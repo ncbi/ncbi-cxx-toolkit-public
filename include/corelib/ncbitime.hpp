@@ -65,6 +65,7 @@ BEGIN_NCBI_SCOPE
 
 // Forward declarations
 class CTimeSpan;
+class CFastLocalTime;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -708,7 +709,7 @@ public:
     /// @param seconds
     ///   Seconds to add. Default is 1 second.
     ///   If negative, it will result in a "subtraction" operation.
-    CTime& AddSecond(long seconds = 1);
+    CTime& AddSecond(long seconds = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified nanoseconds.
     ///
@@ -879,6 +880,9 @@ private:
     /// then set to current time.
     CTime& x_SetTime(const time_t* t = 0);
 
+    /// Version of x_SetTime() with MT-safe locks
+    CTime& x_SetTimeMTSafe(const time_t* t = 0);
+
     /// Helper method to adjust day number to correct value after day
     /// manipulations.
     void x_AdjustDay(void);
@@ -929,6 +933,9 @@ private:
     friend CTime operator+ (int days, const CTime& t);
     NCBI_XNCBI_EXPORT
     friend CTime operator+ (const CTimeSpan& ts, const CTime& t);
+
+    // Friend class
+    friend class CFastLocalTime;
 };
 
 
@@ -1217,6 +1224,45 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFastLocalTime --
+///
+/// Define a class for quick and dirty getting a local time.
+///
+/// Getting local time may trigger request to a time server daemon,
+/// thus potentially causing a relatively significant delay,
+/// so we 'll need a caching local timer.
+
+class NCBI_XNCBI_EXPORT CFastLocalTime
+{
+public:
+    /// Constructor.
+    /// It should not try to get local time from OS more often than once
+    /// an hour. Default:  check once, 5 seconds after each hour.
+    CFastLocalTime(unsigned int sec_after_hour = 5);
+
+    /// Get local time
+    CTime GetLocalTime(void);
+
+    /// Do unscheduled check
+    void Tuneup(void);
+
+private:
+    /// Internal version of Tuneup()
+    void x_Tuneup(time_t timer);
+
+private:
+    unsigned int m_SecAfterHour;  ///< Time interval in seconds after hour
+                             ///< in which we should avoid to do Tuneup().
+    CTime   m_LocalTime;     ///< Saved local time
+    
+    time_t  m_LastTuneTime;  ///< Last Tuneup() time
+    time_t  m_LastSysTime;   ///< Last system time
+    int     m_Timezone;      ///< Cached timezone adjustment for local time
+    int     m_Daylight;      ///< Cached system daylight information
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1306,6 +1352,15 @@ extern CTime operator + (int days, const CTime& t);
 
 NCBI_XNCBI_EXPORT
 extern int   operator- (const CTime& t1, const CTime& t2);
+
+/// Quick and dirty getter of local time.
+/// Use global object of CFastLocalTime class to obtain time.
+/// See CFastLocalTime for details.
+NCBI_XNCBI_EXPORT
+extern CTime GetFastLocalTime(void);
+
+NCBI_XNCBI_EXPORT
+extern void TuneupFastLocalTime(void);
 
 
 //=============================================================================
@@ -1440,10 +1495,10 @@ CTime& CTime::AddYear(int years, EDaylight adl)
 }
 
 inline
-CTime& CTime::SetTimeT(const time_t& t) { return x_SetTime(&t); }
+CTime& CTime::SetTimeT(const time_t& t) { return x_SetTimeMTSafe(&t); }
 
 inline
-CTime& CTime::SetCurrent(void) { return x_SetTime(); }
+CTime& CTime::SetCurrent(void) { return x_SetTimeMTSafe(); }
 
 inline 
 CTime& CTime::operator+= (int days) { return AddDay(days); }
@@ -1934,6 +1989,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/02/10 14:20:32  ivanov
+ * Added quick and dirty getter of local time -- CFastLocalTime.
+ * Also added global functions GetFastLocalTime() and TuneupFastLocalTime().
+ *
  * Revision 1.43  2005/02/07 16:01:04  ivanov
  * Changed parameter type in the CTime::AddSecons() to long.
  * Fixed Workshop 64bits compiler warnings.

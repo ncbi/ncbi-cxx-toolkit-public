@@ -99,6 +99,9 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
     delete fmt;
 }
 
+// Global quick and dirty getter of local time
+static CFastLocalTime s_FastLocalTime;
+
 
 //============================================================================
 
@@ -997,13 +1000,19 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
 }
 
 
+CTime& CTime::x_SetTimeMTSafe(const time_t* value)
+{
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+    x_SetTime(value);
+    return *this;
+}
+
+
 CTime& CTime::x_SetTime(const time_t* value)
 {
     long ns = 0;
     time_t timer;
-
-    // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
 
     // Get time with nanoseconds
 #if defined(NCBI_OS_MSWIN)
@@ -1062,7 +1071,6 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Minute         = t->tm_min;
     m_Second         = t->tm_sec;
     m_NanoSecond     = ns;
-
     return *this;
 }
 
@@ -1178,7 +1186,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 }
 
 
-CTime& CTime::AddSecond(long seconds)
+CTime& CTime::AddSecond(long seconds, EDaylight adl)
 {
     if ( !seconds ) {
         return *this;
@@ -1187,7 +1195,7 @@ CTime& CTime::AddSecond(long seconds)
     long newSecond = Second();
     s_Offset(&newSecond, seconds, 60, &minuteOffset);
     m_Second = (int)newSecond;
-    return AddMinute(minuteOffset);
+    return AddMinute(minuteOffset, adl);
 }
 
 
@@ -1868,6 +1876,74 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 
 //=============================================================================
 //
+//  CFastLocalTime
+//
+//=============================================================================
+
+CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
+    : m_SecAfterHour(sec_after_hour),
+      m_LastTuneTime(0), m_LastSysTime(0),
+      m_Timezone(0), m_Daylight(-1)
+{
+#if !defined(TIMEZONE_IS_UNDEFINED)
+    m_Timezone = TimeZone();
+    m_Daylight = Daylight();
+#endif
+    m_LocalTime.SetTimeZonePrecision(CTime::eHour);
+}
+
+
+void CFastLocalTime::Tuneup(void)
+{
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+    time_t timer = time(0);
+    x_Tuneup(timer);
+}
+
+
+void CFastLocalTime::x_Tuneup(time_t timer)
+{
+    m_LocalTime.x_SetTime(&timer);
+
+#if !defined(TIMEZONE_IS_UNDEFINED)
+    m_Timezone = TimeZone();
+    m_Daylight = Daylight();
+#endif
+    m_LastTuneTime = timer;
+    m_LastSysTime  = timer;
+}
+
+
+CTime CFastLocalTime::GetLocalTime(void)
+{
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+
+    // Get system timer
+    time_t timer = time(0);
+
+    // Avoid to make time tune up in first m_SecAfterHour for each hour
+    // Otherwise do this at each hours/timezone change.
+    if ( !m_LastTuneTime  ||
+         ((timer / 3600 != m_LastTuneTime / 3600)  &&
+          (timer % 3600 >  (time_t)m_SecAfterHour))  || 
+         (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+    ) {
+        x_Tuneup(timer);
+        return m_LocalTime;
+    }
+    // Adjust system time to local time without system calls
+    m_LocalTime.AddSecond(timer - m_LastSysTime, CTime::eIgnoreDaylight);
+    m_LastSysTime = timer;
+
+    // Return computed local time
+    return m_LocalTime;
+}
+
+
+//=============================================================================
+//
 //  CStopWatch
 //
 //=============================================================================
@@ -1954,12 +2030,30 @@ int operator- (const CTime& t1, const CTime& t2)
 }
 
 
+CTime GetFastLocalTime(void)
+{
+    return s_FastLocalTime.GetLocalTime();
+}
+
+
+void TuneupFastLocalTime(void)
+{
+    s_FastLocalTime.Tuneup();
+}
+
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/02/10 14:20:32  ivanov
+ * Added quick and dirty getter of local time -- CFastLocalTime.
+ * Also added global functions GetFastLocalTime() and TuneupFastLocalTime().
+ *
  * Revision 1.58  2005/02/07 16:01:04  ivanov
  * Changed parameter type in the CTime::AddSecons() to long.
  * Fixed Workshop 64bits compiler warnings.
