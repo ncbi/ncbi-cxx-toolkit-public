@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2001/12/26 21:21:05  ucko
+ * Conditionalize deletion of m_FSS on NCBI_OS_MAC.
+ *
  * Revision 1.10  2001/12/26 20:58:22  juran
  * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
  * Add copy constructor and assignment operator for CDirEntry on Mac OS,
@@ -260,7 +263,9 @@ string CDirEntry::GetPath(void) const
 
 CDirEntry::~CDirEntry(void)
 {
+#ifdef NCBI_OS_MAC
 	delete m_FSS;
+#endif
 }
 
 void CDirEntry::SplitPath(const string& path, string* dir,
