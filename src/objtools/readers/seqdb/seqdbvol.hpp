@@ -30,32 +30,26 @@
  *
  */
 
-/// CSeqDBVol class
-/// 
-/// This object defines access to one database volume.
+/// @file seqdbvol.hpp
+/// Defines database volume access classes.
+///
+/// Defines classes:
+///     CSeqDBVol
+///
+/// Implemented for: UNIX, MS-Windows
 
-#include <iostream>
-
-#include <objtools/readers/seqdb/seqdb.hpp>
-#include "seqdbfile.hpp"
-#include "seqdbisam.hpp"
-
-#include <sstream>
-
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <serial/objistr.hpp>
-#include <serial/serial.hpp>
-#include <corelib/ncbimtx.hpp>
+#include "seqdbatlas.hpp"
+#include "seqdbgeneral.hpp"
+#include "seqdbtax.hpp"
+#include <objects/seq/seq__.hpp>
 
 BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
+
+/// CSeqDBVol class
+/// 
+/// This object defines access to one database volume.
 
 class CSeqDBVol {
 public:
@@ -77,10 +71,13 @@ public:
     
     char GetSeqType() const;
     
-    CRef<CBioseq> GetBioseq(Uint4            oid,
-                            bool             use_objmgr,
-                            bool             insert_ctrlA,
-                            CSeqDBLockHold & locked) const;
+    CRef<CBioseq>
+    GetBioseq(Uint4                 oid,
+              bool                  have_oidlist,
+              Uint4                 memb_bit,
+              Uint4                 pref_gi,
+              CRef<CSeqDBTaxInfo>   tax_info,
+              CSeqDBLockHold      & locked) const;
     
     // Will get (and release) the lock as needed.
     
@@ -123,11 +120,21 @@ public:
     bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
     
 private:
-    CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
+    CRef<CBlast_def_line_set>
+    x_GetHdrText(Uint4 oid,
+                 CSeqDBLockHold & locked) const;
+    
+    void x_GetHdrBinary(Uint4            oid,
+                        vector<char>   & hdr_data,
+                        CSeqDBLockHold & locked) const;
+    
+    CRef<CSeqdesc> x_GetAsnDefline(Uint4 oid, CSeqDBLockHold & locked) const;
     
     char   x_GetSeqType() const;
     
-    bool   x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const;
+    bool   x_GetAmbChar(Uint4            oid,
+                        vector<Int4>   & ambchars,
+                        CSeqDBLockHold & locked) const;
     
     Int4   x_GetAmbigSeq(Int4               oid,
                          char            ** buffer,
@@ -150,6 +157,27 @@ private:
                        bool             keep,
                        CSeqDBLockHold & locked,
                        bool             can_release) const;
+    
+    CRef<CBlast_def_line_set>
+    x_GetTaxDefline(Uint4 oid, CSeqDBLockHold & locked) const;
+    
+    CRef<CBlast_def_line_set>
+    x_GetTaxDefline(Uint4            oid,
+                    bool             have_oidlist,
+                    Uint4            membership_bit,
+                    Uint4            preferred_gi,
+                    CSeqDBLockHold & locked) const;
+    
+    CRef<CSeqdesc>
+    x_GetTaxonomy(Uint4                 oid,
+                  bool                  have_oidlist,
+                  Uint4                 membership_bit,
+                  Uint4                 preferred_gi,
+                  CRef<CSeqDBTaxInfo>   tax_info,
+                  CSeqDBLockHold      & locked) const;
+    
+    bool x_SeqIdIn(const list< CRef<CSeq_id> > & seqids,
+                   CSeq_id                     & seqid) const;
     
     CSeqDBAtlas      & m_Atlas;
     string             m_VolName;

@@ -27,8 +27,21 @@
  *
  */
 
+/// @file seqdbvol.cpp
+/// Implementation for the CSeqDBVol class, which provides an
+/// interface for all functionality of one database volume.
+
 #include <ncbi_pch.hpp>
 #include "seqdbvol.hpp"
+#include "seqdboidlist.hpp"
+
+#include <objects/general/general__.hpp>
+
+#include <serial/objistr.hpp>
+#include <serial/serial.hpp>
+#include <corelib/ncbimtx.hpp>
+
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 
@@ -291,58 +304,6 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
     _ASSERT(base_length == (buf8bit.size() - sreserve));
 }
 
-#if 0
-static vector<Uint1>
-s_SeqDBMapNcbiNA4ToBlastNA4Setup(void)
-{
-    vector<Uint1> translated;
-    translated.resize(256);
-    
-    // This mapping stolen., er, courtesy of blastkar.c.
-    
-    Uint1 trans_ncbi4na_to_blastna[] = {
-        15, /* Gap, 0 */
-        0,  /* A,   1 */
-        1,  /* C,   2 */
-        6,  /* M,   3 */
-        2,  /* G,   4 */
-        4,  /* R,   5 */
-        9,  /* S,   6 */
-        13, /* V,   7 */
-        3,  /* T,   8 */
-        8,  /* W,   9 */
-        5,  /* Y,  10 */
-        12, /* H,  11 */
-        7,  /* K,  12 */
-        11, /* D,  13 */
-        10, /* B,  14 */
-        14  /* N,  15 */
-    };
-    
-    for(int i = 0; i<256; i++) {
-        int a1 = (i >> 4) & 0xF;
-        int a2 = i & 0xF;
-        
-        int b1 = trans_ncbi4na_to_blastna[a1];
-        int b2 = trans_ncbi4na_to_blastna[a2];
-        
-        translated[i] = (b1 << 4) | b2;
-    }
-    
-    return translated;
-}
-
-static void
-s_SeqDBMapNcbiNA4ToBlastNA4(vector<char> & buf)
-{
-    static vector<Uint1> trans = s_SeqDBMapNcbiNA4ToBlastNA4Setup();
-    
-    for(Uint4 i = 0; i < buf.size(); i++) {
-        buf[i] = trans[ unsigned(buf[i]) & 0xFF ];
-    }
-}
-#endif
-
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
 {
@@ -505,14 +466,6 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
         
         for(Int4 j = 0; j <= row_len; j++) {
             buf4bit[index++] = trans_ch;
-//             if (!rem) {
-//            	buf4bit[index] = (buf4bit[index] & 0x0F) + char_l;
-//             	rem = 1;
-//             } else {
-//            	buf4bit[index] = (buf4bit[index] & 0xF0) + char_r;
-//             	rem = 0;
-//                 index++;
-//             }
     	}
         
 	if (new_format) /* for new format we have 8 bytes for each element. */
@@ -620,61 +573,301 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
     }
 }
 
-CRef<CBioseq>
-CSeqDBVol::GetBioseq(Uint4 oid,
-                     bool /*use_objmgr,*/,
-                     bool /*insert_ctrlA*/,
-                     CSeqDBLockHold & locked) const
+// This is meant to mimic the readdb behavior.  It produces a string
+// with the title of the first defline, then the seqids plus title for
+// each subsequent defline.
+
+void s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 {
-    // 1. Declare variables.
+    title.erase();
     
+    string seqid_str;
+    
+    typedef list< CRef<CBlast_def_line> >::const_iterator TDefIt; 
+    typedef list< CRef<CSeq_id        > >::const_iterator TSeqIt;
+    
+    const list< CRef<CBlast_def_line> > & dl = deflines->Get();
+    
+    bool first_defline(true);
+    
+    for(TDefIt iter = dl.begin(); iter != dl.end(); iter++) {
+        ostringstream oss;
+        
+        const CBlast_def_line & defline = **iter;
+        
+        if (! title.empty()) {
+            //oss << "\1";
+            oss << " ";
+        }
+        
+        bool wrote_seqids(false);
+        
+        if ((!first_defline) && defline.CanGetSeqid()) {
+            const list< CRef<CSeq_id > > & sl = defline.GetSeqid();
+            
+            bool first_seqid(true);
+            
+            // First should look like: "<title>"
+            // Others should look like: " ><seqid>|<seqid>|<seqid><title>"
+            
+            // Should this be two sections not one loop?
+
+            for (TSeqIt seqit = sl.begin(); seqit != sl.end(); seqit++) {
+                if (first_seqid) {
+                    oss << ">";
+                } else {
+                    oss << "|";
+                }
+                
+                (*seqit)->WriteAsFasta(oss);
+                
+                first_seqid = false;
+                wrote_seqids = true;
+            }
+        }
+        
+        // Omit seqids from first defline
+        first_defline = false;
+        
+        if (defline.CanGetTitle()) {
+            if (wrote_seqids) {
+                oss << " ";
+            }
+            oss << defline.GetTitle();
+        }
+        
+        title += oss.str();
+    }
+}
+
+static bool s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & a, const CSeq_id & b)
+{
+    typedef list< CRef<CSeq_id> > TSeqidList;
+    
+    for(TSeqidList::const_iterator now = a.begin(); now != a.end(); now++) {
+        CSeq_id::E_SIC rv = (*now)->Compare(b);
+        
+        switch(rv) {
+        case CSeq_id::e_YES:
+            return true;
+            
+        case CSeq_id::e_NO:
+            return false;
+            
+        default:
+            break;
+        }
+    }
+    
+    return false;
+}
+
+CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetTaxDefline(Uint4            oid,
+                           bool             have_oidlist,
+                           Uint4            membership_bit,
+                           Uint4            preferred_gi,
+                           CSeqDBLockHold & locked) const
+{
+    typedef list< CRef<CBlast_def_line> > TBDLL;
+    typedef TBDLL::iterator               TBDLLIter;
+    typedef TBDLL::const_iterator         TBDLLConstIter;
+    
+    // 1. read a defline set w/ gethdr.
+    
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
+    
+    // 2. filter based on "rdfp->membership_bit" or similar.
+    
+    if (have_oidlist && (membership_bit != 0)) {
+        // Create the memberships mask (should this be fixed to allow
+        // membership bits greater than 32?)
+        
+        Uint4 memb_mask = 0x1 << (membership_bit-1);
+        
+        TBDLL & dl = BDLS->Set();
+        
+        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
+            const CBlast_def_line & defline = **iter;
+            
+            if ((defline.CanGetMemberships() == false) ||
+                ((defline.GetMemberships().front() & memb_mask)) == 0) {
+                
+                TBDLLIter eraseme = iter++;
+                
+                dl.erase(eraseme);
+            }
+        }
+    }
+    
+    // 3. if there is a preferred gi, bump it to the top.
+    
+    if (preferred_gi != 0) {
+        CSeq_id seqid(CSeq_id::e_Gi, preferred_gi);
+        
+        TBDLL & dl = BDLS->Set();
+        
+        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
+            if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
+                dl.push_front(*iter);
+                dl.erase(iter);
+                break;
+            }
+        }
+    }
+    
+    return BDLS;
+}
+
+CRef<CSeqdesc>
+CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
+                         bool                  have_oidlist,
+                         Uint4                 membership_bit,
+                         Uint4                 preferred_gi,
+                         CRef<CSeqDBTaxInfo>   tax_info,
+                         CSeqDBLockHold      & locked) const
+{
+    const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
+    
+    CRef<CSeqdesc> taxonomy;
+    
+    CRef<CBlast_def_line_set> bdls =
+        x_GetTaxDefline(oid,
+                        have_oidlist,
+                        membership_bit,
+                        preferred_gi,
+                        locked);
+    
+    if (bdls.Empty()) {
+        return taxonomy;
+    }
+    
+    typedef list< CRef<CBlast_def_line> > TBDLL;
+    typedef TBDLL::iterator               TBDLLIter;
+    typedef TBDLL::const_iterator         TBDLLConstIter;
+    
+    const TBDLL & dl = bdls->Get();
+    
+    CRef<CUser_object> uobj(new CUser_object);
+    
+    CRef<CObject_id> uo_oi(new CObject_id);
+    uo_oi->SetStr(TAX_DATA_OBJ_LABEL);
+    uobj->SetType(*uo_oi);
+    
+    bool found = false;
+    
+    for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
+        Uint4 taxid = (*iter)->GetTaxid();
+        
+        CSeqDBTaxNames tnames;
+        
+        if (tax_info.Empty()) {
+            continue;
+        }
+        
+        bool worked = tax_info->GetTaxNames(taxid, tnames, locked);
+        
+        if (! worked) {
+            continue;
+        }
+        
+        found = true;
+        
+        CRef<CUser_field> uf(new CUser_field);
+        
+        CRef<CObject_id> uf_oi(new CObject_id);
+        uf_oi->SetId(taxid);
+        uf->SetLabel(*uf_oi);
+        
+        vector<string> & strs = uf->SetData().SetStrs();
+        
+        uf->SetNum(4);
+        strs.resize(4);
+        
+        strs[0] = tnames.GetSciName();
+        strs[1] = tnames.GetCommonName();
+        strs[2] = tnames.GetBlastName();
+        strs[3] = tnames.GetSKing();
+        
+        uobj->SetData().push_back(uf);
+    }
+    
+    if (found) {
+        taxonomy = new CSeqdesc;
+        taxonomy->SetUser(*uobj); // or something.
+    }
+    
+    return taxonomy;
+}
+
+CRef<CSeqdesc> CSeqDBVol::x_GetAsnDefline(Uint4 oid, CSeqDBLockHold & locked) const
+{
+    const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
+    
+    CRef<CSeqdesc> asndef;
+    
+    vector<char> hdr_data;
+    x_GetHdrBinary(oid, hdr_data, locked);
+    
+    if (! hdr_data.empty()) {
+        CRef<CUser_object> uobj(new CUser_object);
+    
+        CRef<CObject_id> uo_oi(new CObject_id);
+        uo_oi->SetStr(ASN1_DEFLINE_LABEL);
+        uobj->SetType(*uo_oi);
+        
+        CRef<CUser_field> uf(new CUser_field);
+        
+        CRef<CObject_id> uf_oi(new CObject_id);
+        uf_oi->SetStr(ASN1_DEFLINE_LABEL);
+        uf->SetLabel(*uf_oi);
+        
+        vector< vector<char>* > & strs = uf->SetData().SetOss();
+        uf->SetNum(1);
+        
+        strs.push_back(new vector<char>);
+        strs[0]->swap(hdr_data);
+        
+        uobj->SetData().push_back(uf);
+        
+        asndef = new CSeqdesc;
+        asndef->SetUser(*uobj); // or something.
+    }
+    
+    return asndef;
+}
+
+CRef<CBioseq>
+CSeqDBVol::GetBioseq(Uint4                 oid,
+                     bool                  have_oidlist,
+                     Uint4                 memb_bit,
+                     Uint4                 pref_gi,
+                     CRef<CSeqDBTaxInfo>   tax_info,
+                     CSeqDBLockHold      & locked) const
+{
     CRef<CBioseq> null_result;
     
-    // 2. if we can't find the seq_num (get_link), we are done.
+    // Get the defline set.  Probably this is like the function above
+    // that gets asn, but split it up more when returning it.
     
-    //xx  Not relevant - the layer above this would do that before
-    //xx  This specific 'CSeqDB' object was involved.
-    
-    // 3. get the descriptor - i.e. sip, defline.  Probably this
-    // is like the function above that gets asn, but split it up
-    // more when returning it.
-    
-    // QUESTIONS: What do we actually want?  The defline & seqid, or
-    // the defline set and seqid set?  From readdb.c it looks like the
-    // single items are the prized artifacts.
-    
-    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid, locked));
+    CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
     
-    {
-        if (defline_set.Empty() ||
-            (! defline_set->CanGet())) {
-            return null_result;
-        }
-        
-    
-        defline = defline_set->Get().front();
-        
-        if (! defline->CanGetSeqid()) {
-            // Not sure if this is necessary - if it turns out we can
-            // handle a null, this should be taken back out.
-            return null_result;
-        }
-        
-        // Do we want the list, or just the first CRef<>??  For now, get
-        // the whole list.
-        
-        seqids = defline->GetSeqid();
+    if (defline_set.Empty() ||
+        (! defline_set->CanGet())) {
+        return null_result;
     }
+        
+    defline = defline_set->Get().front();
+        
+    if (! defline->CanGetSeqid()) {
+        return null_result;
+    }
+        
+    seqids = defline->GetSeqid();
     
-    // 4. If insert_ctrlA is FALSE, we convert each "^A" to " >";
-    // Otherwise, we just copy the defline across. (inline func?)
-    
-    //xx Ignoring ctrl-A issue for now (as per Tom's insns.)
-    
-    // 5. Get length & sequence (_get_sequence).  That should be
-    // mimicked before this.
+    // Get length & sequence.
     
     const char * seq_buffer = 0;
     
@@ -684,31 +877,19 @@ CSeqDBVol::GetBioseq(Uint4 oid,
         return null_result;
     }
     
-    // 6. If using obj mgr, BioseqNew() is called; otherwise
-    // MemNew().  --> This is the BioseqPtr, bsp.
-    
-    //byte_store = BSNew(0);
-    
-    // 7. A byte store is created (BSNew()).
-    
-    //xx No allocation is done; instead we just call *Set() etc.
-    
-    // 8. If protein, we set bsp->mol = Seq_mol_aa, seq_data_type
-    // = Seq_code_ncbistdaa; then we write the buffer into the
-    // byte store.
-    
-    // 9. Nucleotide sequences require more pain, suffering.
+    // If protein, we set bsp->mol = Seq_mol_aa, seq_data_type =
+    // Seq_code_ncbistdaa; then we write the buffer into the byte
+    // store (or equivalent).
+    //
+    // Nucleotide sequences require more work:
     // a. Try to get ambchars
     // b. If there are any, convert sequence to 4 byte rep.
     // c. Otherwise write to a byte store.
     // d. Set mol = Seq_mol_na;
     
-    // 10. Stick the byte store into the bsp->seq_data
-    
     CRef<CBioseq> bioseq(new CBioseq);
     
     CSeq_inst & seqinst = bioseq->SetInst();
-    //CSeq_data & seqdata = seqinst->SetSeq_data();
     
     bool is_prot = (x_GetSeqType() == kSeqTypeProt);
     
@@ -738,43 +919,47 @@ CSeqDBVol::GetBioseq(Uint4 oid,
         seq_buffer = 0;
     }
     
-    // 11. Set the length, id (Seq_id), and repr (== raw).
+    // Set the length, id (Seq_id), and repr (== raw).
     
     seqinst.SetLength(length);
     seqinst.SetRepr(CSeq_inst::eRepr_raw);
     bioseq->SetId().swap(seqids);
     
-    // 12. Add the new_defline to the list at bsp->descr if
-    // non-null, with ValNodeAddString().
-    
-    // 13. If the format is not text (si), we get the defline and
-    // chain it onto the bsp->desc list; then we read and append
-    // taxonomy names to the list (readdb_get_taxonomy_names()).
+    // If the format is binary, we get the defline and chain it onto
+    // the bsp->desc list; then we read and append taxonomy names to
+    // the list (x_GetTaxonomy()).
     
     if (defline_set.NotEmpty()) {
-        // Convert defline to ... string.
-        
-        //1. Have a defline.. maybe.  Want to add this as the title.(?)
-        // A. How to add a description item:
+        // Convert defline to string.
         
         string description;
         
-        s_GetDescrFromDefline(defline_set, description);
+        s_GetBioseqTitle(defline_set, description);
         
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetTitle().swap(description);
         
-        CSeq_descr & seqdesc = bioseq->SetDescr();
-        seqdesc.Set().push_back(desc1);
+        CRef<CSeqdesc> desc2( x_GetAsnDefline(oid, locked) );
+        
+        CSeq_descr & seq_desc_set = bioseq->SetDescr();
+        seq_desc_set.Set().push_back(desc1);
+        
+        if (! desc2.Empty()) {
+            seq_desc_set.Set().push_back(desc2);
+        }
     }
     
-    // I'm going to let the taxonomy slide for now....
+    CRef<CSeqdesc> tax = x_GetTaxonomy(oid,
+                                       have_oidlist,
+                                       memb_bit,
+                                       pref_gi,
+                                       tax_info,
+                                       locked);
     
-    //cerr << "Taxonomy, etc." << endl;
-
-    // 14. Return the bsp.
-    
-    // Everything seems eerily quiet so far, so...
+    if (tax.NotEmpty()) {
+        CSeq_descr & seqdesc = bioseq->SetDescr();
+        seqdesc.Set().push_back(tax);
+    }
     
     return bioseq;
 }
@@ -792,7 +977,7 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLo
         retval = (char*) malloc(length);
         break;
         
-// MemNew is not available yet.
+// MemNew is not available.
 //     case eMemNew:
 //         retval = (char*) MemNew(length);
 //         break;
@@ -847,8 +1032,8 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
         vector<char> buffer_na8;
         
         {
-            // The code in this block is a few excerpts from
-            // GetBioseq() and s_SeqDBWriteSeqDataNucl().
+            // The code in this block is derived from GetBioseq() and
+            // s_SeqDBWriteSeqDataNucl().
             
             // Get the length and the (probably mmapped) data.
             
@@ -953,7 +1138,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) c
 {
     list< CRef< CSeq_id > > seqids;
     
-    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid, locked));
+    CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         CRef<CBlast_def_line> defline = defline_set->Get().front();
@@ -971,19 +1156,21 @@ Uint8 CSeqDBVol::GetTotalLength(void) const
     return m_Idx.GetTotalLength();
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
+CRef<CBlast_def_line_set>
+CSeqDBVol::GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
 {
-    return x_GetHdr(oid, locked);
+    return x_GetHdrText(oid, locked);
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
+CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetHdrText(Uint4 oid, CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> nullret;
     
     TIndx hdr_start = 0;
     TIndx hdr_end   = 0;
     
-    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end/*, locked*/)) {
+    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
         return nullret;
     }
     
@@ -1011,6 +1198,32 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked
     
     
     return phil;
+}
+
+void CSeqDBVol::x_GetHdrBinary(Uint4 oid, vector<char> & hdr_data, CSeqDBLockHold & locked) const
+{
+    hdr_data.clear();
+    
+    TIndx hdr_start = 0;
+    TIndx hdr_end   = 0;
+    
+    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
+        return;
+    }
+    
+    const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
+    
+    // If empty, nothing to do.
+    
+    if (! asn_region) {
+        return;
+    }
+    
+    // Return the binary byte data as a string.
+    
+    const char * asn_region_end = asn_region + (hdr_end - hdr_start);
+    
+    hdr_data.assign(asn_region, asn_region_end);
 }
 
 bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
@@ -1086,7 +1299,7 @@ bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdr(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
     
     if (BDLS.Empty() || (! BDLS->CanGet())) {
         return false;
@@ -1131,7 +1344,7 @@ bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdr(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
     
     if (BDLS.Empty() || (! BDLS->CanGet())) {
         return false;
