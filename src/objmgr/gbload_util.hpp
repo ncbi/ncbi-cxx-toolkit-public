@@ -64,8 +64,8 @@ public:
     Select(m_Locks->m_Pool.Select(a));
     Switch(newstate);
   }
-  template<class A> void Lock(A *a) { Switch(eBoth,a);};
-  template<class A> void Unlock(A *a) { Switch(eMain,a);};
+  template<class A> void Lock(A *a)   { Switch(eBoth,a); }
+  template<class A> void Unlock(A *a) { Switch(eMain,a); }
   void Lock()   { Switch(eMain);};
   void Unlock() { Switch(eNone);};
   void Local()  { Switch(eLocal);};
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.2  2002/07/22 23:10:04  kimelman
+ * make sunWS happy
+ *
  * Revision 1.1  2002/07/22 22:53:24  kimelman
  * exception handling fixed: 2level mutexing moved to Guard class + added
  * handling of confidential data.
