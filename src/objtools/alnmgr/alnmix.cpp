@@ -122,31 +122,34 @@ void CAlnMix::x_CreateScope()
 
 void CAlnMix::Merge(TMergeFlags flags)
 {
+    if (m_InputDSs.empty()) {
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnMix::Merge(): "
+                   "No alignments were added for merging.");
+    }
     if ( !m_DS  ||  m_MergeFlags != flags) {
-        if (m_InputDSs.size()) {
-            x_Reset();
-            m_MergeFlags = flags;
-            if (m_MergeFlags & fTryOtherMethodOnFail) {
+        x_Reset();
+        m_MergeFlags = flags;
+        if (m_MergeFlags & fTryOtherMethodOnFail) {
+            try {
+                x_Merge();
+            } catch(...) {
+                if (m_MergeFlags & fGen2EST) {
+                    m_MergeFlags &= !fGen2EST;
+                } else {
+                    m_MergeFlags |= fGen2EST;
+                }
                 try {
                     x_Merge();
                 } catch(...) {
-                    if (m_MergeFlags & fGen2EST) {
-                        m_MergeFlags &= !fGen2EST;
-                    } else {
-                        m_MergeFlags |= fGen2EST;
-                    }
-                    try {
-                        x_Merge();
-                    } catch(...) {
-                        NCBI_THROW(CAlnException, eUnknownMergeFailure,
-                                   "CAlnMix::x_Merge(): "
-                                   "Both Gen2EST and Nucl2Nucl "
-                                   "merges failed.");
-                    }
+                    NCBI_THROW(CAlnException, eUnknownMergeFailure,
+                               "CAlnMix::x_Merge(): "
+                               "Both Gen2EST and Nucl2Nucl "
+                               "merges failed.");
                 }
-            } else {
-                x_Merge();
             }
+        } else {
+            x_Merge();
         }
     }
 }
@@ -1896,6 +1899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2003/12/10 16:14:38  todorov
+* + exception when merge with no input
+*
 * Revision 1.80  2003/12/08 21:28:03  todorov
 * Forced Translation of Nucleotide Sequences
 *
