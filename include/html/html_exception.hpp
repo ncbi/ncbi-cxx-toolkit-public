@@ -69,21 +69,23 @@ public:
         eTableCellType,
         eTemplateAccess,
         eTemplateTooBig,
+        eEndlessRecursion,
         eUnknown
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
-        case eNullPtr:         return "eNullPtr";
-        case eWrite:           return "eWrite";
-        case eTextUnclosedTag: return "eTextUnclosedTag";
-        case eTableCellUse:    return "eTableCellUse";
-        case eTableCellType:   return "eTableCellType";
-        case eTemplateAccess:  return "eTemplateAccess";
-        case eTemplateTooBig:  return "eTemplateTooBig";
-        case eUnknown:         return "eUnknown";
-        default:               return CException::GetErrCodeString();
+        case eNullPtr:          return "eNullPtr";
+        case eWrite:            return "eWrite";
+        case eTextUnclosedTag:  return "eTextUnclosedTag";
+        case eTableCellUse:     return "eTableCellUse";
+        case eTableCellType:    return "eTableCellType";
+        case eTemplateAccess:   return "eTemplateAccess";
+        case eTemplateTooBig:   return "eTemplateTooBig";
+        case eEndlessRecursion: return "eEndlessRecursion";
+        case eUnknown:          return "eUnknown";
+        default:                return CException::GetErrCodeString();
         }
     }
 
@@ -120,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 20:15:18  ivanov
+ * + eEndlessRecursion
+ *
  * Revision 1.4  2003/12/23 17:59:51  ivanov
  * Added exception tracing. Moved code to separate .cpp file.
  *
