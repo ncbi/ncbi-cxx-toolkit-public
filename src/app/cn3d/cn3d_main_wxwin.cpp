@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2001/09/02 11:26:02  thiessen
+* add mac font defaults
+*
 * Revision 1.73  2001/08/31 22:24:40  thiessen
 * add timer for animation
 *
@@ -557,6 +560,8 @@ bool Cn3DApp::OnInit(void)
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
 #elif defined(__WXGTK__)
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
+#elif defined(__WXMAC__)
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
 #endif
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
@@ -569,6 +574,8 @@ bool Cn3DApp::OnInit(void)
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
 #elif defined(__WXGTK__)
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
+#elif defined(__WXMAC__)
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
 #endif
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
@@ -840,8 +847,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
         None
     };
 */
-#else
-#warning need to define GL attrib list
+#elif defined(__WXMAC__)
 	int *attribList = NULL;
 #endif
     glCanvas = new Cn3DGLCanvas(this, attribList);
