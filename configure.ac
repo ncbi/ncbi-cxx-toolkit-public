@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.119 2002/08/15 22:03:41 vakatov Exp $
+#  $Id: configure.ac,v 1.120 2002/08/19 14:56:39 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -749,8 +749,8 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math -fstrict-aliasing"
         ;;
       WorkShop* )
-        # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
-        DEF_FAST_FLAGS="-fast"
+        # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
+        DEF_FAST_FLAGS="-fast $ARCH_CFLAGS"
         case "$host_cpu" in
            # Work around a WorkShop standard library bug.
            i?86) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET" ;;
@@ -759,7 +759,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       KCC )
         DEF_FAST_FLAGS="+K3"
         case "$host_os" in
-           solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast" ;;
+           solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast $ARCH_CFLAGS" ;;
         esac
         ;;
       ICC )
@@ -781,6 +781,7 @@ fi
 
 : ${FAST_CFLAGS="$DEF_FAST_FLAGS"}
 : ${FAST_CXXFLAGS="$DEF_FAST_FLAGS"}
+: ${FAST_LDFLAGS="$DEF_FAST_FLAGS"}
 
 
 #### DLLs
@@ -1204,12 +1205,14 @@ if test "$compiler" != "MSVC" ; then
 
    NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
    NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-O[0-9]*//g'`
+   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
       LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
       FAST_CFLAGS="$CFLAGS" 
       FAST_CXXFLAGS="$CXXFLAGS" 
+      FAST_LDFLAGS="$LDFLAGS"
    else
       if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          CFLAGS="$CFLAGS -O" ; fi
@@ -1220,6 +1223,7 @@ if test "$compiler" != "MSVC" ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
+      FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
    fi
 
    if test "$with_debug" = "no"  -a  "$with_optimization" = "no" ; then
@@ -2699,6 +2703,7 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
 AC_SUBST(DEPFLAGS_POST)
 AC_SUBST(LDFLAGS)
+AC_SUBST(FAST_LDFLAGS)
 AC_SUBST(LIBS)
 
 AC_SUBST(D_SFX)
