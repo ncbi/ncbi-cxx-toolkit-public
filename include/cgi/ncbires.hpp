@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/02/05 22:00:36  sandomir
+* Command::GetLink() changes
+*
 * Revision 1.18  1999/02/02 17:27:07  sandomir
 * PFindByName fixed
 *
@@ -206,7 +209,7 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual string GetLink( void ) const = 0;
+  virtual string GetLink( CNcbiMsgRequest& request ) const = 0;
 
   virtual void Execute( CNcbiMsgRequest& request ) = 0;
 
