@@ -435,8 +435,11 @@ END_TEST_FUNCTION
 
 int ASNIOTestApp::Run(void)
 {
-    if (GetEnvironment().Get("ASNIOTEST_FILES").size() > 0)
+    if (GetEnvironment().Get("ASNIOTEST_FILES").size() > 0) {
         pathToFiles = GetEnvironment().Get("ASNIOTEST_FILES");
+    } else if (CDirEntry("data/pdbSeqId.txt").Exists()) {
+        pathToFiles = "data";
+    }
     INFOMSG("Looking for sample files in " << pathToFiles);
 
     int nErrors = 0;
@@ -500,6 +503,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/23 16:29:52  ucko
+* Try to find test files in data/.
+*
 * Revision 1.8  2004/01/15 14:35:13  thiessen
 * add date to output
 *
