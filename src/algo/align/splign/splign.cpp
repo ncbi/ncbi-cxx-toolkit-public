@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 // define cut-off strategy at the terminii
-static const size_t kMinTermExonSize = 45; // strategy applies below this limit
+static const size_t kMinTermExonSize = 55; // strategy applies below this limit
 static const double kMinTermExonIdty = 0.95; 
 static const size_t kIntronPerTermExon = 300;
 
@@ -616,7 +616,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     if(ctg_end - 1 < smax) { // perhabs adjust smax
         smax = ctg_end - 1;
     }
- 
+
     if(!ctg_strand) {
         // make reverse complementary
         // for the contig's area of interest
@@ -743,7 +743,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     }
     
     m_segments.resize(j + 1);
-    
+
     return rv;
 }
 
@@ -755,6 +755,11 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     typedef deque<SSegment> TSegments;
     TSegments segments;
     static const char kGap [] = "<GAP>";
+
+//#define DBG_DUMP_PATTERN
+#ifdef  DBG_DUMP_PATTERN
+    cerr << "Pattern:" << endl;  
+#endif
 
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
@@ -776,7 +781,6 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             back_inserter(pattern));
             for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
-//#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
 	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
 		   << pattern[j+2] << '\t' << pattern[j+3] << endl;
@@ -856,8 +860,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 //#define DUMP_ORIG_SEGS
 #ifdef DUMP_ORIG_SEGS
+    cerr << "Orig segments:" << endl;
     ITERATE(TSegments, ii, segments) {
-        cout << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
+        cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
              << ii->m_annot << endl;
@@ -1079,6 +1084,18 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_details.resize(0);
         m_segments.push_back(g);
     }
+
+//#define DUMP_PROCESSED_SEGS
+#ifdef DUMP_PROCESSED_SEGS
+    cerr << "Processed segments:" << endl;
+    ITERATE(CSplign::TSegments, ii, m_segments) {
+        cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
+             << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
+             << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
+             << ii->m_annot << endl;
+    }
+#endif
+
 }
 
 
@@ -1343,6 +1360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/09/09 21:23:41  kapustin
+ * Adjust min term exon sizeto use with fixed genomic extent
+ *
  * Revision 1.19  2004/07/19 13:38:07  kapustin
  * Remove unused conditional code
  *
@@ -1353,7 +1373,8 @@ END_NCBI_SCOPE
  * Increment model id for models with exceptions
  *
  * Revision 1.16  2004/06/21 18:43:20  kapustin
- * Tweak seg-level post-processing to reconcile boundary identity improvement with rterm-exon cutting
+ * Tweak seg-level post-processing to reconcile boundary identity
+ * improvement with rterm-exon cutting
  *
  * Revision 1.15  2004/06/16 21:02:43  kapustin
  * Set lower length limit for gaps treated as poly-A parts
@@ -1362,7 +1383,8 @@ END_NCBI_SCOPE
  * Rearrange seg-level postprocessing steps
  *
  * Revision 1.13  2004/06/03 19:27:54  kapustin
- * Add CSplign::GetIdentity(). Limit the genomic extension for small terminal exons
+ * Add CSplign::GetIdentity(). Limit the genomic extension for small
+ * terminal exons
  *
  * Revision 1.12  2004/05/24 16:13:57  gorelenk
  * Added PCH ncbi_pch.hpp
