@@ -399,6 +399,9 @@ public:
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     
+    /// Translate a Seq-id to a list of OIDs.
+    void SeqidToOids(const CSeq_id & seqid, vector<TOID> & oids) const;
+    
     /// Find the sequence closest to the given offset into the database.
     /// 
     /// The database volumes can be viewed as a single array of
