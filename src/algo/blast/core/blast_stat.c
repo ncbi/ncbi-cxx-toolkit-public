@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.67  2004/05/05 21:16:24  camacho
+ * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
+ *
  * Revision 1.66  2004/05/04 13:00:02  madden
  * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_KarlinBlkIdealCalc, make public
  *
@@ -1513,17 +1516,8 @@ Blast_ResFreqNormalize(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, double norm
 	return 0;
 }
 
-/*
-	Fills a buffer with the 'standard' alphabet (given by 
-	STD_AMINO_ACID_FREQS[index].ch).
-
-	Return value is the number of residues in alphabet.  
-	Negative returns upon error.
-*/
-
-static Int2
-BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
-
+Int2
+Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 {
 	Int2 index;
 
@@ -1556,7 +1550,7 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 	if (sbp->protein_alphabet == TRUE)
 	{
 		residues = (Uint1*) calloc(DIM(STD_AMINO_ACID_FREQS), sizeof(Uint1));
-		retval = BlastGetStdAlphabet(sbp->alphabet_code, residues, DIM(STD_AMINO_ACID_FREQS));
+		retval = Blast_GetStdAlphabet(sbp->alphabet_code, residues, DIM(STD_AMINO_ACID_FREQS));
 		if (retval < 1)
 			return retval;
 
@@ -1731,8 +1725,8 @@ BlastScoreChk(Int4 lo, Int4 hi)
 	return 0;
 }
 
-static BLAST_ScoreFreq*
-BlastScoreFreqNew(Int4 score_min, Int4 score_max)
+BLAST_ScoreFreq*
+Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 {
 	BLAST_ScoreFreq*	sfp;
 	Int4	range;
@@ -1753,7 +1747,7 @@ BlastScoreFreqNew(Int4 score_min, Int4 score_max)
 	}
 
 	sfp->sprob0 = sfp->sprob;
-	sfp->sprob -= score_min;
+	sfp->sprob -= score_min;        /* center around 0 */
 	sfp->score_min = score_min;
 	sfp->score_max = score_max;
 	sfp->obs_min = sfp->obs_max = 0;
@@ -2347,7 +2341,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	stdrfp = Blast_ResFreqNew(sbp);
 	Blast_ResFreqStdComp(sbp, stdrfp);
 	Blast_ResFreqString(sbp, rfp, query, query_length);
-	sbp->sfp[context_number] = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
+	sbp->sfp[context_number] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
 	sbp->kbp_std[context_number] = Blast_KarlinBlkCreate();
 	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
@@ -2381,7 +2375,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 
 	stdrfp = Blast_ResFreqNew(sbp);
 	Blast_ResFreqStdComp(sbp, stdrfp);
-	sfp = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
+	sfp = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
 	kbp_ideal = Blast_KarlinBlkCreate();
 	BlastKarlinBlkCalc(kbp_ideal, sfp);

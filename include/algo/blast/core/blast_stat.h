@@ -335,6 +335,22 @@ Blast_ResFreq* Blast_ResFreqDestruct(Blast_ResFreq* rfp);
 */
 Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
 
+/** Creates a new structure to keep track of score frequencies for a scoring
+ * system.
+ * @param score_min Minimum score [in]
+ * @param score_max Maximum score [in]
+ */
+BLAST_ScoreFreq*
+Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
+
+/** Fills a buffer with the 'standard' alphabet 
+ * (given by STD_AMINO_ACID_FREQS[index].ch).
+ *
+ * @return Number of residues in alphabet or negative returns upon error.
+ */
+Int2
+Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, 
+                     Uint4 residues_size);
 #ifdef __cplusplus
 }
 #endif
