@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
 * Revision 1.6  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -132,9 +135,9 @@ TaxonomyWindow::~TaxonomyWindow(void)
 }
 
 
-static void ExpandAll(wxTreeCtrl& tree, const wxTreeItemId& id, bool shouldExpand)
+static void ExpandAll(wxTreeCtrl& tree, const wxTreeItemId& id, bool shouldExpand, int toLevel)
 {
-    if (!tree.ItemHasChildren(id)) return;
+    if (toLevel == 0 || !tree.ItemHasChildren(id)) return;
 
     // shouldExpand/collapse this node
     bool isExpanded = tree.IsExpanded(id);
@@ -146,7 +149,7 @@ static void ExpandAll(wxTreeCtrl& tree, const wxTreeItemId& id, bool shouldExpan
     // descend tree and shouldExpand/collapse all children
     long cookie = (long) (&tree);
     for (wxTreeItemId child=tree.GetFirstChild(id, cookie); child.IsOk(); child=tree.GetNextChild(id, cookie))
-        ExpandAll(tree, child, shouldExpand);
+        ExpandAll(tree, child, shouldExpand, toLevel - 1);
 }
 
 void TaxonomyWindow::OnActivate(wxTreeEvent& event)
@@ -157,7 +160,7 @@ void TaxonomyWindow::OnActivate(wxTreeEvent& event)
 
     if (keyActivated && hasChildren) {
         // expand/collapse entire tree at internal node
-        ExpandAll(*tree, itemID, !tree->IsExpanded(itemID));
+        ExpandAll(*tree, itemID, !tree->IsExpanded(itemID), -1);
     }
 
     else if (!keyActivated && !hasChildren) {
@@ -221,8 +224,8 @@ public:
 // map taxid -> node
 typedef std::map < int , TaxonomyTreeNode > TaxonomyTreeMap;
 
-static void AppendChildrenToTree(wxTreeCtrl *tree,
-    const TaxonomyTreeMap& treeMap, const TaxonomyTreeNode& node, const wxTreeItemId id)
+static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMap,
+    const TaxonomyTreeNode& node, const wxTreeItemId id, bool abbreviated)
 {
     // add sequence nodes
     if (node.sequences.size() > 0) {
@@ -240,11 +243,18 @@ static void AppendChildrenToTree(wxTreeCtrl *tree,
     if (node.childTaxids.size() > 0) {
         TaxonomyTreeNode::ChildTaxIDMap::const_iterator c, ce = node.childTaxids.end();
         for (c=node.childTaxids.begin(); c!=ce; c++) {
-            const TaxonomyTreeNode& childNode = treeMap.find(c->first)->second;
-            wxString name;
-            name.Printf("%s (%i)", childNode.name.c_str(), childNode.nDescendentLeaves);
+            const TaxonomyTreeNode *childNode = &(treeMap.find(c->first)->second);
+            wxString name = childNode->name.c_str();
+            if (abbreviated) {
+                while (childNode->sequences.size() == 0 && childNode->childTaxids.size() == 1 &&
+                       treeMap.find(childNode->childTaxids.begin()->first)->second.sequences.size() == 0)
+                    childNode = &(treeMap.find(childNode->childTaxids.begin()->first)->second);
+                if (childNode->name != name.c_str())
+                    name += wxString(" . . . ") + childNode->name.c_str();
+            }
+            name.Printf("%s (%i)", name.c_str(), childNode->nDescendentLeaves);
             wxTreeItemId childId = tree->AppendItem(id, name);
-            AppendChildrenToTree(tree, treeMap, childNode, childId);
+            AppendChildrenToTree(tree, treeMap, *childNode, childId, abbreviated);
         }
     }
 }
@@ -269,7 +279,8 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     parentNode.nDescendentLeaves++;
 }
 
-void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent, const BlockMultipleAlignment *alignment)
+void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent,
+    const BlockMultipleAlignment *alignment, bool abbreviated)
 {
     wxBeginBusyCursor();    // sometimes takes a while
 
@@ -314,7 +325,8 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent, const BlockMultip
     *handle = window = new TaxonomyWindow(windowParent, handle);
     wxString name;
     name.Printf("%s (%i)", node->name.c_str(), node->nDescendentLeaves);
-    AppendChildrenToTree(window->tree, taxTree, *node, window->tree->AddRoot(name));
+    AppendChildrenToTree(window->tree, taxTree, *node, window->tree->AddRoot(name), abbreviated);
+    ExpandAll(*(window->tree), window->tree->GetRootItem(), true, 2);
     window->Show(true);
     taxonomyWindows.push_back(handle);
 

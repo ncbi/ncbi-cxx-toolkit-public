@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
 * Revision 1.41  2002/10/04 18:45:28  thiessen
 * updates to taxonomy viewer
 *
@@ -197,7 +200,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
-    EVT_MENU      (MID_TAXONOMY,                        SequenceViewerWindow::OnTaxonomy)
+    EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,    SequenceViewerWindow::OnTaxonomy)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -215,7 +218,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
     subMenu->Append(MID_EXPORT_HTML, "&HTML");
     viewMenu->Append(MID_EXPORT, "&Export...", subMenu);
-    viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...");
+    subMenu = new wxMenu;
+    subMenu->Append(MID_TAXONOMY_FULL, "&Full");
+    subMenu->Append(MID_TAXONOMY_ABBR, "&Abbreviated");
+    viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...", subMenu);
 
     editMenu->AppendSeparator();
     subMenu = new wxMenu;
@@ -567,7 +573,8 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
 {
     if (!taxonomyTree) taxonomyTree = new TaxonomyTree();
     if (sequenceViewer->GetCurrentAlignments())
-        taxonomyTree->ShowTreeForAlignment(this, sequenceViewer->GetCurrentAlignments()->front());
+        taxonomyTree->ShowTreeForAlignment(this, sequenceViewer->GetCurrentAlignments()->front(),
+            (event.GetId() == MID_TAXONOMY_ABBR));
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
 * Revision 1.2  2002/10/04 18:45:28  thiessen
 * updates to taxonomy viewer
 *
@@ -66,7 +69,8 @@ public:
     TaxonomyTree(void);
     ~TaxonomyTree(void);
 
-    void ShowTreeForAlignment(wxFrame *parent, const BlockMultipleAlignment *alignment);
+    void ShowTreeForAlignment(wxFrame *parent,
+        const BlockMultipleAlignment *alignment, bool abbreviated);
 
 private:
     // cached taxid's by identifier

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
 * Revision 1.22  2002/09/09 22:51:19  thiessen
 * add basic taxonomy tree viewer
 *
@@ -135,6 +138,8 @@ private:
         MID_SCORE_THREADER,
         MID_SELF_HIT,
         MID_TAXONOMY,
+            MID_TAXONOMY_FULL,
+            MID_TAXONOMY_ABBR,
         MID_EXPORT,
             MID_EXPORT_FASTA,
             MID_EXPORT_A2M,
