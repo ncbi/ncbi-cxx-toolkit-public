@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = test_regexp
+APP_PROJ = test_pcre
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
