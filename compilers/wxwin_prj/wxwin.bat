@@ -86,7 +86,7 @@ ECHO FATAL: File %FILE% not found. Please check your settings.
 GOTO EXIT
 :START
 msdev.exe %FILE% /MAKE "all - %CFG%"
-IF NOT ERRORLEVEL 0 GOTO ABORT
+IF ERRORLEVEL 1 GOTO ABORT
 
 IF NOT %CFG% == ALL GOTO ITERATE
 IF NOT _%TARGET% == _ALL GOTO COMPLETE
@@ -100,7 +100,7 @@ SET CFG=%2%
 GOTO LOOP
 
 :ABORT
-ECHO INFO: Aborted, please see error log. Hit any key to quit...
+ECHO INFO: Build failed, please see error log. Hit any key to quit...
 PAUSE > NUL
 GOTO EXIT
 :COMPLETE
