@@ -60,6 +60,8 @@ AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
+AC_ARG_WITH(static,
+   [ --with-static           build all libraries statically even if --with-dll])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(64,
@@ -134,7 +136,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll runpath mt 64 \
+debug optimization dll static runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 local-lbsm serial objects app ctools gui internal"
@@ -623,12 +625,19 @@ changequote([, ])dnl
       echo
       ;;
    esac
-   LIB_OR_DLL="dll"
-   FORCE_STATIC_LIB=
-   dll_sfx="DLL"
-elif test "$with_dll" = "no" ; then
+fi
+
+case "$with_dll:$with_static" in
+   yes:yes) LIB_OR_DLL="both"; dll_sfx="DLL+static" ;;
+   yes:*)   LIB_OR_DLL="dll";  dll_sfx="DLL" ;;
+   *:no)    AC_MSG_ERROR([--without-static requires --with-dll]) ;;
+   *)       LIB_OR_DLL="lib";  dll_sfx=""  ;;
+esac
+  
+if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
-   dll_sfx=""
+else
+   FORCE_STATIC_LIB=
 fi
 
 
@@ -2129,6 +2138,7 @@ CFLAGS="$SAVE_CFLAGS"
 CXXFLAGS="$SAVE_CXXFLAGS"
 CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
+LIB_OR_DLL="$SAVE_LIB_OR_DLL"
 with_dll="$SAVE_with_dll"
 WithPackages="$SAVE_WithPackages"
 WithoutPackages="$SAVE_WithoutPackages"
@@ -2170,13 +2180,17 @@ if test -n "$with_extra_action" ; then
 fi
 
 dnl printout additional configuration options
-if test "$with_dll" = "yes" ; then
-   DLL_USAGE="LIBRARIES:  build as dynamic by default"
-elif test "$with_dll" = "no" ; then
-   DLL_USAGE="LIBRARIES:  build as static only"
-else
-   DLL_USAGE="LIBRARIES:  build as static by default"
-fi
+[case "$LIB_OR_DLL" in
+both) DLL_USAGE="LIBRARIES:  build as static and dynamic by default" ;;
+dll)  DLL_USAGE="LIBRARIES:  build as dynamic by default" ;;
+lib) 
+   if test "$with_dll" = "no" ; then
+      DLL_USAGE="LIBRARIES:  build as static only"
+   else
+      DLL_USAGE="LIBRARIES:  build as static by default"
+   fi
+   ;;
+esac]
 
 cat << EOCONF
 ===============================================================================
@@ -2216,6 +2230,7 @@ SAVE_CFLAGS="$CFLAGS"
 SAVE_CXXFLAGS="$CXXFLAGS"
 SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
+SAVE_LIB_OR_DLL="$LIB_OR_DLL"
 SAVE_with_dll="$with_dll"
 SAVE_WithPackages="$WithPackages"
 SAVE_WithoutPackages="$WithoutPackages"

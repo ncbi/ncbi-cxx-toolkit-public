@@ -6,14 +6,45 @@
 #  C and C++ compilation rules
 #################################
 
+# When building --with-dll --with-static, the same rule makes both object
+# files so that we don't have to complicate the autodep rules.
+
 ###  C++ compilation
 %@obj_ext@: ./%.cpp
+	@if [ -n "$(XSHLIB)" ]; then \
+		mkdir -p shared && \
+		echo "$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $<" \
+			"@f_outobj@shared/$@ $(CXX_FILTER)" && \
+		$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $< \
+			@f_outobj@shared/$@ $(CXX_FILTER); \
+	fi
 	$(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 %@obj_ext@: $(srcdir)/%.cpp
+	@if [ -n "$(XSHLIB)" ]; then \
+		mkdir -p shared && \
+		echo "$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $<" \
+			"@f_outobj@shared/$@ $(CXX_FILTER)" && \
+		$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $< \
+			@f_outobj@shared/$@ $(CXX_FILTER); \
+	fi
 	$(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 
 ###  C compilation
 %@obj_ext@: ./%.c
+	@if [ -n "$(XSHLIB)" ]; then \
+		mkdir -p shared && \
+		echo "$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $<" \
+			"@f_outobj@shared/$@ $(CC_FILTER)" && \
+		$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $< @f_outobj@shared/$@ \
+			$(CC_FILTER); \
+	fi
 	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
+	@if [ -n "$(XSHLIB)" ]; then \
+		mkdir -p shared && \
+		echo "$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $<" \
+			"@f_outobj@shared/$@ $(CC_FILTER)" && \
+		$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $< @f_outobj@shared/$@ \
+			$(CC_FILTER); \
+	fi
 	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
