@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/09/29 14:38:54  vasilche
+* Updated for changes in library.
+*
 * Revision 1.22  2000/09/26 19:29:17  vasilche
 * Removed experimental choice pointer stuff.
 *
@@ -166,9 +169,9 @@ int CAsn2Asn::Run(void)
     {
         CArgDescriptions argDesc;
         argDesc.AddKey("i", "inputFile", "input data file",
-                       argDesc.eInputFile, argDesc.fDelayOpen);
+                       argDesc.eInputFile);
         argDesc.AddOptionalKey("o", "outputFile", "output data file",
-                               argDesc.eOutputFile, argDesc.fDelayOpen);
+                               argDesc.eOutputFile);
         argDesc.AddFlag("e", "treat data as Seq-entry");
         argDesc.AddFlag("b", "binary ASN.1 input format");
         argDesc.AddFlag("X", "XML input format");
@@ -177,7 +180,7 @@ int CAsn2Asn::Run(void)
         argDesc.AddFlag("C", "Convert data without reading in memory");
         argDesc.AddFlag("S", "Skip data without reading in memory");
         argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
-                               argDesc.eOutputFile, argDesc.fDelayOpen);
+                               argDesc.eOutputFile);
         argDesc.AddOptionalKey("c", "count", "perform command <count> times",
                                argDesc.eInteger, 0, "1");
         
