@@ -1146,11 +1146,12 @@ void CDataSource::x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
             tse_info->m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
+        SAnnotTypeSelector localSelector = annotSelector;
         do {
-            x_MapAnnotObject(tse_info->x_SetRangeMap(selMap, annotSelector),
+            x_MapAnnotObject(tse_info->x_SetRangeMap(selMap, localSelector),
                              mapit->second.GetOverlappingRange(),
                              annotRef);
-        } while ( x_MakeGenericSelector(annotSelector) );
+        } while ( x_MakeGenericSelector(localSelector) );
     }
 }
 
@@ -1481,6 +1482,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2003/06/10 14:19:42  grichenk
+* Do not reset selector when mapping annotations
+*
 * Revision 1.105  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
