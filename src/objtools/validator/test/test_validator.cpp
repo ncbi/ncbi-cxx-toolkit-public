@@ -155,7 +155,7 @@ int CTest_validatorApplication::Run(void)
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        obj_mgr->RegisterDataLoader(*new CGBDataLoader("ID",),
+        obj_mgr->RegisterDataLoader(*new CGBDataLoader("ID"),
 				    CObjectManager::eDefault);
     }
 
@@ -220,6 +220,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2003/02/03 17:51:06  shomrat
+ * Bug fix - Trailing comma in a parameter list
+ *
  * Revision 1.6  2003/02/03 17:06:48  shomrat
  * Changed parameters to CGBDataLoader
  *
