@@ -1174,7 +1174,7 @@ double CSearch::CalcNormalTopHit(double Mean, double TopHitProb)
     int i;
     double retval(0.0L), before(-1.0L), increment;
 	
-    for(i = 0; i < 1000; i++) {
+    for(i = 1; i < 1000; i++) {
 	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
 	// convergence hack -- on linux (at least) convergence test doesn't work
 	// for gcc release build
@@ -1195,7 +1195,7 @@ double CSearch::CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, do
     int i;
     double retval(0.0L), increment;
 	
-    for(i = 0; i < Hits; i++) {
+    for(i = 1; i < Hits; i++) {
 	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
 //	if(increment <= MSDOUBLELIMIT) break;
 	retval += increment;
@@ -1262,6 +1262,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.39  2005/03/17 23:37:08  lewisg
+more tinkering with the poisson
+
 Revision 1.38  2005/03/16 23:01:34  lewisg
 fix i=0 poisson summation
 
