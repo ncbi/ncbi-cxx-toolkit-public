@@ -282,13 +282,21 @@ CCgiApplication::~CCgiApplication(void)
 
 int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
+    // Discriminate between different types of error
+    const char* status_str = "500 Server Error";
     if ( dynamic_cast<CCgiParseException*> (&e) ) {
-        os << "Status: 400 Malformed HTTP request"        HTTP_EOL;
-    } else {
-        os << "Status: 500 Error processing HTTP request" HTTP_EOL;
+        status_str = "400 Malformed HTTP Request";
     }
-    os << "Content-Type: text/html" HTTP_EOL HTTP_EOL;
+
+    // HTTP header
+    os << "Status: " << status_str << HTTP_EOL;
+    os << "Content-Type: text/plain" HTTP_EOL HTTP_EOL;
+
+    // Message
+    os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
     os << e.what();
+
+    // Check for problems in sending the response
     if ( !os.good() ) {
         ERR_POST("CCgiApplication::OnException() failed to send error page"
                  " back to the client");
@@ -737,6 +745,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.55  2004/08/11 15:21:31  vakatov
+* CCgiApplication::OnException() -- also print the status and description to
+* the HTTP body;  change MIME to plain/text.
+*
 * Revision 1.54  2004/08/04 16:26:53  vakatov
 * The default implementation of CCgiApplication::OnException() handler to
 * issue a "400" HTTP error if it's the HTTP request itself that seems to
