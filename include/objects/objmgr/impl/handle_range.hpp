@@ -154,7 +154,6 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
             }
         }
     }
-    cout << "no intersections found";
     return false;
 }
 
@@ -165,6 +164,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/08/07 17:51:54  grichenk
+* Removed debug message
+*
 * Revision 1.11  2002/07/31 16:52:36  grichenk
 * Fixed bug in IntersectingWith()
 *
