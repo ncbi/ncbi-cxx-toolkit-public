@@ -131,6 +131,7 @@ CValidError_imp::CValidError_imp
       m_RequireTaxonID((options & CValidator::eVal_need_taxid) != 0),
       m_RequireISOJTA((options & CValidator::eVal_need_isojta) != 0),
       m_ValidateIdSet((options & CValidator::eVal_validate_id_set) != 0),
+      m_RemoteFetch((options & CValidator::eVal_remote_fetch) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -435,45 +436,101 @@ void CValidError_imp::Validate
 
     CValidError_feat feat_validator(*this);
     for (CTypeConstIterator <CSeq_feat> fi (se); fi; ++fi) {
-        feat_validator.ValidateSeqFeat(*fi);
+        try {
+            feat_validator.ValidateSeqFeat(*fi);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating feature. EXCEPTION: ") + 
+                e.what(), *fi);
+            return;
+        }
     }
 
     CValidError_desc desc_validator(*this);
     for (CTypeConstIterator <CSeqdesc> di (se); di; ++di) {
-        desc_validator.ValidateSeqDesc(*di);
+        try {
+            desc_validator.ValidateSeqDesc(*di);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating decriptor. EXCEPTION: ") + 
+                e.what(), *di);
+            return;
+        }
     }
-
+    
     CValidError_bioseq bioseq_validator(*this);
     for (CTypeConstIterator <CBioseq> bi (se); bi; ++bi) {
-        bioseq_validator.ValidateSeqIds(*bi);
-        bioseq_validator.ValidateInst(*bi);
-        bioseq_validator.ValidateBioseqContext(*bi);
-        bioseq_validator.ValidateHistory(*bi);
+        try {
+            bioseq_validator.ValidateSeqIds(*bi);
+            bioseq_validator.ValidateInst(*bi);
+            bioseq_validator.ValidateBioseqContext(*bi);
+            bioseq_validator.ValidateHistory(*bi);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating bioseq. EXCEPTION: ") + 
+                e.what(), *bi);
+            return;
+        }
     }
 
     CValidError_bioseqset bioseqset_validator(*this);
     for (CTypeConstIterator <CBioseq_set> si (se); si; ++si) {
-        bioseqset_validator.ValidateBioseqSet(*si);
+        try {
+            bioseqset_validator.ValidateBioseqSet(*si);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating bioseq set. EXCEPTION: ") + 
+                e.what(), *si);
+            return;
+        }
     }
 
     CValidError_align align_validator(*this);
     for (CTypeConstIterator <CSeq_align> ai (se); ai; ++ai) {
-        align_validator.ValidateSeqAlign(*ai);
+        try {
+            align_validator.ValidateSeqAlign(*ai);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating alignment. EXCEPTION: ") + 
+                e.what(), *ai);
+            return;
+        }
     }
-
+    
     CValidError_graph graph_validator(*this);
     for (CTypeConstIterator <CSeq_graph> gi (se); gi; ++gi) {
-        graph_validator.ValidateSeqGraph(*gi);
+        try {
+            graph_validator.ValidateSeqGraph(*gi);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating graph. EXCEPTION: ") + 
+                e.what(), *gi);
+            return;
+        }
     }
 
     CValidError_annot annot_validator(*this);
     for (CTypeConstIterator <CSeq_annot> ni (se); ni; ++ni) {
-        annot_validator.ValidateSeqAnnot(*ni);
+        try {
+            annot_validator.ValidateSeqAnnot(*ni);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating annotation. EXCEPTION: ") + 
+                e.what(), *ni);
+            return;
+        }
     }
-
+    
     CValidError_descr descr_validator(*this);
     for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
-        descr_validator.ValidateSeqDescr(*ei);
+        try {
+            descr_validator.ValidateSeqDescr(*ei);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
+                string("Exeption while validating descriptor list. EXCEPTION: ")
+                + e.what(), *ei);
+            return;
+        }
     }
 
     ReportMissingPubs(se, cs);
@@ -942,66 +999,73 @@ void CValidError_imp::ValidateBioSource
 	const COrg_ref& orgref = bsrc.GetOrg();
   
 	// Organism must have a name.
-	if ( orgref.GetTaxname().empty() && orgref.GetCommon().empty() ) {
+	if ( (!orgref.IsSetTaxname()  ||  orgref.GetTaxname().empty())  &&
+         (!orgref.IsSetCommon()   ||  orgref.GetCommon().empty()) ) {
 		PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-			     "No organism name has been applied to this Bioseq.", obj);
+            "No organism name has been applied to this Bioseq.", obj);
 	}
 
 	// validate legal locations.
 	if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
 		 bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
 		PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceLocation,
-			     "Transposon and insertion sequence are no longer legal locations.", obj);
+            "Transposon and insertion sequence are no longer legal locations.",
+            obj);
 	}
 
 	int chrom_count = 0;
 	bool chrom_conflict = false;
     const CSubSource *chromosome = 0;
 	string countryname;
-	ITERATE( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
-		switch ( (**ssit).GetSubtype() ) {
 
-		case CSubSource::eSubtype_country:
-			countryname = (**ssit).GetName();
-            if ( !CCountries::IsValid(countryname) ) {
-				if ( countryname.empty() ) {
-					countryname = "?";
-				}
-				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-						 "Bad country name " + countryname, obj);
-			}
-			break;
-
-		case CSubSource::eSubtype_chromosome:
-			++chrom_count;
-			if ( chromosome != 0 ) {
-				if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
-					chrom_conflict = true;
-				}          
-			} else {
-				chromosome = ssit->GetPointer();
-			}
-			break;
-
-		case CSubSource::eSubtype_transposon_name:
-		case CSubSource::eSubtype_insertion_seq_name:
-			PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
-					 "Transposon name and insertion sequence name are no longer legal qualifiers.", obj);
-		break;
-
-		case 0:
-			PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
-               "Unknown subsource subtype 0.", obj);
-			break;
-    
-		case CSubSource::eSubtype_other:
-			ValidateSourceQualTags((**ssit).GetName(), obj);
-			break;
-		}
-	}
+    if ( bsrc.IsSetSubtype() ) {
+        ITERATE( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
+            switch ( (**ssit).GetSubtype() ) {
+                
+            case CSubSource::eSubtype_country:
+                countryname = (**ssit).GetName();
+                if ( !CCountries::IsValid(countryname) ) {
+                    if ( countryname.empty() ) {
+                        countryname = "?";
+                    }
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                        "Bad country name " + countryname, obj);
+                }
+                break;
+                
+            case CSubSource::eSubtype_chromosome:
+                ++chrom_count;
+                if ( chromosome != 0 ) {
+                    if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
+                        chrom_conflict = true;
+                    }          
+                } else {
+                    chromosome = ssit->GetPointer();
+                }
+                break;
+                
+            case CSubSource::eSubtype_transposon_name:
+            case CSubSource::eSubtype_insertion_seq_name:
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
+                    "Transposon name and insertion sequence name are no "
+                    "longer legal qualifiers.", obj);
+                break;
+                
+            case 0:
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+                    "Unknown subsource subtype 0.", obj);
+                break;
+                
+            case CSubSource::eSubtype_other:
+                ValidateSourceQualTags((**ssit).GetName(), obj);
+                break;
+            }
+        }
+    }
 	if ( chrom_count > 1 ) {
-		string msg = chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
-									  "Multiple identical chromosome qualifiers";
+		string msg = 
+            chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
+                             "Multiple identical chromosome qualifiers";
 		PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
 	}
 
@@ -1030,23 +1094,26 @@ void CValidError_imp::ValidateBioSource
     }
     const COrgName& orgname = orgref.GetOrgname();
 
-	ITERATE ( COrgName::TMod, omit, orgname.GetMod() ) {
-		int subtype = (**omit).GetSubtype();
-
-		if ( (subtype == 0) || (subtype == 1) ) {
-			PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-				     "Unknown orgmod subtype " + subtype, obj);
-		}
-		if ( subtype == COrgMod::eSubtype_variety ) {
-			if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
-				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-						 "Orgmod variety should only be in plants or fungi", obj);
-			}
-		}
-		if ( subtype == COrgMod::eSubtype_other ) {
-			ValidateSourceQualTags( (**omit).GetSubname(), obj);
-		}
-	}
+    if ( orgname.IsSetMod() ) {
+        ITERATE ( COrgName::TMod, omit, orgname.GetMod() ) {
+            int subtype = (**omit).GetSubtype();
+            
+            if ( (subtype == 0) || (subtype == 1) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                    "Unknown orgmod subtype " + subtype, obj);
+            }
+            if ( subtype == COrgMod::eSubtype_variety ) {
+                if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                        "Orgmod variety should only be in plants or fungi", 
+                        obj);
+                }
+            }
+            if ( subtype == COrgMod::eSubtype_other ) {
+                ValidateSourceQualTags( (**omit).GetSubname(), obj);
+            }
+        }
+    }
 
     if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj);
@@ -1181,12 +1248,12 @@ void CValidError_imp::ValidateSeqLoc
                 strand_prv = strand_cur;
                 id_prv = id_cur;
             }
-        } catch( runtime_error& rt ) {
+        } catch( const exception& e ) {
             string label;
             lit->GetLabel(&label);
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_Range,  // !!! need to chenge error type
+            PostErr(eDiag_Error, eErr_Internal_Exception,  
                 "Exception caught while validating location " +
-                label + ". exception: " + rt.what(), seq);
+                label + ". Exception: " + e.what(), seq);
                 
             strand_cur = eNa_strand_other;
             id_cur = 0;
@@ -1429,13 +1496,23 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
     CConstRef<CSeq_feat> feat;
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+
+
+    // In case of a NT bioseq limit the search to features packaged on the 
+    // NT (we assume features have been pulled from the segments to the NT).
+    const CSeq_entry* limit = 0;
+    if ( IsNT() ) {
+        limit = m_TSE.GetPointer();
+    }
+
     if ( bsh ) {
         CFeat_CI fi(bsh, 
                     0, 0,
                     CSeqFeatData::e_Cdregion,
                     SAnnotSelector::eOverlap_Intervals,
                     CFeat_CI::eResolve_TSE,
-                    CFeat_CI::e_Product);
+                    CFeat_CI::e_Product,
+                    limit);
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
@@ -1483,6 +1560,36 @@ bool CValidError_imp::IsSerialNumberInComment(const string& comment)
         pos = comment.find('[', pos);
     }
     return false;
+}
+
+
+bool CValidError_imp::CheckSeqVector(const CSeqVector& vec)
+{
+    if ( IsSequenceAvaliable(vec) ) {
+        return true;
+    }
+
+    if ( IsRemoteFetch() ) {
+        // issue some sort of error
+    }
+    return false;
+}
+
+
+bool CValidError_imp::IsSequenceAvaliable(const CSeqVector& vec)
+{
+    // IMPORTANT: This is a temporary implementation, due to (yet) restricted
+    // implementation of the Scope / object manager classes.
+    // if the first and last elements are accesible the sequence is available.
+    try {
+        vec[0]; 
+        vec[vec.size() - 1];
+    } catch ( const exception& ) {
+        // do something
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -1659,6 +1766,7 @@ void CValidError_imp::SetScope(const CSeq_entry& se)
 {
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddTopLevelSeqEntry(*const_cast<CSeq_entry*>(&se));
+    m_Scope->AddDefaults();
 }
 
 
@@ -1932,6 +2040,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/04/04 18:40:50  shomrat
+* Increased robustness in face of exceptions.
+*
 * Revision 1.27  2003/03/28 16:30:33  shomrat
 * Implemented PostErr method for graph errors.
 *
