@@ -374,6 +374,7 @@ public:
         bool biosource = false);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
         bool biosource = false);
+    void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj);
         
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
@@ -505,7 +506,6 @@ private:
     bool m_IsXR;
     bool m_IsGI;
     
-
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
@@ -917,6 +917,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/01/12 20:24:42  shomrat
+* Added ValidateCitSub
+*
 * Revision 1.53  2003/12/17 19:15:19  shomrat
 * declarations for graph packaging problem test
 *
