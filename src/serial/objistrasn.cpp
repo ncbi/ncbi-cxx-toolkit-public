@@ -196,10 +196,10 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
             }
         }
     } catch (CEofException& e) {
-        // There should be no eof here, report as an error
-        if (GetStackDepth() < 2) {
+        if (GetStackDepth() <= 2) {
             throw;
         } else {
+            // There should be no eof here, report as error
             ThrowError(fEOF, e.what());
         }
     }
@@ -1299,6 +1299,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2004/12/06 18:28:02  gouriano
+* Adjusted processing of CEofException
+*
 * Revision 1.92  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
