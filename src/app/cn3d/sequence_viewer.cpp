@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/12/06 17:07:15  thiessen
+* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
+*
 * Revision 1.57  2002/12/02 13:37:08  thiessen
 * add seqrow format export
 *
@@ -325,56 +328,109 @@ void SequenceViewer::TurnOnEditor(void)
 }
 
 static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
+    const std::vector < int >& rowOrder,
     BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
 {
     // do whole alignment for now
     int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
-
     if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
         ERR_POST(Error << "DumpFASTA() - nonsensical display region parameters");
         return;
     }
 
-    // output each alignment row
+    // first fill out ids
+    typedef std::map < const MoleculeIdentifier * , std::list < std::string > > IDMap;
+    IDMap idMap;
+    int row;
+    bool anyRepeat = false;
+
+    for (row=0; row<alignment->NRows(); row++) {
+        const Sequence *seq = alignment->GetSequenceOfRow(row);
+        std::list < std::string >& titleList = idMap[seq->identifier];
+        CNcbiOstrstream oss;
+        oss << '>';
+
+        if (titleList.size() == 0) {
+
+            // create full title line for first instance of this sequence
+            bool prevID = false;
+            if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+                oss << "gi|" << seq->identifier->gi;
+                prevID = true;
+            }
+            if (seq->identifier->pdbID.size() > 0) {
+                if (prevID) oss << '|';
+                if (seq->identifier->pdbID == "query" || seq->identifier->pdbID == "consensus") {
+                    oss << "lcl|" << seq->identifier->pdbID;
+                } else {
+                    oss << "pdb|" << seq->identifier->pdbID;
+                    if (seq->identifier->pdbChain != ' ')
+                        oss << '|' << (char) seq->identifier->pdbChain << " Chain "
+                           << (char) seq->identifier->pdbChain << ',';
+                }
+                prevID = true;
+            }
+            if (seq->identifier->accession.size() > 0) {
+                if (prevID) oss << '|';
+                oss << seq->identifier->accession;
+                prevID = true;
+            }
+            if (seq->description.size() > 0)
+                oss << ' ' << seq->description;
+
+        } else {
+            // add repeat id
+            oss << "lcl|instance #" << (titleList.size() + 1) << " of " << seq->identifier->ToString();
+            anyRepeat = true;
+        }
+
+        titleList.resize(titleList.size() + 1);
+        oss << '\n' << '\0';
+        auto_ptr<char> data(oss.str());
+        titleList.back() = data.get();
+    }
+
+    static const int eAllRepeats=0, eFakeRepeatIDs=1, eNoRepeats=2;
+    int choice = eAllRepeats;
+
+    if (anyRepeat) {
+        wxArrayString choices;
+        choices.Add("Include all repeats with normal IDs");
+        choices.Add("Include all repeats, but use unique IDs");
+        choices.Add("Include no repeated sequences");
+        choice = wxGetSingleChoiceIndex("How do you want to handle repeated sequences?",
+            "Choose repeat type", choices);
+        if (choice < 0) return; // cancelled
+    }
+
+    // output each alignment row (in order of the display)
     int paragraphStart, nParags = 0, i;
     char ch;
     Vector color, bgColor;
     bool highlighted, drawBG;
-    for (int row=0; row<alignment->NRows(); row++) {
+    for (row=0; row<alignment->NRows(); row++) {
+        const Sequence *seq = alignment->GetSequenceOfRow(rowOrder[row]);
 
-        // create title line
-        os << '>';
-        const Sequence *seq = alignment->GetSequenceOfRow(row);
-        bool prevID = false;
-        if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-            os << "gi|" << seq->identifier->gi;
-            prevID = true;
-        }
-        if (seq->identifier->pdbID.size() > 0) {
-            if (prevID) os << '|';
-            if (seq->identifier->pdbID == "query" || seq->identifier->pdbID == "consensus") {
-                os << "lcl|" << seq->identifier->pdbID;
+        // output title
+        std::list < std::string >& titleList = idMap[seq->identifier];
+        if (choice == eAllRepeats) {
+            os << titleList.front();    // use full id
+        } else if (choice == eFakeRepeatIDs) {
+            os << titleList.front();
+            titleList.pop_front();      // move to next (fake) id
+        } else if (choice == eNoRepeats) {
+            if (titleList.size() > 0) {
+                os << titleList.front();
+                titleList.clear();      // remove all ids after first instance
             } else {
-                os << "pdb|" << seq->identifier->pdbID;
-                if (seq->identifier->pdbChain != ' ')
-                    os << '|' << (char) seq->identifier->pdbChain << " Chain "
-                       << (char) seq->identifier->pdbChain << ',';
+                continue;
             }
-            prevID = true;
         }
-        if (seq->identifier->accession.size() > 0) {
-            if (prevID) os << '|';
-            os << seq->identifier->accession;
-            prevID = true;
-        }
-        if (seq->description.size() > 0)
-            os << ' ' << seq->description;
-        os << '\n';
 
         // split alignment up into "paragraphs", each with nColumns
         for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
             for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
-                if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, row, justification,
+                if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, rowOrder[row], justification,
                         &ch, &color, &highlighted, &drawBG, &bgColor)) {
                     if (ch == '~')
                         os << (isA2M ? '.' : '-');
@@ -389,6 +445,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
 }
 
 static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
+    const std::vector < int >& rowOrder,
     BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
 {
 
@@ -409,8 +466,9 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
     // set up the titles and uids, figure out how much space any seqLoc string will take
     std::vector < std::string > titles(alignment->NRows()), uids(doHTML ? alignment->NRows() : 0);
-    int row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
-    for (row=0; row<alignment->NRows(); row++) {
+    int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
+    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        row = rowOrder[alnRow]; // translate display row -> data row
         const Sequence *sequence = alignment->GetSequenceOfRow(row);
 
         titles[row] = sequence->identifier->ToString();
@@ -446,7 +504,8 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     char ch;
     Vector color, bgCol;
     bool highlighted, drawBG;
-    for (row=0; row<alignment->NRows(); row++) {
+    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        row = rowOrder[alnRow]; // translate display row -> data row
         lastShownSeqLocs[row] = -1;
         for (alnLoc=0; alnLoc<firstCol; alnLoc++) {
             if (!alignment->GetCharacterTraitsAt(alnLoc, row, justification,
@@ -503,7 +562,8 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
         int nDisplayedResidues;
 
         // output each alignment row
-        for (row=0; row<alignment->NRows(); row++) {
+        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+            row = rowOrder[alnRow]; // translate display row -> data row
             const Sequence *sequence = alignment->GetSequenceOfRow(row);
 
             // actual sequence characters and colors; count how many non-gaps in each row
@@ -579,44 +639,16 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
     // additional sanity check on seqloc markers
     if (firstCol == 0 && lastCol == alignment->AlignmentWidth()-1) {
-        for (row=0; row<alignment->NRows(); row++) {
+        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+            row = rowOrder[alnRow]; // translate display row -> data row
             if (lastShownSeqLocs[row] !=
                     alignment->GetSequenceOfRow(row)->Length()-1) {
                 ERR_POST(Error << "DumpText: full display - seqloc markers don't add up for row " << row);
                 break;
             }
         }
-        if (row != alignment->NRows())
+        if (alnRow != alignment->NRows())
             ERR_POST(Error << "DumpText: full display - seqloc markers don't add up correctly");
-    }
-}
-
-static void DumpSeqrow(const BlockMultipleAlignment *alignment,
-    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
-{
-    int row, column;
-    char ch;
-    Vector color, bgColor;
-    bool highlighted, drawBG;
-
-    for (row=0; row<alignment->NRows(); row++) {
-
-        // write title + tab
-        os << alignment->GetSequenceOfRow(row)->identifier->ToString() << '\t';
-
-        // write residues in uppercase
-        for (column=0; column<alignment->AlignmentWidth(); column++) {
-            if (alignment->GetCharacterTraitsAt(column, row, justification,
-                    &ch, &color, &highlighted, &drawBG, &bgColor))
-            {
-                if (ch == '~')
-                    os << '-';
-                else
-                    os << (char) toupper(ch);
-            } else
-                ERR_POST("GetCharacterTraitsAt() failed!");
-        }
-        os << '\n';
     }
 }
 
@@ -626,7 +658,6 @@ void SequenceViewer::ExportAlignment(eExportType type)
     wxString extension, wildcard;
     if (type == asFASTA) { extension = ".fsa"; wildcard = "FASTA Files (*.fsa)|*.fsa"; }
     else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
-    else if (type == asSeqrow) { extension = ".ali"; wildcard = "Seqrow (*.ali)|*.ali"; }
     else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
     else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
 
@@ -653,19 +684,23 @@ void SequenceViewer::ExportAlignment(eExportType type)
             return;
         }
 
+        // map display row order to rows in BlockMultipleAlignment
+        std::vector < int > rowOrder;
+        const SequenceDisplay *display = GetCurrentDisplay();
+        for (int i=0; i<display->rows.size(); i++) {
+            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
+            if (alnRow) rowOrder.push_back(alnRow->row);
+        }
+
         // actually write the alignment
         if (type == asFASTA || type == asFASTAa2m) {
             TESTMSG("exporting" << (type == asFASTAa2m ? " A2M " : " ") << "FASTA to " << outputFile.c_str());
             DumpFASTA((type == asFASTAa2m), alignmentManager->GetCurrentMultipleAlignment(),
-                sequenceWindow->GetCurrentJustification(), *ofs);
+                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
         } else if (type == asText || type == asHTML) {
             TESTMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
             DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
-                sequenceWindow->GetCurrentJustification(), *ofs);
-        } else {
-            TESTMSG("exporting seqrow to " << outputFile.c_str());
-            DumpSeqrow(alignmentManager->GetCurrentMultipleAlignment(),
-                sequenceWindow->GetCurrentJustification(), *ofs);
+                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
         }
     }
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/12/06 17:07:15  thiessen
+* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
+*
 * Revision 1.29  2002/12/02 13:37:08  thiessen
 * add seqrow format export
 *
@@ -120,7 +123,6 @@ public:
     enum eExportType {
         asFASTA,    // plain FASTA with gaps and all uppercase
         asFASTAa2m, // a2m variant of FASTA, lowercase unaligned and '.' as unaligned gap
-        asSeqrow,   // simple format with one sequence per row
         asText,     // plain text with id's and locations
         asHTML      // HTML, like text but with color
     };

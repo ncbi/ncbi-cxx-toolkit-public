@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/06 17:07:15  thiessen
+* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
+*
 * Revision 1.24  2002/12/02 13:37:09  thiessen
 * add seqrow format export
 *
@@ -146,7 +149,6 @@ private:
         MID_EXPORT,
             MID_EXPORT_FASTA,
             MID_EXPORT_A2M,
-            MID_EXPORT_SEQROW,
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
         // edit menu
