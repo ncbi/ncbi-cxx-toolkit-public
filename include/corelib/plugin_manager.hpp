@@ -473,6 +473,11 @@ template <class TIClass, class TDriver>
 class CSimpleClassFactoryImpl : public IClassFactory<TIClass>
 {
 public:
+
+    typedef IClassFactory<TIClass>         TParent;
+    typedef typename TParent::SDriverInfo  TDriverInfo;
+    typedef typename TParent::TDriverList  TDriverList;
+
     /// Construction
     ///
     /// @param driver_name
@@ -514,7 +519,7 @@ public:
 
     void GetDriverVersions(TDriverList& info_list) const
     {
-        info_list.push_back(SDriverInfo(m_DriverName, m_DriverVersionInfo));
+        info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
     }
 
 protected:
@@ -677,6 +682,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/11/03 20:08:01  kuznets
+ * Fixing various compiler warnings
+ *
  * Revision 1.8  2003/11/03 17:52:00  kuznets
  * Added CSimpleClassFactoryImpl template.
  * Helps quickly implement basic PM compatible class factory.
