@@ -69,14 +69,14 @@ static int _SuppressDiagPopupMessages(void)
         _set_error_mode(_OUT_TO_STDERR);
 
         /* Debug library */
-        _CrtSetReportFile(_CRT_WARN,   stderr);
+        _CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
-        _CrtSetReportFile(_CRT_ERROR,  stderr);
+        _CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
-        _CrtSetReportFile(_CRT_ASSERT, stderr);
+        _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     }
-	return 0;
+    return 0;
 }
 
 /* Put this function at startup init level 'V', far enough not to mess up with
@@ -130,6 +130,9 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2004/12/21 03:43:44  lavr
+ * Fix CRT report file destination, _CRTDBG_FILE_STDERR not stderr!
+ *
  * Revision 1.16  2004/06/10 15:42:19  ivanov
  * _SuppressDiagPopupMessages() returns 'int' to avoid runtime errors on MSVC7
  *
