@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2002/05/07 15:31:50  lavr
+ * +#include <stdio.h>: noticed by J.Kans
+ *
  * Revision 6.37  2002/05/06 19:18:12  lavr
  * Few changes to comply with the rest of API
  *
@@ -151,13 +154,14 @@
 
 #include "ncbi_comm.h"
 #if defined(_DEBUG) && !defined(NDEBUG)
-#include "ncbi_priv.h"
+#  include "ncbi_priv.h"
 #endif
 #include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2002/05/07 15:31:47  lavr
+ * +#include <stdio.h>: noticed by J.Kans
+ *
  * Revision 6.37  2002/05/06 19:17:33  lavr
  * Take advantage of SERV_ServiceName()
  *
@@ -163,6 +166,7 @@
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
