@@ -1,0 +1,14 @@
+# $Id$
+
+include $(builddir)/Makefile.mk
+include $(builddir)/Makefile.$(Rules)
+
+ALL =@GCCPCH@ $(pchdir)/normal $(pchdir)/dll $(pchdir)/fast $(pchdir)/fastdll
+
+all all_p all_r: $(ALL)
+
+clean clean_p clean_r:
+
+purge purge_p purge_r:
+	-$(RMDIR) $(pchdir)
+	-$(RM) ncbi_pch.hpp.d.*

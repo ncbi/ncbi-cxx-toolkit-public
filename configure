@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -884,6 +884,8 @@ Optional Packages:
  --with-check=           run test suite after the build
  --with-ncbi-public      ensure compatibility for all in-house platforms
  --with-strip            strip binaries at build time
+ --with-pch              precompile headers even without autodep (unsafe)
+ --without-pch           do not use precompiled headers
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -1597,6 +1599,18 @@ if test "${with_strip+set}" = set; then
 
 fi;
 
+# Check whether --with-pch or --without-pch was given.
+if test "${with_pch+set}" = set; then
+  withval="$with_pch"
+
+fi;
+
+# Check whether --with-pch2 or --without-pch2 was given.
+if test "${with_pch2+set}" = set; then
+  withval="$with_pch2"
+
+fi;
+
 ## NCBI packages
 
 # Check whether --with-ncbi-c or --without-ncbi-c was given.
@@ -2042,7 +2056,7 @@ fi;
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs \
+check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
@@ -4371,6 +4385,36 @@ else
 fi
 
 
+### Support for precompiled headers
+GCCPCH="#"
+if test "$compiler" = GCC -a "$with_pch" != "no"; then
+   echo "$as_me:$LINENO: checking whether $CXX supports precompiled headers" >&5
+echo $ECHO_N "checking whether $CXX supports precompiled headers... $ECHO_C" >&6
+if test "${ncbi_cv_cxx_pch+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  echo '#include <iostream>' > conftest.hpp
+       echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&5
+       if $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&5 2>&1 \
+         &&  test -f conftest.hpp.gch; then
+          ncbi_cv_cxx_pch=yes
+       else
+          ncbi_cv_cxx_pch=no
+       fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_cxx_pch" >&5
+echo "${ECHO_T}$ncbi_cv_cxx_pch" >&6
+   if test "$ncbi_cv_cxx_pch" = "yes"; then
+      if test "$Rules" = "rules"; then
+         { echo "$as_me:$LINENO: WARNING: Your version of make does not fully support PCH-related dependencies." >&5
+echo "$as_me: WARNING: Your version of make does not fully support PCH-related dependencies." >&2;}
+      fi
+      CXXFLAGS="-DNCBI_USE_PCH $CXXFLAGS"
+      GCCPCH=""
+   fi
+fi
+
+
 #### Tools
 echo "$as_me:$LINENO: checking whether ln -s works" >&5
 echo $ECHO_N "checking whether ln -s works... $ECHO_C" >&6
@@ -4516,9 +4560,9 @@ cat >>conftest.$ac_ext <<_ACEOF
 int libfunc(void) { return 0; }
 _ACEOF
        echo $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&5
-       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&5
+       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&5 2>&1
        echo $AR conftest.a conftest.o >&5
-       $AR conftest.a conftest.o >&5
+       $AR conftest.a conftest.o >&5 2>&1
        save_LIBS=$LIBS
        LIBS="conftest.a $LIBS"
        cat >conftest.$ac_ext <<_ACEOF
@@ -19944,6 +19988,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -20708,6 +20753,7 @@ s,@DEPFLAGS@,$DEPFLAGS,;t t
 s,@DEPFLAGS_POST@,$DEPFLAGS_POST,;t t
 s,@FAST_LDFLAGS@,$FAST_LDFLAGS,;t t
 s,@C_LIBS@,$C_LIBS,;t t
+s,@GCCPCH@,$GCCPCH,;t t
 s,@D_SFX@,$D_SFX,;t t
 s,@DEBUG_SFX@,$DEBUG_SFX,;t t
 s,@LIB_OR_DLL@,$LIB_OR_DLL,;t t

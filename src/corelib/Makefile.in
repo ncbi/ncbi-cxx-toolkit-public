@@ -6,6 +6,7 @@
 # Meta-makefile for the "CoreLib"
 #################################
 
+USR_PROJ = precompile
 LIB_PROJ = corelib test_mt
 SUB_PROJ = test
 

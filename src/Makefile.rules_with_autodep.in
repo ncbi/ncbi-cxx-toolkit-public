@@ -11,12 +11,43 @@
 ###  C/C++ compilation
 include $(builddir)/Makefile.rules
 
+@GCCPCH@GCCPCH = 1
+
+ifdef GCCPCH
+ ifneq ($(findstring $(FAST_CXXFLAGS),$(CXXFLAGS)),)
+  ifneq ($(FAST_CXXFLAGS),$(ORIG_CXXFLAGS))
+   is_fast = 1
+  endif
+ endif
+ ifneq ($(findstring $(CXXFLAGS_DLL),$(CXXFLAGS_ALL)),)
+  ifdef is_fast
+   PCHMODE = fastdll
+  else
+   PCHMODE = dll
+  endif
+ else
+  ifdef is_fast
+   PCHMODE = fast
+  else
+   PCHMODE = normal
+  endif
+ endif
+ FIXPCH = -e 's%\$$(wildcard \$$(includedir)/\(ncbi_pch\.hpp\))%$$(incdir)/\1.gch/$(PCHMODE)%g'
+endif
+
 
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
+	       -e 's%$(incdir)%$$(incdir)%g' \
+	       -e 's%$(includedir)%$$(includedir)%g' \
+	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
+	  &&  test -s $@_  &&  mv -f $@_ $@
+D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	       -e 's%\$$(wildcard ncbi_pch@obj_ext@) *:%$$(incdir)/ncbi_pch.hpp.gch/$(PCHMODE) $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
@@ -30,6 +61,8 @@ D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	$(CC_WRAPPER) $(CC)   $(D_TAIL)
 %.d: $(srcdir)/%.c
 	$(CC_WRAPPER) $(CC)   $(D_TAIL)
+$(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE): $(pchsrc)
+	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 
 
 ifeq ($(MAKECMDGOALS),clean)
@@ -43,5 +76,10 @@ DONT_INCLUDE = 1
 endif
 
 ifndef DONT_INCLUDE
-include $(SOURCES:=.d)
+ifdef SOURCES
+ include $(SOURCES:=.d)
+endif
+ifdef GCCPCH
+ include $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE)
+endif
 endif

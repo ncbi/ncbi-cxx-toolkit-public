@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.301 2004/05/14 15:18:13 vakatov Exp $
+#  $Id: configure.ac,v 1.302 2004/05/17 13:55:13 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -128,6 +128,10 @@ AC_ARG_WITH(ncbi-public,
    [ --with-ncbi-public      ensure compatibility for all in-house platforms])
 AC_ARG_WITH(strip,
    [ --with-strip            strip binaries at build time])
+AC_ARG_WITH(pch,
+   [ --with-pch              precompile headers even without autodep (unsafe)])
+AC_ARG_WITH(pch2,
+   [ --without-pch           do not use precompiled headers])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -286,7 +290,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs \
+check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
@@ -1203,6 +1207,28 @@ else
 fi
 
 
+### Support for precompiled headers
+GCCPCH="#"
+if test "$compiler" = GCC -a "$with_pch" != "no"; then
+   AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
+      [echo '#include <iostream>' > conftest.hpp
+       echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
+       if $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD 2>&1 \
+         &&  test -f conftest.hpp.gch; then
+          ncbi_cv_cxx_pch=yes
+       else
+          ncbi_cv_cxx_pch=no
+       fi])
+   if test "$ncbi_cv_cxx_pch" = "yes"; then
+      if test "$Rules" = "rules"; then
+         AC_MSG_WARN([Your version of make does not fully support PCH-related dependencies.])
+      fi
+      CXXFLAGS="-DNCBI_USE_PCH $CXXFLAGS"
+      GCCPCH=""
+   fi
+fi
+
+
 #### Tools
 AC_PROG_LN_S
 AC_PROG_RANLIB
@@ -1211,9 +1237,9 @@ if test "x$RANLIB" != "x:"; then
    AC_CACHE_CHECK([ranlib's effectiveness], ncbi_cv_prog_ranlib_effect,
       [AC_LANG_CONFTEST([AC_LANG_SOURCE([[int libfunc(void) { return 0; }]])])
        echo $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&AS_MESSAGE_LOG_FD
-       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&AS_MESSAGE_LOG_FD
+       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&AS_MESSAGE_LOG_FD 2>&1
        echo $AR conftest.a conftest.o >&AS_MESSAGE_LOG_FD
-       $AR conftest.a conftest.o >&AS_MESSAGE_LOG_FD
+       $AR conftest.a conftest.o >&AS_MESSAGE_LOG_FD 2>&1
        save_LIBS=$LIBS
        LIBS="conftest.a $LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int libfunc(void);]],
@@ -3885,6 +3911,7 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(FAST_LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
+AC_SUBST(GCCPCH)
 
 AC_SUBST(D_SFX)
 AC_SUBST(DEBUG_SFX)
