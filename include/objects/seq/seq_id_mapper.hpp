@@ -37,7 +37,6 @@
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -70,6 +69,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 public:
     static CSeq_id_Mapper& GetSeq_id_Mapper(void);
     
+    CSeq_id_Mapper(void);
     virtual ~CSeq_id_Mapper(void);
     
     // Get seq-id handle. Create new handle if not found and
@@ -92,9 +92,7 @@ public:
     static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);
     
 private:
-    CSeq_id_Mapper(void);
     
-    friend class CSafeStaticRef<CSeq_id_Mapper>;
     friend class CSeq_id_Handle;
     friend class CSeq_id_Info;
 
@@ -116,8 +114,6 @@ private:
 
     TTrees          m_Trees;
     mutable CMutex  m_IdMapMutex;
-    
-    static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
 };
 
 
@@ -141,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/06/08 19:18:40  grichenk
+* Removed CSafeStaticRef from seq_id_mapper.hpp
+*
 * Revision 1.23  2004/02/19 17:25:33  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.

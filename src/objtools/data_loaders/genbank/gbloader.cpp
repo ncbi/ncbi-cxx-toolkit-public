@@ -55,6 +55,7 @@
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1161,6 +1162,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2004/06/08 19:18:40  grichenk
+* Removed CSafeStaticRef from seq_id_mapper.hpp
+*
 * Revision 1.106  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *
