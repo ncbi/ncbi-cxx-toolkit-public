@@ -106,9 +106,9 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
     if(!BLadder.CreateLadder(kBIon, 1, (char *)Sequence, iSearch,
 			     position, endposition, Masses[iMissed][0], 
 			     MassArray, AA, ModMask, NumMod)) return 1;
-    YLadder.CreateLadder(kYIon, 1, (char *)Sequence, iSearch,
+    if(!YLadder.CreateLadder(kYIon, 1, (char *)Sequence, iSearch,
 			 position, endposition, Masses[iMissed][0], 
-			 MassArray, AA, ModMask, NumMod);
+			     MassArray, AA, ModMask, NumMod)) return 1;
     B2Ladder.CreateLadder(kBIon, 2, (char *)Sequence, iSearch,
 			  position, endposition, 
 			  Masses[iMissed][0], 
@@ -151,7 +151,7 @@ int CSearch::CompareLadders(CLadder& BLadder,
 #ifdef CHECKGI
 static void CheckGi(int gi)
 {
-    if(gi == 127655 || gi == 127664 ) {
+    if(gi == 4388856 ) {
 	ERR_POST(Info << "test seq");
     }
 }
@@ -707,6 +707,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.10  2003/11/20 22:32:50  lewisg
+fix end of sequence X bug
+
 Revision 1.9  2003/11/20 15:40:53  lewisg
 fix hitlist bug, change defaults
 
