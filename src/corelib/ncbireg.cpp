@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/09/10 16:34:35  ivanov
+* Added method HasChanged()
+*
 * Revision 1.18  2001/06/26 15:20:22  ivanov
 * Fixed small bug in s_ConvertComment().
 * Changed method of check and create new section in Read().
@@ -216,12 +219,16 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
 static CFastMutex s_RegMutex;
 
 
-CNcbiRegistry::CNcbiRegistry(void) {}
+CNcbiRegistry::CNcbiRegistry(void) 
+{
+    m_HasChanged = false;
+}
 
 CNcbiRegistry::~CNcbiRegistry(void) {}
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
 {
+    m_HasChanged = false;
     CHECK_FLAGS("CNcbiRegistry", flags, eTransient);
     Read(is, flags);
 }
@@ -229,6 +236,11 @@ CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
 
 bool CNcbiRegistry::Empty(void) const {
     return m_Registry.empty();
+}
+
+
+bool CNcbiRegistry::HasChanged(void) const {
+    return m_HasChanged;
 }
 
 
@@ -414,8 +426,11 @@ Error in reading the registry: '" + str + "'", line);
 /* Write data from reqistry to stream
  */
 bool CNcbiRegistry::Write(CNcbiOstream& os)
-    const
 {
+    if ( !HasChanged() ) {
+        return true;
+    }
+
     CFastMutexGuard LOCK(s_RegMutex);
 
     // write file comment
@@ -487,6 +502,7 @@ bool CNcbiRegistry::Write(CNcbiOstream& os)
                 return false;
         }
     }
+    m_HasChanged = false;
     return true;
 }
 
@@ -494,6 +510,7 @@ bool CNcbiRegistry::Write(CNcbiOstream& os)
 
 void CNcbiRegistry::Clear(void)
 {
+    m_HasChanged = true;
     m_Registry.clear();
 }
 
@@ -547,6 +564,8 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
 {
     CHECK_FLAGS("Set", flags, ePersistent | eNoOverride | eTruncate);
 
+    bool setPersistent = (flags & ePersistent) > 0;
+
     // Truncate marginal spaces of "section" and "name"
     // Make sure they aren't empty and consist of alpanum and '_' only
     string x_section = NStr::TruncateSpaces(section);
@@ -570,6 +589,9 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( value.empty() )  // the "unset" case
             return false;
         // new section, new entry
+        if (setPersistent) {
+            m_HasChanged = true;
+        }
         x_SetValue(m_Registry[x_section][x_name], value, flags, comment);
         return true;
     }
@@ -582,6 +604,9 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( value.empty() )  // the "unset" case
             return false;
         // new entry
+        if (setPersistent) {
+            m_HasChanged = true;
+        }
         x_SetValue(reg_section[x_name], value, flags, comment);
         return true;
     }
@@ -600,12 +625,17 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         return false;
 
     // modify an existing entry
+    if (setPersistent) {
+        m_HasChanged = true;
+    }
     x_SetValue(entry, value, flags, comment);
 
     // unset(remove) the entry, if empty
     if (entry.persistent.empty()  &&  entry.transient.empty()) {
         reg_section.erase(find_entry);
-
+        if (setPersistent) {
+            m_HasChanged = true;
+        }
         // remove the section, if empty
         if ( reg_section.empty() ) {
             m_Registry.erase(find_section);
@@ -661,6 +691,7 @@ bool CNcbiRegistry::SetComment(const string& comment, const string& section,
 
     // (re)set entry comment
     find_entry->second.comment = x_comment;
+    m_HasChanged = true;
 
     return true;
 }

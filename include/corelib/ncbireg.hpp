@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/09/10 16:35:02  ivanov
+* Added method HasChanged()
+*
 * Revision 1.13  2001/06/22 21:50:20  ivanov
 * Added (with Denis Vakatov) ability for read/write the registry file
 * with comments. Also added functions GetComment() and SetComment().
@@ -139,6 +142,9 @@ public:
     // Return TRUE if the registry contains no entries
     bool Empty(void) const;
 
+    // Return TRUE if some persisent value in r`the registry was changed 
+    bool HasChanged(void) const;
+
     // Parse the stream "is" and merge its content to current entries.
     //
     // Valid flags := { eTransient, eNoOverride }
@@ -150,7 +156,7 @@ public:
     void Read(CNcbiIstream& is, TFlags flags = 0);
 
     // Dump the registry content(non-transient entries only!) to "os"
-    bool Write(CNcbiOstream& os) const;
+    bool Write(CNcbiOstream& os);
 
     // Reset the whole registry content
     void Clear(void);
@@ -209,6 +215,7 @@ private:
     typedef map<string, TRegSection, PNocase>  TRegistry;
     TRegistry m_Registry;
     string    m_Comment;    // registry comment
+    bool      m_HasChanged; // some persisent value was changed
 
 
     // Valid flags := { ePersistent, eTruncate }
