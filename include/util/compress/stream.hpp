@@ -40,6 +40,7 @@
  * @{
  */
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -223,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/20 20:34:31  lavr
+ * One empty line added (separator)
+ *
  * Revision 1.6  2003/07/10 16:17:48  ivanov
  * Moved kCompressionDefaultBufSize definition to compress.hpp
  *
