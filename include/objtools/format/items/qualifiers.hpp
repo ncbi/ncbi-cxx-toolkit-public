@@ -169,11 +169,13 @@ public:
     bool HasQual(const Key& key) const {
         return Find(key) != m_Quals.end();
     }
-    pair<iterator, iterator> GetQuals(const Key& key) {
-        return m_Quals.equal_range(key);
+    iterator LowerBound(Key& key) {
+        typename TQualMMap::iterator it = m_Quals.lower_bound(key);
+        return it->first == key ? it : m_Quals.end();
     }
-    pair<const_iterator, const_iterator> GetQuals(const Key& key) const {
-        return m_Quals.equal_range(key);
+    const_iterator LowerBound(const Key& key) const {
+        typename TQualMMap::const_iterator it = m_Quals.lower_bound(key);
+        return it->first == key ? it : m_Quals.end();
     }
     iterator Erase(iterator it) {
         iterator next = it;
@@ -577,6 +579,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/03/28 17:15:16  shomrat
+* Use lower_bound instead of equal_range
+*
 * Revision 1.19  2005/01/21 13:10:09  dicuccio
 * Pass by reference, not by value
 *
