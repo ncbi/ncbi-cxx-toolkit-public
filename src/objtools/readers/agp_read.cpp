@@ -1,0 +1,202 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Josh Cherry
+ *
+ * File Description:  Read agp file
+ */
+
+
+#include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/reader_exception.hpp>
+
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
+
+CRef<CBioseq_set> AgpRead(CNcbiIstream& is)
+{
+    vector<CRef<CSeq_entry> > entries;
+    AgpRead(is, entries);
+    CRef<CBioseq_set> bioseq_set(new CBioseq_set);
+    ITERATE (vector<CRef<CSeq_entry> >, iter, entries) {
+        bioseq_set->SetSeq_set().push_back(*iter);
+    }
+    return bioseq_set;
+}
+
+
+void AgpRead(CNcbiIstream& is, vector<CRef<CSeq_entry> >& entries)
+{
+    vector<CRef<CBioseq> > bioseqs;
+    AgpRead(is, bioseqs);
+    NON_CONST_ITERATE (vector<CRef<CBioseq> >, bioseq, bioseqs) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(**bioseq);
+        entries.push_back(entry);
+    }
+}
+
+
+void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
+{
+    string line;
+    vector<string> fields;
+    string current_object;
+    CRef<CBioseq> bioseq;
+    CRef<CSeq_inst> seq_inst;
+    int last_to;
+    int part_num, last_part_num;
+
+    int line_num = 0;
+    while (NcbiGetlineEOL(is, line)) {
+        line_num++;
+        if (line[0] == '#') {
+            // comment line; skip
+            continue;
+        }
+        if (line.find_first_not_of(" \t\n\r") == string::npos) {
+            // skip lines containing only white space
+            continue;
+        }
+
+        fields.clear();
+        NStr::Tokenize(line, "\t", fields);
+
+        if (fields.size() != 9) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        string("error at line ") + 
+                        NStr::IntToString(line_num) + ": found " +
+                        NStr::IntToString(fields.size()) +
+                        " columns; there should be 9",
+                        is.tellg());
+        }
+
+        if (fields[0] != current_object || !bioseq) {
+            // close out old one, start a new one
+            if (bioseq) {
+                bioseq->SetInst(*seq_inst);
+                bioseqs.push_back(bioseq);
+            }
+
+            current_object = fields[0];
+
+            seq_inst.Reset(new CSeq_inst);
+            seq_inst->SetRepr(CSeq_inst::eRepr_delta);
+            seq_inst->SetMol(CSeq_inst::eMol_dna);
+
+            bioseq.Reset(new CBioseq);
+            CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local,
+                                         current_object, current_object));
+            bioseq->SetId().push_back(id);
+
+            last_to = 0;
+            last_part_num = 0;
+        }
+
+        // validity checks
+        part_num = NStr::StringToInt(fields[3]);
+        if (part_num != last_part_num + 1) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        string("error at line ") + 
+                        NStr::IntToString(line_num) +
+                        ": part number out of order",
+                        is.tellg());
+        }
+        last_part_num = part_num;
+        if (NStr::StringToInt(fields[1]) != last_to + 1) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        string("error at line ") + 
+                         NStr::IntToString(line_num) +
+                         ": begining not equal to previous end + 1",
+                         is.tellg());
+        }
+        last_to = NStr::StringToInt(fields[2]);
+
+
+        // build a Delta-seq, either a Seq-literal (for a gap) or a Seq-loc 
+
+        CRef<CDelta_seq> delta_seq(new CDelta_seq);
+
+        if (fields[4] == "N") {
+            // a gap
+            delta_seq->SetLiteral().SetLength(NStr::StringToInt(fields[5]));
+        } else if (fields[4].size() == 1 && 
+                   fields[4].find_first_of("ADFGPOW") == 0) {
+            CSeq_loc& loc = delta_seq->SetLoc();
+            CRef<CSeq_id> comp_id(new CSeq_id(fields[5]));
+            loc.SetInt().SetId(*comp_id);
+            loc.SetInt().SetFrom(NStr::StringToInt(fields[6]) - 1);
+            loc.SetInt().SetTo  (NStr::StringToInt(fields[7]) - 1);
+            if (fields[8] == "+") {
+                loc.SetInt().SetStrand(eNa_strand_plus);
+            } else if (fields[8] == "-") {
+                loc.SetInt().SetStrand(eNa_strand_minus);
+            } else {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            string("error at line ") + 
+                            NStr::IntToString(line_num) + ": invalid "
+                            "orientation " + fields[8],
+                            is.tellg());
+            }
+        } else {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        string("error at line ") + 
+                        NStr::IntToString(line_num) + ": invalid "
+                        "component type " + fields[4],
+                        is.tellg());
+        }
+        seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
+    }
+
+    // deal with the last one
+    if (bioseq) {
+        bioseq->SetInst(*seq_inst);
+        bioseqs.push_back(bioseq);
+    }
+}
+
+
+END_NCBI_SCOPE
+
+
+/*
+ * =====================================================================
+ * $Log$
+ * Revision 1.1  2003/12/08 15:49:32  jcherry
+ * Initial version
+ *
+ * =====================================================================
+ */
