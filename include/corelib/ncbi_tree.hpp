@@ -42,11 +42,11 @@ BEGIN_NCBI_SCOPE
 ///    Bi-directionaly linked N way tree.
 ///
 
-template <class TValue> class CTreeNWay
+template <class TValue> class CTreeNode
 {
 public:
     typedef TValue                     TValueType;
-    typedef CTreeNWay<TValue>          TTreeType;
+    typedef CTreeNode<TValue>          TTreeType;
     typedef list<TTreeType*>           TNodeList;
     typedef list<const TTreeType*>     TConstNodeList;
     typedef typename TNodeList::iterator        TNodeList_I;
@@ -56,11 +56,11 @@ public:
     ///
     /// @param
     ///   value - node value
-    CTreeNWay(const TValue& value = TValue());
-    ~CTreeNWay();
+    CTreeNode(const TValue& value = TValue());
+    ~CTreeNode();
 
-    CTreeNWay(const TTreeType& tree);
-    CTreeNWay& operator =(const TTreeType& tree);
+    CTreeNode(const TTreeType& tree);
+    CTreeNode& operator =(const TTreeType& tree);
 
     /// Get node's parent
     ///
@@ -150,7 +150,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreeNWay<TValue>* AddNode(const TValue& val);
+    CTreeNode<TValue>* AddNode(const TValue& val);
 
 
     /// Insert new subnode before the specified location in the subnode list
@@ -198,21 +198,22 @@ struct CTreePair
 ///    Bi-directionaly linked N way tree.
 ///    Parameterized by id - value pair
 
-template <class TId, class TValue> class CTreePairNWay
-    : public CTreeNWay< CTreePair<TId, TValue> >
+template <class TId, class TValue> class CTreePairNode
+    : public CTreeNode< CTreePair<TId, TValue> >
 {
 public:
-    typedef CTreeNWay<CTreePair<TId, TValue> >   TParent;
+    typedef TId                                  TIdType;
+    typedef CTreeNode<CTreePair<TId, TValue> >   TParent;
     typedef CTreePair<TId, TValue>               TTreePair;
-    typedef CTreePairNWay<TId, TValue>           TPairTreeType;
+    typedef CTreePairNode<TId, TValue>           TPairTreeType;
     typedef list<TPairTreeType*>                 TPairTreeNodeList;
     typedef list<const TPairTreeType*>           TConstPairTreeNodeList;
 
 public:
 
-    CTreePairNWay(const TId& id = TId(), const TValue& value = V());
-    CTreePairNWay(const CTreePairNWay<TId, TValue>& tr);
-    CTreePairNWay<TId, TValue>& operator=(const CTreePairNWay<TId, TValue>& tr);
+    CTreePairNode(const TId& id = TId(), const TValue& value = V());
+    CTreePairNode(const CTreePairNode<TId, TValue>& tr);
+    CTreePairNode<TId, TValue>& operator=(const CTreePairNode<TId, TValue>& tr);
 
 
     /// Add new subnode whose value is (a copy of) val
@@ -221,7 +222,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreePairNWay<TId, TValue>* AddNode(const TId& id, const TValue& value);
+    CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
 
     /// Return node's value
     const TValue& GetValue() const { return m_Value.value; }
@@ -258,29 +259,86 @@ public:
     void FindNodes(const list<TId>& node_path, TConstPairTreeNodeList* res) const;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Tree algorithms
+//
+
+
+
+/// Algorithm to trace the pair tree and find specified leaf along the node path
+/// 
+/// Algorithm always chooses the deepest leaf 
+template<class TPairTree, class TPathList>
+const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_path)
+{
+    _ASSERT(!node_path.empty());
+
+    const TPairTree* ptr = &tr;
+    const TPairTree* pfnd = 0;
+
+    TPathList::const_iterator last_it = node_path.end();
+    --last_it;
+    typename const TPathList::value_type& last_search_id = *last_it;
+
+    ITERATE(typename TPathList, sit, node_path) {
+        const typename TPairTree::TIdType& search_id = *sit;
+        bool sub_level_found = false;
+        
+        typename TPairTree::TNodeList_CI it = tr.SubNodeBegin();
+        typename TPairTree::TNodeList_CI it_end = tr.SubNodeEnd();
+
+        for (;it != it_end; ++it) {
+            const typename TPairTree::TParent* node = *it;
+            const typename TPairTree::TTreePair& node_pair = node->GetValue();
+
+            if (node_pair.id == search_id) {  
+                ptr = (TPairTree*) node;
+                sub_level_found = true;
+            }
+
+            if (node_pair.id == last_search_id) {
+                pfnd = (TPairTree*) node;
+                sub_level_found = true;
+            }
+
+            if (sub_level_found)
+                break;
+
+        } // for it
+
+        if (!sub_level_found) {
+            break;
+        }
+        
+    } // ITERATE
+
+    return pfnd;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTreeNWay<TValue>
+//  CTreeNode<TValue>
 //
 
 template<class TValue>
-CTreeNWay<TValue>::CTreeNWay(const TValue& value)
+CTreeNode<TValue>::CTreeNode(const TValue& value)
 : m_Parent(0),
   m_Value(value)
 {}
 
 template<class TValue>
-CTreeNWay<TValue>::~CTreeNWay()
+CTreeNode<TValue>::~CTreeNode()
 {
     ITERATE(typename TNodeList, it, m_Nodes) {
-        CTreeNWay* node = *it;
+        CTreeNode* node = *it;
         delete node;
     }
 }
 
 template<class TValue>
-CTreeNWay<TValue>::CTreeNWay(const TTreeType& tree)
+CTreeNode<TValue>::CTreeNode(const TTreeType& tree)
 : m_Parent(0),
   m_Value(tree.m_Value)
 {
@@ -288,10 +346,10 @@ CTreeNWay<TValue>::CTreeNWay(const TTreeType& tree)
 }
 
 template<class TValue>
-CTreeNWay<TValue>& CTreeNWay<TValue>::operator=(const TTreeType& tree)
+CTreeNode<TValue>& CTreeNode<TValue>::operator=(const TTreeType& tree)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
-        CTreeNWay* node = *it;
+        CTreeNode* node = *it;
         delete node;
     }
     m_Nodes.clear();
@@ -299,20 +357,20 @@ CTreeNWay<TValue>& CTreeNWay<TValue>::operator=(const TTreeType& tree)
 }
 
 template<class TValue>
-void CTreeNWay<TValue>::CopyFrom(const TTreeType& tree)
+void CTreeNode<TValue>::CopyFrom(const TTreeType& tree)
 {
     ITERATE(typename TNodeList, it, tree.m_Nodes) {
-        const CTreeNWay* src_node = *it;
-        CTreeNWay* new_node = new CTreeNWay(*src_node);
+        const CTreeNode* src_node = *it;
+        CTreeNode* new_node = new CTreeNode(*src_node);
         AddNode(new_node);
     }
 }
 
 template<class TValue>
-void CTreeNWay<TValue>::RemoveNode(TTreeType* subnode)
+void CTreeNode<TValue>::RemoveNode(TTreeType* subnode)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
-        CTreeNWay* node = *it;
+        CTreeNode* node = *it;
         if (node == subnode) {
             m_Nodes.erase(it);
             delete node;
@@ -322,20 +380,20 @@ void CTreeNWay<TValue>::RemoveNode(TTreeType* subnode)
 }
 
 template<class TValue>
-void CTreeNWay<TValue>::RemoveNode(TNodeList_I it)
+void CTreeNode<TValue>::RemoveNode(TNodeList_I it)
 {
-    CTreeNWay* node = *it;
+    CTreeNode* node = *it;
     m_Nodes.erase(it);
     delete node;
 }
 
 
 template<class TValue>
-typename CTreeNWay<TValue>::TTreeType* 
-CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TTreeType* subnode)
+typename CTreeNode<TValue>::TTreeType* 
+CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TTreeType* subnode)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
-        CTreeNWay* node = *it;
+        CTreeNode* node = *it;
         if (node == subnode) {
             m_Nodes.erase(it);
             node->SetParent(0);
@@ -347,10 +405,10 @@ CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TTreeType* subnode)
 
 
 template<class TValue>
-typename CTreeNWay<TValue>::TTreeType* 
-CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TNodeList_I it)
+typename CTreeNode<TValue>::TTreeType* 
+CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TNodeList_I it)
 {
-    CTreeNWay* node = *it;
+    CTreeNode* node = *it;
     m_Nodes.erase(it);
     node->SetParent(0);
 
@@ -359,14 +417,14 @@ CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TNodeList_I it)
 
 
 template<class TValue>
-void CTreeNWay<TValue>::AddNode(typename CTreeNWay<TValue>::TTreeType* subnode)
+void CTreeNode<TValue>::AddNode(typename CTreeNode<TValue>::TTreeType* subnode)
 {
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
 }
 
 template<class TValue>
-CTreeNWay<TValue>* CTreeNWay<TValue>::AddNode(const TValue& val)
+CTreeNode<TValue>* CTreeNode<TValue>::AddNode(const TValue& val)
 {
     TTreeType* subnode = new TTreeType(val);
     AddNode(subnode);
@@ -374,7 +432,7 @@ CTreeNWay<TValue>* CTreeNWay<TValue>::AddNode(const TValue& val)
 }
 
 template<class TValue>
-void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
+void CTreeNode<TValue>::InsertNode(TNodeList_I it,
                                    TTreeType* subnode)
 {
     m_Nodes.insert(it, subnode);
@@ -384,39 +442,39 @@ void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTreePairNWay<TId, TValue>
+//  CTreePairNode<TId, TValue>
 //
 
 
 template<class TId, class TValue>
-CTreePairNWay<TId, TValue>::CTreePairNWay(const TId& id, const TValue& value)
-: //CTreePairNWay<TId, TValue>::TParent(TTreePair(id, value))
+CTreePairNode<TId, TValue>::CTreePairNode(const TId& id, const TValue& value)
+: //CTreePairNode<TId, TValue>::TParent(TTreePair(id, value))
   TParent(TTreePair(id, value))
 {}
 
 
 template<class TId, class TValue>
-CTreePairNWay<TId, TValue>::CTreePairNWay(const CTreePairNWay<TId, TValue>& tr)
+CTreePairNode<TId, TValue>::CTreePairNode(const CTreePairNode<TId, TValue>& tr)
 : TParent(tr)
 {}
 
 
 template<class TId, class TValue>
-CTreePairNWay<TId, TValue>& 
-CTreePairNWay<TId, TValue>::operator=(const CTreePairNWay<TId, TValue>& tr)
+CTreePairNode<TId, TValue>& 
+CTreePairNode<TId, TValue>::operator=(const CTreePairNode<TId, TValue>& tr)
 {
     TParent::operator=(tr);
 }
 
 template<class TId, class TValue>
-CTreePairNWay<TId, TValue>*
-CTreePairNWay<TId, TValue>::AddNode(const TId& id, const TValue& value)
+CTreePairNode<TId, TValue>*
+CTreePairNode<TId, TValue>::AddNode(const TId& id, const TValue& value)
 {
-    return (CTreePairNWay<TId, TValue>*)TParent::AddNode(TTreePair(id, value));
+    return (CTreePairNode<TId, TValue>*)TParent::AddNode(TTreePair(id, value));
 }
 
 template<class TId, class TValue>
-void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path, 
+void CTreePairNode<TId, TValue>::FindNodes(const list<TId>& node_path, 
                                            TPairTreeNodeList*       res)
 {
     typename TParent::TTreeType* tr = this;
@@ -432,7 +490,7 @@ void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path,
             TParent* node = *it;
             const TTreePair& node_pair = node->GetValue();
 
-            if (node_pair.id == search_id) {  // value found
+            if (node_pair.id == search_id) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -440,7 +498,7 @@ void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path,
         } // for it
 
         if (!sub_level_found) {
-            break;
+            return;
         }
         sub_level_found = false;
 
@@ -451,7 +509,7 @@ void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path,
 
 
 template<class TId, class TValue>
-void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>&         node_path, 
+void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path, 
                                            TConstPairTreeNodeList*  res) const
 {
     const typename TParent::TTreeType* tr = this;
@@ -467,7 +525,7 @@ void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>&         node_path,
             const TParent* node = *it;
             const TTreePair& node_pair = node->GetValue();
 
-            if (node_pair.id == search_id) {  // value found
+            if (node_pair.id == search_id) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -475,7 +533,7 @@ void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>&         node_path,
         } // for it
 
         if (!sub_level_found) {
-            break;
+            return;
         }
         sub_level_found = false;
 
@@ -491,17 +549,20 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/01/12 20:09:22  kuznets
+ * Renamed CTreeNWay to CTreeNode
+ *
  * Revision 1.11  2004/01/12 18:01:15  jcherry
  * Added IsLeaf method
  *
  * Revision 1.10  2004/01/12 16:49:48  kuznets
- * CTreePairNWay added id, value accessor functions
+ * CTreePairNode added id, value accessor functions
  *
  * Revision 1.9  2004/01/12 15:26:22  kuznets
  * Fixed various compilation warnings (GCC & WorkShop)
  *
  * Revision 1.8  2004/01/12 15:01:58  kuznets
- * +CTreePairNWay::FindNodes
+ * +CTreePairNode::FindNodes
  *
  * Revision 1.7  2004/01/09 19:01:39  kuznets
  * Fixed compilation for GCC
