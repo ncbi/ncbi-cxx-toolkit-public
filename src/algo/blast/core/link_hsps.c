@@ -918,8 +918,12 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 		last_hsp = H;
 	}
 	
-   /* Save results in the hsp_list */
-   
+   /* The HSP's may be in a different order than they were before, 
+      but hsp contains the first one. */
+   for (index = 0, H = first_hsp; index < hsp_list->hspcnt; index++) {
+      hsp_list->hsp_array[index] = H;
+      H = H->next;
+   }
    
    return 0;
 }
