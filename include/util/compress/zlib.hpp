@@ -35,7 +35,11 @@
  */
 
 #include <util/compress/stream.hpp>
-#include <zlib.h>
+#ifdef NCBI_COMPILER_MSVC
+#  include <util/compress/zlib/zlib.h>
+#else
+#  include <zlib.h>
+#endif
 #ifdef USE_LOCAL_ZLIB
 #  include <util/compress/zlib/zutil.h>
 #endif
@@ -331,6 +335,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/05 16:55:13  ucko
+ * Include the internal zlib.h when using MSVC until its build system
+ * catches up.
+ *
  * Revision 1.6  2004/04/05 15:54:12  ucko
  * Default to using external versions of zlib, bzlib, and libpcre if available.
  *
