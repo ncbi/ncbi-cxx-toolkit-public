@@ -94,7 +94,6 @@ int CRegexApplication::Run(void)
     start = 0;
     char *txt = new char[text.length() + 1];
     strcpy(txt, text.c_str());
-    size_t len = strlen(txt);
     while (true)
     {
         pattern.GetMatch(txt, start, 0, 0, true);
@@ -134,6 +133,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/26 15:37:41  lavr
+ * Remove unused variable "len", line 97
+ *
  * Revision 1.2  2003/06/20 18:31:51  clausen
  * Switched to work with new CRegexp interface
  *
