@@ -393,53 +393,45 @@ static const char Hex[] = "0123456789ABCDEF";
 
 void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
-    const CPrimitiveTypeInfo* info = object.GetPrimitiveTypeInfo();
-
-    switch ( info->GetValueType() ) {
+    switch ( object.GetPrimitiveValueType() ) {
     case CPrimitiveTypeInfo::eBool:
-        if ( info->GetValueBool(object.GetObjectPtr()) )
+        if ( object.GetPrimitiveValueBool() )
             out << "TRUE";
         else
             out << "FALSE";
         break;
     case CPrimitiveTypeInfo::eChar:
-        out << '\'' << info->GetValueChar(object.GetObjectPtr()) << '\'';
+        out << '\'' << object.GetPrimitiveValueChar() << '\'';
         break;
     case CPrimitiveTypeInfo::eInteger:
-        if ( info->IsSigned() )
-            out << info->GetValueLong(object.GetObjectPtr());
+        if ( object.IsPrimitiveValueSigned() )
+            out << object.GetPrimitiveValueLong();
         else
-            out << info->GetValueULong(object.GetObjectPtr());
+            out << object.GetPrimitiveValueULong();
         break;
     case CPrimitiveTypeInfo::eReal:
-        out << info->GetValueDouble(object.GetObjectPtr());
+        out << object.GetPrimitiveValueDouble();
         break;
     case CPrimitiveTypeInfo::eString:
-        out << '"';
-        {
-            string s;
-            info->GetValueString(object.GetObjectPtr(), s);
-            out << s;
-        }
-        out << '"';
+        out << '"' << object.GetPrimitiveValueString() << '"';
         break;
     case CPrimitiveTypeInfo::eEnum:
         {
             string s;
-            info->GetValueString(object.GetObjectPtr(), s);
+            object.GetPrimitiveValueString(s);
             if ( !s.empty() )
                 out << s;
-            else if ( info->IsSigned() )
-                out << info->GetValueLong(object.GetObjectPtr());
+            else if ( object.IsPrimitiveValueSigned() )
+                out << object.GetPrimitiveValueLong();
             else
-                out << info->GetValueULong(object.GetObjectPtr());
+                out << object.GetPrimitiveValueULong();
         }
         break;
     case CPrimitiveTypeInfo::eOctetString:
         out << '\'';
         {
             vector<char> s;
-            info->GetValueOctetString(object.GetObjectPtr(), s);
+            object.GetPrimitiveValueOctetString(s);
             iterate ( vector<char>, i, s ) {
                 char c = *i;
                 out << Hex[(c >> 4) & 15] << Hex[c & 15];

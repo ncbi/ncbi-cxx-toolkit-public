@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/06 16:21:19  vasilche
+* Added interface to primitive types in CObjectInfo & CConstObjectInfo.
+*
 * Revision 1.3  2000/07/03 18:42:44  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -186,7 +189,7 @@ CObjectInfo CObjectInfo::GetClassMember(TMemberIndex index) const
     return make_pair(mInfo->GetMember(GetObjectPtr()), mInfo->GetTypeInfo());
 }
 
-void CObjectInfo::EraseClassMember(TMemberIndex index) const
+void CObjectInfo::EraseClassMember(TMemberIndex index)
 {
     const CMemberInfo* mInfo = GetClassTypeInfo()->GetMemberInfo(index);
     if ( !mInfo->Optional() || mInfo->GetDefault() ) {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/06 16:21:16  vasilche
+* Added interface to primitive types in CObjectInfo & CConstObjectInfo.
+*
 * Revision 1.3  2000/07/03 18:42:35  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -49,6 +52,19 @@
 *
 * ===========================================================================
 */
+
+inline
+CPrimitiveTypeInfo::EValueType
+CObjectTypeInfo::GetPrimitiveValueType(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueType();
+}
+
+inline
+bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
+{
+    return GetPrimitiveTypeInfo()->IsSigned();
+}
 
 inline
 const CObject* CConstObjectInfo::GetCObjectPtr(TConstObjectPtr objectPtr,
@@ -120,6 +136,56 @@ CConstObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 }
 
 inline
+bool CConstObjectInfo::GetPrimitiveValueBool(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueBool(GetObjectPtr());
+}
+
+inline
+char CConstObjectInfo::GetPrimitiveValueChar(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueChar(GetObjectPtr());
+}
+
+inline
+long CConstObjectInfo::GetPrimitiveValueLong(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueLong(GetObjectPtr());
+}
+
+inline
+unsigned long CConstObjectInfo::GetPrimitiveValueULong(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueULong(GetObjectPtr());
+}
+
+inline
+double CConstObjectInfo::GetPrimitiveValueDouble(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueDouble(GetObjectPtr());
+}
+
+inline
+void CConstObjectInfo::GetPrimitiveValueString(string& value) const
+{
+    GetPrimitiveTypeInfo()->GetValueString(GetObjectPtr(), value);
+}
+
+inline
+string CConstObjectInfo::GetPrimitiveValueString(void) const
+{
+    string value;
+    GetPrimitiveValueString(value);
+    return value;
+}
+
+inline
+void CConstObjectInfo::GetPrimitiveValueOctetString(vector<char>& value) const
+{
+    GetPrimitiveTypeInfo()->GetValueOctetString(GetObjectPtr(), value);
+}
+
+inline
 CObjectInfo::CObjectInfo(void)
 {
 }
@@ -148,6 +214,48 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 {
     Set(object.first, object.second);
     return *this;
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueBool(bool value)
+{
+    GetPrimitiveTypeInfo()->SetValueBool(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueChar(char value)
+{
+    GetPrimitiveTypeInfo()->SetValueChar(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueLong(long value)
+{
+    GetPrimitiveTypeInfo()->SetValueLong(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueULong(unsigned long value)
+{
+    GetPrimitiveTypeInfo()->SetValueULong(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueDouble(double value)
+{
+    GetPrimitiveTypeInfo()->SetValueDouble(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueString(const string& value)
+{
+    GetPrimitiveTypeInfo()->SetValueString(GetObjectPtr(), value);
+}
+
+inline
+void CObjectInfo::SetPrimitiveValueOctetString(const vector<char>& value)
+{
+    GetPrimitiveTypeInfo()->SetValueOctetString(GetObjectPtr(), value);
 }
 
 #endif /* def OBJECT__HPP  &&  ndef OBJECT__INL */

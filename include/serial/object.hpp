@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/06 16:21:15  vasilche
+* Added interface to primitive types in CObjectInfo & CConstObjectInfo.
+*
 * Revision 1.8  2000/07/03 18:42:35  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -73,7 +76,8 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
-#include <serial/member.hpp>
+#include <serial/stdtypes.hpp>
+#include <serial/memberid.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -88,7 +92,6 @@ class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CPointerTypeInfo;
 class CMemberId;
-class CMemberInfo;
 
 class CObjectGetTypeInfo
 {
@@ -131,6 +134,9 @@ public:
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
     const CPointerTypeInfo* GetPointerTypeInfo(void) const;
     
+    // primitive type interface
+    CPrimitiveTypeInfo::EValueType GetPrimitiveValueType(void) const;
+    bool IsPrimitiveValueSigned(void) const;
     // class/choice interface
     TMemberIndex GetMembersCount(void) const;
     const CMemberId& GetMemberId(TMemberIndex index) const;
@@ -250,6 +256,15 @@ public:
             return make_pair(GetObjectPtr(), GetTypeInfo());
         }
 
+    // primitive type interface
+    bool GetPrimitiveValueBool(void) const;
+    char GetPrimitiveValueChar(void) const;
+    long GetPrimitiveValueLong(void) const;
+    unsigned long GetPrimitiveValueULong(void) const;
+    double GetPrimitiveValueDouble(void) const;
+    void GetPrimitiveValueString(string& value) const;
+    string GetPrimitiveValueString(void) const;
+    void GetPrimitiveValueOctetString(vector<char>& value) const;
     // class interface
     bool ClassMemberIsSet(TMemberIndex index) const;
     CConstObjectInfo GetClassMember(TMemberIndex index) const;
@@ -302,10 +317,18 @@ public:
         {
             return make_pair(GetObjectPtr(), GetTypeInfo());
         }
-    
+
+    // primitive type interface
+    void SetPrimitiveValueBool(bool value);
+    void SetPrimitiveValueChar(char value);
+    void SetPrimitiveValueLong(long value);
+    void SetPrimitiveValueULong(unsigned long value);
+    void SetPrimitiveValueDouble(double value);
+    void SetPrimitiveValueString(const string& value);
+    void SetPrimitiveValueOctetString(const vector<char>& value);
     // class interface
     CObjectInfo GetClassMember(TMemberIndex index) const;
-    void EraseClassMember(TMemberIndex index) const;
+    void EraseClassMember(TMemberIndex index);
     // choice interface
     CObjectInfo GetCurrentChoiceVariant(void) const;
     // pointer interface
@@ -380,17 +403,17 @@ public:
 
     bool IsSet(void) const
         {
-            return GetClassObject().ClassMemberIsSet(GetMemberIndex());
+            return m_Object.ClassMemberIsSet(GetMemberIndex());
         }
 
     CObjectInfo operator*(void) const
         {
-            return GetClassObject().GetClassMember(GetMemberIndex());
+            return m_Object.GetClassMember(GetMemberIndex());
         }
     
     void Erase(void)
         {
-            GetClassObject().EraseClassMember(GetMemberIndex());
+            m_Object.EraseClassMember(GetMemberIndex());
             Next();
         }
     
