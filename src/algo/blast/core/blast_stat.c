@@ -1041,6 +1041,8 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
     } else if (strcasecmp(sbp->name, "PAM70") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam70;
+    } else if (strcasecmp(sbp->name, "PAM250") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam250;
     } else {
         return -1;
     }
@@ -3618,6 +3620,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2004/10/01 14:52:05  camacho
+ * Add PAM250 to list of matrices to load from tables library
+ *
  * Revision 1.94  2004/10/01 13:58:59  camacho
  * Remove extra PSSM column for RPS-BLAST
  *
