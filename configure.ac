@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.23 2001/12/06 19:51:56 ucko Exp $
+#  $Id: configure.ac,v 1.24 2002/01/07 19:56:14 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1403,7 +1403,7 @@ AC_TRY_LINK(
    [AC_DEFINE_UNQUOTED(HAVE_LIBKSTAT, 1)],
    [KSTAT_LIBS=""]
 )
-AC_MSG_RESULT([$KSTAT_LIBS])
+AC_MSG_RESULT([${KSTAT_LIBS:-no}])
 
 
 ## RPCSVC system library and rstat() function
@@ -1417,7 +1417,26 @@ AC_TRY_LINK(
    [AC_DEFINE_UNQUOTED(HAVE_LIBRPCSVC, 1)],
    [RPCSVC_LIBS=""]
 )
-AC_MSG_RESULT([$RPCSVC_LIBS])
+AC_MSG_RESULT([${RPCSVC_LIBS:-no}])
+
+
+## CRYPT system library and setkey() function
+case "$host_os" in
+changequote(, )dnl
+ solaris2\.[678] )  CRYPT_LIBS=${CRYPT_LIBS:="-lcrypt_i"} ;;
+changequote([, ])dnl
+esac
+
+CRYPT_LIBS=${CRYPT_LIBS:="-lcrypt"}
+AC_MSG_CHECKING(if CRYPT library and functions are available)
+LIBS="$CRYPT_LIBS $orig_LIBS"
+AC_TRY_LINK(
+   [#include <stdlib.h>],
+   [setkey("my_key"); ],
+   [AC_DEFINE_UNQUOTED(HAVE_LIBCRYPT, 1)],
+   [CRYPT_LIBS=""]
+)
+AC_MSG_RESULT([${CRYPT_LIBS:-no}])
 
 
 
@@ -2352,6 +2371,7 @@ AC_SUBST(NETWORK_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
+AC_SUBST(CRYPT_LIBS)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)

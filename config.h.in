@@ -102,6 +102,9 @@
 /* RPCSVC library is available */
 #undef HAVE_LIBRPCSVC
 
+/* CRYPT library is available */
+#undef HAVE_LIBCRYPT
+
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
@@ -141,6 +144,11 @@
 /* Architecture size */
 #undef NCBI_PLATFORM_BITS
 
+/* Define if type `char' is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+# undef __CHAR_UNSIGNED__
+#endif
+
 /* Define if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
@@ -165,20 +173,20 @@
 /* Define if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
 /* Define if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
-/* Define if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+/* Define if you have the <strstrea.h> header file. */
+#undef HAVE_STRSTREA_H
 
 /* Define if you have the <strstream> header file. */
 #undef HAVE_STRSTREAM
 
 /* Define if you have the <strstream.h> header file. */
 #undef HAVE_STRSTREAM_H
-
-/* Define if you have the <strstrea.h> header file. */
-#undef HAVE_STRSTREA_H
 
 /* Define if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -191,6 +199,12 @@
 
 /* Define if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t
+
+/* The size of a `__int64', as computed by sizeof. */
+#undef SIZEOF___INT64
 
 /* The size of a `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
@@ -219,20 +233,9 @@
 /* The size of a `void*', as computed by sizeof. */
 #undef SIZEOF_VOIDP
 
-/* The size of a `__int64', as computed by sizeof. */
-#undef SIZEOF___INT64
-
 /* Define if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* Define if your processor stores words with the most significant byte first
    (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
-
-/* Define if type `char' is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-# undef __CHAR_UNSIGNED__
-#endif
-
-/* Define to `unsigned' if <sys/types.h> does not define. */
-#undef size_t

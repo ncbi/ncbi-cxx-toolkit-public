@@ -101,6 +101,9 @@
 /* RPCSVC library is available */
 #undef HAVE_LIBRPCSVC
 
+/* CRYPT library is available */
+#undef HAVE_LIBCRYPT
+
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
