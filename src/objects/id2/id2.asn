@@ -1,4 +1,4 @@
---$Revision: 1.12 $
+--$Revision: 1.13 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -65,11 +65,11 @@ ID2-Request-Get-Packages ::= SEQUENCE {
 ID2-Request-Get-Seq-id ::= SEQUENCE {
         seq-id          ID2-Seq-id,
         seq-id-type     INTEGER {
-                any     (0),    -- return any one Seq-id
+                any     (0),    -- return any qualified Seq-id
                 gi      (1),    -- gi is preferred
                 text    (2),    -- text Seq-id (accession etc) is preferred
                 general (4),    -- general Seq-id is preferred
-                all     (127)   -- return all Seq-ids of the sequence
+                all     (127)   -- return all qualified Seq-ids of the sequence
         } DEFAULT any
 }
 
@@ -283,6 +283,16 @@ ID2-Reply-Get-Seq-id ::= SEQUENCE {
 
         -- this Seq-id is the last one in the request
         end-of-reply    NULL OPTIONAL
+}
+
+
+ID2-Blob-State ::= ENUMERATED {
+        live            (0),
+        suppressed-temp (1),
+        suppressed      (2),
+        dead            (3),
+        protected       (4),
+        withdrawn       (5)
 }
 
 
