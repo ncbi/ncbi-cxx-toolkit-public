@@ -14,4 +14,4 @@ OBJ = type namespace statictype enumtype reftype unitype blocktype choicetype \
 LIB = xser xncbi
 
 CPPFLAGS = -I. $(ORIG_CPPFLAGS)
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(MATH_LIBS) $(ORIG_LIBS)

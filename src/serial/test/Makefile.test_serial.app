@@ -14,5 +14,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
   $(NCBI_C_INCLUDE) \
   -I$(top_srcdir)/src/serial/test/
 
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) \
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(MATH_LIBS) \
   $(ORIG_LIBS)
