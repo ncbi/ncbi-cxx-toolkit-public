@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/03/01 00:32:15  lavr
+ * FIX: Empty update does not generate parse error
+ *
  * Revision 6.9  2001/02/09 17:35:45  lavr
  * Modified: fSERV_StatelessOnly overrides info->stateless
  * Bug fixed: free(type) -> free(name)
@@ -159,10 +162,9 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
     SServiceConnector* uuu = (SServiceConnector*) data;
     const char* line;
 
-    if (!SERV_Update(uuu->iter, header))
-        return 0/*failed*/;
     if (server_error)
         return 1/*parsed okay*/;
+    SERV_Update(uuu->iter, header);
 
     line = header;
     while (line && *line) {
