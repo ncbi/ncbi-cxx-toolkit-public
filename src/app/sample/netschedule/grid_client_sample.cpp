@@ -50,7 +50,7 @@ public:
 
 void CGridClientSampleApp::Init(void)
 {
-    /// Don't forget to call it
+    // Don't forget to call it
     CGridClientApp::Init();
 
     // Create command-line argument descriptions class
@@ -137,10 +137,14 @@ int CGridClientSampleApp::Run(void)
                              << job_status.GetErrorMessage() );
             break;
         }
+
+        // A job has been canceled
         if (status == CNetScheduleClient::eCanceled) {
             LOG_POST( "Job " << job_key << " is canceled.");
             break;
         }
+
+        // A job is still running
         if (++cnt % 1000 == 0) {
             NcbiCout << "Still waiting..." << NcbiEndl;
         }
@@ -158,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 15:01:37  didenko
+ * Added some comments
+ *
  * Revision 1.4  2005/03/28 14:54:01  didenko
  * Added job cancelation check
  *
