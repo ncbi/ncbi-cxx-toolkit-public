@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/10/17 14:18:22  ucko
+* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
+* classes that overload ConfigureDiagDestination.
+*
 * Revision 1.26  2001/10/05 14:56:26  ucko
 * Minor interface tweaks for CCgiStreamDiagHandler and descendants.
 *
@@ -273,6 +277,14 @@ FCgiDiagHandlerFactory CCgiApplication::FindCgiDiagHandler(const string& key)
 }
 
 
+void CCgiApplication::SetCgiDiagHandler(CCgiDiagHandler* handler)
+{
+    m_DiagHandler.reset(handler);
+    s_ActiveCgiDiagHandler = handler;
+    SetDiagHandler(s_CgiDiagHandler, NULL, NULL);
+}
+
+
 void CCgiApplication::ConfigureDiagnostics(CCgiContext& context)
 {
     // Disable for production servers?
@@ -297,9 +309,7 @@ void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
     if (factory == NULL) {
         factory = s_StderrDiagHandlerFactory;
     }
-    m_DiagHandler.reset(factory(dest.substr(colon + 1), context));
-    s_ActiveCgiDiagHandler = m_DiagHandler.get();
-    SetDiagHandler(s_CgiDiagHandler, NULL, NULL);
+    SetCgiDiagHandler(factory(dest.substr(colon + 1), context));
 }
 
 

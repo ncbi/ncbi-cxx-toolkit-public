@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/10/17 14:18:04  ucko
+* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
+* classes that overload ConfigureDiagDestination.
+*
 * Revision 1.24  2001/10/05 14:56:20  ucko
 * Minor interface tweaks for CCgiStreamDiagHandler and descendants.
 *
@@ -202,6 +206,8 @@ protected:
     void                   RegisterCgiDiagHandler(const string& key,
                                                 FCgiDiagHandlerFactory fact);
     FCgiDiagHandlerFactory FindCgiDiagHandler(const string& key);
+    void                   SetCgiDiagHandler(CCgiDiagHandler* handler);
+
     virtual void           ConfigureDiagnostics(CCgiContext& context);
     virtual void           ConfigureDiagDestination(CCgiContext& context);
     virtual void           ConfigureDiagThreshold(CCgiContext& context);
