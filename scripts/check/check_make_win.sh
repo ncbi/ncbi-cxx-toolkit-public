@@ -269,9 +269,13 @@ RunTest() {
 
    # Run check
    check_exec="$x_root_dir/scripts/check/check_exec.sh"
-   test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
-   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >> \$x_test_out 2>&1
+   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >/tmp/\$\$.out 2>&1
    result=\$?
+   sed -e '/ ["][$][@]["].*\$/ {
+      s/^.*: //
+      s/ ["][$][@]["].*$//
+      }' /tmp/\$\$.out >> \$x_test_out
+   rm -f /tmp/\$\$.out
 
    # Write result of the test into the his output file
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
