@@ -1,0 +1,6 @@
+# $Id$
+
+ASN_PROJ = seqtest
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

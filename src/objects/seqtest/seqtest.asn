@@ -1,0 +1,44 @@
+--
+-- $Id: seqtest.asn,v 1.1 2004/08/19 16:28:10 jcherry Exp $
+--
+
+
+NCBI-SeqTest DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-test-result, Seq-test-result-set, SeqTestResults;
+
+IMPORTS Date, User-object FROM NCBI-General
+        Seq-align FROM NCBI-Seqalign
+        Seq-feat FROM NCBI-Seqfeat
+        Seq-graph FROM NCBI-Seqres
+        Bioseq FROM NCBI-Sequence
+        Seq-id, Seq-loc FROM NCBI-Seqloc;
+
+SeqTestResults ::= SEQUENCE {
+    source CHOICE {
+        seq-id VisibleString,
+        seq-feat Seq-feat,
+        seq-align Seq-align
+    },
+    results Seq-test-result-set
+}
+
+Seq-test-result-set ::= SET OF Seq-test-result
+
+Seq-test-result ::= SEQUENCE {
+    test VisibleString,
+    date Date,
+    output-data User-object
+}
+
+
+END
+
+--
+-- $Log: seqtest.asn,v $
+-- Revision 1.1  2004/08/19 16:28:10  jcherry
+-- Initial version
+--
+--
+

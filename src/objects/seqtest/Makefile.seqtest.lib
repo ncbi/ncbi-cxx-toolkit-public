@@ -1,0 +1,6 @@
+# $Id$
+
+ASN = seqtest
+
+LIB = seqtest
+SRC = $(ASN:%=%__) $(ASN:%=%___)
