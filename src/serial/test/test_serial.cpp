@@ -273,7 +273,7 @@ void TestHooks(CTestSerialObject& obj)
 
 int CTestSerial::Run(void)
 {
-    CNcbiOfstream diag("test.log");
+    CNcbiOfstream diag("test_serial.log");
     SetDiagStream(&diag);
     try {
 #if HAVE_NCBI_C
@@ -331,7 +331,7 @@ int CTestSerial::Run(void)
             }
         }
         {
-            CNcbiOfstream out("test.asno2");
+            CNcbiOfstream out("test_serial.asno2");
             PrintAsn(out, ConstObjectInfo(*env));
         }
 #endif
@@ -487,17 +487,17 @@ int CTestSerial::Run(void)
 
         {
             {
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.asno",
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test_serial.asno",
                                                                   eSerial_AsnText));
                 *out << write;
             }
             {
-                CNcbiOfstream out("test.asno2");
+                CNcbiOfstream out("test_serial.asno2");
                 PrintAsn(out, ConstObjectInfo(write));
             }
             CTestSerialObject read;
             {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test_serial.asn",
                                                                  eSerial_AsnText));
                 *in >> read;
             }
@@ -519,7 +519,7 @@ int CTestSerial::Run(void)
             read.m_Next->Dump(NcbiCerr);
 #if !defined(HAVE_NCBI_C)
             {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test_serial.asn",
                                                                  eSerial_AsnText));
                 in->Skip(ObjectType(read));
             }
@@ -528,13 +528,13 @@ int CTestSerial::Run(void)
 
         {
             {
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.asbo",
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test_serial.asbo",
                                                                   eSerial_AsnBinary));
                 *out << write;
             }
             CTestSerialObject read;
             {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test_serial.asb",
                                                                  eSerial_AsnBinary));
                 *in >> read;
             }
@@ -556,7 +556,7 @@ int CTestSerial::Run(void)
             read.m_Next->Dump(NcbiCerr);
 #if !defined(HAVE_NCBI_C)
             {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test_serial.asb",
                                                                  eSerial_AsnBinary));
                 in->Skip(ObjectType(read));
             }
@@ -772,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2003/06/13 20:44:33  ivanov
+ * Changed names of the test files from "test.*" to "test_serial.*"
+ *
  * Revision 1.60  2003/06/02 16:48:51  lavr
  * Renamed testserial -> test_serial
  *
