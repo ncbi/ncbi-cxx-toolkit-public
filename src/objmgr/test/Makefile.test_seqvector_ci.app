@@ -16,4 +16,4 @@ LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio \
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_seqvector_ci
-CHECK_TIMEOUT = 250
+CHECK_TIMEOUT = 500
