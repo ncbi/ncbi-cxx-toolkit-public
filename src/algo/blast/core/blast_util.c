@@ -139,12 +139,18 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
    if (!seq_blk)
        return 1;
 
-   if (seq_blk->sequence_allocated) 
+   if (seq_blk->sequence_allocated) {
        sfree(seq_blk->sequence);
-   if (seq_blk->sequence_start_allocated)
+       seq_blk->sequence_allocated = FALSE;
+   }
+   if (seq_blk->sequence_start_allocated) {
        sfree(seq_blk->sequence_start);
-   if (seq_blk->oof_sequence_allocated)
+       seq_blk->sequence_start_allocated = FALSE;
+   }
+   if (seq_blk->oof_sequence_allocated) {
        sfree(seq_blk->oof_sequence);
+       seq_blk->oof_sequence_allocated = FALSE;
+   }
 
    return 0;
 }
