@@ -352,6 +352,16 @@
 
 
 /*
+ * Export specifier for library objects_taxon1
+ */
+#ifdef NCBI_TAXON1_EXPORTS
+#  define NCBI_TAXON1_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_TAXON1_EXPORT        __declspec(dllimport)
+#endif
+
+
+/*
  * Export specifier for library objects_mim
  */
 #ifdef NCBI_MIM_EXPORTS
@@ -574,6 +584,7 @@
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
 #  define NCBI_SUBMIT_EXPORT
+#  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XNCBI_EXPORT
@@ -592,6 +603,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2003/02/06 18:49:58  dicuccio
+ * Added NCBI_TAXON1_EXPORT specifier
+ *
  * Revision 1.9  2003/01/17 19:44:28  lavr
  * Reduce dependencies
  *
