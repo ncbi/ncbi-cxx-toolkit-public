@@ -733,7 +733,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
         const CImprint& imp = man.GetCit().GetImp();
         if ( !m_Journal.empty() ) {
             m_Title = m_Journal;
-            m_Journal.clear();
+            m_Journal.erase();
         }
         m_Journal = "Thesis (";
         imp.GetDate().GetDate(&m_Journal, "%Y");
@@ -1229,6 +1229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/05/20 17:11:45  ucko
+* Reset strings with erase() rather than clear(), which isn't 100% portable.
+*
 * Revision 1.16  2004/05/20 13:47:54  shomrat
 * Fixed Pub-set match
 *
