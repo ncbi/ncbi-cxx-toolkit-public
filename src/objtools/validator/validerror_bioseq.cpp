@@ -357,6 +357,10 @@ void CValidError_bioseq::ValidateSeqIds
             "Multiple accessions on sequence with gi number", seq);
     }
 
+    if ( m_Imp.IsValidateIdSet() ) {
+        ValidateIDSetAgainstDb(seq);
+    }
+
     // C toolkit ensures that there is exactly one CBioseq for a CSeq_id
     // Not done here because object manager will not allow
     // the same Seq-id on multiple Bioseqs
@@ -2389,6 +2393,113 @@ const CBioseq* CValidError_bioseq::GetNucGivenProt(const CBioseq& prot)
 }
 
 
+void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
+{
+    const CSeq_id*  gb_id = 0,
+                 *  db_gb_id = 0;
+    int             gi = 0,
+                    db_gi = 0;
+    const CDbtag*   general_id = 0,
+                *   db_general_id = 0;
+
+    ITERATE( CBioseq::TId, id, seq.GetId() ) {
+        switch ( (*id)->Which() ) {
+        case CSeq_id::e_Genbank:
+            gb_id = id->GetPointer();
+            break;
+
+        case CSeq_id::e_Gi:
+            gi = (*id)->GetGi();
+            break;
+
+        case CSeq_id::e_General:
+            general_id = &((*id)->GetGeneral());
+            break;
+    
+        default:
+            break;
+        }
+    }
+
+    if ( gi == 0  &&  gb_id != 0 ) {
+        gi = GetGIForSeqId(*gb_id);
+    }
+
+    if ( gi <= 0 ) {
+        return;
+    }
+
+    list< CRef< CSeq_id > > id_set = GetSeqIdsForGI(gi);
+    if ( !id_set.empty() ) {
+        ITERATE( list< CRef< CSeq_id > >, id, id_set ) {
+            switch ( (*id)->Which() ) {
+            case CSeq_id::e_Genbank:
+                db_gb_id = id->GetPointer();
+                break;
+                
+            case CSeq_id::e_Gi:
+                db_gi = (*id)->GetGi();
+                break;
+                
+            case CSeq_id::e_General:
+                db_general_id = &((*id)->GetGeneral());
+                break;
+                
+            default:
+                break;
+            }
+        }
+
+        string gi_str = NStr::IntToString(gi);
+
+        if ( db_gi != gi ) {
+          PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+              "New gi number (" + gi_str + ")" +
+              " does not match old one (" + NStr::IntToString(db_gi) + ")", 
+              seq);
+        }
+        if ( (gb_id != 0)  &&  (db_gb_id != 0) ) {
+          if ( !gb_id->Match(*db_gb_id) ) {
+              PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                  "New accession (" + gb_id->AsFastaString() + 
+                  ") does not match old one (" + db_gb_id->AsFastaString() + 
+                  ") on gi (" + gi_str + ")", seq);
+          }
+        } else if ( gb_id != NULL) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                "Gain of accession (" + gb_id->AsFastaString() + ") on gi (" +
+                gi_str + ")", seq);
+        } else if ( db_gb_id != 0 ) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                "Loss of accession (" + db_gb_id->AsFastaString() + 
+                ") on gi (" + gi_str + ")", seq);
+        }
+
+        string new_gen_label, old_gen_label;
+        if ( general_id  != 0  &&  db_general_id != 0 ) {
+            if ( !general_id->Match(*db_general_id) ) {
+                db_general_id->GetLabel(&old_gen_label);
+                general_id->GetLabel(&new_gen_label);
+                PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                    "New general ID (" + new_gen_label + 
+                    ") does not match old one (" + old_gen_label +
+                    ") on gi (" + gi_str + ")", seq);
+            }
+        } else if ( general_id != 0 ) {
+            general_id->GetLabel(&new_gen_label);
+            PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                "Gain of general ID (" + new_gen_label + ") on gi (" + 
+                gi_str + ")", seq);
+        } else if ( db_general_id != 0 ) {
+            db_general_id->GetLabel(&old_gen_label);
+            PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
+                "Loss of general ID (" + old_gen_label + ") on gi (" +
+                gi_str + ")", seq);
+        }
+    }
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -2398,6 +2509,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/03/21 16:27:48  shomrat
+* Added ValidateIDSetAgainstDb
+*
 * Revision 1.22  2003/03/18 21:48:37  grichenk
 * Removed obsolete class CAnnot_CI
 *
