@@ -3505,7 +3505,7 @@ case "$host_os:$compiler" in
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
    CONF_dll_ext=".dylib"
    CONF_loadable_ext=".so"
-   if "$CXX" -v 2>&1 | grep -q Apple; then
+   if $CXX -v 2>&1 | grep -q Apple; then
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
       CFLAGS="-Wno-long-double $CFLAGS"
@@ -3814,7 +3814,7 @@ case "$compiler" in
         # and loadable objects (bundles).
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
         has_dll_loadable=""
-        if "$CXX" -v 2>&1 | grep -q Apple; then
+        if $CXX -v 2>&1 | grep -q Apple; then
            LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
            LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
         else
