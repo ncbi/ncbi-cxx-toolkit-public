@@ -178,6 +178,7 @@ private:
     friend class CSeqVector;
     friend class CHandleRangeMap;
     friend class CDataSource;
+    friend class CScope;
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI;
 };
@@ -283,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/02/27 14:35:32  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.29  2003/01/23 19:33:57  vasilche
 * Commented out obsolete methods.
 * Use strand argument of CSeqVector instead of creation reversed seqmap.

@@ -128,6 +128,13 @@ public:
 
     CSeq_id_Handle GetIdHandle(const CSeq_id& id) const;
 
+    void UpdateAnnotIndex(const CHandleRangeMap& loc,
+                          CSeq_annot::C_Data::E_Choice sel);
+    void GetSynonyms(const CSeq_id_Handle& id,
+                     set<CSeq_id_Handle>& syns);
+    void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                             CAnnotTypes_CI::TTSESet& tse_set);
+
 private:
     void x_DetachFromOM(void);
     // Get requests history (used by data sources to process requests)
@@ -189,6 +196,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/02/27 14:35:32  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.29  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

@@ -1236,33 +1236,16 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
 }
 #endif
 
-void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
-                                 set<CTSE_Lock>& tse_set,
-                                 CSeq_annot::C_Data::E_Choice sel,
-                                 CScope& scope)
+
+void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
+                                   CSeq_annot::C_Data::E_Choice sel)
 {
-/*
-Iterate each id from "loc". Find all TSEs with references to the id.
-Put TSEs, containing the sequence itself to "selected_with_seq" and
-TSEs without the sequence to "selected_with_ref". In "selected_with_seq"
-try to find TSE, referenced by the history (if more than one found, report
-error), if not found, search for a live TSE (if more than one found,
-report error), if not found, check if there is only one dead TSE in the set.
-Otherwise report error.
-From "selected_with_ref" select only live TSEs and dead TSEs, referenced by
-the history.
-The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
-without the sequence but with references to the id and all dead TSEs
-(with references and without the sequence), referenced by the history.
-*/
     //### Lock all TSEs found, unlock all filtered out in the end.
-    TTSESet loaded_tse_set;
-    TTSESet tmp_tse_set;
     if ( m_Loader ) {
         // Send request to the loader
         switch ( sel ) {
         case CSeq_annot::C_Data::e_Ftable:
-            m_Loader->GetRecords(loc, CDataLoader::eFeatures, &loaded_tse_set);
+            m_Loader->GetRecords(loc, CDataLoader::eFeatures);
             break;
         case CSeq_annot::C_Data::e_Align:
             //### Need special flag for alignments
@@ -1283,7 +1266,178 @@ without the sequence but with references to the id and all dead TSEs
         }
         m_IndexedAnnot = true;
     }
+}
+
+
+void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
+                              set<CSeq_id_Handle>& syns,
+                              CScope& scope)
+{
+    //### The TSE returns locked, unlock it
+    CSeq_id_Handle idh = main_idh;
+    CTSE_Lock tse_info = x_FindBestTSE(main_idh, scope.m_History);
+    if ( !tse_info ) {
+        // Try to find the best matching id (not exactly equal)
+        const CSeq_id& id = idh.GetSeqId();
+        TSeq_id_HandleSet hset;
+        GetSeq_id_Mapper().GetMatchingHandles(id, hset);
+        iterate(TSeq_id_HandleSet, hit, hset) {
+            if ( tse_info  &&  idh.IsBetter(*hit) )
+                continue;
+            CTSE_Lock tmp_tse = x_FindBestTSE(*hit, scope.m_History);
+            if ( tmp_tse ) {
+                tse_info = tmp_tse;
+                idh = *hit;
+            }
+        }
+    }
+    // At this point the tse_info (if not null) should be locked
+    if ( tse_info ) {
+        TBioseqMap::const_iterator info = tse_info->m_BioseqMap.find(idh);
+        if (info == tse_info->m_BioseqMap.end()) {
+            // Just copy the existing id
+            syns.insert(main_idh);
+        }
+        else {
+            // Create range list for each synonym of a seq_id
+            const CBioseq_Info::TSynonyms& syn = info->second->m_Synonyms;
+            iterate ( CBioseq_Info::TSynonyms, syn_it, syn ) {
+                syns.insert(*syn_it);
+            }
+        }
+    }
+    else {
+        // Just copy the existing range map
+        syns.insert(main_idh);
+    }
+}
+
+
+void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                      set<CTSE_Lock>& tse_set,
+                                      CScope& scope)
+{
+    TTSESet tmp_tse_set;
+    TTSESet non_history;
+    CMutexGuard guard(m_DataSource_Mtx);    
+
+    TTSEMap::const_iterator tse_it = m_TSE_ref.find(idh);
+    if (tse_it != m_TSE_ref.end()) {
+        _ASSERT(tse_it->second.size() > 0);
+        TTSESet selected_with_ref;
+        TTSESet selected_with_seq;
+        iterate(TTSESet, tse, tse_it->second) {
+            if ( (*tse)->m_BioseqMap.find(idh) != (*tse)->m_BioseqMap.end() ) {
+                selected_with_seq.insert(*tse); // with sequence
+            }
+            else
+                selected_with_ref.insert(*tse); // with reference
+        }
+
+        CRef<CTSE_Info> unique_from_history;
+        CRef<CTSE_Info> unique_live;
+        iterate (TTSESet, with_seq, selected_with_seq) {
+            if ( scope.m_History.find(CTSE_Lock(*with_seq)) !=
+                 scope.m_History.end() ) {
+                if ( unique_from_history ) {
+                    THROW1_TRACE(runtime_error,
+                        "CDataSource::PopulateTSESet() -- "
+                        "Ambiguous request: multiple history matches");
+                }
+                unique_from_history = *with_seq;
+            }
+            else if ( !unique_from_history ) {
+                if ((*with_seq)->m_Dead)
+                    continue;
+                if ( unique_live ) {
+                    THROW1_TRACE(runtime_error,
+                        "CDataSource::PopulateTSESet() -- "
+                        "Ambiguous request: multiple live TSEs");
+                }
+                unique_live = *with_seq;
+            }
+        }
+        if ( unique_from_history ) {
+            tmp_tse_set.insert(unique_from_history);
+        }
+        else if ( unique_live ) {
+            non_history.insert(unique_live);
+        }
+        else if (selected_with_seq.size() == 1) {
+            non_history.insert(*selected_with_seq.begin());
+        }
+        else if (selected_with_seq.size() > 1) {
+            //### Try to resolve the conflict with the help of loader
+            THROW1_TRACE(runtime_error,
+                "CDataSource::PopulateTSESet() -- "
+                "Ambigous request: multiple TSEs found");
+        }
+        iterate(TTSESet, tse, selected_with_ref) {
+            bool in_history =
+                scope.m_History.find(CTSE_Lock(*tse)) != scope.m_History.end();
+            if ( !(*tse)->m_Dead  || in_history ) {
+                // Select only TSEs present in the history and live TSEs
+                // Different sets for in-history and non-history TSEs for
+                // the future filtering.
+                if ( in_history ) {
+                    tmp_tse_set.insert(*tse); // in-history TSE
+                }
+                else {
+                    non_history.insert(*tse); // non-history TSE
+                }
+            }
+        }
+    }
+    // Filter out TSEs not in the history yet and conflicting with any
+    // history TSE. The conflict may be caused by any seq-id, even not
+    // mentioned in the searched location.
+    iterate (TTSESet, tse_it, non_history) {
+        bool conflict = false;
+        // Check each seq-id from the current TSE
+        iterate (CTSE_Info::TBioseqMap, seq_it, (*tse_it)->m_BioseqMap) {
+            iterate (CScope::TRequestHistory, hist_it, scope.m_History) {
+                conflict =
+                    (*hist_it)->m_BioseqMap.find(seq_it->first) !=
+                    (*hist_it)->m_BioseqMap.end();
+                if ( conflict )
+                    break;
+            }
+            if ( conflict )
+                break;
+        }
+        if ( !conflict ) {
+            // No conflicts found -- add the TSE to the resulting set
+            tmp_tse_set.insert(*tse_it);
+        }
+    }
+    iterate (TTSESet, lit, tmp_tse_set) {
+        tse_set.insert(CTSE_Lock(*lit));
+    }
+}
+
+
+void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
+                                 set<CTSE_Lock>& tse_set,
+                                 CSeq_annot::C_Data::E_Choice sel,
+                                 CScope& scope)
+{
+/*
+Iterate each id from "loc". Find all TSEs with references to the id.
+Put TSEs, containing the sequence itself to "selected_with_seq" and
+TSEs without the sequence to "selected_with_ref". In "selected_with_seq"
+try to find TSE, referenced by the history (if more than one found, report
+error), if not found, search for a live TSE (if more than one found,
+report error), if not found, check if there is only one dead TSE in the set.
+Otherwise report error.
+From "selected_with_ref" select only live TSEs and dead TSEs, referenced by
+the history.
+The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
+without the sequence but with references to the id and all dead TSEs
+(with references and without the sequence), referenced by the history.
+*/
+    UpdateAnnotIndex(loc, sel);
     x_ResolveLocationHandles(loc, scope.m_History);
+    TTSESet tmp_tse_set;
     TTSESet non_history;
     CMutexGuard guard(m_DataSource_Mtx);    
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
@@ -2151,6 +2305,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/02/27 14:35:31  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.84  2003/02/25 20:10:40  grichenk
 * Reverted to single total-range index for annotations
 *

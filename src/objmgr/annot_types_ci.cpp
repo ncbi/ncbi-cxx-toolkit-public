@@ -576,52 +576,59 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 }
 
 
-void CAnnotTypes_CI::x_SearchMain(CHandleRangeMap loc)
+void CAnnotTypes_CI::x_SearchMain(const CHandleRangeMap& loc)
 {
-    // Search all possible TSEs
-    TTSESet entries;
-    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
-    iterate(TTSESet, tse_it, entries) {
-        if ( m_NativeTSE  &&  *tse_it != m_NativeTSE ) {
+    m_Scope->UpdateAnnotIndex(loc, m_Selector.m_AnnotChoice);
+
+    iterate ( CHandleRangeMap, idit, loc ) {
+        if ( idit->second.Empty() ) {
             continue;
         }
-        m_TSESet.insert(*tse_it);
-        const CTSE_Info& tse_info = **tse_it;
 
-        iterate ( CHandleRangeMap::TLocMap, idit, loc.GetMap() ) {
-            if ( idit->second.Empty() ) {
-                continue;
-            }
+        set<CSeq_id_Handle> syns;
+        m_Scope->GetSynonyms(idit->first, syns);
+        iterate ( set<CSeq_id_Handle>, synit, syns ) {
+            TTSESet entries;
+            m_Scope->GetTSESetWithAnnots(*synit, entries);
 
-            CTSE_Info::TAnnotMap::const_iterator amit =
-                tse_info.m_AnnotMap.find(idit->first);
-            if (amit == tse_info.m_AnnotMap.end()) {
-                continue;
-            }
+            iterate ( TTSESet, tse_it, entries ) {
+                if ( m_NativeTSE  &&  *tse_it != m_NativeTSE ) {
+                    continue;
+                }
+                m_TSESet.insert(*tse_it);
+                const CTSE_Info& tse_info = **tse_it;
+                CTSE_Guard guard(tse_info);
 
-            CTSE_Info::TAnnotSelectorMap::const_iterator sit =
-                amit->second.find(m_Selector);
-            if ( sit == amit->second.end() ) {
-                continue;
-            }
-
-            for ( CTSE_Info::TRangeMap::const_iterator aoit =
-                      sit->second.begin(idit->second.GetOverlappingRange());
-                  aoit; ++aoit ) {
-                const SAnnotObject_Index& annot_index = aoit->second;
-                const CAnnotObject_Info& annot_info =
-                    *annot_index.m_AnnotObject;
-                if ( bool(m_SingleEntry)  &&
-                     (m_SingleEntry != &annot_info.GetSeq_entry())) {
+                CTSE_Info::TAnnotMap::const_iterator amit =
+                    tse_info.m_AnnotMap.find(*synit);
+                if (amit == tse_info.m_AnnotMap.end()) {
                     continue;
                 }
 
-                if ( m_OverlapType == CAnnot_CI::eOverlap_Intervals &&
-                     !idit->second.IntersectingWith(annot_index.m_HandleRange->second) ) {
+                CTSE_Info::TAnnotSelectorMap::const_iterator sit =
+                    amit->second.find(m_Selector);
+                if ( sit == amit->second.end() ) {
                     continue;
                 }
+
+                for ( CTSE_Info::TRangeMap::const_iterator aoit =
+                          sit->second.begin(idit->second.GetOverlappingRange());
+                      aoit; ++aoit ) {
+                    const SAnnotObject_Index& annot_index = aoit->second;
+                    const CAnnotObject_Info& annot_info =
+                        *annot_index.m_AnnotObject;
+                    if ( bool(m_SingleEntry)  &&
+                         (m_SingleEntry != &annot_info.GetSeq_entry())) {
+                        continue;
+                    }
+
+                    if ( m_OverlapType == CAnnot_CI::eOverlap_Intervals &&
+                         !idit->second.IntersectingWith(annot_index.m_HandleRange->second) ) {
+                        continue;
+                    }
                 
-                m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
+                    m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
+                }
             }
         }
     }
@@ -669,47 +676,63 @@ void CAnnotTypes_CI::x_SearchLocation(const CSeqMap_CI& seg,
         if ( hr.Empty() )
             return;
     }}
-    TTSESet entries;
-    m_Scope->x_PopulateTSESet(ref_loc, m_Selector.m_AnnotChoice, entries);
-    iterate(TTSESet, tse_it, entries) {
-        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
-            continue;
-        m_TSESet.insert(*tse_it);
-        const CTSE_Info& tse_info = **tse_it;
-        CTSE_Guard guard(tse_info);
 
-        iterate ( CHandleRangeMap, idit, ref_loc ) {
+    m_Scope->UpdateAnnotIndex(ref_loc, m_Selector.m_AnnotChoice);
+
+    iterate ( CHandleRangeMap, idit, ref_loc ) {
+        if ( idit->second.Empty() ) {
+            continue;
+        }
+
+        set<CSeq_id_Handle> syns;
+        m_Scope->GetSynonyms(idit->first, syns);
+        iterate ( set<CSeq_id_Handle>, synit, syns ) {
             CSeq_loc_Conversion cvt(master_loc->first.GetSeqId(),
-                                    seg, idit->first,
+                                    seg, *synit,
                                     m_Scope);
 
-            CTSE_Info::TAnnotMap::const_iterator ait =
-                tse_info.m_AnnotMap.find(idit->first);
-            if ( ait == tse_info.m_AnnotMap.end() )
-                continue;
+            TTSESet entries;
+            m_Scope->GetTSESetWithAnnots(*synit, entries);
 
-            CTSE_Info::TAnnotSelectorMap::const_iterator sit =
-                ait->second.find(m_Selector);
-            if ( sit == ait->second.end() )
-                continue;
-
-            for ( CTSE_Info::TRangeMap::const_iterator aoit =
-                      sit->second.begin(idit->second.GetOverlappingRange());
-                  aoit; ++aoit ) {
-                const SAnnotObject_Index& annot_index = aoit->second;
-                const CAnnotObject_Info& annot_info =
-                    *annot_index.m_AnnotObject;
-                if ( bool(m_SingleEntry)  &&
-                     (m_SingleEntry != &annot_info.GetSeq_entry()) )
+            iterate ( TTSESet, tse_it, entries ) {
+                if ( m_NativeTSE  &&  *tse_it != m_NativeTSE ) {
                     continue;
+                }
+                m_TSESet.insert(*tse_it);
+                const CTSE_Info& tse_info = **tse_it;
+                CTSE_Guard guard(tse_info);
 
-                if ( m_OverlapType == CAnnot_CI::eOverlap_Intervals &&
-                     !idit->second.IntersectingWith(annot_index.m_HandleRange->second) ) {
+                CTSE_Info::TAnnotMap::const_iterator amit =
+                    tse_info.m_AnnotMap.find(*synit);
+                if (amit == tse_info.m_AnnotMap.end()) {
                     continue;
                 }
 
-                m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
-                cvt.Convert(m_AnnotSet.back(), m_Selector.m_FeatProduct);
+                CTSE_Info::TAnnotSelectorMap::const_iterator sit =
+                    amit->second.find(m_Selector);
+                if ( sit == amit->second.end() ) {
+                    continue;
+                }
+
+                for ( CTSE_Info::TRangeMap::const_iterator aoit =
+                          sit->second.begin(idit->second.GetOverlappingRange());
+                      aoit; ++aoit ) {
+                    const SAnnotObject_Index& annot_index = aoit->second;
+                    const CAnnotObject_Info& annot_info =
+                        *annot_index.m_AnnotObject;
+                    if ( bool(m_SingleEntry)  &&
+                         (m_SingleEntry != &annot_info.GetSeq_entry())) {
+                        continue;
+                    }
+
+                    if ( m_OverlapType == CAnnot_CI::eOverlap_Intervals &&
+                         !idit->second.IntersectingWith(annot_index.m_HandleRange->second) ) {
+                        continue;
+                    }
+                
+                    m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
+                    cvt.Convert(m_AnnotSet.back(), m_Selector.m_FeatProduct);
+                }
             }
         }
     }
@@ -722,6 +745,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/02/27 14:35:32  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.45  2003/02/26 17:54:14  vasilche
 * Added cached total range of mapped location.
 *

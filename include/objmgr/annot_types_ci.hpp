@@ -171,7 +171,7 @@ private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
     void x_Initialize(const CHandleRangeMap& master_loc);
-    void x_SearchMain(CHandleRangeMap loc);
+    void x_SearchMain(const CHandleRangeMap& loc);
     void x_SearchLocation(const CSeqMap_CI& seg,
                           CHandleRangeMap::const_iterator master_loc);
     
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/02/27 14:35:32  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.30  2003/02/26 17:54:14  vasilche
 * Added cached total range of mapped location.
 *

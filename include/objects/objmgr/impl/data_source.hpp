@@ -162,6 +162,16 @@ public:
                         CSeq_annot::C_Data::E_Choice sel,
                         CScope& scope);
 
+
+    void UpdateAnnotIndex(const CHandleRangeMap& loc,
+                          CSeq_annot::C_Data::E_Choice sel);
+    void GetSynonyms(const CSeq_id_Handle& id,
+                     set<CSeq_id_Handle>& syns,
+                     CScope& scope);
+    void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                             set<CTSE_Lock>& tse_set,
+                             CScope& scope);
+
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return false if the entry was not found or is not a TSE. "filter" may
     // be used to select a particular sequence type.
@@ -361,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/02/27 14:35:32  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.40  2003/02/25 14:48:07  vasilche
 * Added Win32 export modifier to object manager classes.
 *

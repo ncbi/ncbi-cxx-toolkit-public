@@ -287,6 +287,44 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 }
 
 
+void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
+                              CSeq_annot::C_Data::E_Choice sel)
+{
+    //CMutexGuard guard(m_Scope_Mtx);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        (*it)->UpdateAnnotIndex(loc, sel);
+    }
+}
+
+
+void CScope::GetSynonyms(const CSeq_id_Handle& id,
+                         set<CSeq_id_Handle>& syns)
+{
+    //CMutexGuard guard(m_Scope_Mtx);
+    CBioseq_Handle bh = GetBioseqHandle(id);
+    if ( bh ) {
+        bh.x_GetDataSource().GetSynonyms(id, syns, *this);
+    }
+    else {
+        syns.insert(id);
+    }
+}
+
+
+void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                 CAnnotTypes_CI::TTSESet& tse_set)
+{
+    //CMutexGuard guard(m_Scope_Mtx);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        (*it)->GetTSESetWithAnnots(idh, tse_set, *this);
+    }
+    //### Filter the set depending on the requests history?
+    iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
+        x_AddToHistory(**tse_it);
+    }
+}
+
+
 void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel,
                               CAnnotTypes_CI::TTSESet& tse_set)
@@ -433,6 +471,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/02/27 14:35:31  vasilche
+* Splitted PopulateTSESet() by logically independent parts.
+*
 * Revision 1.42  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
