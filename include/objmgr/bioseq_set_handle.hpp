@@ -145,11 +145,22 @@ public:
     const TDescr& GetDescr(void) const;
 
     // Utility methods/operators
+
+    /// Check if handle points to a bioseq-set
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    // Check if handle does not point to a bioseq-set
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator!(void) const;
 
     CBioseq_set_Handle& operator=(const CBioseq_set_Handle& bsh);
 
+    // Reset handle and make it not to point to any bioseq-set
     void Reset(void);
 
     /// Check if handles point to the same bioseq
@@ -527,6 +538,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/09/29 19:52:19  kononenk
+* Updated doxygen documentation
+*
 * Revision 1.11  2004/09/28 15:25:26  kononenk
 * Added doxygen formatting
 *
