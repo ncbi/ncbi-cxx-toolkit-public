@@ -953,6 +953,10 @@ static void s_TEST_db_map(void)
 
     }}
 
+    i2s.clear();
+    size_t sz = i2s.size();
+    assert(sz == 0);
+
     cout << "======== db_map test ok." << endl;
 
 }
@@ -990,6 +994,11 @@ static void s_TEST_db_multimap(void)
 
     }}
     assert(sz == 2);
+
+    ii2s.erase(3);
+    sz = ii2s.size();
+    assert(sz == 2);
+
 
     cout << "======== db_multimap test ok." << endl;
 
@@ -1079,6 +1088,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/07/23 20:23:37  kuznets
+ * + test for clean, erase (db_map)
+ *
  * Revision 1.12  2003/07/22 19:21:56  kuznets
  * Added test case for CBDB_File::Attach function
  *
