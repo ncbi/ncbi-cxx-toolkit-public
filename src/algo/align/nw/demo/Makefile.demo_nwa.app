@@ -18,7 +18,7 @@ SRC = nwa starter
 #LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 
-LIB = xalgo xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio \
+LIB = xalgo xobjmgr id1 seqset seqloc $(SEQ_LIBS) pub medline biblio \
       general xser xconnect xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
