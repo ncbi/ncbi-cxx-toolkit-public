@@ -1,3 +1,6 @@
+/* It is the NCBI C++ Toolkit */
+#undef NCBI_CXX_TOOLKIT
+
 /* Host info */
 #undef HOST
 #undef HOST_CPU
@@ -31,6 +34,9 @@
 
 /* gethostbyaddr_r() */
 #undef HAVE_GETHOSTBYADDR_R
+
+/* localtime_r() */
+#undef HAVE_LOCALTIME_R
 
 /* pthread_setconcurrency() */
 #undef HAVE_PTHREAD_SETCONCURRENCY

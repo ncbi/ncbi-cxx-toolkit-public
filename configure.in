@@ -179,6 +179,10 @@ if test "$with_extra_action" = "no" ; then
 fi
 
 
+#### Always define this
+AC_DEFINE_UNQUOTED(NCBI_CXX_TOOLKIT, 1)
+
+
 #### Get the running host's properties
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(HOST,        "$host")
@@ -891,7 +895,9 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-### Check for some library functions.
+### Check for some reentrant library functions (only needed in MT mode)
+
+if test "$with_mt" = "yes" ; then
 
 ## gethostbyname_r() -- 2 different variants
 
@@ -984,6 +990,20 @@ fi
 AC_MSG_RESULT("$x_gethostbyaddr_r")
 
 
+AC_MSG_CHECKING(for localtime_r)
+AC_TRY_COMPILE(
+   [#include <time.h>],
+   [
+     void* dummy = (void*) &localtime_r;
+     time_t    timer;
+     struct tm result;
+     (void) localtime_r(&timer, &result);
+   ],
+   AC_DEFINE_UNQUOTED(HAVE_LOCALTIME_R, 1)
+)
+AC_MSG_RESULT()
+
+
 AC_MSG_CHECKING(for pthread_setconcurrency)
 AC_TRY_COMPILE(
    [#include <pthread.h>],
@@ -995,6 +1015,11 @@ AC_TRY_COMPILE(
 )
 AC_MSG_RESULT()
 
+fi
+### ...reentrant versions of some standard library functions, MT functions
+
+
+### Check for other standard library functions
 
 AC_MSG_CHECKING(for strdup)
 AC_TRY_COMPILE(
