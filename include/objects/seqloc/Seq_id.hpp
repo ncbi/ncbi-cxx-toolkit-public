@@ -141,6 +141,7 @@ public:
         eAcc_con           = 6 << 8, // just a contig/segset
         eAcc_segset        = eAcc_con, // was once wrongly split out
         eAcc_wgs           = 7 << 8,
+        // XXX -- GSS?
         eAcc_division_mask = 0xff00,
 
         // Actual return values with EXAMPLE prefixes (to be followed
@@ -231,6 +232,7 @@ public:
         eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,  // BA
         eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
         eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
+        eAcc_ddbj_gss       = e_Ddbj | 128 << 8        | fAcc_nuc,  // DE
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other | fAcc_prot,
@@ -498,6 +500,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2004/12/08 15:19:38  ucko
+ * EAccessionInfo: +eAcc_ddbj_gss (DE)
+ *
  * Revision 1.49  2004/11/15 22:21:48  grichenk
  * Doxygenized comments, fixed group names.
  *
