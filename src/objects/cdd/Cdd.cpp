@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/06/07 18:35:48  hurwitz
+ * fix 2 bugs for Solaris compilation
+ *
  * Revision 1.1  2002/06/07 14:44:11  hurwitz
  * extra functions for cdd objects
  *
@@ -392,7 +395,7 @@ bool CCdd::ReMaster(int Row) {
   list< CRef< CDense_diag > >::iterator  i, ii;
   list< CRef< CSeq_id > >::iterator  j, jj;
   CRef< CSeq_id >  pTempSeqId1, pTempSeqId2;
-  list< int >::iterator  k, kk;
+  list< unsigned int >::iterator  k, kk;
   int  TempStart1, TempStart2, RowIndex, From, To, NewFrom, NewTo;
   list< CRef< CAlign_annot > >::iterator  m;
   list< CRef< CSeq_interval > >::iterator n;
@@ -466,7 +469,7 @@ bool CCdd::ReMaster(int Row) {
   }
 
   // get den-diag-set.  1st row is new master, 2nd row is old master.
-  GetDenDiagSet(Row, pDenDiagSet1);
+  SetDenDiagSet(Row, pDenDiagSet1);
   // if there's an align-annot set
   if (IsSetAlignannot()) {
     // for each alignannot
@@ -520,7 +523,7 @@ int CCdd::GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow) 
 // corresponds to Position on slave row.
 //---------------------------------------------------------------------------
   list< CRef< CDense_diag > >::iterator  i;
-  list< int >::iterator  k;
+  list< unsigned int >::iterator  k;
   int  Start, Len, OtherStart;
 
   // find from and to in old-master
@@ -587,8 +590,8 @@ bool CCdd::GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag) {
 //-------------------------------------------------------------------------
 // get either the first or last dense-diag of Row
 //-------------------------------------------------------------------------
-  TDendiag* pDenDiagSet;                     // (TDendiag = list<CRef<CDense_diag>>)
-  list< CRef< CDense_diag > >::iterator k;
+  const TDendiag* pDenDiagSet;                     // (TDendiag = list<CRef<CDense_diag>>)
+  list< CRef< CDense_diag > >::const_iterator k;
 
   if (GetDenDiagSet(Row, pDenDiagSet)) {
     if (First) {
@@ -720,13 +723,11 @@ int CCdd::GetLowerBound(int Row) {
 // get the lower alignment boundary for Row
 //-------------------------------------------------------------------------
   CRef< CDense_diag > DenDiag;
-  list< int > Starts;
-  list< int >::iterator  i;
+  list< unsigned int >::const_iterator  i;
 
   // get the first den-diag for row
   GetDenDiag(Row, true, DenDiag);
-  Starts = DenDiag->GetStarts();
-  i = Starts.begin();
+  i = DenDiag->GetStarts().begin();
   if (Row != 0) {
     i++;
   }
@@ -738,13 +739,11 @@ int CCdd::GetUpperBound(int Row) {
 // get the upper alignment boundary for Row
 //-------------------------------------------------------------------------
   CRef< CDense_diag > DenDiag;
-  list< int > Starts;
-  list< int >::iterator  i;
+  list< unsigned int >::const_iterator  i;
 
   // get the last den-diag for row
   GetDenDiag(Row, false, DenDiag);
-  Starts = DenDiag->GetStarts();
-  i = Starts.begin();
+  i = DenDiag->GetStarts().begin();
   if (Row != 0) {
     i++;
   }
