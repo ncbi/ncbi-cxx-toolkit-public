@@ -13,7 +13,7 @@
 			if (oArgs.Length < 2) {
 				return false;
 			}
-			if (oArgs.Length > 4) {
+			if (oArgs.Length > 5) {
 				return false;
 			}
 			
@@ -26,10 +26,10 @@
 			var oRe = /^[a-z]([a-z]|\d|[_])*$/g;
 			if (oTask.ProjectName.match(oRe) == null) {
 				WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
-				WScript.Echo("Project name should starts from lower-case letter");
-				WScript.Echo("             and containts lower-case letter(s),");
-				WScript.Echo("                           underscore(s)");
-				WScript.Echo("                        or digit(s)");
+				WScript.Echo("Project name should start with lower-case letter");
+				WScript.Echo("             and containt lower-case letter(s),");
+				WScript.Echo("                          underscore(s)");
+				WScript.Echo("                          or digit(s)");
 				WScript.Quit(1);
 			}
 			
@@ -88,6 +88,7 @@
 			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
 			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 			usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+            usage_str += "    [-v]        -- show details about what is being made\n";
 			usage_str += "EXAMPLES:\n";
 			usage_str += "    cscript new_project.wsf my_app app/basic\n";
 			usage_str += "    cscript new_project.wsf my_app app/basic -dll\n";
@@ -104,6 +105,7 @@
 				WScript.Echo(Usage());
 				WScript.Quit(1);
 			}
+            SetVerbose(oArgs, "-v", false);
 			this.ProjectName     = GetPositionalValue(oArgs, 0);
 			this.ProjectTemplate = GetPositionalValue(oArgs, 1).replace("/", "/sample/");
 			this.DllBuild        = GetFlagValue(oArgs, "-dll", false);
@@ -141,7 +143,7 @@
 			
 			RemoveTempFolder(oShell, oFso, oTree);
 			execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/" + oTask.ProjectTemplate);
-			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcProjectBranch);
+			execute(oShell, "copy /Y temp\\*.* \"" + oTree.SrcProjectBranch + "\"");
 			RemoveTempFolder(oShell, oFso, oTree);
 		}
 		// Change Makefile.in and Makefile.*.app
@@ -183,7 +185,7 @@
 					makefile_app = src_file;
 				}
 			}
-			WScript.Echo("Makefile.*.app :" + makefile_app);
+			WScript.Echo("Makefile.*.app: " + makefile_app);
 			
 			// open for reading
 			var old_makefile = oFso.OpenTextFile(makefile_app, 1);
@@ -249,13 +251,21 @@
 		var oTree  = new Tree(oShell, oTask);
 		//DumpTree(oTree);
 		
+        VerboseEcho("========================= CreateTreeStructure =========================");
 		CreateTreeStructure(oTree, oTask);
+        VerboseEcho("========================= FillTree ====================================");
 		FillTree           (oShell, oTree);
+        VerboseEcho("========================= CopyProjectTemplate =========================");
  		CopyProjectTemplate(oShell, oTree, oTask);
+        VerboseEcho("========================= CopyPtb =====================================");
  		CopyPtb            (oShell, oTree, oTask);
+        VerboseEcho("========================= AdjustProject ===============================");
  		AdjustProject      (oShell, oTree, oTask);
+        VerboseEcho("========================= AdjustLocalSite =============================");
  		AdjustLocalSite    (oShell, oTree, oTask);
+        VerboseEcho("========================= RunPtb ======================================");
  		RunPtb             (oShell, oTree, oTask);
+        VerboseEcho("========================= LoadSolution ================================");
  		LoadSolution       (oShell, oTree, oTask);
  		
 	 	</script>
