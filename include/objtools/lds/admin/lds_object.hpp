@@ -98,7 +98,7 @@ protected:
     int SaveObject(int file_id,
                    const string& seq_id,
                    const string& description,
-                   size_t offset,
+                   CNcbiStreamoff offset,
                    int type_id);
 
 private:
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/30 18:16:28  gouriano
+ * Use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.9  2003/07/29 19:50:30  kuznets
  * Replaced bare pointers with CRef<>
  *

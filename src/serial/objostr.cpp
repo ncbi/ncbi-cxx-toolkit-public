@@ -350,7 +350,7 @@ string CObjectOStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-size_t CObjectOStream::GetStreamOffset(void) const
+CNcbiStreamoff CObjectOStream::GetStreamOffset(void) const
 {
     return m_Output.GetStreamOffset();
 }
@@ -999,6 +999,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2004/08/30 18:19:39  gouriano
+* Use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.95  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

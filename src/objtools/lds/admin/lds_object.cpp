@@ -255,7 +255,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
 int CLDS_Object::SaveObject(int file_id,
                             const string& seq_id,
                             const string& description,
-                            size_t offset,
+                            CNcbiStreamoff offset,
                             int type_id)
 {
     ++m_MaxObjRecId;
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/30 18:21:44  gouriano
+ * Use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.22  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -50,14 +50,14 @@ public:
 
     // Event function called when parser finds a top level object
     virtual void OnTopObjectFoundPre(const CObjectInfo& object, 
-                                     size_t stream_offset);
+                                     CNcbiStreamoff stream_offset);
 
     // Event function alled after top object deserialization
     virtual void OnTopObjectFoundPost(const CObjectInfo& object);
 
     // Overload from CObjectsSniffer
     virtual void OnObjectFoundPre(const CObjectInfo& object, 
-                                  size_t stream_offset);
+                                  CNcbiStreamoff stream_offset);
 
     // Overload from CObjectsSniffer
     virtual void OnObjectFoundPost(const CObjectInfo& object);
@@ -69,17 +69,17 @@ public:
 
     struct SObjectDetails
     {
-        CObjectInfo   info;
-        size_t        offset;
-        size_t        parent_offset;
-        size_t        top_level_offset;
-        bool          is_top_level;
-        int           ext_id;  // Database id or any other external id
+        CObjectInfo    info;
+        CNcbiStreamoff offset;
+        CNcbiStreamoff parent_offset;
+        CNcbiStreamoff top_level_offset;
+        bool           is_top_level;
+        int            ext_id;  // Database id or any other external id
 
         SObjectDetails(const  CObjectInfo& object_info,
-                       size_t stream_offset,
-                       size_t p_offset,
-                       size_t top_offset,
+                       CNcbiStreamoff stream_offset,
+                       CNcbiStreamoff p_offset,
+                       CNcbiStreamoff top_offset,
                        bool   is_top)
         : info(object_info),
           offset(stream_offset),
@@ -94,7 +94,7 @@ public:
 
     // Find object information based on the stream offset.
     // Return NULL if not found.
-    SObjectDetails* FindObjectInfo(size_t stream_offset);
+    SObjectDetails* FindObjectInfo(CNcbiStreamoff stream_offset);
 
     TObjectVector& GetObjectsVector() { return m_Objects; }
 
@@ -105,10 +105,10 @@ protected:
     struct SObjectParseDescr
     {
         const CObjectInfo*  object_info;
-        size_t              stream_offset;
+        CNcbiStreamoff      stream_offset;
 
         SObjectParseDescr(const CObjectInfo* oi,
-                          size_t offset)
+                          CNcbiStreamoff offset)
         : object_info(oi),
           stream_offset(offset)
         {}
@@ -126,7 +126,7 @@ protected:
     // This function works on the fact that only one object can 
     // be found in one particular offset, and offset udentifies any
     // object unqiely in its file.
-    int FindObject(size_t stream_offset);
+    int FindObject(CNcbiStreamoff stream_offset);
 
 private:
     TParseStack         m_Stack;
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/30 18:16:28  gouriano
+ * Use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.7  2003/10/09 16:43:05  kuznets
  * +ClearObjectsVector()
  *

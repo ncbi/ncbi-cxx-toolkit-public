@@ -69,7 +69,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<size_t>::max();
+    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
 #endif
 }
 
@@ -81,7 +81,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<size_t>::max();
+    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
 #endif
 }
 
@@ -116,7 +116,7 @@ void CObjectOStreamAsnBinary::EndTag(void)
 inline
 void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 {
-    size_t limit = m_CurrentPosition + 1 + length;
+    CNcbiStreamoff limit = m_CurrentPosition + 1 + length;
     if ( limit <= m_CurrentPosition || limit > m_CurrentTagLimit )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     else
@@ -208,7 +208,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         ThrowError(fFormatError, "WriteBytes only allowed in DATA");
-    size_t new_pos = m_CurrentPosition + size;
+    CNcbiStreamoff new_pos = m_CurrentPosition + size;
     if ( new_pos < m_CurrentPosition || new_pos > m_CurrentTagLimit )
         ThrowError(fFormatError, "tag DATA overflow");
     m_CurrentPosition = new_pos;
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2004/08/30 18:19:39  gouriano
+* Use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.90  2004/08/04 14:45:25  vasilche
 * Fixed wrong constant.
 *

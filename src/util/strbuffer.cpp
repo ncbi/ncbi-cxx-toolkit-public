@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/08/30 18:20:23  gouriano
+* Use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.43  2004/08/04 14:33:27  vasilche
 * Avoid copying of the whole buffer if possible.
 *
@@ -570,7 +573,7 @@ void CIStreamBuffer::BadNumber(void)
         "bad number in line " + NStr::UIntToString(GetLine()));
 }
 
-void CIStreamBuffer::SetStreamOffset(size_t pos)
+void CIStreamBuffer::SetStreamOffset(CNcbiStreamoff pos)
 {
     m_Input->Seekg(pos);
     m_BufferOffset = pos;

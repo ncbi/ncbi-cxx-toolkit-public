@@ -57,13 +57,13 @@ CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(void)
 
 
 void CLDS_CoreObjectsReader::OnTopObjectFoundPre(const CObjectInfo& object,
-                                                 size_t stream_offset)
+                                                 CNcbiStreamoff stream_offset)
 {
     // GetStreamOffset() returns offset of the most recent top level object
     // In case of the Text ASN.1 it can differ from the stream_offset variable
     // because reader first reads the file header and only then calls the main
     // Read function.
-    size_t offset = GetStreamOffset();
+    CNcbiStreamoff offset = GetStreamOffset();
 
     m_TopDescr = SObjectParseDescr(&object, offset);
     m_Stack.push(SObjectParseDescr(&object, offset));
@@ -85,7 +85,7 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
 
 
 void CLDS_CoreObjectsReader::OnObjectFoundPre(const CObjectInfo& object, 
-                                              size_t stream_offset)
+                                              CNcbiStreamoff stream_offset)
 {
     if (m_Stack.size() == 0) {
         OnTopObjectFoundPre(object, stream_offset);
@@ -129,7 +129,7 @@ void CLDS_CoreObjectsReader::Reset()
 
 
 CLDS_CoreObjectsReader::SObjectDetails* 
-CLDS_CoreObjectsReader::FindObjectInfo(size_t stream_offset)
+CLDS_CoreObjectsReader::FindObjectInfo(CNcbiStreamoff stream_offset)
 {
     int idx = FindObject(stream_offset);
     if (idx < 0)
@@ -137,7 +137,7 @@ CLDS_CoreObjectsReader::FindObjectInfo(size_t stream_offset)
     return &m_Objects[idx];
 }
 
-int CLDS_CoreObjectsReader::FindObject(size_t stream_offset)
+int CLDS_CoreObjectsReader::FindObject(CNcbiStreamoff stream_offset)
 {
     int idx = 0;
     ITERATE(TObjectVector, it, m_Objects) {
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/30 18:21:44  gouriano
+ * Use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.6  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *

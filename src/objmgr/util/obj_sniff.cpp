@@ -110,7 +110,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
 
 
 void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& /*object*/, 
-                                       size_t /*stream_offset*/)
+                                       CNcbiStreamoff /*stream_offset*/)
 {
 }
 
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2004/08/30 18:21:05  gouriano
+* Use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.18  2004/08/04 14:46:55  vasilche
 * Removed unused variables.
 *

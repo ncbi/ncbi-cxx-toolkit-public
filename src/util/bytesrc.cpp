@@ -89,7 +89,7 @@ bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
     return true;
 }
 
-void CByteSourceReader::Seekg(size_t pos)
+void CByteSourceReader::Seekg(CNcbiStreamoff pos)
 {
     NCBI_THROW(CUtilException,eWrongCommand,"CByteSourceReader::Seekg: unable to seek");
 }
@@ -196,7 +196,7 @@ bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
     return true;
 }
 
-void CStreamByteSourceReader::Seekg(size_t pos)
+void CStreamByteSourceReader::Seekg(CNcbiStreamoff pos)
 {
     m_Stream->seekg(pos);
 }
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/08/30 18:20:23  gouriano
+ * Use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.35  2004/08/09 14:19:42  vasilche
  * Fixed excessive stack memory usage in ~CMemoryChunk().
  *

@@ -528,12 +528,12 @@ string CObjectIStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-size_t CObjectIStream::GetStreamOffset(void) const
+CNcbiStreamoff CObjectIStream::GetStreamOffset(void) const
 {
     return m_Input.GetStreamOffset();
 }
 
-void CObjectIStream::SetStreamOffset(size_t pos)
+void CObjectIStream::SetStreamOffset(CNcbiStreamoff pos)
 {
     m_Input.SetStreamOffset(pos);
 }
@@ -1519,6 +1519,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.130  2004/08/30 18:19:39  gouriano
+* Use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.129  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
