@@ -41,13 +41,14 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 
 
-/** Methods used to "order" the HSP's. */
-#define BLAST_NUMBER_OF_ORDERING_METHODS 2
-
-typedef enum LinkOrderingMethod {
-   BLAST_SMALL_GAPS = 0,
-   BLAST_LARGE_GAPS
-} LinkOrderingMethod;
+/** Describes the method for ordering HSPs. Note that these values
+ *  are used to index an array, so their values must linearly increase
+ */
+typedef enum ELinkOrderingMethod {
+    eLinkSmallGaps = 0,   /**< favor small gaps when linking an HSP */
+    eLinkLargeGaps = 1,   /**< favor large gaps when linking an HSP */
+    eOrderingMethods = 2  /**< number of methods (last in list) */
+} ELinkOrderingMethod;
 
 /* Forward declaration */
 struct LinkHSPStruct;
@@ -60,12 +61,11 @@ struct LinkHSPStruct;
  * used outside of the function Blast_EvenGapLinkHSPs.
  */
 typedef struct BlastHSPLink {
-   struct LinkHSPStruct* link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Best 
+   struct LinkHSPStruct* link[eOrderingMethods]; /**< Best 
                                                choice of HSP to link with */
-   Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
-                                                  ordering. */
-   Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
-   double xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
+   Int2 num[eOrderingMethods]; /**< number of HSP in the ordering. */
+   Int4 sum[eOrderingMethods]; /**< Sum-Score of HSP. */
+   double xsum[eOrderingMethods]; /**< Sum-Score of HSP,
                                      multiplied by the appropriate Lambda. */
    Int4 changed; /**< Has the link been changed since previous access? */
 } BlastHSPLink;
@@ -84,13 +84,27 @@ typedef struct LinkHSPStruct {
                               "link" pointer. */
    Int4 linked_to;         /**< Where this HSP is linked to? */
    double xsum;              /**< Normalized score of a set of HSPs */
-   Int2 ordering_method;   /**< Which method (max or no max for gaps) was 
-                              used for linking HSPs? */
+   ELinkOrderingMethod ordering_method;   /**< Which method (max or 
+                                            no max for gaps) was 
+                                            used for linking HSPs? */
    Int4 q_offset_trim;     /**< Start of trimmed hsp in query */
    Int4 q_end_trim;        /**< End of trimmed HSP in query */
    Int4 s_offset_trim;     /**< Start of trimmed hsp in subject */
    Int4 s_end_trim;        /**< End of trimmed HSP in subject */
 } LinkHSPStruct;
+
+/** The helper array contains the info used frequently in the inner 
+ * for loops of the HSP linking algorithm.
+ * One array of helpers will be allocated for each thread.
+ */
+typedef struct LinkHelpStruct {
+  LinkHSPStruct* ptr;
+  Int4 q_off_trim;
+  Int4 s_off_trim;
+  Int4 sum[eOrderingMethods];
+  Int4 maxsum1;
+  Int4 next_larger;
+} LinkHelpStruct;
 
 /** Calculates e-value of a set of HSPs with sum statistics.
  * @param program_number Type of BLAST program [in]
@@ -100,7 +114,7 @@ typedef struct LinkHSPStruct {
  * @param head_hsp Set of HSPs with previously calculated sum score/evalue [in]
  * @param hsp New HSP candidate to join the set [in]
  * @param xsum Normalized score for the collection if HSPs[out]
- * @return E-value of the all HSPs together
+ * @return E-value of all the HSPs together
  */
 static double 
 s_SumHSPEvalue(EBlastProgramType program_number, 
@@ -147,8 +161,13 @@ s_SumHSPEvalue(EBlastProgramType program_number,
    return sum_evalue;
 }
 
-/** Sort the HSP's by starting position of the query.  Called by qsort.  
- *	The first function sorts in forward, the second in reverse order.
+/** Callback used by qsort to sort a list of HSPs (encapsulated in
+ *  LinkHSPStruct structures) in order of increasing query start offset.
+ *  The subject start offset of HSPs is used as a tiebreaker, and no HSPs
+ *  may be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
 */
 static int
 s_FwdCompareHSPs(const void* v1, const void* v2)
@@ -179,8 +198,12 @@ s_FwdCompareHSPs(const void* v1, const void* v2)
 	return 0;
 }
 
-/** Sort the HSP's by starting position of the query.  Called by qsort.  
- *	The first function sorts in forward, the second in reverse order.
+/** Like s_FwdCompareHSPs, except with additional logic to
+ *  distinguish HSPs that lie within different strands of 
+ *  a single translated query sequence
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
 */
 static int
 s_FwdCompareHSPsTransl(const void* v1, const void* v2)
@@ -194,8 +217,8 @@ s_FwdCompareHSPsTransl(const void* v1, const void* v2)
 	h1 = (*hp1)->hsp;
 	h2 = (*hp2)->hsp;
 
-   context1 = h1->context/3;
-   context2 = h2->context/3;
+   context1 = h1->context/(NUM_FRAMES / 2);
+   context2 = h2->context/(NUM_FRAMES / 2);
 
    if (context1 < context2)
       return -1;
@@ -215,7 +238,14 @@ s_FwdCompareHSPsTransl(const void* v1, const void* v2)
 	return 0;
 }
 
-/* Comparison function based on end position in the query */
+/** Callback used by qsort to sort a list of HSPs (encapsulated in
+ *  LinkHSPStruct structures) in order of increasing query end offset.
+ *  The subject end offset of HSPs is used as a tiebreaker, and no
+ *  HSPs may be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_EndCompareHSPs(const void* v1, const void* v2)
 {
@@ -245,6 +275,12 @@ s_EndCompareHSPs(const void* v1, const void* v2)
 	return 0;
 }
 
+/** Callback used by qsort to sort a list of LinkHSPStruct structures
+ *  in order of decreasing sum score. Entries in the list may be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_XSumCompareHSPs(const void* v1, const void* v2)
 {
@@ -271,7 +307,17 @@ s_XSumCompareHSPs(const void* v1, const void* v2)
     return 0;
 }
 
-/* Find an HSP with offset closest, but not smaller/larger than a given one.
+/** Find an HSP with closest start or end offset that is 
+ *  greater than a specified value. The list of HSPs to search must 
+ *  be sorted by query start or end offset
+ * @param hsp_array List of pointers to HSPs, encapsulated within 
+ *                  LinkHSPStruct structures [in]
+ * @param size Number of elements in the array [in]
+ * @param offset The target offset to search for [in]
+ * @param right TRUE if comparison is made to query start offset
+ *              of an HSP, FALSE if comparison is to query end offset [in]
+ * @return The index in the array of the HSP whose start/end offset 
+ *         is closest to but >= the value 'offset'
  */
 static Int4 
 s_HSPBinarySearch(LinkHSPStruct** hsp_array, Int4 size, 
@@ -296,6 +342,14 @@ s_HSPBinarySearch(LinkHSPStruct** hsp_array, Int4 size,
    return end;
 }
 
+/** Callback used by qsort to sort a list of HSPs (encapsulated in
+ *  LinkHSPStruct structures) in order of decreasing query start offset.
+ *  The subject start offset of HSPs is used as a tiebreaker, and no HSPs
+ *  may be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_RevCompareHSPs(const void *v1, const void *v2)
 
@@ -325,6 +379,13 @@ s_RevCompareHSPs(const void *v1, const void *v2)
 	return 0;
 }
 
+/** Like s_RevCompareHSPs, except with additional logic to
+ *  distinguish HSPs that lie within different strands of 
+ *  a single translated query sequence
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_RevCompareHSPsTransl(const void *v1, const void *v2)
 
@@ -338,8 +399,8 @@ s_RevCompareHSPsTransl(const void *v1, const void *v2)
 	h1 = (*hp1)->hsp;
 	h2 = (*hp2)->hsp;
 	
-   context1 = h1->context/3;
-   context2 = h2->context/3;
+   context1 = h1->context/(NUM_FRAMES / 2);
+   context2 = h2->context/(NUM_FRAMES / 2);
 
    if (context1 < context2)
       return -1;
@@ -358,6 +419,16 @@ s_RevCompareHSPsTransl(const void *v1, const void *v2)
 	return 0;
 }
 
+/** Callback used by qsort to sort a list of HSPs (encapsulated in
+ *  LinkHSPStruct structures) in order of decreasing query start offset
+ *  (suitable for use with tblastn). HSPs are first separated by frame 
+ *  of a translated subject sequence, and tiebreaking is by decreasing 
+ *  query end offset, then subject start offset, then subject end offset. 
+ *  HSPs may not be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_RevCompareHSPsTbn(const void *v1, const void *v2)
 
@@ -402,6 +473,16 @@ s_RevCompareHSPsTbn(const void *v1, const void *v2)
 	return 0;
 }
 
+/** Callback used by qsort to sort a list of HSPs (encapsulated in
+ *  LinkHSPStruct structures) in order of decreasing query start offset
+ *  (suitable for use with tblastx). HSPs are first separated by frame 
+ *  of a translated query sequence and then by frame of a translated
+ *  subject sequence. Tiebreaking is by decreasing query end offset, 
+ *  then subject start offset, then subject end offset. HSPs may not be NULL
+ *  @param v1 first HSP in list [in]
+ *  @param v2 second HSP in list [in]
+ *  @return -1, 0, or 1 depending on HSPs
+*/
 static int
 s_RevCompareHSPsTbx(const void *v1, const void *v2)
 
@@ -415,8 +496,8 @@ s_RevCompareHSPsTbx(const void *v1, const void *v2)
 	h1 = (*hp1)->hsp;
 	h2 = (*hp2)->hsp;
 
-   context1 = h1->context/3;
-   context2 = h2->context/3;
+   context1 = h1->context/(NUM_FRAMES / 2);
+   context2 = h2->context/(NUM_FRAMES / 2);
 
    if (context1 < context2)
       return -1;
@@ -450,19 +531,11 @@ s_RevCompareHSPsTbx(const void *v1, const void *v2)
 	return 0;
 }
 
-/** The helper array contains the info used frequently in the inner 
- * for loops of the HSP linking algorithm.
- * One array of helpers will be allocated for each thread.
+/** Initialize a LinkHSPStruct
+ * @param lhsp Pointer to struct to initialize. If NULL, struct gets
+ *              allocated and then initialized [in/modified]
+ * @return Pointer to initialized struct
  */
-typedef struct LinkHelpStruct {
-  LinkHSPStruct* ptr;
-  Int4 q_off_trim;
-  Int4 s_off_trim;
-  Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS];
-  Int4 maxsum1;
-  Int4 next_larger;
-} LinkHelpStruct;
-
 static LinkHSPStruct* 
 s_LinkHSPStructReset(LinkHSPStruct* lhsp)
 {
@@ -484,6 +557,16 @@ s_LinkHSPStructReset(LinkHSPStruct* lhsp)
    return lhsp;
 }
 
+/** Perform even gap linking on a list of HSPs 
+ * @param program_number The blast program that generated the HSPs [in]
+ * @param hsp_list List of HSPs to link [in/modified]
+ * @param query_info List of structures describing all query sequences [in]
+ * @param subject_length Number of letters in the subject sequence [in]
+ * @param sbp Score block [in]
+ * @param link_hsp_params Configuration information for the linking process [in]
+ * @param gapped_calculation TRUE if the HSPs are from a gapped search [in]
+ * @return 0 if linking succeeded, nonzero otherwise
+ */
 static Int2
 s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, Int4 subject_length,
@@ -499,7 +582,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 	Boolean linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];
 	Int4 index, index1, num_links, frame_index;
-   LinkOrderingMethod ordering_method;
+   ELinkOrderingMethod ordering_method;
    Int4 num_query_frames, num_subject_frames;
 	Int4 *hp_frame_number;
 	Int4 window_size, trim_size;
@@ -744,7 +827,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
                lh_helper[H_index].ptr = H;
                lh_helper[H_index].q_off_trim = q_off_t;
                lh_helper[H_index].s_off_trim = s_off_t;
-               for(i=0;i<BLAST_NUMBER_OF_ORDERING_METHODS;i++)
+               for(i=0;i<eOrderingMethods;i++)
                   lh_helper[H_index].sum[i] = H->hsp_link.sum[i];
                max[SIGN(s_frame)+1]=
                   MAX(max[SIGN(s_frame)+1],H->hsp_link.sum[1]);
@@ -1014,7 +1097,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
               }
             }
             ordering_method =
-               prob[0]<=prob[1] ? BLAST_SMALL_GAPS : BLAST_LARGE_GAPS;
+               prob[0]<=prob[1] ? eLinkSmallGaps : eLinkLargeGaps;
          }
          else
          {
@@ -1029,7 +1112,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
                          query_info->contexts[query_context].eff_searchsp,
                          BLAST_GapDecayDivisor(gap_decay_rate,
                                               best[1]->hsp_link.num[1]));
-            ordering_method = BLAST_LARGE_GAPS;
+            ordering_method = eLinkLargeGaps;
          }
 
          best[ordering_method]->start_of_chain = TRUE;
@@ -1170,6 +1253,13 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    return 0;
 }
 
+/** Propagate linked set information back to the HSPs that are linked.
+ * The 'num' and 'evalue' field of each HSP are updated for all HSPs
+ * participating in all linked sets
+ * @param linkhsp_array List of pointers to the HSPs; each is encapsulated
+ *                      in a LinkHSPStruct
+ * @param hspcnt The number of HSPs in the list
+ */
 static void 
 s_ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt)
 {
@@ -1199,6 +1289,15 @@ s_ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt)
    }
 }
 
+/** Add an HSP to an existing linked set of HSPs
+ * @param head_hsp_ptr Pointer to first HSP in the linked set; each
+                        HSP is encapsulated in a LinkHSPStruct
+ * @param new_hsp The HSP to add
+ * @param xsum The sum score of the combined linked set
+ * @param evalue The E-value of the combined linked set
+ * @param reverse_link TRUE if HSP is to become the last member of the
+ *                      linked set instead of the first
+ */
 static void 
 s_AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp, 
                   double xsum, double evalue, Boolean reverse_link)
@@ -1483,6 +1582,7 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
    return 0;
 }
 
+/* see description in link_hsps.h */
 Int2 
 BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, Int4 subject_length,
