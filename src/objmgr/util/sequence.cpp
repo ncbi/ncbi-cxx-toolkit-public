@@ -1583,9 +1583,12 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
         }
         if (pos == gaps.front().m_Start) {
             if (m_Flags & eInstantiateGaps) {
-                for (TSeqPos l = gaps.front().m_Length; l > 0; l -= m_Width) {
-                    m_Out << string(min(l, m_Width), gap) << '\n';
+                TSeqPos l = gaps.front().m_Length;
+                while (l > m_Width) {
+                    m_Out << string(m_Width, gap) << '\n';
+                    l -= m_Width;
                 }
+                m_Out << string(l, gap) << '\n';
             } else {
                 m_Out << "-\n";
             }
@@ -2603,6 +2606,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.115  2005/01/26 15:44:19  ucko
+* CFastaOstream::WriteSequence: fix gap-instantiation logic to avoid
+* infinite loops with the gap length isn't an exact multiple of the
+* line width.
+*
 * Revision 1.114  2005/01/13 15:24:16  dicuccio
 * Added optional flags to GetBestXxxForXxx() functions to control the types of
 * checks performed
