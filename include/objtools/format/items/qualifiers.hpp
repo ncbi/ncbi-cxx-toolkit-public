@@ -51,6 +51,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objtools/format/items/flat_seqloc.hpp>
+#include <objtools/format/items/flat_qual_slots.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -135,6 +136,59 @@ protected:
 
     mutable const string* m_Prefix;
     mutable const string* m_Suffix;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// qualifiers container
+
+template<typename Key>
+class CQualContainer : public CObject
+{
+public:
+    // typedef
+    typedef multimap<Key, CConstRef<IFlatQVal> > TQualMMap;
+    typedef TQualMMap::const_iterator            const_iterator;
+    typedef TQualMMap::iterator                  iterator;
+    typedef TQualMMap::size_type                 size_type;
+
+    // constructor
+    CQualContainer(void) {}
+    
+    iterator begin(void) { return m_Quals.begin(); }
+    const_iterator begin(void) const { return m_Quals.begin(); }
+    iterator end(void) { return m_Quals.end(); }
+    const_iterator end(void) const { return m_Quals.end(); }
+    
+    void AddQual(const Key& key, const IFlatQVal* value) {
+        m_Quals.insert(TQualMMap::value_type(key, CConstRef<IFlatQVal>(value)));
+    }
+    
+    bool HasQual(const Key& key) const {
+        return Find(key) != m_Quals.end();
+    }
+    pair<iterator, iterator> GetQuals(const Key& key) {
+        return m_Quals.equal_range(key);
+    }
+    pair<const_iterator, const_iterator> GetQuals(const Key& key) const {
+        return m_Quals.equal_range(key);
+    }
+    void RemoveQuals(const Key& key) {
+        pair<iterator, iterator> range = m_Quals.equal_range(key);
+        m_Quals.erase(range.first, range.second);
+    }
+    iterator Find(const Key& key) {
+        return m_Quals.find(key);
+    }
+    const_iterator Find(const Key& key) const {
+        return m_Quals.find(key);
+    }
+    size_type Size() const {
+        return m_Quals.size();
+    }
+
+private:
+    TQualMMap m_Quals;
 };
 
 
@@ -353,13 +407,19 @@ private:
 class CFlatXrefQVal : public IFlatQVal
 {
 public:
-    typedef CSeq_feat::TDbxref TXref;
-    CFlatXrefQVal(const TXref& value) : m_Value(value) { }
+    typedef CSeq_feat::TDbxref                TXref;
+    typedef CQualContainer<EFeatureQualifier> TQuals;
+
+    CFlatXrefQVal(const TXref& value, const TQuals* quals = 0) 
+        :   m_Value(value), m_Quals(quals) { }
     void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
                 TFlags flags) const;
 
 private:
-    TXref m_Value;
+    bool x_XrefInGeneXref(const CDbtag& dbtag) const;
+
+    TXref             m_Value;
+    CConstRef<TQuals> m_Quals;
 };
 
 
@@ -435,6 +495,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/30 20:25:26  shomrat
+* + class CQualContainer
+*
 * Revision 1.5  2004/03/18 15:28:45  shomrat
 * Fixes to quals formatting; + new Product qual
 *
