@@ -42,8 +42,6 @@
 #include <objmgr/reader.hpp>
 
 #include <dbapi/driver/public.hpp>
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/driver_mgr.hpp>
 
 #include <memory>
 
@@ -157,6 +155,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2003/07/24 20:36:48  vasilche
+* Fixed includes.
+*
 * Revision 1.6  2003/07/24 19:28:08  vasilche
 * Implemented SNP split for ID1 loader.
 *
