@@ -72,6 +72,11 @@ public:
     const CNcbiResource& GetResource(void) const { return x_GetResource(); }
     CNcbiResource&       GetResource(void)       { return x_GetResource(); }
 
+    // 1-based for FastCGI (but 0 before the first iteration starts);
+    // always 0 for normal CGIs.
+    unsigned int GetFCgiIteration(void) const { return m_Iteration; }
+    bool         IsFastCGI       (void) const;
+
     virtual void Init(void);  // initialization
     virtual void Exit(void);  // cleanup
 
@@ -150,6 +155,8 @@ private:
 
     auto_ptr<CCookieAffinity> m_caf;         // Cookie affinity service pointer
     char*                     m_hostIP;      // Cookie affinity host IP buffer
+
+    unsigned int              m_Iteration;
 };
 
 
@@ -206,6 +213,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/03/24 16:14:11  ucko
+* New accessors GetFCgiIteration and IsFastCGI; new data member m_Iteration.
+*
 * Revision 1.35  2003/03/03 16:36:33  kuznets
 * explicit use of std namespace when reffering exception
 *
