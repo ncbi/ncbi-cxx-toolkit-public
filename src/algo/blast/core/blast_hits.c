@@ -412,13 +412,13 @@ diag_uniq_compare_hsps(const void* v1, const void* v2)
        h1->query.end <= h2->query.end &&  
        h1->subject.offset >= h2->subject.offset && 
        h1->subject.end <= h2->subject.end && 
-       h1->evalue >= h2->evalue) { 
+       h1->score <= h2->score) { 
       (*hp1)->score = 0;
    } else if (h1->query.offset <= h2->query.offset &&  
               h1->query.end >= h2->query.end &&  
               h1->subject.offset <= h2->subject.offset && 
               h1->subject.end >= h2->subject.end && 
-              h1->evalue <= h2->evalue) { 
+              h1->score >= h2->score) { 
       (*hp2)->score = 0;
    }
    
