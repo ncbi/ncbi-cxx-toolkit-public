@@ -565,19 +565,57 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWrite
 
 /******************************************************************************
  *  Connectionless (datagram) sockets
+ *
+ *  How the datagram exchange API works:
+ *
+ *  Datagram socket is created with special DSOCK_Create[Ex] calls but the
+ *  resulting object is a SOCK handle. That is, almost all SOCK routines
+ *  may be applied to the handle. The only exception is SOCK_Shutdown().
+ *  For datagram sockets there are differences in how I/O behaves:
+ *
+ *  SOCK_Write() writes data into an internal message buffer, appending new
+ *  data as they come with each SOCK_Write(). When the message is complete,
+ *  SOCK_SendMsg() should be called (optionally with additional last,
+ *  or the only [if no SOCK_Write() preceded the call] message fragment)
+ *  to actually send the message down the wire. If successful, SOCK_SendMsg()
+ *  cleans the internal buffer, and the process may repeat. If unsuccessful,
+ *  SOCK_SendMsg() can be repeated with restiction that no additional data are
+ *  provided in the call. This way, the entire message will be attempted to
+ *  be sent again. On the other hand, if after any SOCK_SendMsg() new data
+ *  are added [regardless of whether previous data were successfully sent
+ *  or not], all previously written [and kept in the internal send buffer]
+ *  data get dropped and replaced with the new data.
+ *
+ *  DSOCK_WaitMsg() can be used to learn whether there is a new message
+ *  available for read by DSOCK_RecvMsg() immediately.
+ *
+ *  SOCK_RecvMsg() receives the message into an internal receive buffer,
+ *  and optionally can return the initial datagram fragment via provided
+ *  buffer [this initial fragment is then stripped from what remains unread
+ *  in the internal buffer]. Optimized version can supply a maximal message
+ *  size (if known in advance), or 0 to get a message of any allowable size.
+ *  The actual size of the received message can be obtained via a
+ *  pointer-type argument 'msgsize'. The message kept in the internal buffer
+ *  can be read out in several SOCK_Read() calls, last returning eIO_Closed,
+ *  when all data have been taken out. SOCK_Wait() returns eIO_Success while
+ *  there are data in the internal message buffer that SOCK_Read() can read.
+ *
+ *  SOCK_WipeMsg() can be used to clear the internal message buffers in
+ *  either eIO_Read or eIO_Write directions, meaning receive and send
+ *  buffers correspondingly.
  */
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
-(unsigned short port,                   /* [in]  may be 0 for unbound        */
- SOCK*          sock                    /* [out] socket created              */
+(unsigned short  port,                  /* [in]  may be 0 for unbound        */
+ SOCK*           sock                   /* [out] socket created              */
  );
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
-(unsigned short port,                   /* [in]  may be 0 for unbound        */
- SOCK*          sock,                   /* [out] socket created              */
- ESwitch        do_log                  /* [in]  whether to log data activity*/
+(unsigned short  port,                  /* [in]  may be 0 for unbound        */
+ SOCK*           sock,                  /* [out] socket created              */
+ ESwitch         do_log                 /* [in]  whether to log data activity*/
  );
 
 
@@ -605,9 +643,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
- size_t          msgsize,               /* [in]  expected msg size, 0 for max*/
  void*           buf,                   /* [in]  buf to store msg at,m.b.NULL*/
  size_t          buflen,                /* [in]  buf length provided         */
+ size_t          maxmsglen,             /* [in]  maximal expected message len*/
  size_t*         msglen,                /* [out] actual msg size, may be NULL*/
  unsigned int*   sender_addr,           /* [out] net byte order, may be NULL */
  unsigned short* sender_port            /* [out] host byte order, may be NULL*/
@@ -615,8 +653,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
-(SOCK      sock,                        /* [in]  SOCK from DSOCK_Create[Ex]()*/
- EIO_Event direction                    /* [in]  either of eIO_Read|eIO_Write*/
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ EIO_Event       direction              /* [in]  either of eIO_Read|eIO_Write*/
  );
 
 
@@ -731,6 +769,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2003/04/30 16:59:05  lavr
+ * Added notice about how datagram API is supposed to work
+ *
  * Revision 6.34  2003/04/11 20:57:43  lavr
  * DSOCK_Connect() documented
  *
