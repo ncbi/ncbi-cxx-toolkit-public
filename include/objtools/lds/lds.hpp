@@ -71,6 +71,9 @@ public:
     // Open LDS database (Read/Write mode)
     void Open();
 
+    // Flush all cache buffers to disk
+    void Sync();
+
     // Return reference on database tables
     SLDS_TablesCollection& GetTables() { return m_db; }
 
@@ -122,6 +125,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/10/09 16:44:48  kuznets
+ * Added Sync() method for LDS database to be able explicitly flush cache buffer
+ * (when we at the DB update checkpoint)
+ *
  * Revision 1.14  2003/10/08 18:19:14  kuznets
  * Database holder class changed to keep more than one database.
  *
