@@ -1343,7 +1343,6 @@ CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
 }
 
 
-inline
 void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
 {
     TRangeMap& ranges = m_IdMap[cvt.m_Src_id_Handle];
@@ -1662,6 +1661,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2003/11/05 00:33:53  ucko
+* Un-inline CSeq_loc_Conversion_Set::Add due to use before definition.
+*
 * Revision 1.99  2003/11/04 21:10:01  grichenk
 * Optimized feature mapping through multiple segments.
 * Fixed problem with CAnnotTypes_CI not releasing scope
