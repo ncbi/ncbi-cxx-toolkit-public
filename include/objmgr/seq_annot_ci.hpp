@@ -48,6 +48,9 @@ class CSeq_annot_Handle;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CBioseq_set_Info;
+class CBioseq_Handle;
+class CBioseq_set_Handle;
+
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_CI
 {
@@ -60,8 +63,12 @@ public:
     CSeq_annot_CI(void);
     explicit CSeq_annot_CI(const CSeq_entry_Handle& entry,
                            EFlags flags = eSearch_recursive);
+    explicit CSeq_annot_CI(const CBioseq_set_Handle& bioseq_set,
+                           EFlags flags = eSearch_recursive);
     CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
                   EFlags flags = eSearch_recursive);
+    // Iterate from the bioseq up to the TSE
+    explicit CSeq_annot_CI(const CBioseq_Handle& bioseq);
     CSeq_annot_CI(const CSeq_annot_CI& iter);
     ~CSeq_annot_CI(void);
 
@@ -106,6 +113,8 @@ private:
     TAnnot_CI                   m_AnnotIter;
     CSeq_annot_Handle           m_CurrentAnnot;
     TEntryStack                 m_EntryStack;
+    // Used when initialized with a bioseq handle to iterate upwards
+    bool                        m_UpTree;
 };
 
 
@@ -152,6 +161,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/04/26 14:13:45  grichenk
+* Added constructors from bioseq-set handle and bioseq handle.
+*
 * Revision 1.8  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

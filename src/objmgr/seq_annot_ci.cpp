@@ -69,6 +69,7 @@ CSeq_annot_CI::SEntryLevel_CI::~SEntryLevel_CI(void)
 
 
 CSeq_annot_CI::CSeq_annot_CI(void)
+    : m_UpTree(false)
 {
 }
 
@@ -79,6 +80,7 @@ CSeq_annot_CI::~CSeq_annot_CI(void)
 
 
 CSeq_annot_CI::CSeq_annot_CI(const CSeq_annot_CI& iter)
+    : m_UpTree(false)
 {
     *this = iter;
 }
@@ -91,6 +93,7 @@ CSeq_annot_CI& CSeq_annot_CI::operator=(const CSeq_annot_CI& iter)
         m_AnnotIter = iter.m_AnnotIter;
         m_CurrentAnnot = iter.m_CurrentAnnot;
         m_EntryStack = iter.m_EntryStack;
+        m_UpTree = iter.m_UpTree;
     }
     return *this;
 }
@@ -98,16 +101,35 @@ CSeq_annot_CI& CSeq_annot_CI::operator=(const CSeq_annot_CI& iter)
 
 CSeq_annot_CI::CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
                              EFlags flags)
-    : m_Scope(scope)
+    : m_Scope(scope),
+      m_UpTree(false)
 {
     x_Initialize(scope.GetSeq_entryHandle(entry), flags);
 }
 
 
 CSeq_annot_CI::CSeq_annot_CI(const CSeq_entry_Handle& entry, EFlags flags)
-    : m_Scope(entry.GetScope())
+    : m_Scope(entry.GetScope()),
+      m_UpTree(false)
 {
     x_Initialize(entry, flags);
+}
+
+
+CSeq_annot_CI::CSeq_annot_CI(const CBioseq_Handle& bioseq)
+    : m_Scope(bioseq.GetScope()),
+      m_UpTree(true)
+{
+    x_Initialize(bioseq.GetParentEntry(), eSearch_entry);
+}
+
+
+CSeq_annot_CI::CSeq_annot_CI(const CBioseq_set_Handle& bioseq_set,
+                             EFlags flags)
+    : m_Scope(bioseq_set.GetScope()),
+      m_UpTree(false)
+{
+    x_Initialize(bioseq_set.GetParentEntry(), flags);
 }
 
 
@@ -169,6 +191,16 @@ void CSeq_annot_CI::x_Settle(void)
             return;
         }
 
+        if ( m_UpTree ) {
+            // Iterating from a bioseq up to its TSE
+            if ( m_CurrentEntry->HasParent_Info() ) {
+                x_SetEntry(m_CurrentEntry->GetParentSeq_entry_Info());
+                continue;
+            }
+            m_CurrentAnnot = CSeq_annot_Handle();
+            return;
+        }
+
         if ( m_EntryStack.empty() ) {
             m_CurrentAnnot = CSeq_annot_Handle();
             return;
@@ -191,6 +223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/04/26 14:13:46  grichenk
+* Added constructors from bioseq-set handle and bioseq handle.
+*
 * Revision 1.6  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
