@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.35 2002/12/03 20:18:51 kholodov Exp $
+-- $Id: docsum.asn,v 1.36 2003/07/09 18:10:39 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.36  2003/07/09 18:10:39  sherry
+-- *** empty log message ***
+--
 -- Revision 1.35  2002/12/03 20:18:51  kholodov
 -- Modified: validation status is represented by 4 boolean values
 --
@@ -195,7 +198,12 @@ NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all SNP bat
 NSE-Assay ::= SEQUENCE {
 	handle VisibleString,
 	batch VisibleString,			-- Submitter (local) batch id
-	batch-id INTEGER,			-- dbSNP batch_id. Use to join assay to subsnp data (NSE-ss, below).
+	batch-id INTEGER,			-- dbSNP batch_id. Use to join assay to subsnp and validation data (NSE-ss, NSE-ss, below).
+	batch-type ENUMERATED {			-- distinguishes submission batches from follow-up confirmation of refSNPs. 
+									-- Join to appropriate object by batch-id.
+		snpassay (1),				-- detailed assay conditions for NSE-ss.
+		validation (2),				-- refSNPs confirmed by subsequent experimental data. Data for NSE-rs.validated-in-other-pop
+		doublehit (3)				-- refSNPs with both alleles seen twice. Data for NSE-rs.validated-by-2hit-2allele
 	moltype ENUMERATED {
 		genomic (1),
 		cDNA (2),
@@ -206,6 +214,7 @@ NSE-Assay ::= SEQUENCE {
 	method-ex SEQUENCE OF VisibleString OPTIONAL,			-- description of deviation from/addition to given method
 	samplesize INTEGER OPTIONAL,					-- number of chromosomes examined during ascertainment
 	organism VisibleString OPTIONAL,				-- Scientific Name
+	taxid INTEGER OPTIONAL,							-- taxonomy ID for organism from NCBI taxonomy database
 	population VisibleString OPTIONAL,				-- Population surveyed for variation
 	strains SEQUENCE OF VisibleString OPTIONAL,			-- Strains used in survey for variation
 	citation SEQUENCE OF VisibleString OPTIONAL,
@@ -325,10 +334,12 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 
 	valid-prob-min INTEGER OPTIONAL,	-- minimum reported success rate of all submissions in cluster
 	valid-prob-max INTEGER OPTIONAL,	-- maximum reported success rate of all submissions in cluster
-	validated-by-submitter BOOLEAN OPTIONAL, -- at lease one ss in cluster was validated by independent assay
+	validated-other-pop BOOLEAN OPTIONAL, -- at least one ss in cluster was validated by independent assay
+	val-other-pop-batches SET OF INTEGER OPTIONAL, -- dbSNP batch-id's for independent assay validation data. Use batch-ids to get methods etc.
 	validated-by-frequency BOOLEAN OPTIONAL, -- at least one subsnp in cluster has frequency data submitted
-	validated-by-cluster   BOOLEAN OPTIONAL, -- cluster has 2+ submissions
+	validated-by-cluster   BOOLEAN OPTIONAL, -- cluster has 2+ submissions, with 1+ submissions assayed with a non-computational method
 	validated-by-2hit-2allele BOOLEAN OPTIONAL, --all alleles have been observed in 2+ chromosomes
+	val-2hit-2allele SET OF INTEGER OPTIONAL, -- dbSNP batch-id's for double-hit snp validation data. Use batch-id to get methods, etc.
 	genotype BOOLEAN OPTIONAL,		-- at least one genotype reported for this refSNP
 	linkout BOOLEAN OPTIONAL,		-- YES if linkout to at least one submitter website
 	last-action NSE-Date OPTIONAL,		-- Date of update or create
@@ -379,7 +390,10 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
 		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
 		reversed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
-						-- by seq-ss-exemplar. 
+								-- by seq-ss-exemplar. 
+	strand ENUMERATED {			-- strand is defined as TOP/BOTTOM by nature of flanking nucleotide sequence itself
+		top			(1),		-- 
+		bottom		(2) } OPTIONAL,
 	moltype ENUMERATED {			-- moltype from Batch table
 		genomic (1),
 		cDNA (2),
