@@ -38,6 +38,7 @@
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <vector>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -75,14 +76,22 @@ public:
     // member modification
     // descr
     typedef CSeq_descr TDescr;
-    virtual bool IsSetDescr(void) const = 0;
-    virtual const TDescr& GetDescr(void) const = 0;
-    virtual void SetDescr(TDescr& v) = 0;
-    virtual TDescr& x_SetDescr(void) = 0;
-    virtual void ResetDescr(void) = 0;
+    bool IsSetDescr(void) const;
+    bool CanGetDescr(void) const;
+    const TDescr& GetDescr(void) const;
+    TDescr& SetDescr(void);
+    void SetDescr(TDescr& v);
+    void ResetDescr(void);
     bool AddSeqdesc(CSeqdesc& d);
     bool RemoveSeqdesc(const CSeqdesc& d);
-    void AddSeq_descr(TDescr& v);
+    void AddSeq_descr(const TDescr& v);
+
+    virtual bool x_IsSetDescr(void) const = 0;
+    virtual bool x_CanGetDescr(void) const = 0;
+    virtual const TDescr& x_GetDescr(void) const = 0;
+    virtual TDescr& x_SetDescr(void) = 0;
+    virtual void x_SetDescr(TDescr& v) = 0;
+    virtual void x_ResetDescr(void) = 0;
 
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
@@ -114,10 +123,15 @@ public:
 
     void x_SetAnnot(void);
     void x_SetAnnot(const CBioseq_Base_Info& info);
-    void x_DoUpdateObject(void);
+
+    void x_AddDescrChunkId(TChunkId chunk_id);
+    void x_AddAnnotChunkId(TChunkId chunk_id);
 
     virtual TObjAnnot& x_SetObjAnnot(void) = 0;
     virtual void x_ResetObjAnnot(void) = 0;
+
+    void x_DoUpdate(TNeedUpdateFlags flags);
+    void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
 
 private:
     friend class CAnnotTypes_CI;
@@ -129,6 +143,9 @@ private:
     // members
     TAnnot              m_Annot;
     TObjAnnot*          m_ObjAnnot;
+
+    TChunkIds           m_DescrChunks;
+    TChunkIds           m_AnnotChunks;
 };
 
 
@@ -141,22 +158,37 @@ private:
 
 
 inline
+bool CBioseq_Base_Info::IsSetDescr(void) const
+{
+    return x_NeedUpdate(fNeedUpdate_descr) || x_IsSetDescr();
+}
+
+
+inline
+bool CBioseq_Base_Info::CanGetDescr(void) const
+{
+    return x_NeedUpdate(fNeedUpdate_descr) || x_CanGetDescr();
+}
+
+
+inline
 bool CBioseq_Base_Info::IsSetAnnot(void) const
 {
-    return m_ObjAnnot != 0;
+    return m_ObjAnnot != 0 || x_NeedUpdate(fNeedUpdate_annot);
 }
 
 
 inline
 bool CBioseq_Base_Info::HasAnnots(void) const
 {
-    return !m_Annot.empty();
+    return !m_Annot.empty() || x_NeedUpdate(fNeedUpdate_annot);
 }
 
 
 inline
 const CBioseq_Base_Info::TAnnot& CBioseq_Base_Info::GetAnnot(void) const
 {
+    x_Update(fNeedUpdate_annot);
     return m_Annot;
 }
 
@@ -167,6 +199,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.4  2004/07/12 15:05:31  grichenk
  * Moved seq-id mapper from xobjmgr to seq library
  *

@@ -96,12 +96,12 @@ public:
     void RemoveId(const CSeq_id_Handle& id);
     string IdString(void) const;
 
-    bool IsSetDescr(void) const;
-    bool CanGetDescr(void) const;
-    const TDescr& GetDescr(void) const;
-    void SetDescr(TDescr& v);
+    bool x_IsSetDescr(void) const;
+    bool x_CanGetDescr(void) const;
+    const TDescr& x_GetDescr(void) const;
     TDescr& x_SetDescr(void);
-    void ResetDescr(void);
+    void x_SetDescr(TDescr& v);
+    void x_ResetDescr(void);
 
     // inst
     typedef TObject::TInst TInst;
@@ -179,6 +179,9 @@ public:
 
     void x_AttachMap(CSeqMap& seq_map);
 
+    void x_AddSeq_dataChunkId(TChunkId chunk_id);
+    void x_DoUpdate(TNeedUpdateFlags flags);
+
 protected:
     friend class CDataSource;
     friend class CScope_Impl;
@@ -236,6 +239,7 @@ private:
     mutable CConstRef<CSeqMap>  m_SeqMap;
     mutable CFastMutex          m_SeqMap_Mtx;
 
+    TChunkIds               m_Seq_dataChunks;
 };
 
 
@@ -267,6 +271,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.20  2004/07/12 15:05:31  grichenk
  * Moved seq-id mapper from xobjmgr to seq library
  *

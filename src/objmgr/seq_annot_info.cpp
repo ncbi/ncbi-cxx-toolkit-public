@@ -200,13 +200,14 @@ void CSeq_annot_Info::x_UpdateName(void)
 
 CConstRef<CSeq_annot> CSeq_annot_Info::GetCompleteSeq_annot(void) const
 {
+    x_UpdateComplete();
     return GetSeq_annotCore();
 }
 
 
 CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotCore(void) const
 {
-    x_UpdateObject();
+    x_UpdateCore();
     return m_Object;
 }
 
@@ -243,10 +244,10 @@ void CSeq_annot_Info::x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info)
 }
 
 
-void CSeq_annot_Info::x_DoUpdateObject(void)
+void CSeq_annot_Info::x_DoUpdate(TNeedUpdateFlags /*flags*/)
 {
     NCBI_THROW(CObjMgrException, eNotImplemented,
-               "CSeq_annot_Info::x_DoUpdateObject: unimplemented");
+               "CSeq_annot_Info::x_DoUpdate: unimplemented");
 }
 
 
@@ -472,6 +473,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.17  2004/06/07 17:01:17  grichenk
  * Implemented referencing through locs annotations
  *

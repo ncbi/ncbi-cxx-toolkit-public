@@ -79,14 +79,14 @@ CBioseq_set_Info::~CBioseq_set_Info(void)
 
 CConstRef<CBioseq_set> CBioseq_set_Info::GetCompleteBioseq_set(void) const
 {
-    return GetBioseq_setCore();
+    x_UpdateComplete();
+    return m_Object;
 }
 
 
 CConstRef<CBioseq_set> CBioseq_set_Info::GetBioseq_setCore(void) const
 {
-    x_UpdateObject();
-    _ASSERT(!x_NeedUpdateObject());
+    x_UpdateCore();
     return m_Object;
 }
 
@@ -178,19 +178,27 @@ void CBioseq_set_Info::x_ParentDetach(CSeq_entry_Info& parent)
 }
 
 
-void CBioseq_set_Info::x_DoUpdateObject(void)
+void CBioseq_set_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
-    if ( !m_Seq_set.empty() ) {
-        const CBioseq_set::TSeq_set& seq_set = m_Object->GetSeq_set();
-        _ASSERT(seq_set.size() == m_Seq_set.size());
-        CBioseq_set::TSeq_set::const_iterator it2 = seq_set.begin();
-        NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
-            (*it)->x_UpdateObject();
-            _ASSERT(it2->GetPointer() == &(*it)->x_GetObject());
-            ++it2;
+    if ( flags & (fNeedUpdate_core|fNeedUpdate_children) ) {
+        if ( !m_Seq_set.empty() ) {
+            const CBioseq_set::TSeq_set& seq_set = m_Object->GetSeq_set();
+            _ASSERT(seq_set.size() == m_Seq_set.size());
+            CBioseq_set::TSeq_set::const_iterator it2 = seq_set.begin();
+            NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
+                if ( flags & fNeedUpdate_core ) {
+                    (*it)->x_UpdateCore();
+                }
+                if ( flags & fNeedUpdate_children ) {
+                    (*it)->x_Update((flags & fNeedUpdate_children) | 
+                                    (flags >> kNeedUpdate_bits));
+                }
+                _ASSERT(it2->GetPointer() == &(*it)->x_GetObject());
+                ++it2;
+            }
         }
     }
-    TParent::x_DoUpdateObject();
+    TParent::x_DoUpdate(flags);
 }
 
 
@@ -273,27 +281,21 @@ int CBioseq_set_Info::x_GetBioseq_set_Id(const CObject_id& object_id)
 }
 
 
-bool CBioseq_set_Info::IsSetDescr(void) const
+bool CBioseq_set_Info::x_IsSetDescr(void) const
 {
     return m_Object->IsSetDescr();
 }
 
 
-bool CBioseq_set_Info::CanGetDescr(void) const
+bool CBioseq_set_Info::x_CanGetDescr(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetDescr();
+    return m_Object->CanGetDescr();
 }
 
 
-const CSeq_descr& CBioseq_set_Info::GetDescr(void) const
+const CSeq_descr& CBioseq_set_Info::x_GetDescr(void) const
 {
     return m_Object->GetDescr();
-}
-
-
-void CBioseq_set_Info::SetDescr(TDescr& v)
-{
-    m_Object->SetDescr(v);
 }
 
 
@@ -303,7 +305,13 @@ CSeq_descr& CBioseq_set_Info::x_SetDescr(void)
 }
 
 
-void CBioseq_set_Info::ResetDescr(void)
+void CBioseq_set_Info::x_SetDescr(TDescr& v)
+{
+    m_Object->SetDescr(v);
+}
+
+
+void CBioseq_set_Info::x_ResetDescr(void)
 {
     m_Object->ResetDescr();
 }
@@ -422,6 +430,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.7  2004/05/21 21:42:12  gorelenk
  * Added PCH ncbi_pch.hpp
  *

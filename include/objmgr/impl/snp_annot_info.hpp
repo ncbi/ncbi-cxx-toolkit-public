@@ -254,7 +254,7 @@ protected:
     void x_SetGi(int gi);
     void x_AddSNP(const SSNP_Info& snp_info);
 
-    void x_DoUpdateObject(void);
+    void x_DoUpdate(TNeedUpdateFlags flags);
 
 private:
     CSeq_annot_SNP_Info& operator=(const CSeq_annot_SNP_Info&);
@@ -445,6 +445,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.14  2004/05/04 18:08:47  grichenk
 * Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
 *

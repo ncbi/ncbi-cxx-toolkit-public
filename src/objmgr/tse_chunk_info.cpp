@@ -69,7 +69,16 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
     _ASSERT(tse_info.m_Chunks.find(GetChunkId()) == tse_info.m_Chunks.end());
     m_TSE_Info = &tse_info;
     tse_info.m_Chunks[GetChunkId()].Reset(this);
+    // attach descrs
+    ITERATE ( TPlaces, it, m_DescrPlaces ) {
+        x_GetBase(*it).x_AddDescrChunkId(GetChunkId());
+    }
+    // attach annots
+    ITERATE ( TPlaces, it, m_AnnotPlaces ) {
+        x_GetBase(*it).x_AddAnnotChunkId(GetChunkId());
+    }
     tse_info.x_SetDirtyAnnotIndex();
+    // attach seq-data
     x_TSEAttachSeq_data();
 }
 
@@ -96,6 +105,12 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
         x_UpdateAnnotIndexContents(tse);
         m_DirtyAnnotIndex = false;
     }
+}
+
+
+void CTSE_Chunk_Info::x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id)
+{
+    m_DescrPlaces.push_back(TPlace(place_type, place_id));
 }
 
 
@@ -198,6 +213,13 @@ CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(const TPlace& place)
 }
 
 
+void CTSE_Chunk_Info::x_LoadDescr(const TPlace& place,
+                                  const CSeq_descr& descr)
+{
+    x_GetBase(place).AddSeq_descr(descr);
+}
+
+
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
@@ -216,6 +238,7 @@ void CTSE_Chunk_Info::x_TSEAttachSeq_data(void)
             NCBI_THROW(CObjMgrException, eOtherError,
                        "Chunk-Info Seq-data has bad Seq-id: "+id.AsString());
         }
+        const_cast<CBioseq_Info&>(*bioseq).x_AddSeq_dataChunkId(GetChunkId());
         const CSeqMap& seq_map = bioseq->GetSeqMap();
         const_cast<CSeqMap&>(seq_map).SetRegionInChunk(*this,
                                                        range.GetFrom(),
@@ -246,6 +269,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.10  2004/06/15 14:06:49  vasilche
 * Added support to load split sequences.
 *

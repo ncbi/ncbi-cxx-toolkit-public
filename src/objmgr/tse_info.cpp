@@ -362,6 +362,17 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 }
 
 
+CTSE_Chunk_Info& CTSE_Info::GetChunk(TChunkId chunk_id)
+{
+    TChunks::iterator iter = m_Chunks.find(chunk_id);
+    if ( iter == m_Chunks.end() ) {
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "invalid chunk id: "+NStr::IntToString(chunk_id));
+    }
+    return *iter->second;
+}
+
+
 CRef<CTSE_Chunk_Info> CTSE_Info::GetNotLoadedChunk(void)
 {
     NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
@@ -370,14 +381,6 @@ CRef<CTSE_Chunk_Info> CTSE_Info::GetNotLoadedChunk(void)
         }
     }
     return CRef<CTSE_Chunk_Info>();
-}
-
-
-void CTSE_Info::LoadAllChunks(void)
-{
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->Load();
-    }
 }
 
 
@@ -728,6 +731,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.45  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *

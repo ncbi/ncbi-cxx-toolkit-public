@@ -98,11 +98,35 @@ public:
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     virtual void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
-    bool x_NeedUpdateObject(void) const;
-    void x_SetNeedUpdateObject(void);
-    void x_ResetNeedUpdateObject(void);
-    void x_UpdateObject(void) const;
-    virtual void x_DoUpdateObject(void);
+    enum {
+        kNeedUpdate_bits        = 8,
+        fNeedUpdate_this        = (1<<kNeedUpdate_bits)-1,
+        fNeedUpdate_children    = fNeedUpdate_this<<kNeedUpdate_bits
+    };
+    enum ENeedUpdate {
+        fNeedUpdate_descr             = 1<<0, // descr of this object
+        fNeedUpdate_annot             = 1<<1, // annot of this object
+        fNeedUpdate_seq_data          = 1<<2, // seq-data of this object
+        fNeedUpdate_core              = 1<<3, // core
+        fNeedUpdate_children_descr    = fNeedUpdate_descr   <<kNeedUpdate_bits,
+        fNeedUpdate_children_annot    = fNeedUpdate_annot   <<kNeedUpdate_bits,
+        fNeedUpdate_children_seq_data = fNeedUpdate_seq_data<<kNeedUpdate_bits,
+        fNeedUpdate_children_core     = fNeedUpdate_core    <<kNeedUpdate_bits
+    };
+    typedef unsigned TNeedUpdateFlags;
+    bool x_NeedUpdate(ENeedUpdate flag) const;
+    void x_SetNeedUpdate(TNeedUpdateFlags flags);
+    virtual void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
+
+    void x_Update(TNeedUpdateFlags flags) const;
+    virtual void x_DoUpdate(TNeedUpdateFlags flags);
+
+    void x_UpdateComplete(void) const;
+    void x_UpdateCore(void) const;
+
+    typedef int TChunkId;
+    typedef vector<TChunkId> TChunkIds;
+    void x_LoadChunks(const TChunkIds& chunks) const;
 
 protected:
     void x_BaseParentAttach(CTSE_Info_Object& parent);
@@ -118,7 +142,7 @@ private:
     CTSE_Info*              m_TSE_Info;
     CTSE_Info_Object*       m_Parent_Info;
     bool                    m_DirtyAnnotIndex;
-    bool                    m_NeedUpdateObject;
+    TNeedUpdateFlags        m_NeedUpdateFlags;
 };
 
 
@@ -152,9 +176,9 @@ bool CTSE_Info_Object::x_DirtyAnnotIndex(void) const
 
 
 inline
-bool CTSE_Info_Object::x_NeedUpdateObject(void) const
+bool CTSE_Info_Object::x_NeedUpdate(ENeedUpdate flag) const
 {
-    return m_NeedUpdateObject;
+    return (m_NeedUpdateFlags & flag) != 0;
 }
 
 
@@ -164,6 +188,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.2  2004/03/24 18:30:29  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.

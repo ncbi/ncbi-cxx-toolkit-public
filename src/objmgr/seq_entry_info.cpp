@@ -225,29 +225,34 @@ CBioseq_Info& CSeq_entry_Info::SelectSeq(CBioseq& seq)
 }
 
 
-void CSeq_entry_Info::x_DoUpdateObject(void)
+void CSeq_entry_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( m_Contents ) {
-        m_Contents->x_UpdateObject();
-        _ASSERT(!m_Contents->x_NeedUpdateObject());
-        _ASSERT(!IsSet() ||
-                GetSet().GetBioseq_setCore() == &m_Object->GetSet());
-        _ASSERT(!IsSeq() ||
-                GetSeq().GetBioseqCore() == &m_Object->GetSeq());
+        m_Contents->x_Update(flags);
+        _ASSERT(Which()==m_Object->Which());
+        _ASSERT(!IsSet()||GetSet().GetBioseq_setCore() == &m_Object->GetSet());
+        _ASSERT(!IsSeq()||GetSeq().GetBioseqCore() == &m_Object->GetSeq());
     }
+    TParent::x_DoUpdate(flags);
+}
+
+
+void CSeq_entry_Info::x_SetNeedUpdateContents(TNeedUpdateFlags flags)
+{
+    x_SetNeedUpdate(flags);
 }
 
 
 CConstRef<CSeq_entry> CSeq_entry_Info::GetCompleteSeq_entry(void) const
 {
-    return GetSeq_entryCore();
+    x_UpdateComplete();
+    return m_Object;
 }
 
 
 CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entryCore(void) const
 {
-    x_UpdateObject();
-    _ASSERT(!x_NeedUpdateObject());
+    x_UpdateCore();
     return m_Object;
 }
 
@@ -449,44 +454,51 @@ void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 
 bool CSeq_entry_Info::IsSetDescr(void) const
 {
+    x_Update(fNeedUpdate_descr);
     return bool(m_Contents) && m_Contents->IsSetDescr();
 }
 
 
 const CSeq_descr& CSeq_entry_Info::GetDescr(void) const
 {
+    x_Update(fNeedUpdate_descr);
     return m_Contents->GetDescr();
 }
 
 
 void CSeq_entry_Info::SetDescr(TDescr& v)
 {
+    x_Update(fNeedUpdate_descr);
     m_Contents->SetDescr(v);
 }
 
 
 void CSeq_entry_Info::ResetDescr(void)
 {
+    x_Update(fNeedUpdate_descr);
     m_Contents->ResetDescr();
 }
 
 
 bool CSeq_entry_Info::AddSeqdesc(CSeqdesc& d)
 {
+    x_Update(fNeedUpdate_descr);
     return m_Contents->AddSeqdesc(d);
 }
 
 
 bool CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
 {
+    x_Update(fNeedUpdate_descr);
     return m_Contents->RemoveSeqdesc(d);
 }
 
 
 void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
 {
+    x_Update(fNeedUpdate_descr);
     if ( src.IsSetDescr() ) {
-        m_Contents->AddSeq_descr(src.m_Contents->x_SetDescr());
+        m_Contents->AddSeq_descr(src.m_Contents->SetDescr());
     }
 }
 
@@ -537,6 +549,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.15  2004/05/21 21:42:13  gorelenk
  * Added PCH ncbi_pch.hpp
  *

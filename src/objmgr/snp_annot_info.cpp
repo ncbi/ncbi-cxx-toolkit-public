@@ -575,8 +575,9 @@ void CSeq_annot_SNP_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 }
 
 
-void CSeq_annot_SNP_Info::x_DoUpdateObject(void)
+void CSeq_annot_SNP_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
+    TParent::x_DoUpdate(flags);
 }
 
 
@@ -646,6 +647,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.15  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.14  2004/06/30 20:53:33  vasilche
  * Added parsing string dbSNP id for SNP table.
  *

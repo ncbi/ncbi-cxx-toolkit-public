@@ -161,23 +161,78 @@ void CBioseq_Base_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
-void CBioseq_Base_Info::x_DoUpdateObject(void)
+void CBioseq_Base_Info::x_AddDescrChunkId(TChunkId id)
 {
-    if ( IsSetAnnot() ) {
-        _ASSERT(m_ObjAnnot && m_ObjAnnot->size() == m_Annot.size());
-        TObjAnnot::iterator it2 = m_ObjAnnot->begin();
-        NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
-            (*it)->x_UpdateObject();
-            it2->Reset(const_cast<CSeq_annot*>(&(*it)->x_GetObject()));
-            ++it2;
+    m_DescrChunks.push_back(id);
+    x_SetNeedUpdate(fNeedUpdate_descr);
+}
+
+
+void CBioseq_Base_Info::x_AddAnnotChunkId(TChunkId id)
+{
+    m_AnnotChunks.push_back(id);
+    x_SetNeedUpdate(fNeedUpdate_annot);
+}
+
+
+void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
+{
+    if ( flags & fNeedUpdate_descr ) {
+        x_LoadChunks(m_DescrChunks);
+    }
+    if ( flags & (fNeedUpdate_annot|fNeedUpdate_children) ) {
+        x_LoadChunks(m_AnnotChunks);
+        if ( IsSetAnnot() ) {
+            _ASSERT(m_ObjAnnot && m_ObjAnnot->size() == m_Annot.size());
+            TObjAnnot::iterator it2 = m_ObjAnnot->begin();
+            NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
+                (*it)->x_UpdateComplete();
+                it2->Reset(const_cast<CSeq_annot*>(&(*it)->x_GetObject()));
+                ++it2;
+            }
         }
     }
-    TParent::x_DoUpdateObject();
+    TParent::x_DoUpdate(flags);
+}
+
+
+void CBioseq_Base_Info::x_SetNeedUpdateParent(TNeedUpdateFlags flags)
+{
+    GetParentSeq_entry_Info().x_SetNeedUpdateContents(flags);
+}
+
+
+const CBioseq_Base_Info::TDescr& CBioseq_Base_Info::GetDescr(void) const
+{
+    x_Update(fNeedUpdate_descr);
+    return x_GetDescr();
+}
+
+
+CBioseq_Base_Info::TDescr& CBioseq_Base_Info::SetDescr(void)
+{
+    x_Update(fNeedUpdate_descr);
+    return x_SetDescr();
+}
+
+
+void CBioseq_Base_Info::SetDescr(CBioseq_Base_Info::TDescr& v)
+{
+    x_Update(fNeedUpdate_descr);
+    x_SetDescr(v);
+}
+
+
+void CBioseq_Base_Info::ResetDescr(void)
+{
+    x_Update(fNeedUpdate_descr);
+    x_ResetDescr();
 }
 
 
 bool CBioseq_Base_Info::AddSeqdesc(CSeqdesc& d)
 {
+    x_Update(fNeedUpdate_descr);
     TDescr::Tdata& s = x_SetDescr().Set();
     ITERATE ( TDescr::Tdata, it, s ) {
         if ( it->GetPointer() == &d ) {
@@ -191,6 +246,7 @@ bool CBioseq_Base_Info::AddSeqdesc(CSeqdesc& d)
 
 bool CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
 {
+    x_Update(fNeedUpdate_descr);
     if ( !IsSetDescr() ) {
         return false;
     }
@@ -208,11 +264,11 @@ bool CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
 }
 
 
-void CBioseq_Base_Info::AddSeq_descr(TDescr& v)
+void CBioseq_Base_Info::AddSeq_descr(const TDescr& v)
 {
     TDescr::Tdata& s = x_SetDescr().Set();
-    TDescr::Tdata& src = v.Set();
-    NON_CONST_ITERATE ( TDescr::Tdata, it, src ) {
+    const TDescr::Tdata& src = v.Get();
+    ITERATE ( TDescr::Tdata, it, src ) {
         s.push_back(*it);
     }
 }
@@ -246,7 +302,7 @@ CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(const CSeq_annot& annot)
 void CBioseq_Base_Info::AddAnnot(CRef<CSeq_annot_Info> info)
 {
     _ASSERT(!info->HasParent_Info());
-    if ( !IsSetAnnot() ) {
+    if ( !m_ObjAnnot ) {
         m_ObjAnnot = &x_SetObjAnnot();
     }
     _ASSERT(m_ObjAnnot->size() == m_Annot.size());
@@ -288,6 +344,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.5  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -51,6 +51,8 @@ class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_literal;
+class CSeq_descr;
+class CSeq_annot;
 class CBioseq_Base_Info;
 class CBioseq_Info;
 
@@ -94,6 +96,7 @@ public:
 
     void x_TSEAttach(CTSE_Info& tse_info);
 
+    void x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id);
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
     CBioseq_Base_Info& x_GetBase(const TPlace& place);
     CBioseq_Info& x_GetBioseq(const TPlace& place);
@@ -107,6 +110,7 @@ public:
                         const TLocationSet& location);
     void x_AddSeq_data(const TLocationSet& location);
 
+    void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
     void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
 
     typedef list< CRef<CSeq_literal> > TSequence;
@@ -135,6 +139,7 @@ private:
     bool            m_DirtyAnnotIndex;
     bool            m_NotLoaded;
 
+    TPlaces         m_DescrPlaces;
     TPlaces         m_AnnotPlaces;
     TAnnotContents  m_AnnotContents;
     TLocationSet    m_Seq_data;
@@ -173,6 +178,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.6  2004/06/15 14:06:49  vasilche
 * Added support to load split sequences.
 *

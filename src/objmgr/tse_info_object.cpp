@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/tse_info_object.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -43,7 +44,7 @@ CTSE_Info_Object::CTSE_Info_Object(void)
     : m_TSE_Info(0),
       m_Parent_Info(0),
       m_DirtyAnnotIndex(true),
-      m_NeedUpdateObject(false)
+      m_NeedUpdateFlags(0)
 {
 }
 
@@ -163,8 +164,8 @@ void CTSE_Info_Object::x_BaseParentAttach(CTSE_Info_Object& parent)
     if ( x_DirtyAnnotIndex() ) {
         x_SetParentDirtyAnnotIndex();
     }
-    if ( x_NeedUpdateObject() ) {
-        parent.x_SetNeedUpdateObject();
+    if ( m_NeedUpdateFlags ) {
+        x_SetNeedUpdateParent(m_NeedUpdateFlags);
     }
 }
 
@@ -226,6 +227,14 @@ void CTSE_Info_Object::x_SetDirtyAnnotIndexNoParent(void)
 }
 
 
+void CTSE_Info_Object::x_SetNeedUpdateParent(TNeedUpdateFlags flags)
+{
+    flags |= flags << kNeedUpdate_bits;
+    flags &= fNeedUpdate_children;
+    GetBaseParent_Info().x_SetNeedUpdate(flags);
+}
+
+
 void CTSE_Info_Object::x_ResetDirtyAnnotIndex(void)
 {
     if ( x_DirtyAnnotIndex() ) {
@@ -256,35 +265,52 @@ void CTSE_Info_Object::x_UpdateAnnotIndexContents(CTSE_Info& /*tse*/)
 }
 
 
-void CTSE_Info_Object::x_SetNeedUpdateObject(void)
+void CTSE_Info_Object::x_SetNeedUpdate(TNeedUpdateFlags flags)
 {
-    if ( !x_NeedUpdateObject() ) {
-        m_NeedUpdateObject = true;
+    flags &= ~m_NeedUpdateFlags; // already set
+    if ( flags ) {
+        m_NeedUpdateFlags |= flags;
         if ( HasParent_Info() ) {
-            GetBaseParent_Info().x_SetNeedUpdateObject();
+            x_SetNeedUpdateParent(flags);
         }
     }
 }
 
 
-void CTSE_Info_Object::x_ResetNeedUpdateObject(void)
+void CTSE_Info_Object::x_Update(TNeedUpdateFlags flags) const
 {
-    m_NeedUpdateObject = false;
-}
-
-
-void CTSE_Info_Object::x_UpdateObject(void) const
-{
-    if ( x_NeedUpdateObject() ) {
-        const_cast<CTSE_Info_Object*>(this)->x_DoUpdateObject();
-        _ASSERT(!x_NeedUpdateObject());
+    if ( m_NeedUpdateFlags & flags ) {
+        const_cast<CTSE_Info_Object*>(this)->
+            x_DoUpdate(flags&m_NeedUpdateFlags);
+        _ASSERT(!(m_NeedUpdateFlags & flags));
     }
 }
 
 
-void CTSE_Info_Object::x_DoUpdateObject(void)
+void CTSE_Info_Object::x_UpdateCore(void) const
 {
-    m_NeedUpdateObject = false;
+    x_Update(fNeedUpdate_core|fNeedUpdate_children_core);
+}
+
+
+void CTSE_Info_Object::x_UpdateComplete(void) const
+{
+    x_Update(m_NeedUpdateFlags);
+}
+
+
+void CTSE_Info_Object::x_DoUpdate(TNeedUpdateFlags flags)
+{
+    m_NeedUpdateFlags &= ~flags;
+}
+
+
+void CTSE_Info_Object::x_LoadChunks(const TChunkIds& chunks) const
+{
+    CTSE_Info& tse = const_cast<CTSE_Info&>(GetTSE_Info());
+    ITERATE ( TChunkIds, it, chunks ) {
+        tse.GetChunk(*it).Load();
+    }
 }
 
 
@@ -294,6 +320,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/12 16:57:32  vasilche
+ * Fixed loading of split Seq-descr and Seq-data objects.
+ * They are loaded correctly now when GetCompleteXxx() method is called.
+ *
  * Revision 1.3  2004/05/21 21:42:13  gorelenk
  * Added PCH ncbi_pch.hpp
  *

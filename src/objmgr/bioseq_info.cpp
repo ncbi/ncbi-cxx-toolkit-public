@@ -96,14 +96,31 @@ CBioseq_Info::~CBioseq_Info(void)
 
 CConstRef<CBioseq> CBioseq_Info::GetCompleteBioseq(void) const
 {
+    x_UpdateComplete();
     return m_Object;
 }
 
 
 CConstRef<CBioseq> CBioseq_Info::GetBioseqCore(void) const
 {
-    x_UpdateObject();
+    x_UpdateCore();
     return m_Object;
+}
+
+
+void CBioseq_Info::x_AddSeq_dataChunkId(TChunkId chunk_id)
+{
+    m_Seq_dataChunks.push_back(chunk_id);
+    x_SetNeedUpdate(fNeedUpdate_seq_data);
+}
+
+
+void CBioseq_Info::x_DoUpdate(TNeedUpdateFlags flags)
+{
+    if ( flags & fNeedUpdate_seq_data ) {
+        x_LoadChunks(m_Seq_dataChunks);
+    }
+    TParent::x_DoUpdate(flags);
 }
 
 
@@ -261,7 +278,7 @@ bool CBioseq_Info::IsSetId(void) const
 
 bool CBioseq_Info::CanGetId(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetId();
+    return m_Object->CanGetId();
 }
 
 
@@ -292,27 +309,21 @@ void CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
 }
 
 
-bool CBioseq_Info::IsSetDescr(void) const
+bool CBioseq_Info::x_IsSetDescr(void) const
 {
     return m_Object->IsSetDescr();
 }
 
 
-bool CBioseq_Info::CanGetDescr(void) const
+bool CBioseq_Info::x_CanGetDescr(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetDescr();
+    return m_Object->CanGetDescr();
 }
 
 
-const CSeq_descr& CBioseq_Info::GetDescr(void) const
+const CSeq_descr& CBioseq_Info::x_GetDescr(void) const
 {
     return m_Object->GetDescr();
-}
-
-
-void CBioseq_Info::SetDescr(TDescr& v)
-{
-    m_Object->SetDescr(v);
 }
 
 
@@ -322,7 +333,13 @@ CSeq_descr& CBioseq_Info::x_SetDescr(void)
 }
 
 
-void CBioseq_Info::ResetDescr(void)
+void CBioseq_Info::x_SetDescr(TDescr& v)
+{
+    m_Object->SetDescr(v);
+}
+
+
+void CBioseq_Info::x_ResetDescr(void)
 {
     m_Object->ResetDescr();
 }
@@ -348,7 +365,7 @@ bool CBioseq_Info::IsSetInst(void) const
 
 bool CBioseq_Info::CanGetInst(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetInst();
+    return m_Object->CanGetInst();
 }
 
 
@@ -771,6 +788,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.23  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

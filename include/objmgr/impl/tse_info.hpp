@@ -140,7 +140,6 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
-    typedef int                                              TChunkId;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
 
     bool ContainsSeqid(const CSeq_id_Handle& id) const;
@@ -160,7 +159,7 @@ public:
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
     CRef<CTSE_Chunk_Info> GetNotLoadedChunk(void);
-    void LoadAllChunks(void);
+    CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
 
 private:
     friend class CTSE_Guard;
@@ -354,6 +353,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.50  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

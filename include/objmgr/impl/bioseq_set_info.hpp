@@ -79,12 +79,12 @@ public:
     void SetId(TId& v);
     void ResetId(void);
 
-    bool IsSetDescr(void) const;
-    bool CanGetDescr(void) const;
-    const TDescr& GetDescr(void) const;
-    void SetDescr(TDescr& v);
+    bool x_IsSetDescr(void) const;
+    bool x_CanGetDescr(void) const;
+    const TDescr& x_GetDescr(void) const;
     TDescr& x_SetDescr(void);
-    void ResetDescr(void);
+    void x_SetDescr(TDescr& v);
+    void x_ResetDescr(void);
 
     typedef TObject::TColl TColl;
     bool IsSetColl(void) const;
@@ -180,7 +180,8 @@ protected:
     TObjAnnot& x_SetObjAnnot(void);
     void x_ResetObjAnnot(void);
 
-    void x_DoUpdateObject(void);
+    void x_DoUpdate(TNeedUpdateFlags flags);
+
     static CRef<TObject> sx_ShallowCopy(const TObject& obj);
 
 private:
@@ -464,6 +465,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.4  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *

@@ -158,6 +158,7 @@ protected:
     friend class CSeq_annot_CI;
 
     friend class CTSE_Info;
+    friend class CBioseq_Base_Info;
     friend class CBioseq_Info;
     friend class CBioseq_set_Info;
     friend class CSeq_annot_Info;
@@ -185,7 +186,9 @@ protected:
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
-    void x_DoUpdateObject(void);
+    void x_DoUpdate(TNeedUpdateFlags flags);
+    void x_SetNeedUpdateContents(TNeedUpdateFlags flags);
+
     static CRef<TObject> sx_ShallowCopy(TObject& obj);
 
     // Seq-entry pointer
@@ -249,6 +252,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.13  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

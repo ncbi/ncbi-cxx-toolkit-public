@@ -105,7 +105,7 @@ public:
     bool x_HasSNP_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
 
-    void x_DoUpdateObject(void);
+    void x_DoUpdate(TNeedUpdateFlags flags);
     static CRef<TObject> sx_ShallowCopy(TObject& obj);
 
 protected:
@@ -190,6 +190,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/07/12 16:57:32  vasilche
+* Fixed loading of split Seq-descr and Seq-data objects.
+* They are loaded correctly now when GetCompleteXxx() method is called.
+*
 * Revision 1.15  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
