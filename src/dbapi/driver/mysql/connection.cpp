@@ -30,6 +30,7 @@
  */
 
 #include <dbapi/driver/mysql/interfaces.hpp>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -200,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/24 19:46:53  vysokolo
+ * addaed support of blob
+ *
  * Revision 1.4  2003/06/05 16:02:48  soussov
  * adds code for DumpResults and for the dumped results processing
  *

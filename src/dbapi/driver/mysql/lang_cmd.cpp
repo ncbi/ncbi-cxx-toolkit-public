@@ -51,9 +51,10 @@ CMySQL_LangCmd::~CMySQL_LangCmd()
 }
 
 
-bool CMySQL_LangCmd::More(const string& /*query_text*/)
+bool CMySQL_LangCmd::More(const string& query_text)
 {
-    return false;
+    m_Query += query_text;
+    return true;
 }
 
 
@@ -155,11 +156,22 @@ int CMySQL_LangCmd::RowCount() const
   return mysql_affected_rows(&this->m_Connect->m_MySQL);
 }
 
+string CMySQL_LangCmd::EscapeString(const char* str, unsigned long len)
+{
+    std::auto_ptr<char> buff( new char[len*2 + 1]);
+    mysql_real_escape_string(&this->m_Connect->m_MySQL, buff.get(), str, len);
+    return buff.get();
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/24 19:46:53  vysokolo
+ * addaed support of blob
+ *
  * Revision 1.7  2003/06/06 16:02:53  butanaev
  * Fixed return value of Send - it should return true.
  *

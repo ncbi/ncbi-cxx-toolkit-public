@@ -165,6 +165,18 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
         return item_buff;
     }
 
+    if (b_type == eDB_Image) {
+        if ( !item_buff ) {
+            item_buff = new CDB_Image;
+        }
+        if ( d_len ) {
+            ((CDB_Image*) item_buff)->Append(d_ptr, d_len);
+        } else {
+            item_buff->AssignNULL();
+        }
+        return item_buff;
+    }
+
     long   int_val;
     double double_val;
 
@@ -290,6 +302,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/24 19:46:53  vysokolo
+ * addaed support of blob
+ *
  * Revision 1.5  2003/02/26 17:10:35  kuznets
  * Fixed int->bool warning in MSVC
  *

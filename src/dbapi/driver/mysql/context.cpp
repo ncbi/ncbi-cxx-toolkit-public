@@ -82,7 +82,6 @@ CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////
 // DriverManager related functions
 //
@@ -112,6 +111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/24 19:46:53  vysokolo
+ * addaed support of blob
+ *
  * Revision 1.4  2003/07/17 20:51:37  soussov
  * connections pool improvements
  *
