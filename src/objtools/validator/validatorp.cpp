@@ -152,6 +152,7 @@ CValidError_imp::CValidError_imp
       m_IsNW(false),
       m_IsXR(false),
       m_IsGI(false),
+      m_IsGB(false),
       m_PrgCallback(0),
       m_NumAlign(0),
       m_NumAnnot(0),
@@ -2048,6 +2049,7 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
                 case CSeq_id::e_Giim:
                     break;
                 case CSeq_id::e_Genbank:
+                    m_IsGB = true;
                     m_IsGED = true;
                     break;
                 case CSeq_id::e_Embl:
@@ -2471,6 +2473,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/08/09 14:54:49  shomrat
+* Added m_IsGB
+*
 * Revision 1.57  2004/08/03 13:40:52  shomrat
 * + eErr_GENERIC_MedlineEntryPub
 *
