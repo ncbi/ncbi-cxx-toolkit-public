@@ -1351,17 +1351,23 @@ void CArgDescriptions::Delete(const string& name)
     {{ // ...from the list of key/flag args
         TKeyFlagArgs::iterator it =
             find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name);
-        _ASSERT(it != m_KeyFlagArgs.end());
-        _ASSERT(find(it, m_KeyFlagArgs.end(), name) == m_KeyFlagArgs.end());
-        m_KeyFlagArgs.erase(it);
+        if (it != m_KeyFlagArgs.end()) {
+            m_KeyFlagArgs.erase(it);
+            _ASSERT(find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name) ==
+                         m_KeyFlagArgs.end());
+            _ASSERT(find(m_PosArgs.begin(), m_PosArgs.end(), name) ==
+                         m_PosArgs.end());
+            return;
+        }
     }}
 
     {{ // ...from the list of positional args' positions
         TPosArgs::iterator it =
             find(m_PosArgs.begin(), m_PosArgs.end(), name);
-        _ASSERT(it != m_PosArgs.end());
-        _ASSERT(find(it, m_PosArgs.end(), name) == m_PosArgs.end());
+        _ASSERT (it != m_PosArgs.end());
         m_PosArgs.erase(it);
+        _ASSERT(find(m_PosArgs.begin(), m_PosArgs.end(), name) ==
+                     m_PosArgs.end());
     }}
 }
 
@@ -1622,7 +1628,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
 
     if ( Exist(name) ) {
         NCBI_THROW(CArgException,eSynopsis,
-            "Argument with this name is defined already: " + name);
+            "Argument with this name is already defined: " + name);
     }
 
     if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
@@ -2205,6 +2211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2002/08/08 18:37:32  gouriano
+ * corrected CArgDescriptions::Delete
+ *
  * Revision 1.38  2002/07/15 18:17:23  gouriano
  * renamed CNcbiException and its descendents
  *
