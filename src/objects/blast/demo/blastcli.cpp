@@ -313,7 +313,6 @@ queue_search()
 	CRef<CBlast4_queue_search_request> q(new CBlast4_queue_search_request);
 	q->SetProgram("blastp");
 	q->SetService("plain");
-	q->SetParamset("dummy");
     q->SetQueries(*seqset);
 	q->SetSubject(*subject);
 
