@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  1999/07/08 18:05:15  vakatov
+* Fixed compilation warnings
+*
 * Revision 1.46  1999/06/18 20:42:50  vakatov
 * Fixed tiny compilation warnings
 *
@@ -988,7 +991,7 @@ CHTML_input::CHTML_input(const string& type, const string& name)
 {
     SetAttribute(KHTMLAttributeName_type, type);
     SetNameAttribute(name);
-};
+}
 
 
 // HTML input type names

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/08 18:05:12  vakatov
+* Fixed compilation warnings
+*
 * Revision 1.17  1999/05/28 18:04:06  vakatov
 * CHTMLNode::  added attribute "CLASS"
 *
@@ -383,14 +386,14 @@ inline CHTML_option::CHTML_option(const string& value, bool selected)
     : CParent(value)
 {
     SetOptionalAttribute(KHTMLAttributeName_selected, selected);
-};
+}
 
 inline CHTML_option::CHTML_option(const string& value, const string& label, bool selected)
     : CParent(label)
 {
     SetAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_selected, selected);
-};
+}
 
 inline CHTML_select::CHTML_select(const string& name, bool multiple)
 {
@@ -409,14 +412,14 @@ inline CHTML_select* CHTML_select::AppendOption(const string& value, bool select
 {
     AppendChild(new CHTML_option(value, selected));
     return this;
-};
+}
 
 
 inline CHTML_select* CHTML_select::AppendOption(const string& value, const string& label, bool selected)
 {
     AppendChild(new CHTML_option(value, label, selected));
     return this;
-};
+}
 
 inline CHTML_br::CHTML_br(void)
 {

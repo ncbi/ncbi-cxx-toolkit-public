@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/08 18:05:13  vakatov
+* Fixed compilation warnings
+*
 * Revision 1.7  1999/05/28 16:32:10  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -75,7 +78,7 @@ struct BaseTagMapper
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
-struct StaticTagMapper : BaseTagMapper
+struct StaticTagMapper : public BaseTagMapper
 {
     StaticTagMapper(CNCBINode* (*function)(void));
 
@@ -87,7 +90,7 @@ private:
     CNCBINode* (*m_Function)(void);
 };
 
-struct StaticTagMapperByName : BaseTagMapper
+struct StaticTagMapperByName : public BaseTagMapper
 {
     StaticTagMapperByName(CNCBINode* (*function)(const string& name));
     
@@ -100,7 +103,7 @@ private:
 };
 
 template<class C>
-struct StaticTagMapperByNode : BaseTagMapper
+struct StaticTagMapperByNode : public BaseTagMapper
 {
     StaticTagMapperByNode(CNCBINode* (*function)(C* node));
     
@@ -113,7 +116,7 @@ private:
 };
 
 template<class C>
-struct StaticTagMapperByNodeAndName : BaseTagMapper
+struct StaticTagMapperByNodeAndName : public BaseTagMapper
 {
     StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name));
     
@@ -125,7 +128,7 @@ private:
     CNCBINode* (*m_Function)(C* node, const string& name);
 };
 
-struct ReadyTagMapper : BaseTagMapper
+struct ReadyTagMapper : public BaseTagMapper
 {
     ReadyTagMapper(CNCBINode* node);
 
@@ -138,7 +141,7 @@ private:
 };
 
 template<class C>
-struct TagMapper : BaseTagMapper
+struct TagMapper : public BaseTagMapper
 {
     TagMapper(CNCBINode* (C::*method)(void));
 
@@ -151,7 +154,7 @@ private:
 };
 
 template<class C>
-struct TagMapperByName : BaseTagMapper
+struct TagMapperByName : public BaseTagMapper
 {
     TagMapperByName(CNCBINode* (C::*method)(const string& name));
 
