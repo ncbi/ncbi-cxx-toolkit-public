@@ -255,6 +255,11 @@ typedef int TSOCK_Handle;
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
 
+#ifdef sun
+#undef sun
+#endif
+
+
 #ifdef HAVE_SOCKLEN_T
 typedef socklen_t SOCK_socklen_t;
 #else
@@ -4308,6 +4313,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.158  2004/10/26 20:27:10  ucko
+ * Ensure that "sun" isn't defined as a macro.
+ *
  * Revision 6.157  2004/10/26 17:47:51  lavr
  * Store socket's host:port when connecting (fallen out during UNIX mods)
  *
