@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/30 19:20:58  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.8  1998/12/30 21:52:17  vakatov
 * Fixed for the new SunPro 5.0 beta compiler that does not allow friend
 * templates and member(in-class) templates
@@ -79,6 +83,10 @@
 
 class CDiagBuffer {
     friend CDiagBuffer& GetDiagBuffer(void);
+    friend bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags);
+    friend void SetDiagPostFlag(EDiagPostFlag flag);
+    friend void UnsetDiagPostFlag(EDiagPostFlag flag);
+    friend void SetDiagPostPrefix(const char* prefix);
 #if !defined(NO_INCLASS_TMPL)
     friend class CNcbiDiag;
     friend CNcbiDiag& Reset(CNcbiDiag& diag);
@@ -97,7 +105,7 @@ public:
 
     CDiagBuffer(void);
 
-    //### This is temporary workaround to allow call the destructor of
+    //### This is a temporary workaround to allow call the destructor of
     //### static instance of "CDiagBuffer" defined in GetDiagBuffer()
 public:
     ~CDiagBuffer(void);
@@ -128,6 +136,12 @@ private:
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
 
+    // the bitwise OR combination of "EDiagPostFlag"
+    static unsigned int sm_PostFlags;
+
+    // user-specified string to add to each posted message
+    static char* sm_PostPrefix;
+
     // (NOTE:  these two dont need to be protected by mutexes because it is not
     //  critical -- while not having a mutex around would save us a little
     //  performance)
@@ -135,9 +149,7 @@ private:
     static EDiagSev sm_DieSeverity;
 
     // call the current diagnostics handler directly
-    static void DiagHandler(EDiagSev    sev,
-                            const char* message_buf,
-                            size_t      message_len);
+    static void DiagHandler(SDiagMessage& mess);
 
     // Symbolic name for the severity levels(used by CNcbiDiag::SeverityName)
     static const char* SeverityName[eDiag_Trace+1];
@@ -153,23 +165,50 @@ private:
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
-inline CNcbiDiag::CNcbiDiag(EDiagSev sev, const char* message, bool flush)
+inline CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
  : m_Buffer(GetDiagBuffer())
 {
-    m_Severity = sev;
-    if ( message )
-        (*this) << message;
-    if ( flush )
-        (*this) << Endm;
+    m_Severity  = sev;
+    m_File[0]   = '\0';
+    m_Line      = 0;
+    m_PostFlags = post_flags;
 }
 
 inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
 }
 
+inline CNcbiDiag& CNcbiDiag::SetFile(const char* file) {
+    if (file  &&  *file) {
+        ::strncpy(m_File, file, sizeof(m_File));
+        m_File[sizeof(m_File) - 1] = '\0';
+    } else {
+        *m_File = '\0';
+    }
+    return *this;
+}
+
+inline CNcbiDiag& CNcbiDiag::SetLine(size_t line) {
+    m_Line = line;
+    return *this;
+}
+
 inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
 }
+
+inline const char* CNcbiDiag::GetFile(void) const {
+    return m_File;
+}
+
+inline size_t CNcbiDiag::GetLine(void) const {
+    return m_Line;
+}
+
+inline unsigned int CNcbiDiag::GetPostFlags(void) const {
+    return m_PostFlags;
+}
+
 
 #if defined(NO_INCLASS_TMPL)
 template<class X> void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
@@ -255,9 +294,13 @@ inline void CDiagBuffer::Flush(void) {
     if ( m_Stream.pcount() ) {
         const char* message = m_Stream.str();
         m_Stream.rdbuf()->freeze(0);
-        DiagHandler(sev, message, m_Stream.pcount());
+        SDiagMessage mess(sev, message, m_Stream.pcount(), 0,
+                          m_Diag->GetFile(), m_Diag->GetLine(),
+                          m_Diag->GetPostFlags());
+        DiagHandler(mess);
         Reset(*m_Diag);
     }
+
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
         abort();
 }
@@ -278,6 +321,36 @@ inline void CDiagBuffer::Detach(const CNcbiDiag* diag) {
         Flush();
         m_Diag = 0;
     }
+}
+
+
+
+///////////////////////////////////////////////////////
+//  EDiagPostFlag::
+
+inline bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags) {
+    if (flags & eDPF_Default)
+        flags = CDiagBuffer::sm_PostFlags;
+    return (flags & flag) != 0;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CDiagMessage::
+
+inline SDiagMessage::SDiagMessage(EDiagSev severity,
+                                  const char* buf, size_t len,
+                                  void* data, const char* file, size_t line,
+                                  unsigned int flags, const char* prefix) {
+    m_Severity  = severity;
+    m_Buffer    = buf;
+    m_BufferLen = len;
+    m_Data      = data;
+    m_File      = file;
+    m_Line      = line;
+    m_Flags     = flags;
+    m_Prefix    = prefix;
 }
 
 

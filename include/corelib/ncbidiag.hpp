@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/04/30 19:20:57  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.10  1999/03/15 16:08:09  vakatov
 * Fixed "{...}" macros to "do {...} while(0)" lest it to mess up with "if"s
 *
@@ -89,11 +93,33 @@ typedef enum {
     eDiag_Trace
 } EDiagSev;
 
-// Auxiliary macro for a "standard" error posting
-#define ERR_POST(message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Error); \
-    _diag_ << message; \
+// Auxiliary macros for a "standard" error posting
+#define ERR_POST(severity, message)  do { \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(severity); \
+    _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
 } while(0)
+
+
+// Which parts of the diagnostic context should be posted, and which are not...
+// The generic appearance of the posted message is as follows:
+//   "<file>", line <line>: <severity>: [<prefix>] <message>
+// e.g. if all flags are set, and prefix string is set to "My prefix", and
+// ERR_POST(eDiag_Warning, "Take care!"):
+//   "/home/iam/myfile.cpp", line 33: Warning: [My prefix] Take care!
+// See also SDiagMessage::Compose().
+typedef enum {
+    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
+    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Prefix       = 0x8,  // set by default (always)
+    eDPF_Severity     = 0x10, // set by default (always)
+
+    // set all flags
+    eDPF_All          = 0x7FFF,
+    // ignore all other flags, use global flags
+    eDPF_Default      = 0x8000
+} EDiagPostFlag;
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -101,12 +127,9 @@ typedef enum {
 
 class CNcbiDiag {
 public:
-    CNcbiDiag(EDiagSev    sev     = eDiag_Error,
-              const char* message = 0,
-              bool        flush   = false);
+    CNcbiDiag(EDiagSev     sev        = eDiag_Error,
+              unsigned int post_flags = eDPF_Default);
     ~CNcbiDiag(void);
-
-    EDiagSev GetSeverity(void) const;                     // current severity
 
 #if !defined(NO_INCLASS_TMPL)
     // formatted output
@@ -116,7 +139,8 @@ public:
     }
 #endif
 
-    CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) { // manipulators
+    // manipulators
+    CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) {
         return f(*this);
     }
 
@@ -130,15 +154,30 @@ public:
     friend CNcbiDiag& Fatal  (CNcbiDiag& diag); /// severity for the next
     friend CNcbiDiag& Trace  (CNcbiDiag& diag); /// diagnostic message
 
-    // a common symbolic name for the severity levels
+    // get a common symbolic name for the severity levels
     static const char* SeverityName(EDiagSev sev);
+
+    // specify file name and line number to post
+    // they are active for this message only, and they will be reset to
+    // zero after this message is posted
+    CNcbiDiag& SetFile(const char* file);
+    CNcbiDiag& SetLine(size_t line);
+
+    // get severity, file or line of the current message
+    EDiagSev     GetSeverity (void) const;
+    const char*  GetFile     (void) const;
+    size_t       GetLine     (void) const;
+    unsigned int GetPostFlags(void) const;
 
 #if !defined(NO_INCLASS_TMPL)
 private:
 #endif
 
-    EDiagSev     m_Severity;  // severity level for the current message
+    EDiagSev     m_Severity;  // severity level of the current message
+    char         m_File[256]; // file name      .....
+    size_t       m_Line;      // line #         .....
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
+    unsigned int m_PostFlags; // bitwise OR of "EDiagPostFlag"
     // prohibit assignment
     CNcbiDiag& operator =(const CNcbiDiag&) { return *this; }
 };
@@ -153,6 +192,20 @@ template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
 // ATTENTION:  the following functions are application-wide, i.e they
 //             are not local for a particular thread
 /////////////////////////////////////////////////////////////////////////////
+
+
+// Return "true" if the specified "flag" is set in global "flags"(to be posted)
+// If eDPF_Default is set in "flags" then use the current global flags as
+// specified by SetDiagPostFlag()/UnsetDiagPostFlag()
+inline bool IsSetDiagPostFlag(EDiagPostFlag flag,
+                              unsigned int  flags = eDPF_Default);
+
+// Set/unset the specified flag (globally)
+extern void SetDiagPostFlag(EDiagPostFlag flag);
+extern void UnsetDiagPostFlag(EDiagPostFlag flag);
+
+// Specify a string to prefix all subsequent error postings with
+extern void SetDiagPostPrefix(const char* prefix);
 
 
 // Do not post messages which severity is less than "min_sev"
@@ -173,15 +226,32 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true);
 // has a new error message completed and ready to post.
 // "cleanup(data)" will be called whenever this hook gets replaced and
 // on the program termination.
-// NOTE 1:  "message_buf" is in general NOT '\0'-terminated
-// NOTE 2:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
-//          MT-protected, so that they would never be called simultaneously
-//          from different threads
-typedef void (*FDiagHandler)(EDiagSev    sev,
-                             const char* message_buf,
-                             size_t      message_len,
-                             void*       data);
+// NOTE:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
+//        MT-protected, so that they would never be called simultaneously
+//        from different threads
+struct SDiagMessage {
+    SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
+                 const char* file = 0, size_t line = 0,
+                 unsigned int flags = eDPF_Default, const char* prefix = 0);
+    EDiagSev     m_Severity;
+    const char*  m_Buffer;  // not guaranteed to be '\0'-terminated!
+    size_t       m_BufferLen;
+    void*        m_Data;
+    const char*  m_File;
+    size_t       m_Line;
+    unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
+    const char*  m_Prefix;
+
+    // allocate("new") and compose a message string in the "standard" format:
+    //    "<file>", line <line>: <severity>: [<prefix>] <message>
+    // NOTE:  it is user's responsibility to "delete" the returned string
+    char* Compose(void) const;
+};
+
+typedef void (*FDiagHandler)(const SDiagMessage& mess);
+
 typedef void (*FDiagCleanup)(void* data);
+
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);

@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/04/30 19:20:56  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.12  1999/04/22 14:18:18  vasilche
 * Added _TRACE_THROW() macro which can be configured to make coredump at some point fo throwing exception.
 *
@@ -72,35 +76,30 @@ BEGIN_NCBI_SCOPE
 
 #if defined(_DEBUG)
 
-#  define _FILE_LINE \
-"{" << __FILE__ << ":" << __LINE__ << "} "
-
 #  define _TRACE(message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace); \
-    _diag_ << _FILE_LINE << message; \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace, eDPF_All); \
+    _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
 } while(0)
 
 #  define _TROUBLE  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
-    _diag_ << _FILE_LINE << "Trouble!"; \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal, eDPF_All); \
+    _diag_.SetFile(__FILE__).SetLine(__LINE__) << "Trouble!"; \
 } while(0)
+
 #  define _ASSERT(expr)  do { \
     if ( !(expr) ) \
         { \
               NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
-              _diag_ << _FILE_LINE << "Assertion failed: " << #expr; \
+              _diag_.SetFile(__FILE__).SetLine(__LINE__) \
+                  << "Assertion failed: (" << #expr << ")"; \
         } \
 } while(0)
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
 extern int TraceThrow(void);
-
 #  define _TRACE_THROW() do { \
-    { \
-        NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace); \
-        _diag_ << _FILE_LINE << "trace"; \
-    } \
+    _TRACE("_TRACE_THROW"); \
     TraceThrow(); \
 } while(0)
 

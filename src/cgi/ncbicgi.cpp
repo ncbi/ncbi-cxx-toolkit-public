@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/04/30 19:21:03  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.25  1999/04/28 16:54:42  vasilche
 * Implemented stream input processing for FastCGI applications.
 * Fixed POST request parsing
@@ -657,13 +661,15 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
         for ( size_t pos = 0; pos < len; ) {
             if ( !istr ) {
                 _TRACE_THROW();
-                throw runtime_error("Init CCgiRequest::CCgiRequest -- error in reading POST content: bad stream state");
+                throw runtime_error("\
+CCgiRequest::x_Init() -- error in reading POST content: bad stream state");
             }
             istr->read(&str[pos], len - pos);
             size_t count = istr->gcount();
             if ( count == 0 ) {
                 _TRACE_THROW();
-                throw runtime_error("Init CCgiRequest::CCgiRequest -- error in reading POST content: unexpected EOF");
+                throw runtime_error("\
+CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
             }
             pos += count;
         }
@@ -677,7 +683,8 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
 
     if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {
         // there is already empty name key
-        ERR_POST("empty key name: we'll not check for IMAGE names");
+                ERR_POST(eDiag_Error,
+                 "empty key name: we'll not check for IMAGE names");
         return;
     }
 
@@ -700,7 +707,8 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
                 }
                 else {
                     // is't second name - error: we will not change anything
-                    ERR_POST("duplicated IMAGE name: \"" << imageName <<
+                    ERR_POST(eDiag_Error,
+                             "duplicated IMAGE name: \"" << imageName <<
                              "\" and \"" << name << "\"");
                     return;
                 }

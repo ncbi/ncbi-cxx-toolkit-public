@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  1999/04/30 19:21:06  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.38  1999/04/27 14:50:12  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -329,7 +333,8 @@ static void TestDiag(void)
 
     SetDiagStream(&NcbiCerr);
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
-    ERR_POST( "[Set Diag Stream(cerr)]  Std.Diag. double = "   << d );
+    ERR_POST(eDiag_Error,
+             "[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
     _TRACE  ( "[Set Diag Stream(cerr)]  Trace double = "       << d );
 
     CNcbiTestDiag cntd;
@@ -340,6 +345,26 @@ static void TestDiag(void)
 
     diag << Error << "This message has severity \"Info\"" << Reset
          << Info  << "This message has severity \"Info\"" << Endm;
+
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostPrefix("Foo-Prefix");
+    ERR_POST(eDiag_Error, "This is the most detailed " << "error posting");
+    SetDiagPostPrefix(0);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    ERR_POST(eDiag_Error, "No line #, " << "Short filename, " << "No prefix");
+    _TRACE("_TRACE:  must have all possible info in the posted message");
+    UnsetDiagPostFlag(eDPF_Severity);
+    ERR_POST(eDiag_Error, "...and no severity");
+    SetDiagPostFlag(eDPF_Line);
+    SetDiagPostFlag(eDPF_Severity);
+    SetDiagPostPrefix("Bad!!! No Prefix!!!");
+    UnsetDiagPostFlag(eDPF_Prefix);
+    ERR_POST(eDiag_Error, "Short filename, " << "No prefix");
+    UnsetDiagPostFlag(eDPF_All);
+    ERR_POST(eDiag_Error, "This is the least detailed error posting");
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostPrefix(0);
 }
 
 
@@ -806,6 +831,7 @@ void TestCgiResponse(int argc, char** argv)
 class CTestApplication : public CNcbiApplication
 {
 public:
+    virtual ~CTestApplication(void);
     virtual int Run(void);
 };
 
@@ -827,6 +853,10 @@ int CTestApplication::Run(void)
     return 0;
 }
 
+CTestApplication::~CTestApplication()
+{
+    SetDiagStream(0);
+}
 
   
 /////////////////////////////////

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/30 19:21:08  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.9  1999/03/18 17:54:50  vasilche
 * CNCBINode will try to call PrintEnd if exception in PrintChildren
 * occures
@@ -234,7 +238,8 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out)
         PrintChildren(out);
     }
     catch (...) {
-        ERR_POST("CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
+        ERR_POST(eDiag_Error, "\
+CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
         PrintEnd(out);
         throw;
     }

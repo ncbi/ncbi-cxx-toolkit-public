@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/30 19:21:04  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
 * Revision 1.8  1998/12/28 17:56:37  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -71,6 +75,15 @@ BEGIN_NCBI_SCOPE
 //## DECLARE_MUTEX(s_Mutex);  // protective mutex
 
 
+unsigned int CDiagBuffer::sm_PostFlags =
+#if defined(_DEBUG)
+eDPF_All;
+#else
+eDPF_Prefix | eDPF_Severity;
+#endif
+
+char* CDiagBuffer::sm_PostPrefix = 0;
+
 EDiagSev CDiagBuffer::sm_PostSeverity = eDiag_Error;
 EDiagSev CDiagBuffer::sm_DieSeverity  = eDiag_Fatal;
 
@@ -83,19 +96,98 @@ void*        CDiagBuffer::sm_HandlerData    = 0;
 FDiagCleanup CDiagBuffer::sm_HandlerCleanup = 0;
 
 
-void CDiagBuffer::DiagHandler(EDiagSev    sev,
-                              const char* message_buf,
-                              size_t      message_len)
+void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
     if ( CDiagBuffer::sm_HandlerFunc ) {
         //## MUTEX_LOCK(s_Mutex);
-        if ( CDiagBuffer::sm_HandlerFunc )
-            CDiagBuffer::sm_HandlerFunc(sev, message_buf, message_len,
-                                        CDiagBuffer::sm_HandlerData);
+        if ( CDiagBuffer::sm_HandlerFunc ) {
+            mess.m_Data   = CDiagBuffer::sm_HandlerData;
+            mess.m_Prefix = CDiagBuffer::sm_PostPrefix;
+            CDiagBuffer::sm_HandlerFunc(mess);
+        }
         //## MUTEX_UNLOCK(s_Mutex);
     }
 }
 
+
+char* SDiagMessage::Compose(void) const
+{
+    CNcbiOstrstream ostr;
+
+    // "<file>"
+    bool print_file = (m_File  &&  *m_File  &&
+                       IsSetDiagPostFlag(eDPF_File, m_Flags));
+    if ( print_file ) {
+        const char* x_file = m_File;
+        if ( !IsSetDiagPostFlag(eDPF_LongFilename, m_Flags) ) {
+            for (const char* s = m_File;  *s;  s++) {
+                if (*s == '/'  ||  *s == '\\'  ||  *s == ':')
+                    x_file = s + 1;
+            }
+        }
+        ostr << '"' << x_file << '"';
+    }
+
+    // , line <line>
+    bool print_line = (m_Line  &&  IsSetDiagPostFlag(eDPF_Line, m_Flags));
+    if ( print_line )
+        ostr << (print_file ? ", line " : "line ") << m_Line;
+
+    // :
+    if (print_file  ||  print_line)
+        ostr << ": ";
+
+    // <severity>:
+    if ( IsSetDiagPostFlag(eDPF_Severity, m_Flags) )
+        ostr << CNcbiDiag::SeverityName(m_Severity) << ": ";
+
+    // [<prefix>]
+    if (m_Prefix  &&  *m_Prefix  &&  IsSetDiagPostFlag(eDPF_Prefix, m_Flags))
+        ostr << '[' << m_Prefix << "] ";
+
+    // <message>
+    if ( m_BufferLen )
+        ostr.write(m_Buffer, m_BufferLen);
+
+    // auto-freeze and return the resultant('\0'-terminated) string
+    ostr.put('\0');
+    return ostr.str();
+}
+
+
+extern void SetDiagPostFlag(EDiagPostFlag flag)
+{
+    if (flag == eDPF_Default)
+        return;
+
+    //## MUTEX_LOCK(s_Mutex);
+    CDiagBuffer::sm_PostFlags |= flag;
+    //## MUTEX_UNLOCK(s_Mutex);
+}
+
+extern void UnsetDiagPostFlag(EDiagPostFlag flag)
+{
+    if (flag == eDPF_Default)
+        return;
+
+    //## MUTEX_LOCK(s_Mutex);
+    CDiagBuffer::sm_PostFlags &= ~flag;
+    //## MUTEX_UNLOCK(s_Mutex);
+}
+
+
+extern void SetDiagPostPrefix(const char* prefix)
+{
+    //## MUTEX_LOCK(s_Mutex);
+    delete CDiagBuffer::sm_PostPrefix;
+    if (prefix  &&  *prefix) {
+        CDiagBuffer::sm_PostPrefix = new char[::strlen(prefix) + 1];
+        ::strcpy(CDiagBuffer::sm_PostPrefix, prefix);
+    } else {
+        CDiagBuffer::sm_PostPrefix = 0;
+    }
+    //## MUTEX_UNLOCK(s_Mutex);
+}
 
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
@@ -160,18 +252,16 @@ struct SToStream_Data {
     bool          quick_flush;
 };
 
-static void s_ToStream_Handler(EDiagSev    sev,
-                               const char* message_buf,
-                               size_t      message_len,
-                               void*       data)
+static void s_ToStream_Handler(const SDiagMessage& mess)
 { // (it is MT-protected -- by the "CDiagBuffer::DiagHandler()")
-    SToStream_Data* x_data = (SToStream_Data*) data;
+    SToStream_Data* x_data = (SToStream_Data*)mess.m_Data;
     if ( !x_data )
         return;
 
     CNcbiOstream& os = *x_data->os;
-    os << CNcbiDiag::SeverityName(sev) << ": ";
-    os.write(message_buf, message_len);
+    char* str = mess.Compose();
+    os << str;
+    delete str;
     os << NcbiEndl;
     if ( x_data->quick_flush )
         os << NcbiFlush;
