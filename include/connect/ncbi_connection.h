@@ -46,6 +46,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/02/09 17:33:38  lavr
+ * CONN_GetType added
+ *
  * Revision 6.4  2001/01/03 22:29:22  lavr
  * Changed IOStatus -> Status
  *
@@ -193,6 +196,16 @@ extern EIO_Status CONN_Status
  */
 extern EIO_Status CONN_Close
 (CONN conn  /* [in] connection handle */
+ );
+
+
+/* Get a verbal connection type as a character string.
+ * Note that the returned value is only valid until the next
+ * I/O operation in the connection. Return value 0 denotes
+ * unknown connection type.
+ */
+extern const char* CONN_GetType
+(CONN        conn       /* [in]  connection handle */ 
  );
 
 
