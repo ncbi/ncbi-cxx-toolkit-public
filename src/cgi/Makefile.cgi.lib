@@ -4,8 +4,7 @@
 # NOTE:  see also makefile for lib "XFCGI" -- these two should be kept in-sync!
 #################################
 
-SRC = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
-	cgi_run
-LIB    = xcgi
+SRC = ncbicgi cgiapp cgictx ncbicgir ncbires cgi_run
+LIB = xcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
