@@ -279,8 +279,8 @@ typedef unsigned   EBSockType;
 #endif
 
 
-#define SET_LISTENING(s) ((s)->r_on_w =  (unsigned) eDefault + 1)
-#define IS_LISTENING(s)  ((s)->r_on_w == (unsigned) eDefault + 1)
+#define SET_LISTENING(s) ((s)->r_on_w  =   (unsigned) eDefault + 1)
+#define IS_LISTENING(s)  ((s)->r_on_w  ==  (unsigned) eDefault + 1)
 
 
 /* Listening socket
@@ -408,6 +408,9 @@ static ESwitch s_InterruptOnSignal = eOff; /* restart I/O by default      */
 
 /* Data/event logging */
 static ESwitch s_Log = eOff;               /* no logging by default       */
+
+/* Select restart timeout */
+static unsigned s_SelectTimeout = 0;       /* =0 (disabled) by default    */
 
 /* Flag to indicate whether API should mask SIGPIPE (during initialization) */
 #ifdef NCBI_OS_UNIX
@@ -742,6 +745,14 @@ extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
  */
 
 
+extern unsigned int SOCK_SetSelectInternalRestartTimeout(unsigned int tmo)
+{
+    unsigned int old_tmo = s_SelectTimeout;
+    s_SelectTimeout = tmo;
+    return old_tmo;
+}
+
+
 extern void SOCK_AllowSigPipeAPI(void)
 {
 #ifdef NCBI_OS_UNIX
@@ -1001,16 +1012,20 @@ static EIO_Status s_Select(size_t                n,
                            SSOCK_Poll            polls[],
                            const struct timeval* tv)
 {
-    int/*bool*/ write_only = 1;
-    int/*bool*/ read_only = 1;
-    int/*bool*/ ready = 0;
-    int/*bool*/ bad = 0;
-    fd_set      r_fds, w_fds, e_fds;
-    int         n_fds;
-    size_t      i;
+    int/*bool*/    write_only = 1;
+    int/*bool*/    read_only = 1;
+    int/*bool*/    ready = 0;
+    int/*bool*/    bad = 0;
+    fd_set         r_fds, w_fds, e_fds;
+    int            n_fds;
+    struct timeval x_tv;
+    size_t         i;
+
+    if ( tv )
+        x_tv = *tv;
 
     for (;;) { /* (optionally) auto-resume if interrupted by a signal */
-        struct timeval x_tv;
+        struct timeval xx_tv;
 
         n_fds = 0;
         FD_ZERO(&r_fds);
@@ -1095,16 +1110,28 @@ static EIO_Status s_Select(size_t                n,
         if ( ready )
             return eIO_Success;
 
-        if ( tv )
-            x_tv = *tv;
+        if (!tv  ||  (s_SelectTimeout &&
+                      (x_tv.tv_sec > s_SelectTimeout  ||
+                       (x_tv.tv_sec == s_SelectTimeout  &&  x_tv.tv_usec)))) {
+            xx_tv.tv_sec  = s_SelectTimeout;
+            xx_tv.tv_usec = 0;
+        } else
+            xx_tv = x_tv;
 
         n_fds = select(SOCK_NFDS((TSOCK_Handle) n_fds),
                        write_only ? 0 : &r_fds, read_only ? 0 : &w_fds,
-                       &e_fds, tv ? &x_tv : 0);
+                       &e_fds, tv || s_SelectTimeout ? &xx_tv : 0);
 
         /* timeout has expired */
-        if (n_fds == 0)
+        if (n_fds == 0) {
+            if ( !tv )
+                continue;
+            if (s_SelectTimeout  &&  x_tv.tv_sec >= s_SelectTimeout) {
+                x_tv.tv_sec -= s_SelectTimeout;
+                continue;
+            }
             return eIO_Timeout;
+        }
 
         if (n_fds > 0)
             break;
@@ -2649,7 +2676,6 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
         free(sock);
     }
     return status;
-    
 }
 
 
@@ -4004,6 +4030,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.141  2003/11/18 20:19:48  lavr
+ * +SOCK_SetSelectInternalRestartTimeout() and restart impl. in s_Select()
+ *
  * Revision 6.140  2003/11/14 13:05:23  lavr
  * Eliminate race on socket file descriptors in s_Select() when socket aborted
  *
