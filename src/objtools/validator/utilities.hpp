@@ -36,8 +36,9 @@
 #include <corelib/ncbistr.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
-#include <serial/iterator.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include <serial/iterator.hpp>
 
 #include <vector>
 #include <list>
@@ -177,6 +178,9 @@ bool IsClassInEntry(const CSeq_entry& se, CBioseq_set::EClass clss);
 bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope);
 bool IsBlankString(const string& str);
 bool IsBlankStringList(const list< string >& str_list);
+int GetGIForSeqId(const CSeq_id& id);
+list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
+
 
 // =============================================================================
 // AnyObj:
@@ -213,6 +217,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/03/21 16:19:01  shomrat
+* Added GetGiForSeqId and GetSeqIdsForGI
+*
 * Revision 1.6  2003/02/07 21:03:20  shomrat
 * Added transposo to gbqual types
 *

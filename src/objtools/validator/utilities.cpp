@@ -31,21 +31,23 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
-#include "utilities.hpp"
 
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
+
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/id1/client.hpp>
 
 #include <vector>
 #include <algorithm>
 #include <list>
 
+#include "utilities.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1074,6 +1076,19 @@ bool IsBlankStringList(const list< string >& str_list)
 }
 
 
+int GetGIForSeqId(const CSeq_id& id)
+{
+    return CID1Client().AskGetgi(id);
+}
+
+
+
+list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
+{
+    return CID1Client().AskGetseqidsfromgi(gi);
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -1083,6 +1098,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/03/21 16:19:21  shomrat
+* Added GetGiForSeqId and GetSeqIdsForGI
+*
 * Revision 1.6  2003/03/11 16:04:09  kuznets
 * iterate -> ITERATE
 *
