@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/17 21:11:59  grichenk
+* Fixed annotations loading
+* Set "partial" flag in features if necessary
+* Implemented most seq-loc types in reference resolving methods
+* Fixed searching for annotations within a signle TSE
+*
 * Revision 1.13  2002/04/12 19:32:20  grichenk
 * Removed temp. patch for SerialAssign<>()
 *
@@ -82,6 +88,7 @@
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
 #include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -105,7 +112,8 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                EResolveMethod resolve)
     : m_Selector(selector),
       m_AnnotCopy(0),
-      m_Scope(&scope)
+      m_Scope(&scope),
+      m_NativeTSE(0)
 {
     x_Initialize(loc, resolve);
 }
@@ -117,7 +125,8 @@ CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
                                EResolveMethod resolve)
     : m_Selector(selector),
       m_AnnotCopy(0),
-      m_Scope(bioseq.m_Scope)
+      m_Scope(bioseq.m_Scope),
+      m_NativeTSE(bioseq.m_TSE)
 {
     // Convert interval to the seq-loc
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -207,8 +216,10 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
     // references -- otherwise duplicate features may be
     // found.
     TTSESet entries;
-    m_Scope->x_PopulateTSESet(loc, entries);
+    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
     non_const_iterate(TTSESet, tse_it, entries) {
+        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
+            continue;
         if ( m_TSESet.insert(*tse_it).second ) {
             (*tse_it)->Lock();
             CAnnot_CI annot_it(**tse_it, loc, m_Selector);
@@ -323,9 +334,12 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const
             // Process feature location
             CRef<CSeq_feat> fcopy = new CSeq_feat;
             SerialAssign<CSeq_feat>(*fcopy, fsrc);
-            x_ConvertLocToMaster(fcopy->SetLocation());
-            if ( fcopy->IsSetProduct() )
-                x_ConvertLocToMaster(fcopy->SetProduct());
+            if (x_ConvertLocToMaster(fcopy->SetLocation()))
+                fcopy->SetPartial() = true;
+            if ( fcopy->IsSetProduct() ) {
+                if (x_ConvertLocToMaster(fcopy->SetProduct()))
+                    fcopy->SetPartial() = true;
+            }
             m_AnnotCopy.Reset(new CAnnotObject
                               (*fcopy, annot_obj.GetSeq_annot()));
             break;
@@ -354,8 +368,9 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const
 }
 
 
-void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
+bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
 {
+    bool partial = false;
     iterate (TConvMap, convmap_it, m_ConvMap) {
         // Check seq_id
         iterate (TIdConvList, conv_it, convmap_it->second) {
@@ -385,6 +400,10 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         ((*conv_it)->m_RefMin + (*conv_it)->m_RefShift);
                     loc.SetInt().SetTo
                         ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
+                    if (loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1 <
+                        m_Scope->GetBioseqHandle(loc.GetInt().
+                        GetId()).GetSeqVector().size())
+                        partial = true;
                     continue;
                 }
             case CSeq_loc::e_Int:
@@ -396,77 +415,89 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                          GetSeq_id((*conv_it)->m_MasterId));
                     int new_from = loc.GetInt().GetFrom();
                     int new_to = loc.GetInt().GetTo();
-                    if (new_from < (*conv_it)->m_RefMin)
+                    if (new_from < (*conv_it)->m_RefMin) {
                         new_from = (*conv_it)->m_RefMin;
-                    if (new_to > (*conv_it)->m_RefMax)
+                        partial = true;
+                    }
+                    if (new_to > (*conv_it)->m_RefMax) {
                         new_to = (*conv_it)->m_RefMax;
+                        partial = true;
+                    }
                     new_from += (*conv_it)->m_RefShift;
                     new_to += (*conv_it)->m_RefShift;
                     loc.SetInt().SetFrom(new_from);
                     loc.SetInt().SetTo(new_to);
                     continue;
                 }
-                /*
-    case CSeq_loc::e_Pnt:
-        {
-            if (m_Scope->x_GetIdMapper().
-                GetHandle(loc.GetPnt().GetId()) != sdata.m_RefId)
-                return;
-            // Convert to the allowed master seq interval
-            int new_pnt = loc.GetPnt().GetPoint() + sdata.m_RefShift;
-            if (new_pnt < sdata.m_RefMin  ||  new_pnt > sdata.m_RefMax) {
-                loc.SetEmpty();
-                return;
-            }
-            SerialAssign<CSeq_id>(loc.SetPnt().SetId(),
-                m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-            loc.SetPnt().SetPoint(new_pnt);
-            continue;
-        }
-    case CSeq_loc::e_Packed_int:
-        {
-            non_const_iterate ( CPacked_seqint::Tdata, ii, loc.SetPacked_int().Set() ) {
-                if (m_Scope->x_GetIdMapper().
-                    GetHandle((*ii)->GetId()) != sdata.m_RefId)
+            case CSeq_loc::e_Pnt:
+                {
+                    SerialAssign<CSeq_id>
+                        (loc.SetPnt().SetId(),
+                         m_Scope->x_GetIdMapper().
+                         GetSeq_id((*conv_it)->m_MasterId));
+                    // Convert to the allowed master seq interval
+                    int new_pnt = loc.GetPnt().GetPoint();
+                    if (new_pnt < (*conv_it)->m_RefMin  ||
+                        new_pnt > (*conv_it)->m_RefMax) {
+                        //### Can this happen if loc is intersecting with the
+                        //### conv_it location?
+                        loc.SetEmpty();
+                        partial = true;
+                        continue;
+                    }
+                    loc.SetPnt().SetPoint(new_pnt + (*conv_it)->m_RefShift);
                     continue;
-                // Convert to the allowed master seq interval
-                SerialAssign<CSeq_id>((*ii)->SetId(),
-                    m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-                int new_from = (*ii)->GetFrom() + sdata.m_RefShift;
-                int new_to = (*ii)->GetTo() + sdata.m_RefShift;
-                if (new_from < sdata.m_RefMin)
-                    new_from = sdata.m_RefMin;
-                if (new_to < sdata.m_RefMax)
-                    new_to = sdata.m_RefMax;
-                (*ii)->SetFrom(new_from);
-                (*ii)->SetTo(new_to);
-            }
-            continue;
-        }
-    case CSeq_loc::e_Packed_pnt:
-        {
-            if (m_Scope->x_GetIdMapper().
-                GetHandle(loc.GetPacked_pnt().GetId()) != sdata.m_RefId)
-                return;
-            SerialAssign<CSeq_id>(loc.SetPacked_pnt().SetId(),
-                m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-            CPacked_seqpnt::TPoints pnt_copy(loc.SetPacked_pnt().SetPoints());
-            loc.SetPacked_pnt().ResetPoints();
-            non_const_iterate ( CPacked_seqpnt::TPoints, pi, pnt_copy ) {
-                // Convert to the allowed master seq interval
-                int new_pnt = *pi + sdata.m_RefShift;
-                if (new_pnt >= sdata.m_RefMin  &&  new_pnt <= sdata.m_RefMax) {
-                    loc.SetPacked_pnt().SetPoints().push_back(*pi);
                 }
-            }
-            continue;
-        }
-                */
+            case CSeq_loc::e_Packed_int:
+                {
+                    non_const_iterate ( CPacked_seqint::Tdata, ii, loc.SetPacked_int().Set() ) {
+                        CSeq_loc idloc;
+                        SerialAssign<CSeq_id>(idloc.SetWhole(), (*ii)->GetId());
+                        if (!(*conv_it)->m_Location->IntersectingWithLoc(idloc))
+                            continue;
+                        // Convert to the allowed master seq interval
+                        SerialAssign<CSeq_id>((*ii)->SetId(),
+                            m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
+                        int new_from = (*ii)->GetFrom();
+                        int new_to = (*ii)->GetTo();
+                        if (new_from < (*conv_it)->m_RefMin) {
+                            new_from = (*conv_it)->m_RefMin;
+                            partial = true;
+                        }
+                        if (new_to < (*conv_it)->m_RefMax) {
+                            new_to = (*conv_it)->m_RefMax;
+                            partial = true;
+                        }
+                        (*ii)->SetFrom(new_from + (*conv_it)->m_RefShift);
+                        (*ii)->SetTo(new_to + (*conv_it)->m_RefShift);
+                    }
+                    continue;
+                }
+            case CSeq_loc::e_Packed_pnt:
+                {
+                    SerialAssign<CSeq_id>(loc.SetPacked_pnt().SetId(),
+                        m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
+                    CPacked_seqpnt::TPoints pnt_copy(loc.SetPacked_pnt().SetPoints());
+                    loc.SetPacked_pnt().ResetPoints();
+                    non_const_iterate ( CPacked_seqpnt::TPoints, pi, pnt_copy ) {
+                        // Convert to the allowed master seq interval
+                        int new_pnt = *pi;
+                        if (new_pnt >= (*conv_it)->m_RefMin  &&
+                            new_pnt <= (*conv_it)->m_RefMax) {
+                            loc.SetPacked_pnt().SetPoints().push_back
+                                (*pi + (*conv_it)->m_RefShift);
+                        }
+                        else {
+                            partial = true;
+                        }
+                    }
+                    continue;
+                }
             case CSeq_loc::e_Mix:
                 {
                     non_const_iterate
                         (CSeq_loc_mix::Tdata, li, loc.SetMix().Set()) {
-                        x_ConvertLocToMaster(**li);
+                        partial |= x_ConvertLocToMaster(**li);
                     }
                     continue;
                 }
@@ -474,45 +505,50 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                 {
                     non_const_iterate
                         (CSeq_loc_equiv::Tdata, li, loc.SetEquiv().Set()) {
-                        x_ConvertLocToMaster(**li);
+                        partial |= x_ConvertLocToMaster(**li);
                     }
                     continue;
                 }
-                /*
-    case CSeq_loc::e_Bond:
-        {
-            CSeq_id_Handle hA = m_Scope->x_GetIdMapper().
-                GetHandle(loc.GetBond().GetA().GetId());
-            CSeq_id_Handle hB;
-            bool corrected = false;
-            if ( loc.GetBond().IsSetB() )
-                hB = m_Scope->x_GetIdMapper().
-                    GetHandle(loc.GetBond().GetB().GetId());
-            if (hA == sdata.m_RefId) {
-                // Convert A to the allowed master seq interval
-                SerialAssign<CSeq_id>(loc.SetBond().SetA().SetId(),
-                    m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-                int newA = loc.GetBond().GetA().GetPoint() + sdata.m_RefShift;
-                if (newA >= sdata.m_RefMin  &&  newA <= sdata.m_RefMax) {
-                    loc.SetBond().SetA().SetPoint(newA);
-                    corrected = true;
+            case CSeq_loc::e_Bond:
+                {
+                    bool corrected = false;
+                    CSeq_loc idloc;
+                    SerialAssign<CSeq_id>(idloc.SetWhole(), loc.GetBond().GetA().GetId());
+                    if ((*conv_it)->m_Location->IntersectingWithLoc(idloc)) {
+                        // Convert A to the allowed master seq interval
+                        SerialAssign<CSeq_id>(loc.SetBond().SetA().SetId(),
+                            m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
+                        int newA = loc.GetBond().GetA().GetPoint();
+                        if (newA >= (*conv_it)->m_RefMin  &&
+                            newA <= (*conv_it)->m_RefMax) {
+                            loc.SetBond().SetA().SetPoint(newA + (*conv_it)->m_RefShift);
+                            corrected = true;
+                        }
+                        else {
+                            partial = true;
+                        }
+                    }
+                    if ( loc.GetBond().IsSetB() ) {
+                        SerialAssign<CSeq_id>(idloc.SetWhole(), loc.GetBond().GetB().GetId());
+                        if ((*conv_it)->m_Location->IntersectingWithLoc(idloc)) {
+                            // Convert A to the allowed master seq interval
+                            SerialAssign<CSeq_id>(loc.SetBond().SetB().SetId(),
+                                m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
+                            int newB = loc.GetBond().GetB().GetPoint();
+                            if (newB >= (*conv_it)->m_RefMin  &&
+                                newB <= (*conv_it)->m_RefMax) {
+                                loc.SetBond().SetB().SetPoint(newB + (*conv_it)->m_RefShift);
+                                corrected = true;
+                            }
+                            else {
+                                partial = true;
+                            }
+                        }
+                    }
+                    if ( !corrected )
+                        loc.SetEmpty();
+                    continue;
                 }
-            }
-            if (hB == sdata.m_RefId) {
-                // Convert B to the allowed master seq interval
-                SerialAssign<CSeq_id>(loc.SetBond().SetB().SetId(),
-                    m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-                int newB = loc.GetBond().GetB().GetPoint() + sdata.m_RefShift;
-                if (newB >= sdata.m_RefMin  &&  newB <= sdata.m_RefMax) {
-                    loc.SetBond().SetB().SetPoint(newB);
-                    corrected = true;
-                }
-            }
-            if ( !corrected )
-                loc.SetEmpty();
-            continue;
-        }
-    */
             default:
                 {
                     throw runtime_error
@@ -521,6 +557,7 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
             }
         }
     }
+    return partial;
 }
 
 

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/17 21:11:58  grichenk
+* Fixed annotations loading
+* Set "partial" flag in features if necessary
+* Implemented most seq-loc types in reference resolving methods
+* Fixed searching for annotations within a signle TSE
+*
 * Revision 1.10  2002/04/11 12:07:28  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -164,8 +170,9 @@ private:
                              bool resolve);
     // Convert an annotation to the master location coordinates
     CAnnotObject* x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const;
-    // Convert seq-loc to the master location coordinates
-    void x_ConvertLocToMaster(CSeq_loc& loc) const;
+    // Convert seq-loc to the master location coordinates, return true
+    // if any location was adjusted (used as Partial flag for features)
+    bool x_ConvertLocToMaster(CSeq_loc& loc) const;
 
     SAnnotSelector               m_Selector;
     // Map of all convertions from references to the master location
@@ -179,6 +186,8 @@ private:
     // Copy of the annot object (feature etc.) converted to the master seq
     mutable CRef<CAnnotObject>   m_AnnotCopy;
     mutable CRef<CScope>         m_Scope;
+    // If non-zero, search annotations in the "native" TSE only
+    CRef<CTSE_Info>              m_NativeTSE;
 };
 
 
