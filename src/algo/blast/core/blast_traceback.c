@@ -385,7 +385,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                                 &nucl_sequence_rev);
       }
    } else {
-      /* For out-of-frame gapping, swith query and subject sequences */
+      /* For out-of-frame gapping, switch query and subject sequences */
       subject_start = subject = query_blk->sequence;
       subject_length_orig = query_blk->length;
       query = subject_blk->sequence;
@@ -527,11 +527,11 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                   hsp->gap_info->frame2 = hsp->query.frame;
                   hsp->gap_info->frame1 = hsp->subject.frame;
                   hsp->gap_info->original_length1 = subject_blk->length;
-                  hsp->gap_info->original_length2 = query_blk->length;
+                  hsp->gap_info->original_length2 = query_length;
                } else {
                   hsp->gap_info->frame1 = hsp->query.frame;
                   hsp->gap_info->frame2 = hsp->subject.frame;
-                  hsp->gap_info->original_length1 = query_blk->length;
+                  hsp->gap_info->original_length1 = query_length;
                   hsp->gap_info->original_length2 = subject_blk->length;
                }
                if (program == blast_type_blastx)
