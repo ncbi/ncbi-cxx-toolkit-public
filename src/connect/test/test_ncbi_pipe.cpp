@@ -33,7 +33,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/ncbi_pipe.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 #include <string.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -214,10 +214,9 @@ int CTest::Run(void)
     assert(exitcode == 0);
 
     // Pipe for reading (iostream)
-    assert(pipe.Open("ls", args, CPipe::fStdIn_Close) == eIO_Success);
-    CPipeIOStream ios(pipe);
+    CConn_PipeStream ios("ls", args, CPipe::fStdIn_Close);
     s_ReadStream(ios);
-    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(ios.GetPipe().Close(&exitcode) == eIO_Success);
     assert(exitcode == 0);
 
 #elif defined (NCBI_OS_MSWIN)
@@ -235,10 +234,9 @@ int CTest::Run(void)
     assert(exitcode == 0);
 
     // Pipe for reading (iostream)
-    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close) == eIO_Success);
-    CPipeIOStream ios(pipe);
+    CConn_PipeStream ios(cmd.c_str(), args, CPipe::fStdIn_Close);
     s_ReadStream(ios);
-    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(ios.GetPipe().Close(&exitcode) == eIO_Success);
     assert(exitcode == 0);
 #endif
 
@@ -284,8 +282,7 @@ int CTest::Run(void)
     args.push_back("one");
     args.push_back("two");
     args.push_back("three");
-    assert(pipe.Open(app.c_str(), args, CPipe::fStdErr_Open) == eIO_Success);
-    CPipeIOStream ps(pipe);
+    CConn_PipeStream ps(app.c_str(), args, CPipe::fStdErr_Open);
     cout << endl;
     for (int i = 5; i<=10; i++) {
         int value; 
@@ -301,7 +298,7 @@ int CTest::Run(void)
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
-    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(ps.GetPipe().Close(&exitcode) == eIO_Success);
     assert(exitcode == kTestResult);
 
     cout << "\nTEST execution completed successfully!\n";
@@ -364,6 +361,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2003/09/23 21:13:32  lavr
+ * Adapt test for new stream and pipe API
+ *
  * Revision 6.16  2003/09/10 15:54:47  ivanov
  * Rewritten s_ReadPipe/s_WritePipe with using I/O loops.
  * Removed unused Delay().
