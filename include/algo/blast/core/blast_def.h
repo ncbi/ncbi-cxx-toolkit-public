@@ -48,10 +48,12 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
-#define NCBI_INLINE __inline
-#else
-#define NCBI_INLINE inline
+#ifndef NCBI_INLINE
+#   ifdef _MSC_VER
+#       define NCBI_INLINE __inline
+#   else
+#       define NCBI_INLINE inline
+#   endif
 #endif
 
 #define blast_type_blastn 0
@@ -63,7 +65,9 @@ extern "C" {
 #define blast_type_undefined 255
 
 /** Codons are always of length 3 */
+#ifndef CODON_LENGTH
 #define CODON_LENGTH 3
+#endif
 
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
