@@ -34,9 +34,8 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/impl/heap_scope.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,6 +49,7 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 class CSeq_annot_Handle;
+class CAlign_CI;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -63,9 +63,6 @@ class NCBI_XOBJMGR_EXPORT CSeq_align_Handle
 {
 public:
     CSeq_align_Handle(void);
-    CSeq_align_Handle(CScope& scope,
-                      const CSeq_annot_Info& annot_info,
-                      size_t index);
     ~CSeq_align_Handle(void);
 
     /// Check if handle points to a seq-align
@@ -97,10 +94,14 @@ public:
     const CSeq_align::TBounds& GetBounds(void) const;
 
 private:
+    friend class CAlign_CI;
+
     const CSeq_align& x_GetSeq_align(void) const;
 
-    CHeapScope                 m_Scope;
-    CConstRef<CSeq_annot_Info> m_Annot;
+    CSeq_align_Handle(const CSeq_annot_Handle& annot,
+                      size_t index);
+
+    CSeq_annot_Handle          m_Annot;
     size_t                     m_Index;
 };
 
@@ -184,6 +185,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/12/22 15:56:12  vasilche
+* Used CSeq_annot_Handle in annotations' handles.
+*
 * Revision 1.4  2004/12/20 16:03:13  dicuccio
 * Added export specifier
 *

@@ -43,31 +43,26 @@ BEGIN_SCOPE(objects)
 
 CSeq_align_Handle::CSeq_align_Handle(void)
 {
-    return;
 }
 
 
-CSeq_align_Handle::CSeq_align_Handle(CScope& scope,
-                                     const CSeq_annot_Info& annot_info,
+CSeq_align_Handle::CSeq_align_Handle(const CSeq_annot_Handle& annot,
                                      size_t index)
-    : m_Scope(scope),
-      m_Annot(&annot_info),
+    : m_Annot(annot),
       m_Index(index)
 {
-    return;
 }
 
 
 CSeq_align_Handle::~CSeq_align_Handle(void)
 {
-    return;
 }
 
 
 const CSeq_align& CSeq_align_Handle::x_GetSeq_align(void) const
 {
     _ASSERT(m_Annot);
-    return m_Annot->GetAnnotObject_Info(m_Index).GetAlign();
+    return m_Annot.x_GetInfo().GetAnnotObject_Info(m_Index).GetAlign();
 }
 
 
@@ -79,10 +74,7 @@ CConstRef<CSeq_align> CSeq_align_Handle::GetSeq_align(void) const
 
 CSeq_annot_Handle CSeq_align_Handle::GetAnnot(void) const
 {
-    if ( m_Annot ) {
-        return m_Scope.GetImpl()->GetSeq_annotHandle(*m_Annot->GetSeq_annotCore());
-    }
-    return CSeq_annot_Handle();
+    return m_Annot;
 }
 
 
@@ -92,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/22 15:56:12  vasilche
+ * Used CSeq_annot_Handle in annotations' handles.
+ *
  * Revision 1.4  2004/11/04 19:21:18  grichenk
  * Marked non-handle versions of SetLimitXXXX as deprecated
  *

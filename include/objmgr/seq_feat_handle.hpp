@@ -34,12 +34,11 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/impl/heap_scope.hpp>
 #include <util/range.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -53,6 +52,7 @@ BEGIN_SCOPE(objects)
 
 
 class CSeq_annot_Handle;
+class CMappedFeat;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,12 +66,6 @@ class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
 {
 public:
     CSeq_feat_Handle(void);
-    CSeq_feat_Handle(CScope& scope,
-                     const CSeq_annot_Info& annot_info,
-                     size_t index);
-    CSeq_feat_Handle(CScope& scope,
-                     const CSeq_annot_SNP_Info& snp_info,
-                     size_t index);
     ~CSeq_feat_Handle(void);
 
     /// Check if handle points to a seq-feat
@@ -148,6 +142,8 @@ public:
     string GetAllele(size_t index) const;
 
 private:
+    friend class CMappedFeat;
+
     const SSNP_Info& x_GetSNP_Info(void) const;
     const CSeq_feat& x_GetSeq_feat(void) const;
 
@@ -157,8 +153,11 @@ private:
         eType_Seq_annot_SNP_Info
     };
 
-    CHeapScope                 m_Scope;
-    CConstRef<CSeq_annot_Info> m_Annot;
+    CSeq_feat_Handle(const CSeq_annot_Handle& annot,
+                     EAnnotInfoType type,
+                     size_t index);
+
+    CSeq_annot_Handle          m_Annot;
     EAnnotInfoType             m_AnnotInfoType;
     size_t                     m_Index;
 };
@@ -438,6 +437,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/12/22 15:56:12  vasilche
+* Used CSeq_annot_Handle in annotations' handles.
+*
 * Revision 1.5  2004/12/03 19:25:55  shomrat
 * Added export prefix
 *

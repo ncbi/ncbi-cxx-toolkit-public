@@ -34,9 +34,8 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/impl/heap_scope.hpp>
 #include <objects/seqres/Seq_graph.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,8 +47,8 @@ BEGIN_SCOPE(objects)
  */
 
 
-class CScope;
 class CSeq_annot_Handle;
+class CMappedGraph;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -62,9 +61,6 @@ class CSeq_graph_Handle
 {
 public:
     CSeq_graph_Handle(void);
-    CSeq_graph_Handle(CScope& scope,
-                      const CSeq_annot_Info& annot_info,
-                      size_t index);
     ~CSeq_graph_Handle(void);
 
     /// Check if handle points to a seq-graph
@@ -105,10 +101,13 @@ public:
     const CSeq_graph::TGraph& GetGraph(void) const;
 
 private:
+    friend class CMappedGraph;
+
     const CSeq_graph& x_GetSeq_graph(void) const;
 
-    CHeapScope                 m_Scope;
-    CConstRef<CSeq_annot_Info> m_Annot;
+    CSeq_graph_Handle(const CSeq_annot_Handle& annot, size_t index);
+
+    CSeq_annot_Handle          m_Annot;
     size_t                     m_Index;
 };
 
@@ -255,6 +254,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/12/22 15:56:12  vasilche
+* Used CSeq_annot_Handle in annotations' handles.
+*
 * Revision 1.3  2004/09/29 19:49:37  kononenk
 * Added doxygen formatting
 *

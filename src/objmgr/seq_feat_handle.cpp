@@ -48,47 +48,32 @@ CSeq_feat_Handle::CSeq_feat_Handle(void)
 }
 
 
-CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
-                                   const CSeq_annot_Info& annot_info,
+CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
+                                   EAnnotInfoType type,
                                    size_t index)
-    : m_Scope(scope),
-      m_Annot(&annot_info),
-      m_AnnotInfoType(eType_Seq_annot_Info),
+    : m_Annot(annot),
+      m_AnnotInfoType(type),
       m_Index(index)
 {
-    return;
-}
-
-
-CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
-                                   const CSeq_annot_SNP_Info& snp_info,
-                                   size_t index)
-    : m_Scope(scope),
-      m_Annot(&snp_info.GetParentSeq_annot_Info()),
-      m_AnnotInfoType(eType_Seq_annot_SNP_Info),
-      m_Index(index)
-{
-    return;
 }
 
 
 CSeq_feat_Handle::~CSeq_feat_Handle(void)
 {
-    return;
 }
 
 
 const SSNP_Info& CSeq_feat_Handle::x_GetSNP_Info(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
-    return m_Annot->x_GetSNP_annot_Info().GetSNP_Info(m_Index);
+    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().GetSNP_Info(m_Index);
 }
 
 
 const CSeq_feat& CSeq_feat_Handle::x_GetSeq_feat(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_Info);
-    return m_Annot->GetAnnotObject_Info(m_Index).GetFeat();
+    return m_Annot.x_GetInfo().GetAnnotObject_Info(m_Index).GetFeat();
 }
 
 
@@ -102,7 +87,7 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
     case eType_Seq_annot_SNP_Info:
         {
             return x_GetSNP_Info().
-                CreateSeq_feat(m_Annot->x_GetSNP_annot_Info());
+                CreateSeq_feat(m_Annot.x_GetInfo().x_GetSNP_annot_Info());
         }
     default:
         {
@@ -114,10 +99,7 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
 
 CSeq_annot_Handle CSeq_feat_Handle::GetAnnot(void) const
 {
-    if ( m_Annot ) {
-        return m_Scope.GetImpl()->GetSeq_annotHandle(*m_Annot->GetSeq_annotCore());
-    }
-    return CSeq_annot_Handle();
+    return m_Annot;
 }
 
 
@@ -144,7 +126,7 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 CSeq_id::TGi CSeq_feat_Handle::GetGi(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
-    return m_Annot->x_GetSNP_annot_Info().GetGi();
+    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().GetGi();
 }
 
 
@@ -166,7 +148,7 @@ string CSeq_feat_Handle::GetAllele(size_t index) const
     _ASSERT(index < SSNP_Info::kMax_AllelesCount);
     const SSNP_Info& snp = x_GetSNP_Info();
     _ASSERT(snp.m_AllelesIndices[index] != SSNP_Info::kNo_AlleleIndex);
-    return m_Annot->x_GetSNP_annot_Info().
+    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().
         x_GetAllele(snp.m_AllelesIndices[index]);
 }
 
@@ -177,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/22 15:56:12  vasilche
+ * Used CSeq_annot_Handle in annotations' handles.
+ *
  * Revision 1.4  2004/11/04 19:21:18  grichenk
  * Marked non-handle versions of SetLimitXXXX as deprecated
  *
