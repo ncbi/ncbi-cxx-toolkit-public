@@ -781,7 +781,6 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Int4 i;
    Uint1* s,* s_end;
    Uint1* q_start = query->sequence;
-   Uint1* q_end = query->sequence + query->length;
    Int4 hitsfound, total_hits = 0;
    Uint4 word_size, compressed_wordsize, reduced_word_length;
    Uint4 extra_bytes_needed;
@@ -868,7 +867,7 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
    Uint4 max_bases_left, Uint4 max_bases_right, Uint4 max_length, 
    Boolean extend_partial_byte, Uint4* extended_right)
 {
-   Uint4 length, extended_left = 0;
+   Uint4 length;
    Uint1* q,* s;
    
    *extended_right = 0;
@@ -1059,7 +1058,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Int4 start_offset, end_offset, next_start;
    Uint1 max_bases_left, max_bases_right;
    Boolean variable_wordsize = word_options->variable_wordsize;
-   Int4 extended_right;
+   Uint4 extended_right;
    Uint4 q_off, s_off; /* Adjusted offsets */
    Uint1 remainder; 
 
