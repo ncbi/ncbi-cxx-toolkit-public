@@ -622,7 +622,7 @@ bool CWriterCopyByteSourceReader::EndOfData(void) const
 
 
 CRef<CSubSourceCollector>
-CWriterCopyByteSourceReader::SubSource(size_t prepend,
+CWriterCopyByteSourceReader::SubSource(size_t /*prepend*/,
                                        CRef<CSubSourceCollector> parent)
 {
     return 
@@ -637,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/10/20 21:18:18  ivanov
+ * Get rid of compilation warning
+ *
  * Revision 1.29  2003/10/14 18:28:33  vasilche
  * Added full set of explicit constructors/destructors to all readers and sources.
  * Added CWriterCopyByteSourceReader for copying data from another reader object.
