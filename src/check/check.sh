@@ -7,11 +7,37 @@
 #
 #  Auxilary script -- to be called by "./Makefile.check"
 #
-#  "file:[full:]/abs_fname  file:[full:]rel_fname
-#   mail:[full:]addr1,addr2,..  post:[full:]url  watch:addr1,addr2,.."
+#  "file:[full:]/abs_fname       file:[full:]rel_fname
+#   mail:[full:]addr1,addr2,...  post:[full:]url  watch:addr1,addr2,...
+#   debug"
 #
 ###########################################################################
 
+
+####  ERROR STREAM
+
+err_log="/tmp/check.sh.err.$$"
+exec 2>$err_log
+trap "rm -f $err_log" 1 2 15
+
+
+####  DEBUG
+
+n_arg=0
+for arg in "$@" ; do
+   n_arg=`expr $n_arg + 1`
+   test $n_arg -lt 5   &&  continue
+
+   if test "$arg" = "debug" ; then
+      set -xv
+      debug="yes"
+      run_script="/bin/sh -xv"
+      break
+   fi
+done
+
+
+####  MISC
 
 script_name=`basename $0`
 script_args="$*"
@@ -19,11 +45,10 @@ script_args="$*"
 short_res="check.sh.log"
 full_res="check.sh.out"
 
+mailx="mailx -r ''"
 
-#####  ERRORS
-err_log="/tmp/check.sh.err.$$"
-exec 2>$err_log
-trap "rm -f $err_log" 1 2 15
+
+####  ERROR REPORT
 
 Error()
 {
@@ -45,8 +70,7 @@ EOF
 
 ####  ARGS
 
-test $# -gt 3 ||  Error "Wrong number of args:  $#"
-test -d "$3"  ||  Error "Is not a directory:  $2"
+test $# -gt 3  ||  Error "Wrong number of args:  $#"
 
 signature="$1"
 make="$2"
@@ -58,14 +82,15 @@ shift
 shift
 shift
 
-cd "$builddir"  ||  Error "Cannot CHDIR to directory:  $builddir"
+test -d "$builddir"  &&  cd "$builddir"  ||  \
+  Error "Cannot CHDIR to directory:  $builddir"
 
 case "$action" in
  all )
    # continue
    ;;
  clean | purge )
-   test -x ./check.sh  &&  ./check.sh clean
+   test -x ./check.sh  &&  $run_script ./check.sh clean
    exit 0
    ;;
  * )
@@ -76,7 +101,8 @@ esac
 
 ####  RUN CHECKS
 
-"$make" check_r RUN_CHECK=Y
+"$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
+$run_script ./check.sh run
 
 
 ####  POST RESULTS
@@ -110,6 +136,8 @@ for dest in "$@" ; do
       loc=`echo "$loc" | sed 's/,/ /g'`
       watch_list="$watch_list $loc"
       ;;
+    debug )
+      ;;
     * )
       err_list="$err_list BAD_TYPE:\"$dest\""
       ;;
@@ -117,7 +145,7 @@ for dest in "$@" ; do
 done
 
 # Compose the "full" results archive, if necessary
-echo "$*" | grep ':full:' >/dev/null  &&  ./check.sh concat
+echo "$*" | grep ':full:' >/dev/null  &&   $run_scrip ./check.sh concat
 
 # Post results to the specified locations
 if test -n "$file_list_full" ; then
@@ -139,7 +167,7 @@ subject="[C++ CHECK RESULTS]  ${signature}"
 if test -n "$mail_list_full" ; then
    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
-      cat $full_res | mailx -s "$subject" $mailto  || \
+      cat $full_res | $mailx -s "$subject" $mailto  || \
          err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
@@ -147,15 +175,15 @@ fi
 if test -n "$mail_list" ; then
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
-      cat $short_res | mailx -s "$subject" $mailto  ||  \
+      cat $short_res | $mailx -s "$subject" $mailto  ||  \
          err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
 # Post errors to watchers
-if test -n "$err_list" ; then
+if test -n "$err_list"  -o  "$debug" = "yes" ; then
    ( echo "$err_list" ; echo ; echo "====================" ; cat $err_log ) | \
-    mailx -s "[C++ CHECK ERR]  ${signature}" $watch_list
+    $mailx -s "[C++ CHECK ERR]  ${signature}" $watch_list
 fi
 
 
