@@ -77,12 +77,18 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     {
         if (m_EventMode == CObjectsSniffer::eCallAlways) {
 
+            // Clear the discard flag before calling sniffer's event reactors
+            m_Sniffer->SetDiscardCurrObject(false);
+
             m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
      
             DefaultRead(in, object);
 
             m_Sniffer->OnObjectFoundPost(object);
 
+            // Relay discard flag to the stream
+            bool discard = m_Sniffer->GetDiscardCurrObject();
+            in.SetDiscardCurrObject(discard);
         }
         else 
         {
@@ -237,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2003/08/28 16:15:57  kuznets
+* + SetDiscardCurrObject() method
+*
 * Revision 1.12  2003/08/25 14:27:38  kuznets
 * Added stack reflecting current serialization hooks call hierachy.
 *

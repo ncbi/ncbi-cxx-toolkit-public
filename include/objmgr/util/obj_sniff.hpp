@@ -106,7 +106,7 @@ public:
 
 
 public:
-    CObjectsSniffer() {}
+    CObjectsSniffer() : m_DiscardCurrObj(false) {}
     virtual ~CObjectsSniffer() {}
 
     // Add new possible type to the recognition list.
@@ -142,6 +142,12 @@ public:
     // and deserialized.
     virtual void OnObjectFoundPost(const CObjectInfo& object);
 
+    // Set the discard flag. If set TRUE current deserialized object is not
+    // deserialized. 
+    // The mechanizm is based on CObjectIStream::SetDiscardCurrObject
+    void SetDiscardCurrObject(bool discard=true) { m_DiscardCurrObj = true; }
+    bool GetDiscardCurrObject() const { return m_DiscardCurrObj; }
+
 protected:
     void ProbeASN1_Text(CObjectIStream& input);
     void ProbeASN1_Bin(CObjectIStream& input);
@@ -151,9 +157,14 @@ protected:
     
     friend class COffsetReadHook;
 private:
-    TCandidates         m_Candidates;  // Possible candidates for type probing
-    TTopLevelMapVector  m_TopLevelMap; // Vector of level object descriptions
-    size_t              m_StreamOffset;// Stream offset of the top level object
+    // Possible candidates for type probing
+    TCandidates         m_Candidates;    
+    // Vector of level object descriptions
+    TTopLevelMapVector  m_TopLevelMap;   
+    // Stream offset of the top level object
+    size_t              m_StreamOffset;  
+    // Flag indicates that current object should be discarded
+    bool                m_DiscardCurrObj;
 };
 
 
@@ -184,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/08/28 16:15:23  kuznets
+ * + SetDiscardCurrObject() method
+ *
  * Revision 1.12  2003/08/25 14:27:24  kuznets
  * Added stack reflecting current serialization hooks call hierachy.
  *
