@@ -193,10 +193,9 @@ CGuidGenerator::~CGuidGenerator(void)
 string CGuidGenerator::Generate12Chars(void)
 {
     CNcbiOstrstream ost;
-
-    ost << hex << uppercase << noshowbase << setw(12) << setfill('A') 
-        << m_Seed++ << ends << flush;
-
+    ost.unsetf(ios::showbase);
+    ost.setf  (ios::uppercase);
+    ost << hex  << setw(12) << setfill('A') << m_Seed++ << ends << flush;
     return ost.str();
 }
 
@@ -1028,6 +1027,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/06/15 19:01:08  gorelenk
+ * Changed CGuidGenerator::Generate12Chars to fix compilation errors on
+ * GCC 2.95.
+ *
  * Revision 1.30  2004/06/14 20:59:23  gorelenk
  * Added *correct* conversion from streampos to size_t .
  *
