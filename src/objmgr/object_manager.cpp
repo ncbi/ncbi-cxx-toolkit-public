@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.8  2002/05/02 20:42:37  grichenk
 * throw -> THROW1_TRACE
 *
@@ -64,9 +67,9 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr/object_manager.hpp>
 #include "data_source.hpp"
-#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr/scope.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE

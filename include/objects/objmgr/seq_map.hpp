@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.15  2002/05/03 21:28:02  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -87,7 +90,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <vector>

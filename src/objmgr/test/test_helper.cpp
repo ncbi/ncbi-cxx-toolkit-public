@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.8  2002/05/03 21:28:12  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -90,11 +93,11 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/objmgr1/bioseq_handle.hpp>
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/desc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
-#include <objects/objmgr1/align_ci.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/desc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/align_ci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
 

@@ -29,7 +29,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objects/objmgr1/reader_pubseq.hpp>
+#include <objects/objmgr/reader_pubseq.hpp>
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -74,6 +74,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.3  2002/05/06 03:28:52  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.2  2002/04/12 14:52:34  butanaev
 * Typos fixed, code cleanup.
 *

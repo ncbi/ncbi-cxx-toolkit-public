@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.2  2002/02/25 21:05:27  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -44,7 +47,7 @@
 */
 
 
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.4  2002/03/15 18:10:08  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -48,7 +51,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include "seq_id_mapper.hpp"
 #include <serial/typeinfo.hpp>
 

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.16  2002/05/03 21:28:10  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -83,10 +86,10 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr/seq_map.hpp>
 #include "seq_id_mapper.hpp"
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.30  2002/05/06 03:31:51  vakatov
+ * OM/OM1 renaming
+ *
  * Revision 1.29  2002/03/11 21:52:05  lavr
  * Print complete debug and trace information when compiled with _DEBUG
  *
@@ -165,7 +168,7 @@
 #include <objects/id1/ID1server_back.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/ID1server_request.hpp>
-#include <objects/objmgr/objmgr.hpp>
+#include <objects/objmgr_old/objmgr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>

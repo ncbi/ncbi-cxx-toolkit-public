@@ -36,9 +36,9 @@
 #include "data_source.hpp"
 #include "annot_object.hpp"
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/objmgr1/reader_id1.hpp>
-#include <objects/objmgr1/reader_pubseq.hpp>
-#include <objects/objmgr1/gbloader.hpp>
+#include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/reader_pubseq.hpp>
+#include <objects/objmgr/gbloader.hpp>
 #include <bitset>
 #include <set>
 #include <vector>
@@ -798,6 +798,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.33  2002/05/03 21:28:10  ucko
 * Introduce T(Signed)SeqPos.
 *

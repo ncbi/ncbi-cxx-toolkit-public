@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.11  2002/04/18 23:24:24  kimelman
 * bugfix: out of bounds...
 *
@@ -98,11 +101,11 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/gbloader.hpp>
-#include <objects/objmgr1/reader_id1.hpp>
-#include <objects/objmgr1/reader_pubseq.hpp>
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/gbloader.hpp>
+#include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/reader_pubseq.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>

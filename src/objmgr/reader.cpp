@@ -22,7 +22,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/reader.hpp>
+#include <objects/objmgr/reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.5  2002/03/27 20:23:50  butanaev
 * Added connection pool.
 *

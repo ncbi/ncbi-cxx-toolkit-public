@@ -33,7 +33,7 @@
 *
 */
 
-#include <objects/objmgr1/reader.hpp>
+#include <objects/objmgr/reader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -57,6 +57,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/05/06 03:28:48  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.2  2002/04/09 18:48:16  kimelman
 * portability bugfixes: to compile on IRIX, sparc gcc
 *

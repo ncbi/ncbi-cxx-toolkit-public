@@ -22,7 +22,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/reader_pubseq.hpp>
+#include <objects/objmgr/reader_pubseq.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.10  2002/05/03 21:28:10  ucko
 * Introduce T(Signed)SeqPos.
 *

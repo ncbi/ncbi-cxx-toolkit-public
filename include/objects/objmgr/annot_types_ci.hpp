@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/06 03:30:35  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.14  2002/05/03 21:28:01  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -85,8 +88,8 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/bioseq_handle.hpp>
-#include <objects/objmgr1/annot_ci.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/annot_ci.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/06 03:30:35  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.16  2002/05/03 18:35:36  grichenk
 * throw -> THROW1_TRACE
 *
@@ -87,7 +90,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <corelib/ncbistd.hpp>

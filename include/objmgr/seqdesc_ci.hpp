@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.2  2002/02/21 19:27:01  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -45,7 +48,7 @@
 */
 
 
-#include <objects/objmgr1/desc_ci.hpp>
+#include <objects/objmgr/desc_ci.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <corelib/ncbistd.hpp>
 

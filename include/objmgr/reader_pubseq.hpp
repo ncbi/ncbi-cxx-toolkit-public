@@ -30,7 +30,7 @@
 #include <serial/enumvalues.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
-#include <objects/objmgr1/reader.hpp>
+#include <objects/objmgr/reader.hpp>
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
@@ -130,6 +130,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.7  2002/05/03 21:28:02  ucko
 * Introduce T(Signed)SeqPos.
 *

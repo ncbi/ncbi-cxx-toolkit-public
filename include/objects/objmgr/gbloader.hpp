@@ -42,8 +42,8 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include <objects/objmgr1/data_loader.hpp>
-#include <objects/objmgr1/reader.hpp>
+#include <objects/objmgr/data_loader.hpp>
+#include <objects/objmgr/reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.19  2002/05/06 03:30:35  vakatov
+ * OM/OM1 renaming
+ *
  * Revision 1.18  2002/05/03 21:28:01  ucko
  * Introduce T(Signed)SeqPos.
  *

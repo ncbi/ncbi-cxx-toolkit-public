@@ -12,7 +12,7 @@ SRC = align_ci annot_ci annot_object annot_types_ci bioseq_handle \
       bioseq_handle2 bioseq_info tse_info seqmatch_info gbload_util \
       gbloader strstreambuf
 
-LIB    = xobjmgr1
+LIB    = xobjmgr
 
 # Dependencies for shared library
 DLL_LIB = dbapi_driver

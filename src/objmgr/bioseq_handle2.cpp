@@ -30,9 +30,9 @@
 *   CreateDefLine in the C toolkit.)
 */
 
-#include <objects/objmgr1/seqdesc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
-#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/scope.hpp>
 #include <serial/iterator.hpp>
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -710,6 +710,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.10  2002/05/03 21:28:09  ucko
 * Introduce T(Signed)SeqPos.
 *

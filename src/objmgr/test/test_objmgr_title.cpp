@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.6  2002/03/27 22:08:46  ucko
 * Use high-level GB loader instead of low-level ID1 reader.
 *
@@ -70,10 +73,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/bioseq_handle.hpp>
-#include <objects/objmgr1/gbloader.hpp>
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/gbloader.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/06 03:28:49  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.4  2002/05/03 21:28:11  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -60,14 +63,14 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 
 // Object manager includes
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/desc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
-#include <objects/objmgr1/align_ci.hpp>
-#include <objects/objmgr1/gbloader.hpp>
-#include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/desc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/align_ci.hpp>
+#include <objects/objmgr/gbloader.hpp>
+#include <objects/objmgr/reader_id1.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;

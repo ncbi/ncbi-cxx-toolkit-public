@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/06 03:30:35  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.4  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -50,7 +53,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.18  2002/04/22 20:04:39  grichenk
 * Fixed TSE dropping, removed commented code
 *
@@ -95,10 +98,10 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr/scope.hpp>
 #include "data_source.hpp"
 #include "tse_info.hpp"
-#include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr/object_manager.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 

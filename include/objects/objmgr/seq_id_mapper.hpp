@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.6  2002/04/22 20:03:48  grichenk
 * Redesigned keys usage table to work in 64-bit mode
 *
@@ -54,7 +57,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.hpp>

@@ -23,7 +23,7 @@
 */
 
 #include <corelib/ncbistre.hpp>
-#include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr/reader_id1.hpp>
 
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.20  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.19  2002/05/03 21:28:10  ucko
 * Introduce T(Signed)SeqPos.
 *

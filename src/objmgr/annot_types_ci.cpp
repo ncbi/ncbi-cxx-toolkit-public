@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.19  2002/05/03 21:28:08  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -97,13 +100,13 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/annot_types_ci.hpp>
+#include <objects/objmgr/annot_types_ci.hpp>
 #include "annot_object.hpp"
 #include "data_source.hpp"
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/06 03:28:48  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.2  2002/02/25 21:05:29  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -41,7 +44,7 @@
 */
 
 
-#include <objects/objmgr1/seqmatch_info.hpp>
+#include <objects/objmgr/seqmatch_info.hpp>
 
 #include "data_source.hpp"
 #include "tse_info.hpp"

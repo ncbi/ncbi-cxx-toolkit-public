@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.6  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -54,7 +57,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/annot_ci.hpp>
+#include <objects/objmgr/annot_ci.hpp>
 #include "annot_object.hpp"
 #include "handle_range_map.hpp"
 #include "tse_info.hpp"

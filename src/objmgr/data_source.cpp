@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.39  2002/05/03 21:28:09  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -156,7 +159,7 @@
 #include "data_source.hpp"
 #include "annot_object.hpp"
 #include "handle_range_map.hpp"
-#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>

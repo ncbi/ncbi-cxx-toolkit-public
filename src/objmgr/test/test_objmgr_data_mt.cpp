@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.1  2002/04/30 19:04:05  gouriano
 * multi-threaded data retrieval test
 *
@@ -45,14 +48,14 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/seqdesc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
-#include <objects/objmgr1/align_ci.hpp>
-#include <objects/objmgr1/gbloader.hpp>
-#include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/align_ci.hpp>
+#include <objects/objmgr/gbloader.hpp>
+#include <objects/objmgr/reader_id1.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 

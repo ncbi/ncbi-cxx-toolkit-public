@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.7  2002/05/03 21:28:08  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -58,7 +61,7 @@
 * ===========================================================================
 */
 
-#include <objects/objmgr1/align_ci.hpp>
+#include <objects/objmgr/align_ci.hpp>
 
 #include "annot_object.hpp"
 

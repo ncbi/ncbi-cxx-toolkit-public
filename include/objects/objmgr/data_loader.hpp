@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/06 03:30:35  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.7  2002/03/30 19:37:05  kimelman
 * gbloader MT test
 *
@@ -61,8 +64,8 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr1/data_loader_factory.hpp>
-#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/data_loader_factory.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
