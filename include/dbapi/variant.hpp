@@ -180,6 +180,7 @@ public:
     CDB_Object* GetNonNullData() const;
 
     // Methods to work with BLOB data (Text and Image)
+    size_t GetBlobSize();
     size_t Read(void* buf, size_t len);
     size_t Append(const void* buf, size_t len);
     // Truncates from buffer end to buffer start. 
@@ -233,6 +234,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.12  2003/06/25 22:24:46  kholodov
+ * Added: GetBlobSize() method
+ *
  * Revision 1.11  2003/05/05 18:33:15  kholodov
  * Added: LONGCHAR and LONGBINARY support
  *

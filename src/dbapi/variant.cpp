@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.19  2003/06/25 22:24:21  kholodov
+* Added: GetBlobSize() method
+*
 * Revision 1.18  2003/05/05 18:32:50  kholodov
 * Added: LONGCHAR and LONGBINARY support
 *
@@ -545,10 +548,8 @@ size_t CVariant::Read(void* buf, size_t len)
 
     switch(GetType()) {
     case eDB_Image:
-        return ((CDB_Image*)GetData())->Read(buf, len);
-        
     case eDB_Text:
-        return ((CDB_Text*)GetData())->Read(buf, len);
+        return ((CDB_Stream*)GetData())->Read(buf, len);
 
     default:
         throw CVariantException("CVariant::Read(): invalid type");
@@ -560,13 +561,24 @@ size_t CVariant::Append(const void* buf, size_t len)
 
     switch(GetType()) {
     case eDB_Image:
-        return ((CDB_Image*)GetData())->Append(buf, len);
-        
     case eDB_Text:
-        return ((CDB_Text*)GetData())->Append(buf, len);
+        return ((CDB_Stream*)GetData())->Append(buf, len);
 
     default:
         throw CVariantException("CVariant::Append(): invalid type");
+    }
+}
+
+size_t CVariant::GetBlobSize()
+{
+
+    switch(GetType()) {
+    case eDB_Image:
+    case eDB_Text:
+        return ((CDB_Stream*)GetData())->Size();
+
+    default:
+        throw CVariantException("CVariant::GetBlobSize(): invalid type");
     }
 }
 
