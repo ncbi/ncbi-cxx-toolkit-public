@@ -243,14 +243,7 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
 
 bool CBioseqContext::x_IsGPS(void) const
 {
-    const CSeq_entry& gps = 
-        GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
-    // make sure the returned entry is indeed gen-prod set
-    if ( gps.IsSet() ) {
-        return gps.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set;
-    }
-
-    return false;
+    return GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
 }
 
 
@@ -368,10 +361,10 @@ SIZE_TYPE CBioseqContext::x_GetPartNumber(const CBioseq_Handle& h) const
 const CBioseq& CBioseqContext::x_GetMasterForPart(const CBioseq& part) const
 {
     CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(part);
-    const CSeq_entry& segset =
+    CSeq_entry_Handle segset =
         bsh.GetComplexityLevel(CBioseq_set::eClass_segset);
     _ASSERT(segset.IsSet());
-    const CBioseq_set& bsst = segset.GetSet();
+    const CBioseq_set& bsst = *segset.GetSet().GetBioseq_setCore();
     _ASSERT(!bsst.GetSeq_set().empty());
     _ASSERT(bsst.GetSeq_set().front()->IsSeq());
 
@@ -501,12 +494,12 @@ bool CBioseqContext::x_HasParts(const CBioseq& seq) const
 
     CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(seq);
 
-    const CSeq_entry& segset_entry =
+    CSeq_entry_Handle segset_entry =
         bsh.GetComplexityLevel(CBioseq_set::eClass_segset);
     if ( !segset_entry.IsSet() ) { 
         return false;
     }
-    const CBioseq_set& segset = segset_entry.GetSet();
+    const CBioseq_set& segset = *segset_entry.GetSet().GetBioseq_setCore();
     if ( !segset.CanGetClass()  ||
          segset.GetClass() != CBioseq_set::eClass_segset ) {
         return false;
@@ -724,6 +717,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/24 18:57:04  vasilche
+* CBioseq_Handle::GetComplexityLevel() now returns CSeq_entry_Handle.
+*
 * Revision 1.9  2004/03/18 15:36:26  shomrat
 * + new flag ShowFtableRefs
 *
