@@ -17,6 +17,13 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)nameser.h	5.24 (Berkeley) 6/1/90
+ *
+ *
+ * RCS Modification History:
+ * $Log$
+ * Revision 1.4  1995/05/18 08:23:22  epstein
+ * add RCS modification history (after PowerPC port)
+ *
  */
 
 /*
