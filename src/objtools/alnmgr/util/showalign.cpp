@@ -2029,7 +2029,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        (*iter)->range.GetFrom(), (*iter)->range.GetTo());
+                        (*iter)->range.GetFrom() +1 , (*iter)->range.GetTo() + 1 );
                 out << urlBuf;
             }  
             out << (*iter)->feat_str;
@@ -2047,7 +2047,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat5->range.GetFrom(), feat5->range.GetTo());
+                        feat5->range.GetFrom() + 1 , feat5->range.GetTo() + 1 );
                 out << urlBuf;
             }  
             out << actual_range.GetFrom() - feat5->range.GetTo() << " bp at 5' side: " << feat5->feat_str;
@@ -2061,7 +2061,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat3->range.GetFrom(), feat3->range.GetTo());
+                        feat3->range.GetFrom() + 1 , feat3->range.GetTo() + 1);
                 out << urlBuf;
             }
             out << feat3->range.GetFrom() - actual_range.GetTo() << " bp at 3' side: " << feat3->feat_str;
@@ -2201,6 +2201,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.47  2004/09/27 21:12:33  jianye
+*modify coordinates to get subseq
+*
 *Revision 1.46  2004/09/27 14:32:33  jianye
 *modify use_this_gi logic
 *
