@@ -1024,12 +1024,12 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     {{ /* wait for the connection request to come (up to timeout) */
         EIO_Status     status;
         SSOCK_Poll     poll;
-        SOCK_struct    sock;
         struct timeval tv;
+        SOCK_struct    s;
 
-        memset(&sock, 0, sizeof(sock));
-        sock.sock   = lsock->sock;
-        poll.sock   = &sock;
+        memset(&s, 0, sizeof(s));
+        s.sock      = lsock->sock;
+        poll.sock   = &s;
         poll.event  = eIO_Read;   /* ... due to READ-only operation       */
         poll.revent = eIO_Open;   /* (must have this cleared for check)   */
         status = s_Select(1, &poll, s_to2tv(timeout, &tv));
@@ -1228,15 +1228,15 @@ static EIO_Status s_Connect(SOCK            sock,
             int            x_errno = 0;
             EIO_Status     status;
             SSOCK_Poll     poll;
-            SOCK_struct    sock;
             struct timeval tv;
+            SOCK_struct    s;
 #ifdef NCBI_OS_UNIX
             SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(x_errno);
 #endif /*NCBI_OS_UNIX*/
 
-            memset(&sock, 0, sizeof(sock));
-            sock.sock   = x_sock;
-            poll.sock   = &sock;
+            memset(&s, 0, sizeof(s));
+            s.sock      = x_sock;
+            poll.sock   = &s;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, s_to2tv(timeout, &tv));
@@ -2428,6 +2428,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
                                 size_t          datalen)
 {
     size_t             x_msgsize;
+    char               w[1536];
     EIO_Status         status;
     unsigned short     x_port;
     unsigned int       x_host;
@@ -2464,7 +2465,9 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     }
 
     if ((x_msgsize = BUF_Size(sock->w_buf)) != 0) {
-        if ( !(x_msg = malloc(x_msgsize)) )
+        if (x_msgsize <= sizeof(w))
+            x_msg = w;
+        else if ( !(x_msg = malloc(x_msgsize)) )
             return eIO_Unknown;
         verify(BUF_Peek(sock->w_buf, x_msg, x_msgsize) == x_msgsize);
     } else
@@ -2534,7 +2537,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
         }
     }
 
-    if ( x_msg )
+    if (x_msg  &&  x_msg != w)
         free(x_msg);
     if (status == eIO_Success)
         sock->w_status = s_WipeWBuf(sock);
@@ -2543,14 +2546,15 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
 
 
 extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
-                                size_t          msgsize,
                                 void*           buf,
                                 size_t          buflen,
+                                size_t          msgsize,
                                 size_t*         msglen,
                                 unsigned int*   sender_addr,
                                 unsigned short* sender_port)
 {
     size_t     x_msgsize;
+    char       w[1536];
     EIO_Status status;
     void*      x_msg;
 
@@ -2573,7 +2577,8 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         ? msgsize : ((1 << 16) - 1);
 
     if ( !(x_msg = (x_msgsize <= buflen
-                    ? buf : malloc(x_msgsize))) ) {
+                    ? buf : (x_msgsize <= sizeof(w)
+                             ? w : malloc(x_msgsize)))) ) {
         return eIO_Unknown;
     }
 
@@ -2655,7 +2660,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         }
     }
 
-    if (x_msgsize > buflen)
+    if (x_msgsize > buflen && x_msg != w)
         free(x_msg);
     return status;
 }
@@ -3031,6 +3036,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.96  2003/04/30 17:00:18  lavr
+ * Added on-stack buffers for small datagrams; few name collisions resolved
+ *
  * Revision 6.95  2003/04/25 15:21:26  lavr
  * Explicit cast of calloc()'s result
  *
