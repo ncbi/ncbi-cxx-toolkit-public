@@ -231,14 +231,19 @@ public:
         : TParent(value), m_ParentTree(0) 
         {}
 
+        
         CBioNode(const CBioNode& bn)
-        : TParent(bn), m_ParentTree(bn.GetParentTree()) 
-        {}
+        : TParent(bn), m_ParentTree(0) 
+        {
+            TBioTree* pt = (TBioTree*)bn.GetParentTree();
+            SetParentTree(pt);
+        }
               
         CBioNode& operator =(const CBioNode& tree)
         {
             TParent::operator=(tree);
-            m_ParentTree = tree.GetParentTree();
+            TBioTree* pt = (TBioTree*)tree.GetParentTree();
+            SetParentTree(pt);
         }
 
         /// Associate node with the hosting class (non-recursive)
@@ -594,6 +599,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/01 19:57:55  kuznets
+ * Type casts to fix GCC 2.95 compilation
+ *
  * Revision 1.19  2004/10/21 13:29:11  kuznets
  * Improved comments
  *
