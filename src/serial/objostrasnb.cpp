@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/01/14 17:58:11  grichenk
+* Fixed long tags processing
+*
 * Revision 1.63  2001/12/10 16:57:24  grichenk
 * Fixed WriteLongTag()
 *
@@ -401,7 +404,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
         StartTag(byte);
         break;
     case eTagValue:
-        if ( byte & 0x80 )
+        if ( (byte & 0x80) == 0)
             m_CurrentTagState = eLengthStart;
         break;
     case eLengthStart:
@@ -512,14 +515,11 @@ void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
     }
     
     // beginning of tag
-    WriteByte(bits | 0x80); // write high bits
-    if ( shift == 0 )
-        return;
-    // write remaining bits
     while ( shift != 0 ) {
         shift -= 7;
         WriteByte((tag >> shift) | 0x80);
     }
+    // write remaining bits
     WriteByte(tag & 0x7f);
 }
 

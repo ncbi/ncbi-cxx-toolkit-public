@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/01/14 17:58:11  grichenk
+* Fixed long tags processing
+*
 * Revision 1.54  2001/10/17 20:41:24  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -353,7 +356,7 @@ TTag CObjectIStreamAsnBinary::PeekTag(void)
         }
         byte = PeekTagByte(i++);
         tag = (tag << 7) | (byte & 0x7f);
-    } while ( (byte & 0x80) == 0 );
+    } while ( (byte & 0x80) != 0 );
     m_CurrentTagLength = i;
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagParsed;
