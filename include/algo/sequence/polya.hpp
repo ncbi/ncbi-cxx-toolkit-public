@@ -46,15 +46,26 @@ enum EPolyTail {
 ///////////////////////////////////////////////////////////////////////////////
 /// PRE : null-terminated string containing sequence; possible cleavage site
 /// POST: poly-A tail cleavage site, if any (-1 if not)
-TSignedSeqPos FindPolyA(const char* seq, TSignedSeqPos possCleavageSite = -1);
+TSignedSeqPos NCBI_XALGOSEQ_EXPORT
+FindPolyA(const char* seq, TSignedSeqPos possCleavageSite = -1);
 
 ///////////////////////////////////////////////////////////////////////////////
 /// PRE : null-terminated string containing sequence; possible cleavage site
 /// POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 /// head, or neither
-EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
-                       TSignedSeqPos possCleavageSite = -1);
+EPolyTail NCBI_XALGOSEQ_EXPORT
+FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
+             TSignedSeqPos possCleavageSite = -1);
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.2  2003/12/30 21:28:31  johnson
+* added msvc export specifiers
+*
+* ===========================================================================
+*/
 
 #endif /*ALGO_SEQUENCE___POLYA__HPP*/
