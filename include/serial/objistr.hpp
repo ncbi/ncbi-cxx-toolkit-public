@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.66  2001/05/17 14:59:11  lavr
 * Typos corrected
 *
@@ -751,6 +755,17 @@ public:
     CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
 };
+
+
+inline
+char& CheckVisibleChar(char& c,
+                       EFixNonPrint fix_method,
+                       int at_line = 0);
+
+char& ReplaceVisibleChar(char& c,
+                         EFixNonPrint fix_method,
+                         int at_line);
+
 
 #include <serial/objistr.inl>
 

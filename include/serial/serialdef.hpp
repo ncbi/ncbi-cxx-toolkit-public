@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.17  2000/12/15 21:28:49  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -181,6 +185,20 @@ enum EContainerType {
     eContainerSet,
     eContainerMap
 };
+
+
+// How to process non-printing character in the ASN VisibleString
+//
+enum EFixNonPrint {
+    eFNP_Allow,            // pass through unchanged, post no error message
+    eFNP_Replace,          // replace with '#' silently
+    eFNP_ReplaceAndWarn,   // replace with '#', post an error of severity ERROR
+    eFNP_Throw,            // replace with '#', throw an exception
+    eFNP_Abort,            // replace with '#', post an error of severity FATAL
+
+    eFNP_Default = eFNP_ReplaceAndWarn
+};
+
 
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2001/06/07 17:12:50  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.67  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -340,16 +344,22 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsn(void)
     return new CObjectIStreamAsn();
 }
 
-CObjectIStreamAsn::CObjectIStreamAsn(void)
+CObjectIStreamAsn::CObjectIStreamAsn(EFixNonPrint how)
+    : m_FixMethod(how)
 {
 }
 
-CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
+CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
+                                     EFixNonPrint how)
+    : m_FixMethod(how)
 {
     Open(in);
 }
 
-CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn)
+CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
+                                     bool deleteIn,
+                                     EFixNonPrint how)
+    : m_FixMethod(how)
 {
     Open(in, deleteIn);
 }
@@ -771,6 +781,7 @@ void CObjectIStreamAsn::ReadString(string& s)
                 }
                 break;
             default:
+                /*
                 if ( (c & 0xff) > '~' ) {
                     // non ascii
                     if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
@@ -780,6 +791,7 @@ void CObjectIStreamAsn::ReadString(string& s)
                     // control
                     BadStringChar(startLine, c);
                 }
+                */
 
                 // ok: append char
                 if ( ++i == 128 ) {
@@ -795,6 +807,10 @@ void CObjectIStreamAsn::ReadString(string& s)
     catch ( CEofException& ) {
         UnendedString(startLine);
         throw;
+    }
+    // Check the string for non-printable characters
+    for (i = 0; i < s.length(); i++) {
+        CheckVisibleChar(s[i], m_FixMethod, startLine);
     }
 }
 
@@ -922,6 +938,8 @@ void CObjectIStreamAsn::SkipString(void)
                 }
                 break;
             default:
+                CheckVisibleChar(c, m_FixMethod, startLine);
+                /*
                 if ( (c & 0xff) > '~' ) {
                     // non ascii
                     if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
@@ -931,6 +949,7 @@ void CObjectIStreamAsn::SkipString(void)
                     // control
                     BadStringChar(startLine, c);
                 }
+                */
 
                 // ok: skip char
                 if ( ++i == 128 ) {

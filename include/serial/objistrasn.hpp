@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.48  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -255,9 +259,12 @@ BEGIN_NCBI_SCOPE
 class CObjectIStreamAsn : public CObjectIStream
 {
 public:
-    CObjectIStreamAsn(void);
-    CObjectIStreamAsn(CNcbiIstream& in);
-    CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
+    CObjectIStreamAsn(EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsn(CNcbiIstream& in,
+                      EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsn(CNcbiIstream& in,
+                      bool deleteIn,
+                      EFixNonPrint how = eFNP_Default);
 
     ESerialDataFormat GetDataFormat(void) const;
 
@@ -270,6 +277,12 @@ public:
 
     Uint1 ReadByte(void);
     void ReadBytes(Uint1* bytes, unsigned size);
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
 
 protected:
     TObjectIndex ReadIndex(void);
@@ -383,6 +396,7 @@ private:
     void EndBlock(void);
 
     bool m_BlockStart;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
 //#include <objistrb.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.14  2001/05/17 14:59:17  lavr
 * Typos corrected
 *
@@ -465,5 +469,22 @@ void CObjectIStream::SkipStd(const char* const& )
 {
     SkipCString();
 }
+
+
+inline
+char& CheckVisibleChar(char& c,
+                         EFixNonPrint fix_method,
+                         int at_line)
+{
+    if (fix_method == eFNP_Allow) {
+        return c;
+    }
+    if ((c & 0xff) <= '~'  &&  (c & 0xff) >= ' ') {
+    // Printable char - no checks or convertions
+        return c;
+    }
+    ReplaceVisibleChar(c, fix_method, at_line);
+}
+
 
 #endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */

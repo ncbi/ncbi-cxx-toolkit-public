@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/06/07 17:12:51  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.52  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -264,7 +268,8 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 }
 
 
-CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(void)
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
+    : m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -273,7 +278,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(void)
     m_CurrentTagLength = 0;
 }
 
-CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
+                                                 EFixNonPrint how)
+    : m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -284,7 +291,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
 }
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
-                                                 bool deleteIn)
+                                                 bool deleteIn,
+                                                 EFixNonPrint how)
+    : m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -761,6 +770,10 @@ void CObjectIStreamAsnBinary::ReadStringValue(string& s)
     size_t length = ReadLength();
     s.resize(length);
     ReadBytes(&s[0], length);
+    // Check the string for non-printable characters
+    for (size_t i = 0; i < s.length(); i++) {
+        CheckVisibleChar(s[i], m_FixMethod);
+    }
     EndOfTag();
 }
 
@@ -768,9 +781,13 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
 {
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();
-	char* s = static_cast<char*>(malloc(length + 1));
-	ReadBytes(s, length);
-	s[length] = 0;
+    char* s = static_cast<char*>(malloc(length + 1));
+	 ReadBytes(s, length);
+    s[length] = 0;
+    // Check the string for non-printable characters
+    for (char* c = s; *c; c++) {
+        CheckVisibleChar(*c, m_FixMethod);
+    }
     EndOfTag();
     return s;
 }

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.34  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -190,8 +194,11 @@ public:
     typedef CObjectStreamAsnBinaryDefs::ETag ETag;
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
 
-    CObjectOStreamAsnBinary(CNcbiOstream& out);
-    CObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
+    CObjectOStreamAsnBinary(CNcbiOstream& out,
+                            EFixNonPrint how = eFNP_Default);
+    CObjectOStreamAsnBinary(CNcbiOstream& out,
+                            bool deleteOut,
+                            EFixNonPrint how = eFNP_Default);
     virtual ~CObjectOStreamAsnBinary(void);
 
     ESerialDataFormat GetDataFormat(void) const;
@@ -220,6 +227,13 @@ public:
 
     void WriteEndOfContent(void);
 
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
+
 protected:
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
@@ -235,7 +249,8 @@ protected:
     virtual void WriteStringStore(const string& s);
     virtual void CopyString(CObjectIStream& in);
     virtual void CopyStringStore(CObjectIStream& in);
-    void CopyStringValue(CObjectIStreamAsnBinary& in);
+    void CopyStringValue(CObjectIStreamAsnBinary& in,
+                         bool checkVisible = false);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
@@ -307,6 +322,7 @@ private:
     size_t m_CurrentTagLength;
     size_t m_CurrentTagLimit;
     stack<size_t> m_Limits;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
     void StartTag(Uint1 code);
     void EndTag(void);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/06/07 17:12:51  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.63  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -320,14 +324,17 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
     return new CObjectOStreamAsn(out, deleteOut);
 }
 
-CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out)
-    : CObjectOStream(out)
+CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
+                                     EFixNonPrint how)
+    : CObjectOStream(out), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
 }
 
-CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
-    : CObjectOStream(out, deleteOut)
+CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
+                                     bool deleteOut,
+                                     EFixNonPrint how)
+    : CObjectOStream(out, deleteOut), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
 }
@@ -480,7 +487,9 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;
+        CheckVisibleChar(c, m_FixMethod, startLine);
         --length;
+        /*
         if ( (c & 0xff) > '~' ) {
             // non ascii
             if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 ) {
@@ -495,6 +504,7 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
                      ": " << (c & 0xff));
             c = '#';
         }
+        */
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
         if ( c == '"' )

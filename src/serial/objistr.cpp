@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2001/06/07 17:12:50  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.78  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -1357,5 +1361,30 @@ size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
     return 0;
 }
 #endif
+
+
+char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, int at_line)
+{
+    string message = "Bad char in VisibleString" +
+        ((at_line > 0) ?
+            " starting at line " + NStr::UIntToString(at_line) :
+            string("")) + ": " + NStr::IntToString(int(c) & 0xff);
+    c = '#';
+    switch (fix_method) {
+    case eFNP_Replace:
+        break;
+    case eFNP_ReplaceAndWarn:
+        CNcbiDiag(eDiag_Error, eDPF_Default) << message << Endm;
+        break;
+    case eFNP_Throw:
+        throw runtime_error(message);
+        break;
+    case eFNP_Abort:
+        CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
+        break;
+    }
+    return c;
+}
+
 
 END_NCBI_SCOPE

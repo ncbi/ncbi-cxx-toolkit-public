@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.33  2000/12/15 21:28:47  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -185,9 +189,12 @@ public:
     typedef CObjectStreamAsnBinaryDefs::ETag ETag;
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
 
-    CObjectIStreamAsnBinary(void);
-    CObjectIStreamAsnBinary(CNcbiIstream& in);
-    CObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn);
+    CObjectIStreamAsnBinary(EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsnBinary(CNcbiIstream& in,
+                            EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsnBinary(CNcbiIstream& in,
+                            bool deleteIn,
+                            EFixNonPrint how = eFNP_Default);
 
     ESerialDataFormat GetDataFormat(void) const;
 
@@ -196,6 +203,13 @@ public:
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
+
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
 
 protected:
     virtual bool ReadBool(void);
@@ -292,6 +306,7 @@ private:
     size_t m_CurrentTagLength;  // length of tag header (without length field)
     size_t m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
     stack<size_t> m_Limits;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
 #if CHECK_STREAM_INTEGRITY
     enum ETagState {

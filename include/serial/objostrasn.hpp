@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
 * Revision 1.36  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -190,8 +194,11 @@ BEGIN_NCBI_SCOPE
 class CObjectOStreamAsn : public CObjectOStream
 {
 public:
-    CObjectOStreamAsn(CNcbiOstream& out);
-    CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
+    CObjectOStreamAsn(CNcbiOstream& out,
+                      EFixNonPrint how = eFNP_Default);
+    CObjectOStreamAsn(CNcbiOstream& out,
+                      bool deleteOut,
+                      EFixNonPrint how = eFNP_Default);
     virtual ~CObjectOStreamAsn(void);
 
     ESerialDataFormat GetDataFormat(void) const;
@@ -204,6 +211,12 @@ public:
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in);
     void WriteEnum(TEnumValueType value, const string& valueName);
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
 
 protected:
     virtual void WriteBool(bool data);
@@ -285,6 +298,7 @@ private:
     void EndBlock(void);
 
     bool m_BlockStart;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
 //#include <serial/objostrasn.inl>
