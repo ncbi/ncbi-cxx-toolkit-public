@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/26 17:27:04  vasilche
+* Added optinal reverse feature traversal.
+*
 * Revision 1.18  2003/03/21 14:51:41  vasilche
 * Added debug printing of features collected.
 *
@@ -163,6 +166,7 @@ void CDemoApp::Init(void)
 
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
+    arg_desc->AddFlag("reverse", "reverse order of features");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -193,6 +197,9 @@ int CDemoApp::Run(void)
     int repeat_count = args["count"].AsInteger();
     bool only_features = args["only_features"];
     bool print_features = args["print_features"];
+    SAnnotSelector::ESortOrder order =
+        args["reverse"]?
+        SAnnotSelector::eSortOrder_Reverse: SAnnotSelector::eSortOrder_Normal;
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -274,8 +281,10 @@ int CDemoApp::Run(void)
         count = 0;
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
-        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-                              SAnnotSelector::eOverlap_Intervals, resolve);
+        for (CFeat_CI feat_it(scope, loc,
+                              SAnnotSelector()
+                              .SetResolveMethod(resolve)
+                              .SetSortOrder(order));
              feat_it;  ++feat_it) {
             count++;
             // Get seq-annot containing the feature
@@ -297,8 +306,10 @@ int CDemoApp::Run(void)
         // searching for e_Cdregion features only. If the sequence is
         // segmented (constructed), search for features on the referenced
         // sequences in the same top level seq-entry, ignore far pointers.
-        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
-                              SAnnotSelector::eOverlap_Intervals, resolve);
+        for (CFeat_CI feat_it(scope, loc,
+                              SAnnotSelector(CSeqFeatData::e_Cdregion)
+                              .SetResolveMethod(resolve)
+                              .SetSortOrder(order));
              feat_it;  ++feat_it) {
             count++;
             // Get seq vector filtered with the current feature location.
@@ -332,8 +343,10 @@ int CDemoApp::Run(void)
         loc.SetInt().SetTo(9);
         count = 0;
         // Iterate features. No feature type restrictions.
-        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-                              SAnnotSelector::eOverlap_Intervals, resolve);
+        for (CFeat_CI feat_it(scope, loc,
+                              SAnnotSelector()
+                              .SetResolveMethod(resolve)
+                              .SetSortOrder(order));
              feat_it;  ++feat_it) {
             count++;
         }
@@ -345,8 +358,10 @@ int CDemoApp::Run(void)
         // and start/stop points on the bioseq. If both start and stop are 0 the
         // whole bioseq is used. The last parameter may be used for type filtering.
         count = 0;
-        for (CFeat_CI feat_it(handle, 0, 999, CSeqFeatData::e_not_set,
-                              SAnnotSelector::eOverlap_Intervals, resolve);
+        for (CFeat_CI feat_it(handle, 0, 999,
+                              SAnnotSelector()
+                              .SetResolveMethod(resolve)
+                              .SetSortOrder(order));
              feat_it;  ++feat_it) {
             count++;
             if ( print_features ) {
