@@ -276,6 +276,10 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr);
 
+void 
+AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
+                   Int4 query_offset, Int4 query_length, Int4* start_shift);
+
 #ifdef __cplusplus
 }
 #endif

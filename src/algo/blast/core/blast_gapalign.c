@@ -3319,7 +3319,7 @@ OOF_SEMI_G_ALIGN_EX(Uint1* query, Uint1* subject, Int4 q_off,
 #define MAX_SUBJECT_OFFSET 90000
 #define MAX_TOTAL_GAPS 3000
 
-static void 
+void 
 AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
 		   Int4 query_offset, Int4 query_length, Int4* start_shift)
 {
@@ -3342,7 +3342,7 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
    if (s_offset <= max_extension_left) {
       *start_shift = 0;
    } else {
-      *start_shift = s_offset - max_extension_left;;
+      *start_shift = s_offset - max_extension_left;
       *subject_offset_ptr = max_extension_left;
    }
 
