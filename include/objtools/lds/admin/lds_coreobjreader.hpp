@@ -71,6 +71,7 @@ public:
         size_t        parent_offset;
         size_t        top_level_offset;
         bool          is_top_level;
+        int           ext_id;  // Database id or any other external id
 
         SObjectDetails(const  CObjectInfo& object_info,
                        size_t stream_offset,
@@ -81,7 +82,8 @@ public:
           offset(stream_offset),
           parent_offset(p_offset),
           top_level_offset(top_offset),
-          is_top_level(is_top)
+          is_top_level(is_top),
+          ext_id(0)
         {}
     };
 
@@ -89,7 +91,9 @@ public:
 
     // Find object information based on the stream offset.
     // Return NULL if not found.
-    const SObjectDetails* FindObjectInfo(size_t stream_offset);
+    SObjectDetails* FindObjectInfo(size_t stream_offset);
+
+    TObjectVector& GetObjectsVector() { return m_Objects; }
 
 protected:
 
@@ -134,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/30 20:28:31  kuznets
+ * added support of external (database) id into SObjectsDetals structure.
+ *
  * Revision 1.2  2003/05/23 20:33:33  kuznets
  * Bulk changes in lds library, code reorganizations, implemented top level
  * objects read, metainformation persistance implemented for top level objects...
