@@ -66,6 +66,9 @@
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
+/* NCBI C Toolkit libs are available */
+#undef HAVE_WXWINDOWS
+
 /* Fast-CGI library is available */
 #undef HAVE_LIBFASTCGI
 
