@@ -1,4 +1,4 @@
---$Revision: 4.2 $
+--$Revision: 4.3 $
 --**********************************************************************
 --
 --  MEDLINE data definitions
@@ -28,7 +28,8 @@ Medline-entry ::= SEQUENCE {
     xref SET OF Medline-si OPTIONAL ,
     idnum SET OF VisibleString OPTIONAL ,  -- ID Number (grants, contracts)
     gene SET OF VisibleString OPTIONAL ,
-	pmid PubMedId OPTIONAL }               -- MEDLINE records may include the PubMedId
+	pmid PubMedId OPTIONAL ,               -- MEDLINE records may include the PubMedId
+	pub-type SET OF VisibleString OPTIONAL } -- may show publication types (review, etc)
 
 Medline-mesh ::= SEQUENCE {
     mp BOOLEAN DEFAULT FALSE ,       -- TRUE if main point (*)
