@@ -138,12 +138,13 @@ public:
     bool IsInNucProt(void) const { return m_IsInNucProt; }  // Is in a nuc-prot set?
 
     // type of bioseq?
-    bool IsGED            (void) const { return m_IsGED;  }  // Genbank, EMBL or DDBJ
-    bool IsEMBL           (void) const { return m_IsEMBL; }  // EMBL
-    bool IsDDBJ           (void) const { return m_IsDDBJ; }  // DDBJ
-    bool IsPDB            (void) const { return m_IsPDB;  }  // PDB
-    bool IsSP             (void) const { return m_IsSP;   }  // SwissProt
-    bool IsTPA            (void) const { return m_IsTPA;  }  // Third-Party Annotation
+    bool IsGED            (void) const { return m_IsGED;     }  // Genbank, EMBL or DDBJ
+    bool IsGenbank        (void) const { return m_IsGenbank; }  // Genbank
+    bool IsEMBL           (void) const { return m_IsEMBL;    }  // EMBL
+    bool IsDDBJ           (void) const { return m_IsDDBJ;    }  // DDBJ
+    bool IsPDB            (void) const { return m_IsPDB;     }  // PDB
+    bool IsSP             (void) const { return m_IsSP;      }  // SwissProt
+    bool IsTPA            (void) const { return m_IsTPA;     }  // Third-Party Annotation
     bool IsJournalScan    (void) const { return m_IsJournalScan;  }  // scanned from journal
     bool IsPatent         (void) const { return m_IsPatent; }  // patent
     bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
@@ -212,6 +213,7 @@ private:
     bool m_IsInGPS;        // Gene-Prod Set
     bool m_IsInNucProt;    // Nuc-Prot Set
     bool m_IsGED;          // Genbank, Embl or Ddbj
+    bool m_IsGenbank;      // Genbank
     bool m_IsEMBL;         // EMBL
     bool m_IsDDBJ;         // DDBJ
     bool m_IsPDB;          // PDB
@@ -518,6 +520,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/11/24 16:46:21  shomrat
+* + IsGenbank
+*
 * Revision 1.21  2004/10/22 15:41:15  shomrat
 * + IsDDBJ
 *

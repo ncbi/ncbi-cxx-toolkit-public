@@ -81,6 +81,7 @@ CBioseqContext::CBioseqContext
     m_IsInGPS(false),
     m_IsInNucProt(false),
     m_IsGED(false),
+    m_IsGenbank(false),
     m_IsEMBL(false),
     m_IsDDBJ(false),
     m_IsPDB(false),
@@ -232,14 +233,12 @@ void CBioseqContext::x_SetId(void)
         // Genbank, Embl or Ddbj
         case CSeq_id::e_Embl:
             m_IsEMBL = true;
-            m_IsGED = true;
             break;
         case CSeq_id::e_Ddbj:
             m_IsDDBJ = true;
-            m_IsGED = true;
             break;
         case CSeq_id::e_Genbank:
-            m_IsGED = true;
+            m_IsGenbank = true;
             m_IsGbGenomeProject = m_IsGbGenomeProject  ||
                 ((acc_type & CSeq_id::eAcc_gb_genome) != 0);
             m_IsNcbiCONDiv = m_IsNcbiCONDiv  ||
@@ -266,6 +265,7 @@ void CBioseqContext::x_SetId(void)
         // TPA
         case CSeq_id::e_Tpg:
             m_IsTPA = true;
+            m_IsGenbank = true;
             break;
         case CSeq_id::e_Tpe:
             m_IsTPA = true;
@@ -316,6 +316,9 @@ void CBioseqContext::x_SetId(void)
         // GBB source
         m_ShowGBBSource = m_ShowGBBSource  ||  (acc_info == CSeq_id::eAcc_gsdb_dirsub);
     }
+
+    // Genbank/Embl/Ddbj (GED)
+    m_IsGED = m_IsEMBL  ||  m_IsDDBJ  ||  m_IsGenbank;
 }
 
 
@@ -600,6 +603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/11/24 16:50:21  shomrat
+* + IsGenbank
+*
 * Revision 1.28  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
