@@ -324,7 +324,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
             if ( m_Reader->m_Begin == m_Reader->m_End  ||
                  !m_Reader->m_LastOutAvail) {
                 n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf,
-					                              m_Reader->m_InBufSize);
+                                                  m_Reader->m_InBufSize);
                 if ( !n_read ) {
                     // We can't read more of data
                     return false;
@@ -353,8 +353,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
         if ( !out_avail ) { 
             m_Reader->m_LastStatus = m_Reader->m_Processor->Flush(
 				egptr(), out_size, &out_avail);
-            if ( m_Reader->m_LastStatus != CP::eStatus_Success  &&
-                 m_Reader->m_LastStatus != CP::eStatus_Overflow) {
+            if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
                 return false;
             }
             m_Reader->m_LastOutAvail = out_avail;
@@ -450,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/10 11:56:08  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.9  2004/01/20 20:37:35  lavr
  * Fix "Okay" spelling
  *

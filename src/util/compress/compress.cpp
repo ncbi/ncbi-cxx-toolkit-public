@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //
 
 CCompression::CCompression(ELevel level)
-    : m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr)
+    : m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0)
 {
     return;
 }
@@ -128,8 +128,8 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
 //
 
 CCompressionProcessor::CCompressionProcessor(void)
-    : m_Busy(false)
 {
+    Reset();
     return;
 }
 
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/10 11:56:08  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.5  2003/07/15 15:50:50  ivanov
  * Improved error diagnostics
  *

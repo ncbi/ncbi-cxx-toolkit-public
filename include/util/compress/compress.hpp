@@ -106,6 +106,8 @@ public:
         eLevel_VeryHigh      =  8,
         eLevel_Best          =  9
     };
+    // Compression flags. The flag selection depends from realization.
+    typedef int TFlags;
 
     // 'ctors
     CCompression(ELevel level = eLevel_Default);
@@ -127,6 +129,11 @@ public:
     int    GetErrorCode(void) const;
     string GetErrorDescription(void) const;
 
+    // Get/set flags
+    TFlags GetFlags(void) const;
+    void SetFlags(TFlags flags);
+
+
     //
     // Utility functions 
     //
@@ -136,6 +143,7 @@ public:
     // The compressor error code can be acquired via GetLastError() call.
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
+
     virtual bool CompressBuffer(
         const void* src_buf, unsigned int  src_len,
         void*       dst_buf, unsigned int  dst_size,
@@ -182,7 +190,8 @@ private:
     ELevel  m_Level;      // Compression level
     int     m_ErrorCode;  // Last compressor action error/status
     string  m_ErrorMsg;   // Last compressor action error message
-
+    TFlags  m_Flags;      // Bitwise OR of flags
+ 
     // Friend classes
     friend class CCompressionStreambuf;
 };
@@ -258,7 +267,7 @@ public:
         // Logical end of (compressed) stream is detected, no errors occurred.
         // All subsequent inquiries about data processing should be ignored.
         eStatus_EndOfData,
-        // Error has occurred. The error code can be acquired by GetLastError() 
+        // Error has occurred. The error code can be acquired by GetLastError.
         eStatus_Error,
         // Output buffer overflow - not enough output space.
         // Buffer must be emptied and the last action repeated.
@@ -273,6 +282,10 @@ public:
     // the current compression object already have being use in other
     // compression session.
     bool IsBusy(void) const;
+
+    // Return number of processed/output bytes.
+    unsigned long GetProcessedSize(void);
+    unsigned long GetOutputSize(void);
 
 protected:
     // Initialize the internal stream state for compression/decompression.
@@ -317,14 +330,23 @@ protected:
     virtual EStatus End(void) = 0;
 
 protected:
+    // Reset internal state
+    void Reset(void);
+
     // Set/unset compressor busy flag
     void SetBusy(bool busy = true);
 
-private:
-    bool m_Busy;   // Is true if compressor is ready to begin
-                   // next session
+    // Increase number of processed/output bytes.
+    void IncreaseProcessedSize(unsigned long n_bytes);
+    void IncreaseOutputSize(unsigned long n_bytes);
 
+private:
+    unsigned long m_ProcessedSize; //< The number of processed bytes
+    unsigned long m_OutputSize;    //< The number of output bytes
+    bool          m_Busy;          //< Is true if compressor is ready to begin
+                                   //< next session
     // Friend classes
+    friend class CCompressionStream;
     friend class CCompressionStreambuf;
 };
 
@@ -337,39 +359,93 @@ private:
 // Inline functions
 //
 
-inline void CCompression::SetLevel(ELevel level)
+inline
+void CCompression::SetLevel(ELevel level)
 {
     m_Level = level;
 }
 
-inline int CCompression::GetErrorCode(void) const
+inline
+int CCompression::GetErrorCode(void) const
 {
     return m_ErrorCode;
 }
 
-inline string CCompression::GetErrorDescription(void) const
+inline
+string CCompression::GetErrorDescription(void) const
 {
     return m_ErrorMsg;
 }
 
-inline void CCompression::SetError(int errcode, const char* description)
+inline
+void CCompression::SetError(int errcode, const char* description)
 {
     m_ErrorCode = errcode;
     m_ErrorMsg  = description ? description : kEmptyStr;
 }
 
-inline bool CCompressionProcessor::IsBusy(void) const
+inline
+CCompression::TFlags CCompression::GetFlags(void) const
+{
+    return m_Flags;
+}
+
+inline
+void CCompression::SetFlags(TFlags flags)
+{
+    m_Flags = flags;
+}
+
+inline
+void CCompressionProcessor::Reset(void)
+{
+    m_ProcessedSize  = 0;
+    m_OutputSize     = 0;
+    m_Busy           = false;
+}
+
+inline
+bool CCompressionProcessor::IsBusy(void) const
 {
     return m_Busy;
 }
 
-inline void CCompressionProcessor::SetBusy(bool busy)
+inline
+void CCompressionProcessor::SetBusy(bool busy)
 {
     if ( busy  &&  m_Busy ) {
         NCBI_THROW(CCompressionException, eCompression,
                    "CCompression::SetBusy(): The compressor is busy now");
     }
     m_Busy = busy;
+}
+
+inline
+void CCompressionProcessor::IncreaseProcessedSize(unsigned long n_bytes)
+{
+    if (n_bytes > 0) {
+        m_ProcessedSize += n_bytes;
+    }
+}
+
+inline
+void CCompressionProcessor::IncreaseOutputSize(unsigned long n_bytes)
+{
+    if (n_bytes > 0) {
+        m_OutputSize += n_bytes;
+    }
+}
+
+inline
+unsigned long CCompressionProcessor::GetProcessedSize(void)
+{
+    return m_ProcessedSize;
+}
+
+inline
+unsigned long CCompressionProcessor::GetOutputSize(void)
+{
+    return m_OutputSize;
 }
 
 
@@ -379,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/10 11:56:24  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.7  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *

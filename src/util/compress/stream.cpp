@@ -66,7 +66,7 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
 
 CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
 {
-    if ( m_Processor  &&  m_NeedDelete ) {
+    if ( m_Processor  &&  m_NeedDelete == eDelete ) {
         delete m_Processor;
     }
     m_Processor = 0;
@@ -139,12 +139,38 @@ void CCompressionStream::Finalize(CCompressionStream::EDirection dir)
 }
 
 
+unsigned long CCompressionStream::x_GetProcessedSize(
+                                  CCompressionStream::EDirection dir)
+{
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader :
+                                                       m_Writer;
+    if (!sp  ||  !sp->m_Processor) {
+        return 0;
+    }
+    return sp->m_Processor->GetProcessedSize();
+}
+
+unsigned long CCompressionStream::x_GetOutputSize(
+                                  CCompressionStream::EDirection dir)
+{
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader :
+                                                       m_Writer;
+    if (!sp  ||  !sp->m_Processor) {
+        return 0;
+    }
+    return sp->m_Processor->GetOutputSize();
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/10 11:56:08  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.7  2004/04/09 14:02:29  ivanov
  * Added workaround fix for GCC 2.95. The ios::~ios() is protected here.
  *

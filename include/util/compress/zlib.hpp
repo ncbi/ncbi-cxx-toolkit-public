@@ -100,12 +100,20 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CZipCompression : public CCompression 
 {
 public:
+    /// Zip stream processing flags.
+    enum EFlags {
+        fCheckFileHeader = (1<<1), // Check & skip file header
+                                   // for decompression stream;
+        fWriteGZipFormat = (1<<2)  // Use .gz file format to write
+                                   // into compression stream
+    };
+
     // 'ctors
     CZipCompression(
-        ELevel level    = eLevel_Default,
-        int window_bits = MAX_WBITS,             // [8..15]
-        int mem_level   = DEF_MEM_LEVEL,         // [1..9] 
-        int strategy    = Z_DEFAULT_STRATEGY     // [0,1]
+        ELevel level       = eLevel_Default,
+        int    window_bits = MAX_WBITS,             // [8..15]
+        int    mem_level   = DEF_MEM_LEVEL,         // [1..9] 
+        int    strategy    = Z_DEFAULT_STRATEGY     // [0,1]
     );
     virtual ~CZipCompression(void);
 
@@ -139,7 +147,8 @@ public:
         /* out */            unsigned int* dst_len
     );
 
-    // (De)compress file "src_file" and put result to file with name "dst_file".
+    // (De)compress file "src_file" and put result to file
+    // with name "dst_file".
     // Return TRUE on success, FALSE on error.
     virtual bool CompressFile(
         const string& src_file,
@@ -154,15 +163,15 @@ public:
     
 protected:
     // Format string with last error description
-    string FormatErrorMessage(string where, bool use_stream_data = true) const;
+    string FormatErrorMessage(string where, bool use_stream_data =true) const;
 
 protected:
-    z_stream  m_Stream;         // Compressor stream
-    int       m_WindowBits;     // The base two logarithm of the window size
-                                // (the size of the history buffer). 
-    int       m_MemLevel;       // The allocation memory level for the
-                                // internal compression state
-    int       m_Strategy;       // Parameter to tune the compression algorithm
+    z_stream  m_Stream;     // Compressor stream;
+    int       m_WindowBits; // The base two logarithm of the window size
+                            // (the size of the history buffer). 
+    int       m_MemLevel;   // The allocation memory level for the
+                            // internal compression state;
+    int       m_Strategy;   // The parameter to tune the compression algorithm
 };
 
  
@@ -237,15 +246,16 @@ class NCBI_XUTIL_EXPORT CZipCompressor : public CZipCompression,
 public:
     // 'ctors
     CZipCompressor(
-        ELevel level       = eLevel_Default,
-        int    window_bits = MAX_WBITS,
-        int    mem_level   = DEF_MEM_LEVEL,
-        int    strategy    = Z_DEFAULT_STRATEGY
+        ELevel               level       = eLevel_Default,
+        int                  window_bits = MAX_WBITS,
+        int                  mem_level   = DEF_MEM_LEVEL,
+        int                  strategy    = Z_DEFAULT_STRATEGY,
+        CCompression::TFlags flags       = 0
     );
     virtual ~CZipCompressor(void);
 
 protected:
-    virtual EStatus Init   (void); 
+    virtual EStatus Init   (void);
     virtual EStatus Process(const char* in_buf,  unsigned long  in_len,
                             char*       out_buf, unsigned long  out_size,
                             /* out */            unsigned long* in_avail,
@@ -255,6 +265,12 @@ protected:
     virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
                             /* out */            unsigned long* out_avail);
     virtual EStatus End    (void);
+
+private:
+    unsigned long m_CRC32;  // CRC32 for compressed data
+    string        m_Cache;  // Buffer to cache small pieces of data
+    bool          m_NeedWriteHeader;
+                            // Is true if needed to write a file header
 };
 
 
@@ -269,7 +285,10 @@ class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
 {
 public:
     // 'ctors
-    CZipDecompressor(int window_bits = MAX_WBITS);
+    CZipDecompressor(
+        int                  window_bits = MAX_WBITS,
+        CCompression::TFlags flags       = 0
+    );
     virtual ~CZipDecompressor(void);
 
 protected:
@@ -283,8 +302,10 @@ protected:
     virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
                             /* out */            unsigned long* out_avail);
     virtual EStatus End    (void);
+
 private:
-    bool m_NeedCheckHeader;  //< Is true if need to check file header.
+    bool   m_NeedCheckHeader; // Is true if needed to check at file header
+    string m_Cache;           // Buffer to cache small pieces of data
 };
 
 
@@ -298,17 +319,36 @@ class NCBI_XUTIL_EXPORT CZipStreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
+    // Full constructor
     CZipStreamCompressor(
-        CCompression::ELevel level       = CCompression::eLevel_Default,
-        streamsize           in_bufsize  = kCompressionDefaultBufSize,
-        streamsize           out_bufsize = kCompressionDefaultBufSize,
-        int                  window_bits = MAX_WBITS,
-        int                  mem_level   = DEF_MEM_LEVEL,
-        int                  strategy    = Z_DEFAULT_STRATEGY)
-
+        CCompression::ELevel  level,
+        streamsize            in_bufsize,
+        streamsize            out_bufsize,
+        int                   window_bits,
+        int                   mem_level,
+        int                   strategy,
+        CCompression::TFlags  flags
+        ) 
         : CCompressionStreamProcessor(
-              new CZipCompressor(level, window_bits, mem_level, strategy),
+              new CZipCompressor(level,window_bits,mem_level,strategy,flags),
               eDelete, in_bufsize, out_bufsize)
+    {}
+
+    // Conventional constructors
+    CZipStreamCompressor(
+        CCompression::ELevel  level,
+        CCompression::TFlags  flags = 0
+        )
+        : CCompressionStreamProcessor(
+              new CZipCompressor(level, MAX_WBITS, DEF_MEM_LEVEL,
+                                 Z_DEFAULT_STRATEGY, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
+    {}
+    CZipStreamCompressor(CCompression::TFlags flags = 0)
+        : CCompressionStreamProcessor(
+              new CZipCompressor(CCompression::eLevel_Default, MAX_WBITS,
+                                 DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
 
@@ -317,13 +357,23 @@ class NCBI_XUTIL_EXPORT CZipStreamDecompressor
     : public CCompressionStreamProcessor
 {
 public:
+    // Full constructor
     CZipStreamDecompressor(
-        streamsize  in_bufsize   = kCompressionDefaultBufSize,
-        streamsize  out_bufsize  = kCompressionDefaultBufSize,
-        int         window_bits  = MAX_WBITS)
+        streamsize            in_bufsize,
+        streamsize            out_bufsize,
+        int                   window_bits,
+        CCompression::TFlags  flags
+        )
+        : CCompressionStreamProcessor( 
+              new CZipDecompressor(window_bits,flags),
+              eDelete, in_bufsize, out_bufsize)
+    {}
 
-        : CCompressionStreamProcessor(new CZipDecompressor(window_bits),
-                                      eDelete, in_bufsize, out_bufsize)
+    // Conventional constructor
+    CZipStreamDecompressor(CCompression::TFlags flags = 0)
+        : CCompressionStreamProcessor( 
+              new CZipDecompressor(MAX_WBITS, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
 
@@ -337,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/10 11:56:24  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.8  2004/04/19 14:17:54  ivanov
  * Added gzip file format support into stream decompressor
  *
@@ -345,7 +398,7 @@ END_NCBI_SCOPE
  * catches up.
  *
  * Revision 1.6  2004/04/05 15:54:12  ucko
- * Default to using external versions of zlib, bzlib, and libpcre if available.
+ * Default to using external versions of zlib,bzlib, and libpcre if available.
  *
  * Revision 1.5  2003/07/15 15:45:45  ivanov
  * Improved error diagnostics

@@ -103,9 +103,9 @@ class NCBI_XUTIL_EXPORT CCompressionStream : virtual public CNcbiIos
 public:
     /// Stream processing direction.
     enum EDirection {
-        eRead,              // reading from stream
-        eWrite,             // writing into stream
-        eReadWrite          // eRead + eWrite
+        eRead,                      // reading from stream
+        eWrite,                     // writing into stream
+        eReadWrite                  // eRead + eWrite
     };
 
     /// Which of the objects (passed in the constructor) should be
@@ -113,13 +113,13 @@ public:
     /// NOTE:  if the reader and writer are in fact one object, it will
     ///        not be deleted twice.
     enum EOwnership {
-        fOwnStream = (1<<1),  // delete the underlying I/O stream
-        fOwnReader = (1<<2),  // delete the reader
-        fOwnWriter = (1<<3),  // delete the writer
+        fOwnStream = (1<<1),        // delete the underlying I/O stream
+        fOwnReader = (1<<2),        // delete the reader
+        fOwnWriter = (1<<3),        // delete the writer
         fOwnProcessor = fOwnReader + fOwnWriter,
         fOwnAll       = fOwnStream + fOwnProcessor
     };
-    typedef int TOwnership;   // bitwise OR of EOwnership
+    typedef int TOwnership;         // bitwise OR of EOwnership
 
     /// Constructor
     ///
@@ -136,58 +136,18 @@ public:
     // This function just calls a streambuf Finalize().
     virtual void Finalize(CCompressionStream::EDirection dir =
                           CCompressionStream::eReadWrite);
+
+protected:
+    // Return number of processed/output bytes.
+    unsigned long x_GetProcessedSize(CCompressionStream::EDirection dir);
+    unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
+
 protected:
     CNcbiIos*                    m_Stream;    // underlying stream
     CCompressionStreambuf*       m_StreamBuf; // stream buffer
     CCompressionStreamProcessor* m_Reader;    // read processor
     CCompressionStreamProcessor* m_Writer;    // write processor
     TOwnership                   m_Ownership; // bitwise OR of EOwnership
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// I/O stream classes
-//
-
-class NCBI_XUTIL_EXPORT CCompressionIStream : public istream,
-                                              public CCompressionStream
-{
-public:
-    CCompressionIStream(CNcbiIos&                    stream,
-                        CCompressionStreamProcessor* stream_processor,
-                        TOwnership                   ownership = 0)
-        : istream(0),
-          CCompressionStream(stream, stream_processor, 0, ownership)
-    {}
-};
-
-
-class NCBI_XUTIL_EXPORT CCompressionOStream : public ostream,
-                                              public CCompressionStream
-{
-public:
-    CCompressionOStream(CNcbiIos&                    stream,
-                        CCompressionStreamProcessor* stream_processor,
-                        TOwnership                   ownership = 0)
-        : ostream(0),
-          CCompressionStream(stream, 0, stream_processor, ownership)
-    {}
-};
-
-
-class NCBI_XUTIL_EXPORT CCompressionIOStream : public iostream,
-                                               public CCompressionStream
-{
-public:
-    CCompressionIOStream(CNcbiIos&                    stream,
-                         CCompressionStreamProcessor* read_sp,
-                         CCompressionStreamProcessor* write_sp,
-                         TOwnership                   ownership = 0)
-        : iostream(0),
-          CCompressionStream(stream, read_sp, write_sp, ownership)
-    {}
 };
 
 
@@ -234,7 +194,78 @@ private:
     bool                   m_Finalized;   // True if a Finalize() already done
                                           // for compression processor  
     // Friend classes
+    friend class CCompressionStream;
     friend class CCompressionStreambuf;
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// I/O stream classes
+//
+
+class NCBI_XUTIL_EXPORT CCompressionIStream : public istream,
+                                              public CCompressionStream
+{
+public:
+    CCompressionIStream(CNcbiIos&                    stream,
+                        CCompressionStreamProcessor* stream_processor,
+                        TOwnership                   ownership = 0)
+        : istream(0),
+          CCompressionStream(stream, stream_processor, 0, ownership)
+    {}
+    
+    // Return number of processed/output bytes.
+    unsigned long GetProcessedSize(void) {
+        return CCompressionStream::x_GetProcessedSize(eRead);
+    };
+    unsigned long GetOutputSize(void) {
+        return CCompressionStream::x_GetOutputSize(eRead);
+    };
+};
+
+
+class NCBI_XUTIL_EXPORT CCompressionOStream : public ostream,
+                                              public CCompressionStream
+{
+public:
+    CCompressionOStream(CNcbiIos&                    stream,
+                        CCompressionStreamProcessor* stream_processor,
+                        TOwnership                   ownership = 0)
+        : ostream(0),
+          CCompressionStream(stream, 0, stream_processor, ownership)
+    {}
+
+    // Return number of processed/output bytes.
+    unsigned long GetProcessedSize(void) {
+        return CCompressionStream::x_GetProcessedSize(eWrite);
+    };
+    unsigned long GetOutputSize(void) {
+        return CCompressionStream::x_GetOutputSize(eWrite);
+    };
+};
+
+
+class NCBI_XUTIL_EXPORT CCompressionIOStream : public iostream,
+                                               public CCompressionStream
+{
+public:
+    CCompressionIOStream(CNcbiIos&                    stream,
+                         CCompressionStreamProcessor* read_sp,
+                         CCompressionStreamProcessor* write_sp,
+                         TOwnership                   ownership = 0)
+        : iostream(0),
+          CCompressionStream(stream, read_sp, write_sp, ownership)
+    { }
+
+    // Return number of processed/output bytes.
+    unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
+        return CCompressionStream::x_GetProcessedSize(dir);
+    };
+    unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
+        return CCompressionStream::x_GetOutputSize(dir);
+    };
 };
 
 
@@ -247,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/10 11:56:24  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.8  2004/04/09 11:48:56  ivanov
  * Added ownership parameter for automaticaly destruction underlying stream
  * and read/write compression processors.

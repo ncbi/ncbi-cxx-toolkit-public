@@ -360,6 +360,8 @@ CBZip2Compressor::~CBZip2Compressor()
 
 CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
 {
+    // Initialize members
+    Reset();
     SetBusy();
     // Initialize the compressor stream structure
     memset(&m_Stream, 0, sizeof(m_Stream));
@@ -391,6 +393,8 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
+    IncreaseProcessedSize(in_len - *in_avail);
+    IncreaseOutputSize(*out_avail);
 
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
@@ -415,6 +419,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     int errcode = BZ2_bzCompress(&m_Stream, BZ_FLUSH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - m_Stream.avail_out;
+    IncreaseOutputSize(*out_avail);
 
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
@@ -442,6 +447,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     int errcode = BZ2_bzCompress(&m_Stream, BZ_FINISH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - m_Stream.avail_out;
+    IncreaseOutputSize(*out_avail);
 
     switch (errcode) {
     case BZ_FINISH_OK:
@@ -488,6 +494,8 @@ CBZip2Decompressor::~CBZip2Decompressor()
 
 CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
 {
+    // Initialize members
+    Reset();
     SetBusy();
     // Initialize the decompressor stream structure
     memset(&m_Stream, 0, sizeof(m_Stream));
@@ -523,6 +531,8 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
+    IncreaseProcessedSize(in_len - *in_avail);
+    IncreaseOutputSize(*out_avail);
 
     switch (errcode) {
     case BZ_OK:
@@ -567,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/10 11:56:08  ivanov
+ * Added gzip file format support
+ *
  * Revision 1.6  2004/04/01 14:14:03  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
