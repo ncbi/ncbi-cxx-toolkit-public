@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.22  2003/08/01 22:33:32  dondosha
+* Made BlastScoreBlkGappedFill static
+*
 * Revision 1.21  2003/08/01 17:20:39  dondosha
 * Renamed BLAST_ScoreBlk to BlastScoreBlk
 *
@@ -184,18 +187,6 @@ extern "C" {
 #include <na_lookup.h>
 #include <blast_extend.h>
 #include <blast_gapalign.h>
-
-/** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
- *      Should be moved to blastkar.c (or it's successor) in the future.
- * @param sbp Contains fields to be set, should not be NULL. [out]
- * @param scoring_options Scoring_options [in]
- * @param program_number Used to set fields on sbp [in]
- *
-*/
-Int2
-BlastScoreBlkGappedFill(BlastScoreBlk* sbp,
-const BlastScoringOptions* scoring_options, Uint1 program_number);
-
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.
