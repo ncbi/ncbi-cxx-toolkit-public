@@ -29,7 +29,7 @@
  *
  */
 
-#include "bdb_cursor.hpp"
+#include <bdb/bdb_cursor.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/28 14:51:55  kuznets
+ * #include directives changed to conform the NCBI policy
+ *
  * Revision 1.1  2003/04/24 16:34:30  kuznets
  * Initial revision
  *
