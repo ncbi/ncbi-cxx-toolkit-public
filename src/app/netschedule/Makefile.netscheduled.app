@@ -3,7 +3,7 @@
 #################################
 
 APP = netscheduled
-SRC = netscheduled bdb_queue job_status queue_clean_thread notif_thread
+SRC = netscheduled bdb_queue job_status queue_clean_thread
 
 REQUIRES = MT bdb
 
