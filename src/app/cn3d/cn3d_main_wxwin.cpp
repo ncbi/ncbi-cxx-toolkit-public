@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.151  2002/08/09 18:24:08  thiessen
+* improve/add magic formula to avoid Windows symbol clashes
+*
 * Revision 1.150  2002/08/01 12:51:36  thiessen
 * add E-value display to block aligner
 *
@@ -557,6 +560,9 @@
 #ifdef CreateDialog
 #undef CreateDialog
 #endif
+#ifdef GetCharWidth
+#undef GetCharWidth
+#endif
 #endif
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
@@ -616,6 +622,7 @@ wxString wxMacFSSpec2MacFilename(const FSSpec *); // in wxwin/src/common/filefn.
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 #define CN3D_VERSION_STRING "4.1"
 

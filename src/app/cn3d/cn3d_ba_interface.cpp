@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/08/09 18:24:08  thiessen
+* improve/add magic formula to avoid Windows symbol clashes
+*
 * Revision 1.7  2002/08/04 21:41:05  thiessen
 * fix GetObject problem
 *
@@ -53,6 +56,22 @@
 *
 * ===========================================================================
 */
+
+#ifdef __WXMSW__
+#include <windows.h>
+#ifdef Yield
+#undef Yield
+#endif
+#ifdef DrawText
+#undef DrawText
+#endif
+#ifdef CreateDialog
+#undef CreateDialog
+#endif
+#ifdef GetCharWidth
+#undef GetCharWidth
+#endif
+#endif
 
 #include <wx/string.h>
 #include <corelib/ncbistd.hpp>
