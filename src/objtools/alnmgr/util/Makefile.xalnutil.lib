@@ -1,4 +1,4 @@
 # $Id$
 
 LIB = xalnutil
-SRC = showalign
+SRC = showalign blast_format
