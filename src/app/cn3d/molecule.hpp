@@ -117,7 +117,7 @@ public:
     bool IsSolvent(void) const { return (type == eSolvent); }
     bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
 
-    int NResidues(void) const { return static_cast<int>(residues.size()); }
+    int NResidues(void) const { return residues.size(); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
     {
         ResidueMap::const_iterator info=residues.find(rID);
@@ -158,6 +158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.27  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

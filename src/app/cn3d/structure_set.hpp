@@ -291,7 +291,7 @@ public:
 
     bool IsMaster(void) const { return isMaster; }
     bool IsSlave(void) const { return !isMaster; }
-    int NDomains(void) const { return static_cast<int>(domainMap.size()); }
+    int NDomains(void) const { return domainMap.size(); }
 };
 
 END_SCOPE(Cn3D)
@@ -301,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.74  2003/02/03 19:20:07  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

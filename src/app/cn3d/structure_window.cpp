@@ -39,6 +39,7 @@
 #include <objects/cdd/Cdd.hpp>
 
 #include <algorithm>
+#include <memory>
 
 #ifdef __WXMSW__
 #include <windows.h>
@@ -1432,6 +1433,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.12  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *

@@ -52,8 +52,6 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 
-#include <memory>
-
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/messenger.hpp"
@@ -686,9 +684,9 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
         // first find all objects with the annotation's mmdbID; fill out chain id and interval
         const BlockMultipleAlignment *alignment = set->alignmentManager->GetCurrentMultipleAlignment();
         if (!alignment) throw "no alignment";
-        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-            alignedBlocks(alignment->GetUngappedAlignedBlocks());
-        if (alignedBlocks->size() == 0) throw "no aligned blocks";
+        BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
+        alignment->GetUngappedAlignedBlocks(&alignedBlocks);
+        if (alignedBlocks.size() == 0) throw "no aligned blocks";
         for (int row=0; row<alignment->NRows(); row++) {
             const StructureObject *object;
             const Sequence *seq = alignment->GetSequenceOfRow(row);
@@ -697,8 +695,8 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                 continue;
             ChainInfo& ci = annotObjects[object];
             ci.alignedMoleculeID = seq->molecule->id;
-            ci.from = alignedBlocks->front()->GetRangeOfRow(row)->from;
-            ci.to = alignedBlocks->back()->GetRangeOfRow(row)->to;
+            ci.from = alignedBlocks.front()->GetRangeOfRow(row)->from;
+            ci.to = alignedBlocks.back()->GetRangeOfRow(row)->to;
             ci.hits = 0;
         }
         if (annotObjects.size() == 0)
@@ -1224,6 +1222,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.34  2003/02/03 19:20:01  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

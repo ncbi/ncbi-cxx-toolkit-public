@@ -1274,8 +1274,9 @@ void StructureObject::RealignStructure(int nCoords,
     const Molecule
         *masterMolecule = multiple->GetSequenceOfRow(0)->molecule,
         *slaveMolecule = multiple->GetSequenceOfRow(slaveRow)->molecule;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-    if (blocks.get()) {
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() > 0) {
         CChem_graph_pntrs
             *masterCGPs = new CChem_graph_pntrs(),
             *slaveCGPs = new CChem_graph_pntrs();
@@ -1287,13 +1288,13 @@ void StructureObject::RealignStructure(int nCoords,
         masterCGPs->SetResidues(*masterRPs);
         slaveCGPs->SetResidues(*slaveRPs);
 
-        masterRPs->SetInterval().resize(blocks->size());
-        slaveRPs->SetInterval().resize(blocks->size());
-        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+        masterRPs->SetInterval().resize(blocks.size());
+        slaveRPs->SetInterval().resize(blocks.size());
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
         CResidue_pntrs::TInterval::iterator
             mi = masterRPs->SetInterval().begin(),
             si = slaveRPs->SetInterval().begin();
-        for (b=blocks->begin(); b!=be; b++, mi++, si++) {
+        for (b=blocks.begin(); b!=be; b++, mi++, si++) {
             CResidue_interval_pntr
                 *masterRIP = new CResidue_interval_pntr(),
                 *slaveRIP = new CResidue_interval_pntr();
@@ -1461,6 +1462,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.132  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.131  2003/06/12 14:38:46  thiessen
 * fix empty feature list bug in blank structure alignment data
 *

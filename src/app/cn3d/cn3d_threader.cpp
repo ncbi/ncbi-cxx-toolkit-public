@@ -183,18 +183,18 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     static const int MIN_LOOP_MAX = 2;
     static const int EXTENSION_MAX = 10;
 
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-        alignedBlocks(multiple->GetUngappedAlignedBlocks());
-    Cor_Def *corDef = NewCorDef(alignedBlocks->size());
+    BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
+    multiple->GetUngappedAlignedBlocks(&alignedBlocks);
+    Cor_Def *corDef = NewCorDef(alignedBlocks.size());
 
     // zero loop constraints for tails
-    corDef->lll.llmn[0] = corDef->lll.llmn[alignedBlocks->size()] =
-    corDef->lll.llmx[0] = corDef->lll.llmx[alignedBlocks->size()] =
-    corDef->lll.lrfs[0] = corDef->lll.lrfs[alignedBlocks->size()] = 0;
+    corDef->lll.llmn[0] = corDef->lll.llmn[alignedBlocks.size()] =
+    corDef->lll.llmx[0] = corDef->lll.llmx[alignedBlocks.size()] =
+    corDef->lll.lrfs[0] = corDef->lll.lrfs[alignedBlocks.size()] = 0;
 
     // loop constraints for unaligned regions between aligned blocks
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
-        b = alignedBlocks->begin(), be = alignedBlocks->end();
+        b = alignedBlocks.begin(), be = alignedBlocks.end();
     int n, max;
     for (n=1, b++; b!=be; n++, b++) {
         const UnalignedBlock *uaBlock = multiple->GetUnalignedBlockBefore(*b);
@@ -211,7 +211,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     // minimum block sizes (in coordinates of master)
     const Block::Range *range;
     int mid;
-    for (n=0, b=alignedBlocks->begin(); b!=be; b++, n++) {
+    for (n=0, b=alignedBlocks.begin(); b!=be; b++, n++) {
         range = (*b)->GetRangeOfRow(0);
         mid = (range->from + range->to) / 2;
         corDef->sll.rfpt[n] = mid;
@@ -225,16 +225,16 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
         corDef->sll.nomx[0] = corDef->sll.rfpt[0];
 
     // right extension - trim to available residues
-    corDef->sll.comx[alignedBlocks->size() - 1] = corDef->sll.comn[alignedBlocks->size() - 1] + EXTENSION_MAX;
-    if (corDef->sll.rfpt[alignedBlocks->size() - 1] + corDef->sll.comx[alignedBlocks->size() - 1] >=
+    corDef->sll.comx[alignedBlocks.size() - 1] = corDef->sll.comn[alignedBlocks.size() - 1] + EXTENSION_MAX;
+    if (corDef->sll.rfpt[alignedBlocks.size() - 1] + corDef->sll.comx[alignedBlocks.size() - 1] >=
             multiple->GetMaster()->Length())
-        corDef->sll.comx[alignedBlocks->size() - 1] =
-            multiple->GetMaster()->Length() - corDef->sll.rfpt[alignedBlocks->size() - 1] - 1;
+        corDef->sll.comx[alignedBlocks.size() - 1] =
+            multiple->GetMaster()->Length() - corDef->sll.rfpt[alignedBlocks.size() - 1] - 1;
 
     // extensions into unaligned areas between blocks
     const Block::Range *prevRange = NULL;
     int nUnaligned, extN;
-    for (n=0, b=alignedBlocks->begin(); b!=be; b++, n++) {
+    for (n=0, b=alignedBlocks.begin(); b!=be; b++, n++) {
         range = (*b)->GetRangeOfRow(0);
         if (n > 0) {
             nUnaligned = range->from - prevRange->to - 1;
@@ -255,12 +255,12 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         const BlockMultipleAlignment *pairwise, int terminalCutoff)
 {
     const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-        multipleABlocks(multiple->GetUngappedAlignedBlocks()),
-        pairwiseABlocks(pairwise->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
+    multiple->GetUngappedAlignedBlocks(&multipleABlocks);
+    pairwise->GetUngappedAlignedBlocks(&pairwiseABlocks);
 
     // query has # constraints = # blocks in multiple alignment
-    Qry_Seq *qrySeq = NewQrySeq(slaveSeq->Length(), multipleABlocks->size());
+    Qry_Seq *qrySeq = NewQrySeq(slaveSeq->Length(), multipleABlocks.size());
 
     // fill in residue numbers
     int i;
@@ -270,11 +270,11 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
     // if a block in the multiple is contained in the pairwise (looking at master coords),
     // then add a constraint to keep it there
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
-        m, me = multipleABlocks->end(), p, pe = pairwiseABlocks->end();
+        m, me = multipleABlocks.end(), p, pe = pairwiseABlocks.end();
     const Block::Range *multipleRange, *pairwiseRange;
-    for (i=0, m=multipleABlocks->begin(); m!=me; i++, m++) {
+    for (i=0, m=multipleABlocks.begin(); m!=me; i++, m++) {
         multipleRange = (*m)->GetRangeOfRow(0);
-        for (p=pairwiseABlocks->begin(); p!=pe; p++) {
+        for (p=pairwiseABlocks.begin(); p!=pe; p++) {
             pairwiseRange = (*p)->GetRangeOfRow(0);
             if (pairwiseRange->from <= multipleRange->from && pairwiseRange->to >= multipleRange->to) {
                 int masterCenter = (multipleRange->from + multipleRange->to) / 2;
@@ -295,25 +295,25 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         if (qrySeq->sac.mn[0] == -1) {
             if (pairwise->alignSlaveFrom >= 0) {
                 qrySeq->sac.mn[0] = pairwise->alignSlaveFrom - terminalCutoff;
-            } else if (pairwiseABlocks->size() > 0) {
-                const Block::Range *nextQryBlock = pairwiseABlocks->front()->GetRangeOfRow(1);
+            } else if (pairwiseABlocks.size() > 0) {
+                const Block::Range *nextQryBlock = pairwiseABlocks.front()->GetRangeOfRow(1);
                 qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
             }
             if (qrySeq->sac.mn[0] < 0) qrySeq->sac.mn[0] = 0;
             INFOMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
         }
-        if (qrySeq->sac.mx[multipleABlocks->size() - 1] == -1) {
+        if (qrySeq->sac.mx[multipleABlocks.size() - 1] == -1) {
             if (pairwise->alignSlaveTo >= 0) {
-                qrySeq->sac.mx[multipleABlocks->size() - 1] = pairwise->alignSlaveTo + terminalCutoff;
-            } else if (pairwiseABlocks->size() > 0) {
-                const Block::Range *prevQryBlock = pairwiseABlocks->back()->GetRangeOfRow(1);
-                qrySeq->sac.mx[multipleABlocks->size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
+                qrySeq->sac.mx[multipleABlocks.size() - 1] = pairwise->alignSlaveTo + terminalCutoff;
+            } else if (pairwiseABlocks.size() > 0) {
+                const Block::Range *prevQryBlock = pairwiseABlocks.back()->GetRangeOfRow(1);
+                qrySeq->sac.mx[multipleABlocks.size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
             }
-            if (qrySeq->sac.mx[multipleABlocks->size() - 1] >= qrySeq->n ||
-                qrySeq->sac.mx[multipleABlocks->size() - 1] < 0)
-                qrySeq->sac.mx[multipleABlocks->size() - 1] = qrySeq->n - 1;
+            if (qrySeq->sac.mx[multipleABlocks.size() - 1] >= qrySeq->n ||
+                qrySeq->sac.mx[multipleABlocks.size() - 1] < 0)
+                qrySeq->sac.mx[multipleABlocks.size() - 1] = qrySeq->n - 1;
             INFOMSG("new C-terminal block constrained to query loc <= "
-                << qrySeq->sac.mx[multipleABlocks->size() - 1] + 1);
+                << qrySeq->sac.mx[multipleABlocks.size() - 1] + 1);
         }
     }
 
@@ -1027,15 +1027,15 @@ cleanup:
     return retval;
 }
 
-static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList *aBlocks,
+static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList& aBlocks,
     int row, const vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
 {
     double score = 0.0;
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end();
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end();
     const Block::Range *masterRange, *slaveRange;
     int i;
 
-    for (b=aBlocks->begin(); b!=be; b++) {
+    for (b=aBlocks.begin(); b!=be; b++) {
         masterRange = (*b)->GetRangeOfRow(0);
         slaveRange = (*b)->GetRangeOfRow(row);
         for (i=0; i<(*b)->width; i++)
@@ -1096,7 +1096,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     Seq_Mtf *seqMtf = NULL;
     Rcx_Ptl *rcxPtl = NULL;
     Fld_Mtf *fldMtf = NULL;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks;
+    BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
     vector < int > residueNumbers;
     bool retval = false;
     int row;
@@ -1116,7 +1116,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
 
     // get aligned blocks
-    aBlocks.reset(multiple->GetUngappedAlignedBlocks());
+    multiple->GetUngappedAlignedBlocks(&aBlocks);
 
     for (row=0; row<multiple->NRows(); row++) {
 
@@ -1129,7 +1129,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         // sum score types (weightPSSM already built into seqMtf & rcxPtl)
         double
             scorePSSM = (weightPSSM > 0.0) ?
-                CalculatePSSMScore(aBlocks.get(), row, residueNumbers, seqMtf) : 0.0,
+                CalculatePSSMScore(aBlocks, row, residueNumbers, seqMtf) : 0.0,
             scoreContacts = (weightPSSM < 1.0) ?
                 CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0,
             score = (scorePSSM + scoreContacts) / SCALING_FACTOR;
@@ -1166,11 +1166,12 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     violations->resize(multiple->NRows());
 
     // look for too-short regions between aligned blocks
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks(multiple->GetUngappedAlignedBlocks());
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end(), n;
+    BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
+    multiple->GetUngappedAlignedBlocks(&aBlocks);
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end(), n;
     int nViolations = 0;
     const Block::Range *thisRange, *nextRange, *thisMaster, *nextMaster;
-    for (b=aBlocks->begin(); b!=be; b++) {
+    for (b=aBlocks.begin(); b!=be; b++) {
         n = b;
         n++;
         if (n == be) break;
@@ -1197,19 +1198,19 @@ int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
     const BlockMultipleAlignment *toBeThreaded)
 {
     int nBlocksToAlign = 0;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-        multipleABlocks(coreAlignment->GetUngappedAlignedBlocks()),
-        pairwiseABlocks(toBeThreaded->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
+    coreAlignment->GetUngappedAlignedBlocks(&multipleABlocks);
+    toBeThreaded->GetUngappedAlignedBlocks(&pairwiseABlocks);
 
     // if a block in the multiple is *not* contained in the pairwise (looking at master coords),
     // then it'll probably be realigned upon threading
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
-        m, me = multipleABlocks->end(), p, pe = pairwiseABlocks->end();
+        m, me = multipleABlocks.end(), p, pe = pairwiseABlocks.end();
     const Block::Range *multipleRange, *pairwiseRange;
-    for (m=multipleABlocks->begin(); m!=me; m++) {
+    for (m=multipleABlocks.begin(); m!=me; m++) {
         multipleRange = (*m)->GetRangeOfRow(0);
         bool realignBlock = true;
-        for (p=pairwiseABlocks->begin(); p!=pe; p++) {
+        for (p=pairwiseABlocks.begin(); p!=pe; p++) {
             pairwiseRange = (*p)->GetRangeOfRow(0);
             if (pairwiseRange->from <= multipleRange->from && pairwiseRange->to >= multipleRange->to) {
                 realignBlock = false;
@@ -1231,6 +1232,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.37  2003/06/18 11:38:42  thiessen
 * add another trace message
 *

@@ -60,8 +60,6 @@
 
 #include <regex.h>  // regex from C-toolkit
 
-#include <memory>
-
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/structure_set.hpp"
@@ -535,10 +533,10 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
 
         // do the search, finding all non-overlapping matches
         int start = 0;
-        while (start < sequenceString.size()) {
+        while (start < Length()) {
 
             int result = re_search(patternBuffer, sequenceString.c_str(),
-                sequenceString.size(), start, sequenceString.size(), registers);
+                Length(), start, Length(), registers);
             if (result == -1)
                 break;
             else if (result == -2)
@@ -549,7 +547,7 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
             // allowed to be included in the search. (This isn't very efficient! but
             // the regex API doesn't have an option for finding the shortest hit...)
             int stringSize = start + 1;
-            while (stringSize <= sequenceString.size()) {
+            while (stringSize <= Length()) {
                 result = re_search(patternBuffer, sequenceString.c_str(),
                     stringSize, start, stringSize, registers);
                 if (result >= 0) break;
@@ -589,6 +587,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.57  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

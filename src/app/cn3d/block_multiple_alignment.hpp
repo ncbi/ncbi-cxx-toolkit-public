@@ -158,9 +158,9 @@ public:
     void SelectedRange(int row, int from, int to,
         eUnalignedJustification justification, bool toggle) const;
 
-    // get a list of UngappedAlignedBlocks; should be destroyed by called when done
-    typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;
-    UngappedAlignedBlockList *GetUngappedAlignedBlocks(void) const;
+    // fill in a vector of UngappedAlignedBlocks
+    typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
+    void GetUngappedAlignedBlocks(UngappedAlignedBlockList *blocks) const;
 
     // free color storage
     void FreeColors(void);
@@ -283,9 +283,9 @@ public:
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
 
-    int NBlocks(void) const { return static_cast<int>(blocks.size()); }
+    int NBlocks(void) const { return blocks.size(); }
     int NAlignedBlocks(void) const;
-    int NRows(void) const { return static_cast<int>(sequences->size()); }
+    int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
 
     // return a number from 1..n for aligned blocks, -1 for unaligned
@@ -314,7 +314,7 @@ public:
 
 // static function to create Seq-aligns out of multiple
 ncbi::objects::CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow);
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, int slaveRow);
 
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
@@ -367,7 +367,7 @@ public:
     // resize - add new (empty) rows at end
     void AddRows(int nNewRows) { ranges.resize(ranges.size() + nNewRows); }
 
-    int NSequences(void) const { return static_cast<int>(ranges.size()); }
+    int NSequences(void) const { return ranges.size(); }
 };
 
 
@@ -421,6 +421,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.36  2003/02/03 19:20:01  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

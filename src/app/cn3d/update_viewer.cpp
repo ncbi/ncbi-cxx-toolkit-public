@@ -217,8 +217,9 @@ void UpdateViewer::SaveAlignments(void)
             ERRORMSG("CreateSeqAlignFromUpdate() - can only save pairwise updates");
             continue;
         }
-        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks((*a)->GetUngappedAlignedBlocks());
-        CSeq_align *newSeqAlign = CreatePairwiseSeqAlignFromMultipleRow(*a, blocks.get(), 1);
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        (*a)->GetUngappedAlignedBlocks(&blocks);
+        CSeq_align *newSeqAlign = CreatePairwiseSeqAlignFromMultipleRow(*a, blocks, 1);
         if (!newSeqAlign) continue;
 
         // the Update-align and Seq-annot's list of Seq-aligns where this new Seq-align will go
@@ -838,11 +839,11 @@ void UpdateViewer::ImportStructure(void)
     int masterFrom = -1, masterTo = -1;
     const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
     if (multiple) {
-        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-            aBlocks(multiple->GetUngappedAlignedBlocks());
-        if (aBlocks.get() && aBlocks->size() > 0) {
-            masterFrom = aBlocks->front()->GetRangeOfRow(0)->from;
-            masterTo = aBlocks->back()->GetRangeOfRow(0)->to;
+        BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
+        multiple->GetUngappedAlignedBlocks(&aBlocks);
+        if (aBlocks.size() > 0) {
+            masterFrom = aBlocks.front()->GetRangeOfRow(0)->from;
+            masterTo = aBlocks.back()->GetRangeOfRow(0)->to;
         }
     }
     GetVASTAlignments(newSequences, master, &newAlignments,
@@ -940,9 +941,10 @@ static void MapSlaveToMaster(const BlockMultipleAlignment *alignment,
 {
     slave2master->clear();
     slave2master->resize(alignment->GetSequenceOfRow(slaveRow)->Length(), -1);
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> uaBlocks(alignment->GetUngappedAlignedBlocks());
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks->end();
-    for (b=uaBlocks->begin(); b!=be; b++) {
+    BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
+    alignment->GetUngappedAlignedBlocks(&uaBlocks);
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks.end();
+    for (b=uaBlocks.begin(); b!=be; b++) {
         const Block::Range
             *masterRange = (*b)->GetRangeOfRow(0),
             *slaveRange = (*b)->GetRangeOfRow(slaveRow);
@@ -1050,8 +1052,9 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
         ERRORMSG("Can't do BLAST Neighbor when no multiple alignment is present");
         return;
     }
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> uaBlocks(multiple->GetUngappedAlignedBlocks());
-    if (uaBlocks->size() == 0) {
+    BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
+    multiple->GetUngappedAlignedBlocks(&uaBlocks);
+    if (uaBlocks.size() == 0) {
         ERRORMSG("Can't do BLAST Neighbor with null multiple alignment");
         return;
     }
@@ -1076,10 +1079,10 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
             int excess = 0;
             if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
                 WARNINGMSG("Can't get footprint excess residues from registry");
-            newAlignment->alignMasterFrom = uaBlocks->front()->GetRangeOfRow(row)->from - excess;
+            newAlignment->alignMasterFrom = uaBlocks.front()->GetRangeOfRow(row)->from - excess;
             if (newAlignment->alignMasterFrom < 0)
                 newAlignment->alignMasterFrom = 0;
-            newAlignment->alignMasterTo = uaBlocks->back()->GetRangeOfRow(row)->to + excess;
+            newAlignment->alignMasterTo = uaBlocks.back()->GetRangeOfRow(row)->to + excess;
             if (newAlignment->alignMasterTo >= (*seqs)[0]->Length())
                 newAlignment->alignMasterTo = (*seqs)[0]->Length() - 1;
             newAlignment->alignSlaveFrom = update->alignSlaveFrom;
@@ -1175,6 +1178,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.63  2003/04/04 14:02:22  thiessen
 * more informative error messages on structure import
 *

@@ -36,8 +36,6 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
-#include <memory>
-
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
@@ -315,14 +313,15 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
 {
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
     if (!multiple) return;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-    if (!blocks.get()) {
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) {
         WARNINGMSG("Can't realign slaves with no aligned residues!");
         return;
     }
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     int nResidues = 0;
-    for (b=blocks->begin(); b!=be; b++) nResidues += (*b)->width;
+    for (b=blocks.begin(); b!=be; b++) nResidues += (*b)->width;
     if (nResidues <= 2) {
         WARNINGMSG("Can't realign slaves with < 3 aligned residues!");
         return;
@@ -336,7 +335,7 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
     }
 
     int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
-    b = blocks->begin();
+    b = blocks.begin();
     GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes);
 
     double *weights = new double[nResidues];
@@ -358,7 +357,7 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
 
-            b = blocks->begin();
+            b = blocks.begin();
             GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
             if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
 
@@ -687,15 +686,15 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
 
         // if necessary, find nearest neighbor to merged sequence, and add new row after it
         if (mergeToNeighbor && nSuccessfulMerges == 1) {
-            auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-                blocks(multiple->GetUngappedAlignedBlocks());
-            BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+            BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+            multiple->GetUngappedAlignedBlocks(&blocks);
+            BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
             int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
             const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
             for (row=0; row<lastRow; row++) {
                 const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
                 rowScore = 0;
-                for (b=blocks->begin(); b!=be; b++) {
+                for (b=blocks.begin(); b!=be; b++) {
                     for (col=0; col<(*b)->width; col++) {
                         rowScore += GetBLOSUM62Score(
                             mergeSeq->sequenceString[(*b)->GetRangeOfRow(lastRow)->from + col],
@@ -880,6 +879,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.83  2003/02/03 19:19:59  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

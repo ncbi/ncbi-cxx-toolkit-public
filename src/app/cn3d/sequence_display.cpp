@@ -37,7 +37,6 @@
 #include <corelib/ncbi_limits.h>
 
 #include <algorithm>
-#include <memory>
 
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/viewer_window_base.hpp"
@@ -1028,9 +1027,9 @@ bool SequenceDisplay::ProximitySort(int displayRow)
 
     TRACEMSG("doing Proximity Sort on alignment row " << keyRow->row);
     int row;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-        blocks(keyRow->alignment->GetUngappedAlignedBlocks());
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    keyRow->alignment->GetUngappedAlignedBlocks(&blocks);
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     const Sequence *seq1 = keyRow->alignment->GetSequenceOfRow(keyRow->row);
     vector < DisplayRowFromAlignment * > sortedByScore;
 
@@ -1046,7 +1045,7 @@ bool SequenceDisplay::ProximitySort(int displayRow)
         } else {
             const Sequence *seq2 = alnRow->alignment->GetSequenceOfRow(alnRow->row);
             double score = 0.0;
-            for (b=blocks->begin(); b!=be; b++) {
+            for (b=blocks.begin(); b!=be; b++) {
                 const Block::Range
                     *r1 = (*b)->GetRangeOfRow(keyRow->row),
                     *r2 = (*b)->GetRangeOfRow(alnRow->row);
@@ -1242,6 +1241,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.67  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

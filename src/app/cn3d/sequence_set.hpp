@@ -83,7 +83,7 @@ public:
     const Molecule *molecule;
     bool isProtein;
 
-    int Length(void) const { return static_cast<int>(sequenceString.size()); }
+    int Length(void) const { return sequenceString.size(); }
     int GetOrSetMMDBLink(void) const;
 
     // Seq-id stuff (C++ and C)
@@ -106,6 +106,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/07/14 18:37:08  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.29  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

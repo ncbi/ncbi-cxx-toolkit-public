@@ -49,8 +49,6 @@
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/cn3d_blast.hpp"
 
-#include <memory>
-
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
 #ifdef _DEBUG
 #ifdef MemNew
@@ -1277,16 +1275,16 @@ bool BlockMultipleAlignment::DeleteRow(int row)
     return true;
 }
 
-BlockMultipleAlignment::UngappedAlignedBlockList *
-BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
+void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *uabs) const
 {
-    UngappedAlignedBlockList *uabs = new UngappedAlignedBlockList();
+    uabs->clear();
+    uabs->reserve(blocks.size());
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
         UngappedAlignedBlock *uab = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (uab) uabs->push_back(uab);
     }
-    return uabs;
+    uabs->resize(uabs->size());
 }
 
 bool BlockMultipleAlignment::ExtractRows(
@@ -1311,8 +1309,9 @@ bool BlockMultipleAlignment::ExtractRows(
         TRACEMSG("creating new pairwise alignments");
         SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
 
-        auto_ptr<UngappedAlignedBlockList> uaBlocks(GetUngappedAlignedBlocks());
-        UngappedAlignedBlockList::const_iterator u, ue = uaBlocks->end();
+        UngappedAlignedBlockList uaBlocks;
+        GetUngappedAlignedBlocks(&uaBlocks);
+        UngappedAlignedBlockList::const_iterator u, ue = uaBlocks.end();
 
         for (i=0; i<slavesToRemove.size(); i++) {
 
@@ -1325,7 +1324,7 @@ bool BlockMultipleAlignment::ExtractRows(
             (*newSeqs)[0] = (*sequences)[0];
             (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
             BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
-            for (u=uaBlocks->begin(); u!=ue; u++) {
+            for (u=uaBlocks.begin(); u!=ue; u++) {
                 // only copy blocks that aren't flagged to be realigned
                 if (markBlocks.find(*u) == markBlocks.end()) {
                     UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
@@ -1344,16 +1343,16 @@ bool BlockMultipleAlignment::ExtractRows(
             }
 
             // add aligned region info (for threader to use later on)
-            if (uaBlocks->size() > 0) {
+            if (uaBlocks.size() > 0) {
                 int excess = 0;
                 if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
                     WARNINGMSG("Can't get footprint excess residues from registry");
                 newAlignment->alignSlaveFrom =
-                    uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from - excess;
+                    uaBlocks.front()->GetRangeOfRow(slavesToRemove[i])->from - excess;
                 if (newAlignment->alignSlaveFrom < 0)
                     newAlignment->alignSlaveFrom = 0;
                 newAlignment->alignSlaveTo =
-                    uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
+                    uaBlocks.back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
                 if (newAlignment->alignSlaveTo >= (*newSeqs)[1]->Length())
                     newAlignment->alignSlaveTo = (*newSeqs)[1]->Length() - 1;
                 TRACEMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
@@ -1495,7 +1494,7 @@ void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForR
 
 
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow)
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, int slaveRow)
 {
     if (!multiple || slaveRow < 0 || slaveRow >= multiple->NRows()) {
         ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
@@ -1507,10 +1506,10 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     seqAlign->SetDim(2);
 
     CSeq_align::C_Segs::TDendiag& denDiags = seqAlign->SetSegs().SetDendiag();
-    denDiags.resize((blocks->size() > 0) ? blocks->size() : 1);
+    denDiags.resize((blocks.size() > 0) ? blocks.size() : 1);
 
     CSeq_align::C_Segs::TDendiag::iterator d, de = denDiags.end();
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks->begin();
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks.begin();
     const Block::Range *range;
     for (d=denDiags.begin(); d!=de; d++, b++) {
 
@@ -1521,7 +1520,7 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
 
         // master row
         denDiag->SetIds().front().Reset(multiple->GetSequenceOfRow(0)->CreateSeqId());
-        if (blocks->size() > 0) {
+        if (blocks.size() > 0) {
             range = (*b)->GetRangeOfRow(0);
             denDiag->SetStarts().push_back(range->from);
         } else
@@ -1529,14 +1528,14 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
 
         // slave row
         denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(slaveRow)->CreateSeqId());
-        if (blocks->size() > 0) {
+        if (blocks.size() > 0) {
             range = (*b)->GetRangeOfRow(slaveRow);
             denDiag->SetStarts().push_back(range->from);
         } else
             denDiag->SetStarts().push_back(0);
 
         // block width
-        denDiag->SetLen((blocks->size() > 0) ? (*b)->width : 0);
+        denDiag->SetLen((blocks.size() > 0) ? (*b)->width : 0);
     }
 
     return seqAlign;
@@ -1659,15 +1658,15 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
         sap->segtype = SAS_DENDIAG;
 
         DenseDiagPtr prevDd = NULL;
-        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-            blocks(GetUngappedAlignedBlocks());
-        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.get()->end();
+        UngappedAlignedBlockList blocks;
+        GetUngappedAlignedBlocks(&blocks);
+        UngappedAlignedBlockList::const_iterator b, be = blocks.end();
 
-        for (b=blocks.get()->begin(); b!=be; b++) {
+        for (b=blocks.begin(); b!=be; b++) {
             DenseDiagPtr dd = DenseDiagNew();
             if (prevDd) prevDd->next = dd;
             prevDd = dd;
-            if (b == blocks.get()->begin()) sap->segs = dd;
+            if (b == blocks.begin()) sap->segs = dd;
 
             dd->dim = 2;
             GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
@@ -1799,6 +1798,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.51  2003/06/13 14:46:58  thiessen
 * fix row cache bug
 *

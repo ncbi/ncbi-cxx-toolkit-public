@@ -95,7 +95,8 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     seqAligns.resize((multiple->NRows() == 1) ? 1 : multiple->NRows() - 1);
     CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
 
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
 
     // create Seq-aligns; if there's only one row (the master), then cheat and create an alignment
     // of the master with itself, because asn data doesn't take well to single-row "alignment"
@@ -103,11 +104,11 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
         int newRow;
         for (int row=1; row<multiple->NRows(); row++, sa++) {
           newRow = rowOrder[row];
-          CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
+          CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, newRow);
           sa->Reset(seqAlign);
         }
     } else
-        sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), 0));
+        sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, 0));
 
     auto_ptr<AlignmentSet> newAlignmentSet;
     try {
@@ -273,6 +274,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/07/14 18:37:07  thiessen
+* change GetUngappedAlignedBlocks() param types; other syntax changes
+*
 * Revision 1.28  2003/06/12 14:21:11  thiessen
 * when saving single-row alignment, make master-master alignment in asn
 *
