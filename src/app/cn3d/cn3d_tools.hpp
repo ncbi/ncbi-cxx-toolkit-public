@@ -129,8 +129,12 @@ static const std::string
     REG_CONFIG_SECTION = "Cn3D-4-Config",
     REG_FAVORITES_NAME = "Favorites",
         NO_FAVORITES_FILE = "(none)",   // to signal that no Favorites file is defined
-    REG_ANIMATION_DELAY = "AnimationDelay",
     REG_SHOW_LOG_ON_START = "ShowLogOnStartup",
+    // animation
+    REG_ANIMATION_SECTION = "Cn3D-4-Animation",
+    REG_SPIN_DELAY = "SpinDelay",
+    REG_SPIN_INCREMENT = "SpinIncrement",
+    REG_FRAME_DELAY = "FrameDelay",
     // quality settings
     REG_QUALITY_SECTION = "Cn3D-4-Quality",
     REG_QUALITY_ATOM_SLICES = "AtomSlices",
@@ -208,6 +212,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/12/03 15:07:10  thiessen
+* add more sophisticated animation controls
+*
 * Revision 1.29  2003/11/15 16:08:35  thiessen
 * add stereo
 *

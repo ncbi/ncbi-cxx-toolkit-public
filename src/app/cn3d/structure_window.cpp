@@ -76,6 +76,7 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cdd_splash_dialog.hpp"
 #include "cn3d/command_processor.hpp"
+#include "cn3d/animation_controls.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -138,7 +139,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_SHOW_REJECTS,  StructureWindow::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         StructureWindow::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      StructureWindow::OnSetFont)
-    EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 StructureWindow::OnAnimate)
+    EVT_MENU_RANGE(MID_PLAY, MID_ANIM_CONTROLS,             StructureWindow::OnAnimate)
     EVT_MENU_RANGE(MID_HELP_COMMANDS, MID_ONLINE_HELP,      StructureWindow::OnHelp)
     EVT_MENU      (MID_ABOUT,                               StructureWindow::OnHelp)
     EVT_TIMER     (MID_ANIMATE,                             StructureWindow::OnAnimationTimer)
@@ -150,7 +151,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
     cddRefDialog(NULL), cddBookRefDialog(NULL), helpController(NULL), helpConfig(NULL),
-    cddOverview(NULL), fileMessagingManager("Cn3D"), fileMessenger(NULL)
+    cddOverview(NULL), fileMessagingManager("Cn3D"), fileMessenger(NULL), spinIncrement(3.0)
 {
     GlobalMessenger()->AddStructureWindow(this);
     animationTimer.SetOwner(this, MID_ANIMATE);
@@ -206,7 +207,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     subMenu->Check(MID_SPIN, false);
     subMenu->Append(MID_STOP, "&Stop\ts", "", true);
     subMenu->Check(MID_STOP, true);
-    subMenu->Append(MID_SET_DELAY, "Set &Delay");
+    subMenu->AppendSeparator();
+    subMenu->Append(MID_ANIM_CONTROLS, "Set Spee&d");
     menu->Append(MID_ANIMATE, "Ani&mation", subMenu);
     menu->AppendSeparator();
     menu->Append(MID_STEREO, "St&ereo", "", true);
@@ -546,21 +548,20 @@ void StructureWindow::OnPNG(wxCommandEvent& event)
 
 void StructureWindow::OnAnimate(wxCommandEvent& event)
 {
-    if (event.GetId() != MID_SET_DELAY) {
+    if (event.GetId() != MID_ANIM_CONTROLS) {
         menuBar->Check(MID_PLAY, false);
         menuBar->Check(MID_SPIN, false);
         menuBar->Check(MID_STOP, true);
     }
     if (!glCanvas->structureSet) return;
 
-    int currentDelay;
-    if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, &currentDelay))
-        return;
-
-    // play
+    // play frames
     if (event.GetId() == MID_PLAY) {
         if (glCanvas->structureSet->frameMap.size() > 1) {
-            animationTimer.Start(currentDelay, false);
+            int delay;
+            if (!RegistryGetInteger(REG_ANIMATION_SECTION, REG_FRAME_DELAY, &delay))
+                return;
+            animationTimer.Start(delay, false);
             animationMode = ANIM_FRAMES;
             menuBar->Check(MID_PLAY, true);
             menuBar->Check(MID_STOP, false);
@@ -569,7 +570,11 @@ void StructureWindow::OnAnimate(wxCommandEvent& event)
 
     // spin
     if (event.GetId() == MID_SPIN) {
-        animationTimer.Start(40, false);
+        int delay;
+        if (!RegistryGetInteger(REG_ANIMATION_SECTION, REG_SPIN_DELAY, &delay) ||
+            !RegistryGetDouble(REG_ANIMATION_SECTION, REG_SPIN_INCREMENT, &spinIncrement))
+            return;
+        animationTimer.Start(delay, false);
         animationMode = ANIM_SPIN;
         menuBar->Check(MID_SPIN, true);
         menuBar->Check(MID_STOP, false);
@@ -580,18 +585,14 @@ void StructureWindow::OnAnimate(wxCommandEvent& event)
         animationTimer.Stop();
     }
 
-    // set delay
-    else if (event.GetId() == MID_SET_DELAY) {
-        long newDelay = wxGetNumberFromUser("Enter a delay value in milliseconds (1..5000)",
-            "Delay:", "Set Delay", (long) currentDelay, 1, 5000, this);
-        if (newDelay > 0) {
-            if (!RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, (int) newDelay))
-                return;
-            // change delay if timer is running
-            if (animationTimer.IsRunning()) {
-                animationTimer.Stop();
-                animationTimer.Start((int) newDelay, false);
-            }
+    // controls
+    else if (event.GetId() == MID_ANIM_CONTROLS) {
+        AnimationControls dialog(this);
+        dialog.ShowModal();
+        // restart timer to pick up new settings
+        if (animationTimer.IsRunning()) {
+            animationTimer.Stop();
+            Command((animationMode == ANIM_SPIN) ? MID_SPIN : MID_PLAY);
         }
     }
 }
@@ -605,7 +606,7 @@ void StructureWindow::OnAnimationTimer(wxTimerEvent& event)
 
     else if (animationMode == ANIM_SPIN) {
         // pretend the user dragged the mouse to the right
-        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, 3, 0);
+        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, spinIncrement, 0);
         glCanvas->Refresh(false);
     }
 }
@@ -1484,6 +1485,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/12/03 15:07:10  thiessen
+* add more sophisticated animation controls
+*
 * Revision 1.21  2003/11/15 16:08:36  thiessen
 * add stereo
 *

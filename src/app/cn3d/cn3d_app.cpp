@@ -223,10 +223,14 @@ void Cn3DApp::InitRegistry(void)
 {
     // first set up defaults, then override any/all with stuff from registry file
 
-    // default animation delay and log window startup
-    RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 500);
+    // default log window startup
     RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, false);
     RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
+
+    // default animation controls
+    RegistrySetInteger(REG_ANIMATION_SECTION, REG_SPIN_DELAY, 50);
+    RegistrySetDouble(REG_ANIMATION_SECTION, REG_SPIN_INCREMENT, 3.0),
+    RegistrySetInteger(REG_ANIMATION_SECTION, REG_FRAME_DELAY, 500);
 
     // default quality settings
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
@@ -478,6 +482,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/12/03 15:07:09  thiessen
+* add more sophisticated animation controls
+*
 * Revision 1.8  2003/11/15 16:08:35  thiessen
 * add stereo
 *

@@ -112,7 +112,7 @@ public:
                 MID_PLAY,
                 MID_SPIN,
                 MID_STOP,
-                MID_SET_DELAY,
+                MID_ANIM_CONTROLS,
         // Show/Hide menu
             MID_SHOW_HIDE,
             MID_SHOW_ALL,
@@ -238,6 +238,7 @@ private:
     wxTimer animationTimer;
     enum { ANIM_FRAMES, ANIM_SPIN };    // animation modes
     int animationMode;
+    double spinIncrement;
 
     // help window and associated config file (for saving bookmarks, etc.)
     wxHtmlHelpController *helpController;
@@ -261,6 +262,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/12/03 15:07:10  thiessen
+* add more sophisticated animation controls
+*
 * Revision 1.7  2003/11/15 16:08:37  thiessen
 * add stereo
 *
