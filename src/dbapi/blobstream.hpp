@@ -33,6 +33,9 @@
 * File Description: stream implementation for reading and writing BLOBs
 *
 * $Log$
+* Revision 1.2  2002/05/13 19:08:44  kholodov
+* Modified: source code is included in NCBI namespace
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -41,6 +44,8 @@
 */
 
 #include "bytestreambuf.hpp"
+
+BEGIN_NCBI_SCOPE
 
 class CBlobIStream : public istream
 {
@@ -70,5 +75,5 @@ private:
 
 //====================================================================
 
-
+END_NCBI_SCOPE
 #endif //  _BLOBSTREAM_HPP_
