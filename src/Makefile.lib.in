@@ -36,9 +36,9 @@ CXXFLAGS_ALL = $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 
 CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %@obj_ext@: ./%.c
-	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+	$(CC) @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
-	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+	$(CC) @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 
 
 ### The library build rule
