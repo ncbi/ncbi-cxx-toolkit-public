@@ -1667,7 +1667,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 m_Attlist = false;
                 return kInvalidMember;
             }
-            if ( NextTagIsClosing() )
+            if ( ThisTagIsSelfClosed() || NextTagIsClosing() )
                 return kInvalidMember;
             tagName = ReadName(BeginOpeningTag());
         }
@@ -2102,6 +2102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/12/10 15:14:32  gouriano
+* Corrected BeginClassMember for empty tags
+*
 * Revision 1.68  2004/09/09 21:02:00  ucko
 * Remove redundant "return" from StartDelayBuffer.
 *
