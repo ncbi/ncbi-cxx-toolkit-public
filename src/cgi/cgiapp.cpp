@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/27 16:11:11  vakatov
+* Moved #define FAST_CGI from inside the "cgiapp.cpp" to "sunpro50.sh"
+*
 * Revision 1.1  1999/04/27 14:50:03  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -37,15 +40,13 @@
 * ===========================================================================
 */
 
-#define FAST_CGI 1
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbires.hpp>
 #include <corelib/cgiapp.hpp>
 #include <corelib/cgictx.hpp>
 
-#if FAST_CGI
+#if defined(FAST_CGI)
 # include <fcgiapp.h>
 # include <corelib/fcgibuf.hpp>
 #endif
@@ -64,7 +65,7 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 int CCgiApplication::Run(void)
 {
-#if FAST_CGI
+#if defined(FAST_CGI)
     if ( !FCGX_IsCGI() ) {
         int iterations;
         {
