@@ -68,6 +68,12 @@ typedef enum {
 #define CODON_LENGTH 3
 #endif
 
+/** for traslated gapped searches, this is the default value in nucleotides of
+ *  longest_intron */
+#ifndef DEFAULT_LONGEST_INTRON
+#define DEFAULT_LONGEST_INTRON 122
+#endif
+
 /** Compression ratio of nucleotide bases (4 bases in 1 byte) */
 #ifndef COMPRESSION_RATIO
 #define COMPRESSION_RATIO 4
