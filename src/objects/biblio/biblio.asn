@@ -1,9 +1,8 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
 --  by James Ostell, 1990
---  version 0.8
 --
 --  Taken from the American National Standard for
 --      Bibliographic References
@@ -15,7 +14,7 @@ NCBI-Biblio DEFINITIONS ::=
 BEGIN
 
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
-		Cit-proc;
+		Cit-proc, Cit-sub;
 
 IMPORTS Person-id, Date FROM NCBI-General;
 
@@ -60,9 +59,37 @@ Id-pat ::= SEQUENCE {                   -- just to identify a patent
         number VisibleString ,          -- Patent Document Number
         app-number VisibleString } }    -- Patent Doc Appl Number
 
-Cit-let ::= SEQUENCE {                  -- letter or manuscript
+Cit-let ::= SEQUENCE {                  -- letter, thesis, or manuscript
     cit Cit-book ,                      -- same fields as a book
-    man-id VisibleString OPTIONAL }     -- Manuscript identifier
+    man-id VisibleString OPTIONAL ,     -- Manuscript identifier
+    type ENUMERATED {
+        not-set (0) ,
+        manuscript (1) ,
+        letter (2) ,
+        thesis (3) } OPTIONAL }
+                                -- NOTE: this is just to cite a
+                                -- direct data submission, see NCBI-Submit
+                                -- for the form of a sequence submission
+Cit-sub ::= SEQUENCE {               -- citation for a direct submission
+    authors Auth-list ,              -- not necessarily authors of the paper
+    imp Imprint ,
+    medium ENUMERATED {              -- medium of submission
+        not-set (0) ,
+        paper   (1) ,
+        tape    (2) ,
+        floppy  (3) ,
+        email   (4) ,
+        other   (255) } OPTIONAL }
+    
+Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
+    cit VisibleString OPTIONAL ,     -- anything, not parsable
+    authors Auth-list OPTIONAL ,
+    muid INTEGER OPTIONAL ,      -- medline uid
+    journal Title OPTIONAL ,
+    volume VisibleString OPTIONAL ,
+    issue VisibleString OPTIONAL ,
+    pages VisibleString OPTIONAL ,
+    date Date OPTIONAL }
     
     
     -- Authorship Group
@@ -127,16 +154,6 @@ Meeting ::= SEQUENCE {
     date Date ,
     place Affil OPTIONAL }
 
-Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
-    cit VisibleString OPTIONAL ,     -- anything, not parsable
-    authors Auth-list OPTIONAL ,
-    muid INTEGER OPTIONAL ,      -- medline uid
-    journal Title OPTIONAL ,
-    volume VisibleString OPTIONAL ,
-    issue VisibleString OPTIONAL ,
-    pages VisibleString OPTIONAL ,
-    date Date OPTIONAL }
-    
             
 END
 
