@@ -257,8 +257,8 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 
 /*
  */
-extern NCBI_XCONNECT_EXPORT unsigned int SOCK_SetSelectInternalRestartTimeout
-(unsigned timeout);
+extern NCBI_XCONNECT_EXPORT const STimeout*SOCK_SetSelectInternalRestartTimeout
+(const STimeout* timeout);
 
 
 /* By default (on UNIX platforms) the SOCK API functions automagically call
@@ -957,6 +957,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2003/11/24 19:22:24  lavr
+ * SetSelectInternalRestartTimeout() to accept ptr to STimeout
+ *
  * Revision 6.46  2003/11/18 20:18:49  lavr
  * +SetSelectInternalRestartTimeout()
  *
