@@ -137,7 +137,7 @@ bool CFeatQualAssoc::IsLegalGbqual
 }
 
 
-const CFeatQualAssoc::GBQualTypeVec& CFeatQualAssoc::GetMandatoryGbquals
+const CFeatQualAssoc::TGBQualTypeVec& CFeatQualAssoc::GetMandatoryGbquals
 (CSeqFeatData::ESubtype ftype)
 {
     return Instance()->GetMandatoryQuals(ftype);
@@ -161,10 +161,10 @@ bool CFeatQualAssoc::IsLegal
 }
 
 
-const CFeatQualAssoc::GBQualTypeVec& CFeatQualAssoc::GetMandatoryQuals
+const CFeatQualAssoc::TGBQualTypeVec& CFeatQualAssoc::GetMandatoryQuals
 (CSeqFeatData::ESubtype ftype)
 {
-    static GBQualTypeVec empty;
+    static TGBQualTypeVec empty;
 
     if ( m_MandatoryGbquals.find(ftype) != m_MandatoryGbquals.end() ) {
         return m_MandatoryGbquals[ftype];
@@ -190,512 +190,521 @@ CFeatQualAssoc::CFeatQualAssoc(void)
 }
 
 
-#define ASSOCIATE(feat_subtype, gbqual_type) \
-    m_LegalGbquals[CSeqFeatData::feat_subtype].push_back(CGbqualType::gbqual_type)
+void CFeatQualAssoc::Associate
+(CSeqFeatData::ESubtype feat_subtype,
+ CGbqualType::EType gbqual_type)
+{
+    // IMPORTANT: Bug in GCC compile prevent the code to be written as:
+    //    m_LegalGbqual[feat_subtype].push_back(gbqual_type);
+    TGBQualTypeVec& vec = m_LegalGbquals[feat_subtype];
+    vec.push_back(gbqual_type);
+}
+
 
 void CFeatQualAssoc::PoplulateLegalGbquals(void)
 {
     // gene
-    ASSOCIATE( eSubtype_gene, e_Allele );
-    ASSOCIATE( eSubtype_gene, e_Function );
-    ASSOCIATE( eSubtype_gene, e_Label );
-    ASSOCIATE( eSubtype_gene, e_Map );
-    ASSOCIATE( eSubtype_gene, e_Phenotype );
-    ASSOCIATE( eSubtype_gene, e_Product );
-    ASSOCIATE( eSubtype_gene, e_Standard_name );
-    ASSOCIATE( eSubtype_gene, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Usedin );
     
  
     // CDS
-    ASSOCIATE( eSubtype_cdregion, e_Allele );
-    ASSOCIATE( eSubtype_cdregion, e_Codon );
-    ASSOCIATE( eSubtype_cdregion, e_Label );
-    ASSOCIATE( eSubtype_cdregion, e_Map );
-    ASSOCIATE( eSubtype_cdregion, e_Number );
-    ASSOCIATE( eSubtype_cdregion, e_Standard_name );
-    ASSOCIATE( eSubtype_cdregion, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Codon );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Usedin );
 
     // prot
-    ASSOCIATE( eSubtype_prot, e_Product );
+    Associate( CSeqFeatData::eSubtype_prot, CGbqualType::e_Product );
 
     // preRNA
-    ASSOCIATE( eSubtype_preRNA, e_Allele );
-    ASSOCIATE( eSubtype_preRNA, e_Function );
-    ASSOCIATE( eSubtype_preRNA, e_Label );
-    ASSOCIATE( eSubtype_preRNA, e_Map );
-    ASSOCIATE( eSubtype_preRNA, e_Product );
-    ASSOCIATE( eSubtype_preRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_preRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Usedin );
 
     // mRNA
-    ASSOCIATE( eSubtype_mRNA, e_Allele );
-    ASSOCIATE( eSubtype_mRNA, e_Function );
-    ASSOCIATE( eSubtype_mRNA, e_Label );
-    ASSOCIATE( eSubtype_mRNA, e_Map );
-    ASSOCIATE( eSubtype_mRNA, e_Product );
-    ASSOCIATE( eSubtype_mRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_mRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Usedin );
 
     // tRNA
-    ASSOCIATE( eSubtype_tRNA, e_Function );
-    ASSOCIATE( eSubtype_tRNA, e_Label );
-    ASSOCIATE( eSubtype_tRNA, e_Map );
-    ASSOCIATE( eSubtype_tRNA, e_Product );
-    ASSOCIATE( eSubtype_tRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_tRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Usedin );
 
     // rRNA
-    ASSOCIATE( eSubtype_rRNA, e_Function );
-    ASSOCIATE( eSubtype_rRNA, e_Label );
-    ASSOCIATE( eSubtype_rRNA, e_Map );
-    ASSOCIATE( eSubtype_rRNA, e_Product );
-    ASSOCIATE( eSubtype_rRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_rRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Usedin );
 
     // snRNA
-    ASSOCIATE( eSubtype_snRNA, e_Function );
-    ASSOCIATE( eSubtype_snRNA, e_Label );
-    ASSOCIATE( eSubtype_snRNA, e_Map );
-    ASSOCIATE( eSubtype_snRNA, e_Product );
-    ASSOCIATE( eSubtype_snRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_snRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Usedin );
 
     // scRNA
-    ASSOCIATE( eSubtype_scRNA, e_Function );
-    ASSOCIATE( eSubtype_scRNA, e_Label );
-    ASSOCIATE( eSubtype_scRNA, e_Map );
-    ASSOCIATE( eSubtype_scRNA, e_Product );
-    ASSOCIATE( eSubtype_scRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_scRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Usedin );
 
     // otherRNA
-    ASSOCIATE( eSubtype_otherRNA, e_Function );
-    ASSOCIATE( eSubtype_otherRNA, e_Label );
-    ASSOCIATE( eSubtype_otherRNA, e_Map );
-    ASSOCIATE( eSubtype_otherRNA, e_Product );
-    ASSOCIATE( eSubtype_otherRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_otherRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Usedin );
 
     // attenuator
-    ASSOCIATE( eSubtype_attenuator, e_Label );
-    ASSOCIATE( eSubtype_attenuator, e_Map );
-    ASSOCIATE( eSubtype_attenuator, e_Phenotype );
-    ASSOCIATE( eSubtype_attenuator, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Usedin );
 
     // C_region
-    ASSOCIATE( eSubtype_C_region, e_Label );
-    ASSOCIATE( eSubtype_C_region, e_Map );
-    ASSOCIATE( eSubtype_C_region, e_Product );
-    ASSOCIATE( eSubtype_C_region, e_Standard_name );
-    ASSOCIATE( eSubtype_C_region, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Usedin );
 
     // CAAT_signal
-    ASSOCIATE( eSubtype_CAAT_signal, e_Label );
-    ASSOCIATE( eSubtype_CAAT_signal, e_Map );
-    ASSOCIATE( eSubtype_CAAT_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Usedin );
 
     // Imp_CDS
-    ASSOCIATE( eSubtype_Imp_CDS, e_Codon );
-    ASSOCIATE( eSubtype_Imp_CDS, e_EC_number );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Function );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Label );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Map );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Number );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Product );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Standard_name );
-    ASSOCIATE( eSubtype_Imp_CDS, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Codon );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_EC_number );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Usedin );
 
     // conflict
-    ASSOCIATE( eSubtype_conflict, e_Label );
-    ASSOCIATE( eSubtype_conflict, e_Map );
-    ASSOCIATE( eSubtype_conflict, e_Replace );
-    ASSOCIATE( eSubtype_conflict, e_Label );
+    Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Replace );
+    Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Label );
 
     // D_loop
-    ASSOCIATE( eSubtype_D_loop, e_Label );
-    ASSOCIATE( eSubtype_D_loop, e_Map );
-    ASSOCIATE( eSubtype_D_loop, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Usedin );
 
     // D_segment
-    ASSOCIATE( eSubtype_D_segment, e_Label );
-    ASSOCIATE( eSubtype_D_segment, e_Map );
-    ASSOCIATE( eSubtype_D_segment, e_Product );
-    ASSOCIATE( eSubtype_D_segment, e_Standard_name );
-    ASSOCIATE( eSubtype_D_segment, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Usedin );
 
     // enhancer
-    ASSOCIATE( eSubtype_enhancer, e_Label );
-    ASSOCIATE( eSubtype_enhancer, e_Map );
-    ASSOCIATE( eSubtype_enhancer, e_Standard_name );
-    ASSOCIATE( eSubtype_enhancer, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Usedin );
 
     // exon
-    ASSOCIATE( eSubtype_exon, e_Allele );
-    ASSOCIATE( eSubtype_exon, e_EC_number );
-    ASSOCIATE( eSubtype_exon, e_Function );
-    ASSOCIATE( eSubtype_exon, e_Label );
-    ASSOCIATE( eSubtype_exon, e_Map );
-    ASSOCIATE( eSubtype_exon, e_Number );
-    ASSOCIATE( eSubtype_exon, e_Product );
-    ASSOCIATE( eSubtype_exon, e_Standard_name );
-    ASSOCIATE( eSubtype_exon, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_EC_number );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Usedin );
 
     // GC_signal
-    ASSOCIATE( eSubtype_GC_signal, e_Label );
-    ASSOCIATE( eSubtype_GC_signal, e_Map );
-    ASSOCIATE( eSubtype_GC_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Usedin );
 
     // iDNA
-    ASSOCIATE( eSubtype_iDNA, e_Function );
-    ASSOCIATE( eSubtype_iDNA, e_Label );
-    ASSOCIATE( eSubtype_iDNA, e_Map );
-    ASSOCIATE( eSubtype_iDNA, e_Number );
-    ASSOCIATE( eSubtype_iDNA, e_Standard_name );
-    ASSOCIATE( eSubtype_iDNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Usedin );
 
     // intron
-    ASSOCIATE( eSubtype_intron, e_Allele );
-    ASSOCIATE( eSubtype_intron, e_Cons_splice );
-    ASSOCIATE( eSubtype_intron, e_Function );
-    ASSOCIATE( eSubtype_intron, e_Label );
-    ASSOCIATE( eSubtype_intron, e_Map );
-    ASSOCIATE( eSubtype_intron, e_Number );
-    ASSOCIATE( eSubtype_intron, e_Standard_name );
-    ASSOCIATE( eSubtype_intron, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Cons_splice );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Usedin );
 
     // J_segment
-    ASSOCIATE( eSubtype_J_segment, e_Label );
-    ASSOCIATE( eSubtype_J_segment, e_Map );
-    ASSOCIATE( eSubtype_J_segment, e_Product );
-    ASSOCIATE( eSubtype_J_segment, e_Standard_name );
-    ASSOCIATE( eSubtype_J_segment, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Usedin );
 
     // LTR
-    ASSOCIATE( eSubtype_LTR, e_Function );
-    ASSOCIATE( eSubtype_LTR, e_Label );
-    ASSOCIATE( eSubtype_LTR, e_Map );
-    ASSOCIATE( eSubtype_LTR, e_Standard_name );
-    ASSOCIATE( eSubtype_LTR, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Usedin );
 
     // mat_peptide
-    ASSOCIATE( eSubtype_mat_peptide, e_EC_number );
-    ASSOCIATE( eSubtype_mat_peptide, e_Function );
-    ASSOCIATE( eSubtype_mat_peptide, e_Label );
-    ASSOCIATE( eSubtype_mat_peptide, e_Map );
-    ASSOCIATE( eSubtype_mat_peptide, e_Product );
-    ASSOCIATE( eSubtype_mat_peptide, e_Standard_name );
-    ASSOCIATE( eSubtype_mat_peptide, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_EC_number );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Usedin );
 
     // misc_binding
-    ASSOCIATE( eSubtype_misc_binding, e_Bound_moiety );
-    ASSOCIATE( eSubtype_misc_binding, e_Function );
-    ASSOCIATE( eSubtype_misc_binding, e_Label );
-    ASSOCIATE( eSubtype_misc_binding, e_Map );
-    ASSOCIATE( eSubtype_misc_binding, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Bound_moiety );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Usedin );
 
     // misc_difference
-    ASSOCIATE( eSubtype_misc_difference, e_Clone );
-    ASSOCIATE( eSubtype_misc_difference, e_Label );
-    ASSOCIATE( eSubtype_misc_difference, e_Map );
-    ASSOCIATE( eSubtype_misc_difference, e_Phenotype );
-    ASSOCIATE( eSubtype_misc_difference, e_Replace );
-    ASSOCIATE( eSubtype_misc_difference, e_Standard_name );
-    ASSOCIATE( eSubtype_misc_difference, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Clone );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Replace );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Usedin );
 
     // misc_feature
-    ASSOCIATE( eSubtype_misc_feature, e_Function );
-    ASSOCIATE( eSubtype_misc_feature, e_Label );
-    ASSOCIATE( eSubtype_misc_feature, e_Map );
-    ASSOCIATE( eSubtype_misc_feature, e_Number );
-    ASSOCIATE( eSubtype_misc_feature, e_Phenotype );
-    ASSOCIATE( eSubtype_misc_feature, e_Product );
-    ASSOCIATE( eSubtype_misc_feature, e_Standard_name );
-    ASSOCIATE( eSubtype_misc_feature, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Usedin );
 
     // misc_recomb
-    ASSOCIATE( eSubtype_misc_recomb, e_Label );
-    ASSOCIATE( eSubtype_misc_recomb, e_Map );
-    ASSOCIATE( eSubtype_misc_recomb, e_Organism );
-    ASSOCIATE( eSubtype_misc_recomb, e_Standard_name );
-    ASSOCIATE( eSubtype_misc_recomb, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Organism );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Usedin );
 
     // misc_signal
-    ASSOCIATE( eSubtype_misc_signal, e_Function );
-    ASSOCIATE( eSubtype_misc_signal, e_Label );
-    ASSOCIATE( eSubtype_misc_signal, e_Map );
-    ASSOCIATE( eSubtype_misc_signal, e_Phenotype );
-    ASSOCIATE( eSubtype_misc_signal, e_Standard_name );
-    ASSOCIATE( eSubtype_misc_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Usedin );
 
     // misc_structure
-    ASSOCIATE( eSubtype_misc_structure, e_Function );
-    ASSOCIATE( eSubtype_misc_structure, e_Label );
-    ASSOCIATE( eSubtype_misc_structure, e_Map );
-    ASSOCIATE( eSubtype_misc_structure, e_Standard_name );
-    ASSOCIATE( eSubtype_misc_structure, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Usedin );
 
     // modified_base
-    ASSOCIATE( eSubtype_misc_structure, e_Frequency );
-    ASSOCIATE( eSubtype_misc_structure, e_Label );
-    ASSOCIATE( eSubtype_misc_structure, e_Map );
-    ASSOCIATE( eSubtype_misc_structure, e_Mod_base );
-    ASSOCIATE( eSubtype_misc_structure, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Frequency );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Mod_base );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Usedin );
 
     // N_region
-    ASSOCIATE( eSubtype_N_region, e_Label );
-    ASSOCIATE( eSubtype_N_region, e_Map );
-    ASSOCIATE( eSubtype_N_region, e_Product );
-    ASSOCIATE( eSubtype_N_region, e_Standard_name );
-    ASSOCIATE( eSubtype_N_region, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Usedin );
 
     // old_sequence
-    ASSOCIATE( eSubtype_old_sequence, e_Label );
-    ASSOCIATE( eSubtype_old_sequence, e_Map );
-    ASSOCIATE( eSubtype_old_sequence, e_Replace );
-    ASSOCIATE( eSubtype_old_sequence, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Replace );
+    Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Usedin );
 
     // polyA_signal
-    ASSOCIATE( eSubtype_polyA_signal, e_Label );
-    ASSOCIATE( eSubtype_polyA_signal, e_Map );
-    ASSOCIATE( eSubtype_polyA_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Usedin );
 
     // polyA_site
-    ASSOCIATE( eSubtype_polyA_site, e_Label );
-    ASSOCIATE( eSubtype_polyA_site, e_Map );
-    ASSOCIATE( eSubtype_polyA_site, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Usedin );
 
     // prim_transcript
-    ASSOCIATE( eSubtype_prim_transcript, e_Allele );
-    ASSOCIATE( eSubtype_prim_transcript, e_Function );
-    ASSOCIATE( eSubtype_prim_transcript, e_Label );
-    ASSOCIATE( eSubtype_prim_transcript, e_Map );
-    ASSOCIATE( eSubtype_prim_transcript, e_Standard_name );
-    ASSOCIATE( eSubtype_prim_transcript, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Usedin );
 
     // primer_bind
-    ASSOCIATE( eSubtype_primer_bind, e_Label );
-    ASSOCIATE( eSubtype_primer_bind, e_Map );
-    ASSOCIATE( eSubtype_primer_bind, e_PCR_conditions );
-    ASSOCIATE( eSubtype_primer_bind, e_Standard_name );
-    ASSOCIATE( eSubtype_primer_bind, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_PCR_conditions );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Usedin );
 
     // promoter
-    ASSOCIATE( eSubtype_promoter, e_Function );
-    ASSOCIATE( eSubtype_promoter, e_Label );
-    ASSOCIATE( eSubtype_promoter, e_Map );
-    ASSOCIATE( eSubtype_promoter, e_Phenotype );
-    ASSOCIATE( eSubtype_promoter, e_Standard_name );
-    ASSOCIATE( eSubtype_promoter, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Usedin );
 
     // protein_bind
-    ASSOCIATE( eSubtype_promoter, e_Bound_moiety );
-    ASSOCIATE( eSubtype_promoter, e_Function );
-    ASSOCIATE( eSubtype_promoter, e_Label );
-    ASSOCIATE( eSubtype_promoter, e_Map );
-    ASSOCIATE( eSubtype_promoter, e_Standard_name );
-    ASSOCIATE( eSubtype_promoter, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Bound_moiety );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Usedin );
 
     // RBS
-    ASSOCIATE( eSubtype_RBS, e_Label );
-    ASSOCIATE( eSubtype_RBS, e_Map );
-    ASSOCIATE( eSubtype_RBS, e_Standard_name );
-    ASSOCIATE( eSubtype_RBS, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Usedin );
 
     // repeat_region
-    ASSOCIATE( eSubtype_repeat_region, e_Function );
-    ASSOCIATE( eSubtype_repeat_region, e_Label );
-    ASSOCIATE( eSubtype_repeat_region, e_Map );
-    ASSOCIATE( eSubtype_repeat_region, e_Rpt_family );
-    ASSOCIATE( eSubtype_repeat_region, e_Rpt_type );
-    ASSOCIATE( eSubtype_repeat_region, e_Rpt_unit );
-    ASSOCIATE( eSubtype_repeat_region, e_Standard_name );
-    ASSOCIATE( eSubtype_repeat_region, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_family );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_type );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Usedin );
 
     // repeat_unit
-    ASSOCIATE( eSubtype_repeat_unit, e_Function );
-    ASSOCIATE( eSubtype_repeat_unit, e_Label );
-    ASSOCIATE( eSubtype_repeat_unit, e_Map );
-    ASSOCIATE( eSubtype_repeat_unit, e_Rpt_family );
-    ASSOCIATE( eSubtype_repeat_unit, e_Rpt_type );
-    ASSOCIATE( eSubtype_repeat_unit, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Rpt_family );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Rpt_type );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Usedin );
 
     // rep_origin
-    ASSOCIATE( eSubtype_rep_origin, e_Direction );
-    ASSOCIATE( eSubtype_rep_origin, e_Label );
-    ASSOCIATE( eSubtype_rep_origin, e_Map );
-    ASSOCIATE( eSubtype_rep_origin, e_Standard_name );
-    ASSOCIATE( eSubtype_rep_origin, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Direction );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Usedin );
 
     // S_region
-    ASSOCIATE( eSubtype_repeat_unit, e_Label );
-    ASSOCIATE( eSubtype_repeat_unit, e_Map );
-    ASSOCIATE( eSubtype_repeat_unit, e_Product );
-    ASSOCIATE( eSubtype_repeat_unit, e_Standard_name );
-    ASSOCIATE( eSubtype_repeat_unit, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Usedin );
 
     // satellite
-    ASSOCIATE( eSubtype_satellite, e_Label );
-    ASSOCIATE( eSubtype_satellite, e_Map );
-    ASSOCIATE( eSubtype_satellite, e_Rpt_family );
-    ASSOCIATE( eSubtype_satellite, e_Rpt_type );
-    ASSOCIATE( eSubtype_satellite, e_Rpt_unit );
-    ASSOCIATE( eSubtype_satellite, e_Standard_name );
-    ASSOCIATE( eSubtype_satellite, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_family );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_type );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_unit );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Usedin );
 
     // sig_peptide
-    ASSOCIATE( eSubtype_sig_peptide, e_Function );
-    ASSOCIATE( eSubtype_sig_peptide, e_Label );
-    ASSOCIATE( eSubtype_sig_peptide, e_Map );
-    ASSOCIATE( eSubtype_sig_peptide, e_Product );
-    ASSOCIATE( eSubtype_sig_peptide, e_Standard_name );
-    ASSOCIATE( eSubtype_sig_peptide, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Usedin );
 
     // stem_loop
-    ASSOCIATE( eSubtype_stem_loop, e_Function );
-    ASSOCIATE( eSubtype_stem_loop, e_Label );
-    ASSOCIATE( eSubtype_stem_loop, e_Map );
-    ASSOCIATE( eSubtype_stem_loop, e_Standard_name );
-    ASSOCIATE( eSubtype_stem_loop, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Usedin );
 
     // STS
-    ASSOCIATE( eSubtype_STS, e_Label );
-    ASSOCIATE( eSubtype_STS, e_Map );
-    ASSOCIATE( eSubtype_STS, e_Standard_name );
-    ASSOCIATE( eSubtype_STS, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Usedin );
 
     // TATA_signal
-    ASSOCIATE( eSubtype_TATA_signal, e_Label );
-    ASSOCIATE( eSubtype_TATA_signal, e_Map );
-    ASSOCIATE( eSubtype_TATA_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Usedin );
 
     // terminator
-    ASSOCIATE( eSubtype_terminator, e_Label );
-    ASSOCIATE( eSubtype_terminator, e_Map );
-    ASSOCIATE( eSubtype_terminator, e_Standard_name );
-    ASSOCIATE( eSubtype_terminator, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Usedin );
 
     // transit_peptide
-    ASSOCIATE( eSubtype_transit_peptide, e_Function );
-    ASSOCIATE( eSubtype_transit_peptide, e_Label );
-    ASSOCIATE( eSubtype_transit_peptide, e_Map );
-    ASSOCIATE( eSubtype_transit_peptide, e_Product );
-    ASSOCIATE( eSubtype_transit_peptide, e_Standard_name );
-    ASSOCIATE( eSubtype_transit_peptide, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Usedin );
 
     // unsure
-    ASSOCIATE( eSubtype_unsure, e_Label );
-    ASSOCIATE( eSubtype_unsure, e_Map );
-    ASSOCIATE( eSubtype_unsure, e_Replace );
-    ASSOCIATE( eSubtype_unsure, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Replace );
+    Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Usedin );
 
     // V_region
-    ASSOCIATE( eSubtype_V_region, e_Label );
-    ASSOCIATE( eSubtype_V_region, e_Map );
-    ASSOCIATE( eSubtype_V_region, e_Product );
-    ASSOCIATE( eSubtype_V_region, e_Standard_name );
-    ASSOCIATE( eSubtype_V_region, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Usedin );
 
     // V_segment
-    ASSOCIATE( eSubtype_V_segment, e_Label );
-    ASSOCIATE( eSubtype_V_segment, e_Map );
-    ASSOCIATE( eSubtype_V_segment, e_Product );
-    ASSOCIATE( eSubtype_V_segment, e_Standard_name );
-    ASSOCIATE( eSubtype_V_segment, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Usedin );
 
     // variation
-    ASSOCIATE( eSubtype_variation, e_Allele );
-    ASSOCIATE( eSubtype_variation, e_Frequency );
-    ASSOCIATE( eSubtype_variation, e_Label );
-    ASSOCIATE( eSubtype_variation, e_Map );
-    ASSOCIATE( eSubtype_variation, e_Phenotype );
-    ASSOCIATE( eSubtype_variation, e_Product );
-    ASSOCIATE( eSubtype_variation, e_Replace );
-    ASSOCIATE( eSubtype_variation, e_Standard_name );
-    ASSOCIATE( eSubtype_variation, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Frequency );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Replace );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Usedin );
 
     // 3clip
-    ASSOCIATE( eSubtype_3clip, e_Allele );
-    ASSOCIATE( eSubtype_3clip, e_Function );
-    ASSOCIATE( eSubtype_3clip, e_Label );
-    ASSOCIATE( eSubtype_3clip, e_Map );
-    ASSOCIATE( eSubtype_3clip, e_Standard_name );
-    ASSOCIATE( eSubtype_3clip, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Usedin );
 
     // 3UTR
-    ASSOCIATE( eSubtype_3UTR, e_Allele );
-    ASSOCIATE( eSubtype_3UTR, e_Function );
-    ASSOCIATE( eSubtype_3UTR, e_Label );
-    ASSOCIATE( eSubtype_3UTR, e_Map );
-    ASSOCIATE( eSubtype_3UTR, e_Standard_name );
-    ASSOCIATE( eSubtype_3UTR, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Usedin );
 
     // 5clip
-    ASSOCIATE( eSubtype_5clip, e_Allele );
-    ASSOCIATE( eSubtype_5clip, e_Function );
-    ASSOCIATE( eSubtype_5clip, e_Label );
-    ASSOCIATE( eSubtype_5clip, e_Map );
-    ASSOCIATE( eSubtype_5clip, e_Standard_name );
-    ASSOCIATE( eSubtype_5clip, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Usedin );
 
     // 5UTR
-    ASSOCIATE( eSubtype_5UTR, e_Allele );
-    ASSOCIATE( eSubtype_5UTR, e_Function );
-    ASSOCIATE( eSubtype_5UTR, e_Label );
-    ASSOCIATE( eSubtype_5UTR, e_Map );
-    ASSOCIATE( eSubtype_5UTR, e_Standard_name );
-    ASSOCIATE( eSubtype_5UTR, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Usedin );
 
     // 10_signal
-    ASSOCIATE( eSubtype_10_signal, e_Label );
-    ASSOCIATE( eSubtype_10_signal, e_Map );
-    ASSOCIATE( eSubtype_10_signal, e_Standard_name );
-    ASSOCIATE( eSubtype_10_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Usedin );
 
     // 35_signal
-    ASSOCIATE( eSubtype_35_signal, e_Label );
-    ASSOCIATE( eSubtype_35_signal, e_Map );
-    ASSOCIATE( eSubtype_35_signal, e_Standard_name );
-    ASSOCIATE( eSubtype_35_signal, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Usedin );
 
     // region
-    ASSOCIATE( eSubtype_region, e_Function );
-    ASSOCIATE( eSubtype_region, e_Label );
-    ASSOCIATE( eSubtype_region, e_Map );
-    ASSOCIATE( eSubtype_region, e_Number );
-    ASSOCIATE( eSubtype_region, e_Phenotype );
-    ASSOCIATE( eSubtype_region, e_Product );
-    ASSOCIATE( eSubtype_region, e_Standard_name );
-    ASSOCIATE( eSubtype_region, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Usedin );
 
     // mat_peptide_aa
-    ASSOCIATE( eSubtype_mat_peptide_aa, e_Label );
-    ASSOCIATE( eSubtype_mat_peptide_aa, e_Map );
-    ASSOCIATE( eSubtype_mat_peptide_aa, e_Product );
-    ASSOCIATE( eSubtype_mat_peptide_aa, e_Standard_name );
-    ASSOCIATE( eSubtype_mat_peptide_aa, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Usedin );
 
     // sig_peptide_aa
-    ASSOCIATE( eSubtype_sig_peptide_aa, e_Label );
-    ASSOCIATE( eSubtype_sig_peptide_aa, e_Map );
-    ASSOCIATE( eSubtype_sig_peptide_aa, e_Product );
-    ASSOCIATE( eSubtype_sig_peptide_aa, e_Standard_name );
-    ASSOCIATE( eSubtype_sig_peptide_aa, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Usedin );
 
     // transit_peptide_aa
-    ASSOCIATE( eSubtype_transit_peptide_aa, e_Label );
-    ASSOCIATE( eSubtype_transit_peptide_aa, e_Map );
-    ASSOCIATE( eSubtype_transit_peptide_aa, e_Product );
-    ASSOCIATE( eSubtype_transit_peptide_aa, e_Standard_name );
-    ASSOCIATE( eSubtype_transit_peptide_aa, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Usedin );
 
     // snoRNA
-    ASSOCIATE( eSubtype_snoRNA, e_Function );
-    ASSOCIATE( eSubtype_snoRNA, e_Label );
-    ASSOCIATE( eSubtype_snoRNA, e_Map );
-    ASSOCIATE( eSubtype_snoRNA, e_Product );
-    ASSOCIATE( eSubtype_snoRNA, e_Standard_name );
-    ASSOCIATE( eSubtype_snoRNA, e_Usedin );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Usedin );
 }
+
 
 void CFeatQualAssoc::PopulateMandatoryGbquals(void)
 {
@@ -1044,6 +1053,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/01/06 16:38:03  shomrat
+* ASSOCIATE macro replaced with function to overcome a bug in GCC compiler
+*
 * Revision 1.2  2002/12/24 16:50:15  shomrat
 * Removal of redundant GBQual types
 *
