@@ -188,6 +188,8 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
         
         // BLOB dump
         if (blob_db) {
+            unsigned char buf[2048];
+            
             unsigned size = blob_db->LobSize();
             out << m_ColumnSeparator;
             if (size) {
@@ -200,14 +202,13 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                         << size 
                         << " {";
                     
-                    char buf[256];
                     size_t bytes_read;
                     blob_stream->Read(buf, 128, &bytes_read);
                     unsigned sp_counter = 0;
                     for (unsigned int i = 0; i < bytes_read; ++i) {
                         if (m_BlobFormat & eBlobAsHex) {
                           out << setfill('0') << hex << setw(2) 
-                              << (int)buf[i];
+                              << (unsigned)buf[i];
                            if (++sp_counter == 4) {
                                cout << " ";
                                sp_counter = 0;
@@ -222,7 +223,6 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                     out << "}]";
                                         
                 } else {  // All BLOB
-                    char buf[2048];
                     
                     out << "BLOB. size=" << size << "\n";
                     
@@ -233,7 +233,7 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                             unsigned sp_counter = 0;
                             for (unsigned int i = 0; i < bytes_read; ++i) {
                                out << setfill('0') << hex << setw(2) 
-                                   << (int)buf[i];
+                                   << (unsigned)buf[i];
                                if (++sp_counter == 4) {
                                    cout << " ";
                                    sp_counter = 0;
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/30 16:27:22  kuznets
+ * Fixed casting for correct BLOB printing
+ *
  * Revision 1.9  2004/06/29 12:28:02  kuznets
  * Added option to copy all db records to another file
  *
