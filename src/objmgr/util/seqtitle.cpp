@@ -61,6 +61,7 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/util/feature.hpp>
 #include <objects/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -95,6 +96,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     CConstRef<CMolInfo>       mol_info(NULL);
     bool                      third_party = false;
     bool                      is_nc       = false;
+    bool                      is_nm       = false;
     bool                      wgs_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
@@ -119,6 +121,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                     wgs_master = true;
                 } else if (type == CSeq_id::eAcc_refseq_chromosome) {
                     is_nc = true;
+                } else if (type == CSeq_id::eAcc_refseq_mrna) {
+                    is_nm = true;
                 }
             }
             break;
@@ -218,6 +222,39 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 flags &= ~fGetTitle_Organism;
             }
             break;
+        }
+    } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()) {
+        unsigned int         genes = 0, cdregions = 0, prots = 0;
+        CConstRef<CSeq_feat> gene(0),   cdregion(0);
+        CSeq_loc everywhere;
+        everywhere.SetWhole(*hnd.GetSeqId());
+        for (CFeat_CI it(hnd.GetScope(), everywhere, CSeqFeatData::e_not_set);
+             it;  ++it) {
+            switch (it->GetData().Which()) {
+            case CSeqFeatData::e_Gene:
+                ++genes;
+                gene.Reset(&*it);
+                break;
+            case CSeqFeatData::e_Cdregion:
+                ++cdregions;
+                cdregion.Reset(&*it);
+                break;
+            case CSeqFeatData::e_Prot:
+                ++prots;
+                break;
+            default:
+                break;
+            }
+        }
+        if (genes == 1  &&  cdregions == 1  // &&  prots >= 1
+            &&  source->GetOrg().IsSetTaxname()) {
+            title = source->GetOrg().GetTaxname() + ' ';
+            feature::GetLabel(*cdregion, &title, feature::eContent,
+                              &hnd.GetScope());
+            title += " (";
+            feature::GetLabel(*gene, &title, feature::eContent,
+                              &hnd.GetScope());
+            title += "), mRNA";
         }
     }
 
@@ -321,6 +358,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                     if ( !(*it)->GetLiteral().IsSetSeq_data() ) {
                         pieces++;
                     }
+                    break;
+                default:
                     break;
                 }
             }
@@ -774,6 +813,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2002/11/15 17:39:59  ucko
+* Make better titles for NM sequences
+*
 * Revision 1.8  2002/11/08 19:43:38  grichenk
 * CConstRef<> constructor made explicit
 *
