@@ -375,9 +375,13 @@ void CGBDataLoader::x_CreateDriver(const TParamTree* params)
     {{
         size_t queue_size;
         try {
-            queue_size =
-                NStr::StringToUInt(GetParam(params,
-                                            NCBI_GBLOADER_PARAM_ID_GC_SIZE));
+            string param = GetParam(params, NCBI_GBLOADER_PARAM_ID_GC_SIZE);
+            if ( param.empty() ) {
+                queue_size = DEFAULT_ID_GC_SIZE;
+            }
+            else {
+                queue_size = NStr::StringToUInt(param);
+            }
         }
         catch ( ... ) {
             queue_size = DEFAULT_ID_GC_SIZE;
