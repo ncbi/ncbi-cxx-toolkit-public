@@ -49,7 +49,7 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                  &link, (CS_INT) sizeof(link), NULL);
 
     // retrieve the connection attributes
-    CS_INT outlen;
+    CS_INT outlen(0);
     char   buf[512];
 
     ct_con_props(m_Link, CS_GET, CS_SERVERNAME,
@@ -672,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/02/05 14:56:22  dicuccio
+ * Fixed uninitialized read reported by valgrind.
+ *
  * Revision 1.12  2003/01/31 16:49:38  lavr
  * Remove unused variable "e" from catch() clause
  *
