@@ -1278,8 +1278,8 @@ CSeq_id::x_Init
             CDbtag& dbt = SetGeneral();
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
-            the_id = NStr::StringToNumeric(acc);
-            if (the_id >= 0  &&  name[0] != '0') {
+            the_id = NStr::StringToNumeric(name);
+            if (the_id >= 0  &&  (name.size() == 1 || name[0] != '0')) {
                 oid.SetId(the_id);
             }else{
                 oid.SetStr(name);
@@ -1355,6 +1355,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.68  2004/01/16 17:39:17  vasilche
+ * Fixed parsing 'gnl|xxx|999' format - integer tag detection.
+ *
  * Revision 6.67  2004/01/16 15:58:19  ucko
  * CM now specifically assigned to eAcc_gb_con.
  *
