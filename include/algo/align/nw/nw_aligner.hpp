@@ -135,7 +135,10 @@ public:
         eDelete,
         eMatch,
         eReplace,
-        eIntron
+        eIntron_GT_AG = 0x0100,
+        eIntron_GC_AG,
+        eIntron_AT_AC,
+        eIntron_Generic
     };
 
     // guiding hits
@@ -177,20 +180,28 @@ protected:
     TScore                    m_score;
     vector<size_t>            m_guides;
 
+    // facilitate guide pre- and  post-processing, if applicable
     virtual TScore x_Run   ();
+
+    // core dynamic programming
     virtual TScore x_Align (const char* seg1, size_t len1,
                             const char* seg2, size_t len2,
                             vector<ETranscriptSymbol>* transcript);
 
-    virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
-                          size_t N1, size_t N2,
-                          vector<ETranscriptSymbol>* transcript);
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
                              vector<char>* seq2_transformed) const;
-    enum { kInfMinus = kMin_Int / 2 };
 
     virtual TScore x_ScoreByTranscript() const
         throw(CNWAlignerException);
+
+    // overflow safe "infinity"
+    enum { kInfMinus = kMin_Int / 2 };
+
+private:
+    void x_DoBackTrace(const unsigned char* backtrace_matrix,
+                       size_t N1, size_t N2,
+                       vector<ETranscriptSymbol>* transcript);
+
 };
 
 
@@ -203,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/05/23 18:23:40  kapustin
+ * Introduce a generic splice type. Make transcript symbol to be more specific about type of the intron.
+ *
  * Revision 1.19  2003/04/14 18:58:19  kapustin
  * x_Run() -> x_Align()
  *
