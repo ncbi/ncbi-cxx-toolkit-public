@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Vladimir Soussov
+* Author:  Vladimir Soussov, Denis Vakatov
 * 
 * File Description:  Exceptions
 *
@@ -77,6 +77,9 @@ public:
 
     // clone
     virtual CDB_Exception* Clone() const;
+
+    // verbal description of severity
+    virtual const char* SeverityString(EDB_Severity sev);
 
     // destructor
     virtual ~CDB_Exception() throw();
@@ -188,6 +191,8 @@ public:
 
 };
 
+
+
 class CDB_MultiEx : public CDB_Exception
 {
 public:
@@ -238,15 +243,53 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CDB_UserHandler::  base class for user-defined handlers
 //
+// CDB_UserHandler::         base class for user-defined handlers
+// CDB_UserHandler_Stream::  specialized -- to print err.messages to a stream
+//
+
 
 class CDB_UserHandler
 {
 public:
     // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
     virtual bool HandleIt(CDB_Exception* ex) = 0;
+
+    // Get current global "last-resort" error handler.
+    // This handler is guaranteed to be valid up to the program termination,
+    // and it will call the user-defined handler last set by SetDefault().
+    // NOTE:  never pass it to SetDefault, like:  "SetDefault(&GetDefault())"!
+    static CDB_UserHandler& GetDefault();
+
+    // Alternate the default global "last-resort" error handler.
+    // Passing NULL will mean to ignore all errors that reach it.
+    // Return previously set (or default-default if not set yet) handler.
+    // The returned handler should be delete'd by the caller; the last set
+    // handler will be delete'd automagically on the program termination.
+    static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
+
+    // d-tor
     virtual ~CDB_UserHandler();
+};
+
+
+
+class CDB_UserHandler_Stream : public CDB_UserHandler
+{
+public:
+    CDB_UserHandler_Stream(ostream*      os,
+                           const string& prefix = kEmptyStr,
+                           bool          own_os = false);
+    virtual ~CDB_UserHandler_Stream();
+
+    // Print "*ex" to the output stream "os", with "prefix" (as set by  c-tor).
+    // Return TRUE (i.e. always process the "ex").
+    virtual bool HandleIt(CDB_Exception* ex);
+
+private:
+    ostream* m_Output;     // output stream to print messages to
+    string   m_Prefix;     // string to prefix each message with
+    bool     m_OwnOutput;  // if TRUE, then delete "m_Output" in d-tor
 };
 
 
@@ -258,6 +301,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/10/01 20:09:27  vakatov
+ * Introduced a generic default user error handler and the means to
+ * alternate it. Added an auxiliary error handler class
+ * "CDB_UserHandler_Stream".
+ * Moved "{Push/Pop}{Cntx/Conn}MsgHandler()" to the generic code
+ * (in I_DriverContext).
+ *
  * Revision 1.5  2001/09/28 16:37:32  vakatov
  * Added missing "throw()" to exception classes derived from "std::exception"
  *

@@ -39,101 +39,6 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  C_DefCntxErrHandler::
-//
-
-class C_DefCntxErrHandler : public CDB_UserHandler
-{
-public:
-    virtual bool HandleIt(CDB_Exception* ex);
-};
-
-
-static C_DefCntxErrHandler s_DefErrHandler;
-
-
-bool C_DefCntxErrHandler::HandleIt(CDB_Exception* ex)
-{
-    if ( !ex ) {
-        return false;
-    }
-
-    cerr << "Sybase ";
-
-    switch ( ex->Severity() ) {
-    case eDB_Info:     cerr << "Info";             break;
-    case eDB_Warning:  cerr << "Warning";          break;
-    case eDB_Error:    cerr << "Error";            break;
-    case eDB_Fatal:    cerr << "Fatal Error";      break;
-    default:           cerr << "Unknown severity";
-    }
-
-    cerr << " ";
-
-    switch ( ex->Type() ) {
-    case CDB_Exception::eDS : {
-        const CDB_DSEx& e = dynamic_cast<const CDB_DSEx&> (*ex);
-        cerr << "Message (Err.code:" << e.ErrCode() << ") Data source: '"
-             << e.OriginatedFrom() << "'\n<<<" << e.Message() << ">>>";
-        break;
-    }
-    case CDB_Exception::eRPC : {
-        const CDB_RPCEx& e = dynamic_cast<const CDB_RPCEx&> (*ex);
-        cerr << "Message (Err code:" << e.ErrCode()
-             << ") SQL/Open server: '" << e.OriginatedFrom()
-             << "' Procedure: '" << e.ProcName()
-             << "' Line: " << e.ProcLine() << endl
-             << "<<<" << e.Message() << ">>>";
-        break;
-    }
-    case CDB_Exception::eSQL : {
-        const CDB_SQLEx& e = dynamic_cast<const CDB_SQLEx&> (*ex);
-        cerr << "Message (Err.code=" << e.ErrCode()
-             << ") SQL server: '" << e.OriginatedFrom()
-             << "' SQLstate '" << e.SqlState()
-             << "' Line: " << e.BatchLine() << endl
-             << " <<<" << e.Message() << ">>>";
-        break;
-    }
-    case CDB_Exception::eDeadlock : {
-        const CDB_DeadlockEx& e = dynamic_cast<const CDB_DeadlockEx&> (*ex);
-        cerr << "Message: SQL server: " << e.OriginatedFrom()
-             << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eTimeout : {
-        const CDB_TimeoutEx& e = dynamic_cast<const CDB_TimeoutEx&> (*ex);
-        cerr << "Message: SQL server: " << e.OriginatedFrom()
-             << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eClient : {
-        const CDB_ClientEx& e = dynamic_cast<const CDB_ClientEx&> (*ex);
-        cerr << "Message: Err code=" << e.ErrCode()
-             <<" Source: " << e.OriginatedFrom() << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eMulti : {
-        CDB_MultiEx& e = dynamic_cast<CDB_MultiEx&> (*ex);
-        while ( s_DefErrHandler.HandleIt(e.Pop()) ) {
-            continue;
-        }
-        break;
-    }
-    default: {
-        cerr << "Message: Error code=" << ex->ErrCode()
-             << " <" << ex->what() << ">";
-    }
-    }
-
-    cerr << endl;
-    return true;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 //  CTLibContext::
 //
 
@@ -213,7 +118,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 
         p_pot = new CPointerPot;
         r = cs_config(m_Context, CS_SET, CS_USERDATA,
-                      (CS_VOID*) &p_pot, sizeof(p_pot), NULL);
+                      (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), NULL);
         if (r != CS_SUCCEED) {
             cs_ctx_drop(m_Context);
             m_Context = 0;
@@ -257,9 +162,6 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     if ( p_pot ) {
         p_pot->Add((TPotItem) this);
     }
-
-    PushCntxMsgHandler(&s_DefErrHandler);
-    PushDefConnMsgHandler(&s_DefErrHandler);
 }
 
 
@@ -843,6 +745,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/01 20:09:30  vakatov
+ * Introduced a generic default user error handler and the means to
+ * alternate it. Added an auxiliary error handler class
+ * "CDB_UserHandler_Stream".
+ * Moved "{Push/Pop}{Cntx/Conn}MsgHandler()" to the generic code
+ * (in I_DriverContext).
+ *
  * Revision 1.4  2001/09/27 20:08:33  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

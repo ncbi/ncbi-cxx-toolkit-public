@@ -122,6 +122,12 @@ I_Result::~I_Result()
 //  I_DriverContext::
 //
 
+I_DriverContext::I_DriverContext()
+{
+    PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault() );
+    PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault() );
+}
+
 void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h)
 {
     m_CntxHandlers.Push(h);
@@ -208,6 +214,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/01 20:09:29  vakatov
+ * Introduced a generic default user error handler and the means to
+ * alternate it. Added an auxiliary error handler class
+ * "CDB_UserHandler_Stream".
+ * Moved "{Push/Pop}{Cntx/Conn}MsgHandler()" to the generic code
+ * (in I_DriverContext).
+ *
  * Revision 1.4  2001/09/27 20:08:32  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

@@ -417,7 +417,9 @@ public:
     virtual ~I_DriverContext();
 
 protected:
-    // To allow the children of I_DriverContext to create CDB_Connection
+    I_DriverContext();
+
+    // To allow children of I_DriverContext to create CDB_Connection
     static CDB_Connection* Create_Connection(I_Connection& connection);
 
     // Used and unused(reserve) connections
@@ -529,6 +531,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/01 20:09:27  vakatov
+ * Introduced a generic default user error handler and the means to
+ * alternate it. Added an auxiliary error handler class
+ * "CDB_UserHandler_Stream".
+ * Moved "{Push/Pop}{Cntx/Conn}MsgHandler()" to the generic code
+ * (in I_DriverContext).
+ *
  * Revision 1.4  2001/09/27 20:08:29  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

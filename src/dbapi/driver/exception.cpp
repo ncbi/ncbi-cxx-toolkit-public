@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Vladimir Soussov
+* Author:  Vladimir Soussov, Denis Vakatov
 *   
 * File Description:  Exceptions
 *
@@ -31,7 +31,6 @@
 */
 
 #include <dbapi/driver/exception.hpp>
-
 
 
 BEGIN_NCBI_SCOPE
@@ -68,6 +67,19 @@ CDB_Exception* CDB_Exception::Clone() const
 {
     return new CDB_Exception
         (m_Type, m_Severity, m_ErrCode, m_OriginatedFrom, m_Message);
+}
+
+
+const char* CDB_Exception::SeverityString(EDB_Severity sev)
+{
+    switch ( sev ) {
+    case eDB_Info:     return "Info";
+    case eDB_Warning:  return "Warning";
+    case eDB_Error:    return "Error";
+    case eDB_Fatal:    return "Fatal Error";
+    default:           return "Unknown severity";
+    }
+ 
 }
 
 
@@ -252,6 +264,52 @@ CDB_MultiEx::CDB_MultiExStorage::~CDB_MultiExStorage()
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Default::  wrapper for the actual current handler
+//
+// NOTE: It is actually a singleton, but as it is a local and very simple class,
+// so there is no singleton-specific sanity checks here...
+//
+
+class CDB_UserHandler_Default : public CDB_UserHandler
+{
+public:
+    CDB_UserHandler* Set(CDB_UserHandler* h);
+
+    virtual bool HandleIt(CDB_Exception* ex);
+    virtual ~CDB_UserHandler_Default();
+
+private:
+    CDB_UserHandler* m_Handler; 
+};
+
+
+CDB_UserHandler* CDB_UserHandler_Default::Set(CDB_UserHandler* h)
+{
+    if (h == this) {
+        throw runtime_error("CDB_UserHandler_Default::Reset() -- attempt "
+                            "to set handle wrapper as a handler");
+    }
+
+    CDB_UserHandler* prev_h = m_Handler;
+    m_Handler = h;
+    return prev_h;
+}
+
+
+CDB_UserHandler_Default::~CDB_UserHandler_Default()
+{
+    delete m_Handler;
+}
+
+
+bool CDB_UserHandler_Default::HandleIt(CDB_Exception* ex)
+{
+    return m_Handler ? m_Handler->HandleIt(ex) : true;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_UserHandler::
 //
 
@@ -261,6 +319,127 @@ CDB_UserHandler::~CDB_UserHandler()
 }
 
 
+//
+// ATTENTION:  Should you change the following static methods, please make sure
+//             to rebuild all DLLs which have this code statically linked in!
+//
+
+static CDB_UserHandler_Default s_CDB_DefUserHandler;  // (singleton)
+
+
+CDB_UserHandler& CDB_UserHandler::GetDefault()
+{
+    static bool s_CDB_DefUserHandler_IsSet = false;
+
+    if ( !s_CDB_DefUserHandler_IsSet ) {
+        s_CDB_DefUserHandler_IsSet = true;
+        delete s_CDB_DefUserHandler.Set(new CDB_UserHandler_Stream(&cerr));
+    }
+
+    return s_CDB_DefUserHandler;
+}
+
+
+CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
+{
+    return s_CDB_DefUserHandler.Set(h);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Stream::
+//
+
+
+CDB_UserHandler_Stream::CDB_UserHandler_Stream(ostream*      os,
+                                               const string& prefix,
+                                               bool          own_os)
+    : m_Output(os),
+      m_Prefix(prefix),
+      m_OwnOutput(own_os)
+{
+    return;
+}
+
+
+CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
+{
+    if ( m_OwnOutput )
+        delete m_Output;
+}
+
+
+bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
+{
+    if ( !ex ) {
+        return false;
+    }
+
+    *m_Output << m_Prefix << ' ';
+
+    *m_Output << ex->SeverityString(ex->Severity()) << ' ';
+
+    switch ( ex->Type() ) {
+    case CDB_Exception::eDS : {
+        const CDB_DSEx& e = dynamic_cast<const CDB_DSEx&> (*ex);
+        *m_Output << "Message (Err.code:" << e.ErrCode() << ") Data source: '"
+             << e.OriginatedFrom() << "'\n<<<" << e.Message() << ">>>";
+        break;
+    }
+    case CDB_Exception::eRPC : {
+        const CDB_RPCEx& e = dynamic_cast<const CDB_RPCEx&> (*ex);
+        *m_Output << "Message (Err code:" << e.ErrCode()
+             << ") SQL/Open server: '" << e.OriginatedFrom()
+             << "' Procedure: '" << e.ProcName()
+             << "' Line: " << e.ProcLine() << endl
+             << "<<<" << e.Message() << ">>>";
+        break;
+    }
+    case CDB_Exception::eSQL : {
+        const CDB_SQLEx& e = dynamic_cast<const CDB_SQLEx&> (*ex);
+        *m_Output << "Message (Err.code=" << e.ErrCode()
+             << ") SQL server: '" << e.OriginatedFrom()
+             << "' SQLstate '" << e.SqlState()
+             << "' Line: " << e.BatchLine() << endl
+             << " <<<" << e.Message() << ">>>";
+        break;
+    }
+    case CDB_Exception::eDeadlock : {
+        const CDB_DeadlockEx& e = dynamic_cast<const CDB_DeadlockEx&> (*ex);
+        *m_Output << "Message: SQL server: " << e.OriginatedFrom()
+             << " <" << e.Message() << ">";
+        break;
+    }
+    case CDB_Exception::eTimeout : {
+        const CDB_TimeoutEx& e = dynamic_cast<const CDB_TimeoutEx&> (*ex);
+        *m_Output << "Message: SQL server: " << e.OriginatedFrom()
+             << " <" << e.Message() << ">";
+        break;
+    }
+    case CDB_Exception::eClient : {
+        const CDB_ClientEx& e = dynamic_cast<const CDB_ClientEx&> (*ex);
+        *m_Output << "Message: Err code=" << e.ErrCode()
+             <<" Source: " << e.OriginatedFrom() << " <" << e.Message() << ">";
+        break;
+    }
+    case CDB_Exception::eMulti : {
+        CDB_MultiEx& e = dynamic_cast<CDB_MultiEx&> (*ex);
+        while ( HandleIt(e.Pop()) ) {
+            continue;
+        }
+        break;
+    }
+    default: {
+        *m_Output << "Message: Error code=" << ex->ErrCode()
+             << " <" << ex->what() << ">";
+    }
+    }
+
+    *m_Output << endl;
+    return true;
+}
+
 
 END_NCBI_SCOPE
 
@@ -269,6 +448,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/01 20:09:29  vakatov
+ * Introduced a generic default user error handler and the means to
+ * alternate it. Added an auxiliary error handler class
+ * "CDB_UserHandler_Stream".
+ * Moved "{Push/Pop}{Cntx/Conn}MsgHandler()" to the generic code
+ * (in I_DriverContext).
+ *
  * Revision 1.4  2001/09/28 16:37:34  vakatov
  * Added missing "throw()" to exception classes derived from "std::exception"
  *
@@ -287,4 +473,3 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
-
