@@ -79,12 +79,12 @@ class CSeqMaskerOstat : public CObject
         virtual void doSetParam( const string & name, Uint4 value ) = 0;
         virtual void doSetBlank() = 0;
 
-        CNcbiOstream & out_stream;
+        CNcbiOstream& out_stream;
 
     private:
 
         CSeqMaskerOstat( const CSeqMaskerOstat & );
-        CSeqMaskerOstat( CSeqMaskerOstat & );
+        CSeqMaskerOstat& operator=( const CSeqMaskerOstat & );
 
         enum 
         {
@@ -97,11 +97,12 @@ class CSeqMaskerOstat : public CObject
 
 END_NCBI_SCOPE
 
-#endif
-
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/29 13:29:25  dicuccio
+ * Drop multiple copy ctors; hide assignment operator
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *
@@ -113,3 +114,5 @@ END_NCBI_SCOPE
  *
  * ========================================================================
  */
+
+#endif
