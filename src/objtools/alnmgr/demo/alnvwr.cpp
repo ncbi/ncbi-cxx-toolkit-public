@@ -168,9 +168,7 @@ void CAlnMgrTestApp::LoadDenseg(void)
         m_ObjMgr = new CObjectManager;
         
         m_ObjMgr->RegisterDataLoader
-            (*new CBlastDbDataLoader("BLASTDB",
-                                     "nr Trace/Mus_Musculus_WGS",
-                                     CBlastDbDataLoader::eNucleotide),
+            (*new CGBDataLoader("ID", NULL, 2),
              CObjectManager::eDefault);
 
         m_Scope = new CScope(*m_ObjMgr);
@@ -564,6 +562,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/07/23 21:01:08  ucko
+* Revert use of (uncommitted) BLAST DB data loader.
+*
 * Revision 1.8  2003/07/23 20:52:07  todorov
 * +width, +aln_starts for the inserts in GetWhole..
 *
