@@ -449,6 +449,22 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
 }
 
 
+const CSynonymsSet& CScope::GetSynonyms(const CSeq_id& id)
+{
+    return GetSynonyms(GetIdHandle(id));
+}
+
+
+const CSynonymsSet& CScope::GetSynonyms(const CSeq_id_Handle& id)
+{
+    const CSynonymsSet* ret = x_GetSynonyms(id);
+    if ( !ret ) {
+        NCBI_THROW(CException, eUnknown, "GetSynonyms failed");
+    }
+    return *ret;
+}
+
+
 const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
 {
     TSynCache::const_iterator cached = m_SynCache.find(id);
@@ -526,6 +542,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/04/03 14:18:09  vasilche
+* Added public GetSynonyms() method.
+*
 * Revision 1.56  2003/03/26 21:00:19  grichenk
 * Added seq-id -> tse with annotation cache to CScope
 *

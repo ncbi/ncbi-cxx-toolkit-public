@@ -169,6 +169,9 @@ public:
 
     CSeq_id_Handle GetIdHandle(const CSeq_id& id) const;
 
+    const CSynonymsSet& GetSynonyms(const CSeq_id& id);
+    const CSynonymsSet& GetSynonyms(const CSeq_id_Handle& id);
+
 private:
     typedef CAnnotTypes_CI::TTSESet       TTSE_Set;
 
@@ -245,6 +248,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/04/03 14:18:08  vasilche
+* Added public GetSynonyms() method.
+*
 * Revision 1.39  2003/03/26 21:00:07  grichenk
 * Added seq-id -> tse with annotation cache to CScope
 *
