@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/21 22:24:59  vasilche
+* A lot of cleaning.
+*
 * Revision 1.7  1998/12/11 22:53:41  lewisg
 * added docsum page
 *
@@ -62,24 +65,45 @@
 #include <cgiapp.hpp>
 BEGIN_NCBI_SCOPE
 
+class BaseTagMapper;
+
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is
 // the turning on and off of sub HTML components via style bits and a
 // creation function that orders sub components on the page.  The ability
 // to hold children and print HTML is inherited from CHTMLNode.
   
-class CHTMLBasicPage: public CHTMLNode {
+class CHTMLBasicPage: public CNCBINode {
+    // parent class
+    typedef CNCBINode CParent;
+
 public: 
-    CHTMLBasicPage();
-    virtual void Create(int style = 0) { InitMembers(style); InitSubPages(style); Finish(style); }
-    virtual void InitMembers(int style = 0) {}  
-    virtual void InitSubPages(int style = 0) {}  // initialize members
-    virtual void Finish(int style = 0) = 0;  // create and aggregate sub pages + other html
-    virtual CCgiApplication * GetApplication(void) { return m_CgiApplication; }
-    virtual void SetApplication(CCgiApplication * App) { m_CgiApplication = App; }
+    CHTMLBasicPage(CCgiApplication* application = 0, int style = 0);
+
+    virtual CCgiApplication * GetApplication(void);
+    virtual void SetApplication(CCgiApplication * App);
+
+    int GetStyle(void) const;
+    void SetStyle(int style);
+
+    // resolve <@XXX@> tag
+    virtual CNCBINode* MapTag(const string& name);
+    // add tag resolver
+    void AddTagMap(const string& name, BaseTagMapper* mapper);
+    //    void AddTagMap(const string& name, CNCBINode* (*function)(void));
+    //    void AddTagMap(const string& name, CNCBINode* (*function)(const string& name));
+    void AddTagMap(const string& name, CNCBINode* (CHTMLBasicPage::*method)(void));
+    void AddTagMap(const string& name, CNCBINode* (CHTMLBasicPage::*method)(const string& name));
 
 protected:
-    CCgiApplication * m_CgiApplication;  // pointer to runtime information  
+    CCgiApplication * m_CgiApplication;  // pointer to runtime information
+    int m_Style;
+
+    map<string, BaseTagMapper*> m_TagMap;
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    //    CHTMLBasicPage(const CHTMLBasicPage& origin);
 };
 
 
@@ -87,23 +111,21 @@ protected:
 //  this is the basic 3 section NCBI page
 
 
-class CHTMLPage: public CHTMLBasicPage {
+class CHTMLPage : public CHTMLBasicPage {
+    // parent class
+    typedef CHTMLBasicPage CParent;
+
 public:
     ////////// 'tors
 
-    CHTMLPage();
-    static CHTMLBasicPage * New(void) { return new CHTMLPage; }  // for the page factory
+    CHTMLPage(CCgiApplication* application = 0, int style = 0);
+    static CHTMLBasicPage * New(void);
 
     ////////// flags
 
     static const int kNoTITLE = 0x1;
     static const int kNoVIEW = 0x2;
-
-    ////////// how to make the page
-
-    virtual void InitMembers(int Style = 0);
-    virtual void InitSubPages(int Style = 0);
-    virtual void Finish(int Style = 0);
+    static const int kNoTEMPLATE = 0x4;
 
     ////////// page parameters
 
@@ -112,18 +134,21 @@ public:
 
     ////////// the individual sub pages
 
-    virtual CHTMLNode * CreateTemplate(void);
-    CHTMLNode * m_Template;
+    virtual void CreateSubNodes(void);
 
-    virtual CHTMLNode * CreateTitle(void);
-    CHTMLNode * m_Title;
+    virtual CNCBINode* CreateTemplate(void);
+    virtual CNCBINode* CreateTitle(void);
+    virtual CNCBINode* CreateView(void);
 
-    virtual CHTMLNode * CreateView(void);
-    CHTMLNode * m_View;
-
-
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    //    CHTMLPage(const CHTMLPage& origin);
 };
 
 
+// inline functions here:
+#include <page.inl>
+
 END_NCBI_SCOPE
+
 #endif

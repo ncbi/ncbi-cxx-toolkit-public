@@ -1,3 +1,6 @@
+#if defined(NODE__HPP)  &&  !defined(NODE__INL)
+#define NODE__INL
+
 /*  $Id$
 * ===========================================================================
 *
@@ -23,88 +26,81 @@
 *
 * ===========================================================================
 *
-* Author:  !!! PUT YOUR NAME(s) HERE !!!
+* Author: Eugene Vasilchenko
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/12/21 22:25:06  vasilche
+* Revision 1.1  1998/12/21 22:24:57  vasilche
 * A lot of cleaning.
-*
-* Revision 1.2  1998/12/11 22:43:35  lewisg
-* added docsum page
-*
-* Revision 1.1  1998/12/11 18:11:17  lewisg
-* frontpage added
-*
-
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <ncbicgi.hpp>
-#include <html.hpp>
-#include <page.hpp>
-#include <factory.hpp>
-#include <cgiapp.hpp>
-#include <components.hpp>
-#include <querypages.hpp>
-BEGIN_NCBI_SCOPE
 
-class CMyApp : public CSimpleCgiApp
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! PUT YOUR CODE HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
+
+inline CNCBINode::TChildList::iterator CNCBINode::ChildBegin(void)
 {
-public:
-    CMyApp(int argc = 0, char** argv = 0)
-        : CSimpleCgiApp(argc, argv)
-        {
-        }
-
-    virtual int Run(void);
-};
-
-
-extern "C" int main(int argc, char *argv[])
-{
-    int result;
-
-    CMyApp app( argc, argv );
-
-    app.Init(); 
-    result = app.Run();
-    app.Exit(); 
-
-    return result;
+    return m_ChildNodes.begin();
 }
 
-SFactoryList < CHTMLBasicPage > PageList [] = {
-    { CPmDocSumPage::New, "docsum", 0 },
-    { CPmFrontPage::New, "", 0 }
-};
-
-
-int CMyApp::Run(void) 
+inline CNCBINode::TChildList::iterator CNCBINode::ChildEnd(void)
 {
-    CFactory < CHTMLBasicPage > Factory;
-
-    NcbiCout << "Content-TYPE: text/html\n\n";  // CgiResponse
-
-    try {
-        int i = Factory.CgiFactory( (TCgiEntries&)(GetRequest()->GetEntries()), PageList);
-        CHTMLBasicPage * Page = (PageList[i].pFactory)();
-        Page->SetApplication(this);
-        Page->SetStyle(PageList[i].Style);
-        Page->Print(NcbiCout);  // serialize it
-        delete Page;
-    }
-    catch (exception exc) {
-        NcbiCerr << "\n" << exc.what() << NcbiEndl;
-    }
-
-    return 0;  
+    return m_ChildNodes.end();
 }
 
+inline CNCBINode::TChildList::const_iterator CNCBINode::ChildBegin(void) const
+{
+    return m_ChildNodes.begin();
+}
 
-END_NCBI_SCOPE
+inline CNCBINode::TChildList::const_iterator CNCBINode::ChildEnd(void) const
+{
+    return m_ChildNodes.end();
+}
+
+inline const string& CNCBINode::GetName(void) const
+{
+    return m_Name;
+}
+
+inline void CNCBINode::SetName(const string& name)
+{
+    m_Name = name;
+}
+
+inline void CNCBINode::SetAttribute(const string& name, int value)
+{
+    SetAttribute(name, IntToString(value));
+}
+
+inline void CNCBINode::SetOptionalAttribute(const string& name, const string& value)
+{
+    if ( !value.empty() )
+        SetAttribute(name, value);
+}
+
+inline void CNCBINode::SetOptionalAttribute(const string& name, bool value)
+{
+    if ( value )
+        SetAttribute(name);
+}
+
+inline void CNCBINode::SetOptionalAttribute(const char* name, const string& value)
+{
+    if ( !value.empty() )
+        SetAttribute(name, value);
+}
+
+inline void CNCBINode::SetOptionalAttribute(const char* name, bool value)
+{
+    if ( value )
+        SetAttribute(name);
+}
+
+#endif /* def NODE__HPP  &&  ndef NODE__INL */

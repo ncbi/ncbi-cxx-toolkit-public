@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/21 22:25:04  vasilche
+* A lot of cleaning.
+*
 * Revision 1.4  1998/12/08 00:33:44  lewisg
 * cleanup
 *
@@ -48,103 +51,126 @@
 #include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
+#include <nodemap.hpp>
 BEGIN_NCBI_SCOPE
  
 // CHTMLBasicPage
 
-CHTMLBasicPage::CHTMLBasicPage(): m_CgiApplication(0) {}
+CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
+    : m_CgiApplication(application), m_Style(style)
+{
+}
 
+/*
+CHTMLBasicPage::CHTMLBasicPage(const CHTMLBasicPage* origin)
+    : CParent(origin)
+{
+    m_CgiApplication = origin->m_CgiApplication;
+    m_Style = origin->m_Style;
+    m_TagMap = origin->m_TagMap;
+}
+*/
+
+CNCBINode* CHTMLBasicPage::CloneSelf() const
+{
+    return new CHTMLBasicPage(*this);
+}
+
+void CHTMLBasicPage::SetApplication(CCgiApplication * App)
+{
+    m_CgiApplication = App;
+}
+
+void CHTMLBasicPage::SetStyle(int style)
+{
+    m_Style = style;
+}
+
+BaseTagMapper::~BaseTagMapper(void)
+{
+}
+
+CNCBINode* CHTMLBasicPage::MapTag(const string& name)
+{
+    map<string, BaseTagMapper*>::iterator i = m_TagMap.find(name);
+    if ( i != m_TagMap.end() ) {
+        return (i->second)->MapTag(this, name);
+    }
+
+    return CParent::MapTag(name);
+}
+
+void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
+{
+    m_TagMap[name] = mapper;
+}
+
+void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode*(CHTMLBasicPage::*method)(void))
+{
+    AddTagMap(name, new TagMapper<CHTMLBasicPage>(method));
+}
+
+void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode*(CHTMLBasicPage::*method)(const string& name))
+{
+    AddTagMap(name, new TagMapper<CHTMLBasicPage>(method));
+}
 
 // CHTMLPage
 
-CHTMLPage::CHTMLPage(): m_Title(0), m_View(0), m_Template(0) {}
-
-
-void CHTMLPage::InitMembers(int style)
+CHTMLPage::CHTMLPage(CCgiApplication* application, int style)
+    : CParent(application, style),  m_PageName("PubMed"), m_TemplateFile("frontpage.html")
 {
-    ////////// section for initializing members
-
-    m_PageName = "PubMed";
-    m_TemplateFile = "frontpage.html";
+    AddTagMap("TEMPLATE", new TagMapper<CHTMLPage>(&CreateTemplate));
+    AddTagMap("TITLE", new TagMapper<CHTMLPage>(&CreateTitle));
+    AddTagMap("VIEW", new TagMapper<CHTMLPage>(&CreateView));
 }
 
-
-void CHTMLPage::InitSubPages(int style)
+/*
+CHTMLPage::CHTMLPage(const CHTMLPage* origin)
+    : CParent(origin)
 {
-  ////////// section for initializing sub windows
-    try {
-	if (!m_Template) m_Template = CreateTemplate();
+    m_PageName = origin->m_PageName;
+    m_TemplateFile = origin->m_TemplateFile;
+}
+*/
 
-	if(!(style & kNoTITLE)) {
-	    if (!m_Title) m_Title = CreateTitle();
-	    if (!m_Title) m_Title = new CHTMLNode;
-	}
-
-	if(!(style & kNoVIEW)) {
-	    if (!m_View) m_View = CreateView();
-	    if (!m_View) m_View = new CHTMLNode;
-	}
-    }
-    catch (...) {
-	delete m_Template;
-	delete m_Title;
-	delete m_View;
-	throw;
-    }
+CNCBINode* CHTMLPage::CloneSelf() const
+{
+    return new CHTMLPage(*this);
 }
 
-
-void CHTMLPage::Finish(int style)
+void CHTMLPage::CreateSubNodes(void)
 {
-    if(m_Template)
-	AppendChild(m_Template);
-
-    if(!(style & kNoTITLE) && m_Title)
-	Rfind("<@TITLE@>", m_Title);
-
-    if(!(style & kNoVIEW) && m_View) 
-        Rfind("<@VIEW@>", m_View);
+    AppendChild(new CHTMLTagNode("TEMPLATE"));
 }
 
-
-CHTMLNode * CHTMLPage::CreateTitle(void) 
-{
-    return new CHTMLText(m_PageName);
-}
-
-
-CHTMLNode * CHTMLPage::CreateTemplate(void) 
+CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
     string input;  
     char ch;
-    CHTMLText * text;
 
-    try {
-	CNcbiIfstream inFile(m_TemplateFile.c_str());
-	while( inFile.get(ch)) input += ch;
-	text = new CHTMLText;
-	text->Data(input); // some text
-	return text;
-    }
-    catch(...) {
-        delete text;
-        throw;
-    }
+    CNcbiIfstream inFile(m_TemplateFile.c_str());
+
+    while( inFile.get(ch))
+        input += ch;
+    
+    return new CHTMLText(input);
 }
 
-
-CHTMLNode * CHTMLPage::CreateView(void) 
+CNCBINode* CHTMLPage::CreateTitle(void) 
 {
-    CQueryBox * querybox;
-    try {
-	querybox = new CQueryBox();
-	querybox->Finish(0);
-	return querybox;
-    }
-    catch(...) {
-	delete querybox;
-	throw;
-    }
+    if ( GetStyle() & kNoTITLE )
+        return 0;
+
+    return new CHTMLText(m_PageName);
+}
+
+CNCBINode* CHTMLPage::CreateView(void) 
+{
+    if ( GetStyle() & kNoVIEW)
+        return 0;
+
+    return new CQueryBox();
 }
 
 END_NCBI_SCOPE

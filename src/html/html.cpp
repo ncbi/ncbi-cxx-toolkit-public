@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/21 22:25:03  vasilche
+* A lot of cleaning.
+*
 * Revision 1.9  1998/12/10 19:21:51  lewisg
 * correct error handling in InsertInTable
 *
@@ -68,314 +71,395 @@
 BEGIN_NCBI_SCOPE
 
 
-string & CHTMLHelper::HTMLEncode(string & input)
+string CHTMLHelper::HTMLEncode(const string& input)
 {
-    string::size_type i = 0;
-    i = input.find_first_of("\"&<>", 0);
-    while(i!=string::npos) {
-	switch(input[i]) {
-	case '"':
-	    input.replace(i, (SIZE_TYPE)1, "&quot;");
-	    break;
-	case '&':
-	    input.replace(i, (SIZE_TYPE)1, "&amp;");
-	    break;
-	case '<':
-	    input.replace(i, (SIZE_TYPE)1, "&lt;");
-	    break;
-	case '>':
-	    input.replace(i, (SIZE_TYPE)1, "&gt;");
-	    break;
-	default:
-	    break;
-	}	
-	i = input.find_first_of("\"&<>", ++i);
+    string output;
+    string::size_type last = 0;
+
+    // find first symbol to encode
+    string::size_type ptr = input.find_first_of("\"&<>", last);
+    while ( ptr != string::npos ) {
+        // copy plain part of input
+        if ( ptr != last )
+            output.append(input, last, ptr);
+
+        // append encoded symbol
+        switch ( input[ptr] ) {
+        case '"':
+            output.append("&quot;");
+            break;
+        case '&':
+            output.append("&amp;");
+            break;
+        case '<':
+            output.append("&lt;");
+            break;
+        case '>':
+            output.append("&gt;");
+            break;
+        }
+
+        // skip it
+        last = ptr + 1;
+
+        // find next symbol to encode
+        ptr = input.find_first_of("\"&<>", last);
     }
+
+    // append last part of input
+    if ( last != input.size() )
+        output.append(input, last, input.size());
+
     return input;
 }
 
-
-string CHTMLHelper::IntToString(int Input)
+CHTMLNode::CHTMLNode(const string& name)
+    : CParent(name)
 {
-    CNcbiOstrstream ostream;
-    ostream << Input << '\0';
-    return ostream.str();
 }
 
-
-
-
-CHTMLNode::CHTMLNode(void): m_Name("") {}
-
-
-// serialize the node to the given string
-void CHTMLNode::Print(string & output)  
+CHTMLNode::CHTMLNode(const CHTMLNode& origin)
+    : CParent(origin)
 {
-    list <CNCBINode *>::iterator iChildren = m_ChildNodes.begin();
-    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * ) (*iChildren))->Print(output);
 }
 
-
-void CHTMLNode::Print(CNcbiOstream & output)  
+void CHTMLNode::AppendPlainText(const string& appendstring)
 {
-    list <CNCBINode *>::iterator iChildren = m_ChildNodes.begin();
-    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * ) (*iChildren))->Print(output);
+    if ( !appendstring.empty() )
+        AppendChild(new CHTMLPlainText(appendstring));
 }
 
-// this function searches for a text string in a Text node and replaces it with a node
-void CHTMLNode::Rfind(const string & tagname, CNCBINode * replacenode)
+void CHTMLNode::AppendHTMLText(const string& appendstring)
 {
-    list <CNCBINode *>::iterator iChildren;
-    
-    if(!replacenode) return;
-    for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) {     
-        ((CHTMLNode * )(*iChildren))->Rfind(tagname, replacenode);
-    }
+    if ( !appendstring.empty() )
+        AppendChild(new CHTMLText(appendstring));
 }
 
+// <@XXX@> mapping tag node
 
-CNCBINode * CHTMLNode::AppendText(const string & appendstring)
+CHTMLTagNode::CHTMLTagNode(const string& name)
+    : CParent(name)
 {
-    CHTMLText * text;
-    try {  
-	text = new CHTMLText(appendstring);
-	return AppendChild(text);
-    }
-    catch (...) {
-	delete text;
-	throw;
-    }
 }
 
+CHTMLTagNode::CHTMLTagNode(const CHTMLTagNode& origin)
+    : CParent(origin)
+{
+}
+
+CNCBINode* CHTMLTagNode::CloneSelf(void) const
+{
+    return new CHTMLTagNode(*this);
+}
+
+void CHTMLTagNode::CreateSubNodes(void)
+{
+    AppendChild(MapTag(GetName()));
+}
+
+// plain text node
+
+CHTMLPlainText::CHTMLPlainText(const string& text)
+    : m_Text(text)
+{
+}
+
+CHTMLPlainText::CHTMLPlainText(const CHTMLPlainText& origin)
+    : CParent(origin), m_Text(origin.m_Text)
+{
+}
+
+CNCBINode* CHTMLPlainText::CloneSelf() const
+{
+    return new CHTMLPlainText(*this);
+}
+
+void CHTMLPlainText::SetText(const string& text)
+{
+    m_Text = text;
+}
+
+CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out)  
+{
+    return out << CHTMLHelper::HTMLEncode(m_Text);
+}
 
 // text node
 
-CHTMLText::CHTMLText(void) {}
-
-
-CHTMLText::CHTMLText(const string & text): m_Datamember(text) {}
-
-
-void CHTMLText::Print(string& output)  
+CHTMLText::CHTMLText(const string& text)
+    : m_Text(text)
 {
-    list <CNCBINode *> :: iterator iChildren = m_ChildNodes.begin();
-    output.append(m_Datamember);
-    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode *)(* iChildren))->Print(output);
 }
 
-
-void CHTMLText::Print(CNcbiOstream & output)  
+CHTMLText::CHTMLText(const CHTMLText& origin)
+    : CParent(origin), m_Text(origin.m_Text)
 {
-    list <CNCBINode *> :: iterator iChildren = m_ChildNodes.begin();
-    output << m_Datamember.c_str();
-    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode *)(* iChildren))->Print(output);
 }
 
-
-// splits a text node after the iSplit position
-
-CNCBINode * CHTMLText::Split(SIZE_TYPE iSplit) // throw(out_of_range)
+CNCBINode* CHTMLText::CloneSelf() const
 {
-    CHTMLText * outText;
-    if(iSplit > m_Datamember.size()) throw out_of_range("CHTMLText::Split arg out of range");
-    try {
-	outText = new CHTMLText;
-	outText->m_Datamember = m_Datamember.substr(0, iSplit); 
-	m_Datamember.erase(0, iSplit);
-    }
-    catch(...) {
-        delete outText;
-    }
-    return outText;
+    return new CHTMLText(*this);
 }
 
+static const string KTagStart = "<@";
+static const string KTagEnd = "@>";
 
-void CHTMLText::Rfind(const string & tagname, CNCBINode * replacenode)
+CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out)  
 {
-    list <CNCBINode *>::iterator iChildren;
-    SIZE_TYPE iPosition;
-    CNCBINode * splittext;
-    
-    if(!replacenode) return;
-    iPosition = m_Datamember.find(tagname, 0); // look for the tag to replace
-    if (iPosition != NPOS) {
-        splittext = Split(iPosition);  // split it at the found position
-        if(splittext && m_ParentNode) {
-            m_Datamember.erase(0, tagname.size());
-            m_ParentNode->InsertBefore(splittext, this);
-            m_ParentNode->InsertBefore(replacenode, this);
+    return out << m_Text;
+}
+
+// text node
+
+void CHTMLText::CreateSubNodes()
+{
+    SIZE_TYPE tagStart = m_Text.find(KTagStart);
+    if ( tagStart != NPOS ) {
+        string text = m_Text.substr(tagStart);
+        m_Text = m_Text.substr(0, tagStart);
+        SIZE_TYPE last = 0;
+        tagStart = 0;
+        do {
+            SIZE_TYPE tagNameStart = tagStart + KTagStart.size();
+            SIZE_TYPE tagNameEnd = text.find(KTagEnd, tagNameStart);
+            if ( tagNameEnd != NPOS ) {
+                // tag found
+                if ( last != tagStart ) {
+                    AppendChild(new CHTMLText(text.substr(last, tagStart - last)));
+                }
+
+                AppendChild(new CHTMLTagNode(text.substr(tagNameStart, tagNameEnd - tagNameStart)));
+                last = tagNameEnd + KTagEnd.size();
+                tagStart = text.find(KTagStart, last);
+            }
+            else {
+                // tag not closed
+                throw runtime_error("tag not closed");
+            }
+        } while ( tagStart != NPOS );
+
+        if ( last != text.size() ) {
+            AppendChild(new CHTMLText(text.substr(last)));
         }
     }
-    for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) {     
-        ((CHTMLNode *)(* iChildren))->Rfind(tagname, replacenode);
-    }
-    
 }
-
 
 // tag node
 
-CHTMLElement::CHTMLElement(void): m_EndTag(true) {}
-
-
-void CHTMLElement::Print(string& output)  
+CHTMLOpenElement::CHTMLOpenElement(const string& name)
+    : CParent(name)
 {
-    list <CNCBINode *>::iterator iChildren;
-    map <string, string, less<string> > :: iterator iAttributes = m_Attributes.begin();
-    
-    output.append( "<" + m_Name);
-    while (iAttributes != m_Attributes.end()) {
-        if ((*iAttributes).second == "") {
-            output.append(" " + (*iAttributes).first);
-            iAttributes++;
-        }
-        else {
-            output.append(" " + (*iAttributes).first + "=" + (*iAttributes).second );
-            iAttributes++;
-        }
-    }
-    output.append(">");
-    
-    for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * )(*iChildren))->Print(output);
-    if(m_EndTag) output.append( "</" + m_Name + ">\n");
 }
 
-
-
-void CHTMLElement::Print(CNcbiOstream & output)  
+CHTMLOpenElement::CHTMLOpenElement(const CHTMLOpenElement& origin)
+    : CParent(origin)
 {
-    list <CNCBINode *>::iterator iChildren;
-    map <string, string, less<string> > :: iterator iAttributes = m_Attributes.begin();
-    
-    output << "<" << m_Name.c_str();
-    while (iAttributes != m_Attributes.end()) {
-        if ((*iAttributes).second == "") {
-            output << " " << (*iAttributes).first.c_str();
-            iAttributes++;
-        }
-        else {
-            output << " " << (*iAttributes).first.c_str() << "=" << (*iAttributes).second.c_str();
-            iAttributes++;
+}
+
+CNCBINode* CHTMLOpenElement::CloneSelf(void) const
+{
+    return new CHTMLOpenElement(*this);
+}
+
+CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out)
+{
+    out << '<' << m_Name;
+    for (TAttributes::iterator i = m_Attributes.begin(); i != m_Attributes.end(); ++i ) {
+        out << ' ' << i->first;
+        if ( !i->second.empty() ) {
+            out << '=' << i->second;
         }
     }
-    output << ">";
-    
-    for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * )(*iChildren))->Print(output);
-    if(m_EndTag) output << "</" << m_Name.c_str() << ">\n";
+    return out << '>';
+}
+
+CHTMLElement::CHTMLElement(const string& name)
+    : CParent(name)
+{
+}
+
+CHTMLElement::CHTMLElement(const CHTMLElement& origin)
+    : CParent(origin)
+{
+}
+
+CNCBINode* CHTMLElement::CloneSelf(void) const
+{
+    return new CHTMLElement(*this);
+}
+
+CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out)
+{
+    return out << "</" << m_Name << ">\n";
 }
 
 
 // pre element
 
-CHTML_pre::CHTML_pre(void) { m_Name = "pre"; }
-
-
-CHTML_pre::CHTML_pre(const string & Text)
+CHTML_pre::CHTML_pre(void)
+    : CParent("pre")
 {
-     m_Name = "pre";
-     AppendText(Text);
+}
+
+CHTML_pre::CHTML_pre(const string& text)
+    : CParent("pre")
+{
+     AppendHTMLText(text);
+}
+
+// capton element
+
+CHTML_caption::CHTML_caption(void)
+    : CParent("caption")
+{
+}
+
+CHTML_caption::CHTML_caption(const string& text)
+    : CParent("caption")
+{
+     AppendHTMLText(text);
 }
 
 
 // anchor element
 
-CHTML_a::CHTML_a(void) { m_Name = "a"; }
-
-
-CHTML_a::CHTML_a(const string & href)
+CHTML_a::CHTML_a(void)
+    : CParent("a")
 {
-    m_Name = "a";
-    m_Attributes["href"] = href;
+}
+
+CHTML_a::CHTML_a(const string& href)
+    : CParent("a")
+{
+    SetAttribute("href", href);
 }
 
 
-CHTML_a::CHTML_a(const string & Href, const string & Text)
+CHTML_a::CHTML_a(const string& href, const string& text)
+    : CParent("a")
 {
-    m_Name = "a";
-    m_Attributes["href"] = Href;
-    AppendText(Text);
+    SetAttribute("href", href);
+    AppendHTMLText(text);
 }
 
 
 // TABLE element
 
-CHTML_table::CHTML_table(void) { m_Name = "table"; }
-
-
-CHTML_table::CHTML_table(const string & bgcolor)
+CHTML_table::CHTML_table(void)
+    : CParent("table")
 {
-     m_Name = "table";
-     m_Attributes["bgcolor"] = bgcolor;
 }
 
 
-CHTML_table::CHTML_table(const string & bgcolor, const string & width)
+CHTML_table::CHTML_table(const string& bgcolor)
+    : CParent("table")
 {
-    m_Name = "table";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
+     SetAttribute("bgcolor", bgcolor);
+}
+
+
+CHTML_table::CHTML_table(const string& bgcolor, const string& width)
+    : CParent("table")
+{
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
 }
 
 
 // instantiates table rows and cells
-void CHTML_table::MakeTable(int row, int column)  // throw(bad_alloc)
+void CHTML_table::MakeTable(int rows, int columns)  // throw(bad_alloc)
 {
-    int irow, icolumn;
-    CHTML_tr * tr;
-
-    for(irow = 0; irow < row; irow++)
-	{
-	    try {
-		tr = new CHTML_tr;
-		for (icolumn = 0; icolumn < column; icolumn++) tr->AppendChild(new CHTML_td);
-	    }
-	    catch(...) {
-		delete tr;
-		throw;
-	    }
-	
-	    this->AppendChild(tr);
-	}
+    for(int row = 0; row < rows; row++) {
+        CHTML_tr* tr = new CHTML_tr;
+        AppendChild(tr);
+        for (int column = 0; column < columns; column++) {
+            tr->AppendChild(new CHTML_td);
+        }
+    }
 }
 
 
 // contructors that also instantiate rows and cells
 CHTML_table::CHTML_table(int row, int column)
+    : CParent("table")
 {
-     m_Name = "table";
      MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, int row, int column)
+    : CParent("table")
 {
-    m_Name = "table";
-    m_Attributes["bgcolor"] = bgcolor;
+    SetAttribute("bgcolor", bgcolor);
     MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, const string & width, int row, int column)
+    : CParent("table")
 {
-    m_Name = "table";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
     MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column)
+    : CParent("table")
 {
-    m_Name = "table";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
-    m_Attributes["cellspacing"] = cellspacing;
-    m_Attributes["cellpadding"] = cellpadding;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
+    SetAttribute("cellspacing", cellspacing);
+    SetAttribute("cellpadding", cellpadding);
     MakeTable(row, column);
 }
 
+CHTML_table::CHTML_table(const CHTML_table& origin)
+    : CParent(origin)
+{
+}
 
-CNCBINode * CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  // todo: exception
+CNCBINode* CHTML_table::CloneSelf(void) const
+{
+    return new CHTML_table(*this);
+}
+
+/*
+CNCBINode* CHTML_table::Cell(int row, int column)  // todo: exception
+{
+    return Column(Row(row), column);
+}
+
+// returns row in table, adding rows if nesessary
+CNCBINode* CHTML_table::Row(int needRow)
+{
+    int row = -1; // we didn't scan any row yet
+    // scan all existing rows
+    for ( TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i ) {
+        // if it's real row
+        if ( (*i)->GetName() == "tr" ) {
+            // if we row number is ok
+            if ( row > needRow ) {
+                // this is the result
+                return *i;
+            }
+            row++;
+        }
+    }
+
+    // we don't have enough rows in our table: allocate some more
+    CHTML_tr* tr;
+    while ( row < needRow ) {
+        tr = new CHTML_tr;
+        AppendChild(tr);
+        row++;
+    }
+    return tr;
+}
+
+*/
+
+CNCBINode* CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  // todo: exception
 {
     int iRow, iColumn;
     list <CNCBINode *>::iterator iChildren;
@@ -385,39 +469,42 @@ CNCBINode * CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  
     iRow = 0;
     iChildren = m_ChildNodes.begin();
 
-    while (iRow <= row && iChildren != m_ChildNodes.end()) {
-        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") iRow++;           
+    while ( iRow <= row && iChildren != m_ChildNodes.end() ) {
+        if ( (*iChildren)->GetName() == "tr" )
+            iRow++;
         iChildren++;
     }
 
-    if( iChildren == m_ChildNodes.end() && iRow <= row) return NULL;
+    if( iChildren == m_ChildNodes.end() && iRow <= row)
+        return NULL;
     iChildren--;
 
     iColumn = 0;
-    iRowChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
+    iRowChildren = (*iChildren)->ChildBegin();
 
-    while (iColumn <= column && iRowChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-        if (((CHTMLNode *)(* iRowChildren))->GetName() == "td") iColumn++;           
+    while ( iColumn <= column && iRowChildren != (*iChildren)->ChildEnd() ) {
+        if ( (*iRowChildren)->GetName() == "td" )
+            iColumn++;
         iRowChildren++;
     }
-    if(iRowChildren == ((CHTMLNode *)(*iChildren))->ChildEnd() && 
-       iColumn <= column) return NULL;
+
+    if ( iRowChildren == (*iChildren)->ChildEnd() && iColumn <= column )
+        return NULL;
     else {
-	iRowChildren--;
-	return ((CHTMLNode *)(* iRowChildren))->AppendChild(Child);
+        iRowChildren--;
+        return (*iRowChildren)->AppendChild(Child);
     }
 }
-
 
 CNCBINode * CHTML_table::InsertTextInTable(int row, int column, const string & appendstring) // throw(bad_alloc)
 {
     CHTMLText * text;
     try {
-	text = new CHTMLText(appendstring);
+        text = new CHTMLText(appendstring);
     }
     catch (.../*bad_alloc &e*/) {
-	delete text;
-	throw;
+        delete text;
+        throw;
     }
     return InsertInTable(row, column, text);
 }
@@ -433,292 +520,396 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & wi
     iChildren = m_ChildNodes.begin();
     
     while (iChildren != m_ChildNodes.end()) {
-        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") {
+        if ( (*iChildren)->GetName() == "tr" ) {
             ix = 1;
-            iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
+            iyChildren = (*iChildren)->ChildBegin();
             
-            while (ix < column && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-                if (((CHTMLNode *)(* iyChildren))->GetName() == "td") ix++;  
+            while ( ix < column && iyChildren != (*iChildren)->ChildEnd() ) {
+                if ( (*iyChildren)->GetName() == "td" )
+                    ix++;  
                 iyChildren++;
             }
-            if(iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-                ((CHTMLNode *)(*iyChildren))->SetAttributes("width", width);
+            if ( iyChildren != (*iChildren)->ChildEnd() ) {
+                (*iyChildren)->SetAttribute("width", width);
             }
         }
         iChildren++;
-    }
-    
+    }    
 }
 
 
 // tr tag
 
 
-CHTML_tr::CHTML_tr(void) { m_Name = "tr"; }
+CHTML_tr::CHTML_tr(void)
+    : CParent("tr")
+{
+}
 
 
 CHTML_tr::CHTML_tr(const string & bgcolor) 
+    : CParent("tr")
 {
-    m_Name = "tr";
-    m_Attributes["bgcolor"] = bgcolor;
+    SetAttribute("bgcolor", bgcolor);
 }
 
 
 CHTML_tr::CHTML_tr(const string & bgcolor, const string & width)
+    : CParent("tr")
 {
-    m_Name = "tr";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
 }
 
 
 CHTML_tr::CHTML_tr(const string & bgcolor, const string & width, const string & align)
+    : CParent("tr")
 { 
-    m_Name = "tr";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
-    m_Attributes["align"] = align;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
+    SetAttribute("align", align);
 }
 
 
 // td tag
 
-CHTML_td::CHTML_td(void) { m_Name = "td"; }
+CHTML_td::CHTML_td(void)
+    : CParent("td")
+{
+}
 
 
 CHTML_td::CHTML_td(const string & bgcolor)
+    : CParent("td")
 {
-    m_Name = "td";
-    m_Attributes["bgcolor"] = bgcolor;
+    SetAttribute("bgcolor", bgcolor);
 }
 
 
 CHTML_td::CHTML_td(const string & bgcolor, const string & width)
+    : CParent("td")
 {
-    m_Name = "td";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
 }
 
 
 CHTML_td::CHTML_td(const string & bgcolor, const string & width, const string & align)
+    : CParent("td")
 {
-    m_Name = "td";
-    m_Attributes["bgcolor"] = bgcolor;
-    m_Attributes["width"] = width;
-    m_Attributes["align"] = align;
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
+    SetAttribute("align", align);
+}
+
+
+// td tag
+
+CHTML_th::CHTML_th(void)
+    : CParent("th")
+{
+}
+
+
+CHTML_th::CHTML_th(const string & bgcolor)
+    : CParent("th")
+{
+    SetAttribute("bgcolor", bgcolor);
+}
+
+
+CHTML_th::CHTML_th(const string & bgcolor, const string & width)
+    : CParent("th")
+{
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
+}
+
+
+CHTML_th::CHTML_th(const string & bgcolor, const string & width, const string & align)
+    : CParent("th")
+{
+    SetAttribute("bgcolor", bgcolor);
+    SetAttribute("width", width);
+    SetAttribute("align", align);
 }
 
 
 // form element
 
-CHTML_form::CHTML_form(void) { m_Name = "form"; }
-
-
-CHTML_form::CHTML_form(const string & action, const string & method)
+CHTML_form::CHTML_form (const CHTML_form& origin)
+    : CParent(origin)
 {
-    m_Name = "form";
-    m_Attributes["action"] = action;
-    m_Attributes["method"] = method;
 }
 
-
-CHTML_form::CHTML_form (const string & action, const string & method, const string & name)
+CHTML_form::CHTML_form (const string& action, const string& method, const string& enctype)
+    : CParent("form")
 {
-    m_Name = "form";
-    m_Attributes["action"] = action;
-    m_Attributes["method"] = method;
-    m_Attributes["name"] = name;
+    SetOptionalAttribute("action", action);
+    SetOptionalAttribute("method", method);
+    SetOptionalAttribute("enctype", enctype);
 }
 
+void CHTML_form::AddHidden(const string& name, const string& value)
+{
+    AppendChild(new CHTML_hidden(name, value));
+}
 
 // textarea element
 
-CHTML_textarea::CHTML_textarea(void) { m_Name = "textarea"; }
-
-
-CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows)
+CHTML_textarea::CHTML_textarea(const string & name, int cols, int rows, const string & value)
+    : CParent("textarea")
 {
-    m_Name = "textarea";
-    m_Attributes["name"] = name;
-    m_Attributes["cols"] = cols;
-    m_Attributes["rows"] = rows;
-}
-
-
-CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows, const string & value)
-{
-    m_Name = "textarea";
-    m_Attributes["name"] = name;
-    m_Attributes["cols"] = cols;
-    m_Attributes["rows"] = rows;
-    AppendText(value);  // an exception should propagate ok?
+    SetAttribute("name", name);
+    SetAttribute("cols", cols);
+    SetAttribute("rows", rows);
+    AppendPlainText(value);  // an exception should propagate ok?
 }
 
 
 //input tag
 
-CHTML_input::CHTML_input(void) { m_Name = "input"; m_EndTag = false; }
-
-
-CHTML_input::CHTML_input(const string & type, const string & value)
+CHTML_input::CHTML_input(const string& type, const string& name)
+    : CParent("input")
 {
-    m_Name = "input";
-    m_EndTag = false;
-    m_Attributes["type"] = type;
-    m_Attributes["value"] = value;
-};
-
-
-CHTML_input::CHTML_input(const string & type, const string & name, const string & value)
-{
-    m_Name = "input";
-    m_EndTag = false;
-    m_Attributes["type"] = type;
-    m_Attributes["name"] = name;
-    m_Attributes["value"] = value;
-};
-
-
-CHTML_input::CHTML_input(const string & type, const string & name, const string & value, const string & size)
-{
-    m_Name = "input";
-    m_EndTag = false;
-    m_Attributes["type"] = type;
-    m_Attributes["name"] = name;
-    m_Attributes["size"] = size;
-    if(!value.empty()) m_Attributes["value"] = value;
+    SetAttribute("type", type);
+    SetAttribute("name", name);
 };
 
 
 // checkbox tag 
 
-CHTML_checkbox::CHTML_checkbox(const string & name, const string & value, const string & description, bool checked)
+CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
+    : CParent("checkbox", name)
 {
-    m_Name = "input";
-    m_EndTag = false;
-    m_Attributes["type"] = "checkbox";
-    m_Attributes["name"] = name;
-    if(!value.empty()) m_Attributes["value"] = value;
-    if (checked) m_Attributes["checked"] = "";    
-    AppendText(description);  // adds the description at the end
+    SetOptionalAttribute("value", value);
+    SetOptionalAttribute("checked", checked);
+    AppendHTMLText(description);  // adds the description at the end
 }
 
+CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
+    : CParent("checkbox", name)
+{
+    SetOptionalAttribute("checked", checked);
+    AppendHTMLText(description);  // adds the description at the end
+}
+
+
+// radio tag 
+
+CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
+    : CParent("radio", name)
+{
+    SetAttribute("value", value);
+    SetAttribute("checked", checked);
+    AppendHTMLText(description);  // adds the description at the end
+}
+
+// hidden tag 
+
+CHTML_hidden::CHTML_hidden(const string& name, const string& value)
+    : CParent("hidden", name)
+{
+    SetAttribute("value", value);
+}
+
+// hidden tag 
+
+CHTML_submit::CHTML_submit(const string& name)
+    : CParent("input")
+{
+    SetAttribute("type", "submit");
+    SetOptionalAttribute("value", name);
+}
+
+// text tag 
+
+CHTML_text::CHTML_text(const string& name, const string& value)
+    : CParent("text", name)
+{
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_text::CHTML_text(const string& name, int size, const string& value)
+    : CParent("text", name)
+{
+    SetAttribute("size", size);
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
+    : CParent("text", name)
+{
+    SetAttribute("size", size);
+    SetAttribute("maxlength", maxlength);
+    SetOptionalAttribute("value", value);
+}
 
 // option tag
 
-CHTML_option::CHTML_option(void)
+CHTML_option::CHTML_option(const string& content, bool selected)
+    : CParent("option")
 {
-    m_Name = "option";
-    m_EndTag = false;
-}
-
-
-CHTML_option::CHTML_option(bool selected)
-{
-    m_Name = "option";
-    m_EndTag = false;
-    if (selected) m_Attributes["selected"] = "";
+    SetOptionalAttribute("selected", selected);
+    AppendPlainText(content);
 };
 
 
-CHTML_option::CHTML_option(bool selected, const string & value)
+CHTML_option::CHTML_option(const string& content, const string& value, bool selected)
+    : CParent("option")
 {
-    m_Name = "option";
-    m_EndTag = false;
-    if (selected) m_Attributes["selected"] = "";
-    m_Attributes["value"] = value;
+    SetAttribute("value", value);
+    SetOptionalAttribute("selected", selected);
+    AppendPlainText(content);
 };
 
 
 // select tag
 
-CHTML_select::CHTML_select(void) { m_Name = "select"; }
-
-
-CHTML_select::CHTML_select(const string & name)
+CHTML_select::CHTML_select(const string& name, bool multiple)
+    : CParent("select")
 {
-    m_Name = "select";
-    m_Attributes["name"] = name;
+    SetAttribute("name", name);
+    SetOptionalAttribute("multiple", multiple);
+}
+
+CHTML_select::CHTML_select(const string& name, int size, bool multiple)
+    : CParent("select")
+{
+    SetAttribute("name", name);
+    SetAttribute("size", size);
+    SetOptionalAttribute("multiple", multiple);
 }
 
 
-CNCBINode * CHTML_select::AppendOption(const string & option)
+CHTML_select* CHTML_select::AppendOption(const string& option, bool selected)
 {
-    CNCBINode * retval;
-    try {
-	retval = AppendChild(new CHTML_option);
-	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
-    }
-    catch (...) {
-        delete retval;
-        throw;
-    }
-    return retval;
+    AppendChild(new CHTML_option(option, selected));
+    return this;
 };
 
 
-CNCBINode * CHTML_select::AppendOption(const string & option, bool selected)
+CHTML_select* CHTML_select::AppendOption(const string& option, const string& value, bool selected)
 {
-    CNCBINode * retval;
-    try {
-	retval = AppendChild(new CHTML_option(selected));
-	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
-    }
-    catch (...) {
-	delete retval;
-	throw;
-    }
-
-    return retval;
-};
-
-
-CNCBINode * CHTML_select::AppendOption(const string & option, bool selected, const string & value)
-{
-    CNCBINode * retval;
-    try {
-	retval = AppendChild(new CHTML_option(selected, value));
-	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
-    }
-    catch (...) {
-	delete retval;
-	throw;
-    }
-
-    return retval;
+    AppendChild(new CHTML_option(option, value, selected));
+    return this;
 };
 
 
 // p tag with close tag
 
-CHTML_p::CHTML_p(void) { m_Name = "p"; }
-
+CHTML_p::CHTML_p(void)
+    : CParent("p")
+{
+}
 
 // p tag without close
 
-CHTML_pnop::CHTML_pnop(void) { m_Name = "p"; m_EndTag = false; }
-
+CHTML_pnop::CHTML_pnop(void)
+    : CParent("p")
+{
+}
 
 // br tag
 
-CHTML_br::CHTML_br(void) { m_Name = "br"; m_EndTag = false; }
+CHTML_br::CHTML_br(void)
+    : CParent("br")
+{
+}
 
+CHTML_br::CHTML_br(int count)
+    : CParent("br")
+{
+    for ( int i = 1; i < count; ++i )
+        AppendChild(new CHTML_br());
+}
 
 // img tag
 
-CHTML_img::CHTML_img(void) { m_Name = "img"; m_EndTag = false; }
-
+CHTML_img::CHTML_img(void)
+    : CParent("img")
+{
+}
 
 CHTML_img::CHTML_img(const string & src, const string & width, const string & height, const string & border)
+    : CParent("img")
 {
-    m_Name = "img";
-    m_EndTag = false; 
-    m_Attributes["src"] = src;
-    m_Attributes["width"] = width;
-    m_Attributes["height"] = height;
-    m_Attributes["border"] = border;
+    SetAttribute("src", src);
+    SetAttribute("width", width);
+    SetAttribute("height", height);
+    SetAttribute("border", border);
 }
+
+// dl tag
+
+CHTML_dl::CHTML_dl(bool compact)
+    : CParent("dl")
+{
+    SetOptionalAttribute("compact", compact);
+}
+
+CHTML_dl* CHTML_dl::AppendTerm(const string& term, const string& definition)
+{
+    AppendChild(new CHTML_dt(term));
+    if ( !definition.empty() )
+        AppendChild(new CHTML_dd(definition));
+    return this;
+}
+
+CHTML_dl* CHTML_dl::AppendTerm(const string& term, CNCBINode* definition)
+{
+    AppendChild(new CHTML_dt(term));
+    if ( definition )
+        AppendChild(new CHTML_dd(definition));
+    return this;
+}
+
+CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, const string& definition)
+{
+    AppendChild(new CHTML_dt(term));
+    if ( !definition.empty() )
+        AppendChild(new CHTML_dd(definition));
+    return this;
+}
+
+CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
+{
+    AppendChild(new CHTML_dt(term));
+    if ( definition )
+        AppendChild(new CHTML_dd(definition));
+    return this;
+}
+
+// dt tag
+
+CHTML_dt::CHTML_dt(CNCBINode* term)
+    : CParent("dt")
+{
+    if ( term )
+        AppendChild(term);
+}
+
+CHTML_dt::CHTML_dt(const string& term)
+    : CParent("dt")
+{
+    AppendHTMLText(term);
+}
+
+// dd tag
+
+CHTML_dd::CHTML_dd(CNCBINode* term)
+    : CParent("dd")
+{
+    if ( term )
+        AppendChild(term);
+}
+
+CHTML_dd::CHTML_dd(const string& term)
+    : CParent("dd")
+{
+    AppendHTMLText(term);
+}
+
 
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/21 22:25:05  vasilche
+* A lot of cleaning.
+*
 * Revision 1.3  1998/12/12 00:06:19  lewisg
 * *** empty log message ***
 *
@@ -50,29 +53,39 @@
 #include <ncbi.h>
 #include <ncbienv.h>
 #include <memory>
+#include <nodemap.hpp>
 BEGIN_NCBI_SCOPE
 
 //
 // basic search page
 //
 
-CPmFrontPage::CPmFrontPage() {}
-
-
-void CPmFrontPage::InitMembers(int style)
+CPmFrontPage::CPmFrontPage()
 {
     m_PageName = "Pubmed Search";
     m_TemplateFile = "tabletemplate.html";
+
+    //    AddTagMap("QUERYBOX", new TagMapper<CPmFrontPage>(&CreateQueryBox));
 }
 
+/*
+CPmFrontPage::CPmFrontPage(const CPmFrontPage* origin)
+    : CParent(origin)
+{
+}
 
-CHTMLNode * CPmFrontPage::CreateView(void) 
+CNCBINode* CPmFrontPage::CloneSelf(void) const
+{
+    return new CPmFrontPage(this);
+}
+*/
+
+CNCBINode* CPmFrontPage::CreateView(void)
 {
     //
     // demo purposes only
     //
-    CQueryBox * QueryBox = new CQueryBox;
-    QueryBox->InitMembers();
+    CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
     QueryBox->m_Width = 400;
     QueryBox->m_BgColor = "#CCCCCFF";
     QueryBox->m_DispMax = "dispmax";
@@ -80,7 +93,6 @@ CHTMLNode * CPmFrontPage::CreateView(void)
     QueryBox->m_DbName = "db";
     QueryBox->m_TermName = "term";
     QueryBox->m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
-    QueryBox->InitMembers();
     QueryBox->m_Disp.push_back("10");
     QueryBox->m_Disp.push_back("20");
     QueryBox->m_Disp.push_back("50");
@@ -95,8 +107,6 @@ CHTMLNode * CPmFrontPage::CreateView(void)
     QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
     QueryBox->m_Databases["c"] = "Complete Genomes";
     QueryBox->m_HiddenValues["form"] = "4";
-    QueryBox->InitSubPages();
-    QueryBox->Finish();
 
     return QueryBox;
 }
@@ -106,55 +116,32 @@ CHTMLNode * CPmFrontPage::CreateView(void)
 // Docsum page
 //
 
-CPmDocSumPage::CPmDocSumPage(): m_Pager(0), m_QueryBox(0) {}
-
-
-void CPmDocSumPage::InitMembers(int style)
+CPmDocSumPage::CPmDocSumPage()
 {
     m_PageName = "Search Results";
     m_TemplateFile = "template.html";
-    
+
+    AddTagMap("PAGER", new TagMapper<CPmDocSumPage>(&CreatePager));
+    //    AddTagMap("QUERYBOX", new TagMapper<CPmDocSumPage>(&CreateQueryBox));
 }
 
-
-void CPmDocSumPage::InitSubPages(int style)
+CNCBINode* CPmDocSumPage::CreatePager(void) 
 {
-    CHTMLPage::InitSubPages(style);
+    if ( GetStyle() & kNoPAGER )
+        return 0;
 
-    try {
-	if(!(style & kNoQUERYBOX)) {
-	    if (!m_QueryBox) m_QueryBox = CreateQueryBox();
-	    if (!m_QueryBox) m_QueryBox = new CHTMLNode;
-	}
-    	if(!(style & kNoPAGER)) {
-	    if (!m_Pager) m_Pager = CreatePager();
-	    if (!m_Pager) m_Pager = new CHTMLNode;
-	}
-    }
-    catch (...) {
-	delete m_QueryBox;
-	delete m_Pager;
-	throw;
-    }
-}
-
-
-CHTMLNode * CPmDocSumPage::CreatePager(void) 
-{
     //
     //  demo only
     //
-
     CPagerBox * Pager = new CPagerBox;
-    Pager->InitMembers();
     Pager->m_Width = 600;
-    Pager->m_TopButton->m_Name = "Display";
+    Pager->m_TopButton->SetName("Display");
     Pager->m_TopButton->m_Select = "display";
     Pager->m_TopButton->m_List["dopt"] = "Top";
-    Pager->m_RightButton->m_Name = "Save";
+    Pager->m_RightButton->SetName("Save");
     Pager->m_RightButton->m_Select = "save";
     Pager->m_RightButton->m_List["m_s"] = "Right";
-    Pager->m_LeftButton->m_Name = "Order";
+    Pager->m_LeftButton->SetName("Order");
     Pager->m_LeftButton->m_Select = "order";
     Pager->m_LeftButton->m_List["m_o"] = "Left";
     Pager->m_PageList->m_Pages[1] = "http://one";
@@ -166,27 +153,28 @@ CHTMLNode * CPmDocSumPage::CreatePager(void)
     Pager->m_PageList->m_Pages[7] = "http://one";
     Pager->m_PageList->m_Forward = "http://forward";
     Pager->m_PageList->m_Backward = "http://backward";
-    Pager->Finish();
-    return Pager;
+
+    CHTML_form* Form = new CHTML_form;
+    Form->AppendChild(Pager);
+    return Form;
 }
 
 
-CHTMLNode * CPmDocSumPage::CreateQueryBox(void) 
+CNCBINode* CPmDocSumPage::CreateView(void) 
 {
+    if ( GetStyle() & kNoQUERYBOX ) 
+        return 0;
+
     //
     // demo only
     //
-
-    CQueryBox * QueryBox = new CQueryBox;
-    QueryBox->InitMembers(1);
+    CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
     QueryBox->m_Width = 600;
     QueryBox->m_BgColor = "#FFFFFF";
     QueryBox->m_DispMax = "dispmax";
     QueryBox->m_DefaultDispMax = "20";
     QueryBox->m_DbName = "db";
     QueryBox->m_TermName = "term";
-    QueryBox->m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
-    QueryBox->InitMembers();
     QueryBox->m_Disp.push_back("10");
     QueryBox->m_Disp.push_back("20");
     QueryBox->m_Disp.push_back("50");
@@ -201,44 +189,7 @@ CHTMLNode * CPmDocSumPage::CreateQueryBox(void)
     QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
     QueryBox->m_Databases["c"] = "Complete Genomes";
     QueryBox->m_HiddenValues["form"] = "4";
-    QueryBox->InitSubPages(1);
-    QueryBox->Finish(1);
-
     return QueryBox;
 }
-
-
-CHTMLNode * CPmDocSumPage::CreateView(void) 
-{
-   return NULL;
-}
-
-
-void CPmDocSumPage::Finish(int Style)
-{
-
-    CHTMLPage::Finish(Style);
-
-    CHTML_form * Form;
-    try {
-	Form = new CHTML_form;
-	Form->AppendChild(m_Pager);
-
-	if(!(Style & kNoPAGER) && m_Pager) 
-	    Rfind("<@PAGER@>", Form);
-
-	if(!(Style & kNoQUERYBOX) && m_QueryBox) 
-	    Rfind("<@QUERYBOX@>", m_QueryBox);
-    } 
-    catch (...) {
-	delete Form;
-    }
-
-}
-
-
-
-
-
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/21 22:25:04  vasilche
+* A lot of cleaning.
+*
 * Revision 1.3  1998/11/23 23:42:29  lewisg
 * *** empty log message ***
 *
@@ -41,54 +44,188 @@
 *
 * ===========================================================================
 */
+
 #include <ncbistd.hpp>
 #include <node.hpp>
-#include <html.hpp> //remove!
+// #include <html.hpp> //remove!
+
 BEGIN_NCBI_SCOPE
 
-// append a child
-CNCBINode * CNCBINode::AppendChild(CNCBINode * childNode)
+CNCBINode::CNCBINode(void)
+    : m_ParentNode(0), m_Initialized(false)
 {
-    if(!childNode) return NULL;
-    m_ChildNodes.push_back(childNode);
-    ((CNCBINode *)childNode)->m_ParentNode = this;
-    ((CNCBINode *)childNode)->m_SelfIter = --(m_ChildNodes.end()); // don't forget that end() points beyond the list
-    return childNode;
+}
+
+CNCBINode::CNCBINode(const string& name)
+    : m_ParentNode(0), m_Initialized(false), m_Name(name)
+{
+}
+
+// we leak memory like crazy until the sunpro compiler is upgraded
+// it can't handle a virtual destructor in any form for some reason.
+CNCBINode::~CNCBINode(void)
+{
+#if 0
+    while ( !m_ChildList.empty() ) {
+        delete *ChildBegin();
+    }
+    DetachFromParent();
+#endif
+}
+
+CNCBINode::CNCBINode(const CNCBINode& origin)
+    : m_ParentNode(0), m_Initialized(origin.m_Initialized),
+      m_Name(origin.m_Name), m_Attributes(origin.m_Attributes)
+{
+}
+
+CNCBINode* CNCBINode::Clone() const
+{
+    CNCBINode* copy = CloneSelf();
+
+    CloneChildrenTo(copy);
+
+    return copy;
+}
+
+void CNCBINode::CloneChildrenTo(CNCBINode* copy) const
+{
+    for (TChildList::const_iterator i = ChildBegin(); i != ChildEnd(); ++i) {
+        CNCBINode* childOrigin = *i;
+        CNCBINode* child = childOrigin->CloneSelf();
+        copy->AppendChild(child);
+        childOrigin->CloneChildrenTo(child);
+    }
+}
+
+CNCBINode* CNCBINode::CloneSelf() const
+{
+    return new CNCBINode(*this);
+}
+
+void CNCBINode::DetachFromParent(void)
+{
+    if ( m_ParentNode ) {
+        m_ParentNode->RemoveChild(this);
+        _ASSERT(m_ParentNode == 0);
+    }
+}
+
+CNCBINode* CNCBINode::RemoveChild(CNCBINode* child)
+{
+    if ( child->m_ParentNode != this )
+        return 0;
+
+    m_ChildNodes.erase(FindChild(child));
+    child->m_ParentNode = 0;
+    return child;
+}
+
+CNCBINode::TChildList::iterator CNCBINode::FindChild(CNCBINode* child)
+{
+    for (TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i) {
+        if (*i == child) {
+            return i;
+        }
+    }
+    throw runtime_error("Broken CNCBINode tree");
+}
+
+// append a child
+CNCBINode* CNCBINode::AppendChild(CNCBINode * child)
+{
+    if ( !child )
+        return 0;
+
+    child->DetachFromParent();
+
+    m_ChildNodes.push_back(child);
+    child->m_ParentNode = this;
+
+    return child;
 }
 
 
 // insert a child before the given node
 CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
 {
-    if(!newChild | ! refChild) return NULL;
-    ((CNCBINode *)newChild)->m_ParentNode = this;
-    ((CNCBINode *)newChild)->m_SelfIter = (list<CNCBINode *>::iterator) m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
+    if ( !newChild || !refChild || refChild->m_ParentNode != this )
+        return 0;
+
+    newChild->DetachFromParent();
+
+    m_ChildNodes.insert(++FindChild(refChild), newChild);
+    newChild->m_ParentNode = this;
+
     return newChild;
 }
 
-
-// we leak memory like crazy until the sunpro compiler is upgraded
-// it can't handle a virtual destructor in any form for some reason.
-
-CNCBINode::~CNCBINode(void)
+// set attributes
+string CNCBINode::GetAttribute(const string& name) const
 {
-#if 0
-    list <CNCBINode *>::iterator iChildren;
-    CNCBINode * temp;
-
-    iChildren = m_ChildNodes.begin();
-    while ( iChildren != m_ChildNodes.end()) {     
-        temp = (CNCBINode *) *iChildren; // need an extra copy as the iterator gets destroyed by the child
-        iChildren++;
-        delete temp;
-    }
-
-    if(m_ParentNode) {
-         ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
-    }
-#endif
+    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
+    TAttributes::iterator ptr = Attributes.find(name);
+    if ( ptr == Attributes.end() )
+        return 0;
+    return ptr->second;
 }
 
+void CNCBINode::SetAttribute(const string& name)
+{
+    m_Attributes[name];
+}
+
+void CNCBINode::SetAttribute(const string& name, const string& value)
+{
+    m_Attributes[name] = value;
+}
+
+// this function searches for a text string in a Text node and replaces it with a node
+CNCBINode* CNCBINode::MapTag(const string& tagname)
+{
+    if ( !m_ParentNode )
+        return 0;
+
+    return m_ParentNode->MapTag(tagname);
+}
+
+// print the whole node tree (with possible initialization)
+CNcbiOstream& CNCBINode::Print(CNcbiOstream& out)
+{
+    if ( !m_Initialized ) { // if there is no children
+        CreateSubNodes();             // create them
+        m_Initialized = true;
+    }
+
+    PrintBegin(out);
+    PrintChildren(out);
+    PrintEnd(out);
+    return out;
+}
+
+CNcbiOstream& CNCBINode::PrintBegin(CNcbiOstream& out)
+{
+    return out;
+}
+
+CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out)
+{
+    return out;
+}
+
+// print all children
+CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out)
+{
+    for (TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i) {
+        (*i)->Print(out);
+    }
+    return out;
+}
+
+// by default, we don't create any subnode
+void CNCBINode::CreateSubNodes(void)
+{
+}
 
 END_NCBI_SCOPE
 

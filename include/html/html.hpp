@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/21 22:24:56  vasilche
+* A lot of cleaning.
+*
 * Revision 1.7  1998/12/09 23:02:55  lewisg
 * update to new cgiapp class
 *
@@ -58,8 +61,10 @@
 */
 
 
-//#include <ncbistd.h>
+#include <ncbistd.h>
 #include <node.hpp>
+#include <map>
+
 BEGIN_NCBI_SCOPE
 
 // utility functions
@@ -67,78 +72,163 @@ BEGIN_NCBI_SCOPE
 class CHTMLHelper
 {
 public:
-    static string & HTMLEncode(string &);  // HTML encodes a string. E.g. &lt;
-    static string IntToString(int);
+    static string HTMLEncode(const string &);  // HTML encodes a string. E.g. &lt;
 };
 
 
 // base class for html node
 
 class CHTMLNode : public CNCBINode {
+    // parent class
+    typedef CNCBINode CParent;
+
 public:
-    string GetName(void) const { return m_Name; }
-    void SetName(string & namein) { m_Name = namein; }
-    string GetAttributes(const string& aname) { return m_Attributes[aname]; }  // how to make const with non-const []?
-    void SetAttributes(const string & aname, string avalue) { m_Attributes[aname] = avalue; }
-    virtual void Print(string &);   // prints the tag and children
-    virtual void Print(CNcbiOstream &);   // prints the tag and children
-    virtual void Rfind(const string & tagname, CNCBINode * replacenode);  // finds and replaces text with a node    
-    CHTMLNode(void);
-    CNCBINode * AppendText(const string &);  // convenient way to add CHTMLText
+    CHTMLNode(const string& name);
+
+    void AppendPlainText(const string &);  // convenient way to add CHTMLPlainText
+    void AppendHTMLText(const string &);  // convenient way to add CHTMLText
 
 protected:
-    string m_Name; // the tag name
-    map<string, string, less<string> > m_Attributes; // the tag attributes, e.g. href="link.html"
+    // support for cloning
+    CHTMLNode(const CHTMLNode& origin);
+};
+
+// <@XXX@> mapping node
+
+class CHTMLTagNode : public CNCBINode {
+    // parent class
+    typedef CNCBINode CParent;
+
+public:
+    CHTMLTagNode(const string& tagname);
+
+    virtual void CreateSubNodes(void);
+
+protected:
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTMLTagNode(const CHTMLTagNode& origin);
 };
 
 
 // A text node that contains plain text
-class CHTMLText: public CHTMLNode {
+class CHTMLPlainText : public CNCBINode {
+    // parent class
+    typedef CNCBINode CParent;
+
 public:
-    string Data(void) const { return m_Datamember; }
-    void Data(const string & datain) { m_Datamember = datain; }
-    CNCBINode * Split(SIZE_TYPE); // splits a node in two
-    virtual void Print(string &);
-    virtual void Print(CNcbiOstream &);   // prints the tag and children
-    virtual void Rfind(const string & tagname, CNCBINode * replacenode);  
-    CHTMLText(void);
-    CHTMLText(const string & text);
+    CHTMLPlainText(const string& text);
     
+    const string& GetText(void) const;
+    void SetText(const string& text);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
+
 protected:
-    string m_Datamember;  // the text
+    string m_Text;  // the text
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTMLPlainText(const CHTMLPlainText& origin);
 };
 
+// A text node that contains html text with tags and possibly <@TAG@>
+class CHTMLText : public CNCBINode {
+    // parent class
+    typedef CNCBINode CParent;
+
+public:
+    CHTMLText(const string& text);
+    
+    const string& GetText(void) const;
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
+    virtual void CreateSubNodes();
+
+protected:
+    string m_Text;  // the text
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTMLText(const CHTMLText& origin);
+};
 
 // An html tag
-class CHTMLElement: public CHTMLNode {
+class CHTMLOpenElement: public CHTMLNode {
+    // parent class
+    typedef CHTMLNode CParent;
+
 public:
-    virtual void Print(string&);
-    virtual void Print(CNcbiOstream &);   // prints the tag and children
-    CHTMLElement(void);
+    CHTMLOpenElement(const string& name);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &);   // prints tag itself
+
 protected:
-    bool m_EndTag;  // is there a closing tag for the element?
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTMLOpenElement(const CHTMLOpenElement& origin);
 };
 
+// An html tag
+class CHTMLElement: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
+public:
+    CHTMLElement(const string& name);
+
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &);   // prints tag close
+
+protected:
+
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTMLElement(const CHTMLElement& origin);
+};
 
 // the "pre" tag
 class CHTML_pre: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
     CHTML_pre(void);
-    CHTML_pre(const string & Text);
+    CHTML_pre(const string& text);
+
 };
 
 
+// the "caption" tag
+class CHTML_caption: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
+public:
+    CHTML_caption(void);
+    CHTML_caption(const string& text);
+
+};
+
 // the "a" tag
 class CHTML_a: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
     CHTML_a(void);
     CHTML_a(const string & href);
-    CHTML_a(const string & Href, const string & Text);
+    CHTML_a(const string & href, const string & text);
+
 };
 
 
 // the table tag
 class CHTML_table: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
     CHTML_table(void);
     CHTML_table(const string & bgcolor);
@@ -147,113 +237,269 @@ public:
     CHTML_table(const string & bgcolor, int row, int column);
     CHTML_table(const string & bgcolor, const string & width, int row, int column);
     CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column);
-    CNCBINode * InsertInTable(int row, int column, CNCBINode *);
-    CNCBINode * InsertTextInTable(int row, int column, const string &);
-    void ColumnWidth(CHTML_table *, int column, const string & width);  
+
+    CNCBINode* Cell(int row, int column);
+    CNCBINode* InsertInTable(int row, int column, CNCBINode *);
+    CNCBINode* InsertTextInTable(int row, int column, const string &);
+
+    void ColumnWidth(CHTML_table*, int column, const string & width);
+
 protected:
     void MakeTable(int, int);
 
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+    CHTML_table(const CHTML_table& origin);
 };
 
 
 // the tr tag
 class CHTML_tr: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
     CHTML_tr(void);
-    CHTML_tr(const string &);
-    CHTML_tr(const string &, const string &);
-    CHTML_tr(const string &, const string &, const string &);
+    CHTML_tr(const string & bgcolor);
+    CHTML_tr(const string & bgcolor, const string & width);
+    CHTML_tr(const string & bgcolor, const string & width, const string & align);
+
 };
 
 
+// the th tag
+class CHTML_th: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
+public:
+    CHTML_th(void);
+    CHTML_th(const string & bgcolor);
+    CHTML_th(const string & bgcolor, const string & width);
+    CHTML_th(const string & bgcolor, const string & width, const string & align);
+
+};
+
 // the td tag
-class CHTML_td: public CHTMLElement {
+class CHTML_td: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
     CHTML_td(void);
     CHTML_td(const string & bgcolor);
     CHTML_td(const string & bgcolor, const string & width);
     CHTML_td(const string & bgcolor, const string & width, const string & align);
+
 };
 
 
 // the form tag
 class CHTML_form: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
-    CHTML_form(void);
-    CHTML_form(const string & action, const string & method);
-    CHTML_form(const string & action, const string & method, const string & name);
+    CHTML_form(const string& action = NcbiEmptyString, const string& method = NcbiEmptyString, const string& enctype = NcbiEmptyString);
+
+protected:
+    // Cloning
+    CHTML_form(const CHTML_form& origin);
+
+    void AddHidden(const string& name, const string& value);
 };
 
 
 // the textarea tag
 class CHTML_textarea: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
-    CHTML_textarea(void);
-    CHTML_textarea(const string & name, const string & cols, const string & rows);
-    CHTML_textarea(const string & name, const string & cols, const string & rows, const string & value);
+    CHTML_textarea(const string & name, int cols, int rows, const string & value);
+
 };
 
 
-class CHTML_input: public CHTMLElement {
+// input tag
+class CHTML_input: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
-    CHTML_input(void);
-    CHTML_input::CHTML_input(const string & type, const string & value);
-    CHTML_input::CHTML_input(const string & type, const string & name, const string & value);
-    CHTML_input::CHTML_input(const string & type, const string & name, const string & value, const string & size);
+    CHTML_input(const string& type, const string& name);
 };
 
+// input type=checkbox tag
+class CHTML_checkbox: public CHTML_input {
+    // parent class
+    typedef CHTML_input CParent;
 
-class CHTML_checkbox: public CHTMLElement {
 public:
-    CHTML_checkbox(const string & name, const string & value, const string & description, bool checked);
+    CHTML_checkbox(const string& name, bool checked = false, const string& description = NcbiEmptyString);
+    CHTML_checkbox(const string& name, const string& value, bool checked = false, const string& description = NcbiEmptyString);
+
 };
-  
+
+// input type=radio tag
+class CHTML_radio: public CHTML_input {
+    // parent class
+    typedef CHTML_input CParent;
+
+public:
+    CHTML_radio(const string& name, const string& value, bool checked = false, const string& description = NcbiEmptyString);
+
+};
+
+// input type=hidden tag
+class CHTML_hidden: public CHTML_input {
+    // parent class
+    typedef CHTML_input CParent;
+
+public:
+    CHTML_hidden(const string& name, const string& value);
+
+};
+
+// input type=text tag
+class CHTML_text: public CHTML_input {
+    // parent class
+    typedef CHTML_input CParent;
+
+public:
+    CHTML_text(const string& name, const string& value = NcbiEmptyString);
+    CHTML_text(const string& name, int size, const string& value = NcbiEmptyString);
+    CHTML_text(const string& name, int size, int maxlength, const string& value = NcbiEmptyString);
+
+};
+
+// input type=submit tag
+class CHTML_submit: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
+public:
+    CHTML_submit(const string& name);
+
+};
+
 //option tag.  rarely used alone.  see select tag
-class CHTML_option: public CHTMLElement {
+class CHTML_option: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
-    CHTML_option(void);
-    CHTML_option(bool selected);
-    CHTML_option(bool selected, const string & value);
+    CHTML_option(const string& content, bool selected = false);
+    CHTML_option(const string& content, const string& value, bool selected = false);
+
 };
 
 
 // select tag
 class CHTML_select: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
-    CNCBINode * AppendOption(const string & option);
-    CNCBINode * AppendOption(const string & option, bool selected);
-    CNCBINode * AppendOption(const string & option, bool selected, const string & value);
-    CHTML_select(void);
-    CHTML_select(const string & name);
+    CHTML_select(const string & name, bool multiple = false);
+    CHTML_select(const string & name, int size, bool multiple = false);
+
+    // return this to allow chained AppendOption
+    CHTML_select* AppendOption(const string& option, bool selected = false);
+    CHTML_select* AppendOption(const string& option, const string & value, bool selected = false);
+    
 };
 
 
 // paragraph with end tag
 class CHTML_p: public CHTMLElement {
+    // parent class
+    typedef CHTMLElement CParent;
+
 public:
     CHTML_p(void);
+
 };
 
 
 // paragraph without end tag
-class CHTML_pnop: public CHTMLElement {
+class CHTML_pnop: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
     CHTML_pnop(void);
+
 };
 
 
 // break
-class CHTML_br: public CHTMLElement {
+class CHTML_br: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
     CHTML_br(void);
+    // create <number> of <br> tags
+    CHTML_br(int number);
+
 };
 
 
-class CHTML_img: public CHTMLElement {
+class CHTML_img: public CHTMLOpenElement {
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
 public:
     CHTML_img(void);
-    CHTML_img(const string & src, const string & width, const string & height, const string & border = "0");
+    CHTML_img(const string & src, const string& width, const string& height, const string& border = "0");
+
 };
 
+// dl tag
+class CHTML_dl : public CHTMLElement
+{
+    // parent class
+    typedef CHTMLElement CParent;
+
+public:
+    CHTML_dl(bool compact = false);
+
+    // return this to allow chained AppendTerm
+    CHTML_dl* AppendTerm(const string& term, const string& definition = NcbiEmptyString);
+    CHTML_dl* AppendTerm(const string& term, CNCBINode* definition = 0);
+    CHTML_dl* AppendTerm(CNCBINode* term, const string& definition = NcbiEmptyString);
+    CHTML_dl* AppendTerm(CNCBINode* term, CNCBINode* definition = 0);
+
+};
+
+// dt tag
+class CHTML_dt : public CHTMLOpenElement
+{
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
+public:
+    CHTML_dt(const string& term);
+    CHTML_dt(CNCBINode* term = 0);
+
+};
+
+// dd tag
+class CHTML_dd : public CHTMLOpenElement
+{
+    // parent class
+    typedef CHTMLOpenElement CParent;
+
+public:
+    CHTML_dd(const string& term);
+    CHTML_dd(CNCBINode* definition = 0);
+
+};
+
+// inline functions
+#include <html.inl>
+
 END_NCBI_SCOPE
+
 #endif

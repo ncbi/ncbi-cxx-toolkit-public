@@ -1,5 +1,5 @@
-#ifndef QUERYPAGES__HPP
-#define QUERYPAGES__HPP
+#if defined(PAGE__HPP)  &&  !defined(PAGE__INL)
+#define PAGE__INL
 
 /*  $Id$
 * ===========================================================================
@@ -26,77 +26,37 @@
 *
 * ===========================================================================
 *
-* Author:  Lewis Geer
+* Author: Eugene Vasilchenko
 *
 * File Description:
-*   Pages for pubmed query program
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/12/21 22:25:00  vasilche
+* Revision 1.1  1998/12/21 22:24:59  vasilche
 * A lot of cleaning.
-*
-* Revision 1.3  1998/12/12 00:06:56  lewisg
-* *** empty log message ***
-*
-* Revision 1.2  1998/12/11 22:53:41  lewisg
-* added docsum page
-*
-* Revision 1.1  1998/12/11 18:13:51  lewisg
-* frontpage added
-*
-
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <page.hpp>
 
-BEGIN_NCBI_SCOPE
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! PUT YOUR CODE HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-/////////////////////////////////
-///// Basic Search
-
-
-class CPmFrontPage: public CHTMLPage {
-public:
-    CPmFrontPage();
-    static CHTMLBasicPage * New(void) { return new CPmFrontPage;}
-
-    virtual CNCBINode* CreateView(void);
-};
-
-
-class CPmDocSumPage: public CHTMLPage
+static inline CHTMLBasicPage* CHTMLPage::New(void)
 {
- public:
-    static const int kNoQUERYBOX = 0x8;
+    return new CHTMLPage;
+}  // for the page factory
 
-    virtual CNCBINode* CreateView(void);
-    // only one pager for now until I make copy constructor.
-    static const int kNoPAGER = 0x16;
-    virtual CNCBINode* CreatePager();
-
-    CPmDocSumPage();
-    static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}
-
-};
-
-#if 0
-CPmReportPage: public CPmDocSumPage
+inline CCgiApplication* CHTMLBasicPage::GetApplication(void)
 {
- public:
-    virtual void InitMembers(int);
-    virtual void InitSubPages(int Style);
-    virtual void Finish(int Style);
-    virtual CHTMLNode * CreateView(void);
+    return m_CgiApplication;
+}
 
-    CPmReportPage();
-    static CHTMLBasicPage * New(void) { return new CPmReportPage;}
-};
-#endif /* 0 */
+inline int CHTMLBasicPage::GetStyle(void) const
+{
+    return m_Style;
+}
 
-END_NCBI_SCOPE
-#endif
+#endif /* def PAGE__HPP  &&  ndef PAGE__INL */

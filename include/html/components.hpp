@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/21 22:24:55  vasilche
+* A lot of cleaning.
+*
 * Revision 1.6  1998/12/11 22:53:39  lewisg
 * added docsum page
 *
@@ -60,13 +63,16 @@
 BEGIN_NCBI_SCOPE
 
 
-class CQueryBox: public CHTMLBasicPage 
+class CQueryBox: public CHTML_form
 {
+    // parent class
+    typedef CHTML_form CParent;
+
 public:
 
-    virtual void InitMembers(int Style = 0);
-    virtual void InitSubPages(int Style = 0);
-    virtual void Finish(int Style = 0);
+    //////// 'tors
+
+    CQueryBox(const string& URL = NcbiEmptyString);
 
     ////////  members
 
@@ -86,43 +92,66 @@ public:
 
     //////// subpages
 
-    virtual CHTMLNode * CreateComments(void);
-    CHTMLNode * m_Comments;  // extra comments
+    virtual void CreateSubNodes(void);
+    virtual CNCBINode* CreateComments(void);
 
-    //////// 'tors
-
-    CQueryBox();
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
 };
 
 
 // makes a button followed by a drop down
 
-class CButtonList: public CHTMLBasicPage
+class CButtonList: public CHTML_form
 {
+    // parent class
+    typedef CHTML_form CParent;
+
 public:
-    string m_Name;  // button name
+    CButtonList(void);
+
     string m_Select;  // select tag name
     map < string, string > m_List;
-    virtual void Finish(int);
+
+    virtual void CreateSubNodes(void);
+
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
 };
 
 
 // makes a set of pagination links
 
-class CPageList: public CHTMLBasicPage
+class CPageList: public CHTML_form
 {
+    // parent class
+    typedef CHTML_form CParent;
+
 public:
+    CPageList(void);
+
     map < int, string > m_Pages; // number, href
     string m_Forward; // forward url
     string m_Backward; // backward url
-    virtual void Finish(int);
 
+    virtual void CreateSubNodes(void);
+
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
 };
 
 
-class CPagerBox: public CHTMLBasicPage
+class CPagerBox: public CHTML_form
 {
+    // parent class
+    typedef CHTML_form CParent;
+
 public:
+    CPagerBox(void);
+
     int m_Width; // in pixels
     CButtonList * m_TopButton;  // display button
     CButtonList * m_LeftButton; // save button
@@ -130,24 +159,31 @@ public:
     CPageList * m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
-    virtual void InitMembers(int Style = 0);
-    virtual void Finish(int Style = 0);
+    virtual void CreateSubNodes(void);
 
-    CPagerBox();
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
 };
 
 
-class CSmallPagerBox: public CHTMLBasicPage
+class CSmallPagerBox: public CHTML_form
 {
+    // parent class
+    typedef CHTML_form CParent;
+
 public:
+    CSmallPagerBox(void);
+
     int m_Width; // in pixels
     CPageList * m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
-    virtual void InitMembers(int Style = 0);
-    virtual void Finish(int Style = 0);
+    virtual void CreateSubNodes(void);
 
-    CSmallPagerBox();
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
 };
 
 

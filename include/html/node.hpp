@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/21 22:24:57  vasilche
+* A lot of cleaning.
+*
 * Revision 1.3  1998/11/23 23:47:50  lewisg
 * *** empty log message ***
 *
@@ -55,19 +58,78 @@ BEGIN_NCBI_SCOPE
 class CNCBINode
 {
 public:    
-    list<CNCBINode *>::iterator ChildBegin(void) { return m_ChildNodes.begin(); }
-    list<CNCBINode *>::iterator ChildEnd(void) { return m_ChildNodes.end(); }
-    virtual CNCBINode * InsertBefore(CNCBINode * newChild, CNCBINode * refChild);  // adds a child to the child list at iterator.
-    virtual CNCBINode * AppendChild(CNCBINode *);  // add a Node * to the end of m_ChildNodes
-    CNCBINode(void) { m_ParentNode = NULL; }
-    virtual ~CNCBINode(); 
+    typedef list<CNCBINode*> TChildList;
+    typedef map<string, string> TAttributes;
+
+    // 'structors
+    CNCBINode(void);
+    CNCBINode(const string& name);
+    virtual ~CNCBINode();
+ 
     // need to include explicit copy and assignment op.  I don't think the child list should be copied, nor parent.
 
+    TChildList::iterator ChildBegin(void);
+    TChildList::iterator ChildEnd(void);
+    TChildList::const_iterator ChildBegin(void) const;
+    TChildList::const_iterator ChildEnd(void) const;
+
+    // removes a child
+    CNCBINode* RemoveChild(CNCBINode* child);
+    // adds a child to the child list at iterator.
+    // returns inserted child
+    CNCBINode* InsertBefore(CNCBINode* newChild, CNCBINode* refChild);
+    // add a Node * to the end of m_ChildNodes
+    // returns inserted child
+    CNCBINode* AppendChild(CNCBINode* child);
+    // finds child's iterator
+    TChildList::iterator FindChild(CNCBINode* child);
+
+    virtual CNcbiOstream& Print(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out);
+
+    // this method will be called when printing and "this" node doesn't
+    // contain any children
+    virtual void CreateSubNodes(void);
+    // finds and replaces text with a node    
+    virtual CNCBINode* MapTag(const string& tagname);
+
+    const string& GetName(void) const;
+    void SetName(const string& namein);
+    string GetAttribute(const string& name) const;
+    void SetAttribute(const string& name, const string& value);
+    void SetAttribute(const string& name);
+    void SetAttribute(const string& name, int value);
+    void SetOptionalAttribute(const string& name, const string& value);
+    void SetOptionalAttribute(const string& name, bool set);
+    void SetOptionalAttribute(const char* name, const string& value);
+    void SetOptionalAttribute(const char* name, bool set);
+
+    // clone whole node tree
+    CNCBINode* Clone() const;
+
 protected:
-    list<CNCBINode *> m_ChildNodes;  // Child nodes.
-    CNCBINode * m_ParentNode;
-    list<CNCBINode *>::iterator m_SelfIter;  // points to self in *parent's* m_ChildNodes list.
+    TChildList m_ChildNodes;  // Child nodes.
+    CNCBINode* m_ParentNode;  // Parent node (or null).
+
+    bool m_Initialized;
+
+    string m_Name; // node name
+
+    TAttributes m_Attributes; // attributes, e.g. href="link.html"
+
+    // Support for cloning
+    void CloneChildrenTo(CNCBINode* copy) const;
+    virtual CNCBINode* CloneSelf() const;
+    CNCBINode(const CNCBINode& origin);
+
+private:
+    void DetachFromParent();
 };
+
+// inline functions are defined here:
+#include <node.inl>
 
 END_NCBI_SCOPE
 #endif
