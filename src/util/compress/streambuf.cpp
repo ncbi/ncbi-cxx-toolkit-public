@@ -29,9 +29,9 @@
  *
  */
 
-#include <memory>
 #include "streambuf.hpp"
 #include <util/compress/stream.hpp>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -450,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/09/25 17:51:08  dicuccio
+ * Reordered headers to avoid compilation warning on MSVC
+ *
  * Revision 1.7  2003/07/15 15:52:50  ivanov
  * Added correct handling end of stream state.
  *
