@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.300 2004/05/13 18:18:28 ucko Exp $
+#  $Id: configure.ac,v 1.301 2004/05/14 15:18:13 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2247,7 +2247,7 @@ if test -z "$Z_LIBS"; then
    Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
    # Z_LIBS="-lz"
    Z_LIB="z"
-   AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
+   # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
    WithPackages="$WithPackages Z LocalZ"
    WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ Z//'`
 fi

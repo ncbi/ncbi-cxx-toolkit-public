@@ -14634,11 +14634,7 @@ echo "$as_me: using local copy in $zlocal" >&6;}
    Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
    # Z_LIBS="-lz"
    Z_LIB="z"
-
-cat >>confdefs.h <<\_ACEOF
-#define USE_LOCAL_ZLIB 1
-_ACEOF
-
+   # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
    WithPackages="$WithPackages Z LocalZ"
    WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ Z//'`
 fi
