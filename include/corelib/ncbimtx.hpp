@@ -121,13 +121,6 @@ typedef HANDLE TSystemMutex;
 /// The CThreadSystemID is based on the platform dependent thread ID type,
 /// TThreadSystemID, defined in ncbithr_conf.hpp.
 
-#if defined(NCBI_COMPILER_MSVC)
-// MS VC compiler warns about legal two assignment operators (with and without volatile).
-// Without second assignment operator it doesn't compile the code. :-(
-# pragma warning(push)
-# pragma warning(disable : 4522)
-#endif
-
 class NCBI_XNCBI_EXPORT CThreadSystemID
 {
 public:
@@ -156,17 +149,9 @@ public:
             m_ID = id.m_ID;
             return *this;
         }
-    void operator=(const volatile CThreadSystemID& id) volatile
-        {
-            m_ID = id.m_ID;
-        }
 
     /// Equality operator for thread ID.
     bool operator==(const CThreadSystemID& id) const
-        {
-            return m_ID == id.m_ID;
-        }
-    bool operator==(const volatile CThreadSystemID& id) const volatile
         {
             return m_ID == id.m_ID;
         }
@@ -176,15 +161,22 @@ public:
         {
             return m_ID != id.m_ID;
         }
-    bool operator!=(const volatile CThreadSystemID& id) const volatile
+
+    /// volatile versions of above methods
+    void Set(const CThreadSystemID& id) volatile
+        {
+            m_ID = id.m_ID;
+        }
+    bool Is(const CThreadSystemID& id) const volatile
+        {
+            return m_ID == id.m_ID;
+        }
+    bool IsNot(const CThreadSystemID& id) const volatile
         {
             return m_ID != id.m_ID;
         }
 };
 
-#if defined(NCBI_COMPILER_MSVC)
-# pragma warning(pop)
-#endif
 
 /// Use in defining initial value of system mutex.
 #define THREAD_SYSTEM_ID_INITIALIZER { 0 }
@@ -1002,7 +994,7 @@ public:
     /// Get the RW-lock being guarded.
     CRWLock* GetRW(void) const { return m_RW; }
 
-private:
+protected:
     CRWLock* m_RW;  /// The RW-lock -- NULL if not acquired.
 
     /// Private copy constructor to disallow initialization.
@@ -1029,6 +1021,15 @@ public:
     /// destructor.
     CReadLockGuard(CRWLock& rw) : CAutoRW(rw) { GetRW()->ReadLock(); }
 
+    void Guard(CRWLock& rw)
+        {
+            if ( &rw != m_RW ) {
+                Release();
+                rw.ReadLock();
+                m_RW = &rw;
+            }
+        }
+
 private:
     /// Private copy constructor to disallow initialization.
     CReadLockGuard(const CReadLockGuard&);
@@ -1053,6 +1054,15 @@ public:
     /// Acquire the W-lock;  register it to be released by the guard
     /// destructor.
     CWriteLockGuard(CRWLock& rw) : CAutoRW(rw) { GetRW()->WriteLock(); }
+
+    void Guard(CRWLock& rw)
+        {
+            if ( &rw != m_RW ) {
+                Release();
+                rw.WriteLock();
+                m_RW = &rw;
+            }
+        }
 
 private:
     /// Private copy constructor to disallow initialization.
@@ -1127,6 +1137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/09/17 17:56:46  vasilche
+ * Fixed volatile methods of CThreadSystemID.
+ *
  * Revision 1.27  2003/09/17 15:20:45  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.

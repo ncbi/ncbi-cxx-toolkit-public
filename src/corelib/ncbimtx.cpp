@@ -170,7 +170,7 @@ void SSystemMutex::Lock(void)
     m_Mutex.CheckInitialized();
 
     CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && owner == m_Owner ) {
+    if ( m_Count > 0 && m_Owner.Is(owner) ) {
         // Don't lock twice, just increase the counter
         m_Count++;
         return;
@@ -179,7 +179,7 @@ void SSystemMutex::Lock(void)
     // Lock the mutex and remember the owner
     m_Mutex.Lock();
     _ASSERT(m_Count == 0);
-    m_Owner = owner;
+    m_Owner.Set(owner);
     m_Count = 1;
 }
 
@@ -188,7 +188,7 @@ bool SSystemMutex::TryLock(void)
     m_Mutex.CheckInitialized();
 
     CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && owner == m_Owner ) {
+    if ( m_Count > 0 && m_Owner.Is(owner) ) {
         // Don't lock twice, just increase the counter
         m_Count++;
         return true;
@@ -197,7 +197,7 @@ bool SSystemMutex::TryLock(void)
     // If TryLock is successful, remember the owner
     if ( m_Mutex.TryLock() ) {
         _ASSERT(m_Count == 0);
-        m_Owner = owner;
+        m_Owner.Set(owner);
         m_Count = 1;
         return true;
     }
@@ -213,7 +213,7 @@ void SSystemMutex::Unlock(void)
     // No unlocks by threads other than owner.
     // This includes no unlocks of unlocked mutex.
     CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count == 0 || owner != m_Owner ) {
+    if ( m_Count == 0 || m_Owner.IsNot(owner) ) {
         ThrowNotOwned();
     }
 
@@ -460,7 +460,7 @@ void CRWLock::ReadLock(void)
     CFastMutexGuard guard(m_RW->m_Mutex);
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
     if ( m_Count < 0 ) {
-        if ( m_Owner == self_id ) {
+        if ( m_Owner.Is(self_id) ) {
             // if W-locked by the same thread - update W-counter
             m_Count--;
         }
@@ -539,7 +539,7 @@ bool CRWLock::TryReadLock(void)
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if (m_Count < 0) {
-        if (m_Owner != self_id) {
+        if ( m_Owner.IsNot(self_id) ) {
             // W-locked by another thread
             return false;
         }
@@ -577,7 +577,7 @@ void CRWLock::WriteLock(void)
     CFastMutexGuard guard(m_RW->m_Mutex);
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
-    if (m_Count < 0 && m_Owner == self_id) {
+    if ( m_Count < 0 && m_Owner.Is(self_id) ) {
         // W-locked by the same thread
         m_Count--;
     }
@@ -625,7 +625,7 @@ void CRWLock::WriteLock(void)
         xncbi_Validate(m_Count >= 0,
                        "CRWLock::WriteLock() - invalid readers counter");
         m_Count = -1;
-        m_Owner = self_id;
+        m_Owner.Set(self_id);
     }
 
     // No readers allowed
@@ -645,7 +645,7 @@ bool CRWLock::TryWriteLock(void)
 
     if ( m_Count < 0 ) {
         // W-locked
-        if ( m_Owner != self_id ) {
+        if ( m_Owner.IsNot(self_id) ) {
             // W-locked by another thread
             return false;
         }
@@ -671,7 +671,7 @@ bool CRWLock::TryWriteLock(void)
                        "error locking R&W-semaphores");
 #endif
         m_Count = -1;
-        m_Owner = self_id;
+        m_Owner.Set(self_id);
     }
 
     // No readers allowed
@@ -693,7 +693,7 @@ void CRWLock::Unlock(void)
 
     if (m_Count < 0) {
         // Check it is R-locked or W-locked by the same thread
-        xncbi_Validate(m_Owner == self_id,
+        xncbi_Validate(m_Owner.Is(self_id),
                        "CRWLock::Unlock() - "
                        "RWLock is locked by another thread");
         if ( ++m_Count == 0 ) {
@@ -1027,6 +1027,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/17 17:56:47  vasilche
+ * Fixed volatile methods of CThreadSystemID.
+ *
  * Revision 1.13  2003/09/17 15:20:46  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
