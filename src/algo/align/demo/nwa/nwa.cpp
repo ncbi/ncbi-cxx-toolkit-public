@@ -43,7 +43,7 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment demo application.\n"
-                              "Build 1.00.15 - 05/02/03");
+                              "Build 1.00.16 - 05/23/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -107,6 +107,11 @@ void CAppNWA::Init()
         ("Wi2", "intron2", "type 2 (AT/AC) intron weight",
          CArgDescriptions::eInteger,
          NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(2)).c_str());
+
+    argdescr->AddDefaultKey
+        ("Wi3", "intron3", "type 3 (arbitrary splice) intron weight",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(3)).c_str());
 
     int intron_min_size = CNWAlignerMrna2Dna::GetDefaultIntronMinSize();
     argdescr->AddDefaultKey
@@ -269,6 +274,7 @@ void CAppNWA::x_RunOnPair() const
         aligner_mrna2dna->SetWi (0, args["Wi0"]. AsInteger());
         aligner_mrna2dna->SetWi (1, args["Wi1"]. AsInteger());
         aligner_mrna2dna->SetWi (2, args["Wi2"]. AsInteger());
+        aligner_mrna2dna->SetWi (3, args["Wi3"]. AsInteger());
 
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
 
@@ -400,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/05/23 18:28:27  kapustin
+ * Introduce new (generic) splice type
+ *
  * Revision 1.18  2003/05/06 20:27:30  kapustin
  * Specify guide size in command line argument
  *
