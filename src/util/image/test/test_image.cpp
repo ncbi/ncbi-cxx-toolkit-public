@@ -38,6 +38,7 @@
 #include <corelib/ncbitime.hpp>
 
 #include <util/image/image_io.hpp>
+#include <util/image/image_util.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -229,6 +230,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/16 12:04:14  dicuccio
+ * Added include for image_util.hpp
+ *
  * Revision 1.3  2004/05/17 21:08:10  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
