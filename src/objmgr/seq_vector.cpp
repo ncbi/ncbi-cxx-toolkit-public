@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/04/26 14:37:21  grichenk
+* Limited CSeqVector cache size
+*
 * Revision 1.15  2002/04/25 18:14:47  grichenk
 * e_not_set coding gap symbol set to 0
 *
@@ -249,11 +252,30 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void)
 }
 
 
+const int kCacheSize = 65536;
+
+
 CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
 {
-    if (m_CachedPos < 0  ||  m_CachedLen <= 0) {
-        m_CachedPos = m_CurData.dest_start;
-        m_CachedLen = m_CurData.length;
+    // The cache must be initialized and include the point requested
+    if (m_CachedPos < 0  ||  m_CachedLen <= 0  ||
+        m_CachedPos > pos  ||  m_CachedPos+m_CachedLen <= pos) {
+        // Select cache position and length to cover maximum of
+        // kCacheSize*2 characters around pos.
+        m_CachedPos = pos - kCacheSize;
+        int cend = m_CachedPos + kCacheSize*2;
+        if (m_CachedPos < m_CurData.dest_start) {
+            m_CachedPos = m_CurData.dest_start;
+            cend = m_CachedPos + kCacheSize*2;
+        }
+        if (cend > m_CurData.dest_start + m_CurData.length) {
+            cend = m_CurData.dest_start + m_CurData.length;
+            m_CachedPos = cend - kCacheSize*2;
+            if (m_CachedPos < m_CurData.dest_start)
+                m_CachedPos = m_CurData.dest_start;
+        }
+        m_CachedLen = cend - m_CachedPos;
+        int src_start = m_CurData.src_start + m_CachedPos - m_CurData.dest_start;
         if (!m_CurData.src_data) {
             // No data - fill with the gap symbol
             m_CachedData = string(m_CachedLen, GetGapChar());
@@ -262,7 +284,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             // Prepare real data
             CConstRef<CSeq_data> out;
 
-            TSeqPosition start = m_CurData.src_start;
+            TSeqPosition start = src_start;
 
             if (m_CurData.src_data->Which() == m_Coding  ||
                 m_Coding == CSeq_data::e_not_set) {
@@ -272,7 +294,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 CSeq_data* tmp = new CSeq_data;
                 out.Reset(tmp);
                 CSeqportUtil::Convert(*m_CurData.src_data, tmp,
-                    m_Coding, m_CurData.src_start, m_CurData.length);
+                    m_Coding, src_start, m_CachedLen);
                 // Adjust starting position
                 start = 0;
             }
@@ -375,7 +397,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             //out.Release();
         }
     }
-    return m_CachedData[pos - m_CurData.dest_start];
+    return m_CachedData[pos - m_CachedPos];
 }
 
 
