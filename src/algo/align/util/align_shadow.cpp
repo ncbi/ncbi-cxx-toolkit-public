@@ -118,11 +118,11 @@ CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
 
     double matches;
     seq_align.GetNamedScore("num_ident", matches);
-    m_Identity = matches / m_Length;
+    m_Identity = float(matches / m_Length);
 
     double score;
     seq_align.GetNamedScore("bit_score", score);
-    m_Score = score;
+    m_Score = float(score);
 
     double evalue;
     seq_align.GetNamedScore("sum_e", evalue);
@@ -188,9 +188,9 @@ void CAlignShadow<TId>::x_InitFromString(const char* str)
     
     if(!iss.bad()) {
 
-        m_Identity = identity100 / 100;
+        m_Identity = float(identity100 / 100.0);
         m_EValue = evalue;
-        m_Score = score;
+        m_Score = float(score);
 
         m_Strand[0] = a <= b;
 
@@ -556,7 +556,7 @@ CNcbiOstream& operator<< (
 template<class TId>
 void CAlignShadow<TId>::x_Ser(CNcbiOstream& os) const
 {
-    const float identity100 = 100.0 * m_Identity;
+    const float identity100 = 100.0f * m_Identity;
     os << identity100 << '\t'   << m_Length << '\t'
        << m_Mismatches << '\t' << m_Gaps   << '\t';
     
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.3  2004/12/22 15:55:53  kapustin
+ * A few type conversions to make msvc happy
+ *
  * Revision 1.2  2004/12/21 21:27:42  ucko
  * Don't explicitly instantiate << for CConstRef<CSeq_id>, for which it
  * has instead been specialized.
