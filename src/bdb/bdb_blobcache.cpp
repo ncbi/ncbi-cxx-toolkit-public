@@ -422,7 +422,8 @@ CBDB_Cache::CBDB_Cache()
   m_Env(0),
   m_CacheDB(0),
   m_CacheAttrDB(0),
-  m_VersionFlag(eDropOlder)
+  m_VersionFlag(eDropOlder),
+  m_PageSizeHint(eLargePage)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -540,7 +541,17 @@ void CBDB_Cache::Open(const char* cache_path,
     m_CacheDB->SetEnv(*m_Env);
     m_CacheAttrDB->SetEnv(*m_Env);
 
-    m_CacheDB->SetPageSize(32 * 1024);
+    switch (m_PageSizeHint)
+    {
+    case eLarge:
+        m_CacheDB->SetPageSize(32 * 1024);
+        break;
+    case eSmall:
+        // nothing to do
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
 
     string cache_db_name = 
        string("lcs_") + string(cache_name) + string(".db");
@@ -1731,6 +1742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2004/08/24 15:04:51  kuznets
+ * Improved page size control
+ *
  * Revision 1.69  2004/08/24 14:07:44  kuznets
  * Reworked cache join machamism, no PID lock when join is successfull + remove env on shutdown
  *
