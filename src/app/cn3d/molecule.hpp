@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
 * Revision 1.16  2000/11/30 15:49:08  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -147,7 +150,7 @@ public:
     };
     std::vector < eSecStruc > residueSecondaryStructures;
     std::vector < int > residueDomains;
-    std::list < int > domainIDs;
+    int nDomains;
 
     // corresponding sequence (if present)
     const Sequence *sequence;

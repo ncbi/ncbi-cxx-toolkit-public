@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
 * Revision 1.31  2000/11/30 15:49:09  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -168,7 +171,8 @@ public:
 
     // public data
     const bool isMultipleStructure;
-    bool isAlphaOnly; // assume if one Object is alpha-only, then they all are
+    bool isAlphaOnly;   // assume if one Object is alpha-only, then they all are
+    int nDomains;       // total number of domains over all objects
 
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
@@ -247,7 +251,7 @@ public:
     // public data
 
     static const int NO_MMDB_ID;
-    int mmdbID;
+    int id, mmdbID;
     std::string pdbID;
     Matrix *transformToMaster;
 
@@ -278,6 +282,7 @@ private:
 public:
     bool IsMaster(void) const { return isMaster; }
     bool IsSlave(void) const { return !isMaster; }
+    int NDomains(void) const { return domainMap.size(); }
 };
 
 END_SCOPE(Cn3D)

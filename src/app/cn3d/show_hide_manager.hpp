@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
 * Revision 1.3  2000/08/17 18:32:37  thiessen
 * minor fixes to StyleManager
 *
@@ -47,6 +50,10 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <map>
+
+#include "cn3d/structure_base.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -58,12 +65,17 @@ public:
     // eventually this will be tied to a GUI element or something...
     bool OverlayConfEnsembles(void) const { return true; }
 
-    // eventually these will actually do something, too...
-    bool IsResidueHidden(const Residue *residue) const;
-    bool IsResidueVisible(const Residue *residue) const
-        { return !IsResidueHidden(residue); }    
+    // set show/hide status of an entity - must be StructureObject, Molecule, or Residue.
+    void Show(const StructureBase *entity, bool isShown);
+
+    // query whether an entity is visible
+    bool IsHidden(const StructureBase *entity) const;
+    bool IsVisible(const StructureBase *entity) const
+        { return !IsHidden(entity); }
 
 private:
+    typedef std::map < const StructureBase *, bool > EntitiesHidden;
+    EntitiesHidden entitiesHidden;
 };
 
 END_SCOPE(Cn3D)

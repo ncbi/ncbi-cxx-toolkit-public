@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
 * Revision 1.1  2000/11/30 15:49:07  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -50,21 +53,30 @@ public:
     Colors(void);
 
     enum eColor {
+        // individual colors
         eHighlight = 0,
         eHelix,
         eStrand,
         eCoil,
+        eNumColors,
 
-        eNumColors  // must be last
+        // color cycles
+        eCycle1
     };
 
 private:
-    // actual color storage
+    // storage for individual colors
     Vector colors[eNumColors];
+
+    // storage for color cycles
+    enum {
+        nCycle1 = 10
+    };
+    Vector cycle1[nCycle1];
 
 public:
     // color accessors
-    const Vector& Get(eColor which) const { return colors[which]; }
+    const Vector& Get(eColor which, int n = 0) const;
 };
 
 END_SCOPE(Cn3D)

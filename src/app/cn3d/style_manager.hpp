@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
 * Revision 1.17  2000/10/16 14:25:20  thiessen
 * working alignment fit coloring
 *
@@ -132,6 +135,7 @@ public:
         eElement,
         eObject,
         eMolecule,
+        eDomain,
         eSecondaryStructure,
         eUserSelect,
 
@@ -149,23 +153,23 @@ public:
         eColorScheme colorScheme;
         Vector userColor;
     } BackboneStyle;
-    
+
     typedef struct {
         bool isOn;
         eDrawingStyle style;
         eColorScheme colorScheme;
         Vector userColor;
     } GeneralStyle;
-    
+
     BackboneStyle proteinBackbone, nucleotideBackbone;
 
-    GeneralStyle 
+    GeneralStyle
         proteinSidechains, nucleotideSidechains,
         heterogens,
         solvents,
         connections,
         helixObjects, strandObjects;
-    
+
     bool hydrogensOn;
 
     double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
