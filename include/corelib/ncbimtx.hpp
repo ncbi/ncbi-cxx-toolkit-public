@@ -38,6 +38,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/04/16 18:45:28  vakatov
+ * Do not include system MT-related headers if in single-thread mode
+ *
  * Revision 1.3  2001/03/26 22:50:24  grichenk
  * Fixed CFastMutex::Unlock() bug
  *
@@ -57,21 +60,16 @@
 #if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define NCBI_WIN32_THREADS
+#    include <windows.h>
 #  elif defined(NCBI_OS_UNIX)
 #    define NCBI_POSIX_THREADS
+#    include <pthread.h>
+#    include <sys/errno.h>
 #  else
 #    define NCBI_NO_THREADS
 #  endif
 #else
 #  define NCBI_NO_THREADS
-#endif
-
-
-#if defined(NCBI_WIN32_THREADS)
-#  include <windows.h>
-#elif defined(NCBI_POSIX_THREADS)
-#  include <pthread.h>
-#  include <sys/errno.h>
 #endif
 
 
