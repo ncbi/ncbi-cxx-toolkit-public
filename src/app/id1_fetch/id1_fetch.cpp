@@ -75,7 +75,11 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#if 1
+#include <objects/flat/flat_ncbi_formatter.hpp>
+#else
 #include <objects/util/genbank.hpp>
+#endif
 #include <objects/util/sequence.hpp>
 
 #include <memory>
@@ -522,14 +526,21 @@ bool CId1FetchApp::LookUpGI(int gi)
         out.Write(handle);
     } else if (fmt == "quality") {
         WriteQualityScores(handle);
-    } else if (fmt == "genbank") {
+    } else if (fmt == "genbank"  ||  fmt == "genpept") {
+        bool gp = fmt == "genpept";
         const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+#if 1
+        CFlatNCBIFormatter formatter(*new CFlatTextOStream(cout), *m_Scope,
+                                     IFlatFormatter::eMode_Entrez);
+        formatter.Format(entry, formatter,
+                         gp ? IFlatFormatter::fSkipNucleotides
+                         : IFlatFormatter::fSkipProteins);
+#else
         CGenbankWriter(*m_OutputFile, *m_Scope,
-                       CGenbankWriter::eFormat_Genbank).Write(entry);
-    } else if (fmt == "genpept") {
-        const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
-        CGenbankWriter(*m_OutputFile, *m_Scope,
-                       CGenbankWriter::eFormat_Genpept).Write(entry);
+                       gp ? CGenbankWriter::eFormat_Genpept
+                       : CGenbankWriter::eFormat_Genbank)
+            .Write(entry);
+#endif
     }
 
     if (reply_object.NotEmpty()  &&  format != eSerial_None) {
@@ -552,22 +563,6 @@ void CId1FetchApp::Exit(void)
 {
     SOCK_ShutdownAPI();
     SetDiagStream(0);
-}
-
-
-static vector<string> s_SplitString(const string& s, char delimiter)
-{
-    vector<string> pieces;
-    SIZE_TYPE pos, start = 0;
-
-    do {
-        pos = s.find(delimiter, start);
-        pieces.push_back(s.substr(start, pos - start));
-        _TRACE("SplitString: got piece " << pieces.back());
-        start = pos + 1;
-    } while (pos != NPOS);
-
-    return pieces;
 }
 
 
@@ -594,7 +589,8 @@ int CId1FetchApp::LookUpFlatSeqID(const string& s)
     {
         data.erase(data.end() - 1);
         // remove last character, which should be ')'
-        vector<string> pieces = s_SplitString(data, ',');
+        vector<string> pieces;
+        NStr::Tokenize(data, ",", pieces);
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
         return m_ID1Client.AskGetgi(CSeq_id(type, pieces[1], pieces[0],
@@ -742,6 +738,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/04/03 17:45:25  ucko
+* Switch to new (differently buggy ;-)) flat-file generator.
+* Drop s_SplitString, as NStr::Tokenize does the same thing.
+*
 * Revision 1.40  2003/03/10 18:48:48  kuznets
 * iterate->ITERATE
 *
