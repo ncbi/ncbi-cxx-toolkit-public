@@ -551,9 +551,42 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
     str->clear();
     char ch;
     EIO_Status io_st;
-    size_t  bytes_read;
     unsigned loop_cnt = 0;
 
+    char szBuf[1024] = {0,};
+    unsigned str_len = 0;
+    size_t n_read = 0;
+
+    for (bool flag = true; flag; ) {
+        io_st = sock.Read(szBuf, 256, &n_read, eIO_ReadPeek);
+        switch (io_st) 
+        {
+        case eIO_Success:
+            flag = false;
+            break;
+        case eIO_Timeout:
+            // TODO: add repetition counter or another protector here
+            break;
+        default: // invalid socket or request, bailing out
+            return false;
+        };
+    }
+
+    for (str_len = 0; str_len < n_read; ++str_len) {
+        ch = szBuf[str_len];
+        if (ch == 0 || ch == '\n' || ch == 13) {
+            break;
+        }
+        *str += ch;
+    }
+
+    if (str_len == 0) {
+        return false;
+    }
+    io_st = sock.Read(szBuf, str_len + 1);
+    return true;
+
+/*
     do {
         do {
             io_st = sock.Read(&ch, 1, &bytes_read);
@@ -578,6 +611,7 @@ out_of_loop:
     } while (str->empty());
 
     return true;
+*/
 
 }
 
@@ -743,6 +777,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/19 18:20:26  kuznets
+ * Use ReadPeek to avoid net delays
+ *
  * Revision 1.7  2004/10/19 15:53:36  kuznets
  * Code cleanup
  *
