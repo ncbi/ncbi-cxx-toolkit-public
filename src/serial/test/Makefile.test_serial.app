@@ -10,7 +10,9 @@ APP = serialtest
 OBJ = serialobject testserial webenv
 LIB = xser xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE) \
-	-I$(top_srcdir)/src/internal/webenv/asn
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  $(NCBI_C_INCLUDE) \
+  -I$(top_srcdir)/src/internal/webenv/asn
 
-LIBS = -L$(NCBI_C_LIB) -lncbi $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) -lncbi \
+  $(ORIG_LIBS)

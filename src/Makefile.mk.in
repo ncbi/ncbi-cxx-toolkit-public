@@ -31,7 +31,7 @@ incdir      = @incdir@
 libdir      = @libdir@
 bindir      = @bindir@
 
-STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/$(INTERNAL)
+STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/internal
 
 
 ### Auxiliary commands
@@ -104,7 +104,7 @@ LIBS     = $(CONF_LIBS)
 ### Do not use any default suffix rules
 .SUFFIXES:
 
-### Use automatic auto-dependencies(SunOS make, .KEEP_STATE:)
+### Use automatic auto-dependencies (SunOS make, .KEEP_STATE:)
 @KeepStateTarget@
 
 
@@ -119,24 +119,25 @@ NETWORK_LIBS = @NETWORK_LIBS@
 # (see in "configure.in" for the pre-set defaults)
 #
 
-# Path to the Sybase package
-SYBASE_PATH = @SYBASE_PATH@
+# Sybase:  headers and libs
+SYBASE_INCLUDE = @SYBASE_INCLUDE@
+SYBASE_LIBS    = @SYBASE_LIBS@
+
+# NCBI C Toolkit:  headers and path to the libs
+NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
+NCBI_C_LIBPATH = @NCBI_C_LIBPATH@
+
+# Fast-CGI lib:  headers and libs
+FASTCGI_INCLUDE = @FASTCGI_INCLUDE@
+FASTCGI_LIBS    = @FASTCGI_LIBS@
+# Fast-CGI lib:  (module to add to the "xcgi" library)
+FASTCGI_OBJS    = @FASTCGI_OBJS@
+
+# NCBI SSS DB:  headers and libs
+NCBI_SSSDB_INCLUDE = @NCBI_SSSDB_INCLUDE@
+NCBI_SSSDB_LIBS    = @NCBI_SSSDB_LIBS@
 
 # Path to the root of PubMed tree -- sources, headers and precompiled libs
-PM_PATH = @PM_PATH@
-
-# Path to the NCBI C toolkit headers
-NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
-# Path to the precompiled NCBI C toolkit libs
-NCBI_C_LIB = @NCBI_C_LIB@
-
-# Path to the SSS DB headers
-NCBI_SSS_INCLUDE = @NCBI_SSS_INCLUDE@
-# Path to the precompiled SSS DB libs
-NCBI_SSS_LIB = @NCBI_SSS_LIB@
-
-# Fast-CGI lib(external) and C++ modules(internal)
-FASTCGI_LIBS = @FASTCGI_LIBS@
-FASTCGI_OBJS = @FASTCGI_OBJS@
+NCBI_PM_PATH = @NCBI_PM_PATH@
 
 #################################

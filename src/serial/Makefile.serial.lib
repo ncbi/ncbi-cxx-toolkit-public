@@ -3,16 +3,14 @@
 # Build library "XSER"
 #################################
 
-LIBOBJ = typeref typeinfo stdtypes \
-	ptrinfo autoptrinfo choiceptr \
-	member memberid memberlist \
-	stltypes \
-	asntypes classinfo \
-	objistr objostr objlist \
-	objistrb objostrb \
-	objostrasn objistrasn \
-	objostrasnb objistrasnb \
-	rtti
+LIBOBJ = \
+  typeref typeinfo stdtypes ptrinfo autoptrinfo choiceptr \
+  member memberid memberlist \
+  stltypes \
+  asntypes classinfo \
+  objistr objostr objlist objistrb objostrb \
+  objostrasn objistrasn objostrasnb objistrasnb \
+  rtti
 LIB    = xser
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)

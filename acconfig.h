@@ -25,8 +25,20 @@
 /* "auto_ptr" template class is not implemented in <memory> */
 #undef HAVE_NO_AUTO_PTR
 
+/* SYBASE libraries are available */
+#undef HAVE_LIBSYBASE
+
+/* NCBI C Toolkit libs are available */
+#undef HAVE_NCBI_C
+
 /* Fast-CGI library is available */
 #undef HAVE_LIBFASTCGI
+
+/* NCBI SSS DB library is available */
+#undef HAVE_LIBSSSDB
+
+/* NCBI PubMed libraries are available */
+#undef HAVE_PUBMED
 
 /* New C++ streams dont have ios_base:: */
 #undef HAVE_NO_IOS_BASE

@@ -33,10 +33,8 @@
 #    2) Run the resultant "configure" script to produce
 #      a) "ncbiconf.h"
 #      a) "Makefile"s
-#    NOTE:  "--exec_prefix" flag must be specified by the user!
 #
 #############################################################################
-
 
 AC_INIT(include/corelib/ncbitype.h)
 
@@ -44,13 +42,177 @@ AC_INIT(include/corelib/ncbitype.h)
 #############################################################################
 
 
-#### Check if "${exec_prefix}" dir is defined
+#### Get the running host's properties
+AC_CANONICAL_HOST
+AC_DEFINE_UNQUOTED(HOST,        "$host")
+AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
+AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
+AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
+
+
+#### C and C++ compilers
+AC_LANG_CPLUSPLUS
+AC_PROG_CC
+AC_PROG_CXX
+
+
+#### Detect supported compilers
+changequote(<<, >>)dnl
+compiler=
+if test "$GCC" = "yes" ; then
+   case "`$CXX --version`" in
+    2\.95* ) compiler="GCC" ;;
+    egcs-2\.91\.* )
+      case "$host" in
+       i*86*-pc-cygwin32 ) compiler="EGCS" ;;
+      esac ;;
+   esac
+else
+   case "$host" in
+    sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[67] )
+      case "`$CXX -V 2>&1`" in
+        *WorkShop*Compilers*5\.*)  compiler="WorkShop5" ;;
+      esac ;;
+
+    mips-sgi-irix6\.* )
+      case "`$CXX -version 2>&1`" in
+        MIPSpro*Compilers:*Version*7\.3 )  compiler="MIPSpro73" ;;
+      esac ;;
+
+    i*86*-pc-cygwin32 )
+      case "$CXX" in
+        *cl\.exe* | cl)  compiler="MSVC" ;; 
+      esac ;;
+   esac
+fi
+changequote([, ])dnl
+
+
+#### Use full path to the compiler, if safe
+set $CC
+x_CC="`which $1`"
+if test -x "$x_CC" ; then
+  shift
+  CC="$x_CC $*"
+  echo "Adjusted C   compiler: $CC"
+fi
+x_CC=
+
+set $CXX
+x_CXX="`which $1`"
+if test -x "$x_CXX" ; then
+  shift
+  CXX="$x_CXX $*"
+  echo "Adjusted C++ compiler: $CXX"
+fi
+x_CXX=
+
+
+#### Check if the compiler matches one of the supported compilers
+if test -z "$compiler" ; then
+  AC_MSG_ERROR(Compiler $CXX is not supported. Consult doc/config.html-ref_Compilers for the list of supported platforms/compilers.)
+fi
+
+
+#### Provide default environment setup for known platforms/compilers
+compiler_extra=
+case "$host:$compiler" in
+ *-linux:GCC )
+   NETWORK_LIBS=${NETWORK_LIBS:=" "}
+   ;;
+
+ *-osf1*:GCC )
+   CXXFLAGS="-fsquangle $CXXFLAGS"
+   ;;
+
+ *:WorkShop5 )
+   if test "$with_bincopy" != "yes" ; then
+     with_bincopy="no"
+   fi
+   if test -n "$WS64_CFLAGS" ; then
+      if test "$host" != "sparc-sun-solaris2.7" ; then
+        echo "64bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
+        exit 1
+      fi
+      compiler_extra="_64"
+      with_internal="no"
+   else
+      compiler_extra="_32"
+   fi
+   CFLAGS=${CFLAGS:="-mt $WS64_CFLAGS"}
+   CXXFLAGS=${CXX_FLAGS:="-mt +w +w2 $WS64_CFLAGS"}
+   LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
+   AR="$CXX -xar -o"
+   RANLIB=":"
+   ;;
+
+ *:MIPSpro73 )
+   COMMON_FLAGS="-fullwarn -signed -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
+   CFLAGS=${CFLAGS:="$COMMON_FLAGS -ansi"}
+   CXXFLAGS=${CXXFLAGS:="$COMMON_FLAGS -ansiW -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"}
+   CPPFLAGS="-D__LONGLONG $CPPFLAGS"
+   AR=${AR:="$CXX -ar -WR,-v -o"}
+   ;;
+
+ i*86*-pc-cygwin32:EGCS  |  i*86*-pc-cygwin32:GCC )
+   NETWORK_LIBS=${NETWORK_LIBS:=" "}
+   CONF_exe_ext=".exe"
+   ;;
+
+ i*86*-pc-cygwin32:MSVC )
+   CFLAGS=${CFLAGS:="/W4 /Od /Zi /DEBUG /D_DEBUG"}
+   CXXFLAGS=${CXXFLAGS:="/W4 /Od /Zi /DEBUG /D_DEBUG"}
+   CPPFLAGS="/nologo $CPPFLAGS"
+   LDFLAGS=${LDFLAGS:="/DEBUG"}
+   AR="lib.exe"
+   RANLIB=":"
+   STRIP=":"
+   CONF_obj_ext=".obj"
+   CONF_lib_ext=".lib"
+   CONF_lib_l_ext=".lib"
+   CONF_lib_pre=" "
+   CONF_lib_l_pre=" "
+   CONF_exe_ext=".exe"
+   CONF_f_compile="/c "
+   CONF_f_outobj="/Fo"
+   CONF_f_outlib="/OUT:"
+   CONF_f_libpath="/LIBPATH:"
+   CONF_f_outexe="/OUT:"
+   script_shell=""
+   make_shell=""
+   ;;
+esac
+
+
+#### GNU compiler::  common flags and definitions
+if test "$GCC" = "yes" ; then
+   CFLAGS="-Wall $CFLAGS"
+   CXXFLAGS="-Wall $CXXFLAGS"
+   AC_DEFINE_UNQUOTED(__EXTENSIONS__, 1)
+   AC_DEFINE_UNQUOTED(_SVID_SOURCE,   1)
+fi
+
+
+#### SUN "make" utility only
+case "$host_os" in
+  solaris* )  KeepStateTarget=".KEEP_STATE:" ;;
+esac
+
+
+#### Tools
+AC_PROG_RANLIB
+AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR)
+AC_CHECK_PROG(STRIP, strip, strip, :)
+
+
+#### Check if "${exec_prefix}" is defined;  provide a default one
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
-   exec_prefix="${srcdir}/exec"
+   exec_prefix="${srcdir}/${compiler}${compiler_extra}"
 fi
 
 #### Check if there is "${exec_prefix}" dir
 test -d "${exec_prefix}"  ||  mkdir -p "${exec_prefix}"
+
 
 #### Make "exec_prefix" absolute
 case "${exec_prefix}" in
@@ -67,6 +229,12 @@ case "${exec_prefix}" in
    *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
 esac
 
+#### Add full host specs to "${exec_prefix}"
+if test "$with_hostspec" = "yes" ; then
+   exec_prefix="${exec_prefix}--${host}"
+fi
+
+
 #### Make "srcdir" absolute
 case "${srcdir}" in
    /* ) ;;
@@ -79,8 +247,9 @@ case "${srcdir}" in
         srcdir="`(cd ${srcdir}; pwd)`"
       fi
    ;;
-   *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
+   * ) srcdir="`(cd ${srcdir}; pwd)`" ;;
 esac
+
 
 #### Specify and create $includedir, $incdir, $libdir, $bindir and $builddir
 includedir="$srcdir/include"
@@ -105,55 +274,10 @@ if test -f "${ncbiconf}" ; then
    test "$answer" = "y"  ||  test "$answer" = "Y"  ||  exit
 fi
 
-#### Get the running host's properties
-AC_CANONICAL_HOST
-AC_DEFINE_UNQUOTED(HOST,        "$host")
-AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
-AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
-AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
 
 #### Use right command shell in scripts and makefiles
 script_sh="#! ${CONFIG_SHELL:=/bin/sh}"
 make_shell="SHELL=${CONFIG_SHELL:=/bin/sh}"
-
-#### Tools
-AC_LANG_CPLUSPLUS
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_RANLIB
-AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR)
-AC_CHECK_PROG(STRIP, strip, strip, :)
-
-
-#### Paths to another packages
-
-# Sybase
-SYBASE_PATH=${SYBASE_PATH:="No_SybasePath"}
-
-# NCBI PubMed
-PM_PATH=${PM_PATH:="No_PmPath"}
-
-# NCBI C Toolkit
-NCBI=${NCBI:="No_NCBI"}
-NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
-NCBI_C_INCLUDE=${NCBI_C_INCLUDE:="$NCBI_C_PATH/include"}
-NCBI_C_RELEASE_LIB=${NCBI_C_RELEASE_LIB:="$NCBI_C_PATH/lib"}
-NCBI_C_DEBUG_LIB=${NCBI_C_DEBUG_LIB:="$NCBI_C_PATH/altlib"}
-
-# NCBI SSS package
-NCBI_SSS_PATH=${NCBI_SSS_PATH:="No_NcbiSSSPath"}
-NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH"}
-NCBI_SSS_RELEASE_LIB=${NCBI_SSS_RELEASE_LIB:="$NCBI_SSS_PATH/Release"}
-NCBI_SSS_DEBUG_LIB=${NCBI_SSS_DEBUG_LIB:="$NCBI_SSS_PATH/Debug"}
-
-
-### System and miscellaneous libs
-
-THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
-NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
-
-FASTCGI_LIBS=${FASTCGI_LIBS:="-lfcgi"}
-FASTCGI_LIBS="$FASTCGI_LIBS $NETWORK_LIBS"
 
 
 #### Turn on compilation warnings and adjust
@@ -179,30 +303,11 @@ if test "$with_bincopy" = "no" ; then
    BINCOPY="cp -p"
 fi
 
-#### GNU compiler
-if test "$GCC" = "yes" ; then
-   # GNU compiler
-   CFLAGS="-Wall $CFLAGS"
-   CXXFLAGS="-Wall $CXXFLAGS"
-   AC_DEFINE_UNQUOTED(__EXTENSIONS__, 1)
-   AC_DEFINE_UNQUOTED(_SVID_SOURCE,   1)
-fi
-
-#### MSVC++ compiler
-if test "$CXX" = "cl.exe /TP" ; then
-   # MSVC++ compiler
-   script_shell=""
-   make_shell=""
-   msvc="yes"
-fi
 
 #### Do not include debug info to the libs and executables("--without-debug")
 changequote(, )dnl
-if test "$msvc" != "yes" ; then
+if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
-      NCBI_C_LIB="$NCBI_C_RELEASE_LIB"
-      NCBI_SSS_LIB="$NCBI_SSS_RELEASE_LIB"
-
       CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`" -DNDEBUG"
       if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
          CFLAGS="$CFLAGS -O" ; fi
@@ -213,9 +318,6 @@ if test "$msvc" != "yes" ; then
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
          LDFLAGS="$LDFLAGS -O"   ; fi
    else
-      NCBI_C_LIB="$NCBI_C_DEBUG_LIB"
-      NCBI_SSS_LIB="$NCBI_SSS_DEBUG_LIB"
-
       CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`" -D_DEBUG"
       if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
          CFLAGS="$CFLAGS -g"     ; fi
@@ -316,28 +418,6 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-AC_MSG_CHECKING(if Fast-CGI library is available and not disabled)
-FASTCGI_OBJS=
-if test -x "$FASTCGI_LIBS"  ||  test "$with_fastcgi" = "no" ; then
-   FASTCGI_LIBS=
-else
-   FASTCGI_LIBS="-L$NCBI_C_LIB $FASTCGI_LIBS"
-   orig_CPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$NCBI_C_INCLUDE"
-   orig_LIBS="$LIBS" ; LIBS="$FASTCGI_LIBS $LIBS  $NETWORK_LIBS"
-   AC_TRY_LINK(
-      [#include <fcgiapp.h>],
-      [return FCGX_IsCGI(); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBFASTCGI, 1)
-       FASTCGI_OBJS="fcgibuf"
-      ],
-      [FASTCGI_LIBS= ]
-   )
-   LIBS="$orig_LIBS"
-   CPPFLAGS="$orig_CPPFLAGS"
-fi
-AC_MSG_RESULT()
-
-
 AC_MSG_CHECKING(if new C++ streams dont have ios_base::)
 AC_TRY_COMPILE(
    [#include <iostream>],
@@ -364,14 +444,172 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+dnl Check for the availability of other packages
+dnl --------------------------------------------
+
+### System and miscellaneous libs
+THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
+NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
+
+
+### Save original compilator/linker flags
+###
+orig_CPPFLAGS="$CPPFLAGS"
+orig_LIBS="$LIBS"
+
+
+## SYBASE libraries
+AC_MSG_CHECKING(if SYBASE libraries are available)
+if test "$with_sybase" != "no" ; then
+   SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/11.1.0"}
+   SYBASE_INCLUDE="-I$SYBASE_PATH/include"
+   SYBASE_LIBS="-L$SYBASE_PATH/lib -lct -lcs -ltcl -lcomn -lintl"
+   CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
+   LIBS="$SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <ctpublic.h>],
+      [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0);  return 0; ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBSYBASE, 1)],
+      [with_sybase="no"]
+   )
+fi
+if test "$with_sybase" = "no" ; then
+   SYBASE_PATH="No_Sybase"
+   SYBASE_INCLUDE=
+   SYBASE_LIBS=
+fi
+AC_MSG_RESULT([$SYBASE_PATH])
+
+
+## NCBI C Toolkit
+AC_MSG_CHECKING(if NCBI C toolkit is available)
+if test "$with_ncbi_c" != "no" ; then
+   NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
+   NCBI_C_INCLUDE="-I$NCBI_C_PATH/include"
+   if test "$with_debug" = "no" ; then
+     NCBI_C_LIBPATH="-L$NCBI_C_PATH/lib"
+   else
+     NCBI_C_LIBPATH="-L$NCBI_C_PATH/altlib"
+   fi
+   CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <ncbi.h>],
+      [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0);  return 0; ],
+      [AC_DEFINE_UNQUOTED(HAVE_NCBI_C, 1)],
+      [with_ncbi_c="no"]
+   )
+fi
+if test "$with_ncbi_c" = "no" ; then
+   NCBI_C_PATH="No_NCBI_CToolkit"
+   NCBI_C_INCLUDE=
+   NCBI_C_LIBPATH=
+fi
+AC_MSG_RESULT([$NCBI_C_PATH])
+
+
+## Inhouse Fast-CGI library
+AC_MSG_CHECKING(if Fast-CGI library is available)
+if test "$with_fastcgi" != "no" ; then
+   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
+   FASTCGI_INCLUDE="-I$FASTCGI_PATH/include"
+   if test "$with_debug" = "no" ; then
+      FASTCGI_LIBS="-L$FASTCGI_PATH/lib -lfcgi"
+   else
+      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib -lfcgi"
+   fi
+   FASTCGI_OBJS="fcgibuf"
+   CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
+   LIBS="$FASTCGI_LIBS $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <fcgiapp.h>],
+      [return FCGX_IsCGI(); ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBFASTCGI, 1)],
+      [with_fastcgi="no"]
+   )
+fi
+if test "$with_fastcgi" = "no" ; then
+   FASTCGI_PATH="No_FastCgi"
+   FASTCGI_INCLUDE=
+   FASTCGI_LIBS=
+   FASTCGI_OBJS=
+fi
+AC_MSG_RESULT([$FASTCGI_PATH])
+
+
+## NCBI SSS DB library
+AC_MSG_CHECKING(if NCBI SSS DB library is available)
+if test "$with_sybase" = "no" ; then
+   with_sssdb="no"
+elif test "$with_sssdb" != "no" ; then
+   NCBI_SSSDB_PATH=${NCBI_SSSDB_PATH:="/net/neptune/pubmed1/sss/db"}
+   NCBI_SSSDB_INCLUDE="-I$NCBI_SSSDB_PATH"
+   if test "$with_debug" = "no" ; then
+     NCBI_SSSDB_LIBS="-L$NCBI_SSSDB_PATH/Release -lsssdb"
+   else
+     NCBI_SSSDB_LIBS="-L$NCBI_SSSDB_PATH/Debug -lsssdb"
+   fi
+   CPPFLAGS="$NCBI_SSSDB_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_SSSDB_LIBS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <cslink.hpp>],
+      [ (new CSLink)->connect2server("srv", "user", "pwd", "db");  return 0; ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBSSSDB, 1)],
+      [with_sssdb="no"]
+   )
+fi
+if test "$with_sssdb" = "no" ; then
+   NCBI_SSSDB_PATH="No_NCBI_SSSDB"
+   NCBI_SSSDB_INCLUDE=
+   NCBI_SSSDB_LIBS=
+fi
+AC_MSG_RESULT([$NCBI_SSSDB_PATH])
+
+
+# NCBI PubMed
+AC_MSG_CHECKING(if NCBI PubMed libraries are available)
+if test "$with_ncbi_c" = "no" ; then
+   with_pubmed="no"
+elif test "$with_pubmed" != "no" ; then
+   NCBI_PM_PATH=${NCBI_PM_PATH:="/net/neptune/pubmed1/Cvs5"}
+   CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
+   LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <ncbistr.hpp>],
+      [ CNcbiString("abc");  return 0; ],
+      [AC_DEFINE_UNQUOTED(HAVE_PUBMED, 1)],
+      [with_pubmed="no"]
+   )
+fi
+if test "$with_pubmed" = "no" ; then
+   NCBI_PM_PATH="No_NCBI_PubMed"
+fi
+AC_MSG_RESULT([$NCBI_PM_PATH])
+
+
+### Restore original compilator/linker flags
+###
+LIBS="$orig_LIBS"
+CPPFLAGS="$orig_CPPFLAGS"
+
+
+dnl Optional projects
+dnl --------------------------------------------
+
 if test "$with_internal" = "yes" ; then
-   internal="internal"   
+   internal="internal"
 else
    internal=
 fi
 
+if test "$with_serial" = "no" ; then
+   serial=
+else
+   serial="serial"
+fi
 
-dnl Check for C standard types
+
+dnl Check for C standard types an sizes
 dnl ---------------------------------
 AC_C_BIGENDIAN
 AC_C_CHAR_UNSIGNED
@@ -384,6 +622,13 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
+
+
+dnl Cleanup
+dnl -------
+if test "$compiler" = "WorkShop5" ; then
+  test -d SunWS_cache  &&  rm -r SunWS_cache
+fi
 
 
 #############################################################################
@@ -425,6 +670,8 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
 AC_SUBST(internal)
+AC_SUBST(serial)
+
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
 AC_SUBST(obj_ext)
@@ -441,16 +688,16 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
+AC_SUBST(SYBASE_INCLUDE)
+AC_SUBST(SYBASE_LIBS)
+AC_SUBST(NCBI_C_INCLUDE)
+AC_SUBST(NCBI_C_LIBPATH)
+AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
-
-AC_SUBST(PM_PATH)
-AC_SUBST(SYBASE_PATH)
-
-AC_SUBST(NCBI_C_INCLUDE)
-AC_SUBST(NCBI_C_LIB)
-AC_SUBST(NCBI_SSS_INCLUDE)
-AC_SUBST(NCBI_SSS_LIB)
+AC_SUBST(NCBI_SSSDB_INCLUDE)
+AC_SUBST(NCBI_SSSDB_LIBS)
+AC_SUBST(NCBI_PM_PATH)
 
 AC_SUBST(BINCOPY)
 
@@ -502,9 +749,17 @@ Configuration completed.
 
 Optional configure flags:
  --without-debug    to build the release versions of libs and apps
- --without-fastcgi  to prohibit the use of Fast-CGI library
+ --without-bincopy  do not check whether the copied binaries are identical
  --with-internal    to build all projects including the internal ones
- --without-bincopy  dont check whether the copied binaries are identical
+ --without-sybase   do not use SYBASE libraries
+ --without-ncbi-c   do not use the NCBI C Toolkit
+ --without-fastcgi  do not Fast-CGI library
+ --without-sssdb    do not use NCBI SSS DB library
+ --without-pubmed   do not use NCBI PubMed libraries
+ --without-serial   do not build the serialization library and tests (temp)
+
+ --exec-prefix      to specify a non-default build directory name
+ --with-hostspec    add full host specs(OS, CPU) to the build directory name
 
 Tools / flags / paths:  $builddir/Makefile.mk
 Preprocessor defines:   $ncbiconf

@@ -7,4 +7,4 @@ LIBOBJ = asnio asnwrite
 LIB    = xasn
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
-  -I$(NCBI_C_INCLUDE)
+  $(NCBI_C_INCLUDE)

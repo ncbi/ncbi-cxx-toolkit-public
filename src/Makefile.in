@@ -1,7 +1,7 @@
 # $Id$
 
-# Master(top-level) makefile
+# Master (top-level) makefile
 #################################
 
-SUB_PROJ = corelib cgi html @internal@
+SUB_PROJ = corelib cgi html @serial@ @internal@
 include @builddir@/Makefile.meta
