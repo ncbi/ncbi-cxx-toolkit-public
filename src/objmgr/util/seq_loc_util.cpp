@@ -2267,7 +2267,8 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     ENa_strand strand1 = GetStrand(loc1);
     ENa_strand strand2 = GetStrand(loc2);
     if ( !TestForStrands(strand1, strand2) ) {
-        if ( type != eOverlap_Subset ) { // Subset does not use total ranges
+        // Subset and CheckIntervals don't use total ranges
+        if ( type != eOverlap_Subset   &&  type != eOverlap_CheckIntervals ) {
             if ( strand1 == eNa_strand_other  ||
                 strand2 == eNa_strand_other ) {
                 return x_TestForOverlap_MultiStrand(loc1, loc2, type, scope);
@@ -2607,6 +2608,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2004/12/13 12:56:31  shomrat
+* x_TestForOverlap_MultiStrand doesn't handle eOverlap_CheckIntervals
+*
 * Revision 1.13  2004/12/10 16:53:23  shomrat
 * Restore previous semantics for IsSameBioseq()
 *
