@@ -1266,6 +1266,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
   Int4* wa;
   BlastGapDP* dp;
   Int4 factor = 1;
+  Int4 NN;
   
   if(!score_only)
       return OOF_ALIGN(A, B, M, N, S, pei, pej, sapp, gap_align, score_options,
@@ -1290,12 +1291,12 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
 	X = m;
 
   if(N <= 0 || M <= 0) return 0;
-  N+=2;
+  NN = N + 2;
 
   j = (N + 5) * sizeof(BlastGapDP);
   CD = (BlastGapDP*)calloc(1, j);
   CD[0].CC = 0; c = CD[0].DD = -m;
-  for(i = 3; i <= N; i+=3) {
+  for(i = 3; i <= NN; i+=3) {
     CD[i].CC = c;
     CD[i].DD = c - m; 
     CD[i-1].CC = CD[i-2].CC = CD[i-1].DD = CD[i-2].DD = MININT;
@@ -1317,9 +1318,9 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     }
     s1 = s2 = s3 = f1= f2 = MININT; f1=f2=e1 = e2 = e3 = MININT; sc = MININT;
     for(cb = i = tt, dp = &CD[i-1]; 1;) {
-	if (i >= j) break;
-   sc = MAX(MAX(f1, f2)-shift, s3)+wa[B[factor*i]];
-   ++i;
+	if (i >= j || i > N) break;
+        sc = MAX(MAX(f1, f2)-shift, s3)+wa[B[factor*i]];
+        ++i;
 
 	f1 = s3; 
 	s3 = (++dp)->CC; f1 = MAX(f1, s3);
@@ -1375,7 +1376,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
 		dp->DD = MAX(sc, d-h);
 	    }
 	}
-	if (i >= j) { c = e2; e2 = e1; e1 = e3; e3 = c; break; }
+	if (i >= j || i > N) { c = e2; e2 = e1; e1 = e3; e3 = c; break; }
 
    sc = MAX(MAX(f1, f2)-shift, s1)+wa[B[factor*i]];
    ++i;
@@ -1412,7 +1413,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     if(cb < j) { j = cb;}
     else {
 	c = (MAX(e1, MAX(e2, e3))+X-best_score)/h+j;
-	if (c > N) c = N;
+	if (c > NN) c = NN;
 	if (c > j)
 	while (1) {
 	    CD[j].CC = e1;
@@ -1427,7 +1428,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
 	}
     }
     c = j+4;
-    if (c > N+1) c = N+1;
+    if (c > NN+1) c = NN+1;
     while (j < c) {
 	CD[j].DD = CD[j].CC = MININT;
 	j++;
