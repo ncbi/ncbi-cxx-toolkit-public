@@ -152,7 +152,7 @@ CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg, CScope* scope) co
 {
     if ( !scope ) {
         THROW1_TRACE(runtime_error,
-                     "CSeqMap::x)GetBioseqHandle: "
+                     "CSeqMap::x_GetBioseqHandle: "
                      "scope is null");
     }
     CBioseq_Handle bh = scope->GetBioseqHandle(x_GetRefSeqid(seg));
@@ -498,7 +498,8 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
 }
 
 
-void CSeqMap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+void CSeqMap::DebugDump(CDebugDumpContext /*ddc*/,
+                        unsigned int /*depth*/) const
 {
 #if 0
     ddc.SetFrame("CSeqMap");
@@ -766,6 +767,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.33  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -43,6 +43,7 @@
 #endif
 
 #include <map>
+#include <bitset>
 #include <time.h>
 
 #if defined(NCBI_OS_MAC)
@@ -139,12 +140,20 @@ public:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CTSEUpload {
+class NCBI_XOBJMGR_EXPORT CTSEUpload : public CObject
+{
 public:
-  enum EChoice { eNone,eDone,ePartial };
-  CTSEUpload() : m_mode(eNone), m_tse(0) {};
-  EChoice                       m_mode;
-  CSeq_entry                   *m_tse;
+    enum EChoice {
+        eNone,
+        eDone,
+        ePartial
+    };
+    CTSEUpload()
+        : m_mode(eNone)
+        {
+        }
+    EChoice                       m_mode;
+    CRef<CSeq_entry>              m_tse;
 };
 
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
@@ -162,26 +171,54 @@ public:
                   int gc_threshold=100);
     virtual ~CGBDataLoader(void);
   
-    virtual bool DropTSE(const CSeq_entry* sep);
+    virtual bool DropTSE(const CTSE_Info& tse_info);
     virtual bool GetRecords(const CHandleRangeMap& hrmap,
                             const EChoice choice);
   
-    virtual CTSE_Info*
-    ResolveConflict(const CSeq_id_Handle& handle,
-                    const TTSE_LockSet& tse_set);
+    virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
+                                                 const TTSE_LockSet& tse_set);
   
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
   
 private:
+    struct STSEinfo : public CObject
+    {
+        typedef set<CSeq_id_Handle>  TSeqids;
+        enum { eDead, eConfidential, eLast };
+  
+        CRef<STSEinfo>    next;
+        CRef<STSEinfo>    prev;
+        bitset<eLast>     mode;
+        CRef<CSeqref>     key;
+        int               locked;
+        CTSE_Info        *tseinfop;
+  
+        TSeqids           m_SeqIds;
+        CTSEUpload        m_upload;
+  
+        STSEinfo();
+        STSEinfo(const STSEinfo&);
+        ~STSEinfo();
+    };
+    struct SSeqrefs : public CObject
+    {
+        typedef CReader::TSeqrefs TSeqrefs;
+  
+        TSeqrefs        m_Sr;
+        CRefresher      m_Timer;
+        SSeqrefs();
+        SSeqrefs(const SSeqrefs&);
+        ~SSeqrefs();
+    };
     class CCmpTSE
     {
     private:
         CRef<CSeqref> m_sr;
     public:
-        CCmpTSE(const CRef<CSeqref>& sr) : m_sr(sr)        {}
-        CCmpTSE(CSeqref* sr)             : m_sr(sr)        {}
-        ~CCmpTSE(void) {}
+        CCmpTSE(const CRef<CSeqref>& sr);
+        CCmpTSE(CSeqref* sr);
+        ~CCmpTSE(void);
 
         operator bool  (void)       const { return m_sr;};
 
@@ -195,18 +232,16 @@ private:
         CSeqref& get() { return *m_sr; };
         const CSeqref& get() const { return *m_sr; }
     };
-    struct STSEinfo;
-    struct SSeqrefs;
-  
+
     typedef int                              TMask;
   
-    typedef map<CCmpTSE          ,STSEinfo*> TSr2TSEinfo   ;
-    typedef map<const CSeq_entry*,STSEinfo*> TTse2TSEinfo  ;
-    typedef map<TSeq_id_Key     , SSeqrefs*> TSeqId2Seqrefs;
+    typedef map<CCmpTSE          , CRef<STSEinfo> > TSr2TSEinfo   ;
+    //typedef map<const CSeq_entry*, CRef<STSEinfo> > TTse2TSEinfo  ;
+    typedef map<CSeq_id_Handle   , CRef<SSeqrefs> > TSeqId2Seqrefs;
   
-    CReader        *m_Driver;
+    CRef<CReader>   m_Driver;
     TSr2TSEinfo     m_Sr2TseInfo;
-    TTse2TSEinfo    m_Tse2TseInfo;
+    //TTse2TSEinfo    m_Tse2TseInfo;
   
     TSeqId2Seqrefs  m_Bs2Sr;
   
@@ -214,34 +249,38 @@ private:
   
     SLeveledMutex   m_Locks;
   
-    STSEinfo       *m_UseListHead;
-    STSEinfo       *m_UseListTail;
+    CRef<STSEinfo>  m_UseListHead;
+    CRef<STSEinfo>  m_UseListTail;
     unsigned        m_TseCount;
     unsigned        m_TseGC_Threshhold;
     bool            m_InvokeGC;
-    void            x_UpdateDropList(STSEinfo *p);
-    void            x_DropTSEinfo(STSEinfo *tse);
+    void            x_UpdateDropList(CRef<STSEinfo> p);
+    void            x_DropTSEinfo(CRef<STSEinfo> tse);
+    void            x_ExcludeFromDropList(CRef<STSEinfo> p);
+    void            x_AppendToDropList(CRef<STSEinfo> p);
   
     //
     // private code
     //
-    const CSeq_id*  x_GetSeqId(const TSeq_id_Key h);
   
     TMask           x_Request2SeqrefMask(const EChoice choice);
     TMask           x_Request2BlobMask(const EChoice choice);
   
   
-    typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
-    bool            x_GetRecords(const TSeq_id_Key key,
-                                 const CHandleRange &hrange, EChoice choice);
-    bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
+    bool            x_GetRecords(const CSeq_id_Handle& key,
+                                 const CHandleRange &hrange,
+                                 EChoice choice);
+    CRef<SSeqrefs>  x_ResolveHandle(const CSeq_id_Handle& h);
     bool            x_NeedMoreData(CTSEUpload *tse_up,
                                    const CSeqref& srp,
-                                   int from,int to, TMask blob_mask);
-    bool            x_GetData(STSEinfo *tse,const CSeqref& srp,
+                                   int from,int to,
+                                   TMask blob_mask);
+    bool            x_GetData(CRef<STSEinfo> tse,const CSeqref& srp,
                               int from,int to, TMask blob_mask,
                               CReader::TConn conn);
-    void            x_Check(STSEinfo *me);
+    void            x_Check(CConstRef<STSEinfo> me = CRef<STSEinfo>());
+
+    CRef<STSEinfo> GetTSEinfo(const CTSE_Info& tse_info);
 };
 
 
@@ -252,6 +291,11 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.35  2003/05/20 15:44:37  vasilche
+ * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+ * Fixed some warnings on WorkShop.
+ * Added workaround for memory leak on WorkShop.
+ *
  * Revision 1.34  2003/05/13 20:14:40  vasilche
  * Catching exceptions and reconnection were moved from readers to genbank loader.
  *

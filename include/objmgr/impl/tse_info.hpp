@@ -78,7 +78,10 @@ class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
 public:
     // 'ctors
-    CTSE_Info(CDataSource* data_source, CSeq_entry& tse, bool dead);
+    CTSE_Info(CDataSource* data_source,
+              CSeq_entry& tse,
+              bool dead,
+              const CObject* blob_id);
     virtual ~CTSE_Info(void);
 
     CDataSource& GetDataSource(void) const;
@@ -91,6 +94,8 @@ public:
 
     bool IsDead(void) const;
     bool Locked(void) const;
+
+    const CConstRef<CObject>& GetBlobId(void) const;
 
     // indexes types
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqMap;
@@ -132,7 +137,7 @@ private:
     TAnnotMap  m_AnnotMap;
 
     // May be used by data loaders to store blob-id
-    typedef CRef<CObject> TBlob_ID;
+    typedef CConstRef<CObject> TBlob_ID;
     TBlob_ID   m_Blob_ID;
 
     friend class CTSE_Guard;
@@ -238,12 +243,24 @@ bool CTSE_Info::Locked(void) const
 }
 
 
+inline
+const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
+{
+    return m_Blob_ID;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.29  2003/05/06 18:54:08  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

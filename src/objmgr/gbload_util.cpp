@@ -168,7 +168,7 @@ CGBLGuard::~CGBLGuard()
 void CGBLGuard::Select(int s)
 {
   if(m_current==eMain) m_select=s;
-  _VERIFY(m_select==s);
+  _ASSERT(m_select==s);
 }
 
 #define LOCK_POST(x) GBLOG_POST(x) 
@@ -188,7 +188,7 @@ void CGBLGuard::MUnlock()
 
 void CGBLGuard::PLock()
 {
-  _VERIFY(m_select>=0);
+  _ASSERT(m_select>=0);
   LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] tried   @ " << m_Loc);
   m_Locks->m_Pool.GetMutex(m_select).Lock();
   LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] locked  @ " << m_Loc);
@@ -196,7 +196,7 @@ void CGBLGuard::PLock()
 
 void CGBLGuard::PUnlock()
 {
-  _VERIFY(m_select>=0);
+  _ASSERT(m_select>=0);
    LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] unlocked@ " << m_Loc);
   m_Locks->m_Pool.GetMutex(m_select).Unlock();
 }
@@ -278,6 +278,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.15  2003/05/12 19:18:29  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *

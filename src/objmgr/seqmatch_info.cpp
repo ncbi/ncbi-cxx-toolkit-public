@@ -61,21 +61,15 @@ bool CSeqMatch_Info::operator< (const CSeqMatch_Info& info) const
 }
 
 
-CSeqMatch_Info::operator bool (void)
-{
-    return bool(m_Handle);
-}
-
-
-bool CSeqMatch_Info::operator! (void)
-{
-    return !m_Handle;
-}
-
-
 CDataSource& CSeqMatch_Info::GetDataSource(void) const
 {
     return GetTSE_Info().GetDataSource();
+}
+
+
+CConstRef<CBioseq_Info> CSeqMatch_Info::GetBioseq_Info(void) const
+{
+    return GetDataSource().GetBioseq_Info(*this);
 }
 
 
@@ -85,6 +79,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.11  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

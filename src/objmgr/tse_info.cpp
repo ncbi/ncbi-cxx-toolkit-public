@@ -75,9 +75,12 @@ SAnnotObject_Index& SAnnotObject_Index::operator=(const SAnnotObject_Index& ind)
 //
 
 
-CTSE_Info::CTSE_Info(CDataSource* source, CSeq_entry& entry, bool dead)
+CTSE_Info::CTSE_Info(CDataSource* source,
+                     CSeq_entry& entry,
+                     bool dead,
+                     const CObject* blob_id)
     : CSeq_entry_Info(entry), m_DataSource(source), m_Dead(dead),
-      m_DirtyAnnotIndex(true)
+      m_Blob_ID(blob_id), m_DirtyAnnotIndex(true)
 {
     m_Parent = this;
     m_TSE_Info = this;
@@ -210,6 +213,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.24  2003/04/25 14:23:26  vasilche
 * Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
 *

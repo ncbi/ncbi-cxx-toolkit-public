@@ -80,7 +80,7 @@ CSeqMap_CI::CSeqMap_CI(void)
 {
 }
 
-CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
                        EPosition /*byPos*/, TSeqPos pos,
                        size_t maxResolveCount, TFlags flags)
     : m_Position(0),
@@ -98,7 +98,7 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
 }
 
 
-CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
                        EBegin /*toBegin*/,
                        size_t maxResolveCount, TFlags flags)
     : m_Position(0),
@@ -111,7 +111,7 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
 }
 
 
-CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
                        EEnd /*toEnd*/,
                        size_t maxResolveCount, TFlags flags)
     : m_Position(seqMap->GetLength(scope)),
@@ -130,7 +130,7 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
 }
 
 
-CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
                        TSeqPos from, TSeqPos length, ENa_strand strand,
                        EBegin /*toBegin*/,
                        size_t maxResolveCount, TFlags flags)
@@ -244,7 +244,7 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
 }
 
 
-void CSeqMap_CI::x_Push(CConstRef<CSeqMap> seqMap,
+void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
                         TSeqPos from, TSeqPos length,
                         bool minusStrand,
                         TSeqPos pos)
@@ -405,6 +405,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.10  2003/02/27 16:29:19  vasilche
 * Fixed lost features from first segment.
 *

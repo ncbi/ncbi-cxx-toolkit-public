@@ -47,7 +47,7 @@ class NCBI_XOBJMGR_EXPORT CSeqMap_CI_SegmentInfo
 {
 public:
     CSeqMap_CI_SegmentInfo(void);
-    CSeqMap_CI_SegmentInfo(CConstRef<CSeqMap> seqMap, size_t index);
+    CSeqMap_CI_SegmentInfo(const CConstRef<CSeqMap>& seqMap, size_t index);
 
     TSeqPos GetRefPosition(void) const;
     bool GetRefMinusStrand(void) const;
@@ -104,23 +104,23 @@ public:
     typedef int TFlags;
 
     CSeqMap_CI(void);
-    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                EIndex byIndex, size_t index,
                size_t maxResolveCount = 0,
                TFlags flags = fDefaultFlags);
-    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                EPosition byPosition, TSeqPos position,
                size_t maxResolveCount = 0,
                TFlags flags = fDefaultFlags);
-    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                EBegin toBegin,
                size_t maxResolveCount = 0,
                TFlags flags = fDefaultFlags);
-    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                EEnd toEnd,
                size_t maxResolveCount = 0,
                TFlags flags = fDefaultFlags);
-    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                TSeqPos start, TSeqPos length, ENa_strand strand,
                EBegin toBegin,
                size_t maxResolveCount = 0,
@@ -189,7 +189,7 @@ private:
     bool x_Found(void) const;
 
     bool x_Push(TSeqPos offset, bool resolveExternal);
-    void x_Push(CConstRef<CSeqMap> seqMap,
+    void x_Push(const CConstRef<CSeqMap>& seqMap,
                 TSeqPos from, TSeqPos length, bool minusStrand, TSeqPos pos);
     bool x_Pop(void);
 
@@ -227,6 +227,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.4  2003/02/05 15:55:26  vasilche
 * Added eSeqEnd segment at the beginning of seq map.
 * Added flags to CSeqMap_CI to stop on data, gap, or references.

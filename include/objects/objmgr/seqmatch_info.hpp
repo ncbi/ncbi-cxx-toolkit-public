@@ -53,7 +53,8 @@ class CDataSource;
 //
 
 
-class NCBI_XOBJMGR_EXPORT CSeqMatch_Info {
+class NCBI_XOBJMGR_EXPORT CSeqMatch_Info
+{
 public:
     CSeqMatch_Info(void);
     CSeqMatch_Info(const CSeq_id_Handle& h, const CTSE_Info& tse);
@@ -68,6 +69,8 @@ public:
     const CTSE_Info& GetTSE_Info(void) const;
 
     const CSeq_id_Handle& GetIdHandle(void) const;
+
+    CConstRef<CBioseq_Info> GetBioseq_Info(void) const;
 
 private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
@@ -89,12 +92,31 @@ const CSeq_id_Handle& CSeqMatch_Info::GetIdHandle(void) const
 }
 
 
+inline
+CSeqMatch_Info::operator bool (void)
+{
+    return bool(m_Handle);
+}
+
+
+inline
+bool CSeqMatch_Info::operator! (void)
+{
+    return !m_Handle;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.12  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

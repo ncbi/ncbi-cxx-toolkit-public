@@ -185,7 +185,9 @@ public:
     /// Register new TSE (Top Level Seq-entry)
     typedef set<TTSE_Lock>     TTSE_LockSet;
 
-    CRef<CTSE_Info> AddTSE(CSeq_entry& se, bool dead = false);
+    CRef<CTSE_Info> AddTSE(CSeq_entry& se,
+                           bool dead = false,
+                           const CObject* blob_id = 0);
 
     /// Add new sub-entry to "parent".
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -228,7 +230,7 @@ public:
 
     /// Get Bioseq info by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
-    CRef<CBioseq_Info> GetBioseqHandle(CSeqMatch_Info& info);
+    CConstRef<CBioseq_Info> GetBioseq_Info(const CSeqMatch_Info& info);
 
     // Filter set of CSeq_id (setSource)
     // Select from the setSource ones which are "owned" by this DataSource
@@ -294,7 +296,7 @@ public:
     // "filter" may be used to select a particular sequence type.
     // Used to initialize bioseq iterators.
     TTSE_Lock GetTSEHandles(const CSeq_entry& entry,
-                            set<CBioseq_Info*>& bioseqs,
+                            set< CConstRef<CBioseq_Info> >& bioseqs,
                             CSeq_inst::EMol filter);
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
@@ -318,7 +320,9 @@ public:
 private:
     // attach, detach, index & unindex methods
     // TSE
-    CRef<CTSE_Info> x_AttachTSE(CSeq_entry& tse, bool dead);
+    CRef<CTSE_Info> x_AttachTSE(CSeq_entry& tse,
+                                bool dead,
+                                const CObject* blob_id);
     void x_DetachTSE(CTSE_Info& tse_info);
     // Seq-entry
     void x_AttachSeq_entry_Contents(CSeq_entry_Info& entry_info);
@@ -340,7 +344,9 @@ private:
 
     // create, delete & lookup Xxx_Info objects
     // TSE
-    CRef<CTSE_Info> x_CreateTSE_Info(CSeq_entry& tse, bool dead);
+    CRef<CTSE_Info> x_CreateTSE_Info(CSeq_entry& tse,
+                                     bool dead,
+                                     const CObject* blob_id);
     CRef<CTSE_Info> x_FindTSE_Info(const CSeq_entry& tse);
     void x_DeleteTSE_Info(CTSE_Info& tse_info);
     // Seq-entry
@@ -468,6 +474,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.54  2003/05/14 18:39:26  grichenk
 * Simplified TSE caching and filtering in CScope, removed
 * some obsolete members and functions.

@@ -213,7 +213,8 @@ private:
     void x_ClearCacheOnNewData(void);
     // Add a bioseq/seq-id to the scope's cache. Optional seq-id may be used
     // to cache the bioseq under this id as well as with each synonym.
-    void x_AddBioseqToCache(CBioseq_Info& info, const CSeq_id_Handle* id = 0);
+    void x_AddBioseqToCache(const CConstRef<CBioseq_Info>& info,
+                            const CSeq_id_Handle* id = 0);
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
@@ -279,6 +280,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.47  2003/05/14 18:39:25  grichenk
 * Simplified TSE caching and filtering in CScope, removed
 * some obsolete members and functions.

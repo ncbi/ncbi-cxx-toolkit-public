@@ -86,10 +86,10 @@ void CSeq_id_Which_Tree::x_RemoveFromKeyMap(TSeq_id_Key key)
 void CSeq_id_Which_Tree::DropKeysRange(TSeq_id_Key first, TSeq_id_Key last)
 {
     TKeyMap::iterator it = m_KeyMap.lower_bound(first);
-    while (it != m_KeyMap.end()) {
+    while (it != m_KeyMap.end() && it->first <= last) {
         x_DropHandle(it->second);
-        m_KeyMap.erase(it);
-        it = m_KeyMap.lower_bound(first);
+        TKeyMap::iterator erase = it++;
+        m_KeyMap.erase(erase);
     }
 }
 
@@ -1549,6 +1549,7 @@ CSeq_id_Mapper& CSeq_id_Mapper::GetSeq_id_Mapper(void)
 
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
+    CMutexGuard guard(m_IdMapMutex);
     while (m_IdMap.size() > 0) {
         // Prevent premature tree destruction
         CRef<CSeq_id_Which_Tree> keep_tree = m_IdMap.begin()->second;
@@ -1558,11 +1559,16 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
         ITERATE (TKeyUsageTable, seg_it, m_KeyUsageTable) {
             size_t seg = seg_it->first;
             keep_tree->DropKeysRange(seg*kKeyUsageTableSegmentSize,
-                (seg+1)*kKeyUsageTableSegmentSize-1);
+                                     seg*kKeyUsageTableSegmentSize
+                                     +kKeyUsageTableSegmentSize-1);
         }
     }
 //### This is for debugging only
     ITERATE(TKeyUsageTable, it, m_KeyUsageTable) {
+        if ( it->second ) {
+            ERR_POST("CSeq_id_Mapper::~CSeq_id_Mapper: used keys: "<<
+                     it->first << " - " << it->second);
+        }
         _ASSERT(it->second == 0);
     }
 //###
@@ -1623,7 +1629,8 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     }
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
-    CFastMutexGuard guard(map_it->second->m_TreeMutex);
+    CMutexGuard guard(m_IdMapMutex);
+    //CFastMutexGuard guard(map_it->second->m_TreeMutex);
     TSeq_id_Info info = map_it->second->FindEqual(id);
     // If found, return valid handle
     if ( !info.first.Empty() )
@@ -1651,7 +1658,8 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
-    CFastMutexGuard guard(map_it->second->m_TreeMutex);
+    CMutexGuard guard(m_IdMapMutex);
+    //CFastMutexGuard guard(map_it->second->m_TreeMutex);
     map_it->second->FindMatch(id, m_list);
     ITERATE(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
         h_set.insert(CSeq_id_Handle(*this, it->second));
@@ -1669,8 +1677,9 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
     }
 
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
+    CMutexGuard guard(m_IdMapMutex);
     ITERATE(TIdMap, map_it, m_IdMap) {
-        CFastMutexGuard guard(map_it->second->m_TreeMutex);
+        //CFastMutexGuard guard(map_it->second->m_TreeMutex);
         map_it->second->FindMatchStr(sid, m_list);
     }
 
@@ -1687,6 +1696,7 @@ const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& handle)
                      "CSeq_id_Mapper::GetSeq_id() -- "
                      "wrong CSeq_id_Handle mapper");
     }
+    CMutexGuard guard(handle.m_Mapper->m_IdMapMutex);
     TKeyToIdMap::const_iterator ref =
         handle.m_Mapper->m_KeyMap.find(handle.m_Value);
     if ( ref == handle.m_Mapper->m_KeyMap.end() ) {
@@ -1700,6 +1710,7 @@ const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& handle)
 
 const CSeq_id* CSeq_id_Mapper::x_GetSeq_id(TSeq_id_Key key) const
 {
+    CMutexGuard guard(m_IdMapMutex);
     TKeyToIdMap::const_iterator ref = m_KeyMap.find(key);
     if (ref != m_KeyMap.end()) {
         return ref->second.GetPointer();
@@ -1707,10 +1718,9 @@ const CSeq_id* CSeq_id_Mapper::x_GetSeq_id(TSeq_id_Key key) const
     return 0;
 }
 
-
 void CSeq_id_Mapper::AddHandleReference(const CSeq_id_Handle& handle)
 {
-    CFastMutexGuard guard(m_IdMapMutex);
+    CMutexGuard guard(m_IdMapMutex);
     TKeyUsageTable::iterator key_grp = m_KeyUsageTable.find(
         handle.m_Value / kKeyUsageTableSegmentSize);
     if ( key_grp != m_KeyUsageTable.end() ) {
@@ -1726,7 +1736,7 @@ void CSeq_id_Mapper::AddHandleReference(const CSeq_id_Handle& handle)
 
 void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 {
-    CFastMutexGuard guard(m_IdMapMutex);
+    CMutexGuard guard(m_IdMapMutex);
     TSeq_id_Key seg = handle.m_Value / kKeyUsageTableSegmentSize;
     TKeyUsageTable::iterator key_grp = m_KeyUsageTable.find(seg);
     _ASSERT(key_grp != m_KeyUsageTable.end()  &&  key_grp->second > 0);
@@ -1749,7 +1759,7 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 
 TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
 {
-    CFastMutexGuard guard(m_IdMapMutex);
+    //CFastMutexGuard guard(m_IdMapMutex);
     if (m_NextKey < kKeyUsageTableSegmentSize*kKeyUsageTableSize - 1) {
         m_NextKey++;
         // If in an occupied segment - just return the key
@@ -1788,6 +1798,7 @@ bool CSeq_id_Mapper::IsBetter(const CSeq_id_Handle& h1,
                               const CSeq_id_Handle& h2) const
 {
     _ASSERT(h1.m_Mapper == this  &&  h2.m_Mapper == this);
+    CMutexGuard guard(m_IdMapMutex);
     TIdMap::const_iterator it1 = m_IdMap.find(h1.x_GetSeqId()->Which());
     _ASSERT(it1 != m_IdMap.end()  &&  it1->second.GetPointer());
     TIdMap::const_iterator it2 = m_IdMap.find(h2.x_GetSeqId()->Which());
@@ -1795,7 +1806,7 @@ bool CSeq_id_Mapper::IsBetter(const CSeq_id_Handle& h1,
     if (it1->second != it2->second)
         return false;
     CConstRef<CSeq_id_Which_Tree> wtree = it1->second;
-    CFastMutexGuard guard(wtree->m_TreeMutex);
+    //CFastMutexGuard guard(wtree->m_TreeMutex);
     // Compare versions if any
     return wtree->IsBetterVersion(h1, h2);
 }
@@ -1809,6 +1820,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.34  2003/05/06 18:51:15  grichenk
 * Fixed minor bug in keys allocation
 *

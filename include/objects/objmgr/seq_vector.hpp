@@ -164,7 +164,7 @@ inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
     TCoding coding = m_Coding;
-    return coding & kTypeUnknown? x_UpdateCoding(): coding;
+    return int(coding) & kTypeUnknown? x_UpdateCoding(): coding;
 }
 
 
@@ -182,6 +182,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.31  2003/05/05 21:00:27  vasilche
 * Fix assignment of empty CSeqVector.
 *

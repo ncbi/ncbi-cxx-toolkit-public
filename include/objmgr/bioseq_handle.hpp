@@ -51,6 +51,7 @@ class CBioseq_Info;
 class CTSE_Info;
 class CSeq_entry;
 class CSeq_annot;
+class CSeqMatch_Info;
 
 // Bioseq handle -- must be a copy-safe const type.
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
@@ -162,9 +163,10 @@ public:
     void ReplaceAnnot(CSeq_annot& old_annot, CSeq_annot& new_annot);
 
 private:
-    CBioseq_Handle(const CSeq_id_Handle& value,
-                   CScope& scope,
-                   const CBioseq_Info& bioseq);
+    CBioseq_Handle(CScope* scope, const CSeqMatch_Info& match);
+    CBioseq_Handle(CScope* scope,
+                   const CSeq_id_Handle& id,
+                   const CConstRef<CBioseq_Info>& bioseq);
 
     // Get the internal seq-id handle
     const CSeq_id_Handle&  GetKey(void) const;
@@ -172,10 +174,12 @@ private:
     // Get data source
     CDataSource& x_GetDataSource(void) const;
 
+    const CConstRef<CBioseq_Info>& x_GetBioseq_Info(void) const;
+
     bool x_IsSynonym(const CSeq_id& id) const;
 
-    CSeq_id_Handle       m_Value;       // Seq-id equivalent
-    CScope*              m_Scope;
+    CScope*                   m_Scope;
+    CSeq_id_Handle            m_Value;       // Seq-id equivalent
     CConstRef<CBioseq_Info>   m_Bioseq_Info;
     CConstRef<CObject>        m_TSE_Lock;
 
@@ -237,12 +241,24 @@ CScope& CBioseq_Handle::GetScope(void) const
 }
 
 
+inline
+const CConstRef<CBioseq_Info>& CBioseq_Handle::x_GetBioseq_Info(void) const
+{
+    return m_Bioseq_Info;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/05/20 15:44:36  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.37  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

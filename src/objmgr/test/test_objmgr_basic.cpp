@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/05/20 15:44:39  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.13  2003/04/29 19:51:14  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
@@ -94,9 +99,7 @@ class CTestDataLoader : public CDataLoader
 public:
     CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
     virtual bool GetRecords(const CHandleRangeMap& /*hrmap*/,
-        const EChoice /*choice*/) { return false; }
-    virtual bool DropTSE(const CSeq_entry* /*sep*/)  {return false;}
-    virtual void GC(void) {return;}
+                            const EChoice /*choice*/) { return false; }
 };
 
 //===========================================================================

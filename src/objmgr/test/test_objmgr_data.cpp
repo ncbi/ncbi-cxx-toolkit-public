@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/05/20 15:44:39  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.6  2003/05/06 16:52:55  vasilche
 * Added 'pause' argument.
 *
@@ -185,6 +190,7 @@ bool CTestOM::Thread_Run(int idx)
     int delta = (to > from) ? 1 : -1;
     int pause = m_pause;
 
+    bool ok = true;
     for ( int i = from, end = to+delta; i != end; i += delta ) {
         if ( i != from && pause ) {
             SleepSec(pause);
@@ -278,10 +284,11 @@ bool CTestOM::Thread_Run(int idx)
         } catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
                      << ": EXCEPTION = " << e.what());
+            ok = false;
         }
         scope.ResetHistory();
     }
-    return true;
+    return ok;
 }
 
 bool CTestOM::TestApp_Args( CArgDescriptions& args)

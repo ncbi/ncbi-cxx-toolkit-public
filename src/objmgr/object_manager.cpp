@@ -148,7 +148,6 @@ bool CObjectManager::RevokeDataLoader(CDataLoader& loader)
         THROW1_TRACE(runtime_error,
             "CObjectManager::RevokeDataLoader() -- "
             "Data loader " + loader_name + " not registered");
-        return false;
     }
     CDataSource* source = m_mapLoaderToSource[&loader];
     if (!source->ReferencedOnlyOnce()) {
@@ -174,7 +173,6 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
         THROW1_TRACE(runtime_error,
             "CObjectManager::RevokeDataLoader() -- "
             "Data loader " + loader_name + " not registered");
-        return false;
     }
     return RevokeDataLoader(*loader);
 }
@@ -432,6 +430,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.22  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

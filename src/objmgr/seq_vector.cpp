@@ -529,7 +529,7 @@ const char* CSeqVector::sx_GetComplementTable(TCoding key)
 CSeqVector::TCoding CSeqVector::x_UpdateCoding(void) const
 {
     TCoding coding = m_Coding;
-    if ( coding & kTypeUnknown ) {
+    if ( int(coding) & kTypeUnknown ) {
         GetSequenceType();
         const_cast<CSeqVector*>(this)->
             SetCoding(EVectorCoding(coding & ~kTypeUnknown));
@@ -545,7 +545,7 @@ CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
         x_UpdateSequenceType(dataCoding);
 
     TCoding coding = m_Coding;
-    if ( coding & kTypeUnknown ) {
+    if ( int(coding) & kTypeUnknown ) {
         TCoding newCoding = CSeq_data::e_not_set;
         switch ( GetSequenceType() ) {
         case eType_aa:
@@ -595,7 +595,7 @@ void CSeqVector::SetIupacCoding(void)
         SetCoding(CSeq_data::e_Iupacna);
         break;
     default:
-        SetCoding(TCoding(kTypeUnknown | CBioseq_Handle::eCoding_Iupac));
+        SetCoding(TCoding(int(kTypeUnknown) | CBioseq_Handle::eCoding_Iupac));
         break;
     }
 }
@@ -611,7 +611,7 @@ void CSeqVector::SetNcbiCoding(void)
         SetCoding(CSeq_data::e_Ncbi4na);
         break;
     default:
-        SetCoding(TCoding(kTypeUnknown | CBioseq_Handle::eCoding_Ncbi));
+        SetCoding(TCoding(int(kTypeUnknown) | CBioseq_Handle::eCoding_Ncbi));
         break;
     }
 }
@@ -698,6 +698,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/05/20 15:44:38  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.48  2003/05/05 21:00:26  vasilche
 * Fix assignment of empty CSeqVector.
 *

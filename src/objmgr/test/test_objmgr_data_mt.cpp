@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/05/20 15:44:39  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.7  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
@@ -138,6 +143,7 @@ bool CTestOM::Thread_Run(int idx)
     }
     delta = (to > from) ? 1 : -1;
 
+    bool ok = true;
     for (int i = from;
         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
         try {
@@ -210,10 +216,11 @@ bool CTestOM::Thread_Run(int idx)
         } catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
                 << ": EXCEPTION = " << e.what());
+            ok = false;
         }
         scope.ResetHistory();
     }
-    return true;
+    return ok;
 }
 
 bool CTestOM::TestApp_Args( CArgDescriptions& args)

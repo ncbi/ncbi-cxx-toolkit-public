@@ -167,8 +167,7 @@ void CDataSource::DropAllTSEs(void)
 {
     // Find and drop each TSE
     while ( !m_TSE_InfoMap.empty() ) {
-        _ASSERT( !m_TSE_InfoMap.begin()->second->Locked() );
-        x_DetachTSE(*m_TSE_InfoMap.begin()->second);
+        _VERIFY(DropTSE(m_TSE_InfoMap.begin()->second->GetTSE()));
     }
 }
 
@@ -214,9 +213,10 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     }
     else if ( live_count == 0 ) {
         if ( m_Loader ) {
-            CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, all_tse));
+            CConstRef<CTSE_Info> best
+                (m_Loader->ResolveConflict(handle, all_tse));
             if ( best ) {
-                return TTSE_Lock(&*best);
+                return best;
             }
         }
         // No live TSEs -- try to select the best dead TSE
@@ -227,9 +227,10 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     if ( m_Loader ) {
         // Multiple live TSEs - try to resolve the conflict (the status of some
         // TSEs may change)
-        CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, live_tse));
+        CConstRef<CTSE_Info> best
+            (m_Loader->ResolveConflict(handle, live_tse));
         if ( best ) {
-            return TTSE_Lock(&*best);
+            return best;
         }
     }
     THROW1_TRACE(runtime_error,
@@ -267,7 +268,7 @@ const CSeq_entry& CDataSource::GetTSEFromInfo(const TTSE_Lock& tse)
 }
 
 
-CRef<CBioseq_Info> CDataSource::GetBioseqHandle(CSeqMatch_Info& info)
+CConstRef<CBioseq_Info> CDataSource::GetBioseq_Info(const CSeqMatch_Info& info)
 {
     CRef<CBioseq_Info> ret;
     // The TSE is locked by the scope, so, it can not be deleted.
@@ -365,7 +366,8 @@ const CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 }
 
 
-CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse, bool dead)
+CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse, bool dead,
+                                    const CObject* blob_id)
 {
     CMutexGuard guard(m_DataSource_Mtx);
 
@@ -375,14 +377,14 @@ CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse, bool dead)
                      "CDataSource::AddTSE(): tse already added");
     }
 
-     if ( tse.GetParentEntry() ) {
+    if ( tse.GetParentEntry() ) {
         THROW1_TRACE(runtime_error,
                      "CDataSource::AddTSE(): tse is child of another entry");
     }
 
     tse.Parentize();
 
-    return x_AttachTSE(tse, dead);
+    return x_AttachTSE(tse, dead, blob_id);
 }
 
 
@@ -415,9 +417,10 @@ bool CDataSource::DropTSE(CSeq_entry& tse)
 }
 
 
-CRef<CTSE_Info> CDataSource::x_AttachTSE(CSeq_entry& tse, bool dead)
+CRef<CTSE_Info> CDataSource::x_AttachTSE(CSeq_entry& tse, bool dead,
+                                         const CObject* blob_id)
 {
-    CRef<CTSE_Info> tse_info = x_CreateTSE_Info(tse, dead);
+    CRef<CTSE_Info> tse_info = x_CreateTSE_Info(tse, dead, blob_id);
 
     x_AttachSeq_entry_Contents(*tse_info);
 
@@ -429,11 +432,9 @@ CRef<CTSE_Info> CDataSource::x_AttachTSE(CSeq_entry& tse, bool dead)
 
 void CDataSource::x_DetachTSE(CTSE_Info& tse_info)
 {
-    /*
     if ( m_Loader ) {
-        m_Loader->DropTSE(&tse_info.GetTSE());
+        m_Loader->DropTSE(tse_info);
     }
-    */
 
     x_DetachSeq_entry_Contents(tse_info);
 
@@ -515,9 +516,10 @@ CRef<CBioseq_Info> CDataSource::x_FindBioseq_Info(const CBioseq& obj)
 
 
 CRef<CTSE_Info> CDataSource::x_CreateTSE_Info(CSeq_entry& entry,
-                                              bool dead)
+                                              bool dead,
+                                              const CObject* blob_id)
 {
-    CRef<CTSE_Info> info(new CTSE_Info(this, entry, dead));
+    CRef<CTSE_Info> info(new CTSE_Info(this, entry, dead, blob_id));
     _VERIFY(m_TSE_InfoMap.insert
             (TTSE_InfoMap::value_type(&entry, info)).second);
     _VERIFY(m_Seq_entry_InfoMap.insert
@@ -662,7 +664,8 @@ void CDataSource::x_AttachBioseqSet(CBioseq_set& seq_set,
                                     CSeq_entry_Info& parent_info)
 {
     NON_CONST_ITERATE ( CBioseq_set::TSeq_set, it, seq_set.SetSeq_set() ) {
-        x_AttachSeq_entry_Contents(*x_CreateSeq_entry_Info(**it, parent_info));
+        CRef<CSeq_entry_Info> info = x_CreateSeq_entry_Info(**it, parent_info);
+        x_AttachSeq_entry_Contents(*info);
     }
     
     if ( seq_set.IsSetAnnot() ) {
@@ -1016,8 +1019,8 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   const SAnnotTypeSelector& sel,
+void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& /*loc*/,
+                                   const SAnnotTypeSelector& /*sel*/,
                                    const CSeq_annot_Info& annot_info)
 {
     CMutexGuard ds_guard(m_DataSource_Mtx);
@@ -1202,7 +1205,7 @@ void CDataSource::x_MapAnnotObject(CAnnotObject_Info* annot_info_ptr)
 
 
 void CDataSource::x_DropAnnotObject(const CObject* annotPtr,
-                                    CSeq_annot_Info& annot)
+                                    CSeq_annot_Info& _DEBUG_ARG(annot))
 {
     TAnnotObject_InfoMap::iterator aoit = m_AnnotObject_InfoMap.find(annotPtr);
     if ( aoit == m_AnnotObject_InfoMap.end() ) {
@@ -1315,8 +1318,8 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
 
 
 CSeqMatch_Info* CDataSource::ResolveConflict(const CSeq_id_Handle& id,
-                                           CSeqMatch_Info& info1,
-                                           CSeqMatch_Info& info2)
+                                             CSeqMatch_Info& info1,
+                                             CSeqMatch_Info& info2)
 {
     if (&info1.GetDataSource() != this  ||
         &info2.GetDataSource() != this) {
@@ -1336,7 +1339,7 @@ CSeqMatch_Info* CDataSource::ResolveConflict(const CSeq_id_Handle& id,
     TTSE_LockSet tse_set;
     tse_set.insert(TTSE_Lock(&info1.GetTSE_Info()));
     tse_set.insert(TTSE_Lock(&info2.GetTSE_Info()));
-    CTSE_Info* tse = m_Loader->ResolveConflict(id, tse_set);
+    CConstRef<CTSE_Info> tse = m_Loader->ResolveConflict(id, tse_set);
     if (tse == &info1.GetTSE_Info()) {
         return &info1;
     }
@@ -1378,7 +1381,7 @@ bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
 #endif
 
 TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
-                                     set<CBioseq_Info*>& bioseqs,
+                                     set< CConstRef<CBioseq_Info> >& bioseqs,
                                      CSeq_inst::EMol filter)
 {
     // Find TSE_Info
@@ -1389,7 +1392,7 @@ TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
     }}
     if ( tse_info ) {
         // Populate the map
-        NON_CONST_ITERATE( CTSE_Info::TBioseqMap, it, tse_info->m_BioseqMap ) {
+        ITERATE( CTSE_Info::TBioseqMap, it, tse_info->m_BioseqMap ) {
             if ( filter != CSeq_inst::eMol_not_set ) {
                 // Filter sequences
                 if (it->second->GetBioseq().GetInst().GetMol() != filter) {
@@ -1403,7 +1406,8 @@ TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
 }
 
 
-void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+void CDataSource::DebugDump(CDebugDumpContext /*ddc*/,
+                            unsigned int /*depth*/) const
 {
 /*
     ddc.SetFrame("CDataSource");
@@ -1477,6 +1481,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.103  2003/05/14 18:39:28  grichenk
 * Simplified TSE caching and filtering in CScope, removed
 * some obsolete members and functions.

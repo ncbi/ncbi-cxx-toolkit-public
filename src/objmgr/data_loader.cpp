@@ -87,33 +87,27 @@ string CDataLoader::GetName(void) const
 }
 
 
-TSeq_id_Key CDataLoader::x_GetSeq_id_Key(const CSeq_id_Handle& handle)
-{
-    if ( !m_Mapper ) {
-        m_Mapper = handle.m_Mapper;
-    }
-    _ASSERT(m_Mapper.GetPointer() == handle.m_Mapper);
-    return handle.m_Value;
-}
-
-
-CSeq_id_Handle CDataLoader::x_GetSeq_id_Handle(TSeq_id_Key key)
-{
-    _ASSERT( m_Mapper );
-    return CSeq_id_Handle(*m_Mapper, key);
-}
-
-
 bool CDataLoader::IsLive(const CTSE_Info& tse)
 {
     return !tse.m_Dead;
 }
 
 
-CTSE_Info* CDataLoader::ResolveConflict(const CSeq_id_Handle&,
-                                        const TTSE_LockSet&)
+bool CDataLoader::DropTSE(const CTSE_Info& /*tse_info*/)
 {
-    return 0;
+    return true;
+}
+
+
+void CDataLoader::GC(void)
+{
+}
+
+
+CConstRef<CTSE_Info> CDataLoader::ResolveConflict(const CSeq_id_Handle&,
+                                                  const TTSE_LockSet&)
+{
+    return CConstRef<CTSE_Info>();
 }
 
 
@@ -129,6 +123,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.8  2003/05/06 18:54:09  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

@@ -245,12 +245,8 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
     {{
         CMutexGuard guard(m_Scope_Cache_Mtx);
         if (match) {
-            CRef<CBioseq_Info> bsi =
-                match.GetDataSource().GetBioseqHandle(match);
-            _ASSERT(bsi);
-            bh = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
-            m_Cache.insert(TCache::value_type(id, bh));
-            x_AddBioseqToCache(*bsi, &id);
+            m_Cache[id] = bh = CBioseq_Handle(this, match);
+            x_AddBioseqToCache(bh.x_GetBioseq_Info(), &id);
         }
         else {
             m_Cache[id];
@@ -277,10 +273,8 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
     ITERATE ( TSeq_id_HandleSet, hit, hset ) {
         CSeqMatch_Info match(id, bh.m_Bioseq_Info->GetTSE_Info());
-        CBioseq_Info* bsi = match.GetDataSource().GetBioseqHandle(match);
-        if ( bsi ) {
-            ret = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
-            m_Cache[id] = ret;
+        if ( match.GetBioseq_Info() ) {
+            m_Cache[id] = ret = CBioseq_Handle(this, match);
             break;
         }
     }
@@ -349,23 +343,27 @@ void CScope::x_ResolveInNode(const CPriorityNode& node,
         }
     }
     else if ( node.IsDataSource() ) {
-        TTSE_LockSet& dsc = m_DS_Cache[&node.GetDataSource()];
         CSeqMatch_Info info;
         CSeqMatch_Info from_history;
-        ITERATE(TTSE_LockSet, tse_it, dsc) {
-            CTSE_Info::TBioseqMap::const_iterator seq =
-                (*tse_it)->m_BioseqMap.find(idh);
-            if (seq != (*tse_it)->m_BioseqMap.end()) {
-                // Use cached TSE (same meaning as from history). If info
-                // is set but not in the history just ignore it.
-                info = CSeqMatch_Info(idh, **tse_it);
-                if ( from_history ) {
-                    // Both are in the history - can not resolve the conflict
-                    x_ThrowConflict(eConflict_History, info, from_history);
+        {{
+            CMutexGuard guard(m_Scope_Cache_Mtx);
+            TTSE_LockSet& dsc = m_DS_Cache[&node.GetDataSource()];
+            ITERATE(TTSE_LockSet, tse_it, dsc) {
+                CTSE_Info::TBioseqMap::const_iterator seq =
+                    (*tse_it)->m_BioseqMap.find(idh);
+                if (seq != (*tse_it)->m_BioseqMap.end()) {
+                    // Use cached TSE (same meaning as from history). If info
+                    // is set but not in the history just ignore it.
+                    info = CSeqMatch_Info(idh, **tse_it);
+                    if ( from_history ) {
+                        // Both are in the history -
+                        // can not resolve the conflict
+                        x_ThrowConflict(eConflict_History, info, from_history);
+                    }
+                    from_history = info;
                 }
-                from_history = info;
             }
-        }
+        }}
         if (!from_history) {
             // Try to load the sequence from the data source
             info = node.GetDataSource().BestResolve(idh);
@@ -515,15 +513,14 @@ CSeq_id_Handle CScope::GetIdHandle(const CSeq_id& id) const
 }
 
 
-void CScope::x_AddBioseqToCache(CBioseq_Info& info, const CSeq_id_Handle* id)
+void CScope::x_AddBioseqToCache(const CConstRef<CBioseq_Info>& info,
+                                const CSeq_id_Handle* id)
 {
-    ITERATE(CBioseq_Info::TSynonyms, syn, info.m_Synonyms) {
-        CBioseq_Handle bsh(*syn, *this, info);
-        m_Cache[*syn] = bsh;
+    ITERATE(CBioseq_Info::TSynonyms, syn, info->m_Synonyms) {
+        m_Cache[*syn] = CBioseq_Handle(this, *syn, info);
     }
     if ( id ) {
-        CBioseq_Handle bsh(*id, *this, info);
-        m_Cache[*id] = bsh;
+        m_Cache[*id] = CBioseq_Handle(this, *id, info);
     }
 }
 
@@ -594,15 +591,15 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
     CReadLockGuard rguard(m_Scope_Conf_RWLock);
     CMutexGuard guard(m_Scope_Cache_Mtx);
     TTSE_Lock tse_lock(0);
-    set<CBioseq_Info*> info_set;
+    set< CConstRef<CBioseq_Info> > info_set;
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         tse_lock = it->GetTSEHandles(tse, info_set, filter);
         if (tse_lock) {
             // Convert each bioseq info into bioseq handle
-            ITERATE (set<CBioseq_Info*>, iit, info_set) {
-                CBioseq_Handle h(*(*iit)->m_Synonyms.begin(), *this, **iit);
+            ITERATE (set< CConstRef<CBioseq_Info> >, iit, info_set) {
+                CBioseq_Handle h(this, *(*iit)->m_Synonyms.begin(), *iit);
                 handles.insert(h);
-                x_AddBioseqToCache(**iit);
+                x_AddBioseqToCache(*iit);
             }
             break;
         }
@@ -734,6 +731,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.67  2003/05/14 18:39:28  grichenk
 * Simplified TSE caching and filtering in CScope, removed
 * some obsolete members and functions.

@@ -90,7 +90,7 @@ public:
                             const EChoice choice) = 0;
     
     // 
-    virtual bool DropTSE(const CSeq_entry *sep) = 0 ;
+    virtual bool DropTSE(const CTSE_Info& tse_info);
     
     // Specify datasource to send loaded data to.
     void SetTargetDataSource(CDataSource& data_source);
@@ -101,19 +101,17 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle&,
-                                       const TTSE_LockSet&);
+    virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle&,
+                                                 const TTSE_LockSet&);
     virtual bool IsLive(const CTSE_Info& tse);
 
-    virtual void GC(void) = 0;
+    virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
 protected:
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
     
-    TSeq_id_Key    x_GetSeq_id_Key(const CSeq_id_Handle& handle);
-    CSeq_id_Handle x_GetSeq_id_Handle(TSeq_id_Key key);
     const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
 
 private:
@@ -143,6 +141,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.18  2003/05/06 18:54:06  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

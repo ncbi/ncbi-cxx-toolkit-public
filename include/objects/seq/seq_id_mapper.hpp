@@ -173,7 +173,7 @@ private:
     typedef map<TSeq_id_Key, CRef<CSeq_id> >                  TKeyToIdMap;
     TIdMap      m_IdMap;
     TKeyToIdMap m_KeyMap;
-    CFastMutex  m_IdMapMutex;
+    mutable CMutex  m_IdMapMutex;
 };
 
 
@@ -183,6 +183,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.15  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -35,6 +35,7 @@
 #include <objects/objmgr/impl/handle_range.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seqmatch_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -58,13 +59,31 @@ CBioseq_Handle::CBioseq_Handle(void)
 }
 
 
-CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value,
-                               CScope& scope,
-                               const CBioseq_Info& bioseq)
-    : m_Value(value),
-      m_Scope(&scope),
-      m_Bioseq_Info(&bioseq)
+CBioseq_Handle::CBioseq_Handle(CScope* scope, const CSeqMatch_Info& match)
+    : m_Scope(scope),
+      m_Value(match.GetIdHandle()),
+      m_Bioseq_Info(match.GetBioseq_Info()),
+      m_TSE_Lock(&match.GetTSE_Info())
 {
+    _ASSERT(m_Scope);
+    _ASSERT(m_Value);
+    _ASSERT(m_Bioseq_Info);
+    _ASSERT(m_TSE_Lock);
+}
+
+
+CBioseq_Handle::CBioseq_Handle(CScope* scope,
+                               const CSeq_id_Handle& id,
+                               const CConstRef<CBioseq_Info>& bioseq)
+    : m_Scope(scope),
+      m_Value(id),
+      m_Bioseq_Info(bioseq),
+      m_TSE_Lock(&bioseq->GetTSE_Info())
+{
+    _ASSERT(m_Scope);
+    _ASSERT(m_Value);
+    _ASSERT(m_Bioseq_Info);
+    _ASSERT(m_TSE_Lock);
 }
 
 
@@ -320,6 +339,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/05/20 15:44:37  vasilche
+* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
+* Fixed some warnings on WorkShop.
+* Added workaround for memory leak on WorkShop.
+*
 * Revision 1.37  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
