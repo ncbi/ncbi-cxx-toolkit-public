@@ -342,17 +342,25 @@ void CGenbankFormatter::x_Reference
     CNcbiOstrstream ref_line;
 
     // print serial number
-    ref_line << ref.GetSerial() << (ref.GetSerial() < 10 ? "  " : " ");
+    ref_line << ref.GetSerial();
+    if (ref.GetSerial() > 99) {
+        ref_line << ' ';
+    }
 
     // print sites or range
     CPubdesc::TReftype reftype = ref.GetReftype();
+    if (reftype !=  CPubdesc::eReftype_no_target) {
+        ref_line << ' ';
+    }
 
     if ( reftype == CPubdesc::eReftype_sites  ||
          reftype == CPubdesc::eReftype_feats ) {
         ref_line << "(sites)";
     } else if ( reftype == CPubdesc::eReftype_no_target ) {
+        // do nothing
     } else {
-        const CSeq_loc* loc = ref.GetLoc() != 0 ? ref.GetLoc() : &ctx.GetLocation();
+        ref_line << ' ';
+        const CSeq_loc* loc = (ref.GetLoc() != 0) ? ref.GetLoc() : &ctx.GetLocation();
         x_FormatRefLocation(ref_line, *loc, " to ", "; ", ctx);
     }
     Wrap(l, GetWidth(), "REFERENCE", CNcbiOstrstreamToString(ref_line));
@@ -696,6 +704,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/08/09 19:17:55  shomrat
+* Remove redundent spaces from REFERENCE line
+*
 * Revision 1.14  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
