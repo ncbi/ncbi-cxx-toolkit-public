@@ -321,12 +321,13 @@ private:
     size_t x_GetAnnotCount(void) const;
 
     // Set of processed annot-locs to avoid duplicates
-    typedef set< CConstRef<CSeq_loc> > TAnnotLocsSet;
+    typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
+    typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
 
     SAnnotSelector                   m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
-    set<CTSE_Handle>                 m_TSE_LockSet;
+    TTSE_LockMap                     m_TSE_LockMap;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
@@ -778,6 +779,10 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/03/17 17:52:27  grichenk
+* Added flag to SAnnotSelector for skipping multiple SNPs from the same
+* seq-annot. Optimized CAnnotCollector::GetAnnot().
+*
 * Revision 1.25  2005/03/03 18:49:12  didenko
 * Added Swap methods and std::swap functions for
 * CAnnotMapping_Info and CAnnotObject_Ref classes

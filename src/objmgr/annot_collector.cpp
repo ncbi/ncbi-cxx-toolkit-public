@@ -903,7 +903,12 @@ CSeq_annot_Handle CAnnot_Collector::GetAnnot(const CAnnotObject_Ref& ref) const
     else {
         info = &ref.GetSeq_annot_Info();
     }
-    return GetScope().GetSeq_annotHandle(*info->GetSeq_annotCore());
+    // return GetScope().GetSeq_annotHandle(*info->GetSeq_annotCore());
+
+    TTSE_LockMap::const_iterator tse_it =
+        m_TSE_LockMap.find(&info->GetTSE_Info());
+    _ASSERT(tse_it != m_TSE_LockMap.end());
+    return CSeq_annot_Handle(*info, tse_it->second);
 }
 
 
@@ -913,7 +918,7 @@ void CAnnot_Collector::x_Clear(void)
     if ( m_MappingCollector.get() ) {
         m_MappingCollector.reset();
     }
-    m_TSE_LockSet.clear();
+    m_TSE_LockMap.clear();
     m_Scope = CHeapScope();
 }
 
@@ -1182,7 +1187,7 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
 void CAnnot_Collector::x_GetTSE_Info(void)
 {
     // only one TSE is needed
-    _ASSERT(m_TSE_LockSet.empty());
+    _ASSERT(m_TSE_LockMap.empty());
     _ASSERT(m_Selector.m_LimitObjectType != SAnnotSelector::eLimit_None);
     _ASSERT(m_Selector.m_LimitObject);
     
@@ -1214,7 +1219,8 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     }
     _ASSERT(m_Selector.m_LimitObject);
     _ASSERT(m_Selector.m_LimitTSE);
-    m_TSE_LockSet.insert(m_Selector.m_LimitTSE);
+    m_TSE_LockMap[&m_Selector.m_LimitTSE.x_GetTSE_Info()] =
+        m_Selector.m_LimitTSE;
 }
 
 
@@ -1402,7 +1408,7 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
             CSeq_annot_SNP_Info::const_iterator snp_it =
                 snp_annot.FirstIn(range);
             if ( snp_it != snp_annot.end() ) {
-                m_TSE_LockSet.insert(tseh);
+                m_TSE_LockMap[&tseh.x_GetTSE_Info()] = tseh;
                 TSeqPos index = snp_it - snp_annot.begin() - 1;
                 do {
                     ++index;
@@ -1418,6 +1424,10 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                     annot_ref.SetSNP_Point(snp, cvt);
                     if ( x_AddObject(annot_ref, cvt, 0) ) {
                         return;
+                    }
+                    if ( m_Selector.m_CollectSeq_annots ) {
+                        // Ignore multiple SNPs from the same seq-annot
+                        break;
                     }
                 } while ( ++snp_it != snp_annot.end() );
             }
@@ -1441,7 +1451,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
     // CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    m_TSE_LockSet.insert(tseh);
+    m_TSE_LockMap[&tseh.x_GetTSE_Info()] = tseh;
 
     for ( size_t index = from_idx; index < to_idx; ++index ) {
         size_t start_size = m_AnnotSet.size(); // for rollback
@@ -1699,14 +1709,14 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
             CConstRef<CSynonymsSet> syns =
                 m_Scope->GetSynonyms(idit->first, GetGetFlag());
             CScope_Impl::TSeq_idSet idh_set;
-            ITERATE ( set<CTSE_Handle>, tse_it, m_TSE_LockSet ) {
+            ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
                 if ( !syns ) {
-                    found |= x_SearchTSE(*tse_it, idit->first,
+                    found |= x_SearchTSE(tse_it->second, idit->first,
                                          idit->second, cvt);
                 }
                 else {
                     ITERATE(CSynonymsSet, syn_it, *syns) {
-                        found |= x_SearchTSE(*tse_it,
+                        found |= x_SearchTSE(tse_it->second,
                                              syns->GetSeq_id_Handle(syn_it),
                                              idit->second, cvt);
                     }
@@ -1722,7 +1732,7 @@ void CAnnot_Collector::x_SearchAll(void)
 {
     _ASSERT(m_Selector.m_LimitObjectType != SAnnotSelector::eLimit_None);
     _ASSERT(m_Selector.m_LimitObject);
-    if ( m_TSE_LockSet.empty() ) {
+    if ( m_TSE_LockMap.empty() ) {
         // data source name not matched
         return;
     }
@@ -1865,6 +1875,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/03/17 17:52:27  grichenk
+* Added flag to SAnnotSelector for skipping multiple SNPs from the same
+* seq-annot. Optimized CAnnotCollector::GetAnnot().
+*
 * Revision 1.52  2005/03/15 19:14:27  vasilche
 * Correctly update and check  bioseq ids in split blobs.
 *

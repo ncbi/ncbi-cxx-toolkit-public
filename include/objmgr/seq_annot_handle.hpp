@@ -151,6 +151,7 @@ public:
 protected:
     friend class CScope_Impl;
     friend class CSeq_annot_CI;
+    friend class CAnnot_Collector;
 
     CSeq_annot_Handle(const CSeq_annot_Info& annot,
                       const CTSE_Handle& tse);
@@ -292,6 +293,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/03/17 17:52:27  grichenk
+* Added flag to SAnnotSelector for skipping multiple SNPs from the same
+* seq-annot. Optimized CAnnotCollector::GetAnnot().
+*
 * Revision 1.17  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

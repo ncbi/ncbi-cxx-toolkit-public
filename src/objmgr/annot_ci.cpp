@@ -64,6 +64,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc)
                      scope, loc,
                      &SAnnotSelector()
                      .SetNoMapping(true)
+                     .SetCollectSeq_annots(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
@@ -76,6 +77,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      scope, loc,
                      &SAnnotSelector(sel)
                      .SetNoMapping(true)
+                     .SetCollectSeq_annots(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
@@ -87,6 +89,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq)
                      bioseq,
                      &SAnnotSelector()
                      .SetNoMapping(true)
+                     .SetCollectSeq_annots(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
@@ -99,6 +102,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      bioseq,
                      &SAnnotSelector(sel)
                      .SetNoMapping(true)
+                     .SetCollectSeq_annots(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
@@ -145,6 +149,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/03/17 17:52:27  grichenk
+* Added flag to SAnnotSelector for skipping multiple SNPs from the same
+* seq-annot. Optimized CAnnotCollector::GetAnnot().
+*
 * Revision 1.37  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

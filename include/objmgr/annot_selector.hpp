@@ -359,6 +359,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Try to avoid collecting multiple objects from the same seq-annot.
+    /// Speeds up collecting seq-annots with SNP features.
+    SAnnotSelector& SetCollectSeq_annots(bool value = true)
+        {
+            m_CollectSeq_annots = value;
+            return *this;
+        }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -394,6 +402,7 @@ protected:
     bool                  m_NoMapping;
     bool                  m_AdaptiveDepth;
     bool                  m_ExcludeExternal;
+    bool                  m_CollectSeq_annots;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesSet        m_AnnotTypesSet;
@@ -409,6 +418,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/03/17 17:52:27  grichenk
+* Added flag to SAnnotSelector for skipping multiple SNPs from the same
+* seq-annot. Optimized CAnnotCollector::GetAnnot().
+*
 * Revision 1.44  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.
