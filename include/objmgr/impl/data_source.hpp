@@ -1,5 +1,5 @@
-#ifndef DATA_SOURCE__HPP
-#define DATA_SOURCE__HPP
+#ifndef OBJECTS_OBJMGR_IMPL___DATA_SOURCE__HPP
+#define OBJECTS_OBJMGR_IMPL___DATA_SOURCE__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,7 +33,7 @@
 *
 */
 
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
@@ -345,6 +345,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/02/05 17:57:41  dicuccio
+* Moved into include/objects/objmgr/impl to permit data loaders to be defined
+* outside of xobjmgr.
+*
 * Revision 1.35  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *
@@ -471,4 +475,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  // DATA_SOURCE__HPP
+#endif  // OBJECTS_OBJMGR_IMPL___DATA_SOURCE__HPP

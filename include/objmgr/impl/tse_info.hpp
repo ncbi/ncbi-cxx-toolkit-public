@@ -1,5 +1,5 @@
-#ifndef OBJECTS_OBJMGR___TSE_INFO__HPP
-#define OBJECTS_OBJMGR___TSE_INFO__HPP
+#ifndef OBJECTS_OBJMGR_IMPL___TSE_INFO__HPP
+#define OBJECTS_OBJMGR_IMPL___TSE_INFO__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -34,7 +34,7 @@
 */
 
 
-#include <objects/objmgr/bioseq_info.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
 #include <objects/objmgr/annot_ci.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
@@ -187,6 +187,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/05 17:57:41  dicuccio
+* Moved into include/objects/objmgr/impl to permit data loaders to be defined
+* outside of xobjmgr.
+*
 * Revision 1.16  2003/02/04 21:46:31  grichenk
 * Added map of annotations by intervals (the old one was
 * by total ranges)
@@ -248,4 +252,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* OBJECTS_OBJMGR___TSE_INFO__HPP */
+#endif  /* OBJECTS_OBJMGR_IMPL___TSE_INFO__HPP */
