@@ -74,7 +74,7 @@ class CDiagBuffer
 
     // Severity
     NCBI_XNCBI_EXPORT friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
-    NCBI_XNCBI_EXPORT friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
+    NCBI_XNCBI_EXPORT friend void SetDiagFixedPostLevel(EDiagSev post_sev);
     NCBI_XNCBI_EXPORT friend bool DisableDiagPostLevelChange(bool disable_change);
     NCBI_XNCBI_EXPORT friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     NCBI_XNCBI_EXPORT friend void IgnoreDiagDieLevel(bool ignore,
@@ -430,6 +430,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/03/18 22:49:32  vakatov
+ * SetDiagFixedPostLevel() -- get rid of extraneous and breaking 'const' in arg
+ *
  * Revision 1.39  2004/03/10 19:54:12  gorelenk
  * Changed NCBI_XNCBI_EXPORT prefixes for class CDiagBuffer members.
  *
