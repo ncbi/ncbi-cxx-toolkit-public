@@ -184,7 +184,7 @@ typedef struct {
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
 
-#define REG_CONN_HTTP_USER_HEADER "USER_HEADER"
+#define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
 #define DEF_CONN_HTTP_USER_HEADER 0
 
 
@@ -647,6 +647,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2005/02/28 17:23:20  lavr
+ * Fix HTTP_USER_HEADER env.var. name ("HTTP" was missing)
+ *
  * Revision 6.38  2005/02/24 19:51:24  lavr
  * Document CONN_HTTP_USER_HEADER environment
  *
