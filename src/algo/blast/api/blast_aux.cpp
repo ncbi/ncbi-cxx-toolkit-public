@@ -221,6 +221,32 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*d
 }
 
 void
+CBlastScoreBlk::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastScoreBlk");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("protein_alphabet", m_Ptr->protein_alphabet);
+    ddc.Log("alphabet_size", m_Ptr->alphabet_size);
+    ddc.Log("alphabet_start", m_Ptr->alphabet_start);
+    ddc.Log("mat_dim1", m_Ptr->mat_dim1);
+    ddc.Log("mat_dim2", m_Ptr->mat_dim2);
+    ddc.Log("loscore", m_Ptr->loscore);
+    ddc.Log("hiscore", m_Ptr->hiscore);
+    ddc.Log("penalty", m_Ptr->penalty);
+    ddc.Log("reward", m_Ptr->reward);
+    ddc.Log("scale_factor", m_Ptr->scale_factor);
+    ddc.Log("read_in_matrix", m_Ptr->read_in_matrix);
+    ddc.Log("number_of_contexts", m_Ptr->number_of_contexts);
+    ddc.Log("name", m_Ptr->name);
+    ddc.Log("ambig_size", m_Ptr->ambig_size);
+    ddc.Log("ambig_occupy", m_Ptr->ambig_occupy);
+    ddc.Log("query_length", m_Ptr->query_length);
+    ddc.Log("effective_search_sp", m_Ptr->effective_search_sp);
+}
+
+void
 CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastScoringOptions");
@@ -246,6 +272,32 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) 
     if (!m_Ptr)
         return;
 
+}
+
+void
+CPSIMatrix::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CPSIMatrix");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("ncols", m_Ptr->ncols);
+    ddc.Log("nrows", m_Ptr->nrows);
+    ddc.Log("lambda", m_Ptr->lambda);
+    ddc.Log("kappa", m_Ptr->kappa);
+    ddc.Log("h", m_Ptr->h);
+    // pssm omitted because it might be too large!
+}
+
+void
+CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc, 
+                                   unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CPSIDiagnosticsResponse");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("alphabet_size", m_Ptr->alphabet_size);
 }
 
 BlastMaskLoc*
@@ -309,6 +361,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2004/08/04 20:10:33  camacho
+ * + class wrappers for PSIMatrix and PSIDiagnosticsResponse, implemented DebugDump for CBlastScoreBlk
+ *
  * Revision 1.43  2004/06/23 14:05:06  dondosha
  * Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
  *
