@@ -1,1406 +1,1646 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
-    <title> Generating web pages with the HTML classes </title>
-  </head>
-  <body bgcolor = white>
-    <h1> Generating web pages with the HTML classes </h1>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title> Generating web pages with the HTML classes </title>
+</head>
+<body bgcolor="#FFFFFF">
 
-<ul>
-  <li>The <a href="#node"> <i>CNCBINode</i></a> class
-  <li>The <a href="#text"> <i>CHTMLText</i> and <i>CHTMLPlainText</i></a> classes
-  <li>The NCBI <a href="#page"> Page </a> classes
-  <li>Using the <a href="#ncbipage"> <i>CHTMLPage</i></a> class with template files 
-  <li>The <a href="#tag"> <i>CHTMLTagNode</i> </a> class
-  <li>The <a href="#htmnode"> <i>CHTMLNode</i> </a> class
-  <li>The <a href="#htmdualnode"> <i>CHTMLDualNode</i> </a> class
-  <li>Using the HTML classes with a <a href="#cgiapp"> <i>CCgiApplication</i></a> object
-  <li><a href="#appendix"> Appendix</a>
-  <ul>
-    <li>The <a href="#tmode"> <i>CNCBINode::TMode</i></a> class
-    <li><a href="#quickRef">Quick Reference Guide</a>
-  </ul>
-</ul>
+<h1>
+Generating web pages with the HTML classes</h1>
 
-Web applications involving interactions with a client via a complex HTML interface can be
-difficult to understand and maintain. The NCBI C++ Toolkit classes decouple
-the complexity of interacting with a CGI client from the complexity of generating HTML
-output by defining separate class hierarchies for these activities.  In fact, one useful
-application of the HTML classes is to generate web pages "offline". <p>
-
-The chapter on 
-<a href="cgi.html"> <i>Developing CGI Applications</i></a> discussed only the activities involved in
-processing the client's request and generating a response.  This section introduces the
-C++ Toolkit components that support the creation of HTML pages, and concludes with a 
-brief consideration of how the HTML classes can be used in consort with a running
-<i>CCgiApplication</i>. Further discussion of combining a CGI application with the HTML classes can be found
-in the section on <a href="htmlcgi.html"> <i>An example web-based CGI application</i></a>.
-See also <a href="../libs/newhtml.html"><i>NCBI C++ HTML Classes</i></a> in the Reference Manual. 
-
-<a name="node"> <h3> The <a href="../docxx/CNCBINode.html">
-<i>CNCBINode</i></a> class </h3>
-
-All of the HTML classes are derived from the <i>CNCBINode</i> class, which in turn, is
-derived from the <a href="cref.html#cobject"><i>CObject</i></a> class.  Much of the
-functionality of the many derived subclasses is implemented by the <i>CNCBINode</i> base
-class.  The <i>CNCBINode</i> class has just three data members:
-<ul>
- <li> <i>m_Name</i> - a <i>string</i>, used to identify the type of node or to store text data
- <li> <i>m_Attributes</i> - a map&lt;string, string> of properties for this node
- <li> <i>m_Children</i> - a list of subnodes embedded (at run-time) in this node
-</ul>
-
-The <i>m_Name</i> data member is used differently depending on the type of node. For HTML
-<a href="#text">text</a> nodes, <i>m_Name</i> stores the actual body of text. For 
-<a href="#CHTMLElement"><i>CHTMLElement</i></a> objects, <i>m_Name</i> stores
-the HTML tagname that will be used in generating HTML formatted output.<p> 
-
-The <i>m_Attributes</i> data member provides for the encoding of specific features to be
-associated with the node, such as background color for a web page.
-A group of "Get/SetAttribute" member functions are provided for access
-and modification of the node's attributes. All of the "SetAttribute" methods return <i>this</i> -
-a pointer to the HTML node being operated on, and so, can be daisy-chained, as in:
-
-<pre>	table->SetCellSpacing(0)->SetBgColor("CCCCCC");</pre>
-
-Care must be taken however, in the order of invocations, as the object type returned by each
-operation is determined by the class in which the method is defined.  In the above example,
-<i>table</i> is an instance of <a href="#CHTML_table"> <i>CHTML_table</i></a>,
-which is a subclass of <i>CNCBINode</i> - where <i>SetBgColor()</i> is defined. The above expression 
-then, effectively executes:
-<pre>	table->SetCellSpacing(0);
-	table->SetBgColor("CCCCCC");
-</pre>
-
-In contrast, the expression:
-
-<pre>	table->SetBgColor("CCCCCC")->SetCellSpacing(0);</pre>
-
-would fail to compile, as it would effectively execute:
-
-<pre>	table->SetBgColor("CCCCCC");
-	(CNCBINode*)table->SetCellSpacing(0);
-</pre>
-
-since the method <i>SetCellSpacing()</i> is undefined for <i>CNCBINode()</i> objects.
-<p>
-
-The <i>m_Children</i> data member of <i>CNCBINode</i> stores a dynamically allocated list of
-<i>CNCBINode</i> subcomponents of the node. In general, the in memory representation of each node is a
-graph of <i>CNCBINode</i> objects (or subclasses thereof), where each object may in turn
-contain additional <i>CNCBINode</i> children.  For example, an unordered list is represented as
-a <a href="#CHTML_ul"> <i>CHTML_ul</i></a> (<i>&lt;ul></i>) element
-containing <i>CHTML_li</i> (<i>&lt;li></i>) subcomponents.  <p>
-
-A number of member functions are provided to operate on <i>m_Children</i>.  These include
-methods to access, add, and remove children, along with a pair of <i>begin/end</i> iterators
-(<a href="../lxr/search?string=ChildBegin"><i>ChildBegin</i>()</a>
-and 
-<a href="../lxr/search?string=ChildEnd"><i>ChildEnd</i>()</a>),
-and a function to dereference these iterators (<i>Node(i)</i>). <p>
-
-Depending on flags set at compile time, <i>m_Children</i> is represented as
-either a list of <i>CNodeRef</i> objects, or a list of <i>auto_ptr&lt;CNodeRef</i>>, where
-<a href="../lxr/ident?i=CNodeRef">
-<i>CNodeRef</i></a> is a typedef for <a href="cref.html#cref"> <i>CRef</i></a>&lt;<i>CNCBINode</i>>.  
-This distinction is transparent to the user however, and the important point is that
-the deallocation of all dynamically embedded child nodes is handled automatically by the
-containing class.<p>
-
-<a href="../lxr/ident?i=Print">
-<i>CNCBINode::Print()</i></a> recursively generates the HTML text for the node and all of its
-children, and outputs the result to a specified output stream.  The <i>Print()</i> function
-takes two arguments: (1) an output stream, and (2) a <i>CNCBINode::TMode</i> object, where <a
-href="#tmode"><i>TMode</i></a> is an internal class defined inside the <i>CNCBINode</i> class.
-The <i>TMode</i> object is used by the print function to determine what type of encoding takes
-place on the output, and in some cases, to locate the containing parent node.<p>
-
-Many of the <i>CNCBINode</i> objects do not actually allocate their embedded subnodes until
-the <i>Print()</i> method is invoked. Instead, a kind of lazy evaluation is used, and
-the information required to install these nodes to <i>m_Children</i> is used by the 
-<i>CreateSubNodes()</i> method only when output has been requested (see discussion <a href="#createsub">below</a>). 
-
-<p>
-A slice of the NCBI C++ Toolkit class hierarchy rooted at the
-<a href="../docxx/CNCBINode.html"
-<i>CNCBINode</i></a> class includes the following directly derived subclasses:
-<ul> CNCBINode:
-     <ul> <li> <a href="#CSmallPagerBox"><i>CSmallPagerBox</i></a> 
-          <li> <a href="#CSelection">    <i>CSelection</i></a>	
-	  <li> <a href="#CPagerBox">     <i>CPagerBox</i></a>	
-	  <li> <a href="#CPager">	 <i>CPager</i></a>	
-	  <li> <a href="#text">		 <i>CHTMLText</i></a>
-	  <li> <a href="#tag">		 <i>CHTMLTagNode</i></a>
-	  <li> <a href="#text">		 <i>CHTMLPlainText</i></a>
-	  <li> <a href="#htmnode">	 <i>CHTMLNode</i></a>
-	  <li> <a href="#htmdualnode">	 <i>CHTMLDualNode</i></a>
-	  <li> <a href="#ncbipage">	 <i>CHTMLBasicPage</i></a>
-	  <li> <a href="#CButtonList">   <i>CButtonList</i></a>
-     </ul>
-</ul>
-Many of these subclasses make little sense out of context, as they are designed for use as 
-subcomponents of, for example, a <i>CHTMLPage</i>. Exceptions to this are the text nodes,
-described next.
-<p>
-
-<a name="text"> <h3>HTML Text nodes:
-<a href="../docxx/CHTMLText.html"><i>CHTMLText</i> </a> and
-<a href="../docxx/CHTMLPlainText.html">
-<i>CHTMLPlainText</i> </a></h3>
-
-The <i>CHTMLText</i> class uses the <i>m_Name</i> data member (inherited from <i>CNCBINode</i>)
-to store a text string of arbitrary length.  No new data members are introduced, but two new
-member functions are defined. 
-<a href="../lxr/ident?i=SetText">
-<i>SetText()</i></a> resets <i>m_Name</i> to a new string, and
-<a href="../lxr/ident?i=GetText">
-<i>GetText()</i></a> returns the value currently stored in <i>m_Name</i>.  With the exception of
-specially <i>tagged</i> sections (described below), all text occurring in a <i>CHTMLText</i>
-node is sent directly to the output without further encoding. <p>
-
-The <a href="../docxx/CHTMLPlainText.html">
-<i>CHTMLPlainText</i></a> class is provided for text that may require further encoding. In addition to
-the <i>SetText()</i> and
-<i>GetText()</i> member functions described for the <i>CHTMLText</i> class, one
-new data member is introduced. <i>m_NoEncode</i> is a Boolean variable that designates whether or
-not the text should be further encoded. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access and
-modification of this private data member.
-For example:
-
-<pre>
-     (new CHTMLText("&lt;br> testing BR &lt;br>"))->Print(cout);
-</pre>
-will generate the output:
-<pre>
-<br> testing BR <br> </pre>
-
-whereas:
-<pre>
-    (new CHTMLPlainText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
-will generate:
-<pre>
-&lt;br> testing BR &lt;br>
-</pre>
-
-The text in the <i>CHTMLText</i> node is output verbatim, and the web browser interprets
-the <i>&lt;br></i> tags as line breaks. In contrast, the <i>CHTMLPlainText</i> node 
-effectively "insulates" its content from the browser's interpretation by 
-encoding the <i>&lt;br></i> tags as "&amp;lt;br&amp;gt;".<p>
-
-<i>CHTMLText</i> nodes also play a special role in the implementation of page nodes that work
-with template files.  A <i>tagname</i> in the text is delimited by "&lt;@" and "@>", as in:
-<i>&lt;@tagname@></i>.  This device is used for example, when working with <a href="#ncbipage">
-template files</a>, to allow additional nodes to be inserted in a pre-formatted web page.  The
-<i>CHTMLText::PrintBegin()</i> method is specialized to skip over the tag names
-and their delimiters, outputting only the text generated by the nodes that should be inserted in
-that tagged section. Further discussion of this feature is deferred until the section on the <a
-href="#page"> NCBI page classes</a>, which contain a <i>TTagMap</i>. <p>
-
-<a name="page"> <h3> The NCBI Page classes </h3>
-
-The page classes serve as generalized containers for collections of other HTML components, which
-are mapped to the page by a <i>tagmap</i>.  In general, subcomponents are added to a page
-using the <a href="../lxr/ident?i=AddTagMap">
-<i>AddTagMap()</i></a> method (described below), instead of the <i>AppendChild()</i>
-method. The page classes define the following subtree in the C++ Toolkit class hierarchy:
-
-<ul><li> <a href="../docxx/CHTMLBasicPage.html"><i>CHTMLBasicPage</i></a>
-    <ul><li> <a href="../docxx/CHTMLPage.html"><i>CHTMLPage</i></a>
-	<ul><li> <a href="../docxx/CPmFrontPage.html"><i>CPmFrontPage</i></a>
-	    <li> <a href="../docxx/CPmDocSumPage.html"><i>CPmDocSumPage</i></a>
-	</ul>
-   </ul>
-</ul>
-<a name="tagmap">
-In addition to the data members inherited
-from <a href="#node"><i>CNCBINode</i></a>, three new private data members are defined in the
-<i>CHTMLBasicPage</i> class.
-
-<ol>
- <li> <i>m_CgiApplication</i> - a pointer to the <i>CCgiApplication</i>
- <li> <i>m_Style</i> - an integer flag indicating subcomponents to display/suppress (e.g., <i>Title</i>)
- <li> <i>m_TagMap</i> (see discussion)
-</ol>
-
-In effect, <i>m_TagMap</i> is used to map <i>string</i>s to tagged subcomponents of the page -
-some of which may not have been instantiated yet. Specifically, <i>m_TagMap</i> is defined as a
-<i>TTagMap</i> variable, which has the following type definition:
-<pre>
-    typedef map&lt;string, BaseTagMapper*> TTagMap;
-</pre>
-<a name="tagmapper">
-Here, 
-<a href ="../lxr/ident?i=BaseTagMapper">
-<i>BaseTagMapper</i></a> is a base class for a set of functor-like structs.
-Each of the derived subclasses of <i>BaseTagMapper</i> has a single data
-member (e.g. <i>m_Node, m_Function</i> or <i>m_Method</i>), which points to 
-either a <i>CNCBINode</i>, or a function that
-<i>returns</i> a pointer to a <i>CNCBINode</i>. The <i>BaseTagMapper</i> class also has
-a single member function, 
-<a href="../lxr/ident?i=MapTag">
-<i>MapTag()</i></a>, which knows how to "invoke" its data 
-member. <p>
-
-The simplest subclass of <i>BaseTagMapper</i> is the
-<a href ="../lxr/ident?i=ReadyTagMapper">
-
-<i>ReadyTagMapper</i></a> class whose sole data member, <i>m_Node</i>, is a <a
-href="cref.html#cref"><i>CRef</i></a> pointer to a <i>CNCBINode</i>. In this case the
-<i>MapTag()</i> function simply returns <i>&*m_Node</i>.  Several different types of tagmappers
-are derived from the <i>BaseTagMapper</i> class in
-<a href="../lxr/source/include/html/nodemap.hpp">
-nodemap.hpp</a>. Each of these subclasses specializes a different type of data member, which
-may be a pointer to a free function, a pointer to a member function, or a pointer to an 
-object, as in the case of the <i>ReadyTagMapper</i>. The action taken by the tagmapper's
-<i>MapTag()</i> method in order to return a pointer to a <i>CNCBINode</i> is implemented accordingly.<p>
-
-The  <i>CHTMLBasicPage</i> class also has a member function named <i>MapTag()</i>, 
-which is used in turn, to invoke a tagmapper's <i>MapTag()</i> method. Specifically,
-<i>CHTMLBasicPage::MapTag(tagname)</i> first locates the installed tagmapper 
-associated with tagname, <i>m_TagMap[tagname]</i>. If an entry is found, that tagmapper's <i>MapTag()</i> 
-member function is then invoked, which finally returns a pointer to 
-a <i>CNCBINode</i>.<p>
-
-A second member function, <i>CHTMLBasicPage::</i><a href=
-"../lxr/ident?i=AddTagMap"><i>AddTagMap(str,
-obj) </i></a>, provides for the insertion of a new tag string and its associated tagmapper
-struct to <i>m_TagMap</i>.  Depending on the object type of the second argument, a
-type-specific implementation of an overloaded helper function, <a
-href="../lxr/ident?i=CreateTagMapper">
-<i>CreateTagMapper()</i></a>, can be used to install the desired tagmapper.<p>
-
-In order for a new mapping to have any effect however, the tag must also occur in one of the
-nodes installed as a child of the page. This is because the <i>Print()</i> methods for the page
-nodes do virtually nothing except invoke the <i>Print()</i> methods for <i>m_Children</i>. The
-<i>m_TagMap</i> data member, along with all of its supporting methods, is required for the
-usage of template files, as described in the next section.
-<p>
-
-The primary purpose of the <i>CHTMLBasicPage</i> is as a base class whose features are
-inherited by the <i>CHTMLPage</i> class - it is not intended for direct usage. Important
-inherited features include its three data members: <i> m_CgiApplication, m_Style,</i> and
-<i>m_TagMap</i>, and its member functions: <i>Get/SetApplication(), Get/SetStyle(),
-MapTag()</i>, and <i>AddTagMap()</i>. Several of the more advanced HTML components generate
-their content via access of the running CGI application. For example, see the description of a
-<a href="#CSelection"> <i>CSelection</i></a> node.  It is not strictly necessary
-to specify a CGI application when instantiating a page object however, and constructors
-are available that do not require an application argument.
-
-<a name="ncbipage"> <h3> Using the <i>CHTMLPage</i> class with template files </h3>
-
-The <a href="../lxr/ident?i=CHTMLPage">
-<i>CHTMLPage</i></a> class is derived from the <i>CHTMLBasicPage</i>. In combination with the
-appropriate template file, this class can be used to generate
-the standard <a href="ncbi_page.html"> <i>NCBI web page</i></a>, which includes:
-<ul>
-<li> the NCBI logo 
-<li> a hook for the application-specific logo
-<li> a top menubar of links to several databases served by the <i>query</i> program
-<li> a links sidebar for application-specific links to relevant sites
-<li> a <strong><i>VIEW</i> tag </strong> for the application's web interface
-<li> a bottom menubar for help links, disclaimers, etc.
-</ul>
-
-The template file is a simple HTML text file with one extension -- the use of named tags
-(<i><@tagname@></i>) which allow the insertion of new HTML blocks into a pre-formatted
-page. The standard NCBI page template file contains one such
-tag, <i>VIEW</i>. <p>
-
-The <i>CHTMLPage</i> class introduces two new data members: <b><i>m_Title</i></b>
-(<i>string</i>), which specifies the title for the page, and <i><b>m_TemplateFile</b></i>
-(<i>string</i>), which specifies a template file to load.  Two constructors are available, and
-both accept <i>string</i> arguments that initialize these two data members. The first takes
-just the title name and template file name, with both arguments being optional.  The other
-constructor takes a pointer to a <a href="cgi.html#ccgiapp"> <i>CCgiApplication</i></a> and a
-<i>style</i> (type <i>int</i>), along with the title and template_file names. All but the first
-argument are optional for the second constructor. The member functions, <i>SetTitle()</i> and 
-<i>SetTemplateFile()</i>, allow these data members to be reset after the page has been initialized. <p>
-
-Five additional member functions support the usage of template files and tagnodes as follows:
 <ul>
 <li>
-<a href="../lxr/ident?i=CreateTemplate">
-<i>CreateTemplate()</i></a> reads the contents of file <i>m_TemplateFile</i> into a <i>CHTMLText</i> 
-node, and returns a pointer to that node. <p>
+The <i><a href="#node">CNCBINode</a></i> class</li>
 
-<li><a href="../lxr/ident?i=CreateSubNodes">
-<i>CreateSubNodes()</i></a> executes <i>AppendChild(CreateTemplate())</i>, and is called at the
-top of <i>Print()</i> when <i>m_Children</i> is empty. Thus, the contents of the template file
-are read into the <i>m_Name</i> data member of a <i>CHTMLText</i> node, and that node
-is then installed as a child in the page's <i>m_Children</i>.<p>
+<li>
+The <a href="#text"><i>CHTMLText</i> and <i>CHTMLPlainText</i></a> classes</li>
 
-<li><a href="../lxr/ident?i=CreateTitle"><i>CreateTitle()</i></a>
-returns <i>new CHTMLText(m_Title)</i>.<p>
+<li>
+The NCBI <a href="#page">Page </a>classes</li>
 
-<li><a href="../lxr/ident?i=CreateView"><i>CreateView()</i></a>
-is effectively a virtual function that must be redefined by the application. The
-<i>CHTMLPage</i> class definition returns a null pointer (0).<p>
+<li>
+Using the <i><a href="#ncbipage">CHTMLPage</a></i> class with template
+files</li>
 
-<li><a href="../lxr/ident?i=Init"><i>Init()</i></a>
-is called by all of the <i>CHTMLPage</i> constructors, and initializes <i>m_TagMap</i> as follows:
-<pre>
-void CHTMLPage::Init(void)
-{
-    AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
-    AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
-}
-</pre>
-As described in the preceding section, 
-<a href="../lxr/ident?i=CreateTagMapper"><i>CreateTagMapper()</i></a> 
+<li>
+The <a href="#tag"><i>CHTMLTagNode</i> </a>class</li>
 
-is an overloaded function that creates a tagmapper struct. In this case, <i>CreateTitle()</i>
-and <i>CreateView()</i> will be installed as the <i>m_Method</i> data members in the resulting
-tagmappers. In general, the type of struct created by <i>CreateTagMapper</i> depends on the
-argument types to that function. In its usage here, <i>CreateTagMapper</i> is a template
-function, whose arguments are a pointer to an object and a pointer to a class method:
-<pre>
-template&lt;class C>
-BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void)) {
-    return new TagMapper&lt;C>(method);
-}
-</pre>
-The value returned is itself a template object, whose constructor expects a pointer to a method
-(which will be used as a callback to create an object of type <i>C</i>). Here, <i>AddTagMap()</i>
-installs <i>CreateTitle()</i>  and <i>CreateView()</i> as the data member for the tagmapper associated 
-with tag "TITLE" and tag "VIEW", respectively.
+<li>
+The <a href="#htmnode"><i>CHTMLNode</i> </a>class</li>
+
+<li>
+The <a href="#htmdualnode"><i>CHTMLDualNode</i> </a>class</li>
+
+<li>
+Using the HTML classes with a <i><a href="#cgiapp">CCgiApplication</a></i>
+object</li>
+
+<li>
+<a href="#appendix">Appendix</a></li>
+
+<ul>
+<li>
+The <i><a href="#tmode">CNCBINode::TMode</a></i> class</li>
+
+<li>
+<a href="#quickRef">Quick Reference Guide</a></li>
 </ul>
+</ul>
+Web applications involving interactions with a client via a complex HTML
+interface can be difficult to understand and maintain. The NCBI C++ Toolkit
+classes decouple the complexity of interacting with a CGI client from the
+complexity of generating HTML output by defining separate class hierarchies
+for these activities. In fact, one useful application of the HTML classes
+is to generate web pages "offline".
+<p>The chapter on <i><a href="cgi.html">Developing CGI Applications</a></i>
+discussed only the activities involved in processing the client's request
+and generating a response. This section introduces the C++ Toolkit components
+that support the creation of HTML pages, and concludes with a brief consideration
+of how the HTML classes can be used in consort with a running
+<i>CCgiApplication</i>.
+Further discussion of combining a CGI application with the HTML classes
+can be found in the section on <i><a href="htmlcgi.html">An example web-based
+CGI application</a></i>. See also <i><a href="../libs/newhtml.html">NCBI
+C++ HTML Classes</a></i> in the Reference Manual.&nbsp;<a NAME="node"></a>
+<h3>
+The <i><a href="../docxx/CNCBINode.html">CNCBINode</a></i> class</h3>
+All of the HTML classes are derived from the <i>CNCBINode</i> class, which
+in turn, is derived from the <i><a href="cref.html#cobject">CObject</a></i>
+class. Much of the functionality of the many derived subclasses is implemented
+by the <i>CNCBINode</i> base class. The <i>CNCBINode</i> class has just
+three data members:
+<ul>
+<li>
+<i>m_Name</i> - a <i>string</i>, used to identify the type of node or to
+store text data</li>
 
-An example using the NCBI standard template file should help make these concepts more concrete. The following
-code excerpt uses the standard NCBI template and inserts a text node at the <i>VIEW</i> tag position
-(compare <a href="xmplOut.html"> output</a> to <a href="ncbi_page.html">unaltered template</a>):
+<li>
+<i>m_Attributes</i> - a map&lt;string, string> of properties for this node</li>
 
-<font color = "#000080"> <pre>
-#include &lt;html/html.hpp>
-#include &lt;html/page.hpp>
+<li>
+<i>m_Children</i> - a list of subnodes embedded (at run-time) in this node</li>
+</ul>
+The <i>m_Name</i> data member is used differently depending on the type
+of node. For HTML
+<a href="#text">text</a> nodes, <i>m_Name</i> stores
+the actual body of text. For <i><a href="#CHTMLElement">CHTMLElement</a></i>
+objects, <i>m_Name</i> stores the HTML tagname that will be used in generating
+HTML formatted output.
+<p>&nbsp;The <i>m_Attributes</i> data member provides for the encoding
+of specific features to be associated with the node, such as background
+color for a web page. A group of "Get/SetAttribute" member functions are
+provided for access and modification of the node's attributes. All of the
+"SetAttribute" methods return <i>this</i> - a pointer to the HTML node
+being operated on, and so, can be daisy-chained, as in:
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetCellSpacing(0)->SetBgColor("CCCCCC");</pre>
+Care must be taken however, in the order of invocations, as the object
+type returned by each operation is determined by the class in which the
+method is defined. In the above example,
+<i>table</i> is an instance of
+<i><a href="#CHTML_table">CHTML_table</a></i>, which is a subclass of <i>CNCBINode</i>
+- where <i>SetBgColor()</i> is defined. The above expression then, effectively
+executes:
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetCellSpacing(0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC");</pre>
+In contrast, the expression:
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC")->SetCellSpacing(0);</pre>
+would fail to compile, as it would effectively execute:
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (CNCBINode*)table->SetCellSpacing(0);</pre>
+since the method <i>SetCellSpacing()</i> is undefined for <i>CNCBINode()</i>
+objects.
+<p>The <i>m_Children</i> data member of <i>CNCBINode</i> stores a dynamically
+allocated list of
+<i>CNCBINode</i> subcomponents of the node. In general,
+the in memory representation of each node is a graph of <i>CNCBINode</i>
+objects (or subclasses thereof), where each object may in turn contain
+additional <i>CNCBINode</i> children. For example, an unordered list is
+represented as a <i><a href="#CHTML_ul">CHTML_ul</a></i> (<i>&lt;ul></i>)
+element containing <i>CHTML_li</i> (<i>&lt;li></i>) subcomponents.
+<p>A number of member functions are provided to operate on <i>m_Children</i>.
+These include methods to access, add, and remove children, along with a
+pair of <i>begin/end</i> iterators (<a href="../lxr/search?string=ChildBegin"><i>ChildBegin</i>()</a>
+and <a href="../lxr/search?string=ChildEnd"><i>ChildEnd</i>()</a>), and
+a function to dereference these iterators (<i>Node(i)</i>).
+<p>Depending on flags set at compile time, <i>m_Children</i> is represented
+as either a list of <i>CNodeRef</i> objects, or a list of <i>auto_ptr&lt;CNodeRef</i>>,
+where
+<i><a href="../lxr/ident?i=CNodeRef">CNodeRef</a></i> is a typedef
+for <i><a href="cref.html#cref">CRef</a></i>&lt;<i>CNCBINode</i>>. This
+distinction is transparent to the user however, and the important point
+is that the deallocation of all dynamically embedded child nodes is handled
+automatically by the containing class.
+<p>&nbsp;<i><a href="../lxr/ident?i=Print">CNCBINode::Print()</a></i> recursively
+generates the HTML text for the node and all of its children, and outputs
+the result to a specified output stream. The <i>Print()</i> function takes
+two arguments: (1) an output stream, and (2) a <i>CNCBINode::TMode</i>
+object, where <i><a href="#tmode">TMode</a></i> is an internal class defined
+inside the <i>CNCBINode</i> class. The <i>TMode</i> object is used by the
+print function to determine what type of encoding takes place on the output,
+and in some cases, to locate the containing parent node.
+<p>&nbsp;Many of the <i>CNCBINode</i> objects do not actually allocate
+their embedded subnodes until the <i>Print()</i> method is invoked. Instead,
+a kind of lazy evaluation is used, and the information required to install
+these nodes to <i>m_Children</i> is used by the <i>CreateSubNodes()</i>
+method only when output has been requested (see discussion <a href="#createsub">below</a>).
+<p>A slice of the NCBI C++ Toolkit class hierarchy rooted at the
+<a href="../docxx/CNCBINode.html" <i>CNCBINode</a>
+class includes the following directly derived subclasses:
+<ul>CNCBINode:
+<ul>
+<li>
+<i><a href="#CSmallPagerBox">CSmallPagerBox</a></i></li>
 
-USING_NCBI_SCOPE;
+<li>
+<i><a href="#CSelection">CSelection</a></i></li>
 
-int main() 
-{
-    try {
-        CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "ncbi_page.html");
-	Page->AddTagMap( "VIEW", new CHTMLText("Insert this string at VIEW tag"));
-	Page->Print(cout);
-        cout.flush();
-        return 0;  
-    }
+<li>
+<i><a href="#CPagerBox">CPagerBox</a></i></li>
 
-    catch (exception& exc) { 
-        NcbiCerr << "\n" << exc.what() << NcbiEndl;
-    }
-    return 1;
-}
-</pre></font>
+<li>
+<i><a href="#CPager">CPager</a></i></li>
 
-The name of the template file is stored in <i>m_TemplateFile</i>, and no further action on that
-file will be taken until <i>Page->Print(cout)</i> is executed.  The call to <i>AddTagMap()</i> is in a
-sense then, a forward reference to a tag that we know is contained in the template. Thus,
-although a new <i>CHTMLText</i> node <i>is</i> instantiated in this statement, it is not
-appended to the page as a child, but is instead "mapped" to the page's <i>m_TagMap</i> where it
-is indexed by "VIEW". <p>
+<li>
+<i><a href="#text">CHTMLText</a></i></li>
 
-The contents of the template file will not be read until <i>Print()</i> is invoked. At that time,
-the text in the template file will be stored in a <a href="#text"><i>CHTMLText</i></a> node, and when that node is in
-turn printed, any tag node substitutions will then be made.
-More generally, nodes are not added to the page's <i>m_Children</i> graph until <i>Print()</i>
-is executed. At that time, <i>CreateSubNodes()</i> is invoked if <i>m_Children</i> is empty.
-Finally, the actual mapping of a tag (embedded in the template) to the associated <i>TagMapper</i>
-in <i>m_TagMap</i>, is executed by <i>CHTMLText::PrintBegin()</i>. <p>
+<li>
+<i><a href="#tag">CHTMLTagNode</a></i></li>
 
-The <i>CHTMLPage</i> class, in combination with a template file, provides a very powerful and
-general method for generating a "boiler-plate" web page which can be adapted to application-specific
-needs using the <i>CHTMLPage::AddTagMap()</i> method. When needed, The user can edit the template
-file to insert additional <i>&lt;@tagname@></i> tags. The <i>AddTagMap()</i> method is defined <i>only</i> for
-page objects however, as they are the only class having a <i>m_TagMap</i> data member. <p>
+<li>
+<i><a href="#text">CHTMLPlainText</a></i></li>
 
-Before continuing to a general discussion of <i>tagnodes</i>, let's review how the page classes
-work in combination with a template file:
+<li>
+<i><a href="#htmnode">CHTMLNode</a></i></li>
 
-<ol>
-<li> A page is first created with a title string and a template file name. These arguments are
-stored directly in the page's data members, <i>m_Title</i> and <i>m_TemplateFile</i>.<p>
+<li>
+<i><a href="#htmdualnode">CHTMLDualNode</a></i></li>
 
-<li> The page's <i>Init()</i>
-method is then called to establish tagmap entries for "TITLE" and "VIEW" in <i>m_TagMap</i>.<p>
+<li>
+<i><a href="#ncbipage">CHTMLBasicPage</a></i></li>
 
-<li> Additional HTML nodes which should be added to this page are inserted using
-the page's <i>AddTagMap(tagname, *node)</i> method, where the <i>string tagname</i> appears
-in the template as <i>"&lt;@tagname@>"</i>. Typically, a CGI application defines a custom 
-implementation of the <i>CreateView()</i> method, and installs it using 
-<i>AddTagMap("VIEW", CreateView())</i>.<p>
-
-<li> When the page's <i>Print()</i> method is called, it first checks to see if the page has any child nodes, and
-if so, assumes there is no template loaded, and simply calls <i>PrintChildren()</i>. If there
-are no children however, <i>page->CreateSubNodes()</i> is called, which in turn calls the <i>CreateTemplate()</i>
-method. This method simply reads the contents of the template file and stores it directly in a <i>CHTMLText</i> node,
-which is installed as the only child of the parent page.<p>
-
-<li> The page's <i>Print()</i> method then calls <i>PrintChildren()</i>, which (eventually)
-causes <i>CHTMLText::PrintBegin()</i> to be executed. This method in turn, encodes special
-handling of <i>"&lt;@tagname@>"</i> strings. In effect, it repeatedly outputs all text up to
-the first "@" character; extracts the <i>tagname</i> from the text; searches the parent page's
-m_TagMap to find the <i>TagMapper</i> for that <i>tagname</i>, and finally, calls
-<i>Print()</i> on the HTML node returned by the <i>Tagmapper</i>. <i>CHTMLText::PrintBegin()</i>
-continues in this fashion until the end of its text is reached. 
-</ol>
-NOTE: appending any child nodes
-directly to the page prior to calling the <i>Print()</i> method will make the template
-effectively inaccessible, since <i>m_Children()</i> will not be empty. For this reason, the
-user is advised to use <i>AddTagNode()</i> rather than <i>AppendChild()</i> when adding
-subcomponents.
-
-<a name="tag"> <h3> The
-<a href="../docxx/CHTMLTagNode.html"><i>CHTMLTagNode</i> </a>class</h3>
-The objects and methods described to this point provide no mechanisms for dynamically 
-adding tagged nodes. As mentioned, the user is free to edit the template file to contain
-additional <i>&lt;@tag@></i> names, and <i>AddTagMap()</i> can then be used to associate 
-tagmappers with these new tags. This however, requires that one know ahead of time how many
-tagged nodes will be used. The problem specifically arises in the usage of template files,
-as it is not possible to add child nodes directly to the page without overriding the 
-the template file.<p>
-
-The <i>CHTMLTagNode</i> class addresses this issue. Derived directly from <i>CNCBINode</i>, 
-the class's constructor takes a single (<i>string</i> or <i>char*</i>) argument, <i>tagname</i>,
-which is stored as <i>m_Name</i>. The 
-<a href="../lxr/ident?i=PrintChildren">
-<i>CHTMLTagNode::PrintChildren()</i></a> method is specialized to handle tags, and makes
-a call to <a href="../lxr/ident?i=MapTagAll">
-<i>MapTagAll</i></a><i>(GetName(), mode)</i>. Here, <i>GetName()</i> returns the <i>m_Name</i> of the
-<i>CHTMLTagNode</i>, and <i>mode</i> is the <a href="#tmode"> <i>TMode</i></a> argument that 
-was passed in to <i>PrintChildren()</i>. In addition to an enumeration variable specifying the
-mode of output, a <i>TMode</i> object has a pointer to the parent node that invoked 
-<i>PrintChildren()</i>. This pointer is used by <i>MapTagAll()</i>, to locate a parent node
-whose <i>m_TagMap</i> has an installed <i>tagmapper</i> for the tagname. The <i>TMode</i>
-object's parent pointer essentially implements a stack which can be used to retrace the dynamic
-chain of <i>PrintChildren()</i> invocations, until either a match is found or the end of the
-call stack is reached. When a match is found, the associated <i>tagmapper</i>'s <i>MapTag()</i>
-method is invoked, and <i>Print()</i> is applied to the node returned by this function. <p>
-
-The following example uses an auxillary <i>CNCBINode</i> (<i>tagHolder</i>) to install additional
-<i>CHTMLTagNode</i> objects. The tags themselves however, are installed in the containing
-page's <i>m_TagMap</i>, where they will be retrieved by the <i>MapTagAll()</i> function,
-when <i>PrintChildren()</i> is called for the auxillary node. That node in turn, is mapped
-to the page's <i>VIEW</i> tag. When the parent page is "printed", <i>CreateSubNodes()</i> will
-create a <i>CHTMLText</i> node. The text node will hold the contents of the template file and be appended
-as a child to the page. When <i>PrintBegin()</i> is later invoked for the text node, <i>MapTagAll()</i>
-associates the <i>VIEW</i> string with the <i>CNCBINode</i>, and in turn, calls <i>Print()</i> on
-that node. 
-
-
-<font color = "#000080"> <pre>
-#include &lt;html/html.hpp>
-#include &lt;html/page.hpp>
-
-USING_NCBI_SCOPE;
-
-int main() 
-{
-    try {
-
-        CHTMLPage *Page = new CHTMLPage("myTitle", "ncbi_page.html");
-        CNCBINode *tagHolder = new CNCBINode();
-
-	Page->AddTagMap( "VIEW", tagHolder);
-
-	tagHolder->AppendChild(new CHTMLTagNode("TAG1"));
-	tagHolder->AppendChild(new CHTML_br());
-	tagHolder->AppendChild(new CHTMLTagNode("TAG2"));
-
-	Page->AddTagMap( "TAG1", new CHTMLText("Insert this string at TAG1"));
-	Page->AddTagMap( "TAG2", new CHTMLText("Insert another string at TAG2"));
-
-	Page->Print(cout);
-        cout.flush();
-        return 0;  
-    }
-
-    catch (exception& exc) { 
-        NcbiCerr << "\n" << exc.what() << NcbiEndl;
-    }
-    return 1;
-}
-</pre></font>
-
-<a name="htmnode"> <h3> The <a href="../docxx/CHTMLNode.html"><i>CHTMLNode</i></a> class </h3>
-<i>CHTMLNode</i> is derived directly from the <i>CNCBINode</i> class, and provides the base class
-for all elements requiring HTML tags (e.g., &lt;ul>, &lt;br>, &lt;img>, &lt;table>, etc.). The class
-interface includes several constructors, all of which expect the first argument to specify the HTML
-tagname for the node. This argument is used by the constructor to set the <i>m_Name</i> data
-member. The optional second argument may be either a text string, which will be appended to the node
-using <i>AppendPlainText()</i>, or a <i>CNCBINode</i>, which will be appended using
-<i>AppendChild()</i>.<p>
-
-A uniform system of class names is applied; each subclass derived from the <i>CHTMLNode</i> base
-class is named <i>CHTML_[tag]</i>, where <i>[tag]</i> is the HTML tag in lowercase, and is always
-preceded by an underscore.  The NCBI C++ Toolkit hierarchy defines roughly 40 subclasses of <a
-href="#CHTMLNode"><i>CHTMLNode</i></a> - all of which are defined in the <a href="#quickRef"> Quick
-Reference Guide</a> at the end of this section. The constructors for "empty" elements, such as <a
-href="#CHTML_br"><i>CHTML_br</i></a>, which have no assigned values, are simply invoked as:
-<i>CHTML_br()</i>.  The Quick Reference Guide provides brief explanations of each class, along with
-descriptions of the class constructors. <p>
-
-In addition to the subclasses explicitly defined in the hierarchy, a large number of lightweight 
-subclasses of <i>CHTMLNode</i> are defined by the preprocessor macro <a href=
-"../lxr/ident?i=DECLARE_HTML_ELEMENT">
-<i>DECLARE_HTML_ELEMENT</i></a><i>(Tag, Parent)</i> defined in <i>html.hpp</i>. All of these
-elements have the same interface as other <i>CHTMLNode</i> classes however, and the
-distinction is invisible to the user.<p>
-
-A rich interface of settable attributes is defined in the base class, and is applicable to all
-of the derived subclasses, including those implemented by the preprocessor macros. Settable attributes
-include: <i>class, style, id, width, height, size, alignment, color, title, accesskey,</i> and <i>name</i>.
-All of the <i>SetXxx()</i> functions which set these attributes return a <i>this</i> pointer, cast as 
-<i>CHTMLNode*</i>.<p>
-
-
-<a name="htmdualnode"> <h3> The <a href="../docxx/CHTMLDualNode.html"><i>CHTMLDualNode</i></a> class </h3>
-<i>CHTMLDualNode</i> is derived directly from the <i>CNCBINode</i> class, and provides the base class
-for all elements requiring different means for displaying data in <a href="#appendix" ><i>eHTML</i></a>
-and <a href="#appendix" ><i>ePlainText</i></a> modes.<p>
-
-This class interface includes several constructors, all of which expect the second argument to specify 
-the alternative text, displaying vice encoded HTML text in <i>ePlainText</i> mode. This argument is 
-used by the constructor to set the <i>m_Plain</i> data member. First argument of constructors expect 
-HTML text by way of string, reference to any object of CNCBINode class or same inherited from it class.
-This parameter appended to the node using <i>AppendChild()</i> method.
-In <i>eHTML</i> mode print become standard mean, using method <i>PrintChildren()</i> to HTML-subnodes. 
-And in <i>ePlainText</i> mode always print only text of data <i>m_Plain</i>.
-For example:
-
-<pre>
-    (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);
-</pre>
+<li>
+<i><a href="#CButtonList">CButtonList</a></i></li>
+</ul>
+</ul>
+Many of these subclasses make little sense out of context, as they are
+designed for use as subcomponents of, for example, a <i>CHTMLPage</i>.
+Exceptions to this are the text nodes, described next.
+<p><a NAME="text"></a>
+<h3>
+HTML Text nodes:
+<a href="../docxx/CHTMLText.html"><i>CHTMLText</i> </a>and
+<a href="../docxx/CHTMLPlainText.html"><i>CHTMLPlainText</i></a></h3>
+The <i>CHTMLText</i> class uses the <i>m_Name</i> data member (inherited
+from <i>CNCBINode</i>) to store a text string of arbitrary length. No new
+data members are introduced, but two new member functions are defined.
+<i><a href="../lxr/ident?i=SetText">SetText()</a></i> resets <i>m_Name</i>
+to a new string, and
+<i><a href="../lxr/ident?i=GetText">GetText()</a></i>
+returns the value currently stored in <i>m_Name</i>. With the exception
+of specially <i>tagged</i> sections (described below), all text occurring
+in a <i>CHTMLText</i> node is sent directly to the output without further
+encoding.
+<p>The <i><a href="../docxx/CHTMLPlainText.html">CHTMLPlainText</a></i>
+class is provided for text that may require further encoding. In addition
+to the <i>SetText()</i> and
+<i>GetText()</i> member functions described
+for the <i>CHTMLText</i> class, one new data member is introduced. <i>m_NoEncode</i>
+is a Boolean variable that designates whether or not the text should be
+further encoded. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access
+and modification of this private data member. For example:
+<pre>&nbsp;&nbsp;&nbsp;&nbsp; (new CHTMLText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
 will generate the output:
 <pre>
-    &lt;p&gt;text&lt;/p&gt;
+&nbsp;testing BR&nbsp;
 </pre>
-
 whereas:
-<pre>
-    (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);
-</pre>
+<pre>&nbsp;&nbsp;&nbsp; (new CHTMLPlainText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
 will generate:
-<pre>
-    \n TEXT \n
-</pre>
+<pre>&lt;br> testing BR &lt;br></pre>
+The text in the <i>CHTMLText</i> node is output verbatim, and the web browser
+interprets the <i>&lt;br></i> tags as line breaks. In contrast, the <i>CHTMLPlainText</i>
+node effectively "insulates" its content from the browser's interpretation
+by encoding the <i>&lt;br></i> tags as "&amp;lt;br&amp;gt;".
+<p>&nbsp;<i>CHTMLText</i> nodes also play a special role in the implementation
+of page nodes that work with template files. A <i>tagname</i> in the text
+is delimited by "&lt;@" and "@>", as in:
+<i>&lt;@tagname@></i>. This device
+is used for example, when working with <a href="#ncbipage">template files</a>,
+to allow additional nodes to be inserted in a pre-formatted web page. The
+<i>CHTMLText::PrintBegin()</i>
+method is specialized to skip over the tag names and their delimiters,
+outputting only the text generated by the nodes that should be inserted
+in that tagged section. Further discussion of this feature is deferred
+until the section on the <a href="#page">NCBI page classes</a>, which contain
+a <i>TTagMap</i>.
+<p><a NAME="page"></a>
+<h3>
+The NCBI Page classes</h3>
+The page classes serve as generalized containers for collections of other
+HTML components, which are mapped to the page by a <i>tagmap</i>. In general,
+subcomponents are added to a page using the <i><a href="../lxr/ident?i=AddTagMap">AddTagMap()</a></i>
+method (described below), instead of the <i>AppendChild()</i> method. The
+page classes define the following subtree in the C++ Toolkit class hierarchy:
+<ul>
+<li>
+<i><a href="../docxx/CHTMLBasicPage.html">CHTMLBasicPage</a></i></li>
 
+<ul>
+<li>
+<i><a href="../docxx/CHTMLPage.html">CHTMLPage</a></i></li>
 
-<a name="cgiapp"> <h3>Using the HTML classes with a <i>CCgiApplication</i> object</h3> 
+<ul>
+<li>
+<i><a href="../docxx/CPmFrontPage.html">CPmFrontPage</a></i></li>
 
-The previous chapter described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> classes, with
-an emphasis on their independence from the HTML classes. In practice however, a real
-application must employ both types of objects, and they must communicate with one another. 
-The only explicit connection between the CGI and HTML components is in the HTML page
-classes, whose constructors accept a <a href="cgi.html#ccgiapp"> <i>CCgiApplication</i></a> as
-an input parameter. The open-ended definition of the page's <i>m_TagMap</i> data member also
-allows the user to install <i>tagmapper</i> functions that are under control of the application,
-thus providing an "output port" for the application. In particular, an application-specific 
-<i>CreateView()</i> method can easily be installed as the function to be associated with
-a page's <i>VIEW</i> tag. The <a href="../tools/hello/hello.html">
-<i>Hello</i></a> demo program provides a simple example of using these classes in coordination
+<li>
+<i><a href="../docxx/CPmDocSumPage.html">CPmDocSumPage</a></i></li>
+</ul>
+</ul>
+</ul>
+<a NAME="tagmap"></a>In addition to the data members inherited from <i><a href="#node">CNCBINode</a></i>,
+three new private data members are defined in the
+<i>CHTMLBasicPage</i>
+class.
+<ol>
+<li>
+<i>m_CgiApplication</i> - a pointer to the <i>CCgiApplication</i></li>
+
+<li>
+<i>m_Style</i> - an integer flag indicating subcomponents to display/suppress
+(e.g., <i>Title</i>)</li>
+
+<li>
+<i>m_TagMap</i> (see discussion)</li>
+</ol>
+In effect, <i>m_TagMap</i> is used to map <i>string</i>s to tagged subcomponents
+of the page - some of which may not have been instantiated yet. Specifically,
+<i>m_TagMap</i> is defined as a
+<i>TTagMap</i> variable, which has the
+following type definition:
+<pre>&nbsp;&nbsp;&nbsp; typedef map&lt;string, BaseTagMapper*> TTagMap;</pre>
+<a NAME="tagmapper"></a>Here, <i><a href="../lxr/ident?i=BaseTagMapper">BaseTagMapper</a></i>
+is a base class for a set of functor-like structs. Each of the derived
+subclasses of <i>BaseTagMapper</i> has a single data member (e.g. <i>m_Node,
+m_Function</i> or <i>m_Method</i>), which points to either a <i>CNCBINode</i>,
+or a function that
+<i>returns</i> a pointer to a <i>CNCBINode</i>. The
+<i>BaseTagMapper</i> class also has a single member function, <i><a href="../lxr/ident?i=MapTag">MapTag()</a></i>,
+which knows how to "invoke" its data member.
+<p>The simplest subclass of <i>BaseTagMapper</i> is the
+<i><a href="../lxr/ident?i=ReadyTagMapper">ReadyTagMapper</a></i>
+class whose sole data member, <i>m_Node</i>, is a <i><a href="cref.html#cref">CRef</a></i>
+pointer to a <i>CNCBINode</i>. In this case the
+<i>MapTag()</i> function
+simply returns <i>&amp;*m_Node</i>. Several different types of tagmappers
+are derived from the <i>BaseTagMapper</i> class in
+<a href="../lxr/source/include/html/nodemap.hpp">nodemap.hpp</a>.
+Each of these subclasses specializes a different type of data member, which
+may be a pointer to a free function, a pointer to a member function, or
+a pointer to an object, as in the case of the <i>ReadyTagMapper</i>. The
+action taken by the tagmapper's
+<i>MapTag()</i> method in order to return
+a pointer to a <i>CNCBINode</i> is implemented accordingly.
+<p>&nbsp;The <i>CHTMLBasicPage</i> class also has a member function named
+<i>MapTag()</i>, which is used in turn, to invoke a tagmapper's <i>MapTag()</i>
+method. Specifically,
+<i>CHTMLBasicPage::MapTag(tagname)</i> first locates
+the installed tagmapper associated with tagname, <i>m_TagMap[tagname]</i>.
+If an entry is found, that tagmapper's <i>MapTag()</i> member function
+is then invoked, which finally returns a pointer to a <i>CNCBINode</i>.
+<p>&nbsp;A second member function, <i>CHTMLBasicPage::<a href="../lxr/ident?i=AddTagMap">AddTagMap(str,
+obj) </a></i>, provides for the insertion of a new tag string and its associated
+tagmapper struct to <i>m_TagMap</i>. Depending on the object type of the
+second argument, a type-specific implementation of an overloaded helper
+function, <i><a href="../lxr/ident?i=CreateTagMapper">CreateTagMapper()</a></i>,
+can be used to install the desired tagmapper.
+<p>&nbsp;In order for a new mapping to have any effect however, the tag
+must also occur in one of the nodes installed as a child of the page. This
+is because the <i>Print()</i> methods for the page nodes do virtually nothing
+except invoke the <i>Print()</i> methods for <i>m_Children</i>. The
+<i>m_TagMap</i>
+data member, along with all of its supporting methods, is required for
+the usage of template files, as described in the next section.
+<p>The primary purpose of the <i>CHTMLBasicPage</i> is as a base class
+whose features are inherited by the <i>CHTMLPage</i> class - it is not
+intended for direct usage. Important inherited features include its three
+data members: <i>m_CgiApplication, m_Style,</i> and
+<i>m_TagMap</i>, and
+its member functions: <i>Get/SetApplication(), Get/SetStyle(), MapTag()</i>,
+and <i>AddTagMap()</i>. Several of the more advanced HTML components generate
+their content via access of the running CGI application. For example, see
+the description of a
+<i><a href="#CSelection">CSelection</a></i> node.
+It is not strictly necessary to specify a CGI application when instantiating
+a page object however, and constructors are available that do not require
+an application argument.&nbsp;<a NAME="ncbipage"></a>
+<h3>
+Using the <i>CHTMLPage</i> class with template files</h3>
+The <i><a href="../lxr/ident?i=CHTMLPage">CHTMLPage</a></i> class is derived
+from the <i>CHTMLBasicPage</i>. In combination with the appropriate template
+file, this class can be used to generate the standard <i><a href="ncbi_page.html">NCBI
+web page</a></i>, which includes:
+<ul>
+<li>
+the NCBI logo</li>
+
+<li>
+a hook for the application-specific logo</li>
+
+<li>
+a top menubar of links to several databases served by the <i>query</i>
+program</li>
+
+<li>
+a links sidebar for application-specific links to relevant sites</li>
+
+<li>
+a <b><i>VIEW</i> tag </b>for the application's web interface</li>
+
+<li>
+a bottom menubar for help links, disclaimers, etc.</li>
+</ul>
+The template file is a simple HTML text file with one extension -- the
+use of named tags (<i>&lt;@tagname@></i>) which allow the insertion of
+new HTML blocks into a pre-formatted page. The standard NCBI page template
+file contains one such tag, <i>VIEW</i>.
+<p>The <i>CHTMLPage</i> class introduces two new data members: <b><i>m_Title</i></b>
+(<i>string</i>), which specifies the title for the page, and <b><i>m_TemplateFile</i></b>
+(<i>string</i>), which specifies a template file to load. Two constructors
+are available, and both accept <i>string</i> arguments that initialize
+these two data members. The first takes just the title name and template
+file name, with both arguments being optional. The other constructor takes
+a pointer to a <i><a href="cgi.html#ccgiapp">CCgiApplication</a></i> and
+a
+<i>style</i> (type <i>int</i>), along with the title and template_file
+names. All but the first argument are optional for the second constructor.
+The member functions, <i>SetTitle()</i> and <i>SetTemplateFile()</i>, allow
+these data members to be reset after the page has been initialized.
+<p>Five additional member functions support the usage of template files
+and tagnodes as follows:
+<ul>
+<li>
+<i><a href="../lxr/ident?i=CreateTemplate">CreateTemplate()</a></i> reads
+the contents of file <i>m_TemplateFile</i> into a <i>CHTMLText</i> node,
+and returns a pointer to that node.</li>
+
+<li>
+<i><a href="../lxr/ident?i=CreateSubNodes">CreateSubNodes()</a></i> executes
+<i>AppendChild(CreateTemplate())</i>, and is called at the top of <i>Print()</i>
+when <i>m_Children</i> is empty. Thus, the contents of the template file
+are read into the <i>m_Name</i> data member of a <i>CHTMLText</i> node,
+and that node is then installed as a child in the page's <i>m_Children</i>.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+<i><a href="../lxr/ident?i=CreateTitle">CreateTitle()</a></i> returns <i>new
+CHTMLText(m_Title)</i>.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+<i><a href="../lxr/ident?i=CreateView">CreateView()</a></i> is effectively
+a virtual function that must be redefined by the application. The
+<i>CHTMLPage</i>
+class definition returns a null pointer (0).</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+<i><a href="../lxr/ident?i=Init">Init()</a></i> is called by all of the
+<i>CHTMLPage</i> constructors, and initializes <i>m_TagMap</i> as follows:</li>
+
+<pre>void CHTMLPage::Init(void)
+{
+&nbsp;&nbsp;&nbsp; AddTagMap("TITLE", CreateTagMapper(this, &amp;CHTMLPage::CreateTitle));
+&nbsp;&nbsp;&nbsp; AddTagMap("VIEW",&nbsp; CreateTagMapper(this, &amp;CHTMLPage::CreateView));
+}</pre>
+As described in the preceding section, <i><a href="../lxr/ident?i=CreateTagMapper">CreateTagMapper()</a></i>
+is an overloaded function that creates a tagmapper struct. In this case,
+<i>CreateTitle()</i> and <i>CreateView()</i> will be installed as the <i>m_Method</i>
+data members in the resulting tagmappers. In general, the type of struct
+created by <i>CreateTagMapper</i> depends on the argument types to that
+function. In its usage here, <i>CreateTagMapper</i> is a template function,
+whose arguments are a pointer to an object and a pointer to a class method:
+<pre>template&lt;class C>
+BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void)) {
+&nbsp;&nbsp;&nbsp; return new TagMapper&lt;C>(method);
+}</pre>
+The value returned is itself a template object, whose constructor expects
+a pointer to a method (which will be used as a callback to create an object
+of type <i>C</i>). Here, <i>AddTagMap()</i> installs <i>CreateTitle()</i>
+and <i>CreateView()</i> as the data member for the tagmapper associated
+with tag "TITLE" and tag "VIEW", respectively.</ul>
+An example using the NCBI standard template file should help make these
+concepts more concrete. The following code excerpt uses the standard NCBI
+template and inserts a text node at the <i>VIEW</i> tag position (compare
+<a href="xmplOut.html">output</a> to <a href="ncbi_page.html">unaltered
+template</a>):
+<pre><font color="#000080">#include &lt;html/html.hpp>
+#include &lt;html/page.hpp>
+
+USING_NCBI_SCOPE;
+
+int main()&nbsp;
+{
+&nbsp;&nbsp;&nbsp; try {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "ncbi_page.html");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "VIEW", new CHTMLText("Insert this string at VIEW tag"));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->Print(cout);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout.flush();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; }
+
+&nbsp;&nbsp;&nbsp; catch (exception&amp; exc) {&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; return 1;
+}</font></pre>
+The name of the template file is stored in <i>m_TemplateFile</i>, and no
+further action on that file will be taken until <i>Page->Print(cout)</i>
+is executed. The call to <i>AddTagMap()</i> is in a sense then, a forward
+reference to a tag that we know is contained in the template. Thus, although
+a new <i>CHTMLText</i> node <i>is</i> instantiated in this statement, it
+is not appended to the page as a child, but is instead "mapped" to the
+page's <i>m_TagMap</i> where it is indexed by "VIEW".
+<p>The contents of the template file will not be read until <i>Print()</i>
+is invoked. At that time, the text in the template file will be stored
+in a <i><a href="#text">CHTMLText</a></i> node, and when that node is in
+turn printed, any tag node substitutions will then be made. More generally,
+nodes are not added to the page's <i>m_Children</i> graph until <i>Print()</i>
+is executed. At that time, <i>CreateSubNodes()</i> is invoked if <i>m_Children</i>
+is empty. Finally, the actual mapping of a tag (embedded in the template)
+to the associated <i>TagMapper</i> in <i>m_TagMap</i>, is executed by <i>CHTMLText::PrintBegin()</i>.
+<p>The <i>CHTMLPage</i> class, in combination with a template file, provides
+a very powerful and general method for generating a "boiler-plate" web
+page which can be adapted to application-specific needs using the <i>CHTMLPage::AddTagMap()</i>
+method. When needed, The user can edit the template file to insert additional
+<i>&lt;@tagname@></i> tags. The <i>AddTagMap()</i> method is defined <i>only</i>
+for page objects however, as they are the only class having a <i>m_TagMap</i>
+data member.
+<p>Before continuing to a general discussion of <i>tagnodes</i>, let's
+review how the page classes work in combination with a template file:
+<ol>
+<li>
+A page is first created with a title string and a template file name. These
+arguments are stored directly in the page's data members, <i>m_Title</i>
+and <i>m_TemplateFile</i>.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+The page's <i>Init()</i> method is then called to establish tagmap entries
+for "TITLE" and "VIEW" in <i>m_TagMap</i>.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+Additional HTML nodes which should be added to this page are inserted using
+the page's <i>AddTagMap(tagname, *node)</i> method, where the <i>string
+tagname</i> appears in the template as <i>"&lt;@tagname@>"</i>. Typically,
+a CGI application defines a custom implementation of the <i>CreateView()</i>
+method, and installs it using <i>AddTagMap("VIEW", CreateView())</i>.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+When the page's <i>Print()</i> method is called, it first checks to see
+if the page has any child nodes, and if so, assumes there is no template
+loaded, and simply calls <i>PrintChildren()</i>. If there are no children
+however, <i>page->CreateSubNodes()</i> is called, which in turn calls the
+<i>CreateTemplate()</i> method. This method simply reads the contents of
+the template file and stores it directly in a <i>CHTMLText</i> node, which
+is installed as the only child of the parent page.</li>
+
+<br>&nbsp;
+<p>&nbsp;
+<li>
+The page's <i>Print()</i> method then calls <i>PrintChildren()</i>, which
+(eventually) causes <i>CHTMLText::PrintBegin()</i> to be executed. This
+method in turn, encodes special handling of <i>"&lt;@tagname@>"</i> strings.
+In effect, it repeatedly outputs all text up to the first "@" character;
+extracts the <i>tagname</i> from the text; searches the parent page's m_TagMap
+to find the <i>TagMapper</i> for that <i>tagname</i>, and finally, calls
+<i>Print()</i>
+on the HTML node returned by the <i>Tagmapper</i>. <i>CHTMLText::PrintBegin()</i>
+continues in this fashion until the end of its text is reached.</li>
+</ol>
+NOTE: appending any child nodes directly to the page prior to calling the
+<i>Print()</i> method will make the template effectively inaccessible,
+since <i>m_Children()</i> will not be empty. For this reason, the user
+is advised to use <i>AddTagNode()</i> rather than <i>AppendChild()</i>
+when adding subcomponents.&nbsp;<a NAME="tag"></a>
+<h3>
+The
+<a href="../docxx/CHTMLTagNode.html"><i>CHTMLTagNode</i> </a>class</h3>
+The objects and methods described to this point provide no mechanisms for
+dynamically adding tagged nodes. As mentioned, the user is free to edit
+the template file to contain additional <i>&lt;@tag@></i> names, and <i>AddTagMap()</i>
+can then be used to associate tagmappers with these new tags. This however,
+requires that one know ahead of time how many tagged nodes will be used.
+The problem specifically arises in the usage of template files, as it is
+not possible to add child nodes directly to the page without overriding
+the the template file.
+<p>&nbsp;The <i>CHTMLTagNode</i> class addresses this issue. Derived directly
+from <i>CNCBINode</i>, the class's constructor takes a single (<i>string</i>
+or <i>char*</i>) argument, <i>tagname</i>, which is stored as <i>m_Name</i>.
+The <i><a href="../lxr/ident?i=PrintChildren">CHTMLTagNode::PrintChildren()</a></i>
+method is specialized to handle tags, and makes a call to <i><a href="../lxr/ident?i=MapTagAll">MapTagAll</a>(GetName(),
+mode)</i>. Here, <i>GetName()</i> returns the <i>m_Name</i> of the
+<i>CHTMLTagNode</i>,
+and <i>mode</i> is the <i><a href="#tmode">TMode</a></i> argument that
+was passed in to <i>PrintChildren()</i>. In addition to an enumeration
+variable specifying the mode of output, a <i>TMode</i> object has a pointer
+to the parent node that invoked <i>PrintChildren()</i>. This pointer is
+used by <i>MapTagAll()</i>, to locate a parent node whose <i>m_TagMap</i>
+has an installed <i>tagmapper</i> for the tagname. The <i>TMode</i> object's
+parent pointer essentially implements a stack which can be used to retrace
+the dynamic chain of <i>PrintChildren()</i> invocations, until either a
+match is found or the end of the call stack is reached. When a match is
+found, the associated <i>tagmapper</i>'s <i>MapTag()</i> method is invoked,
+and <i>Print()</i> is applied to the node returned by this function.
+<p>The following example uses an auxillary <i>CNCBINode</i> (<i>tagHolder</i>)
+to install additional
+<i>CHTMLTagNode</i> objects. The tags themselves
+however, are installed in the containing page's <i>m_TagMap</i>, where
+they will be retrieved by the <i>MapTagAll()</i> function, when <i>PrintChildren()</i>
+is called for the auxillary node. That node in turn, is mapped to the page's
+<i>VIEW</i> tag. When the parent page is "printed", <i>CreateSubNodes()</i>
+will create a <i>CHTMLText</i> node. The text node will hold the contents
+of the template file and be appended as a child to the page. When <i>PrintBegin()</i>
+is later invoked for the text node, <i>MapTagAll()</i> associates the <i>VIEW</i>
+string with the <i>CNCBINode</i>, and in turn, calls <i>Print()</i> on
+that node.
+<pre><font color="#000080">#include &lt;html/html.hpp>
+#include &lt;html/page.hpp>
+
+USING_NCBI_SCOPE;
+
+int main()&nbsp;
+{
+&nbsp;&nbsp;&nbsp; try {
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHTMLPage *Page = new CHTMLPage("myTitle", "ncbi_page.html");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNCBINode *tagHolder = new CNCBINode();
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "VIEW", tagHolder);
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTMLTagNode("TAG1"));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTML_br());
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTMLTagNode("TAG2"));
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "TAG1", new CHTMLText("Insert this string at TAG1"));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "TAG2", new CHTMLText("Insert another string at TAG2"));
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->Print(cout);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout.flush();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; }
+
+&nbsp;&nbsp;&nbsp; catch (exception&amp; exc) {&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; return 1;
+}</font></pre>
+<a NAME="htmnode"></a>
+<h3>
+The <i><a href="../docxx/CHTMLNode.html">CHTMLNode</a></i> class</h3>
+<i>CHTMLNode</i> is derived directly from the <i>CNCBINode</i> class, and
+provides the base class for all elements requiring HTML tags (e.g., &lt;ul>,
+&lt;br>, &lt;img>, &lt;table>, etc.). The class interface includes several
+constructors, all of which expect the first argument to specify the HTML
+tagname for the node. This argument is used by the constructor to set the
+<i>m_Name</i> data member. The optional second argument may be either a
+text string, which will be appended to the node using <i>AppendPlainText()</i>,
+or a <i>CNCBINode</i>, which will be appended using
+<i>AppendChild()</i>.
+<p>&nbsp;A uniform system of class names is applied; each subclass derived
+from the <i>CHTMLNode</i> base class is named <i>CHTML_[tag]</i>, where
+<i>[tag]</i> is the HTML tag in lowercase, and is always preceded by an
+underscore. The NCBI C++ Toolkit hierarchy defines roughly 40 subclasses
+of <i><a href="#CHTMLNode">CHTMLNode</a></i> - all of which are defined
+in the <a href="#quickRef">Quick Reference Guide</a> at the end of this
+section. The constructors for "empty" elements, such as <i><a href="#CHTML_br">CHTML_br</a></i>,
+which have no assigned values, are simply invoked as:
+<i>CHTML_br()</i>.
+The Quick Reference Guide provides brief explanations of each class, along
+with descriptions of the class constructors.
+<p>In addition to the subclasses explicitly defined in the hierarchy, a
+large number of lightweight subclasses of <i>CHTMLNode</i> are defined
+by the preprocessor macro <i><a href="../lxr/ident?i=DECLARE_HTML_ELEMENT">DECLARE_HTML_ELEMENT</a>(Tag,
+Parent)</i> defined in <i>html.hpp</i>. All of these elements have the
+same interface as other <i>CHTMLNode</i> classes however, and the distinction
+is invisible to the user.
+<p>&nbsp;A rich interface of settable attributes is defined in the base
+class, and is applicable to all of the derived subclasses, including those
+implemented by the preprocessor macros. Settable attributes include: <i>class,
+style, id, width, height, size, alignment, color, title, accesskey,</i>
+and <i>name</i>. All of the <i>SetXxx()</i> functions which set these attributes
+return a <i>this</i> pointer, cast as <i>CHTMLNode*</i>.
+<p><a NAME="htmdualnode"></a>
+<h3>
+The <i><a href="../docxx/CHTMLDualNode.html">CHTMLDualNode</a></i> class</h3>
+<i>CHTMLDualNode</i> is derived directly from the <i>CNCBINode</i> class,
+and provides the base class for all elements requiring different means
+for displaying data in <i><a href="#appendix">eHTML</a></i> and <i><a href="#appendix">ePlainText</a></i>
+modes.
+<p>&nbsp;This class interface includes several constructors. The second
+argument in these constructors specifies the alternative text to&nbsp;
+be displayed in <i>ePlainText</i> mode. The first argument of these constructors
+expects HTML text or pointer to an object of (or inherited from) CNCBINode
+class. It will be appended to the node using <i>AppendChild()</i> method,
+and printed out in <i>eHTML</i> mode. For example:
+<pre>&nbsp;&nbsp;&nbsp; (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);</pre>
+will generate the output:
+<pre>&nbsp;&nbsp;&nbsp; &lt;p>text&lt;/p></pre>
+whereas:
+<pre>&nbsp;&nbsp;&nbsp; (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);</pre>
+will generate:
+<pre>&nbsp;&nbsp;&nbsp; \n TEXT \n</pre>
+<a NAME="cgiapp"></a>
+<h3>
+Using the HTML classes with a <i>CCgiApplication</i> object</h3>
+The previous chapter described the NCBI C++ Toolkit's <a href="cgi.html">CGI</a>
+classes, with an emphasis on their independence from the HTML classes.
+In practice however, a real application must employ both types of objects,
+and they must communicate with one another. The only explicit connection
+between the CGI and HTML components is in the HTML page classes, whose
+constructors accept a <i><a href="cgi.html#ccgiapp">CCgiApplication</a></i>
+as an input parameter. The open-ended definition of the page's <i>m_TagMap</i>
+data member also allows the user to install <i>tagmapper</i> functions
+that are under control of the application, thus providing an "output port"
+for the application. In particular, an application-specific <i>CreateView()</i>
+method can easily be installed as the function to be associated with a
+page's <i>VIEW</i> tag. The <i><a href="../tools/hello/hello.html">Hello</a></i>
+demo program provides a simple example of using these classes in coordination
 with each other.
-
-<p>
-<a name="appendix"> <h1>Appendix</h1>
-<a name="tmode"> <h3> The <a href="../docxx/TMode.html">
-<i>CNCBINode::TMode</i></a> class</h3>
+<p><a NAME="appendix"></a>
+<h1>
+Appendix</h1>
+<a NAME="tmode"></a>
+<h3>
+The <i><a href="../docxx/TMode.html">CNCBINode::TMode</a></i> class</h3>
 <i>TMode</i> is an internal class defined inside the <i>CNCBINode</i> class.
 The <i>TMode</i> class has three data members defined:
 <ol>
-<li> <i>EMode m_Mode </i>- an enumeration variable specifying <i>eHTML</i> (0) or <i>ePlainText</i> (1) output encoding
-<li> <i>CNCBINode* m_Node </i> - a pointer to the <i>CNCBINode</i> associated with this <i>TMode</i> object
-<li> <i>TMode* m_Previous </i> - a pointer to the <i>TMode</i> associated with the parent of <i>m_Node</i>
+<li>
+<i>EMode m_Mode </i>- an enumeration variable specifying <i>eHTML</i> (0)
+or <i>ePlainText</i> (1) output encoding</li>
+
+<li>
+<i>CNCBINode* m_Node </i>- a pointer to the <i>CNCBINode</i> associated
+with this <i>TMode</i> object</li>
+
+<li>
+<i>TMode* m_Previous </i>- a pointer to the <i>TMode</i> associated with
+the parent of <i>m_Node</i></li>
 </ol>
-<i>Print()</i> is implemented
-as a recursive function that allows the child node to dynamically "inherit" its mode of output from the parent node
-which contains it. <i>Print()</i> outputs the current node using <i>PrintBegin()</i>, recursively prints the
-child nodes using <i>PrintChildren()</i>, and concludes with a call to <i>PrintEnd()</i>.
-<i>TMode</i> objects are created dynamically as needed, inside the <i>Print()</i> function.
-The first call to <i>Print()</i> from say, a root <i>Page</i> node, generally specifies the output stream
-only, and uses a default <i>eHTML</i> enumeration value to initialize a <i>TMode</i> object.
-The <i>TMode</i> constructor in this case is:
+<i>Print()</i> is implemented as a recursive function that allows the child
+node to dynamically "inherit" its mode of output from the parent node which
+contains it. <i>Print()</i> outputs the current node using <i>PrintBegin()</i>,
+recursively prints the child nodes using <i>PrintChildren()</i>, and concludes
+with a call to <i>PrintEnd()</i>.
+<i>TMode</i> objects are created dynamically
+as needed, inside the <i>Print()</i> function. The first call to <i>Print()</i>
+from say, a root <i>Page</i> node, generally specifies the output stream
+only, and uses a default <i>eHTML</i> enumeration value to initialize a
+<i>TMode</i> object. The <i>TMode</i> constructor in this case is:
+<center><pre>&nbsp;TMode(EMode m = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center>
 
-<center><pre> TMode(EMode m = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center><br>
-
-The call to <i>Print()</i> with no <i>TMode</i> argument automatically calls this default
-constructor to create a <i>TMode</i> object which will then be substituted for the formal
-parameter <i>prev</i> inside tbe <i>Print()</i> method. One way to think of this is that the
-initial print call - which will ultimately be propagated to all of the child nodes - is
-initiated with a "null parent" <i>TMode</i> object that only specifies the mode of output.
-
-<font color = "#000080"> <pre>
-CNcbiOstream& CNCBINode::Print(CNcbiOstream& os, TMode prev)
+<p><br>The call to <i>Print()</i> with no <i>TMode</i> argument automatically
+calls this default constructor to create a <i>TMode</i> object which will
+then be substituted for the formal parameter <i>prev</i> inside tbe <i>Print()</i>
+method. One way to think of this is that the initial print call - which
+will ultimately be propagated to all of the child nodes - is initiated
+with a "null parent" <i>TMode</i> object that only specifies the mode of
+output.
+<pre><font color="#000080">CNcbiOstream&amp; CNCBINode::Print(CNcbiOstream&amp; os, TMode prev)
 {
-    // ...
+&nbsp;&nbsp;&nbsp; // ...
 
-    TMode mode(&prev, this);
+&nbsp;&nbsp;&nbsp; TMode mode(&amp;prev, this);
 
-    PrintBegin(os, mode);
+&nbsp;&nbsp;&nbsp; PrintBegin(os, mode);
 
-    try {
-        PrintChildren(out, mode);
-    }
-    catch (...) {
-        // ...
-    }
-  
-    PrintEnd(os, mode);
-}
-</pre></font>
-In the first top-level call to <i>Print()</i>, <i>prev</i> is the default <i>TMode</i> object
-described above, with <i>NULL</i> values for <i>m_Previous</i> and <i>m_Node</i>. In the 
-body of the <i>Print()</i> method however, a new <i>TMode</i> is created for subsequent 
-recursion, with the following constructor used to create the new <i>TMode</i> at that level:
-
+&nbsp;&nbsp;&nbsp; try {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PrintChildren(out, mode);
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; catch (...) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; PrintEnd(os, mode);
+}</font></pre>
+In the first top-level call to <i>Print()</i>, <i>prev</i> is the default
+<i>TMode</i> object described above, with <i>NULL</i> values for <i>m_Previous</i>
+and <i>m_Node</i>. In the body of the <i>Print()</i> method however, a
+new <i>TMode</i> is created for subsequent recursion, with the following
+constructor used to create the new <i>TMode</i> at that level:
 <pre>TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode), m_Node(N), m_Previous(M) {}</pre>
-
-where <i>M</i> is the <i>TMode</i> input parameter, and <i>N</i> is the <i>current</i> node.<p>
-
-<a name="createsub">
-
-Thus, the output encoding specified at the top level is propagated to the <i>PrintXxx()</i> methods
-of all the child nodes embedded in the parent. The <i>CNCBINode::PrintXxx()</i> methods essentially do nothing;
-<i>PrintBegin()</i> and <i>PrintEnd()</i> simply return 0, and <i>PrintChildren()</i> just
-calls <i>Print()</i> on each child. Thus, the actual printing is implemented by the 
-<a href="../lxr/ident?i=PrintBegin"> 
-<i>PrintBegin()</i></a>  and
-<a href="../lxr/ident?i=PrintEnd"> 
-<i>PrintEnd()</i></a> methods that are specialized by the child objects. 
-<p>
-
-As the foregoing discussion implies, a generic <i>CNCBINode</i> which has no children explicitly installed
-will generate no output. For example, a 
-<a href="../lxr/ident?i=CHTMLPage">
-<i>CHTMLPage</i></a> object which has been initialized by loading a 
-<a href="../lxr/ident?i=CreateTemplate">
-template</a> file has no children until they are explicitly created. In this case, the <i>Print()</i>
-method will first call
-<a href="../lxr/ident?i=CreateSubNodes">
-<i>CreateSubNodes()</i></a> before executing <i>PrintChildren()</i>. The use of template files, and
-the associated set of <i>TagMap</i> functions are discussed in the section on the
-NCBI <a href="#tagmap"> Page</a> classes. <p>
-
-<a name="quickRef">  <h3> Quick Reference Guide</h3>
+where <i>M</i> is the <i>TMode</i> input parameter, and <i>N</i> is the
+<i>current</i> node.
+<p><a NAME="createsub"></a>Thus, the output encoding specified at the top
+level is propagated to the <i>PrintXxx()</i> methods of all the child nodes
+embedded in the parent. The <i>CNCBINode::PrintXxx()</i> methods essentially
+do nothing;
+<i>PrintBegin()</i> and <i>PrintEnd()</i> simply return 0,
+and <i>PrintChildren()</i> just calls <i>Print()</i> on each child. Thus,
+the actual printing is implemented by the <i><a href="../lxr/ident?i=PrintBegin">PrintBegin()</a></i>
+and
+<i><a href="../lxr/ident?i=PrintEnd">PrintEnd()</a></i> methods that
+are specialized by the child objects.
+<p>As the foregoing discussion implies, a generic <i>CNCBINode</i> which
+has no children explicitly installed will generate no output. For example,
+a <i><a href="../lxr/ident?i=CHTMLPage">CHTMLPage</a></i> object which
+has been initialized by loading a <a href="../lxr/ident?i=CreateTemplate">template</a>
+file has no children until they are explicitly created. In this case, the
+<i>Print()</i> method will first call
+<i><a href="../lxr/ident?i=CreateSubNodes">CreateSubNodes()</a></i>
+before executing <i>PrintChildren()</i>. The use of template files, and
+the associated set of <i>TagMap</i> functions are discussed in the section
+on the NCBI <a href="#tagmap">Page</a> classes.
+<p><a NAME="quickRef"></a>
+<h3>
+Quick Reference Guide</h3>
 
 <ul>
-<li> <a href="#CNCBINode"> <i>CNCBINode</i></a>
-<ul> 
-<li><a href="#CButtonList"><i>CButtonList</i></a>
-<li><a href="#CHTMLBasicPage"><i>CHTMLBasicPage</i></a>
-	<ul>
-	<li><a href="#CHTMLPage"><i>CHTMLPage</i></a>
-    		<ul>
-     		<li><a href="#CPmDocSumPage"><i>CPmDocSumPage</i></a>
-     		<li><a href="#CPmFrontPage"><i>CPmFrontPage</i></a>
-    		</ul>
-   	</ul>
+<li>
+<i><a href="#CNCBINode">CNCBINode</a></i></li>
 
-<li><a href="#CHTMLNode">	 <i>CHTMLNode</i></a>
-	<ul>
-    	<li><a href="#CHTMLComment"><i>CHTMLComment</i></a>
-	<li><a href="#CHTMLOpenElement">	<i>CHTMLOpenElement</i></a>
-		<ul>
-        	<li><a href="#CHTML_br">	<i>CHTML_br</i></a>
-        	<li><a href="#CHTML_hr">	<i>CHTML_hr</i></a>
-        	<li><a href="#CHTML_img">	<i>CHTML_img</i></a>
-		<li><a href="#CHTML_input">	<i>CHTML_input</i></a>
-			<ul>
-	  		<li><a href="#CHTML_checkbox"> <i>CHTML_checkbox</i></a>
-	  		<li><a href="#CHTML_file">	<i>CHTML_file</i></a>
-	  		<li><a href="#CHTML_hidden">	<i>CHTML_hidden</i></a>
-	  		<li><a href="#CHTML_image">	<i>CHTML_image</i></a>
-	  		<li><a href="#CHTML_radio">	<i>CHTML_radio</i></a>
-	  		<li><a href="#CHTML_reset">	<i>CHTML_reset</i></a>
-			<li><a href="#CHTML_submit">	<i>CHTML_submit</i></a>
-			<li><a href="#CHTML_text">	<i>CHTML_text</i></a>
-			</ul>
+<ul>
+<li>
+<i><a href="#CButtonList">CButtonList</a></i></li>
 
-        	<li><a href="#CHTMLElement">	<i>CHTMLElement</i></a>
-        		<ul>
-	    		<li><a href="#CHTML_a">		<i>CHTML_a</i></a>
-	    		<li><a href="#CHTML_basefont">	<i>CHTML_basefont</i></a>
-	    		<!--li><a href="#CHTML_button">	<i>CHTML_button</i></a-->
-	    		<li><a href="#CHTML_dl">	<i>CHTML_dl</i></a>
- 	    		<li><a href="#CHTML_fieldset">	<i>CHTML_fieldset</i></a>
- 	    		<li><a href="#CHTML_font">	<i>CHTML_font</i></a>
-	    			<ul>
-	      			<li><a href="#CHTML_color"><i>CHTML_color</i></a>
-	    			</ul>
-	    		<li><a href="#CHTML_form">	<i>CHTML_form</i></a>
-	    		<li><a href="#CHTML_label">	<i>CHTML_label</i></a>
-	    		<li><a href="#CHTML_legend">	<i>CHTML_legend</i></a>
-	    		<li><a href="#CHTML_option">	<i>CHTML_option</i></a>
-	    		<li><a href="#CHTML_select">	<i>CHTML_select</i></a>
-	  		<li><a href="#CHTML_table">	<i>CHTML_table</i></a>
-	  			<ul>
-	    			<li><a href="#CLinkBar">	<i>CLinkBar</i></a>
-	    			<li><a href="#CPageList">	<i>CPageList</i></a>
-	    			<li><a href="#CPagerView">	<i>CPagerView</i></a>
- 	    			<li><a href="#CQueryBox">	<i>CQueryBox</i></a>
-	  			</ul>
-	  		<li><a href="#CHTML_tc">	<i>CHTML_tc</i></a>
- 	  		<li><a href="#CHTML_textarea">	<i>CHTML_textarea</i></a>
-	    		<li><a href="#CHTML_tr">	<i>CHTML_tr</i></a>
-	    		<li><a href="#CHTMLListElement"> <i>CHTMLListElement</i></a>
-	     			<ul>
-	       			<li><a href="#CHTML_dir">  <i>CHTML_dir</i></a>
-	       			<li><a href="#CHTML_menu"> <i>CHTML_menu</i></a>
-	       			<li><a href="#CHTML_ol">   <i>CHTML_ol</i></a>
-	       			<li><a href="#CHTML_ul">   <i>CHTML_ul</i></a>
-	     			</ul>
-	   		</ul>
-        	</ul>
-   	</ul>
-<li><a href="#CHTMLPlainText">   <i>CHTMLPlainText</i></a>
-<li><a href="#CHTMLTagNode">	 <i>CHTMLTagNode</i></a>
-<li><a href="#CHTMLDualNode">	 <i>CHTMLDualNode</i></a>
-	<ul>
-    	<li><a href="#CHTMLSpecialChar"><i>CHTMLSpecialChar</i></a>
-        </ul>
-<li><a href="#CHTMLText">	 <i>CHTMLText</i></a>
-<li><a href="#CPager">		 <i>CPager</i></a>
-<li><a href="#CPagerBox">	 <i>CPagerBox</i></a>
-<li><a href="#CSelection">	 <i>CSelection</i></a>
-<li><a href="#CSmallPagerBox">	 <i>CSmallPagerBox</i></a>
-</ul> 
+<li>
+<i><a href="#CHTMLBasicPage">CHTMLBasicPage</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTMLPage">CHTMLPage</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CPmDocSumPage">CPmDocSumPage</a></i></li>
+
+<li>
+<i><a href="#CPmFrontPage">CPmFrontPage</a></i></li>
 </ul>
-&nbsp;<p>
+</ul>
+
+<li>
+<i><a href="#CHTMLNode">CHTMLNode</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTMLComment">CHTMLComment</a></i></li>
+
+<li>
+<i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTML_br">CHTML_br</a></i></li>
+
+<li>
+<i><a href="#CHTML_hr">CHTML_hr</a></i></li>
+
+<li>
+<i><a href="#CHTML_img">CHTML_img</a></i></li>
+
+<li>
+<i><a href="#CHTML_input">CHTML_input</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTML_checkbox">CHTML_checkbox</a></i></li>
+
+<li>
+<i><a href="#CHTML_file">CHTML_file</a></i></li>
+
+<li>
+<i><a href="#CHTML_hidden">CHTML_hidden</a></i></li>
+
+<li>
+<i><a href="#CHTML_image">CHTML_image</a></i></li>
+
+<li>
+<i><a href="#CHTML_radio">CHTML_radio</a></i></li>
+
+<li>
+<i><a href="#CHTML_reset">CHTML_reset</a></i></li>
+
+<li>
+<i><a href="#CHTML_submit">CHTML_submit</a></i></li>
+
+<li>
+<i><a href="#CHTML_text">CHTML_text</a></i></li>
+</ul>
+
+<li>
+<i><a href="#CHTMLElement">CHTMLElement</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTML_a">CHTML_a</a></i></li>
+
+<li>
+<i><a href="#CHTML_basefont">CHTML_basefont</a></i>&nbsp;<!--li><a href="#CHTML_button">	<i>CHTML_button</i></a--></li>
+
+<li>
+<i><a href="#CHTML_dl">CHTML_dl</a></i></li>
+
+<li>
+<i><a href="#CHTML_fieldset">CHTML_fieldset</a></i></li>
+
+<li>
+<i><a href="#CHTML_font">CHTML_font</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTML_color">CHTML_color</a></i></li>
+</ul>
+
+<li>
+<i><a href="#CHTML_form">CHTML_form</a></i></li>
+
+<li>
+<i><a href="#CHTML_label">CHTML_label</a></i></li>
+
+<li>
+<i><a href="#CHTML_legend">CHTML_legend</a></i></li>
+
+<li>
+<i><a href="#CHTML_option">CHTML_option</a></i></li>
+
+<li>
+<i><a href="#CHTML_select">CHTML_select</a></i></li>
+
+<li>
+<i><a href="#CHTML_table">CHTML_table</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CLinkBar">CLinkBar</a></i></li>
+
+<li>
+<i><a href="#CPageList">CPageList</a></i></li>
+
+<li>
+<i><a href="#CPagerView">CPagerView</a></i></li>
+
+<li>
+<i><a href="#CQueryBox">CQueryBox</a></i></li>
+</ul>
+
+<li>
+<i><a href="#CHTML_tc">CHTML_tc</a></i></li>
+
+<li>
+<i><a href="#CHTML_textarea">CHTML_textarea</a></i></li>
+
+<li>
+<i><a href="#CHTML_tr">CHTML_tr</a></i></li>
+
+<li>
+<i><a href="#CHTMLListElement">CHTMLListElement</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTML_dir">CHTML_dir</a></i></li>
+
+<li>
+<i><a href="#CHTML_menu">CHTML_menu</a></i></li>
+
+<li>
+<i><a href="#CHTML_ol">CHTML_ol</a></i></li>
+
+<li>
+<i><a href="#CHTML_ul">CHTML_ul</a></i></li>
+</ul>
+</ul>
+</ul>
+</ul>
+
+<li>
+<i><a href="#CHTMLPlainText">CHTMLPlainText</a></i></li>
+
+<li>
+<i><a href="#CHTMLTagNode">CHTMLTagNode</a></i></li>
+
+<li>
+<i><a href="#CHTMLDualNode">CHTMLDualNode</a></i></li>
+
+<ul>
+<li>
+<i><a href="#CHTMLSpecialChar">CHTMLSpecialChar</a></i></li>
+</ul>
+
+<li>
+<i><a href="#CHTMLText">CHTMLText</a></i></li>
+
+<li>
+<i><a href="#CPager">CPager</a></i></li>
+
+<li>
+<i><a href="#CPagerBox">CPagerBox</a></i></li>
+
+<li>
+<i><a href="#CSelection">CSelection</a></i></li>
+
+<li>
+<i><a href="#CSmallPagerBox">CSmallPagerBox</a></i></li>
+</ul>
+</ul>
+
+<p>
 <hr>
 <dl>
-<dt><a name="CButtonList"> <a href="../docxx/CButtonList.html">
-<i>CButtonList</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="../lxr/ident?i=CButtonList">
-<i>components.hpp</i></a>.
+<dt>
+<a NAME="CButtonList"></a><i><a href="../docxx/CButtonList.html">CButtonList</a></i>
+(Custom feature not for general use.)</dt>
 
-An HTML select button with a drop down list; used in <a href="#CPagerBox">
-<i>CPagerBox</i></a>. The constructor takes no arguments, and child nodes (options) are added using method 
-<a href="../lxr/ident?i=CreateSubNodes">
-<i>CbuttonList::CreateSubNodes()</i></a>
-<p>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>; defined in
+<i><a href="../lxr/ident?i=CButtonList">components.hpp</a></i>.
+An HTML select button with a drop down list; used in <i><a href="#CPagerBox">CPagerBox</a></i>.
+The constructor takes no arguments, and child nodes (options) are added
+using method <i><a href="../lxr/ident?i=CreateSubNodes">CbuttonList::CreateSubNodes()</a></i></dd>
 
-<dt><a name="CHTML_a"> <a href="../docxx/CHTML_a.html">
-<i>CHTML_a</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="../lxr/ident?i=CHTML_a">
-<i>html.hpp</i></a> - 
-an HTML anchor element, as used in <i>&lt;a href="..."></i>. The constructor takes the URL string
-as the argument, and optionally, a <i>CNCBINode</i> to be appended as a child node. The label
-inserted before the closing tag (&lt;/a>) can thus be specified by providing a <a href="#CHTMLText">
-<i>CHTMLText</i></a> node to the constructor, or by using the <i>AppendChild()</i> after the anchor 
-has been created.
-<p>
+<dt>
+<a NAME="CHTML_a"></a><i><a href="../docxx/CHTML_a.html">CHTML_a</a></i></dt>
 
-<dt><a name="CHTML_basefont"> <a href="../docxx/CHTML_basefont.html">
-<i>CHTML_basefont</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_basefont">
-<i>html.hpp</i></a> - 
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_a">html.hpp</a></i> - an HTML anchor element,
+as used in <i>&lt;a href="..."></i>. The constructor takes the URL string
+as the argument, and optionally, a <i>CNCBINode</i> to be appended as a
+child node. The label inserted before the closing tag (&lt;/a>) can thus
+be specified by providing a <i><a href="#CHTMLText">CHTMLText</a></i> node
+to the constructor, or by using the <i>AppendChild()</i> after the anchor
+has been created.</dd>
 
-an HTML basefont element used to define the font size and/or typeface for text embedded in
-this node by <i>AppendChild()</i>. The constructor expects one to two arguments specifying size,
-typeface, or both.
-<p>
+<dt>
+<a NAME="CHTML_basefont"></a><i><a href="../docxx/CHTML_basefont.html">CHTML_basefont</a></i></dt>
 
-<dt><a name="CHTML_br"> <a href="../docxx/CHTML_br.html">
-<i>CHTML_br</i></a>
-<dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_br">
-<i>html.hpp</i></a> - 
-the HTML component used to insert line breaks. The constructor takes no arguments.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_basefont">html.hpp</a></i> - an HTML basefont
+element used to define the font size and/or typeface for text embedded
+in this node by <i>AppendChild()</i>. The constructor expects one to two
+arguments specifying size, typeface, or both.</dd>
 
-<dt><a name="CHTML_checkbox"> <a href="../docxx/CHTML_checkbox.html">
-<i>CHTML_checkbox</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_checkbox">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a checkbox. The
-constructor takes up to four arguments specifying the name (<i>string</i>), value (<i>string</i>),
-state (<i>bool</i>), and description (<i>string</i>) for the node.
-<p>
+<dt>
+<a NAME="CHTML_br"></a><i><a href="../docxx/CHTML_br.html">CHTML_br</a></i></dt>
 
-<dt><a name="CHTML_color"> <a href="../docxx/CHTML_color.html">
-<i>CHTML_color</i></a>
-<dd>Derived from <a href="#CHTML_font"><i>CHTML_font</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_color">
-<i>html.hpp</i></a> - 
-an HTML font color element. Two constructors are available, and both expect <i>string color</i>
-as the first argument. If no other argument is provided, a <i>NULL CNCBINode</i> is assumed
-for the second argument, and text can be added  to the node using <i>AppendChild()</i>.
-An alternative constructor accepts a simple <i>string text</i> argument. 
-<p>
+<dd>
+Derived from <i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_br">html.hpp</a></i> - the HTML component
+used to insert line breaks. The constructor takes no arguments.</dd>
 
-<dt><a name="CHTML_dir"> <a href="../docxx/CHTML_dir.html">
-<i>CHTML_dir</i></a>
-<dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_dir">
-<i>html.hpp</i></a> - 
-the HTML component used to insert a <i>dir</i> list. 
-The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
-is by default false, and the <i>type</i> attribute is left to the browser. 
-<i>CHTML_dir("square", true)</i> will create a compact <i>dir</i> element with square icons.
-Items can be added to the list using 
-<i>AppendChild(new CHTMLText("&lt;li>...")</i>.
-<p>
+<dt>
+<a NAME="CHTML_checkbox"></a><i><a href="../docxx/CHTML_checkbox.html">CHTML_checkbox</a></i></dt>
 
-<dt><a name="CHTML_dl"> <a href="../docxx/CHTML_dl.html">
-<i>CHTML_dl</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_dl">
-<i>html.hpp</i></a> - an HTML glossary list. 
-The constructor takes a single <i>bool</i> argument; if no arguments are provided, the
-<i>compact</i> attribute is by default false.  Terms are added to the list using
-<a href="../lxr/ident?i=AppendTerm">
-<i>AppendTerm()</i></a>.
-<p>
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_checkbox">html.hpp</a></i> - can only
+be used inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML
+component for a checkbox. The constructor takes up to four arguments specifying
+the name (<i>string</i>), value (<i>string</i>), state (<i>bool</i>), and
+description (<i>string</i>) for the node.</dd>
 
-<dt><a name="CHTML_fieldset"> 
-<a href="../docxx/CHTML_fieldset.html">
-<i>CHTML_fieldset</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_fieldset">
+<dt>
+<a NAME="CHTML_color"></a><i><a href="../docxx/CHTML_color.html">CHTML_color</a></i></dt>
 
-<i>html.hpp</i></a> - an element that groups related form controls (such as checkboxes, radio
-buttons, etc.)  together to define a <i>form control group</i>.  The constructors take at most 1
-argument, which may be either a <i>string</i> or a <a href="#CHTML_legend"> <i>CHTML_legend</i></a>
-node. If the argument is a <i>string</i>, then it is used to create a <i>CHTML_legend</i> node for
-the <i>fieldset</i>. The individual form controls to be included in the group are specified using the 
-<i>AppendChild()</i> method.
-<p>
+<dd>
+Derived from <i><a href="#CHTML_font">CHTML_font</a></i>, defined in <i><a href="../lxr/ident?i=CHTML_color">html.hpp</a></i>
+- an HTML font color element. Two constructors are available, and both
+expect <i>string color</i> as the first argument. If no other argument
+is provided, a <i>NULL CNCBINode</i> is assumed for the second argument,
+and text can be added to the node using <i>AppendChild()</i>. An alternative
+constructor accepts a simple <i>string text</i> argument.</dd>
 
-<dt><a name="CHTML_file"> <a href="../docxx/CHTML_file.html">
-<i>CHTML_file</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_file">
-<i>html.hpp</i></a> - used only inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a> -
-a <i>form</i> input type to create a file widget for selecting files to be sent to the server. 
-The constructor takes a <i>string</i> name and an optional <i>string</i> value.
-<!--Note that the <i>ENCTYPE</i> attribute of the enclosing form must be
-<i>multipart/form-data</i> (see <a href="#CHTML_form"> <i>CHTML_form</i></a>).-->
-<p>
+<dt>
+<a NAME="CHTML_dir"></a><i><a href="../docxx/CHTML_dir.html">CHTML_dir</a></i></dt>
 
-<dt><a name="CHTML_font"> <a href="../docxx/CHTML_font.html">
-<i>CHTML_font</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_font">
-<i>html.hpp</i></a> - an HTML font element. 
-The constructor takes up to four arguments. The first three arguments specify the font typeface and
-size, along with a Boolean value indicating whether the given font size is absolute or relative.
-The last argument is either a <i>string</i> or a <i>CNCBINode</i> containing text. Additional
-text should be added using the  <i>AppendChild()</i> method.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLListElement">CHTMLListElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_dir">html.hpp</a></i> - the HTML component
+used to insert a <i>dir</i> list. The constructor takes zero to two arguments;
+if no arguments are provided, the <i>compact</i> attribute is by default
+false, and the <i>type</i> attribute is left to the browser. <i>CHTML_dir("square",
+true)</i> will create a compact <i>dir</i> element with square icons. Items
+can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>.</dd>
 
-<dt><a name="CHTML_form"> <a href="../docxx/CHTML_form.html">
-<i>CHTML_form</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_form">
-<i>html.hpp</i></a> - an HTML <i>form</i> node with two constructors. The first takes the URL
-<i>string</i> (for submission of form data) and method (<i>CHTML::eGet</i> or <i>CHTML::ePost</i>),
-and the <i>AppendChild()</i> method is used to add nodes. The second constructor takes three
-arguments, specifying the URL, an HTML node to append to the form, and the enumereated
-<i>get/post</i> method.
-<p>
+<dt>
+<a NAME="CHTML_dl"></a><i><a href="../docxx/CHTML_dl.html">CHTML_dl</a></i></dt>
 
-<dt><a name="CHTML_hidden"> <a href="../docxx/CHTML_hidden.html">
-<i>CHTML_hidden</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_hidden">
-<i>html.hpp</i></a> - used only inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a> -
-the HTML node for adding <i>hidden</i> key/value pairs to the data that
-will be submitted by an <i>HTML_form</i>. The constructor takes a name <i>string</i> and a 
-value, where the latter may be either a <i>string</i> or an <i>int</i>.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_dl">html.hpp</a></i> - an HTML glossary
+list. The constructor takes a single <i>bool</i> argument; if no arguments
+are provided, the
+<i>compact</i> attribute is by default false. Terms are
+added to the list using
+<i><a href="../lxr/ident?i=AppendTerm">AppendTerm()</a></i>.</dd>
 
-<dt><a name="CHTML_hr"> <a href="../docxx/CHTML_hr.html">
-<i>CHTML_hr</i></a>
-<dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_hr">
-<i>html.hpp</i></a> - 
-the HTML component used to insert a horizontal rule. The constructor takes up to three arguments,
-specifying the size, width and shading to be used in the display.
-<p>
+<dt>
+<a NAME="CHTML_fieldset"></a><i><a href="../docxx/CHTML_fieldset.html">CHTML_fieldset</a></i></dt>
 
-<dt><a name="CHTML_image"> <a href="../docxx/CHTML_image.html">
-<i>CHTML_image</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_image">
-<i>html.hpp</i></a> - used only inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a> -
-the HTML component used to add an inline active image to an HTML <i>form</i>. Clicking on the
-image submits the form data to the <i>CHTML_form</i>'s URL. The constructor takes three arguments, 
-specifying the name of the node, the URL string for the image file, and a Boolean value (optional)
-indicating whether or not the displayed image should have a border. 
-<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_fieldset">html.hpp</a></i> - an element
+that groups related form controls (such as checkboxes, radio buttons, etc.)
+together to define a <i>form control group</i>. The constructors take at
+most 1 argument, which may be either a <i>string</i> or a <i><a href="#CHTML_legend">CHTML_legend</a></i>
+node. If the argument is a <i>string</i>, then it is used to create a <i>CHTML_legend</i>
+node for the <i>fieldset</i>. The individual form controls to be included
+in the group are specified using the <i>AppendChild()</i> method.</dd>
 
-<dt><a name="CHTML_img"> <a href="../docxx/CHTML_img.html">
-<i>CHTML_img</i></a>
-<dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_img">
-<i>html.hpp</i></a> - an HTML <i>img</i> component for adding an inline image to
-a web page. The constructor takes a single URL <i>string</i> argument for the image's <i>src</i>.
-The alternative constructor also accepts two integer arguments specifying the width and height
-of the displayed image.
-<p>
+<dt>
+<a NAME="CHTML_file"></a><i><a href="../docxx/CHTML_file.html">CHTML_file</a></i></dt>
 
-<dt><a name="CHTML_input"> <a href="../docxx/CHTML_input.html">
-<i>CHTML_input</i></a>
-<dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_input">
-<i>html.hpp</i></a> - the base class for all HTML input elements to be added to a <a href="#CHTML_form">
-<i>CHTML_form</i></a>. The constructor takes a (<i>char*</i>) input type  and a (<i>string</i>) 
-name. The constructor for each of the subclasses has a static member <i>sm_InputType</i> which
-is passed as the first argument to the <i>CParent</i>'s (<i>CHTML_input</i>) constructor.
-<p>
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_file">html.hpp</a></i> - used only inside
+a <i><a href="#CHTML_form">CHTML_form</a></i> - a <i>form</i> input type
+to create a file widget for selecting files to be sent to the server. The
+constructor takes a <i>string</i> name and an optional <i>string</i> value.<!--Note that the <i>ENCTYPE</i> attribute of the enclosing form must be
+<i>multipart/form-data</i> (see <a href="#CHTML_form"> <i>CHTML_form</i></a>).--></dd>
 
-<dt><a name="CHTML_label"> 
-<a href="../docxx/CHTML_label.html">
-<i>CHTML_label</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_label">
-<i>html.hpp</i></a> - associates a label with a form control. 
+<dt>
+<a NAME="CHTML_font"></a><i><a href="../docxx/CHTML_font.html">CHTML_font</a></i></dt>
 
-The constructors take a <i>string</i> argument which specifies the text for the label,
-and optionally, a second <i>string</i> argument specifying the <i>FOR</i> attribute.
-The <i>FOR</i> attribute explicitly identifies the form control to associate with this label.<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_font">html.hpp</a></i> - an HTML font
+element. The constructor takes up to four arguments. The first three arguments
+specify the font typeface and size, along with a Boolean value indicating
+whether the given font size is absolute or relative. The last argument
+is either a <i>string</i> or a <i>CNCBINode</i> containing text. Additional
+text should be added using the <i>AppendChild()</i> method.</dd>
 
+<dt>
+<a NAME="CHTML_form"></a><i><a href="../docxx/CHTML_form.html">CHTML_form</a></i></dt>
 
-<dt><a name="CHTML_legend"> 
-<a href="../docxx/CHTML_legend.html">
-<i>CHTML_legend</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_legend">
-<i>html.hpp</i></a> - 
-defines a caption for a <a href="#CHTML_fieldset"><i>CHTML_fieldset</i></a> element. 
-The constructors take a single argument which may be either a <i>string</i> or
-a <i>CHTMLNode</i>. <p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_form">html.hpp</a></i> - an HTML <i>form</i>
+node with two constructors. The first takes the URL
+<i>string</i> (for
+submission of form data) and method (<i>CHTML::eGet</i> or <i>CHTML::ePost</i>),
+and the <i>AppendChild()</i> method is used to add nodes. The second constructor
+takes three arguments, specifying the URL, an HTML node to append to the
+form, and the enumereated
+<i>get/post</i> method.</dd>
 
-<dt><a name="CHTML_menu"> <a href="../docxx/CHTML_menu.html">
-<i>CHTML_menu</i></a>
-<dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_menu">
-<i>html.hpp</i></a> - 
-the HTML component used to insert a <i>menu</i> list. 
-The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
-is by default false, and the <i>type</i> attribute is left to the browser. 
-<i>CHTML_menu("square", true)</i> will create a compact <i>menu</i> element with square icons.
-Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>.
-<p>
+<dt>
+<a NAME="CHTML_hidden"></a><i><a href="../docxx/CHTML_hidden.html">CHTML_hidden</a></i></dt>
 
-<dt><a name="CHTML_ol"> <a href="../docxx/CHTML_ol.html">
-<i>CHTML_ol</i></a>
-<dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_ol">
-<i>html.hpp</i></a> - 
-the HTML component used to insert an enumerated list. The constructor takes up to three arguments,
-specifying the starting number, the <i>type</i> of enumeration (Arabic, Roman Numeral etc.), 
-and a Boolean argument specifying whether or not the display should be compact. 
-Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>. 
-<p>
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_hidden">html.hpp</a></i> - used only inside
+a <i><a href="#CHTML_form">CHTML_form</a></i> - the HTML node for adding
+<i>hidden</i> key/value pairs to the data that will be submitted by an
+<i>HTML_form</i>. The constructor takes a name <i>string</i> and a value,
+where the latter may be either a <i>string</i> or an <i>int</i>.</dd>
 
-<dt><a name="CHTML_option"> <a href="../docxx/CHTML_option.html">
-<i>CHTML_option</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_option">
-<i>html.hpp</i></a> - an HTML <i>option</i> associated with a <a href="#CHTML_select">
-<i>CHTML_select</i></a> component. The constructor takes a value (<i>string</i>), a
-label (<i>string</i> or <i>char*</i>), and a Boolean indicating whether or not the
-option is by default selected. The last two arguments are optional, and by default the option 
-is <i>not</i> selected. 
-<p>
+<dt>
+<a NAME="CHTML_hr"></a><i><a href="../docxx/CHTML_hr.html">CHTML_hr</a></i></dt>
 
-<dt><a name="CHTML_radio"> <a href="../docxx/CHTML_radio.html">
-<i>CHTML_radio</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_radio">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a radio button. The
-constructor takes up to four arguments specifying the name (<i>string</i>), value (<i>string</i>),
-state (<i>bool</i>), and description (<i>string</i>) for the node.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_hr">html.hpp</a></i> - the HTML component
+used to insert a horizontal rule. The constructor takes up to three arguments,
+specifying the size, width and shading to be used in the display.</dd>
 
-<dt><a name="CHTML_reset"> <a href="../docxx/CHTML_reset.html">
-<i>CHTML_reset</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_reset">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a reset button. The
-constructor takes a single optional argument specifying the button's label.
-<p>
+<dt>
+<a NAME="CHTML_image"></a><i><a href="../docxx/CHTML_image.html">CHTML_image</a></i></dt>
 
-<dt><a name="CHTML_select"> <a href="../docxx/CHTML_select.html">
-<i>CHTML_select</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_select">
-<i>html.hpp</i></a> - an HTML <i>select</i> component. The constructor takes up to three arguments,
-specifying the name (<i>string</i>) and size (<i>int</i>) of the selection box, along with a Boolean 
-specifying whether or not multiple selections are allowed (default is false). Select options should
-be added using the <i>AppendOption()</i> method. 
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_image">html.hpp</a></i> - used only inside
+a <i><a href="#CHTML_form">CHTML_form</a></i> - the HTML component used
+to add an inline active image to an HTML <i>form</i>. Clicking on the image
+submits the form data to the <i>CHTML_form</i>'s URL. The constructor takes
+three arguments, specifying the name of the node, the URL string for the
+image file, and a Boolean value (optional) indicating whether or not the
+displayed image should have a border.</dd>
 
-<p>
+<dt>
+<a NAME="CHTML_img"></a><i><a href="../docxx/CHTML_img.html">CHTML_img</a></i></dt>
 
-<dt><a name="CHTML_submit"> <a href="../docxx/CHTML_submit.html">
-<i>CHTML_submit</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_submit">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a submit button. The
-constructor takes two <i>string</i> arguments specifying the button's name and label (optional).
-When selected, this causes the data selections in the including <i>form</i> to be
-sent to the <i>form</i>'s URL. <p>
+<dd>
+Derived from <i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_img">html.hpp</a></i> - an HTML <i>img</i>
+component for adding an inline image to a web page. The constructor takes
+a single URL <i>string</i> argument for the image's <i>src</i>. The alternative
+constructor also accepts two integer arguments specifying the width and
+height of the displayed image.</dd>
 
-<dt><a name="CHTML_table"> <a href="../docxx/CHTML_table.html">
-<i>CHTML_table</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="../lxr/ident?i=CHTML_table">
-<i>html.hpp</i></a> - an HTML table element. The constructor takes no arguments, but many
-member functions are provided to get/set attributes of the table. Because each of the "set
-attribute" methods returns <i>this</i>, the invocations can be strung together in a single
-statement.<p>
+<dt>
+<a NAME="CHTML_input"></a><i><a href="../docxx/CHTML_input.html">CHTML_input</a></i></dt>
 
-Use <a href="../lxr/search?string=InsertAt">
-<i>InsertAt</i></a><i>(row, col, contents)</i> to add <i>contents</i> to table cell <i>row,
-col</i>.  To add contents to the next available cell, use <i>AppendChild (new <a
-href="#CHTML_tc">CHTML_tc</a>(tag, contents))</i>, where <i>tag</i> is type <i>char*</i> and
-<i>contents</i> is type <i>char*, string</i> or <i>CNCBINode*</i>.  .
-<p>
+<dd>
+Derived from <i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_input">html.hpp</a></i> - the base
+class for all HTML input elements to be added to a <i><a href="#CHTML_form">CHTML_form</a></i>.
+The constructor takes a (<i>char*</i>) input type and a (<i>string</i>)
+name. The constructor for each of the subclasses has a static member <i>sm_InputType</i>
+which is passed as the first argument to the <i>CParent</i>'s (<i>CHTML_input</i>)
+constructor.</dd>
 
-<dt><a name="CHTML_tc"> <a href="../docxx/CHTML_tc.html">
-<i>CHTML_tc</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="../lxr/ident?i=CHTML_tc">
-<i>html.hpp</i></a> - an HTML table cell element. All of the constructors expect the first
-argument to be a <i>char* tagname</i>. The second argument, if present, may be text
-(<i>char*</i> or <i>string</i>) or a pointer to a <i>CNCBINode</i>. 
-<p>
+<dt>
+<a NAME="CHTML_label"></a><i><a href="../docxx/CHTML_label.html">CHTML_label</a></i></dt>
 
-<dt><a name="CHTML_text"> <a href="../docxx/CHTML_text.html">
-<i>CHTML_text</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_text">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a text box inside
-a form. The constructor takes up to four arguments: 
-name (<i>string</i>), size (<i>int</i>), maxlength (<i>int</i>), and value (<i>string</i>).
-Only the first argument is required.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_label">html.hpp</a></i> - associates a
+label with a form control. The constructors take a <i>string</i> argument
+which specifies the text for the label, and optionally, a second <i>string</i>
+argument specifying the <i>FOR</i> attribute. The <i>FOR</i> attribute
+explicitly identifies the form control to associate with this label.</dd>
 
-<dt><a name="CHTML_textarea"> <a href="../docxx/CHTML_textarea.html">
-<i>CHTML_textarea</i></a>
-<dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_textarea">
-<i>html.hpp</i></a> - 
-can only be used inside
-a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a textarea inside
-a form. The constructor takes up to four arguments: 
-name (<i>string</i>), cols (<i>int</i>), rows (<i>int</i>), and value (<i>string</i>).
-Only the last argument is optional.
-<p>
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CHTML_legend"></a><i><a href="../docxx/CHTML_legend.html">CHTML_legend</a></i></dt>
 
-<dt><a name="CHTML_tr"> <a href="../docxx/CHTML_tr.html">
-<i>CHTML_tr</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="../lxr/ident?i=CHTML_tr">
-<i>html.hpp</i></a> - an HTML table row element. The constructors take a single argument,
-which may be either a <i>string</i> or a pointer to a <i>CNCBINode</i>.
-<p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_legend">html.hpp</a></i> - defines a caption
+for a <i><a href="#CHTML_fieldset">CHTML_fieldset</a></i> element. The
+constructors take a single argument which may be either a <i>string</i>
+or a <i>CHTMLNode</i>.</dd>
 
-<dt><a name="CHTML_ul"> <a href="../docxx/CHTML_ul.html">
-<i>CHTML_ul</i></a>
-<dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="../lxr/ident?i=CHTML_ul">
-<i>html.hpp</i></a> - 
-the HTML component used to insert an unordered list. 
-The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
-is by default false, and the <i>type</i> attribute is left to the browser. 
-<i>CHTML_menu("square", true)</i> will create a compact <i>list</i> element with square icons.
-Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>.
-<p>
+<dt>
+<a NAME="CHTML_menu"></a><i><a href="../docxx/CHTML_menu.html">CHTML_menu</a></i></dt>
 
-<dt><a name="CHTMLBasicPage"> <a href="../docxx/CHTMLBasicPage.html">
-<i>CHTMLBasicPage</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="../lxr/ident?i=CHTMLBasicPage">
-<i>page.hpp</i></a> - 
-The base class for <a href="#CHTMLPage"><i>CHTMLPage</i></a> and its descendants. The HTML page
-classes serve as generalized containers for collections of other HTML elements, which together
-define a web page. Each page has a <a href="webpgs.html#tagmap"><i>TTagMap</i></a>, which maps
-names (<i>strings</i>) to the HTML subcomponents embedded in the page. Two constructors are
-defined. The first takes no arguments, and the other, takes a pointer to a <a href="cgi.html#ccgiapp">
-<i>CCgiApplication</i></a> and a <i>style</i> (<i>int</i>) argument.<p>
+<dd>
+Derived from <i><a href="#CHTMLListElement">CHTMLListElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_menu">html.hpp</a></i> - the HTML component
+used to insert a <i>menu</i> list. The constructor takes zero to two arguments;
+if no arguments are provided, the <i>compact</i> attribute is by default
+false, and the <i>type</i> attribute is left to the browser. <i>CHTML_menu("square",
+true)</i> will create a compact <i>menu</i> element with square icons.
+Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>.</dd>
 
+<dt>
+<a NAME="CHTML_ol"></a><i><a href="../docxx/CHTML_ol.html">CHTML_ol</a></i></dt>
 
-<dt><a name="CHTMLComment"> <a href="../docxx/CHTMLComment.html">
-<i>CHTMLComment</i></a>
-<dd>Derived from <a href="#CHTMLNode"><i>CHTMLNode</i></a>, 
-defined in <a href="../lxr/ident?i=CHTMLComment">
-<i>html.hpp</i></a> - used to insert an HTML comment. The constructor takes at
-most one argument, which may be a <i>char*</i>, a <i>string</i>, or a <i>CNCBINode</i>. The
+<dd>
+Derived from <i><a href="#CHTMLListElement">CHTMLListElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_ol">html.hpp</a></i> - the HTML component
+used to insert an enumerated list. The constructor takes up to three arguments,
+specifying the starting number, the <i>type</i> of enumeration (Arabic,
+Roman Numeral etc.), and a Boolean argument specifying whether or not the
+display should be compact. Items can be added to the list using <i>AppendChild(new
+CHTMLText("&lt;li>...")</i>.</dd>
+
+<dt>
+<a NAME="CHTML_option"></a><i><a href="../docxx/CHTML_option.html">CHTML_option</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_option">html.hpp</a></i> - an HTML <i>option</i>
+associated with a <i><a href="#CHTML_select">CHTML_select</a></i> component.
+The constructor takes a value (<i>string</i>), a label (<i>string</i> or
+<i>char*</i>), and a Boolean indicating whether or not the option is by
+default selected. The last two arguments are optional, and by default the
+option is <i>not</i> selected.</dd>
+
+<dt>
+<a NAME="CHTML_radio"></a><i><a href="../docxx/CHTML_radio.html">CHTML_radio</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_radio">html.hpp</a></i> - can only be
+used inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML component
+for a radio button. The constructor takes up to four arguments specifying
+the name (<i>string</i>), value (<i>string</i>), state (<i>bool</i>), and
+description (<i>string</i>) for the node.</dd>
+
+<dt>
+<a NAME="CHTML_reset"></a><i><a href="../docxx/CHTML_reset.html">CHTML_reset</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_reset">html.hpp</a></i> - can only be
+used inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML component
+for a reset button. The constructor takes a single optional argument specifying
+the button's label.</dd>
+
+<dt>
+<a NAME="CHTML_select"></a><i><a href="../docxx/CHTML_select.html">CHTML_select</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_select">html.hpp</a></i> - an HTML <i>select</i>
+component. The constructor takes up to three arguments, specifying the
+name (<i>string</i>) and size (<i>int</i>) of the selection box, along
+with a Boolean specifying whether or not multiple selections are allowed
+(default is false). Select options should be added using the <i>AppendOption()</i>
+method.</dd>
+
+<dt>
+<a NAME="CHTML_submit"></a><i><a href="../docxx/CHTML_submit.html">CHTML_submit</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_submit">html.hpp</a></i> - can only be
+used inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML component
+for a submit button. The constructor takes two <i>string</i> arguments
+specifying the button's name and label (optional). When selected, this
+causes the data selections in the including <i>form</i> to be sent to the
+<i>form</i>'s URL.</dd>
+
+<dt>
+<a NAME="CHTML_table"></a><i><a href="../docxx/CHTML_table.html">CHTML_table</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_table">html.hpp</a></i> - an HTML table
+element. The constructor takes no arguments, but many member functions
+are provided to get/set attributes of the table. Because each of the "set
+attribute" methods returns <i>this</i>, the invocations can be strung together
+in a single statement.</dd>
+
+<p><br>&nbsp;Use <i><a href="../lxr/search?string=InsertAt">InsertAt</a>(row,
+col, contents)</i> to add <i>contents</i> to table cell <i>row, col</i>.
+To add contents to the next available cell, use <i>AppendChild (new <a href="#CHTML_tc">CHTML_tc</a>(tag,
+contents))</i>, where <i>tag</i> is type <i>char*</i> and
+<i>contents</i>
+is type <i>char*, string</i> or <i>CNCBINode*</i>. .
+<dt>
+<a NAME="CHTML_tc"></a><i><a href="../docxx/CHTML_tc.html">CHTML_tc</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_tc">html.hpp</a></i> - an HTML table cell
+element. All of the constructors expect the first argument to be a <i>char*
+tagname</i>. The second argument, if present, may be text (<i>char*</i>
+or <i>string</i>) or a pointer to a <i>CNCBINode</i>.</dd>
+
+<dt>
+<a NAME="CHTML_text"></a><i><a href="../docxx/CHTML_text.html">CHTML_text</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_text">html.hpp</a></i> - can only be used
+inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML component
+for a text box inside a form. The constructor takes up to four arguments:
+name (<i>string</i>), size (<i>int</i>), maxlength (<i>int</i>), and value
+(<i>string</i>). Only the first argument is required.</dd>
+
+<dt>
+<a NAME="CHTML_textarea"></a><i><a href="../docxx/CHTML_textarea.html">CHTML_textarea</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTML_input">CHTML_input</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_textarea">html.hpp</a></i> - can only
+be used inside a <i><a href="#CHTML_form">CHTML_form</a></i>; the HTML
+component for a textarea inside a form. The constructor takes up to four
+arguments: name (<i>string</i>), cols (<i>int</i>), rows (<i>int</i>),
+and value (<i>string</i>). Only the last argument is optional.</dd>
+
+<dt>
+<a NAME="CHTML_tr"></a><i><a href="../docxx/CHTML_tr.html">CHTML_tr</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTML_tr">html.hpp</a></i> - an HTML table row
+element. The constructors take a single argument, which may be either a
+<i>string</i> or a pointer to a <i>CNCBINode</i>.</dd>
+
+<dt>
+<a NAME="CHTML_ul"></a><i><a href="../docxx/CHTML_ul.html">CHTML_ul</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLListElement">CHTMLListElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTML_ul">html.hpp</a></i> - the HTML component
+used to insert an unordered list. The constructor takes zero to two arguments;
+if no arguments are provided, the <i>compact</i> attribute is by default
+false, and the <i>type</i> attribute is left to the browser. <i>CHTML_menu("square",
+true)</i> will create a compact <i>list</i> element with square icons.
+Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")</i>.</dd>
+
+<dt>
+<a NAME="CHTMLBasicPage"></a><i><a href="../docxx/CHTMLBasicPage.html">CHTMLBasicPage</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLBasicPage">page.hpp</a></i>
+- The base class for <i><a href="#CHTMLPage">CHTMLPage</a></i> and its
+descendants. The HTML page classes serve as generalized containers for
+collections of other HTML elements, which together define a web page. Each
+page has a <i><a href="webpgs.html#tagmap">TTagMap</a></i>, which maps
+names (<i>strings</i>) to the HTML subcomponents embedded in the page.
+Two constructors are defined. The first takes no arguments, and the other,
+takes a pointer to a <i><a href="cgi.html#ccgiapp">CCgiApplication</a></i>
+and a <i>style</i> (<i>int</i>) argument.</dd>
+
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CHTMLComment"></a><i><a href="../docxx/CHTMLComment.html">CHTMLComment</a></i></dt>
+
+<dd>
+Derived from <i><a href="#CHTMLNode">CHTMLNode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLComment">html.hpp</a></i>
+- used to insert an HTML comment. The constructor takes at most one argument,
+which may be a <i>char*</i>, a <i>string</i>, or a <i>CNCBINode</i>. The
 constructor then uses
-<a href = "../lxr/ident?i=AppendPlainText">
-<i>AppendPlainText()</i></a> or 
-<a href = "../lxr/ident?i=AppendChild">
-<i>AppendChild()</i></a>, depending on the type of argument,  to append the argument to 
-the comment node.<p>
+<i><a href="../lxr/ident?i=AppendPlainText">AppendPlainText()</a></i>
+or <i><a href="../lxr/ident?i=AppendChild">AppendChild()</a></i>, depending
+on the type of argument, to append the argument to the comment node.</dd>
 
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CHTMLElement"></a><i><a href="../docxx/CHTMLElement.html">CHTMLElement</a></i></dt>
 
-<dt><a name="CHTMLElement"> <a href="../docxx/CHTMLElement.html">
-<i>CHTMLElement</i></a>
-<dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>,
-defined in <a
-href="../lxr/ident?i=CHTMLElement">
-<i>html.hpp</i></a> - the base class for all tagged elements which require a closing tag of the
-form <i>&lt;/tagname></i>. <i>CHTMLElement</i> specializes the 
-<a href="../lxr/ident?i=PrintEnd">
-<i>PrintEnd()</i></a> method by generating the end tag <i>&lt;/m_Name></i> on the output, where
-<i>m_Name</i> stores the tagname of the instance's subclass.
-Subclasses include <i>CHTML_a, CHTML_basefont, CHTML_dl, CHTML_font,
-CHTML_form, CHTML_option, CHTML_select, CHTML_table, CHTML_tc, CHTML_textarea,</i> and
-<i>CHTMLListElement</i>.<p>
+<dd>
+Derived from <i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>, defined
+in <i><a href="../lxr/ident?i=CHTMLElement">html.hpp</a></i> - the base
+class for all tagged elements which require a closing tag of the form <i>&lt;/tagname></i>.
+<i>CHTMLElement</i> specializes the <i><a href="../lxr/ident?i=PrintEnd">PrintEnd()</a></i>
+method by generating the end tag <i>&lt;/m_Name></i> on the output, where
+<i>m_Name</i>
+stores the tagname of the instance's subclass. Subclasses include <i>CHTML_a,
+CHTML_basefont, CHTML_dl, CHTML_font, CHTML_form, CHTML_option, CHTML_select,
+CHTML_table, CHTML_tc, CHTML_textarea,</i> and
+<i>CHTMLListElement</i>.</dd>
 
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CHTMLListElement"></a><i><a href="../docxx/CHTMLListElement.html">CHTMLListElement</a></i></dt>
 
-<dt><a name="CHTMLListElement"> <a href="../docxx/CHTMLListElement.html">
-<i>CHTMLListElement</i></a>
-<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="../lxr/ident?i=CHTMLListElement">
-<i>html.hpp</i></a> - the base class for <i>CHTML_ul, CHTML_ol, CHTML_dir,</i> and <i>CHTML_menu</i> lists.
-Arguments to the constructor include the <i>tagname</i> and <i>type</i> strings for the list,
-along with a Boolean indicating whether or not the list is compact. <p>
+<dd>
+Derived from <i><a href="#CHTMLElement">CHTMLElement</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTMLListElement">html.hpp</a></i> - the base
+class for <i>CHTML_ul, CHTML_ol, CHTML_dir,</i> and <i>CHTML_menu</i> lists.
+Arguments to the constructor include the <i>tagname</i> and <i>type</i>
+strings for the list, along with a Boolean indicating whether or not the
+list is compact.</dd>
 
+<dt>
+<a NAME="CHTMLNode"></a><i><a href="../docxx/CHTMLNode.html">CHTMLNode</a></i></dt>
 
-<dt><a name="CHTMLNode"> <a href="../docxx/CHTMLNode.html">
-<i>CHTMLNode</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>,
-defined in <a href="../lxr/ident?i=CHTMLNode">
-<i>html.hpp</i></a> - the base class for <a href="#CHTMLComment"><i>CHTMLComment</i></a> and <a
-href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>. Attributes include 
-<i>style, id, title, accesskey, color, bgcolor, height, width, align, valign, size, name,</i> and <i>class</i>. 
-All of the constructors require a <i>tagname</i> argument, which may be either type <i>char*</i> or
-<i>string</i>. The optional second argument may be type <i>char*</i>, <i>string</i>, or
-<i>CNCBINode</i>. <p>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLNode">html.hpp</a></i>
+- the base class for <i><a href="#CHTMLComment">CHTMLComment</a></i> and
+<i><a href="#CHTMLOpenElement">CHTMLOpenElement</a></i>. Attributes include
+<i>style, id, title, accesskey, color, bgcolor, height, width, align, valign,
+size, name,</i> and <i>class</i>. All of the constructors require a <i>tagname</i>
+argument, which may be either type <i>char*</i> or
+<i>string</i>. The optional
+second argument may be type <i>char*</i>, <i>string</i>, or
+<i>CNCBINode</i>.</dd>
 
+<dt>
+<a NAME="CHTMLOpenElement"></a><i><a href="../docxx/CHTMLOpenElement.html">CHTMLOpenElement</a></i></dt>
 
-<dt><a name="CHTMLOpenElement"> <a href="../docxx/CHTMLOpenElement.html">
-<i>CHTMLOpenElement</i></a>
-<dd>Derived from <a href="#CHTMLNode"><i>CHTMLNode</i></a>,
-defined in <a href="../lxr/ident?i=CHTMLOpenElement">
-<i>html.hpp</i></a> - the base class for all tag elements, including
-<i>CHTMLElement</i>, <i>CHTML_br</i>, <i>CHTML_hr</i>, <i>CHTML_img</i>, and
-<i>CHTML_input</i>. All of the constructors require a
-<i>tagname</i> argument, which may be either type <i>char*</i> or <i>string</i>. The optional
-second argument may be type <i>char*</i>, <i>string</i>, or <i>CNCBINode</i>. <p>
+<dd>
+Derived from <i><a href="#CHTMLNode">CHTMLNode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLOpenElement">html.hpp</a></i>
+- the base class for all tag elements, including
+<i>CHTMLElement</i>, <i>CHTML_br</i>,
+<i>CHTML_hr</i>, <i>CHTML_img</i>, and
+<i>CHTML_input</i>. All of the constructors
+require a
+<i>tagname</i> argument, which may be either type <i>char*</i>
+or <i>string</i>. The optional second argument may be type <i>char*</i>,
+<i>string</i>, or <i>CNCBINode</i>.</dd>
 
+<dt>
+<a NAME="CHTMLPage"></a><i><a href="../docxx/CHTMLPage.html">CHTMLPage</a></i></dt>
 
-<dt><a name="CHTMLPage"> <a href="../docxx/CHTMLPage.html">
-<i>CHTMLPage</i></a>
-<dd>Derived from <a href="#CHTMLBasicPage"><i>CHTMLBasicPage</i></a>;
-defined in <a href="../lxr/ident?i=CHTMLPage">
-<i>page.hpp</i></a> - the basic 3 section NCBI page. There are two constructors. The first takes
-a title (type <i>string</i>) and the name of a template file (type <i>string</i>). Both
-arguments are optional. The other constructor takes a pointer to a <a href="cgi.html#ccgiapp">
-<i>CCgiApplication</i></a>, a <i>style</i> (type <i>int</i>), a title and a template_file
-name. All but the first argument are optional. <p>
+<dd>
+Derived from <i><a href="#CHTMLBasicPage">CHTMLBasicPage</a></i>; defined
+in <i><a href="../lxr/ident?i=CHTMLPage">page.hpp</a></i> - the basic 3
+section NCBI page. There are two constructors. The first takes a title
+(type <i>string</i>) and the name of a template file (type <i>string</i>).
+Both arguments are optional. The other constructor takes a pointer to a
+<i><a href="cgi.html#ccgiapp">CCgiApplication</a></i>, a <i>style</i> (type
+<i>int</i>), a title and a template_file name. All but the first argument
+are optional.</dd>
 
+<dt>
+<a NAME="CHTMLPlainText"></a><i><a href="../docxx/CHTMLPlainText.html">CHTMLPlainText</a></i></dt>
 
-<dt><a name="CHTMLPlainText"> <a href="../docxx/CHTMLPlainText.html">
-<i>CHTMLPlainText</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="../lxr/ident?i=CHTMLPlainText">
-<i>html.hpp</i></a> - 
-A simple text component, which can be used to insert text that will be displayed verbatim 
-by a browser (may require encoding). The constructor takes two arguments: the text to be inserted
-(<i>char*</i> or <i>string</i>) and a Boolean (default <i>false</i>) indicating that the
-output <i>should</i> be encoded. See also <a href="CHTMLText"> <i>CHTMLText</i></a>.<p>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLPlainText">html.hpp</a></i>
+- A simple text component, which can be used to insert text that will be
+displayed verbatim by a browser (may require encoding). The constructor
+takes two arguments: the text to be inserted (<i>char*</i> or <i>string</i>)
+and a Boolean (default <i>false</i>) indicating that the output <i>should</i>
+be encoded. See also <i><a href="CHTMLText">CHTMLText</a></i>.</dd>
 
-<dt><a name="CHTMLTagNode"> <a href="../docxx/CHTMLTagNode.html">
-<i>CHTMLTagNode</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="../lxr/ident?i=CHTMLTagNode">
-<i>html.hpp</i></a>.
-<p>
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CHTMLTagNode"></a><i><a href="../docxx/CHTMLTagNode.html">CHTMLTagNode</a></i></dt>
 
-<dt><a name="CHTMLDualNode"> <a href="../docxx/CHTMLDualNode.html">
-<i>CHTMLDualNode</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, defined in
-<a href="../lxr/ident?i=CHTMLDualNode">
-<i>html.hpp</i></a> - 
-A class for elements requiring different means for displaying data in eHTML and ePlainText modes.
-The constructor takes a 2 arguments, data for output in HTML - version (string with HTML code or 
-a pointer to a CNCBINode. ) and text for output in ePlainText mode.
-<p>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>; defined in
+<i><a href="../lxr/ident?i=CHTMLTagNode">html.hpp</a></i>.</dd>
 
-<dt><a name="CHTMLSpecialChar"> <a href="../docxx/CHTMLSpecialChar.html">
-<i>CHTMLSpecialChar</i></a>
-<dd>Derived from <a href="#CHTMLDualNode"><i>CHTMLDualNode</i></a>, defined in
-<a href="../lxr/ident?i=CHTMLSpecialChar">
-<i>html.hpp</i></a> - 
-A class for HTML special chars like <i>&amp;nbsp</i>, <i>&amp;copy</i>  and etc.
-Elements of this class have two variants for output, in eHTML and ePlainText modes.
-For example: <i>&amp;nbsp</i> have plain text variant - "&nbsp;", and <i>&amp;copy</i> - "(c)".
-<i>html.hpp</i> has several predefined simple classes, based on this class, for any special chars. It is 
-<i>CHTML_nbsp</i>, <i>CHTML_gt</i>, <i>CHTML_lt</i>, <i>CHTML_quot</i>, <i>CHTML_amp</i>,
-<i>CHTML_copy</i> and <i>CHTML_reg</i>. Each have one optional arqument, which specify number 
-chars for output. 
-<p>
+<dt>
+<a NAME="CHTMLDualNode"></a><i><a href="../docxx/CHTMLDualNode.html">CHTMLDualNode</a></i></dt>
 
-<dt><a name="CHTMLText"> <a href="../docxx/CHTMLText.html">
-<i>CHTMLText</i></a>
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="../lxr/ident?i=CHTMLText">
-<i>html.hpp</i></a> - 
-A simple text component which can be used to install a default web page design (stored in a
-<i>template</i> file) on a <a href="#CHTMLPage"><i>CHTMLPage</i></a> or to simply insert
-<b>encoded</b> text. The 
-<a href="../lxr/ident?i=PrintBegin"> 
-<i>PrintBegin()</i></a> is specialized to handle <a href="#CHTMLTagNode"> <i>tagnodes</i></a>
-occurring in the text. The constructor takes a single argument - the text itself - which
-may be of type <i>char*</i> or <i>string</i>.
-<a href="CHTMLPlainText"> <i>CHTMLPlainText</i></a> should be used to
-insert text that does not embed any <i>tagnodes</i> and requires further encoding.
-<p>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in
+<i><a href="../lxr/ident?i=CHTMLDualNode">html.hpp</a></i>
+- Allows the user to <a href="#htmdualnode">explicitly specify</a> what
+exactly to print out in <i>eHTML</i> and in <i>ePlainText</i> modes. The
+constructor takes 2 arguments -- the first one is for <i>eHTML</i> mode
+output (string or a pointer to a <i>CNCBINode</i>), and the second one
+is a plain text for <i>ePlainText</i> mode output.</dd>
 
-<dt><a name="CLinkBar"> <a href="../docxx/CLinkBar.html">
-<i>CLinkBar</i></a> (Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="../lxr/ident?i=CLinkBar">
-<i>linkbar.hpp</i></a> - 
-Used to create a horizontal linkbar on a page. The constructor takes a list of <a href="#CLinkDefinition">
-<i>CLinkDefinition</i></a>, a width (<i>int</i>), and a height (<i>int</i>), where the last two arguments
-are optional. Use <a href="../lxr/ident?i=AddLink">
-<i>CLinkBar::AddLink()</i></a> to add links, and 
-<a href="../lxr/ident?i=CreateSubNodes">
-<i>CLinkBar::CreateSubNodes()</i></a> to install newly added links as subnodes. <p>
+<dt>
+<a NAME="CHTMLSpecialChar"></a><i><a href="../docxx/CHTMLSpecialChar.html">CHTMLSpecialChar</a></i></dt>
 
-<dt><a name="CLinkDefinition"> <a href="../docxx/CLinkDefinition.html">
-<i>CLinkDefinition</i></a> (Custom feature not for general use.)  
-<dd>Not derived from any other class; defined in
-<a href="../lxr/ident?i=CLinkDefinition">
-<i>linkbar.hpp</i></a> - 
-Used to create a link that can be installed to a <a href="#CLinkBar"><i>CLinkBar</i></a>.  The
-constructors take up to five arguments, including a name (<i>string</i>), a width (<i>int</i>),
-a height (<i>int</i>), a path to an image file (<i>string</i>), and a path to a non-image file
-(<i>string</i>),
+<dd>
+Derived from <i><a href="#CHTMLDualNode">CHTMLDualNode</a></i>, defined
+in
+<i><a href="../lxr/ident?i=CHTMLSpecialChar">html.hpp</a></i> - A class
+for HTML special chars like <i>&amp;nbsp</i>, <i>&amp;copy,</i> etc. Elements
+of this class have two variants for output, for eHTML and ePlainText modes.
+For example: <i>&amp;nbsp</i> have plain text variant - " ", and <i>&amp;copy</i>
+- "(c)".
+<i>html.hpp</i> has several predefined simple classes, based on
+this class, for any special chars. It is <i>CHTML_nbsp</i>, <i>CHTML_gt</i>,
+<i>CHTML_lt</i>, <i>CHTML_quot</i>, <i>CHTML_amp</i>,
+<i>CHTML_copy</i>
+and <i>CHTML_reg</i>. Each have one optional arqument, which specify the
+number of symbols to output.</dd>
 
+<dt>
+<a NAME="CHTMLText"></a><i><a href="../docxx/CHTMLText.html">CHTMLText</a></i></dt>
 
-<dt><a name="CNCBINode"> <a href="../docxx/CNCBINode.html"><i>CNCBINode</i></a>
-<dd>Derived from <a href="#CObject"><i>CObject</i></a>, 
-defined in <a href="../lxr/ident?i=CNCBINode">
-<i>node.hpp</i></a> - 
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLText">html.hpp</a></i>
+- A simple text component which can be used to install a default web page
+design (stored in a
+<i>template</i> file) on a <i><a href="#CHTMLPage">CHTMLPage</a></i>
+or to simply insert
+<b>encoded</b> text. The <i><a href="../lxr/ident?i=PrintBegin">PrintBegin()</a></i>
+is specialized to handle <i><a href="#CHTMLTagNode">tagnodes</a></i> occurring
+in the text. The constructor takes a single argument - the text itself
+- which may be of type <i>char*</i> or <i>string</i>.
+<i><a href="CHTMLPlainText">CHTMLPlainText</a></i>
+should be used to insert text that does not embed any <i>tagnodes</i> and
+requires further encoding.</dd>
 
-A base class for all other HTML node classes. Contains data members <i>m_Name,
-m_Attributes</i>, and <i>m_Children</i>. The constructor takes at most one argument,
-<i>name</i>, which defines the internal data member <i>m_Name</i>.
-<p>
+<dt>
+<a NAME="CLinkBar"></a><i><a href="../docxx/CLinkBar.html">CLinkBar</a></i>
+(Custom feature not for general use.)</dt>
 
-<dt><a name="CPageList"> <a href="../docxx/CPageList.html">
-<i>CPageList</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="../lxr/ident?i=CPageList">
-<i>components.hpp</i></a>.
-Used by the pager box components to page between results pages; contains forward and backward URLs,
-the current page number, and a <i>map&lt;int, string></i> that associates page numbers with URLs.
-<p>
+<dd>
+Derived from <i><a href="#CHTML_table">CHTML_table</a></i>; defined in
+<i><a href="../lxr/ident?i=CLinkBar">linkbar.hpp</a></i>
+- Used to create a horizontal linkbar on a page. The constructor takes
+a list of <i><a href="#CLinkDefinition">CLinkDefinition</a></i>, a width
+(<i>int</i>), and a height (<i>int</i>), where the last two arguments are
+optional. Use <i><a href="../lxr/ident?i=AddLink">CLinkBar::AddLink()</a></i>
+to add links, and <i><a href="../lxr/ident?i=CreateSubNodes">CLinkBar::CreateSubNodes()</a></i>
+to install newly added links as subnodes.</dd>
 
-<dt><a name="CPager"> <a href="../docxx/CPager.html">
-<i>CPager</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="../lxr/ident?i=CHTMLPlainText">
-<i>html.hpp</i></a> - 
-<p>
+<dt>
+<a NAME="CLinkDefinition"></a><i><a href="../docxx/CLinkDefinition.html">CLinkDefinition</a></i>
+(Custom feature not for general use.)</dt>
 
-<dt><a name="CPagerBox"> <a href="../docxx/CPagerBox.html">
-<i>CPagerBox</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="../lxr/ident?i=CPagerBox">
-<i>components.hpp</i></a>.
-A more elaborate paging component than the <a href="#CSmallPagerBox"> <i>CSmallPagerBox</i></a>;
-contains pointers to a <a href="#CPageList"> <i>CPageList</i></a> and (3) <a href="#CButtonList">
-<i>CButtonList</i></a> components (<i>left, right</i>, and <i>top</i>). Additional properties include
-width, background color, and number of results.
-<p>
+<dd>
+Not derived from any other class; defined in
+<i><a href="../lxr/ident?i=CLinkDefinition">linkbar.hpp</a></i>
+- Used to create a link that can be installed to a <i><a href="#CLinkBar">CLinkBar</a></i>.
+The constructors take up to five arguments, including a name (<i>string</i>),
+a width (<i>int</i>), a height (<i>int</i>), a path to an image file (<i>string</i>),
+and a path to a non-image file (<i>string</i>),</dd>
 
-<dt><a name="CPagerView"> <a href="../docxx/CPagerView.html">
-<i>CPagerView</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="../lxr/ident?i=CPagerView">
-<i>pager.hpp</i></a>.<p>
+<dt>
+<a NAME="CNCBINode"></a><i><a href="../docxx/CNCBINode.html">CNCBINode</a></i></dt>
 
-<dt><a name="CPmDocSumPage"> <a href="../docxx/CPmDocSumPage.html">
-<i>CPmDocSumPage</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTMLPage"><i>CHTMLPage</i></a>; defined in
-<a href="../lxr/ident?i=CPmDocSumPage">
-<i>querypages.hpp</i></a>.<p>
-<p>
+<dd>
+Derived from <i><a href="#CObject">CObject</a></i>, defined in <i><a href="../lxr/ident?i=CNCBINode">node.hpp</a></i>
+- A base class for all other HTML node classes. Contains data members <i>m_Name,
+m_Attributes</i>, and <i>m_Children</i>. The constructor takes at most
+one argument,
+<i>name</i>, which defines the internal data member <i>m_Name</i>.</dd>
 
-<dt><a name="CPmFrontPage"> <a href="../docxx/CPmFrontPage.html">
-<i>CPmFrontPage</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTMLPage"><i>CHTMLPage</i></a>; defined in
-<a href="../lxr/ident?i=CPmFrontPage">
-<i>querypages.hpp</i></a>.<p>
-<p>
+<dt>
+<a NAME="CPageList"></a><i><a href="../docxx/CPageList.html">CPageList</a></i>
+(Custom feature not for general use.)</dt>
 
-<dt><a name="CQueryBox"> <a href="../docxx/CQueryBox.html">
-<i>CQueryBox</i></a>
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="../lxr/ident?i=CQueryBox">
-<i>components.hpp</i></a>.
-<p>
+<dd>
+Derived from <i><a href="#CHTML_table">CHTML_table</a></i>; defined in
+<i><a href="../lxr/ident?i=CPageList">components.hpp</a></i>.
+Used by the pager box components to page between results pages; contains
+forward and backward URLs, the current page number, and a <i>map&lt;int,
+string></i> that associates page numbers with URLs.</dd>
 
-<dt><a name="CSelection"> <a href="../docxx/CSelection.html">
-<i>CSelection</i></a> 
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="../lxr/ident?i=CSelection">
-<i>components.hpp</i></a>.
+<dt>
+<a NAME="CPager"></a><i><a href="../docxx/CPager.html">CPager</a></i> (Custom
+feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>, defined in <i><a href="../lxr/ident?i=CHTMLPlainText">html.hpp</a></i>
+-</dd>
+
+<dt>
+<a NAME="CPagerBox"></a><i><a href="../docxx/CPagerBox.html">CPagerBox</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>; defined in
+<i><a href="../lxr/ident?i=CPagerBox">components.hpp</a></i>.
+A more elaborate paging component than the <i><a href="#CSmallPagerBox">CSmallPagerBox</a></i>;
+contains pointers to a <i><a href="#CPageList">CPageList</a></i> and (3)
+<i><a href="#CButtonList">CButtonList</a></i> components (<i>left, right</i>,
+and <i>top</i>). Additional properties include width, background color,
+and number of results.</dd>
+
+<dt>
+<a NAME="CPagerView"></a><i><a href="../docxx/CPagerView.html">CPagerView</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CHTML_table">CHTML_table</a></i>; defined in
+<i><a href="../lxr/ident?i=CPagerView">pager.hpp</a></i>.</dd>
+
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CPmDocSumPage"></a><i><a href="../docxx/CPmDocSumPage.html">CPmDocSumPage</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CHTMLPage">CHTMLPage</a></i>; defined in
+<i><a href="../lxr/ident?i=CPmDocSumPage">querypages.hpp</a></i>.</dd>
+
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CPmFrontPage"></a><i><a href="../docxx/CPmFrontPage.html">CPmFrontPage</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CHTMLPage">CHTMLPage</a></i>; defined in
+<i><a href="../lxr/ident?i=CPmFrontPage">querypages.hpp</a></i>.</dd>
+
+<br>&nbsp;
+<p>&nbsp;
+<dt>
+<a NAME="CQueryBox"></a><i><a href="../docxx/CQueryBox.html">CQueryBox</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CHTML_table">CHTML_table</a></i>; defined in
+<i><a href="../lxr/ident?i=CQueryBox">components.hpp</a></i>.</dd>
+
+<dt>
+<a NAME="CSelection"></a><i><a href="../docxx/CSelection.html">CSelection</a></i>
+(Custom feature not for general use.)</dt>
+
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>; defined in
+<i><a href="../lxr/ident?i=CSelection">components.hpp</a></i>.
 A checkbox-like component whose choices are generated (using the
-<i>CreateSubNodes()</i> method) from the 
-<a href="../lxr/ident?i=TCgiEntries">
-<i>TCgiEntries</i></a> of a <a href="cgi.html#ccgireq"><i>CCgiRequest</i></a> object.
-<p>
+<i>CreateSubNodes()</i>
+method) from the <i><a href="../lxr/ident?i=TCgiEntries">TCgiEntries</a></i>
+of a <i><a href="cgi.html#ccgireq">CCgiRequest</a></i> object.</dd>
 
-<dt><a name="CSmallPagerBox"> <a href="../docxx/CSmallPagerBox.html">
-<i>CSmallPagerBox</i></a> 
-(Custom feature not for general use.)  
-<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="../lxr/ident?i=CSmallPagerBox">
-<i>components.hpp</i></a>.
-A minimal paging component that displays the number of results
-from the query and the current page being viewed. Has background color and width attributes
-and contains a pointer to a <a href="#CPageList"> <i>CPageList</i></a>. See also <a href="#CPagerBox">
-<i>CPagerBox</i></a> and <a href="#CPager"><i>CPager</i></a>.
-<p>
-</dl>
-&nbsp;&nbsp;&nbsp;
+<dt>
+<a NAME="CSmallPagerBox"></a><i><a href="../docxx/CSmallPagerBox.html">CSmallPagerBox</a></i>
+(Custom feature not for general use.)</dt>
 
-   </body>
+<dd>
+Derived from <i><a href="#CNCBINode">CNCBINode</a></i>; defined in
+<i><a href="../lxr/ident?i=CSmallPagerBox">components.hpp</a></i>.
+A minimal paging component that displays the number of results from the
+query and the current page being viewed. Has background color and width
+attributes and contains a pointer to a <i><a href="#CPageList">CPageList</a></i>.
+See also <i><a href="#CPagerBox">CPagerBox</a></i> and <i><a href="#CPager">CPager</a></i>.</dd>
 
-<a href="cgi.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="htmlcgi.html"> <i> next</i> </a>
+<br>&nbsp;
+<p>&nbsp;</dl>
+&nbsp;&nbsp;&nbsp; <a href="cgi.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
+
+<i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp; 
+<i><a href="htmlcgi.html">next</a></i>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+</table>
+
+</body>
 </html>
-
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
-
