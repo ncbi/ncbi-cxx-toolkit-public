@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/16 11:56:19  dicuccio
+* throw() --> THROWS_NONE
+*
 * Revision 1.9  2004/05/12 18:33:23  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
@@ -145,14 +148,14 @@ public:
     CAmbiguiousTypes(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
-        const list<CDataType*>& types) throw()
+        const list<CDataType*>& types) THROWS_NONE
         : CNotFoundException(file, line, prev_exception,
             (CNotFoundException::EErrCode) CException::eInvalid,
             message), m_Types(types)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CAmbiguiousTypes, CNotFoundException);
 
 public:
-    const list<CDataType*>& GetTypes(void) const throw()
+    const list<CDataType*>& GetTypes(void) const THROWS_NONE
     {
         return m_Types;
     }
