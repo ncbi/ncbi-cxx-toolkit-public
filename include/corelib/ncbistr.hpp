@@ -252,7 +252,8 @@ public:
     static string PrintableString(const string& str);
 
     enum EWrapFlags {
-        fWrap_Hyphenate  = 0x1  // add a hyphen when breaking words?
+        fWrap_Hyphenate  = 0x1, // add a hyphen when breaking words?
+        fWrap_HTMLPre    = 0x2  // wrap as preformatted HTML?
     };
     typedef int TWrapFlags; // binary OR of "EWrapFlags"
 
@@ -637,6 +638,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2002/10/16 19:29:17  ucko
+ * +fWrap_HTMLPre
+ *
  * Revision 1.22  2002/10/03 14:44:33  ucko
  * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
  * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also
