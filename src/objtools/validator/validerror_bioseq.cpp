@@ -1979,6 +1979,12 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 }
                 cds_from = loc.GetStart(kInvalidSeqPos);
                 cds_to = loc.GetEnd(kInvalidSeqPos);
+                if ( x5UTR_to > 0 ) {
+                    if ( x5UTR_to + 1 != cds_from ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                            "5'UTR does not abut CDS", fi->GetOriginalFeature());
+                    }
+                }
                 break;
                 
             case CSeqFeatData::e_Rna:
@@ -2008,8 +2014,11 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     }
                     if ( fsubtype == CSeqFeatData::eSubtype_3UTR ) {
                         x3UTR_from = loc.GetStart(kInvalidSeqPos);
+                        if ( cds_to + 1 != x3UTR_from ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                                "CDS does not abut 3'UTR", fi->GetOriginalFeature());
+                        }
                     }
-
                 }
                 break;
 
@@ -2034,19 +2043,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
-        // check that the 5UTR and 3UTR (if exist) abut the CDS
-        if ( x5UTR_to > 0 ) {
-            if ( x5UTR_to + 1 != cds_from ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                    "5'UTR does not abut CDS", fi->GetOriginalFeature());
-            }
-        }
-        if ( x3UTR_from > 0 ) {
-            if ( cds_to + 1 != x3UTR_from ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                    "CDS does not abut 3'UTR", fi->GetOriginalFeature());
-            }
-        }
         if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(fi->GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                 "Feature has 'far' location - accession not packaged in record",
@@ -3318,6 +3314,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/10/27 17:02:49  shomrat
+* fixes to 3'UTR and 5'UTR checks
+*
 * Revision 1.52  2003/10/27 14:55:19  shomrat
 * added test for eErr_SEQ_FEAT_UTRdoesNotAbutCDS on mRNA bioseqs
 *
