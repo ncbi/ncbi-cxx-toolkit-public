@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/25 19:37:36  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.21  2001/11/13 20:53:36  grichenk
 * Fixed comments reading
 *
@@ -815,9 +818,11 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
     }
     else {
         CLightString tagName = ReadName(BeginClosingTag());
-        CLightString rest = SkipStackTagName(tagName, level);
-        if ( !rest.Empty() )
-            ThrowError(eFormatError, "unexpected tag");
+        if (!FetchFrameFromTop(level).GetMemberId().HaveNoPrefix()) {
+            CLightString rest = SkipStackTagName(tagName, level);
+            if ( !rest.Empty() )
+                ThrowError(eFormatError, "unexpected tag");
+        }
         EndClosingTag();
     }
 }
@@ -1008,6 +1013,12 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
         return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
+    TMemberIndex ind = classType->GetMembers().Find(tagName);
+    if ( ind != kInvalidMember ) {
+        if (classType->GetMemberInfo(ind)->GetId().HaveNoPrefix()) {
+            return ind;
+        }
+    }
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember )
@@ -1023,6 +1034,12 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
         return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
+    TMemberIndex ind = classType->GetMembers().Find(tagName);
+    if ( ind != kInvalidMember ) {
+        if (classType->GetMemberInfo(ind)->GetId().HaveNoPrefix()) {
+            return ind;
+        }
+    }
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember )

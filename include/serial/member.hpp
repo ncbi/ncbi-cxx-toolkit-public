@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/09/25 19:38:25  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.20  2002/09/09 18:13:59  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -174,6 +177,7 @@ public:
 
     bool Optional(void) const;
     CMemberInfo* SetOptional(void);
+    CMemberInfo* SetNoPrefix(void);
 
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);

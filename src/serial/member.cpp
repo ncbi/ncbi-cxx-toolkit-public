@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/09/25 19:37:36  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.22  2002/09/09 18:14:02  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -349,6 +352,12 @@ CMemberInfo* CMemberInfo::SetOptional(void)
 {
     m_Optional = true;
     UpdateFunctions();
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetNoPrefix(void)
+{
+    GetId().SetNoPrefix();
     return this;
 }
 

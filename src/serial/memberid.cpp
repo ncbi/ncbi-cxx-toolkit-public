@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/25 19:37:36  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.13  2000/10/03 17:22:42  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -97,33 +100,39 @@
 BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
-    : m_Tag(eNoExplicitTag), m_ExplicitTag(false)
+    : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    m_NoPrefix(false)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
-    : m_Tag(tag), m_ExplicitTag(explicitTag)
+    : m_Tag(tag), m_ExplicitTag(explicitTag),
+    m_NoPrefix(false)
 {
 }
 
 CMemberId::CMemberId(const string& name)
-    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false)
+    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    m_NoPrefix(false)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
-    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag)
+    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
+    m_NoPrefix(false)
 {
 }
 
 CMemberId::CMemberId(const char* name)
-    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false)
+    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    m_NoPrefix(false)
 {
     _ASSERT(name);
 }
 
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
-    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag)
+    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
+    m_NoPrefix(false)
 {
     _ASSERT(name);
 }
@@ -148,6 +157,16 @@ string CMemberId::ToString(void) const
         return m_Name;
     else
         return '[' + NStr::IntToString(GetTag()) + ']';
+}
+
+void CMemberId::SetNoPrefix(void)
+{
+    m_NoPrefix = true;
+}
+
+bool CMemberId::HaveNoPrefix(void) const
+{
+    return m_NoPrefix;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/25 19:38:25  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.13  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -128,11 +131,15 @@ public:
     // return visible representation of CMemberId (as in ASN.1)
     string ToString(void) const;
 
+    void SetNoPrefix(void);
+    bool HaveNoPrefix(void) const;
+
 private:
     // identification
     string m_Name;
     TTag m_Tag;
     bool m_ExplicitTag;
+    bool m_NoPrefix;
 };
 
 #include <serial/memberid.inl>

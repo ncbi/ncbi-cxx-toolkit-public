@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/09/25 19:37:36  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
 * Revision 1.30  2002/03/07 22:02:02  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -560,8 +563,10 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     case TFrame::eFrameClassMember:
     case TFrame::eFrameChoiceVariant:
         {
-            PrintTagName(level + 1);
-            m_Output.PutChar('_');
+            if (!frame.GetMemberId().HaveNoPrefix()) {
+                PrintTagName(level + 1);
+                m_Output.PutChar('_');
+            }
             m_Output.PutString(frame.GetMemberId().GetName());
             return;
         }
