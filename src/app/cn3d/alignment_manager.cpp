@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/30 23:46:26  thiessen
+* working alignment display
+*
 * Revision 1.2  2000/08/30 19:48:41  thiessen
 * working sequence window
 *
@@ -81,7 +84,7 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
             TESTMSG((*seq)->sequenceString.substr(range->from, range->to - range->from + 1)); 
     }
 
-    (*sequenceViewer)->DisplaySequences(currentMultipleAlignment->sequences);
+    (*sequenceViewer)->DisplayAlignment(currentMultipleAlignment);
 }
 
 AlignmentManager::~AlignmentManager(void)
@@ -187,7 +190,7 @@ bool MultipleAlignment::AddBlockAtEnd(const Block& newBlock)
     SequenceList::const_iterator sequence = sequences->begin();
     int blockWidthM1 = newBlock.front().to - newBlock.front().from;
     for (range=newBlock.begin(); range!=re; range++, sequence++) {
-        if (range->to - range->from != blockWidthM1 ||            // check block width
+        if (range->to - range->from != blockWidthM1 ||              // check block width
             (blocks.size() > 0 && range->from <= prevRange->to) ||  // check for range overlap
             range->from > range->to ||                              // check range values
             range->to >= (*sequence)->Length()) {                   // check bounds of end

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/30 23:46:27  thiessen
+* working alignment display
+*
 * Revision 1.4  2000/08/30 19:48:41  thiessen
 * working sequence window
 *
@@ -54,7 +57,9 @@
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI8na.hpp>
 #include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/IUPACna.hpp>
 
 #include "cn3d/sequence_set.hpp"
 
@@ -180,19 +185,31 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
+
+        // protein formats
         if (bioseq.GetInst().GetSeq_data().IsNcbieaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetNcbieaa().Get();
         } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+        }
+        
+        // nucleotide formats
+        else if (bioseq.GetInst().GetSeq_data().IsIupacna()) {
+            sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
         } else if (bioseq.GetInst().GetSeq_data().IsNcbi4na()) {
             StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi4na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi8na()) {  // same repr. for non-X as 4na
+            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi8na().Get(), &sequenceString,
                 (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
         } else if (bioseq.GetInst().GetSeq_data().IsNcbi2na()) {
             StringFrom2na(bioseq.GetInst().GetSeq_data().GetNcbi2na().Get(), &sequenceString,
                 (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
             if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() < sequenceString.length())
                 sequenceString.resize(bioseq.GetInst().GetLength());
-        } else {
+        }
+        
+        else {
             ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
                 << ": confused by sequence string format");
             return;

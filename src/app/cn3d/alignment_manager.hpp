@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/30 23:45:36  thiessen
+* working alignment display
+*
 * Revision 1.2  2000/08/30 19:49:02  thiessen
 * working sequence window
 *
@@ -43,6 +46,7 @@
 #define CN3D_ALIGNMENT_MANAGER__HPP
 
 #include <list>
+#include <vector>
 
 #include <corelib/ncbistl.hpp>
 
@@ -92,7 +96,7 @@ public:
         int from, to;
     } Range;
 
-    typedef std::list < Range > Block;
+    typedef std::vector < Range > Block;
     typedef std::list < Block > BlockList;
     BlockList blocks;
     const SequenceList *sequences;

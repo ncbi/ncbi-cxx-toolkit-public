@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/30 23:45:36  thiessen
+* working alignment display
+*
 * Revision 1.1  2000/08/30 19:49:05  thiessen
 * working sequence window
 *
@@ -69,7 +72,7 @@ public:
     // efficient just to set it statically, as characters don't change once
     // the display is created. (Color does change, so that will be looked up
     // dynamically.) The index must be -1 if this isn't a sequence cell (e.g.
-    // a separator, ruler, identifier, etc.).
+    // a separator, ruler, gap, identifier, etc.).
     typedef struct {
         char character;
         int index;
