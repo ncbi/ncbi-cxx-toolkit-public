@@ -30,12 +30,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.1  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/sequence_display.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.2  2001/03/02 03:26:59  thiessen
 * fix dangling pointer upon app close
 *
@@ -135,6 +138,13 @@ bool SequenceViewerWindow::RequestEditorEnable(bool enable)
 
 bool SequenceViewerWindow::SaveDialog(bool canCancel)
 {
+    // if editor is checked on, then this save command was initiated outside the menu;
+    // if so, then need to turn off editor pretending it was done from 'enable editor' menu item
+    if (menuBar->IsChecked(MID_ENABLE_EDIT)) {
+        Command(MID_ENABLE_EDIT);
+        return true;
+    }
+
     // quick & dirty check for whether save is necessary, by whether Undo is enabled
     if (!menuBar->IsEnabled(MID_UNDO)) {
         viewer->KeepOnlyStackTop();  // remove any unnecessary copy from stack

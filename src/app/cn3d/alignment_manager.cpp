@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.40  2001/03/01 20:15:50  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -206,6 +209,7 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
     // all slaves start out visible
     slavesVisible.resize(alignmentSet->alignments.size());
     for (int i=0; i<slavesVisible.size(); i++) slavesVisible[i] = true;
+
     NewMultipleWithRows(slavesVisible);
 }
 
@@ -429,13 +433,17 @@ void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequenc
 
 void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const
 {
+    if (slavesVisible.size() != alignmentSet->alignments.size()) // can happen if row is added/deleted
+        slavesVisible.resize(alignmentSet->alignments.size(), true);
+
     // copy visibility list
     *visibilities = slavesVisible;
 }
 
 void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnabled)
 {
-    if (itemsEnabled.size() != slavesVisible.size()) {
+    if (itemsEnabled.size() != slavesVisible.size() ||
+        itemsEnabled.size() != alignmentSet->alignments.size()) {
         ERR_POST(Error << "AlignmentManager::SelectionCallback() - wrong size list");
         return;
     }

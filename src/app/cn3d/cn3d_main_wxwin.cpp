@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.26  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -430,7 +433,7 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
     GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
-    SaveDialog(false);                          // give structure window a change to save data
+    SaveDialog(false);                          // give structure window a chance to save data
     Destroy();
 }
 
@@ -659,6 +662,11 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 {
+    if (glCanvas->structureSet) {
+        GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
+        SaveDialog(false);                          // give structure window a chance to save data
+    }
+
     const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str());
     if (!filestr.IsEmpty())
         LoadFile(filestr.c_str());

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/03/02 15:33:43  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.26  2001/02/08 23:01:13  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -183,7 +186,7 @@ private:
     const AlignmentSet *alignmentSet;
     Threader *threader;
 
-    std::vector < bool > slavesVisible;
+    mutable std::vector < bool > slavesVisible;
 
     // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;

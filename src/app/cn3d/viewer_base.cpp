@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
 * Revision 1.2  2001/03/02 03:26:59  thiessen
 * fix dangling pointer upon app close
 *
@@ -39,6 +42,7 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/viewer_base.hpp"
