@@ -263,17 +263,18 @@ void CDiagBuffer::UpdatePrefix(void)
 ///////////////////////////////////////////////////////
 //  CDiagMessage::
 
-void SDiagMessage::Write(string& str) const
+void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 {
     CNcbiOstrstream ostr;
-    ostr << *this;
+    Write(ostr, flags);
     ostr.put('\0');
     str = ostr.str();
     ostr.rdbuf()->freeze(0);
 }
 
 
-CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
+CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os,
+                                  TDiagWriteFlags flags) const
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
@@ -373,7 +374,9 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
     }
 
     // Endl
-    os << NcbiEndl;
+    if ((flags & fNoEndl) == 0) {
+        os << NcbiEndl;
+    }
 
     return os;
 }
@@ -684,7 +687,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
         SDiagMessage diagmsg(
             eDiag_Error, text.c_str(), text.size(),
             (pex->GetFile()).c_str(), pex->GetLine(),
-            eDPF_Default, 0,0,0,err_type.c_str());
+            GetPostFlags(), 0,0,0,err_type.c_str());
         string report;
         diagmsg.Write(report);
         *this << "    "; // indentation
@@ -1030,6 +1033,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.65  2002/08/20 19:10:39  gouriano
+ * added DiagWriteFlags into SDiagMessage::Write
+ *
  * Revision 1.64  2002/08/16 15:02:11  ivanov
  * Added class CDiagAutoPrefix
  *

@@ -334,8 +334,13 @@ struct SDiagMessage {
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> EOL
     // and put it to string "str", or write to an output stream "os".
-    void          Write(string& str) const;
-    CNcbiOstream& Write(CNcbiOstream& os) const;
+    enum EDiagWriteFlags {
+        fNone   = 0x0,
+        fNoEndl = 0x01
+    };
+    typedef int TDiagWriteFlags;
+    void          Write(string& str,     TDiagWriteFlags flags = fNone) const;
+    CNcbiOstream& Write(CNcbiOstream& os,TDiagWriteFlags flags = fNone) const;
 };
 
 inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
@@ -538,6 +543,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.50  2002/08/20 19:13:09  gouriano
+ * added DiagWriteFlags into SDiagMessage::Write
+ *
  * Revision 1.49  2002/08/16 15:02:50  ivanov
  * Added class CDiagAutoPrefix
  *
