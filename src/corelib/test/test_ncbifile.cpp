@@ -25,35 +25,8 @@
  *
  * Author: Vladimir Ivanov
  *
- * File Description:
- *   Test program for file's accessory functions
+ * File Description:   Test program for file's accessory functions
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2002/01/21 04:48:15  vakatov
- * Use #_MSC_VER instead of #NCBI_OS_MSWIN
- *
- * Revision 1.6  2002/01/20 04:42:22  vakatov
- * Do not #define _DEBUG on NCBI_OS_MSWIN
- *
- * Revision 1.5  2002/01/10 16:48:06  ivanov
- * Added test s_TEST_CheckPath()
- *
- * Revision 1.4  2001/11/19 18:13:10  juran
- * Add s_TEST_MatchesMask().
- * Use GetEntries() instead of Contents().
- *
- * Revision 1.3  2001/11/15 16:36:29  ivanov
- * Moved from util to corelib
- *
- * Revision 1.2  2001/11/01 20:06:50  juran
- * Replace directory streams with Contents() method.
- * Implement and test Mac OS platform.
- *
- * Revision 1.1  2001/09/19 13:08:15  ivanov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #if defined(NDEBUG)
@@ -242,6 +215,14 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConcatPath(":file", "")      == ":file:");
     _VERIFY( d.ConcatPath("", "")           == ":");
 #endif
+    // Concat any OS paths
+    _VERIFY( d.ConcatPathEx("dir/", "file")     == "dir/file");
+    _VERIFY( d.ConcatPathEx("/dir/", "file")    == "/dir/file");
+    _VERIFY( d.ConcatPathEx("dir\\", ":file")   == "dir\\file");
+    _VERIFY( d.ConcatPathEx("dir\\dir", "file") == "dir\\dir\\file");
+    _VERIFY( d.ConcatPathEx("dir/", ":file")    == "dir/file");
+    _VERIFY( d.ConcatPathEx("dir/dir", "file")  == "dir/dir/file");
+    _VERIFY( d.ConcatPathEx("dir:dir", "file")  == "dir:dir:file");
 }
 
 
@@ -490,3 +471,36 @@ int main(int argc, const char* argv[])
 {
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.8  2002/01/22 19:29:09  ivanov
+ * Added test for ConcatPathEx()
+ *
+ * Revision 1.7  2002/01/21 04:48:15  vakatov
+ * Use #_MSC_VER instead of #NCBI_OS_MSWIN
+ *
+ * Revision 1.6  2002/01/20 04:42:22  vakatov
+ * Do not #define _DEBUG on NCBI_OS_MSWIN
+ *
+ * Revision 1.5  2002/01/10 16:48:06  ivanov
+ * Added test s_TEST_CheckPath()
+ *
+ * Revision 1.4  2001/11/19 18:13:10  juran
+ * Add s_TEST_MatchesMask().
+ * Use GetEntries() instead of Contents().
+ *
+ * Revision 1.3  2001/11/15 16:36:29  ivanov
+ * Moved from util to corelib
+ *
+ * Revision 1.2  2001/11/01 20:06:50  juran
+ * Replace directory streams with Contents() method.
+ * Implement and test Mac OS platform.
+ *
+ * Revision 1.1  2001/09/19 13:08:15  ivanov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
