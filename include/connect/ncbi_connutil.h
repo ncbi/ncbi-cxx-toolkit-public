@@ -37,6 +37,17 @@
  *       ConnNetInfo_Clone()
  *       ConnNetInfo_Print()
  *       ConnNetInfo_Destroy()
+ *       ConnNetInfo_Log()
+ *       ConnNetInfo_ParseURL()
+ *       ConnNetInfo_SetUserHeader()
+ *       ConnNetInfo_AppendUserHeader()
+ *       ConnNetInfo_DeleteUserHeader()
+ *       ConnNetInfo_OverrideUserHeader()
+ *       ConnNetInfo_AppendArg()
+ *       ConnNetInfo_PrependArg()
+ *       ConnNetInfo_DeleteArg()
+ *       ConnNetInfo_PreOverrideArg()
+ *       ConnNetInfo_PostOverrideArg()
  *       #define REG_CONN_***
  *       #define DEF_CONN_***
  *
@@ -57,6 +68,7 @@
  *    5.Search for a token in the input stream (either CONN or SOCK):
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
+ *       BUF_StripToPattern()
  *
  *    6.Convert "[host][:port]" from verbal into binary form and vice versa:
  *       StringToHostPort()
@@ -213,6 +225,41 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info);
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info);
 
 
+/* Convenience routines to manipulate SConnNetInfo::args[].
+ * In "arg" all routines below assume to have a single arg name
+ * or an "arg=value" pair. In the former case, additional "val"
+ * may be supplied separately (and will be prepended by "=" if
+ * necessary). In the latter case, having a non-zero string in
+ * "val" may result in an erroneous behavior. Ampersand (&) gets
+ * automatically added to keep the arg list correct.
+ * Return value (if any): none-zero on success; 0 on error.
+ */
+
+/* append argument to the end of the list */
+extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
+                                         const char*   arg,
+                                         const char*   val);
+
+/* put argument in the front of the list */
+extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
+                                          const char*   arg,
+                                          const char*   val);
+
+/* delete argument from the list */
+extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
+                                  const char*   arg);
+
+/* same as sequence Delete then Prepend, see above */
+extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
+                                              const char*   arg,
+                                              const char*   val);
+
+/* same as sequence Delete then Append, see above */
+extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
+                                               const char*   arg,
+                                               const char*   val);
+
+
 /* Set user header (discard previously set header, if any).
  * Reset the old header (if any) if "header" == NULL.
  */
@@ -220,9 +267,11 @@ extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info, const char* header);
 
 
 /* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
- * header was set, or if "hdr" == NULL).
+ * header was set, or if "header" == NULL).
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern void ConnNetInfo_AppendUserHeader(SConnNetInfo* info, const char* hdr);
+extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
+                                                const char*   header);
 
 
 /* Override user header (same as ConnNetInfo_AppendUserHeader() if
@@ -231,14 +280,16 @@ extern void ConnNetInfo_AppendUserHeader(SConnNetInfo* info, const char* hdr);
  * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
  * any appearence of "My-Tag: [<value>]" from the user header. Unmatched
  * tags simply added to the existing user header (as with "Append" above).
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern void ConnNetInfo_OverrideUserHeader(SConnNetInfo* inf, const char* hdr);
+extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
+                                                  const char*   header);
 
 
 /* Delete entries from current user header, if their tags match of those
  * tags passed in "hdr" (regardless of the value, if any, of the latter).
  */
-extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* inf, const char* hdr);
+extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info, const char* hdr);
 
 
 /* Parse URL into "*info", using (service-specific, if any) defaults.
@@ -528,6 +579,13 @@ extern size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2002/10/21 18:30:27  lavr
+ * +ConnNetInfo_AppendArg()
+ * +ConnNetInfo_PrependArg()
+ * +ConnNetInfo_DeleteArg()
+ * +ConnNetInfo_PreOverrideArg()
+ * +ConnNetInfo_PostOverrideArg()
+ *
  * Revision 6.23  2002/10/11 19:41:40  lavr
  * +ConnNetInfo_AppendUserHeader()
  * +ConnNetInfo_OverrideUserHeader()
