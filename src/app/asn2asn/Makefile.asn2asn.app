@@ -15,3 +15,4 @@ REQUIRES = objects
 CHECK_CMD = asn2asn.sh
 CHECK_CMD = asn2asn.sh /net/sampson/a/coremake/test_data/objects
 CHECK_REQUIRES = unix
+CHECK_TIMEOUT = 400
