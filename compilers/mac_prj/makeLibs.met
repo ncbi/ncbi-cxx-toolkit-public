@@ -425,6 +425,7 @@ on SetProjectData()
 		AddGuiProject("w_toplevel", {}, "widgets:toplevel")
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
+		AddGuiProject("w_taxtree", {}, "widgets:tax_tree")
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
 		-- AddGuiProject("w_seq", {}, "widgets:seq") -- empty
 		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
@@ -463,7 +464,7 @@ on SetProjectData()
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
 			GuiFileDataList("gui:plugin", {"plugin__.cpp", "plugin___.cpp"}), Â
-			GuiFileDataExcept("gui:core", {"plugin_thread.cpp"})}
+			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
@@ -498,7 +499,7 @@ on SetProjectData()
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
@@ -506,7 +507,7 @@ on SetProjectData()
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
 			{})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xflat", "xformat"})
+			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
 		
 	end if
