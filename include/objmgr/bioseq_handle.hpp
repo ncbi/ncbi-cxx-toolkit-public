@@ -328,10 +328,40 @@ public:
     bool operator!(void) const;
 
     // these methods are for cross scope move only.
+    /// Copy current bioseq into seq-entry
+    /// 
+    /// @param entry
+    ///  Current bioseq will be inserted into seq-entry pointed 
+    ///  by this handle. 
+    //   If seq-entry is not seqset exception will be thrown
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle CopyTo(const CSeq_entry_EditHandle& entry,
                               int index = -1) const;
+
+    /// Copy current bioseq into seqset
+    /// 
+    /// @param entry
+    ///  Current bioseq will be inserted into seqset pointed 
+    ///  by this handle. 
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle CopyTo(const CBioseq_set_EditHandle& seqset,
                               int index = -1) const;
+
+    /// Copy current bioseq into seq-entry and set seq-entry as bioseq
+    /// 
+    /// @param entry
+    ///  seq-entry pointed by entry handle will be set to bioseq
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle CopyToSeq(const CSeq_entry_EditHandle& entry) const;
 
 protected:
@@ -363,6 +393,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_EditHandle : public CBioseq_Handle
 public:
     CBioseq_EditHandle(void);
     
+    /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // Modification functions
@@ -399,20 +430,85 @@ public:
     //////////////////////////////////////////////////////////////////
 
 
-    // Add/remove/replace annotations:
+    /// Attach an annotation
+    ///
+    /// @param annot
+    ///  Reference to this annotation will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  CopyAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+
+    /// Attach a copy of the annotation
+    ///
+    /// @param annot
+    ///  Copy of the annotation pointed by this handle will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle& annot) const;
+
+    /// Remove the annotation from its location and attach to current one
+    ///
+    /// @param annot
+    ///  An annotation  pointed by this handle will be removed and attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  CopyAnnot()
     CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
 
     // Tree modification, target handle must be in the same TSE
     // entry.Which() must be e_not_set or e_Set.
+
+    /// Move current bioseq into seq-entry
+    /// 
+    /// @param entry
+    ///  Current bioseq will be inserted into seq-entry pointed 
+    ///  by this handle. 
+    //   If seq-entry is not seqset exception will be thrown
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle MoveTo(const CSeq_entry_EditHandle& entry,
                               int index = -1) const;
+
+    /// Move current bioseq into seqset
+    /// 
+    /// @param entry
+    ///  Current bioseq will be inserted into seqset pointed 
+    ///  by this handle. 
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle MoveTo(const CBioseq_set_EditHandle& seqset,
                               int index = -1) const;
 
+    /// Move current bioseq into seq-entry and set seq-entry as bioseq
+    /// 
+    /// @param entry
+    ///  seq-entry pointed by entry handle will be set to bioseq
+    ///
+    /// @return
+    ///  Edit handle to inserted bioseq
     CBioseq_EditHandle MoveToSeq(const CSeq_entry_EditHandle& entry) const;
 
+    /// Remove current bioseq from its location
     void Remove(void) const;
 
 protected:
@@ -494,6 +590,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/09/28 19:36:29  kononenk
+* Updated doxygen documentation
+*
 * Revision 1.60  2004/09/27 20:14:21  kononenk
 * Added doxygen formatting
 *
