@@ -920,6 +920,8 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
     bool file_exists = atlas->GetFileSizeL(*m_Fname, flength);
     
     if (file_exists) {
+        string expt;
+        
         try {
             m_MemFile = new CMemoryFileMap(*m_Fname);
             
@@ -931,8 +933,19 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             }
         }
         catch(std::bad_alloc) {
-            NCBI_THROW(CSeqDBException, eMemErr,
-                       "CSeqDBAtlas::MapMmap: allocation failed.");
+            expt = "\nstd::bad_alloc.";
+        }
+        catch(CException & e) {
+            // Make sure the string is not empty.
+            expt = string("\n") + e.ReportAll();
+        }
+        
+        if (expt.length()) {
+            expt = string("CSeqDBAtlas::MapMmap: While mapping file [") + (*m_Fname) + "] with " +
+                NStr::UInt8ToString(atlas->GetCurrentAllocationTotal()) +
+                " bytes allocated, caught exception:" + expt;
+            
+            NCBI_THROW(CSeqDBException, eFileErr, expt);
         }
         
         if ((m_Begin != 0) || (m_End != flength)) {

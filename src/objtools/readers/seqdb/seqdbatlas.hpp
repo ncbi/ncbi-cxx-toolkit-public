@@ -1108,6 +1108,19 @@ public:
         return m_SliceSize;
     }
     
+    /// Return the current number of bytes allocated.
+    /// 
+    /// This returns the number of bytes currently allocated by the
+    /// atlas code.  It does not include overhead or meta-data such as
+    /// the CRegionMap objects or the atlas object itself.
+    /// 
+    /// @return
+    ///   The amount of memory allocated in bytes.
+    TIndx GetCurrentAllocationTotal()
+    {
+        return m_CurAlloc;
+    }
+    
 private:
     /// Private method to prevent copy construction.
     CSeqDBAtlas(const CSeqDBAtlas &);
