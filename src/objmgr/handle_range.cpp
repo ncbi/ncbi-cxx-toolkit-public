@@ -47,11 +47,11 @@ BEGIN_SCOPE(objects)
 
 
 CHandleRange::CHandleRange(void)
-    : m_IsCircular(false),
+    : m_TotalRanges_plus(TRange::GetEmpty()),
+      m_TotalRanges_minus(TRange::GetEmpty()),
+      m_IsCircular(false),
       m_IsSingleStrand(true)
 {
-    m_TotalRanges_plus = TRange::GetEmpty();
-    m_TotalRanges_minus = TRange::GetEmpty();
 }
 
 
@@ -76,6 +76,32 @@ CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
         m_IsSingleStrand = hr.m_IsSingleStrand;
     }
     return *this;
+}
+
+
+CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
+{
+    TTotalRangeFlags ret = 0;
+    if ( m_Ranges.empty() ) {
+        return ret;
+    }
+    if ( !m_IsCircular ) {
+        if ( !m_TotalRanges_plus.Empty() ) {
+            ret |= eStrandPlus;
+        }
+        if ( !m_TotalRanges_minus.Empty() ) {
+            ret |= eStrandMinus;
+        }
+    }
+    else {
+        if ( x_IncludesPlus(m_Ranges.front().second) ) {
+            ret |= eStrandPlus;
+        }
+        if ( x_IncludesMinus(m_Ranges.front().second) ) {
+            ret |= eStrandMinus;
+        }
+    }
+    return ret;
 }
 
 
@@ -160,8 +186,8 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 
 bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 {
-    if (!m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus)
-        &&  !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus)) {
+    if ( !m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) &&
+         !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus) ) {
         return false;
     }
     ITERATE(TRanges, it1, m_Ranges) {
@@ -243,35 +269,41 @@ CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
 }
 
 
-CHandleRange::TRange CHandleRange::GetCircularStart(void) const
+CHandleRange::TRange
+CHandleRange::GetCircularRangeStart(bool include_origin) const
 {
     _ASSERT(m_IsCircular);
     TOpenRange ret = m_TotalRanges_plus;
-    // Adjust start/stop to include cut point
-    if ( !IsReverse(m_Ranges.front().second) ) {
-        // Include end
-        ret.SetTo(TRange::GetWholeTo());
-    }
-    else {
-        // Include start
-        ret.SetFrom(TRange::GetWholeFrom());
+    if ( include_origin ) {
+        // Adjust start/stop to include cut point
+        if ( !IsReverse(m_Ranges.front().second) ) {
+            // Include end
+            ret.SetTo(TRange::GetWholeTo());
+        }
+        else {
+            // Include start
+            ret.SetFrom(TRange::GetWholeFrom());
+        }
     }
     return ret;
 }
 
 
-CHandleRange::TRange CHandleRange::GetCircularEnd(void) const
+CHandleRange::TRange
+CHandleRange::GetCircularRangeEnd(bool include_origin) const
 {
     _ASSERT(m_IsCircular);
     TOpenRange ret = m_TotalRanges_minus;
-    // Adjust start/stop to include cut point
-    if ( !IsReverse(m_Ranges.front().second) ) {
-        // Include end
-        ret.SetFrom(TRange::GetWholeFrom());
-    }
-    else {
-        // Include start
-        ret.SetTo(TRange::GetWholeTo());
+    if ( include_origin ) {
+        // Adjust start/stop to include cut point
+        if ( !IsReverse(m_Ranges.front().second) ) {
+            // Include end
+            ret.SetFrom(TRange::GetWholeFrom());
+        }
+        else {
+            // Include start
+            ret.SetTo(TRange::GetWholeTo());
+        }
     }
     return ret;
 }
@@ -317,6 +349,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/12/22 15:56:22  vasilche
+* Explicitly mark ETotalRangeFlags values as bits.
+* Allow to include origin in GetCircularRangeStart() and GetCircularRangeEnd().
+* GetStrandsFlag() made non-inlined for its size.
+*
 * Revision 1.25  2004/12/08 16:39:37  grichenk
 * Optimized total ranges in CHandleRange
 *

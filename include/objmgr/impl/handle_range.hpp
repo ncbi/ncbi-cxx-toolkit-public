@@ -75,9 +75,9 @@ public:
 
     // Get the range including all ranges in the list (with any strand)
     enum ETotalRangeFlags {
-        eStrandPlus    = 1,
-        eStrandMinus   = 2,
-        eStrandAny     = eStrandPlus | eStrandMinus,
+        eStrandPlus    = 1 << 0,
+        eStrandMinus   = 1 << 1,
+        eStrandAny     = eStrandPlus | eStrandMinus
     };
     typedef unsigned int TTotalRangeFlags;
 
@@ -85,13 +85,18 @@ public:
     TTotalRangeFlags GetStrandsFlag(void) const;
 
     TRange GetOverlappingRange(TTotalRangeFlags flags = eStrandAny) const;
+
     // Leftmost and rightmost points of the total range ragardless of strand
     TSeqPos GetLeft(void) const;
     TSeqPos GetRight(void) const;
-    // Ranges for circular locations
-    TRange GetCircularStart(void) const;
-    TRange GetCircularEnd(void) const;
 
+    // Ranges for circular locations
+    // valid only when IsCircular() returns true
+    // return first part of a circular location up to origin
+    TRange GetCircularRangeStart(bool include_origin = true) const;
+    // return second part of a circular location starting from origin
+    TRange GetCircularRangeEnd(bool include_origin = true) const;
+    
     // Get the range including all ranges in the list which (with any strand)
     // filter the list through 'range' argument
     TRange GetOverlappingRange(const TRange& range) const;
@@ -181,39 +186,17 @@ bool CHandleRange::x_IncludesMinus(const ENa_strand& strand) const
 }
 
 
-inline
-CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
-{
-    TTotalRangeFlags ret = 0;
-    if ( m_Ranges.empty() ) {
-        return ret;
-    }
-    if ( !m_IsCircular ) {
-        if ( !m_TotalRanges_plus.Empty() ) {
-            ret |= eStrandPlus;
-        }
-        if ( !m_TotalRanges_minus.Empty() ) {
-            ret |= eStrandMinus;
-        }
-    }
-    else {
-        if ( x_IncludesPlus(m_Ranges.front().second) ) {
-            ret |= eStrandPlus;
-        }
-        if ( x_IncludesMinus(m_Ranges.front().second) ) {
-            ret |= eStrandMinus;
-        }
-    }
-    return ret;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2004/12/22 15:56:22  vasilche
+ * Explicitly mark ETotalRangeFlags values as bits.
+ * Allow to include origin in GetCircularRangeStart() and GetCircularRangeEnd().
+ * GetStrandsFlag() made non-inlined for its size.
+ *
  * Revision 1.24  2004/12/08 16:39:37  grichenk
  * Optimized total ranges in CHandleRange
  *
