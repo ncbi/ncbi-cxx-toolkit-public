@@ -287,75 +287,74 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                                            ESearchDirection dir,
                                            bool try_reverse_dir) const
 {
+    if (aln_pos > GetAlnStop()) {
+        aln_pos = GetAlnStop(); // out-of-range adjustment
+    }
     TNumseg seg = GetSeg(aln_pos);
-    if (seg < 0) {
-        return -1;
-    } else {
-        TSignedSeqPos pos = GetStart(for_row, seg);
-        if (pos >= 0) {
-            TSeqPos delta = aln_pos - GetAlnStart(seg);
-            if (IsPositiveStrand(for_row)) {
-                pos += delta;
-            } else {
-                pos += GetLen(seg) - 1 - delta;
-            }
-        } else if (dir != eNone) {
-            // it is a gap, search in the neighbouring segments
-            // according to search direction (dir) and strand
-            bool reverse_pass = false;
-            TNumseg orig_seg = seg = x_GetRawSegFromSeg(seg);
+    TSignedSeqPos pos = GetStart(for_row, seg);
+    if (pos >= 0) {
+        TSeqPos delta = aln_pos - GetAlnStart(seg);
+        if (IsPositiveStrand(for_row)) {
+            pos += delta;
+        } else {
+            pos += GetLen(seg) - 1 - delta;
+        }
+    } else if (dir != eNone) {
+        // it is a gap, search in the neighbouring segments
+        // according to search direction (dir) and strand
+        bool reverse_pass = false;
+        TNumseg orig_seg = seg = x_GetRawSegFromSeg(seg);
             
-            while (true) {
-                if (IsPositiveStrand(for_row)) {
-                    if (dir == eBackwards  ||  dir == eLeft) {
-                        while (--seg >=0  &&  pos == -1) {
-                            pos = x_GetRawStop(for_row, seg);
-                        }
-                    } else {
-                        while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
-                            pos = x_GetRawStart(for_row, seg);
-                        }
+        while (true) {
+            if (IsPositiveStrand(for_row)) {
+                if (dir == eBackwards  ||  dir == eLeft) {
+                    while (--seg >=0  &&  pos == -1) {
+                        pos = x_GetRawStop(for_row, seg);
                     }
                 } else {
-                    if (dir == eForward  ||  dir == eLeft) {
-                        while (--seg >=0  &&  pos == -1) {
-                            pos = x_GetRawStart(for_row, seg);
-                        }
-                    } else {
-                        while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
-                            pos = x_GetRawStop(for_row, seg);
-                        } 
+                    while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                        pos = x_GetRawStart(for_row, seg);
                     }
                 }
-                if (!try_reverse_dir) {
-                    break;
-                }
-                if (pos >= 0) {
-                    break; // found
-                } else if (reverse_pass) {
-                    string msg = "CAlnVec::GetSeqPosFromAlnPos(): "
-                        "Invalid Dense-seg: Row " +
-                        NStr::IntToString(for_row) +
-                        " contains gaps only.";
-                    NCBI_THROW(CAlnException, eInvalidDenseg, msg);
-                }
-                // not found, try reverse direction
-                reverse_pass = true;
-                seg = orig_seg;
-                switch (dir) {
-                case eLeft:
-                    dir = eRight; break;
-                case eRight:
-                    dir = eLeft; break;
-                case eForward:
-                    dir = eBackwards; break;
-                case eBackwards:
-                    dir = eForward; break;
+            } else {
+                if (dir == eForward  ||  dir == eLeft) {
+                    while (--seg >=0  &&  pos == -1) {
+                        pos = x_GetRawStart(for_row, seg);
+                    }
+                } else {
+                    while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                        pos = x_GetRawStop(for_row, seg);
+                    } 
                 }
             }
+            if (!try_reverse_dir) {
+                break;
+            }
+            if (pos >= 0) {
+                break; // found
+            } else if (reverse_pass) {
+                string msg = "CAlnVec::GetSeqPosFromAlnPos(): "
+                    "Invalid Dense-seg: Row " +
+                    NStr::IntToString(for_row) +
+                    " contains gaps only.";
+                NCBI_THROW(CAlnException, eInvalidDenseg, msg);
+            }
+            // not found, try reverse direction
+            reverse_pass = true;
+            seg = orig_seg;
+            switch (dir) {
+            case eLeft:
+                dir = eRight; break;
+            case eRight:
+                dir = eLeft; break;
+            case eForward:
+                dir = eBackwards; break;
+            case eBackwards:
+                dir = eForward; break;
+            }
         }
-        return pos;
     }
+    return pos;
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
@@ -676,6 +675,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2002/10/24 21:27:29  todorov
+* out-of-range adjustment instead of return -1 for the GetSeqPosFromAlnPos
+*
 * Revision 1.14  2002/10/21 19:14:27  todorov
 * reworked aln chunks: now supporting more types; added chunk aln coords
 *
