@@ -753,8 +753,11 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
              PHIBlastMatchPatterns(subject+offset, query+start_offsets[index], 
                                    length))
          {
-            /* Pattern has matched completely. Save the pair of offsets */
-            query_offsets[count] = start_offsets[index];
+            /* Pattern has matched completely. Save index into the array
+               of pattern start offsets in query (so pattern length will
+               be accessible in the word finder later), and the subject
+               offset. */
+            query_offsets[count] = index;
             subject_offsets[count] = offset;
             ++count;
          }

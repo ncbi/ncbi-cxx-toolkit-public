@@ -52,7 +52,7 @@ Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
    Int4 totalhits=0;
    Int4 first_offset = 0;
    Int4 last_offset  = subject->length;
-   Int4 hsp_q, hsp_s, hsp_len;
+   Int4 pat_len;
    Int4 i;
    Int4 score;
 
@@ -67,15 +67,10 @@ Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
       /* for each hit, */
       for (i = 0; i < hits; ++i) {
          /* do an extension */
-         score=BlastAaExtendOneHit(matrix, subject, query,
-                  subject_offsets[i], query_offsets[i], 
-                  word_params->x_dropoff, &hsp_q, &hsp_s, &hsp_len);
-         
-         /* if the hsp meets the score threshold, report it */
-         if (score > word_params->cutoff_score) {
-            BlastSaveInitHsp(init_hitlist, hsp_q, hsp_s, 
-               query_offsets[i], subject_offsets[i], hsp_len, score);
-         }
+         BlastSaveInitHsp(init_hitlist, 
+            lookup->start_offsets[query_offsets[i]], subject_offsets[i], 
+            lookup->start_offsets[query_offsets[i]], subject_offsets[i], 
+            lookup->lengths[query_offsets[i]], 0);
       } /* end for */
    } /* end while */
    return totalhits;
