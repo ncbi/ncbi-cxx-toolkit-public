@@ -19,7 +19,9 @@ string MkDir(const string& s)
         return s + '/';
 }
 
-void GenerateCode(const CModuleSet& types, const string& fileName)
+void GenerateCode(const CModuleSet& types, const string& fileName,
+                  const string& sourcesListName,
+                  const string& headersDir, const string& sourcesDir)
 {
     CNcbiRegistry def;
     { // load descriptions from registry file
@@ -37,10 +39,9 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         def.Read(*in);
     }
 
-    string headersPath = MkDir(def.Get("-", "headers_path"));
-    string sourcesPath = MkDir(def.Get("-", "sources_path"));
+    string headersPath = MkDir(headersDir);
+    string sourcesPath = MkDir(sourcesDir);
     string headersPrefix = MkDir(def.Get("-", "headers_prefix"));
-    string fileListName = def.Get("-", "file_list");
 
     typedef list<const ASNType*> TClasses;
     typedef map<string, TClasses> TOutputFiles;
@@ -78,13 +79,15 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         code.GenerateCPP(sourcesPath);
     }
 
-    if ( !fileListName.empty() ) {
-        ofstream fileList(fileListName.c_str());
+    if ( !sourcesListName.empty() ) {
+        ofstream fileList(sourcesListName.c_str());
         
+        fileList << "GENFILES =";
         for ( TOutputFiles::const_iterator filei = outputFiles.begin();
               filei != outputFiles.end();
               ++filei ) {
-            fileList << filei->first;
+            fileList << ' ' << filei->first << "_Base";
         }
+        fileList << endl;
     }
 }

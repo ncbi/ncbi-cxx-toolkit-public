@@ -83,6 +83,10 @@ void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 void CFileCode::GenerateHPP(const string& path) const
 {
     ofstream header((path + m_HeaderName).c_str());
+    if ( !header ) {
+        NcbiCerr << "Cannot create file: " << path << m_HeaderName << endl;
+        return;
+    }
 
     header <<
         "// This is generated file, don't modify" << endl <<
@@ -137,6 +141,10 @@ void CFileCode::GenerateHPP(const string& path) const
 void CFileCode::GenerateCPP(const string& path) const
 {
     ofstream code((path + m_CPPName).c_str());
+    if ( !code ) {
+        NcbiCerr << "Cannot create file: " << path << m_CPPName << endl;
+        return;
+    }
 
     code <<
         "// This is generated file, don't modify" << endl <<

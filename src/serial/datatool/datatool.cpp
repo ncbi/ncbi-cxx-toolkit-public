@@ -12,6 +12,94 @@
 
 USING_NCBI_SCOPE;
 
+static void Error(const char* msg, const char* msg2 = "")
+{
+    NcbiCerr << msg << msg2 << endl;
+    exit(1);
+}
+
+class SourceFile
+{
+public:
+    SourceFile(const string& name, bool binary = false);
+    ~SourceFile(void);
+
+    operator CNcbiIstream&(void) const
+        {
+            return *m_StreamPtr;
+        }
+
+private:
+    CNcbiIstream* m_StreamPtr;
+    bool m_Open;
+};
+
+SourceFile::SourceFile(const string& name, bool binary)
+{
+    if ( name == "stdin" || name == "-" ) {
+        m_StreamPtr = &NcbiCin;
+        m_Open = false;
+    }
+    else {
+        m_StreamPtr = new ifstream(name.c_str(),
+                                   binary? ios::in | ios::binary: ios::in);
+        if ( !*m_StreamPtr ) {
+            delete m_StreamPtr;
+            m_StreamPtr = 0;
+            Error("cannot open file ", name.c_str());
+        }
+        m_Open = true;
+    }
+}
+
+SourceFile::~SourceFile(void)
+{
+    if ( m_Open ) {
+        delete m_StreamPtr;
+    }
+}
+
+class DestinationFile
+{
+public:
+    DestinationFile(const string& name, bool binary = false);
+    ~DestinationFile(void);
+
+    operator CNcbiOstream&(void) const
+        {
+            return *m_StreamPtr;
+        }
+
+private:
+    CNcbiOstream* m_StreamPtr;
+    bool m_Open;
+};
+
+DestinationFile::DestinationFile(const string& name, bool binary)
+{
+    if ( name == "stdout" || name == "-" ) {
+        m_StreamPtr = &NcbiCout;
+        m_Open = false;
+    }
+    else {
+        m_StreamPtr = new ofstream(name.c_str(),
+                                   binary? ios::in | ios::binary: ios::in);
+        if ( !*m_StreamPtr ) {
+            delete m_StreamPtr;
+            m_StreamPtr = 0;
+            Error("cannot open file ", name.c_str());
+        }
+        m_Open = true;
+    }
+}
+
+DestinationFile::~DestinationFile(void)
+{
+    if ( m_Open ) {
+        delete m_StreamPtr;
+    }
+}
+
 enum EFileType {
     eNone,
     eASNText,
@@ -26,22 +114,34 @@ static void Help(void)
     NcbiCout << endl <<
         "DataTool 1.0 arguments:" << endl <<
         endl <<
-        "  -m  ASN.1 Module File [File In]" << endl <<
-        "  -f  ASN.1 Module File [File Out]  Optional" << endl <<
-        "  -v  Print Value File [File In]  Optional" << endl <<
-        "  -p  Print Value File [File Out]  Optional" << endl <<
-        "  -d  Binary Value File (type required) [File In]  Optional" << endl <<
-        "  -t  Binary Value Type [String]  Optional" << endl <<
-        "  -e  Binary Value File [File Out]  Optional" << endl <<
-        "  -o  C++ code definition file [File In] Optional" << endl;
+        "  -m  ASN.1 module file [File In]" << endl <<
+        "  -f  ASN.1 module file [File Out]  Optional" << endl <<
+        "  -mx XML module file [File In]" << endl <<
+        "  -fx XML module file [File Out]  Optional" << endl <<
+        "  -v  Read value in ASN.1 text format [File In]  Optional" << endl <<
+        "  -p  Print value in ASN.1 text format [File Out]  Optional" << endl <<
+        "  -vx Read value in XML format [File In]  Optional" << endl <<
+        "  -px Print value in XML format [File Out]  Optional" << endl <<
+        "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << endl <<
+        "  -t  Binary value type [String]  Optional" << endl <<
+        "  -e  Write value in ASN.1 binary format [File Out]  Optional" << endl <<
+        "  -o  C++ code definition file [File In] Optional" << endl <<
+        "  -oh Directory for generated C++ headers [Directory] Optional" << endl <<
+        "  -oc Directory for generated C++ code [Directory] Optional" << endl <<
+        "  -of File for list of generated C++ files [File Out] Optional" << endl;
 }
 
 static const char* StringArgument(const char* arg)
 {
     if ( !arg || !arg[0] ) {
-        ERR_POST(Fatal << "argument expected");
+        Error("argument expected");
     }
     return arg;
+}
+
+static const char* DirArgument(const char* arg)
+{
+    return StringArgument(arg);
 }
 
 static const char* FileInArgument(const char* arg)
@@ -62,7 +162,22 @@ static TObject LoadValue(CModuleSet& types, const string& typeName,
                          const string& fileName, EFileType fileType);
 static void StoreValue(const TObject& object,
                        const string& fileName, EFileType fileType);
-void GenerateCode(const CModuleSet& types, const string& fileName);
+void GenerateCode(const CModuleSet& types, const string& fileName,
+                  const string& sourcesListName,
+                  const string& headersDir, const string& sourcesDir);
+
+inline EFileType FileType(const char* arg, EFileType defType = eASNText)
+{
+    switch ( arg[2] ) {
+    case 0:
+        return defType;
+    case 'x':
+        return eXMLText;
+    default:
+        Error("Invalid argument: ", arg);
+        return defType;
+    }
+}
 
 int main(int argc, const char*argv[])
 {
@@ -82,6 +197,9 @@ int main(int argc, const char*argv[])
     EFileType dataOutType;
 
     string codeInFile;
+    string headersDir;
+    string sourcesDir;
+    string sourcesListFile;
 
     if ( argc <= 1 ) {
         Help();
@@ -91,48 +209,63 @@ int main(int argc, const char*argv[])
         for ( int i = 1; i < argc; ++i ) {
             const char* arg = argv[i];
             if ( arg[0] != '-' ) {
-                ERR_POST(Fatal << "Invalid argument " << arg);
+                Error("Invalid argument: ", arg);
             }
             switch ( arg[1] ) {
             case 'm':
-                sourceInType = eASNText;
+                sourceInType = FileType(arg);
                 sourceInFile = FileInArgument(argv[++i]);
                 break;
             case 'f':
-                sourceOutType = eASNText;
+                sourceOutType = FileType(arg);
                 sourceOutFile = FileOutArgument(argv[++i]);
                 break;
             case 'v':
-                dataInType = eASNText;
+                dataInType = FileType(arg);
                 dataInFile = FileInArgument(argv[++i]);
                 break;
             case 'p':
-                dataOutType = eASNText;
+                dataOutType = FileType(arg);
                 dataOutFile = FileOutArgument(argv[++i]);
                 break;
             case 'd':
-                dataInType = eASNBinary;
+                dataInType = FileType(arg, eASNBinary);
                 dataInFile = FileInArgument(argv[++i]);
                 break;
             case 'e':
-                dataOutType = eASNBinary;
+                dataOutType = FileType(arg, eASNBinary);
                 dataOutFile = FileOutArgument(argv[++i]);
                 break;
             case 't':
                 dataInName = StringArgument(argv[++i]);
                 break;
             case 'o':
-                codeInFile = FileInArgument(argv[++i]);
+                switch ( arg[2] ) {
+                case 0:
+                    codeInFile = FileInArgument(argv[++i]);
+                    break;
+                case 'h':
+                    headersDir = DirArgument(argv[++i]);
+                    break;
+                case 'c':
+                    sourcesDir = DirArgument(argv[++i]);
+                    break;
+                case 'f':
+                    sourcesListFile = FileOutArgument(argv[++i]);
+                    break;
+                default:
+                    Error("Invalid argument: ", arg);
+                }
                 break;
             default:
-                ERR_POST(Fatal << "Invalid argument " << arg);
+                Error("Invalid argument: ", arg);
             }
         }
     }
 
     try {
         if ( sourceInFile.empty() )
-            ERR_POST(Fatal << "Module file not specified");
+            Error("Module file not specified");
 
         CModuleSet types;
         LoadDefinition(types, sourceInFile, sourceInType);
@@ -149,14 +282,15 @@ int main(int argc, const char*argv[])
         }
 
         if ( !codeInFile.empty() )
-            GenerateCode(types, codeInFile);
+            GenerateCode(types, codeInFile, sourcesListFile,
+                         headersDir, sourcesDir);
     }
     catch (exception& e) {
-        ERR_POST(Fatal << "Error: " << e.what());
+        Error("Error: ", e.what());
         return 1;
     }
     catch (...) {
-        ERR_POST(Fatal << "Error: unknown");
+        Error("Error: unknown");
         return 1;
     }
 	return 0;
@@ -166,22 +300,11 @@ int main(int argc, const char*argv[])
 void LoadDefinition(CModuleSet& types,
                     const string& fileName, EFileType fileType)
 {
-    ifstream fileIn;
-    CNcbiIstream* in;
-    if ( fileName == "stdin" || fileName == "-" ) {
-        in = &NcbiCin;
-    }
-    else {
-        fileIn.open(fileName.c_str());
-        if ( !fileIn )
-            ERR_POST(Fatal << "cannot open file " << fileName);
-        in = &fileIn;
-    }
-    
     if ( fileType != eASNText )
-        ERR_POST(Fatal << "data definition format not supported");
+        Error("data definition format not supported");
 
-    ASNLexer lexer(*in);
+    SourceFile in(fileName);
+    ASNLexer lexer(in);
     ASNParser parser(lexer);
     try {
         parser.Modules(types);
@@ -197,64 +320,43 @@ void LoadDefinition(CModuleSet& types,
 void StoreDefinition(const CModuleSet& types,
                      const string& fileName, EFileType fileType)
 {
-    ofstream fileOut;
-    CNcbiOstream* out;
-    if ( fileName == "stdout" || fileName == "-" ) {
-        out = &NcbiCout;
-    }
-    else {
-        fileOut.open(fileName.c_str());
-        if ( !fileOut )
-            ERR_POST(Fatal << "cannot open file " << fileName);
-        out = &fileOut;
-    }
-
     if ( fileType != eASNText )
-        ERR_POST(Fatal << "data definition format not supported");
+        Error("data definition format not supported");
+    
+    DestinationFile out(fileName);
     
     for ( CModuleSet::TModules::const_iterator i = types.modules.begin();
           i != types.modules.end(); ++i ) {
-        (*i)->Print(*out);
+        (*i)->Print(out);
     }
 }
 
 TObject LoadValue(CModuleSet& types, const string& typeName,
                   const string& fileName, EFileType fileType)
 {
-    ifstream fileIn;
-    CNcbiIstream* in;
-    if ( fileName == "stdin" || fileName == "-" ) {
-        in = &NcbiCin;
-    }
-    else {
-        fileIn.open(fileName.c_str(),
-                    fileType == eASNBinary? ios::in | ios::binary: ios::in);
-        if ( !fileIn )
-            ERR_POST(Fatal << "cannot open file " << fileName);
-        in = &fileIn;
-    }
-    
+    SourceFile in(fileName, fileType == eASNBinary);
+
     auto_ptr<CObjectIStream> objIn;
     switch ( fileType ) {
     case eASNText:
-        objIn.reset(new CObjectIStreamAsn(*in));
+        objIn.reset(new CObjectIStreamAsn(in));
         break;
     case eASNBinary:
-        objIn.reset(new CObjectIStreamAsnBinary(*in));
+        objIn.reset(new CObjectIStreamAsnBinary(in));
         break;
     default:
-        ERR_POST(Fatal << "value format not supported");
+        Error("value format not supported");
     }
     objIn->SetTypeMapper(&types);
     string type = objIn->ReadTypeName();
     if ( type.empty() ) {
         if ( typeName.empty() )
-            ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
+            Error("ASN.1 value type must be specified (-t)");
         type = typeName;
     }
     TTypeInfo typeInfo = types.MapType(type);
     if ( typeInfo == 0 )
-        ERR_POST(Fatal << "type not found: " << type);
+        Error("type not found: ", type.c_str());
     
     TObjectPtr object = 0;
     objIn->ReadExternalObject(&object, typeInfo);
@@ -264,30 +366,18 @@ TObject LoadValue(CModuleSet& types, const string& typeName,
 void StoreValue(const TObject& object,
                 const string& fileName, EFileType fileType)
 {
-    ofstream fileOut;
-    CNcbiOstream* out;
-    if ( fileName == "stdout" || fileName == "-" ) {
-        out = &NcbiCout;
-    }
-    else {
-        fileOut.open(fileName.c_str(),
-                     fileType == eASNBinary? ios::out | ios::binary: ios::out);
-        if ( !fileOut )
-            ERR_POST(Fatal << "cannot open file " << fileName);
-        out = &fileOut;
-    }
+    DestinationFile out(fileName, fileType == eASNBinary);
 
     auto_ptr<CObjectOStream> objOut;
     switch ( fileType ) {
     case eASNText:
-        objOut.reset(new CObjectOStreamAsn(*out));
+        objOut.reset(new CObjectOStreamAsn(out));
         break;
     case eASNBinary:
-        objOut.reset(new CObjectOStreamAsnBinary(*out));
+        objOut.reset(new CObjectOStreamAsnBinary(out));
         break;
     default:
-        ERR_POST(Fatal << "value format not supported");
+        Error("value format not supported");
     }
     objOut->Write(&object.first, object.second);
 }
-
