@@ -32,6 +32,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 
 #include <bdb/bdb_blobcache.hpp>
@@ -1897,11 +1898,47 @@ void CBDB_IntCache::Purge(time_t           time_point,
 
 
 
+const string kBDBCacheDriverName("bdbcache");
+
+
+/// Class factory for BDB implementation of ICache
+///
+/// @internal
+///
+class CBDB_CacheReaderCF : 
+    public CSimpleClassFactoryImpl<ICache, CBDB_Cache>
+{
+public:
+    typedef 
+      CSimpleClassFactoryImpl<ICache, CBDB_Cache> TParent;
+public:
+    CBDB_CacheReaderCF() : TParent(kBDBCacheDriverName, 0)
+    {
+    }
+    ~CBDB_CacheReaderCF()
+    {
+    }
+};
+
+void NCBI_BDB_ICacheEntryPoint(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CBDB_CacheReaderCF>::
+       NCBI_EntryPointImpl(info_list, method);
+}
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/12/08 16:13:15  kuznets
+ * Added plugin mananger support
+ *
  * Revision 1.30  2003/11/28 17:35:05  vasilche
  * Fixed new[]/delete discrepancy.
  *

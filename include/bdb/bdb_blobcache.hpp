@@ -342,6 +342,18 @@ private:
 };
 
 
+extern NCBI_BDB_EXPORT const string kBDBCacheDriverName;
+
+extern "C" 
+{
+
+void NCBI_BDB_EXPORT NCBI_BDB_ICacheEntryPoint(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method);
+
+} // extern C
+
+
 /* @} */
 
 
@@ -350,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/12/08 16:12:02  kuznets
+ * Added plugin mananger support
+ *
  * Revision 1.10  2003/11/25 19:36:24  kuznets
  * + ICache implementation
  *

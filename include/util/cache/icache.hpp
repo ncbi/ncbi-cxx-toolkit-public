@@ -39,6 +39,7 @@
 /// binary large objects (BLOBS).
 
 
+#include <corelib/plugin_manager_impl.hpp>
 #include <util/reader_writer.hpp>
 #include <string>
 
@@ -272,12 +273,18 @@ public:
 };
 
 
+NCBI_DECLARE_INTERFACE_VERSION(ICache,  "icache", 1, 1, 0);
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/08 16:11:43  kuznets
+ * Added plugin mananger support
+ *
  * Revision 1.2  2003/11/25 17:12:54  kuznets
  * Reworked cache maintanance methods.
  * Unified cache items expiration functions.
