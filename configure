@@ -13722,27 +13722,21 @@ echo $ECHO_N "checking for res_search in -lresolv... $ECHO_C" >&6
 if test "${ac_cv_lib_resolv_res_search+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lresolv  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
+  orig_LIBS=$LIBS
+    LIBS="-lresolv $NETWORK_LIBS $orig_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char res_search ();
+#include <resolv.h>
 int
 main ()
 {
-res_search ();
+unsigned char ans[256];
+         int st = res_search("foo.bar", 1, 1, ans, sizeof(ans));
   ;
   return 0;
 }
@@ -13767,16 +13761,15 @@ sed 's/^/| /' conftest.$ac_ext >&5
 ac_cv_lib_resolv_res_search=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    LIBS=$orig_LIBS
 fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_resolv_res_search" >&5
 echo "${ECHO_T}$ac_cv_lib_resolv_res_search" >&6
-if test $ac_cv_lib_resolv_res_search = yes; then
-  RESOLVER_LIBS="-lresolv"
+if test "$ac_cv_lib_resolv_res_search" = "yes"; then
+   RESOLVER_LIBS=-lresolv
 else
-  RESOLVER_LIBS=
+   RESOLVER_LIBS=
 fi
-
 
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
    { echo "$as_me:$LINENO: Skipping checks for get{addr,name}info (new in Solaris 8)." >&5

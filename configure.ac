@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.317 2004/08/24 18:06:16 ucko Exp $
+#  $Id: configure.ac,v 1.318 2004/08/25 19:12:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2221,7 +2221,20 @@ if test -z "${NETWORK_LIBS+set}"; then
    AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
       [NETWORK_LIBS=$libnsl])
 fi
-AC_CHECK_LIB(resolv, res_search, [RESOLVER_LIBS="-lresolv"], [RESOLVER_LIBS=])
+AC_CACHE_CHECK([for res_search in -lresolv], ac_cv_lib_resolv_res_search,
+   [orig_LIBS=$LIBS
+    LIBS="-lresolv $NETWORK_LIBS $orig_LIBS"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[#include <resolv.h>]],
+       [[unsigned char ans[256];
+         int st = res_search("foo.bar", 1, 1, ans, sizeof(ans));]])],
+       [ac_cv_lib_resolv_res_search=yes], [ac_cv_lib_resolv_res_search=no])
+    LIBS=$orig_LIBS])
+if test "$ac_cv_lib_resolv_res_search" = "yes"; then
+   RESOLVER_LIBS=-lresolv
+else
+   RESOLVER_LIBS=
+fi
 
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
    AC_MSG_NOTICE([Skipping checks for get{addr,name}info (new in Solaris 8).])
