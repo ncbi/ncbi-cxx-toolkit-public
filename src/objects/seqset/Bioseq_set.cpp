@@ -35,59 +35,36 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.10  2000/04/06 16:11:52  vasilche
+ * Revision 1.1  2000/04/06 16:12:24  vasilche
  * Added PostRead test method.
  *
- * Revision 1.9  2000/03/29 15:56:58  vasilche
- * Generated base files now have _ suffix instead of original _Base
- *
- * Revision 1.8  2000/03/17 16:46:52  vasilche
- * Added copyright message to generated files.
  *
  * ===========================================================================
  */
 
-#ifndef OBJECTS_SEQSET_BIOSEQ_SET_HPP
-#define OBJECTS_SEQSET_BIOSEQ_SET_HPP
-
+// standard includes
 
 // generated includes
-#include <objects/seqset/Bioseq_set_.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 // generated classes
-class CBioseq_set : public CBioseq_set_Base
+// constructor for static/automatic objects
+CBioseq_set::CBioseq_set(void)
 {
-    typedef CBioseq_set_Base Tparent;
-public:
-    // constructor for static/automatic objects
-    CBioseq_set(void);
-    // destructor
-    ~CBioseq_set(void);
+}
 
-    // create dynamically allocated object
-    static CBioseq_set* New(void)
-        {
-            return new CBioseq_set(NCBI_NS_NCBI::CObject::eCanDelete);
-        }
+// constructor for dynamic objects
+CBioseq_set::CBioseq_set(NCBI_NS_NCBI::CObject::ECanDelete)
+    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)
+{
+}
 
-    // public getters
-    const TSeq_set& GetSeq_set(void) const
-        {
-            return Tparent::GetSeq_set();
-        }
-    TSeq_set& SetSeq_set(void)
-        {
-            return Tparent::SetSeq_set();
-        }
+// destructor
+CBioseq_set::~CBioseq_set(void)
+{
+}
 
-    void PostRead(void);
-
-protected:
-    // hidden constructor for dynamic objects
-    CBioseq_set(NCBI_NS_NCBI::CObject::ECanDelete);
-
-};
-
-NCBISER_HAVE_POST_READ(CBioseq_set)
-
-#endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP
+void CBioseq_set::PostRead(void)
+{
+    NcbiCout << "Bioseq-set loaded" << NcbiEndl;
+}
