@@ -100,8 +100,8 @@ void CAlnVwr::Segments(const CAlnMap& alnmap,
 
 
 void CAlnVwr::Chunks(const CAlnMap& alnmap,
-                     CAlnMap::TGetChunkFlags flags,
-                     CNcbiOstream& out)
+                     CNcbiOstream& out,
+                     CAlnMap::TGetChunkFlags flags)
 {
     CAlnMap::TNumrow row;
 
@@ -143,14 +143,14 @@ void CAlnVwr::Chunks(const CAlnMap& alnmap,
 
 
 void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
+                          CNcbiOstream& out,
                           int scrn_width,
-                          EAlgorithm algorithm,
-                          CNcbiOstream& out)
+                          EAlgorithm algorithm)
 {
     switch(algorithm) {
     case eUseSegments:
         {
-            int aln_pos = 0;
+            TSeqPos aln_pos = 0;
             CAlnMap::TSignedRange rng;
             
             do {
@@ -251,7 +251,7 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
             } while (pos < aln_len);
             break;
         }
-    case eSpeedOptimized:
+    case eUseWholeAlnSeqVector:
         {
             CAlnMap::TNumrow row, nrows = alnvec.GetNumRows();
 
@@ -309,6 +309,9 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/08/30 12:31:35  todorov
+ * Made CNcbiOstream& a required param. Changed the order of params. Changed name of the speed-optimized algrorithm. Changed the default value for PopStyle
+ *
  * Revision 1.1  2004/08/27 20:55:00  todorov
  * initial revision
  *

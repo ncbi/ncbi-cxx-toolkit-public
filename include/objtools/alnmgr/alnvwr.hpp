@@ -47,14 +47,14 @@ public:
     // CAlnMap printers:
 
     static void CsvTable(const CAlnMap&          aln_map,
-                         CNcbiOstream&           out   = cout);
+                         CNcbiOstream&           out);
 
     static void Segments(const CAlnMap&          aln_map,
-                         CNcbiOstream&           out   = cout);
+                         CNcbiOstream&           out);
 
     static void Chunks  (const CAlnMap&          aln_map,
-                         CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly,
-                         CNcbiOstream&           out   = cout);
+                         CNcbiOstream&           out,
+                         CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly);
 
 
     // CAlnVec printer:
@@ -63,13 +63,13 @@ public:
     enum EAlgorithm {
         eUseChunks,
         eUseSegments,
-        eSpeedOptimized
+        eUseWholeAlnSeqVector  // fastest, but mem inefficient for large alns
     };
 
     static void PopsetStyle(const CAlnVec& aln_vec,
+                            CNcbiOstream&  out,
                             int            scrn_width = 70,
-                            EAlgorithm     algorithm  = eSpeedOptimized,
-                            CNcbiOstream&  out        = cout);
+                            EAlgorithm     algorithm  = eUseChunks);
 };
 
 
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/30 12:31:25  todorov
+ * Made CNcbiOstream& a required param. Changed the order of params. Changed name of the speed-optimized algrorithm. Changed the default value for PopStyle
+ *
  * Revision 1.2  2004/08/28 18:45:38  vakatov
  * Added MS-Win export;  some code beautification.
  * BTW, CNcbiOstream&  out = cout looks a bit fishy.
