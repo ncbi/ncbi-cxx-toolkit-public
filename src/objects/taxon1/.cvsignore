@@ -6,5 +6,12 @@
 .cvsignore
 Makefile.*.lib
 Makefile.in
+Taxon1_data.cpp
+Taxon1_error.cpp
+Taxon1_info.cpp
+Taxon1_name.cpp
+Taxon1_req.cpp
+Taxon1_resp.cpp
+Taxon2_data.cpp
 gmon.out
 gprof.out

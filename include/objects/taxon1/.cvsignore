@@ -1,3 +1,11 @@
 .cvsignore
+Taxon1_data.hpp
+Taxon1_error.hpp
+Taxon1_info.hpp
+Taxon1_name.hpp
+Taxon1_req.hpp
+Taxon1_resp.hpp
+Taxon2_data.hpp
 [A-Z]*_.hpp
 objects/taxon1__.hpp
+taxon1__.hpp
