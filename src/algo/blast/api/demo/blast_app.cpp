@@ -543,7 +543,7 @@ int CBlastApplication::Run(void)
     ProcessCommandLineArgs(opts, seq_src);
 
     // Perform repeats filtering if required
-    Blast_FindRepeatFilterLoc(query_loc, opts->GetOptions().GetFilterString());
+    Blast_FindRepeatFilterLoc(query_loc, opts);
 
     BlastHSPStream* hsp_stream = NULL;
     bool tabular_output = args["tabular"].AsBoolean();

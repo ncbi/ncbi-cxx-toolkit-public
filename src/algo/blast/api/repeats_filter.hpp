@@ -53,13 +53,14 @@ BEGIN_SCOPE(blast)
 /** Finds repeats locations for a given set of sequences. The locations are
  * saved in the respective fields of the SSeqLoc structures. If previous masks
  * exist, they are combined with the new masks.
+ * opts_handle will be downcast to CBlastNucleotideOptionsHandle and if that succeeds
+ * and repeat filtering is specified then it will be run, otherwise it just returns.
  * @param query_loc Vector of sequence locations. [in] [out]
- * @param filter_string Filtering option for a BLAST search, e.g. 
- *                      "m L;R -d rodents.lib" [in]
+ * @param opts_handle options handle for blast search [in]
  */
 NCBI_XBLAST_EXPORT
 void
-Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, const char* filter_sting);
+Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, const CBlastOptionsHandle* opts_handle);
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
@@ -70,6 +71,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/03/31 20:43:14  madden
+* Blast_FindRepeatFilterLoc now takes CBlastOptionsHandle rather than char*
+*
 * Revision 1.5  2005/03/29 15:58:54  dondosha
 * Added blast scope
 *

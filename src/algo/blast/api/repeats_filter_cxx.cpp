@@ -187,36 +187,28 @@ s_SetRepeatsSearchDefaults(CBlastNucleotideOptionsHandle& opts)
 }
 
 void
-Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
+Blast_FindRepeatFilterLoc(TSeqLocVector& query, const CBlastOptionsHandle* opts_handle)
 {
-    const Boolean kIsProt = FALSE;
-    Blast_Message* blmsg=NULL;
-    SBlastFilterOptions* filtering_options=NULL;
 
-    if(BlastFilteringOptionsFromString(eBlastTypeBlastn, filter_string, &filtering_options, &blmsg) != 0)
-    {
-        string msg = blmsg ? blmsg->message : "Error parsing filter string";
-        NCBI_THROW(CBlastException, eInternal, msg);
-    }
+    const CBlastNucleotideOptionsHandle* nucl_handle = dynamic_cast<const CBlastNucleotideOptionsHandle*>(opts_handle);
 
-    if (filtering_options == NULL || filtering_options->repeatFilterOptions == NULL)
-    {
-        filtering_options = SBlastFilterOptionsFree(filtering_options);
-        return;
-    }
+    // Either non-blastn search or repeat filtering not desired.
+    if (nucl_handle == NULL || nucl_handle->GetRepeatFiltering() == false)
+       return;
 
-    SRepeatFilterOptions* repeat_options = filtering_options->repeatFilterOptions;
-    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(repeat_options->database, kIsProt);
-    filtering_options = SBlastFilterOptionsFree(filtering_options);
+    bool kIsProt = false;
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(nucl_handle->GetRepeatFilteringDB(), kIsProt);
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
         string msg(error_str);
         sfree(error_str);
         NCBI_THROW(CBlastException, eSeqSrc, msg);
     }
-    CBlastNucleotideOptionsHandle opts;
 
-    s_SetRepeatsSearchDefaults(opts);
+    // Options for repeat filtering search
+    CBlastNucleotideOptionsHandle repeat_opts;
+
+    s_SetRepeatsSearchDefaults(repeat_opts);
 
     // Remove any lower case masks, because they should not be used for the 
     // repeat locations search.
@@ -228,7 +220,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
         query[index].mask.Reset(NULL);
     }
 
-    CDbBlast blaster(query, seq_src, opts);
+    CDbBlast blaster(query, seq_src, repeat_opts);
     blaster.PartialRun();
 
     seq_src = BlastSeqSrcFree(seq_src);
@@ -252,6 +244,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.19  2005/03/31 20:43:38  madden
+ *  Blast_FindRepeatFilterLoc now takes CBlastOptionsHandle rather than char*
+ *
  *  Revision 1.18  2005/03/29 15:59:21  dondosha
  *  Added blast scope
  *
