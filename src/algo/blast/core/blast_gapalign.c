@@ -3216,6 +3216,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
             status =  BLAST_ProtGappedAlignment(program_number, &query_tmp, 
                          subject, gap_align, score_params, init_hsp);
          } else {
+            /*  Start the gapped alignment on the fourth character of the
+             *  eight character word that seeded the alignment; the start
+             *  is included in the leftward extension. */
+            init_hsp->s_off += 3;
+            init_hsp->q_off += 3;
+ 
             status = BLAST_DynProgNtGappedAlignment(&query_tmp, subject, 
                          gap_align, score_params, init_hsp);
          }
