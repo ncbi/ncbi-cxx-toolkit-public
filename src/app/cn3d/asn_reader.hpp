@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/09/24 11:34:35  thiessen
+* add missing ncbi::
+*
 * Revision 1.5  2001/09/19 22:55:43  thiessen
 * add preliminary net import and BLAST
 *
@@ -146,15 +149,15 @@ static bool GetAsnDataViaHTTP(
     bool okay = false;
 
     // set up registry field to set GET connection method for HTTP
-    CNcbiRegistry* reg = new CNcbiRegistry;
+    ncbi::CNcbiRegistry* reg = new CNcbiRegistry;
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
     CORE_SetREG(REG_cxx2c(reg, true));
 
     try {
         // load data from stream using given URL params
-        CConn_HttpStream httpStream(host, path, args);
-        CObjectIStreamAsnBinary asnStream(httpStream);
+        ncbi::CConn_HttpStream httpStream(host, path, args);
+        ncbi::CObjectIStreamAsnBinary asnStream(httpStream);
         asnStream >> *asnObject;
         okay = true;
 
