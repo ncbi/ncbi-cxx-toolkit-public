@@ -631,7 +631,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
                        "Registry file \"" + *conf + "\" cannot be opened");
         }
         return false;
-    } else if (entry.registry != &reg) {
+    } else if (entry.registry != static_cast<IRWRegistry*>(&reg)) {
         // should be impossible with new CMetaRegistry interface...
         if (&reg == m_Config  &&  reg.Empty()) {
             m_Config.Reset(dynamic_cast<CNcbiRegistry*>
@@ -1249,6 +1249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2005/01/10 21:44:21  ucko
+ * Add one more tweak required by WorkShop.
+ *
  * Revision 1.102  2005/01/10 16:58:38  ucko
  * Reflect recent changes to CMetaRegistry's interface to take advantage
  * of CNcbiRegistry's refactoring.
