@@ -108,6 +108,7 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
+    void x_SetRandomizer(CNcbi2naRandomizer& randomizer);
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);
@@ -429,6 +430,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/06/14 18:30:08  grichenk
+* Added ncbi2na randomizer to CSeqVector
+*
 * Revision 1.19  2004/04/26 14:15:00  grichenk
 * Added standard container methods
 *

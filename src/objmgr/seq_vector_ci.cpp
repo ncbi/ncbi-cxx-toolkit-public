@@ -53,106 +53,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-// Internal class to put random bases in place of ambiguities
-
-const size_t kRandomizerPosMask = 0x3f;
-const size_t kRandomDataSize    = kRandomizerPosMask + 1;
-
-class CNcbi2naRandomizer : public CObject
-{
-public:
-    // If seed == 0 then use random number for seed
-    CNcbi2naRandomizer(CRandom& gen);
-    ~CNcbi2naRandomizer(void);
-
-    typedef char* TData;
-
-    void RandomizeData(TData data,    // cache to be randomized
-                       size_t count,  // number of bases in the cache
-                       TSeqPos pos);  // sequence pos of the cache
-
-private:
-    CNcbi2naRandomizer(const CNcbi2naRandomizer&);
-    CNcbi2naRandomizer& operator=(const CNcbi2naRandomizer&);
-
-    // First value in each row indicates ambiguity (1) or
-    // normal base (0)
-    typedef char        TRandomData[kRandomDataSize + 1];
-    typedef TRandomData TRandomTable[16];
-
-    TRandomTable m_RandomTable;
-};
-
-
-CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
-{
-    unsigned int bases[4]; // Count of each base in the random distribution
-    for (int na4 = 0; na4 < 16; na4++) {
-        int bit_count = 0;
-        char set_bit = 0;
-        for (int bit = 0; bit < 4; bit++) {
-            // na4 == 0 is special case (gap) should be treated as 0xf
-            if ( !na4  ||  (na4 & (1 << bit)) ) {
-                bit_count++;
-                bases[bit] = 1;
-                set_bit = bit;
-            }
-            else {
-                bases[bit] = 0;
-            }
-        }
-        if (bit_count == 1) {
-            // Single base
-            m_RandomTable[na4][0] = 0;
-            m_RandomTable[na4][1] = set_bit;
-            continue;
-        }
-        // Ambiguity: create random distribution with possible bases
-        m_RandomTable[na4][0] = bit_count; // need any non-zero value
-        for (int bit = 0; bit < 4; bit++) {
-            bases[bit] *= kRandomDataSize/bit_count +
-                kRandomDataSize % bit_count;
-        }
-        for (int i = kRandomDataSize - 1; i >= 0; i--) {
-            CRandom::TValue rnd = gen.GetRand(0, i);
-            for (int base = 0; base < 4; base++) {
-                if (!bases[base]  ||  rnd > bases[base]) {
-                    rnd -= bases[base];
-                    continue;
-                }
-                m_RandomTable[na4][i + 1] = base;
-                bases[base]--;
-                break;
-            }
-        }
-    }
-}
-
-
-CNcbi2naRandomizer::~CNcbi2naRandomizer(void)
-{
-    return;
-}
-
-
-void CNcbi2naRandomizer::RandomizeData(TData data,
-                                       size_t count,
-                                       TSeqPos pos)
-{
-    for (TData stop = data + count; data < stop; ++data, ++pos) {
-        if ( m_RandomTable[(unsigned char)(*data)][0] ) {
-            // Ambiguity, use random value
-            *data = m_RandomTable[(unsigned char)(*data)]
-                [(pos & kRandomizerPosMask) + 1];
-        }
-        else {
-            // Normal base
-            *data = m_RandomTable[(unsigned char)(*data)][1];
-        }
-    }
-}
-
-
 static const TSeqPos kCacheSize = 1024;
 
 template<class DstIter, class SrcCont>
@@ -301,7 +201,8 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_CacheEnd(0),
       m_BackupPos(0),
       m_BackupData(0),
-      m_BackupEnd(0)
+      m_BackupEnd(0),
+      m_Randomizer(seq_vector.m_Randomizer)
 {
     try {
         x_SetPos(pos);
@@ -327,6 +228,7 @@ void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
     m_Strand = seq_vector.m_Strand;
     m_Coding = seq_vector.m_Coding;
     m_CachePos = seq_vector.size();
+    m_Randomizer = seq_vector.m_Randomizer;
 }
 
 
@@ -757,6 +659,16 @@ void CSeqVector_CI::x_PrevCacheSeg()
 }
 
 
+void CSeqVector_CI::x_SetRandomizer(CNcbi2naRandomizer& randomizer)
+{
+    TSeqPos pos = GetPos();
+    x_ResetCache();
+    x_ResetBackup();
+    m_Randomizer.Reset(&randomizer);
+    x_SetPos(pos);
+}
+
+
 void CSeqVector_CI::x_InitRandomizer(CRandom& random_gen)
 {
     TSeqPos pos = GetPos();
@@ -803,6 +715,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/06/14 18:30:08  grichenk
+* Added ncbi2na randomizer to CSeqVector
+*
 * Revision 1.35  2004/06/08 13:33:49  grichenk
 * Fixed randomization of gaps in ncbi2na coding
 *
