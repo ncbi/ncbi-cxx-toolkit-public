@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/04/26 14:18:20  lavr
+ * SERV_MapperName moved to a private header
+ *
  * Revision 6.14  2001/04/24 21:15:35  lavr
  * Added functions: SERV_MapperName(), SERV_Penalize().
  *
@@ -143,13 +146,6 @@ SERV_ITER SERV_OpenEx
  * Return 0 if no more servers were found for the service requested.
  */
 const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
- );
-
-
-/* Get name of current service mapper.
- */
-const char* SERV_MapperName
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
  );
 
