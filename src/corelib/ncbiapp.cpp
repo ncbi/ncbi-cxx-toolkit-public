@@ -386,21 +386,22 @@ int CNcbiApplication::AppMain
     int exit_code = 1;
 
     try {
-        // Init application
+        // Initialize the application
         try {
-			// Load registry from the config file
-			if ( conf ) {
-				string x_conf(conf);
-				LoadConfig(*m_Config, &x_conf);
-			} else {
-				LoadConfig(*m_Config, NULL);
-			}
-			// Setup the debugging features from the config file.
-			// Don't call till after LoadConfig()
-			// NOTE: this will override environment variables, 
-			// except DIAG_POST_LEVEL which is Set*Fixed*.
-			HonorDebugSettings();
+            // Load registry from the config file
+            if ( conf ) {
+                string x_conf(conf);
+                LoadConfig(*m_Config, &x_conf);
+            } else {
+                LoadConfig(*m_Config, NULL);
+            }
+            // Setup the debugging features from the config file.
+            // Don't call till after LoadConfig()
+            // NOTE: this will override environment variables, 
+            // except DIAG_POST_LEVEL which is Set*Fixed*.
+            HonorDebugSettings();
 
+            // Do init
             Init();
 
             // If the app still has no arg description - provide default one
@@ -414,12 +415,11 @@ int CNcbiApplication::AppMain
         }
         catch (CArgHelpException& ) {
             if ( !m_DisableArgDesc ) {
-                if ((m_HideArgs & fHideHelp) != 0)
-                    {
-                        if (m_ArgDesc->Exist("h")) {
-                            m_ArgDesc->Delete("h");
-                        }
+                if ((m_HideArgs & fHideHelp) != 0) {
+                    if (m_ArgDesc->Exist("h")) {
+                        m_ArgDesc->Delete("h");
                     }
+                }
                 if ((m_HideArgs & fHideLogfile) == 0  &&
                     !m_ArgDesc->Exist(s_ArgLogFile + 1)) {
                     m_ArgDesc->AddOptionalKey
@@ -904,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2004/06/15 17:54:15  vakatov
+ * Indentation
+ *
  * Revision 1.87  2004/06/15 16:12:47  ivanov
  * Moved loading registry from the config file into general try/catch block
  *
@@ -963,10 +966,12 @@ END_NCBI_SCOPE
  * NCBI_OS_DARWIN and NCBI_OS_UNIX are not mutually exclusive.
  *
  * Revision 1.70  2003/09/22 13:43:41  ivanov
- * Include <corelib/ncbidll.hpp> only on MSWin. + include <corelib/ncbi_os_mswin.hpp>
+ * Include <corelib/ncbidll.hpp> only on MSWin.
+ * + include <corelib/ncbi_os_mswin.hpp>
  *
  * Revision 1.69  2003/09/17 21:03:58  ivanov
- * FindProgramExecutablePath:  try more accurate method of detection on MS Windows
+ * FindProgramExecutablePath:  try more accurate method of detection on
+ * MS Windows
  *
  * Revision 1.68  2003/09/16 20:55:33  ivanov
  * FindProgramExecutablePath:  try more accurate method of detection on Linux.
@@ -985,215 +990,5 @@ END_NCBI_SCOPE
  * Revision 1.64  2003/08/05 20:00:36  ucko
  * Completely rewrite LoadConfig to use CMetaRegistry; properly handle
  * only sometimes owning m_Config.
- *
- * Revision 1.63  2003/06/26 18:55:40  rsmith
- * call LoadConfig even if conf is null, child classes might do something
- * anyway. (gbench).
- *
- * Revision 1.62  2003/06/25 15:59:00  rsmith
- * factor out config file DEBUG settings into HonorDebugSettings
- *
- * Revision 1.61  2003/06/23 18:02:31  vakatov
- * CNcbiApplication::MacArgMunging() moved from header to the source file.
- * Heed warnings, formally reformat the code and comments.
- *
- * Revision 1.60  2003/06/18 20:41:23  ucko
- * FindProgramExecutablePath: conditionalize the Darwin-specific code on
- * Metrowerks, since no executable linked against Carbon can run remotely. :-/
- *
- * Revision 1.59  2003/06/16 13:52:27  rsmith
- * Add ProgramDisplayName member. Program name becomes real executable full
- * path. Handle Mac special arg handling better.
- *
- * Revision 1.58  2003/04/07 21:22:54  gouriano
- * correct App exit codes when CException was caught
- *
- * Revision 1.57  2003/03/19 19:37:10  gouriano
- * added optional adjustment of stdio streams
- *
- * Revision 1.56  2003/03/14 21:01:06  kans
- * commented out include Processes because Mac OS 10.2 libraries give an
- * undefined symbol error
- *
- * Revision 1.55  2003/03/14 20:35:24  rsmith
- * Comment out previous changes for Mac OSX since on 10.2 the header files
- * do not compile properly.
- *
- * Revision 1.54  2003/03/13 22:16:11  rsmith
- * on Metrowerks, Mac OSX, always use ncbi.args as the file name for arguments.
- *
- * Revision 1.53  2003/03/13 22:04:27  rsmith
- * Changes to AppMain so MacOSX can find out the appname and arguments.
- *
- * Revision 1.52  2003/02/17 06:30:05  vakatov
- * Get rid of an unused variable
- *
- * Revision 1.51  2002/12/26 17:13:03  ivanov
- * Added version info and Set/GetVersion functions into CNcbiApplication class
- *
- * Revision 1.50  2002/12/18 22:54:48  dicuccio
- * Shuffled some headers to avoid a potentially serious compiler warning
- * (deletion of incomplete type in Windows).
- *
- * Revision 1.49  2002/08/08 18:36:50  gouriano
- * added HideStdArgs function
- *
- * Revision 1.48  2002/08/08 13:39:06  gouriano
- * logfile & conffile-related correction
- *
- * Revision 1.47  2002/08/02 20:13:06  gouriano
- * added possibility to disable arg descriptions
- *
- * Revision 1.46  2002/08/01 19:02:17  ivanov
- * Added autoload of the verbose message file specified in the
- * applications configuration file.
- *
- * Revision 1.45  2002/07/31 18:33:44  gouriano
- * added default argument description,
- * added info about logfile and conffile optional arguments
- *
- * Revision 1.44  2002/07/22 19:33:28  ivanov
- * Fixed bug with internal processing parameters -conffile and -logfile
- *
- * Revision 1.43  2002/07/15 18:17:23  gouriano
- * renamed CNcbiException and its descendents
- *
- * Revision 1.42  2002/07/11 14:18:25  gouriano
- * exceptions replaced by CNcbiException-type ones
- *
- * Revision 1.41  2002/07/10 16:20:13  ivanov
- * Changes related with renaming
- * SetDiagFixedStrPostLevel()->SetDiagFixedPostLevel()
- *
- * Revision 1.40  2002/07/09 16:36:52  ivanov
- * s_SetFixedDiagPostLevel() moved to ncbidiag.cpp
- * and renamed to SetDiagFixedStrPostLevel()
- *
- * Revision 1.39  2002/07/02 18:31:38  ivanov
- * Added assignment the value of diagnostic post level from environment
- * variable and config file if set. Disable to change it from application
- * in this case.
- *
- * Revision 1.38  2002/06/19 16:57:56  ivanov
- * Added new default command line parameters "-logfile <file>" and
- * "-conffile <file>" into CNcbiApplication::AppMain()
- *
- * Revision 1.37  2002/04/11 21:08:00  ivanov
- * CVS log moved to end of the file
- *
- * Revision 1.36  2002/01/22 19:28:37  ivanov
- * Changed ConcatPath() -> ConcatPathEx() in LoadConfig()
- *
- * Revision 1.35  2002/01/20 05:53:59  vakatov
- * Get rid of a GCC warning;  formally rearrange some code.
- *
- * Revision 1.34  2002/01/10 16:52:20  ivanov
- * Changed LoadConfig() -- new method to search the config file
- *
- * Revision 1.33  2001/08/20 14:58:10  vakatov
- * Get rid of some compilation warnings
- *
- * Revision 1.32  2001/08/10 18:26:07  vakatov
- * Allow user to throw "CArgException" (and thus force USAGE printout
- * with user-provided explanation) not from any of Init(), Run() or Exit().
- *
- * Revision 1.31  2001/07/07 01:19:28  juran
- * Use "ncbi" for app name on Mac OS (if argv[0] is null).
- *
- * Revision 1.30  2001/03/26 20:07:40  vakatov
- * [NCBI_OS_MAC]  Use argv[0] (if available) as basename for ".args"
- *
- * Revision 1.29  2001/02/02 16:19:27  vasilche
- * Fixed reading program arguments on Mac
- *
- * Revision 1.28  2001/02/01 19:53:26  vasilche
- * Reading program arguments from file moved to CNcbiApplication::AppMain.
- *
- * Revision 1.27  2000/12/23 05:50:53  vakatov
- * AppMain() -- check m_ArgDesc for NULL
- *
- * Revision 1.26  2000/11/29 17:00:25  vakatov
- * Use LOG_POST instead of ERR_POST to print cmd.-line arg usage
- *
- * Revision 1.25  2000/11/24 23:33:12  vakatov
- * CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
- * setup cmd.-line argument description, and then to retrieve their
- * values, respectively. Also implements internal error handling and
- * printout of USAGE for the described arguments.
- *
- * Revision 1.24  2000/11/01 20:37:15  vasilche
- * Fixed detection of heap objects.
- * Removed ECanDelete enum and related constructors.
- * Disabled sync_with_stdio ad the beginning of AppMain.
- *
- * Revision 1.23  2000/06/09 18:41:04  vakatov
- * FlushDiag() -- check for empty diag.buffer
- *
- * Revision 1.22  2000/04/04 22:33:35  vakatov
- * Auto-set the tracing and the "abort-on-throw" debugging features
- * basing on the application environment and/or registry
- *
- * Revision 1.21  2000/01/20 17:51:18  vakatov
- * Major redesign and expansion of the "CNcbiApplication" class to 
- *  - embed application arguments   "CNcbiArguments"
- *  - embed application environment "CNcbiEnvironment"
- *  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
- *  - allow memory-resided "per application" temp. diagnostic buffer
- *  - allow one to specify exact name of the config.-file to load, or to
- *    ignore the config.file (via constructor's "conf" arg)
- *  - added detailed comments
- *
- * Revision 1.20  1999/12/29 21:20:18  vakatov
- * More intelligent lookup for the default config.file. -- try to strip off
- * file extensions if cannot find an exact match;  more comments and tracing
- *
- * Revision 1.19  1999/11/15 15:54:59  sandomir
- * Registry support moved from CCgiApplication to CNcbiApplication
- *
- * Revision 1.18  1999/06/11 20:30:37  vasilche
- * We should catch exception by reference, because catching by value
- * doesn't preserve comment string.
- *
- * Revision 1.17  1999/05/04 00:03:12  vakatov
- * Removed the redundant severity arg from macro ERR_POST()
- *
- * Revision 1.16  1999/04/30 19:21:03  vakatov
- * Added more details and more control on the diagnostics
- * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
- *
- * Revision 1.15  1999/04/27 14:50:06  vasilche
- * Added FastCGI interface.
- * CNcbiContext renamed to CCgiContext.
- *
- * Revision 1.14  1999/02/22 21:12:38  sandomir
- * MsgRequest -> NcbiContext
- *
- * Revision 1.13  1998/12/28 23:29:06  vakatov
- * New CVS and development tree structure for the NCBI C++ projects
- *
- * Revision 1.12  1998/12/28 15:43:12  sandomir
- * minor fixed in CgiApp and Resource
- *
- * Revision 1.11  1998/12/14 15:30:07  sandomir
- * minor fixes in CNcbiApplication; command handling fixed
- *
- * Revision 1.10  1998/12/09 22:59:35  lewisg
- * use new cgiapp class
- *
- * Revision 1.7  1998/12/09 16:49:56  sandomir
- * CCgiApplication added
- *
- * Revision 1.4  1998/12/03 21:24:23  sandomir
- * NcbiApplication and CgiApplication updated
- *
- * Revision 1.3  1998/12/01 19:12:08  lewisg
- * added CCgiApplication
- *
- * Revision 1.2  1998/11/05 21:45:14  sandomir
- * std:: deleted
- *
- * Revision 1.1  1998/11/02 22:10:13  sandomir
- * CNcbiApplication added; netest sample updated
- *
  * ===========================================================================
  */
