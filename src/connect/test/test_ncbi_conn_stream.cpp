@@ -64,25 +64,6 @@ static CNcbiRegistry* s_CreateRegistry(void)
 }
 
 
-static size_t s_Read(iostream& ios, char* buffer, size_t size)
-{
-    size_t read = 0;
-    for (;;) {
-        ios.read(buffer, size);
-        size_t count = ios.gcount();
-        if (count == 0 && (ios.eof() || ios.bad()))
-            break;
-        read   += count;
-        buffer += count;
-        size   -= count;
-        if (!size)
-            break;
-        ios.clear();
-    }
-    return read;
-}
-
-
 END_NCBI_SCOPE
 
 
@@ -131,7 +112,8 @@ int main(void)
         return 1;
     }
 
-    size_t buflen = s_Read(ios, buf2, kBufferSize + 1);
+    ios.read(buf2, kBufferSize + 1);
+    streamsize buflen = ios.gcount();
 
     if (!ios.good() && !ios.eof()) {
         ERR_POST("Error receiving data");
@@ -159,7 +141,7 @@ int main(void)
     ios.clear();
 
     LOG_POST("Test 2 of 3: Random bounce");
-    
+
     if (!(ios << buf1)) {
         ERR_POST("Error sending data");
         return 1;
@@ -172,7 +154,8 @@ int main(void)
 
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
-        j = s_Read(ios, &buf2[i], k);
+        ios.read(&buf2[i], k);
+        j = ios.gcount();
         if (!ios.good() && !ios.eof()) {
             ERR_POST("Error receiving data");
             return 2;
@@ -211,13 +194,14 @@ int main(void)
         buf1[i] = (char)(255/*rand()%256*/);
 
     ios.write(buf1, kBufferSize);
-    
+
     if (!ios.good()) {
         ERR_POST("Error sending data");
         return 1;
     }
-    
-    buflen = s_Read(ios, buf2, kBufferSize + 1);
+
+    ios.read(buf2, kBufferSize + 1);
+    buflen = ios.gcount();
 
     if (!ios.good() && !ios.eof()) {
         ERR_POST("Error receiving data");
@@ -251,6 +235,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/11/04 03:10:24  lavr
+ * Remove special s_Read(); use standard istream::read() instead
+ *
  * Revision 6.27  2003/05/20 21:22:24  lavr
  * Do not clear() if stream is bad() in s_Read()
  *
