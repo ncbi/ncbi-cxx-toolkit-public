@@ -218,6 +218,7 @@ public:
     CAlnMixSeq(void) 
         : m_DS_Count(0),
           m_Score(0),
+          m_StrandScore(0),
           m_Width(1),
           m_Frame(-1),
           m_RefBy(0),
@@ -232,6 +233,7 @@ public:
     const CBioseq_Handle* m_BioseqHandle;
     CRef<CSeq_id>         m_SeqId;
     int                   m_Score;
+    int                   m_StrandScore;
     bool                  m_IsAA;
     int                   m_Width;
     int                   m_Frame;
@@ -336,6 +338,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/06/23 18:31:20  todorov
+* Calculate the prevailing strand per row (using scores)
+*
 * Revision 1.38  2004/05/25 16:00:20  todorov
 * remade truncation of overlaps
 *

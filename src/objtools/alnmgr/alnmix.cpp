@@ -414,8 +414,34 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                             match->m_Score = len;
                         }
                         
+
+                        // add to the sequences' scores
                         aln_seq1->m_Score += match->m_Score;
                         aln_seq2->m_Score += match->m_Score;
+
+                        // in case of fForceTranslation, 
+                        // check if strands are not mixed by
+                        // comparing current strand to the prevailing one
+                        if (m_AddFlags & fForceTranslation  &&
+                            (aln_seq1->m_StrandScore > 0  && 
+                             strand1 == eNa_strand_minus) ||
+                            (aln_seq1->m_StrandScore < 0  && 
+                             strand1 != eNa_strand_minus) ||
+                            (aln_seq2->m_StrandScore > 0  && 
+                             strand2 == eNa_strand_minus) ||
+                            (aln_seq2->m_StrandScore < 0  && 
+                             strand2 != eNa_strand_minus)) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMix::Add(): "
+                                       "Unable to mix strands when "
+                                       "forcing translation!");
+                        }
+                        
+                        // add to the prevailing strand
+                        aln_seq1->m_StrandScore += (strand1 == eNa_strand_minus ?
+                                                    - match->m_Score : match->m_Score);
+                        aln_seq2->m_StrandScore += (strand2 == eNa_strand_minus ?
+                                                    - match->m_Score : match->m_Score);
 
                     }
                 }
@@ -687,7 +713,11 @@ void CAlnMix::x_Merge()
                 }
 
                 // this seq has not yet been used, set the strand
-                seq1->m_PositiveStrand = ! (m_MergeFlags & fNegativeStrand);
+                if (m_AddFlags & fForceTranslation) {
+                    seq1->m_PositiveStrand = (seq1->m_StrandScore >= 0);
+                } else {
+                    seq1->m_PositiveStrand = ! (m_MergeFlags & fNegativeStrand);
+                }
 
                 //create the first one
                 seg = new CAlnMixSegment;
@@ -2014,6 +2044,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.99  2004/06/23 18:31:10  todorov
+* Calculate the prevailing strand per row (using scores)
+*
 * Revision 1.98  2004/06/22 01:24:04  ucko
 * Restore subtraction accidentally dropped in last commit; should
 * resolve infinite loops.
