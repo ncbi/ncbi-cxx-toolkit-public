@@ -415,7 +415,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if (i->defaultValue.empty()) {
                         code.ClassPublic() << "optional";
                     } else {
-                        code.ClassPublic() << "mandatory with default";
+                        code.ClassPublic() << "mandatory with default "
+                                           << i->defaultValue;
                     }
                 } else {
                     code.ClassPublic() << "mandatory";
@@ -1456,6 +1457,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/01/24 20:19:39  ucko
+* When describing a field with a default value, note what it is rather
+* than just that it exists.
+*
 * Revision 1.66  2005/01/12 15:38:49  vasilche
 * Use CRef<>::NotEmpty() to avoid performance warning on MSVC.
 *
