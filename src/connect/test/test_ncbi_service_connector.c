@@ -43,9 +43,9 @@ int main(int argc, const char* argv[])
     static char obuf[8192 + 2] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
     const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
-    SConnNetInfo *net_info;
+    SConnNetInfo* net_info;
     CONNECTOR connector;
-    EIO_Status status;
+    STimeout* timeout;
     char ibuf[1024];
     CONN conn;
     size_t n;
@@ -61,9 +61,9 @@ int main(int argc, const char* argv[])
         obuf[++n]              = 0;
     }
     strcpy(net_info->args, "testarg=testval&service=none");
+    timeout = net_info->timeout;
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
-    ConnNetInfo_Destroy(net_info);
 
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
@@ -99,10 +99,7 @@ int main(int argc, const char* argv[])
 #endif
 
     for (;;) {
-        STimeout timeout;
-        timeout.sec  = 5;
-        timeout.usec = 12345;
-        if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
+       if (CONN_Wait(conn, eIO_Read, timeout) != eIO_Success) {
             CONN_Close(conn);
             CORE_LOG(eLOG_Fatal, "Error waiting for reading");
         }
@@ -150,6 +147,8 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
     }
 
+    
+    ConnNetInfo_Destroy(net_info);
     CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
     CONN_Close(conn);
 #endif
@@ -162,6 +161,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2005/01/28 17:41:22  lavr
+ * Allow CONN_TIMEOUT from the environment to be used in Wait-on-Read
+ *
  * Revision 6.29  2004/02/23 15:23:43  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
