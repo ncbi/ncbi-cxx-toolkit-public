@@ -282,6 +282,7 @@ public:
                        streamsize buf_size = kConn_DefaultBufSize);
 
     string& ToString(string&);  // fill in the data, return the argument
+    char*   ToCStr(void);       // '\0'-terminated; delete when done using it 
 
 private:
     // Disable copy constructor and assignment.
@@ -351,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.30  2004/10/27 16:09:32  lavr
+ * +CConn_MemoryStream::ToCStr()
+ *
  * Revision 6.29  2004/10/26 20:30:41  lavr
  * +CConn_MemoryStream::ToString()
  *
