@@ -77,13 +77,6 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 }
 
 
-#define ENUM_METHOD_NAME(EnumName) \
-    NCBI_NAME2(GetTypeInfo_enum_,EnumName)
-#define DECLARE_ENUM_INFO(EnumName) \
-    const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void)
-#define DECLARE_LOCAL_ENUM_INFO(EnumName) \
-    static DECLARE_ENUM_INFO(EnumName)
-
 // macros used in ADD_*_MEMBER macros to specify complex type
 // example: ADD_MEMBER(member, STL_set, (STD, (string)))
 #define SERIAL_TYPE(TypeMacro) NCBI_NAME2(SERIAL_TYPE_,TypeMacro)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/10 17:59:34  vasilche
+* Moved macros needed in headers to serialbase.hpp.
+* Use DECLARE_ENUM_INFO in generated code.
+*
 * Revision 1.8  2000/07/10 17:31:59  vasilche
 * Macro arguments made more clear.
 * All old ASN stuff moved to serialasn.hpp.
@@ -166,10 +170,10 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             "\n";
         // prototype of GetTypeInfo_enum_* function
         if ( inClass )
-            hpp << "static ";
-        hpp <<
-            "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetTypeInfo_enum_"
-            <<m_EnumName<<"(void);\n"
+            hpp << "DECLARE_INTERNAL_ENUM_INFO";
+        else
+            hpp << "DECLARE_ENUM_INFO";
+        hpp << '('<<m_EnumName<<");\n"
             "\n";
         ctx.AddHPPCode(hpp);
     }

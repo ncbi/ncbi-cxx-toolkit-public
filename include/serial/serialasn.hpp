@@ -181,26 +181,6 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
                                        readProc, writeProc));
 }
 
-#define ASN_STRUCT_NAME(AsnStructName) NCBI_NAME2(struct_, AsnStructName)
-#define ASN_STRUCT_METHOD_NAME(AsnStructName) \
-    NCBI_NAME2(GetTypeInfo_struct_,AsnStructName)
-
-#define DECLARE_ASN_TYPE_INFO(AsnStructName) \
-    const NCBI_NS_NCBI::CTypeInfo* ASN_STRUCT_METHOD_NAME(AsnStructName)(void)
-#define DECLARE_ASN_STRUCT_INFO(AsnStructName) \
-    struct ASN_STRUCT_NAME(AsnStructName); \
-    DECLARE_ASN_TYPE_INFO(AsnStructName); \
-    inline \
-    const NCBI_NS_NCBI::CTypeInfo* \
-    GetAsnStructTypeInfo(const ASN_STRUCT_NAME(AsnStructName)* ) \
-    { \
-        return ASN_STRUCT_METHOD_NAME(AsnStructName)(); \
-    } \
-    struct ASN_STRUCT_NAME(AsnStructName)
-
-#define DECLARE_ASN_CHOICE_INFO(AsnChoiceName) \
-    DECLARE_ASN_TYPE_INFO(AsnChoiceName)
-
 // old ASN structires info
 #define BEGIN_NAMED_ASN_STRUCT_INFO(AsnStructAlias, AsnStructName) \
     BEGIN_TYPE_INFO(NCBI_NAME2(struct_,AsnStructName), \

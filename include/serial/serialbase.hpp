@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/10 17:59:30  vasilche
+* Moved macros needed in headers to serialbase.hpp.
+* Use DECLARE_ENUM_INFO in generated code.
+*
 * Revision 1.4  2000/06/16 16:31:07  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -272,5 +276,36 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 { \
     NCBI_NS_NCBI::CClassInfoHelper<Class>::SetPreWrite(info); \
 }
+
+#define ENUM_METHOD_NAME(EnumName) \
+    NCBI_NAME2(GetTypeInfo_enum_,EnumName)
+#define DECLARE_ENUM_INFO(EnumName) \
+    const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void)
+#define DECLARE_INTERNAL_ENUM_INFO(EnumName) \
+    static DECLARE_ENUM_INFO(EnumName)
+
+#if HAVE_NCBI_C
+
+#define ASN_STRUCT_NAME(AsnStructName) NCBI_NAME2(struct_, AsnStructName)
+#define ASN_STRUCT_METHOD_NAME(AsnStructName) \
+    NCBI_NAME2(GetTypeInfo_struct_,AsnStructName)
+
+#define DECLARE_ASN_TYPE_INFO(AsnStructName) \
+    const NCBI_NS_NCBI::CTypeInfo* ASN_STRUCT_METHOD_NAME(AsnStructName)(void)
+#define DECLARE_ASN_STRUCT_INFO(AsnStructName) \
+    struct ASN_STRUCT_NAME(AsnStructName); \
+    DECLARE_ASN_TYPE_INFO(AsnStructName); \
+    inline \
+    const NCBI_NS_NCBI::CTypeInfo* \
+    GetAsnStructTypeInfo(const ASN_STRUCT_NAME(AsnStructName)* ) \
+    { \
+        return ASN_STRUCT_METHOD_NAME(AsnStructName)(); \
+    } \
+    struct ASN_STRUCT_NAME(AsnStructName)
+
+#define DECLARE_ASN_CHOICE_INFO(AsnChoiceName) \
+    DECLARE_ASN_TYPE_INFO(AsnChoiceName)
+
+#endif
 
 #endif  /* SERIALBASE__HPP */
