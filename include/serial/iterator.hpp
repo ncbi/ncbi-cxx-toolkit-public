@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/06/13 15:15:19  ucko
+* Add [explicit] CSerialObject-based constructors, which should get rid
+* of the need for [Const]Begin() in the majority of cases.
+*
 * Revision 1.20  2001/05/17 14:56:45  lavr
 * Typos corrected
 *
@@ -126,6 +130,7 @@
 #include <serial/objecttype.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/serialutil.hpp>
+#include <serial/serialbase.hpp>
 #include <set>
 #include <stack>
 
@@ -152,6 +157,11 @@ public:
           m_DetectLoops(detectLoops)
         {
         }
+    CBeginInfo(CSerialObject& object, bool detectLoops = false)
+        : CParent(&object, object.GetThisTypeInfo()),
+          m_DetectLoops(detectLoops)
+        {
+        }
 
     bool m_DetectLoops;
 };
@@ -172,6 +182,12 @@ public:
     CConstBeginInfo(const CConstObjectInfo& object,
                     bool detectLoops = false)
         : CParent(object.GetObjectPtr(), object.GetTypeInfo()),
+          m_DetectLoops(detectLoops)
+        {
+        }
+    CConstBeginInfo(const CSerialObject& object,
+                    bool detectLoops = false)
+        : CParent(&object, object.GetThisTypeInfo()),
           m_DetectLoops(detectLoops)
         {
         }
@@ -505,6 +521,10 @@ public:
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
+    explicit CTypeIterator(CSerialObject& object)
+        : CParent(TypeGetter::GetTypeInfo(), TBeginInfo(object))
+        {
+        }
 
     CTypeIterator<C, TypeGetter>& operator=(const TBeginInfo& beginInfo)
         {
@@ -546,6 +566,10 @@ public:
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
+    explicit CTypeConstIterator(const CSerialObject& object)
+        : CParent(TypeGetter::GetTypeInfo(), TBeginInfo(object))
+        {
+        }
 
     CTypeConstIterator<C, TypeGetter>& operator=(const TBeginInfo& beginInfo)
         {
@@ -577,6 +601,10 @@ public:
         }
     CLeafTypeIterator(const TBeginInfo& beginInfo)
         : CParent(C::GetTypeInfo(), beginInfo)
+        {
+        }
+    explicit CLeafTypeIterator(CSerialObject& object)
+        : CParent(C::GetTypeInfo(), TBeginInfo(object))
         {
         }
 
@@ -620,6 +648,10 @@ public:
         : CParent(C::GetTypeInfo(), beginInfo)
         {
         }
+    explicit CLeafTypeConstIterator(const CSerialObject& object)
+        : CParent(C::GetTypeInfo(), TBeginInfo(object))
+        {
+        }
 
     CLeafTypeConstIterator<C>& operator=(const TBeginInfo& beginInfo)
         {
@@ -652,6 +684,10 @@ public:
         : CParent(beginInfo)
         {
         }
+    explicit CStdTypeIterator(CSerialObject& object)
+        : CParent(object)
+        {
+        }
 
     CStdTypeIterator<T>& operator=(const TBeginInfo& beginInfo)
         {
@@ -674,6 +710,10 @@ public:
         }
     CStdTypeConstIterator(const TBeginInfo& beginInfo)
         : CParent(beginInfo)
+        {
+        }
+    explicit CStdTypeConstIterator(const CSerialObject& object)
+        : CParent(object)
         {
         }
 
