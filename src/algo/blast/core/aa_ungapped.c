@@ -164,13 +164,13 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                if (score > cutoff) {
                   BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
                      query_offsets[i], subject_offsets[i], hsp_len, score);
+                  /* Reset level, so we know this hit has been extended */
+                  diag_array[diag_coord].diag_level = 0;
                }
                /* Update the last hit on this diagonal to the end of this 
                   extension */
                diag_array[diag_coord].last_hit = 
                   hsp_s + hsp_len + diag_offset;
-               /* Reset level, so we know this hit has been extended */
-               diag_array[diag_coord].diag_level = 0;
             } else {
                /* New hit is too far away from the previous; discard 
                   the previous hit and start a new one */
