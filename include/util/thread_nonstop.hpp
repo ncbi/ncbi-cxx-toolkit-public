@@ -78,10 +78,7 @@ protected:
 
 private:
     unsigned int           m_RunInterval;
-    unsigned int           m_StopPollInterval;
-
-    mutable CRWLock        m_Lock;       ///< protects m_StopRequest
-    bool                   m_StopRequest;///< TRUE when thread needs to stop
+    mutable CSemaphore     m_StopSignal;
 };
 
 
@@ -90,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/30 13:41:42  kuznets
+ * Use semaphore to stop thread
+ *
  * Revision 1.1  2004/10/07 18:00:48  kuznets
  * Initial revision
  *

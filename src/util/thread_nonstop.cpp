@@ -40,25 +40,18 @@ BEGIN_NCBI_SCOPE
 CThreadNonStop::CThreadNonStop(unsigned run_delay,
                                unsigned stop_request_poll)
 : m_RunInterval(run_delay),
-  m_StopRequest(false)
+  m_StopSignal(0, 100)
 {
-    m_StopPollInterval = 
-        stop_request_poll <= run_delay ? stop_request_poll : 1;
 }
 
 bool CThreadNonStop::IsStopRequested() const
 {
-    m_Lock.ReadLock();
-    bool b = m_StopRequest;
-    m_Lock.Unlock();
-    return b;
+    return m_StopSignal.TryWait(0, 0);
 }
 
 void CThreadNonStop::RequestStop()
 {
-    m_Lock.WriteLock();
-    m_StopRequest = true;
-    m_Lock.Unlock();
+    m_StopSignal.Post();
 }
 
 void* CThreadNonStop::Main(void)
@@ -67,15 +60,7 @@ void* CThreadNonStop::Main(void)
 
         DoJob();
 
-        for (unsigned i = 0; i < m_RunInterval; i += m_StopPollInterval) {
-            SleepSec(m_StopPollInterval);
-            if (IsStopRequested()) {
-                return 0;
-            }
-        } // for i
-        if (IsStopRequested())
-            break;
-        
+        flag = !m_StopSignal.TryWait(m_RunInterval, 0);
     } // for flag
 
     return 0;
@@ -88,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/30 13:41:54  kuznets
+ * Use semaphore to stop thread
+ *
  * Revision 1.1  2004/10/07 18:01:00  kuznets
  * Initial revision
  *
