@@ -178,7 +178,7 @@ inline SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
 {
     BindKey("object_attr_id", &object_attr_id);
 
-    BindData("object_title", &object_title, 256);
+    BindData("object_title", &object_title, 512);
     BindData("organism", &organism, 256);
     BindData("keywords", &keywords, 1024);
 }
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2003/06/04 16:33:32  kuznets
+* Increased length of object_title field in SLDS_ObjectAttrDB
+*
 * Revision 1.7  2003/06/03 19:14:02  kuznets
 * Added lds dll export/import specifications
 *
