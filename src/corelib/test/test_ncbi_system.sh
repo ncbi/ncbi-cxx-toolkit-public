@@ -12,9 +12,9 @@ if test "$os" = "Linux" ; then
 elif test -n "`echo $os | grep CYGWIN`" ; then
    test $test_cpu -eq 3  -a  $test_mem -eq 3  ||  exit 1
 else
+   test $test_mem -eq 255  ||  exit 1
    # exit code 158 -- signal 30 (CPU time exceeded)
-   test $test_cpu -eq 158  ||  exit 1
-   test $test_cpu -eq 255  -a  $test_mem -eq 255  ||  exit 1
+   test $test_cpu -eq 255  -o  $test_cpu -eq 158  ||  exit 1
 fi
 
 exit 0
