@@ -208,13 +208,27 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  );
 
 
-/* Get a verbal connection type as a character string.
+/* Get a verbal representation of connection type as a character string.
  * Note that the returned value is only valid until the next
  * I/O operation in the connection. Return value NULL denotes
  * unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 (CONN conn  /* [in]  connection handle */ 
+ );
+
+
+/* Return a human-readable description of the connection as a character
+ * 0-terminated string. The string is not guaranteed to have any
+ * particular format and is intended solely for something like
+ * logging and debugging. Return NULL if the connection cannot
+ * provide any description information (or if it is in a bad state).
+ * Application program is responsible to deallocate the space occupied
+ * by the returned string calling free() when the description is no longer
+ * needed.
+ */
+extern NCBI_XCONNECT_EXPORT char* CONN_Description
+(CONN conn  /* [in]  connection handle */
  );
 
 
@@ -286,6 +300,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/05/14 03:47:12  lavr
+ * +CONN_Description()
+ *
  * Revision 6.15  2003/04/09 17:58:43  siyan
  * Added doxygen support
  *

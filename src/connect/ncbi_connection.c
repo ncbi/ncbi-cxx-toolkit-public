@@ -601,8 +601,17 @@ extern const char* CONN_GetType(CONN conn)
 {
     CONN_NOT_NULL_EX(GetType, 0);
 
-    return conn->state == eCONN_Unusable  ||  !conn->meta.list   ||
+    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
         !conn->meta.get_type ? 0 : conn->meta.get_type(conn->meta.c_get_type);
+}
+
+
+extern char* CONN_Description(CONN conn)
+{
+    CONN_NOT_NULL_EX(Description, 0);
+
+    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
+        !conn->meta.descr ? 0 : conn->meta.descr(conn->meta.c_descr);
 }
 
 
@@ -696,6 +705,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2003/05/14 03:51:16  lavr
+ * +CONN_Description()
+ *
  * Revision 6.31  2003/05/12 18:33:21  lavr
  * Names of timeout variables uniformed
  *
