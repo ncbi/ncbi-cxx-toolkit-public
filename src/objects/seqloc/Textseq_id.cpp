@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/08/31 20:05:45  ucko
+ * Fix ICC build.
+ *
  * Revision 6.5  2001/08/31 16:02:43  clausen
  * Added new constructors for Fasta.
  *
@@ -166,7 +169,7 @@ CTextseq_id::CTextseq_id
   const string& name,
   const string& version,
   const string& release,
-  const bool    allow_dot_version )
+  bool    allow_dot_version )
 {
     int ver = 0;
 
@@ -193,7 +196,7 @@ CTextseq_id::CTextseq_id
   const string& name,
   int           version,
   const string& release,
-  const bool    allow_dot_version )
+  bool    allow_dot_version )
 {
     x_Init(acc, name, version, release, allow_dot_version);
 }

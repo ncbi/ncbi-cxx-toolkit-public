@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
 * Revision 1.21  2001/08/16 13:19:26  grichenk
 * Removed extra-defines for MAC, rearranged code for MAC paths
 *
@@ -460,7 +463,7 @@ string MakeFileName(const string& fname, size_t addLength)
     return name;
 }
 
-CDelayedOfstream::CDelayedOfstream(const char* fileName)
+CDelayedOfstream::CDelayedOfstream(const string& fileName)
 {
     open(fileName);
 }
@@ -470,17 +473,18 @@ CDelayedOfstream::~CDelayedOfstream(void)
     close();
 }
 
-void CDelayedOfstream::open(const char* fileName)
+void CDelayedOfstream::open(const string& fileName)
 {
     close();
     clear();
     seekp(0, IOS_BASE::beg);
+    clear(); // eof set?
     m_FileName = fileName;
-    m_Istream.reset(new CNcbiIfstream(fileName));
+    m_Istream.reset(new CNcbiIfstream(fileName.c_str()));
     if ( !*m_Istream ) {
         _TRACE("cannot open " << m_FileName);
         m_Istream.reset(0);
-        m_Ostream.reset(new CNcbiOfstream(fileName));
+        m_Ostream.reset(new CNcbiOfstream(fileName.c_str()));
         if ( !*m_Ostream ) {
             _TRACE("cannot create " << m_FileName);
             setstate(m_Ostream->rdstate());

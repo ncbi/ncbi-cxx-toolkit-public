@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
 * Revision 1.34  2000/11/27 18:19:48  vasilche
 * Datatool now conforms CNcbiApplication requirements.
 *
@@ -349,7 +352,7 @@ void CCodeGenerator::GenerateCode(void)
             const char* suffix = i? "_.cpp": ".cpp";
             string fileName = m_CombiningFileName + "__" + suffix;
             
-            CDelayedOfstream out(fileName.c_str());
+            CDelayedOfstream out(fileName);
             if ( !out )
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
             

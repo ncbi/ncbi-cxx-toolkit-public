@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/08/31 20:05:44  ucko
+ * Fix ICC build.
+ *
  * Revision 6.14  2001/08/31 16:02:10  clausen
  * Added new constructors for Fasta and added new id types, tpd, tpe, tpg
  *
@@ -603,9 +606,10 @@ CSeq_id::x_Init
             CId_pat::C_Id&   id_pat_id = id_pat.SetId();
             id_pat.SetCountry(acc);
 
-            const char app_str[] = "App=";
-            if (name.compare(app_str, 0, sizeof(app_str)-1) == 0) {
-                id_pat_id.SetApp_number(name.substr(4));
+            const char      app_str[] = "App=";
+            const SIZE_TYPE app_str_len = sizeof(app_str) - 1;
+            if (name.substr(0, app_str_len) == app_str) {
+                id_pat_id.SetApp_number(name.substr(app_str_len));
             } else {
                 id_pat_id.SetNumber(name);
             }

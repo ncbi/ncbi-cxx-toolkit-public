@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/08/31 20:05:44  ucko
+* Fix ICC build.
+*
 * Revision 1.39  2001/05/17 15:05:45  lavr
 * Typos corrected
 *
@@ -178,19 +181,19 @@ template<typename T> const CTypeInfo* (*GetTypeRef(const T* object))(void);
 template<typename T> pair<void*, const CTypeInfo*> ObjectInfo(T& object);
 template<typename T> pair<const void*, const CTypeInfo*> ConstObjectInfo(const T& object);
 
-template<>
+EMPTY_TEMPLATE
 inline
 const CTypeInfo* (*GetTypeRef< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>* object))(void)
 {
     return &NCBI_NS_NCBI::objects::CSeq_entry::GetRefChoiceTypeInfo;
 }
-template<>
+EMPTY_TEMPLATE
 inline
 pair<void*, const CTypeInfo*> ObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
 {
     return make_pair((void*)&object, GetTypeRef(&object)());
 }
-template<>
+EMPTY_TEMPLATE
 inline
 pair<const void*, const CTypeInfo*> ConstObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
 {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/08/31 20:05:43  ucko
+* Fix ICC build.
+*
 * Revision 1.25  2001/01/30 21:40:58  vasilche
 * Fixed dealing with unsigned enums.
 *
@@ -246,7 +249,7 @@ class CStdTypeInfo
 {
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<bool>
 {
 public:
@@ -256,7 +259,7 @@ public:
     static CTypeInfo* CreateTypeInfoNullBool(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<char>
 {
 public:
@@ -264,7 +267,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<signed char>
 {
 public:
@@ -272,7 +275,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<unsigned char>
 {
 public:
@@ -280,7 +283,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<short>
 {
 public:
@@ -288,7 +291,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<unsigned short>
 {
 public:
@@ -296,7 +299,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<int>
 {
 public:
@@ -304,7 +307,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<unsigned>
 {
 public:
@@ -313,7 +316,7 @@ public:
 };
 
 #if SIZEOF_LONG == 4
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<long>
 {
 public:
@@ -321,7 +324,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<unsigned long>
 {
 public:
@@ -330,7 +333,7 @@ public:
 };
 #endif
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<Int8>
 {
 public:
@@ -338,7 +341,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<Uint8>
 {
 public:
@@ -346,7 +349,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<float>
 {
 public:
@@ -354,7 +357,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<double>
 {
 public:
@@ -363,7 +366,7 @@ public:
 };
 
 #if SIZEOF_LONG_DOUBLE != 0
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<long double>
 {
 public:
@@ -372,7 +375,7 @@ public:
 };
 #endif
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<string>
 {
 public:
@@ -382,7 +385,7 @@ public:
     static CTypeInfo* CreateTypeInfoStringStore(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<char*>
 {
 public:
@@ -390,7 +393,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo<const char*>
 {
 public:
@@ -398,7 +401,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo< vector<char> >
 {
 public:
@@ -406,7 +409,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo< vector<signed char> >
 {
 public:
@@ -414,7 +417,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-template<>
+EMPTY_TEMPLATE
 class CStdTypeInfo< vector<unsigned char> >
 {
 public:

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/08/31 20:05:42  ucko
+* Fix ICC build.
+*
 * Revision 1.21  2001/05/21 21:46:17  vakatov
 * SIZE_TYPE, NPOS -- moved from <ncbistl.hpp> to <ncbistr.hpp> and
 * made non-macros (to avoid possible name clashes)
@@ -156,6 +159,13 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 // fix nonstandard 'for' statement behaviour on MSVC
 #if defined(NCBI_OS_MSWIN) && !defined(for)
 # define for if(0);else for
+#endif
+
+// ICC may fail to generate code preceded by "template<>"
+#ifdef NCBI_COMPILER_ICC
+#define EMPTY_TEMPLATE
+#else
+#define EMPTY_TEMPLATE template<>
 #endif
 
 #endif /* NCBISTL__HPP */

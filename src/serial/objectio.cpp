@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/08/31 20:05:45  ucko
+* Fix ICC build.
+*
 * Revision 1.4  2001/05/17 15:07:07  lavr
 * Typos corrected
 *
@@ -116,6 +119,27 @@ COStreamFrame::~COStreamFrame(void)
         GetStream().PopErrorFrame();
 }
 
+#ifdef NCBI_COMPILER_ICC
+void* COStreamFrame::operator new(size_t size)
+{
+    return ::operator new(size);
+}
+
+void* COStreamFrame::operator new[](size_t size)
+{
+    return ::operator new[](size);
+}
+
+void* CIStreamFrame::operator new(size_t size)
+{
+    return ::operator new(size);
+}
+
+void* CIStreamFrame::operator new[](size_t size)
+{
+    return ::operator new[](size);
+}
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

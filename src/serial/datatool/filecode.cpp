@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
 * Revision 1.28  2001/08/16 13:18:03  grichenk
 * Corrected calls to GetStdPath() -- moved '>' outside the call
 *
@@ -364,7 +367,7 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
 void CFileCode::GenerateHPP(const string& path) const
 {
     string fileName = Path(path, GetBaseHPPName());
-    CDelayedOfstream header(fileName.c_str());
+    CDelayedOfstream header(fileName);
     if ( !header ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
         return;
@@ -473,7 +476,7 @@ void CFileCode::GenerateHPP(const string& path) const
 void CFileCode::GenerateCPP(const string& path) const
 {
     string fileName = Path(path, GetBaseCPPName());
-    CDelayedOfstream code(fileName.c_str());
+    CDelayedOfstream code(fileName);
     if ( !code ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
         return;
@@ -672,7 +675,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
     }
 
     // write new contents of nonmodified file
-    CDelayedOfstream out(fileName.c_str());
+    CDelayedOfstream out(fileName);
     if ( !out ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
         return false;

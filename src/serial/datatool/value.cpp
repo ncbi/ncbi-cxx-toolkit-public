@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
 * Revision 1.16  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -130,19 +133,19 @@ void CNullDataValue::PrintASN(CNcbiOstream& out, int ) const
     out << "NULL";
 }
 
-template<>
+EMPTY_TEMPLATE
 void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << (GetValue()? "TRUE": "FALSE");
 }
 
-template<>
+EMPTY_TEMPLATE
 void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
 
-template<>
+EMPTY_TEMPLATE
 void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << '"';

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/08/31 20:05:43  ucko
+* Fix ICC build.
+*
 * Revision 1.11  2001/08/15 19:16:10  juran
 * Add GetStdPath() prototype.
 *
@@ -160,14 +163,14 @@ struct FileInfo {
 class CDelayedOfstream : public CNcbiOstrstream
 {
 public:
-    CDelayedOfstream(const char* fileName);
+    CDelayedOfstream(const string& fileName);
     virtual ~CDelayedOfstream(void);
 
     bool is_open(void) const
         {
             return !m_FileName.empty();
         }
-    void open(const char* fileName);
+    void open(const string& fileName);
     void close(void);
 
 protected:
