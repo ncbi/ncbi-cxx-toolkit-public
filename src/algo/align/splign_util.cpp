@@ -34,7 +34,7 @@
 #include "splign_hitparser.hpp"
 
 #include <algorithm>
-#include <cmath>
+#include <math.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/04/23 18:43:58  ucko
+ * <cmath> -> <math.h>, since some older compilers (MIPSpro) lack the wrappers.
+ *
  * Revision 1.4  2004/04/23 16:50:48  kapustin
  * sprintf->CNcbiOstrstream
  *

@@ -39,7 +39,7 @@
 #include <algo/align/align_exception.hpp>
 
 #include <deque>
-#include <cmath>
+#include <math.h>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -1144,6 +1144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/23 18:43:47  ucko
+ * <cmath> -> <math.h>, since some older compilers (MIPSpro) lack the wrappers.
+ *
  * Revision 1.4  2004/04/23 16:52:04  kapustin
  * Change the way we get donor address
  *
