@@ -174,6 +174,16 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("range_to", "RangeTo",
                              "features ending at this point on the sequence",
                              CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("range_loc", "RangeLoc",
+                             "features on this Seq-loc in ASN.1 text format",
+                             CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("overlap", "Overlap",
+                            "Method of overlap location check",
+                            CArgDescriptions::eString, "totalrange");
+    arg_desc->SetConstraint("overlap",
+                            &(*new CArgAllow_Strings,
+                              "totalrange", "intervals"));
+                             
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
@@ -547,6 +557,15 @@ int CDemoApp::Run(void)
         range_from = range_to = 0;
         range_loc = whole_loc;
     }
+    if ( args["range_loc"] ) {
+        CNcbiIstrstream in(args["range_loc"].AsString().c_str());
+        in >> MSerial_AsnText >> *range_loc;
+    }
+    SAnnotSelector::EOverlapType overlap = SAnnotSelector::eOverlap_TotalRange;
+    if ( args["overlap"].AsString() == "totalrange" )
+        overlap = SAnnotSelector::eOverlap_TotalRange;
+    if ( args["overlap"].AsString() == "intervals" )
+        overlap = SAnnotSelector::eOverlap_Intervals;
 
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
@@ -674,6 +693,7 @@ int CDemoApp::Run(void)
         SAnnotSelector base_sel;
         base_sel
             .SetResolveMethod(resolve)
+            .SetOverlapType(overlap)
             .SetSortOrder(order)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
@@ -742,7 +762,12 @@ int CDemoApp::Run(void)
                     NcbiCout << "\n" <<
                         MSerial_AsnText << it->GetMappedFeature();
                     if ( 1 ) {
-                        NcbiCout << "Original location:\n" <<
+                        NcbiCout << "Original location:";
+                        if ( it->GetOriginalFeature().IsSetPartial() ) {
+                            NcbiCout << " partial = " <<
+                                it->GetOriginalFeature().GetPartial();
+                        }
+                        NcbiCout << "\n" <<
                             MSerial_AsnText <<
                             it->GetOriginalFeature().GetLocation();
                     }
@@ -997,6 +1022,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2004/10/21 15:48:40  vasilche
+* Added options -range_loc and -overlap.
+*
 * Revision 1.87  2004/10/14 17:44:52  vasilche
 * Added bidirectional tests for CSeqMap_CI.
 *
