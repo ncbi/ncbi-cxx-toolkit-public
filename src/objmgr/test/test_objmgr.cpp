@@ -89,6 +89,7 @@ int CTestApp::Run(void)
     const CArgs& args = GetArgs();
     CDataGenerator::sm_DumpEntries = args["dump_entries"];
     CTestHelper::sm_DumpFeatures = args["dump_features"];
+    CTestHelper::sm_TestRemoveEntry = true;
 
     m_ObjMgr = new CObjectManager;
 
@@ -255,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/02/03 17:58:51  vasilche
+* Always test CScope::RemoveEntry() in single thread.
+*
 * Revision 1.37  2003/11/04 16:21:37  grichenk
 * Updated CAnnotTypes_CI to map whole features instead of splitting
 * them by sequence segments.

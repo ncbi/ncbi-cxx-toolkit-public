@@ -843,6 +843,11 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
 
 
 bool CTestHelper::sm_DumpFeatures = false;
+#if defined _MT
+bool CTestHelper::sm_TestRemoveEntry = false;
+#else 
+bool CTestHelper::sm_TestRemoveEntry = true;
+#endif
 
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 TSeqPos seq_len,
@@ -926,7 +931,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Iterate seq-map except the last element
     len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
-        .SetResolveCount(2));
+                                .SetResolveCount(2));
     vector<CSeqMap::const_iterator> itrs;
     for ( ; seg != seq_map->end(&scope); ++seg ) {
         _ASSERT(seg);
@@ -972,9 +977,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Iterate seq-map except the last element
     len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
-        .SetLimitTSE(&handle.GetTopLevelSeqEntry())
-        .SetResolveCount(kInvalidSeqPos)
-        .SetFlags(CSeqMap::fFindAny));
+                                .SetLimitTSE(&handle.GetTopLevelSeqEntry())
+                                .SetResolveCount(kInvalidSeqPos)
+                                .SetFlags(CSeqMap::fFindAny));
     vector<CSeqMap::const_iterator> itrs;
     for ( ; seg != seq_map->end(&scope); ++seg ) {
         _ASSERT(seg);
@@ -1332,26 +1337,26 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(count == seq_alignrg_cnt);
     _ASSERT(annot_set.size() == alignrg_annots_cnt);
     CHECK_END("get align set");
-#if !defined(_MT)
-    CHECK_WRAP();
-    CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
-        handle.GetBioseq().GetParentEntry()));
-    CSeq_entry* parent = entry->GetParentEntry();
-    scope.RemoveEntry(*entry);
-    handle = scope.GetBioseqHandle(id);
-    _ASSERT(!handle  ||  handle.GetBioseq().GetParentEntry() != entry);
-    if ( parent ) {
-        // Non-TSE
-        scope.AttachEntry(*parent, *entry);
+    if ( sm_TestRemoveEntry ) {
+        CHECK_WRAP();
+        CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
+                                   handle.GetBioseq().GetParentEntry()));
+        CSeq_entry* parent = entry->GetParentEntry();
+        scope.RemoveEntry(*entry);
+        handle = scope.GetBioseqHandle(id);
+        _ASSERT(!handle  ||  handle.GetBioseq().GetParentEntry() != entry);
+        if ( parent ) {
+            // Non-TSE
+            scope.AttachEntry(*parent, *entry);
+        }
+        else {
+            // TSE
+            scope.AddTopLevelSeqEntry(*entry);
+        }
+        handle = scope.GetBioseqHandle(id);
+        _ASSERT(handle);
+        CHECK_END_ALWAYS("remove/attach seq-entry");
     }
-    else {
-        // TSE
-        scope.AddTopLevelSeqEntry(*entry);
-    }
-    handle = scope.GetBioseqHandle(id);
-    _ASSERT(handle);
-    CHECK_END_ALWAYS("remove/attach seq-entry");
-#endif
 }
 
 
@@ -1402,6 +1407,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/02/03 17:58:50  vasilche
+* Always test CScope::RemoveEntry() in single thread.
+*
 * Revision 1.49  2003/12/22 22:32:10  grichenk
 * Enabled RemoveEntry/AttachEntry test in non-MT builds.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/03 17:58:50  vasilche
+* Always test CScope::RemoveEntry() in single thread.
+*
 * Revision 1.10  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
@@ -123,6 +126,7 @@ public:
     static void TestDataRetrieval( CScope& scope, int idx, int delta);
 
     static bool sm_DumpFeatures;
+    static bool sm_TestRemoveEntry;
 };
 
 END_SCOPE(objects)
