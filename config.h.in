@@ -113,9 +113,6 @@
 /* There is no "std::char_traits" type defined */
 #undef HAVE_NO_CHAR_TRAITS
 
-/* Make it Multi-Thread safe */
-#undef NCBI_MT
-
 /* The number of bytes in a __int64.  */
 #undef SIZEOF___INT64
 

@@ -497,22 +497,19 @@ with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
    case "$compiler" in
-    GCC )
-      CPPFLAGS="$CPPFLAGS -D_REENTRANT"
+    GCC | MIPSpro73 )
       ;;
     WorkShop* )
       CFLAGS="-mt $CFLAGS"
       CXXFLAGS="-mt $CXXFLAGS"
       LDFLAGS="-mt $LDFLAGS"
       ;;
-    MIPSpro73 )
-      ;;
     * )
       AC_MSG_ERROR(["Dont know how to build MT-safe with compiler $CXX $compiler_ver"])
       ;;
    esac
+   CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
    LIBS="$LIBS $THREAD_LIBS"
-   AC_DEFINE_UNQUOTED(NCBI_MT, 1)
 else
    THREAD_LIBS=
 fi
