@@ -2060,7 +2060,7 @@ int TestForOverlap(const CSeq_loc& loc1,
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from1 <= from2  &&  to1 >= to2) ?
-                            (from2 - from1) - (to1 - to2) : -1;
+                            int(from2 - from1) - int(to1 - to2) : -1;
                     }
                     else {
                         if (rg2.GetFrom() >= from1  ||  rg2.GetTo() <= to1) {
@@ -2092,7 +2092,7 @@ int TestForOverlap(const CSeq_loc& loc1,
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from2 <= from1  &&  to2 >= to1) ?
-                            (from1 - from2) - (to2 - to1) : -1;
+                            int(from1 - from2) - int(to2 - to1) : -1;
                     }
                     else {
                         // Non-circular location can not contain a circular one
@@ -2150,7 +2150,7 @@ int TestForOverlap(const CSeq_loc& loc1,
             }
             else {
                 TSeqPos loc2start = it2.GetRange().GetFrom();
-                TSeqPos loc2end = it2.GetRange().GetTo();
+                //TSeqPos loc2end = it2.GetRange().GetTo();
                 // Find the first interval in loc1 intersecting with loc2
                 for ( ; it1  /*&&  it1.GetRange().GetFrom() <= loc2end*/; ++it1) {
                     if (it1.GetSeq_id().Equals(it2.GetSeq_id())  &&
@@ -4111,6 +4111,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.83  2004/07/12 16:54:43  vasilche
+* Fixed compilation warnings.
+*
 * Revision 1.82  2004/05/27 13:48:24  jcherry
 * Replaced some calls to deprecated CBioseq_Handle::GetBioseq() with
 * GetCompleteBioseq() or GetBioseqCore()
