@@ -43,6 +43,7 @@
 #include <dbapi/driver/driver_mgr.hpp>
 
 #include <vector>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -62,8 +63,8 @@ public:
     int Sat()    const { return m_Sat; }
     int SatKey() const { return m_SatKey; }
 
-    virtual char *print(char*,int) const;
-    virtual char *printTSE(char*,int) const;
+    virtual const string print(void) const;
+    virtual const string printTSE(void) const;
 
     virtual int Compare(const CSeqref& seqRef, EMatchLevel ml = eSeq) const;
 
@@ -149,6 +150,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2003/04/15 15:30:14  vasilche
+* Added include <memory> when needed.
+* Removed buggy buffer in printing methods.
+* Removed unnecessary include of stream_util.hpp.
+*
 * Revision 1.1  2003/04/15 14:24:08  vasilche
 * Changed CReader interface to not to use fake streams.
 *

@@ -405,10 +405,7 @@ CGBDataLoader::GC(void)
         }
         if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end()) continue;
         
-#ifdef DEBUG_SYNC
-        char b[100];
-        GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
-#endif
+        GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE() << ")");
         CConstRef<CSeq_entry> se(sep);
         g.Unlock();
         if(GetDataSource()->DropTSE(*se) ) {
@@ -482,12 +479,11 @@ bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
         //GBLOG_POST( "x_GetRecords-Seqref_iterate_0" );
         if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
         //GBLOG_POST( "list uploaded TSE");
-        // char b[100];
         //for(TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.begin(); tsep != m_Sr2TseInfo.end(); ++tsep)
         //  {
-        //     GBLOG_POST(tsep->first.get().printTSE(b,sizeof(b)));
+        //     GBLOG_POST(tsep->first.get().printTSE());
         //  }
-        // GBLOG_POST("x_GetRecords-Seqref_iterate_1" << (*srp)->print(b,sizeof(b)) );
+        // GBLOG_POST("x_GetRecords-Seqref_iterate_1" << (*srp)->print() );
       
         // find TSE info for each seqref
         TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
@@ -652,10 +648,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   
     GBLOG_POST( "ResolveHandle(" << h << ") " << sr->m_Sr.size() );
     ITERATE(SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
-        char b[100];
-        b[0] = 0;
-        b[0] = b[0];
-        GBLOG_POST( (*srp)->print(b,sizeof(b)));
+        GBLOG_POST( (*srp)->print());
     }
   
     if ( !osr.empty() ) {
@@ -724,8 +717,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
     if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
         return false;
     bool new_tse = false;
-    char s[100];
-    GBLOG_POST( "GetBlob(" << srp->printTSE(s,sizeof(s)) << "," <<
+    GBLOG_POST( "GetBlob(" << srp->printTSE() << "," <<
                 tse_up << ") " << from << ":"<< to << ":=" << tse_up->m_mode);
   
     _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
@@ -763,7 +755,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
         if(count==0) {
             tse_up->m_mode = CTSEUpload::eDone;
             // TODO log message
-            LOG_POST("ERROR: can not retrive sequence  : " << srp.print(s,sizeof(s)));
+            LOG_POST("ERROR: can not retrive sequence  : " << srp.print());
         }
       
         //GBLOG_POST( "GetData-after:: " << from << to <<  endl;
@@ -791,6 +783,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/04/15 15:30:15  vasilche
+* Added include <memory> when needed.
+* Removed buggy buffer in printing methods.
+* Removed unnecessary include of stream_util.hpp.
+*
 * Revision 1.56  2003/04/15 14:24:08  vasilche
 * Changed CReader interface to not to use fake streams.
 *

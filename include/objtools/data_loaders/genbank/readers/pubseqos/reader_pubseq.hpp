@@ -33,6 +33,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/reader.hpp>
 #include <vector>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -85,6 +86,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2003/04/15 15:30:14  vasilche
+* Added include <memory> when needed.
+* Removed buggy buffer in printing methods.
+* Removed unnecessary include of stream_util.hpp.
+*
 * Revision 1.12  2003/04/15 14:24:07  vasilche
 * Changed CReader interface to not to use fake streams.
 *

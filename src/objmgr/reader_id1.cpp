@@ -39,11 +39,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
-
-
-#ifdef NCBI_COMPILER_MIPSPRO
-#  include <util/stream_utils.hpp>
-#endif
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -258,21 +254,19 @@ CSeq_entry* CId1Blob::Seq_entry()
 }
 
 
-char* CId1Seqref::print(char* s, int size) const
+const string CId1Seqref::print(void) const
 {
-    CNcbiOstrstream ostr(s, size);
+    CNcbiOstrstream ostr;
     ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
-    s[ostr.pcount()] = 0;
-    return s;
+    return CNcbiOstrstreamToString(ostr);
 }
 
 
-char* CId1Seqref::printTSE(char* s, int size) const
+const string CId1Seqref::printTSE(void) const
 {
-    CNcbiOstrstream ostr(s, size);
+    CNcbiOstrstream ostr;
     ostr << "TSE(" << Sat() << "," << SatKey () << ")";
-    s[ostr.pcount()] = 0;
-    return s;
+    return CNcbiOstrstreamToString(ostr);
 }
 
 
@@ -377,6 +371,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.35  2003/04/15 15:30:15  vasilche
+ * Added include <memory> when needed.
+ * Removed buggy buffer in printing methods.
+ * Removed unnecessary include of stream_util.hpp.
+ *
  * Revision 1.34  2003/04/15 14:24:08  vasilche
  * Changed CReader interface to not to use fake streams.
  *

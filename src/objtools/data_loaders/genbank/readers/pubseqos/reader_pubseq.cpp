@@ -31,7 +31,7 @@
 #include <objects/objmgr/impl/seqref_pubseq.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -49,21 +49,19 @@ void CPubseqSeqref::x_Reconnect(TConn conn) const
 }
 
 
-char* CPubseqSeqref::print(char *s,int size) const
+const string CPubseqSeqref::print(void) const
 {
-    CNcbiOstrstream ostr(s,size);
+    CNcbiOstrstream ostr;
     ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
-    s[ostr.pcount()]=0;
-    return s;
+    return CNcbiOstrstreamToString(ostr);
 }
 
 
-char* CPubseqSeqref::printTSE(char *s,int size) const
+const string CPubseqSeqref::printTSE(void) const
 {
-    CNcbiOstrstream ostr(s,size);
+    CNcbiOstrstream ostr;
     ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
-    s[ostr.pcount()]=0;
-    return s;
+    return CNcbiOstrstreamToString(ostr);
 }
 
 
@@ -487,6 +485,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.24  2003/04/15 15:30:15  vasilche
+* Added include <memory> when needed.
+* Removed buggy buffer in printing methods.
+* Removed unnecessary include of stream_util.hpp.
+*
 * Revision 1.23  2003/04/15 14:24:08  vasilche
 * Changed CReader interface to not to use fake streams.
 *

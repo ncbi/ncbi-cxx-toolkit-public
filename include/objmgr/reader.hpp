@@ -86,8 +86,8 @@ public:
                                        TBlobClass blobClass,
                                        TConn conn = 0) const = 0;
 
-    virtual char*      print(char*, int)    const = 0;
-    virtual char*      printTSE(char*, int) const = 0;
+    virtual const string print(void)    const = 0;
+    virtual const string printTSE(void) const = 0;
 
     enum EMatchLevel {
         eContext,
@@ -139,6 +139,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2003/04/15 15:30:14  vasilche
+* Added include <memory> when needed.
+* Removed buggy buffer in printing methods.
+* Removed unnecessary include of stream_util.hpp.
+*
 * Revision 1.20  2003/04/15 14:24:07  vasilche
 * Changed CReader interface to not to use fake streams.
 *
