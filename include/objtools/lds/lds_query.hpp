@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //////////////////////////////////////////////////////////////////
-//
-// CLDS_Query different queries to the LDS database.
-//
+///
+/// CLDS_Query different queries to the LDS database.
+///
 
 class NCBI_LDS_EXPORT CLDS_Query
 {
@@ -50,18 +50,22 @@ public:
     : m_db(lds_tables)
     {}
 
-    // Scan the database, find the file, return TRUE if file exists.
-    // Linear scan, no idx optimization.
+    /// Scan the database, find the file, return TRUE if file exists.
+    /// Linear scan, no idx optimization.
     bool FindFile(const string& path);
 
-    // Scans the objects database, search for sequences.
-    // All found ids are added to the obj_ids set.
+    /// Scan the objects database, search for sequences.
+    /// All found ids are added to the obj_ids set.
     void FindSequences(const vector<string>& seqids, CLDS_Set* obj_ids);
 
-    // Scans seq_id_list, search for referred sequence ids .
+    /// Scan seq_id_list, search for referred sequence ids .
     void FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids);
 
-    // Structure describes the indexed object
+    /// Scan the objects database, search for sequences
+    /// All found ids are added to the obj_ids set.
+    void FindSequences(const string& query, CLDS_Set* obj_ids);
+
+    /// Structure describes the indexed object
     struct SObjectDescr
     {
         int                     id;
@@ -89,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/11 18:43:10  kuznets
+ * + FindSequences (by a query string)
+ *
  * Revision 1.5  2003/08/06 20:47:58  kuznets
  * SObjectDescr receives title field to facilitate structure reuse in gbench UI component)
  *
