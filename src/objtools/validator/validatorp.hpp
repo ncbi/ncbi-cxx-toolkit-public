@@ -94,9 +94,13 @@ BEGIN_SCOPE(validator)
 
 // ===========================  Internal error types  ==========================
 
+#define ERR_CODE_BEGIN(x) x##BEGIN
+#define ERR_CODE_END(x) x##END
+
 enum EErrType {
     eErr_ALL = 0,
 
+    ERR_CODE_BEGIN(SEQ_INST),
     eErr_SEQ_INST_ExtNotAllowed,
     eErr_SEQ_INST_ExtBadOrMissing,
     eErr_SEQ_INST_SeqDataNotFound,
@@ -143,7 +147,9 @@ enum EErrType {
     eErr_SEQ_INST_TpaAssmeblyProblem,
     eErr_SEQ_INST_SeqLocLength,
     eErr_SEQ_INST_MissingGaps,
+    ERR_CODE_END(SEQ_INST),
 
+    ERR_CODE_BEGIN(SEQ_DESCR),
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
     eErr_SEQ_DESCR_FileOpenCollision,
@@ -173,14 +179,19 @@ enum EErrType {
     eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
     eErr_SEQ_DESCR_UnwantedCompleteFlag,
     eErr_SEQ_DESCR_CollidingPublications,
+    ERR_CODE_END(SEQ_DESCR),
 
+    ERR_CODE_BEGIN(GENERIC),
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
     eErr_GENERIC_AuthorListHasEtAl,
     eErr_GENERIC_MissingPubInfo,
     eErr_GENERIC_UnnecessaryPubEquiv,
     eErr_GENERIC_BadPageNumbering,
+    ERR_CODE_END(GENERIC),
 
+    ERR_CODE_BEGIN(SEQ_PKG),
+    eErr_SEQ_PKG_BEGIN,
     eErr_SEQ_PKG_NoCdRegionPtr,
     eErr_SEQ_PKG_NucProtProblem,
     eErr_SEQ_PKG_SegSetProblem,
@@ -194,7 +205,9 @@ enum EErrType {
     eErr_SEQ_PKG_GenomicProductPackagingProblem,
     eErr_SEQ_PKG_InconsistentMolInfoBiomols,
     eErr_SEQ_PKG_GraphPackagingProblem,
+    ERR_CODE_END(SEQ_PKG),
 
+    ERR_CODE_BEGIN(SEQ_FEAT),
     eErr_SEQ_FEAT_InvalidForType,
     eErr_SEQ_FEAT_PartialProblem,
     eErr_SEQ_FEAT_PartialsInconsistent,
@@ -273,7 +286,9 @@ enum EErrType {
     eErr_SEQ_FEAT_DuplicateTranslExcept,
     eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
     eErr_SEQ_FEAT_NoNameForProtein,
+    ERR_CODE_END(SEQ_FEAT),
 
+    ERR_CODE_BEGIN(SEQ_ALIGN),
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
     eErr_SEQ_ALIGN_DensegLenStart,
@@ -292,7 +307,9 @@ enum EErrType {
     eErr_SEQ_ALIGN_SegsInvalidDim,
     eErr_SEQ_ALIGN_Segtype,
     eErr_SEQ_ALIGN_BlastAligns,
+    ERR_CODE_END(SEQ_ALIGN),
 
+    ERR_CODE_BEGIN(SEQ_GRAPH),
     eErr_SEQ_GRAPH_GraphMin,
     eErr_SEQ_GRAPH_GraphMax,
     eErr_SEQ_GRAPH_GraphBelow,
@@ -309,8 +326,11 @@ enum EErrType {
     eErr_SEQ_GRAPH_GraphNScore,
     eErr_SEQ_GRAPH_GraphGapScore,
     eErr_SEQ_GRAPH_GraphOverlap,
+    ERR_CODE_END(SEQ_GRAPH),
 
+    ERR_CODE_BEGIN(INTERNAL),
     eErr_Internal_Exception,
+    ERR_CODE_END(INTERNAL),
 
     eErr_UNKNOWN
 };
@@ -938,6 +958,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2004/07/29 16:08:51  shomrat
+* Separated error message from offending object's description; Added error group
+*
 * Revision 1.69  2004/07/07 16:04:33  shomrat
 * + ValidateAnticodon
 *

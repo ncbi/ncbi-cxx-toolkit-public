@@ -225,28 +225,28 @@ void CValidError_imp::PostErr
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string&   message,
- TDesc    ds)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TDesc          ds)
 {
     // Append Descriptor label
-    string msg(message + " DESCRIPTOR: ");
-    ds.GetLabel (&msg, CSeqdesc::eBoth);
+    string desc = "DESCRIPTOR: ";
+    ds.GetLabel (&desc, CSeqdesc::eBoth);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, ds);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string&   message,
- TFeat    ft)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TFeat          ft)
 {
     // Add feature part of label
-    string msg(message + " FEATURE: ");
-    feature::GetLabel(ft, &msg, feature::eBoth, m_Scope);
+    string desc = "FEATURE: ";
+    feature::GetLabel(ft, &desc, feature::eBoth, m_Scope);
 
     // Add feature location part of label
     string loc_label;
@@ -259,11 +259,12 @@ void CValidError_imp::PostErr
         ft.GetLocation().GetLabel(&loc_label);
     }
     if (loc_label.size() > 800) {
-        loc_label = loc_label.substr(0, 797) + "...";
+        loc_label.replace(797, NPOS, "...");
     }
     if (!loc_label.empty()) {
-        loc_label = string("[") + loc_label + "]";
-        msg += loc_label;
+        desc += "[";
+        desc += loc_label;
+        desc += "]";
     }
 
     // Append label for bioseq of feature location
@@ -272,17 +273,17 @@ void CValidError_imp::PostErr
             CBioseq_Handle hnd = m_Scope->GetBioseqHandle(ft.GetLocation());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-                msg += "[";
-                bc->GetLabel(&msg, CBioseq::eBoth);
-                msg += "]";
+                desc += "[";
+                bc->GetLabel(&desc, CBioseq::eBoth);
+                desc += "]";
             }
         } catch (...){
         };
     }
 
     // Append label for product of feature
-    loc_label.erase();
     if (ft.IsSetProduct()) {
+        loc_label.erase();
         if (m_SuppressContext) {
             CSeq_loc loc;
             loc.Assign(ft.GetProduct());
@@ -292,160 +293,175 @@ void CValidError_imp::PostErr
             ft.GetProduct().GetLabel(&loc_label);
         }
         if (loc_label.size() > 800) {
-            loc_label = loc_label.substr(0, 797) + "...";
+            loc_label.replace(797, NPOS, "...");
         }
         if (!loc_label.empty()) {
-            loc_label = string("[") + loc_label + "]";
-            msg += loc_label;
+            desc += "[";
+            desc += loc_label;
+            desc += "]";
         }
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, ft);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft);
+}
+
+
+static void s_AppendBioseqLabel(string& str, CValidError_imp::TBioseq sq, bool supress_context)
+{
+    str += "BIOSEQ: ";
+    sq.GetLabel(&str, CBioseq::eContent, supress_context);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string&   message,
- TBioseq  sq)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TBioseq        sq)
 {
     // Append bioseq label
-    string msg(message + " BIOSEQ: ");
-    if (m_SuppressContext) {
-        sq.GetLabel(&msg, CBioseq::eContent, true);
-    } else {
-        sq.GetLabel(&msg, CBioseq::eBoth, false);
-    }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, sq);
+    string desc;
+    s_AppendBioseqLabel(desc, sq, m_SuppressContext);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string&   message,
- TBioseq  sq,
- TDesc    ds)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TBioseq        sq,
+ TDesc          ds)
 {
     // Append Descriptor label
-    string msg(message + " DESCRIPTOR: ");
-    ds.GetLabel(&msg, CSeqdesc::eBoth);
+    string desc("DESCRIPTOR: ");
+    ds.GetLabel(&desc, CSeqdesc::eBoth);
     PostErr(sv, et, msg, sq);
+}
+
+
+static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress_context)
+{
+    str += "BIOSEQ-SET: ";
+    if (supress_context) {
+        st.GetLabel(&str, CBioseq_set::eContent);
+    } else {
+        st.GetLabel(&str, CBioseq_set::eBoth);
+    }
 }
 
 
 void CValidError_imp::PostErr
 (EDiagSev      sv,
  EErrType      et,
- const string& message,
- TSet          set)
+ const string& msg,
+ TSet          st)
 {
     // Append Bioseq_set label
-    string msg(message + " BIOSEQ-SET: ");
-    if (m_SuppressContext) {
-        set.GetLabel(&msg, CBioseq_set::eContent);
-    } else {
-        set.GetLabel(&msg, CBioseq_set::eBoth);
-    }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, set);
+    string desc = "BIOSEQ-SET: ";
+    s_AppendSetLabel(desc, st, m_SuppressContext);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st);
 }
 
 
 void CValidError_imp::PostErr
 (EDiagSev        sv,
  EErrType        et,
- const string&   message,
- TSet            set,
+ const string&   msg,
+ TSet            st,
  TDesc           ds)
 {
     // Append Descriptor label
-    string msg(message + " DESCRIPTOR: ");
-    ds.GetLabel(&msg, CSeqdesc::eBoth);
-    PostErr(sv, et, msg, set);
+    string desc =  " DESCRIPTOR: ";
+    ds.GetLabel(&desc, CSeqdesc::eBoth);
+    s_AppendSetLabel(desc, st, m_SuppressContext);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string&   message,
- TAnnot    an)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TAnnot         an)
 {
     // Append Annotation label
-    string msg(message + " ANNOTATION: ");
+    string desc = "ANNOTATION: ";
 
     // !!! need to decide on the message
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, an);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string& message,
- TGraph graph)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TGraph         graph)
 {
     // Append Graph label
-    string msg(message + " GRAPH: ");
-    if ( graph.IsSetTitle() ) {
-        msg += graph.GetTitle();
+    string desc = "GRAPH: ";
+    if (graph.IsSetTitle()) {
+        desc += graph.GetTitle();
     } else {
-        msg += "Not Named";
+        desc += "<Unnamed>";
     }
-    msg += " ";
-    graph.GetLoc().GetLabel(&msg);
+    desc += " ";
+    graph.GetLoc().GetLabel(&desc);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, graph);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string& message,
- TBioseq sq,
- TGraph graph)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TBioseq        sq,
+ TGraph         graph)
 {
     // Append Graph label
-    string msg(message + " GRAPH: ");
+    string desc("GRAPH: ");
     if ( graph.IsSetTitle() ) {
-        msg += graph.GetTitle();
+        desc += graph.GetTitle();
     } else {
-        msg += "Not Named";
+        desc += "<Unnamed>";
     }
-    msg += " ";
-    graph.GetLoc().GetLabel(&msg);
-
-    PostErr(sv, et, msg, sq);
+    desc += " ";
+    graph.GetLoc().GetLabel(&desc);
+    s_AppendBioseqLabel(desc, sq, m_SuppressContext);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string& message,
- TAlign align)
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ TAlign        align)
 {
     // Append Alignment label
-    string msg(message + " ALIGNMENT: ");
-    msg += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
-    msg += ", dim=" + NStr::IntToString(align.GetDim());
+    string desc = "ALIGNMENT: ";
+    desc += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
+    desc += ", dim=" + NStr::IntToString(align.GetDim());
 
-    msg+= " SEGS: ";
-    msg += align.GetSegs().SelectionName(align.GetSegs().Which());
+    desc+= " SEGS: ";
+    desc += align.GetSegs().SelectionName(align.GetSegs().Which());
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, align);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev sv,
- EErrType et,
- const string& message,
- TEntry entry)
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ TEntry        entry)
 {
-    m_ErrRepository->AddValidErrItem(sv, et, message, entry);
+    string desc = "SEQ-ENTRY: ";
+    entry.GetLabel(&desc, CSeq_entry::eContent);
+
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry);
 }
 
 
@@ -1415,7 +1431,11 @@ void CValidError_imp::ValidateCitSub
                 }}
 #undef HAS_VALUE
                 break;
+
+            default:
+                break;
             }
+            
         }
     }
 
@@ -2436,6 +2456,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/07/29 16:08:47  shomrat
+* Separated error message from offending object's description; Added error group
+*
 * Revision 1.53  2004/06/25 14:56:41  shomrat
 * Use modified CValidError API
 *

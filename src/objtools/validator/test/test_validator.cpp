@@ -458,8 +458,10 @@ void CTest_validatorApplication::PrintValidErrItem
 (const CValidErrItem& item,
  CNcbiOstream& os)
 {
-    os << item.GetSevAsStr() << ":       " << item.GetErrCode() << endl << endl
-       << "Message: " << item.GetMsg() << endl << endl;
+    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ":       " 
+       << item.GetErrGroup() << " "
+       << item.GetErrCode() << endl << endl
+       << "Message: " << item.GetMsg() << " " << item.GetObjDesc() << endl << endl;
      //<< "Verbose: " << item.GetVerbose() << endl << endl;
 }
 
@@ -469,7 +471,7 @@ void CTest_validatorApplication::PrintBatchItem
 (const CValidErrItem& item,
  CNcbiOstream&os)
 {
-    os << item.GetSevAsStr() << ": [" << item.GetErrCode() <<"] ["
+    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ": [" << item.GetErrCode() <<"] ["
        << item.GetMsg() << "]" << endl;
 }
 
@@ -490,6 +492,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2004/07/29 16:09:09  shomrat
+ * Separated error message from offending object's description; Added error group
+ *
  * Revision 1.28  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -34,6 +34,7 @@
 #include <serial/serialbase.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/validator/validator.hpp>
+#include <util/static_map.hpp>
 
 #include "validatorp.hpp"
 
@@ -113,12 +114,13 @@ CValidError::CValidError(void)
 }
 
 void CValidError::AddValidErrItem
-(EDiagSev sev,
- unsigned int ec,
- const string& msg,
+(EDiagSev             sev,
+ unsigned int         ec,
+ const string&        msg,
+ const string&        desc,
  const CSerialObject& obj)
 {
-    CConstRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, obj));
+    CConstRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj));
     m_ErrItems.push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
@@ -129,80 +131,7 @@ CValidError::~CValidError()
 }
 
 
-// *********************** CValidErrItem implementation ********************
-
-
-CValidErrItem::CValidErrItem
-(EDiagSev             sev,
- unsigned int         ec,
- const string&        msg,
- const CSerialObject& obj)
-  : m_Severity(sev),
-    m_ErrIndex(ec),
-    m_Message(msg),
-    m_Object(&obj)
-{
-}
-
-CValidErrItem::~CValidErrItem(void)
-{
-}
-
-
-EDiagSev CValidErrItem::GetSeverity(void) const
-{
-    return m_Severity;
-}
-
-
-const string& CValidErrItem::GetSevAsStr(void) const
-{
-    static const string str_sev[] = {
-        "Info",
-        "Warning",
-        "Error",
-        "Critical",
-        "Fatal",
-        "Trace"
-    };
-
-    return str_sev[GetSeverity()];
-}
-
-
-const string& CValidErrItem::GetErrCode(void) const
-{
-    if (m_ErrIndex <= eErr_UNKNOWN) {
-        return sm_Terse [m_ErrIndex];
-    }
-    return sm_Terse [eErr_UNKNOWN];
-}
-
-
-const string& CValidErrItem::GetMsg(void) const
-{
-    return m_Message;
-}
-
-
-const string& CValidErrItem::GetVerbose(void) const
-{
-    if (m_ErrIndex <= eErr_UNKNOWN) {
-        return sm_Verbose [m_ErrIndex];
-    }
-    return sm_Verbose [eErr_UNKNOWN];
-}
-
-
-//const CConstObjectInfo& CValidErrItem::GetObject(void) const
-const CSerialObject& CValidErrItem::GetObject(void) const
-{
-    return *m_Object;
-}
-
-
 // ************************ CValidError_CI implementation **************
-
 
 CValidError_CI::CValidError_CI(void) :
     m_Validator(0),
@@ -313,227 +242,389 @@ bool CValidError_CI::AtEnd(void) const
 }
 
 
+// *********************** CValidErrItem implementation ********************
+
+/*
+// constant data associated with each error type
+struct SErrorData
+{
+    SErrorInfo(const string& group, const string& terse, const string& verbose) :
+        m_Group(group), m_Terse(terse), m_Verbose(verbose)
+    {}
+
+    const string& m_Group;      // group of errors it belongs to
+    const string  m_Terse;      // short error decription
+    const string  m_Verbose;    // long error explenation
+};
+typedef SErrorInfo                  TErrInfo;
+typedef pair<EErrType, TErrInfo>    TErrPair;
+
+static const string kErrGroupAll      = "All";
+static const string kErrGroupInst     = "SEQ_INST";
+static const string kErrGroupGENERIC  = "GENERIC";
+static const string kErrGroupPkg      = "SEQ_PKG";
+static const string kErrGroupFeat     = "SEQ_FEAT";
+static const string kErrGroupAlign    = "SEQ_ALIGN";
+static const string kErrGroupGraph    = "SEQ_GRAPH";
+static const string kErrGroupDescr    = "SEQ_DESCR";
+static const string kErrGroupInternal = "INTERNAL";
+*/
+
+CValidErrItem::CValidErrItem
+(EDiagSev             sev,
+ unsigned int         ec,
+ const string&        msg,
+ const string&        desc,
+ const CSerialObject& obj)
+  : m_Severity(sev),
+    m_ErrIndex(ec),
+    m_Message(msg),
+    m_Desc(desc),
+    m_Object(&obj)
+{
+}
+
+
+CValidErrItem::~CValidErrItem(void)
+{
+}
+
+
+EDiagSev CValidErrItem::GetSeverity(void) const
+{
+    return m_Severity;
+}
+
+
+const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
+{
+    static const string str_sev[] = {
+        "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
+    };
+
+    return str_sev[sev];
+}
+
+
+const string& CValidErrItem::GetErrCode(void) const
+{
+    if (m_ErrIndex <= eErr_UNKNOWN) {
+        return sm_Terse [m_ErrIndex];
+    }
+    return sm_Terse [eErr_UNKNOWN];
+}
+
+
+
+const string& CValidErrItem::GetErrGroup (void) const
+{
+    static const string kSeqInst  = "SEQ_INST";
+    static const string kSeqDescr = "SEQ_DESCR";
+    static const string kGeneric  = "GENERIC";
+    static const string kSeqPkg   = "SEQ_PKG";
+    static const string kSeqFeat  = "SEQ_FEAT";
+    static const string kSeqAlign = "SEQ_ALIGN";
+    static const string kSeqGraph = "SEQ_GRAPH";
+    static const string kInternal = "INTERNAL";
+    static const string kUnknown   = "UNKNOWN";
+
+#define IS_IN(x) (m_ErrIndex >= ERR_CODE_BEGIN(x))  &&  (m_ErrIndex <= ERR_CODE_END(x))
+
+    if ((m_ErrIndex < eErr_UNKNOWN)  &&  (m_ErrIndex > 0)) {
+        if ( IS_IN(SEQ_INST) ) {
+            return kSeqInst;
+        } else if ( IS_IN(SEQ_DESCR) ) {
+            return kSeqDescr;
+        } else if ( IS_IN(GENERIC) ) {
+            return kGeneric;
+        } else if ( IS_IN(SEQ_PKG) ) {
+            return kSeqPkg;
+        } else if ( IS_IN(SEQ_FEAT) ) {
+            return kSeqFeat;
+        } else if ( IS_IN(SEQ_ALIGN) ) {
+            return kSeqAlign;
+        } else if ( IS_IN(SEQ_GRAPH) ) {
+            return kSeqGraph;
+        } else if ( IS_IN(INTERNAL) ) {
+            return kInternal;
+        }
+    }
+
+#undef IS_IN
+
+    return kUnknown;
+}
+
+
+const string& CValidErrItem::GetMsg(void) const
+{
+    return m_Message;
+}
+
+
+const string& CValidErrItem::GetObjDesc(void) const
+{
+    return m_Desc;
+}
+
+
+const string& CValidErrItem::GetVerbose(void) const
+{
+    if (m_ErrIndex <= eErr_UNKNOWN) {
+        return sm_Verbose [m_ErrIndex];
+    }
+    return sm_Verbose [eErr_UNKNOWN];
+}
+
+
+//const CConstObjectInfo& CValidErrItem::GetObject(void) const
+const CSerialObject& CValidErrItem::GetObject(void) const
+{
+    return *m_Object;
+}
+
+
+#define BEGIN(x) ""
+#define END(x) ""
+
 // External terse error type explanation
 const string CValidErrItem::sm_Terse [] = {
     "UNKNOWN",
 
-    "SEQ_INST_ExtNotAllowed",
-    "SEQ_INST_ExtBadOrMissing",
-    "SEQ_INST_SeqDataNotFound",
-    "SEQ_INST_SeqDataNotAllowed",
-    "SEQ_INST_ReprInvalid",
-    "SEQ_INST_CircularProtein",
-    "SEQ_INST_DSProtein",
-    "SEQ_INST_MolNotSet",
-    "SEQ_INST_MolOther",
-    "SEQ_INST_FuzzyLen",
-    "SEQ_INST_InvalidLen",
-    "SEQ_INST_InvalidAlphabet",
-    "SEQ_INST_SeqDataLenWrong",
-    "SEQ_INST_SeqPortFail",
-    "SEQ_INST_InvalidResidue",
-    "SEQ_INST_StopInProtein",
-    "SEQ_INST_PartialInconsistent",
-    "SEQ_INST_ShortSeq",
-    "SEQ_INST_NoIdOnBioseq",
-    "SEQ_INST_BadDeltaSeq",
-    "SEQ_INST_LongHtgsSequence",
-    "SEQ_INST_LongLiteralSequence",
-    "SEQ_INST_SequenceExceeds350kbp",
-    "SEQ_INST_ConflictingIdsOnBioseq",
-    "SEQ_INST_MolNuclAcid",
-    "SEQ_INST_ConflictingBiomolTech",
-    "SEQ_INST_SeqIdNameHasSpace",
-    "SEQ_INST_IdOnMultipleBioseqs",
-    "SEQ_INST_DuplicateSegmentReferences",
-    "SEQ_INST_TrailingX",
-    "SEQ_INST_BadSeqIdFormat",
-    "SEQ_INST_PartsOutOfOrder",
-    "SEQ_INST_BadSecondaryAccn",
-    "SEQ_INST_ZeroGiNumber",
-    "SEQ_INST_RnaDnaConflict",
-    "SEQ_INST_HistoryGiCollision",
-    "SEQ_INST_GiWithoutAccession",
-    "SEQ_INST_MultipleAccessions",
-    "SEQ_INST_HistAssemblyMissing",
-    "SEQ_INST_TerminalNs",
-    "SEQ_INST_UnexpectedIdentifierChange",
-    "SEQ_INST_InternalNsInSeqLit",
-    "SEQ_INST_SeqLitGapLength0",
-    "SEQ_INST_TpaAssmeblyProblem",
-    "SEQ_INST_SeqLocLength",
-    "SEQ_INST_MissingGaps",
+    BEGIN(SEQ_INST),
+    "ExtNotAllowed",
+    "ExtBadOrMissing",
+    "SeqDataNotFound",
+    "SeqDataNotAllowed",
+    "ReprInvalid",
+    "CircularProtein",
+    "DSProtein",
+    "MolNotSet",
+    "MolOther",
+    "FuzzyLen",
+    "InvalidLen",
+    "InvalidAlphabet",
+    "SeqDataLenWrong",
+    "SeqPortFail",
+    "InvalidResidue",
+    "StopInProtein",
+    "PartialInconsistent",
+    "ShortSeq",
+    "NoIdOnBioseq",
+    "BadDeltaSeq",
+    "LongHtgsSequence",
+    "LongLiteralSequence",
+    "SequenceExceeds350kbp",
+    "ConflictingIdsOnBioseq",
+    "MolNuclAcid",
+    "ConflictingBiomolTech",
+    "SeqIdNameHasSpace",
+    "IdOnMultipleBioseqs",
+    "DuplicateSegmentReferences",
+    "TrailingX",
+    "BadSeqIdFormat",
+    "PartsOutOfOrder",
+    "BadSecondaryAccn",
+    "ZeroGiNumber",
+    "RnaDnaConflict",
+    "HistoryGiCollision",
+    "GiWithoutAccession",
+    "MultipleAccessions",
+    "HistAssemblyMissing",
+    "TerminalNs",
+    "UnexpectedIdentifierChange",
+    "InternalNsInSeqLit",
+    "SeqLitGapLength0",
+    "TpaAssmeblyProblem",
+    "SeqLocLength",
+    "MissingGaps",
+    END(SEQ_INST),
 
-    "SEQ_DESCR_BioSourceMissing",
-    "SEQ_DESCR_InvalidForType",
-    "SEQ_DESCR_FileOpenCollision",
-    "SEQ_DESCR_Unknown",
-    "SEQ_DESCR_NoPubFound",
-    "SEQ_DESCR_NoOrgFound",
-    "SEQ_DESCR_MultipleBioSources",
-    "SEQ_DESCR_NoMolInfoFound",
-    "SEQ_DESCR_BadCountryCode",
-    "SEQ_DESCR_NoTaxonID",
-    "SEQ_DESCR_InconsistentBioSources",
-    "SEQ_DESCR_MissingLineage",
-    "SEQ_DESCR_SerialInComment",
-    "SEQ_DESCR_BioSourceNeedsFocus",
-    "SEQ_DESCR_BadOrganelle",
-    "SEQ_DESCR_MultipleChromosomes",
-    "SEQ_DESCR_BadSubSource",
-    "SEQ_DESCR_BadOrgMod",
-    "SEQ_DESCR_InconsistentProteinTitle",
-    "SEQ_DESCR_Inconsistent",
-    "SEQ_DESCR_ObsoleteSourceLocation",
-    "SEQ_DESCR_ObsoleteSourceQual",
-    "SEQ_DESCR_StructuredSourceNote",
-    "SEQ_DESCR_MultipleTitles",
-    "SEQ_DESCR_Obsolete",
-    "SEQ_DESCR_UnnecessaryBioSourceFocus",
-    "SEQ_DESCR_RefGeneTrackingWithoutStatus",
-    "SEQ_DESCR_UnwantedCompleteFlag",
-    "SEQ_DESCR_CollidingPublications",
+    BEGIN(SEQ_DESCR),
+    "BioSourceMissing",
+    "InvalidForType",
+    "FileOpenCollision",
+    "Unknown",
+    "NoPubFound",
+    "NoOrgFound",
+    "MultipleBioSources",
+    "NoMolInfoFound",
+    "BadCountryCode",
+    "NoTaxonID",
+    "InconsistentBioSources",
+    "MissingLineage",
+    "SerialInComment",
+    "BioSourceNeedsFocus",
+    "BadOrganelle",
+    "MultipleChromosomes",
+    "BadSubSource",
+    "BadOrgMod",
+    "InconsistentProteinTitle",
+    "Inconsistent",
+    "ObsoleteSourceLocation",
+    "ObsoleteSourceQual",
+    "StructuredSourceNote",
+    "MultipleTitles",
+    "Obsolete",
+    "UnnecessaryBioSourceFocus",
+    "RefGeneTrackingWithoutStatus",
+    "UnwantedCompleteFlag",
+    "CollidingPublications",
+    END(SEQ_DESCR),
 
-    "GENERIC_NonAsciiAsn",
-    "GENERIC_Spell",
-    "GENERIC_AuthorListHasEtAl",
-    "GENERIC_MissingPubInfo",
-    "GENERIC_UnnecessaryPubEquiv",
-    "GENERIC_BadPageNumbering",
+    BEGIN(GENERIC),
+    "NonAsciiAsn",
+    "Spell",
+    "AuthorListHasEtAl",
+    "MissingPubInfo",
+    "UnnecessaryPubEquiv",
+    "BadPageNumbering",
+    END(GENERIC),
 
-    "SEQ_PKG_NoCdRegionPtr",
-    "SEQ_PKG_NucProtProblem",
-    "SEQ_PKG_SegSetProblem",
-    "SEQ_PKG_EmptySet",
-    "SEQ_PKG_NucProtNotSegSet",
-    "SEQ_PKG_SegSetNotParts",
-    "SEQ_PKG_SegSetMixedBioseqs",
-    "SEQ_PKG_PartsSetMixedBioseqs",
-    "SEQ_PKG_PartsSetHasSets",
-    "SEQ_PKG_FeaturePackagingProblem",
-    "SEQ_PKG_GenomicProductPackagingProblem",
-    "SEQ_PKG_InconsistentMolInfoBiomols",
-    "SEQ_PKG_GraphPackagingProblem",
+    BEGIN(SEQ_PKG),
+    "NoCdRegionPtr",
+    "NucProtProblem",
+    "SegSetProblem",
+    "EmptySet",
+    "NucProtNotSegSet",
+    "SegSetNotParts",
+    "SegSetMixedBioseqs",
+    "PartsSetMixedBioseqs",
+    "PartsSetHasSets",
+    "FeaturePackagingProblem",
+    "GenomicProductPackagingProblem",
+    "InconsistentMolInfoBiomols",
+    "GraphPackagingProblem",
+    END(SEQ_PKG),
 
-    "SEQ_FEAT_InvalidForType",
-    "SEQ_FEAT_PartialProblem",
-    "SEQ_FEAT_PartialsInconsistent",
-    "SEQ_FEAT_InvalidType",
-    "SEQ_FEAT_Range",
-    "SEQ_FEAT_MixedStrand",
-    "SEQ_FEAT_SeqLocOrder",
-    "SEQ_FEAT_CdTransFail",
-    "SEQ_FEAT_StartCodon",
-    "SEQ_FEAT_InternalStop",
-    "SEQ_FEAT_NoProtein",
-    "SEQ_FEAT_MisMatchAA",
-    "SEQ_FEAT_TransLen",
-    "SEQ_FEAT_NoStop",
-    "SEQ_FEAT_TranslExcept",
-    "SEQ_FEAT_NoProtRefFound",
-    "SEQ_FEAT_NotSpliceConsensus",
-    "SEQ_FEAT_OrfCdsHasProduct",
-    "SEQ_FEAT_GeneRefHasNoData",
-    "SEQ_FEAT_ExceptInconsistent",
-    "SEQ_FEAT_ProtRefHasNoData",
-    "SEQ_FEAT_GenCodeMismatch",
-    "SEQ_FEAT_RNAtype0",
-    "SEQ_FEAT_UnknownImpFeatKey",
-    "SEQ_FEAT_UnknownImpFeatQual",
-    "SEQ_FEAT_WrongQualOnImpFeat",
-    "SEQ_FEAT_MissingQualOnImpFeat",
-    "SEQ_FEAT_PsuedoCdsHasProduct",
-    "SEQ_FEAT_IllegalDbXref",
-    "SEQ_FEAT_FarLocation",
-    "SEQ_FEAT_DuplicateFeat",
-    "SEQ_FEAT_UnnecessaryGeneXref",
-    "SEQ_FEAT_TranslExceptPhase",
-    "SEQ_FEAT_TrnaCodonWrong",
-    "SEQ_FEAT_BadTrnaAA",
-    "SEQ_FEAT_BothStrands",
-    "SEQ_FEAT_CDSgeneRange",
-    "SEQ_FEAT_CDSmRNArange",
-    "SEQ_FEAT_OverlappingPeptideFeat",
-    "SEQ_FEAT_SerialInComment",
-    "SEQ_FEAT_MultipleCDSproducts",
-    "SEQ_FEAT_FocusOnBioSourceFeature",
-    "SEQ_FEAT_PeptideFeatOutOfFrame",
-    "SEQ_FEAT_InvalidQualifierValue",
-    "SEQ_FEAT_MultipleMRNAproducts",
-    "SEQ_FEAT_mRNAgeneRange",
-    "SEQ_FEAT_TranscriptLen",
-    "SEQ_FEAT_TranscriptMismatches",
-    "SEQ_FEAT_CDSproductPackagingProblem",
-    "SEQ_FEAT_DuplicateInterval",
-    "SEQ_FEAT_PolyAsiteNotPoint",
-    "SEQ_FEAT_ImpFeatBadLoc",
-    "SEQ_FEAT_LocOnSegmentedBioseq",
-    "SEQ_FEAT_UnnecessaryCitPubEquiv",
-    "SEQ_FEAT_ImpCDShasTranslation",
-    "SEQ_FEAT_ImpCDSnotPseudo",
-    "SEQ_FEAT_MissingMRNAproduct",
-    "SEQ_FEAT_AbuttingIntervals",
-    "SEQ_FEAT_CollidingGeneNames",
-    "SEQ_FEAT_CollidingLocusTags",
-    "SEQ_FEAT_MultiIntervalGene",
-    "SEQ_FEAT_FeatContentDup",
-    "SEQ_FEAT_BadProductSeqId",
-    "SEQ_FEAT_RnaProductMismatch",
-    "SEQ_FEAT_DifferntIdTypesInSeqLoc",
-    "SEQ_FEAT_MissingCDSproduct",
-    "SEQ_FEAT_MissingLocation",
-    "SEQ_FEAT_OnlyGeneXrefs",
-    "SEQ_FEAT_UTRdoesNotAbutCDS",
-    "SEQ_FEAT_MultipleCdsOnMrna",
-    "SEQ_FEAT_BadConflictFlag",
-    "SEQ_FEAT_ConflictFlagSet",
-    "SEQ_FEAT_LocusTagProblem",
-    "SEQ_FEAT_AltStartCodon",
-    "SEQ_FEAT_GenesInconsistent",
-    "SEQ_FEAT_DuplicateTranslExcept",
-    "SEQ_FEAT_TranslExceptAndRnaEditing",
-    "SEQ_FEAT_NoNameForProtein",
+    BEGIN(SEQ_FEAT),
+    "InvalidForType",
+    "PartialProblem",
+    "PartialsInconsistent",
+    "InvalidType",
+    "Range",
+    "MixedStrand",
+    "SeqLocOrder",
+    "CdTransFail",
+    "StartCodon",
+    "InternalStop",
+    "NoProtein",
+    "MisMatchAA",
+    "TransLen",
+    "NoStop",
+    "TranslExcept",
+    "NoProtRefFound",
+    "NotSpliceConsensus",
+    "OrfCdsHasProduct",
+    "GeneRefHasNoData",
+    "ExceptInconsistent",
+    "ProtRefHasNoData",
+    "GenCodeMismatch",
+    "RNAtype0",
+    "UnknownImpFeatKey",
+    "UnknownImpFeatQual",
+    "WrongQualOnImpFeat",
+    "MissingQualOnImpFeat",
+    "PsuedoCdsHasProduct",
+    "IllegalDbXref",
+    "FarLocation",
+    "DuplicateFeat",
+    "UnnecessaryGeneXref",
+    "TranslExceptPhase",
+    "TrnaCodonWrong",
+    "BadTrnaAA",
+    "BothStrands",
+    "CDSgeneRange",
+    "CDSmRNArange",
+    "OverlappingPeptideFeat",
+    "SerialInComment",
+    "MultipleCDSproducts",
+    "FocusOnBioSourceFeature",
+    "PeptideFeatOutOfFrame",
+    "InvalidQualifierValue",
+    "MultipleMRNAproducts",
+    "mRNAgeneRange",
+    "TranscriptLen",
+    "TranscriptMismatches",
+    "CDSproductPackagingProblem",
+    "DuplicateInterval",
+    "PolyAsiteNotPoint",
+    "ImpFeatBadLoc",
+    "LocOnSegmentedBioseq",
+    "UnnecessaryCitPubEquiv",
+    "ImpCDShasTranslation",
+    "ImpCDSnotPseudo",
+    "MissingMRNAproduct",
+    "AbuttingIntervals",
+    "CollidingGeneNames",
+    "CollidingLocusTags",
+    "MultiIntervalGene",
+    "FeatContentDup",
+    "BadProductSeqId",
+    "RnaProductMismatch",
+    "DifferntIdTypesInSeqLoc",
+    "MissingCDSproduct",
+    "MissingLocation",
+    "OnlyGeneXrefs",
+    "UTRdoesNotAbutCDS",
+    "MultipleCdsOnMrna",
+    "BadConflictFlag",
+    "ConflictFlagSet",
+    "LocusTagProblem",
+    "AltStartCodon",
+    "GenesInconsistent",
+    "DuplicateTranslExcept",
+    "TranslExceptAndRnaEditing",
+    "NoNameForProtein",
+    END(SEQ_FEAT),
 
-    "SEQ_ALIGN_SeqIdProblem",
-    "SEQ_ALIGN_StrandRev",
-    "SEQ_ALIGN_DensegLenStart",
-    "SEQ_ALIGN_StartMorethanBiolen",
-    "SEQ_ALIGN_EndMorethanBiolen",
-    "SEQ_ALIGN_LenMorethanBiolen",
-    "SEQ_ALIGN_SumLenStart",
-    "SEQ_ALIGN_SegsDimMismatch",
-    "SEQ_ALIGN_SegsNumsegMismatch",
-    "SEQ_ALIGN_SegsStartsMismatch",
-    "SEQ_ALIGN_SegsPresentMismatch",
-    "SEQ_ALIGN_SegsPresentStartsMismatch",
-    "SEQ_ALIGN_SegsPresentStrandsMismatch",
-    "SEQ_ALIGN_FastaLike",
-    "SEQ_ALIGN_SegmentGap",
-    "SEQ_ALIGN_SegsInvalidDim",
-    "SEQ_ALIGN_Segtype",
-    "SEQ_ALIGN_BlastAligns",
+    BEGIN(SEQ_ALIGN),
+    "SeqIdProblem",
+    "StrandRev",
+    "DensegLenStart",
+    "StartMorethanBiolen",
+    "EndMorethanBiolen",
+    "LenMorethanBiolen",
+    "SumLenStart",
+    "SegsDimMismatch",
+    "SegsNumsegMismatch",
+    "SegsStartsMismatch",
+    "SegsPresentMismatch",
+    "SegsPresentStartsMismatch",
+    "SegsPresentStrandsMismatch",
+    "FastaLike",
+    "SegmentGap",
+    "SegsInvalidDim",
+    "Segtype",
+    "BlastAligns",
+    END(SEQ_ALIGN),
 
-    "SEQ_GRAPH_GraphMin",
-    "SEQ_GRAPH_GraphMax",
-    "SEQ_GRAPH_GraphBelow",
-    "SEQ_GRAPH_GraphAbove",
-    "SEQ_GRAPH_GraphByteLen",
-    "SEQ_GRAPH_GraphOutOfOrder",
-    "SEQ_GRAPH_GraphBioseqLen",
-    "SEQ_GRAPH_GraphSeqLitLen",
-    "SEQ_GRAPH_GraphSeqLocLen",
-    "SEQ_GRAPH_GraphStartPhase",
-    "SEQ_GRAPH_GraphStopPhase",
-    "SEQ_GRAPH_GraphDiffNumber",
-    "SEQ_GRAPH_GraphACGTScore",
-    "SEQ_GRAPH_GraphNScore",
-    "SEQ_GRAPH_GraphGapScore",
-    "SEQ_GRAPH_GraphOverlap",
+    BEGIN(SEQ_GRAPH),
+    "GraphMin",
+    "GraphMax",
+    "GraphBelow",
+    "GraphAbove",
+    "GraphByteLen",
+    "GraphOutOfOrder",
+    "GraphBioseqLen",
+    "GraphSeqLitLen",
+    "GraphSeqLocLen",
+    "GraphStartPhase",
+    "GraphStopPhase",
+    "GraphDiffNumber",
+    "GraphACGTScore",
+    "GraphNScore",
+    "GraphGapScore",
+    "GraphOverlap",
+    END(SEQ_GRAPH),
 
-    "Internal_Exception",
+    BEGIN(INTERNAL),
+    "Exception",
+    END(INTERNAL),
 
     "UNKONWN"
 };
+
 
 
 // External verbose error type explanation
@@ -541,6 +632,7 @@ const string CValidErrItem::sm_Verbose [] = {
 "UNKNOWN",
 
 /* SEQ_INST */
+BEGIN(SEQ_INST),
 
 //  SEQ_INST_ExtNotAllowed
 "A Bioseq 'extension' is used for special classes of Bioseq. This class \
@@ -678,7 +770,10 @@ Seq-hist.assembly alignment for the PRIMARY block.",
 //  SEQ_INST_MissingGaps
 "HTGS delta records should have gaps between each sequence segment.",
 
+END(SEQ_INST),
+
 /* SEQ_DESCR */
+BEGIN(SEQ_DESCR),
 
 //  SEQ_DESCR_BioSourceMissing
 "The biological source of this sequence has not been described \
@@ -775,7 +870,10 @@ the title also says it is a complete sequence or complete genome.",
 "Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
 The lower-level ones are redundant, and should be removed.",
 
+END(SEQ_DESCR),
+
 /* SEQ_GENERIC */
+BEGIN(GENERIC),
 
 //  GENERIC_NonAsciiAsn
 "There is a non-ASCII type character in this entry.",
@@ -793,7 +891,10 @@ prevent proper display of all publication information.",
 //  GENERIC_BadPageNumbering
 "The publication page numbering is suspect.",
 
+END(GENERIC),
+
 /* SEQ_PKG */
+BEGIN(SEQ_PKG),
 
 //  SEQ_PKG_NoCdRegionPtr
 "A protein is found in this entry, but the coding region has not been \
@@ -828,7 +929,10 @@ RefSeq records may however be referenced remotely.",
 //  SEQ_PKG_GraphPackagingProblem
 "A graph should be packaged on its bioseq, or on a set containing the Bioseq.",
 
+END(SEQ_PKG),
+
 /* SEQ_FEAT */
+BEGIN(SEQ_FEAT),
 
 //  SEQ_FEAT_InvalidForType
 "This feature type is illegal on this type of Bioseq.",
@@ -1090,7 +1194,10 @@ other nonsense suppressors.",
 //  SEQ_FEAT_NoNameForProtein
 "A protein feature has a description, but no product name.",
 
+END(SEQ_FEAT),
+
 /* SEQ_ALIGN */
+BEGIN(SEQ_ALIGN),
 
 //  SEQ_ALIGN_SeqIdProblem
 "The seqence referenced by an alignment SeqID is not packaged in the record.",
@@ -1129,7 +1236,10 @@ other nonsense suppressors.",
 //  SEQ_ALIGN_BlastAligns
 "BLAST alignments are not desired in records submitted to the sequence database.",
 
+END(SEQ_ALIGN),
+
 /* SEQ_GRAPH */
+BEGIN(SEQ_GRAPH),
 
 //  SEQ_GRAPH_GraphMin
 "The graph minimum value is outside of the 0-100 range.",
@@ -1172,12 +1282,20 @@ segments.",
 //  SEQ_GRAPH_GraphOverlap
 "Quality graphs overlap - may be due to an old fa2htgs bug.",
 
+END(SEQ_GRAPH),
+
+BEGIN(INTERNAL),
+
 //  Internal_Exception
 "Exception was caught while performing validation. Vaidation terminated.",
+
+END(INTERNAL),
 
 "UNKNOWN"
 };
 
+#undef BEGIN
+#undef END
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -1188,6 +1306,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/07/29 16:07:58  shomrat
+* Separated error message from offending object's description; Added error group
+*
 * Revision 1.48  2004/07/07 13:26:56  shomrat
 * + SEQ_FEAT_NoNameForProtein
 *
