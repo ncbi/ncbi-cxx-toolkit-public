@@ -185,9 +185,9 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
                 logFrame->logText->Clear();
                 logFrame->totalChars = 0;
             }
+            logFrame->logText->SetInsertionPoint(logFrame->logText->GetLastPosition());
             *(logFrame->logText) << errMsg.c_str();
             logFrame->totalChars += errMsg.size();
-            logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
         } else {
             // if message window doesn't exist yet, store messages until later
             backLog.push_back(errMsg.c_str());
@@ -633,6 +633,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/05/22 15:33:41  thiessen
+* fix scrolling bug in log frame
+*
 * Revision 1.20  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
