@@ -3,6 +3,8 @@
 APP = python_ncbi_dbapi_test
 SRC = python_ncbi_dbapi_test
 
+REQUIRES = PYTHON CPPUNIT DLL
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE) $(CPPUNIT_INCLUDE)
 
 LIB  = xutil xncbi
