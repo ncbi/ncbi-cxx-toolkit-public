@@ -387,21 +387,62 @@ BlastSetUp_MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
     return status;
 }
 
+static Int2
+BlastScoreBlkInit(Uint1 program_number, 
+                  const BlastScoringOptions* scoring_options,
+                  const BlastHitSavingOptions* hit_options,
+                  BlastQueryInfo* query_info, BlastScoreBlk** sbpp, 
+                  Blast_Message** blast_message)
+{
+   BlastScoreBlk* sbp = *sbpp;
+   Int2 status = 0;
+   Boolean is_na;
+   Int4 total_num_contexts;
+
+   if (sbp) {
+      /* Scoring block has already been created */
+      return 0;
+   }
+
+   /* At this stage query sequences are nucleotide only for blastn */
+   is_na = (program_number == blast_type_blastn);
+   total_num_contexts = query_info->last_context + 1;
+
+   if (is_na)
+      sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
+   else
+      sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
+
+   /* Fills in block for gapped blast. */
+   if (hit_options->phi_align) {
+      PHIScoreBlkFill(sbp, scoring_options, blast_message);
+   } else {
+      status = BlastScoreBlkGappedFill(sbp, scoring_options, 
+                                       program_number, query_info);
+      if (status) {
+         Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                            "Unable to initialize scoring block");
+         return status;
+      }
+   }
+   
+   *sbpp = sbp;
+   return 0;
+}
+
 Int2 BLAST_MainSetUp(Uint1 program_number,
                      const QuerySetUpOptions * qsup_options,
                      const BlastScoringOptions * scoring_options,
-                     const LookupTableOptions * lookup_options,
                      const BlastHitSavingOptions * hit_options,
                      BLAST_SequenceBlk * query_blk,
                      BlastQueryInfo * query_info,
                      BlastSeqLoc ** lookup_segments, BlastMaskLoc * *filter_out,
                      BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
 {
-    BlastScoreBlk *sbp;
+    BlastScoreBlk *sbp = NULL;
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Boolean is_na;              /* Is this nucleotide? */
     Int2 context = 0, index;    /* Loop variables. */
-    Int2 total_num_contexts = 0;        /* number of different strands, sequences, etc. */
     Int2 status = 0;            /* return value */
     Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
     BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
@@ -414,50 +455,28 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                                             case masks */
     Int4 context_offset;
     Boolean no_forward_strand; 
+    /* If lookup segments are not requested, it means lookup table will not 
+       be created. Then filtering is not needed if 'masking at hash only' 
+       filtering option is set. */
+    Boolean no_lookup = (lookup_segments == NULL); 
 
-    if ((status =
-         BlastScoringOptionsValidate(program_number, scoring_options,
-                                     blast_message)) != 0)
-        return status;
+    if (!sbpp)
+       return -1;
 
-    if ((status =
-         LookupTableOptionsValidate(program_number, lookup_options,
-                                    blast_message)) != 0)
-        return status;
-
-    if ((status =
-         BlastHitSavingOptionsValidate(program_number, hit_options,
-                                       blast_message)) != 0)
-        return status;
+    if ((status = BlastScoreBlkInit(program_number, scoring_options, 
+                     hit_options, query_info, &sbp, blast_message)) != 0)
+       return status;
+    else
+       *sbpp = sbp;
 
     /* At this stage query sequences are nucleotide only for blastn */
     is_na = (program_number == blast_type_blastn);
-    total_num_contexts = query_info->last_context + 1;
-
-    sbp = *sbpp;
-    if (!sbp) {
-        if (is_na)
-            sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
-        else
-            sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
-
-        /* Fills in block for gapped blast. */
-        if (hit_options->phi_align) {
-           PHIScoreBlkFill(sbp, scoring_options, blast_message);
-        } else {
-           status = BlastScoreBlkGappedFill(sbp, scoring_options, 
-                       program_number, query_info);
-           if (status) {
-              return status;
-           }
-        }
-
-        *sbpp = sbp;
-    }
 
     next_mask_slp = query_blk->lcase_mask;
     mask_slp = NULL;
-    *filter_out = NULL;
+
+    if (filter_out)
+       *filter_out = NULL;
 
     no_forward_strand = (query_info->first_context > 0);
 
@@ -483,9 +502,8 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
            masking locations are the same as on the forward strand */
         if (!reverse || no_forward_strand) {
             if ((status = BlastSetUp_Filter(program_number, buffer,
-                                            query_length, 0,
-                                            qsup_options->filter_string,
-                                            &mask_at_hash, &filter_slp)))
+                             query_length, 0, qsup_options->filter_string,
+                             &mask_at_hash, &filter_slp, no_lookup)))
                 return status;
 
             /* Extract the mask locations corresponding to this query 
@@ -525,8 +543,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                them back to nucleotide coordinates. */
             if (filter_slp_combined) {
                 if (!last_filter_out) {
-                    last_filter_out = *filter_out =
+                    last_filter_out = 
                         (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+                    if (filter_out)
+                       *filter_out = last_filter_out;
                 } else {
                     last_filter_out->next =
                         (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
@@ -559,9 +579,11 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BLAST_InitDNAPSequence(query_blk, query_info);
     }
 
-    *lookup_segments = NULL;
-    BLAST_ComplementMaskLocations(program_number, query_info, *filter_out,
-                                  lookup_segments);
+    if (lookup_segments && filter_out) {
+       *lookup_segments = NULL;
+       BLAST_ComplementMaskLocations(program_number, query_info, *filter_out,
+                                     lookup_segments);
+    }
 
     /* If there was a lower case mask, its contents have now been moved to 
      * filter_out and are no longer needed in the query block.
@@ -569,7 +591,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     query_blk->lcase_mask = NULL;
 
     /* Free the filtering locations if masking done for lookup table only */
-    if (mask_at_hash) {
+    if (filter_out && mask_at_hash) {
         *filter_out = BlastMaskLocFree(*filter_out);
     }
 
@@ -590,4 +612,177 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     sbp->kbp_gap = sbp->kbp_gap_std;
 
     return 0;
+}
+
+/* Computes the effective search space for the given parameters */
+static
+Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
+                                 Uint1 program_number, /* [in] */
+                                 Int4 query_length,    /* [in] */
+                                 const BlastScoringOptions* 
+                                 scoring_options,      /* [in] */
+                                 double alpha,         /* [in] */
+                                 double beta,          /* [in] */
+                                 Int8 db_length,       /* [in] */
+                                 Int4 db_num_seqs,     /* [in] */
+                                 Int4* length_adjustment_out  /* [out] */
+                                )
+{
+    Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
+    Int4 last_length_adjustment = 0;/* length adjustment in previous iteration.*/
+    Int4 min_query_length;   /* lower bound on query length. */
+    Int2 i; /* Iteration index for calculating length adjustment */
+    Int8 effective_length, effective_db_length; /* effective lengths of 
+                                                  query and database */
+    Int8 retval = 0;
+
+    ASSERT(kbp);
+
+    min_query_length = (Int4) (1/(kbp->K));
+
+    for (i=0; i<5; i++) {
+
+        if (program_number != blast_type_blastn && 
+            scoring_options->gapped_calculation) {
+
+            length_adjustment = BLAST_Nint((((kbp->logK)+log((double)(query_length-last_length_adjustment)*(double)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
+
+        } else {
+
+            length_adjustment = BLAST_Nint((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
+        }
+
+        if (length_adjustment >= query_length-min_query_length) {
+            length_adjustment = query_length-min_query_length;
+            break;
+        }
+        
+        if (ABS(last_length_adjustment-length_adjustment) <= 1)
+            break;
+        last_length_adjustment = length_adjustment;
+    }
+    effective_length = 
+        MAX(query_length - length_adjustment, min_query_length);
+    effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
+     
+    retval = effective_length * effective_db_length;
+
+    if (length_adjustment_out) {
+        *length_adjustment_out = length_adjustment;
+    }
+
+    return retval;
+}
+
+Int2 BLAST_CalcEffLengths (Uint1 program_number, 
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options, 
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
+{
+   double alpha=0, beta=0; /*alpha and beta for new scoring system */
+   Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
+   Int4 index;		/* loop index. */
+   Int4	db_num_seqs;	/* number of sequences in database. */
+   Int8	db_length;	/* total length of database. */
+   BLAST_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
+   Int4 query_length;   /* length of an individual query sequence */
+   Int8 effective_search_space = 0; /* Effective search space for a given 
+                                   sequence/strand/frame */
+
+   if (sbp == NULL || eff_len_options == NULL)
+      return 1;
+
+   /* use values in BlastEffectiveLengthsOptions* */
+   db_length = eff_len_options->db_length;
+   if (program_number == blast_type_tblastn || 
+       program_number == blast_type_tblastx)
+      db_length = db_length/3;	
+   
+   db_num_seqs = eff_len_options->dbseq_num;
+   
+   if (program_number != blast_type_blastn) {
+      if (scoring_options->gapped_calculation) {
+         BLAST_GetAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
+            scoring_options->gap_open, scoring_options->gap_extend);
+      }
+   }
+   
+   if (scoring_options->gapped_calculation && 
+       program_number != blast_type_blastn) 
+      kbp_ptr = sbp->kbp_gap_std;
+   else
+      kbp_ptr = sbp->kbp_std; 
+   
+   for (index = query_info->first_context;
+        index <= query_info->last_context;
+        index++) {
+
+      if (eff_len_options->searchsp_eff) {
+         effective_search_space = eff_len_options->searchsp_eff;
+      } else {
+         if ( (query_length = BLAST_GetQueryLength(query_info, index)) <= 0) {
+             continue;
+         }
+         /* Use the correct Karlin block. For blastn, two identical Karlin
+            blocks are allocated for each sequence (one per strand), but we
+            only need one of them.
+         */
+         effective_search_space = ComputeEffectiveSearchSpace(kbp_ptr[index],
+                                                              program_number,
+                                                              query_length,
+                                                              scoring_options,
+                                                              alpha, beta,
+                                                              db_length,
+                                                              db_num_seqs,
+                                                              &length_adjustment);
+      }
+      query_info->eff_searchsp_array[index] = effective_search_space;
+      query_info->length_adjustments[index] = length_adjustment;
+
+   }
+
+   return 0;
+}
+
+Int2 
+BLAST_GapAlignSetUp(Uint1 program_number,
+                    const BlastSeqSrc* seq_src,
+                    const BlastScoringOptions* scoring_options,
+                    const BlastEffectiveLengthsOptions* eff_len_options,
+                    const BlastExtensionOptions* ext_options,
+                    const BlastHitSavingOptions* hit_options,
+                    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+                    BlastScoreBlk* sbp, Uint4 subject_length, 
+                    BlastExtensionParameters** ext_params,
+                    BlastHitSavingParameters** hit_params,
+                    BlastGapAlignStruct** gap_align)
+{
+   Int2 status = 0;
+   Uint4 max_subject_length;
+
+   if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
+                    eff_len_options, sbp, query_info)) != 0)
+      return status;
+
+   BlastExtensionParametersNew(program_number, ext_options, sbp, 
+                               query_info, ext_params);
+
+   BlastHitSavingParametersNew(program_number, hit_options, NULL, sbp, 
+                               query_info, hit_params);
+
+   /* To initialize the gapped alignment structure, we need to know the 
+      maximal subject sequence length */
+   if (seq_src) {
+      max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
+   } else {
+      max_subject_length = subject_length;
+   }
+
+   if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
+                    max_subject_length, query_info->max_length, sbp, 
+                    gap_align)) != 0) {
+      return status;
+   }
+
+   return status;
 }
