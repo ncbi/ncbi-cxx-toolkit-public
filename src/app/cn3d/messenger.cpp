@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/19 12:40:54  thiessen
+* avoid multiple sequence redraws with scroll set
+*
 * Revision 1.7  2000/10/12 02:14:56  thiessen
 * working block boundary editing
 *
@@ -90,6 +93,11 @@ void Messenger::PostRedrawMolecule(const Molecule *molecule)
 void Messenger::PostRedrawSequenceViewers(void)
 {
     redrawSequenceViewers = true;
+}
+
+void Messenger::UnPostRedrawSequenceViewers(void)
+{
+    redrawSequenceViewers = false;
 }
 
 void Messenger::ProcessRedraws(void)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/19 12:40:21  thiessen
+* avoid multiple sequence redraws with scroll set
+*
 * Revision 1.6  2000/10/12 02:14:32  thiessen
 * working block boundary editing
 *
@@ -81,6 +84,10 @@ public:
     void PostRedrawSequenceViewers(void);
     void PostRedrawAllStructures(void);
     void PostRedrawMolecule(const Molecule *molecule);
+
+    // un-Post a redraw message - use (carefully!) to avoid redundant redraws
+    // (flicker) if some other action is known to cause immediate redraw.
+    void UnPostRedrawSequenceViewers(void);
 
     // should be called only by Cn3DApp at idle time; processes any redraws
     // that have been posted by prior event(s)

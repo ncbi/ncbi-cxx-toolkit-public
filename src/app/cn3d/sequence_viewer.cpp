@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/19 12:40:54  thiessen
+* avoid multiple sequence redraws with scroll set
+*
 * Revision 1.21  2000/10/17 14:35:06  thiessen
 * added row shift - editor basically complete
 *
@@ -325,7 +328,8 @@ void SequenceViewerWindow::UpdateAlignment(ViewableAlignment *alignment)
     viewerWidget->GetScroll(&vsX, &vsY);
     viewerWidget->AttachAlignment(alignment);
     viewerWidget->ScrollTo(vsX, vsY);
-    viewer->messenger->PostRedrawSequenceViewers();
+    // ScrollTo causes immediate redraw, so don't need a second one
+    viewer->messenger->UnPostRedrawSequenceViewers();
 }
 
 void SequenceViewerWindow::OnTitleView(wxCommandEvent& event)
@@ -1049,7 +1053,8 @@ void SequenceViewer::NewAlignment(SequenceDisplay *display)
         viewerWindow->NewAlignment(display);
 		viewerWindow->ScrollToColumn(display->GetStartingColumn());
         viewerWindow->Show(true);
-        messenger->PostRedrawSequenceViewers();
+        // ScrollTo causes immediate redraw, so don't need a second one
+        messenger->UnPostRedrawSequenceViewers();
     }
 }
 
