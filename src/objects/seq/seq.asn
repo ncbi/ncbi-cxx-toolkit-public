@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -46,7 +46,8 @@ Seq-descr ::= SET OF CHOICE {
     genbank GB-block ,           -- GenBank specific info
     pub Pubdesc ,                -- a reference to the publication
     region VisibleString ,       -- overall region (globin locus)
-    user User-object }           -- user defined object
+    user User-object ,           -- user defined object
+	sp SP-block }                -- SWISSPROT specific info
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
@@ -80,6 +81,8 @@ GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
     natmut (13) ,     -- natural mutant ?
     transposon (14) ,
     insertion-seq (15) ,
+	no-left (16) ,    -- missing left end (5' for na, NH2 for aa)
+	no-right (17) ,   -- missing right end (3' or COOH)
     other (255) }
 
 GIBB-method ::= ENUMERATED {        -- sequencing methods
@@ -156,6 +159,19 @@ GB-block ::= SEQUENCE {          -- GenBank specific descriptions
     entry-date Date OPTIONAL ,          -- replaces date
     div VisibleString OPTIONAL }        -- GenBank division
     
+
+SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
+	class ENUMERATED {
+		not-set (0) ,
+		standard (1) ,      -- conforms to all SWISSPROT checks
+		prelim (2) ,        -- only seq and biblio checked
+		other (255) } ,
+	extra-acc SET OF VisibleString OPTIONAL ,  -- old SWISSPROT ids
+	imeth BOOLEAN DEFAULT FALSE ,  -- seq known to start with Met
+	plasnm SET OF VisibleString OPTIONAL,  -- plasmid names carrying gene
+	seqref SET OF Seq-id OPTIONAL,         -- xref to other sequences
+    dbref SET OF Dbtag OPTIONAL ,          -- xref to non-sequence dbases
+	keyterms SET OF VisibleString OPTIONAL } -- keywords
 
 --*** Instances of sequences *******************************
 --*
