@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.31  2003/06/23 21:49:11  dondosha
+ * Possibility of linking HSPs for tblastn activated
+ *
  * Revision 1.30  2003/06/20 21:40:21  dondosha
  * Added parameters for linking HSPs
  *
@@ -902,6 +905,9 @@ Int2 BlastHitSavingOptionsNew(const Uint1 program,
 
    (*options)->hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
+
+   if (program == blast_type_tblastn)
+      (*options)->do_sum_stats = TRUE;
 
    /* other stuff?? */
    
