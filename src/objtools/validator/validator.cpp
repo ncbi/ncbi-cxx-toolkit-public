@@ -585,6 +585,7 @@ const string CValidErrItem::sm_Terse [] = {
     "CDSmRNAmismatch",
     "UnnecessaryException",
     "LocusTagProductMismatch",
+    "MrnaTransFail",
     END(SEQ_FEAT),
 
     BEGIN(SEQ_ALIGN),
@@ -1228,6 +1229,9 @@ not detect an error that needs to be suppressed.",
 //  SEQ_FEAT_LocusTagProductMismatch 
 "In certain records a policy is that the locus_tag of the gene is expected to \
 match the prefix of the general ID of the CDS or mRNA product Bioseq.",
+//  SEQ_FEAT_MrnaTransFail 
+"A fundamental error occurred in software while attempting to transcribe this \
+messenger RNA. It is either a software problem or sever data corruption.",
 
 END(SEQ_FEAT),
 
@@ -1341,6 +1345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/09/21 19:08:56  shomrat
+* + SEQ_FEAT_MrnaTransFail
+*
 * Revision 1.55  2004/09/21 18:35:46  shomrat
 * Added LocusTagProductMismatch
 *
