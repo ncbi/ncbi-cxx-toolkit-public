@@ -85,7 +85,17 @@ public:
         {
             string         accession;
             ENa_strand     strand;
+
+            /// the set of ranges that make up this location
+            /// this allows us to separately assign frame even if the ranges in
+            /// question do not appear in the correct order
             set<TSeqRange> ranges;
+
+            /// a subsidiary set of ranges that is merged into ranges after
+            /// parsing.  this is used to account for things like start/stop
+            /// codons, that are CDS intervals and should be merged into CDS
+            /// intervals
+            set<TSeqRange> merge_ranges;
         };
 
         typedef set<vector<string> > TAttrs;
@@ -100,8 +110,8 @@ public:
         string       source;
         string       key;
         string       score;
-        int          frame;     ///< 0-based; . maps to -1.
         TAttrs       attrs;
+        int frame;
         unsigned int line_no;
         EType        type;
 
@@ -198,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/01/13 15:30:33  dicuccio
+ * Adjusted internal struct to track out-of-order ranges
+ *
  * Revision 1.5  2004/06/07 20:43:44  ucko
  * Add initial GFF 3 support.
  *
