@@ -283,7 +283,7 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetExtnOpts(), 
             m_OptsHandle->GetOptions().GetHitSaveOpts(),
             m_OptsHandle->GetOptions().GetEffLenOpts(),
-            m_OptsHandle->GetOptions().GetProtOpts(), 
+            m_OptsHandle->GetOptions().GetPSIBlastOpts(), 
             m_OptsHandle->GetOptions().GetDbOpts(),
             m_ipResults, m_ipDiagnostics);
     } else {
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2004/05/17 18:12:29  bealer
+ * - Add PSI-Blast support.
+ *
  * Revision 1.26  2004/05/14 17:16:12  dondosha
  * BlastReturnStat structure changed to BlastDiagnostics and refactored
  *

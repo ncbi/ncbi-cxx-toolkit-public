@@ -358,7 +358,7 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_ScoringOpts.Reset((BlastScoringOptions*)calloc(1, sizeof(BlastScoringOptions)));
     m_EffLenOpts.reset((BlastEffectiveLengthsOptions*)calloc(1, sizeof(BlastEffectiveLengthsOptions)));
     m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
-    m_ProtOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
+    m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
 }
 
 CBlastOptionsLocal::~CBlastOptionsLocal()
@@ -419,7 +419,7 @@ CBlastOptionsLocal::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     m_InitWordOpts.DebugDump(ddc, depth);
     m_ExtnOpts.DebugDump(ddc, depth);
     m_HitSaveOpts.DebugDump(ddc, depth);
-    m_ProtOpts.DebugDump(ddc, depth);
+    m_PSIBlastOpts.DebugDump(ddc, depth);
     m_DbOpts.DebugDump(ddc, depth);
     m_ScoringOpts.DebugDump(ddc, depth);
     //m_EffLenOpts.DebugDump(ddc, depth);
@@ -539,8 +539,8 @@ CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
     if ( x_safe_memcmp(a, b, sizeof(BlastHitSavingOptions)) != 0 )
          return false;
 
-    a = static_cast<void*>( (PSIBlastOptions*) m_ProtOpts);
-    b = static_cast<void*>( (PSIBlastOptions*) rhs.m_ProtOpts);
+    a = static_cast<void*>( (PSIBlastOptions*) m_PSIBlastOpts);
+    b = static_cast<void*>( (PSIBlastOptions*) rhs.m_PSIBlastOpts);
     if ( x_safe_memcmp(a, b, sizeof(PSIBlastOptions)) != 0 )
          return false;
 
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/05/17 18:12:29  bealer
+* - Add PSI-Blast support.
+*
 * Revision 1.42  2004/05/17 15:31:31  madden
 * Removed unneeded blast_gapalign.h include
 *

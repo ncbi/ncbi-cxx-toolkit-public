@@ -22,7 +22,8 @@ multiseq_src \
 seqdb_src \
 bl2seq \
 db_blast \
-db_traceback
+db_traceback \
+psiblast_options
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
