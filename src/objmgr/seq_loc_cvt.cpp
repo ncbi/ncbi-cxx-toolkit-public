@@ -399,7 +399,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
         break;
     case CSeq_annot::C_Data::e_Align:
         // TODO: map align
-        break;
+        return;
     }
     SetMappedLocation(ref, index);
 }
@@ -754,6 +754,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/02 16:06:53  grichenk
+* Skip location mapping for seq-aligns
+*
 * Revision 1.9  2003/12/04 20:04:24  grichenk
 * Fixed bugs in seq-loc converters.
 *
