@@ -81,6 +81,12 @@ CConstRef<CSeq_entry> CSeq_entry_Handle::GetSeq_entryCore(void) const
 }
 
 
+bool CSeq_entry_Handle::HasParentEntry(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().HasParent_Info();
+}
+
+
 CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
 {
     CSeq_entry_Handle ret;
@@ -471,6 +477,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/05/11 19:26:19  grichenk
+* Implemented HasParentSeq_entry()
+*
 * Revision 1.9  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *
