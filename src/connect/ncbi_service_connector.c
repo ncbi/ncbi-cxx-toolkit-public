@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2001/09/24 20:29:36  lavr
+ * +SSERVICE_Extra* parameter in constructor; store and use of this parameter
+ *
  * Revision 6.26  2001/09/10 21:21:20  lavr
  * Support for temporary switching into firewall mode as per dispatcher request
  *
@@ -134,16 +137,17 @@
 
 
 typedef struct SServiceConnectorTag {
-    const char*         name;           /* Textual connector type            */
-    const char*         service;        /* Requested service name            */
-    TSERV_Type          types;          /* Server types, record keeping only */
-    SConnNetInfo*       net_info;       /* Connection information            */
-    SERV_ITER           iter;           /* Dispatcher information            */
-    CONNECTOR           conn;           /* Low level communication connector */
-    SMetaConnector      meta;           /*        ...and its virtual methods */
-    unsigned int        host;           /* from parsed connection info...    */
-    unsigned short      port;
-    ticket_t            ticket;
+    const char*        name;            /* Verbal connector type             */
+    const char*        service;         /* Requested service name            */
+    TSERV_Type         types;           /* Server types, record keeping only */
+    SConnNetInfo*      net_info;        /* Connection information            */
+    SERV_ITER          iter;            /* Dispatcher information            */
+    CONNECTOR          conn;            /* Low level communication connector */
+    SMetaConnector     meta;            /*        ...and its virtual methods */
+    unsigned int       host;            /* from parsed connection info...    */
+    unsigned short     port;
+    ticket_t           ticket;
+    SSERVICE_Extra     params;
 } SServiceConnector;
 
 
@@ -327,6 +331,15 @@ static char* s_AdjustNetParams(SConnNetInfo* net_info,
 }
 
 
+static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
+{
+    if (uuu->params.get_next_info)
+        return (*uuu->params.get_next_info)(uuu->iter, uuu->params.data);
+    else
+        return SERV_GetNextInfo(uuu->iter);
+}
+
+
 /* Although all additional HTTP tags, which comprise dispatching, have
  * default values, which in most cases are fine with us, we will use
  * these tags explicitly to distinguish calls originated from within the
@@ -356,7 +369,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
         return 0; /*nothing to adjust in firewall mode: all done by dispd.cgi*/
 
     for (;;) {
-        if (!(info = SERV_GetNextInfo(uuu->iter)))
+        if (!(info = s_GetNextInfo(uuu)))
             return 0/*false - not adjusted*/;
         /* Skip any 'stateful_capable' issues here, which might
          * have left behind a failed stateful dispatching with a
@@ -615,8 +628,11 @@ static EIO_Status s_Close
         uuu->name = 0;
     }
 
-    if (close_dispatcher)
+    if (close_dispatcher) {
         s_CloseDispatcher(uuu);
+        if (uuu->params.cleanup)
+            (*uuu->params.cleanup)(uuu->params.data);
+    }
 
     if (uuu->conn) {
         SMetaConnector* meta = connector->meta;
@@ -646,7 +662,7 @@ static EIO_Status s_VT_Open
         
         if (uuu->net_info->firewall)
             info = 0;
-        else if (!(info = SERV_GetNextInfo(uuu->iter)))
+        else if (!(info = s_GetNextInfo(uuu)))
             break;
 
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info)))
@@ -763,17 +779,11 @@ static void s_Destroy(CONNECTOR connector)
  *  EXTERNAL -- the connector's "constructor"
  ***********************************************************************/
 
-extern CONNECTOR SERVICE_CreateConnector
-(const char*          service)
-{
-    return SERVICE_CreateConnectorEx(service, fSERV_Any, 0);
-}
-
-
 extern CONNECTOR SERVICE_CreateConnectorEx
-(const char*         service,
- TSERV_Type          types,
- const SConnNetInfo* net_info)
+(const char*           service,
+ TSERV_Type            types,
+ const SConnNetInfo*   net_info,
+ const SSERVICE_Extra* params)
 {
     CONNECTOR          ccc;
     SServiceConnector* xxx;
@@ -794,6 +804,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     xxx->types = types;
     xxx->iter = 0;
     xxx->conn = 0;
+    if (params)
+        memcpy(&xxx->params, params, sizeof(xxx->params));
+    else
+        memset(&xxx->params, 0, sizeof(xxx->params));
     memset(&xxx->meta, 0, sizeof(xxx->meta));
 
     assert(xxx->net_info->http_user_header == 0);
