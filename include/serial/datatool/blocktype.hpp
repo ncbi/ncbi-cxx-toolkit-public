@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/10/15 13:53:08  gouriano
+* use "noprefix" flag
+*
 * Revision 1.9  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -117,12 +120,17 @@ public:
         {
             return m_Optional || m_Default;
         }
+    bool NoPrefix() const
+        {
+            return m_NoPrefix;
+        }
     const CDataValue* GetDefault(void) const
         {
             return m_Default.get();
         }
 
     void SetOptional(void);
+    void SetNoPrefix(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
 
     CComments& Comments(void)
@@ -134,6 +142,7 @@ private:
     string m_Name;
     AutoPtr<CDataType> m_Type;
     bool m_Optional;
+    bool m_NoPrefix;
     AutoPtr<CDataValue> m_Default;
     CComments m_Comments;
 };

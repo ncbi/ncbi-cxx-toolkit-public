@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/10/15 13:58:04  gouriano
+* use "noprefix" flag
+*
 * Revision 1.33  2002/08/14 17:14:25  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -220,16 +223,16 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     const AutoPtr<CTypeStrings>& type,
-                                    bool delayed, int tag)
+                                    bool delayed, int tag, bool noPrefix)
 {
-    m_Variants.push_back(SVariantInfo(name, type, delayed, tag));
+    m_Variants.push_back(SVariantInfo(name, type, delayed, tag, noPrefix));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
                                                const AutoPtr<CTypeStrings>& t,
-                                               bool del, int tag)
+                                               bool del, int tag, bool noPrefx)
     : externalName(name), cName(Identifier(name)),
-      type(t), delayed(del), memberTag(tag)
+      type(t), delayed(del), memberTag(tag), noPrefix(noPrefx)
 {
     switch ( type->GetKind() ) {
     case eKindString:
@@ -970,6 +973,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             
             if ( i->delayed ) {
                 methods << "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
+            }
+            if (i->noPrefix) {
+                methods << "->SetNoPrefix()";
             }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";

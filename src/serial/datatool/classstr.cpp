@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/10/15 13:58:05  gouriano
+* use "noprefix" flag
+*
 * Revision 1.38  2002/08/14 17:14:25  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -239,12 +242,13 @@ void CClassTypeStrings::AddMember(const string& name,
                                   bool optional,
                                   const string& defaultValue,
                                   bool delayed,
-                                  int tag)
+                                  int tag,
+                                  bool noPrefix)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
-                                    delayed, tag));
+                                    delayed, tag, noPrefix));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
@@ -253,12 +257,12 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             bool opt,
                                             const string& defValue,
                                             bool del,
-                                            int tag)
+                                            int tag, bool noPrefx)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
-      defaultValue(defValue)
+      defaultValue(defValue), noPrefix(noPrefx)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -998,6 +1002,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods <<
                     "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
                     i->cName<<"))";
+            }
+            if (i->noPrefix) {
+                methods << "->SetNoPrefix()";
             }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";

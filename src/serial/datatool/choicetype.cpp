@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/10/15 13:58:04  gouriano
+* use "noprefix" flag
+*
 * Revision 1.23  2001/12/03 14:51:29  juran
 * Heed warning.
 *
@@ -278,7 +281,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
             code->AddVariant((*i)->GetName(), varType, delayed,
-                             (*i)->GetType()->GetTag());
+                             (*i)->GetType()->GetTag(), (*i)->NoPrefix());
         }
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());

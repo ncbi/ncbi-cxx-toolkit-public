@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/10/15 13:58:04  gouriano
+* use "noprefix" flag
+*
 * Revision 1.36  2002/02/21 17:17:13  grichenk
 * Prohibited unnamed members in ASN.1 specifications
 *
@@ -372,7 +375,8 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("_pointer"),
-                        optional, defaultCode, delayed, (*i)->GetType()->GetTag());
+                        optional, defaultCode, delayed,
+                        (*i)->GetType()->GetTag(), (*i)->NoPrefix());
     }
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
@@ -493,7 +497,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
 
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
-    : m_Name(name), m_Type(type), m_Optional(false)
+    : m_Name(name), m_Type(type), m_Optional(false), m_NoPrefix(false)
 {
     if ( m_Name.empty() ) {
         THROW1_TRACE(runtime_error,
@@ -551,5 +555,11 @@ void CDataMember::SetOptional(void)
 {
     m_Optional = true;
 }
+
+void CDataMember::SetNoPrefix(void)
+{
+    m_NoPrefix = true;
+}
+
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/10/15 13:53:08  gouriano
+* use "noprefix" flag
+*
 * Revision 1.11  2001/06/11 14:34:58  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -121,9 +124,10 @@ public:
         AutoPtr<CTypeStrings> type;
         bool delayed;
         int memberTag;
+        bool noPrefix;
 
         SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-            bool delayed, int tag);
+            bool delayed, int tag, bool noPrefx);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -136,7 +140,7 @@ public:
         }
 
     void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed, int tag);
+                    bool delayed, int tag, bool noPrefix);
 
 protected:
     void GenerateClassCode(CClassCode& code,

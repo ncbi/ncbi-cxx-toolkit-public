@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/10/15 13:53:08  gouriano
+* use "noprefix" flag
+*
 * Revision 1.14  2002/08/14 17:14:22  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -139,10 +142,11 @@ public:
         bool delayed;
         int memberTag;
         string defaultValue; // DEFAULT value code
+        bool noPrefix;
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
-                    bool delayed, int tag);
+                    bool delayed, int tag, bool noPrefx);
     };
     typedef list<SMemberInfo> TMembers;
 
@@ -167,11 +171,11 @@ public:
     void AddMember(const string& name, const AutoPtr<CTypeStrings>& type,
                    const string& pointerType,
                    bool optional, const string& defaultValue,
-                   bool delayed, int tag);
+                   bool delayed, int tag, bool noPrefix);
     void AddMember(const AutoPtr<CTypeStrings>& type, int tag)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
-                      false, NcbiEmptyString, false, tag);
+                      false, NcbiEmptyString, false, tag, false);
         }
 
     string GetCType(const CNamespace& ns) const;
