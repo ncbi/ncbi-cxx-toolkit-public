@@ -81,13 +81,20 @@ Blast4-get-sequences-request ::= SEQUENCE {
     seq-ids                 SEQUENCE OF Seq-id
 }
 
+-- Options have been broken down into two groups as part of the BLAST
+-- API work.  The algorithm options essentially correspond to those
+-- options available via the CBlastOptions class.
+--   algorithm-options: Options for BLAST (ie. seq comparison) algorithm.
+--   program-options:   Other options, such as which seqs. to compare.
+
 Blast4-queue-search-request ::= SEQUENCE {
     program                 VisibleString,
     service                 VisibleString,
     queries                 Bioseq-set,
     subject                 Blast4-subject,
     paramset                VisibleString OPTIONAL,
-    params                  Blast4-parameters OPTIONAL
+    algorithm-options       Blast4-parameters OPTIONAL,
+    program-options         Blast4-parameters OPTIONAL
 }
 
 --  --------------------------------------------------------------------
