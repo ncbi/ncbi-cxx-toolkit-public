@@ -4,6 +4,6 @@
 Debug*
 Release*
 test
-test_mt.vcproj
+test_mt.lib.vcproj
 
 
