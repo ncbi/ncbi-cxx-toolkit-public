@@ -69,6 +69,7 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+/// Index of remote BLAST options.
 enum EBlastOptIdx {
     eBlastOpt_Program = 100,
     eBlastOpt_WordThreshold,
@@ -139,6 +140,7 @@ public:
     /// Accessors/Mutators for individual options
     
     EProgram GetProgram() const;
+    EBlastProgramType GetProgramType() const;
     void SetProgram(EProgram p);
 
     /******************* Lookup table options ***********************/
@@ -649,6 +651,15 @@ public:
         }
         return m_Local->GetProgram();
     }
+
+    EBlastProgramType GetProgramType() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetProgramType() not available.");
+        }
+        return m_Local->GetProgramType();
+    }
+
     void SetProgram(EProgram p)
     {
         if (m_Local) {
@@ -1642,6 +1653,8 @@ public:
     friend class CBl2Seq;
     friend class CDbBlast;
     friend class CDbBlastTraceback;
+    // Uncomment next line when multi-threaded search files are added
+    //friend class CDbBlastPrelim;
 
     // Tabular formatting thread needs to calculate parameters structures
     // and hence needs access to individual options structures.
@@ -2412,6 +2425,9 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
     m_HitSaveOpts->phi_align = TRUE;
 }
 
+/// Global function to convert program type enumeration used in the engine
+/// to the program enumeration.
+EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -2422,6 +2438,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/07/06 15:45:47  dondosha
+* Added GetProgramType method
+*
 * Revision 1.67  2004/06/15 18:45:46  dondosha
 * Added friend classes CDbBlastTraceback and CBlastTabularFormatThread
 *
