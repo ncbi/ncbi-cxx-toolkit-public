@@ -143,7 +143,7 @@ static void s_JpegReadSkipData(j_decompress_ptr cinfo, long bytes)
     struct SJpegInput* sptr = (SJpegInput*)cinfo->src;
 
     if (bytes > 0) {
-        while (bytes > sptr->pub.bytes_in_buffer) {
+        while (bytes > (long)sptr->pub.bytes_in_buffer) {
             bytes -= sptr->pub.bytes_in_buffer;
             s_JpegReadBuffer(cinfo);
         }
@@ -715,6 +715,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/23 17:16:36  ivanov
+ * Fixed compilation warnings
+ *
  * Revision 1.8  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

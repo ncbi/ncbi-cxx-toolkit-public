@@ -210,9 +210,9 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // extract the size parameters
-        int width  = 0;
-        int height = 0;
-        int depth  = 0;
+        size_t width  = 0;
+        size_t height = 0;
+        size_t depth  = 0;
         TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH,  &width);
         TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &depth);
@@ -469,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/23 17:16:36  ivanov
+ * Fixed compilation warnings
+ *
  * Revision 1.9  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

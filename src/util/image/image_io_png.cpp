@@ -201,7 +201,8 @@ static void s_PngReadValidate(png_structp png_ptr,
         NCBI_THROW(CImageException, eReadError, msg);
     }
 
-    if (x != -1  &&  y != -1  &&  w != -1  &&  h != -1) {
+    if (x != (size_t)-1  &&  y != (size_t)-1  &&
+        w != (size_t)-1  &&  h != (size_t)-1) {
         // further validation: make sure we're actually on the image
         if (x >= width  ||  y >= height) {
             string msg("CImageIOPng::ReadImage(): invalid starting position: ");
@@ -304,10 +305,10 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& istr)
         size_t width  = 0;
         size_t height = 0;
         size_t depth  = 0;
-        size_t x = -1;
-        size_t y = -1;
-        size_t w = -1;
-        size_t h = -1;
+        size_t x = (size_t)-1;
+        size_t y = (size_t)-1;
+        size_t w = (size_t)-1;
+        size_t h = (size_t)-1;
         s_PngReadValidate(png_ptr, info_ptr,
                           width, height, depth,
                           x, y, w, h);
@@ -584,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/11/23 17:16:36  ivanov
+ * Fixed compilation warnings
+ *
  * Revision 1.5  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
