@@ -25,11 +25,15 @@
  *
  * Author: Vladimir Ivanov
  *
- * File Description:
- *    Files and directories accessory functions
+ * File Description:   Files and directories accessory functions
  *
+<<<<<<< ncbifile.cpp
+=======
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2002/01/22 19:27:39  ivanov
+ * Added realization ConcatPathEx()
+ *
  * Revision 1.13  2002/01/20 06:13:34  vakatov
  * Fixed warning;  formatted the source code
  *
@@ -81,6 +85,7 @@
  *
  *
  * ===========================================================================
+>>>>>>> 1.13
  */
 
 #include <corelib/ncbifile.hpp>
@@ -114,9 +119,11 @@ BEGIN_NCBI_SCOPE
 #undef  DIR_SEPARATOR_ALT
 #undef  DISK_SEPARATOR
 #undef  ALL_SEPARATORS
+#undef  ALL_OS_SEPARATORS
 
 #define DIR_PARENT  ".."
 #define DIR_CURRENT '.'
+#define ALL_OS_SEPARATORS   ":/\\"
 
 #if defined(NCBI_OS_MSWIN)
 #  define DIR_SEPARATOR     '\\'
@@ -496,10 +503,50 @@ string CDirEntry::ConcatPath(const string& first, const string& second)
 }
 
 
+<<<<<<< ncbifile.cpp
+string CDirEntry::ConcatPathEx(const string& first, const string& second)
+{
+    // Prepare first part of path
+    string path = NStr::TruncateSpaces(first);
+
+    // Add trailing path separator to first part (OS independence)
+
+    size_t pos = path.length();
+#if defined(NCBI_OS_MAC)
+    if ( !pos ) {
+        path = string(1, GetPathSeparator());
+    }
+#endif
+    if ( pos  &&  string(ALL_OS_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
+        // Find used path separator
+        char sep = GetPathSeparator();
+        size_t sep_pos = path.find_last_of(ALL_OS_SEPARATORS);
+        if ( sep_pos != NPOS ) {
+            sep = path.at(sep_pos);
+        }
+        path += sep;
+    }
+    // Remove leading separator in "second" part
+    string part = NStr::TruncateSpaces(second);
+    if ( part.length() > 0  &&  string(ALL_OS_SEPARATORS).find(part[0]) != NPOS ) {
+        part.erase(0,1);
+    }
+    // Add second part
+    path += part;
+    return path;
+}
+
+
 //  Match "name" against the filename "mask", returning TRUE if
 //   it matches, FALSE if not.  
 //
 bool CDirEntry::MatchesMask(const char* name, const char* mask) 
+=======
+//  Match "name" against the filename "mask", returning TRUE if
+//   it matches, FALSE if not.  
+//
+bool CDirEntry::MatchesMask(const char* name, const char* mask) 
+>>>>>>> 1.13
 {
     char c;
 
@@ -1168,3 +1215,62 @@ bool CDir::Remove(EDirRemoveMode mode) const
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.14  2002/01/22 19:27:39  ivanov
+ * Added realization ConcatPathEx()
+ *
+ * Revision 1.13  2002/01/20 06:13:34  vakatov
+ * Fixed warning;  formatted the source code
+ *
+ * Revision 1.12  2002/01/10 16:46:36  ivanov
+ * Added CDir::GetHome() and some CDirEntry:: path processing functions
+ *
+ * Revision 1.11  2001/12/26 21:21:05  ucko
+ * Conditionalize deletion of m_FSS on NCBI_OS_MAC.
+ *
+ * Revision 1.10  2001/12/26 20:58:22  juran
+ * Use an FSSpec* member instead of an FSSpec, so a forward declaration can
+ * be used.
+ * Add copy constructor and assignment operator for CDirEntry on Mac OS,
+ * thus avoiding memberwise copy which would blow up upon deleting the
+ * pointer twice.
+ *
+ * Revision 1.9  2001/12/18 21:36:38  juran
+ * Remove unneeded Mac headers.
+ * (Required functions copied to ncbi_os_mac.cpp)
+ * MoveRename PStr to PString in ncbi_os_mac.hpp.
+ * Don't use MoreFiles xxxCompat functions.  They're for System 6.
+ * Don't use global scope operator on functions copied into NCBI scope.
+ *
+ * Revision 1.8  2001/11/19 23:38:44  vakatov
+ * Fix to compile with SUN WorkShop (and maybe other) compiler(s)
+ *
+ * Revision 1.7  2001/11/19 18:10:13  juran
+ * Whitespace.
+ *
+ * Revision 1.6  2001/11/15 16:34:12  ivanov
+ * Moved from util to corelib
+ *
+ * Revision 1.5  2001/11/06 14:34:11  ivanov
+ * Fixed compile errors in CDir::Contents() under MS Windows
+ *
+ * Revision 1.4  2001/11/01 21:02:25  ucko
+ * Fix to work on non-MacOS platforms again.
+ *
+ * Revision 1.3  2001/11/01 20:06:48  juran
+ * Replace directory streams with Contents() method.
+ * Implement and test Mac OS platform.
+ *
+ * Revision 1.2  2001/09/19 16:22:18  ucko
+ * S_IFDOOR is nonportable; make sure it exists before using it.
+ * Fix type of second argument to CTmpStream's constructor (caught by gcc 3).
+ *
+ * Revision 1.1  2001/09/19 13:06:09  ivanov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
