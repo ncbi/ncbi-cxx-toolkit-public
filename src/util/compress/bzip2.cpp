@@ -82,10 +82,8 @@ bool CBZip2Compression::CompressBuffer(
         SetLastError(BZ_PARAM_ERROR);
         return false;
     }
-
     // Destination buffer size
     *dst_len = dst_size;
-
     // Compress buffer
     int errcode = BZ2_bzBuffToBuffCompress((char*)dst_buf, dst_len,
                                            (char*)src_buf, src_len,
@@ -111,11 +109,9 @@ bool CBZip2Compression::DecompressBuffer(
         SetLastError(BZ_PARAM_ERROR);
         return false;
     }
-    
     // Destination buffer size
     *dst_len = dst_size;
-    
-    // Compress buffer
+    // Decompress buffer
     int errcode = BZ2_bzBuffToBuffDecompress((char*)dst_buf, dst_len,
                                              (char*)src_buf, src_len, 0, 0 );
     SetLastError(errcode);
@@ -391,9 +387,8 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 //
 
 
-CBZip2Decompressor::CBZip2Decompressor(ELevel level, int verbosity,
-                                       int small_decompress)
-    : CBZip2Compression(level, verbosity, 0, small_decompress)
+CBZip2Decompressor::CBZip2Decompressor(int verbosity, int small_decompress)
+    : CBZip2Compression(eLevel_Default, verbosity, 0, small_decompress)
 {
 }
 
@@ -478,6 +473,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/17 15:43:58  ivanov
+ * Minor cosmetics and comments changes
+ *
  * Revision 1.2  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *

@@ -72,10 +72,8 @@ bool CZipCompression::CompressBuffer(
         SetLastError(Z_STREAM_ERROR);
         return false;
     }
-
     // Destination buffer size
     unsigned long out_len = dst_size;
-
     // Compress buffer
     int errcode = compress2((unsigned char*)dst_buf, &out_len,
                             (unsigned char*)src_buf, src_len, GetLevel());
@@ -101,11 +99,9 @@ bool CZipCompression::DecompressBuffer(
         SetLastError(Z_STREAM_ERROR);
         return false;
     }
-
     // Destination buffer size
     unsigned long out_len = dst_size;
-
-    // Compress buffer
+    // Decompress buffer
     int errcode = uncompress((unsigned char*)dst_buf, &out_len,
                              (unsigned char*)src_buf, src_len);
     SetLastError(errcode);
@@ -168,7 +164,7 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode)
 {
     string open_mode;
 
-    // Form a string file mode like
+    // Form a string file mode using template" <r/w>b<level><strategy>"
     if ( mode == eMode_Read ) {
         open_mode = "rb";
     } else {
@@ -465,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/17 15:43:58  ivanov
+ * Minor cosmetics and comments changes
+ *
  * Revision 1.3  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
