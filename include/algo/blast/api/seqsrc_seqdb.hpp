@@ -71,6 +71,13 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* bssp, void* args);
  */
 BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* bssp);
 
+/** SeqDb sequence source copier: creates a new reference to the CSeqDB object
+ * and copies the rest of the BlastSeqSrc structure.
+ * @param bssp BlastSeqSrc structure to copy [in]
+ * @return Pointer to the new BlastSeqSrc.
+ */
+BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* bssp);
+
 }
 
 /** Initialize the sequence source structure.
@@ -94,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/15 16:23:10  dondosha
+ * Added SeqDbSrcCopy function, to implement BlastSeqSrcCopy interface
+ *
  * Revision 1.3  2004/05/19 14:52:00  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
