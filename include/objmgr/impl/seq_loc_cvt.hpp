@@ -73,6 +73,10 @@ public:
                         const CSeqMap_CI& seg,
                         const CSeq_id_Handle& src_id,
                         CScope* scope);
+    // Create conversion, mapping an ID to itself
+    CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
+                        CScope* scope);
+
     ~CSeq_loc_Conversion(void);
 
     TSeqPos ConvertPos(TSeqPos src_pos);
@@ -423,6 +427,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/06 16:07:26  grichenk
+* Added CBioseq_Handle::GetSeq_entry_Handle()
+* Fixed MapLocation()
+*
 * Revision 1.10  2004/01/30 15:25:44  grichenk
 * Fixed alignments mapping and sorting
 *

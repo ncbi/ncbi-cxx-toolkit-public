@@ -96,7 +96,8 @@ public:
 
     // Get top level seq-entry for a bioseq
     const CSeq_entry& GetTopLevelSeqEntry(void) const;
-    const CSeq_entry_Handle GetTopLevelSeqEntryHandle(void) const;
+    CSeq_entry_Handle GetTopLevelSeqEntryHandle(void) const;
+    CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
     // Go up to a certain complexity level (or the nearest level of the same
     // priority if the required class is not found):
@@ -294,6 +295,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/02/06 16:07:26  grichenk
+* Added CBioseq_Handle::GetSeq_entry_Handle()
+* Fixed MapLocation()
+*
 * Revision 1.47  2003/11/28 15:13:24  grichenk
 * Added CSeq_entry_Handle
 *

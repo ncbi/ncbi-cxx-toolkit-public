@@ -106,9 +106,15 @@ const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 }
 
 
-const CSeq_entry_Handle CBioseq_Handle::GetTopLevelSeqEntryHandle(void) const
+CSeq_entry_Handle CBioseq_Handle::GetTopLevelSeqEntryHandle(void) const
 {
     return CSeq_entry_Handle(GetScope(), x_GetBioseq_Info().GetTSE_Info());
+}
+
+
+CSeq_entry_Handle CBioseq_Handle::GetSeq_entry_Handle(void) const
+{
+    return CSeq_entry_Handle(GetScope(), x_GetBioseq_Info().GetSeq_entry_Info());
 }
 
 
@@ -365,6 +371,9 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
     // Iterate seq-map, for each segment create conversion,
     // for each conversion try to map seq-loc to the master sequence.
     CSeq_loc_Conversion_Set conv_set;
+    CRef<CSeq_loc_Conversion> self_cvt(
+        new CSeq_loc_Conversion(GetSeq_id_Handle(), &GetScope()));
+    conv_set.Add(*self_cvt);
     CHeapScope hscope(GetScope());
     conv_set.SetScope(hscope);
     CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
@@ -406,6 +415,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/02/06 16:07:27  grichenk
+* Added CBioseq_Handle::GetSeq_entry_Handle()
+* Fixed MapLocation()
+*
 * Revision 1.52  2004/01/28 22:10:10  grichenk
 * Removed extra seq-loc initialization in MapLocation
 *

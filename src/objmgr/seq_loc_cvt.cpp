@@ -78,6 +78,28 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
 }
 
 
+CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
+                                         CScope* scope)
+    : m_Src_id_Handle(master_id),
+      m_Src_length(kInvalidSeqPos),
+      m_Src_from(0),
+      m_Src_to(kInvalidSeqPos - 1),
+      m_Shift(0),
+      m_Reverse(false),
+      m_Dst_loc_Empty(0),
+      m_Partial(false),
+      m_LastType(eMappedObjType_not_set),
+      m_LastStrand(eNa_strand_unknown),
+      m_Scope(scope)
+{
+    m_Dst_id.Reset(new CSeq_id);
+    m_Dst_id->Assign(*master_id.GetSeqId());
+    m_Dst_loc_Empty.Reset(new CSeq_loc);
+    m_Dst_loc_Empty->SetEmpty(*m_Dst_id);
+    Reset();
+}
+
+
 CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 {
     _ASSERT(!IsSpecialLoc());
@@ -1338,6 +1360,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/02/06 16:07:27  grichenk
+* Added CBioseq_Handle::GetSeq_entry_Handle()
+* Fixed MapLocation()
+*
 * Revision 1.18  2004/02/05 22:49:19  grichenk
 * Added default cases in switches
 *
