@@ -15,3 +15,5 @@ OBJ = datatool \
 LIB = xser xutil xncbi
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
+
+CHECK_CMD = datatool.sh

@@ -15,4 +15,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I$(srcdir) -I$(srcdir)/webenv
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
 
-CHECK_CMD =
+CHECK_CMD = test.sh
