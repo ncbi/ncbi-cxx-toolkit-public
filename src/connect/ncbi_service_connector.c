@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/04/26 16:28:51  lavr
+ * SSERVICE_Params: reset added for use in open/close pairs
+ * No checks for CONN_DEFAULT_TIMEOUT: now real timeouts always go from CONN
+ *
  * Revision 6.35  2002/03/30 03:34:32  lavr
  * BUGFIX: Memory leak from SERV_ITER in usused connector
  *
@@ -188,16 +192,15 @@ extern "C" {
                                     EIO_Event       dir);
     static EIO_Status  s_VT_Close  (CONNECTOR       connector,
                                     const STimeout* timeout);
-    static void        s_Setup     (SMetaConnector *meta,
-                                    CONNECTOR connector);
-    static void        s_Destroy   (CONNECTOR connector);
+    static void        s_Setup     (SMetaConnector* meta,
+                                    CONNECTOR       connector);
+    static void        s_Destroy   (CONNECTOR       connector);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
 
-static const char* s_VT_GetType
-(CONNECTOR connector)
+static const char* s_VT_GetType(CONNECTOR connector)
 {
     SServiceConnector* xxx = (SServiceConnector*) connector->handle;
     return xxx->name ? xxx->name : "SERVICE";
@@ -238,11 +241,12 @@ static void s_Reset(SMetaConnector *meta)
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_ParseHeader(const char *,void *,int);
+    static int s_ParseHeader(const char*, void*, int);
 }
 #endif /* __cplusplus */
 
-static int/*bool*/ s_ParseHeader(const char* header, void* data,
+static int/*bool*/ s_ParseHeader(const char* header,
+                                 void*       data,
                                  int/*bool*/ server_error)
 {
     static const char kStateless[] = "TRY_STATELESS";
@@ -289,17 +293,17 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
 }
 
 
-static char* s_AdjustNetParams(SConnNetInfo*   net_info,
-                               EReqMethod      req_method,
-                               const char*     cgi_name,
-                               const char*     first_arg,
-                               const char*     first_val,
-                               const char*     cgi_args,
-                               const char*     static_header,
-                               EMIME_Type      mime_t,
-                               EMIME_SubType   mime_s,
-                               EMIME_Encoding  mime_e,
-                               char*           dynamic_header/*will be freed*/)
+static char* s_AdjustNetParams(SConnNetInfo*  net_info,
+                               EReqMethod     req_method,
+                               const char*    cgi_name,
+                               const char*    first_arg,
+                               const char*    first_val,
+                               const char*    cgi_args,
+                               const char*    static_header,
+                               EMIME_Type     mime_t,
+                               EMIME_SubType  mime_s,
+                               EMIME_Encoding mime_e,
+                               char*          dynamic_header/*will be freed*/)
 {
     char content_type[MAX_CONTENT_TYPE_LEN], *retval;
 
@@ -338,17 +342,16 @@ static char* s_AdjustNetParams(SConnNetInfo*   net_info,
             *net_info->args = 0;
     }
 
-    if (mime_t == SERV_MIME_TYPE_UNDEFINED ||
+    if (mime_t == SERV_MIME_TYPE_UNDEFINED    ||
         mime_s == SERV_MIME_SUBTYPE_UNDEFINED ||
         !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
                                    content_type, sizeof(content_type))) {
         *content_type = 0;
     }
-    if ((retval = (char*) malloc((static_header
-                                  ? strlen(static_header) : 0) +
+    if ((retval = (char*) malloc((static_header ? strlen(static_header) : 0) +
                                  strlen(content_type) + 1/*EOL*/ +
-                                 (dynamic_header ?
-                                  strlen(dynamic_header) : 0))) != 0) {
+                                 (dynamic_header? strlen(dynamic_header) : 0)
+                                 )) != 0) {
         strcpy(retval, static_header ? static_header : "");
         strcat(retval, content_type);
         strcat(retval, dynamic_header ? dynamic_header : "");
@@ -363,7 +366,7 @@ static char* s_AdjustNetParams(SConnNetInfo*   net_info,
 static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
 {
     if (uuu->params.get_next_info)
-        return (*uuu->params.get_next_info)(uuu->iter, uuu->params.data);
+        return uuu->params.get_next_info(uuu->iter, uuu->params.data);
     else
         return SERV_GetNextInfo(uuu->iter);
 }
@@ -379,13 +382,14 @@ static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_AdjustNetInfo(SConnNetInfo *, void *,unsigned int);
+    static int s_AdjustNetInfo(SConnNetInfo*, void*, unsigned int);
 }
 #endif /* __cplusplus */
 
 /* This callback is only for services called via direct HTTP */
-static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
-                                   unsigned int n)
+static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
+                                   void*         data,
+                                   unsigned int  n)
 {
     SServiceConnector* uuu = (SServiceConnector*) data;
     const char* user_header = 0;
@@ -424,10 +428,10 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /* default */
             user_header = s_AdjustNetParams(net_info,
                                             info->type == fSERV_HttpGet
-                                            ? eReqMethod_Get :
-                                            (info->type == fSERV_HttpPost
-                                             ? eReqMethod_Post :
-                                             eReqMethod_Any),
+                                            ? eReqMethod_Get
+                                            : (info->type == fSERV_HttpPost
+                                               ? eReqMethod_Post
+                                               : eReqMethod_Any),
                                             SERV_HTTP_PATH(&info->u.http),
                                             0, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
@@ -475,12 +479,11 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
 }
 
 
-static CONNECTOR s_Open
-(SServiceConnector* uuu,
- const STimeout*    timeout,
- const SSERV_Info*  info,
- SConnNetInfo*      net_info,
- int/*bool*/        second_try)
+static CONNECTOR s_Open(SServiceConnector* uuu,
+                        const STimeout*    timeout,
+                        const SSERV_Info*  info,
+                        SConnNetInfo*      net_info,
+                        int/*bool*/        second_try)
 {
     const char* user_header = 0;
 
@@ -627,8 +630,7 @@ static CONNECTOR s_Open
                                           &uuu->ticket, sizeof(uuu->ticket),
                                           net_info->debug_printout ==
                                           eDebugPrintout_Data
-                                          ? eSCC_DebugPrintout
-                                          : 0);
+                                          ? eSCC_DebugPrintout : 0);
         }
         net_info->max_try = 1000000000/*very large number so we can retry*/;
         return HTTP_CreateConnectorEx(net_info, fHCC_AutoReconnect,
@@ -643,16 +645,15 @@ static CONNECTOR s_Open
 }
 
 
-static EIO_Status s_Close
-(CONNECTOR       connector,
- const STimeout* timeout,
- int/*bool*/     close_dispatcher)
+static EIO_Status s_Close(CONNECTOR       connector,
+                          const STimeout* timeout,
+                          int/*bool*/     close_dispatcher)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     EIO_Status status = eIO_Success;
 
     if (uuu->meta.close)
-        status = (*uuu->meta.close)(uuu->meta.c_close, timeout);
+        status = uuu->meta.close(uuu->meta.c_close, timeout);
 
     if (uuu->name) {
         free((void*) uuu->name);
@@ -661,8 +662,8 @@ static EIO_Status s_Close
 
     if (close_dispatcher) {
         s_CloseDispatcher(uuu);
-        if (uuu->params.cleanup)
-            (*uuu->params.cleanup)(uuu->params.data);
+        if (uuu->params.reset)
+            uuu->params.reset(uuu->params.data);
     }
 
     if (uuu->meta.list) {
@@ -676,9 +677,7 @@ static EIO_Status s_Close
 }
 
 
-static EIO_Status s_VT_Open
-(CONNECTOR       connector,
- const STimeout* timeout)
+static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     SMetaConnector* meta = connector->meta;
@@ -732,7 +731,7 @@ static EIO_Status s_VT_Open
 #endif
         if (uuu->meta.get_type) {
             const char* type;
-            if ((type = (*uuu->meta.get_type)(uuu->meta.c_get_type)) != 0) {
+            if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
                 static const char prefix[] = "SERVICE/";
                 char* name = (char*) malloc(strlen(type) + sizeof(prefix));
                 if (name) {
@@ -744,13 +743,9 @@ static EIO_Status s_VT_Open
         }
 
         if (uuu->meta.open) {
-            status = (*uuu->meta.open) (uuu->meta.c_open,
-                                        timeout == CONN_DEFAULT_TIMEOUT
-                                        ? uuu->net_info->timeout : timeout);
+            status = uuu->meta.open(uuu->meta.c_open, timeout);
             if (status != eIO_Success) {
-                s_Close(connector, timeout == CONN_DEFAULT_TIMEOUT
-                        ? uuu->net_info->timeout : timeout,
-                        0/*don't close dispatcher!*/);
+                s_Close(connector, timeout, 0/*don't close dispatcher!*/);
                 continue;
             }
         }
@@ -762,17 +757,13 @@ static EIO_Status s_VT_Open
 }
 
 
-static EIO_Status s_VT_Status
-(CONNECTOR connector,
- EIO_Event dir)
+static EIO_Status s_VT_Status(CONNECTOR connector, EIO_Event dir)
 {
     return eIO_Success;
 }
 
 
-static EIO_Status s_VT_Close
-(CONNECTOR       connector,
- const STimeout* timeout)
+static EIO_Status s_VT_Close(CONNECTOR connector, const STimeout* timeout)
 {
     return s_Close(connector, timeout, 1/*close_dispatcher*/);
 }
@@ -780,10 +771,12 @@ static EIO_Status s_VT_Close
 
 static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 {
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
     CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
+    CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
     /* all the rest is reset to NULL */
     s_Reset(meta);
 }
@@ -794,6 +787,8 @@ static void s_Destroy(CONNECTOR connector)
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
 
     s_CloseDispatcher(uuu);
+    if (uuu->params.cleanup)
+        uuu->params.cleanup(uuu->params.data);
     ConnNetInfo_Destroy(uuu->net_info);
     if (uuu->name)
         free((void*) uuu->name);
