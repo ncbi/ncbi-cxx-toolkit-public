@@ -208,7 +208,7 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
  *         identity cutoff; FALSE otherwise.
  */
 static Boolean
-s_HSPCheckPercentIdentity(BlastHSP* hsp, Int4 percent_identity,
+s_HSPCheckPercentIdentity(BlastHSP* hsp, double percent_identity,
                           Uint1* query_start, Uint1* subject_start)
 {
     Int4 align_length = 0;
@@ -218,7 +218,7 @@ s_HSPCheckPercentIdentity(BlastHSP* hsp, Int4 percent_identity,
                               &hsp->num_ident, &align_length);
     /* Check if this HSP passes the percent identity test */
     return 
-        (((double)hsp->num_ident) / align_length * 100 < 
+        ((((double)hsp->num_ident) / (double) align_length) * 100.0 < 
          percent_identity);
 }
 
