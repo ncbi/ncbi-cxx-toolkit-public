@@ -100,6 +100,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
                 Int8 v8 = val.Value();
+                v->precision= 18;
+                v->scale= 0;
                 if (longlong_to_numeric(v8, 18, v->array) == 0)
                     return false;
                 r = bcp_bind(m_Cmd, (BYTE*) v, 0,
@@ -229,6 +231,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = (DBNUMERIC*) pb;
+                v->precision= 18;
+                v->scale= 0;
                 Int8 v8 = val.Value();
                 if (longlong_to_numeric(v8, 18, v->array) == 0)
                     return false;
@@ -391,19 +395,25 @@ bool CTDS_BCPInCmd::SendRow()
 bool CTDS_BCPInCmd::Cancel()
 {
     if(m_WasSent) {
-	DBINT outrow = bcp_done(m_Cmd);
-	m_WasSent= false;
-	return outrow == 0;
+        DBINT outrow = bcp_done(m_Cmd);
+        m_WasSent= false;
+        return outrow == 0;
     }
-    return true;
+    return false;
 }
 
 
 bool CTDS_BCPInCmd::CompleteBatch()
 {
     if(m_WasSent) {
-	CS_INT outrow = bcp_batch(m_Cmd);
-	return outrow != -1;
+        DBINT outrow = bcp_batch(m_Cmd);
+        if(outrow < 0) {
+            m_HasFailed= true;
+            throw CDB_ClientEx(eDB_Error, 223020,
+                               "CTDS_BCPInCmd::CompleteBatch", 
+                               "bcp_batch failed");
+        }
+        return outrow > 0;
     }
     return false;
 }
@@ -412,9 +422,15 @@ bool CTDS_BCPInCmd::CompleteBatch()
 bool CTDS_BCPInCmd::CompleteBCP()
 {
     if(m_WasSent) {
-	DBINT outrow = bcp_done(m_Cmd);
-	m_WasSent= false;
-	return outrow != -1;
+        DBINT outrow = bcp_done(m_Cmd);
+        if(outrow < 0) {
+            m_HasFailed = true;
+            throw CDB_ClientEx(eDB_Error, 223020,
+                               "CTDS_BCPInCmd::CompleteBCP", 
+                               "bcp_done failed");
+        }
+        m_WasSent= false;
+        return outrow > 0;
     }
     return false;
 }
@@ -448,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/12/03 19:20:40  soussov
+ * some minor fixes in bcp_batch, bcp_done
+ *
  * Revision 1.3  2002/03/04 19:09:27  soussov
  * fixed bug in m_WasSent flag setting
  *
