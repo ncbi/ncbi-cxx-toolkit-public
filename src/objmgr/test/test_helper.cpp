@@ -63,7 +63,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
-#include <objmgr/desc_ci.hpp>
+#include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -1133,7 +1133,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     int count = 0;
     CHECK_WRAP();
     // Test CSeq_descr iterator
-    for (CDesc_CI desc_it(handle); desc_it;  ++desc_it) {
+    for (CSeq_descr_CI desc_it(handle); desc_it;  ++desc_it) {
         count++;
         //### _ASSERT(desc_it->
     }
@@ -1407,6 +1407,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/02/09 19:18:55  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.50  2004/02/03 17:58:50  vasilche
 * Always test CScope::RemoveEntry() in single thread.
 *

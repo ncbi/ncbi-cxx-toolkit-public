@@ -53,7 +53,7 @@
 // Object manager includes
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/desc_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
@@ -506,11 +506,13 @@ int CDemoApp::Run(void)
             // from the bioseq and going the seq-entries tree up to the
             // top-level seq-entry.
             count = 0;
-            for (CDesc_CI desc_it(handle);
-                 desc_it;  ++desc_it) {
+            for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
+                NcbiCout << "\n" <<
+                    MSerial_AsnText << *desc_it;
                 count++;
             }
-            NcbiCout << "Desc count: " << count << NcbiEndl;
+            cout << "\n";
+            NcbiCout << "Seqdesc count: " << count << NcbiEndl;
 
             count = 0;
             for (CSeq_annot_CI ai(scope, handle.GetTopLevelSeqEntry());
@@ -748,6 +750,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/02/09 19:18:50  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.59  2004/02/09 14:54:22  vasilche
 * Dump synonyms of the sequence.
 *

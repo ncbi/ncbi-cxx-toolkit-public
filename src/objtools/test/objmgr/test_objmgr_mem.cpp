@@ -7,7 +7,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/desc_ci.hpp>
+#include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -212,6 +212,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/02/09 19:18:56  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.1  2003/12/16 17:51:21  kuznets
 * Code reorganization
 *

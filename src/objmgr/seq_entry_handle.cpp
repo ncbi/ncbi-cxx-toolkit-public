@@ -33,6 +33,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -44,7 +45,7 @@ CBioseq_Handle CSeq_entry_Handle::GetBioseq(void) const
     _ASSERT( IsSeq() );
     CBioseq_Handle ret;
     CConstRef<CBioseq_Info> info(&m_Entry_Info->GetBioseq_Info());
-    const CSeq_entry& entry = m_Entry_Info->GetSeq_entry();
+    const CSeq_entry& entry = m_Entry_Info->GetTSE();
     const CBioseq_Info::TSynonyms& syns = info->GetSynonyms();
     ITERATE(CBioseq_Info::TSynonyms, id, syns) {
         const CSeq_id& seq_id = *CSeq_id_Mapper::GetSeq_id(*id);
@@ -57,12 +58,37 @@ CBioseq_Handle CSeq_entry_Handle::GetBioseq(void) const
 }
 
 
+bool CSeq_entry_Handle::IsSetDescr(void) const
+{
+    if ( IsSet() ) {
+        return x_GetBioseq_set().IsSetDescr();
+    }
+    else if ( IsSeq() ) {
+        return GetBioseq().GetBioseq().IsSetDescr();
+    }
+    return false;
+}
+
+
+const CSeq_descr&
+CSeq_entry_Handle::GetDescr(CSeqdesc::E_Choice choice) const
+{
+    _ASSERT( IsSetDescr() );
+    return IsSet() ? x_GetBioseq_set().GetDescr() :
+        GetBioseq().GetBioseq().GetDescr();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/02/09 19:18:54  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.1  2003/11/28 15:12:31  grichenk
 * Initial revision
 *

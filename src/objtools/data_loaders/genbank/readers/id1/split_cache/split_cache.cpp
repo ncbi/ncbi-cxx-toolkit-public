@@ -66,7 +66,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
-#include <objmgr/desc_ci.hpp>
+#include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
@@ -666,6 +666,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/02/09 19:18:55  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.13  2004/01/22 20:10:37  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

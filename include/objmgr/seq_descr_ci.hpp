@@ -33,36 +33,92 @@
 *
 */
 
-#include <objmgr/bioseq_handle.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJMGR_EXPORT CDesc_CI
+
+class CBioseq_Handle;
+
+
+class NCBI_XOBJMGR_EXPORT CSeq_descr_CI
 {
 public:
-    CDesc_CI(void);
-    CDesc_CI(const CBioseq_Handle& handle);
-    CDesc_CI(const CDesc_CI& iter);
-    ~CDesc_CI(void);
+    CSeq_descr_CI(void);
+    // Start searching from a bioseq, limit number of seq-entries
+    // to "search_depth" (0 = unlimited).
+    CSeq_descr_CI(const CBioseq_Handle& handle,
+                  CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
+                  size_t search_depth = 0);
+    // Start searching from a seq-entry, limit number of seq-entries
+    // to "search_depth" (0 = unlimited).
+    CSeq_descr_CI(const CSeq_entry_Handle& entry,
+                  CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
+                  size_t search_depth = 0);
+    CSeq_descr_CI(const CSeq_descr_CI& iter);
+    ~CSeq_descr_CI(void);
 
-    CDesc_CI& operator= (const CDesc_CI& iter);
+    CSeq_descr_CI& operator= (const CSeq_descr_CI& iter);
 
-    CDesc_CI& operator++ (void);
+    CSeq_descr_CI& operator++ (void);
     operator bool (void) const;
 
     const CSeq_descr& operator*  (void) const;
     const CSeq_descr* operator-> (void) const;
 
+    CSeq_entry_Handle GetSeq_entry_Handle(void) const;
+
 private:
     // Move to the next entry containing a descriptor
-    void x_Walk(void);
+    void x_Next(void);
 
-    CBioseq_Handle        m_Handle;    // Source bioseq
-    CConstRef<CSeq_entry> m_NextEntry; // Next Seq-entry to get descriptor from
-    CConstRef<CSeq_descr> m_Current;   // Current descriptor
+    CSeq_entry_Handle     m_NextEntry;
+    CSeq_entry_Handle     m_CurrentEntry;
+    CSeqdesc::E_Choice    m_DescrType;
+    size_t                m_MaxCount;
 };
+
+
+inline
+CSeq_descr_CI& CSeq_descr_CI::operator++(void)
+{
+    x_Next();
+    return *this;
+}
+
+
+inline
+CSeq_descr_CI::operator bool (void) const
+{
+    return m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr();
+}
+
+
+inline
+const CSeq_descr& CSeq_descr_CI::operator* (void) const
+{
+    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
+    return m_CurrentEntry.GetDescr(m_DescrType);
+}
+
+
+inline
+const CSeq_descr* CSeq_descr_CI::operator-> (void) const
+{
+    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
+    return &m_CurrentEntry.GetDescr(m_DescrType);
+}
+
+
+inline
+CSeq_entry_Handle CSeq_descr_CI::GetSeq_entry_Handle(void) const
+{
+    return m_CurrentEntry;
+}
 
 
 END_SCOPE(objects)
@@ -71,6 +127,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/09 19:18:49  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.9  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

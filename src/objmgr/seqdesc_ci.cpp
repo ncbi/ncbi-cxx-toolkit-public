@@ -50,25 +50,65 @@ static const list< CRef<CSeqdesc> >::const_iterator kDummyInner
 
 
 CSeqdesc_CI::CSeqdesc_CI(void)
-    : m_Outer(), m_Inner(kDummyInner), m_InnerEnd(kDummyInner), m_Current(NULL)
+    : m_Outer(),
+      m_Inner(kDummyInner),
+      m_InnerEnd(kDummyInner),
+      m_Current(NULL)
 {}
 
 
-CSeqdesc_CI::CSeqdesc_CI(const CDesc_CI& desc_it, CSeqdesc::E_Choice choice)
-    : m_Outer(desc_it), m_Current(NULL), m_Choice(choice)
+CSeqdesc_CI::CSeqdesc_CI(const CSeq_descr_CI& desc_it,
+                         CSeqdesc::E_Choice choice)
+    : m_Outer(desc_it),
+      m_Current(NULL),
+      m_Choice(choice)
 {
     if ( !m_Outer )
         return;
     m_Inner = desc_it->Get().begin();
     m_InnerEnd = desc_it->Get().end();
     // Advance to the first relevant Seqdesc, if any.
-    ++*this;
+    x_Next();
+}
+
+
+CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
+                         CSeqdesc::E_Choice choice,
+                         size_t search_depth)
+    : m_Outer(handle, choice, search_depth),
+      m_Current(NULL),
+      m_Choice(choice)
+{
+    if ( !m_Outer )
+        return;
+    m_Inner = m_Outer->Get().begin();
+    m_InnerEnd = m_Outer->Get().end();
+    // Advance to the first relevant Seqdesc, if any.
+    x_Next();
+}
+
+
+CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
+                         CSeqdesc::E_Choice choice,
+                         size_t search_depth)
+    : m_Outer(entry, choice, search_depth),
+      m_Current(NULL),
+      m_Choice(choice)
+{
+    if ( !m_Outer )
+        return;
+    m_Inner = m_Outer->Get().begin();
+    m_InnerEnd = m_Outer->Get().end();
+    // Advance to the first relevant Seqdesc, if any.
+    x_Next();
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CSeqdesc_CI& iter)
-    : m_Outer(iter.m_Outer), m_Inner(iter.m_Inner),
-      m_InnerEnd(iter.m_InnerEnd), m_Current(iter.m_Current),
+    : m_Outer(iter.m_Outer),
+      m_Inner(iter.m_Inner),
+      m_InnerEnd(iter.m_InnerEnd),
+      m_Current(iter.m_Current),
       m_Choice(iter.m_Choice)
 {
 }
@@ -93,15 +133,15 @@ CSeqdesc_CI& CSeqdesc_CI::operator= (const CSeqdesc_CI& iter)
 }
 
 
-CSeqdesc_CI& CSeqdesc_CI::operator++(void) // prefix
+void CSeqdesc_CI::x_Next(void)
 {
     while (m_Outer) {
         while (m_Inner != m_InnerEnd) {
-            if ((*m_Inner)->Which() == m_Choice
-                ||  m_Choice == CSeqdesc::e_not_set) {
+            if (m_Choice == CSeqdesc::e_not_set
+                ||  (*m_Inner)->Which() == m_Choice) {
                 m_Current = *m_Inner;
                 ++m_Inner;
-                return *this;
+                return;
             } else {
                 ++m_Inner;
             }
@@ -112,27 +152,6 @@ CSeqdesc_CI& CSeqdesc_CI::operator++(void) // prefix
         }
     }
     m_Current = NULL;
-    return *this;
-}
-
-
-CSeqdesc_CI::operator bool(void) const
-{
-    return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
-}
-
-
-const CSeqdesc& CSeqdesc_CI::operator*(void) const
-{
-    _ASSERT(m_Current);
-    return *m_Current;
-}
-
-
-const CSeqdesc* CSeqdesc_CI::operator->(void) const
-{
-    _ASSERT(m_Current);
-    return m_Current;
 }
 
 
@@ -142,6 +161,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/09 19:18:54  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.9  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

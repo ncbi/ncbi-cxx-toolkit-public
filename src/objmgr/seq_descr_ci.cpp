@@ -30,118 +30,92 @@
 *
 */
 
-#include <objmgr/desc_ci.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CDesc_CI::CDesc_CI(void)
-    : m_NextEntry(0), m_Current(0)
+CSeq_descr_CI::CSeq_descr_CI(void)
+    : m_DescrType(CSeqdesc::e_not_set)
 {
     return;
 }
 
 
-CDesc_CI::CDesc_CI(const CBioseq_Handle& handle)
-    : m_Handle(handle)
+CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
+                             CSeqdesc::E_Choice choice,
+                             size_t search_depth)
+    : m_NextEntry(handle.GetSeq_entry_Handle()),
+      m_DescrType(choice),
+      m_MaxCount(search_depth)
 {
-    const CBioseq* seq = &(handle.GetBioseq());
-    m_NextEntry = seq->GetParentEntry();
-    if ( seq->IsSetDescr() ) {
-        m_Current = &seq->GetDescr();
-    }
-    else {
-        m_NextEntry = m_NextEntry->GetParentEntry();
-        x_Walk(); // Skip entries without descriptions
-        if ( m_NextEntry ) {
-            m_Current = &m_NextEntry->GetSet().GetDescr();
-        }
-        else {
-            m_Current = 0;
-        }
-    }
+    x_Next(); // Skip entries without descriptions
 }
 
 
-CDesc_CI::CDesc_CI(const CDesc_CI& iter)
-    : m_Handle(iter.m_Handle),
-      m_NextEntry(iter.m_NextEntry),
-      m_Current(iter.m_Current)
+CSeq_descr_CI::CSeq_descr_CI(const CSeq_entry_Handle& entry,
+                             CSeqdesc::E_Choice choice,
+                             size_t search_depth)
+    : m_NextEntry(entry),
+      m_DescrType(choice),
+      m_MaxCount(search_depth)
 {
-    return;
+    x_Next(); // Skip entries without descriptions
 }
 
-
-CDesc_CI::~CDesc_CI(void)
+    
+CSeq_descr_CI::CSeq_descr_CI(const CSeq_descr_CI& iter)
+    : m_NextEntry(iter.m_NextEntry),
+      m_CurrentEntry(iter.m_CurrentEntry),
+      m_DescrType(iter.m_DescrType),
+      m_MaxCount(iter.m_MaxCount)
 {
     return;
 }
 
 
-CDesc_CI& CDesc_CI::operator= (const CDesc_CI& iter)
+CSeq_descr_CI::~CSeq_descr_CI(void)
+{
+    return;
+}
+
+
+CSeq_descr_CI& CSeq_descr_CI::operator= (const CSeq_descr_CI& iter)
 {
     if (this != &iter) {
-        m_Handle = iter.m_Handle;
         m_NextEntry = iter.m_NextEntry;
-        m_Current = iter.m_Current;
+        m_CurrentEntry = iter.m_CurrentEntry;
+        m_DescrType = iter.m_DescrType;
+        m_MaxCount = iter.m_MaxCount;
     }
     return *this;
 }
 
 
-CDesc_CI& CDesc_CI::operator++(void)
+void CSeq_descr_CI::x_Next(void)
 {
-    if ( !m_NextEntry )
-        return *this;
-    m_NextEntry = m_NextEntry->GetParentEntry();
-    x_Walk(); // Skip entries without descriptions
+    if ( !m_NextEntry ) {
+        m_CurrentEntry = CSeq_entry_Handle();
+        return;
+    }
+    // Find an entry with seq-descr member set
+    while (m_NextEntry  &&  !m_NextEntry.IsSetDescr()) {
+        m_NextEntry = m_NextEntry.GetParentEntry();
+    }
     if ( m_NextEntry ) {
-        m_Current = &m_NextEntry->GetSet().GetDescr();
+        m_CurrentEntry = m_NextEntry;
+        m_NextEntry = m_NextEntry.GetParentEntry();
+        if (m_MaxCount) {
+            --m_MaxCount;
+            if ( !m_MaxCount ) {
+                m_NextEntry = CSeq_entry_Handle();
+            }
+        }
     }
     else {
-        m_Current = 0;
-    }
-    return *this;
-}
-
-
-CDesc_CI::operator bool (void) const
-{
-    return m_Current;
-}
-
-
-const CSeq_descr& CDesc_CI::operator* (void) const
-{
-    _ASSERT(m_Current);
-    return *m_Current;
-}
-
-
-const CSeq_descr* CDesc_CI::operator-> (void) const
-{
-    _ASSERT(m_Current);
-    return m_Current;
-}
-
-
-void CDesc_CI::x_Walk(void)
-{
-    if ( !m_NextEntry )
-        return;
-    _ASSERT( m_NextEntry->IsSet() );
-    // Find an entry with seq-descr member set
-    while (m_NextEntry.GetPointer()  &&
-           !m_NextEntry->GetSet().IsSetDescr()) {
-        m_NextEntry = m_NextEntry->GetParentEntry();
+        m_CurrentEntry = CSeq_entry_Handle();
     }
 }
 
@@ -151,6 +125,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/09 19:18:54  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.10  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -39,6 +39,7 @@
 #include <objmgr/impl/scope_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -84,6 +85,11 @@ public:
     const CBioseq_set::TRelease& Set_GetRelease(void) const;
     bool Set_IsSetDate(void) const;
     const CBioseq_set::TDate& Set_GetDate(void) const;
+
+    // Descriptors may be both in bioseq and bioseq-set
+    bool IsSetDescr(void) const;
+    const CSeq_descr& GetDescr(CSeqdesc::E_Choice choice =
+                               CSeqdesc::e_not_set) const;
 
     CSeq_entry_CI BeginSet(void);
 
@@ -431,6 +437,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/02/09 19:18:50  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.2  2003/12/03 16:40:03  grichenk
 * Added GetParentEntry()
 *

@@ -92,7 +92,7 @@
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 
-#include <objmgr/desc_ci.hpp>
+#include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/scope.hpp>
@@ -452,7 +452,7 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
  const CBioseq &seq,
  int choice)
 {
-    CDesc_CI ds(m_Scope->GetBioseqHandle(seq));
+    CSeq_descr_CI ds(m_Scope->GetBioseqHandle(seq));
     CSeqdesc_CI sd(ds, static_cast<CSeqdesc::E_Choice>(choice));
     for (; sd; ++sd) {
         const list< string > *extra_acc = 0;
@@ -3407,6 +3407,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/02/09 19:18:57  grichenk
+* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
+* and CSeqdesc_CI to avoid using data directly.
+*
 * Revision 1.59  2003/12/16 17:36:27  shomrat
 * implemented ERR_SEQ_INST_SeqLocLength test
 *
