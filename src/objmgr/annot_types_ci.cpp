@@ -920,7 +920,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 cvt->Convert(m_AnnotSet.back(), m_FeatProduct);
             }
             // Limit number of annotations to m_MaxSize
-            if ( m_MaxSize  &&  m_AnnotSet.size() >= m_MaxSize )
+            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
                 return;
         }
     }
@@ -1035,6 +1035,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/07/01 18:00:13  vasilche
+* Fixed unsigned/signed comparison.
+*
 * Revision 1.73  2003/06/25 20:56:30  grichenk
 * Added max number of annotations to annot-selector, updated demo.
 *

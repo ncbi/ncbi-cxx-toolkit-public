@@ -268,7 +268,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
     _ASSERT(start < m_Seg.GetEndPosition());
 
     x_ResizeCache(count);
-    _ASSERT(count <= m_CacheEnd - m_CacheData);
+    _ASSERT(m_CacheData + count <= m_CacheEnd);
 
     switch ( m_Seg.GetType() ) {
     case CSeqMap::eSeqData:
@@ -488,6 +488,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/07/01 18:00:41  vasilche
+* Fixed unsigned/signed comparison.
+*
 * Revision 1.16  2003/06/24 19:46:43  grichenk
 * Changed cache from vector<char> to char*. Made
 * CSeqVector::operator[] inline.
