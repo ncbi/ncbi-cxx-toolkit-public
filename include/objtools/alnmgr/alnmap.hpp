@@ -74,11 +74,20 @@ public:
         fIgnoreUnaligned = 0x01,
         fInsertSameAsSeq = 0x02,
         fDeleteSameAsGap = 0x04,
-        fIgnoreAnchor    = fInsertSameAsSeq | fDeleteSameAsGap
+        fIgnoreAnchor    = fInsertSameAsSeq | fDeleteSameAsGap,
+        fIgnoreGaps      = 0x08
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
     typedef TNumseg TNumchunk;
+
+    enum ESearchDirection {
+        eNone,
+        eBackwards,
+        eForward,
+        eLeft,
+        eRight
+    };
 
     // constructors
     CAlnMap(const CDense_seg& ds);
@@ -126,6 +135,7 @@ public:
     // Alignment segments
     TSeqPos GetAlnStart(TNumseg seg) const;
     TSeqPos GetAlnStop (TNumseg seg) const;
+    TSeqPos GetAlnStart(void)        const { return 0; }
     TSeqPos GetAlnStop (void)        const;
 
     bool    IsSetAnchor(void)           const;
@@ -141,13 +151,17 @@ public:
     TNumseg       GetSeg                 (TSeqPos aln_pos)              const;
     TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos) const;
     TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos) const;
-    TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
-                                          TSeqPos aln_pos)              const;
     TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
                                           TNumrow row, TSeqPos seq_pos) const;
-    TSeqPos       GetBestSeqPosFromAlnPos(TNumrow for_row,
-                                          TSeqPos aln_pos)              const;
 
+    // if seq pos is a gap, will search (if direction specified) 
+    // in the neighbouring segments; if still none found will reverse direction
+    // if try_reverse_dir is set
+    TSignedSeqPos GetSeqPosFromAlnPos(TNumrow for_row,
+                                      TSeqPos aln_pos,
+                                      ESearchDirection dir = eNone,
+                                      bool try_reverse_dir = true) const;
+    
  
 
     // AlnChunks -- declared here for access to typedefs
@@ -239,6 +253,9 @@ protected:
     TSegTypeFlags     x_SetRawSegType   (TNumrow row, TNumseg seg) const;
     CNumSegWithOffset x_GetSegFromRawSeg(TNumseg seg)              const;
     TNumseg           x_GetRawSegFromSeg(TNumseg seg)              const;
+    TSignedSeqPos     x_GetRawStart     (TNumrow row, TNumseg seg) const;
+    TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
+    TSeqPos           x_GetRawLen       (TNumseg seg)              const;
 
     bool x_RawSegTypeDiffNextSegType(TNumrow row, TNumseg seg,
                                      TGetChunkFlags flags) const;
@@ -359,6 +376,28 @@ CAlnMap::TNumseg
 CAlnMap::x_GetRawSegFromSeg(TNumseg seg) const
 {
     return IsSetAnchor() ? m_AlnSegIdx[seg] : seg;
+}
+
+
+inline
+TSignedSeqPos CAlnMap::x_GetRawStart(TNumrow row, TNumseg seg) const
+{
+    return m_DS->GetStarts()[seg * m_DS->GetDim() + row];
+}
+
+inline
+TSeqPos CAlnMap::x_GetRawLen(TNumseg seg) const
+{
+    return m_DS->GetLens()[seg];
+}
+
+
+inline
+TSignedSeqPos CAlnMap::x_GetRawStop(TNumrow row, TNumseg seg) const
+{
+    TSignedSeqPos start = x_GetRawStart(row, seg);
+    return ((start > -1) ? (start + (TSignedSeqPos)x_GetRawLen(seg) - 1)
+            : -1);
 }
 
 
@@ -490,6 +529,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/10/10 17:21:28  todorov
+* switched back to one (but this time enhanced) GetSeqPosFromAlnPos method
+*
 * Revision 1.10  2002/10/04 17:05:31  todorov
 * Added GetTypeAtAlnPos method
 *

@@ -283,7 +283,9 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
-                                           TSeqPos aln_pos) const
+                                           TSeqPos aln_pos,
+                                           ESearchDirection dir,
+                                           bool try_reverse_dir) const
 {
     TNumseg seg = GetSeg(aln_pos);
     if (seg < 0) {
@@ -297,47 +299,63 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
             } else {
                 pos += GetLen(seg) - 1 - delta;
             }
+        } else if (dir != eNone) {
+            // it is a gap, search in the neighbouring segments
+            // according to search direction (dir) and strand
+            bool reverse_pass = false;
+            TNumseg orig_seg = seg = x_GetRawSegFromSeg(seg);
+            
+            while (true) {
+                if (IsPositiveStrand(for_row)) {
+                    if (dir == eBackwards  ||  dir == eLeft) {
+                        while (--seg >=0  &&  pos == -1) {
+                            pos = x_GetRawStop(for_row, seg);
+                        }
+                    } else {
+                        while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                            pos = x_GetRawStart(for_row, seg);
+                        }
+                    }
+                } else {
+                    if (dir == eForward  ||  dir == eLeft) {
+                        while (--seg >=0  &&  pos == -1) {
+                            pos = x_GetRawStart(for_row, seg);
+                        }
+                    } else {
+                        while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                            pos = x_GetRawStop(for_row, seg);
+                        } 
+                    }
+                }
+                if (!try_reverse_dir) {
+                    break;
+                }
+                if (pos >= 0) {
+                    break; // found
+                } else if (reverse_pass) {
+                    string msg = "CAlnVec::GetSeqPosFromAlnPos(): "
+                        "Invalid Dense-seg: Row " +
+                        NStr::IntToString(for_row) +
+                        " contains gaps only.";
+                    NCBI_THROW(CAlnException, eInvalidDenseg, msg);
+                }
+                // not found, try reverse direction
+                reverse_pass = true;
+                seg = orig_seg;
+                switch (dir) {
+                case eLeft:
+                    dir = eRight; break;
+                case eRight:
+                    dir = eLeft; break;
+                case eForward:
+                    dir = eBackwards; break;
+                case eBackwards:
+                    dir = eForward; break;
+                }
+            }
         }
-
         return pos;
     }
-}
-
-TSeqPos CAlnMap::GetBestSeqPosFromAlnPos(TNumrow for_row,
-                                         TSeqPos aln_pos) const
-{
-    if (aln_pos > GetAlnStop()) {
-        return GetSeqStop(for_row);
-    }
-
-    TNumseg seg = GetSeg(aln_pos);
-
-    TSignedSeqPos pos = GetStart(for_row, seg);
-    if (pos == -1) {
-        // our alignment position lies on a gap, so we return
-        // the best available offset
-        if (IsPositiveStrand(for_row)) {
-            for ( ; seg > 0 && pos == -1; --seg) {
-                pos = GetStop(for_row, seg);
-            }
-        } else {
-            for ( ; seg < GetNumSegs() && pos == -1; ++seg) {
-                pos = GetStop(for_row, seg);
-            }
-        }
-        if (pos == -1) {
-            pos = GetSeqStart(for_row);
-        }
-    } else {
-        TSeqPos delta = aln_pos - GetAlnStart(seg);
-        if (IsPositiveStrand(for_row)) {
-            pos += delta;
-        } else {
-            pos += GetLen(seg) - 1 - delta;
-        }
-    }
-    
-    return pos;
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
@@ -435,11 +453,13 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
 {
     CRef<CAlnChunkVec> vec = new CAlnChunkVec(*this, row);
 
+    // boundaries check
     if (range.GetTo() < 0
         ||  (TSeqPos)range.GetFrom() > GetAlnStop(GetNumSegs() - 1)) {
         return vec;
     }
 
+    // determine the participating segments range
     TNumseg first_seg, last_seg, aln_seg;
 
     if (range.GetFrom() < 0) {
@@ -459,6 +479,7 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         }
     }
     
+    // add the participating segments to the vector
     vec->m_Idx.push_back(first_seg);
     for (int seg = first_seg;  seg < last_seg;  seg++) {
         if (x_RawSegTypeDiffNextSegType(row, seg, flags)) {
@@ -574,6 +595,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2002/10/10 17:23:43  todorov
+* switched back to one (but this time enhanced) GetSeqPosFromAlnPos method
+*
 * Revision 1.12  2002/10/04 16:38:06  todorov
 * new method GetBestSeqPosFromAlnPos
 *
