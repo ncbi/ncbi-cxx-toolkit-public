@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1998/11/27 19:46:06  vakatov
+* TestCgi() -- test the query string passed as a cmd.-line argument
+*
 * Revision 1.15  1998/11/27 15:55:07  vakatov
 * + TestCgi(USER STDIN)
 *
@@ -377,9 +380,9 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestIndexes(indexes, "++") );
 }
 
-static void TestCgi_Request_Full(CNcbiIstream& istr)
+static void TestCgi_Request_Full(CNcbiIstream& istr, int argc=0, char** argv=0)
 {
-    CCgiRequest CCR(istr);
+    CCgiRequest CCR(istr, argc, argv);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 
@@ -433,7 +436,7 @@ static void TestCgi_Request_Full(CNcbiIstream& istr)
         PrintIndexes(indexes);
 }
 
-static void TestCgi(void)
+static void TestCgi(int argc, char* argv[])
 {
     TestCgi_Cookies();
     TestCgi_Request_Static();
@@ -524,17 +527,24 @@ static void TestCgi(void)
         TestCgi_Request_Full(NcbiCin);
         NcbiCin.clear();
     } STD_CATCH("TestCgi(USER STDIN)");
+
+    try { // CMD.-LINE ARGS
+        _ASSERT( !putenv("REQUEST_METHOD=") );
+        _ASSERT( !putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
+        TestCgi_Request_Full(NcbiCin/* dummy */, argc, argv);
+    } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
+
 }
 
 
 /////////////////////////////////
 // MAIN
 //
-extern int main(void)
+extern int main(int argc, char* argv[])
 {
     TestDiag();
     TestException();
-    TestCgi();
+    TestCgi(argc, argv);
 
     SetDiagStream(0);
     return 0;
