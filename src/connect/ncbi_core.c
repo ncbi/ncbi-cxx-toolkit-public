@@ -28,35 +28,6 @@
  * File Description:
  *   Types and code shared by all "ncbi_*.[ch]" modules.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2001/08/09 16:24:29  lavr
- * Remove last (unneeded) parameter from LOG_Reset()
- *
- * Revision 6.7  2001/04/25 20:52:29  vakatov
- * LOG_WriteInternal() -- abort on "eLOG_Fatal" even if no logging is set
- *
- * Revision 6.6  2001/01/11 16:42:32  lavr
- * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
- *
- * Revision 6.5  2000/10/18 20:29:43  vakatov
- * REG_Get::  pass in the default value (rather than '\0')
- *
- * Revision 6.4  2000/06/23 19:34:43  vakatov
- * Added means to log binary data
- *
- * Revision 6.3  2000/05/30 23:21:36  vakatov
- * LOG_WriteInternal():  exit/abort on "eLOG_Fatal"
- *
- * Revision 6.2  2000/03/24 23:12:07  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.1  2000/02/23 22:36:16  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_core.h>
@@ -75,11 +46,13 @@ extern const char* IO_StatusStr(EIO_Status status)
         "Success",
         "Timeout",
         "Closed",
+        "Interrupt",
         "Invalid Argument",
         "Not Supported",
         "Unknown"
     };
 
+    assert(status >= eIO_Success  &&  status <= eIO_Unknown);
     return s_StatusStr[status];
 }
 
@@ -486,3 +459,39 @@ extern void REG_Set
 
     REG_UNLOCK;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.9  2002/08/13 19:30:13  lavr
+ * Verbal representation of eIO_Interrupt; log moved to end
+ *
+ * Revision 6.8  2001/08/09 16:24:29  lavr
+ * Remove last (unneeded) parameter from LOG_Reset()
+ *
+ * Revision 6.7  2001/04/25 20:52:29  vakatov
+ * LOG_WriteInternal() -- abort on "eLOG_Fatal" even if no logging is set
+ *
+ * Revision 6.6  2001/01/11 16:42:32  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
+ * Revision 6.5  2000/10/18 20:29:43  vakatov
+ * REG_Get::  pass in the default value (rather than '\0')
+ *
+ * Revision 6.4  2000/06/23 19:34:43  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.3  2000/05/30 23:21:36  vakatov
+ * LOG_WriteInternal():  exit/abort on "eLOG_Fatal"
+ *
+ * Revision 6.2  2000/03/24 23:12:07  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.1  2000/02/23 22:36:16  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
