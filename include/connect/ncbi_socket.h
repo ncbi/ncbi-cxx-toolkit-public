@@ -499,19 +499,21 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock);
 
 
 /* Return zero on success, non-zero on error.  See BSD gethostname().
+ * On error "name" returned emptied (name[0] == '\0').
  */
 extern int SOCK_gethostname
-(char*  name,    /* [out] (guaranteed to be '\0'-terminated)      */
- size_t namelen  /* [in]  max # of bytes allowed to put to "name" */
+(char*  name,          /* [out] (guaranteed to be '\0'-terminated)           */
+ size_t namelen        /* [in]  max # of bytes allowed to put to "name"      */
  );
 
 
-/* Return zero on success.  Vaguely related to the BSD inet_ntoa().
+/* Return zero on success, non-zero on error.  Vaguely related to BSD's
+ * inet_ntoa(). On error "buf" returned emptied (buf[0] == '\0').
  */
 extern int SOCK_ntoa
-(unsigned int host,     /* [in]  must be in the network byte-order           */
- char*        buf,      /* [out] to be filled by smth. like "123.45.67.89\0" */
- size_t       buf_size  /* [in]  max # of bytes to put to "buf", >= 16       */
+(unsigned int host,    /* [in]  must be in the network byte-order            */
+ char*        buf,     /* [out] to be filled by smth. like "123.45.67.89\0"  */
+ size_t       buflen   /* [in]  max # of bytes to put to "buf"               */
  );
 
 
@@ -536,7 +538,7 @@ extern unsigned short SOCK_HostToNetShort(unsigned short value);
  * specified host (or local host, if hostname is passed as NULL),
  * which can be either domain name or an IP address in
  * dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
- * NOTE: "0.0.0.0" and "255.255.255.255" are considered not valid.
+ * NOTE: "0.0.0.0" and "255.255.255.255" are considered invalid.
  */
 extern unsigned int SOCK_gethostbyname
 (const char* hostname  /* [in]  return current host address if hostname is 0 */
@@ -547,6 +549,7 @@ extern unsigned int SOCK_gethostbyname
  * the provided buffer with the name, which the address corresponds to
  * (in case of multiple names the primary name is used). Return value 0
  * means error, while success is denoted by the 'name' argument returned.
+ * Note that on error the name returned emptied (name[0] == '\0').
  */
 extern char* SOCK_gethostbyaddr
 (unsigned int host,    /* [in]  host address in network byte order           */
@@ -563,6 +566,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/11/01 20:12:06  lavr
+ * Specifically state which IP/name manip. routines do emtpy output buffer
+ *
  * Revision 6.22  2002/09/19 18:07:06  lavr
  * Consistency check moved up to be the first thing
  *
