@@ -106,7 +106,7 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize,
      bool            do_tie   = true);
-    virtual ~CConn_IOStream(void);
+    virtual ~CConn_IOStream();
 
     CONN GetCONN(void) const;
 
@@ -290,7 +290,7 @@ public:
      );
     virtual ~CConn_PipeStream();
 
-    CPipe& GetPipe(void) { return m_Pipe; };
+    CPipe& GetPipe(void) { return m_Pipe; }
 
 protected:
     CPipe  m_Pipe; ///< Underlying pipe.
@@ -333,8 +333,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2003/11/12 17:42:40  lavr
+ * Formal (non-functional) changes
+ *
  * Revision 6.24  2003/11/12 16:36:12  ivanov
- * Added Cleanup(), removed SetReadHandle()
+ * Added CConn_IOStream::Cleanup(), removed CConn_PipeStream::SetReadHandle()
  *
  * Revision 6.23  2003/10/23 12:16:48  lavr
  * CConn_IOStream:: base class is now CNcbiIostream
