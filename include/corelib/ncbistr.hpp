@@ -252,9 +252,7 @@ public:
     static string PrintableString(const string& str);
 
     enum EWrapFlags {
-        fWrap_FavorPunct = 0x1, // prefer to break after punctuation?
-        fWrap_UsePrefix1 = 0x2, // use prefix1 for first line?
-        fWrap_Hyphenate  = 0x4  // add a hyphen when breaking words?
+        fWrap_Hyphenate  = 0x1  // add a hyphen when breaking words?
     };
     typedef int TWrapFlags; // binary OR of "EWrapFlags"
 
@@ -265,8 +263,16 @@ public:
     /// "eWrap_UsePrefix1" is set in "flags".
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags = 0,
-                              const string& prefix = kEmptyStr,
-                              const string& prefix1 = kEmptyStr);
+                              const string* prefix = 0,
+                              const string* prefix1 = 0);
+
+    static list<string>& Wrap(const string& str, SIZE_TYPE width,
+                              list<string>& arr, TWrapFlags flags,
+                              const string& prefix, const string* prefix1 = 0);
+
+    static list<string>& Wrap(const string& str, SIZE_TYPE width,
+                              list<string>& arr, TWrapFlags flags,
+                              const string& prefix, const string& prefix1);
 
     /// Similar to the above, but tries to avoid splitting any elements of l.
     /// Delim only applies between elements on the same line; if you want
@@ -275,8 +281,18 @@ public:
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags = 0,
-                                  const string& prefix = kEmptyStr,
-                                  const string& prefix1 = kEmptyStr);
+                                  const string* prefix = 0,
+                                  const string* prefix1 = 0);
+
+    static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
+                                  const string& delim, list<string>& arr,
+                                  TWrapFlags flags, const string& prefix,
+                                  const string* prefix1 = 0);
+
+    static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
+                                  const string& delim, list<string>& arr,
+                                  TWrapFlags flags, const string& prefix,
+                                  const string& prefix1);
 }; // class NStr
 
 
@@ -517,6 +533,43 @@ bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
 }
 
 
+inline
+list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
+                         NStr::TWrapFlags flags, const string& prefix,
+                         const string* prefix1)
+{
+    return Wrap(str, width, arr, flags, &prefix, prefix1);
+}
+
+
+inline
+list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
+                         NStr::TWrapFlags flags, const string& prefix,
+                         const string& prefix1)
+{
+    return Wrap(str, width, arr, flags, &prefix, &prefix1);
+}
+
+
+inline
+list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
+                             const string& delim, list<string>& arr,
+                             NStr::TWrapFlags flags, const string& prefix,
+                             const string* prefix1)
+{
+    return WrapList(l, width, delim, arr, flags, &prefix, prefix1);
+}
+
+
+inline
+list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
+                             const string& delim, list<string>& arr,
+                             NStr::TWrapFlags flags, const string& prefix,
+                             const string& prefix1)
+{
+    return WrapList(l, width, delim, arr, flags, &prefix, &prefix1);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  PCase::
@@ -584,6 +637,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2002/10/03 14:44:33  ucko
+ * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
+ * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also
+ * drop fWrap_FavorPunct, as WrapList should be a better choice for such
+ * situations.
+ *
  * Revision 1.21  2002/10/02 20:14:52  ucko
  * Add Join, Wrap, and WrapList functions to NStr::.
  *

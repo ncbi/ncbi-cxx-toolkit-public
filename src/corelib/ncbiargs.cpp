@@ -1688,8 +1688,7 @@ static void s_PrintComment(list<string>& arr, const CArgDesc& arg,
                 indent = 0;
             }
         }
-        NStr::Wrap(intro, width, arr,
-                   NStr::fWrap_Hyphenate | NStr::fWrap_UsePrefix1,
+        NStr::Wrap(intro, width, arr, NStr::fWrap_Hyphenate,
                    string(indent + 2, ' '), kEmptyStr);
     }}
 
@@ -1797,8 +1796,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
                 syn.push_back((*it)->GetUsageSynopsis());
             }
         }
-        NStr::WrapList(syn, m_UsageWidth, " ", arr, NStr::fWrap_UsePrefix1,
-                       "    ", "  ");
+        NStr::WrapList(syn, m_UsageWidth, " ", arr, 0, "    ", "  ");
     }}
 
     // DESCRIPTION
@@ -2136,6 +2134,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2002/10/03 14:44:34  ucko
+ * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
+ * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also
+ * drop fWrap_FavorPunct, as WrapList should be a better choice for such
+ * situations.
+ *
  * Revision 1.40  2002/10/02 20:16:46  ucko
  * Take advantage of the new wrapping-related code in NStr:: when
  * formatting usage messages.

@@ -478,16 +478,13 @@ string NStr::PrintableString(const string& str)
 
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                          list<string>& arr, NStr::TWrapFlags flags,
-                         const string& prefix, const string& prefix1)
+                         const string* prefix, const string* prefix1)
 {
-#ifdef _DEBUG
-    if ( !prefix1.empty()  &&  !(flags & fWrap_UsePrefix1) ) {
-        ERR_POST(Warning << "NStr::Wrap: non-empty prefix1 will be ignored"
-                 " without fWrap_UsePrefix1");
+    if (prefix == 0) {
+        prefix = &kEmptyStr;
     }
-#endif
 
-    const string* pfx = (flags & fWrap_UsePrefix1) ? &prefix1 : &prefix;
+    const string* pfx = prefix1 ? prefix1 : prefix;
     SIZE_TYPE     pos = 0, len = str.size();
     string        hyphen; // "-" or empty
 
@@ -495,7 +492,6 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         eForced,
         ePunct,
         eSpace,
-        ePunctSpace,
         eNewline
     };
 
@@ -510,20 +506,13 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_pos   = pos2;
                 best_score = eNewline;
                 break;
-            } else if (isspace(c)) {
+            } else if (best_score <= eSpace  &&  isspace(c)) {
                 EScore score = eSpace;
-                if (pos2 > 0) {
-                    char c0 = str[pos2 - 1];
-                    if ((flags & fWrap_FavorPunct)  &&  ispunct(c0)) {
-                        score = ePunctSpace;
-                    } else if (isspace(c0)) {
-                        continue; // take the first space of a group
-                    }
+                if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                    continue; // take the first space of a group
                 }
-                if (score >= best_score) {
-                    best_pos   = pos2;
-                    best_score = score;
-                }
+                best_pos   = pos2;
+                best_score = score;
             } else if (best_score <= ePunct  &&  ispunct(c)) {
                 best_pos   = pos2;
                 best_score = ePunct;
@@ -540,10 +529,10 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         arr.back() += str.substr(pos, best_pos - pos);
         arr.back() += hyphen;
         pos    = best_pos;
-        pfx    = &prefix;
+        pfx    = prefix;
         hyphen = kEmptyStr;
 
-        if (best_score == eSpace  ||  best_score == ePunctSpace) {
+        if (best_score == eSpace) {
             // If breaking at a group of spaces, skip over the whole group
             while (pos < len  &&  isspace(str[pos])  &&  str[pos] != '\n') {
                 ++pos;
@@ -559,17 +548,10 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
 
 list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              const string& delim, list<string>& arr,
-                             NStr::TWrapFlags flags, const string& prefix,
-                             const string& prefix1)
+                             NStr::TWrapFlags flags, const string* prefix,
+                             const string* prefix1)
 {
-#ifdef _DEBUG
-    if ( !prefix1.empty()  &&  !(flags & fWrap_UsePrefix1) ) {
-        ERR_POST(Warning << "NStr::Wrap: non-empty prefix1 will be ignored"
-                 " without fWrap_UsePrefix1");
-    }
-#endif
-
-    const string* pfx      = (flags & fWrap_UsePrefix1) ? &prefix1 : &prefix;
+    const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
     bool          at_start = true;
     iterate (list<string>, it, l) {
@@ -579,9 +561,9 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                 at_start = false;
             } else {
                 // Can't fit, even on its own line; break separately.
-                Wrap(*it, width, arr, flags, prefix, *pfx);
-                pfx      = &prefix;
-                s        = prefix;
+                Wrap(*it, width, arr, flags, prefix, pfx);
+                pfx      = prefix;
+                s        = *prefix;
                 at_start = true;
             }
         } else if (s.size() + delim.size() + it->size() <= width) {
@@ -591,8 +573,8 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
         } else {
             // Can't fit on this line; break here and try again.
             arr.push_back(s);
-            pfx      = &prefix;
-            s        = prefix;
+            pfx      = prefix;
+            s        = *prefix;
             at_start = true;
             --it;
         }
@@ -622,6 +604,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2002/10/03 14:44:35  ucko
+ * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
+ * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also
+ * drop fWrap_FavorPunct, as WrapList should be a better choice for such
+ * situations.
+ *
  * Revision 1.52  2002/10/02 20:15:09  ucko
  * Add Join, Wrap, and WrapList functions to NStr::.
  *
