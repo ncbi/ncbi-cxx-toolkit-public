@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/25 17:17:23  thiessen
+* use wxYield + modal for wxMac, too
+*
 * Revision 1.3  2001/10/25 00:06:29  thiessen
 * fix concurrent rendering problem in wxMSW PNG output
 *
@@ -109,9 +112,9 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
     // automatically bring up the window and let it be shown right away
     Show(true);
 
-#ifdef __WXGTK__
-    // wxSafeYield seems to force redraws in wxGTK, so make window modal
-    // so that it's safe to call wxYield() instead
+#if defined(__WXGTK__) || defined(__WXMAC__)
+    // wxSafeYield seems to force redraws in wxGTK and does ugly things in
+    // wxMac, so make window modal so that it's safe to call wxYield() instead
     SetFocus();
     MakeModal(true);
     wxYield();
@@ -122,7 +125,7 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
 
 void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
 {
-#ifdef __WXGTK__
+#if defined(__WXGTK__) || defined(__WXMAC__)
     ERR_POST(Info << "can veto: " << event.CanVeto());
     if (event.CanVeto()) {
         event.Veto();
@@ -143,8 +146,8 @@ void ProgressMeter::SetValue(int value, bool doYield)
 
         // yield for window redraw
         if (doYield)
-#ifdef __WXGTK__
-            wxYield();  // wxSafeYield seems to force redraws in wxGTK...
+#if defined(__WXGTK__) || defined(__WXMAC__)
+            wxYield();  // wxSafeYield is ugly on these platforms
 #else
             wxSafeYield();
 #endif
