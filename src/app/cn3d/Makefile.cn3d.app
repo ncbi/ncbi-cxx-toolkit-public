@@ -68,13 +68,13 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 	-I$(includedir)/gui_ctools \
 	$(NCBI_C_INCLUDE) \
 	-D__WXGTK__ -DGTK_NO_CHECK_CASTS -D_REENTRANT \
-	-I$(HOME)/Programs/wxGTK-2.2.6/install/include \
+	-I$(HOME)/Programs/wxGTK-2.2.7/install/include \
 	-I$(HOME)/Programs/GTK-1.2/install/include/gtk-1.2 \
 	-I$(HOME)/Programs/GTK-1.2/install/include/glib-1.2 \
 	-I$(HOME)/Programs/GTK-1.2/install/lib/glib/include
 
 LIBS = $(ORIG_LIBS) \
-	-L$(HOME)/Programs/wxGTK-2.2.6/install/lib \
+	-L$(HOME)/Programs/wxGTK-2.2.7/install/lib \
 	-lwx_gtk -lwx_gtk_gl -lGL -lGLU \
 	-L$(HOME)/Programs/GTK-1.2/install/lib \
 	-L/usr/openwin/lib -R/usr/openwin/lib \
