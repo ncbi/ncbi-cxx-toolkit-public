@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2000/09/22 21:27:13  butanaev
+ * Fixed buf in handling default arg values.
+ *
  * Revision 1.4  2000/09/19 21:18:11  butanaev
  * Added possibility to change file open mode on the fly
  *
@@ -353,7 +356,7 @@ private:
     void x_PreCheck(void) const;
     bool x_CreateArg(const string& arg1, bool have_arg2, const string& arg2,
                      unsigned* n_plain, CArgs& args) const;
-    void x_PostCheck(const CArgs& args, unsigned n_plain) const;
+    void x_PostCheck(CArgs& args, unsigned n_plain) const;
 
 public:
     //
