@@ -2876,7 +2876,7 @@ echo ""
 echo "Tools / flags / paths:  $builddir/Makefile.mk"
 echo "Preprocessor defines:   $ncbiconf"
 echo ""
-echo "To build everything:  cd $builddir ; make all_r"
+echo "To build everything:    cd $builddir ; make all_r"
 exit 0
 EOF
 chmod +x $CONFIG_STATUS
