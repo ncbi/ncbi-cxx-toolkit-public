@@ -319,7 +319,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
     if ( x_annot_type == CSeq_annot::C_Data::e_Ftable ) {
         // compare features by type
-        if ( bool(x_info) != bool(y_info) ) {
+        if ( !x_info != !y_info ) {
             CSeqFeatData::E_Choice x_feat_type = CSeqFeatData::e_Imp;
             CSeqFeatData::ESubtype x_feat_subtype =
                 CSeqFeatData::eSubtype_variation;
@@ -1342,6 +1342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2004/02/09 14:48:37  vasilche
+* Got rid of performance warning on MSVC.
+*
 * Revision 1.111  2004/02/06 18:31:54  vasilche
 * Fixed annot sorting class - deal with different annot types (graph align feat).
 *
