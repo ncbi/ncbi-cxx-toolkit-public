@@ -34,15 +34,8 @@
  *           http://www.gzip.org/zlib/manual.html
  */
 
+
 #include <util/compress/zlib.hpp>
-#ifdef NCBI_COMPILER_MSVC
-#  include <util/compress/zlib/zutil.h>
-#else
-#  include <zutil.h>
-#endif
-#ifdef USE_LOCAL_ZLIB
-#  include <util/compress/zlib/zutil.h>
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -882,6 +875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/10 12:57:03  ivanov
+ * Removed #include <zutil.h>
+ *
  * Revision 1.9  2004/05/10 11:56:08  ivanov
  * Added gzip file format support
  *
