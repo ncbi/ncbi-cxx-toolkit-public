@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.161 2003/01/23 23:55:24 vakatov Exp $
+#  $Id: configure.ac,v 1.162 2003/01/30 19:09:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -995,7 +995,7 @@ esac
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
    CFLAGS="-Wall $CFLAGS"
-   CXXFLAGS="-Wall $CXXFLAGS"
+   CXXFLAGS="-Wall -ftemplate-depth-32 $CXXFLAGS"
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
       irix*    )  CXXFLAGS="$CXXFLAGS -D_LANGUAGE_C_PLUS_PLUS" ;;
