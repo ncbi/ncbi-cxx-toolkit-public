@@ -23,4 +23,5 @@ LIB = \
 	xncbi
 
 CHECK_CMD =
-CHECK_COPY = ADF.bin pdbSeqId.txt
+# Must keep on a single line!
+CHECK_COPY = 1doi.bin ADF.bin badAtom.txt badMSP.txt goodAtom.txt goodMSP.txt pdbSeqId.txt
