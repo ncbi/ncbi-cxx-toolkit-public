@@ -37,17 +37,17 @@
 #include <objects/seqalign/seqalign__.hpp>
 
 #include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 
 /// Runs the BLAST algorithm between 2 sequences.
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
-    typedef pair<const CSeq_loc*, CScope*>  TSeqLoc;
-    typedef vector<TSeqLoc>                 TSeqLocVector;
     typedef CBlastOption::EProgram          TProgram;
 
     /// Constructor to compare 2 sequences
@@ -158,52 +158,52 @@ CBl2Seq::GetProgram() const
 }
 
 inline void
-CBl2Seq::SetQuery(CBl2Seq::TSeqLoc& query)
+CBl2Seq::SetQuery(TSeqLoc& query)
 {
     x_ResetQueryDs();
     m_tQueries.push_back(query);
 }
 
-inline const CBl2Seq::TSeqLoc&
+inline const TSeqLoc&
 CBl2Seq::GetQuery() const
 {
     return m_tQueries.front();
 }
 
 inline void
-CBl2Seq::SetQueries(CBl2Seq::TSeqLocVector& queries)
+CBl2Seq::SetQueries(TSeqLocVector& queries)
 {
     x_ResetQueryDs();
     m_tQueries = queries;
 }
 
-inline const CBl2Seq::TSeqLocVector&
+inline const TSeqLocVector&
 CBl2Seq::GetQueries() const
 {
     return m_tQueries;
 }
 
 inline void
-CBl2Seq::SetSubject(CBl2Seq::TSeqLoc& subject)
+CBl2Seq::SetSubject(TSeqLoc& subject)
 {
     x_ResetSubjectDs();
     m_tSubjects.push_back(subject);
 }
 
-inline const CBl2Seq::TSeqLoc&
+inline const TSeqLoc&
 CBl2Seq::GetSubject() const
 {
     return m_tSubjects.front();
 }
 
 inline void
-CBl2Seq::SetSubjects(CBl2Seq::TSeqLocVector& subjects)
+CBl2Seq::SetSubjects(TSeqLocVector& subjects)
 {
     x_ResetSubjectDs();
     m_tSubjects = subjects;
 }
 
-inline const CBl2Seq::TSeqLocVector&
+inline const TSeqLocVector&
 CBl2Seq::GetSubjects() const
 {
     return m_tSubjects;
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/15 16:01:02  dondosha
+* TSeqLoc and TSeqLocVector types definitions moved to blast_aux.hpp, so all applications can use them
+*
 * Revision 1.9  2003/08/11 19:55:04  camacho
 * Early commit to support query concatenation and the use of multiple scopes.
 * Compiles, but still needs work.
