@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi
+REQUIRES = dbapi MT
 
 APP = test_objmgr1_gbloader_mt
 SRC = test_objmgr1_gbloader_mt
