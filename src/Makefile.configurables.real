@@ -6,12 +6,12 @@ LOCAL_CONFIGURABLES = Makefile $(ALL_SUB_PROJ:%=%/Makefile) $(EXTRA_CONFIGURABLE
 SUB_MF_IN = $(ALL_SUB_PROJ:%=$(srcdir)/%/Makefile.in)
 
 # XXX - we have to wildcard under $(builddir) rather than
-# $(top_srcdir), so explicitly list any new root configurables to
+# $(abs_top_srcdir), so explicitly list any new root configurables to
 # ensure they get picked up properly.
 ROOT_CONFIGURABLES  = $(builddir)/Makefile* $(builddir)/*.sh
 CONFIGURABLES = $(ROOT_CONFIGURABLES) $(LOCAL_CONFIGURABLES)
 
-UPDATE_CONFIGURABLE = $(top_srcdir)/scripts/update_configurable.sh $(build_root)
+UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/update_configurable.sh $(build_root)
 
 config_status = $(build_root)/status/config.status
 
@@ -34,13 +34,13 @@ $(SUB_MF_IN):
 	echo $@
 	-cd $(srcdir)  &&  cvs upd -ld `basename \`dirname $@\``
 	mkdir -p `dirname $@`
-	test -f $@  ||  cp -p $(top_srcdir)/src/Makefile.in.skel $@
+	test -f $@  ||  cp -p $(abs_top_srcdir)/src/Makefile.in.skel $@
 
-$(builddir)/%: $(top_srcdir)/src/%.in $(config_status)
+$(builddir)/%: $(abs_top_srcdir)/src/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
-$(config_status): $(top_srcdir)/configure $(top_srcdir)/config.h.in
-	$(top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
+$(config_status): $(abs_top_srcdir)/configure $(abs_top_srcdir)/config.h.in
+	$(abs_top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
 
 .PHONY: configurables
 .PRECIOUS: $(CONFIGURABLES) $(SUB_MF_IN)
