@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/07/11 20:36:29  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.13  2000/07/10 17:32:00  vasilche
 * Macro arguments made more clear.
 * All old ASN stuff moved to serialasn.hpp.
@@ -86,7 +90,7 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/tool/enumtype.hpp>
 #include <serial/classinfo.hpp>
-#include <serial/serialbase.hpp>
+#include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 

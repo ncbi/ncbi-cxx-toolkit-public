@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/07/11 20:36:28  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.21  2000/06/27 16:34:47  vasilche
 * Fixed generated comments.
 * Fixed class names conflict. Now internal classes' names begin with "C_".
@@ -237,10 +241,9 @@ string CClassTypeStrings::GetCType(const CNamespace& /*ns*/) const
     return GetClassName();
 }
 
-string CClassTypeStrings::GetRef(void) const
+string CClassTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "CLASS, ("+GetClassName()+')';
-    //return '&'+GetClassName()+"::GetTypeInfo";
 }
 
 string CClassTypeStrings::NewInstance(const string& init) const
@@ -333,12 +336,11 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
     code.ClassPublic() <<
         "    // type info\n"
-        "    static const "<<ncbiNamespace<<"CTypeInfo* GetTypeInfo(void);\n"
+        "    DECLARE_INTERNAL_TYPE_INFO();\n"
         "\n";
 
     GenerateClassCode(code,
                       code.ClassPublic(),
-                      //haveUserClass? code.ClassPublic(): code.ClassProtected(),
                       methodPrefix, haveUserClass, ctx.GetMethodPrefix());
 
     // constructors/destructor code
@@ -801,69 +803,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     // generate type info
-#if 0
-    methods <<
-        "const NCBI_NS_NCBI::CTypeInfo* "<<methodPrefix<<"GetTypeInfo(void)\n"
-        "{\n"
-        "    static NCBI_NS_NCBI::CGeneratedClassInfo* info = 0;\n"
-        "    if ( !info ) {\n"
-        "        typedef "<<codeClassName<<" CClass_Base;\n"
-        "        typedef "<<GetClassName()<<" CClass;\n"
-        "        info = NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(\""<<GetExternalName()<<"\");\n";
-    if ( m_Members.size() == 1 && m_Members.front().cName.empty() ) {
-        methods <<
-            "        info->SetImplicit();\n";
-    }
-    {
-        iterate ( TMembers, i, m_Members ) {
-            if ( i->ref ) {
-                methods <<
-                    "        NCBI_NS_NCBI::AddMember("
-                    "info->GetMembers(), "
-                    "\""+i->externalName+"\", "
-                    "NCBI_NS_NCBI::Check< NCBI_NS_NCBI::CRef< "+i->tName+" > >::Ptr(MEMBER_PTR("+i->mName+")), "
-                    "&NCBI_NS_NCBI::CRefTypeInfo< "+i->tName+" >::GetTypeInfo, "
-                    +i->type->GetRef()+')';
-                if ( !i->defaultValue.empty() ) {
-                    methods <<
-                        "->SetDefault(new NCBI_NS_NCBI::CRef< "+i->tName+" >(new "<<i->tName<<"("<<i->defaultValue<<")))";
-                }
-                else if ( i->optional ) {
-                    methods <<
-                        "->SetOptional()";
-                }
-            }
-            else {
-                methods <<
-                    "        "<<i->type->GetTypeInfoCode(i->externalName,
-                                                         i->mName);
-                if ( !i->defaultValue.empty() ) {
-                    methods <<
-                        "->SetDefault(new "<<i->tName<<"("<<i->defaultValue<<"))";
-                }
-                else if ( i->optional ) {
-                    methods <<
-                        "->SetOptional()";
-                }
-            }
-            if ( i->haveFlag ) {
-                methods <<
-                    "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
-            }
-            if ( i->delayed ) {
-                methods <<
-                    "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<i->cName<<"))";
-            }
-            methods <<
-                ";\n";
-        }
-    }
-    methods <<
-        "    }\n"
-        "    return info;\n"
-        "}\n"
-        "\n";
-#else
     if ( haveUserClass ) {
         methods <<
             "BEGIN_NAMED_BASE_CLASS_INFO";
@@ -906,7 +845,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 case eKindEnum:
                     methods << "ENUM_";
                     addEnum = true;
-                    if ( !i->type->GetNamespace().IsEmpty() ) {
+                    if ( !i->type->GetNamespace().IsEmpty() &&
+                         code.GetNamespace() != i->type->GetNamespace()) {
+                        _TRACE("EnumNamespace: "<<i->type->GetNamespace()<<" from "<<code.GetNamespace());
                         methods << "IN_";
                         addNamespace = true;
                     }
@@ -922,11 +863,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( addNamespace )
                 methods << ", "<<i->type->GetNamespace();
             if ( addCType )
-                methods << ", "<<i->type->GetCType(CNamespace::KEmptyNamespace);
+                methods << ", "<<i->type->GetCType(code.GetNamespace());
             if ( addEnum )
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
-                methods << ", "<<i->type->GetRef();
+                methods << ", "<<i->type->GetRef(code.GetNamespace());
             methods << ')';
 
             if ( !i->defaultValue.empty() ) {
@@ -958,7 +899,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         "}\n"
         "END_CLASS_INFO\n"
         "\n";
-#endif    
 }
 
 void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
@@ -1035,10 +975,9 @@ string CClassRefTypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(m_Namespace)+m_ClassName;
 }
 
-string CClassRefTypeStrings::GetRef(void) const
+string CClassRefTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "CLASS, ("+GetCType(CNamespace::KEmptyNamespace)+')';
-    //return '&'+GetCType(CNamespace::KEmptyNamespace)+"::GetTypeInfo";
+    return "CLASS, ("+GetCType(ns)+')';
 }
 
 string CClassRefTypeStrings::NewInstance(const string& init) const

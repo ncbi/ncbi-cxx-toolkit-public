@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/11 20:36:29  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.9  2000/07/10 17:59:34  vasilche
 * Moved macros needed in headers to serialbase.hpp.
 * Use DECLARE_ENUM_INFO in generated code.
@@ -139,7 +143,7 @@ string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
     return m_CType;
 }
 
-string CEnumTypeStrings::GetRef(void) const
+string CEnumTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "ENUM, ("+m_CType+", "+m_EnumName+')';
 }
@@ -204,15 +208,6 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     }
 }
 
-string CEnumTypeStrings::GetTypeInfoCode(const string& externalName,
-                                         const string& memberName) const
-{
-    return "info->GetMembers().AddMember("
-        "\""+externalName+"\", "
-        "NCBI_NS_NCBI::EnumMember(MEMBER_PTR("+memberName+"), "
-        "GetEnumInfo_"+m_EnumName+"()))";
-}
-
 CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
                                          const string& cType,
                                          const CNamespace& ns,
@@ -246,13 +241,22 @@ string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(m_Namespace)+m_EnumName;
 }
 
-string CEnumRefTypeStrings::GetRef(void) const
+string CEnumRefTypeStrings::GetRef(const CNamespace& ns) const
 {
-    if ( !m_CType.empty() && m_CType != m_EnumName || m_Namespace.IsEmpty() )
-        return "ENUM, ("+m_CType+", "+m_EnumName+')';
+    string ref = "ENUM";
+    bool haveNamespace = !m_Namespace.IsEmpty() && m_Namespace != ns;
+    if ( haveNamespace )
+        ref += "_IN";
+    ref += ", (";
+    if ( m_CType.empty() )
+        ref += m_EnumName;
     else
-        return "ENUM_IN, ("+m_CType+", "+m_Namespace.ToString()+", "+m_EnumName+')';
-    //return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), "+m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"())";
+        ref += m_CType;
+    if ( haveNamespace ) {
+        ref += ", ";
+        ref += m_Namespace.ToString();
+    }
+    return ref+", "+m_EnumName+')';
 }
 
 string CEnumRefTypeStrings::GetInitializer(void) const
@@ -263,15 +267,6 @@ string CEnumRefTypeStrings::GetInitializer(void) const
 void CEnumRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     ctx.HPPIncludes().insert(m_FileName);
-}
-
-string CEnumRefTypeStrings::GetTypeInfoCode(const string& externalName,
-                                            const string& memberName) const
-{
-    return "info->GetMembers().AddMember("
-        "\""+externalName+"\", "
-        "NCBI_NS_NCBI::EnumMember(MEMBER_PTR("+memberName+"), "
-        +m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"()))";
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/07/11 20:36:01  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.10  2000/06/16 16:31:13  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -159,7 +163,7 @@ public:
         }
 
     string GetCType(const CNamespace& ns) const;
-    string GetRef(void) const;
+    string GetRef(const CNamespace& ns) const;
 
     EKind GetKind(void) const;
 
@@ -210,7 +214,7 @@ public:
                          const string& fileName);
 
     string GetCType(const CNamespace& ns) const;
-    string GetRef(void) const;
+    string GetRef(const CNamespace& ns) const;
 
     EKind GetKind(void) const;
     const CNamespace& GetNamespace(void) const;

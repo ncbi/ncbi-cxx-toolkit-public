@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/07/11 20:36:30  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.16  2000/06/16 16:31:41  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -229,16 +233,6 @@ void CTypeStrings::GenerateUserHPPCode(CNcbiOstream& /*out*/) const
 
 void CTypeStrings::GenerateUserCPPCode(CNcbiOstream& /*out*/) const
 {
-}
-
-string CTypeStrings::GetTypeInfoCode(const string& externalName,
-                                     const string& memberName) const
-{
-    return "NCBI_NS_NCBI::AddMember("
-        "info->GetMembers(), "
-        "\""+externalName+"\", "
-        "NCBI_NS_NCBI::Check< "+GetCType(CNamespace::KEmptyNamespace)+" >::Ptr(MEMBER_PTR("+memberName+")), "
-        +GetRef()+')';
 }
 
 END_NCBI_SCOPE

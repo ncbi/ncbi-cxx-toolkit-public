@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/11 20:36:29  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.9  2000/06/16 16:31:41  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -133,16 +137,14 @@ string CTemplate1TypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+" >";
 }
 
-string CTemplate1TypeStrings::GetRef(void) const
+string CTemplate1TypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef()+')';
-    //return GetRefTemplate()+", "+GetArg1Type()->GetRef();
+    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+')';
 }
 
 string CTemplate1TypeStrings::GetRefTemplate(void) const
 {
     return GetTemplateName();
-    //return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo";
 }
 
 string CTemplate1TypeStrings::GetIsSetCode(const string& var) const
@@ -193,16 +195,10 @@ string CTemplate2TypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+", "+GetArg2Type()->GetCType(ns)+" >";
 }
 
-string CTemplate2TypeStrings::GetRef(void) const
+string CTemplate2TypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef()+", "+GetArg2Type()->GetRef()+')';
-    //return CParent::GetRef()+", "+GetArg2Type()->GetRef();
+    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+", "+GetArg2Type()->GetRef(ns)+')';
 }
-
-//string CTemplate2TypeStrings::GetRefTemplate(void) const
-//{
-//    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+", "+GetArg2Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo";
-//}
 
 void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
@@ -267,9 +263,6 @@ string CListTypeStrings::GetRefTemplate(void) const
     if ( m_ExternalSet )
         templ += "_set";
     return templ;
-    //if ( m_ExternalSet )
-    //    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetSetTypeInfo";
-    //return CParent::GetRefTemplate();
 }
 
 string CListTypeStrings::GetDestructionCode(const string& expr) const
@@ -369,10 +362,9 @@ string CVectorTypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(CNamespace::KSTDNamespace)+"vector< " + m_CharType + " >";
 }
 
-string CVectorTypeStrings::GetRef(void) const
+string CVectorTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "STL_CHAR_vector, ("+m_CharType+')';
-    //return "&NCBI_NS_NCBI::CStlClassInfoChar_vector< "+m_CharType+" >::GetTypeInfo";
 }
 
 string CVectorTypeStrings::GetResetCode(const string& var) const

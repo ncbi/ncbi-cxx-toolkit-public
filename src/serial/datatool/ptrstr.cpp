@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/11 20:36:29  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.5  2000/06/16 16:31:39  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -83,10 +87,9 @@ string CPointerTypeStrings::GetCType(const CNamespace& ns) const
     return GetDataType()->GetCType(ns)+'*';
 }
 
-string CPointerTypeStrings::GetRef(void) const
+string CPointerTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "POINTER, ("+GetDataType()->GetRef()+')';
-    //return "&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, "+GetDataType()->GetRef();
+    return "POINTER, ("+GetDataType()->GetRef(ns)+')';
 }
 
 string CPointerTypeStrings::GetInitializer(void) const
@@ -142,10 +145,9 @@ string CRefTypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType(ns)+" >";
 }
 
-string CRefTypeStrings::GetRef(void) const
+string CRefTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_CRef, ("+GetDataType()->GetRef()+')';
-    //return "&NCBI_NS_NCBI::CRefTypeInfo< "+GetDataType()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo, "+GetDataType()->GetRef();
+    return "STL_CRef, ("+GetDataType()->GetRef(ns)+')';
 }
 
 string CRefTypeStrings::GetInitializer(void) const

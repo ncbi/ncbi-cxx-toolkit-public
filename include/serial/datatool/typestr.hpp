@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/11 20:36:02  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.7  2000/06/16 16:31:13  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -114,7 +118,7 @@ public:
 
     virtual string GetCType(const CNamespace& ns) const = 0;
     virtual bool HaveSpecialRef(void) const;
-    virtual string GetRef(void) const = 0;
+    virtual string GetRef(const CNamespace& ns) const = 0;
 
     // for external types
     virtual const CNamespace& GetNamespace(void) const;
@@ -141,9 +145,6 @@ public:
 
     virtual void GenerateTypeCode(CClassContext& ctx) const;
     virtual void GeneratePointerTypeCode(CClassContext& ctx) const;
-
-    virtual string GetTypeInfoCode(const string& externalName,
-                                   const string& memberName) const;
 
 };
 

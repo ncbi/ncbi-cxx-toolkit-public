@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/11 20:36:01  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.6  2000/06/16 16:31:13  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -97,11 +101,8 @@ public:
     EKind GetKind(void) const;
 
     string GetCType(const CNamespace& ns) const;
-    string GetRef(void) const;
+    string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
-
-    string GetTypeInfoCode(const string& externalName,
-                           const string& memberName) const;
 
 private:
     string m_CType;
@@ -116,11 +117,9 @@ public:
     bool HaveSpecialRef(void) const;
 
     string GetCType(const CNamespace& ns) const;
-    string GetRef(void) const;
+    string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
 
-    string GetTypeInfoCode(const string& externalName,
-                           const string& memberName) const;
 };
 
 class CStringTypeStrings : public CStdTypeStrings
@@ -146,10 +145,8 @@ public:
 
     bool HaveSpecialRef(void) const;
 
-    string GetRef(void) const;
+    string GetRef(const CNamespace& ns) const;
 
-    string GetTypeInfoCode(const string& externalName,
-                           const string& memberName) const;
 };
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/07/11 20:36:28  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.20  2000/07/03 18:42:57  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 *
@@ -849,7 +853,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->type->GetKind() == eKindEnum ) {
                     methods << "ENUM_";
                     addEnum = true;
-                    if ( !i->type->GetNamespace().IsEmpty() ) {
+                    if ( !i->type->GetNamespace().IsEmpty() &&
+                         code.GetNamespace() != i->type->GetNamespace() ) {
+                        _TRACE("EnumNamespace: "<<i->type->GetNamespace()<<" from "<<code.GetNamespace());
                         methods << "IN_";
                         addNamespace = true;
                     }
@@ -890,19 +896,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( addNamespace )
                 methods << ", "<<i->type->GetNamespace();
             if ( addCType )
-                methods << ", "<<i->type->GetCType(CNamespace::KEmptyNamespace);
+                methods << ", "<<i->type->GetCType(code.GetNamespace());
             if ( addEnum )
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
-                methods << ", "<<i->type->GetRef();
+                methods << ", "<<i->type->GetRef(code.GetNamespace());
             methods <<')';
             
             if ( i->delayed ) {
-                methods <<
-                    "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
+                methods << "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
             }
-            methods <<
-                ";\n";
+            methods << ";\n";
         }
     }
     methods <<

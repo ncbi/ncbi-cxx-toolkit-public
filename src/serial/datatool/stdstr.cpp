@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/11 20:36:29  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
 * Revision 1.6  2000/06/16 16:31:40  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -123,30 +127,14 @@ string CStdTypeStrings::GetCType(const CNamespace& ns) const
         return m_CType;
 }
 
-string CStdTypeStrings::GetRef(void) const
+string CStdTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STD, ("+m_Namespace.ToString()+m_CType+')';
-#if 0
-    if ( m_Namespace )
-        return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_Namespace.ToString()+m_CType+" >::GetTypeInfo";
-    else
-        return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_CType+" >::GetTypeInfo";
-#endif
+    return "STD, ("+GetCType(ns)+')';
 }
 
 string CStdTypeStrings::GetInitializer(void) const
 {
     return "0";
-}
-
-string CStdTypeStrings::GetTypeInfoCode(const string& externalName,
-                                        const string& memberName) const
-{
-    return "NCBI_NS_NCBI::AddMember("
-        "info->GetMembers(), "
-        "\""+externalName+"\", "
-        "MEMBER_PTR("+memberName+"), "
-        "NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR("+memberName+")))";
 }
 
 CTypeStrings::EKind CNullTypeStrings::GetKind(void) const
@@ -164,16 +152,9 @@ string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
     return "bool";
 }
 
-string CNullTypeStrings::GetRef(void) const
+string CNullTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "null, ()";
-    //return "&NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo";
-}
-
-string CNullTypeStrings::GetTypeInfoCode(const string& externalName,
-                                         const string& memberName) const
-{
-    return "NCBI_NS_NCBI::AddMember(info->GetMembers(), \""+externalName+"\", MEMBER_PTR("+memberName+"), "+GetRef()+")";
 }
 
 string CNullTypeStrings::GetInitializer(void) const
@@ -216,16 +197,9 @@ bool CStringStoreTypeStrings::HaveSpecialRef(void) const
     return true;
 }
 
-string CStringStoreTypeStrings::GetRef(void) const
+string CStringStoreTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "StringStore, ()";
-    //return "&NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo";
-}
-
-string CStringStoreTypeStrings::GetTypeInfoCode(const string& externalName,
-                                                const string& memberName) const
-{
-    return "NCBI_NS_NCBI::AddMember(info->GetMembers(), \""+externalName+"\", MEMBER_PTR("+memberName+"), "+GetRef()+")";
 }
 
 END_NCBI_SCOPE
