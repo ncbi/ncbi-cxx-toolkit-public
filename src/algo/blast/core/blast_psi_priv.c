@@ -378,22 +378,28 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
         /* # of X residues in either sequence */
         Uint4 nXresidues = 0;
 
-        /* Indicates if the position in seq_index1 currently being examined is
-         * used. In the special case for seq_index1 == kQueryIndex, this
-         * variable is set to FALSE to force the other sequence's position to
+        /* Indicates if the position in seq_index1 currently being examined is 
+         * used. In the special case for seq_index1 == kQueryIndex, this 
+         * variable is set to FALSE to force the other sequence's position to 
          * be used to proceed with processing. */
         Boolean pos1_used = (seq_index1 == kQueryIndex ? FALSE : seq1[i].used);
-        /* Indicates if the position in seq_index2 currently being examined is
+        /* Indicates if the position in seq_index2 currently being examined is 
          * used. */
         Boolean pos2_used = seq2[i].used;
 
-        if ( !(pos1_used || pos2_used) ) {
+        if ( !(pos1_used || pos2_used)) {
             continue;
         }
 
         /* Examine the aligned region */
-        while ( (i < alignment->dimensions->query_sz) && 
-                (pos1_used || pos2_used)) {
+        for ( ; i < alignment->dimensions->query_sz; i++ ) {
+
+            pos1_used = (seq_index1 == kQueryIndex ? FALSE : seq1[i].used);
+            pos2_used = seq2[i].used;
+
+            if ( !(pos1_used || pos2_used)) {
+                continue;
+            }
 
             if (seq1[i].letter == X || seq2[i].letter == X) {
                 nXresidues++;
@@ -403,10 +409,7 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
                 }
                 align_length++;
             }
-            i++;
 
-            pos1_used = (seq_index1 == kQueryIndex ? FALSE : seq1[i].used);
-            pos2_used = seq2[i].used;
         }
         ASSERT(align_length != 0);
 
@@ -1575,6 +1578,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/06 15:23:54  camacho
+ * Fix memory acccess error
+ *
  * Revision 1.16  2004/07/02 19:40:48  camacho
  * Fixes for handling out-of-memory conditions
  *
