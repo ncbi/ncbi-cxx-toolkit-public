@@ -160,7 +160,8 @@ int CTest::Run(void)
     NcbiCout << endl;
     NcbiCout.flush();
     assert(n_read_total > 0); 
-    assert(status == eIO_Success  ||  status == eIO_Timeout);
+    assert(status == eIO_Success  ||  status == eIO_Timeout  ||
+           status == eIO_Closed);
     assert(CONN_Close(conn) == eIO_Success);
 
     // Pipe connector for writing
@@ -244,6 +245,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/05 14:04:20  ivanov
+ * CONN_Read(..., eIO_ReadPersist) can return eIO_Closed also
+ *
  * Revision 1.2  2003/09/03 21:37:25  ivanov
  * Removed Linux ESPIPE workaround
  *
