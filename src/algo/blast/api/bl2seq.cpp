@@ -256,29 +256,34 @@ CBl2Seq::x_Results2SeqAlign()
 {
     ASSERT(mi_vResults.size() == m_tSubjects.size());
     TSeqAlignVector retval;
+    retval.reserve(m_tQueries.size());
 
     for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
     {
+        ASSERT(mi_vResults[index]->num_queries == (int)m_tQueries.size());
+
         TSeqAlignVector seqalign =
             BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
                 m_tQueries, NULL, 
                 &m_tSubjects[index],
                 m_pOptions->GetScoringOpts(), mi_pScoreBlock);
 
-        if (seqalign.size() > 0) {
-            /* Merge the new vector with the current. Assume that both vectors
-               contain CSeq_align_sets for all queries, i.e. have the same 
-               size. */
-            if (retval.size() == 0) {
-                // First time around, just fill the empty vector with the 
-                // seqaligns from the first subject.
-                retval.swap(seqalign);
-            } else {
-                for (unsigned int i = 0; i < retval.size(); ++i) {
-                    retval[i]->Set().splice(retval[i]->Set().end(), 
-                                            seqalign[i]->Set());
-                }
+        /* Merge the new vector with the current. Assume that both vectors
+           contain CSeq_align_sets for all queries, i.e. have the same 
+           size. */
+        ASSERT(seqalign.size() == retval.capacity());
+
+        if (retval.size() == 0) {
+            // First time around, just fill the empty vector with the 
+            // seqaligns from the first subject.
+            retval.swap(seqalign);
+        } else {
+
+            for (unsigned int i = 0; i < retval.size(); ++i) {
+                retval[i]->Set().splice(retval[i]->Set().end(),
+                                       seqalign[i]->Set());
             }
+
         }
     }
 
@@ -299,6 +304,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2003/10/31 00:05:15  camacho
+ * Changes to return discontinuous seq-aligns for each query-subject pair
+ *
  * Revision 1.34  2003/10/30 19:34:53  dondosha
  * Removed gapped_calculation from BlastHitSavingOptions structure
  *
