@@ -399,7 +399,7 @@ void CTL_BCPInCmd::Release()
     if (m_WasSent) {
         try {
             Cancel();
-        } catch (CDB_Exception& e) {}
+        } catch (CDB_Exception& ) {}
         m_WasSent = false;
     }
     m_Connect->DropCmd(*this);
@@ -416,7 +416,7 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
     if ( m_WasSent ) {
         try {
             Cancel();
-        } catch (CDB_Exception& e) {}
+        } catch (CDB_Exception& ) {}
     }
 
     delete[] m_Bind;
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/01/31 16:49:38  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.6  2002/09/16 16:34:16  soussov
  * add try catch when canceling in Release method
  *

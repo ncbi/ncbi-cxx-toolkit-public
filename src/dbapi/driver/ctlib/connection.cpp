@@ -258,7 +258,7 @@ bool CTL_Connection::Refresh()
         CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
         try {
             delete pCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
         }
         m_CMDs.Remove((int) 0);
     }
@@ -348,7 +348,7 @@ void CTL_Connection::Release()
         CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
         try {
             delete pCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
         }
         m_CMDs.Remove((int) 0);
     }
@@ -672,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/01/31 16:49:38  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.11  2002/12/16 16:17:25  soussov
  * ct_con_props returns an outlen == strlen(x)+1. Adaptin to this feature
  *

@@ -94,7 +94,7 @@ CDB_Result* CDBL_CursorCmd::Open()
             }
         }
         delete m_LCmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (m_LCmd) {
             delete m_LCmd;
             m_LCmd = 0;
@@ -120,7 +120,7 @@ CDB_Result* CDBL_CursorCmd::Open()
             }
         }
         delete m_LCmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (m_LCmd) {
             delete m_LCmd;
             m_LCmd = 0;
@@ -159,7 +159,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
             }
         }
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 222004, "CDBL_CursorCmd::Update",
@@ -220,7 +220,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
             }
         }
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 222004, "CDBL_CursorCmd::Update",
@@ -265,7 +265,7 @@ bool CDBL_CursorCmd::Close()
                 }
             }
             delete m_LCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
@@ -292,7 +292,7 @@ bool CDBL_CursorCmd::Close()
                 }
             }
             delete m_LCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
@@ -463,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/01/31 16:50:12  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.9  2002/07/02 16:05:49  soussov
  * splitting Sybase dblib and MS dblib
  *

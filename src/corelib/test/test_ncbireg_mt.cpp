@@ -166,7 +166,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     bool ex_int = false;
     try {
         (void) m_Registry.GetInt("Section_62", "Int_Bad", 999);
-    } catch (CException& e) {
+    } catch (CException& ) {
         ex_int = true;
     }
     assert( ex_int );
@@ -174,7 +174,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     bool ex_bool = false;
     try {
         (void) m_Registry.GetBool("Section_62", "Bool_Bad", false);
-    } catch (CException& e) {
+    } catch (CException& ) {
         ex_bool = true;
     }
     assert( ex_bool );
@@ -182,7 +182,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     bool ex_double = false;
     try {
         (void) m_Registry.GetDouble("Section_62", "Double_Bad", 9.99);
-    } catch (CException& e) {
+    } catch (CException& ) {
         ex_double = true;
     }
     assert( ex_double );
@@ -326,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2003/01/31 16:48:32  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 6.4  2002/12/30 23:23:09  vakatov
  * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
  * conversions and error handling control (to extend Get()'s functionality).

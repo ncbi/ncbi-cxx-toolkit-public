@@ -285,7 +285,7 @@ void CTL_RPCCmd::Release()
     if ( m_WasSent) {
         try {
             Cancel();
-        } catch (CDB_Exception& e) {}
+        } catch (CDB_Exception& ) {}
         m_WasSent = false;
     }
 
@@ -303,7 +303,7 @@ CTL_RPCCmd::~CTL_RPCCmd()
     if ( m_WasSent ) {
         try {
             Cancel();
-        } catch (CDB_Exception& e) {}
+        } catch (CDB_Exception& ) {}
     }
 
     if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
@@ -346,6 +346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/31 16:49:38  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.3  2002/09/16 19:40:03  soussov
  * add try catch when canceling in Release method
  *

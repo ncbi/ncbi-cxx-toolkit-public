@@ -1250,7 +1250,7 @@ CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) :
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         throw CDB_ClientEx(eDB_Error, 222010,
                            "CDBL_CursorResult::CDBL_CursorResult",
                            "failed to get the results");
@@ -1321,7 +1321,7 @@ bool CDBL_CursorResult::Fetch()
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         throw CDB_ClientEx(eDB_Error, 222011, "CDBL_CursorResult::Fetch",
                            "Failed to fetch the results");
     }
@@ -1486,6 +1486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/01/31 16:50:12  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.17  2003/01/06 16:40:49  soussov
  * sets m_CurrItem = -1 for all result types if no fetch was called
  *

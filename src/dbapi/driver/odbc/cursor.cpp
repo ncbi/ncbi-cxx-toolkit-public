@@ -76,7 +76,7 @@ CDB_Result* CODBC_CursorCmd::Open()
                 delete r;
             }
         }
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         throw CDB_ClientEx(eDB_Error, 422001, "CODBC_CursorCmd::Open",
                            "failed to declare cursor");
     }
@@ -98,7 +98,7 @@ CDB_Result* CODBC_CursorCmd::Open()
             }
         }
         m_LCmd->Release();
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (m_LCmd) {
             m_LCmd->Release();
             m_LCmd = 0;
@@ -144,7 +144,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
             }
         }
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 422004, "CODBC_CursorCmd::Update",
@@ -211,7 +211,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
             }
         }
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 422004, "CODBC_CursorCmd::Update",
@@ -258,7 +258,7 @@ bool CODBC_CursorCmd::Close()
                 }
             }
             m_LCmd->Release();
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
@@ -285,7 +285,7 @@ bool CODBC_CursorCmd::Close()
                 }
             }
             m_LCmd->Release();
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
@@ -329,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/31 16:51:03  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.1  2002/06/18 22:06:24  soussov
  * initial commit
  *

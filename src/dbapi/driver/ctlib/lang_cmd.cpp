@@ -284,7 +284,7 @@ void CTL_LangCmd::Release()
     if ( m_WasSent ) {
         try {
             Cancel();
-        }catch (CDB_Exception& e) {}
+        }catch (CDB_Exception& ) {}
         m_WasSent = false;
     }
     m_Connect->DropCmd(*this);
@@ -301,7 +301,7 @@ CTL_LangCmd::~CTL_LangCmd()
     if ( m_WasSent ) {
         try {
             Cancel();
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception& ) {
         }
     }
 
@@ -343,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/31 16:49:38  lavr
+ * Remove unused variable "e" from catch() clause
+ *
  * Revision 1.3  2002/09/16 16:34:16  soussov
  * add try catch when canceling in Release method
  *
