@@ -578,6 +578,7 @@ const string CValidErrItem::sm_Terse [] = {
     "DuplicateTranslExcept",
     "TranslExceptAndRnaEditing",
     "NoNameForProtein",
+    "TaxonDbxrefOnFeature",
     END(SEQ_FEAT),
 
     BEGIN(SEQ_ALIGN),
@@ -1202,6 +1203,10 @@ editing indicates post-transcriptional changes prior to translation.  Use \
 other nonsense suppressors.",
 //  SEQ_FEAT_NoNameForProtein
 "A protein feature has a description, but no product name.",
+//  TaxonDbxrefOnFeature
+"A BioSource feature has a taxonID database identifier in the db_xref area \
+common to all features.  This db_xref should only exist within the separate \
+BioSource xref list.",
 
 END(SEQ_FEAT),
 
@@ -1315,6 +1320,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/08/04 17:47:34  shomrat
+* + SEQ_FEAT_TaxonDbxrefOnFeature
+*
 * Revision 1.51  2004/08/03 13:39:58  shomrat
 * + GENERIC_MedlineEntryPub
 *
