@@ -101,7 +101,9 @@ install_dirs="include compilers scripts"
 if test "$with_src" != "no"; then 
     install_dirs="$install_dirs src LICENSE gpl.txt configure config.guess config.sub config.h.in"
 fi
-test "$with_doc" != "no"  &&  install_dirs="$install_dirs doc"
+if test "$with_doc" != "no" -a -d "$top_srcdir/doc"; then
+    install_dirs="$install_dirs doc"
+fi
 
 
 # Setup an empty install dir (create a new one, or purge an existing one)
