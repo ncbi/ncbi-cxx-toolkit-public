@@ -33,6 +33,8 @@
 */
 
 #include <algo/blast/api/blast_seqalign.hpp>
+#include <algo/blast/core/link_hsps.h>
+
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -556,7 +558,7 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
 static CRef<CSeq_align_set>
 x_ProcessBlastHitList(BlastHitList* hit_list, 
         CConstRef<CSeq_id>& query_seqid,
-        const BlastSeqSrc* bssp, CConstRef<CSeq_id>& subject_id, 
+        const BlastSeqSrc* bssp, const CSeq_id *subject_id, 
         const BlastScoringOptions* score_options, const BlastScoreBlk* sbp,
         CBlastOption::EProgram program)
 {
@@ -603,7 +605,7 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
         CBlastOption::EProgram prog,
         vector< CConstRef<CSeq_id> >& query_seqids, 
         const BlastSeqSrc* bssp,
-        CConstRef<CSeq_id>& subject_seqid,
+        const CSeq_id *subject_seqid,
         const BlastScoringOptions* score_options, 
         const BlastScoreBlk* sbp)
 {
@@ -642,6 +644,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/12 19:19:34  dondosha
+* Use TSeqLocVector type
+*
 * Revision 1.9  2003/08/11 14:00:41  dicuccio
 * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
 * BEGIN_NCBI_SCOPE block)

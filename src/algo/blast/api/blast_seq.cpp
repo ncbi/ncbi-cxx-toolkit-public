@@ -48,7 +48,7 @@ USING_SCOPE(objects);
 BEGIN_NCBI_SCOPE
 
 static int
-BLAST_SetUpQueryInfo(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
+BLAST_SetUpQueryInfo(TSeqLocVector &slp,
     Uint1 program, BlastQueryInfo** query_info_ptr)
 {
    Int4 length, protein_length;
@@ -75,7 +75,7 @@ BLAST_SetUpQueryInfo(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
    query_info->first_context = 0;
    query_info->num_queries = slp.size();
    query_info->last_context = query_info->num_queries*num_frames - 1;
-   if ((strand = sequence::GetStrand(*slp[0], scope)) == eNa_strand_minus) {
+   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second)) == eNa_strand_minus) {
       if (translate)
          query_info->first_context = 3;
       else
@@ -104,8 +104,8 @@ BLAST_SetUpQueryInfo(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
    
    /* Fill the context offsets */
    for (index = 0; index <= query_info->last_context; index += num_frames) {
-      length = sequence::GetLength(*slp[index/num_frames], scope);
-      strand = sequence::GetStrand(*slp[index/num_frames], scope);
+      length = sequence::GetLength(*slp[index/num_frames].first, slp[index/num_frames].second);
+      strand = sequence::GetStrand(*slp[index/num_frames].first, slp[index/num_frames].second);
       if (translate) {
          Int2 first_frame, last_frame;
          if (strand == eNa_strand_plus) {
@@ -181,7 +181,7 @@ static int SeqVectorToSequenceBuffer(CSeqVector &sv, Uint1 encoding,
  * fills both strands if necessary.
  */
 static int 
-BLASTFillSequenceBuffer(const CSeq_loc &sl, CRef<CScope> &scope, 
+BLASTFillSequenceBuffer(const CSeq_loc &sl, CScope* scope, 
     Uint1 encoding, Boolean add_sentinel_bytes, Boolean both_strands, 
     Uint1* buffer)
 {
@@ -250,8 +250,7 @@ BLASTFillSequenceBuffer(const CSeq_loc &sl, CRef<CScope> &scope,
  * @param buffer_length Length of buffer allocated [out]
  */
 static Int2 
-BLAST_GetSequence(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope, 
-   BlastQueryInfo* query_info, 
+BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info, 
    const QuerySetUpOptions* query_options, Uint1 num_frames, Uint1 encoding, 
    Uint1* *buffer_out, Int4 *buffer_length)
 {
@@ -259,6 +258,7 @@ BLAST_GetSequence(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
    Int4 total_length; /* Total length of all queries/frames/strands */
    Int4		index; /* Loop counter */
    CConstRef<CSeq_loc> slp_var; /* loop variable */
+   CScope* scope;
    Uint1*	buffer,* buffer_var; /* buffer offset to be worked on. */
    bool add_sentinel_bytes = TRUE;
    Uint1* genetic_code=NULL;
@@ -287,7 +287,9 @@ BLAST_GetSequence(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
    
    for (index = 0; index <= query_info->last_context; index += num_frames)
    {
-       slp_var = slp[index/num_frames];
+       slp_var = slp[index/num_frames].first;
+       scope = slp[index/num_frames].second;
+
        if (translate) {
            Uint1* na_buffer;
            Int2 frame, frame_start, frame_end;
@@ -341,8 +343,7 @@ BLAST_GetSequence(vector< CConstRef<CSeq_loc> > slp, CRef<CScope> &scope,
 
 int
 BLAST_SetUpQuery(Uint1 program_number, 
-    vector< CConstRef<CSeq_loc> > &query_slp, CRef<CScope> &scope, 
-    const QuerySetUpOptions* query_options, 
+    TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk)
 {
    Uint1* buffer;	/* holds sequence for plus strand or protein. */
@@ -351,7 +352,7 @@ BLAST_SetUpQuery(Uint1 program_number,
    Uint1 num_frames;
    Uint1 encoding;
 
-   if ((status = BLAST_SetUpQueryInfo(query_slp, scope, program_number, 
+   if ((status = BLAST_SetUpQueryInfo(query_slp, program_number, 
                                       query_info)))
       return status;
 
@@ -367,7 +368,7 @@ BLAST_SetUpQuery(Uint1 program_number,
       num_frames = 6;
    }
 
-   if ((status=BLAST_GetSequence(query_slp, scope, *query_info, query_options,
+   if ((status=BLAST_GetSequence(query_slp, *query_info, query_options,
                   num_frames, encoding, &buffer, &buffer_length)))
       return status; 
         

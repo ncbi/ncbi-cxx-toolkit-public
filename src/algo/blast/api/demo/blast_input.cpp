@@ -29,13 +29,15 @@
  *   Reading FASTA from an input file
  *
  */
+#include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <algo/blast/api/blast_input.hpp>
-#include <algo/blast/api/blast_aux.hpp>
-
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <serial/iterator.hpp>
+
+#include <algo/blast/api/blast_input.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -59,10 +61,20 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
-        CSeq_loc* seqloc = new CSeq_loc();
-        seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
-        retval.push_back(make_pair(static_cast<const CSeq_loc*>(seqloc), 
-                                   scope));
+        CSeq_loc *seqloc = new CSeq_loc();
+        if (strand == eNa_strand_plus || strand == eNa_strand_minus || 
+            from > 0 || 
+            (to > 0 && to < sequence::GetLength(*itr->GetId().front(), scope)-1))
+        {
+            //CSeq_interval seq_int = seqloc->SetInt();
+            seqloc->SetInt().SetFrom(from);
+            seqloc->SetInt().SetTo(to);
+            seqloc->SetInt().SetStrand(strand);
+            seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
+        } else {
+            seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
+        }
+        retval.push_back(make_pair(static_cast<const CSeq_loc*>(seqloc), scope));
 
         // Check if this seqentry has been added to the scope already
         CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
