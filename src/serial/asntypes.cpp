@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/21 18:05:09  vasilche
+* Fixed OPTIONAL attribute for ASN.1 structures.
+*
 * Revision 1.13  1999/07/20 18:23:08  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -240,9 +243,12 @@ static const TConstObjectPtr zeroPointer = 0;
 
 TConstObjectPtr CSequenceTypeInfo::CreateDefault(void) const
 {
+    return &zeroPointer;
+/*
 	TObjectPtr def = Alloc(sizeof(TObjectPtr));
 	Get(def) = GetDataTypeInfo()->Create();
     return def;
+*/
 }
 
 bool CSequenceTypeInfo::Equals(TConstObjectPtr object1,
@@ -673,15 +679,13 @@ size_t COldAsnTypeInfo::GetSize(void) const
 
 TConstObjectPtr COldAsnTypeInfo::CreateDefault(void) const
 {
-    TObjectPtr obj = Alloc(sizeof(TObjectPtr));
-    Get(obj) = m_NewProc();
-    return obj;
+    return &zeroPointer;
 }
 
-bool COldAsnTypeInfo::Equals(TConstObjectPtr ,
-                             TConstObjectPtr ) const
+bool COldAsnTypeInfo::Equals(TConstObjectPtr object1,
+                             TConstObjectPtr object2) const
 {
-    return false;
+    return Get(object1) == 0 && Get(object2) == 0;
 }
 
 void COldAsnTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const

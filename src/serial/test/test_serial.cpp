@@ -78,7 +78,7 @@ int CTestSerial::Run(void)
         write1.m_Size = 0x7fffffff;
         write1.m_Attributes.push_back("write1");
         write1.m_Next = &write1;
-        write1.m_WebEnv = WebEnvNew();
+        write1.m_WebEnv = 0;
         write1.m_Name2 = "name2";
 
         {
