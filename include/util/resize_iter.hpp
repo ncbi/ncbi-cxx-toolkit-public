@@ -79,7 +79,7 @@ public:
     CConstResizingIterator<TSeq, TOut> operator++(int); // postfix
     TOut operator*();
     // No operator->; see above.
-    bool AtEnd() const { return m_RawIterator == m_End; }
+    bool AtEnd() const;
 
 private:
     TRawIterator m_RawIterator;
@@ -127,7 +127,7 @@ public:
     void operator=(TVal value);
     operator TVal();
 
-    bool AtEnd() const { return m_RawIterator == m_End; }
+    bool AtEnd() const;
 
 private:
     TRawIterator m_RawIterator;
@@ -152,21 +152,38 @@ private:
 
 
 template <class T>
-size_t x_BitsPerElement(T*) {
+size_t xx_BitsPerElement(const T*)
+{
     return CHAR_BIT * sizeof(T);
+}
+
+template <class TIterator>
+size_t x_BitsPerElement(const TIterator&)
+{
+#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC
+    // Sun cares way too much about backward bug-for-bug compatibility...
+    return xx_BitsPerElement(__value_type(TIterator()));
+#elif defined(NCBI_COMPILER_MSVC)
+    // iterator_traits seems to be broken under MSVC. :-/
+    return xx_BitsPerElement(_Val_type(TIterator()));    
+#else
+    return CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
+#endif    
 }
 
 
 template <class TIterator, class TOut>
-TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
+TOut ExtractBits(TIterator& start, const TIterator& end,
+                 size_t& bit_offset, size_t bit_count)
 {
-#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC // Why does Workshop set this?
+#if 1
+    static const size_t kBitsPerElement = x_BitsPerElement(start);
+#elif defined(_RWSTD_NO_CLASS_PARTIAL_SPEC)
     static const size_t kBitsPerElement
-        = x_BitsPerElement(__value_type(TIterator()));
+        = xx_BitsPerElement(__value_type(TIterator()));
 #elif defined(NCBI_COMPILER_MSVC)
-    // iterator_traits seems to be broken under MSVC. :-/
     static const size_t kBitsPerElement
-        = x_BitsPerElement(_Val_type(TIterator()));    
+        = xx_BitsPerElement(_Val_type(TIterator()));    
 #else
     static const size_t kBitsPerElement
         = CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
@@ -176,7 +193,9 @@ TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
     static const TOut kMask2 = (1 << kBitsPerElement) - 1;
     TOut value;
 
-    if (bit_offset + bit_count <= kBitsPerElement) {
+    if (start == end) {
+        return 0;
+    } else if (bit_offset + bit_count <= kBitsPerElement) {
         // the current element contains it all
         bit_offset += bit_count;
         value = (*start >> (kBitsPerElement - bit_offset)) & kMask;
@@ -187,23 +206,31 @@ TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
     } else {
         // We have to deal with multiple elements.
         value = *start & ((1 << (kBitsPerElement - bit_offset)) - 1);
+        ++start;
         for (bit_offset += bit_count - kBitsPerElement;
              bit_offset >= kBitsPerElement;
              bit_offset -= kBitsPerElement) {
-            value = (value << kBitsPerElement) | (*++start & kMask2);
+            value <<= kBitsPerElement;
+            if (start != end) {
+                value |= *start & kMask2;
+                ++start;
+            }
         }        
-        ++start;
-        if (bit_offset)
-            value = ((value << bit_offset)
-                       | ((*start >> (kBitsPerElement - bit_offset))
-                          & ((1 << bit_offset) - 1)));
+        if (bit_offset) {
+            value <<= bit_offset;
+            if (start != end) {
+                value |= ((*start >> (kBitsPerElement - bit_offset))
+                          & ((1 << bit_offset) - 1));
+            }
+        }
     }
     return value;
 }
 
 
 template <class TIterator, class TVal, class TElement>
-TElement StoreBits(TIterator& start, size_t& bit_offset, size_t bit_count,
+TElement StoreBits(TIterator& start, const TIterator& end,
+                   size_t& bit_offset, size_t bit_count,
                    TElement partial, TVal data) // returns new partial
 {
     static const size_t kBitsPerElement = CHAR_BIT * sizeof(TElement);
@@ -231,7 +258,9 @@ TElement StoreBits(TIterator& start, size_t& bit_offset, size_t bit_count,
         for (bit_offset += bit_count - kBitsPerElement;
              bit_offset >= kBitsPerElement;
              bit_offset -= kBitsPerElement) {
-            *(start++) = data >> (bit_offset - kBitsPerElement);
+            if (start != end) {
+                *(start++) = data >> (bit_offset - kBitsPerElement);
+            }
         }
         if (bit_offset) {
             partial = data << (kBitsPerElement - bit_offset);
@@ -283,7 +312,16 @@ TOut CConstResizingIterator<TSeq, TOut>::operator*()
 
     m_ValueKnown = true;
     return m_Value = ExtractBits<TRawIterator, TOut>
-        (m_RawIterator, m_BitOffset, m_NewSize);
+        (m_RawIterator, m_End, m_BitOffset, m_NewSize);
+}
+
+
+
+template <class TSeq, class TOut>
+bool CConstResizingIterator<TSeq, TOut>::AtEnd() const
+{
+    return distance(m_RawIterator, m_End) * x_BitsPerElement(m_RawIterator)
+        < m_BitOffset + m_NewSize;
 }
 
 
@@ -322,8 +360,8 @@ void CResizingIterator<TSeq, TVal>::operator=(TVal value)
     size_t offset = m_BitOffset;
     TRawValue tmp;
 
-    tmp = StoreBits<TRawIterator, TVal, TRawValue>(it, offset, m_NewSize, *it,
-                                                   value);
+    tmp = StoreBits<TRawIterator, TVal, TRawValue>
+        (it, m_End, offset, m_NewSize, *it, value);
     if (offset > 0) {
         *it = tmp;
     }
@@ -337,7 +375,15 @@ CResizingIterator<TSeq, TVal>::operator TVal()
     TRawIterator it = m_RawIterator;
     size_t offset = m_BitOffset;
 
-    return ExtractBits<TRawIterator, TVal>(it, offset, m_NewSize);
+    return ExtractBits<TRawIterator, TVal>(it, m_End, offset, m_NewSize);
+}
+
+
+template <class TSeq, class TVal>
+bool CResizingIterator<TSeq, TVal>::AtEnd() const
+{
+    return distance(m_RawIterator, m_End) * x_BitsPerElement(m_RawIterator)
+        < m_BitOffset + m_NewSize;
 }
 
 
@@ -347,6 +393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/12 20:09:46  ucko
+* Add safeguards to avoid overshooting when misaligned.
+*
 * Revision 1.5  2004/02/06 18:32:35  vasilche
 * Added missing typename keyword.
 *
