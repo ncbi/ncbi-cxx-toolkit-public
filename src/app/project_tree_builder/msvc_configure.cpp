@@ -100,18 +100,21 @@ static bool s_LibOk(const SLibInfo& lib_info)
 {
     if ( lib_info.IsEmpty() )
         return false;
-    if ( !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
+    if ( !lib_info.m_IncludeDir.empty() &&
+         !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
         LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
         return false;
     }
-    if ( !CDirEntry(lib_info.m_LibPath).Exists() ) {
+    if ( !lib_info.m_LibPath.empty() &&
+         !CDirEntry(lib_info.m_LibPath).Exists() ) {
         LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
         return false;
     }
     ITERATE(list<string>, p, lib_info.m_Libs) {
         const string& lib = *p;
         string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
-        if ( !CDirEntry(lib_path_abs).Exists() ) {
+        if ( !lib_path_abs.empty() &&
+             !CDirEntry(lib_path_abs).Exists() ) {
             LOG_POST(Warning << "No LIB : " + lib_path_abs);
             return false;
         }
@@ -208,6 +211,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/24 20:51:59  gorelenk
+ * Changed implementation of function s_LibOk
+ * and member-function ProcessDefine of class CMsvcConfigure.
+ *
  * Revision 1.3  2004/02/10 18:23:33  gorelenk
  * Implemented overwriting of site defines file *.h only when new file is
  * different from already present one.
