@@ -919,9 +919,11 @@ end UpdateTarget
 on CreateFolder(folderPath)
 	set text item delimiters of AppleScript to ":"
 	-- strip off disk name.
-	set folderPath to (rest of text items of folderPath) as string
-	set pathSoFar to ""
 	tell application "Finder"
+		if (exists disk (first text item of folderPath)) then
+			set folderPath to (rest of text items of folderPath) as string
+		end if
+		set pathSoFar to ""
 		repeat with f in (text items of folderPath)
 			set longerPath to pathSoFar & ":" & f
 			if not (exists folder (longerPath)) then
