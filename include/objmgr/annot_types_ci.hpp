@@ -207,12 +207,12 @@ private:
                       TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_Initialize(const CObject& limit_info);
-    void x_SearchMapped(const CSeqMap_CI& seg,
+    bool x_SearchMapped(const CSeqMap_CI& seg,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange& master_hr);
-    void x_Search(const CHandleRangeMap& loc,
+    bool x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion* cvt);
-    void x_Search(const CSeq_id_Handle& id,
+    bool x_Search(const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
     void x_Search(const CObject& limit_info);
@@ -221,6 +221,7 @@ private:
     void x_ReleaseAll(void);
 
     bool x_NeedSNPs(void) const;
+    bool x_MatchTrigger(const CAnnotObject_Info& annot_info) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
     bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
@@ -463,6 +464,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/09/11 17:45:06  grichenk
+* Added adaptive-depth option to annot-iterators.
+*
 * Revision 1.50  2003/09/03 19:59:00  grichenk
 * Initialize m_MappedIndex to 0
 *

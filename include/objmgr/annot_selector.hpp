@@ -157,7 +157,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved),
           m_MaxSize(0),
-          m_NoMapping(false)
+          m_NoMapping(false),
+          m_AdaptiveDepth(false)
     {
     }
 
@@ -174,7 +175,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved),
           m_MaxSize(0),
-          m_NoMapping(false)
+          m_NoMapping(false),
+          m_AdaptiveDepth(false)
     {
     }
     
@@ -253,6 +255,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             m_ResolveDepth = depth;
             return *this;
         }
+    SAnnotSelector& SetAdaptiveDepth(bool value)
+        {
+            m_AdaptiveDepth = value;
+            return *this;
+        }
     SAnnotSelector& SetMaxSize(int max_size)
         {
             m_MaxSize = max_size;
@@ -325,10 +332,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
                 m_Sources->m_Sources.end();
         }
 
-    // Do not create mapped locations. Used by CAnnot_CI.
-    SAnnotSelector& SetNoMapping(void)
+    // No locations mapping flag. Set to true by CAnnot_CI.
+    SAnnotSelector& SetNoMapping(bool value)
         {
-            m_NoMapping = true;
+            m_NoMapping = value;
             return *this;
         }
 
@@ -346,6 +353,7 @@ protected:
     int                   m_MaxSize;
     CRef<SSources>        m_Sources;
     bool                  m_NoMapping;
+    bool                  m_AdaptiveDepth;
 };
 
 
@@ -355,6 +363,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/09/11 17:45:06  grichenk
+* Added adaptive-depth option to annot-iterators.
+*
 * Revision 1.15  2003/08/22 14:58:55  grichenk
 * Added NoMapping flag (to be used by CAnnot_CI for faster fetching).
 * Added GetScope().

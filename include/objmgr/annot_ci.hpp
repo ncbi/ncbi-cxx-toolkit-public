@@ -92,7 +92,7 @@ private:
 inline
 CAnnot_CI::CAnnot_CI(void)
 {
-    SetNoMapping();
+    SetNoMapping(true);
     SetSortOrder(eSortOrder_None);
     m_Iterator = m_SeqAnnotSet.end();
 }
@@ -115,7 +115,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
                      sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
-                     .SetNoMapping()
+                     .SetNoMapping(true)
                      .SetSortOrder(eSortOrder_None))
 {
     x_Collect();
@@ -128,7 +128,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
                      sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
-                     .SetNoMapping()
+                     .SetNoMapping(true)
                      .SetSortOrder(eSortOrder_None))
 {
     x_Collect();
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/09/11 17:45:06  grichenk
+* Added adaptive-depth option to annot-iterators.
+*
 * Revision 1.22  2003/08/27 21:08:03  grichenk
 * CAnnotTypes_CI made private
 *

@@ -580,37 +580,38 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         if ( !m_LimitObject )
             m_LimitObjectType = eLimit_None;
 
-        x_Search(master_loc, 0);
-        if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
-            ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-                //### Check for eLoadedOnly
-                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
-                if ( !bh ) {
-                    if (m_IdResolving == eFailUnresolved) {
-                        // resolve by Seq-id only
-                        NCBI_THROW(CAnnotException, eFindFailed,
-                                   "Cannot resolve master id");
+        if ( !(x_Search(master_loc, 0)  &&  m_AdaptiveDepth) ) {
+            if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
+                ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+                    //### Check for eLoadedOnly
+                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
+                    if ( !bh ) {
+                        if (m_IdResolving == eFailUnresolved) {
+                            // resolve by Seq-id only
+                            NCBI_THROW(CAnnotException, eFindFailed,
+                                       "Cannot resolve master id");
+                        }
+                        continue; // Do not crash - just skip unresolvable IDs
                     }
-                    continue; // Do not crash - just skip unresolvable IDs
-                }
 
-                CHandleRange::TRange idrange =
-                    idit->second.GetOverlappingRange();
-                const CSeqMap& seqMap = bh.GetSeqMap();
-                CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
-                                                    m_Scope,
-                                                    m_ResolveDepth-1,
-                                                    CSeqMap::fFindRef));
-                while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
-                    _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                    if ( m_ResolveMethod == eResolve_TSE &&
-                         !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
-                                                          bh) ) {
-                        smit.Next(false);
-                        continue;
+                    CHandleRange::TRange idrange =
+                        idit->second.GetOverlappingRange();
+                    const CSeqMap& seqMap = bh.GetSeqMap();
+                    CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
+                                                        m_Scope,
+                                                        m_ResolveDepth-1,
+                                                        CSeqMap::fFindRef));
+                    while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
+                        _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+                        if ( m_ResolveMethod == eResolve_TSE &&
+                             !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
+                                                              bh) ) {
+                            smit.Next(false);
+                            continue;
+                        }
+                        smit.Next(!(x_SearchMapped(smit, idit->first, idit->second)
+                            &&  m_AdaptiveDepth));
                     }
-                    x_SearchMapped(smit, idit->first, idit->second);
-                    ++smit;
                 }
             }
         }
@@ -698,6 +699,14 @@ void CAnnotTypes_CI::x_Initialize(const CObject& limit_info)
 
 
 inline
+bool CAnnotTypes_CI::x_MatchTrigger(const CAnnotObject_Info& annot_info) const
+{
+    // !!! Does the same as x_MatchType(), should be changed !!!
+    return x_MatchType(annot_info);
+}
+
+
+inline
 bool
 CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 {
@@ -781,7 +790,7 @@ bool CAnnotTypes_CI::x_MatchRange(const CHandleRange& hr,
 }
 
 
-void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
+bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                               const CHandleRange& hr,
                               CSeq_loc_Conversion* cvt)
 {
@@ -813,6 +822,8 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         entries = &annot_ref_set->GetData();
         break;
     }
+
+    bool found = false;
 
     ITERATE ( TTSE_LockSet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
@@ -866,13 +877,15 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                   aoit; ++aoit ) {
                 const CAnnotObject_Info& annot_info =
                     *aoit->second.m_AnnotObject_Info;
+                if (!found  &&  x_MatchTrigger(annot_info)) {
+                    found = true;
+                }
+
                 if ( !x_MatchLimitObject(annot_info) ) {
                     continue;
                 }
 
-                if ( !x_MatchType(annot_info) ) {
-                    continue;
-                }
+                _ASSERT(x_MatchType(annot_info));
 
                 if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                     continue;
@@ -889,14 +902,15 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
                 // Limit number of annotations to m_MaxSize
                 if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                    return;
+                    return found;
             }
         }
     }
+    return found;
 }
 
 
-void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
+bool CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                               CSeq_loc_Conversion* cvt)
 {
     switch ( m_LimitObjectType ) {
@@ -927,6 +941,8 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
         break;
     }
 
+    bool found = false;
+
     ITERATE ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
             continue;
@@ -938,14 +954,15 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                        "Cannot find id synonyms");
         }
         if ( !syns  ||  syns->find(idit->first) == syns->end() ) {
-            x_Search(idit->first, idit->second, cvt);
+            found = x_Search(idit->first, idit->second, cvt)  ||  found;
         }
         if ( syns ) {
             ITERATE ( CSynonymsSet, synit, *syns ) {
-                x_Search(*synit, idit->second, cvt);
+                found = x_Search(*synit, idit->second, cvt)  ||  found;
             }
         }
     }
+    return found;
 }
 
 
@@ -1019,7 +1036,7 @@ void CAnnotTypes_CI::x_Search(const CObject& limit_info)
 }
 
 
-void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
+bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
                                     const CSeq_id_Handle& master_id,
                                     const CHandleRange& master_hr)
 {
@@ -1056,16 +1073,16 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
             }
         }
         if ( hr.Empty() )
-            return;
+            return false;
     }}
 
     if (m_NoMapping) {
-        x_Search(ref_loc, 0);
+        return x_Search(ref_loc, 0);
     }
     else {
         CSeq_loc_Conversion cvt(master_id.GetSeqId(),
                                 seg, ref_id, m_Scope);
-        x_Search(ref_loc, &cvt);
+        return x_Search(ref_loc, &cvt);
     }
 }
 
@@ -1076,6 +1093,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/09/11 17:45:07  grichenk
+* Added adaptive-depth option to annot-iterators.
+*
 * Revision 1.85  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

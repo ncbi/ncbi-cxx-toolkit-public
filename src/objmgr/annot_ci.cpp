@@ -46,7 +46,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
           SAnnotSelector(CSeq_annot::C_Data::e_not_set)
-          .SetNoMapping()
+          .SetNoMapping(true)
           .SetSortOrder(eSortOrder_None),
           overlap_type, resolve, entry)
 {
@@ -59,7 +59,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      EResolveMethod resolve, const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
           SAnnotSelector(CSeq_annot::C_Data::e_not_set)
-          .SetNoMapping()
+          .SetNoMapping(true)
           .SetSortOrder(eSortOrder_None),
           overlap_type, resolve, entry)
 {
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/09/11 17:45:07  grichenk
+* Added adaptive-depth option to annot-iterators.
+*
 * Revision 1.27  2003/08/27 14:29:52  vasilche
 * Reduce object allocations in feature iterator.
 *
