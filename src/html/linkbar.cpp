@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/13 15:22:44  vakatov
+* Added default constructor to CLinkDefinition:: -- to let the Mac
+* CodeWarrior C++ compiler to instantiate "list<CLinkDefinition>"
+*
 * Revision 1.4  1999/02/22 22:45:43  vasilche
 * Fixed map::insert(value_type) usage.
 *
@@ -50,6 +54,11 @@
 #include <html/linkbar.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CLinkDefinition::CLinkDefinition(void)
+    : m_Width(0), m_Height(0)
+{
+}
 
 CLinkDefinition::CLinkDefinition(const string& name,
                                  const string& linkImage,

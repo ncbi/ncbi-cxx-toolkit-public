@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/13 15:22:42  vakatov
+* Added default constructor to CLinkDefinition:: -- to let the Mac
+* CodeWarrior C++ compiler to instantiate "list<CLinkDefinition>"
+*
 * Revision 1.3  1999/02/03 15:03:55  vasilche
 * Added check for wrong link names.
 *
@@ -56,6 +60,7 @@ BEGIN_NCBI_SCOPE
 class CLinkDefinition
 {
 public:
+    CLinkDefinition(void);
     CLinkDefinition(const string& name,
                     const string& linkImage = NcbiEmptyString,
                     const string& noLinkImage = NcbiEmptyString);
