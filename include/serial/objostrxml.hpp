@@ -56,13 +56,16 @@ public:
     enum EEncoding {
         eEncoding_Unknown,
         eEncoding_UTF8,
-        eEncoding_ISO8859_1
+        eEncoding_ISO8859_1,
+        eEncoding_Windows_1252
     };
     void SetEncoding(EEncoding enc);
     EEncoding GetEncoding(void) const;
 
     void SetReferenceSchema(bool use_schema = true);
     bool GetReferenceSchema(void) const;
+    void SetReferenceDTD(bool use_dtd = true);
+    bool GetReferenceDTD(void) const;
 
     void SetUseSchemaLocation(bool use_loc = true);
     bool GetUseSchemaLocation(void) const;
@@ -281,6 +284,7 @@ private:
     EEncoding m_Encoding;
     bool m_UseSchemaRef;
     bool m_UseSchemaLoc;
+    bool m_UseDTDRef;
     static string sm_DefaultSchemaNamespace;
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
@@ -302,6 +306,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/01/08 17:42:34  gouriano
+* Added encoding Windows-1252.
+* Made it possible to omit document type declaration
+*
 * Revision 1.37  2003/11/26 19:59:39  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

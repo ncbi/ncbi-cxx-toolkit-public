@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/01/08 17:42:00  gouriano
+* Added encoding Windows-1252.
+* Made it possible to omit document type declaration
+*
 * Revision 1.67  2003/11/26 19:59:41  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
@@ -313,7 +317,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown ),
-      m_UseSchemaRef( false ), m_UseSchemaLoc( true )
+      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true )
 {
     m_Output.SetBackLimit(1);
 }
@@ -340,6 +344,14 @@ void CObjectOStreamXml::SetReferenceSchema(bool use_schema)
 bool CObjectOStreamXml::GetReferenceSchema(void) const
 {
     return m_UseSchemaRef;
+}
+void CObjectOStreamXml::SetReferenceDTD(bool use_dtd)
+{
+    m_UseDTDRef = use_dtd;
+}
+bool CObjectOStreamXml::GetReferenceDTD(void) const
+{
+    return m_UseDTDRef;
 }
 
 void CObjectOStreamXml::SetUseSchemaLocation(bool use_loc)
@@ -421,11 +433,14 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     case eEncoding_ISO8859_1:
         m_Output.PutString("\" encoding=\"ISO-8859-1");   
         break;
+    case eEncoding_Windows_1252:
+        m_Output.PutString("\" encoding=\"Windows-1252");   
+        break;
     }
     m_Output.PutString("\"?>");
     m_Output.PutEol();
 
-    if (!m_UseSchemaRef) {
+    if (!m_UseSchemaRef && m_UseDTDRef) {
         m_Output.PutString("<!DOCTYPE ");
         m_Output.PutString(type->GetName());
     
