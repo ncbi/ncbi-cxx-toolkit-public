@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/12 21:15:59  thiessen
+* add move up/down to CDD annotations
+*
 * Revision 1.7  2001/10/14 09:27:27  thiessen
 * add cdd evidence move up/down
 *
@@ -104,6 +107,7 @@ private:
     void DeleteAnnotation(void);
     void EditAnnotation(void);
     void HighlightAnnotation(void);
+    void MoveAnnotation(bool moveUp);
     void NewEvidence(void);
     void DeleteEvidence(void);
     void EditEvidence(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/02/12 21:15:59  thiessen
+* add move up/down to CDD annotations
+*
 * Revision 1.21  2002/01/19 15:25:03  thiessen
 * tweaks for DebugMT build to work
 *
@@ -148,30 +151,32 @@
 #define ID_L_ANNOT 10000
 #define ID_B_NEW_ANNOT 10001
 #define ID_B_HIGHLIGHT 10002
-#define ID_B_EDIT_ANNOT 10003
-#define ID_B_DEL_ANNOT 10004
-#define ID_L_EVID 10005
-#define ID_B_NEW_EVID 10006
-#define ID_B_SHOW 10007
-#define ID_B_EVID_UP 10008
-#define ID_B_EDIT_EVID 10009
-#define ID_B_DEL_EVID 10010
-#define ID_B_EVID_DOWN 10011
+#define ID_B_ANNOT_UP 10003
+#define ID_B_EDIT_ANNOT 10004
+#define ID_B_DEL_ANNOT 10005
+#define ID_B_ANNOT_DOWN 10006
+#define ID_L_EVID 10007
+#define ID_B_NEW_EVID 10008
+#define ID_B_SHOW 10009
+#define ID_B_EVID_UP 10010
+#define ID_B_EDIT_EVID 10011
+#define ID_B_DEL_EVID 10012
+#define ID_B_EVID_DOWN 10013
 wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_R_COMMENT 10012
-#define ID_ST_COMMENT 10013
-#define ID_T_COMMENT 10014
-#define ID_LINE 10015
-#define ID_R_PMID 10016
-#define ID_ST_PMID 10017
-#define ID_T_PMID 10018
-#define ID_R_STRUCTURE 10019
-#define ID_ST_STRUCTURE 10020
-#define ID_T_STRUCTURE 10021
-#define ID_B_RERANGE 10022
-#define ID_B_EDIT_OK 10023
-#define ID_B_EDIT_CANCEL 10024
+#define ID_R_COMMENT 10014
+#define ID_ST_COMMENT 10015
+#define ID_T_COMMENT 10016
+#define ID_LINE 10017
+#define ID_R_PMID 10018
+#define ID_ST_PMID 10019
+#define ID_T_PMID 10020
+#define ID_R_STRUCTURE 10021
+#define ID_ST_STRUCTURE 10022
+#define ID_T_STRUCTURE 10023
+#define ID_B_RERANGE 10024
+#define ID_B_EDIT_OK 10025
+#define ID_B_EDIT_CANCEL 10026
 wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -305,6 +310,9 @@ void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
         case ID_B_HIGHLIGHT:
             HighlightAnnotation();
             break;
+        case ID_B_ANNOT_UP: case ID_B_ANNOT_DOWN:
+            MoveAnnotation(event.GetId() == ID_B_ANNOT_UP);
+            break;
 
         // evidence buttons
         case ID_B_NEW_EVID:
@@ -348,6 +356,8 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelAnnot, ID_B_DEL_ANNOT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditAnnot, ID_B_EDIT_ANNOT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHighlight, ID_B_HIGHLIGHT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAnnotUp, ID_B_ANNOT_UP, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAnnotDown, ID_B_ANNOT_DOWN, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewEvid, ID_B_NEW_EVID, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelEvid, ID_B_DEL_EVID, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditEvid, ID_B_EDIT_EVID, wxButton)
@@ -403,6 +413,8 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bDelAnnot->Enable(selectedAnnot != NULL);
     bEditAnnot->Enable(selectedAnnot != NULL);
     bHighlight->Enable(selectedAnnot != NULL);
+    bAnnotUp->Enable(annots->GetSelection() > 0);
+    bAnnotDown->Enable(annots->GetSelection() < annots->GetCount() - 1);
     bNewEvid->Enable(selectedAnnot != NULL);
     bDelEvid->Enable(selectedEvid != NULL);
     bEditEvid->Enable(selectedEvid != NULL);
@@ -550,7 +562,6 @@ bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& in
 void CDDAnnotateDialog::HighlightAnnotation(void)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewAnnot, ID_B_NEW_ANNOT, wxButton)
 
     // get selection
     if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
@@ -572,6 +583,47 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
             if (!HighlightInterval(**s)) break;
         }
     }
+}
+
+void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
+{
+    // get selection
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::MoveAnnotation() - error getting annotation pointer");
+        return;
+    }
+
+    CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end(), aPrev = ae, aSwap = ae;
+    CRef < CAlign_annot > tmp;
+    for (a=annotSet->Set().begin(); a!=ae; a++) {
+
+        if (*a == selectedAnnot) {
+            // figure out which (prev or next) annot field to swap with
+            if (moveUp && aPrev != ae)
+                aSwap = aPrev;
+            else if (!moveUp && (++(aSwap = a)) != ae)
+                ;
+            else
+                return;
+
+            // do the swap and update GUI
+            tmp = *aSwap;
+            *aSwap = *a;
+            *a = tmp;
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
+            SetupGUIControls(annots->GetSelection() + (moveUp ? -1 : 1), evids->GetSelection());
+            return;
+        }
+
+        aPrev = a;
+    }
+
+    ERR_POST(Error << "CDDAnnotateDialog::MoveAnnotation() - error finding selected annotation");
 }
 
 void CDDAnnotateDialog::NewEvidence(void)
@@ -1020,7 +1072,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(200,100), 0, strs4, wxLB_SINGLE );
     item2->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxGridSizer *item5 = new wxGridSizer( 2, 0, 0 );
+    wxGridSizer *item5 = new wxGridSizer( 2, 0, 0, 0 );
 
     wxButton *item6 = new wxButton( parent, ID_B_NEW_ANNOT, "New", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -1028,46 +1080,52 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxButton *item7 = new wxButton( parent, ID_B_HIGHLIGHT, "Highlight", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item8 = new wxButton( parent, ID_B_EDIT_ANNOT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item8 = new wxButton( parent, ID_B_ANNOT_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item9 = new wxButton( parent, ID_B_DEL_ANNOT, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item9 = new wxButton( parent, ID_B_EDIT_ANNOT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item10 = new wxButton( parent, ID_B_DEL_ANNOT, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item11 = new wxButton( parent, ID_B_ANNOT_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item2->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item1->Add( item2, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxStaticBox *item11 = new wxStaticBox( parent, -1, "Evidence" );
-    wxStaticBoxSizer *item10 = new wxStaticBoxSizer( item11, wxVERTICAL );
+    wxStaticBox *item13 = new wxStaticBox( parent, -1, "Evidence" );
+    wxStaticBoxSizer *item12 = new wxStaticBoxSizer( item13, wxVERTICAL );
 
-    wxString *strs12 = (wxString*) NULL;
-    wxListBox *item12 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(300,100), 0, strs12, wxLB_SINGLE );
-    item10->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxString *strs14 = (wxString*) NULL;
+    wxListBox *item14 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(300,100), 0, strs14, wxLB_SINGLE );
+    item12->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxGridSizer *item13 = new wxGridSizer( 2, 0, 0, 0 );
+    wxGridSizer *item15 = new wxGridSizer( 2, 0, 0, 0 );
 
-    wxButton *item14 = new wxButton( parent, ID_B_NEW_EVID, "New", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item14, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item16 = new wxButton( parent, ID_B_NEW_EVID, "New", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item15 = new wxButton( parent, ID_B_SHOW, "Show", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item17 = new wxButton( parent, ID_B_SHOW, "Show", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item16 = new wxButton( parent, ID_B_EVID_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item18 = new wxButton( parent, ID_B_EVID_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item17 = new wxButton( parent, ID_B_EDIT_EVID, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item19 = new wxButton( parent, ID_B_EDIT_EVID, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item18 = new wxButton( parent, ID_B_DEL_EVID, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item20 = new wxButton( parent, ID_B_DEL_EVID, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item19 = new wxButton( parent, ID_B_EVID_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item21 = new wxButton( parent, ID_B_EVID_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
+    item15->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item10->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item12->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item1->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item1->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item0->Add( item1, 0, wxALIGN_CENTRE, 5 );
 
