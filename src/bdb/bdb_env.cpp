@@ -108,8 +108,13 @@ void CBDB_Env::JoinEnv(const char* db_home)
     int ret = m_Env->txn_stat(m_Env, &txn_statp, 0);
     if (ret == 0)
     {
-        if (m_Env->flags & DB_ENV_THREAD) {
+        // Try to create a fake transaction to test the environment
+        DB_TXN* txn = 0;
+        ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
+
+        if (ret == 0) {
             m_Transactional = true;
+            ret = txn->discard(txn, 0);
         }
         ::free(txn_statp);
     }
@@ -142,6 +147,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/12/29 17:24:07  kuznets
+ * Created fake transaction when joining environment to check if it supports
+ * transactions.
+ *
  * Revision 1.10  2003/12/29 16:15:37  kuznets
  * +OpenErrFile
  *
