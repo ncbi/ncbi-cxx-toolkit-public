@@ -40,6 +40,7 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/msvc_makefile.hpp>
+#include <app/project_tree_builder/msvc_dlls_info.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -93,6 +94,8 @@ private:
 
     auto_ptr<CBuildType>        m_BuildType;
 
+    auto_ptr<CMsvcDllsInfo>     m_DllsInfo;
+
 public:
 
     void    GetMetaDataFiles    (list<string>*      files)   const;
@@ -107,6 +110,8 @@ public:
     const SProjectTreeInfo&  GetProjectTreeInfo(void);
 
     const CBuildType&        GetBuildType(void);
+
+    const CMsvcDllsInfo&     GetDllsInfo (void);
 
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
@@ -172,6 +177,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/08 23:32:11  gorelenk
+ * Added member m_DllsInfo and declaration of member-function GetDllsInfo
+ * to class CProjBulderApp.
+ *
  * Revision 1.10  2004/03/02 23:29:56  gorelenk
  * Added data-member of type auto_ptr<CBuildType> and member-function
  * GetBuildType.
