@@ -61,7 +61,6 @@ void CLDS_File::SyncWithDir(const string& path,
         LDS_THROW(eFileNotFound, err);
     }
 
-    CLDS_Query lds_query(m_db);
     CChecksum checksum(CChecksum::eCRC32);
 
     set<string> files;
@@ -132,7 +131,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
         (*i)->GetTime(&modification);
         time_t tm = modification.GetTimeT();
         CFile aFile(entry);
-        size_t file_size = aFile.GetLength();
+        size_t file_size = (size_t)aFile.GetLength();
 
         if (ext == ".db") {
             continue; // Berkeley DB file, no need to index it.
@@ -298,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/01/04 14:10:13  kuznets
+ * Fixed warnings(MSVC)
+ *
  * Revision 1.8  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
