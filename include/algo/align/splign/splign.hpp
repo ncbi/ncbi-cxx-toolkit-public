@@ -102,11 +102,61 @@ public:
 
     void Run(THits* hits);
   
-    struct  SSegment;
-    struct  SAlignedCompartment;
+    // a segment can represent an exon or an unaligning piece of mRna (a gap)
+    struct SSegment {
+        
+    public:
+        
+        bool   m_exon; // false if gap
+        double m_idty;
+        size_t m_len;
+        size_t m_box [4];
+        string m_annot;   // short description like AG<exon>GT
+        string m_details; // transcript for exons, '-' for gaps
+        CNWAligner::TScore m_score;
+        
+        void ImproveFromLeft( const char* seq1, const char* seq2,
+                              CConstRef<CSplicedAligner> aligner);
+        void ImproveFromRight( const char* seq1, const char* seq2,
+                               CConstRef<CSplicedAligner> aligner);
+        
+        void Update(CConstRef<CSplicedAligner> aligner); // recompute members
+        const char* GetDonor(void) const;    // raw pointers to parts of annot
+        const char* GetAcceptor(void) const; // or zero if less than 2 chars
+        
+        // NetCache-related serialization
+        void ToBuffer   (vector<char>* buf) const;
+        void FromBuffer (const vector<char>& buf);
+    };
+    
     typedef vector<SSegment> TSegments;
-    typedef vector<SAlignedCompartment> TResults;
 
+    // aligned compartment representation 
+    struct SAlignedCompartment {
+        
+        size_t           m_id;
+        bool             m_error;
+        string           m_msg;
+        bool             m_QueryStrand, m_SubjStrand;
+        TSegments        m_segments;
+        
+        SAlignedCompartment(void): m_id(0), m_error(true)
+        {}
+        
+        SAlignedCompartment(size_t id, bool err, const char* msg):
+            m_id(id), m_error(err), m_msg(msg)
+        {}
+        
+        // return overall identity (including gaps)
+        double GetIdentity(void) const;
+        
+        // save to / read from NetCache buffer
+        void ToBuffer   (vector<char>* buf) const;
+        void FromBuffer (const vector<char>& buf);
+    };
+    
+    typedef vector<SAlignedCompartment> TResults;
+    
     const TResults& GetResult(void) const {
         return m_result;
     }
@@ -169,65 +219,15 @@ protected:
 };
 
 
-// aligned compartment representation 
-struct CSplign::SAlignedCompartment {
-
-    size_t           m_id;
-    bool             m_error;
-    string           m_msg;
-    bool             m_QueryStrand, m_SubjStrand;
-    TSegments        m_segments;
-    
-    SAlignedCompartment(void): m_id(0), m_error(true)
-    {}
-    
-    SAlignedCompartment(size_t id, bool err, const char* msg):
-        m_id(id), m_error(err), m_msg(msg)
-    {}
-    
-    // return overall identity (including gaps)
-    double GetIdentity(void) const;
-    
-    // save to / read from NetCache buffer
-    void ToBuffer   (vector<char>* buf) const;
-    void FromBuffer (const vector<char>& buf);
-};
-
-
-// a segment can represent an exon or an unaligning piece of mRna (a gap)
-struct CSplign::SSegment {
-
-public:
-    
-    bool   m_exon; // false if gap
-    double m_idty;
-    size_t m_len;
-    size_t m_box [4];
-    string m_annot;   // short description like AG<exon>GT
-    string m_details; // transcript for exons, '-' for gaps
-    CNWAligner::TScore m_score;
-     
-    void ImproveFromLeft( const char* seq1, const char* seq2,
-                          CConstRef<CSplicedAligner> aligner);
-    void ImproveFromRight( const char* seq1, const char* seq2,
-                           CConstRef<CSplicedAligner> aligner);
-    
-    void Update(CConstRef<CSplicedAligner> aligner); // recompute members
-    const char* GetDonor(void) const;    // raw pointers to parts of annot
-    const char* GetAcceptor(void) const; // or zero if less than 2 chars
-
-    // NetCache-related serialization
-    void ToBuffer   (vector<char>* buf) const;
-    void FromBuffer (const vector<char>& buf);
-};
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/11/29 21:09:12  kapustin
+ * Move out-of-class struct definitions back within CSplign for more compatibility
+ *
  * Revision 1.15  2004/11/29 14:36:45  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *
