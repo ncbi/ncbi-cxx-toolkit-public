@@ -859,7 +859,8 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
             NS_RETURN_ERROR("Misformed PUT request")
         }
         char *ptr = req->output;
-        for (++s; *s != '"'; ++s) {
+        for (++s; *s; ++s) {
+            if (*s == '"' && *(s-1) != '\\') break;
             NS_CHECKEND(s, "Misformed PUT request")
             *ptr++ = *s;            
         }
@@ -966,7 +967,8 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s !='"') {
             NS_RETURN_ERROR("Misformed PUT error request")
         }
-        for (++s; *s != '"'; ++s) {
+        for (++s; *s; ++s) {
+            if (*s == '"' && *(s-1) != '\\') break;
             NS_CHECKEND(s, "Misformed PUT error request")
             req->err_msg.push_back(*s);
         }
@@ -1379,6 +1381,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/24 16:42:25  kuznets
+ * Fixed bug in command parser
+ *
  * Revision 1.19  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
