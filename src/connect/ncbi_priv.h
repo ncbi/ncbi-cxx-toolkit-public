@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/04/13 06:38:45  lavr
+ * More *_LOGF_* macros added
+ *
  * Revision 6.4  2001/05/17 18:07:15  vakatov
  * Logging::  always call the logger if severity is eLOG_Fatal
  *
@@ -90,6 +93,12 @@ extern MT_LOCK g_CORE_MT_Lock;
  */
 extern LOG g_CORE_Log;
 
+extern const char* g_CORE_Sprintf(const char* fmt, ...)
+#ifdef __GNUC__
+         __attribute__((format(printf, 1, 2)))
+#endif
+;
+
 #define CORE_LOG(level, message)  do { \
     if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
@@ -98,24 +107,18 @@ extern LOG g_CORE_Log;
     } \
 } while (0)
 
-#define CORE_DATA(data, size, message)  do { \
-    if ( g_CORE_Log ) { \
-        CORE_LOCK_READ; \
-        LOG_DATA(g_CORE_Log, data, size, message); \
-        CORE_UNLOCK; \
-    } \
-} while (0)
-
-extern const char* g_CORE_Sprintf(const char* fmt, ...)
-#ifdef __GNUC__
-         __attribute__((format(printf, 1, 2)))
-#endif
-;
-
 #define CORE_LOGF(level, fmt_args)  do { \
     if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, g_CORE_Sprintf fmt_args); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
+#define CORE_DATA(data, size, message)  do { \
+    if ( g_CORE_Log ) { \
+        CORE_LOCK_READ; \
+        LOG_DATA(g_CORE_Log, data, size, message); \
         CORE_UNLOCK; \
     } \
 } while (0)
@@ -136,6 +139,14 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
     } \
 } while (0)
 
+#define CORE_LOGF_SYS_ERRNO(level, fmt_args)  do { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
+        CORE_LOCK_READ; \
+        LOG_WRITE_ERRNO(g_CORE_Log, level, g_CORE_Sprintf fmt_args); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
 #define CORE_LOG_ERRNO(x_errno, level, message)  do { \
     if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         char buf[2048]; \
@@ -143,6 +154,18 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, \
                   MessagePlusErrno(message, xx_errno, "", buf, sizeof(buf))); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
+#define CORE_LOGF_ERRNO(x_errno, level, fmt_args)  do { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
+        char buf[2048]; \
+        int xx_errno = x_errno; \
+        CORE_LOCK_READ; \
+        LOG_WRITE(g_CORE_Log, level, \
+                  MessagePlusErrno(g_CORE_Sprintf fmt_args,\
+                  xx_errno, "", buf, sizeof(buf))); \
         CORE_UNLOCK; \
     } \
 } while (0)
