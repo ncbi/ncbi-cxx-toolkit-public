@@ -10,32 +10,51 @@
 
   	      <ul>
 	        <li><a href="#introduction"> Introduction</a> 
-	        <li><a href="#macros"> The <i>BEGIN_*_INFO</i> pre-processor macros </a>
-	        <li><a href="#addm"> The <i>ADD_*_</i> pre-processor macros </a>
+	        <li><a href="#macros"> Installing a <i>GetTypeInfo()</i> function: the <i>BEGIN_/END_</i> macros </a>
+	        <li><a href="#addm"> Specifying internal structure and class inheritance: the <i>ADD_</i> macros</a>
 	      </ul>
 
-<a name ="introduction"> <h3>Introduction</h3> Type information for the NCBI C++ Toolkit objects is
-defined in the sections on <a href="typeinfo.html"> <i>Runtime Object Type Information</i> </a> and <a
-href="typeinfo2.html"> <i>Generalized Object Type Information</i></a>. In this section, we describe how
-type information can also be implemented and accessed for user-defined types. <p>
+<a name ="introduction"> <h3>Introduction</h3> 
+
+Object type information, as it is used in the NCBI C++ Toolkit, is defined in the section on <a
+href="typeinfo.html"> <i>Runtime Object Type Information</i></a>. As described there, all of the
+classes and constructs defined in the serial <i>include</i> and <i>src</i> directories have a static
+implementation of a <i>GetTypeInfo()</i> function that yields a <a href="typeinfo.html#ctypeinfo">
+<i>CTypeInfo</i></a> for the object of interest.  In this section, we describe how type information
+can also be generated and accessed for user-defined types. We begin with a review of some of the
+basic notions intoduced in the previous discussion.
+<p>
 
 The type information for a class is stored outside any instances of that class, in a statically
-created <a href="typeinfo.html#ctypeinfo"> <i>CTypeInfo</i></a> object. The <i>CTypeInfo</i> object
-is then accessed by all instances of the class via the <a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">
-<i>GetTypeInfo()</i></a> class method. With the first invocation of <i>GetTypeInfo()</i> (for a
-given class), a static <i>CTypeInfo</i> object is created, which is local to the function
-<i>GetTypeInfo()</i>. Subsequent calls to <i>GetTypeInfo()</i> simply return a pointer to this
-statically created local object. Because <i>GetTypeInfo()</i> is itself a static class method, a
-single invocation initializes the <i>CTypeInfo</i> object for all instances of that class.<p>
+created <a href="typeinfo.html#ctypeinfo"> <i>CTypeInfo</i></a> object.  A <i>class</i>'s type
+information includes the class layout, inheritance relations, external alias, and various other
+attributes that are independent of specific instances. In addition, the type information object
+provides an interface to the class's data members.<p>
 
-All of the automatically generated classes defined in the C++ Toolkit's <i>objects</i> directory
-already have a static <i>GetTypeInfo()</i> member function. In order to make type information about
-<i>user-defined</i> classes accessible to your application, the user-defined classes must also
-implement a static <i>GetTypeInfo()</i> method. A set of preprocessor <a href="#macros"> macros</a>
-is available, which greatly simplifies this effort. A pre-requisite to using these macros however,
-is that the class definition must include the following line:<p>
+Limited type information is also available for primitive data types, enumerations, containers, and
+pointers. The type information for a primitive type specifies that it is an <i>int, float,</i> or
+<i>char</i>, etc., and whether or not that element is signed. Enumerations are a special kind of
+primitive type, whose type information specifies its enumeration values and named elements. Type
+information for containers can specify both the type of container and the type of elements. The type
+information for a pointer provides convenient methods of access to the type information for the
+type pointed to.<p>
 
+For all types, the type information is encoded in a static <i>CTypeInfo</i> object, which is
+then accessed by all instances of a given type using a 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">
+<i>GetTypeInfo()</i></a> function. For <i>class</i> types, this function is implemented as a static
+method for the class. For non class types, <i>GetTypeInfoXxx()</i> is implemented as a static global
+function, where <i>Xxx</i> is a unique suffix generated from the type's name. With the first
+invocation of <i>GetTypeInfo()</i> for a given type, the static <i>CTypeInfo</i> object is created,
+which then persists (local to the function <i>GetTypeInfo()</i>) throughout execution. Subsequent
+calls to <i>GetTypeInfo()</i> simply return a pointer to this statically created local object. <p>
+
+In order to make type information about <i>user-defined</i> classes accessible to your application,
+the user-defined classes must also implement a static <i>GetTypeInfo()</i> method. A set of
+preprocessor <a href="#macros"> macros</a> is available, which greatly simplifies this effort. A
+pre-requisite to using these macros however, is that the class definition must include the following
+line:<p>
+<a name="cdcl">
 <center><pre>DECLARE_INTERNAL_TYPE_INFO();
 </pre></center>
 This pre-processor macro will generate the following in-line statement in the class definition:
@@ -43,18 +62,18 @@ This pre-processor macro will generate the following in-line statement in the cl
 <center><pre>static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);
 </pre></center>
 
-Only C++ <i>class</i> (or <i>struct</i>) objects can have methods, and therefore additional
-mechanisms must be used to implement "type information" for C++ <i>enum</i>s. The information
-available for a C++ <i>enum</i> is not actually type information <i>per se</i>, but simply a list of
-the named possible values.  As with class objects, there must be some means of declaring the type
-information function for an enumeration prior to using the macros which implement that function. The
-<i>DECLARE_ENUM_INFO</i> and <i>DECLARE_INTERNAL_ENUM_INFO</i> macros generate the appropriate
-declarations. Specifically, given an enumeration named <i>EMyEnum</i>,
-<i>DECLARE_ENUM_INFO(EMyEnum)</i> will generate the following declaration:
+As with class objects, there must be some means of declaring the type
+information function for an enumeration prior to using the macros which implement that function. 
+Given an enumeration named <i>EMyEnum</i>,
+
+<center><i>DECLARE_ENUM_INFO(EMyEnum)
+</i></center> 
+
+will generate the following declaration:
 
 <p><center><pre>const CEnumeratedTypeValues* GetTypeInfo_enum_EMyEnum(void);</pre></center><p>
 
-The <i>DECLARE_ENUM_INFO()</i> macro should be used in the header file where the enumeration is
+The <i>DECLARE_ENUM_INFO()</i> macro should appear in the header file where the enumeration is
 defined, immediately following the definition. The <i>DECLARE_INTERNAL_ENUM_INFO</i> macro is
 intended for usage with internal class definitions, as in:
 
@@ -71,42 +90,18 @@ intended for usage with internal class definitions, as in:
 The C++ Toolkit also allows one to provide type information for legacy C style <i>struct</i> and
 <i>choice</i> elements defined in the C Toolkit. The mechanisms used to implement this are mentioned
 but not described in detail here, as it is not likely that newly-defined types will be in
-these categories.
+these categories. 
 
-<a name="macros"><h3> The <i>BEGIN_*_INFO</i> pre-processor macros</h3>
+<a name="macros"><h3> Installing a <i>GetTypeInfo()</i> function: the <i>BEGIN_/END_</i> macros </h3>
 
-All of the automatically generated classes in the <i>include/objects</i> directory of the C++ tree have the
-static <i>GetTypeInfo()</i> member function defined. Accordingly, all instances of these classes can 
-be used with the ASN.1 and XML input and output object streams described above. In order to apply 
-these object streams to user-defined classes however, it is also necessary to implement the 
-static <i>GetTypeInfo()</i> member function for these objects. Note that even if your user-defined 
-class is derived from a base class which has its own built-in type information, you must still
-make the type information for the derived class explicit. 
+Several pre-processor macros are available for the installation of the <i>GetTypeInfo()</i> functions
+for different types.  Table 1 lists six <i>BEGIN_NAMED_*_INFO</i> macros, along with a description
+of the type of object each can be applied to and its expected arguments. Each macro in Table 1 has 
+a corresponding <i>END_*_INFO</i> macro definition.<p>
 
-<p>
-
-A number of pre-processor macros are defined in 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialimpl.hpp">
-<i>serialimpl.hpp</i></a> to support this type of activity.  Several pairs of <i>BEGIN/END</i>
-macros implement the <i>GetTypeInfo()</i> method for different types of objects.  Table 1 lists
-seven <i>BEGIN_NAMED_*_INFO</i> macros, along with a description of the type of object each can be
-applied to, and a list of the expected arguments. Each of the <i>BEGIN_NAMED_*_INFO</i> macros
-listed in Table 1 has a corresponding <i>END_*_INFO</i> macro definition.<p>
-
-The first four macros in Table 1 apply to C++ objects; in conjunction with the <i>ADD_NAMED_*</i>
-macros listed in Table 2, these macros implement the <i>GetTypeInfo()</i> method for the object.
-The next two macros implement global, uniquely named functions which provide access to type
-information about C-style structs defined in legacy libraries. The function name is derived by
-concatenating the internal symbolic name of the struct to the prefix
-<i>GetTypeInfo_struct_</i>. Similarly, the last two macros implement global type information
-functions for C++ enumerations; the resulting functions are named
-<i>GetTypeInfo_enum_[EnumName]</i>.<p>
-
-<font color=red>Note:</font> A C++ <i>struct</i> is actually a C++ <i>class</i> with default public 
-members; the CLASS_INFO macros should be used for these objects - <i>not</i> the
-ASN_STRUCT_INFO macros.<p>
-
-Most of these macros take two <i>string</i> arguments:
+The first four macros in Table 1 apply to C++ objects. The <i>DECLARE_INTERNAL_TYPE_INFO()</i> macro
+<strong>must</strong> appear in the class definition's public section. These macros take two
+<i>string</i> arguments:
 <ul>
 <li> an external alias for the type, and 
 <li> the internal C++ symbolic class name. 
@@ -127,6 +122,25 @@ generates a call to the corresponding "named" macro using a quoted string.  For 
 </pre></font>
 
 <p>
+The next two macros implement global, uniquely named functions which provide access to type
+information for C++ enumerations; the resulting functions are named <i>GetTypeInfo_enum_[EnumName]</i>.
+The <i>DECLARE_ENUM_INFO()</i> or <i>DECLARE_ENUM_INFO_IN()</i> macro should be used in these cases
+to declare the <i>GetTypeInfo*()</i> functions.<p>
+
+The usage of these six macros generally takes the following form:
+<font color = "#808080"><pre>
+     BEGIN_*_INFO(ClassName)
+     {
+         ADD_*(MemberName);
+         ADD_*(memberName);
+         ...
+     }
+     END_*_INFO
+</pre></font>
+
+That is, the <i>BEGIN/END</i> macros are used to generate the function's signature and enclosing
+block, and various <i>ADD_*</i> macros are applied to add information about internal members and
+class relations. <p>
 
 <table BORDER WIDTH="100%"><caption ALIGN=BOTTOM> Table 1</caption>
 <tr><th>Macro name</th>			    <th>Used for</th>            <th>Arguments</th>   </tr>
@@ -144,12 +158,6 @@ generates a call to the corresponding "named" macro using a quoted string.  For 
 <tr><td><a href="#choice"> BEGIN_NAMED_CHOICE_INFO</a></td>
 					    <td>C++ class choice object</td>        <td>ClassAlias, ClassName</td> </tr>
 
-<tr><td><a href="#achoice"> BEGIN_NAMED_ASN_CHOICE_INFO</a></td>
-					    <td>(old style) C choice object  </td>  <td>ChoiceAlias, ChoiceName</td> </tr>
-
-<tr><td><a href="#asnstr"> BEGIN_NAMED_ASN_STRUCT_INFO</a></td>
-					    <td>(old style) C Struct object</td>    <td>StructAlias, StructName</td> </tr>
-
 <tr><td><a href="#enum">   BEGIN_NAMED_ENUM_INFO</a></td>
 					    <td>Enum object</td>		    <td>EnumAlias, EnumName, IsInteger</td> </tr>
 
@@ -165,9 +173,9 @@ generates a call to the corresponding "named" macro using a quoted string.  For 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_CLASS_INFO">
 <i>BEGIN_CLASS_INFO(ClassName)</i></a> <br>
 
-should be used on classes that do not contain any pure virtual functions. For example, the
-<i>GetTypeInfo()</i> method for the <a href="iterators.html#CPerson"><i>CPerson</i></a> class (used
-in the chapter on iterators) can be implemented as:
+These macros should be used on classes that do not contain any pure virtual functions. For example,
+the <i>GetTypeInfo()</i> method for the <a href="iterators.html#CPerson"><i>CPerson</i></a> class
+(used in the chapter on iterators) can be implemented as:
 
 <font color = "#000080"> <pre>
 BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
@@ -203,9 +211,9 @@ or <i>ADD_STD_MEMBER</i> macros. These and other macros used to add members are 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ABSTRACT_CLASS_INFO">
 <i>BEGIN_ABSTRACT_CLASS_INFO(ClassName)</i></a> <br>
 
-must be used on abstract base classes which contain pure virtual functions. Because these abstract
-classes cannot be instantiated, special handling is required in order to install their static
-<i>GetTypeInfo()</i> methods. <p>
+These macros must be used on abstract base classes which contain pure virtual functions. Because
+these abstract classes cannot be instantiated, special handling is required in order to install
+their static <i>GetTypeInfo()</i> methods. <p>
 
 For example, suppose the classes <i>CA</i> and <i>CB</i> are derived from an abstract base class,
 <i>CBase</i>.  In order to be able to apply a <a href="iterators.html#typeIt">
@@ -237,9 +245,10 @@ macros defined below. Failure to define these hierarchical relations in the
 <i>BEGIN_NAMED_DERIVED_CLASS_INFO(ClassAlias, ClassName, BaseClassName)</i></a><br> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_DERIVED_CLASS_INFO">
 <i>BEGIN_DERIVED_CLASS_INFO(ClassName, BaseClassName)</i></a><br> 
-should be used on derived subclasses whose parent classes also
-have the <i>GetTypeInfo()</i> method implemented. Data members inherited from parent classes should
-not be included in the derived class type information. 
+
+These macros should be used on derived subclasses whose parent classes also have the
+<i>GetTypeInfo()</i> method implemented. Data members inherited from parent classes should not be
+included in the derived class type information.
 
 <font color = "#000080"> <pre>
 BEGIN_DERIVED_CLASS_INFO(CA, CBase)
@@ -269,61 +278,26 @@ href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CObjectGetTy
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_CHOICE_INFO">
 <i>BEGIN_CHOICE_INFO(ClassName)</i></a><br>
 
-install <i>GetTypeInfo()</i> for C++ <i>choice</i> objects, which are implemented as C++ classes.
-See <a href="choice.html"> <i>Choice objects in the C++ Toolkit</i></a> for a description of 
-C++ <i>choice</i> objects. Each of the choice variants occurs as a data member in the class, and
-the macros used to add choice variants (<a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT"><i>ADD_NAMED_*_CHOICE_VARIANT</i></a>
-and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_CHOICE_VARIANT">
-<i>ADD_*_CHOICE_VARIANT</i></a>)
-are used similarly to those which add data members to classes (see discussion of the 
-<a href ="#addm"> <i>ADD*</i></a> macros below). 
-
- <p>
-
-<li><a name=achoice>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ASN_CHOICE_INFO">
-<i>BEGIN_NAMED_ASN_CHOICE_INFO(ChoiceAlias, ChoiceName)</i></a><br>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ASN_CHOICE_INFO">
-<i>BEGIN_ASN_CHOICE_INFO(ChoiceName)</i></a><br>
-
-install the corresponding global <i>GetTypeInfo_struct_*()</i> 
-functions for old C-style ASN.1 <i>choice</i> nodes (implemented as <i>ValNode</i>s). Arguments
-to the macro are the external choice alias and the internal name for the choice node in the C
-Toolkit libraries. As a result of executing the macro, a global function named
-<i>GetTypeInfo_struct_ChoiceName</i> will be implemented. The 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_ASN_CHOICE_VARIANT">
-<i>ADD_ASN_CHOICE_VARIANT</i></a>
-macros are used to add types to the choice object.
+These macros install <i>GetTypeInfo()</i> for C++ <i>choice</i> objects, which are implemented as
+C++ classes.  See <a href="choice.html"> <i>Choice objects in the C++ Toolkit</i></a> for a
+description of C++ <i>choice</i> objects. Each of the choice variants occurs as a data member in the
+class, and the macros used to add choice variants (<a
+href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT">
+<i>ADD_NAMED_*_CHOICE_VARIANT</i></a>) are used similarly to those which add data members to classes (see
+discussion of the <a href ="#addm"> <i>ADD*</i></a> macros below).
 <p>
-
-<li><a name=asnstr>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ASN_STRUCT_INFO">
-<i>BEGIN_NAMED_ASN_STRUCT_INFO(StructAlias, StructName)</i></a> <br>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ASN_STRUCT_INFO">
-<i>BEGIN_ASN_STRUCT_INFO(StructName)</i></a> <br>
-should be
-used to implement the <i>GetTypeInfo_struct_*()</i> functions for C-style <i>struct</i>s. 
-User-defined C++ <i>struct</i>s should <i>not</i> use this macro; it is provided 
-only for the implementation of type information functions for legacy code structures. 
-As a result of executing this macro, a global function named 
-<i>GetTypeInfo_struct_StructName()</i> will be implemented. 
-Members are added to the <i>struct</i> using the same <i>ADD_*</i> macros as used
-for class objects. <p>
 
 <li><a name=enum>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ENUM_INFO">
 <i>BEGIN_NAMED_ENUM_INFO(EnumAlias, EnumName, IsInteger)</i></a><br>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ENUM_INFO">
 <i>BEGIN_ENUM_INFO(EnumName, IsInteger)</i></a><br>
- takes 2 arguments: 
 
-<ol><li> <i>EnumName</i> - the internal C++ name for the enum type
-    <li> <i>IsInteger</i> - a Boolean value of <i>true</i> or <i>false</i> indicating whether or not 
-    the enumeration includes arbitrary integer values or only those specified in the enumeration.
+In addition to the two arguments used by the <i>BEGIN_*_INFO</i> macros for classes, a Boolean
+argument (<i>IsInteger</i>) indicates whether or not the enumeration includes arbitrary integer
+values or only those explicitly specified.
 
-</ol><p>
+<p>
 Example usage:
 <font color = "#000080"> <pre>
 // hpp file:
@@ -345,9 +319,7 @@ BEGIN_ENUM_INFO(EMyEnum, false)
 END_ENUM_INFO
 </pre></font>
 
-Like the C-style <i>struct</i> types, <i>enum</i> types can not install <i>GetTypeInfo()</i>
-methods, but instead, must implement global, uniquely named functions to provide type
-information. Enumerated values are specified with the <i>ADD_ENUM_VALUE</i> macro.  As a result of
+Enumerated values are specified with the <i>ADD_ENUM_VALUE</i> macro.  As a result of
 executing the above macro, a global function named <i>GetTypeInfo_enum_EMyEnum()</i> will be
 implemented.<p>
 
@@ -359,18 +331,13 @@ implemented.<p>
 
 These macros also implement the type information functions for C++ enumerations --but in this case,
 the enumeration is defined outside the scope where the macro is applied, so a <i>context</i>
-argument is required.  The 3 arguments to the macro are:
+argument is required.  This new argument, <i>CppContext</i>, specifies the C++ class name or
+external namespace where the enumeration is defined.<p>
 
-<ol><li> <i>CppContext</i> - the internal class name or namespace where the enumeration is defined
-    <li> <i>EnumName</i> - the internal C++ name for the <i>enum</i> object
-    <li> <i>IsInteger</i> - a Boolean value of <i>true</i> or <i>false</i> indicating whether or not 
-    the enumeration includes arbitrary integer values or only those specified in the enumeration.
+The <i>CppContext</i> argument should be postfixed with the scope operator (::). For example, if
+<i>EMyEnum</i> is itself defined in <i>CMyClass</i>, then we would use the following macros in the
+<i>*.cpp</i> file:
 
-</ol>
-The enumeration's definition may be internal to some class or occur in a different namespace. 
-The <i>CppContext</i> argument specifies the class name or namespace, postfixed with the scope
-operator (::). For example, if <i>EMyEnum</i> is itself defined in <i>CMyClass</i>, then we would use 
-the following macros in the <i>*.cpp</i> file:
 <font color = "#000080"> <pre>
 BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
 {
@@ -381,10 +348,6 @@ BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
 }
 END_ENUM_IN_INFO
 </pre></font>
-
-<p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, OtherClassName::, EMyEnum);</center><p>
-
-<p>
 
 </ul>
 
@@ -397,24 +360,23 @@ Similarly, the <i>DECLARE_INTERNAL_ENUM_INFO</i> and
 defined. The <i>DECLARE_ASN_TYPE_INFO</i> and <i>DECLARE_ASN_CHOICE_INFO</i> macros can be used to
 declare the type information functions for C-style structs and choice nodes.
 <p>
-<a name="addm"><h4> The <i>ADD_*_</i> pre-processor macros</h4> 
 
-Information about class data members, subclasses, and choice variants is added to the
-<i>GetTypeInfo()</i> functions using the <i>ADD_*</i> macros listed in Table 2. As with the
-<i>BEGIN_*_INFO</i> macros, each of these has both a "named" and an "unnamed" implementation. The
-arguments to all of the ADD_NAMED_* macros begin with the external alias and internal C++ names of
-the data member, subclass, or choice variant to be added. <p>
+<a name="addm">
+<h3> Specifying internal structure and class inheritance: the <i>ADD_</i> macros </h3>
 
-For the ADD_* macros that take only two arguments (an alias and a name), the <i>type</i> of member or
-subclass being added is either a built-in type or is defined by the name argument. When adding
-a <i>CRef</i> data member to a class or choice object however, the class referenced by the
-<i>CRef</i> must be made explicit with the <i>RefClass</i> argument, which is the internal C++ class
-name for the object pointed to. <p>
+Information about internal class structure and inheritance is specified using the <i>ADD_*</i>
+macros. Again, each macro has both a "named" and "unnamed" implementation. The arguments to all of
+the ADD_NAMED_* macros begin with the external alias and C++ name of the item to be added. <p>
 
-Similarly, when adding a data member that is an enumerated value, the enumeration itself must be
+The ADD_* macros that take <i>only</i> an alias and a name require that the <i>type</i> being
+added must be either a built-in type or a type defined by the name argument. When adding a
+<i>CRef</i> data member to a class or choice object however, the class referenced by the <i>CRef</i>
+must be made explicit with the <i>RefClass</i> argument, which is the C++ class name for
+the type pointed to. <p>
+
+Similarly, when adding an enumerated data member to a class, the enumeration itself must be
 explictly named. For example, if class <i>CMyClass</i> contains a data member <i>m_MyEnumVal</i> of
-type <i>EMyEnum</i>, then the BEGIN_NAMED_CLASS_INFO macro for <i>CMyClass</i> should contain the
-following statement:
+type <i>EMyEnum</i>, then the BEGIN_NAMED_CLASS_INFO macro for <i>CMyClass</i> should contain the statement:
 
 <p><center>ADD_ENUM_MEMBER (m_MyEnumVal, EMyEnum);</center><p>
 
@@ -427,8 +389,8 @@ or, to define a "custom" (non-default) external alias:
 <p><center>ADD_NAMED_ENUM_MEMBER ("m_CustomAlias", m_MyEnumVal, EMyEnum);</center><p>
 
 Here, <i>EMyEnum</i> is defined in the same namespace and scope as <i>CMyClass</i>. Alternatively,
-if the enumeration is defined in a different class or namespace (and therefore, not within the same
-scope), then the ADD_ENUM_IN_MEMBER macro must be used:
+if the enumeration is defined in a different class or namespace (and therefore, then the
+ADD_ENUM_IN_MEMBER macro must be used:
 
 <p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, COtherClassName::, EMyEnum);</center><p>
 
@@ -436,12 +398,10 @@ In this example, <i>EMyEnum</i> is defined in a class named <i>COtherClassName</
 <i>CppContext</i> argument (defined here as <i>COtherClassName::</i>) acts as a scope operator, and
 can also be used to specify an alternative namespace. The ADD_NAMED_ENUM_CHOICE_VARIANT and
 ADD_NAMED_ENUM_IN_CHOICE_VARIANT macros are used similarly to provide information about enumerated
-choice options.
-<p>
+choice options. The <i>ADD_ENUM_VALUE</i> macro is used to add enumerated values to the enumeration
+itself, as demonstrated in the above example of the <a href="#enum"> BEGIN_NAMED_ENUM_INFO</a>
+macro.<p>
 
-The <i>ADD_ENUM_VALUE</i> macro is used to implement the <i>GetTypeInfo_enum_[EnumName]</i> functions for
-enumerations. As demonstrated in the above example of the <a href="#enum"> BEGIN_NAMED_ENUM_INFO</a>
-macro, ADD_ENUM_VALUE specifies the legitimate values of the enumeration.  <p>
 
 
 <table ALIGN=TOP BORDER WIDTH="100%"><caption ALIGN=BOTTOM> Table 2</caption>
@@ -506,9 +466,9 @@ The <i>ADD_MEMBER</i> and <i>ADD_CHOICE_VARIANT</i>  macros always take at least
 </ol>
 
 Depending on the (second) <i>TypeMacro</i> argument, additional arguments may or may
-not be needed.  In this case, the <i>TypeMacro</i> is <i>POINTER</i>, which <i>does</i>
+not be needed.  In this example, the <i>TypeMacro</i> is <i>POINTER</i>, which <i>does</i>
 require additional arguments. The <i>TypeMacroArgs</i> here specify that <i>m_NextDoor</i>
-is a pointer to a <i>class</i> object whose C++ name is <i>CPerson</i>.<p>
+is a pointer to a <i>class</i> type whose C++ name is <i>CPerson</i>.<p>
 
 More generally, the remaining arguments depend on the value of <i>TypeMacro</i>, as these
 parameters complete the type definition. The possible strings which can occur as <i>TypeMacro</i>,
@@ -559,11 +519,7 @@ Some examples of using the ADD_MEMBER macro are:
 </pre></font>
 
 Similarly, the <i>ADD_CHOICE_VARIANT</i> macro generates a call to the corresponding <i>ADD_NAMED_CHOICE_VARIANT</i> macro.
-A more complete description of <i>choice</i> objects can be found in <a href="choice.html">
-<i>Choice objects in the C++ Toolkit</i></a>. Similar sets of <i>ADD_*</i> macros are defined for C-style <i>ASN_CHOICE</i> and 
-and <i>ASN_STRUCT</i> elements, in 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialasn.hpp">
-<i>include/serialasn.hpp</i></a>.
+These macros add type information for the <a href="choice.html"><i>choice</i> object's variants.
 
 <p>
 
