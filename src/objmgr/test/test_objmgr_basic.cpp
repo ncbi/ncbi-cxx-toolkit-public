@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/11/26 20:57:06  vasilche
+* Removed redundant const before enum parameter.
+*
 * Revision 1.18  2003/09/30 16:22:05  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
@@ -136,7 +139,7 @@ public:
         {
         }
     virtual void GetRecords(const CSeq_id_Handle& /*id*/,
-                            const EChoice /*choice*/)
+                            EChoice /*choice*/)
         {
         }
 };
