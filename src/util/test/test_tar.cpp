@@ -32,8 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <internal/util/tar/tar.hpp>
-
+#include <util/compress/tar.hpp>
 #include <test/test_assert.h>  // This header must go last
 
 
@@ -75,8 +74,8 @@ int CTest::Run(void)
 
     //CTar tar("/home/ivanov/tar/0021-9193-19940101_176.12-205570-1100884818.17906.tar");
     
-    tar.Extract("e:\\tar\\out");
-    //tar.Extract("/home/ivanov/tar/out");
+    //tar.Extract("e:\\tar\\out");
+    tar.Extract("/home/ivanov/tar/out");
 
     return 0;
 }
@@ -98,6 +97,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/01/31 15:54:14  ivanov
+ * Fixed path to tar.hpp
+ *
  * Revision 1.1  2004/12/02 17:49:16  ivanov
  * Initial draft revision
  *
