@@ -325,6 +325,18 @@ Int4 FrameToContext(Int2 frame);
 NCBI_XBLAST_EXPORT
 Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
 
+/** Get the standard amino acid probabilities. This is basically a wrapper for 
+ * BlastScoreBlkNew() and Blast_ResFreqStdComp() from blast_stat.c with a more
+ * intention-revealing name :)
+ * Caller is responsible for deallocating return value via sfree().
+ * @return NULL if there is not enough memory otherwise an array of length
+ * BLASTAA_SIZE, where each index corresponds to an amino acid as specified in
+ * the NCBIstdaa encoding.
+ */
+NCBI_XBLAST_EXPORT
+double* 
+BLAST_GetStandardAaProbabilities();
+
 #ifdef __cplusplus
 }
 #endif
