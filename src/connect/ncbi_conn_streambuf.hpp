@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/01/30 20:09:14  lavr
+ * Define xsgetn() for WorkShop compiler also
+ *
  * Revision 6.8  2002/01/28 20:21:11  lavr
  * Do not use auto_ptr in class body; auto_ptr moved to constructor
  *
@@ -80,7 +83,7 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
 #endif
     virtual streamsize  showmanyc(void);
@@ -91,14 +94,14 @@ protected:
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    CONN m_Conn;
+    CONN                m_Conn;      // underlying connection handle
 
-    CT_CHAR_TYPE*          m_Buf;       // of size  2 * m_BufSize
-    CT_CHAR_TYPE*          m_WriteBuf;  // m_Buf
-    CT_CHAR_TYPE*          m_ReadBuf;   // m_Buf + m_BufSize
-    streamsize             m_BufSize;   // of m_WriteBuf, m_ReadBuf
+    CT_CHAR_TYPE*       m_Buf;       // of size  2 * m_BufSize
+    CT_CHAR_TYPE*       m_WriteBuf;  // m_Buf
+    CT_CHAR_TYPE*       m_ReadBuf;   // m_Buf + m_BufSize
+    streamsize          m_BufSize;   // of m_WriteBuf, m_ReadBuf
 
-    bool                   m_Tie;       // always flush before reading
+    bool                m_Tie;       // always flush before reading
 
     void x_CheckThrow(EIO_Status status, const string& msg);
 };
