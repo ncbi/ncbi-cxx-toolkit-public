@@ -39,6 +39,7 @@
 
 #include <objects/general/Int_fuzz.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -2907,6 +2908,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.47  2003/04/24 16:15:58  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.46  2003/04/16 19:44:26  grichenk
 * More fixes to TestForOverlap() and GetStrand()
 *

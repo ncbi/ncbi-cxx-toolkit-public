@@ -39,6 +39,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -815,6 +816,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2003/04/24 16:15:58  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.19  2003/03/26 18:57:56  ucko
 * Limit HTGS suffix to deltas containing actual gaps.
 *

@@ -34,6 +34,7 @@
 #include <objects/flat/flat_formatter.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
 #include <objects/objmgr/scope.hpp>
@@ -299,6 +300,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/04/24 16:15:58  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.5  2003/03/28 19:03:40  ucko
 * Add flags to intervals.
 *

@@ -35,12 +35,14 @@
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -1104,6 +1106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/04/24 16:16:00  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.10  2003/03/31 14:41:34  shomrat
 * $id: -> $id$
 *

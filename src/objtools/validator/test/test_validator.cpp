@@ -64,7 +64,6 @@
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/graph_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 
 
 using namespace ncbi;
@@ -438,6 +437,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2003/04/24 16:16:00  vasilche
+ * Added missing includes and forward class declarations.
+ *
  * Revision 1.18  2003/04/15 14:56:52  shomrat
  * cout -> NcbiCout; test before derefernce
  *

@@ -37,6 +37,7 @@
 
 #include <serial/iterator.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
 #include <objects/objmgr/scope.hpp>
@@ -754,6 +755,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/04/24 16:15:58  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.4  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

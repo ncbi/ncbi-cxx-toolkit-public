@@ -66,6 +66,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
@@ -2188,6 +2189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/04/24 16:16:00  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.25  2003/04/07 14:58:36  shomrat
 * Added information to error postings
 *

@@ -40,6 +40,7 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/pub/pub__.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
 
 #include <objects/objmgr/impl/annot_object.hpp>
@@ -642,6 +643,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/04/24 16:15:58  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.7  2003/04/09 20:03:11  ucko
 * Fix unsafe assumptions in CFlatReference::Matches.
 *

@@ -38,6 +38,7 @@
 
 #include <serial/enumvalues.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 
@@ -120,6 +121,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/24 16:15:57  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

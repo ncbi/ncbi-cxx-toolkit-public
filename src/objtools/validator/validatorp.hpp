@@ -67,6 +67,17 @@ class CUser_object;
 class CSeqdesc_CI;
 class CSeq_graph;
 class CMappedGraph;
+class CPubdesc;
+class CBioSource;
+class COrg_ref;
+class CByte_graph;
+class CDelta_seq;
+class CSeqFeatData;
+class CGene_ref;
+class CCdregion;
+class CRNA_ref;
+class CImp_feat;
+class CSeq_align;
 
 
 BEGIN_SCOPE(validator)
@@ -799,6 +810,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/04/24 16:16:00  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.25  2003/04/15 14:53:32  shomrat
 * Added a progress callback mechanism
 *

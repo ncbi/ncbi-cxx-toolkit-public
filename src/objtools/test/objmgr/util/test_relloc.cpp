@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/objmgr/bioseq_handle.hpp>
@@ -138,6 +139,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/24 16:15:59  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.2  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

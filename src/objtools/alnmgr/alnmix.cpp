@@ -33,10 +33,12 @@
 
 #include <objects/alnmgr/alnmix.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 // Object Manager includes
 #include <objects/objmgr/gbloader.hpp>
 #include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/scope.hpp>
 
 #include <algorithm>
@@ -1354,6 +1356,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/04/24 16:15:57  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.43  2003/04/15 14:21:12  vasilche
 * Fixed order of member initializers.
 *

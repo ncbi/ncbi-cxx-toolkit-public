@@ -36,6 +36,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 
@@ -87,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/04/24 16:16:00  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.4  2003/03/31 14:40:49  shomrat
 * $id: -> $id$
 *

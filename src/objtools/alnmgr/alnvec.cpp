@@ -39,6 +39,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -47,7 +48,6 @@
 // Object Manager includes
 #include <objects/objmgr/gbloader.hpp>
 #include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 
@@ -117,7 +117,7 @@ CScope& CAlnVec::GetScope(void) const
         m_ObjMgr = new CObjectManager;
         
         m_ObjMgr->RegisterDataLoader
-            (*new CGBDataLoader("ID", NULL /*new CId1Reader*/, 2),
+            (*new CGBDataLoader("ID", NULL, 2),
              CObjectManager::eDefault);
 
         m_Scope = new CScope(*m_ObjMgr);
@@ -631,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/04/24 16:15:57  vasilche
+* Added missing includes and forward class declarations.
+*
 * Revision 1.25  2003/04/15 14:21:27  vasilche
 * Added missing include file.
 *
