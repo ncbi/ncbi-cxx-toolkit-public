@@ -5,6 +5,18 @@
 </head>
 <body BGCOLOR=white>
 <h1> Working within the C++ source tree </h1>
+<ul>
+  <li> <a href="#checkout"> Check out the source tree and configure a build directory</a> 
+  <li> <a href="#makefiles"> The project's directories and makefiles </a>
+  <li> <a href="#make_in"> <i>Makefile.in</i> meta files</a>
+  <li> <a href="#example">  An example <i>meta-makefile</i> and its associated project makefiles</a>
+  <li> <a href="#exec">  Executing <i>make</i></a>
+  <li> <a href="#usr_make"> Makefile.myProj</a>
+  <li> <a href="#lib_make"> Makefile.myProj.lib</a>
+  <li> <a href="#app_make"> Makefile.myProj.app</a>
+  <li> <a href="#config"> The <i>configure</i> scripts</a>
+</ul>
+
 Most users will find that working in a <i>checked-out</i> subtree or a private
 directory is preferable to working directly in the C++ source tree. There are
 two good reasons to avoid doing so:
@@ -21,29 +33,19 @@ page is provided as an overview of material presented in the
 <a href="../new_proj.html#ref_Makefile">
 Reference Manual</a>.
 
-<ul>
-  <li> <a href="#checkout"> Check out the source tree and build the libraries</a> 
-  <li> <a href="#makefiles"> The project's directories and makefiles </a>
-  <li> <a href="#make_in"> <i>Makefile.in</i></a>
-  <li> <a href="#projdefs"> Macro defintions in <i>Makefile.in</i></a>
-  <li> <a href="#proj_makes"> Makefile.*.app and Makefile.*.lib</a>
-  <li> <a href="#exec">  Executing <i>make</i></a>
-  <li> <a href="#config"> The <i>configure</i> scripts</a>
-</ul>
-
 <a name="checkout">
 
-<a href="../config.html#ref_Source"><h3> Checkout the source tree and build the
-libraries</h3></a> Since you will be working inside the C++ source tree you will first
+<h3><a href="../config.html#ref_Source">Checkout</a> the source tree and configure a build directory</h3>
+Since you will be working inside the C++ source tree you will first
 need to checkout <i>$CVSROOT/internal/c++</i>. If you do not wish to include all of the
 subprojects contained in <i>$CVSROOT/internal/c++/internal</i>, you may want to use
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/scripts/cvs_core.sh">
 <i>cvs_core.sh</i></a> (provided in the <a
-href="../new_proj.html#ref_Checkout"><i>scripts</i></a> directory) for checking out.
+href="../new_proj.html#ref_Checkout"><i>scripts</i></a> directory) for checking out.<p>
 
-Once you have done so, you will need to run one of the configure scripts in the
+Once you have done so, you will need to run one of the <i>configure</i> scripts in the
 <i>internal/c++</i> directory.  For example, to configure your environment to work with the
-<i>gcc</i> compiler on Solaris, use: <i>./configure</i>.
+<i>gcc</i> compiler on Solaris, just run: <i>./configure</i>.
 
 The <a href="../config.html#ref_Configure"><i>configure script</i></a> is a multi-platform
 configuration shell script (generated from <i>configure.in</i> using
@@ -70,69 +72,93 @@ solely inside the project's <i>src</i> directory should be placed there, along w
 implementation files. <p>
 
 In addition to the C++ source files, the <i>src</i> subtrees contain <i>meta-makefiles</i>
-named <i>Makefile*.in</i>, which are used by the <i>configure</i> script to generate
+named <i>Makefile*.in</i>, which are used by the <i>configure</i> script to generate the
 corresponding <i>makefiles</i> in the <i>build</i> subtrees. Figure 1 shows slices of the
 directory structure reflecting the correspondences between the <i>meta-makefiles</i> in the <i>src</i>
 subtrees and makefiles in the <i>build</i> subtrees. Figure 2 is a sketch of the entire C++ tree
 in which these directories are defined.<p>
 
-Each of the <i>meta-makefiles</i> in the
-top-level <i>src</i> tree has a corresponding <i>Makefile*</i> in the top-level of the build
-tree. Thus, you will also need to create a <i>meta-makefile</i> in the newly created
-<i>src/myProj</i> directory before reconfiguring your build directory to include the new
+During the configuration process, each of the <i>meta-makefiles</i> in the top-level of the
+<i>src</i> tree is translated into a corresponding <i>Makefile*</i> in the top-level of the
+<i>build</i> tree. Then, for each project directory containing a <i>Makefile.in</i>, the
+<i>configure</i> script will: (1) create a corresponding subdirectory of the same name in the
+<i>build</i> tree if it does not already exist, and (2) generate a corresponding
+<i>Makefile</i> in the project's <i>build</i> subdirectory. The contents of the project's
+<i>Makefile.in</i> in the <i>src</i> subdirectory determine what is written to the project's
+<i>Makefile</i> in the <i>build</i> subdirectory. Project subdirectories that do not contain a
+<i>meta-makefile</i> are ignored by the configure script. <p>
+
+Thus, you will also need to create a <i>meta-makefile</i> in the newly created
+<i>src/myProj</i> directory before configuring your <i>build</i> directory to include the new
 project. The <i>configure</i> script will then create the corresponding subtree in the
 <i>build</i> directory, along with a new <i>Makefile</i> generated from the <i>Makefile.in</i>
 you created.
 
 <center><img SRC="make.gif"></center>
 <center><img SRC="cpptree2.gif"></center>
-<a name="make_in"> <h3> Makefile.in</h3>
-The file <i>myProj/Makefile.in</i> should contain macros whose definitions have 
+<a name="make_in"> <h3> Makefile.in meta files</h3>
+The meta file <i>myProj/Makefile.in</i> should contain macros whose definitions have 
 the following interpretation:
 
 <ul> 
-<li> <i>LIB_PROJ</i> (optional) - a list of names for library targets
-<li> <i>APP_PROJ</i> (optional) - a list of names for application targets
-<li> <i>SUB_PROJ</i> (optional) - a list of names for subdirectory targets (used on recursive builds)
-<li> <i>USR_PROJ</i> (optional) - a list of names for user-defined makefile targets
+<li> <i><b>USR_PROJ</b></i> (optional) - a list of names for user-defined makefiles.<br>
+
+This macro is provided for the usage of ordinary stand-alone makefiles which do not utilize
+the <i>make</i> commands contained in additional makefiles in the top-level <i>build</i>
+directory.  Each <i>p_i</i> listed in <i>USR_PROJ = p_1 ... p_N</i> must have a corresponding
+<a href="#usr_make"> <i>Makefile.p_i</i></a> in the project's source directory. When <i>make</i>
+is executed, the <i>make</i> directives contained in these files will be executed directly to
+build the targets as specified.<p>
+
+<li> <i><b>LIB_PROJ</b></i> (optional) - a list of names for library makefiles.<br>
+For each library <i>l_i</i> listed in <i>LIB_PROJ = l_1 ... l_N</i>, you must have created a
+corresponding project makefile named <a href="#lib_make"><i>Makefile.l_i.lib</i></a> in the
+project's source directory. When <i>make</i> is executed, these library project makefiles will be
+used along with <i>Makefile.lib</i> and <i>Makefile.lib.tmpl</i> (located in the top-level
+of the <i>build</i> tree) to build the specified libraries.<p>
+
+<li> <i><b>APP_PROJ</b></i> (optional) - a list of names for application makefiles.<br>
+Similarly, each application (<i>p1, p2, ..., pN</i>) listed under <i>APP_PROJ</i> must have a
+corresponding project makefile named <a href="#app_make"><i>Makefile.p*.app</i></a> in the
+project's source directory.  When <i>make</i> is executed, these application project makefiles
+will be used along with <i>Makefile.app</i> and <i>Makefile.app.tmpl</i> to build the
+specified executables.<p>
+
+<li> <i><b>SUB_PROJ</b></i> (optional) - a list of names for subproject directories (used on recursive makes).<br>
+The <i>SUB_PROJ</i> macro is used to recursively define make targets; items listed here define
+the subdirectories rooted in the project's source directory where <i>make</i> should also be
+executed.
+
 </ul>
+The <i>Makefile.in</i> meta file in the project's source directory defines a kind of road map
+that will be used by the configure script to generate a makefile in the corresponding directory
+of the <i>build</i> tree. <i>Makefile.in</i> does <i>not</i> participate in the actual execution
+of <i>make</i>, but rather, defines what will happen at that time by directing the <i>configure</i>
+script in the creation of the <i>Makefile</i> that <i>will</i> be executed (see also the
+Reference Manual's description of <a href="../new_proj.html#ref_Makefile"> makefile
+targets</a>). <p>
 
-These macro definitions are used to define the build targets - refer also to the Reference
-Manual's description of <a href="../new_proj.html#ref_Makefile"> makefile
-targets</a>. Executing <i>make</i> or <i>make all</i> (the default target) will cause all but
-the <i>$SUB_PROJ</i> targets to be built. Copies of the resulting  executables will also be
-placed in the <i>bin</i> directory at the top of the <i>build</i> tree; libraries are copied
-to the <i>lib</i> directory.<p>
+<a name="example"> <h3>An example <i>meta-makefile</i> and its associated project makefiles</h3>
+A simple example should help to make this more concrete.
 
-Executing <i>make all_r</i> will build targets in the <i>$SUB_PROJ</i> subdirectories as
-well. Similarly, <i>make clean</i> removes all object modules, libraries, and executables from
-the project's <i>build</i> directory, while <i>make clean_r</i> removes all object files,
-libraries, and executables from the subproject directories as well.  Finally, <i>make purge</i>
-and <i>make purge_r</i> do the same work as <i>make clean</i> and <i>make clean_r</i>, and then
-remove the libraries and executables from the <i>lib</i> and <i>bin</i> directories as well.
-<p>
-The last two lines in <i>Makefile.in</i> should always be:
+Assuming that <i>myProj</i> is used to develop an application named <i>myProj</i>,
+<i>myProj/Makefile.in</i> should contain the following:
 
-<font color=#000080><pre>
+<font color=blue><pre>####### Example: src/myProj/Makefile.in</pre></font>
+<font color=#000080><pre>APP_PROJ = myProj
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 </pre></font>
-
+<p>
+The last two lines in <i>Makefile.in</i> should always be exactly as shown here.
 These two lines specify <i>make</i> variable templates using the <i>@var_name@</i> syntax. When
 generating the corresponding <i>Makefile</i> in the <i>build</i> directory, the <i>configure</i> script
 will substitute each identifier name bearing that notation with full path definitions. 
 <p>
-Assuming that <i>myProj</i> is used to develop an application named <i>myProj</i>,
-<i>myProj/Makefile.in</i> should contain the following:
-
-<font color=#000080><pre>
-APP_PROJ = myProj
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
-</pre></font>
 The corresponding <i>Makefile</i> in <i>build/myProj</i>
-generated by the <i>configure</i> script will then contain:
+generated by the <i>configure</i> script for this example will then contain:
+<font color=blue><pre>####### Example: myBuild/build/myProj/Makefile</pre></font>
 <font color=#000080><pre># Generated automatically from Makefile.in by configure.
 
 APP_PROJ = myProj
@@ -143,104 +169,164 @@ include /home/zimmerma/internal/c++/myBuild/build/Makefile.meta
 
 As demonstrated in this example, the <i>@srcdir@</i> and <i>@builddir@</i> aliases in the
 makefile template have been replaced with absolute paths in the generated <i>Makefile</i>,
-while the definition of <i>APP_PROJ</i> is copied verbatim. 
+while the definition of <i>APP_PROJ</i> is copied verbatim. <p>
 
-<a name="projdefs"> <h3>The project defintions in <i>Makefile.in</i></h3>
+The only build target in this example is <i>myProj</i>, which is specified as
+an application target - not a library (because it is listed under <i>APP_PROJ</i>).
+Note that there must also be a file named <i>Makefile.myProj.app</i> in the <i>src/myProj</i> 
+directory. This project makefile specifies: 
+<ul>
+<li> <i>APP</i> - the name to be used for the resulting executable
+<li> <i>OBJ</i> - a list of object files to use in the compilation
+<li> <i>LIB</i> - a list of C++ libraries to use in the linking
+<li> <i>LIBS</i> - a list of C libraries to use in the linking
+</ul>
 
-For each application (<i>p1, p2, ..., pN</i>) listed in <i><b>APP_PROJ</b></i>, you must have created
-a corresponding <a href="#proj_makes"> project makefile</a> named <i>Makefile.p*.app</i> in the
-project's source directory.  Similarly, each library (<i>l1, l2, ..., lN</i>) listed in the
-<b><i>LIB_PROJ</i></b> macro must have a corresponding <i>Makefile.l*.lib</i>.
-<p>
-
-The <i><b>SUB_PROJ</b></i> macro is used to define recursive build targets; items listed here
-define the subdirectories rooted in the project's source directory where <i>make</i> should be executed
-recursively.  The <i>configure</i> script will create these relative subdirectories inside the
-new <i>build</i> project directory, and generate the new subdirectories' makefiles
-from the corresponding meta-makefiles in the <i>src</i> subtrees.  A recursive
-build can then be invoked by using "<i>make all_r</i>". <p>
-
-The <b><i>USR_PROJ</i></b> macro is provided for the execution of individually defined makefiles which
-do not follow the conventions described in this section. In general, executing <i>make</i> in a
-build subdirectory causes <i>build/Makefile.meta</i> (located in the top level of the
-<i>build</i> tree), to be executed.  For each <i>target_name</i> listed in <i>USR_PROJ</i>,
-<i>Makefile.meta</i> first tests to see if <i>Makefile.target_name</i> is available in the
-current build directory, and if so, executes:
-
-<font size=2><pre>
-   make -f Makefile.target_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+A suitable makefile for this simple example might contain just the following text:
+<font color=blue><pre>####### Example: src/myProj/Makefile.myProj.app</pre></font>
+<font color=#000080><pre>APP = myProj
+OBJ = myProj
+LIB = xncbi
 </pre></font>
 
-Otherwise, <i>Makefile.meta</i> assumes the required makefile is in the project's source
-directory, and executes:
+In this simple example, the <i>APP_PROJ</i> definition in <i>Makefile.in</i> is identical to
+the definitions of both <i>APP</i> and <i>OBJ</i> in <i>Makefile.myProj.app</i>. This is not
+always the case however, as the <i>APP_PROJ</i> macro is used to define which makefiles in the
+<i>src</i> directory should be used during compilation, while <i>APP</i> defines the name of
+the resulting executable and <i>OBJ</i> specifies the names of object files. (Project makefiles
+for applications are described in more detail <a href="#app_make">below</a>.)
 
-<font size=2><pre>
-   make -f $(srcdir)/Makefile.target_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
-</pre></font>
-
-In either case, although the target's specific makefile is executed directly, the aliased
-<i>srcdir, builddir</i>, and <i>MFLAGS</i> are still available to <i>Makefile.target_name</i>.
-Note also that because <i>make</i> is executed directly from a different directory than the one
-in which the source files are located, complete paths to those source files must be given in
-<i>Makefile.target_name</i>. For example:
-<font color=#000080><pre>####### Makefile.progname
-
-include $(NCBI)/ncbi.mk
-CC = gcc
-INCPATH = $(NCBI_INCDIR)
-
-all: $(srcdir)/progname.c
-	$(CC) -o progname $(srcdir)/progname.c
-
-clean:
-	rm progname progname.o
-
-purge: clean
-</pre></font>
-<p>
-will cause the C program <i>progname</i> to be built directly from
-<i>Makefile.progname</i> using the GCC compiler. The executables and libraries generated
-from the targets specified in <i>USR_PROJ</i> are written to the current <i>build</i> 
-directory only - they are <i>not</i> copied to the <i>bin</i> or <i>lib</i> directories. <p>
 
 <a name = "exec"> <h3> Executing <i>make</i></h3>
 Given these makefile definitions, executing <i>make all_r</i> in the <i>build</i> project
 subdirectory causes <i>build/Makefile.meta</i> to be executed, which sets the following chain
 of events in motion:
 
-<ul>
+<ol>
+ <li> For each <i><b>proj_name</b></i> listed in <i>USR_PROJ</i>, 
+<i>Makefile.meta</i> first tests to see if <i>Makefile.proj_name</i> is available in the
+current <i>build</i> directory, and if so, executes:
+
+<font size=2><pre>
+   make -f Makefile.proj_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+</pre></font>
+
+Otherwise, <i>Makefile.meta</i> assumes the required makefile is in the project's source
+directory, and executes:
+
+<font size=2><pre>
+   make -f $(srcdir)/Makefile.proj_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+</pre></font>
+
+In either case, the important thing to note here is that the commands contained in the
+project's makefiles are executed directly and are <i>not</i> combined with additional makefiles
+in the top-level <i>build</i> directory. The aliased <i>srcdir, builddir</i>, and <i>MFLAGS</i> are
+still available and can be referred to inside <i>Makefile.proj_name</i>.  By default, the
+resulting libraries and executables are written to the <i>build</i> directory only. <p>
+
  <li> For each <i><b>lib_name</b></i> listed in <i>LIB_PROJ</i>, 
      <i>make -f $(builddir)/Makefile.lib.tmpl</i> is executed. This in turn specifies 
      that <i>$(builddir)/Makefile.mk, $(srcdir)/Makefile.<b>lib_name</b>.lib</i>, and 
      <i>$(builddir)/Makefile.lib</i> should be included in the generated makefile commands
      that actually get executed. The resulting libraries are written to the <i>build</i> subdirectory
-     and copied to the <i>lib</i> subtree. <br><br>
+     and copied to the <i>lib</i> subtree. <p>
 
  <li> For each <i><b>app_name</b></i> listed in <i>APP_PROJ</i>, 
      <i>make -f $(builddir)/Makefile.app.tmpl</i> is executed. This in turn specifies 
      that <i>$(builddir)/Makefile.mk, $(srcdir)/Makefile.<b>app_name</b>.app</i>, and <i>$(builddir)/Makefile.app</i>
      should be included in the generated makefile commands that actually get executed. 
      The resulting executables are written to the <i>build</i> subdirectory and copied to 
-     the <i>bin</i> subtree. <br><br>
+     the <i>bin</i> subtree. <p>
 
  <li> For each <i><b>dir_name</b></i> listed in <i>SUB_PROJ</i> (on <i>make all_r</i>), 
-     <i>cd <b>dir_name</b></i> is executed and <i>make all_r</i> is executed. <br>
-     The resulting executables are written to the appropriate <i>build</i> subdirectory and 
-     copied to the <i>bin</i> subtree. <br><br>
+     <i>cd <b>dir_name</b></i> is executed and <i>make all_r</i> is executed. Steps 
+     (1) - (3) are then repeated in the project subdirectory.
+</ol>
 
- <li> For each <i><b>proj_name</b></i> listed in <i>USR_PROJ</i>, 
-     <i>make -f $(srcdir)/Makefile.<b>proj_name</b></i> is executed, and 
-     the resulting libraries and executables are written to the <i>build</i> directory only. 
-</ul>
-<a name="proj_makes"> <a href="../new_proj.html#ref_MakeProjLib"><h3> Makefile.*.lib and Makefile.*.app</h3> </a>
+More generally, for each subdirectory listed in <i>SUB_PROJ</i>, the <i>configure</i> script
+will create a relative subdirectory inside the new <i>build</i> project directory, and generate
+the new subdirectory's <i>Makefile</i> from the corresponding meta-makefile in the <i>src</i>
+subtree.  Note that each subproject directory must also contain its own <i>Makefile.in</i>
+along with the corresponding project makefiles. The recursive make commands, <i>make all_r,
+make clean_r</i>, and <i>make purge_r</i> all refer to this definition of the subprojects to
+define what targets should be recursively built or removed. <p>
+
+<a name="usr_make"> <a href="../new_proj.html#ref_MakeProjUsr"><h3> Makefile.myProj</h3> </a>
+As described, regular makefiles contained in the project's <i>src</i> directory will be invoked
+from the <i>build</i> directory if their <i>suffixes</i> are specified in the $USR_PROJ$
+macro. This macro is originally defined in the project's <i>src</i> directory in the
+<i>Makefile.in</i> meta file, and is propagated to the corresponding <i>Makefile</i> in the
+<i>build</i> directory by the <i>configure</i> script. <p>
+
+For example, if <i>USR_PROJ = myProj</i> in the <i>build</i> directory's <i>Makefile</i>,
+executing <i>make</i> will cause <i>Makefile.myProj</i> (the project makefile) to be
+executed. This project makefile may be located in either the current <i>build</i> directory
+<i>or</i> the corresponding <i>src</i> directory. 
+
+In either case, although the makefile is executed directly, references to the source and object
+files (contained in the project makefile) must give complete paths to those files. In the first
+case, <i>make</i> is invoked as: <i>make -f Makefile.myProj</i>, so the makefile is located in
+the current working (<i>build</i>) directory but the source files are not. In the second case,
+<i>make</i> is invoked as: <i>make -f $(srcdir)/Makefile.myProj</i>, so both the project
+makefile <i>and</i> the source files are non-local.  For example:
+
+<font color=#000080><pre>####### Makefile.myProj
+
+include $(NCBI)/ncbi.mk
+CC = $(NCBI_CC)			# use the NCBI default compiler for this platform
+INCPATH = $(NCBI_INCDIR)	# along with the default include 
+LIBPATH = $(NCBI_LIBDIR)	# and library paths
+
+all: $(srcdir)/myProj.c
+	$(CC) -o myProj $(srcdir)/myProj.c $(NCBI_CFLAGS) -I($INCPATH) -L($LIBPATH) -lncbi
+	cp -p myProj $(builddir)/bin
+
+clean:
+	-rm  myProj myProj.o
+
+purge: clean
+	-rm  $(builddir)/bin/myProj
+</pre></font>
+<p>
+will cause the C program <i>myProj</i> to be built directly from <i>Makefile.myProj</i> using
+the default C compiler, library paths, include paths, and compilation flags defined in <i>ncbi.mk</i>.
+
+
+The executables and libraries generated from the targets specified in <i>USR_PROJ</i> are by
+default written to the current <i>build</i> directory only. In this example however, they are
+also explicitly copied to the <i>bin</i> directory, and accordingly, the <i>purge</i> directives
+also remove the copied executable. <p>
+
+<a name="lib_make"> <a href="../new_proj.html#ref_MakeProjLib"><h3> Makefile.myProj.lib</h3> </a>
 <i>Makefile.<b>lib_name</b>.lib</i> should contain the following macro definitions:
 <ul>
   <li> <i> $(LIBOBJ) </i> - the names of all source files to compile and include in the library
   <li> <i> $(LOBJ) </i> - the names of any pre-compiled object files to include in the library
   <li> <i> $(LIB)</i> - the name of the library being built
 </ul>
-For an example, see <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/Makefile.corelib.lib">
-Makefile.corelib.lib</a>. <p>
+
+In addition, any of the make variables defined in <i>build/Makefile.mk</i>, such as <i>$CPPFLAGS, 
+$LINK,</i> etc., can be referred to and/or redefined in the project makefile, e.g.:
+<pre>
+CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
+CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
+CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)
+LINK     = purify $(ORIG_LINK)
+</pre>
+For a simple example, see <a
+href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/Makefile.corelib.lib">
+Makefile.corelib.lib</a>, and for additional documentation, refer to the 
+<a name="lib_make"> <a href="../new_proj.html#ref_MakeProjLib"> Reference Manual</a> section. 
+This customized makefile can be used to build both static and dynamic(DLL) versions of the library. 
+To build as a DLL on the appropriate platforms, you can explicitly specify: 
+
+<pre>LIB_OR_DLL = dll</pre>
+
+Conversely, if you want the library to always be built as static, specify: 
+
+<pre>LIB_OR_DLL = lib</pre>
+
+<a name="app_make"> <a href="../new_proj.html#ref_MakeProjApp"><h3> Makefile.myProj.app</h3> </a>
 <i>Makefile.<b>app_name</b>.app</i> should contain the following macro definitions:
 <ul>
   <li><i> $(OBJ) </i> - the names of the object modules to build and link to the application
@@ -248,9 +334,17 @@ Makefile.corelib.lib</a>. <p>
   <li><i> $(LIBS) </i> - all other libraries to link to (outside the C++ Toolkit)
   <li><i> $(APP) </i> - the name of the application being built
 </ul>
+For example, if C libraries should also be included in the linking, use:
+
+<pre> LIBS = $(NCBI_C_LIBPATH) -lncbi $(ORIG_LIBS)</pre>
+
+The project's application makefile can also redefine the compiler and linker, along with other
+flags and tools affecting the build process, as described above for <i>Makefile.*.lib</i> files, 
 For an example, see 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/Makefile.coretest.app">
-Makefile.coretest.app</a>. <p>
+Makefile.coretest.app</a>. For additional documentation refer also to the 
+<a name="lib_make"> <a href="../new_proj.html#ref_MakeProjApp"> Reference Manual</a> section. 
+<p>
 
 <a name="config"> <h3>The <i>configure</i> scripts</h3>
 
