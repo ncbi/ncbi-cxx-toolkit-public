@@ -134,6 +134,8 @@ CMutexPool::~CMutexPool(void)
     delete [] spread;
   }
 }
+#else
+CMutex CMutexPool::sm_Lock;
 #endif
 
 /* =========================================================================== */
@@ -276,6 +278,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/03/03 21:12:58  vasilche
+* Added missing static memeber definition.
+*
 * Revision 1.13  2003/03/03 20:34:51  vasilche
 * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
 * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
