@@ -90,6 +90,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
 USING_SCOPE (sequence);
 
+static const char k_IdentityChar = '.';
 static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
 #define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>"
@@ -106,7 +107,7 @@ static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2
 #define URL_Geo "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>"
 
 const int CDisplaySeqalign::m_NumColor;
-const string CDisplaySeqalign::color[m_NumColor]={"#000000", "#808080", "#5A0052"};
+const string CDisplaySeqalign::color[m_NumColor]={"#000000", "#808080", "#FF0000"};
 const int CDisplaySeqalign::m_PMatrixSize;
 const char CDisplaySeqalign::m_PSymbol[m_PMatrixSize+1] = "ARNDCQEGHILKMFPSTWYVBZX";
 const int CDisplaySeqalign::m_Blosum62[m_PMatrixSize][m_PMatrixSize] = {
@@ -216,6 +217,32 @@ static bool s_canDoMultiAlign(const CSeq_align& aln, CScope& scope);
 static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
 static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
+static void x_ColorDifferentBases(string& seq, char identityChar);
+
+//To add color to bases other than identityChar
+static void x_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& out){
+  string color = "#FF0000";
+  bool tagOpened = false;
+  for(int i = 0; i < (int)seq.size(); i ++){
+    if(seq[i] != identityChar){
+      if(!tagOpened){
+	out << "<font color=\""+color+"\"><b>";
+	tagOpened =  true;
+      }
+     
+    } else {
+      if(tagOpened){
+	out << "</b></font>";
+	tagOpened = false;
+      }
+    }
+    out << seq[i];
+    if(tagOpened && i == (int)seq.size() - 1){
+      out << "</b></font>";
+      tagOpened = false;
+    }
+  } 
+}
 
 
 template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
@@ -640,13 +667,19 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     }
   }  //end of preparing row data
   
+  bool colorMismatch = false; //color the mismatches
   //output identities info 
   if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign)) {
     int match = 0;
     int positive = 0;
     int gap = 0;
+    int identity = 0;
     fillIdentityInfo(sequence[0], sequence[1],  match,  positive, middleLine);
-    out<<" Identities = "<<match<<"/"<<(aln_stop+1)<<" ("<<((match*100)/(aln_stop+1))<<"%"<<")";
+    identity = (match*100)/(aln_stop+1);
+    if(identity >= 98){
+      colorMismatch = true;
+    }
+    out<<" Identities = "<<match<<"/"<<(aln_stop+1)<<" ("<<identity<<"%"<<")";
     if(m_AlignType&eProt) {
       out<<", Positives = "<<(positive + match)<<"/"<<(aln_stop+1)<<" ("<<(((positive + match)*100)/(aln_stop+1))<<"%"<<")";
     }
@@ -731,11 +764,11 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	if (row>0 && m_AlignOption & eShowIdentity){
 	  for (int index = j; index < j + actualLineLen && index < (int)sequence[row].size(); index ++){
 	    if (sequence[row][index] == sequence[0][index] && isalpha(sequence[row][index])) {
-	      sequence[row][index] = '.';           
+	      sequence[row][index] = k_IdentityChar;           
 	    }         
 	  }
 	}
-	OutputSeq(sequence[row], m_AV->GetSeqId(row), j, actualLineLen, frame[row], out);
+	OutputSeq(sequence[row], m_AV->GetSeqId(row), j, actualLineLen, frame[row], (row > 0 && colorMismatch)?true:false, out);
         AddSpace(out, m_SeqStopMargin);
 	out << end;
         
@@ -777,7 +810,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }
 	    out<<(*iter)->feature->featureId;
 	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->feature->featureId.size());
-	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, 0, out);
+	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, 0, false, out);
 	    out<<endl;
 	  }
 	}
@@ -785,7 +818,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	//display middle line
 	if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMultiAlign)) {
 	  AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin);
-	  OutputSeq(middleLine, CSeq_id(), j, actualLineLen, 0, out);
+	  OutputSeq(middleLine, CSeq_id(), j, actualLineLen, 0, false, out);
 	  out<<endl;
 	}
       }
@@ -1138,46 +1171,54 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 }
 
 //Output sequence and mask sequences if any
-const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, CNcbiOstream& out) const {
+const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, bool colorMismatch, CNcbiOstream& out) const {
   int actualSize = sequence.size();
   assert(actualSize > start);
   list<CRange<int> > actualSeqloc;
   string actualSeq = sequence.substr(start, len);
-  //go through seqloc containing mask info
-  for (list<alnSeqlocInfo*>::const_iterator iter = m_Alnloc.begin();  iter != m_Alnloc.end(); iter++){
-    int from=(*iter)->alnRange.GetFrom();
-    int to=(*iter)->alnRange.GetTo();
-    int locFrame = (*iter)->seqloc->frame;
-    if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId()) && locFrame == frame){
-      bool isFirstChar = true;
-      CRange<int> eachSeqloc(0, 0);
-      //go through each residule and mask it
-      for (int i=max<int>(from, start); i<=min<int>(to, start+len); i++){
-	//store seqloc start for font tag below
-        if ((m_AlignOption & eHtml) && isFirstChar){         
-          isFirstChar = false;
-          eachSeqloc.Set(i, eachSeqloc.GetTo());
-        }
-        if (m_SeqLocChar==eX){
-          actualSeq[i-start]='X';
-        } else if (m_SeqLocChar==eN){
-          actualSeq[i-start]='n';
-        } else if (m_SeqLocChar==eLowerCase){
-          actualSeq[i-start]=tolower(actualSeq[i-start]);
-        }
-	//store seqloc start for font tag below
-        if ((m_AlignOption & eHtml) && i == min<int>(to, start+len)){ 
-          eachSeqloc.Set(eachSeqloc.GetFrom(), i);
-        }
-      }
-      if(!(eachSeqloc.GetFrom()==0&&eachSeqloc.GetTo()==0)){
-        actualSeqloc.push_back(eachSeqloc);
+  
+  if(id.Which() != CSeq_id::e_not_set){ /*only do this for sequence but not for others like middle line, features*/
+    //go through seqloc containing mask info
+    for (list<alnSeqlocInfo*>::const_iterator iter = m_Alnloc.begin();  iter != m_Alnloc.end(); iter++){
+      int from=(*iter)->alnRange.GetFrom();
+      int to=(*iter)->alnRange.GetTo();
+      int locFrame = (*iter)->seqloc->frame;
+      if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId()) && locFrame == frame){
+	bool isFirstChar = true;
+	CRange<int> eachSeqloc(0, 0);
+	//go through each residule and mask it
+	for (int i=max<int>(from, start); i<=min<int>(to, start+len); i++){
+	  //store seqloc start for font tag below
+	  if ((m_AlignOption & eHtml) && isFirstChar){         
+	    isFirstChar = false;
+	    eachSeqloc.Set(i, eachSeqloc.GetTo());
+	  }
+	  if (m_SeqLocChar==eX){
+	    actualSeq[i-start]='X';
+	  } else if (m_SeqLocChar==eN){
+	    actualSeq[i-start]='n';
+	  } else if (m_SeqLocChar==eLowerCase){
+	    actualSeq[i-start]=tolower(actualSeq[i-start]);
+	  }
+	  //store seqloc start for font tag below
+	  if ((m_AlignOption & eHtml) && i == min<int>(to, start+len)){ 
+	    eachSeqloc.Set(eachSeqloc.GetFrom(), i);
+	  }
+	}
+	if(!(eachSeqloc.GetFrom()==0&&eachSeqloc.GetTo()==0)){
+	  actualSeqloc.push_back(eachSeqloc);
+	}
       }
     }
   }
 
   if(actualSeqloc.empty()){//no need to add font tag
-    out<<actualSeq;
+    if((m_AlignOption & eColorDifferentBases) && (m_AlignOption & eHtml) && colorMismatch){
+      //color the mismatches
+      x_ColorDifferentBases(actualSeq, k_IdentityChar, out);
+    } else {
+      out<<actualSeq;
+    }
   } else {//now deal with font tag for mask for html display    
     bool endTag = false;
     bool numFrontTag = 0;
@@ -1756,6 +1797,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.16  2003/10/27 20:55:53  jianye
+*Added color mismatches capability
+*
 *Revision 1.15  2003/10/08 17:48:54  jianye
 *Fomat cvs log message area better
 *

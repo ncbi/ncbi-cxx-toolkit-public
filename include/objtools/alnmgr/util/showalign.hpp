@@ -95,7 +95,8 @@ public:
     eNewTargetWindow = (1 << 10),  //clicking url link will open a new window
     eShowCdsFeature = (1 << 11),  //show cds for sequence.  Need to fetch from id server, a bit slow. 
     eShowGeneFeature = (1 << 12), //show gene for sequence.  Need to fetch from id server, a bit slow.
-    eMasterAnchored = (1 << 13)  //Query anchored, for multialignment only, default not anchored
+    eMasterAnchored = (1 << 13),  //Query anchored, for multialignment only, default not anchored
+    eColorDifferentBases = (1 << 14)  //coloring mismatches for subject seq
   };
 
   //Need to set eShowMiddleLine to get this
@@ -221,7 +222,7 @@ private:
   //helper functions
   void DisplayAlnvec(CNcbiOstream& out);
   const void PrintDefLine(const CBioseq_Handle& bspHandle, CNcbiOstream& out) const;
-  const void OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, CNcbiOstream& out) const; //display sequence, start is seqalign coodinate
+  const void OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, bool colorMismatch, CNcbiOstream& out) const; //display sequence, start is seqalign coodinate
 
   int getNumGaps();  //Count number of total gaps
   const CRef<CBlast_def_line_set> GetBlastDefline (const CBioseq& cbsp) const;
@@ -250,6 +251,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.11  2003/10/27 20:59:37  jianye
+*Added color mismatches capability
+*
 *Revision 1.10  2003/10/09 15:06:11  jianye
 *Change int to enum defs in SeqlocInfo
 *
