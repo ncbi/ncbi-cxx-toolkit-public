@@ -860,9 +860,10 @@ _handleNeitherAligned(_PSIAlignmentTraits* traits, _EPSIPurgeFsmState* state,
                     const unsigned int align_stop = 
                         traits->start + traits->effective_length +
                         traits->n_x_residues;
-                    int rv = _PSIPurgeAlignedRegion(msa, seq_index, 
-                                                    traits->start, align_stop);
-                    ASSERT(rv == PSI_SUCCESS);
+                    VERIFY(_PSIPurgeAlignedRegion(msa, 
+                                                  seq_index, 
+                                                  traits->start, 
+                                                  align_stop) == PSI_SUCCESS);
                 }
             }
         }
@@ -2370,6 +2371,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/12/15 02:50:50  camacho
+ * Replace ASSERT with VERIFY
+ *
  * Revision 1.42  2004/12/13 22:26:59  camacho
  * Consolidated structure group customizations in option: nsg_compatibility_mode
  *
