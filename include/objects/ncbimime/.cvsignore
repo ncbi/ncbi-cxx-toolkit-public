@@ -1,3 +1,2 @@
 .cvsignore
-*.hpp
-*.inl
+[A-Z]*.hpp

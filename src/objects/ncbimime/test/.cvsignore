@@ -1,2 +1,4 @@
 .cvsignore
-*
+test.*
+Text*.*
+Test*.*
