@@ -107,6 +107,10 @@ public:
         {
             m_Iterator.Next();
         }
+    bool CanGet(void) const
+        {
+            return m_Iterator.CanGet();
+        }
     CObjectInfo Get(void) const
         {
             return *m_Iterator;
@@ -135,6 +139,10 @@ public:
     void Next(void)
         {
             m_Iterator.Next();
+        }
+    bool CanGet(void) const
+        {
+            return m_Iterator.CanGet();
         }
     CConstObjectInfo Get(void) const
         {
@@ -383,6 +391,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/09/30 17:11:57  gouriano
+* Modified TypeIterators to skip unset optional members
+*
 * Revision 1.22  2003/09/15 20:02:04  gouriano
 * fixed the definition of CTypesIteratorBase to eliminate compilation warnings
 *

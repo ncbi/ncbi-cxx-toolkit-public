@@ -125,6 +125,10 @@ public:
 
     virtual bool Valid(void) const = 0;
     virtual void Next(void) = 0;
+    virtual bool CanGet(void) const
+    {
+        return true;
+    }
     virtual TObjectInfo Get(void) const = 0;
 
     static CConstTreeLevelIterator* Create(const TObjectInfo& object);
@@ -143,6 +147,10 @@ public:
 
     virtual bool Valid(void) const = 0;
     virtual void Next(void) = 0;
+    virtual bool CanGet(void) const
+    {
+        return true;
+    }
     virtual TObjectInfo Get(void) const = 0;
 
     static CTreeLevelIterator* Create(const TObjectInfo& object);
@@ -333,6 +341,18 @@ private:
             _ASSERT(!m_Stack.empty());
             TObjectInfo current;
             do {
+                while (!m_Stack.top()->CanGet()) {
+                    for(;;) {
+                        m_Stack.top()->Next();
+                        if (m_Stack.top()->Valid()) {
+                            break;
+                        }
+                        m_Stack.pop();
+                        if (m_Stack.empty()) {
+                            return;
+                        }
+                    }
+                }
                 current = m_Stack.top()->Get();
                 if ( CanSelect(current) ) {
                     m_CurrentObject = current;
@@ -848,6 +868,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/09/30 17:12:30  gouriano
+* Modified TypeIterators to skip unset optional members
+*
 * Revision 1.28  2003/09/15 20:01:15  gouriano
 * fixed the definition of CTypesIteratorBase to eliminate compilation warnings
 *

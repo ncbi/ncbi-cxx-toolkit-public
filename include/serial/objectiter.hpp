@@ -62,6 +62,10 @@ public:
     CConstObjectInfo GetElement(void) const;
     CConstObjectInfo operator*(void) const;
 
+    bool CanGet(void) const
+    {
+        return true;
+    }
 private:
     bool CheckValid(void) const;
 
@@ -93,6 +97,10 @@ public:
 
     void Erase(void);
 
+    bool CanGet(void) const
+    {
+        return true;
+    }
 private:
     bool CheckValid(void) const;
 
@@ -131,6 +139,10 @@ protected:
     void Init(const CClassTypeInfoBase* typeInfo);
     void Init(const CClassTypeInfoBase* typeInfo, TMemberIndex index);
 
+    bool CanGet(void) const
+    {
+        return true;
+    }
 private:
     CObjectTypeInfo m_OwnerType;
     TMemberIndex m_ItemIndex;
@@ -271,6 +283,7 @@ public:
     CConstObjectInfo GetMember(void) const;
     CConstObjectInfo operator*(void) const;
 
+    bool CanGet(void) const;
 private:
     pair<TConstObjectPtr, TTypeInfo> GetMemberPair(void) const;
 
@@ -302,6 +315,7 @@ public:
     void Erase(EEraseFlag flag = eErase_Optional);
     void Reset(void);
 
+    bool CanGet(void) const;
 private:
     pair<TObjectPtr, TTypeInfo> GetMemberPair(void) const;
 
@@ -431,6 +445,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/09/30 17:12:30  gouriano
+* Modified TypeIterators to skip unset optional members
+*
 * Revision 1.8  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

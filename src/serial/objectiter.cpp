@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/09/30 17:11:57  gouriano
+* Modified TypeIterators to skip unset optional members
+*
 * Revision 1.9  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -231,6 +234,11 @@ void CObjectTypeInfoMI::ResetGlobalCopyHook(void) const
     GetNCMemberInfo()->ResetGlobalCopyHook();
 }
 
+bool CConstObjectInfoMI::CanGet(void) const
+{
+    return (GetMemberInfo()->GetSetFlag(m_Object.GetObjectPtr()) != CMemberInfo::eSetNo);
+}
+
 pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
 {
     const CMemberInfo* memberInfo = GetMemberInfo();
@@ -238,11 +246,16 @@ pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
                      memberInfo->GetTypeInfo());
 }
 
+bool CObjectInfoMI::CanGet(void) const
+{
+    return (GetMemberInfo()->GetSetFlag(m_Object.GetObjectPtr()) != CMemberInfo::eSetNo);
+}
+
 pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
 {
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
     const CMemberInfo* memberInfo = GetMemberInfo();
-    memberInfo->UpdateSetFlag(objectPtr, CMemberInfo::eSetYes);
+    memberInfo->UpdateSetFlag(objectPtr, CMemberInfo::eSetMaybe);
     return make_pair(memberInfo->GetMemberPtr(objectPtr),
                      memberInfo->GetTypeInfo());
 }
