@@ -230,6 +230,23 @@ bool AlignmentUtility::DoIBM(void)
     return true;
 }
 
+static inline int GetPSSMScoreOfCharWithAverageOfBZ(const Int4 * const *matrix, unsigned int pssmIndex, char resChar)
+{
+    int score, blRes = LookupBLASTResidueNumberFromCharacter(resChar);
+    switch (blRes) {
+        case 2: // B -> rounded average D/N
+            score = Round(((double) matrix[pssmIndex][4] + matrix[pssmIndex][13]) / 2);
+            break;
+        case 23: // Z -> rounded average E/Q
+            score = Round(((double) matrix[pssmIndex][5] + matrix[pssmIndex][15]) / 2);
+            break;
+        default:
+            score = matrix[pssmIndex][blRes];
+            break;
+    }
+    return score;
+}
+
 // global stuff for DP block aligner score callback
 DP_BlockInfo *g_dpBlocks = NULL;
 const BLAST_Matrix *g_dpPSSM = NULL;
@@ -247,20 +264,8 @@ int ScoreByPSSM(unsigned int block, unsigned int queryPos)
     }
 
     int masterPos = g_dpBlocks->blockPositions[block], score = 0;
-    for (unsigned i=0; i<g_dpBlocks->blockSizes[block]; ++i) {
-        int blRes = LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[queryPos + i]);
-        switch (blRes) {
-            case 2: // B -> rounded average D/N
-                score += Round(((double) g_dpPSSM->matrix[masterPos + i][4] + g_dpPSSM->matrix[masterPos + i][13]) / 2);
-                break;
-            case 23: // Z -> rounded average E/Q
-                score += Round(((double) g_dpPSSM->matrix[masterPos + i][5] + g_dpPSSM->matrix[masterPos + i][15]) / 2);
-                break;
-            default:
-                score += g_dpPSSM->matrix[masterPos + i][blRes];
-                break;
-        }
-    }
+    for (unsigned int i=0; i<g_dpBlocks->blockSizes[block]; ++i)
+        score += GetPSSMScoreOfCharWithAverageOfBZ(g_dpPSSM->matrix, masterPos + i, g_dpQuery->m_sequenceString[queryPos + i]);
 
     return score;
 }
@@ -364,8 +369,8 @@ bool AlignmentUtility::DoLeaveOneOut(
                 *masterRange = (*l)->GetRangeOfRow(0),
                 *range = (*o)->GetRangeOfRow(1);
             for (unsigned int i=0; i<(*l)->m_width; ++i)
-                originalScore += m_currentMultiple->GetPSSM()->matrix[masterRange->from + i]
-                    [LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[range->from + i])];
+                originalScore += GetPSSMScoreOfCharWithAverageOfBZ(
+                    m_currentMultiple->GetPSSM()->matrix, masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
         }
         INFO_MESSAGE("score of extracted row with PSSM(N-1) before realignment: " << originalScore);
 
@@ -508,8 +513,8 @@ int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
             *masterRange = (*b)->GetRangeOfRow(0),
             *range = (*b)->GetRangeOfRow(row);
         for (unsigned int i=0; i<(*b)->m_width; ++i)
-			score += m_currentMultiple->GetPSSM()->matrix[masterRange->from + i]
-                [LookupBLASTResidueNumberFromCharacter(sequence->m_sequenceString[range->from + i])];
+            score += GetPSSMScoreOfCharWithAverageOfBZ(
+                m_currentMultiple->GetPSSM()->matrix, masterRange->from + i, sequence->m_sequenceString[range->from + i]);
     }
 
     return score;
@@ -520,6 +525,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/10/14 13:55:11  thiessen
+* move averaging of B/Z scores into separate function, use for all score reporting
+*
 * Revision 1.15  2004/09/07 18:51:20  lanczyck
 * add SetBlockMultipleAlignment & GetSequenceSet methods
 *
