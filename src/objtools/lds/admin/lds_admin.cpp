@@ -61,6 +61,7 @@ void CLDS_Management::SyncWithDir(const string& dir_name,
     obj.DeleteCascadeFiles(files_deleted, 
                            &objects_deleted, &annotations_deleted);
     obj.UpdateCascadeFiles(files_updated);
+    m_lds_db.Sync();
 }
 
 
@@ -96,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/09 16:45:28  kuznets
+ * + explicit Sync() call
+ *
  * Revision 1.6  2003/10/06 20:16:20  kuznets
  * Added support for sub directories and option to disable CRC32 for files
  *
