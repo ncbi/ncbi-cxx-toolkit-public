@@ -83,12 +83,18 @@
 
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/graph_ci.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqres/Real_graph.hpp>
+#include <objects/seqres/Int_graph.hpp>
+#include <objects/seqres/Byte_graph.hpp>
 
 #include <objects/util/sequence.hpp>
 #include <objects/util/feature.hpp>
@@ -587,6 +593,8 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     
     // flag missing molinfo even if not in Sequin
     CheckForMolinfoOnBioseq(seq);
+
+    ValidateGraphsOnBioseq(seq);
 }
 
 
@@ -1513,6 +1521,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             // The C++ object serializaton will not load if invalid alphabet
             // so no check needed here
 
+            len += (**sg).GetLiteral().GetLength();
             // Check for invalid residues
             if (!(**sg).GetLiteral().IsSetSeq_data()) {
                 break;
@@ -1553,7 +1562,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         NStr::IntToString(*it), seq);
                 }
             }
-            len += (**sg).GetLiteral().GetLength();
             break;
         }
         default:
@@ -1968,6 +1976,10 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     }
 
     CFeat_CI curr(bsh, 0, 0, CSeqFeatData::e_not_set);
+    if ( !curr ) {
+        return;
+    }
+
     CFeat_CI prev = curr;
     ++curr;
     while ( curr ) {
@@ -2579,6 +2591,369 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 }
 
 
+void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
+{
+    if ( !seq.IsNa()  ) {
+        return;
+    }
+
+    int     last_loc = -1;
+    bool    overlaps = false;
+    const CSeq_graph* overlap_graph = 0;
+    SIZE_TYPE num_graphs = 0;
+    SIZE_TYPE graphs_len = 0;
+
+    const CSeq_inst& inst = seq.GetInst();  
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    for ( CGraph_CI grp(bsh, 0, 0); grp; ++grp ) {
+        const CSeq_graph& graph = grp->GetOriginalGraph();
+        if ( !IsSuportedGraphType(graph) ) {
+            continue;
+        }
+
+        // Currently we support only byte graphs
+        ValidateByteGraphOnBioseq(graph, seq);
+        
+        // Test for overlapping graphs
+        const CSeq_loc& loc = graph.GetLoc();
+        if ( (int)loc.GetTotalRange().GetFrom() <= last_loc ) {
+            overlaps = true;
+            overlap_graph = &graph;
+        }
+        last_loc = loc.GetTotalRange().GetTo();
+
+        graphs_len += graph.GetNumval();
+        ++num_graphs;
+    }
+
+    if ( overlaps ) {
+        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphOverlap,
+            "Graph components overlap, with multiple scores for "
+            "a single base", seq, *overlap_graph);
+    }
+
+    SIZE_TYPE seq_len = GetSeqLen(seq);
+    if ( (seq_len != graphs_len)  &&  (inst.GetLength() != graphs_len) ) {
+        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphBioseqLen,
+            "SeqGraph (" + NStr::IntToString(graphs_len) + ") and Bioseq (" +
+            NStr::IntToString(seq_len) + ") length mismatch", seq); // !!!
+    }
+    
+    if ( inst.GetRepr() == CSeq_inst::eRepr_delta  &&  num_graphs > 1 ) {
+        ValidateGraphOnDeltaBioseq(seq);
+    }
+}
+
+
+
+void CValidError_bioseq::ValidateByteGraphOnBioseq
+(const CSeq_graph& graph,
+ const CBioseq& seq) 
+{
+    if ( !graph.GetGraph().IsByte() ) {
+        return;
+    }
+    const CByte_graph& bg = graph.GetGraph().GetByte();
+    
+    // Test that min / max values are in the 0 - 100 range.
+    ValidateMinValues(bg);
+    ValidateMaxValues(bg);
+
+    TSeqPos numval = graph.GetNumval();
+    if ( numval != bg.GetValues().size() ) {
+        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphByteLen,
+            "SeqGraph (" + NStr::IntToString(numval) + ") " + 
+            "and ByteStore (" + NStr::IntToString(bg.GetValues().size()) +
+            ") length mismatch", graph);
+    }
+    
+    ValidateGraphValues(graph, seq);
+}
+
+
+// Currently we support only phrap, phred or gap4 types with byte values.
+bool CValidError_bioseq::IsSuportedGraphType(const CSeq_graph& graph) const
+{
+    string title;
+    if ( graph.IsSetTitle() ) {
+        title = graph.GetTitle();
+    }
+    if ( NStr::CompareNocase(title, "Phrap Quality") == 0  ||
+         NStr::CompareNocase(title, "Phred Quality") == 0  ||
+         NStr::CompareNocase(title, "Gap4") == 0 ) {
+        if ( graph.GetGraph().IsByte() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CValidError_bioseq::ValidateGraphValues
+(const CSeq_graph& graph,
+ const CBioseq& seq)
+{
+    SIZE_TYPE Ns_with_score = 0,
+        gaps_with_score = 0,
+        ACGTs_without_score = 0,
+        vals_below_min = 0,
+        vals_above_max = 0;
+    TSeqPos first_N = numeric_limits<TSeqPos>::min(),
+        first_ACGT = numeric_limits<TSeqPos>::min();
+
+    const CByte_graph& bg = graph.GetGraph().GetByte();
+    int min = bg.GetMin();
+    int max = bg.GetMax();
+
+    const CSeq_loc& gloc = graph.GetLoc();
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(gloc);
+    CSeqVector vec = bsh.GetSequenceView(gloc, 
+                                         CBioseq_Handle::eViewConstructed,
+                                         CBioseq_Handle::eCoding_Ncbi,
+                                         GetStrand(gloc, m_Scope));
+    vec.SetCoding(CSeq_data::e_Ncbi4na);
+    SIZE_TYPE size = vec.size();
+
+    CByte_graph::TValues values;
+    copy( bg.GetValues().begin(), bg.GetValues().end(), back_inserter(values));
+    
+    SIZE_TYPE numvals = ncbi::min(graph.GetNumval(), values.size());
+
+    for ( SIZE_TYPE pos = 0; pos < size && pos < numvals; ++pos ) {
+        CSeqVector::TResidue res = vec[pos];
+        int val;
+        if ( IsResidue(res) ) {
+            val = values[pos];
+            if ( (val < min)  ||  (val < 0) ) {
+                vals_below_min++;
+            }
+            if ( (val > max)  ||  (val > 100) ) {
+                vals_above_max++;
+            }
+
+            switch ( res ) {
+            case 0:     // gap
+                if ( val > 0 ) {
+                    gaps_with_score++;
+                }
+                break;
+
+            case 1:     // A
+            case 2:     // C
+            case 4:     // G
+            case 8:     // T
+                if ( val == 0 ) {
+                    ACGTs_without_score++;
+                    if ( first_ACGT == numeric_limits<TSeqPos>::min() ) {
+                        first_ACGT = pos;
+                    }
+                }
+                break;
+
+            case 15:    // N
+                if ( val > 0 ) {
+                    Ns_with_score++;
+                    if ( first_N == numeric_limits<TSeqPos>::min() ) {
+                        first_N = pos;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    if ( ACGTs_without_score > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphACGTScore, 
+            NStr::IntToString(ACGTs_without_score) + 
+            " ACGT bases have zero score value - first one at position " +
+            NStr::IntToString(first_ACGT), graph);
+    }
+    if ( Ns_with_score > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphNScore,
+            NStr::IntToString(Ns_with_score) +
+            " N bases have positive score value - first one at position " + 
+            NStr::IntToString(first_N), graph);
+    }
+    if ( gaps_with_score > 0 ) {
+        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphGapScore,
+            NStr::IntToString(gaps_with_score) + 
+            " gap bases have positive score value", 
+            graph);
+    }
+    if ( vals_below_min > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphBelow,
+            NStr::IntToString(vals_below_min) + 
+            " quality scores have values below the reported minimum", 
+            graph);
+    }
+    if ( vals_above_max > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphAbove,
+            NStr::IntToString(vals_above_max) + 
+            " quality scores have values above the reported maximum", 
+            graph);
+    }
+}
+
+
+void CValidError_bioseq::ValidateMinValues(const CByte_graph& graph)
+{
+    char min = graph.GetMin();
+    if ( min < 0  ||  min > 100 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphMin, 
+            "Graph min (" + NStr::IntToString(min) + ") out of range",
+            graph);
+    }
+}
+
+
+void CValidError_bioseq::ValidateMaxValues(const CByte_graph& graph)
+{
+    char max = graph.GetMax();
+    if ( max < 0  ||  max > 100 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphMax, 
+            "Graph max (" + NStr::IntToString(max) + ") out of range",
+            graph);
+    }
+}
+
+
+void CValidError_bioseq::ValidateGraphOnDeltaBioseq(const CBioseq& seq)
+{
+    const CDelta_ext& delta = seq.GetInst().GetExt().GetDelta();
+    CDelta_ext::Tdata::const_iterator curr = delta.Get().begin(),
+        next = curr,
+        end = delta.Get().end();
+    ++next;
+    
+
+    SIZE_TYPE   num_delta_seq = delta.Get().size(), 
+                num_graph = 0;
+    TSeqPos offset = 0;
+
+    CGraph_CI grp(m_Scope->GetBioseqHandle(seq), 0, 0);
+    while ( curr != end  &&  grp ) {
+        num_graph++;
+        const CSeq_loc& loc = grp->GetLoc();
+        switch ( (*curr)->Which() ) {
+            case CDelta_seq::e_Loc:
+                if ( !loc.IsNull() ) {
+                    TSeqPos loclen = GetLength(loc, m_Scope);
+                    if ( grp->GetNumval() != loclen ) {
+                        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphSeqLocLen,
+                            "SeqGraph (" + NStr::IntToString(grp->GetNumval()) +
+                            ") and SeqLoc (" + NStr::IntToString(loclen) + 
+                            ") length mismatch", grp->GetOriginalGraph());
+                    }
+                    offset += loclen;
+                }
+                ++grp;
+                break;
+
+            case CDelta_seq::e_Literal:
+                {
+                    const CSeq_literal& lit = (*curr)->GetLiteral();
+                    TSeqPos litlen = lit.GetLength(),
+                        nextlen = 0;
+                    if ( lit.IsSetSeq_data() ) {
+                        while (next != end  &&  GetLitLength(**next, nextlen)) {
+                            litlen += nextlen;
+                            ++next;
+                        }
+                        if ( grp->GetNumval() != litlen ) {
+                            PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphSeqLitLen,
+                                "SeqGraph (" + NStr::IntToString(grp->GetNumval()) +
+                                ") and SeqLit (" + NStr::IntToString(litlen) + 
+                                ") length mismatch", grp->GetOriginalGraph());
+                        }
+                        if ( loc.IsInt() ) {
+                            TSeqPos from = loc.GetTotalRange().GetFrom();
+                            TSeqPos to = loc.GetTotalRange().GetTo();
+                            if (  from != offset ) {
+                                PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStartPhase,
+                                    "SeqGraph (" + NStr::IntToString(from) +
+                                    ") and SeqLit (" + NStr::IntToString(offset) +
+                                    ") start do not coincide", 
+                                    grp->GetOriginalGraph());
+                            }
+                            
+                            if ( to != offset + litlen - 1 ) {
+                                PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStopPhase,
+                                    "SeqGraph (" + NStr::IntToString(to) +
+                                    ") and SeqLit (" + 
+                                    NStr::IntToString(litlen + offset - 1) +
+                                    ") stop do not coincide", 
+                                    grp->GetOriginalGraph());
+                                
+                            }
+                        }
+                        ++grp;
+                    }
+                    offset += litlen;
+                    
+                }
+                break;
+
+            default:
+                break;
+        }
+        curr = next;
+        ++next;
+        
+    }
+    if ( num_delta_seq != num_graph ) {
+        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphDiffNumber,
+            "Different number of SeqGraph (" + 
+            NStr::IntToString(num_delta_seq) + ") and SeqLit (" +
+            NStr::IntToString(num_graph) + ") components",
+            seq);
+    }
+}
+
+
+bool CValidError_bioseq::GetLitLength(const CDelta_seq& delta, TSeqPos& len)
+{
+    len = 0;
+    if ( delta.IsLiteral() ) {
+        const CSeq_literal& lit = delta.GetLiteral();
+        if ( lit.IsSetSeq_data() ) {
+            len = lit.GetLength();
+            return true;
+        }
+    }
+    return false;
+}
+
+
+SIZE_TYPE CValidError_bioseq::GetSeqLen(const CBioseq& seq)
+{
+    SIZE_TYPE seq_len = 0;
+    const CSeq_inst & inst = seq.GetInst();
+
+    if ( inst.GetRepr() == CSeq_inst::eRepr_raw ) {
+        seq_len = inst.GetLength();
+    } else if ( inst.GetRepr() == CSeq_inst::eRepr_delta ) {
+        const CDelta_ext& delta = inst.GetExt().GetDelta();
+        ITERATE( CDelta_ext::Tdata, dseq, delta.Get() ) {
+            switch( (*dseq)->Which() ) {
+            case CDelta_seq::e_Loc:
+                seq_len += GetLength((*dseq)->GetLoc(), m_Scope);
+                break;
+                
+            case CDelta_seq::e_Literal:
+                if ( (*dseq)->GetLiteral().IsSetSeq_data() ) {
+                    seq_len += (*dseq)->GetLiteral().GetLength();
+                }
+                break;
+                
+            default:
+                break;
+            }
+        }
+    }
+    return seq_len;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -2588,6 +2963,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/03/28 16:31:18  shomrat
+* Added Seq-graph validation
+*
 * Revision 1.24  2003/03/21 21:14:13  shomrat
 * Added check for Seq-ids on proteins; Implemented eErr_SEQ_DESCR_UnnecessaryBioSourceFocus
 *
