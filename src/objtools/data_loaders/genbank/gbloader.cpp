@@ -68,7 +68,7 @@ struct CGBDataLoader::STSEinfo
   STSEinfo() : next(0), prev(0), key(0),m_SeqIds(),m_upload()
     {
       //GBLOG_POST("new tse(" << (void*)this << ")");
-    };
+    }
   ~STSEinfo()
     {
       //GBLOG_POST("delete tse(" << (void*)this << ")");
@@ -81,30 +81,33 @@ struct CGBDataLoader::SSeqrefs
   
   class TSeqrefs : public TV {
   public:
-    TSeqrefs() : TV(0) {};
-    ~TSeqrefs() { iterate(TV,it,*this) delete *it; };
+    TSeqrefs() : TV(0) {}
+    ~TSeqrefs() { iterate(TV,it,*this) delete *it; }
   };
   
   TSeqrefs       *m_Sr;
   CRefresher      m_Timer;
-  SSeqrefs() : m_Sr(0) {};
+  SSeqrefs() : m_Sr(0) {}
   ~SSeqrefs()
   {
     if (m_Sr)
       delete m_Sr;
-  };
+  }
 };
 
 //=======================================================================
 // GBLoader Public interface 
 // 
 
-CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_threshold)
-  : CDataLoader(loader_name), m_Driver(driver)
+CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
+                             int gc_threshold)
+  : CDataLoader(loader_name),
+    m_Driver(driver)
 {
   GBLOG_POST( "CGBDataLoader");
-  
-#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
+
+#if 0
+  //#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
   if(!m_Driver)
     {
       try
@@ -789,8 +792,13 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+
+
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/04/28 03:36:47  vakatov
+* Temporarily turn off R1.30(b) unconditionally -- until it is buildable
+*
 * Revision 1.30  2002/04/26 16:32:23  kimelman
 * a) turn on GC b) turn on PubSeq where sybase is available
 *
