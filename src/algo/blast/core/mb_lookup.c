@@ -399,7 +399,6 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    mb_lt->compressed_wordsize = width;
    word_length = COMPRESSION_RATIO*width;
    mb_lt->word_length = lookup_options->word_size;
-   mb_lt->template_length = COMPRESSION_RATIO*width;
    mb_lt->mask = mb_lt->hashsize - 1;
    mask = (1 << (8*width - 2)) - 1;
 
