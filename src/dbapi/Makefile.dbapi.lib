@@ -1,10 +1,9 @@
 # $Id$
 
-LIBOBJ = array variant active_obj dbapi driver_mgr ds_impl conn_impl \
+SRC = array variant active_obj dbapi driver_mgr ds_impl conn_impl \
 	 stmt_impl rs_impl rsmeta_impl cstmt_impl  \
 	 bytestreambuf blobstream \
 	 cursor_impl
- 
 
 LIB    = dbapi
 
