@@ -50,9 +50,11 @@
 BEGIN_NCBI_SCOPE
 
 
+/// NB: now that registries are CObjects, any we "own" will be deleted
+/// only if nothing else still holds a reference to them.
 extern NCBI_XCONNECT_EXPORT REG     REG_cxx2c
-(CNcbiRegistry* reg,
- bool           pass_ownership = false
+(IRWRegistry* reg,
+ bool         pass_ownership = false
  );
 
 
@@ -74,7 +76,7 @@ typedef enum {
 typedef unsigned int FConnectInitFlags;  /* bitwise OR of EConnectInitFlags*/
 
 
-extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry*    reg  = 0,
+extern NCBI_XCONNECT_EXPORT void CONNECT_Init(IRWRegistry*      reg  = 0,
                                               CRWLock*          lock = 0,
                                               FConnectInitFlags flag = 0);
 
@@ -88,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2004/12/20 16:44:39  ucko
+ * Accept any IRWRegistry rather than specifically requiring a CNcbiRegistry.
+ *
  * Revision 6.14  2004/11/30 15:07:05  dicuccio
  * Replaced ncbithr.hpp with ncbimtx.hpp in include list
  *
