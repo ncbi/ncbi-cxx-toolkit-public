@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/11/14 20:44:09  gouriano
+* moved AddMember method into the base class
+*
 * Revision 1.36  2000/10/13 16:28:29  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -231,11 +234,6 @@ public:
     const CItemsInfo& GetMembers(void) const;
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
     const CMemberInfo* GetMemberInfo(const CIterator& i) const;
-
-    CMemberInfo* AddMember(const char* memberId,
-                           const void* memberPtr, const CTypeRef& memberType);
-    CMemberInfo* AddMember(const CMemberId& memberId,
-                           const void* memberPtr, const CTypeRef& memberType);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
