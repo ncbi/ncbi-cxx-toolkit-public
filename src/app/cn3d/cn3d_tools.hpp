@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/07/23 15:46:49  thiessen
+* print out more BLAST info; tweak save file name
+*
 * Revision 1.17  2002/06/05 14:28:39  thiessen
 * reorganize handling of window titles
 *
@@ -122,6 +125,9 @@ extern wxFrame * GlobalTopWindow(void);
 // diagnostic output (mainly for debugging)
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)
+
+// return BLOSUM62 score for two residues
+extern int GetBLOSUM62Score(char a, char b);
 
 // global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
 extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);

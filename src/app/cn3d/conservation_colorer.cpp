@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/07/23 15:46:50  thiessen
+* print out more BLAST info; tweak save file name
+*
 * Revision 1.21  2002/04/27 16:32:12  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -142,8 +145,7 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
 };
 
-std::map < char, std::map < char, int > > Blosum62Map;
-static std::map < char, float > StandardProbabilities;
+static std::map < char, std::map < char, int > > Blosum62Map;
 
 inline char ScreenResidueCharacter(char original)
 {
@@ -161,16 +163,25 @@ inline char ScreenResidueCharacter(char original)
     return ch;
 }
 
-ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
+int GetBLOSUM62Score(char a, char b)
 {
-    if (Blosum62Map.size() == 0) {  // initialize static stuff
-
+    if (Blosum62Map.size() == 0) {
         // initialize BLOSUM map for easy access
         for (int row=0; row<BLOSUMSIZE; row++) {
              for (int column=0; column<BLOSUMSIZE; column++)
                 Blosum62Map[Blosum62Fields[row]][Blosum62Fields[column]] =
                     Blosum62Matrix[row][column];
         }
+    }
+
+    return Blosum62Map[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
+}
+
+static std::map < char, float > StandardProbabilities;
+
+ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
+{
+    if (StandardProbabilities.size() == 0) {  // initialize static stuff
 
         static const char ncbistdaa2char[26] = {
             'X', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
@@ -293,11 +304,11 @@ void ConservationColorer::CalculateConservationColors(void)
             int& weightedVariety = weightedVarieties[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
                 weightedVariety +=
-                    (p->second * (p->second - 1) / 2) * Blosum62Map[p->first][p->first];
+                    (p->second * (p->second - 1) / 2) * GetBLOSUM62Score(p->first, p->first);
                 p2 = p;
                 for (p2++; p2!=pe; p2++)
                     weightedVariety +=
-                        p->second * p2->second * Blosum62Map[p->first][p2->first];
+                        p->second * p2->second * GetBLOSUM62Score(p->first, p2->first);
             }
             if (blockColumn == 0 && b == blocks.begin()) {
                 minWeightedVariety = maxWeightedVariety = weightedVariety;

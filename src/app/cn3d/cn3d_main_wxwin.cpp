@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.147  2002/07/23 15:46:49  thiessen
+* print out more BLAST info; tweak save file name
+*
 * Revision 1.146  2002/06/21 14:39:44  thiessen
 * update version
 *
@@ -569,6 +572,7 @@
 #include <wx/fontdlg.h>
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
+#include <wx/filename.h>
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -2128,9 +2132,10 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     GlobalMessenger()->SequenceWindowsSave();
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
+    wxFileName fn(currentFile.c_str());
     wxString outputFilename = wxFileSelector(
-        "Choose a filename for output", outputFolder, "",
-        ".prt", "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
+        "Choose a filename for output", outputFolder, fn.GetName(), fn.GetExt(),
+        "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
 

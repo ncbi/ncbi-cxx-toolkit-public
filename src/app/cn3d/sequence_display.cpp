@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/07/23 15:46:50  thiessen
+* print out more BLAST info; tweak save file name
+*
 * Revision 1.51  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -1176,8 +1179,8 @@ bool SequenceDisplay::ProximitySort(int displayRow)
                     *r1 = (*b)->GetRangeOfRow(keyRow->row),
                     *r2 = (*b)->GetRangeOfRow(alnRow->row);
                 for (int i=0; i<(*b)->width; i++)
-                    score += Blosum62Map
-                        [seq1->sequenceString[r1->from + i]] [seq2->sequenceString[r2->from + i]];
+                    score += GetBLOSUM62Score(
+                        seq1->sequenceString[r1->from + i], seq2->sequenceString[r2->from + i]);
             }
             alnRow->alignment->SetRowDouble(alnRow->row, score);
             wxString str;

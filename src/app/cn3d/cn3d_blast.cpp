@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/07/23 15:46:49  thiessen
+* print out more BLAST info; tweak save file name
+*
 * Revision 1.14  2002/07/12 13:24:10  thiessen
 * fixes for PSSM creation to agree with cddumper/RPSBLAST
 *
@@ -112,8 +115,8 @@ BEGIN_SCOPE(Cn3D)
 
 const std::string BLASTer::BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
-// gives BLAST residue number for a character (or # for 'X' if char == -1)
-static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
+// gives BLAST residue number for a character (or # for 'X' if char not found)
+static int LookupBLASTResidueNumberFromCharacter(char r)
 {
     typedef std::map < char, int > Char2Int;
     static Char2Int charMap;
@@ -123,9 +126,19 @@ static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
             charMap[BLASTer::BLASTResidues[i]] = i;
     }
 
-    return charMap.find(
-            (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X'
-        )->second;
+    Char2Int::const_iterator n = charMap.find(toupper(r));
+    if (n != charMap.end())
+        return n->second;
+    else
+        return charMap.find('X')->second;
+}
+
+// gives BLAST residue number for a threader residue number (or # for 'X' if char == -1)
+static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
+{
+    r = toupper(r);
+    return LookupBLASTResidueNumberFromCharacter(
+            (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
 }
 
 #ifdef _DEBUG
@@ -181,6 +194,17 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
         fprintf(f, "\n");
 #endif
     }
+
+#ifdef PRINT_PSSM
+    // for diffing with scoremat stored in ascii CD
+    fprintf(f, "{\n");
+    for (i=0; i<seqMtf->n; i++) {
+        for (j=0; j<matrix->columns; j++) {
+            fprintf(f, "      %i,\n", matrix->matrix[i][j]);
+        }
+    }
+    fprintf(f, "}\n");
+#endif
 
 #ifdef _DEBUG
     matrix->posFreqs = (Nlm_FloatHi **) MemNew(matrix->rows * sizeof(Nlm_FloatHi *));
@@ -309,7 +333,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         // actually do the BLAST alignment
         SeqAlign *salp = NULL;
         if (usePSSM) {
-            TESTMSG("calling BlastTwoSequencesByLocWithCallback()");
+            TESTMSG("calling BlastTwoSequencesByLocWithCallback(); PSSM db_length "
+                << (int) options->db_length << ", K " << BLASTmatrix->karlinK);
             salp = BlastTwoSequencesByLocWithCallback(
                 masterSeqLoc, slaveSeqLoc,
                 "blastp", options,
@@ -358,6 +383,9 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             // fill out with blocks from BLAST alignment
             CDense_seg::TStarts::const_iterator iStart = sa.GetSegs().GetDenseg().GetStarts().begin();
             CDense_seg::TLens::const_iterator iLen = sa.GetSegs().GetDenseg().GetLens().begin();
+#ifdef _DEBUG
+            int raw_pssm = 0, raw_bl62 = 0;
+#endif
             for (int i=0; i<sa.GetSegs().GetDenseg().GetNumseg(); i++) {
                 int masterStart = *(iStart++), slaveStart = *(iStart++), len = *(iLen++);
                 if (masterStart >= 0 && slaveStart >= 0 && len > 0) {
@@ -366,22 +394,58 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                     newBlock->SetRangeOfRow(1, slaveStart, slaveStart + len - 1);
                     newBlock->width = len;
                     newAlignment->AddAlignedBlockAtEnd(newBlock);
-                }
-            }
 
-            // put score in status
+#ifdef _DEBUG
+                    // calculate score manually, to compare with that returned by BLAST
+                    for (int j=0; j<len; j++) {
+                        raw_pssm += BLASTmatrix->matrix
+                            [masterStart + j] [LookupBLASTResidueNumberFromCharacter(
+                                slaveSeq->sequenceString[slaveStart + j])];
+                        raw_bl62 += GetBLOSUM62Score(
+                            masterSeq->sequenceString[masterStart + j],
+                            slaveSeq->sequenceString[slaveStart + j]);
+                    }
+#endif
+                }
+#ifdef _DEBUG
+                else if ((masterStart < 0 || slaveStart < 0) && len > 0) {
+                    int gap = options->gap_open + options->gap_extend * len;
+                    raw_pssm -= gap;
+                    raw_bl62 -= gap;
+                }
+#endif
+            }
+#ifdef _DEBUG
+            TESTMSG("Calculated raw score by PSSM: " << raw_pssm);
+            TESTMSG("Calculated raw score by BLOSUM62: " << raw_bl62);
+#endif
+
+            // get scores
             if (sa.IsSetScore()) {
+                wxString scores;
+                scores.Printf("BLAST result for %s:", slaveSeq->identifier->ToString().c_str());
+
                 CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
                 for (sc=sa.GetScore().begin(); sc!=sce; sc++) {
-                    if ((*sc)->GetValue().IsReal() && (*sc)->IsSetId() &&
-                        (*sc)->GetId().IsStr() && (*sc)->GetId().GetStr() == "e_value") {
-                        wxString status;
-                        status.Printf("E-value %g", (*sc)->GetValue().GetReal());
-                        newAlignment->SetRowStatusLine(0, status.c_str());
-                        newAlignment->SetRowStatusLine(1, status.c_str());
-                        break;
+                    if ((*sc)->IsSetId() && (*sc)->GetId().IsStr()) {
+
+                        // E-value (put in status line)
+                        if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "e_value") {
+                            wxString status;
+                            status.Printf("E-value %g", (*sc)->GetValue().GetReal());
+                            newAlignment->SetRowStatusLine(0, status.c_str());
+                            newAlignment->SetRowStatusLine(1, status.c_str());
+                            scores.Printf("%s E-value: %g", scores.c_str(), (*sc)->GetValue().GetReal());
+                        }
+
+                        // raw score
+                        if ((*sc)->GetValue().IsInt() && (*sc)->GetId().GetStr() == "score") {
+                            scores.Printf("%s raw: %i", scores.c_str(), (*sc)->GetValue().GetInt());
+                        }
                     }
                 }
+
+                TESTMSG(scores.c_str());
             }
         }
 
