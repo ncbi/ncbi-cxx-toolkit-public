@@ -1,0 +1,5 @@
+This directory contains sources of BitMagic library, which is an
+open source external project maintained at http://bmagic.sourceforge.net
+
+
+The main entry point for NCBI developers: ncbi_bitset.hpp
