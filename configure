@@ -3004,7 +3004,11 @@ case "$CC" in
       psrcdump=`echo "$CC" | sed -e 's/insure.*/psrcdump/'`
       real_CC=`$psrcdump -t insure++ | sed -ne 's/^Compiler \(.*\)/\1/p'`
       real_dir=`$psrcdump -t insure++ | sed -ne 's/^Compilerinstalldir \(.*\)/\1/p'`
-      test -n "$real_dir" && real_CC="$real_dir/$real_CC"
+      test -n "$real_dir" && test -x "$real_dir/$real_CC" && \
+        real_CC="$real_dir/$real_CC"
+      case "$real_CC" in
+          *gcc* ) LIBS="$LIBS -lstdc++"
+      esac
       ;;
    *)
       real_CC=$CC
@@ -3581,12 +3585,27 @@ fi
 case "$compiler:$compiler_version" in
   GCC:3* )
     # Need to specify runpath for compiler-provided libraries
-    libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
-    case "$host_os" in
-       osf*)     LDFLAGS="-Wl,-rpath,`dirname $libstdcxx` $LDFLAGS" ;;
-       darwin*)  ;;
-       *)        LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
+    case $compiler_version in
+        3.0.* ) major=3 ;;
+        3.1.* ) major=4 ;;
+        *     ) major=5 ;; # ABI theoretically stable from 3.2 on
     esac
+    found=false
+    for f in libstdc++.so.$compiler_version libgcc_s.so.1 libstdc++.a; do
+        path=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+        dir=`dirname "$path"`
+        case "$dir" in
+            /lib | /usr/lib ) break ;; # no rpath needed
+            /*              ) found=true; break ;;
+        esac
+    done
+    if test "$found" = "true"; then
+        case "$host_os" in
+           osf*)     LDFLAGS="-Wl,-rpath,$dir $LDFLAGS" ;;
+           darwin*)  ;;
+           *)        LDFLAGS="-Wl,-R$dir $LDFLAGS" ;;
+        esac
+    fi
     ;;
   ICC:6* )
     # Seems to use libcxa.so.1 even without -i_dynamic...
