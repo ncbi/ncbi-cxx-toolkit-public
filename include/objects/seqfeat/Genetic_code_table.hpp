@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/seqfeat/Genetic_code_table_.hpp>
 
+#include <memory> // for auto_ptr<>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -260,6 +262,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/09/13 00:44:58  ucko
+* #include <memory> for auto_ptr<> template
+*
 * Revision 1.4  2002/09/12 19:58:09  kans
 * CGen_code_table_imp instantiated after type info system (diccucio)
 *
