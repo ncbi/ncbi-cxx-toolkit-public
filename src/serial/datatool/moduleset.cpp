@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/07/29 15:52:07  gouriano
+* use XML namespace name provided in arguments when generating schema
+*
 * Revision 1.35  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -119,6 +122,8 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <typeinfo>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>
@@ -208,11 +213,16 @@ void CFileModules::PrintDTDModular(void) const
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
 {
+    string nsName("http://www.ncbi.nlm.nih.gov");
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    if ( const CArgValue& px_ns = args["xmlns"] ) {
+        nsName = px_ns.AsString();
+    }
     out << "<?xml version=\"1.0\" ?>\n"
         << "<xs:schema\n"
         << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-        << "  xmlns=\"http://www.ncbi.nlm.nih.gov\"\n"
-        << "  targetNamespace=\"http://www.ncbi.nlm.nih.gov\"\n"
+        << "  xmlns=\"" << nsName << "\"\n"
+        << "  targetNamespace=\"" << nsName << "\"\n"
         << "  elementFormDefault=\"qualified\"\n"
         << "  attributeFormDefault=\"unqualified\">\n\n";
 
