@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/04/17 04:14:49  vakatov
+ * CSeq_id::AsFastaString() --> CSeq_id::WriteAsFasta()
+ *
  * Revision 6.10  2001/01/03 16:39:05  vasilche
  * Added CAbstractObjectManager - stub for object manager.
  * CRange extracted to separate file.
@@ -65,7 +68,6 @@
  *
  * Revision 6.1  2000/11/21 18:58:29  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
- *
  *
  * ===========================================================================
  */
@@ -101,6 +103,7 @@ CSeq_id::~CSeq_id(void)
 {
 }
 
+
 const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
 {
     switch ( Which() ) {
@@ -114,6 +117,7 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
         return 0;
     }
 }
+
 
 // Compare() - are SeqIds equivalent?
 CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
@@ -163,7 +167,8 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
     }
 }
 
-static const char* const txtid[16] = {     /* FASTA_LONG formats */
+
+static const char* const s_TextId[16] = {     /* FASTA_LONG formats */
     "???" ,         /* not-set = ??? */
     "lcl",          /* local = lcl|integer or string */
     "bbs",          /* gibbsq = bbs|integer */
@@ -182,72 +187,74 @@ static const char* const txtid[16] = {     /* FASTA_LONG formats */
     "pdb"           /* pdb = pdb|entry name (string)|chain id (char) */
 };
 
-ostream& CSeq_id::AsFastaString(ostream& s) const
+
+void CSeq_id::WriteAsFasta(ostream& out)
+    const
 {
-	E_Choice the_type = Which();
-	if (the_type > e_Pdb)  // new SeqId type
-		the_type = e_not_set;
+    E_Choice the_type = Which();
+    if (the_type > e_Pdb)  // new SeqId type
+        the_type = e_not_set;
 
-	s << txtid[the_type] << '|';
+    out << s_TextId[the_type] << '|';
 
-	switch (the_type) {
+    switch (the_type) {
     case e_not_set:
         break;
     case e_Local:
-        GetLocal().AsString(s);
+        GetLocal().AsString(out);
         break;
     case e_Gibbsq:
-        s << GetGibbsq();
+        out << GetGibbsq();
         break;
     case e_Gibbmt:
-        s << GetGibbmt();
+        out << GetGibbmt();
         break;
     case e_Giim:
-        s << (GetGiim().GetId());
+        out << (GetGiim().GetId());
         break;
     case e_Genbank:
-        GetGenbank().AsFastaString(s);
+        GetGenbank().AsFastaString(out);
         break;
     case e_Embl:
-        GetEmbl().AsFastaString(s);
+        GetEmbl().AsFastaString(out);
         break;
     case e_Pir:
-        GetPir().AsFastaString(s);
+        GetPir().AsFastaString(out);
         break;
     case e_Swissprot:
-        GetSwissprot().AsFastaString(s);
+        GetSwissprot().AsFastaString(out);
         break;
     case e_Patent:
-        GetPatent().AsFastaString(s);
+        GetPatent().AsFastaString(out);
         break;
     case e_Other:
-        GetOther().AsFastaString(s);
+        GetOther().AsFastaString(out);
         break;
     case e_General:
         {
             const CDbtag& dbt = GetGeneral();
-            s << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(s));
+            out << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(out));
         }
         break;
     case e_Gi:
-        s << GetGi();
+        out << GetGi();
         break;
     case e_Ddbj:
-        GetDdbj().AsFastaString(s);
+        GetDdbj().AsFastaString(out);
         break;
     case e_Prf:
-        GetPrf().AsFastaString(s);
+        GetPrf().AsFastaString(out);
         break;
     case e_Pdb:
-        GetPdb().AsFastaString(s);
+        GetPdb().AsFastaString(out);
         break;
     default:
-        s << "[UnknownSeqIdType]";
+        out << "[UnknownSeqIdType]";
         break;
 
     }
-	return s;
 }
+
 
 void CSeq_id::SetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
 {
@@ -259,12 +266,14 @@ void CSeq_id::SetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
     m_ObjectManager = objMgr;
 }
 
+
 void CSeq_id::ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
 {
     if ( m_ObjectManager.GetPointer() != objMgr.GetPointer() )
         ERR_POST("CSeq_id::ResetObjectManager: not owner");
     m_ObjectManager.Reset();
 }
+
 
 CConstRef<CBioseq> CSeq_id::Resolve(void) const
 {
@@ -273,6 +282,7 @@ CConstRef<CBioseq> CSeq_id::Resolve(void) const
 
     return m_ObjectManager->GetBioseq(*this);
 }
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
