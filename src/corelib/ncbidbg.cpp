@@ -45,17 +45,17 @@ BEGIN_NCBI_SCOPE
 static CSafeStaticRef< CTls<int> > s_ValidateTLS;
 
 
-extern void xncbi_SetValidateAction(EValidateAction action)
+void xncbi_SetValidateAction(EValidateAction action)
 {
     s_ValidateTLS->SetValue(reinterpret_cast<int*> (action));
 }
 
 
-extern EValidateAction xncbi_GetValidateAction(void)
+EValidateAction xncbi_GetValidateAction(void)
 {
-// some 64 bit compilers refuse to reinterpret_cast from int* to EValidateAction
-    EValidateAction action = (EValidateAction) (long) s_ValidateTLS->GetValue();
-// we may store Default, but we may not return Default
+    // some 64 bit compilers refuse to cast from int* to EValidateAction
+    EValidateAction action = EValidateAction(long(s_ValidateTLS->GetValue()));
+    // we may store Default, but we may not return Default
     if (action == eValidate_Default) {
 #if defined(_DEBUG)
         action = eValidate_Abort;
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/09/24 18:27:18  vasilche
+ * Removed redundant "extern" keyword
+ *
  * Revision 1.3  2002/04/11 21:08:01  ivanov
  * CVS log moved to end of the file
  *

@@ -82,8 +82,8 @@ enum EValidateAction {
     eValidate_Throw     // throw an exception if not valid
 };
 
-extern void            xncbi_SetValidateAction(EValidateAction action);
-extern EValidateAction xncbi_GetValidateAction(void);
+void            xncbi_SetValidateAction(EValidateAction action);
+EValidateAction xncbi_GetValidateAction(void);
 
 
 END_NCBI_SCOPE
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.28  2002/09/24 18:27:17  vasilche
+ * Removed redundant "extern" keyword
+ *
  * Revision 1.27  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
