@@ -1,5 +1,3 @@
-
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -281,14 +279,14 @@ on SetProjectData()
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
 		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
-
+		
 		set xblastfiles to {Â
 			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
 				}
 		AddProject(ProjectData("xblast", {}, xblastfiles))
 		AddSimpleProject("blast", {}, "algo:blast:core")
-				
+		
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
 		
 		set libdbFiles to {Â
@@ -412,7 +410,7 @@ on SetProjectData()
 		AddGuiProject("gui_utils", {}, "utils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
