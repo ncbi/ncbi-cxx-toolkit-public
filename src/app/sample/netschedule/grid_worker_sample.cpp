@@ -53,6 +53,11 @@ USING_NCBI_SCOPE;
 ///////////////////////////////////////////////////////////////////////
 
 
+/// NetSchedule sample job
+///
+/// Job reads an array of doubles, sorts it and returns data back
+/// to the client as a BLOB.
+///
 class CSampleJob : public IWorkerNodeJob
 {
 public:
@@ -62,7 +67,10 @@ public:
     int Do(CWorkerNodeJobContext& context) 
     {
         LOG_POST( context.GetJobKey() + " " + context.GetJobInput());
-        /// 1. Get an input data from the client
+
+        // 1. Get an input data from the client
+        //    (You can use ASN.1 de-serialization here)
+        //
         CNcbiIstream& is = context.GetIStream();
         int count;
         is >> count;
@@ -71,12 +79,14 @@ public:
         LOG_POST( "Getting " << count << " doubles from stream...");
         for (int i = 0; i < count; ++i) {
             if (!is.good()) {
-                LOG_POST( "Input stream error. Index : " << i );
-                /// if something bad has happend throw an exception
-                /// and its message will be delivered to the client.
-                throw runtime_error("Input stream error"); 
+                ERR_POST( "Input stream error. Index : " << i );
+
+                // if something bad has happend throw an exception
+                // and its message will be delivered to the client.
+                //
+                throw runtime_error("Worker node input stream error"); 
             }
-            /// Don't forget to check if shutdown has been requested
+            // Don't forget to check if shutdown has been requested
             if (count % 1000 == 0) {
                 if (context.GetShutdownLevel() 
                     != CNetScheduleClient::eNoShutdown)
@@ -87,49 +97,48 @@ public:
             dvec.push_back(d);
         }
        
-        /// 2. Doing some time consuming job here
-        /// Don't forget to check if shutdown 
-        /// has been requested.
+        // 2. Doing some time consuming job here
+        // Well behaved algorithm checks from time to time if 
+        // immediate shutdown has been requested and gracefully return 
+        // without calling context.CommitJob()
+        //
         for (int i = 0; i < 5; ++i) {
             if (context.GetShutdownLevel() 
-                != CNetScheduleClient::eNoShutdown) {
+                != CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
             SleepMicroSec(3000);
         }
         sort(dvec.begin(), dvec.end());
 
-        /// 3. Return the result to the client
+
+        // 3. Return the result to the client 
+        //    (You can use ASN.1 serialization here)
+        //
         CNcbiOstream& os = context.GetOStream();
         os << dvec.size() << ' ';
         for (int i = 0; i < count; ++i) {
             if (!os.good()) {
-                LOG_POST( "Output stream error. Index : " << i );
-                /// if something bad has happend throw an exception
-                /// and its message will be delivered to the client.
-                throw runtime_error("Output stream error"); 
-            }
-            /// Don't forget to check if shutdown was requested
-            /// We will interupt the job here only if urgent shutdown
-            /// has been requested.
-            if (count % 1000 == 0) {
-                if (context.GetShutdownLevel() 
-                      == CNetScheduleClient::eShutdownImmidiate) 
-                    return 1;
+                ERR_POST( "Output stream error. Index : " << i );
+                throw runtime_error("Worker node output stream error"); 
             }
             os << dvec[i] << ' ';
         }
 
-        /// 4. Say the system that the job is done and the result 
-        /// can be return to the client.
+        // 4. Indicate that the job is done and the result 
+        // can be delivered to the client.
+        //
         context.CommitJob();
+
         LOG_POST( "Job " << context.GetJobKey() << " is done.");
         return 0;
     }
 };
 
-/// Sample Job Factory
-///
+//// Sample Job Factory
+//// Creates new job class every time worker node receives a request 
+///  from the queue
+////
 class CSampleJobFactory : public IWorkerNodeJobFactory
 {
 public:
@@ -141,7 +150,7 @@ public:
     }
     virtual string GetJobVersion() const 
     {
-        return "Sample Job worker node ver.0.01";
+        return "Sample Job worker node version 1.0.1";
     }
 };
 
@@ -155,6 +164,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/24 17:45:44  kuznets
+ * Comments, formatting...
+ *
  * Revision 1.2  2005/03/24 15:35:35  didenko
  * Made it compile on Unixes
  *
