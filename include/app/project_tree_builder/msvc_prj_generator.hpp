@@ -52,7 +52,7 @@ class CMsvcProjectGenerator
 {
 public:
     CMsvcProjectGenerator(const list<SConfigInfo>& configs);
-    ~CMsvcProjectGenerator();
+    ~CMsvcProjectGenerator(void);
     
     bool Generate(const CProjItem& prj);
 
@@ -60,30 +60,10 @@ private:
 
     list<SConfigInfo> m_Configs;
 
-    /// Helpers:
-    static void CollectSources(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-
-    static void CollectHeaders(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-
-    static void CollectInlines(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-    static void CollectResources(const CProjItem&              project,
-                                 const CMsvcPrjProjectContext& context,
-                                 list<string>*                 rel_pathes);
-
     /// Prohibited to.
     CMsvcProjectGenerator(void);
     CMsvcProjectGenerator(const CMsvcProjectGenerator&);
     CMsvcProjectGenerator& operator= (const CMsvcProjectGenerator&);
-
 };
 
 
@@ -92,6 +72,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/05 20:35:30  gorelenk
+ * Removed declaration of CollectSources,  CollectHeaders, CollectInlines and
+ * CollectResources member-functions of class CMsvcProjectGenerator.
+ *
  * Revision 1.8  2004/02/23 20:43:42  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
