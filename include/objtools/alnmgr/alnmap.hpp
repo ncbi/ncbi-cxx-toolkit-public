@@ -478,7 +478,7 @@ inline
 int CAlnMap::GetWidth(TNumrow row) const
 {
     return
-        m_Widths.size() == (size_t) (m_NumRows ? m_Widths[row] : 1);
+        (m_Widths.size() == (size_t) m_NumRows) ? m_Widths[row] : 1;
 }
 
 inline
@@ -631,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/09/09 19:42:37  dicuccio
+* Fixed thinko in GetWidth() - properly order ternary operator
+*
 * Revision 1.28  2003/09/08 19:49:19  todorov
 * signed vs unsigned warnings fixed
 *
