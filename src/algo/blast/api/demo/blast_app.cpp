@@ -719,10 +719,12 @@ int CBlastApplication::Run(void)
         last_oid = atoi(strtok(NULL, delimiters));
         sfree(range_str);
     }
+    
+    bool db_is_na = (program == eBlastn || program == eTblastn || 
+                     program == eTblastx);
 
     BlastSeqSrc* seq_src = 
-        SeqDbSrcInit(args["db"].AsString().c_str(), 
-                     (program == eBlastp || program == eBlastx),
+        SeqDbSrcInit(args["db"].AsString().c_str(), !db_is_na,
                      first_oid, last_oid, NULL);
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
