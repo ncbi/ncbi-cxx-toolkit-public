@@ -37,7 +37,7 @@
 #include <serial/objostr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <objects/blast/blast__.hpp>
-#include <objects/blast/client.hpp>
+#include <objects/blast/blastclient.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqset/seqset__.hpp>
