@@ -28,6 +28,7 @@
 #
 ###########################################################################
 
+
 # Parameters
 
 res_out="check.sh"
@@ -230,7 +231,7 @@ features="$x_features"
 export features
 
 # Add current, build and scripts directories to PATH
-PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
+PATH=".:${x_build_dir}:${x_root_dir}/scripts:${x_root_dir}/scripts/check:\${PATH}"
 export PATH
 
 EOF
@@ -294,8 +295,10 @@ RunTest() {
          # Fix empty parameters (replace "" to \"\", '' to \'\')
          x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
          # Run check
+         CHECK_TIMEOUT="\$x_timeout"
+         export CHECK_TIMEOUT
          check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         \$check_exec \$x_timeout time -p \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
+         \$check_exec time -p \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
          result=\$?
 
          sed -e '/ ["][$][@]["].*\$/ {

@@ -190,7 +190,7 @@ top_srcdir="\$root_dir"
 export top_srcdir
 
 # Add current, build and scripts directories to PATH
-PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
+PATH=".:\${build_dir}:\${root_dir}/scripts:\${root_dir}/scripts/check:\${PATH}"
 export PATH
 
 count_ok=0
@@ -281,8 +281,10 @@ RunTest() {
    x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
 
    # Run check
+   CHECK_TIMEOUT="\$x_timeout"
+   export CHECK_TIMEOUT
    check_exec="\$root_dir/scripts/check/check_exec.sh"
-   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >$x_tmp/\$\$.\$x_app.\$x_ext 2>&1
+   \$check_exec \`eval echo \$x_run_fix\` >$x_tmp/\$\$.\$x_app.\$x_ext 2>&1
    result=\$?
    sed -e '/ ["][$][@]["].*\$/ {
       s/^.*: //
