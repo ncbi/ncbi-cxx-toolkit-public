@@ -127,7 +127,7 @@ SFlatReference::SFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
     iterate (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
         x_Init(**it, ctx);
     }
-    if (m_Date  &&  m_Date->IsStd()) {
+    if (m_Date.NotEmpty()  &&  m_Date->IsStd()) {
         m_StdDate = &m_Date->GetStd();
     } else {
         // complain?
@@ -412,7 +412,7 @@ void SFlatReference::x_Init(const CCit_art& art, const SFlatContext& ctx)
                 m_PMIDs.insert((*it)->GetPubmed());
                 break;
             case CArticleId::e_Medline:
-                m_PMIDs.insert((*it)->GetMedline());
+                m_MUIDs.insert((*it)->GetMedline());
                 break;
             default:
                 break;
@@ -640,6 +640,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/10 22:06:04  ucko
+* Explicitly call NotEmpty to avoid a bogus MSVC error.
+* Fix a typo that interpreted some MUIDs as PMIDs.
+*
 * Revision 1.2  2003/03/10 20:18:16  ucko
 * Fix broken call to string::insert (caught by Compaq's compiler).
 *
