@@ -351,7 +351,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     }
     const CSeqMap& seq_map = genomic_hand.GetSeqMap();
 
-    CSeqMap_CI map_iter = seq_map.Begin();
+    CSeqMap_CI map_iter = seq_map.Begin(0);
     TSeqPos last = 0;
     while (map_iter.GetType() != CSeqMap::eSeqEnd) {
         if (map_iter.GetPosition() > genomic_earliest) {
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/11/16 21:41:11  grichenk
+ * Removed default value for CScope* argument in CSeqMap methods
+ *
  * Revision 1.7  2004/11/01 19:33:08  grichenk
  * Removed deprecated methods
  *

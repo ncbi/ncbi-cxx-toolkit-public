@@ -153,18 +153,18 @@ public:
     
     ~CSeqMap(void);
 
-    TSeqPos GetLength(CScope* scope = 0) const;
-    TMol GetMol(void) const;    
+    TSeqPos GetLength(CScope* scope) const;
+    TMol GetMol(void) const;
 
     // new interface
     // STL style methods
-    const_iterator begin(CScope* scope = 0) const;
-    const_iterator end(CScope* scope = 0) const;
+    const_iterator begin(CScope* scope) const;
+    const_iterator end(CScope* scope) const;
 
     // NCBI style methods
-    CSeqMap_CI Begin(CScope* scope = 0) const;
-    CSeqMap_CI End(CScope* scope = 0) const;
-    CSeqMap_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
+    CSeqMap_CI Begin(CScope* scope) const;
+    CSeqMap_CI End(CScope* scope) const;
+    CSeqMap_CI FindSegment(TSeqPos pos, CScope* scope) const;
 
     enum EFlags {
         fFindData     = (1<<0),
@@ -331,6 +331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/11/16 21:41:11  grichenk
+* Removed default value for CScope* argument in CSeqMap methods
+*
 * Revision 1.52  2004/10/01 19:52:50  kononenk
 * Added doxygen formatting
 *

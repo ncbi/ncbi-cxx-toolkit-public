@@ -974,9 +974,9 @@ int CDemoApp::Run(void)
                 _ASSERT(seg.GetPosition() == actual_end);
                 _ASSERT(seg.GetLength() == 0);
             }
-            CSeqMap::const_iterator begin = seq_map.begin();
+            CSeqMap::const_iterator begin = seq_map.begin(0);
             _ASSERT(begin.GetPosition() == 0);
-            CSeqMap::const_iterator end = seq_map.end();
+            CSeqMap::const_iterator end = seq_map.end(0);
             _ASSERT(end.GetType() == CSeqMap::eSeqEnd);
             _ASSERT(end.GetPosition() == handle.GetBioseqLength());
             TSeqPos total_length = 0;
@@ -1028,6 +1028,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2004/11/16 21:41:11  grichenk
+* Removed default value for CScope* argument in CSeqMap methods
+*
 * Revision 1.90  2004/11/01 19:33:08  grichenk
 * Removed deprecated methods
 *
