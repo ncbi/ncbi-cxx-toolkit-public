@@ -44,7 +44,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// This enumeration is to evolve into a task/program specific list that 
-/// specifies sets of default parameters to easily conduct searches using BLAST
+/// specifies sets of default parameters to easily conduct searches using
+/// BLAST.
+/// N.B.: When making changes to this enumeration, please update 
+/// blast::ProgramNameToEnum (blast_aux.[ch]pp) and blast::GetNumberOfFrames
+/// (blast_setup_cxx.cpp)
 enum EProgram {
     eBlastn = 0,        ///< Nucl-Nucl (traditional blastn)
     eBlastp,            ///< Protein-Protein
@@ -54,7 +58,7 @@ enum EProgram {
     eRPSBlast,          ///< protein-pssm (reverse-position-specific BLAST)
     eRPSTblastn,        ///< nucleotide-pssm (RPS blast with translated query)
     eMegablast,         ///< Nucl-Nucl (traditional megablast)
-    eDiscMegablast,	   ///< Nucl-Nucl using discontiguous megablast
+    eDiscMegablast,	    ///< Nucl-Nucl using discontiguous megablast
     ePSIBlast,          ///< PSI Blast
     eBlastProgramMax    ///< Undefined program
 };
@@ -99,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/11/12 16:41:53  camacho
+* Enhance documentation for EProgram
+*
 * Revision 1.15  2004/07/06 15:46:09  dondosha
 * Added doxygen comments
 *
