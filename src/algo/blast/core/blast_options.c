@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.99  2004/04/23 14:02:25  papadopo
+ * ignore validation of LookupTableOptions if performing an RPS search
+ *
  * Revision 1.98  2004/04/22 22:18:03  dondosha
  * Set lookup table type correctly in BLAST_FillLookupTableOptions - needed for C driver only
  *
@@ -1186,6 +1189,10 @@ LookupTableOptionsValidate(Uint1 program_number,
 
 	if (options == NULL)
 		return 1;
+
+        if (program_number == blast_type_rpsblast ||
+            program_number == blast_type_rpstblastn)
+                return 0;
 
 	if (program_number != blast_type_blastn && options->threshold <= 0)
 	{
