@@ -452,6 +452,9 @@ size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 END_SCOPE(objects)
 
 
+const string kPubseqReaderDriverName("pubseq_reader");
+
+
 /// Class factory for Pubseq reader
 ///
 /// @internal
@@ -464,7 +467,7 @@ public:
                                     objects::CPubseqReader> TParent;
 public:
 
-    CPubseqReaderCF() : TParent("pubseq_reader", 0)
+    CPubseqReaderCF() : TParent(kPubseqReaderDriverName, 0)
     {
     }
 
@@ -486,6 +489,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.43  2003/12/03 14:30:03  kuznets
+* Code clean up.
+* Made use of driver name constant instead of immediate in-place string.
+*
 * Revision 1.42  2003/12/02 16:18:17  kuznets
 * Added plugin manager support for CReader interface and implementaions
 * (id1 reader, pubseq reader)

@@ -707,6 +707,9 @@ void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
 END_SCOPE(objects)
 
+const string kId1ReaderDriverName("id1_reader");
+
+
 /// Class factory for ID1 reader
 ///
 /// @internal
@@ -718,7 +721,7 @@ public:
     typedef 
       CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader> TParent;
 public:
-    CId1ReaderCF() : TParent("id1_reader", 0)
+    CId1ReaderCF() : TParent(kId1ReaderDriverName, 0)
     {
     }
     ~CId1ReaderCF()
@@ -740,6 +743,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.65  2003/12/03 14:30:02  kuznets
+ * Code clean up.
+ * Made use of driver name constant instead of immediate in-place string.
+ *
  * Revision 1.64  2003/12/02 16:18:16  kuznets
  * Added plugin manager support for CReader interface and implementaions
  * (id1 reader, pubseq reader)
