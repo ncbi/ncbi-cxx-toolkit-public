@@ -531,6 +531,26 @@ CTaxon1::GetGenus(int id_tax)
 }
 
 int
+CTaxon1::GetSuperkingdom(int id_tax)
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( m_plCache->LookupAndAdd( id_tax, &pNode )
+        && pNode ) {
+        int sk_rank(m_plCache->GetSuperkingdomRank());
+        while( !pNode->IsRoot() ) {
+            int rank( pNode->GetRank() );
+            if( rank == sk_rank )
+                return pNode->GetTaxId();
+            if( (rank > 0) && (rank < sk_rank))
+                return -1;
+            pNode = pNode->GetParent();
+        }
+    }
+    return -1;
+}
+
+int
 CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
 {
     int count(0);
@@ -826,6 +846,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.8  2002/11/08 14:39:52  domrach
+ * Member function GetSuperkingdom() added
+ *
  * Revision 6.7  2002/11/04 21:29:18  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

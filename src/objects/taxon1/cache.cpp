@@ -700,6 +700,11 @@ COrgRefCache::InitRanks()
             }
         }
 
+        m_nSuperkingdomRank = FindRankByName( "superkingdom" );
+        if( m_nSuperkingdomRank < -10 ) {
+            m_host.SetLastError( "Superkingdom rank was not found" );
+            return false;
+        }
         m_nFamilyRank = FindRankByName( "family" );
         if( m_nFamilyRank < -10 ) {
             m_host.SetLastError( "Family rank was not found" );
@@ -916,6 +921,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.10  2002/11/08 14:39:52  domrach
+ * Member function GetSuperkingdom() added
+ *
  * Revision 6.9  2002/11/04 21:29:18  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

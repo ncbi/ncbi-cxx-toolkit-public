@@ -66,6 +66,7 @@ public:
     // Rank stuff
     const char* GetRankName( int rank ) const;
 
+    int GetSuperkingdomRank() const { return m_nSuperkingdomRank; }
     int GetFamilyRank() const { return m_nFamilyRank; }
     int GetOrderRank() const { return m_nOrderRank; }
     int GetClassRank() const { return m_nClassRank; }
@@ -128,6 +129,7 @@ private:
     bool             SetBinomialName( CTaxon1Node& node, COrgName& on );
     bool             SetPartialName( CTaxon1Node& node, COrgName& on );
     // Rank stuff
+    int m_nSuperkingdomRank;
     int m_nFamilyRank;
     int m_nOrderRank;
     int m_nClassRank;
@@ -217,6 +219,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.5  2002/11/08 14:39:52  domrach
+ * Member function GetSuperkingdom() added
+ *
  * Revision 6.4  2002/08/06 15:09:46  domrach
  * Introducing new genbank name classes
  *

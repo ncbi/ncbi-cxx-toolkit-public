@@ -167,6 +167,13 @@ public:
     int GetGenus(int id_tax);
 
     //---------------------------------------------
+    // Get superkingdom tax_id (id_tax should be below superkingdom)
+    // Returns: tax_id of superkingdom
+    //          or -1 if error or no superkingdom in the lineage
+    ///
+    int GetSuperkingdom(int id_tax);
+
+    //---------------------------------------------
     // Get taxids for all children of specified node.
     // Returns: number of children, id list appended with found tax ids
     ///
@@ -262,6 +269,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.5  2002/11/08 14:39:51  domrach
+// Member function GetSuperkingdom() added
+//
 // Revision 1.4  2002/02/15 16:17:24  vakatov
 // CTaxon1::Init() -- make "timeout" arg be mandatory
 //
