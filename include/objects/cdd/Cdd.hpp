@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/06/10 21:04:28  hurwitz
+ * added access function to parent field
+ *
  * Revision 1.1  2002/06/06 18:08:16  anyone
  * add custom Cdd operations
  *
@@ -68,8 +71,21 @@ class CCdd : public CCdd_Base
 public:
     CCdd(void);                                     // constructor
     ~CCdd(void);                                    // destructor
-    string GetAccession();                          // get accession of CD
-    void   SetAccession(string Accession);          // set accession of CD
+    string GetAccession(int& Version);              // get accession and version of CD
+    string GetAccession() {
+      int Dummy;
+      return(GetAccession(Dummy));
+    }
+    string GetParentAccession(int& Version);        // get accession and version of parent
+    string GetParentAccession() {
+      int Dummy;
+      return(GetParentAccession(Dummy));
+    }
+    void   SetAccession(string Accession, int Version);      // set accession and version of CD
+    void   SetAccession(string Accession) {
+      SetAccession(Accession, 1);
+    }
+    void   SetParentAccession(string Parent, int Version);   // set accession and version of parent
     string GetLongDescription();                    // long description of CD
     string GetCurationStatus();                     // curation status of CD
     string GetUpdateDate();                         // last update date of CD

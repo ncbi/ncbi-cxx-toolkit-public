@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/06/10 21:05:05  hurwitz
+ * added access function to parent field
+ *
  * Revision 1.2  2002/06/07 18:35:48  hurwitz
  * fix 2 bugs for Solaris compilation
  *
@@ -829,21 +832,43 @@ string CCdd::GetCurationStatus() {
 }
 
 
-void CCdd::SetAccession(string Accession) {
+string CCdd::GetParentAccession(int& Version) {
 //-------------------------------------------------------------------------
-// set accession name of CD
+// get accession name and version of parent
 //-------------------------------------------------------------------------
-  CCdd_id_set::Tdata::iterator  i;
+  string  Str;
 
-  for (i=SetId().Set().begin(); i!=SetId().Set().end(); i++) {
-    if ((*i)->IsGid()) {
-      (*i)->SetGid().SetAccession(Accession);
+  if (IsSetParent()) {
+    if (GetParent().IsGid()) {
+      if (GetParent().GetGid().IsSetVersion()) {
+        Version = GetParent().GetGid().GetVersion();
+      }
+      else {
+        Version = 1;
+      }
+      return(GetParent().GetGid().GetAccession());
     }
   }
+  return(Str);
 }
 
 
-string CCdd::GetAccession() {
+void CCdd::SetParentAccession(string Parent, int Version) {
+//-------------------------------------------------------------------------
+// set accession name and version of parent
+//-------------------------------------------------------------------------
+  ResetParent();
+
+  CCdd_id* pID = new CCdd_id;
+  CGlobal_id* pGID = new CGlobal_id;
+  pGID->SetAccession(Parent);
+  pGID->SetVersion(Version);
+  pID->SetGid(*pGID);
+  SetParent(*pID);
+}
+
+
+string CCdd::GetAccession(int& Version) {
 //-------------------------------------------------------------------------
 // get accession name of CD
 //-------------------------------------------------------------------------
@@ -852,10 +877,31 @@ string CCdd::GetAccession() {
 
   for (i=GetId().Get().begin(); i!=GetId().Get().end(); i++) {
     if ((*i)->IsGid()) {
+      if ((*i)->GetGid().IsSetVersion()) {
+        Version = (*i)->GetGid().GetVersion();
+      }
+      else {
+        Version = 1;
+      }
       return((*i)->GetGid().GetAccession());
     }
   }
   return(Str);
+}
+
+
+void CCdd::SetAccession(string Accession, int Version) {
+//-------------------------------------------------------------------------
+// set accession name of CD
+//-------------------------------------------------------------------------
+  CCdd_id_set::Tdata::iterator  i;
+
+  for (i=SetId().Set().begin(); i!=SetId().Set().end(); i++) {
+    if ((*i)->IsGid()) {
+      (*i)->SetGid().SetAccession(Accession);
+      (*i)->SetGid().SetVersion(Version);
+    }
+  }
 }
 
 
