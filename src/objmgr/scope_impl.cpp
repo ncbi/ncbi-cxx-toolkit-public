@@ -583,12 +583,12 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 {
     if ( !h ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "cannot edit invalid handle");
+                   "CScope::GetEditHandle: null handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "detach is not implemented");
+                   "CScope::GetEditHandle: detach is not implemented");
     }
     
     return CBioseq_EditHandle(h.GetSeq_id_Handle(),
@@ -600,12 +600,12 @@ CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
 {
     if ( !h ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "cannot edit invalid handle");
+                   "CScope::GetEditHandle: null handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "detach is not implemented");
+                   "CScope::GetEditHandle: detach is not implemented");
     }
     
     return CSeq_entry_EditHandle(*m_HeapScope,
@@ -617,12 +617,12 @@ CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
 {
     if ( !h ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "cannot edit invalid handle");
+                   "CScope::GetEditHandle: null handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "detach is not implemented");
+                   "CScope::GetEditHandle: detach is not implemented");
     }
     
     return CSeq_annot_EditHandle(*m_HeapScope,
@@ -634,12 +634,12 @@ CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
 {
     if ( !h ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "cannot edit invalid handle");
+                   "CScope::GetEditHandle: null handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "detach is not implemented");
+                   "CScope::GetEditHandle: detach is not implemented");
     }
     
     return CBioseq_set_EditHandle(*m_HeapScope,
@@ -1171,6 +1171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/25 19:27:44  vasilche
+* Implemented MoveTo and CopyTo methods of handles.
+*
 * Revision 1.3  2004/03/24 18:30:30  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

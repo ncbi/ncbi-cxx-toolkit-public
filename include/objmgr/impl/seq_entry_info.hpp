@@ -93,6 +93,7 @@ public:
     typedef TObject::E_Choice E_Choice;
     E_Choice Which(void) const;
     void x_CheckWhich(E_Choice which) const;
+    void Reset(void);
 
     typedef CBioseq_set_Info TSet;
     bool IsSet(void) const;
@@ -168,7 +169,6 @@ protected:
     void x_AttachObjectVariant(CBioseq& seq);
     void x_AttachObjectVariant(CBioseq_set& seqset);
 
-    void x_Reset(void);
     void x_Select(CSeq_entry::E_Choice which,
                   CBioseq_Base_Info* contents);
     void x_Select(CSeq_entry::E_Choice which,
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/25 19:27:44  vasilche
+* Implemented MoveTo and CopyTo methods of handles.
+*
 * Revision 1.10  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -175,8 +175,7 @@ void CSeq_entry_Info::x_Select(CSeq_entry::E_Choice which,
 }
 
 
-inline
-void CSeq_entry_Info::x_Reset(void)
+void CSeq_entry_Info::Reset(void)
 {
     x_Select(CSeq_entry::e_not_set, 0);
 }
@@ -505,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/25 19:27:44  vasilche
+ * Implemented MoveTo and CopyTo methods of handles.
+ *
  * Revision 1.12  2004/03/24 18:30:30  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.

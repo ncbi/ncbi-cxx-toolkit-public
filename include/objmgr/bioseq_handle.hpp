@@ -246,6 +246,13 @@ public:
     operator bool(void)  const;
     bool operator!(void) const;
 
+    // these methods are for cross scope move only.
+    CBioseq_EditHandle CopyTo(const CSeq_entry_EditHandle& entry,
+                              int index = -1) const;
+    CBioseq_EditHandle CopyTo(const CBioseq_set_EditHandle& seqset,
+                              int index = -1) const;
+    CBioseq_EditHandle CopyToSeq(const CSeq_entry_EditHandle& entry) const;
+
 protected:
     friend class CScope_Impl;
     friend class CSynonymsSet;
@@ -307,13 +314,6 @@ public:
     void MoveTo(const CSeq_entry_EditHandle& entry, int index = -1) const;
     void MoveTo(const CBioseq_set_EditHandle& seqset, int index = -1) const;
     void MoveToSeq(const CSeq_entry_EditHandle& entry) const;
-
-    // these methods are for cross scope move only.
-    CBioseq_EditHandle CopyTo(const CSeq_entry_EditHandle& entry,
-                              int index = -1) const;
-    CBioseq_EditHandle CopyTo(const CBioseq_set_EditHandle& seqset,
-                              int index = -1) const;
-    CBioseq_EditHandle CopyToSeq(const CSeq_entry_EditHandle& entry) const;
 
 protected:
     friend class CScope_Impl;
@@ -392,6 +392,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/03/25 19:27:43  vasilche
+* Implemented MoveTo and CopyTo methods of handles.
+*
 * Revision 1.51  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.
