@@ -36,6 +36,8 @@
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/items/comment_item.hpp>
+#include <objtools/format/items/feature_item.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -83,8 +85,25 @@ protected:
     virtual void x_DoSingleSection(const CBioseq& seq) const = 0;
 
     void x_GatherReferences(void) const;
+
+    // features
+    void x_GatherFeatures  (void) const;
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CFFContext& ctx) const;
+
+
+    // source features
+    typedef CRef<CSourceFeatureItem>    TSFItem;
+    typedef deque<TSFItem>              TSourceFeatSet;
     void x_GatherSourceFeatures(void) const;
-    void x_GatherFeatures  (bool source = true) const;
+    void x_CollectBioSources(TSourceFeatSet& srcs) const;
+    void x_CollectBioSourcesOnBioseq(CBioseq_Handle bh, CRange<TSeqPos> range,
+        CFFContext& ctx, TSourceFeatSet& srcs) const;
+    void x_CollectSourceDescriptors(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
+        CFFContext& ctx, TSourceFeatSet& srcs) const;
+    void x_CollectSourceFeatures(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
+        CFFContext& ctx, TSourceFeatSet& srcs) const;
+    void x_MergeEqualBioSources(TSourceFeatSet& srcs) const;
+    void x_SubtractFromFocus(TSourceFeatSet& srcs) const;
 
     // comments
     void x_GatherComments  (void) const;
@@ -125,6 +144,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 16:41:30  shomrat
+* modification to feature gathering methods
+*
 * Revision 1.2  2004/01/14 15:54:06  shomrat
 * added source indicator to x_GatherFeatures (temporary)
 *
