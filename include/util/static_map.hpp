@@ -199,10 +199,10 @@ private:
     void x_Validate()
     {
 #ifdef _DEBUG
-        const_iterator start = begin();
-        const_iterator prev = start;
+        const_iterator begin = m_Begin;
+        const_iterator prev = begin;
         ++begin;
-        for ( ;  begin != end();  ++begin) {
+        for ( ;  begin != m_End;  ++begin) {
             _ASSERT( m_Comparator(*prev, *begin) );
             prev = begin;
         }
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/22 14:51:03  dicuccio
+ * Fixed erroneous variable names
+ *
  * Revision 1.1  2004/01/22 13:22:12  dicuccio
  * Initial revision
  *
