@@ -175,7 +175,7 @@ string CHTMLHelper::StripTags (const string& str)
 
     // First, strip comments
     while ( (pos = s.find("<!--", pos)) != NPOS ) {
-        int pos_end = s.find("-->", pos + 1);
+        SIZE_TYPE pos_end = s.find("-->", pos + 1);
         if ( pos_end == NPOS ) {
             break;
         }
@@ -185,7 +185,7 @@ string CHTMLHelper::StripTags (const string& str)
     // Now, strip balanced "<..>"
     pos =0;
     while ( (pos = s.find("<", pos)) != NPOS ) {
-        int pos_end = s.find(">", pos + 1);
+        SIZE_TYPE pos_end = s.find(">", pos + 1);
         if ( pos_end == NPOS ) {
             break;
         }
@@ -206,7 +206,7 @@ string CHTMLHelper::StripSpecialChars(const string& str)
 
     // Strip named and numeric character entities "&[#]...;"
     while ( (pos = s.find("&", pos)) != NPOS ) {
-        int pos_end = s.find(";", pos + 1);
+        SIZE_TYPE pos_end = s.find(";", pos + 1);
         if ( pos_end == NPOS ) {
             break;
         }
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/02 15:14:03  ivanov
+ * Fixed compilation warnings
+ *
  * Revision 1.13  2004/02/02 14:17:45  ivanov
  * Added CHTMLHelper::StripHTML(), StripSpecialChars(). Fixed StripTags().
  *
