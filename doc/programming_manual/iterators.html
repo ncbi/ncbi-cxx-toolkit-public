@@ -163,11 +163,51 @@ are given in <a href="ctypeiter_cpp.html"><i>ctypeiter.cpp</i></a>.
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypesIterator.html">
 <h3><i>CTypesIterator</i></h3></a>
 
-Occasionally it is desirable to iterate over a <i>set</i> of types contained inside an
-object. Work is in progress on developing an interface for such an iterator, and
-documentation will be made available once this has been implemented.
+Occasionally it is necessary to iterate over a <i>set</i> of types contained inside an
+object. The <i>CTypesIterator</i>, as its name suggests, is designed for this purpose.
+For example, suppose you have loaded a gene sequence into memory as a <i>CBioseq</i>
+(named <i>seq</i>), and would now like to iterate over all of its references to genes and
+organisms. The following sequence of statements defines an iterator that will step through
+all of <i>seq</i>'s data members (recursively), stopping only at references to gene and
+organism citations:
 
+<font color = "#000080"> <pre>
+     CTypesIterator i;			
+     Type&lt;CGene_ref>::AddTo(i);		// define the types to stop at
+     Type&lt;COrg_ref>::AddTo(i);
+         
+     for (i = Begin(seq); i; ++i) {
+ 
+	 if (Type&lt;CGene_ref>::Match(i)) {
+
+             CGene_ref* geneRef = Type&lt;CGene_ref>::Get(i);
+             ...
+         } 
+	 else if (Type&lt;COrg_ref>::Match(i) {
+
+             COrg_ref* orgRef = Type&lt;COrg_ref>::Get(i);
+             ...
+         }
+     }
+</pre> </font>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/Type.html">
+<i>Type</i></a> is a helper template class that simplifies the syntax required
+to use the multiple types iterator:
+<ul>
+<li> <i>Type&lt;TypeName>::AddTo(i)</i> specifies that iterator <i>i</i> should stop at
+that type
+<li> <i>Type&lt;TypeName>::Match(i)</i> returns <i>True</i> if the specified type is the
+type currently pointed to by iterator <i>i</i>
+<li> <i>Type&lt;TypeName>::Get(i)</i> retrieves
+the object currently pointed to by iterator <i>i</i>, 
+and type casts it to the specified type
+</ul>
 <p>
+
+The <i>Begin(ObjectName)</i> expression is as described in the above
+<i>CTypeIterator</i> and <i>CTypeConstIterator</i> classes. The fact that it is
+also used here tells us that this type of iterator can <i>not</i> be used for
+standard types, as they can not generate their own type information. 
 
 <p>
 <a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
