@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/04/24 21:18:04  lavr
+ * Beautifying: pup open check before buffer check in CONN_Wait()
+ *
  * Revision 6.22  2002/04/22 19:30:01  lavr
  * Do not put trace message on polling wait (tmo={0,0})
  * More effective CONN_Read w/o repeatitive checkings for eIO_ReadPersist
@@ -414,13 +417,13 @@ extern EIO_Status CONN_Wait
         (event != eIO_Read && event != eIO_Write))
         return eIO_InvalidArg;
 
-    /* check if there is a PEEK'ed data in the input */
-    if (event == eIO_Read && BUF_Size(conn->buf))
-        return eIO_Success;
-
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open && (status = s_Open(conn)) != eIO_Success)
         return status;
+
+    /* check if there is a PEEK'ed data in the input */
+    if (event == eIO_Read && BUF_Size(conn->buf))
+        return eIO_Success;
 
     /* call current connector's "WAIT" method */
     status = conn->meta.wait ?
