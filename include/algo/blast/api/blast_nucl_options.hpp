@@ -64,44 +64,66 @@ public:
     CBlastNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastNucleotideOptionsHandle() {}
 
+    /// Sets Defaults
     virtual void SetDefaults();
 
     /******************* Lookup table options ***********************/
+    /// Returns LookupTableType
     int GetLookupTableType() const { return m_Opts->GetLookupTableType(); }
+    /// Sets LookupTableType
+    /// @param type LookupTableType [in]
     void SetLookupTableType(int type) { m_Opts->SetLookupTableType(type); }
 
+    /// Returns ScanStep
     unsigned char GetScanStep() const { return m_Opts->GetScanStep(); }
+    /// Sets ScanStep
+    /// @param step ScanStep [in]
     void SetScanStep(unsigned char step) { m_Opts->SetScanStep(step); }
 
+    /// Returns WordSize
     short GetWordSize() const { return m_Opts->GetWordSize(); }
+    /// Sets WordSize
+    /// @param ws WordSize [in]
     void SetWordSize(short ws) { m_Opts->SetWordSize(ws); }
 
     /******************* Query setup options ************************/
+    /// Returns StrandOption
     objects::ENa_strand GetStrandOption() const { 
         return m_Opts->GetStrandOption();
     }
+    /// Sets StrandOption
+    /// @param strand StrandOption [in]
     void SetStrandOption(objects::ENa_strand strand) {
         m_Opts->SetStrandOption(strand);
     }
 
     /******************* Initial word options ***********************/
+    /// Returns WindowSize
     int GetWindowSize() const { return m_Opts->GetWindowSize(); }
+    /// Sets WindowSize
+    /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
+    /// Returns SeedContainerType
     SeedContainerType GetSeedContainerType() const {
         return m_Opts->GetSeedContainerType();
     }
+    /// Sets SeedContainerType
+    /// @param sct SeedContainerType [in]
     void SetSeedContainerType(SeedContainerType sct) {
         m_Opts->SetSeedContainerType(sct);
     }
 
+    /// Returns SeedExtensionMethod
     SeedExtensionMethod GetSeedExtensionMethod() const {
         return m_Opts->GetSeedExtensionMethod();
     }
-    // Note that the scan step (or stride) is changed as a side effect of
-    // calling this method because. This is because the scan step is best
-    // calculated for the eRightAndLeft seed extension method and a fixed value
-    // is used for the eRight seed extension method.
+    /// Sets SeedExtensionMethod
+    /// Note that the scan step (or stride) is changed as a side effect of
+    /// calling this method because. This is because the scan step is best
+    /// calculated for the eRightAndLeft seed extension method and a fixed value
+    /// is used for the eRight seed extension method.
+    /// @param sem SeedExtensionMethod [in]
     void SetSeedExtensionMethod(SeedExtensionMethod sem) {
         switch (sem) {
         case eRight: 
@@ -121,80 +143,138 @@ public:
         m_Opts->SetSeedExtensionMethod(sem);
     }
 
+    /// Returns VariableWordSize
     bool GetVariableWordSize() const { return m_Opts->GetVariableWordSize(); }
+    /// Sets VariableWordSize
+    /// @param val VariableWordSize [in]
     void SetVariableWordSize(bool val = true) { 
         m_Opts->SetVariableWordSize(val); 
     }
 
+    /// Returns UngappedExtension
     bool GetUngappedExtension() const { return m_Opts->GetUngappedExtension();}
+    /// Sets UngappedExtension
+    /// @param val UngappedExtension [in]
     void SetUngappedExtension(bool val = true) { 
         m_Opts->SetUngappedExtension(val); 
     }
 
+    /// Returns XDropoff
     double GetXDropoff() const { return m_Opts->GetXDropoff(); } 
+    /// Sets XDropoff
+    /// @param x XDropoff [in]
     void SetXDropoff(double x) { m_Opts->SetXDropoff(x); }
 
     /******************* Gapped extension options *******************/
+    /// Returns GapXDropoffFinal
     double GetGapXDropoffFinal() const { 
         return m_Opts->GetGapXDropoffFinal(); 
     }
+    /// Sets GapXDropoffFinal
+    /// @param x GapXDropoffFinal [in]
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
+    /// Returns GapExtnAlgorithm
     EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
+    /// Sets GapExtnAlgorithm
+    /// @param algo GapExtnAlgorithm [in]
     void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) { m_Opts->SetGapExtnAlgorithm(algo); }
 
+    /// Returns GapTracebackAlgorithm
     EBlastTbackExt GetGapTracebackAlgorithm() const { return m_Opts->GetGapTracebackAlgorithm(); }
+    /// Sets GapTracebackAlgorithm
+    /// @param algo GapTracebackAlgorithm [in]
     void SetGapTracebackAlgorithm(EBlastTbackExt algo) { m_Opts->SetGapTracebackAlgorithm(algo); }
 
     /************************ Scoring options ************************/
+    /// Returns MatchReward
     int GetMatchReward() const { return m_Opts->GetMatchReward(); }
+    /// Sets MatchReward
+    /// @param r MatchReward [in]
     void SetMatchReward(int r) { m_Opts->SetMatchReward(r); }
 
+    /// Returns MismatchPenalty
     int GetMismatchPenalty() const { return m_Opts->GetMismatchPenalty(); }
+    /// Sets MismatchPenalty
+    /// @param p MismatchPenalty [in]
     void SetMismatchPenalty(int p) { m_Opts->SetMismatchPenalty(p); }
 
+    /// Returns MatrixName
     const char* GetMatrixName() const { return m_Opts->GetMatrixName(); }
+    /// Sets MatrixName
+    /// @param matrix MatrixName [in]
     void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
 
+    /// Returns MatrixPath
     const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
+    /// Sets MatrixPath
+    /// @param path MatrixPath [in]
     void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
 
+    /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
+    /// Sets GapOpeningCost
+    /// @param g GapOpeningCost [in]
     void SetGapOpeningCost(int g) { m_Opts->SetGapOpeningCost(g); }
 
+    /// Returns GapExtensionCost
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
+    /// Sets GapExtensionCost
+    /// @param e GapExtensionCost [in]
     void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
 
+    /// Returns EffectiveSearchSpace
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
     }
+    /// Sets EffectiveSearchSpace
+    /// @param eff EffectiveSearchSpace [in]
     void SetEffectiveSearchSpace(Int8 eff) {
         m_Opts->SetEffectiveSearchSpace(eff);
     }
 
+    /// Returns UseRealDbSize
     bool GetUseRealDbSize() const { return m_Opts->GetUseRealDbSize(); }
+    /// Sets UseRealDbSize
+    /// @param u UseRealDbSize [in]
     void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
 
 
+    /// Sets TraditionalBlastnDefaults
     void SetTraditionalBlastnDefaults();
+    /// Sets TraditionalMegablastDefaults
     void SetTraditionalMegablastDefaults();
 
 protected:
+    /// Overrides LookupTableDefaults for nucleotide options
     virtual void SetLookupTableDefaults();
+    /// Overrides MBLookupTableDefaults for nucleotide options
     virtual void SetMBLookupTableDefaults();
+    /// Overrides QueryOptionDefaults for nucleotide options
     virtual void SetQueryOptionDefaults();
+    /// Overrides InitialWordOptionsDefaults for nucleotide options
     virtual void SetInitialWordOptionsDefaults();
+    /// Overrides MBInitialWordOptionsDefaults for nucleotide options
     virtual void SetMBInitialWordOptionsDefaults();
+    /// Overrides GappedExtensionDefaults for nucleotide options
     virtual void SetGappedExtensionDefaults();
+    /// Overrides MBGappedExtensionDefaults for nucleotide options
     virtual void SetMBGappedExtensionDefaults();
+    /// Overrides ScoringOptionsDefaults for nucleotide options
     virtual void SetScoringOptionsDefaults();
+    /// Overrides MBScoringOptionsDefaults for nucleotide options
     virtual void SetMBScoringOptionsDefaults();
+    /// Overrides HitSavingOptionsDefaults for nucleotide options
     virtual void SetHitSavingOptionsDefaults();
+    /// Overrides EffectiveLengthsOptionsDefaults for nucleotide options
     virtual void SetEffectiveLengthsOptionsDefaults();
+    /// Overrides SubjectSequenceOptionsDefaults for nucleotide options
     virtual void SetSubjectSequenceOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
+    /// Disallow assignment operator
     CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
 };
 
@@ -208,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/08 22:27:36  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.11  2004/05/18 12:48:24  madden
  * Add setter and getter for GapTracebackAlgorithm (EBlastTbackExt)
  *
@@ -224,6 +307,8 @@ END_NCBI_SCOPE
  * Added methods for get/set matrix, matrix-path, gap-opening, gap-extension
  *
  * Revision 1.6  2004/02/10 19:48:07  dondosha
+    /// Sets MBGappedExtensionDefaults
+    /// @param x MBGappedExtensionDefaults [in]
  * Added SetMBGappedExtensionDefaults method
  *
  * Revision 1.5  2004/01/16 20:42:59  bealer

@@ -44,6 +44,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+// forward declarations
 class CBlastException;
 class CBlastOptionsHandle;
 
@@ -75,12 +76,20 @@ class CBlastOptionsHandle;
 class NCBI_XBLAST_EXPORT CBlastOptionsFactory
 {
 public:
+    /// Convenience define
+    /// @sa CBlastOptions class
     typedef CBlastOptions::EAPILocality EAPILocality;
     
-    static CBlastOptionsHandle* Create(EProgram program, EAPILocality locality = CBlastOptions::eLocal)
+    /// Creates an options handle object for the requested program, throws an
+    /// exception if an unsupported program is requested
+    /// @param program BLAST program [in]
+    /// @return requested options handle with default values set
+    static CBlastOptionsHandle* 
+        Create(EProgram program, EAPILocality locality = CBlastOptions::eLocal)
         THROWS((CBlastException));
 
 private:
+    /// Private c-tor
     CBlastOptionsFactory();
 };
 
@@ -94,8 +103,11 @@ private:
 class NCBI_XBLAST_EXPORT CBlastOptionsHandle : public CObject
 {
 public:
+    /// Convenience define
+    /// @sa CBlastOptions class
     typedef CBlastOptions::EAPILocality EAPILocality;
     
+    /// Default c-tor
     CBlastOptionsHandle(EAPILocality locality);
     
     /// Return the object which this object is a handle for.
@@ -103,6 +115,12 @@ public:
     /// Assumes user knows exactly how to set the individual options 
     /// correctly.
     const CBlastOptions& GetOptions() const { return *m_Opts; }
+
+    /// Returns a reference to the internal options class which this object is
+    /// a handle for.
+    ///
+    /// Assumes user knows exactly how to set the individual options 
+    /// correctly.
     CBlastOptions& SetOptions() { return *m_Opts; }
     
     /// Resets the state of the object to all default values.
@@ -113,51 +131,94 @@ public:
     void DoneDefaults() { m_Opts->DoneDefaults(); }
     
     /******************* Lookup table options ***********************/
+
+    /// Returns AlphabetSize
     int GetAlphabetSize() const { return m_Opts->GetAlphabetSize(); }
+    /// Sets AlphabetSize
+    /// @param asz AlphabetSize [in]
     void SetAlphabetSize(int asz) { m_Opts->SetAlphabetSize(asz); }
 
     /******************* Query setup options ************************/
+    /// Returns FilterString
     const char* GetFilterString() const { return m_Opts->GetFilterString(); }
+    /// Sets FilterString
+    /// @param f FilterString [in]
     void SetFilterString(const char* f) { m_Opts->SetFilterString(f); }
 
     /******************* Gapped extension options *******************/
+    /// Returns GapXDropoff
     double GetGapXDropoff() const { return m_Opts->GetGapXDropoff(); }
+    /// Sets GapXDropoff
+    /// @param x GapXDropoff [in]
     void SetGapXDropoff(double x) { m_Opts->SetGapXDropoff(x); }
 
+    /// Returns GapTrigger
     double GetGapTrigger() const { return m_Opts->GetGapTrigger(); }
+    /// Sets GapTrigger
+    /// @param g GapTrigger [in]
     void SetGapTrigger(double g) { m_Opts->SetGapTrigger(g); }
 
     /******************* Hit saving options *************************/
+    /// Returns HitlistSize
     int GetHitlistSize() const { return m_Opts->GetHitlistSize(); }
+    /// Sets HitlistSize
+    /// @param s HitlistSize [in]
     void SetHitlistSize(int s) { m_Opts->SetHitlistSize(s); }
+    /// Returns PrelimHitlistSize
     int GetPrelimHitlistSize() const { return m_Opts->GetPrelimHitlistSize(); }
+    /// Sets PrelimHitlistSize
+    /// @param s PrelimHitlistSize [in]
     void SetPrelimHitlistSize(int s) { m_Opts->SetPrelimHitlistSize(s); }
 
+    /// Returns MaxNumHspPerSequence
     int GetMaxNumHspPerSequence() const { 
         return m_Opts->GetMaxNumHspPerSequence();
     }
+    /// Sets MaxNumHspPerSequence
+    /// @param m MaxNumHspPerSequence [in]
     void SetMaxNumHspPerSequence(int m) { m_Opts->SetMaxNumHspPerSequence(m); }
 
     // These 2 are never set in core... should they be removed?
+    /// Returns TotalHspLimit
     int GetTotalHspLimit() const { return m_Opts->GetTotalHspLimit(); }
+    /// Sets TotalHspLimit
+    /// @param l TotalHspLimit [in]
     void SetTotalHspLimit(int l) { m_Opts->SetTotalHspLimit(l); }
 
+    /// Returns EvalueThreshold
     double GetEvalueThreshold() const { return m_Opts->GetEvalueThreshold(); }
+    /// Sets EvalueThreshold
+    /// @param eval EvalueThreshold [in]
     void SetEvalueThreshold(double eval) { m_Opts->SetEvalueThreshold(eval); } 
+    /// Returns CutoffScore
     int GetCutoffScore() const { return m_Opts->GetCutoffScore(); }
+    /// Sets CutoffScore
+    /// @param s CutoffScore [in]
     void SetCutoffScore(int s) { m_Opts->SetCutoffScore(s); }
 
+    /// Returns PercentIdentity
     double GetPercentIdentity() const { return m_Opts->GetPercentIdentity(); }
+    /// Sets PercentIdentity
+    /// @param p PercentIdentity [in]
     void SetPercentIdentity(double p) { m_Opts->SetPercentIdentity(p); }
 
+    /// Returns GappedMode
     bool GetGappedMode() const { return m_Opts->GetGappedMode(); }
+    /// Sets GappedMode
+    /// @param m GappedMode [in]
     void SetGappedMode(bool m = true) { m_Opts->SetGappedMode(m); }
 
     /******************** Database (subject) options *******************/
+    /// Returns DbLength
     Int8 GetDbLength() const { return m_Opts->GetDbLength(); }
+    /// Sets DbLength
+    /// @param len DbLength [in]
     void SetDbLength(Int8 len) { m_Opts->SetDbLength(len); }
 
+    /// Returns DbSeqNum
     unsigned int GetDbSeqNum() const { return m_Opts->GetDbSeqNum(); }
+    /// Sets DbSeqNum
+    /// @param num DbSeqNum [in]
     void SetDbSeqNum(unsigned int num) { m_Opts->SetDbSeqNum(num); }
 
 protected:
@@ -166,13 +227,21 @@ protected:
     CRef<CBlastOptions> m_Opts;
 
     // These methods make up the template method
+    /// Sets LookupTableDefaults
     virtual void SetLookupTableDefaults() = 0;
+    /// Sets QueryOptionDefaults
     virtual void SetQueryOptionDefaults() = 0;
+    /// Sets InitialWordOptionsDefaults
     virtual void SetInitialWordOptionsDefaults() = 0;
+    /// Sets GappedExtensionDefaults
     virtual void SetGappedExtensionDefaults() = 0;
+    /// Sets ScoringOptionsDefaults
     virtual void SetScoringOptionsDefaults() = 0;
+    /// Sets HitSavingOptionsDefaults
     virtual void SetHitSavingOptionsDefaults() = 0;
+    /// Sets EffectiveLengthsOptionsDefaults
     virtual void SetEffectiveLengthsOptionsDefaults() = 0;
+    /// Sets SubjectSequenceOptionsDefaults
     virtual void SetSubjectSequenceOptionsDefaults() = 0;
 };
 
@@ -186,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/08 22:27:36  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.13  2004/03/25 17:24:49  camacho
  * Minor change in sample code
  *

@@ -55,6 +55,7 @@ class CPssmCreate;   // forward declaration of unit test class
 
 BEGIN_NCBI_SCOPE
 
+// Forward declarations in objects scope
 BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_loc;
@@ -74,6 +75,7 @@ struct CDeleter<PsiAlignmentData> {
 };
 
 #ifndef GAP_IN_ALIGNMENT
+    /** Representation of GAP in Seq-align */
 #   define GAP_IN_ALIGNMENT     ((Uint4)-1)
 #endif
 
@@ -176,6 +178,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/06/08 22:27:44  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.2  2004/05/28 17:32:32  ucko
  * Remove redundant ncbi:: from specialization of CDeleter, as it
  * confuses some compilers.

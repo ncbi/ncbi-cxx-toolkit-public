@@ -60,60 +60,103 @@ public:
     ~CBlastProteinOptionsHandle() {}
 
     /******************* Lookup table options ***********************/
+    /// Returns WordThreshold
     int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
+    /// Sets WordThreshold
+    /// @param wt WordThreshold [in]
     void SetWordThreshold(int wt) { m_Opts->SetWordThreshold(wt); }
 
+    /// Returns WordSize
     short GetWordSize() const { return m_Opts->GetWordSize(); }
+    /// Sets WordSize
+    /// @param ws WordSize [in]
     void SetWordSize(short ws) { m_Opts->SetWordSize(ws); }
 
     /******************* Initial word options ***********************/
+    /// Returns WindowSize
     int GetWindowSize() const { return m_Opts->GetWindowSize(); }
+    /// Sets WindowSize
+    /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
+    /// Returns XDropoff
     double GetXDropoff() const { return m_Opts->GetXDropoff(); } 
+    /// Sets XDropoff
+    /// @param x XDropoff [in]
     void SetXDropoff(double x) { m_Opts->SetXDropoff(x); }
 
     /******************* Gapped extension options *******************/
+    /// Returns GapXDropoffFinal
     double GetGapXDropoffFinal() const { 
         return m_Opts->GetGapXDropoffFinal(); 
     }
+    /// Sets GapXDropoffFinal
+    /// @param x GapXDropoffFinal [in]
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
     /************************ Scoring options ************************/
+    /// Returns MatrixName
     const char* GetMatrixName() const { return m_Opts->GetMatrixName(); }
+    /// Sets MatrixName
+    /// @param matrix MatrixName [in]
     void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
 
+    /// Returns MatrixPath
     const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
+    /// Sets MatrixPath
+    /// @param path MatrixPath [in]
     void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
 
+    /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
+    /// Sets GapOpeningCost
+    /// @param g GapOpeningCost [in]
     void SetGapOpeningCost(int g) { m_Opts->SetGapOpeningCost(g); }
 
+    /// Returns GapExtensionCost
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
+    /// Sets GapExtensionCost
+    /// @param e GapExtensionCost [in]
     void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
 
+    /// Returns EffectiveSearchSpace
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
     }
+    /// Sets EffectiveSearchSpace
+    /// @param eff EffectiveSearchSpace [in]
     void SetEffectiveSearchSpace(Int8 eff) {
         m_Opts->SetEffectiveSearchSpace(eff);
     }
 
+    /// Returns UseRealDbSize
     bool GetUseRealDbSize() const { return m_Opts->GetUseRealDbSize(); }
+    /// Sets UseRealDbSize
+    /// @param u UseRealDbSize [in]
     void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
 
 protected:
+    /// Overrides LookupTableDefaults for protein options
     virtual void SetLookupTableDefaults();
+    /// Overrides QueryOptionDefaults for protein options
     virtual void SetQueryOptionDefaults();
+    /// Overrides InitialWordOptionsDefaults for protein options
     virtual void SetInitialWordOptionsDefaults();
+    /// Overrides GappedExtensionDefaults for protein options
     virtual void SetGappedExtensionDefaults();
+    /// Overrides ScoringOptionsDefaults for protein options
     virtual void SetScoringOptionsDefaults();
+    /// Overrides HitSavingOptionsDefaults for protein options
     virtual void SetHitSavingOptionsDefaults();
+    /// Overrides EffectiveLengthsOptionsDefaults for protein options
     virtual void SetEffectiveLengthsOptionsDefaults();
+    /// Overrides SubjectSequenceOptionsDefaults for protein options
     virtual void SetSubjectSequenceOptionsDefaults(); 
 
 private:
+    /// Disallow copy constructor
     CBlastProteinOptionsHandle(const CBlastProteinOptionsHandle& rhs);
+    /// Disallow assignment operator
     CBlastProteinOptionsHandle& operator=(const CBlastProteinOptionsHandle& rhs);
 };
 
@@ -127,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/08 22:27:36  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.7  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *
