@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.74  2001/09/02 11:26:02  thiessen
 * add mac font defaults
 *
@@ -800,7 +803,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu->Append(MID_OBJECT, "&Object");
     subMenu->Append(MID_DOMAIN, "&Domain");
     subMenu->Append(MID_MOLECULE, "&Molecule");
+    subMenu->Append(MID_RAINBOW, "&Rainbow");
     subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity");
+    subMenu->Append(MID_CHARGE, "&Charge");
     subMenu->Append(MID_TEMP, "&Temperature");
     subMenu->Append(MID_ELEMENT, "&Element");
     menu->Append(MID_COLORS, "&Coloring Shortcuts", subMenu);
@@ -1259,7 +1264,9 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut);
             case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut);
             case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut);
+            case MID_RAINBOW: COLORING_SHORTCUT(eRainbowShortcut);
             case MID_HYDROPHOB: COLORING_SHORTCUT(eHydrophobicityShortcut);
+            case MID_CHARGE: COLORING_SHORTCUT(eChargeShortcut);
             case MID_TEMP: COLORING_SHORTCUT(eTemperatureShortcut);
             case MID_ELEMENT: COLORING_SHORTCUT(eElementShortcut);
             default:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/09/04 14:40:26  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.10  2001/08/24 00:40:57  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -99,6 +102,11 @@ public:
         eStrand,
         eCoil,
 
+        // charge
+        ePositive,
+        eNegative,
+        eNeutral,
+
         // misc other colors
         eNoDomain,
         eNoTemperature,
@@ -122,10 +130,11 @@ public:
         eTemperatureMap = 0,
         eHydrophobicityMap,
         eConservationMap,
+        eRainbowMap,
 
         eNumColorMaps
     };
-    static const int nTemperatureMap, nHydrophobicityMap, nConservationMap;
+    static const int nTemperatureMap, nHydrophobicityMap, nConservationMap, nRainbowMap;
     Vector Get(eColorMap which, double f) const;
     const Vector* Get(eColorMap which, int index) const;
 

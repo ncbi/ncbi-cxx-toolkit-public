@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/09/04 14:40:26  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.34  2001/08/21 01:10:13  thiessen
 * add labeling
 *
@@ -156,6 +159,12 @@ class wxWindow;
 
 BEGIN_SCOPE(Cn3D)
 
+// for hydrophobicity and charge coloring
+extern const double UNKNOWN_HYDROPHOBICITY;
+extern double GetHydrophobicity(char code);
+extern int GetCharge(char code);
+
+
 // StyleSettings is a complete set of instructions on how to draw a set of
 // molecules. It is used for "global" settings as well as for individual
 // annotations. It is meant to contain all settings that can be saved on
@@ -198,6 +207,8 @@ public:
         eSecondaryStructure = 5,
         eTemperature = 13,
         eHydrophobicity = 14,
+        eCharge = 15,
+        eRainbow = 16,
         eUserSelect = 6,
 
         // different alignment conservation coloring (currently only used for proteins)
@@ -284,7 +295,9 @@ public:
         eObjectShortcut,
         eDomainShortcut,
         eMoleculeShortcut,
+        eRainbowShortcut,
         eHydrophobicityShortcut,
+        eChargeShortcut,
         eTemperatureShortcut,
         eElementShortcut
     };
@@ -310,9 +323,6 @@ public:
     bool LoadSettingsFromASN(const ncbi::objects::CCn3d_style_settings& styleASN);
 };
 
-// for hydrophobicity coloring
-extern const double UNKNOWN_HYDROPHOBICITY;
-extern double GetHydrophobicity(char code);
 
 class StructureSet;
 class StructureObject;

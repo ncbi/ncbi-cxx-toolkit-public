@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.27  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -358,6 +361,14 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
         *color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
             GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
             GlobalColors()->Get(Colors::eNoHydrophobicity);
+    }
+    // or color by charge
+    else if (sequence->isProtein &&
+             sequence->parentSet->styleManager->GetGlobalStyle().
+                proteinBackbone.colorScheme == StyleSettings::eCharge) {
+        int charge = GetCharge(toupper(*character));
+        *color = GlobalColors()->Get(
+            (charge > 0) ? Colors::ePositive : ((charge < 0) ? Colors::eNegative : Colors::eNeutral));;
     }
     // else, color by alignment color
     else {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.12  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -95,7 +98,8 @@ const int
 const int
     Colors::nTemperatureMap = 5,
     Colors::nHydrophobicityMap = 3,
-    Colors::nConservationMap = 2;
+    Colors::nConservationMap = 2,
+    Colors::nRainbowMap = 7;
 
 
 Colors::Colors(void)
@@ -109,6 +113,10 @@ Colors::Colors(void)
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);
     colors[eCoil].Set(.3, .9, .9);
+
+    colors[ePositive].Set(.9, .2, .2);
+    colors[eNegative].Set(.2, .3, 1.0);
+    colors[eNeutral].Set(.6, .6, .6);
 
     colors[eNoDomain].Set(.4, .4, .4);
     colors[eNoTemperature].Set(.4, .4, .4);
@@ -149,6 +157,16 @@ Colors::Colors(void)
     mapColors[eConservationMap].resize(nConservationMap);
     mapColors[eConservationMap][0].Set(100.0/255, 100.0/255, 1.0);
     mapColors[eConservationMap][1].Set(1.0, 25.0/255, 25.0/255);
+
+    // colors for rainbow map
+    mapColors[eRainbowMap].resize(nRainbowMap);
+    mapColors[eRainbowMap][0].Set(0.9, 0.1, 0.1);
+    mapColors[eRainbowMap][1].Set(1.0, 0.5, 0.1);
+    mapColors[eRainbowMap][2].Set(0.8, 0.9, 0.1);
+    mapColors[eRainbowMap][3].Set(0.1, 0.9, 0.1);
+    mapColors[eRainbowMap][4].Set(0.1, 0.1, 1.0);
+    mapColors[eRainbowMap][5].Set(0.5, 0.2, 1.0);
+    mapColors[eRainbowMap][6].Set(0.9, 0.2, 0.5);
 }
 
 const Vector& Colors::Get(eColor which) const

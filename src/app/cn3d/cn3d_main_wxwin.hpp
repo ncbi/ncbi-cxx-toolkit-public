@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/09/04 14:40:26  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.38  2001/08/31 22:24:14  thiessen
 * add timer for animation
 *
@@ -294,7 +297,9 @@ public:
                 MID_OBJECT,
                 MID_DOMAIN,
                 MID_MOLECULE,
+                MID_RAINBOW,
                 MID_HYDROPHOB,
+                MID_CHARGE,
                 MID_TEMP,
                 MID_ELEMENT,
             MID_ANNOTATE,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
 * Revision 1.52  2001/08/24 00:41:36  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -558,10 +561,27 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
             helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
             break;
 
+        case eRainbowShortcut:
+            proteinBackbone.colorScheme = eRainbow;
+            nucleotideBackbone.colorScheme = eRainbow;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eRainbow;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
         case eHydrophobicityShortcut:
             proteinBackbone.colorScheme = eHydrophobicity;
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = eHydrophobicity;
+            nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
+        case eChargeShortcut:
+            proteinBackbone.colorScheme = eCharge;
+            nucleotideBackbone.colorScheme = eElement;
+            proteinSidechains.colorScheme = eCharge;
             nucleotideSidechains.colorScheme = eElement;
             heterogens.colorScheme = solvents.colorScheme = eElement;
             helixObjects.colorScheme = strandObjects.colorScheme = eObject;
@@ -680,6 +700,15 @@ double GetHydrophobicity(char code)
         case 'V': return ( 1.080 + 2.530) / (1.380 + 2.530);
     }
     return UNKNOWN_HYDROPHOBICITY;
+}
+
+int GetCharge(char code)
+{
+    switch (code) {
+        case 'R': case 'H': case 'K': return 1;
+        case 'D': case 'E': return -1;
+    }
+    return 0;
 }
 
 #define ATOM_NOT_DISPLAYED do { \
@@ -857,6 +886,15 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             atomStyle->color = GlobalColors()->Get(Colors::eCycle1, molecule->id - 1);
             break;
 
+        case StyleSettings::eRainbow: {
+            double pos = 1.0;
+            if ((residue->IsAminoAcid() || residue->IsNucleotide()) && molecule->NResidues() > 1) {
+                pos = 1.0 * (residue->id - 1) / (molecule->NResidues() - 1);
+            }
+            atomStyle->color = GlobalColors()->Get(Colors::eRainbowMap, pos);
+            break;
+        }
+
         case StyleSettings::eSecondaryStructure:
             if (molecule->IsResidueInHelix(residue->id))
                 atomStyle->color = GlobalColors()->Get(Colors::eHelix);
@@ -865,6 +903,13 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             else
                 atomStyle->color = GlobalColors()->Get(Colors::eCoil);
             break;
+
+        case StyleSettings::eCharge: {
+            int charge = (residue->IsAminoAcid()) ? GetCharge(residue->code) : 0;
+            atomStyle->color = GlobalColors()->Get(
+                (charge > 0) ? Colors::ePositive : ((charge < 0) ? Colors::eNegative : Colors::eNeutral));
+            break;
+        }
 
         case StyleSettings::eTemperature:
             atomStyle->color =
@@ -876,7 +921,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         case StyleSettings::eHydrophobicity: {
-            double hydrophobicity = (residue->type == Residue::eAminoAcid) ?
+            double hydrophobicity = (residue->IsAminoAcid()) ?
                 GetHydrophobicity(residue->code) : UNKNOWN_HYDROPHOBICITY;
             atomStyle->color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
                 GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
