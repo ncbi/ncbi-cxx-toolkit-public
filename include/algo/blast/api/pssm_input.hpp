@@ -75,6 +75,15 @@ public:
 
     /// Obtain the options for the PSSM engine
     virtual const PSIBlastOptions* GetOptions() = 0;
+
+    /// Obtain the name of the underlying matrix to use when building the PSSM
+    virtual const char* GetMatrixName() {
+        return "BLOSUM62";
+    }
+
+    /// Obtain the diagnostics data that is requested from the PSSM engine
+    /// Its results will be populated in the PssmWithParameters ASN.1 object
+    virtual const PSIDiagnosticsRequest* GetDiagnosticsRequest() = 0;
 };
 
 END_SCOPE(blast)
@@ -84,6 +93,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/10/13 20:48:50  camacho
+ * + support for requesting diagnostics information and specifying underlying matrix
+ *
  * Revision 1.6  2004/10/12 21:21:39  camacho
  * + virtual destructor
  *

@@ -67,7 +67,8 @@ CPssmEngine::CPssmEngine(IPssmInputData* input)
 {
     x_CheckAgainstNullData();
     m_ScoreBlk.Reset(x_InitializeScoreBlock(m_PssmInput->GetQuery(),
-                                            m_PssmInput->GetQueryLength()));
+                                            m_PssmInput->GetQueryLength(), 
+                                            m_PssmInput->GetMatrixName()));
 }
 
 void
@@ -110,20 +111,15 @@ CPssmEngine::Run()
     m_PssmInput->Process();
     x_Validate();
 
-    // Note: currently there is no way for users to request diagnostics through
-    // this interface
-    PSIDiagnosticsRequest request;
-    memset((void*) &request, 0, sizeof(request));
-    request.frequency_ratios = true;
-
     CPSIMatrix pssm;
     CPSIDiagnosticsResponse diagnostics;
-    int status = PSICreatePssmWithDiagnostics(m_PssmInput->GetData(),
-                                              m_PssmInput->GetOptions(),
-                                              m_ScoreBlk, 
-                                              &request, 
-                                              &pssm, 
-                                              &diagnostics);
+    int status = 
+        PSICreatePssmWithDiagnostics(m_PssmInput->GetData(),
+                                     m_PssmInput->GetOptions(),
+                                     m_ScoreBlk, 
+                                     m_PssmInput->GetDiagnosticsRequest(),
+                                     &pssm, 
+                                     &diagnostics);
     if (status) {
         // FIXME: need to use core level perror-like facility
         ostringstream os;
@@ -179,9 +175,11 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
 
 BlastScoreBlk*
 CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
-                                    unsigned int query_length)
+                                    unsigned int query_length,
+                                    const char* matrix_name)
 {
     ASSERT(query);
+    ASSERT(matrix_name);
 
     // This program type will need to be changed when psi-tblastn is
     // implemented
@@ -197,7 +195,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     if (status != 0) {
         NCBI_THROW(CBlastException, eOutOfMemory, "BlastScoringOptions");
     }
-    opts->matrix = strdup("BLOSUM62"); // FIXME: shouldn't use hard coded value
+    opts->matrix = strdup(matrix_name);
     opts->matrix_path = strdup(FindMatrixPath(opts->matrix, true).c_str());
 
     // Setup the sequence block structure
@@ -232,7 +230,15 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                       kScaleFactor,
                                       &errors);
     if (status != 0) {
-        NCBI_THROW(CBlastException, eInternal, errors->message);
+        retval = BlastScoreBlkFree(retval);
+        if (errors) {
+            string msg(errors->message);
+            errors = Blast_MessageFree(errors);
+            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+        } else {
+            NCBI_THROW(CBlastException, eInternal, 
+                       "Unknown error when setting up BlastScoreBlk");
+        }
     }
 
     /*********************************************************************/
@@ -374,7 +380,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
 
     // Record the parameters
     retval->SetParams().SetPseudocount(opts->pseudo_count);
-    string mtx("BLOSUM62"); // FIXME
+    string mtx(m_PssmInput->GetMatrixName());
     mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
     retval->SetParams().SetRpsdbparams().SetMatrixName(mtx);
 
@@ -427,7 +433,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     }
 
     if (diagnostics->frequency_ratios) {
-        CPssmIntermediateData::TFreqRatios freq_ratios = 
+        CPssmIntermediateData::TFreqRatios& freq_ratios = 
             asn1_pssm.SetIntermediateData().SetFreqRatios();
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
@@ -453,6 +459,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/10/13 20:49:00  camacho
+ * + support for requesting diagnostics information and specifying underlying matrix
+ *
  * Revision 1.16  2004/10/13 15:44:47  camacho
  * + validation for columns in multiple sequence alignment
  *

@@ -69,11 +69,17 @@ public:
     /// @param sset pairwise alignment produced by BLAST where query was the
     /// query sequence.
     /// @param opts options to be used in the PSSM engine
+    /// @param matrix_name name of the substitution matrix to use to build PSSM
+    /// If not provided, the default implementation of
+    /// IPssmInputData::GetMatrixName() will be returned
+    /// @param diags diagnostics data requests for the PSSM engine
     CPsiBlastInputData(const unsigned char* query,
                        unsigned int query_length,
                        CRef<objects::CSeq_align_set> sset,
                        CRef<objects::CScope> scope,
-                       const PSIBlastOptions& opts);
+                       const PSIBlastOptions& opts,
+                       const char* matrix_name = NULL,
+                       const PSIDiagnosticsRequest* diags = NULL);
     virtual ~CPsiBlastInputData();
 
     void Process();
@@ -81,6 +87,8 @@ public:
     unsigned int GetQueryLength();
     PSIMsa* GetData();
     const PSIBlastOptions* GetOptions();
+    const char* GetMatrixName();
+    const PSIDiagnosticsRequest* GetDiagnosticsRequest();
 
 private:
 
@@ -96,6 +104,10 @@ private:
     CRef<objects::CSeq_align_set>   m_SeqAlignSet;
     /// Algorithm options
     PSIBlastOptions                 m_Opts;
+    /// Diagnostics request structure
+    PSIDiagnosticsRequest*          m_DiagnosticsRequest;
+    /// Underlying matrix to use
+    string                          m_MatrixName;
     /// Helps to keep track of the hits to process because they meet the
     /// inclusion e-value threshold criteria
     std::vector<Uint1>              m_ProcessHit;
@@ -148,6 +160,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/10/13 20:48:50  camacho
+ * + support for requesting diagnostics information and specifying underlying matrix
+ *
  * Revision 1.6  2004/08/05 18:02:13  camacho
  * Enhanced documentation
  *

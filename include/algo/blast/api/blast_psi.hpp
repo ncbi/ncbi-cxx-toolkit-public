@@ -108,12 +108,14 @@ private:
     /// @todo this should be moved to the core of BLAST
     /// @param query sequence [in]
     /// @param query_length length of the sequence above [in]
+    /// @param matrix_name name of the underlying scoring matrix to use [in]
     /// @throws CBlastException if does not have enough memory or if there was
     /// an error when setting up the return value
     /// @return initialized BlastScoreBlk
     BlastScoreBlk*
     x_InitializeScoreBlock(const unsigned char* query,
-                           unsigned int query_length);
+                           unsigned int query_length,
+                           const char* matrix_name);
 
     /// Checks that no data returned by the IPssmInputData interface is NULL
     /// @throws CBlastException if validation fails. Does not test the
@@ -177,6 +179,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/10/13 20:48:50  camacho
+ * + support for requesting diagnostics information and specifying underlying matrix
+ *
  * Revision 1.14  2004/10/13 15:44:21  camacho
  * + validation for columns in multiple sequence alignment
  *

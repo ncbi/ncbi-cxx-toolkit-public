@@ -88,7 +88,9 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
                                        unsigned int query_length,
                                        CRef<CSeq_align_set> sset,
                                        CRef<CScope> scope,
-                                       const PSIBlastOptions& opts)
+                                       const PSIBlastOptions& opts,
+                                       const char* matrix_name,
+                                       const PSIDiagnosticsRequest* diags)
 {
     if ( !query ) {
         NCBI_THROW(CBlastException, eBadParameter, "NULL query");
@@ -109,6 +111,10 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
     m_MsaDimensions.query_length = query_length;
     m_MsaDimensions.num_seqs = 0;
     m_Msa = NULL;
+
+    // Default value provided by base class
+    m_MatrixName = string(matrix_name ? matrix_name : "");
+    m_DiagnosticsRequest = const_cast<PSIDiagnosticsRequest*>(diags);
 
     const unsigned int kNumHits = m_SeqAlignSet->Get().size();
     m_ProcessHit.reserve(kNumHits);
@@ -207,6 +213,22 @@ inline const PSIBlastOptions*
 CPsiBlastInputData::GetOptions()
 {
     return &m_Opts;
+}
+
+inline const char*
+CPsiBlastInputData::GetMatrixName()
+{
+    if (m_MatrixName.length() != 0) {
+        return m_MatrixName.c_str();
+    } else {
+        return IPssmInputData::GetMatrixName();
+    }
+}
+
+inline const PSIDiagnosticsRequest*
+CPsiBlastInputData::GetDiagnosticsRequest()
+{
+    return m_DiagnosticsRequest;
 }
 
 #if 0
@@ -489,6 +511,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/10/13 20:49:00  camacho
+ * + support for requesting diagnostics information and specifying underlying matrix
+ *
  * Revision 1.7  2004/08/13 22:33:06  camacho
  * Change to be backwards compatible with old pssm engine
  *
