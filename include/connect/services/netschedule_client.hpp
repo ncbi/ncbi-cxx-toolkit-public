@@ -348,6 +348,9 @@ public:
     virtual
     string ServerVersion();
 
+    /// Printable status type 
+    static
+    string StatusToString(EJobStatus status);
 
 protected:
 
@@ -358,6 +361,8 @@ protected:
     /// Kill all jobs in the queue.
     ///
     void DropQueue();
+
+    void PrintStatistics(CNcbiOstream & out);
 
 
 protected:
@@ -608,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/21 13:05:25  kuznets
+ * +PrintStatistics
+ *
  * Revision 1.13  2005/03/17 20:36:05  kuznets
  * +PutFailure()
  *
