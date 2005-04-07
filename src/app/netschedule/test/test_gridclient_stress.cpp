@@ -49,7 +49,14 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
+    string GetProgramVersion(void) const;
 };
+
+string CGridClientTestApp::GetProgramVersion(void) const
+{
+    return "StressTest version 0.1";
+}
+
 
 void CGridClientTestApp::Init(void)
 {
@@ -209,6 +216,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/07 18:11:07  ucko
+ * Supply GetProgramVersion, which is now required.
+ *
  * Revision 1.2  2005/03/31 21:15:35  didenko
  * Chenged parameters default values
  *
