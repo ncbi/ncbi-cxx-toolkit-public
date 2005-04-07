@@ -639,78 +639,78 @@ string CCommentItem::GetStringForBarcode(CBioseqContext& ctx)
 
     CNcbiOstrstream comment;
 
-    comment << "Barcode Consortium: Standard Data Elements" << Endl() << Endl()
+    comment << "Barcode Consortium: Standard Data Elements" << "\n\n"
             << "    Organism:";
     if (taxname != NULL) {
         comment << "          " << *taxname;
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Collected By:";
     if (subsources.find(CSubSource::eSubtype_collected_by) != subsources.end()) {
         comment << "      " << *subsources[CSubSource::eSubtype_collected_by];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Collection Date:";
     if (subsources.find(CSubSource::eSubtype_collection_date) != subsources.end()) {
         comment << "   " << *subsources[CSubSource::eSubtype_collection_date];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Country:";
     if (subsources.find(CSubSource::eSubtype_country) != subsources.end()) {
         comment << "           " << *subsources[CSubSource::eSubtype_country];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Identified By:";
     if (subsources.find(CSubSource::eSubtype_identified_by) != subsources.end()) {
         comment << "     " << *subsources[CSubSource::eSubtype_identified_by];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Isolate:";
     if (orgmods.find(COrgMod::eSubtype_isolate) != orgmods.end()) {
         comment << "           " << *orgmods[COrgMod::eSubtype_isolate];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Lat-Lon:";
     if (subsources.find(CSubSource::eSubtype_lat_lon) != subsources.end()) {
         comment << "           " << *subsources[CSubSource::eSubtype_lat_lon];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Specimen Voucher:";
     if (orgmods.find(COrgMod::eSubtype_specimen_voucher) != orgmods.end()) {
         comment << "  " << *orgmods[COrgMod::eSubtype_specimen_voucher];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Forward Primer:";
     if (subsources.find(CSubSource::eSubtype_fwd_primer_seq) != subsources.end()) {
         comment << "    " << *subsources[CSubSource::eSubtype_fwd_primer_seq];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Reverse Primer:";
     if (subsources.find(CSubSource::eSubtype_rev_primer_seq) != subsources.end()) {
         comment << "    " << *subsources[CSubSource::eSubtype_rev_primer_seq];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Fwd Primer Name:";
     if (subsources.find(CSubSource::eSubtype_fwd_primer_name) != subsources.end()) {
         comment << "   " << *subsources[CSubSource::eSubtype_fwd_primer_name];
     }
-    comment << Endl();
+    comment << '\n';
 
     comment << "    Rev Primer Name:";
     if (subsources.find(CSubSource::eSubtype_rev_primer_name) != subsources.end()) {
         comment << "   " << *subsources[CSubSource::eSubtype_rev_primer_name];
     }
-    comment << Endl() << Endl();
+    comment << "\n\n";
 
     return CNcbiOstrstreamToString(comment);
 }
@@ -1085,6 +1085,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/04/07 18:20:12  shomrat
+* Use \n instead of Endl()
+*
 * Revision 1.18  2005/03/29 18:16:31  shomrat
 * + CBarcodeComment
 *

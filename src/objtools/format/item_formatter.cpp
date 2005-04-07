@@ -556,7 +556,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         if (!authstr.empty()) {
             jour << authstr;
             size_t num_auth = s_NumAuthors(auth);
-            jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << Endl();
+            jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << '\n';
         }
     }
     jour << NStr::ToUpper(title);
@@ -582,7 +582,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         }
     }
 
-    jour << ';' << Endl();
+    jour << ';' << '\n';
 
     if (imp.CanGetPub()) {
         string affil;
@@ -896,7 +896,7 @@ static void s_FormatPatent
     if (pat.IsSetAuthors()  &&  pat.GetAuthors().IsSetAffil()) {
         const CAffil& affil = pat.GetAuthors().GetAffil();
         if (affil.IsStr()  &&  !NStr::IsBlank(affil.GetStr())) {
-            jour << Endl() << affil.GetStr();
+            jour << '\n' << affil.GetStr();
         } else if (affil.IsStd()) {
             const CAffil::TStd& std = affil.GetStd();
 
@@ -907,7 +907,7 @@ static void s_FormatPatent
                 (std.IsSetCity()     &&  !NStr::IsBlank(std.GetCity()))    ||
                 (std.IsSetSub()      &&  !NStr::IsBlank(std.GetSub()))     ||
                 (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry()))) {
-                jour << Endl();
+                jour << '\n';
             }
 
             // Write out the affiliation fields
@@ -932,7 +932,7 @@ static void s_FormatPatent
                 jour << prefix << std.GetSub();
             }
             if (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry())) {
-                jour << ';' << Endl() << std.GetCountry() << ';';
+                jour << ';' << '\n' << std.GetCountry() << ';';
             }
         }
     }
@@ -945,7 +945,7 @@ static void s_FormatPatent
 
         if (affil.IsStr()) {
             if (!NStr::IsBlank(authors)  ||  !NStr::IsBlank(affil.GetStr())) {
-                jour << Endl() << authors << Endl() << affil.GetStr();
+                jour << '\n' << authors << '\n' << affil.GetStr();
             }
         } else if (affil.IsStd()) {
             const CAffil::TStd& std = affil.GetStd();
@@ -958,7 +958,7 @@ static void s_FormatPatent
                 (std.IsSetCity()     &&  !NStr::IsBlank(std.GetCity()))    ||
                 (std.IsSetSub()      &&  !NStr::IsBlank(std.GetSub()))     ||
                 (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry()))) {
-                jour << Endl();
+                jour << '\n';
             }
 
             // Write out the affiliation fields
@@ -990,7 +990,7 @@ static void s_FormatPatent
                 jour << prefix << std.GetSub();
             }
             if (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry())) {
-                jour << ';' << Endl() << std.GetCountry() << ';';
+                jour << ';' << '\n' << std.GetCountry() << ';';
             }
         }
     }
@@ -1226,8 +1226,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/04/07 18:24:38  shomrat
+* Use \n instead of Endl()
+*
 * Revision 1.24  2005/03/29 18:18:09  shomrat
-* Barcode has special wrapping
+* Use
 *
 * Revision 1.23  2005/03/28 17:22:57  shomrat
 * Added assignees for Cit-pat
