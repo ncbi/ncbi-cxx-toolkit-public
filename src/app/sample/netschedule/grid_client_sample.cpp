@@ -45,6 +45,16 @@ public:
 
     virtual void Init(void);
     virtual int Run(void);
+    virtual string GetProgramVersion(void) const
+    {
+        // Next formats are valid and supported:
+        //   ProgramName 1.2.3
+        //   ProgramName version 1.2.3
+        //   ProgramName v. 1.2.3
+        //   ProgramName ver. 1.2.3
+
+        return "SampleNode version 1.0.1";
+    }
 
 };
 
@@ -162,6 +172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/07 16:49:29  didenko
+ * + Program Version checking
+ *
  * Revision 1.5  2005/03/28 15:01:37  didenko
  * Added some comments
  *

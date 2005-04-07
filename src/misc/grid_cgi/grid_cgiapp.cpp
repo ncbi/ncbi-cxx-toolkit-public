@@ -81,6 +81,7 @@ void CGridCgiApplication::Init()
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
+        m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
         CNetScheduleStorageFactory_NetCache cf(GetConfig());
@@ -145,7 +146,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             // A job is done here
             if (status == CNetScheduleClient::eDone) {
                 OnJobDone(job_status, grid_ctx);
-
                 remove_cookie = true;
             }
 
@@ -169,7 +169,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             else {
                 grid_ctx.SetJobKey(job_key);
                 OnStatusCheck(grid_ctx);
-
                 x_RenderRefresh( *page );
             }
              
@@ -209,7 +208,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                         CNetScheduleException::eTooManyPendingJobs )
                         OnQueueIsBusy(grid_ctx);
                     else
-                        throw;
+                        OnJobFailed(ex.what(), grid_ctx);
                 }
 
             }
@@ -265,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/07 16:48:14  didenko
+ * + Program Version checking
+ *
  * Revision 1.6  2005/04/07 13:21:46  didenko
  * Extend classes interfaces
  *

@@ -124,6 +124,14 @@ public:
     ///
     virtual int  Run(void);
 
+    /// Get program version (like: MyProgram v. 1.2.3)
+    ///
+    /// Program version is passed to NetSchedule queue so queue
+    /// controls versions and does not allow obsolete clients
+    /// to connect and submit or execute jobs
+    ///
+    virtual string GetProgramVersion(void) const = 0;
+
 protected:
 
     /// Show a page with input data
@@ -173,6 +181,19 @@ protected:
     ///
     virtual void OnStatusCheck(CGridCgiContext& ctx) {}
 
+    /// This method is call at the very end of the request processing
+    ///
+    virtual void OnEndProcessRequest(CGridCgiContext&) {}
+
+    /// This method is call at the very beginnig of the request processing
+    ///
+    virtual void OnBeginProcessRequest(CGridCgiContext&) {}
+
+    /// This method is call when a job couldn't be submittd
+    /// because of NetSchedule queue is full
+    ///
+    virtual void OnQueueIsBusy(CGridCgiContext&);
+
     /// Return page name. It is used when an inctance of CHTMLPage
     /// class is created.
     ///
@@ -188,19 +209,6 @@ protected:
     /// If so the job will be canceled.
     ///
     virtual bool JobStopRequested(void) const { return false; }
-
-    /// This method is call at the very end of the request processing
-    ///
-    virtual void OnEndProcessRequest(CGridCgiContext&) {}
-
-    /// This method is call at the very beginnig of the request processing
-    ///
-    virtual void OnBeginProcessRequest(CGridCgiContext&) {}
-
-    /// This method is call when a job couldn't be submittd
-    /// because of NetSchedule queue is full
-    ///
-    virtual void OnQueueIsBusy(CGridCgiContext&);
 
 
     virtual string AddToSelfUrl(void) const { return kEmptyStr; }
@@ -229,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/07 16:47:33  didenko
+ * + Program Version checking
+ *
  * Revision 1.7  2005/04/07 13:21:23  didenko
  * Extend classes interfaces
  *

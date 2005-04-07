@@ -70,6 +70,14 @@ public:
     ///
     CGridClient& GetGridClient() { return *m_GridClient; }
 
+    /// Get program version (like: MyProgram v. 1.2.3)
+    ///
+    /// Program version is passed to NetSchedule queue so queue
+    /// controls versions and does not allow obsolete clients
+    /// to connect and submit or execute jobs
+    ///
+    virtual string GetProgramVersion(void) const = 0;
+
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
@@ -84,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/07 16:46:28  didenko
+ * + Program Version checking
+ *
  * Revision 1.2  2005/03/28 16:49:00  didenko
  * Added virtual desturctors to all new interfaces to prevent memory leaks
  *

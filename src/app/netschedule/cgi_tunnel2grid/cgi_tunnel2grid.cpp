@@ -55,7 +55,7 @@ public:
 
     virtual void Init(void);
     virtual int Run(void);
-
+    virtual string GetProgramVersion(void) const;
 
 protected:
 
@@ -116,6 +116,8 @@ private:
     string m_HtmlOnJobCanceled;
     string m_HtmlOnJobFailed;
     string m_HtmlOnStatusCheck;
+
+    string m_ProgramVersion;
     
 };
 
@@ -123,6 +125,10 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  CCgiTunnel2Grid::
 //
+string CCgiTunnel2Grid::GetProgramVersion(void) const
+{ 
+    return m_ProgramVersion; 
+}
 
 int CCgiTunnel2Grid::Run(void)
 {
@@ -145,7 +151,10 @@ int CCgiTunnel2Grid::Run(void)
                               "on_status_check.html.inc");
     m_FallBackDelay = 
         GetConfig().GetInt("tunnel2grid", "fall_back_delay", 5, IRegistry::eReturn);
-    
+
+    m_ProgramVersion =
+        GetConfig().GetString("tunnel2grid", "program", "" );
+
     return CGridCgiApplication::Run();
 }
 
@@ -356,6 +365,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/07 16:48:54  didenko
+ * + Program Version checking
+ *
  * Revision 1.1  2005/04/07 13:25:03  didenko
  * Initial version
  *

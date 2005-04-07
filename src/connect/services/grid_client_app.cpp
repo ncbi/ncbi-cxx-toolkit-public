@@ -54,6 +54,7 @@ void CGridClientApp::Init(void)
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
+        m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
         CNetScheduleStorageFactory_NetCache cf(GetConfig());
@@ -67,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/07 16:47:03  didenko
+ * + Program Version checking
+ *
  * Revision 1.1  2005/03/25 16:25:41  didenko
  * Initial version
  *

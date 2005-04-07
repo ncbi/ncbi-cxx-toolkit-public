@@ -54,6 +54,16 @@ class CGridCgiSampleApplication : public  CGridCgiApplication
 public:
 
     virtual void Init(void);
+    virtual string GetProgramVersion(void) const
+    {
+        // Next formats are valid and supported:
+        //   ProgramName 1.2.3
+        //   ProgramName version 1.2.3
+        //   ProgramName v. 1.2.3
+        //   ProgramName ver. 1.2.3
+
+        return "SampleNode version 1.0.1";
+    }
 
 protected:
 
@@ -339,6 +349,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/07 16:49:29  didenko
+ * + Program Version checking
+ *
  * Revision 1.6  2005/04/05 18:21:08  didenko
  * Changed interface of OnJobDone and PrepareJobData methods
  *

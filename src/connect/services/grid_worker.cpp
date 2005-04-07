@@ -262,6 +262,11 @@ void CGridWorkerNode::Start()
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return;
     }
+    catch (...) {
+        LOG_POST(Error << "Unkown error");
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return;
+    }
 
     string    job_key;
     string    input;
@@ -348,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/07 16:47:03  didenko
+ * + Program Version checking
+ *
  * Revision 1.6  2005/04/05 15:16:20  didenko
  * Fixed a bug that in some cases can lead to a core dump
  *

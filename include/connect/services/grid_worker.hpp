@@ -326,7 +326,10 @@ private:
     CNetScheduleClient* CreateClient()
     {
         CMutexGuard guard(m_NSClientFactoryMutex);
-        return m_NSClientFactory.CreateInstance();
+        auto_ptr<CNetScheduleClient> 
+            ns_client(m_NSClientFactory.CreateInstance());
+        ns_client->SetProgramVersion(m_JobFactory.GetJobVersion());
+        return ns_client.release();
     }
 
     CGridWorkerNode(const CGridWorkerNode&);
@@ -342,6 +345,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/07 16:46:28  didenko
+ * + Program Version checking
+ *
  * Revision 1.7  2005/03/28 16:49:00  didenko
  * Added virtual desturctors to all new interfaces to prevent memory leaks
  *
