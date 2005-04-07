@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/impl/annot_collector.hpp>
 #include <objmgr/impl/snp_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -473,6 +474,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/04/07 20:09:12  ucko
+* Include annot_collector.hpp so that CSeq_feat_Handle::m_CreatedFeat
+* has a fully known type for the sake of its inline constructor.
+*
 * Revision 1.14  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.
