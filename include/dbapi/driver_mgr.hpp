@@ -62,6 +62,8 @@ template <typename T> class CSafeStaticPtr;
 
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
+    friend class CSafeStaticPtr<CDriverManager>;
+
 public:
     // Get a single instance of CDriverManager
     static CDriverManager& GetInstance();
@@ -96,13 +98,6 @@ private:
     static IDataSource* CreateDs(I_DriverContext* ctx);
     // This function will just call the delete operator.
     static void DeleteDs(const IDataSource* const ds);
-
-    friend class CSafeStaticPtr<CDriverManager>;
-
-// DEPRECATED. Will be removed in next version.
-private:
-    static CDriverManager* sm_Instance;
-    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 };
 
 END_NCBI_SCOPE
@@ -114,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/07 14:43:12  ssikorsk
+ * CDriverManager::GetInstance uses CSafeStaticPtr now
+ *
  * Revision 1.12  2005/04/04 19:39:52  ucko
  * Predeclare CSafeStaticPtr<> outside CDriverManager to avoid confusing
  * WorkShop, and limit CDriverManager's friendship to the relevant

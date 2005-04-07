@@ -46,36 +46,16 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// DEPRECATED. Will be removed in next version.
-CDriverManager* CDriverManager::sm_Instance = 0;
-DEFINE_CLASS_STATIC_MUTEX(CDriverManager::sm_Mutex);
-
-
 CDriverManager& CDriverManager::GetInstance()
 {
-    // New implementation ...
-//    static CSafeStaticPtr<CDriverManager> instance;
-//
-//    return instance.Get();
+   static CSafeStaticPtr<CDriverManager> instance;
 
-// DEPRECATED. Will be removed in next version.
-    if ( !sm_Instance ) {
-        CMutexGuard GUARD(sm_Mutex);
-        // Check again with the lock to avoid races
-        if ( !sm_Instance ) {
-            sm_Instance = new CDriverManager;
-        }
-    }
-    return *sm_Instance;
+   return instance.Get();
 }
 
 
 void CDriverManager::RemoveInstance()
 {
-// DEPRECATED. Will be removed in next version.
-    CMutexGuard GUARD(sm_Mutex);
-    delete sm_Instance;
-    sm_Instance = 0;
 }
 
 
@@ -176,6 +156,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.18  2005/04/07 14:43:43  ssikorsk
+* CDriverManager::GetInstance uses CSafeStaticPtr now
+*
 * Revision 1.17  2005/04/04 13:03:56  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *
