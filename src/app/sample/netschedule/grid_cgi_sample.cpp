@@ -95,6 +95,8 @@ protected:
     // Return a job cancelation status.
     virtual bool JobStopRequested(void) const;
 
+    void OnEndProcessRequest(CGridCgiContext& ctx);
+
     // Get the HTML page title.
     virtual string GetPageTitle() const;
     
@@ -276,6 +278,12 @@ void CGridCgiSampleApplication::OnStatusCheck(CGridCgiContext& ctx)
    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
+void CGridCgiSampleApplication::OnEndProcessRequest(CGridCgiContext& ctx)
+{
+    ctx.GetHTMLPage().AddTagMap("DATE",
+        new CHTMLText(CTime(CTime::eCurrent).AsString("M B Y, h:m")));
+}
+
 bool CGridCgiSampleApplication::JobStopRequested(void) const
 {
     const CArgs& args = GetArgs();
@@ -349,6 +357,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/07 19:25:11  didenko
+ * Cosmetics
+ *
  * Revision 1.7  2005/04/07 16:49:29  didenko
  * + Program Version checking
  *
