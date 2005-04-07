@@ -252,6 +252,9 @@ public:
     /// log file are written. 
     void SetCheckpoint(unsigned int bytes) { m_CheckPointInterval = bytes; }
 
+    void SetOverflowLimit(unsigned limit);
+    unsigned GetOverflowLimit() const { return m_OverflowLimit; }
+
 
 
     // ICache interface 
@@ -464,6 +467,8 @@ private:
     unsigned                   m_PurgeThreadDelay;
     /// Trnasaction checkpoint interval (bytes)
     unsigned                   m_CheckPointInterval;
+    /// Overflow limit (objects lower than that stored as BLOBs)
+    unsigned                   m_OverflowLimit;
 };
 
 
@@ -542,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/04/07 17:45:54  kuznets
+ * Added overflow limit cache parameter
+ *
  * Revision 1.51  2005/03/30 13:09:06  kuznets
  * Use semaphor to stop purge execution
  *
