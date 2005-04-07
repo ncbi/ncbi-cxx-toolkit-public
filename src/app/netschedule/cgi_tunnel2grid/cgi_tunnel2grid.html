@@ -1,0 +1,62 @@
+<html>
+<head>
+  <title><@TITLE@></title>
+  <@REFRESH@>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <link rel="stylesheet" href="http://www.ncbi.nlm.nih.gov/corehtml/ncbi.css">
+</head>
+
+
+<body bgcolor="#FFFFFF" background="http://www.ncbi.nlm.nih.gov/corehtml/bkgd.gif" text="#000000" link="#CC6600" vlink="#CC6600">
+<!--  the header   --> 
+<table border="0" width="600" cellspacing="0" cellpadding="0">
+  <tr> 
+    <td width="140"><a href="http://www.ncbi.nlm.nih.gov"> <img src="http://www.ncbi.nlm.nih.gov/corehtml/left.GIF" width="130" height="45" border="0"></a></td>
+    <td width="360" class="head1" valign="BOTTOM"> <span class="H1"><@TITLE@></span></td>
+  </tr>
+</table>
+
+<!--  the contents   --> 
+<table border="0" width="600" cellspacing="0" cellpadding="0">
+  <tr valign="TOP"> 
+  <!--  left column   --> 
+    <td width="125"> 
+<img src="http://www.ncbi.nlm.nih.gov/corehtml/spacer10.GIF" width="125" height="1" border="0">
+
+<!--  the arrow gif back to NCBI front homepage   --> 
+         <table border="0" width="125" cellspacing="0" cellpadding="0">
+                <tr valign="bottom">
+                  <td width="120"><a href="http://www.ncbi.nlm.nih.gov"
+class="HELPBAR"><FONT COLOR="#FFFFFF">NCBI</FONT>
+                         </a><br></td>
+                  <td width="8" align="right"><img src="http://www.ncbi.nlm.nih.gov/Gifs/GoUp1.gif" width="8" height="19" border="0"></td>
+                </tr>
+                <tr align="right">
+                  <td colspan="2"><img src="http://www.ncbi.nlm.nih.gov/Gifs/GoUp2.gif" width="125" height="12" border="0"></td>
+                </tr>
+         </table>
+
+   </td>
+    <!-- extra column to force things over the gif border --> 
+    <td width="15"><img src="http://www.ncbi.nlm.nih.gov/corehtml/spacer10.GIF" width="15" height="1" border="0"> </td>
+    <!-- right content column  --> 
+    <td width="460"> 
+
+<form method="post" action="<@SELF_URL@>">
+
+<@VIEW@>
+
+</form>
+
+<P><A HREF="http://www.ncbi.nlm.nih.gov/About/disclaimer.html" class="SMALL1">Disclaimer</A>
+&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://www.ncbi.nlm.nih.gov/About/privacy.html" class="SMALL1">Privacy statement</A></P>
+<P class="SMALL1"><@DATE@></P>
+
+
+  </tr>
+</table>
+<!--  end of content  -->  
+
+   
+</body>
+</html>

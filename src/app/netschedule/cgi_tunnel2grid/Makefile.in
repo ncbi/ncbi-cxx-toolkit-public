@@ -1,0 +1,4 @@
+APP_PROJ = cgi_tunnel2grid
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
