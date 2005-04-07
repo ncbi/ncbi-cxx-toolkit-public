@@ -77,13 +77,14 @@ public:
 
 private:
     friend class CGridCgiApplication;
-    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
+    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx, CGridCgiApplication& app);
     void SetJobKey(const string& job_key);
 
-    CHTMLPage&   m_Page;
-    CCgiContext& m_CgiContext;
-    string       m_JobKey;
-
+    CHTMLPage&           m_Page;
+    CCgiContext&         m_CgiContext;
+    CGridCgiApplication& m_App;
+    string               m_JobKey;
+    
     /// A copy constructor and an assignemt operator
     /// are prohibited
     ///
@@ -113,9 +114,15 @@ public:
 
     /// Do not override this method yourself! -- it includes all the GRIDCGI
     /// specific machinery. If you override it, do call 
-    /// CGridCgiApplication::Run() from inside your overriding method.
+    /// CGridCgiApplication::ProcessRequest() from inside your overriding method.
     ///
     virtual int  ProcessRequest(CCgiContext& ctx);
+
+    /// Do not override this method yourself! -- it includes all the CGI
+    /// specific machinery. If you override it, do call 
+    /// CGridCgiApplication::Run() from inside your overriding method.
+    ///
+    virtual int  Run(void);
 
 protected:
 
@@ -176,15 +183,6 @@ protected:
     ///
     virtual string GetPageTemplate(void) const = 0;
 
-    /// Get a java script code which is used to reload an HTML page 
-    /// when a job is still runnig so the CGI can automatically check
-    /// the job status. To make reloading mechanism work the HTML page 
-    /// template file has to have <@JSCRIPT@> meta tag somewhere before 
-    /// the <body> tag. See grid_cgi_sample.html file in the sample
-    /// dirctory.
-    ///
-    virtual string GetRefreshJScript(void) const;
-
     /// When job is still runnig this method is called to check if
     /// cancel has been requested via the user interface(HTML). 
     /// If so the job will be canceled.
@@ -195,12 +193,27 @@ protected:
     ///
     virtual void OnEndProcessRequest(CGridCgiContext&) {}
 
+    /// This method is call at the very beginnig of the request processing
+    ///
+    virtual void OnBeginProcessRequest(CGridCgiContext&) {}
+
+    /// This method is call when a job couldn't be submittd
+    /// because of NetSchedule queue is full
+    ///
+    virtual void OnQueueIsBusy(CGridCgiContext&);
+
+
+    virtual string AddToSelfUrl(void) const { return kEmptyStr; }
+
     /// Get a Grid Client.
     ///
     CGridClient& GetGridClient(void) { return *m_GridClient; }
 
 
 private:
+    friend class CGridCgiContext;
+    int m_RefreshDelay;
+    void x_RenderRefresh(CHTMLPage& page) const;
 
     auto_ptr<CNetScheduleClient> m_NSClient;
     auto_ptr<INetScheduleStorage> m_NSStorage;
@@ -216,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/07 13:21:23  didenko
+ * Extend classes interfaces
+ *
  * Revision 1.6  2005/04/05 18:19:58  didenko
  * Changed interface of OnJobDone and PrepareJobData methods
  *

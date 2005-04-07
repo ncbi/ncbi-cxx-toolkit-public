@@ -41,8 +41,9 @@
 BEGIN_NCBI_SCOPE
 
 
-CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
-    : m_Page(page), m_CgiContext(ctx)
+CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx, 
+                                 CGridCgiApplication& app)
+    : m_Page(page), m_CgiContext(ctx), m_App(app)
 {
 }
 
@@ -51,6 +52,14 @@ string CGridCgiContext::GetSelfURL() const
     string url = m_CgiContext.GetSelfURL();
     if (!m_JobKey.empty())
         url += "?job_key=" + m_JobKey;
+    string add = m_App.AddToSelfUrl();
+    if (!add.empty()) {
+        if (!m_JobKey.empty()) 
+            url += '&';
+        else
+            url += '?';
+        url += add;
+    }        
     return url;
 }
 
@@ -62,22 +71,6 @@ void CGridCgiContext::SetJobKey(const string& job_key)
 /////////////////////////////////////////////////////////////////////////////
 //  CGridCgiSampleApplication::
 //
-
-const char* s_jscript = 
-           "<script language=\"JavaScript\">\n"
-           "<!--\n"
-           "function RefreshStatus()\n"
-           "{ document.location.href=\"<@SELF_URL@>\" }\n"
-           "var timer = null\n"
-           "var delay = 3000\n"
-           "timer = setTimeout(\"RefreshStatus()\", delay)\n"
-           "//-->\n"
-           "</script>\n";
-
-string CGridCgiApplication::GetRefreshJScript() const
-{
-    return s_jscript;
-}
 
 
 void CGridCgiApplication::Init()
@@ -97,6 +90,18 @@ void CGridCgiApplication::Init()
 
 }
 
+int  CGridCgiApplication::Run(void)
+{
+    m_RefreshDelay = 
+        GetConfig().GetInt("gridcgi", "refresh_delay", 5, IRegistry::eReturn);
+
+    return CCgiApplication::Run();
+}
+
+void CGridCgiApplication::OnQueueIsBusy(CGridCgiContext& ctx)
+{
+    OnJobFailed("NetSchedule Queue is busy", ctx);
+}
 
 int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
@@ -119,7 +124,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         return 2;
     }
 
-    CGridCgiContext grid_ctx(*page, ctx);
+    CGridCgiContext grid_ctx(*page, ctx, *this);
     string job_key;
     TCgiEntries::const_iterator eit = entries.find("job_key");
     if (eit != entries.end())
@@ -130,6 +135,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         if (c && job_key.empty()) {
             job_key = c->GetValue();
         }
+        OnBeginProcessRequest(grid_ctx);
         if (!job_key.empty()) {
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
             CNetScheduleClient::EJobStatus status;
@@ -154,12 +160,17 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 OnJobCanceled(grid_ctx);
                 remove_cookie = true;
             }
+            
+            // A lost job
+            else if (status == CNetScheduleClient::eJobNotFound) {
+                OnJobFailed("Job is not found.", grid_ctx);
+                remove_cookie = true;
+            }
             else {
                 grid_ctx.SetJobKey(job_key);
                 OnStatusCheck(grid_ctx);
 
-                CHTMLText* jscript = new CHTMLText(GetRefreshJScript());
-                page->AddTagMap("JSCRIPT", jscript);
+                x_RenderRefresh( *page );
             }
              
             if (JobStopRequested())
@@ -184,19 +195,29 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 PrepareJobData(job_submiter);
 
                 // Submit a job
-                string job_key = job_submiter.Submit();
-                res_cookies.Add("job_key", job_key);
-                grid_ctx.SetJobKey(job_key);
-                OnJobSubmitted(grid_ctx);
-              
-                CHTMLText* jscript = new CHTMLText(GetRefreshJScript());
-                page->AddTagMap("JSCRIPT", jscript);
+                try {
+                    string job_key = job_submiter.Submit();
+                    res_cookies.Add("job_key", job_key);
+                    grid_ctx.SetJobKey(job_key);
+                    OnJobSubmitted(grid_ctx);
+                    
+                    x_RenderRefresh( *page );
+        
+                } 
+                catch ( CNetScheduleException& ex ) {
+                    if (ex.GetErrCode() == 
+                        CNetScheduleException::eTooManyPendingJobs )
+                        OnQueueIsBusy(grid_ctx);
+                    else
+                        throw;
+                }
 
             }
             else {
                 ShowParamsPage(grid_ctx);
             }
         }
+
 
         CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL());
         page->AddTagMap("SELF_URL", self_url);
@@ -222,6 +243,17 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     return 0;
 }
 
+void CGridCgiApplication::x_RenderRefresh(CHTMLPage& page) const
+{
+    CHTMLText* redirect = new CHTMLText(
+             "<META HTTP-EQUIV=Refresh " 
+             "CONTENT=\"<@REFRESH_DELAY@>; URL=<@SELF_URL@>\">");
+    page.AddTagMap("REFRESH", redirect);
+    CHTMLPlainText* delay = new CHTMLPlainText(
+                                NStr::IntToString(m_RefreshDelay)
+                                );
+    page.AddTagMap("REFRESH_DELAY",delay);               
+}
 
 
 
@@ -233,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/07 13:21:46  didenko
+ * Extend classes interfaces
+ *
  * Revision 1.5  2005/04/05 18:20:39  didenko
  * Changed interface of OnJobDone and PrepareJobData methods
  *
