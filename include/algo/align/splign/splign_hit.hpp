@@ -143,6 +143,19 @@ public:
       }
     }
 
+    static bool PSubjHigh_QueryHigh_ptr (const CHit* ph1, const CHit* ph2) {
+
+      if(ph1->m_ai[3] < ph2->m_ai[3]) {
+        return true;
+      }
+      else if (ph1->m_ai[3] > ph2->m_ai[3]) {
+        return false;
+      }
+      else {
+        return ph1->m_ai[1] < ph2->m_ai[1];
+      }
+    }
+
     static bool PQuerySubjSubjCoord (const CHit& h1, const CHit& h2) {
 
       int cmp = strcmp(h1.m_Query.c_str(), h2.m_Query.c_str());
