@@ -157,6 +157,14 @@ Optional
 =========================================================================
 
 
+overflow_limit : Integer
+Watermark value. All BLOBs with size lower than this stored as database
+records, higher than that as OS files
+
+Optional
+=========================================================================
+
+
 log_file_max : Integer
 Maximum size of transaction log file
 
