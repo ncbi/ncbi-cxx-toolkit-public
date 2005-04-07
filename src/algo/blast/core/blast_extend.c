@@ -72,6 +72,9 @@ void BlastInitHitListReset(BlastInitHitList* init_hitlist)
 
 BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist)
 {
+   if (init_hitlist == NULL)
+       return NULL;
+
    BlastInitHitListReset(init_hitlist);
    sfree(init_hitlist->init_hsp_array);
    sfree(init_hitlist);
@@ -1608,6 +1611,10 @@ s_BlastStackTableFree(BLAST_StackTable* stack_table)
 
 Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp)
 {
+
+   if (ewp == NULL)
+      return NULL;
+
    BlastDiagTableFree(ewp->diag_table);
    s_BlastStackTableFree(ewp->stack_table);
    sfree(ewp);
