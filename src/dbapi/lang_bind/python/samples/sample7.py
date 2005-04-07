@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+ 
 # $Id$
 # ===========================================================================
 #
@@ -85,6 +87,9 @@ print cursor.rowcount
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/04/07 16:50:12  ssikorsk
+# Added '#! /usr/bin/env python' to each sample
+#
 # Revision 1.1  2005/02/08 18:50:14  ssikorsk
 # Adapted to the "simple mode" interface
 #

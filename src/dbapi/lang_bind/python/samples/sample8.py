@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+ 
 # $Id$
 # ===========================================================================
 #
@@ -109,6 +111,9 @@ print "After a 'manual' commit command the table contains", len( cursor.fetchall
 # ===========================================================================
 #
 # $Log$
+# Revision 1.3  2005/04/07 16:50:12  ssikorsk
+# Added '#! /usr/bin/env python' to each sample
+#
 # Revision 1.2  2005/02/10 16:52:42  ssikorsk
 # Added demonstration of difference between 'standard' and 'manual' transaction processing in the 'simple' mode.
 #

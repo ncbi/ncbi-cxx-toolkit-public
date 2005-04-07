@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+ 
 # $Id$
 # ===========================================================================
 #
@@ -125,6 +127,9 @@ if __name__ == "__main__":
 # ===========================================================================
 #
 # $Log$
+# Revision 1.4  2005/04/07 16:50:12  ssikorsk
+# Added '#! /usr/bin/env python' to each sample
+#
 # Revision 1.3  2005/02/08 18:50:14  ssikorsk
 # Adapted to the "simple mode" interface
 #
