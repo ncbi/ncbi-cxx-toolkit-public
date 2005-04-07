@@ -50,10 +50,9 @@ CTSE_Handle::CTSE_Handle(TObject& object)
 
 CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 {
-    if ( &tse != this ) {
-        Reset();
-        m_Scope = tse.m_Scope;
+    if ( this != &tse ) {
         m_TSE = tse.m_TSE;
+        m_Scope = tse.m_Scope;
     }
     return *this;
 }

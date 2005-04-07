@@ -69,9 +69,8 @@ CSeq_entry_Handle& CSeq_entry_Handle::operator=(const CSeq_entry_Handle& seh)
 {
     // order is significant
     if ( this != &seh ) {
-        Reset();
-        m_TSE = seh.m_TSE;
         m_Info = seh.m_Info;
+        m_TSE = seh.m_TSE;
     }
     return *this;
 }
@@ -496,6 +495,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.16  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

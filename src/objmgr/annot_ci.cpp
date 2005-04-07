@@ -111,14 +111,15 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
-    CAnnotTypes_CI::operator=(iter);
-    m_SeqAnnotSet.clear();
-    m_SeqAnnotSet = iter.m_SeqAnnotSet;
-    if (iter) {
-        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
-    }
-    else {
-        m_Iterator = m_SeqAnnotSet.end();
+    if ( this != &iter ) {
+        CAnnotTypes_CI::operator=(iter);
+        m_SeqAnnotSet = iter.m_SeqAnnotSet;
+        if (iter) {
+            m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
+        }
+        else {
+            m_Iterator = m_SeqAnnotSet.end();
+        }
     }
     return *this;
 }
@@ -149,6 +150,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.38  2005/03/17 17:52:27  grichenk
 * Added flag to SAnnotSelector for skipping multiple SNPs from the same
 * seq-annot. Optimized CAnnotCollector::GetAnnot().

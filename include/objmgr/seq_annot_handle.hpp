@@ -152,6 +152,7 @@ protected:
     friend class CScope_Impl;
     friend class CSeq_annot_CI;
     friend class CAnnot_Collector;
+    friend class CMappedFeat;
 
     CSeq_annot_Handle(const CSeq_annot_Info& annot,
                       const CTSE_Handle& tse);
@@ -293,6 +294,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.18  2005/03/17 17:52:27  grichenk
 * Added flag to SAnnotSelector for skipping multiple SNPs from the same
 * seq-annot. Optimized CAnnotCollector::GetAnnot().

@@ -44,13 +44,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_feat_Handle::CSeq_feat_Handle(void)
-    : m_AnnotInfoType(eType_null)
-{
-    return;
-}
-
-
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    EAnnotInfoType type,
                                    size_t index,
@@ -63,8 +56,12 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
 }
 
 
-CSeq_feat_Handle::~CSeq_feat_Handle(void)
+void CSeq_feat_Handle::Reset(void)
 {
+    m_CreatedFeat.Reset();
+    m_Index = 0;
+    m_AnnotInfoType = eType_null;
+    m_Annot.Reset();
 }
 
 
@@ -175,6 +172,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/07 16:30:42  vasilche
+ * Inlined handles' constructors and destructors.
+ * Optimized handles' assignment operators.
+ *
  * Revision 1.9  2005/03/15 19:10:29  vasilche
  * SSNP_Info structure is defined in separate header.
  *

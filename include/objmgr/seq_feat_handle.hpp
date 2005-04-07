@@ -66,7 +66,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
 {
 public:
     CSeq_feat_Handle(void);
-    ~CSeq_feat_Handle(void);
+
+    void Reset(void);
 
     DECLARE_OPERATOR_BOOL(m_Annot);
 
@@ -163,6 +164,13 @@ private:
     size_t                         m_Index;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
+
+
+inline
+CSeq_feat_Handle::CSeq_feat_Handle(void)
+    : m_AnnotInfoType(eType_null)
+{
+}
 
 
 inline
@@ -465,6 +473,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.13  2005/03/15 19:10:11  vasilche
 * SSNP_Info structure is defined in separate header.
 *

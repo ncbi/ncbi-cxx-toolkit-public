@@ -41,33 +41,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/*
-CSeq_annot_CI::SEntryLevel_CI::SEntryLevel_CI(const CBioseq_set_Info& seqset,
-                                              const TEntry_CI& iter)
-    : m_Set(&seqset), m_Iter(iter)
-{
-}
-
-
-CSeq_annot_CI::SEntryLevel_CI::SEntryLevel_CI(const SEntryLevel_CI& l)
-    : m_Set(l.m_Set), m_Iter(l.m_Iter)
-{
-}
-
-
-CSeq_annot_CI::SEntryLevel_CI&
-CSeq_annot_CI::SEntryLevel_CI::operator=(const SEntryLevel_CI& l)
-{
-    m_Set = l.m_Set;
-    m_Iter = l.m_Iter;
-    return *this;
-}
-
-
-CSeq_annot_CI::SEntryLevel_CI::~SEntryLevel_CI(void)
-{
-}
-*/
 
 CSeq_annot_CI::CSeq_annot_CI(void)
     : m_UpTree(false)
@@ -238,6 +211,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.12  2005/02/11 16:25:03  vasilche
 * More fixed to CSeq_annot_CI.
 *

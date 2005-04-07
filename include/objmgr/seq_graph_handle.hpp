@@ -63,6 +63,8 @@ public:
     CSeq_graph_Handle(void);
     ~CSeq_graph_Handle(void);
 
+    void Reset(void);
+
     DECLARE_OPERATOR_BOOL(m_Annot);
 
     /// Get scope this handle belongs to
@@ -241,6 +243,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.8  2005/03/29 19:22:12  jcherry
 * Added export specifiers
 *

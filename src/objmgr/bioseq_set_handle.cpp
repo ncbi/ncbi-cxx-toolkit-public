@@ -65,9 +65,8 @@ CBioseq_set_Handle&
 CBioseq_set_Handle::operator=(const CBioseq_set_Handle& bsh)
 {
     if ( this != &bsh ) {
-        Reset();
-        m_TSE = bsh.m_TSE;
         m_Info = bsh.m_Info;
+        m_TSE = bsh.m_TSE;
     }
     return *this;
 }
@@ -492,6 +491,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.14  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

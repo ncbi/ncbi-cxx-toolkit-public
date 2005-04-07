@@ -60,9 +60,8 @@ CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
 {
     // order is significant
     if ( this != &sah ) {
-        Reset();
-        m_TSE = sah.m_TSE;
         m_Info = sah.m_Info;
+        m_TSE = sah.m_TSE;
     }
     return *this;
 }
@@ -244,6 +243,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.15  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

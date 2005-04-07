@@ -209,7 +209,7 @@ CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
             m_CurrentEntry = bioseq_ci.m_CurrentEntry;
         }
         else {
-            m_CurrentEntry = CSeq_entry_Handle();
+            m_CurrentEntry.Reset();
             m_CurrentBioseq.Reset();
             while ( !m_EntryStack.empty() ) {
                 m_EntryStack.pop();
@@ -226,6 +226,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.6  2005/03/18 16:14:26  grichenk
 * Iterator with CSeq_inst::eMol_na includes both dna and rna.
 *

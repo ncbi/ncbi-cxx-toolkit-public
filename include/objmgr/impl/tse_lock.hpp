@@ -61,7 +61,7 @@ public:
         }
     CTSE_Lock& operator=(const CTSE_Lock& lock)
         {
-            if ( this != &lock ) {
+            if ( m_Info != lock.m_Info ) {
                 Reset();
                 x_Assign(lock);
             }

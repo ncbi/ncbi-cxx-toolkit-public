@@ -102,11 +102,10 @@ CBioseq_Handle& CBioseq_Handle::operator=(const CBioseq_Handle& bh)
 {
     // order is significant
     if ( this != &bh ) {
-        Reset();
-        m_TSE = bh.m_TSE;
-        m_Seq_id = bh.m_Seq_id;
-        m_ScopeInfo = bh.m_ScopeInfo;
         m_Info = bh.m_Info;
+        m_ScopeInfo = bh.m_ScopeInfo;
+        m_Seq_id = bh.m_Seq_id;
+        m_TSE = bh.m_TSE;
     }
     return *this;
 }
@@ -890,6 +889,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.89  2005/03/29 16:02:30  grichenk
 * Added IsSynonym(const CSeq_id_Handle&)
 *

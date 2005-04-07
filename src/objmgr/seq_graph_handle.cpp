@@ -59,6 +59,13 @@ CSeq_graph_Handle::~CSeq_graph_Handle(void)
 }
 
 
+void CSeq_graph_Handle::Reset(void)
+{
+    m_Index = 0;
+    m_Annot.Reset();
+}
+
+
 const CSeq_graph& CSeq_graph_Handle::x_GetSeq_graph(void) const
 {
     _ASSERT(m_Annot);
@@ -90,6 +97,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/07 16:30:42  vasilche
+ * Inlined handles' constructors and destructors.
+ * Optimized handles' assignment operators.
+ *
  * Revision 1.6  2004/12/28 18:40:30  vasilche
  * Added GetScope() method.
  *

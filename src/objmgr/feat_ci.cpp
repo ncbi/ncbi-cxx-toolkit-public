@@ -70,8 +70,10 @@ CFeat_CI::~CFeat_CI(void)
 
 CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 {
-    CAnnotTypes_CI::operator=(iter);
-    Update();
+    if ( this != &iter ) {
+        CAnnotTypes_CI::operator=(iter);
+        Update();
+    }
     return *this;
 }
 
@@ -189,7 +191,7 @@ CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 
 void CMappedFeat::Reset(void)
 {
-    m_OriginalFeat = CSeq_feat_Handle();
+    m_OriginalFeat.Reset();
     m_MappingInfoObj.Reset();
     m_MappingInfoPtr = &m_MappingInfoObj;
     m_MappedFeat.ResetRefs();
@@ -204,12 +206,30 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 
     const CAnnotObject_Ref& feat_ref = *annot;
     _ASSERT(feat_ref.IsFeat());
-    m_OriginalFeat = CSeq_feat_Handle(collector.GetAnnot(feat_ref),
-        feat_ref.IsSNPFeat() ?
-        CSeq_feat_Handle::eType_Seq_annot_SNP_Info :
-        CSeq_feat_Handle::eType_Seq_annot_Info,
-        feat_ref.GetAnnotObjectIndex(),
-        *collector.m_CreatedOriginal);
+
+    const CSeq_annot_Info* annot_info;
+    if ( feat_ref.IsSNPFeat() ) {
+        annot_info =
+            &feat_ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
+        m_OriginalFeat.m_AnnotInfoType =
+            CSeq_feat_Handle::eType_Seq_annot_SNP_Info;
+    }
+    else {
+        annot_info = &feat_ref.GetSeq_annot_Info();
+        m_OriginalFeat.m_AnnotInfoType =
+            CSeq_feat_Handle::eType_Seq_annot_Info;
+    }
+    if ( m_OriginalFeat.m_Annot.m_Info != annot_info ) {
+        CAnnot_Collector::TTSE_LockMap::const_iterator tse_it =
+            collector.m_TSE_LockMap.find(&annot_info->GetTSE_Info());
+        _ASSERT(tse_it != collector.m_TSE_LockMap.end());
+        m_OriginalFeat.m_Annot.m_Info = annot_info;
+        m_OriginalFeat.m_Annot.m_TSE = tse_it->second;
+    }
+
+    m_OriginalFeat.m_Index = feat_ref.GetAnnotObjectIndex();
+    m_OriginalFeat.m_CreatedFeat = collector.m_CreatedOriginal;
+
     m_MappingInfoPtr = &feat_ref.GetMappingInfo();
     m_MappedFeat.ResetRefs();
     return *this;
@@ -231,6 +251,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/04/07 16:30:42  vasilche
+* Inlined handles' constructors and destructors.
+* Optimized handles' assignment operators.
+*
 * Revision 1.41  2005/03/07 17:30:01  vasilche
 * Added methods to get feature type and subtype
 *
