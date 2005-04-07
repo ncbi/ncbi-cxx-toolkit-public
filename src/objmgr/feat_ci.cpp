@@ -219,7 +219,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         m_OriginalFeat.m_AnnotInfoType =
             CSeq_feat_Handle::eType_Seq_annot_Info;
     }
-    if ( m_OriginalFeat.m_Annot.m_Info != annot_info ) {
+    if ( m_OriginalFeat.m_Annot.m_Info.GetPointerOrNull() != annot_info ) {
         CAnnot_Collector::TTSE_LockMap::const_iterator tse_it =
             collector.m_TSE_LockMap.find(&annot_info->GetTSE_Info());
         _ASSERT(tse_it != collector.m_TSE_LockMap.end());
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/04/07 18:10:33  vasilche
+* Fixed compatibility with Sun.
+*
 * Revision 1.42  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.
