@@ -102,11 +102,12 @@ CTestTransaction::CTestTransaction(
     IConnection& conn,
     ETransBehavior tb
     )
-    : m_TransBehavior( tb )
+    : m_Conn( &conn )
+    , m_TransBehavior( tb )
 {
     if ( m_TransBehavior != eNoTrans ) {
-        m_Stmt.reset( conn.CreateStatement() );
-        m_Stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
+        auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+        stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
     }
 }
 
@@ -114,9 +115,11 @@ CTestTransaction::~CTestTransaction(void)
 {
     try {
         if ( m_TransBehavior == eTransCommit ) {
-            m_Stmt->ExecuteUpdate( "COMMIT TRANSACTION" );
+            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+            stmt->ExecuteUpdate( "COMMIT TRANSACTION" );
         } else if ( m_TransBehavior == eTransRollback ) {
-            m_Stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
+            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+            stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
         }
     }
     catch( ... ) {
@@ -184,21 +187,15 @@ CDBAPIUnitTest::TestGetRowCount()
         {
             auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
-            CheckGetRowCount( stmt.get(), i, eNoTrans );
-            CheckGetRowCount( stmt.get(), i, eTransCommit );
-            CheckGetRowCount( stmt.get(), i, eTransRollback );
+            CheckGetRowCount( i, eNoTrans, stmt.get() );
+            CheckGetRowCount( i, eTransCommit, stmt.get() );
+            CheckGetRowCount( i, eTransRollback, stmt.get() );
         }
         // Dedicated statement
         {
-            CheckGetRowCount( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eNoTrans );
-            CheckGetRowCount( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eTransCommit );
-            CheckGetRowCount( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eTransRollback );
+            CheckGetRowCount( i, eNoTrans );
+            CheckGetRowCount( i, eTransCommit );
+            CheckGetRowCount( i, eTransRollback );
         }
     }
 
@@ -207,30 +204,25 @@ CDBAPIUnitTest::TestGetRowCount()
         {
             auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
-            CheckGetRowCount2( stmt.get(), i, eNoTrans );
-            CheckGetRowCount2( stmt.get(), i, eTransCommit );
-            CheckGetRowCount2( stmt.get(), i, eTransRollback );
+            CheckGetRowCount2( i, eNoTrans, stmt.get() );
+            CheckGetRowCount2( i, eTransCommit, stmt.get() );
+            CheckGetRowCount2( i, eTransRollback, stmt.get() );
         }
         // Dedicated statement
         {
-            CheckGetRowCount2( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eNoTrans );
-            CheckGetRowCount2( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eTransCommit );
-            CheckGetRowCount2( 
-                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
-                i, eTransRollback );
+            CheckGetRowCount2( i, eNoTrans );
+            CheckGetRowCount2( i, eTransCommit );
+            CheckGetRowCount2( i, eTransRollback );
         }
     }
 }
 
 void
 CDBAPIUnitTest::CheckGetRowCount(
-    IStatement* const stmt, 
     int row_count, 
-    ETransBehavior tb)
+    ETransBehavior tb,
+    IStatement* stmt
+    )
 {
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
@@ -239,57 +231,111 @@ CDBAPIUnitTest::CheckGetRowCount(
 
     // Insert row_count records into the table ...
     for ( int i = 0; i < row_count; ++i ) {
-        stmt->ExecuteUpdate(sql);
-        int nRows = stmt->GetRowCount();
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
+
+        curr_stmt->ExecuteUpdate(sql);
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows, 1 );
     }
 
     // Check a SELECT statement
     {
-        sql  = " SELECT * FROM " + m_TableName;
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT * FROM " + m_TableName;
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
     // Check an UPDATE statement
     {
-        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
     // Check a SELECT statement again
     {
-        sql  = " SELECT * FROM " + m_TableName + " WHERE int_val = 0";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT * FROM " + m_TableName + " WHERE int_val = 0";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
     // Check a DELETE statement
     {
-        sql  = " DELETE FROM " + m_TableName;
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " DELETE FROM " + m_TableName;
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
     // Check a SELECT statement again and again ...
     {
-        sql  = " SELECT * FROM " + m_TableName;
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT * FROM " + m_TableName;
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
     }
@@ -298,101 +344,176 @@ CDBAPIUnitTest::CheckGetRowCount(
 
 void
 CDBAPIUnitTest::CheckGetRowCount2(
-    IStatement* const stmt, 
     int row_count, 
-    ETransBehavior tb)
+    ETransBehavior tb,
+    IStatement* stmt
+    )
 {
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
     // auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
-    // _ASSERT(stmt->get());
+    // _ASSERT(curr_stmt->get());
     string sql;
     sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( @value ) \n";
 
     // Insert row_count records into the table ...
     for ( Int4 i = 0; i < row_count; ++i ) {
-        stmt->SetParam(CVariant(i), "@value");
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        curr_stmt->SetParam(CVariant(i), "@value");
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows, 1 );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
     }
 
     // Workaround for the CTLIB driver ...
-    stmt->ClearParamList();
+    {
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
+
+        curr_stmt->ClearParamList();
+    }
 
     // Check a SELECT statement
     {
-        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check an UPDATE statement
     {
-        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a SELECT statement again
     {
-        sql  = " SELECT int_val, int_val FROM " + m_TableName + " WHERE int_val = 0";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " WHERE int_val = 0";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement
     {
-        sql  = " DELETE FROM " + m_TableName;
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " DELETE FROM " + m_TableName;
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement again
     {
-        sql  = " DELETE FROM " + m_TableName;
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " DELETE FROM " + m_TableName;
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
     }
 
     // Check a SELECT statement again and again ...
     {
-        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
-        stmt->ExecuteUpdate(sql);
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
 
-        int nRows = stmt->GetRowCount();
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
+        curr_stmt->ExecuteUpdate(sql);
+
+        int nRows = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
 
-        int nRows2 = stmt->GetRowCount();
+        int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
     }
 
@@ -1452,7 +1573,11 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/04/07 20:29:12  ssikorsk
+ * Added more dedicated statements to each test
+ *
  * Revision 1.11  2005/04/07 19:16:03  ssikorsk
+ *
  * Added two different test patterns:
  * 1) New/dedicated statement for each test;
  * 2) Reusable statement for all tests;

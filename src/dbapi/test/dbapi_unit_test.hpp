@@ -56,7 +56,7 @@ public:
     ~CTestTransaction(void);
 
 private:
-    auto_ptr<IStatement> m_Stmt;
+    IConnection* m_Conn;
     ETransBehavior  m_TransBehavior;
 };
 
@@ -86,13 +86,13 @@ public:
     // Test particular methods.
     void TestGetRowCount();
     void CheckGetRowCount(
-        IStatement* const stmt, 
         int row_count, 
-        ETransBehavior tb = eNoTrans);
+        ETransBehavior tb = eNoTrans,
+        IStatement* stmt = NULL);
     void CheckGetRowCount2(
-        IStatement* const stmt, 
         int row_count, 
-        ETransBehavior tb = eNoTrans);
+        ETransBehavior tb = eNoTrans,
+        IStatement* stmt = NULL);
 
     void Test_Bind(void);
     void Test_Execute(void);
@@ -146,7 +146,11 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/04/07 20:29:12  ssikorsk
+ * Added more dedicated statements to each test
+ *
  * Revision 1.8  2005/04/07 19:16:03  ssikorsk
+ *
  * Added two different test patterns:
  * 1) New/dedicated statement for each test;
  * 2) Reusable statement for all tests;
