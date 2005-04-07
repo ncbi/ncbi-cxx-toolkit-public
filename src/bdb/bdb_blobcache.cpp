@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 
-static const unsigned int s_WriterBufferSize = 256 * 1024;
+//static const unsigned int s_WriterBufferSize = 256 * 1024;
 
 		
 static void s_MakeOverflowFileName(string& buf,
@@ -254,7 +254,7 @@ public:
       m_TTL(ttl),
       m_Flushed(false)
     {
-        m_Buffer = new unsigned char[s_WriterBufferSize];
+        m_Buffer = new unsigned char[m_Cache.GetOverflowLimit()];
     }
 
     virtual ~CBDB_CacheIWriter()
@@ -307,7 +307,7 @@ public:
 
         if (m_Buffer) {
             // Filling the buffer while we can
-            if (new_buf_length <= s_WriterBufferSize) {
+            if (new_buf_length <= m_Cache.GetOverflowLimit()) {
                 ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
                 m_BytesInBuffer = new_buf_length;
                 if (bytes_written) {
@@ -493,7 +493,8 @@ CBDB_Cache::CBDB_Cache()
   m_PurgeNowRunning(false),
   m_RunPurgeThread(false),
   m_PurgeThreadDelay(10),
-  m_CheckPointInterval(24 * (1024 * 1024))
+  m_CheckPointInterval(24 * (1024 * 1024)),
+  m_OverflowLimit(512 * 1024)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -527,6 +528,12 @@ void CBDB_Cache::x_PidLock(ELockMode lm)
     }
 }
 
+void CBDB_Cache::SetOverflowLimit(unsigned limit)
+{
+    _ASSERT(!IsOpen());
+    m_OverflowLimit = limit;
+}
+
 void CBDB_Cache::Open(const char* cache_path, 
                       const char* cache_name,
                       ELockMode lm, 
@@ -549,6 +556,7 @@ void CBDB_Cache::Open(const char* cache_path,
             dir.Create();
         }
     }}
+
 
     m_BytesWritten = 0;
 
@@ -937,7 +945,7 @@ void CBDB_Cache::Store(const string&  key,
 
     unsigned overflow = 0;
 
-    if (size < s_WriterBufferSize) {  // inline BLOB
+    if (size < GetOverflowLimit()) {  // inline BLOB
 
         m_CacheDB->key = key;
         m_CacheDB->version = version;
@@ -2150,6 +2158,7 @@ static const string kCFParam_purge_thread       = "purge_thread";
 static const string kCFParam_purge_thread_delay = "purge_thread_delay";
 static const string kCFParam_checkpoint_bytes   = "checkpoint_bytes";
 static const string kCFParam_log_file_max       = "log_file_max";
+static const string kCFParam_overflow_limit     = "overflow_limit";
 
 
 
@@ -2185,6 +2194,11 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
     if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
         lock = CBDB_Cache::ePidLock;
+    }
+    unsigned overflow_limit = 
+        GetParamDataSize(params, kCFParam_overflow_limit, false, 0);
+    if (overflow_limit) {
+        drv->SetOverflowLimit(overflow_limit);
     }
 
     unsigned mem_size = 
@@ -2317,6 +2331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2005/04/07 17:46:37  kuznets
+ * Use flexible oveflow limit instead of fixed constant
+ *
  * Revision 1.109  2005/03/30 13:09:16  kuznets
  * Use semaphor to stop purge execution
  *
