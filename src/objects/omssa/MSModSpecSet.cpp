@@ -68,7 +68,7 @@ void CMSModSpecSet::CreateArrays(void)
         ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE);
         strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);
         // make sure name is null terminated
-        ModNames[ModNum][kMaxNameSize] = '\0';
+        ModNames[ModNum][kMaxNameSize-1] = '\0';
 
         int iChars(0);
         CMSModSpec::TResidues::const_iterator iRes;
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/07 16:35:27  lewisg
+* fix array out of bounds
+*
 * Revision 1.1  2005/03/14 22:29:54  lewisg
 * add mod file input
 *
