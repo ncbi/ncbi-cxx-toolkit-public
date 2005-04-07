@@ -1335,10 +1335,9 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
 
     const string* pfx = prefix1 ? prefix1 : prefix;
     SIZE_TYPE     pos = 0, len = str.size();
-    string        hyphen; // "-" or empty
+    
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
     bool          do_flat = (flags & fWrap_FlatFile) != 0;
-    string        line;
 
     enum EScore { // worst to best
         eForced,
@@ -1349,6 +1348,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
+        bool      hyphen     = false; // "-" or empty
         SIZE_TYPE column     = s_VisibleWidth(*pfx, is_html);
         SIZE_TYPE column0    = column;
         // the next line will start at best_pos
@@ -1359,7 +1359,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         if (nl_pos == NPOS) {
             nl_pos = len;
         }
-        if (column + nl_pos <= width) {
+        if (column + (nl_pos-pos) <= width) {
             pos0 = nl_pos;
         }
         for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
@@ -1422,26 +1422,27 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             // If the whole remaining text can fit, don't split it...
             best_pos = len;
         } else if (best_score == eForced  &&  (flags & fWrap_Hyphenate)) {
-            hyphen = "-";
+            hyphen = true;
             --best_pos;
         }
         arr.push_back(*pfx);
         {{ // eat backspaces and the characters (if any) that precede them
-            line.assign(str, pos, best_pos - pos);
-            SIZE_TYPE bs = 0;
-            while ((bs = line.find('\b', bs)) != NPOS) {
-                if (bs > 0) {
-                    line.erase(bs - 1, 2);
-                } else {
-                    line.erase(0, 1);
+            string::const_iterator begin = str.begin()+pos, end = str.begin()+best_pos, bs;
+            while ( (bs = find(begin, end, '\b')) != end ) {
+                if ( bs != begin ) {
+                    arr.back().append(begin, bs - 1);
                 }
+                begin = bs + 1;
             }
-            arr.back() += line;
+            if ( begin != end ) {
+                arr.back().append(begin, end);
+            }
         }}
-        arr.back() += hyphen;
+        if (hyphen) {
+            arr.back() += '-';
+        }
         pos    = best_pos;
         pfx    = prefix;
-        hyphen = kEmptyStr;
 
         if (best_score == eSpace  ||  best_score == eNewline) {
             ++pos;
@@ -1709,6 +1710,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.136  2005/04/07 13:47:59  shomrat
+ * Wrap optimization
+ *
  * Revision 1.135  2005/03/24 16:40:36  ucko
  * Streamline Wrap a bit more.
  *
