@@ -35,7 +35,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <connect/ncbi_service.h>
+#include "../ncbi_servicep.h"
 
 #include <memory>
 
@@ -101,13 +101,34 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
 
 
 
-void 
+/// Configure NetCache client using NCBI load balancer
+///
+/// Functions retrieves current status of netcache servers, then connects
+/// netcache client to the most available netcache machine.
+///
+/// @note Please note that it should be done only when we place a new
+/// BLOB to the netcache storage. When retriving you should directly connect
+/// to the service without any load balancing 
+/// (service infomation encoded in the BLOB key)
+///
+/// @internal
+///
+static void 
 NetCache_ConfigureWithLB(
                     CNetCacheClient* nc_client, 
                     const string&    service_name,
                     int              backup_mode_mask)
 {
-    SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
+    SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
+#if 0
+    SERV_ITER srv_it = SERV_Open(service_name.c_str(),
+        fSERV_Any, SERV_LOCALHOST, net_info);
+#else
+    SERV_ITER srv_it = SERV_OpenP(service_name.c_str(),
+        fSERV_Any, SERV_LOCALHOST, 90.0, 0, 0, 0, 0);
+#endif
+    ConnNetInfo_Destroy(net_info);
+
     STimeout& to = nc_client->SetCommunicationTimeout();
     string err_msg = "Cannot connect to netcache service (";
 
@@ -419,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/07 13:52:35  kuznets
+ * NetCache_ConfigureWithLB() made static, favor local host choosing netcache server
+ *
  * Revision 1.14  2005/04/04 18:13:00  kuznets
  * Detailed parametrization of service backup
  *
