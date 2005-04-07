@@ -222,25 +222,6 @@ protected:
 };
 
 
-/// Configure NetCache client using NCBI load balancer
-///
-/// Functions retrieves current status of netcache servers, then connects
-/// netcache client to the most available netcache machine.
-///
-/// @note Please note that it should be done only when we place a new
-/// BLOB to the netcache storage. When retriving you should directly connect
-/// to the service without any load balancing 
-/// (service infomation encoded in the BLOB key)
-///
-/// @internal
-///
-extern NCBI_XCONNECT_EXPORT
-void NetCache_ConfigureWithLB(
-            CNetCacheClient* nc_client, 
-            const string&    service_name,
-            int              backup_mode_mask); 
-                                         
-
 
 /// Client API for NetCache server.
 ///
@@ -446,6 +427,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/04/07 13:51:02  kuznets
+ * NetCache_ConfigureWithLB() removed from the public interface
+ *
  * Revision 1.30  2005/04/04 18:12:36  kuznets
  * Detailed parametrization of service backup
  *
