@@ -108,7 +108,7 @@ bool CFlatSeqLoc::x_Add
     CScope& scope = ctx.GetScope();
     const CBioseq_Handle& seq = ctx.GetHandle();
 
-    string prefix = "join(";
+    const char* prefix = "join(";
 
     // deal with complement of entire location
     if ( type == eType_location ) {
@@ -171,11 +171,11 @@ bool CFlatSeqLoc::x_Add
     case CSeq_loc::e_Packed_int:
     {{
         oss << prefix;
-        string delim;
+        const char* delim = "";
         ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             oss << delim;
             if (!x_Add(**it, oss, ctx, type, show_comp)) {
-                delim = kEmptyStr;
+                delim = "";
             } else {
                 delim = ", \b";
             }
@@ -196,12 +196,12 @@ bool CFlatSeqLoc::x_Add
             oss << "complement(";
         }
         oss << "join(";
-        string delim;
+        const char* delim = "";
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
             if (!x_Add(*it, fuzz, oss, ctx.Config().DoHTML())) {
-                delim = kEmptyStr;
+                delim = "";
             } else {
                 delim = ", \b";
             }
@@ -213,14 +213,14 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Mix:
     {{
-        string delim;
+        const char* delim = "";
         oss << prefix;
         CSeq_loc_CI::EEmptyFlag empty = ((type == eType_location) ?
             CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
         for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
             oss << delim;
             if (!x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp)) {
-                delim = kEmptyStr;
+                delim = "";
             } else {
                 delim = ", \b";
             }
@@ -230,12 +230,12 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Equiv:
     {{
-        string delim;
+        const char* delim = "";
         oss << "one-of(";
         ITERATE (CSeq_loc_equiv::Tdata, it, loc.GetEquiv().Get()) {
             oss << delim;
             if (!x_Add(**it, oss, ctx, type, show_comp)) {
-                delim = kEmptyStr;
+                delim = "";
             } else {
                 delim = ", \b";
             }
@@ -282,23 +282,23 @@ bool CFlatSeqLoc::x_Add
     ENa_strand strand = si.CanGetStrand() ? si.GetStrand() : eNa_strand_unknown;
     bool comp = show_comp  &&  (strand == eNa_strand_minus);
 
-    if ( type == eType_location ) {
-        if ( s_IsVirtualId(CSeq_id_Handle::GetHandle(si.GetId()), ctx.GetHandle()) ) {
-            return false;
-        }
-        oss << (comp ? "complement(" : kEmptyStr);
-        x_AddID(si.GetId(), oss, ctx, type);
-    } else {
-        oss << (comp ? "complement(" : kEmptyStr);
-        x_AddID(si.GetId(), oss, ctx, type);
+    if (type == eType_location  &&
+        s_IsVirtualId(CSeq_id_Handle::GetHandle(si.GetId()), ctx.GetHandle()) ) {
+        return false;
     }
+    if (comp) {
+        oss << "complement(";
+    }
+    x_AddID(si.GetId(), oss, ctx, type);
     x_Add(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, do_html);
     if (to > 0  &&
         (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to())) {
         oss << "..";
         x_Add(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, do_html);
     }
-    oss << (comp ? ")" : kEmptyStr);
+    if (comp) {
+        oss << ')';
+    }
 
     return true;
 }
@@ -431,6 +431,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/04/07 18:22:46  shomrat
+* Decrease the number of string constructions
+*
 * Revision 1.18  2005/03/28 17:19:56  shomrat
 * Minor bug fixing
 *
