@@ -61,8 +61,8 @@
 /* Handler for "Unhandled" exceptions */
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
 {
-	/* Always terminate a program */
-	return EXCEPTION_EXECUTE_HANDLER;
+    /* Always terminate a program */
+    return EXCEPTION_EXECUTE_HANDLER;
 }
 
 static int _SuppressDiagPopupMessages(void)
@@ -142,6 +142,9 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2005/04/07 16:57:55  lavr
+ * No tabs -- just spaces
+ *
  * Revision 1.19  2005/04/07 16:28:15  ivanov
  * _SuppressDiagPopupMessages(): added handling of "Unhandled" exceptions
  *
