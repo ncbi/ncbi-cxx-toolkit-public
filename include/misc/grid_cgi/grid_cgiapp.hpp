@@ -118,12 +118,6 @@ public:
     ///
     virtual int  ProcessRequest(CCgiContext& ctx);
 
-    /// Do not override this method yourself! -- it includes all the CGI
-    /// specific machinery. If you override it, do call 
-    /// CGridCgiApplication::Run() from inside your overriding method.
-    ///
-    virtual int  Run(void);
-
     /// Get program version (like: MyProgram v. 1.2.3)
     ///
     /// Program version is passed to NetSchedule queue so queue
@@ -237,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/07 19:26:54  didenko
+ * Removed Run method
+ *
  * Revision 1.8  2005/04/07 16:47:33  didenko
  * + Program Version checking
  *

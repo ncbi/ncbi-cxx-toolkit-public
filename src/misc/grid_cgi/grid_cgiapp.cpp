@@ -78,6 +78,10 @@ void CGridCgiApplication::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
+    m_RefreshDelay = 
+        GetConfig().GetInt("gridcgi", "refresh_delay", 5, IRegistry::eReturn);
+
+
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
@@ -89,14 +93,6 @@ void CGridCgiApplication::Init()
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage));
 
-}
-
-int  CGridCgiApplication::Run(void)
-{
-    m_RefreshDelay = 
-        GetConfig().GetInt("gridcgi", "refresh_delay", 5, IRegistry::eReturn);
-
-    return CCgiApplication::Run();
 }
 
 void CGridCgiApplication::OnQueueIsBusy(CGridCgiContext& ctx)
@@ -264,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/07 19:27:32  didenko
+ * Removed Run method
+ *
  * Revision 1.7  2005/04/07 16:48:14  didenko
  * + Program Version checking
  *

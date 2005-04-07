@@ -54,7 +54,6 @@ class CCgiTunnel2Grid : public  CGridCgiApplication
 public:
 
     virtual void Init(void);
-    virtual int Run(void);
     virtual string GetProgramVersion(void) const;
 
 protected:
@@ -130,33 +129,6 @@ string CCgiTunnel2Grid::GetProgramVersion(void) const
     return m_ProgramVersion; 
 }
 
-int CCgiTunnel2Grid::Run(void)
-{
-    m_Title = GetConfig().GetString("tunnel2grid", "cgi_title", "" );
-    m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", "");
-    m_HtmlOnJobSubmitted = 
-        GetConfig().GetString("tunnel2grid", "on_job_sumitted_tlf", 
-                              "on_job_submitted.html.inc");
-    m_HtmlOnJobDone =
-        GetConfig().GetString("tunnel2grid", "on_job_done_tlf", 
-                              "on_job_done.html.inc");
-    m_HtmlOnJobCanceled =
-        GetConfig().GetString("tunnel2grid", "on_job_canceled_tlf", 
-                              "on_job_canceled.html.inc");
-    m_HtmlOnJobFailed =
-        GetConfig().GetString("tunnel2grid", "on_job_failed_tlf", 
-                              "on_job_failed.html.inc");
-    m_HtmlOnStatusCheck =
-        GetConfig().GetString("tunnel2grid", "on_status_check_tlf", 
-                              "on_status_check.html.inc");
-    m_FallBackDelay = 
-        GetConfig().GetInt("tunnel2grid", "fall_back_delay", 5, IRegistry::eReturn);
-
-    m_ProgramVersion =
-        GetConfig().GetString("tunnel2grid", "program", "" );
-
-    return CGridCgiApplication::Run();
-}
 
 string CCgiTunnel2Grid::GetPageTitle() const
 {
@@ -182,7 +154,30 @@ void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext&)
 
 void CCgiTunnel2Grid::Init()
 {
-    // Standard CGI framework initialization
+    m_Title = GetConfig().GetString("tunnel2grid", "cgi_title", "" );
+    m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", "");
+    m_HtmlOnJobSubmitted = 
+        GetConfig().GetString("tunnel2grid", "on_job_sumitted_tlf", 
+                              "on_job_submitted.html.inc");
+    m_HtmlOnJobDone =
+        GetConfig().GetString("tunnel2grid", "on_job_done_tlf", 
+                              "on_job_done.html.inc");
+    m_HtmlOnJobCanceled =
+        GetConfig().GetString("tunnel2grid", "on_job_canceled_tlf", 
+                              "on_job_canceled.html.inc");
+    m_HtmlOnJobFailed =
+        GetConfig().GetString("tunnel2grid", "on_job_failed_tlf", 
+                              "on_job_failed.html.inc");
+    m_HtmlOnStatusCheck =
+        GetConfig().GetString("tunnel2grid", "on_status_check_tlf", 
+                              "on_status_check.html.inc");
+    m_FallBackDelay = 
+        GetConfig().GetInt("tunnel2grid", "fall_back_delay", 5, IRegistry::eReturn);
+
+    m_ProgramVersion =
+        GetConfig().GetString("tunnel2grid", "program", "" );
+
+   // Standard CGI framework initialization
     CGridCgiApplication::Init();
 
     // Allows CGI client to put the diagnostics to:
@@ -365,6 +360,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/07 19:28:16  didenko
+ * Removed Run method
+ *
  * Revision 1.2  2005/04/07 16:48:54  didenko
  * + Program Version checking
  *
