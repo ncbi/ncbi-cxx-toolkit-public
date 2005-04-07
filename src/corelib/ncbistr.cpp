@@ -913,50 +913,78 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 
 string NStr::TruncateSpaces(const string& str, ETrunc where)
 {
+    SIZE_TYPE length = str.length();
+    if ( length == 0 ) {
+        return kEmptyStr;
+    }
     SIZE_TYPE beg = 0;
     if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
-        while (beg < str.length()  &&  isspace(str[beg]))
-            beg++;
-        if (beg == str.length())
-            return kEmptyStr;
+        _ASSERT(beg < length);
+        while ( isspace(str[beg]) ) {
+            if ( ++beg == length ) {
+                return kEmptyStr;
+            }
+        }
     }
-    int end = int(str.length() - 1);
+    SIZE_TYPE end = length;
     if (where == eTrunc_End  ||  where == eTrunc_Both) {
-        while ( end >= 0  &&  isspace(str[end]) )
-            end--;
+        _ASSERT(end > beg);
+        do {
+            --end;
+        } while ( isspace(str[end]) );
+        _ASSERT(end >= beg && !isspace(str[end]));
+        ++end;
     }
-    _ASSERT( beg <= (SIZE_TYPE)end );
-    return str.substr(beg, end - beg + 1);
+    _ASSERT(beg < end);
+    if ( (beg - 0) | (end - length) ) { // if either beg != 0 or end != length
+        return str.substr(beg, end - beg);
+    }
+    else {
+        return str;
+    }
 }
 
 
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 {
-    if (str.empty()) return;
-
+    SIZE_TYPE length = str.length();
+    if ( length == 0 ) {
+        return;
+    }
     SIZE_TYPE beg = 0;
     if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
-        while (beg < str.length()  &&  isspace(str[beg]))
-            ++beg;
-        if (beg == str.length()) {
-            str.erase();
-            return;
+        // It's better to use str.data()[] to check string characters
+        // to avoid implicit modification of the string by non-const operator[].
+        _ASSERT(beg < length);
+        while ( isspace(str.data()[beg]) ) {
+            if ( ++beg == length ) {
+                str.erase();
+                return;
+            }
         }
     }
 
-    SIZE_TYPE end = str.length() - 1;
+    SIZE_TYPE end = length;
     if (where == eTrunc_End  ||  where == eTrunc_Both) {
-        while ( end > beg  &&  isspace(str[end]) )
+        // It's better to use str.data()[] to check string characters
+        // to avoid implicit modification of the string by non-const operator[].
+        _ASSERT(end > beg);
+        do {
             --end;
+        } while ( isspace(str.data()[end]) );
+        _ASSERT(end >= beg && !isspace(str.data()[end]));
+        ++end;
     }
-    _ASSERT(beg <= end);
+    _ASSERT(beg < end);
 
 #if defined(NCBI_COMPILER_GCC)  &&  (NCBI_COMPILER_VERSION == 304)
     // work around a library bug
-    str.replace(end + 1, str.size(), kEmptyStr);
+    str.replace(end, length, kEmptyStr);
     str.replace(0, beg, kEmptyStr);
 #else
-    str.replace(0, str.size(), str, beg, end - beg + 1);
+    if ( (beg - 0) | (end - length) ) { // if either beg != 0 or end != length
+        str.replace(0, length, str, beg, end - beg);
+    }
 #endif
 }
 
@@ -993,7 +1021,8 @@ string NStr::Replace(const string& src,
                      SIZE_TYPE start_pos, size_t max_replace)
 {
     string dst;
-    return Replace(src, search, replace, dst, start_pos, max_replace);
+    Replace(src, search, replace, dst, start_pos, max_replace);
+    return dst;
 }
 
 
@@ -1427,14 +1456,27 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         }
         arr.push_back(*pfx);
         {{ // eat backspaces and the characters (if any) that precede them
-            string::const_iterator begin = str.begin()+pos, end = str.begin()+best_pos, bs;
+            string::const_iterator begin = str.begin() + pos;
+            string::const_iterator end = str.begin() + best_pos;
+            string::const_iterator bs; // position of next backspace
             while ( (bs = find(begin, end, '\b')) != end ) {
                 if ( bs != begin ) {
+                    // add all except the last one
                     arr.back().append(begin, bs - 1);
                 }
+                else {
+                    // The backspace is at the beginning of next substring,
+                    // so we should remove previously added symbol if any.
+                    SIZE_TYPE size = arr.back().size();
+                    if ( size > pfx->size() ) { // current size > prefix size
+                        arr.back().resize(size - 1);
+                    }
+                }
+                // skip over backspace
                 begin = bs + 1;
             }
             if ( begin != end ) {
+                // add remaining characters
                 arr.back().append(begin, end);
             }
         }}
@@ -1710,6 +1752,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.137  2005/04/07 16:28:00  vasilche
+ * Take care of several sequential backspaces in Wrap().
+ * Allow return class value optimization in Replace().
+ * Optimized TruncateSpaces() and TruncateSpacesInPlace().
+ *
  * Revision 1.136  2005/04/07 13:47:59  shomrat
  * Wrap optimization
  *
