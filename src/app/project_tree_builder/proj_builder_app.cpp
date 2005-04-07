@@ -223,6 +223,9 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
+    m_AddMissingLibs = false;
+    m_ScanWholeTree  = true;
+    m_CurrentBuildTree = 0;
 }
 
 
@@ -257,6 +260,13 @@ void CProjBulderApp::Init(void)
     arg_desc->AddFlag      ("nobuildptb", 
                             "Exclude \"build PTB\" step from CONFIGURE project.");
 
+    arg_desc->AddFlag      ("ext", 
+                            "Use external libraries instead of missing in-tree ones.");
+    arg_desc->AddFlag      ("nws", 
+                            "Do not scan the whole source tree for missing projects.");
+    arg_desc->AddOptionalKey("extroot", "external_build_root",
+                             "Subtree in which to look for external libraries",
+                             CArgDescriptions::eString);
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -380,6 +390,9 @@ int CProjBulderApp::Run(void)
         LOG_POST(Info << str_log);
         
         // Projects
+        if ( m_AddMissingLibs ) {
+            m_CurrentBuildTree = &projects_tree;
+        }
         CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             prj_gen.Generate(p->second);
@@ -470,6 +483,9 @@ int CProjBulderApp::Run(void)
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
 
         // Projects
+        if ( m_AddMissingLibs ) {
+            m_CurrentBuildTree = &dll_projects_tree;
+        }
         CMsvcProjectGenerator prj_gen(dll_configs);
         ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
             prj_gen.Generate(p->second);
@@ -637,6 +653,12 @@ void CProjBulderApp::ParseArguments(void)
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
     LOG_POST(Info << "Solution: " << m_Solution);
     m_BuildPtb = !((bool)args["nobuildptb"]);
+
+    m_AddMissingLibs =   (bool)args["ext"];
+    m_ScanWholeTree  = !((bool)args["nws"]);
+    if ( const CArgValue& t = args["extroot"] ) {
+        m_BuildRoot = t.AsString();
+    }
 }
 
 
@@ -882,12 +904,16 @@ CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 {
     if ( !m_WholeTree.get() ) {
-        LOG_POST(Info << "*** Analyzing the whole tree makefiles ***");
         m_WholeTree.reset(new CProjectItemsTree);
-        CProjectDummyFilter pass_all_filter;
-        CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
-                                              GetProjectTreeInfo().m_Src, 
-                                              m_WholeTree.get());
+        if (m_ScanWholeTree) {
+            LOG_POST(Info << "*** Analyzing the whole tree makefiles ***");
+            CProjectDummyFilter pass_all_filter;
+            CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
+                                                GetProjectTreeInfo().m_Src, 
+                                                m_WholeTree.get());
+        } else {
+            LOG_POST(Info << "*** Skipping scanning the whole tree makefiles ***");
+        }
     }    
     return *m_WholeTree;
 }
@@ -956,6 +982,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/04/07 16:58:16  gouriano
+ * Make it possible to find and reference missing libraries
+ * without creating project dependencies
+ *
  * Revision 1.53  2005/03/23 19:33:20  gouriano
  * Make it possible to exclude PTB build when configuring
  *

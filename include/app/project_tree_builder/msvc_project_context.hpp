@@ -185,6 +185,10 @@ private:
     list<string> m_NcbiCLibs;
     
     EMakeFileType m_MakeType;
+    
+    string m_StaticLibRoot;
+    string m_DynamicLibRoot;
+    const CProjItem& m_Project;
 
     static map<string, set<string> > s_EnabledPackages;
     static map<string, set<string> > s_DisabledPackages;
@@ -538,6 +542,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/07 16:58:36  gouriano
+ * Make it possible to find and reference missing libraries
+ * without creating project dependencies
+ *
  * Revision 1.23  2005/02/14 18:52:45  gouriano
  * Generate a file with all features and packages listed
  *

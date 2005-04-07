@@ -47,6 +47,7 @@ map<string, set<string> > CMsvcPrjProjectContext::s_DisabledPackages;
 
 //-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
+    : m_Project(project)
 {
     m_MakeType = project.m_MakeType;
     //MSVC project name created from project type and project ID
@@ -109,6 +110,22 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                                       (GetApp().GetProjectTreeInfo().m_Src, 
                                       m_SourcesBaseDir));
         m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
+    }
+
+    string lib_dir = GetApp().GetBuildRoot();
+    if (lib_dir.empty()) {
+        lib_dir = GetApp().GetProjectTreeInfo().m_Compilers;
+        lib_dir = CDirEntry::ConcatPath(lib_dir, 
+                                        GetApp().GetRegSettings().m_CompilersSubdir);
+        lib_dir = CDirEntry::ConcatPath(lib_dir, 
+                                        GetApp().GetBuildType().GetTypeStr());
+    }
+    m_StaticLibRoot = CDirEntry::ConcatPath(lib_dir, "lib");
+    m_DynamicLibRoot = CDirEntry::ConcatPath(lib_dir, "bin");
+// sometimes there is no lib/bin separation -
+// all libs are put into $ConfigurationName folders of the build root
+    if (!CDirEntry(m_StaticLibRoot).Exists()) {
+        m_StaticLibRoot = m_DynamicLibRoot = lib_dir;
     }
 
     // Generate include dirs:
@@ -247,9 +264,10 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     string dir;
 
     // project dir
-    add_include_dirs_list.push_back 
-        (CDirEntry::CreateRelativePath(m_ProjectDir, 
-                                      GetApp().GetProjectTreeInfo().m_Include));
+    string tree_inc = CDirEntry::CreateRelativePath(m_ProjectDir, 
+        GetApp().GetProjectTreeInfo().m_Include);
+    tree_inc = CDirEntry::AddTrailingPathSeparator(tree_inc);
+    add_include_dirs_list.push_back( tree_inc );
     
     //take into account project include dirs
     ITERATE(list<string>, p, m_ProjectIncludeDirs) {
@@ -308,6 +326,29 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         }
     }
 
+    string ext_inc;
+    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    if (all_projects) {
+        string t, try_dir, inc_dir;
+        for ( t = try_dir = m_StaticLibRoot;; ) {
+            inc_dir = CDirEntry::ConcatPath(try_dir, 
+                GetApp().GetConfig().GetString("ProjectTree", "include", ""));
+            if (CDirEntry(inc_dir).Exists()) {
+                ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
+                ext_inc = CDirEntry::AddTrailingPathSeparator(ext_inc);
+                break;
+            }
+            t = CDirEntry(try_dir).GetDir();
+            if (t == try_dir) {
+                ext_inc = tree_inc;
+                break;
+            }
+            try_dir = t;
+        }
+        if (NStr::CompareNocase(tree_inc, ext_inc) != 0) {
+            add_include_dirs_list.push_back( ext_inc );
+        }
+    }
     //Leave only unique dirs and join them to string
 //    add_include_dirs_list.sort();
 //    add_include_dirs_list.unique();
@@ -356,9 +397,33 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         string ncbi_lib = *p + ".lib";
         additional_libs.push_back(ncbi_lib);        
     }
+
+    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    if (all_projects) {
+        string static_lib_dir  = CDirEntry::ConcatPath(m_StaticLibRoot, cfg_info.m_Name);
+        string dynamic_lib_dir = CDirEntry::ConcatPath(m_DynamicLibRoot, cfg_info.m_Name);
+        ITERATE(list<CProjKey>, n, m_Project.m_Depends) {
+            const CProjKey& depend_id = *n;
+            if (depend_id.Type() == CProjKey::eLib || depend_id.Type() == CProjKey::eDll) {
+                CProjectItemsTree::TProjects::const_iterator i =
+                    all_projects->m_Projects.find(depend_id);
+                if (i == all_projects->m_Projects.end()) {
+                    string lib_path = CDirEntry::ConcatPath(
+                        depend_id.Type() == CProjKey::eLib ? static_lib_dir : dynamic_lib_dir,
+                        depend_id.Id());
+                    lib_path += ".lib";
+                    CDirEntry lib(lib_path);
+                    if (!lib.Exists()) {
+                        LOG_POST(Error << "ERROR: Library not found:  " << lib_path);
+                    }
+                    additional_libs.push_back(lib.GetName());
+                }
+            }
+        }
+    }
+
     additional_libs.sort();
     additional_libs.unique();
-
     return NStr::Join(additional_libs, " ");
 }
 
@@ -373,11 +438,23 @@ string CMsvcPrjProjectContext::AdditionalLibrarianOptions
 string CMsvcPrjProjectContext::AdditionalLibraryDirectories
                                             (const SConfigInfo& cfg_info) const
 {
+    list<string> dir_list;
+// library folder
+    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    if (all_projects) {
+        string lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_StaticLibRoot);
+        lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
+        dir_list.push_back(lib_dir);
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_DynamicLibRoot);
+            lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
+            dir_list.push_back(lib_dir);
+        }
+    }
 
     // Take into account requires, default and makefiles libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
-    list<string> dir_list;
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
@@ -964,6 +1041,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/04/07 16:58:16  gouriano
+ * Make it possible to find and reference missing libraries
+ * without creating project dependencies
+ *
  * Revision 1.47  2005/02/14 18:52:29  gouriano
  * Generate a file with all features and packages listed
  *

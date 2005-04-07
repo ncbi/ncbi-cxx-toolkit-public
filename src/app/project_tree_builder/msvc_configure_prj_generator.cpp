@@ -202,6 +202,15 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if (!m_BuildPtb) {
         ofs << " -nobuildptb";
     }
+    if (GetApp().m_AddMissingLibs) {
+        ofs << " -ext";
+    }
+    if (!GetApp().m_ScanWholeTree) {
+        ofs << " -nws";
+    }
+    if (!GetApp().m_BuildRoot.empty()) {
+        ofs << " -extroot " << GetApp().m_BuildRoot;
+    }
 
     ofs << " -logfile %SLN_PATH%_configuration_log.txt"
         << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
@@ -211,14 +220,14 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
         << endl
         << "echo ******************************************************************************" << endl
         << "echo -CONFIGURE- has succeeded" << endl
-        << "echo Configuration log was saved at \"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
         << "echo ******************************************************************************" << endl
         << "exit 0" << endl
         << endl
         << ":report_error" << endl
         << "echo ******************************************************************************" << endl
         << "echo -CONFIGURE- has failed" << endl
-        << "echo Configuration log was saved at \"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
         << "echo ******************************************************************************" << endl
         << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "exit 1" << endl;
@@ -232,6 +241,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/04/07 16:58:16  gouriano
+ * Make it possible to find and reference missing libraries
+ * without creating project dependencies
+ *
  * Revision 1.18  2005/03/23 19:33:20  gouriano
  * Make it possible to exclude PTB build when configuring
  *

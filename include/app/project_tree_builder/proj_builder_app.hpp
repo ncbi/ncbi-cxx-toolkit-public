@@ -101,6 +101,12 @@ private:
     auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
     bool m_BuildPtb;
 
+    const CProjectItemsTree*    m_CurrentBuildTree;
+public:
+    bool m_AddMissingLibs;
+    bool m_ScanWholeTree;
+    string m_BuildRoot;
+
 public:
 
     void GetMetaDataFiles(list<string>* files) const;
@@ -118,7 +124,15 @@ public:
 
           CMsvcDllsInfo&     GetDllsInfo       (void);
 
+    const string&            GetBuildRoot      (void) const
+    {
+        return m_BuildRoot;
+    }
     const CProjectItemsTree& GetWholeTree      (void);
+    const CProjectItemsTree* GetCurrentBuildTree(void) const
+    {
+        return m_CurrentBuildTree;
+    }
 
     CDllSrcFilesDistr&       GetDllFilesDistr  (void);
 
@@ -189,6 +203,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/07 16:58:36  gouriano
+ * Make it possible to find and reference missing libraries
+ * without creating project dependencies
+ *
  * Revision 1.20  2005/03/23 19:32:32  gouriano
  * Make it possible to exclude PTB build when configuring
  *
