@@ -652,8 +652,8 @@ void CGenbankFormatter::FormatSequence
         line[0] = '\0';
         linep = line;
 
-        sprintf(line, "%9ld", (long)base_count);
-        linep += 9;
+        linep += sprintf(line, "%9lu", (unsigned long)base_count);
+        //linep += 9;
         
         // 60 bases in a line, a space between every 10 bases.
         for (i = 0; iter  &&  total > 0  &&  i < 6; ++i) {
@@ -832,8 +832,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/04/07 18:24:04  shomrat
+* Fixed sequence formatting
+*
 * Revision 1.30  2005/03/29 18:18:09  shomrat
-* Format barcode comment
+* Use
 *
 * Revision 1.29  2005/03/28 21:27:23  ucko
 * If we must use sprintf(), #include <stdio.h> for it.
