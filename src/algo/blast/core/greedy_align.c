@@ -44,23 +44,25 @@ static char const rcsid[] =
 
 /** see greedy_align.h for description */
 SMBSpace* 
-MBSpaceNew()
+MBSpaceNew(int num_space_arrays)
 {
     SMBSpace* new_space;
-    const Int4 kMaxSpace = 1000000; 
+    const Int4 kMinSpace = 1000000; 
+
+    num_space_arrays = MAX(kMinSpace, num_space_arrays);
 
     new_space = (SMBSpace*)malloc(sizeof(SMBSpace));
     if (new_space == NULL)
         return NULL;
 
     new_space->space_array = (SGreedyOffset*)malloc(
-                                   kMaxSpace * sizeof(SGreedyOffset));
+                                   num_space_arrays * sizeof(SGreedyOffset));
     if (new_space->space_array == NULL) {
         sfree(new_space);
         return NULL;
     }
     new_space->space_used = 0; 
-    new_space->space_allocated = kMaxSpace;
+    new_space->space_allocated = num_space_arrays;
     new_space->next = NULL;
 
     return new_space;
@@ -106,11 +108,11 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
         return NULL;  
     
     /** @todo FIXME: Calling code must never ask for more
-        than kMaxSpace structures (defined in MBSpaceNew()) */
+        than kMinSpace structures (defined in MBSpaceNew()) */
 
     while (pool->space_used + num_alloc > pool->space_allocated) {
        if (pool->next == NULL) {
-          pool->next = MBSpaceNew();
+          pool->next = MBSpaceNew(num_alloc);
           if (pool->next == NULL) {
 #ifdef ERR_POST_EX_DEFINED
              ErrPostEx(SEV_WARNING, 0, 0, "Cannot get new space for greedy extension");
@@ -390,7 +392,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
        mem_pool = NULL;
     } 
     else if (mem_pool == NULL) {
-       aux_data->space = mem_pool = MBSpaceNew();
+       aux_data->space = mem_pool = MBSpaceNew(0);
     } 
     else { 
         s_RefreshMBSpace(mem_pool);
@@ -861,7 +863,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
         mem_pool = NULL;
     } 
     else if (!mem_pool) {
-       aux_data->space = mem_pool = MBSpaceNew();
+       aux_data->space = mem_pool = MBSpaceNew(0);
     } 
     else { 
         s_RefreshMBSpace(mem_pool);

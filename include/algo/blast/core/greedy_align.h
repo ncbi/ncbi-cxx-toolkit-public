@@ -67,9 +67,13 @@ typedef struct SMBSpace {
 } SMBSpace;
 
 /** Allocate a space structure for greedy alignment
-    @return Pointer to allocated structure, or NULL upon failure
-*/
-SMBSpace* MBSpaceNew(void);
+ *  At least num_space_arrays will be allocated, possibly more if the
+ *  number is low.
+ *
+ *  @param num_space_arrays number of array elements to allocated [in]
+ *  @return Pointer to allocated structure, or NULL upon failure
+ */
+SMBSpace* MBSpaceNew(int num_space_arrays);
 
 /** Free the space structure 
     @param sp Linked list of structures to free
