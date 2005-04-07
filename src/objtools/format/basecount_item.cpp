@@ -83,12 +83,12 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     ITERATE (CSeqVector, it, v) {
-        ++counters[static_cast<CSeqVector_CI::TResidue>(toupper(*it))];
+        ++counters[static_cast<CSeqVector_CI::TResidue>(*it)];
     }
-    m_A = counters[Uchar('A')];
-    m_C = counters[Uchar('C')];
-    m_G = counters[Uchar('G')];
-    m_T = counters[Uchar('T')];
+    m_A = counters[Uchar('A')] + counters[Uchar('a')];
+    m_C = counters[Uchar('C')] + counters[Uchar('c')];
+    m_G = counters[Uchar('G')] + counters[Uchar('g')];
+    m_T = counters[Uchar('T')] + counters[Uchar('t')];
     m_Other = v.size() - m_A - m_C - m_G - m_T;
 }
 
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/04/07 18:19:37  shomrat
+* Removed toupper
+*
 * Revision 1.7  2005/03/28 17:17:17  shomrat
 * Optimizing base count
 *
