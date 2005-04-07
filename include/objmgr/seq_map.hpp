@@ -299,10 +299,16 @@ protected:
     // index of last resolved segment position
     mutable size_t   m_Resolved;
     
+    // representation object of the sequence
     CRef<CObject>    m_Delta;
 
     // Molecule type from seq-inst
     TMol    m_Mol;
+
+    // segments' flags
+    typedef Uint1 THasSegments;
+    mutable THasSegments m_HasSegments;
+
     // Sequence length
     mutable TSeqPos m_SeqLength;
 

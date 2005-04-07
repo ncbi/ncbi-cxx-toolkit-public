@@ -87,6 +87,7 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 CSeqMap::CSeqMap(void)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
+      m_HasSegments(0),
       m_SeqLength(kInvalidSeqPos)
 {
 }
@@ -95,6 +96,7 @@ CSeqMap::CSeqMap(void)
 CSeqMap::CSeqMap(CSeqMap* /*parent*/, size_t /*index*/)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
+      m_HasSegments(0),
       m_SeqLength(kInvalidSeqPos)
 {
 }
@@ -103,6 +105,7 @@ CSeqMap::CSeqMap(CSeqMap* /*parent*/, size_t /*index*/)
 CSeqMap::CSeqMap(const CSeq_loc& ref)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
+      m_HasSegments(0),
       m_SeqLength(kInvalidSeqPos)
 {
     x_AddEnd();
@@ -114,6 +117,7 @@ CSeqMap::CSeqMap(const CSeq_loc& ref)
 CSeqMap::CSeqMap(const CSeq_data& data, TSeqPos length)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
+      m_HasSegments(0),
       m_SeqLength(kInvalidSeqPos)
 {
     x_AddEnd();
@@ -125,6 +129,7 @@ CSeqMap::CSeqMap(const CSeq_data& data, TSeqPos length)
 CSeqMap::CSeqMap(TSeqPos length)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
+      m_HasSegments(0),
       m_SeqLength(length)
 {
     x_AddEnd();
@@ -480,12 +485,14 @@ CSeqMap_CI CSeqMap::ResolvedRangeIterator(CScope* scope,
 
 bool CSeqMap::HasSegmentOfType(ESegmentType type) const
 {
-    ITERATE ( TSegments, it, m_Segments ) {
-        if ( it->m_SegType == type ) {
-            return true;
+    if ( m_HasSegments == 0 ) {
+        THasSegments flags = 0;
+        ITERATE ( TSegments, it, m_Segments ) {
+            flags |= 1<<it->m_SegType;
         }
+        m_HasSegments = flags;
     }
-    return false;
+    return bool((m_HasSegments >> type) & 1);
 }
 
 
