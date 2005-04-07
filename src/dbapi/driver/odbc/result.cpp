@@ -87,6 +87,7 @@ CODBC_RowResult::CODBC_RowResult(
     , m_RowCountPtr( row_count )
 {
     m_NofCols = nof_cols;
+    if(m_RowCountPtr) *m_RowCountPtr= 0;
 
     SQLSMALLINT actual_name_size, nullable;
 
@@ -1030,6 +1031,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/07 18:09:04  soussov
+ * fixes bug with RowCount in RowResult
+ *
  * Revision 1.16  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
