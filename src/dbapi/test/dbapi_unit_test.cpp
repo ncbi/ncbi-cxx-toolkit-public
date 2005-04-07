@@ -272,6 +272,9 @@ CDBAPIUnitTest::CheckGetRowCount2(int row_count, ETransBehavior tb)
         CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
     }
 
+    // Workaround for the CTLIB driver ...
+    m_Stmt->ClearParamList();
+
     // Check a SELECT statement
     {
         sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
@@ -1400,6 +1403,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/04/07 15:42:23  ssikorsk
+ * Workaround for the CTLIB driver
+ *
  * Revision 1.9  2005/04/07 14:55:24  ssikorsk
  * Fixed a GCC compilation error
  *
