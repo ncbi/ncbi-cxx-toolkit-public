@@ -262,7 +262,13 @@ int CGridWorkerApp::Run(void)
                  << "Maximum job threads is " << max_threads << "\n");
 
         CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
-        control_server.Run();
+        try {
+            control_server.Run();
+        }
+        catch (exception& ex) {
+            ERR_POST( "Couldn't run a Threaded server: " << ex.what()  << "\n");
+            RequestShutdown();
+        }
     }
     worker_thread->Join();
     }}
@@ -283,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/07 13:19:17  didenko
+ * Fixed a bug that could cause a core dump
+ *
  * Revision 1.7  2005/04/05 15:16:20  didenko
  * Fixed a bug that in some cases can lead to a core dump
  *
