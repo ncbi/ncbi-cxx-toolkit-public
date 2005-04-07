@@ -263,7 +263,7 @@ CDBAPIUnitTest::CheckGetRowCount2(int row_count, ETransBehavior tb)
     sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( @value ) \n";
 
     // Insert row_count records into the table ...
-    for ( long i = 0; i < row_count; ++i ) {
+    for ( Int4 i = 0; i < row_count; ++i ) {
         m_Stmt->SetParam(CVariant(i), "@value");
         m_Stmt->ExecuteUpdate(sql);
         int nRows = m_Stmt->GetRowCount();
@@ -1400,6 +1400,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/04/07 14:55:24  ssikorsk
+ * Fixed a GCC compilation error
+ *
  * Revision 1.8  2005/04/07 14:07:16  ssikorsk
  * Added CheckGetRowCount2
  *
