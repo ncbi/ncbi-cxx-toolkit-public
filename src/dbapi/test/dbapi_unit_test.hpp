@@ -85,8 +85,14 @@ public:
     // Testing Approach for Members
     // Test particular methods.
     void TestGetRowCount();
-    void CheckGetRowCount(int row_count, ETransBehavior tb = eNoTrans);
-    void CheckGetRowCount2(int row_count, ETransBehavior tb = eNoTrans);
+    void CheckGetRowCount(
+        IStatement* const stmt, 
+        int row_count, 
+        ETransBehavior tb = eNoTrans);
+    void CheckGetRowCount2(
+        IStatement* const stmt, 
+        int row_count, 
+        ETransBehavior tb = eNoTrans);
 
     void Test_Bind(void);
     void Test_Execute(void);
@@ -116,7 +122,6 @@ private:
     CDriverManager& m_DM;
     IDataSource* m_DS;
     auto_ptr<IConnection> m_Conn;
-    auto_ptr<IStatement> m_Stmt;
     TDatabaseParameters  m_DatabaseParameters;
 
 private:
@@ -141,6 +146,11 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/04/07 19:16:03  ssikorsk
+ * Added two different test patterns:
+ * 1) New/dedicated statement for each test;
+ * 2) Reusable statement for all tests;
+ *
  * Revision 1.7  2005/04/07 14:07:16  ssikorsk
  * Added CheckGetRowCount2
  *

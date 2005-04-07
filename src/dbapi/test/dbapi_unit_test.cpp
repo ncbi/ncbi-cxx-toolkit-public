@@ -47,6 +47,12 @@ BEGIN_NCBI_SCOPE
 CPPUNIT_TEST_SUITE_REGISTRATION( CDBAPIUnitTest );
 
 ///////////////////////////////////////////////////////////////////////////////
+// Patterns to test:
+//      I) Statement:
+//          1) New/dedicated statement for each test
+//          2) Reusable statement for all tests
+
+///////////////////////////////////////////////////////////////////////////////
 enum EServerType {
     eUnknown,   //< Server type is not known
     eSybase,    //< Sybase server
@@ -145,10 +151,11 @@ CDBAPIUnitTest::setUp()
         SetDatabaseParameters();
         m_DS = m_DM.CreateDs( DriverName, &m_DatabaseParameters );
     }
-    m_Stmt.release();
+
     m_Conn.reset( m_DS->CreateConnection() );
     m_Conn->Connect( GetUserName(), GetUserPassword(), GetServerName(), "DBAPI_Sample" );
-    m_Stmt.reset( m_Conn->CreateStatement() );
+
+    auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
     // Create a test table ...
     string sql;
@@ -158,7 +165,7 @@ CDBAPIUnitTest::setUp()
     sql += " )";
 
     // Create the table
-    m_Stmt->ExecuteUpdate(sql);
+    stmt->ExecuteUpdate(sql);
 }
 
 void
@@ -173,20 +180,57 @@ CDBAPIUnitTest::TestGetRowCount()
     enum {repeat_num = 5};
 
     for ( int i = 0; i < repeat_num; ++i ) {
-        CheckGetRowCount( i, eNoTrans );
-        CheckGetRowCount( i, eTransCommit );
-        CheckGetRowCount( i, eTransRollback );
+        // Shared/Reusable statement
+        {
+            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+
+            CheckGetRowCount( stmt.get(), i, eNoTrans );
+            CheckGetRowCount( stmt.get(), i, eTransCommit );
+            CheckGetRowCount( stmt.get(), i, eTransRollback );
+        }
+        // Dedicated statement
+        {
+            CheckGetRowCount( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eNoTrans );
+            CheckGetRowCount( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eTransCommit );
+            CheckGetRowCount( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eTransRollback );
+        }
     }
 
     for ( int i = 0; i < repeat_num; ++i ) {
-        CheckGetRowCount2( i, eNoTrans );
-        CheckGetRowCount2( i, eTransCommit );
-        CheckGetRowCount2( i, eTransRollback );
+        // Shared/Reusable statement
+        {
+            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+
+            CheckGetRowCount2( stmt.get(), i, eNoTrans );
+            CheckGetRowCount2( stmt.get(), i, eTransCommit );
+            CheckGetRowCount2( stmt.get(), i, eTransRollback );
+        }
+        // Dedicated statement
+        {
+            CheckGetRowCount2( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eNoTrans );
+            CheckGetRowCount2( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eTransCommit );
+            CheckGetRowCount2( 
+                auto_ptr<IStatement>( m_Conn->GetStatement() ).get(), 
+                i, eTransRollback );
+        }
     }
 }
 
 void
-CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
+CDBAPIUnitTest::CheckGetRowCount(
+    IStatement* const stmt, 
+    int row_count, 
+    ETransBehavior tb)
 {
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
@@ -195,17 +239,17 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
 
     // Insert row_count records into the table ...
     for ( int i = 0; i < row_count; ++i ) {
-        m_Stmt->ExecuteUpdate(sql);
-        int nRows = m_Stmt->GetRowCount();
+        stmt->ExecuteUpdate(sql);
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows, 1 );
     }
 
     // Check a SELECT statement
     {
         sql  = " SELECT * FROM " + m_TableName;
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
@@ -213,9 +257,9 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
     // Check an UPDATE statement
     {
         sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
@@ -223,9 +267,9 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
     // Check a SELECT statement again
     {
         sql  = " SELECT * FROM " + m_TableName + " WHERE int_val = 0";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
@@ -233,9 +277,9 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
     // Check a DELETE statement
     {
         sql  = " DELETE FROM " + m_TableName;
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
@@ -243,9 +287,9 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
     // Check a SELECT statement again and again ...
     {
         sql  = " SELECT * FROM " + m_TableName;
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
     }
@@ -253,97 +297,102 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
 }
 
 void
-CDBAPIUnitTest::CheckGetRowCount2(int row_count, ETransBehavior tb)
+CDBAPIUnitTest::CheckGetRowCount2(
+    IStatement* const stmt, 
+    int row_count, 
+    ETransBehavior tb)
 {
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
     // auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
-    // _ASSERT(stmt.get());
+    // _ASSERT(stmt->get());
     string sql;
     sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( @value ) \n";
 
     // Insert row_count records into the table ...
     for ( Int4 i = 0; i < row_count; ++i ) {
-        m_Stmt->SetParam(CVariant(i), "@value");
-        m_Stmt->ExecuteUpdate(sql);
-        int nRows = m_Stmt->GetRowCount();
+        stmt->SetParam(CVariant(i), "@value");
+        stmt->ExecuteUpdate(sql);
+
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows, 1 );
-        int nRows2 = m_Stmt->GetRowCount();
+
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
     }
 
     // Workaround for the CTLIB driver ...
-    m_Stmt->ClearParamList();
+    stmt->ClearParamList();
 
     // Check a SELECT statement
     {
         sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check an UPDATE statement
     {
         sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a SELECT statement again
     {
         sql  = " SELECT int_val, int_val FROM " + m_TableName + " WHERE int_val = 0";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement
     {
         sql  = " DELETE FROM " + m_TableName;
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement again
     {
         sql  = " DELETE FROM " + m_TableName;
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
     }
 
     // Check a SELECT statement again and again ...
     {
         sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
-        m_Stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate(sql);
 
-        int nRows = m_Stmt->GetRowCount();
+        int nRows = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
 
-        int nRows2 = m_Stmt->GetRowCount();
+        int nRows2 = stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
     }
 
@@ -1403,6 +1452,11 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/04/07 19:16:03  ssikorsk
+ * Added two different test patterns:
+ * 1) New/dedicated statement for each test;
+ * 2) Reusable statement for all tests;
+ *
  * Revision 1.10  2005/04/07 15:42:23  ssikorsk
  * Workaround for the CTLIB driver
  *
