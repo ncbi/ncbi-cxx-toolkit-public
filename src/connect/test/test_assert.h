@@ -57,6 +57,14 @@
  * and in debug libraries, as well as all General Protection Fault messages.
  * Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
  */
+
+/* Handler for "Unhandled" exceptions */
+static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
+{
+    /* Always terminate a program */
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
 static int _SuppressDiagPopupMessages(void)
 {
     /* Check environment variable for silent abort app at error */
@@ -76,6 +84,9 @@ static int _SuppressDiagPopupMessages(void)
         _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
         _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+
+        /* Exceptions */
+        SetUnhandledExceptionFilter(_SEH_Handler);
     }
     return 0;
 }
@@ -131,6 +142,9 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2005/04/07 16:27:30  ivanov
+ * _SuppressDiagPopupMessages(): added handling of "Unhandled" exceptions
+ *
  * Revision 6.24  2005/02/22 19:49:55  ivanov
  * Added more suppress modes for SetErrorMode()
  *
