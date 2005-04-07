@@ -410,6 +410,8 @@ public:
         : TParent(max_threads, queue_size, 
                   spawn_threshold,max_urgent_threads) {}
 
+    virtual ~CStdPoolOfThreads();
+
     /// Causes all threads in the pool to exit cleanly after finishing
     /// all pending requests, optionally waiting for them to die.
     ///
@@ -662,6 +664,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/04/07 13:12:45  didenko
+* + destructor to CStdPoolOfThreads call
+*
 * Revision 1.21  2005/03/29 21:19:23  ucko
 * Make CBlockingQueue::SQueueItemGreater a friend of its parent so
 * WorkShop will let it see CQueueItem.
