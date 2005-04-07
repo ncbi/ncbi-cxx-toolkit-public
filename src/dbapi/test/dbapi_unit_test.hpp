@@ -86,6 +86,7 @@ public:
     // Test particular methods.
     void TestGetRowCount();
     void CheckGetRowCount(int row_count, ETransBehavior tb = eNoTrans);
+    void CheckGetRowCount2(int row_count, ETransBehavior tb = eNoTrans);
 
     void Test_Bind(void);
     void Test_Execute(void);
@@ -140,6 +141,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/04/07 14:07:16  ssikorsk
+ * Added CheckGetRowCount2
+ *
  * Revision 1.6  2005/02/16 21:46:40  ssikorsk
  * Improved CVariant test
  *

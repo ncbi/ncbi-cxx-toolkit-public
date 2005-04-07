@@ -170,10 +170,18 @@ CDBAPIUnitTest::tearDown()
 void
 CDBAPIUnitTest::TestGetRowCount()
 {
-    for ( int i = 0; i < 5; ++i ) {
+    enum {repeat_num = 5};
+
+    for ( int i = 0; i < repeat_num; ++i ) {
         CheckGetRowCount( i, eNoTrans );
         CheckGetRowCount( i, eTransCommit );
         CheckGetRowCount( i, eTransRollback );
+    }
+
+    for ( int i = 0; i < repeat_num; ++i ) {
+        CheckGetRowCount2( i, eNoTrans );
+        CheckGetRowCount2( i, eTransCommit );
+        CheckGetRowCount2( i, eTransRollback );
     }
 }
 
@@ -240,6 +248,100 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
         int nRows = m_Stmt->GetRowCount();
 
         CPPUNIT_ASSERT_EQUAL( 0, nRows );
+    }
+
+}
+
+void
+CDBAPIUnitTest::CheckGetRowCount2(int row_count, ETransBehavior tb)
+{
+    // Transaction ...
+    CTestTransaction transaction(*m_Conn, tb);
+    // auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
+    // _ASSERT(stmt.get());
+    string sql;
+    sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( @value ) \n";
+
+    // Insert row_count records into the table ...
+    for ( long i = 0; i < row_count; ++i ) {
+        m_Stmt->SetParam(CVariant(i), "@value");
+        m_Stmt->ExecuteUpdate(sql);
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( nRows, 1 );
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
+    }
+
+    // Check a SELECT statement
+    {
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+    }
+
+    // Check an UPDATE statement
+    {
+        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+    }
+
+    // Check a SELECT statement again
+    {
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " WHERE int_val = 0";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+    }
+
+    // Check a DELETE statement
+    {
+        sql  = " DELETE FROM " + m_TableName;
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+    }
+
+    // Check a DELETE statement again
+    {
+        sql  = " DELETE FROM " + m_TableName;
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
+    }
+
+    // Check a SELECT statement again and again ...
+    {
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+
+        int nRows2 = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
     }
 
 }
@@ -1298,6 +1400,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/04/07 14:07:16  ssikorsk
+ * Added CheckGetRowCount2
+ *
  * Revision 1.7  2005/03/08 17:59:48  ssikorsk
  * Fixed GCC warnings
  *
