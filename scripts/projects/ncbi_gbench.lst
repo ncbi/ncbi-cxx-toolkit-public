@@ -12,6 +12,7 @@ app/project_tree_builder
 bdb$
 cgi$
 connect$
+connect/ext$
 connect/services$
 corelib$
 dbapi$
