@@ -65,9 +65,12 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     string ptb_path_par = "$(ProjectDir)" + 
                            CDirEntry::AddTrailingPathSeparator
                                  (CDirEntry::CreateRelativePath(m_ProjectDir, 
-                                                                m_OutputDir))+ 
-                          "Release";
-//                          "$(ConfigurationName)";
+                                                                m_OutputDir));
+    if (m_BuildPtb) {
+        ptb_path_par += "Release";
+    } else {
+        ptb_path_par += "$(ConfigurationName)";
+    }
 
     string tree_root_par = "$(ProjectDir)" + 
                            CDirEntry::AddTrailingPathSeparator
@@ -241,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/08 19:08:53  gouriano
+ * Use configuration-dependent PTB when it is not to be built
+ *
  * Revision 1.19  2005/04/07 16:58:16  gouriano
  * Make it possible to find and reference missing libraries
  * without creating project dependencies
