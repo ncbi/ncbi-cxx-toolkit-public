@@ -120,7 +120,7 @@ NetCache_ConfigureWithLB(
                     int              backup_mode_mask)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
-#if 0
+#if 1
     SERV_ITER srv_it = SERV_Open(service_name.c_str(),
         fSERV_Any, SERV_LOCALHOST, net_info);
 #else
@@ -440,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/08 13:23:32  kuznets
+ * Temp commented out local serv preference (problem on Win)
+ *
  * Revision 1.15  2005/04/07 13:52:35  kuznets
  * NetCache_ConfigureWithLB() made static, favor local host choosing netcache server
  *
