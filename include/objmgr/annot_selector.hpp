@@ -38,6 +38,7 @@
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/tse_handle.hpp>
 
+#include <bitset>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -376,7 +377,7 @@ protected:
     void x_InitializeAnnotTypesSet(bool default_value);
     void x_ClearAnnotTypesSet(void);
 
-    typedef vector<bool> TAnnotTypesSet;
+    typedef bitset<CSeqFeatData::eSubtype_max+2> TAnnotTypesBitset;
     typedef vector<CTSE_Handle> TTSE_Limits;
 
     bool                  m_FeatProduct;  // "true" for searching products
@@ -405,7 +406,7 @@ protected:
     bool                  m_CollectSeq_annots;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
-    TAnnotTypesSet        m_AnnotTypesSet;
+    TAnnotTypesBitset        m_AnnotTypesBitset;
 };
 
 
@@ -418,6 +419,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/04/08 14:31:26  grichenk
+* Changed TAnnotTypesSet from vector to bitset
+*
 * Revision 1.45  2005/03/17 17:52:27  grichenk
 * Added flag to SAnnotSelector for skipping multiple SNPs from the same
 * seq-annot. Optimized CAnnotCollector::GetAnnot().

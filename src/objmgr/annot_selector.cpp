@@ -141,7 +141,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ExcludeExternal = sel.m_ExcludeExternal;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
-        m_AnnotTypesSet = sel.m_AnnotTypesSet;
+        m_AnnotTypesBitset = sel.m_AnnotTypesBitset;
     }
     return *this;
 }
@@ -386,24 +386,28 @@ bool SAnnotSelector::ExcludedTSE(const CSeq_entry_Handle& tse) const
 
 void SAnnotSelector::x_ClearAnnotTypesSet(void)
 {
-    m_AnnotTypesSet.clear();
+    m_AnnotTypesBitset.reset();
 }
 
 
 void SAnnotSelector::x_InitializeAnnotTypesSet(bool default_value)
 {
-    if ( !m_AnnotTypesSet.empty() ) {
+    if ( m_AnnotTypesBitset.any() ) {
         return;
     }
-    m_AnnotTypesSet.resize(CAnnotType_Index::GetAnnotTypeRange(
-        CSeq_annot::C_Data::e_Ftable).second, default_value);
+    if ( default_value ) {
+        m_AnnotTypesBitset.set();
+    }
+    else {
+        m_AnnotTypesBitset.reset();
+    }
     // Do not try to use flags from an uninitialized selector
     if (GetAnnotType() != CSeq_annot::C_Data::e_not_set) {
         // Copy current state to the set
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetIndexRange(*this);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesSet[i] = true;
+            m_AnnotTypesBitset.set(i);
         }
     }
     // Do not call this->SetAnnotType() -- it will reset the types set.
@@ -422,7 +426,7 @@ SAnnotSelector& SAnnotSelector::IncludeAnnotType(TAnnotType type)
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetAnnotTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesSet[i] = true;
+            m_AnnotTypesBitset.set(i);
         }
     }
     return *this;
@@ -437,7 +441,7 @@ SAnnotSelector& SAnnotSelector::ExcludeAnnotType(TAnnotType type)
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetAnnotTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesSet[i] = false;
+            m_AnnotTypesBitset.reset(i);
         }
     }
     return *this;
@@ -454,7 +458,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesSet[i] = true;
+            m_AnnotTypesBitset.set(i);
         }
     }
     return *this;
@@ -469,7 +473,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesSet[i] = false;
+            m_AnnotTypesBitset.test(i);
         }
     }
     return *this;
@@ -483,7 +487,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatSubtype(TFeatSubtype subtype)
     }
     else if ( !IncludedFeatSubtype(subtype) ) {
         x_InitializeAnnotTypesSet(false);
-        m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = true;
+        m_AnnotTypesBitset.set(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     return *this;
 }
@@ -494,7 +498,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  IncludedFeatSubtype(subtype)) {
         x_InitializeAnnotTypesSet(true);
-        m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = false;
+        m_AnnotTypesBitset.reset(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     return *this;
 }
@@ -504,14 +508,14 @@ SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
 {
     if ( type == CSeq_annot::C_Data::e_Ftable ) {
         // Remove all non-feature types from the list
-        if ( !m_AnnotTypesSet.empty() ) {
+        if ( m_AnnotTypesBitset.any() ) {
             CAnnotType_Index::TIndexRange range =
                 CAnnotType_Index::GetAnnotTypeRange(type);
             for (size_t i = 0; i < range.first; ++i) {
-                m_AnnotTypesSet[i] = false;
+                m_AnnotTypesBitset.reset(i);
             }
-            for (size_t i = range.second; i < m_AnnotTypesSet.size(); ++i) {
-                m_AnnotTypesSet[i] = false;
+            for (size_t i = range.second; i < m_AnnotTypesBitset.size(); ++i) {
+                m_AnnotTypesBitset.reset(i);
             }
         }
         else {
@@ -528,11 +532,11 @@ SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
 
 bool SAnnotSelector::IncludedAnnotType(TAnnotType type) const
 {
-    if ( !m_AnnotTypesSet.empty() ) {
+    if ( m_AnnotTypesBitset.any() ) {
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetAnnotTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            if (m_AnnotTypesSet[i]) {
+            if ( m_AnnotTypesBitset.test(i) ) {
                 return true;
             }
         }
@@ -545,11 +549,11 @@ bool SAnnotSelector::IncludedAnnotType(TAnnotType type) const
 
 bool SAnnotSelector::IncludedFeatType(TFeatType type) const
 {
-    if ( !m_AnnotTypesSet.empty() ) {
+    if ( m_AnnotTypesBitset.any() ) {
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            if (m_AnnotTypesSet[i]) {
+            if ( m_AnnotTypesBitset.test(i) ) {
                 return true;
             }
         }
@@ -562,8 +566,9 @@ bool SAnnotSelector::IncludedFeatType(TFeatType type) const
 
 bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
 {
-    if ( !m_AnnotTypesSet.empty() ) {
-        return m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)];
+    if ( m_AnnotTypesBitset.any() ) {
+        return m_AnnotTypesBitset
+            .test(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     return GetFeatSubtype() == subtype
         ||  GetFeatSubtype() == CSeqFeatData::eSubtype_any;
@@ -588,6 +593,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/04/08 14:31:26  grichenk
+* Changed TAnnotTypesSet from vector to bitset
+*
 * Revision 1.23  2005/03/24 16:12:59  grichenk
 * Code cleanup (size() -> empty() etc.)
 *

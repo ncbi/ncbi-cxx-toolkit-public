@@ -1514,7 +1514,7 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                                        const CHandleRange&   hr,
                                        CSeq_loc_Conversion*  cvt)
 {
-    if (m_Selector.m_AnnotTypesSet.size() == 0) {
+    if ( !m_Selector.m_AnnotTypesBitset.any() ) {
         pair<size_t, size_t> range =
             CAnnotType_Index::GetIndexRange(m_Selector, *objs);
         if ( range.first < range.second ) {
@@ -1527,7 +1527,7 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
         bool last_bit = false;
         bool cur_bit;
         for (size_t idx = 0; idx < objs->x_GetRangeMapCount(); ++idx) {
-            cur_bit = m_Selector.m_AnnotTypesSet[idx];
+            cur_bit = m_Selector.m_AnnotTypesBitset.test(idx);
             if (!last_bit  &&  cur_bit) {
                 // open range
                 range.first = idx;
@@ -2058,6 +2058,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2005/04/08 14:31:26  grichenk
+* Changed TAnnotTypesSet from vector to bitset
+*
 * Revision 1.56  2005/04/05 13:42:51  vasilche
 * Optimized annotation iterator from CBioseq_Handle.
 *
