@@ -46,16 +46,31 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
+CDriverManager* CDriverManager::sm_Instance = 0;
+DEFINE_CLASS_STATIC_MUTEX(CDriverManager::sm_Mutex);
+
 CDriverManager& CDriverManager::GetInstance()
 {
-   static CSafeStaticPtr<CDriverManager> instance;
+//    static CSafeStaticPtr<CDriverManager> instance;
+//
+//    return instance.Get();
 
-   return instance.Get();
+   if ( !sm_Instance ) {
+       CMutexGuard GUARD(sm_Mutex);
+       // Check again with the lock to avoid races
+       if ( !sm_Instance ) {
+           sm_Instance = new CDriverManager;
+       }
+   }
+   return *sm_Instance;
 }
 
 
 void CDriverManager::RemoveInstance()
 {
+    CMutexGuard GUARD(sm_Mutex);
+    delete sm_Instance;
+    sm_Instance = 0;
 }
 
 
@@ -156,6 +171,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.19  2005/04/08 16:51:28  ssikorsk
+* Restored a previous CDriverManager::GetInstance logic because of ctlib issues
+*
 * Revision 1.18  2005/04/07 14:43:43  ssikorsk
 * CDriverManager::GetInstance uses CSafeStaticPtr now
 *
