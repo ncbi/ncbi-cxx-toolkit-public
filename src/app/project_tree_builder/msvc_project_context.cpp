@@ -117,9 +117,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         lib_dir = GetApp().GetProjectTreeInfo().m_Compilers;
         lib_dir = CDirEntry::ConcatPath(lib_dir, 
                                         GetApp().GetRegSettings().m_CompilersSubdir);
-        lib_dir = CDirEntry::ConcatPath(lib_dir, 
-                                        GetApp().GetBuildType().GetTypeStr());
     }
+    lib_dir = CDirEntry::ConcatPath(lib_dir, 
+                                    GetApp().GetBuildType().GetTypeStr());
     m_StaticLibRoot = CDirEntry::ConcatPath(lib_dir, "lib");
     m_DynamicLibRoot = CDirEntry::ConcatPath(lib_dir, "bin");
 // sometimes there is no lib/bin separation -
@@ -1041,6 +1041,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/04/08 17:30:24  gouriano
+ * Made library search path to depend on build type
+ *
  * Revision 1.48  2005/04/07 16:58:16  gouriano
  * Make it possible to find and reference missing libraries
  * without creating project dependencies
