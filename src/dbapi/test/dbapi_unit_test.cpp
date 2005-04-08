@@ -40,6 +40,8 @@
 
 #include "dbapi_unit_test.hpp"
 
+#include <test/test_assert.h>  /* This header must go last */
+
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1573,6 +1575,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/04/08 15:50:00  ssikorsk
+ * Included test/test_assert.h
+ *
  * Revision 1.12  2005/04/07 20:29:12  ssikorsk
  * Added more dedicated statements to each test
  *
