@@ -1,6 +1,6 @@
 <@VIEW@>
 
-<p/>Job had been submitted<br/>
+<p/>Job has been submitted<br/>
 <INPUT TYPE="submit" NAME="Check Status" VALUE="Check Status">
 
 </@VIEW@>
