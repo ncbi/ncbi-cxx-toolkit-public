@@ -1077,12 +1077,13 @@ void CFeatureItem::x_AddCdregionQuals
             pref = p;
         }
         if (pref != NULL) {
-            if (!pref->GetName().empty()) {
-                CProt_ref::TName names = pref->GetName();
+            const CProt_ref::TName& names = pref->GetName();
+            if (!names.empty()) {
                 x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
-                names.pop_front();
-                if (!names.empty()) {
-                    x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
+                CProt_ref::TName::const_iterator rest = names.begin();
+                if ( ++rest != names.end() ) {
+                    x_AddQual(eFQ_prot_names,
+                              new CFlatStringListQVal(rest, names.end()));
                 }
             }
             if ( pref->CanGetDesc() ) {
@@ -3563,6 +3564,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2005/04/11 15:29:16  vasilche
+* Avoid copying of list<string> when gathering protein names.
+*
 * Revision 1.51  2005/04/05 14:40:59  vasilche
 * Use const char* for qualifier names.
 *

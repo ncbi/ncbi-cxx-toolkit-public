@@ -305,6 +305,10 @@ public:
     CFlatStringListQVal(const list<string>& value,
         TStyle style = CFormatQual::eQuoted)
         :   m_Value(value), m_Style(style) { }
+    CFlatStringListQVal(const list<string>::const_iterator& begin,
+                        const list<string>::const_iterator& end,
+        TStyle style = CFormatQual::eQuoted)
+        :   m_Value(begin, end), m_Style(style) { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
@@ -579,6 +583,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/04/11 15:29:16  vasilche
+* Avoid copying of list<string> when gathering protein names.
+*
 * Revision 1.20  2005/03/28 17:15:16  shomrat
 * Use lower_bound instead of equal_range
 *
