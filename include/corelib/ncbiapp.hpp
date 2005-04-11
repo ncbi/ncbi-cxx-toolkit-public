@@ -368,12 +368,9 @@ protected:
     ///                   "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
     ///
     /// NOTE:
-    /// If "conf" arg is empty or non-empty, but without path, then config file
-    /// will be sought for in the following order:
-    ///  - in the current work directory;
-    ///  - in the dir defined by environment variable "NCBI";
-    ///  - in the user home directory;
-    ///  - in the program dir.
+    /// If "conf" arg is empty or non-empty, but without path, then
+    /// the Toolkit will try to look for it in several potentially
+    /// relevant directories, as described in <corelib/metareg.hpp>.
     ///
     /// Throw an exception if "conf" is non-empty, and cannot open file.
     /// Throw an exception if file exists, but contains invalid entries.
@@ -385,6 +382,8 @@ protected:
     ///   Flags for loading the registry
     /// @return
     ///   TRUE only if the file was non-NULL, found and successfully read.
+    /// @sa
+    ///   CMetaRegistry::GetDefaultSearchPath
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf,
                             CNcbiRegistry::TFlags reg_flags);
 
@@ -537,6 +536,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/11 17:20:09  ucko
+ * Doxygen fix for LoadConfig: replace out-of-date information with a
+ * pointer to CMetaRegistry::GetDefaultSearchPath.
+ *
  * Revision 1.50  2005/03/10 18:01:16  vakatov
  * Made SetupArgDescriptions() and GetArgs() virtual.
  *
