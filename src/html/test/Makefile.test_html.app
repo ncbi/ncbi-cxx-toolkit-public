@@ -5,6 +5,6 @@
 
 APP = test_html
 SRC = test_html
-LIB = xhtml xncbi
+LIB = xhtml xutil xncbi
 
 CHECK_CMD =

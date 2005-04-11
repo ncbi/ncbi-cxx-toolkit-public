@@ -35,6 +35,9 @@
 
 #include <html/html.hpp>
 #include <html/page.hpp>
+#include <html/writer_htmlenc.hpp>
+
+#include <util/rwstream.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -61,6 +64,18 @@ static void s_TEST_SpecialChars(void)
     page.Print(cout, CNCBINode::eHTML);
     cout << endl;
     page.Print(cout, CNCBINode::ePlainText);
+    cout << endl;
+
+    {{
+        CWriter_HTMLEncoder writer(cout,
+                                   CWriter_HTMLEncoder::fPassNumericEntities);
+        CWStream            wstream(&writer);
+        page.Print(wstream, CNCBINode::ePlainText);
+        wstream << endl;
+        wstream << "&foo&" << flush;
+        wstream << "#177;&" << flush;
+        wstream << "bar&#177;&";
+    }}
     cout << endl;
 }
 
@@ -205,6 +220,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/11 18:00:51  ucko
+ * Test/demonstrate CWriter_HTMLEncoder.
+ *
  * Revision 1.6  2004/05/17 21:00:08  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
