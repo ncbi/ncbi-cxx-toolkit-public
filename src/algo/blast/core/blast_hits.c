@@ -192,32 +192,6 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
     return delete_hsp;
 }
                                
-/** Calculates number of identities in an HSP and checks if the percentage of
- * identities passes the cutoff threshold.
- * @param hsp HSP to calculate identities for [in] [out]
- * @param percent_identity Cutoff threshold for percent identity [in]
- * @param query_start Query sequence buffer [in]
- * @param subject_start Subject sequence buffer [in]
- * @return TRUE if HSP is to be deleted, i.e. it has not passed the percent 
- *         identity cutoff; FALSE otherwise.
- */
-static Boolean
-s_HSPCheckPercentIdentity(BlastHSP* hsp, double percent_identity,
-                          Uint1* query_start, Uint1* subject_start)
-{
-    Int4 align_length = 0;
-
-    /* Calculate number of identities. */
-    Blast_HSPGetNumIdentities(query_start, subject_start, hsp, 
-                              &hsp->num_ident, &align_length);
-    /* Check if this HSP passes the percent identity test */
-    return 
-        ((((double)hsp->num_ident) / (double) align_length) * 100.0 < 
-         percent_identity);
-}
-
-
-
 Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingParameters* hit_params, 
@@ -370,18 +344,12 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    score /= factor;
    
    /* Update HSP data. */
-   if (s_UpdateReevaluatedHSP(hsp, TRUE, hit_params->cutoff_score, score, 
+   return
+       s_UpdateReevaluatedHSP(hsp, TRUE, hit_params->cutoff_score, score, 
                               query_start, subject_start, best_q_start, 
                               best_q_end, best_s_start, best_s_end, 
                               best_start_esp, best_prev_esp, best_end_esp, 
-                              best_end_esp_num))
-       return TRUE;
-   
-   /* If HSP passed the score threshold, calculate identities and check against
-      the percent identity cutoff. */
-   return 
-       s_HSPCheckPercentIdentity(hsp, hit_params->options->percent_identity,
-                                 query_start, subject_start);
+                              best_end_esp_num);
 }
 
 /** Update HSP data after reevaluation with ambiguities for an ungapped search.
@@ -465,16 +433,10 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    }
 
    /* Update HSP data. */
-   if (s_UpdateReevaluatedHSPUngapped(hsp, word_params->cutoff_score, score, 
-                                      query_start, subject_start, best_q_start,
-                                      best_q_end, best_s_start, best_s_end))
-       return TRUE;
-
-   /* If HSP passed the score threshold, calculate identities and check against
-      the percent identity cutoff. */
    return
-       s_HSPCheckPercentIdentity(hsp, hit_params->options->percent_identity,
-                                 query_start, subject_start);
+       s_UpdateReevaluatedHSPUngapped(hsp, word_params->cutoff_score, score, 
+                                      query_start, subject_start, best_q_start,
+                                      best_q_end, best_s_start, best_s_end);
 } 
 
 Int2
@@ -606,6 +568,51 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
    *num_ident_ptr = num_ident;
 
    return 0;
+}
+
+/** Calculates number of identities and alignment lengths of an HSP and 
+ * determines whether this HSP should be kept or deleted. The num_ident
+ * field of the BlastHSP structure is filled here.
+ * @param program_number Type of BLAST program [in]
+ * @param hsp An HSP structure [in] [out]
+ * @param query Query sequence [in]
+ * @param subject Subject sequence [in]
+ * @param score_options Scoring options, needed to distinguish the 
+ *                      out-of-frame case. [in]
+ * @param hit_options Hit saving options containing percent identity and
+ *                    HSP length thresholds.
+ * @return FALSE if HSP passes the test, TRUE if it should be deleted.
+ */ 
+Boolean
+Blast_HSPTestIdentityAndLength(EBlastProgramType program_number, 
+                               BlastHSP* hsp, Uint1* query, Uint1* subject, 
+                               const BlastScoringOptions* score_options,
+                               const BlastHitSavingOptions* hit_options)
+{
+   Int4 align_length = 0;
+   Boolean delete_hsp = FALSE;
+
+   ASSERT(hsp && query && subject && score_options && hit_options);
+
+   /* Calculate alignment length and number of identical letters. 
+      Do not get the number of identities if the query is not available */
+   if (score_options->is_ooframe) {
+       Blast_HSPGetOOFNumIdentities(query, subject, hsp, program_number, 
+                                    &hsp->num_ident, &align_length);
+   } else {
+       Blast_HSPGetNumIdentities(query, subject, hsp, 
+                                 &hsp->num_ident, &align_length);
+   }
+      
+   /* Check whether this HSP passes the percent identity and minimal hit 
+      length criteria, and delete it if it does not. */
+   if ((hsp->num_ident * 100 < 
+        align_length * hit_options->percent_identity) ||
+       align_length < hit_options->min_hit_length) {
+      delete_hsp = TRUE;
+   }
+
+   return delete_hsp;
 }
 
 void 
@@ -1819,10 +1826,19 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
          Blast_HSPAdjustSubjectOffset(hsp, start_shift);
       }
    
+      if (!delete_hsp) {
+          delete_hsp = 
+              Blast_HSPTestIdentityAndLength(program, hsp, query_start, 
+                                             subject_start, 
+                                             score_params->options, 
+                                             hit_params->options);
+      }
+
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
          purge = TRUE;
       }
+
    }
 
    sfree(translation_buffer);

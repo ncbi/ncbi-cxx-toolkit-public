@@ -154,51 +154,6 @@ Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp)
    return 0;
 }
 
-/** Calculates number of identities and alignment lengths of an HSP and 
- * determines whether this HSP should be kept or deleted. The num_ident
- * field of the BlastHSP structure is filled here.
- * @param program_number Type of BLAST program [in]
- * @param hsp An HSP structure [in] [out]
- * @param query Query sequence [in]
- * @param subject Subject sequence [in]
- * @param score_options Scoring options, needed to distinguish the 
- *                      out-of-frame case. [in]
- * @param hit_options Hit saving options containing percent identity and
- *                    HSP length thresholds.
- * @return TRUE if HSP passes the test, FALSE if it should be deleted.
- */ 
-static Boolean
-s_HSPTestIdentityAndLength(EBlastProgramType program_number, 
-                               BlastHSP* hsp, Uint1* query, Uint1* subject, 
-                               const BlastScoringOptions* score_options,
-                               const BlastHitSavingOptions* hit_options)
-{
-   Int4 align_length = 0;
-   Boolean keep = TRUE;
-
-   /* Calculate alignment length and number of identical letters. 
-      Do not get the number of identities if the query is not available */
-   if (query != NULL) {
-      if (score_options->is_ooframe) {
-         Blast_HSPGetOOFNumIdentities(query, subject, hsp, program_number, 
-                                      &hsp->num_ident, &align_length);
-      } else {
-         Blast_HSPGetNumIdentities(query, subject, hsp, 
-                                   &hsp->num_ident, &align_length);
-      }
-   }
-      
-   /* Check whether this HSP passes the percent identity and minimal hit 
-      length criteria, and delete it if it does not. */
-   if ((hsp->num_ident * 100 < 
-        align_length * hit_options->percent_identity) ||
-       align_length < hit_options->min_hit_length) {
-      keep = FALSE;
-   }
-
-   return keep;
-}
-
 /** Remove scaling from scores previously calculated on the hsp_list.
  * @param hsp_list list of HPSs with the score field calculated [in|out]
  * @param scale_factor factor by which scores are scaled, for everything other
@@ -556,26 +511,28 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          }
 
          if (gap_align->score >= hit_params->cutoff_score) {
-            Boolean keep = FALSE;
+            Boolean delete_hsp = FALSE;
             Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
             if (kGreedyTraceback) {
                /* Low level greedy algorithm ignores ambiguities, so the score
-                  needs to be reevaluated. */
-               Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, 
-                  adjusted_subject, hit_params, score_params, sbp);
+                * needs to be reevaluated. */
+                delete_hsp = 
+                    Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, 
+                        adjusted_subject, hit_params, score_params, sbp);
             }
-            
-            /* Calculate number of identities and check if this HSP meets the
-               percent identity and length criteria. */
-            keep = s_HSPTestIdentityAndLength(program_number, hsp, 
-                                                  query, adjusted_subject, 
-                                                  score_options, hit_options);
-            if (keep) {
+            if (!delete_hsp) {
+                /* Calculate number of identities and check if this HSP meets the
+                   percent identity and length criteria. */
+                delete_hsp = 
+                    Blast_HSPTestIdentityAndLength(program_number, hsp, query, 
+                                                   adjusted_subject, 
+                                                   score_options, hit_options);
+            }
+            if (!delete_hsp) {
                Blast_HSPAdjustSubjectOffset(hsp, start_shift);
                BlastIntervalTreeAddHSP(hsp, tree, query_info);
-            }
-            else {
+            } else {
                hsp_array[index] = Blast_HSPFree(hsp);
             }
          } else {
