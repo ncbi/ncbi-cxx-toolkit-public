@@ -76,19 +76,20 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
     
     CSeqVector v(ctx.GetLocation(), ctx.GetHandle().GetScope(),
                  CBioseq_Handle::eCoding_Iupac);
-
-    size_t counters[256];
-    for (size_t i = 0; i < 256; ++i) {
+    const size_t COUNT = kMax_UChar+1;
+    TSeqPos counters[COUNT];
+    for ( size_t i = 0; i < COUNT; ++i) {
         counters[i] = 0;
     }
 
-    ITERATE (CSeqVector, it, v) {
-        ++counters[static_cast<CSeqVector_CI::TResidue>(*it)];
+    CSeqVector_CI it(v, 0, CSeqVector_CI::eCaseConversion_lower);
+    for ( TSeqPos count = v.size(); count; --count, ++it ) {
+        ++counters[*it];
     }
-    m_A = counters[Uchar('A')] + counters[Uchar('a')];
-    m_C = counters[Uchar('C')] + counters[Uchar('c')];
-    m_G = counters[Uchar('G')] + counters[Uchar('g')];
-    m_T = counters[Uchar('T')] + counters[Uchar('t')];
+    m_A = counters[Uchar('a')];
+    m_C = counters[Uchar('c')];
+    m_G = counters[Uchar('g')];
+    m_T = counters[Uchar('t')];
     m_Other = v.size() - m_A - m_C - m_G - m_T;
 }
 
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/04/11 15:25:14  vasilche
+* Use lower case for base counting.
+*
 * Revision 1.8  2005/04/07 18:19:37  shomrat
 * Removed toupper
 *
