@@ -49,7 +49,6 @@
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
 class CRPSTest; 
-class CBlastEngineTest;
 class CBlastSetupTest;
 
 class CBlastTabularFormatThread;
@@ -398,6 +397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.94  2005/04/11 16:56:10  dondosha
+* Removed unused forward declaration of CBlastEngineTest class
+*
 * Revision 1.93  2005/04/11 14:29:04  madden
 * Remove CBlastGapAlignTest as friend class
 *
