@@ -174,8 +174,10 @@ private:
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
     void x_InitRandomizer(CRandom& random_gen);
 
+    typedef CSeqVector_CI::ECaseConversion TCaseConversion;
     static const char* sx_GetConvertTable(TCoding src, TCoding dst,
-                                          bool reverse);
+                                          bool reverse,
+                                          TCaseConversion case_conversion);
 
     CHeapScope               m_Scope;
     CConstRef<CSeqMap>       m_SeqMap;
@@ -359,6 +361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2005/04/11 15:23:23  vasilche
+* Added option to change letter case in CSeqVector_CI.
+*
 * Revision 1.57  2005/03/28 20:43:50  jcherry
 * Added export specifier
 *

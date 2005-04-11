@@ -157,6 +157,7 @@ void copy_2bit_any(DstIter dst, size_t count,
 CSeqVector_CI::CSeqVector_CI(void)
     : m_Strand(eNa_strand_unknown),
       m_Coding(CSeq_data::e_not_set),
+      m_CaseConversion(eCaseConversion_none),
       m_Cache(0),
       m_CachePos(0),
       m_CacheData(0),
@@ -177,6 +178,7 @@ CSeqVector_CI::~CSeqVector_CI(void)
 CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
     : m_Strand(eNa_strand_unknown),
       m_Coding(CSeq_data::e_not_set),
+      m_CaseConversion(eCaseConversion_none),
       m_Cache(0),
       m_CachePos(0),
       m_CacheData(0),
@@ -202,6 +204,34 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_TSE(seq_vector.m_TSE),
       m_Strand(seq_vector.m_Strand),
       m_Coding(seq_vector.m_Coding),
+      m_CaseConversion(eCaseConversion_none),
+      m_Cache(0),
+      m_CachePos(0),
+      m_CacheData(0),
+      m_CacheEnd(0),
+      m_BackupPos(0),
+      m_BackupData(0),
+      m_BackupEnd(0),
+      m_Randomizer(seq_vector.m_Randomizer)
+{
+    try {
+        x_SetPos(pos);
+    }
+    catch (...) {
+        x_DestroyCache();
+        throw;
+    }
+}
+
+
+CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
+                             ECaseConversion case_conversion)
+    : m_Scope(seq_vector.m_Scope),
+      m_SeqMap(seq_vector.m_SeqMap),
+      m_TSE(seq_vector.m_TSE),
+      m_Strand(seq_vector.m_Strand),
+      m_Coding(seq_vector.m_Coding),
+      m_CaseConversion(case_conversion),
       m_Cache(0),
       m_CachePos(0),
       m_CacheData(0),
@@ -340,6 +370,7 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     m_TSE = sv_it.m_TSE;
     m_Strand = sv_it.m_Strand;
     m_Coding = sv_it.GetCoding();
+    m_CaseConversion = sv_it.m_CaseConversion;
     m_Seg = sv_it.m_Seg;
     m_CachePos = sv_it.x_CachePos();
     m_Randomizer = sv_it.m_Randomizer;
@@ -464,10 +495,12 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         }
 
         const char* table = 0;
-        if ( cacheCoding != dataCoding || reverse ) {
+        if ( cacheCoding != dataCoding || reverse ||
+             m_CaseConversion != eCaseConversion_none ) {
             table = CSeqVector::sx_GetConvertTable(dataCoding,
                                                    cacheCoding,
-                                                   reverse);
+                                                   reverse,
+                                                   m_CaseConversion);
             if ( !table && cacheCoding != dataCoding ) {
                 NCBI_THROW(CSeqVectorException, eCodingError,
                            "Incompatible sequence codings");
@@ -788,6 +821,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/04/11 15:23:23  vasilche
+* Added option to change letter case in CSeqVector_CI.
+*
 * Revision 1.41  2005/03/28 19:23:06  vasilche
 * Added restricted post-increment and post-decrement operators.
 *

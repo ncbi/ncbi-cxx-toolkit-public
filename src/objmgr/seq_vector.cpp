@@ -290,20 +290,26 @@ DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex2);
 
 const char* CSeqVector::sx_GetConvertTable(TCoding src,
                                            TCoding dst,
-                                           bool reverse)
+                                           bool reverse,
+                                           TCaseConversion case_conversion)
 {
     CFastMutexGuard guard(s_ConvertTableMutex2);
-    typedef pair<pair<TCoding, TCoding>, bool> TKey;
-    typedef map<TKey, vector<char> > TTables;
+    typedef pair<TCoding, TCoding> TMainConversion;
+    typedef pair<bool, CSeqVector_CI::ECaseConversion> TConversionFlags;
+    typedef pair<TMainConversion, TConversionFlags> TConversionKey;
+    typedef vector<char> TConversionTable;
+    typedef map<TConversionKey, TConversionTable> TTables;
     static TTables tables;
 
-    TKey key(pair<TCoding, TCoding>(src, dst), reverse);
+    TConversionKey key;
+    key.first = TMainConversion(src, dst);
+    key.second = TConversionFlags(reverse, case_conversion);
     TTables::iterator it = tables.find(key);
     if ( it != tables.end() ) {
         // already created
         return it->second.empty()? 0: &it->second[0];
     }
-    it = tables.insert(TTables::value_type(key, vector<char>())).first;
+    TConversionTable& table = tables[key];
     if ( !CSeqportUtil::IsCodeAvailable(src) ||
          !CSeqportUtil::IsCodeAvailable(dst) ) {
         // invalid types
@@ -328,6 +334,12 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             reverse = false;
         }
     }
+    if ( case_conversion != CSeqVector_CI::eCaseConversion_none ) {
+        // check if dst is text format
+        if ( dst != CSeq_data::e_Iupacaa && dst != CSeq_data::e_Iupacna ) {
+            case_conversion = CSeqVector_CI::eCaseConversion_none;
+        }
+    }
 
     if ( dst != src ) {
         pair<unsigned, unsigned> dstIndex =
@@ -346,12 +358,13 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             return 0;
         }
     }
-    else if ( !reverse ) {
+    else if ( !reverse &&
+              case_conversion == CSeqVector_CI::eCaseConversion_none ) {
         // no need to convert at all
         return 0;
     }
 
-    it->second.resize(COUNT, char(kInvalidCode));
+    table.resize(COUNT, char(kInvalidCode));
     for ( unsigned i = srcIndex.first; i <= srcIndex.second; ++i ) {
         try {
             unsigned code = i;
@@ -362,12 +375,18 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
                 code = CSeqportUtil::GetMapToIndex(src, dst, code);
             }
             code = min(kInvalidCode, code);
-            it->second[i] = char(code);
+            if ( case_conversion == CSeqVector_CI::eCaseConversion_upper ) {
+                code = toupper(char(code));
+            }
+            else if( case_conversion == CSeqVector_CI::eCaseConversion_lower ) {
+                code = tolower(char(code));
+            }
+            table[i] = char(code);
         }
         catch ( exception& /*noConversion or noComplement*/ ) {
         }
     }
-    return &it->second[0];
+    return &table[0];
 }
 
 
@@ -448,6 +467,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/04/11 15:23:23  vasilche
+* Added option to change letter case in CSeqVector_CI.
+*
 * Revision 1.72  2004/12/22 15:56:17  vasilche
 * Added CTSE_Handle.
 * Added CSeqVector constructor from CBioseq_Handle to allow used TSE linking.

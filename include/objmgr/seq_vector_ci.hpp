@@ -59,9 +59,17 @@ public:
     typedef TResidue value_type;
     typedef CSeq_data::E_Choice   TCoding;
 
+    enum ECaseConversion {
+        eCaseConversion_none,
+        eCaseConversion_upper,
+        eCaseConversion_lower
+    };
+
     CSeqVector_CI(void);
     ~CSeqVector_CI(void);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos = 0);
+    CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
+                  ECaseConversion case_conversion);
     CSeqVector_CI(const CSeqVector_CI& sv_it);
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
@@ -200,6 +208,7 @@ private:
     CTSE_Handle              m_TSE;
     ENa_strand               m_Strand;
     TCoding                  m_Coding;
+    ECaseConversion          m_CaseConversion;
     // Current CSeqMap segment
     CSeqMap_CI               m_Seg;
     // Current cache pointer
@@ -505,6 +514,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/04/11 15:23:23  vasilche
+* Added option to change letter case in CSeqVector_CI.
+*
 * Revision 1.28  2005/03/28 19:23:06  vasilche
 * Added restricted post-increment and post-decrement operators.
 *
