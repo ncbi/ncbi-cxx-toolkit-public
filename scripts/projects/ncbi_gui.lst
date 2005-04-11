@@ -1,6 +1,8 @@
 app/project_tree_builder
 cgi$
 connect$
+connect/ext$
+connect/services$
 corelib$
 dbapi$
 dbapi/cache$
