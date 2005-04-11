@@ -70,8 +70,6 @@ typedef struct BlastGapAlignStruct {
    Int4 subject_start;  /**< subject start offset current alignment */
    Int4 subject_stop; /**< subject end offset of current alignment */
    Int4 score;   /**< Return value: alignment score */
-   double percent_identity;/**< Return value: percent identity - filled only 
-                               by the greedy non-affine alignment algorithm */
 } BlastGapAlignStruct;
 
 /** Initializes the BlastGapAlignStruct structure 
