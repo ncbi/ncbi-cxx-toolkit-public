@@ -132,25 +132,41 @@ struct SQueueDB : public CBDB_File
     }
 };
 
-/// Queue watcher description
+/// @internal
+enum ENetScheduleListenerType
+{
+    eNS_Worker        = (1 << 0),  ///< Regular worker node
+    eNS_BackupWorker  = (1 << 1)   ///< Backup worker node (second priority notifications)
+};
+
+
+/// @internal
+typedef unsigned TNetScheduleListenerType;
+
+
+/// Queue watcher (client) description. Client is predominantly a worker node
+/// waiting for new jobs.
 ///
 /// @internal
 ///
 struct SQueueListener
 {
-    unsigned int   host;         ///< host name (network BO)
-    unsigned short port;         ///< Listening UDP port
-    time_t         last_connect; ///< Last registration timestamp
-    int            timeout;      ///< Notification expiration timeout
+    unsigned int               host;         ///< host name (network BO)
+    unsigned short             udp_port;     ///< Listening UDP port
+    time_t                     last_connect; ///< Last registration timestamp
+    int                        timeout;      ///< Notification expiration timeout
+    TNetScheduleListenerType   client_type;  ///< Client type mask
 
     SQueueListener(unsigned int   host_addr,
-                   unsigned short port_number,
+                   unsigned short udp_port_number,
                    time_t         curr,
-                   int            expiration_timeout)
+                   int            expiration_timeout,
+                   TNetScheduleListenerType ctype = eNS_Worker)
     : host(host_addr),
-      port(port_number),
+      udp_port(udp_port_number),
       last_connect(curr),
-      timeout(expiration_timeout)
+      timeout(expiration_timeout),
+      client_type(ctype)
     {}
 };
 
@@ -320,6 +336,13 @@ public:
                     );
         void ReturnJob(unsigned int job_id);
 
+
+        bool GetJobDescr(unsigned int job_id,
+                         int*         ret_code,
+                         char*        input,
+                         char*        output,
+                         char*        err_msg);
+/*
         // Get output info for compeleted job
         bool GetOutput(unsigned int job_id,
                        int*         ret_code,
@@ -328,6 +351,7 @@ public:
         // Get output for failed job
         bool GetErrMsg(unsigned int job_id,
                        char*        err_msg);
+*/
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
@@ -366,7 +390,7 @@ public:
         ///    host address in network BO
         ///
         void RegisterNotificationListener(unsigned int    host_addr, 
-                                          unsigned short  port,
+                                          unsigned short  udp_port,
                                           int             timeout);
 
         /// UDP notification to all listeners
@@ -454,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/04/11 13:53:25  kuznets
+ * Code cleanup
+ *
  * Revision 1.18  2005/04/06 12:39:55  kuznets
  * + client version control
  *

@@ -1205,7 +1205,38 @@ void CQueueDataBase::CQueue::GetJob(char*          key_buf,
     }
 }
 
+bool CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
+                                         int*         ret_code,
+                                         char*        input,
+                                         char*        output,
+                                         char*        err_msg)
+{
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
 
+    db.id = job_id;
+    if (db.Fetch() == eBDB_Ok) {
+        if (ret_code)
+            *ret_code = db.ret_code;
+
+        if (input) {
+            ::strcpy(input, (const char* )db.input);
+        }
+        if (output) {
+            ::strcpy(output, (const char* )db.output);
+        }
+        if (err_msg) {
+            ::strcpy(err_msg, (const char* )db.err_msg);
+        }
+
+        return true;
+    }
+
+    return false; // job not found
+}
+
+/*
 bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
                                        int*         ret_code,
                                        char*        output)
@@ -1247,7 +1278,7 @@ bool CQueueDataBase::CQueue::GetErrMsg(unsigned int job_id,
 
     return false; // job not found
 }
-
+*/
 
 CNetScheduleClient::EJobStatus 
 CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
@@ -1362,7 +1393,7 @@ void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
 
 void CQueueDataBase::CQueue::RegisterNotificationListener(
                                             unsigned int    host_addr,
-                                            unsigned short  port,
+                                            unsigned short  udp_port,
                                             int             timeout)
 {
     // check if listener is already in the list
@@ -1378,7 +1409,7 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
          ++i) 
     {
         SQueueListener& ql = *wnodes[i];
-        if ((ql.port == port) &&
+        if ((ql.udp_port == udp_port) &&
             (ql.host == host_addr)
             ) {
             ql_ptr = &ql;
@@ -1402,7 +1433,8 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
     // new element
 
     if (timeout) {
-        wnodes.push_back(new SQueueListener(host_addr, port, curr, timeout));
+        wnodes.push_back(
+            new SQueueListener(host_addr, udp_port, curr, timeout));
     }
 }
 
@@ -1454,17 +1486,15 @@ void CQueueDataBase::CQueue::NotifyListeners()
             }
         }}
         host = ql->host;
-        port = ql->port;
+        port = ql->udp_port;
 
-        {{
+        if (port) {
             CFastMutexGuard guard(m_LQueue.us_lock);
-
-        //EIO_Status status = 
-            m_LQueue.udp_socket.Send(msg, msg_len, 
+            //EIO_Status status = 
+                m_LQueue.udp_socket.Send(msg, msg_len, 
                                      CSocketAPI::ntoa(host), port);
-
-        }}
-        // check if we have no more jobs left
+        }
+        // periodically check if we have no more jobs left
         if ((i % 10 == 0) &&
             !m_LQueue.status_tracker.AnyPending()) {
             break;
@@ -1598,6 +1628,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/11 13:53:25  kuznets
+ * Code cleanup
+ *
  * Revision 1.23  2005/04/06 12:39:55  kuznets
  * + client version control
  *
