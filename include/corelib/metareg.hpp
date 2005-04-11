@@ -105,7 +105,12 @@ public:
                        TRegFlags      reg_flags = 0,
                        IRWRegistry*   reg       = 0);
 
-    /// Accessors for the search path for unqualified names.  If the
+    /// Search path for unqualified names.
+    typedef vector<string> TSearchPath;
+    static const TSearchPath& GetSearchPath(void);
+    static       TSearchPath& SetSearchPath(void);
+
+    /// Clears path and substitutes the default search path.  If the
     /// environment NCBI_CONFIG_PATH is set, the default is to look there
     /// exclusively; otherwise, the default list contains the following
     /// directories in order:
@@ -118,11 +123,6 @@ public:
     ///      (Requires use of CNcbiApplication.)
     /// The first two directories are skipped if the environment variable
     /// NCBI_DONT_USE_LOCAL_CONFIG is set.
-    typedef vector<string> TSearchPath;
-    static const TSearchPath& GetSearchPath(void);
-    static       TSearchPath& SetSearchPath(void);
-
-    /// Clears path and substitutes the default search path
     static void GetDefaultSearchPath(TSearchPath& path);
 
 private:
@@ -210,6 +210,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/04/11 17:18:17  ucko
+* Doxygen fix: associate the long comment describing the default search
+* path with GetDefaultSearchPath, not TSearchPath.
+*
 * Revision 1.11  2005/01/25 19:56:34  ucko
 * Hold the single instance with a CSafeStaticPtr rather than a static auto_ptr.
 *
