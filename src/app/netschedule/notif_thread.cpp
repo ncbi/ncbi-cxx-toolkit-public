@@ -55,7 +55,6 @@ void CJobNotificationThread::DoJob(void)
 
 CJobNotificationThread::~CJobNotificationThread()
 {
-    LOG_POST("Notification thread stopped.");
 }
 
 
@@ -64,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/11 13:52:21  kuznets
+ * Removed confusing log message
+ *
  * Revision 1.2  2005/03/30 16:04:41  kuznets
  * Added destructor with diagnostic message
  *
