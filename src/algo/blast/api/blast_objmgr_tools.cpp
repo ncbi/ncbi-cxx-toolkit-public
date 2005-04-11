@@ -126,8 +126,6 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     query_info->first_context = 0;
     query_info->last_context = query_info->num_queries * nframes - 1;
 
-    EBlastProgramType progtype = options.GetProgramType();
-    
     query_info->contexts =
         (BlastContextInfo*) calloc(query_info->last_context + 1, 
                                    sizeof(BlastContextInfo));
@@ -197,19 +195,19 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                 case eNa_strand_plus:
                     ctx_len = (i<3) ? prot_length : 0;
                     QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
-                                         progtype);
+                                         prog);
                     break;
 
                 case eNa_strand_minus:
                     ctx_len = (i<3) ? 0 : prot_length;
                     QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
-                                         progtype);
+                                         prog);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
                     QueryInfo_SetContext(query_info, ctx_index + i, 
-                                         prot_length, progtype);
+                                         prot_length, prog);
                     break;
 
                 default:
@@ -223,29 +221,29 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                 switch (strand) {
                 case eNa_strand_plus:
                     QueryInfo_SetContext(query_info, ctx_index, length,
-                                         progtype);
-                    QueryInfo_SetContext(query_info, ctx_index+1, 0, progtype);
+                                         prog);
+                    QueryInfo_SetContext(query_info, ctx_index+1, 0, prog);
                     break;
 
                 case eNa_strand_minus:
-                    QueryInfo_SetContext(query_info, ctx_index, 0, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index, 0, prog);
                     QueryInfo_SetContext(query_info, ctx_index+1, length,
-                                         progtype);
+                                         prog);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
                     QueryInfo_SetContext(query_info, ctx_index, length,
-                                         progtype);
+                                         prog);
                     QueryInfo_SetContext(query_info, ctx_index+1, length,
-                                         progtype);
+                                         prog);
                     break;
 
                 default:
                     abort();
                 }
             } else {    // protein
-                QueryInfo_SetContext(query_info, ctx_index, length, progtype);
+                QueryInfo_SetContext(query_info, ctx_index, length, prog);
             }
         }
         ctx_index += nframes;
@@ -962,6 +960,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/04/11 19:26:32  madden
+* Remove extra EBlastProgramType variable
+*
 * Revision 1.41  2005/04/06 21:04:55  dondosha
 * GapEditBlock structure removed, use BlastHSP which contains GapEditScript
 *
