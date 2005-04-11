@@ -2501,9 +2501,6 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
       if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
                                         MB_DIAG_CLOSE))
       {
-         Boolean good_hit = TRUE;
-         Int4 hsp_length;
-
          if (gapped_stats)
             ++gapped_stats->extensions;
 
@@ -2512,16 +2509,7 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
             score_params, init_hsp->q_off, init_hsp->s_off, (Boolean) TRUE, 
             (Boolean) (ext_options->ePrelimGapExt == eGreedyWithTracebackExt));
 
-         /* Take advantage of an opportunity to easily check whether this 
-            hit passes the percent identity and minimal length criteria. */
-         hsp_length = 
-            MIN(gap_align->query_stop-gap_align->query_start, 
-                gap_align->subject_stop-gap_align->subject_start) + 1;
-         if (hsp_length < hit_options->min_hit_length || 
-             gap_align->percent_identity < hit_options->percent_identity)
-            good_hit = FALSE;
-               
-         if (good_hit && gap_align->score >= hit_options->cutoff_score) {
+         if (gap_align->score >= hit_options->cutoff_score) {
             /* gap_align contains alignment endpoints; init_hsp contains 
                the offsets to start the alignment from, if traceback is to 
                be performed later */
@@ -2693,10 +2681,6 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
    /* In basic case the greedy algorithm returns number of 
       differences, hence we need to convert it to score */
    if (score_params->gap_open==0 && score_params->gap_extend==0) {
-      /* Take advantage of an opportunity to easily calculate percent 
-         identity, to avoid parsing the traceback later */
-      gap_align->percent_identity = 
-         100*(1 - ((double)score) / MIN(q_ext_l+q_ext_r, s_ext_l+s_ext_r));
       score = 
          (q_ext_r + s_ext_r + q_ext_l + s_ext_l)*score_params->reward/2 - 
          score*(score_params->reward - score_params->penalty);
