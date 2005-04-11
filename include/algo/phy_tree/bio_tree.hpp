@@ -226,20 +226,21 @@ public:
         typedef CTreeNode<TBioNode> TParent;
         typedef CBioNode            TTreeType;
 
-
+        /// Construct tree node with specified value
         CBioNode(const TBioNode& value = TBioNode()) 
         : TParent(value), m_ParentTree(0) 
         {}
 
-        
+        /// Construct tree node based on source tree node (recursive copy)
         CBioNode(const CBioNode& bn)
         : TParent(bn), m_ParentTree(0) 
         {
             TBioTree* pt = (TBioTree*)bn.GetParentTree();
             SetParentTree(pt);
         }
-              
-        CBioNode& operator =(const CBioNode& tree)
+
+        /// Recursive assignment
+        CBioNode& operator=(const CBioNode& tree)
         {
             TParent::operator=(tree);
             TBioTree* pt = (TBioTree*)tree.GetParentTree();
@@ -269,6 +270,7 @@ public:
             return 0;
         }
 
+        /// Node is detached from the tree (Parent becomes 0)
         TTreeType* DetachNode(typename TParent::TNodeList_I it)
         {
             typename TParent::TTreeType* ptn = TParent::DetachNode(it);
@@ -283,6 +285,7 @@ public:
             return 0;
         }
 
+        /// Node is added as a subnode the this node
         void AddNode(TTreeType* subnode)
         {
             if (TBioTree* btr = GetParentTree()) {
@@ -291,6 +294,7 @@ public:
             TParent::AddNode(subnode);
         }
 
+        /// Add a subnode to this node based on value
         CBioNode* AddNode(const TBioNode& val = TBioNode())
         {
             CBioNode* subnode = new CBioNode(val);
@@ -599,6 +603,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/11 15:26:29  kuznets
+ * Added comments
+ *
  * Revision 1.20  2004/11/01 19:57:55  kuznets
  * Type casts to fix GCC 2.95 compilation
  *
