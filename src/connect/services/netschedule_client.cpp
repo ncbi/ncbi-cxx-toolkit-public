@@ -400,6 +400,14 @@ void CNetScheduleClient::DropJob(const string& job_key)
     CheckOK(&m_Tmp);
 }
 
+void CNetScheduleClient::Logging(bool on_off)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    CommandInitiate("LOG ", on_off ? "ON" : "OFF", &m_Tmp);
+    CheckOK(&m_Tmp);
+}
 
 void CNetScheduleClient::SetRunTimeout(const string& job_key, 
                                        unsigned      time_to_run)
@@ -431,7 +439,8 @@ CNetScheduleClient::EJobStatus
 CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
                               string*       output,
-                              string*       err_msg)
+                              string*       err_msg,
+                              string*       input)
 {
     _ASSERT(ret_code);
     _ASSERT(output);
@@ -500,10 +509,8 @@ CNetScheduleClient::GetStatus(const string& job_key,
             }
         }
 
-        if (err_msg) {
-
+        if (err_msg || input) {
             err_msg->erase();
-
             if (!*str)
                 return status;
 
@@ -517,13 +524,35 @@ CNetScheduleClient::GetStatus(const string& job_key,
                 ++str;
                 for( ;*str && *str; ++str) {
                     if (*str == '"' && *(str-1) != '\\') break;
-                    err_msg->push_back(*str);
+                    if (err_msg)
+                        err_msg->push_back(*str);
                 }
             }
 
             *err_msg = NStr::ParseEscapes(*err_msg);
         }
-    }
+
+        if (input) {
+            input->erase();
+            if (!*str)
+                return status;
+
+            for (++str; *str && isspace(*str); ++str) {
+            }
+            
+            if (!*str)
+                return status;
+
+            if (*str && *str == '"') {
+                ++str;
+                for( ;*str && *str; ++str) {
+                    if (*str == '"' && *(str-1) != '\\') break;
+                    input->push_back(*str);
+                }
+            }
+        }
+
+    } // if status done or failed
 
     return status;
 }
@@ -955,6 +984,10 @@ void CNetScheduleClient::CheckOK(string* str)
         if (*str == "CLIENT_VERSION") {
             NCBI_THROW(CNetScheduleException, eInvalidClientOrVersion, 
                        "Client name or version incompatibility");
+        } else 
+        if (*str == "QUEUE_NOT_FOUND") {
+            NCBI_THROW(CNetScheduleException, eUnknownQueue, 
+                       "Queue not found.");
         }
 
         msg += *str;
@@ -1033,6 +1066,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/04/11 13:51:07  kuznets
+ * Added logging
+ *
  * Revision 1.21  2005/04/06 12:37:31  kuznets
  * Added support of client version control
  *
