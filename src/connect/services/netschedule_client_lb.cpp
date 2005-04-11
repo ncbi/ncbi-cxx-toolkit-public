@@ -71,7 +71,8 @@ CNetScheduleClient_LB::CNetScheduleClient_LB(const string& client_name,
   m_Requests(0),
   m_StickToHost(false),
   m_LB_ServiceDiscovery(true),
-  m_ConnFailPenalty(5 * 60)
+  m_ConnFailPenalty(5 * 60),
+  m_MaxRetry(3)
 {
     if (lb_service_name.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -115,11 +116,14 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
         m_Requests = 0;
         x_GetServerList(m_LB_ServiceName);
 
+        m_ServListCurr = 0;
         ITERATE(TServiceList, it, m_ServList) {
-            EIO_Status st = Connect(it->host, it->port);
+            const SServiceAddress& sa = *it;
+            EIO_Status st = Connect(sa.host,sa.port);
             if (st == eIO_Success) {
                 break;
             }
+            ++m_ServListCurr;
         } // ITERATE
 
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
@@ -131,12 +135,37 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
                 "Cannot connect to netschedule service " + m_LB_ServiceName);
     }
 
+
+    _ASSERT(key.empty());
+    _ASSERT(m_ServListCurr < m_ServList.size());
+
+    // check if service list candidate changed, so we try
+    // another server
+
+    for (;m_ServListCurr < m_ServList.size(); ++m_ServListCurr) {
+        const SServiceAddress& sa = m_ServList[m_ServListCurr];
+        string sa_host = CSocketAPI::gethostbyaddr(sa.host);
+        if (sa.port != m_Port || 
+            sa_host != m_Host) {
+            EIO_Status st = Connect(sa.host,sa.port);
+            if (st == eIO_Success) {
+                if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+                    return; // we are connected
+                } 
+            }
+        } else {
+            break;
+        }
+    } // while
+
     TParent::CheckConnect(key);
 }
 
 void CNetScheduleClient_LB::x_GetServerList(const string& service_name)
 {
     _ASSERT(!service_name.empty());
+
+    m_ServListCurr = 0;
 
     if (!m_LB_ServiceDiscovery) {
         if (m_ServList.size() == 0) {
@@ -209,7 +238,30 @@ void CNetScheduleClient_LB::AddServiceAddress(const string&  hostname,
 string CNetScheduleClient_LB::SubmitJob(const string& input)
 {
     ++m_Requests;
-    return TParent::SubmitJob(input);
+    // try to submit this job even if server does not take it
+    unsigned max_retry = m_MaxRetry ? m_MaxRetry : 1;
+    for (unsigned retry = 0; retry < max_retry; ++retry) {
+        try {
+            return TParent::SubmitJob(input);
+        } 
+        catch (CNetScheduleException& ex) {
+            CNetScheduleException::TErrCode ec = ex.GetErrCode();
+            if (ec == CNetScheduleException::eUnknownQueue || 
+                ec == CNetScheduleException::eTooManyPendingJobs) {
+
+                // try another server
+                ++m_ServListCurr;
+                if (m_ServListCurr < m_ServList.size()) {
+                    ERR_POST(ex.what());
+                    continue;
+                }
+            }
+
+            throw;
+        }
+        break;
+    } // for
+    return kEmptyStr;
 }
 
 bool CNetScheduleClient_LB::GetJob(string* job_key, 
@@ -237,6 +289,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
     if (pivot >= serv_size) {
         pivot = serv_size - 1;
     }
+    unsigned exp_count = 0;
 
     unsigned left_right = pivot & 1;
 
@@ -252,10 +305,23 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                         continue;
                     }
                 }
-                bool job_received = 
-                    x_TryGetJob(sa, job_key, input, udp_port);
-                if (job_received) {
-                    return job_received;
+                try {
+                    bool job_received = 
+                        x_TryGetJob(sa, job_key, input, udp_port);
+                    if (job_received) {
+                        return job_received;
+                    }
+                } catch (CNetScheduleException& ex) {
+                    CNetScheduleException::TErrCode ec = ex.GetErrCode();
+                    if (ec != CNetScheduleException::eUnknownQueue) {
+                        throw;
+                    } else {
+                        if (++exp_count < m_MaxRetry) {
+                            ERR_POST(ex.what());
+                        } else {
+                            throw;
+                        }
+                    }
                 }
             }
         } else {
@@ -266,10 +332,23 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                         continue;
                     }
                 }
-                bool job_received = 
-                    x_TryGetJob(sa, job_key, input, udp_port);
-                if (job_received) {
-                    return job_received;
+                try {
+                    bool job_received = 
+                        x_TryGetJob(sa, job_key, input, udp_port);
+                    if (job_received) {
+                        return job_received;
+                    }
+                } catch (CNetScheduleException& ex) {
+                    CNetScheduleException::TErrCode ec = ex.GetErrCode();
+                    if (ec != CNetScheduleException::eUnknownQueue) {
+                        throw;
+                    } else {
+                        if (++exp_count < m_MaxRetry) {
+                            ERR_POST(ex.what());
+                        } else {
+                            throw;
+                        }
+                    }
                 }
             }
         }
@@ -321,6 +400,8 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
         pivot = serv_size - 1;
     }
 
+    unsigned exp_count = 0;
+
     unsigned left_right = pivot & 1;
 
     for (unsigned k = 0; k < 2; ++k, left_right ^= 1) {
@@ -332,11 +413,24 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                         continue;
                     }
                 }
-                bool job_received = 
-                    x_GetJobWaitNotify(sa, 
-                        job_key, input, notification_time, udp_port);
-                if (job_received) {
-                    return job_received;
+                try {
+                    bool job_received = 
+                        x_GetJobWaitNotify(sa, 
+                            job_key, input, notification_time, udp_port);
+                    if (job_received) {
+                        return job_received;
+                    }
+                } catch (CNetScheduleException& ex) {
+                    CNetScheduleException::TErrCode ec = ex.GetErrCode();
+                    if (ec != CNetScheduleException::eUnknownQueue) {
+                        throw;
+                    } else {
+                        if (++exp_count < m_MaxRetry) {
+                            ERR_POST(ex.what());
+                        } else {
+                            throw;
+                        }
+                    }
                 }
             }
         } else {
@@ -347,12 +441,26 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                         continue;
                     }
                 }
-                bool job_received = 
-                    x_GetJobWaitNotify(sa, 
-                        job_key, input, notification_time, udp_port);
-                if (job_received) {
-                    return job_received;
+                try {
+                    bool job_received = 
+                        x_GetJobWaitNotify(sa, 
+                            job_key, input, notification_time, udp_port);
+                    if (job_received) {
+                        return job_received;
+                    }
+                } catch (CNetScheduleException& ex) {
+                    CNetScheduleException::TErrCode ec = ex.GetErrCode();
+                    if (ec != CNetScheduleException::eUnknownQueue) {
+                        throw;
+                    } else {
+                        if (++exp_count < m_MaxRetry) {
+                            ERR_POST(ex.what());
+                        } else {
+                            throw;
+                        }
+                    }
                 }
+
             }
         }
     } // for k
@@ -426,7 +534,7 @@ public:
                    CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
                    const TPluginManagerParamTree* params = 0) const
     {
-        TDriver* drv = 0;
+        auto_ptr<TDriver> drv;
         if (params && (driver.empty() || driver == m_DriverName)) {
             if (version.Match(NCBI_INTERFACE_VERSION(IFace))
                                 != CVersionInfo::eNonCompatible) {
@@ -448,24 +556,31 @@ public:
                 unsigned int rebalance_requests = conf.GetInt(m_DriverName,
                                                 "rebalance_requests",
                                                 CConfig::eErr_NoThrow, 100);
-                drv = new CNetScheduleClient_LB(client_name, 
+                CNetScheduleClient_LB* lb_drv =
+                      new CNetScheduleClient_LB(client_name, 
                                                 service, queue_name,
                                                 rebalance_time, 
                                                 rebalance_requests);
+                drv.reset(lb_drv);
+                unsigned max_retry = conf.GetInt(m_DriverName, 
+                                                 "max_retry",
+                                                 CConfig::eErr_NoThrow, 0);
+                if (max_retry) {
+                    lb_drv->SetMaxRetry(max_retry);
+                }
 
                 const string& services_list = conf.GetString(m_DriverName,
                                                 "sevices_lis",
                                                  CConfig::eErr_NoThrow, "");
                 vector<string> services;
-                NStr::Tokenize(services_list, ",", services);
+                NStr::Tokenize(services_list, ",;", services);
                 for(vector<string>::const_iterator it = services.begin();
                                                    it != services.end(); ++it) {
                     string host, sport;
                     if (NStr::SplitInTwo(*it,":",host,sport)) {
                         try {
                             unsigned int port = NStr::StringToUInt(sport);
-                            static_cast<CNetScheduleClient_LB*>(drv)->
-                                                  AddServiceAddress(host,port);
+                            lb_drv->AddServiceAddress(host, port);
                         } catch(CStringException&) {}
                     }
                 }
@@ -477,12 +592,12 @@ public:
                                                "port",
                                                CConfig::eErr_Throw, 9100);
 
-                drv = new CNetScheduleClient(host, port, 
-                                             client_name, queue_name);
+                drv.reset(new CNetScheduleClient(host, port, 
+                                             client_name, queue_name));
             }
             }                               
         }
-        return drv;
+        return drv.release();
     }
 
     void GetDriverVersions(TDriverList& info_list) const
@@ -511,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/11 13:50:45  kuznets
+ * Implemented retries when queue cannot take job
+ *
  * Revision 1.6  2005/04/06 12:38:13  kuznets
  * LB class factory moved from ns_client.cpp
  *
