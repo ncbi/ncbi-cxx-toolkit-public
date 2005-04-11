@@ -243,10 +243,7 @@ public:
     typedef SAnnotSelector::TAnnotType TAnnotType;
     typedef vector<CAnnotObject_Ref>   TAnnotSet;
 
-    CAnnot_Collector(TAnnotType& type,
-                     CScope&     scope);
-    CAnnot_Collector(const SAnnotSelector& selector,
-                     CScope&               scope);
+    CAnnot_Collector(CScope& scope);
     ~CAnnot_Collector(void);
 
 private:
@@ -258,16 +255,18 @@ private:
     CScope& GetScope(void) const;
     CSeq_annot_Handle GetAnnot(const CAnnotObject_Ref& ref) const;
 
-    SAnnotSelector& GetSelector(void);
+    const SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
     bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
     void x_Clear(void);
-    void x_Initialize(const CBioseq_Handle& bioseq,
+    void x_Initialize(const SAnnotSelector& selector,
+                      const CBioseq_Handle& bioseq,
                       const CRange<TSeqPos>& range,
                       ENa_strand strand);
-    void x_Initialize(const CHandleRangeMap& master_loc);
-    void x_Initialize(void);
+    void x_Initialize(const SAnnotSelector& selector,
+                      const CHandleRangeMap& master_loc);
+    void x_Initialize(const SAnnotSelector& selector);
     void x_GetTSE_Info(void);
     bool x_SearchMapped(const CSeqMap_CI&     seg,
                         CSeq_loc&             master_loc_empty,
@@ -326,7 +325,7 @@ private:
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
     typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
 
-    SAnnotSelector                   m_Selector;
+    const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockMap                     m_TSE_LockMap;
@@ -728,16 +727,16 @@ CScope& CAnnot_Collector::GetScope(void) const
 
 
 inline
-SAnnotSelector& CAnnot_Collector::GetSelector(void)
+const SAnnotSelector& CAnnot_Collector::GetSelector(void)
 {
-    return m_Selector;
+    return *m_Selector;
 }
 
 
 inline
 CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
 {
-    switch (m_Selector.m_ResolveMethod) {
+    switch (m_Selector->m_ResolveMethod) {
     case SAnnotSelector::eResolve_All:
         return CScope::eGetBioseq_All;
     default:
@@ -781,6 +780,10 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/04/11 17:51:38  grichenk
+* Fixed m_CollectSeq_annots initialization.
+* Avoid copying SAnnotSelector in CAnnotTypes_CI.
+*
 * Revision 1.28  2005/04/05 13:42:51  vasilche
 * Optimized annotation iterator from CBioseq_Handle.
 *

@@ -137,8 +137,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
     SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
 
-    /// Set type if not set yet, else do nothing.
-    SAnnotSelector& CheckAnnotType(TAnnotType type);
+    /// Check annot type (ignore subtypes).
+    bool CheckAnnotType(TAnnotType type) const
+        {
+            return GetAnnotType() == type;
+        }
+
+    /// Set annot type, include all subtypes.
+    SAnnotSelector& ForceAnnotType(TAnnotType type);
 
     /// Return true if at least one subtype of the type is included
     /// or selected type is not set (any).
@@ -371,6 +377,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 protected:
     friend class CAnnot_Collector;
 
+    void CheckLimitObjectType(void) const;
+
     static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
     static void x_Add(TAnnotsNames& names, const CAnnotName& name);
     static void x_Del(TAnnotsNames& names, const CAnnotName& name);
@@ -393,7 +401,7 @@ protected:
         eLimit_Seq_entry_Info,  // CSeq_entry_Info + m_LimitTSE
         eLimit_Seq_annot_Info   // CSeq_annot_Info + m_LimitTSE
     };
-    ELimitObject          m_LimitObjectType;
+    mutable ELimitObject  m_LimitObjectType;
     EUnresolvedFlag       m_UnresolvedFlag;
     CConstRef<CObject>    m_LimitObject;
     CTSE_Handle           m_LimitTSE;
@@ -419,6 +427,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/04/11 17:51:38  grichenk
+* Fixed m_CollectSeq_annots initialization.
+* Avoid copying SAnnotSelector in CAnnotTypes_CI.
+*
 * Revision 1.46  2005/04/08 14:31:26  grichenk
 * Changed TAnnotTypesSet from vector to bitset
 *

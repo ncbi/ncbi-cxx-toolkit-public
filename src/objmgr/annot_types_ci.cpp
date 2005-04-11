@@ -56,31 +56,42 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CBioseq_Handle& bioseq,
                                const SAnnotSelector* params)
-    : m_DataCollector(params ?
-        new CAnnot_Collector(*params, bioseq.GetScope()) :
-        new CAnnot_Collector(type, bioseq.GetScope()))
+    : m_DataCollector(new CAnnot_Collector(bioseq.GetScope()))
 {
-    m_DataCollector->GetSelector().CheckAnnotType(type);
-    m_DataCollector->x_Initialize(bioseq,
-                                  CRange<TSeqPos>::GetWhole(),
-                                  eNa_strand_unknown);
+    if ( !params ) {
+        SAnnotSelector sel(type);
+        m_DataCollector->x_Initialize(sel,
+                                      bioseq,
+                                      CRange<TSeqPos>::GetWhole(),
+                                      eNa_strand_unknown);
+    }
+    else if ( !params->CheckAnnotType(type) ) {
+        SAnnotSelector sel(*params);
+        sel.ForceAnnotType(type);
+        m_DataCollector->x_Initialize(sel,
+                                      bioseq,
+                                      CRange<TSeqPos>::GetWhole(),
+                                      eNa_strand_unknown);
+    }
+    else {
+        m_DataCollector->x_Initialize(*params,
+                                      bioseq,
+                                      CRange<TSeqPos>::GetWhole(),
+                                      eNa_strand_unknown);
+    }
     Rewind();
 }
 
 
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               CScope& scope,
-                               const CSeq_loc& loc,
-                               const SAnnotSelector* params)
-    : m_DataCollector(params ?
-        new CAnnot_Collector(*params, scope) :
-        new CAnnot_Collector(type, scope))
+void CAnnotTypes_CI::x_Init(CScope& scope,
+                            const CSeq_loc& loc,
+                            const SAnnotSelector& params)
 {
-    m_DataCollector->GetSelector().CheckAnnotType(type);
     if ( loc.IsWhole() ) {
         CBioseq_Handle bh = scope.GetBioseqHandle(loc.GetWhole());
         if ( bh ) {
-            m_DataCollector->x_Initialize(bh,
+            m_DataCollector->x_Initialize(params,
+                                          bh,
                                           CRange<TSeqPos>::GetWhole(),
                                           eNa_strand_unknown);
             Rewind();
@@ -94,30 +105,48 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
             CRange<TSeqPos> range(seq_int.GetFrom(), seq_int.GetTo());
             ENa_strand strand =
                 seq_int.IsSetStrand()? seq_int.GetStrand(): eNa_strand_unknown;
-            m_DataCollector->x_Initialize(bh, range, strand);
+            m_DataCollector->x_Initialize(params, bh, range, strand);
             Rewind();
             return;
         }
     }
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
-    m_DataCollector->x_Initialize(master_loc);
+    m_DataCollector->x_Initialize(params, master_loc);
     Rewind();
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
+                               CScope& scope,
+                               const CSeq_loc& loc,
+                               const SAnnotSelector* params)
+    : m_DataCollector(new CAnnot_Collector(scope))
+{
+    if ( !params ) {
+        x_Init(scope, loc, SAnnotSelector(type));
+    }
+    else if ( !params->CheckAnnotType(type) ) {
+        SAnnotSelector sel(*params);
+        sel.ForceAnnotType(type);
+        x_Init(scope, loc, sel);
+    }
+    else {
+        x_Init(scope, loc, *params);
+    }
 }
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CSeq_annot_Handle& annot,
                                const SAnnotSelector* params)
-    : m_DataCollector(params ?
-        new CAnnot_Collector(*params, annot.GetScope()) :
-        new CAnnot_Collector(type, annot.GetScope()))
+    : m_DataCollector(new CAnnot_Collector(annot.GetScope()))
 {
-    m_DataCollector->GetSelector()
-        .CheckAnnotType(type)
+    SAnnotSelector sel(*params);
+    sel.ForceAnnotType(type)
         .SetResolveNone() // nothing to resolve
         .SetLimitSeqAnnot(annot);
-    m_DataCollector->x_Initialize();
+    m_DataCollector->x_Initialize(sel);
     Rewind();
 }
 
@@ -125,16 +154,14 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CSeq_entry_Handle& entry,
                                const SAnnotSelector* params)
-    : m_DataCollector(params ?
-        new CAnnot_Collector(*params, entry.GetScope()) :
-        new CAnnot_Collector(type, entry.GetScope()))
+    : m_DataCollector(new CAnnot_Collector(entry.GetScope()))
 {
-    m_DataCollector->GetSelector()
-        .CheckAnnotType(type)
+    SAnnotSelector sel(*params);
+    sel.ForceAnnotType(type)
         .SetResolveNone() // nothing to resolve
         .SetSortOrder(SAnnotSelector::eSortOrder_None)
         .SetLimitSeqEntry(entry);
-    m_DataCollector->x_Initialize();
+    m_DataCollector->x_Initialize(sel);
     Rewind();
 }
 
@@ -157,6 +184,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.126  2005/04/11 17:51:38  grichenk
+* Fixed m_CollectSeq_annots initialization.
+* Avoid copying SAnnotSelector in CAnnotTypes_CI.
+*
 * Revision 1.125  2005/04/05 13:43:28  vasilche
 * Use optimized variant of x_Initialize().
 *

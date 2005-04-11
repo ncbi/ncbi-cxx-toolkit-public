@@ -98,6 +98,9 @@ protected:
 
 private:
     const TAnnotSet& x_GetAnnotSet(void) const;
+    void x_Init(CScope& scope,
+                const CSeq_loc& loc,
+                const SAnnotSelector& params);
 
     CRef<CAnnot_Collector> m_DataCollector;
     // Current annotation
@@ -190,6 +193,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/04/11 17:51:38  grichenk
+* Fixed m_CollectSeq_annots initialization.
+* Avoid copying SAnnotSelector in CAnnotTypes_CI.
+*
 * Revision 1.73  2005/01/12 17:16:13  vasilche
 * Avoid performance warning on MSVC.
 *

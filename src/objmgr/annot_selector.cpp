@@ -68,7 +68,8 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
-      m_ExcludeExternal(false)
+      m_ExcludeExternal(false),
+      m_CollectSeq_annots(false)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
         SetFeatType(feat);
@@ -90,7 +91,8 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
-      m_ExcludeExternal(false)
+      m_ExcludeExternal(false),
+      m_CollectSeq_annots(false)
 {
 }
 
@@ -108,7 +110,8 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
-      m_ExcludeExternal(false)
+      m_ExcludeExternal(false),
+      m_CollectSeq_annots(false)
 {
 }
 
@@ -139,6 +142,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_NoMapping = sel.m_NoMapping;
         m_AdaptiveDepth = sel.m_AdaptiveDepth;
         m_ExcludeExternal = sel.m_ExcludeExternal;
+        m_CollectSeq_annots = sel.m_CollectSeq_annots;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
         m_AnnotTypesBitset = sel.m_AnnotTypesBitset;
@@ -504,7 +508,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
 }
 
 
-SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
+SAnnotSelector& SAnnotSelector::ForceAnnotType(TAnnotType type)
 {
     if ( type == CSeq_annot::C_Data::e_Ftable ) {
         // Remove all non-feature types from the list
@@ -587,12 +591,24 @@ bool SAnnotSelector::MatchType(const CAnnotObject_Info& annot_info) const
 }
 
 
+void SAnnotSelector::CheckLimitObjectType(void) const
+{
+    if ( !m_LimitObject ) {
+        m_LimitObjectType = eLimit_None;
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/04/11 17:51:38  grichenk
+* Fixed m_CollectSeq_annots initialization.
+* Avoid copying SAnnotSelector in CAnnotTypes_CI.
+*
 * Revision 1.24  2005/04/08 14:31:26  grichenk
 * Changed TAnnotTypesSet from vector to bitset
 *
