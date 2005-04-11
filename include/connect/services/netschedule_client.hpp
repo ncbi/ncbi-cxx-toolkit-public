@@ -319,12 +319,16 @@ public:
     ///    Job output data (NetCache key).
     /// @param err_msg
     ///    Error message (if job failed)
-    ///
+    /// @param input
+    ///    When job is done input contains the job input string
+    ///    (if it is a reference to an external BLOB it can be deleted,
+    ///     since it is no longer needed)
     virtual
     EJobStatus GetStatus(const string& job_key, 
                          int*          ret_code,
                          string*       output,
-                         string*       err_msg = 0);
+                         string*       err_msg = 0,
+                         string*       input   = 0);
 
     /// Transfer job to the "Returned" status. It will be
     /// re-executed after a while. 
@@ -389,6 +393,9 @@ protected:
 
     void PrintStatistics(CNcbiOstream & out);
 
+    /// Turn server-side logging on(off)
+    ///
+    void Logging(bool on_off);
 
 protected:
     virtual 
@@ -499,6 +506,12 @@ public:
     void AddServiceAddress(const string&  hostname,
                            unsigned short port);
 
+    /// Set max number of retries when queue returns (recoverable) error
+    void SetMaxRetry(unsigned max_retry) { m_MaxRetry = max_retry; }
+
+    /// Get max number of retries when queue returns (recoverable) error
+    unsigned GetMaxRetry() const { return m_MaxRetry; }
+
 
     virtual
     string SubmitJob(const string& input);
@@ -564,8 +577,10 @@ private:
     bool          m_LB_ServiceDiscovery;
 
     TServiceList  m_ServList;
+    unsigned      m_ServListCurr;    ///< Current connected service
 
     unsigned      m_ConnFailPenalty; ///< Conn fail penalty in seconds
+    unsigned      m_MaxRetry;        ///< N. re-attempts to submit(get) job
 };
 
 
@@ -659,6 +674,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/04/11 13:50:10  kuznets
+ * +Logging()
+ *
  * Revision 1.22  2005/04/06 12:37:07  kuznets
  * Added support of client version control
  *
