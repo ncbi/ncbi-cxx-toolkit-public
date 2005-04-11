@@ -1023,7 +1023,7 @@ class NCBI_XHTML_EXPORT CHTML_input : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
 public:
-    CHTML_input(const char* type, const string& name);
+    CHTML_input(const char* type, const string& name = kEmptyStr);
     ~CHTML_input(void);
 };
 
@@ -1122,31 +1122,16 @@ public:
 };
 
 
-// <button> tag.
-/*
-  commented out because it's not supported in most browsers
-  class CHTML_button : public CHTMLElement
-  {
-  typedef CHTMLElement CParent;
-  public:
-  enum EButtonType {
-  eSubmit,
-  eReset,
-  eButton
-  };
-  CHTML_button(const string& text, EButtonType type);
-  CHTML_button(CNCBINode* contents, EButtonType type);
-  CHTML_button(const string& text, const string& name,
-  const string& value = kEmptyStr);
-  CHTML_button(CNCBINode* contents, const string& name,
-  const string& value = kEmptyStr);
-  ~CHTML_button(void);
-
-  CHTML_button* SetType(EButtonType type);
-  CHTML_button* SetSubmit(const string& name,
-  const string& value = kEmptyStr);
-  };
-*/
+// <input type=button> tag.
+class NCBI_XHTML_EXPORT CHTML_input_button : public CHTML_input
+{
+    typedef CHTML_input CParent;
+    static const char sm_InputType[];
+public:
+    CHTML_input_button(const string& name);
+    CHTML_input_button(const string& name, const string& label);
+    ~CHTML_input_button(void);
+};
 
 
 // <input type=text> tag.
@@ -1174,6 +1159,32 @@ public:
     CHTML_file(const string& name, const string& value = kEmptyStr);
     ~CHTML_file(void);
 };
+
+
+// <button> tag ( added in HTML 4.0)
+class NCBI_XHTML_EXPORT CHTML_button : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+    static const char sm_TagName[];
+public:
+    enum EButtonType {
+        eSubmit,   // submits the form
+        eReset,    // reset the form
+        eButton    // doesn't do anything
+    };
+
+    CHTML_button(const string& text, EButtonType type = eSubmit,
+                 const string& name = kEmptyStr,
+                 const string& value = kEmptyStr);
+    CHTML_button(CNCBINode* contents, EButtonType type = eSubmit,
+                 const string& name = kEmptyStr,
+                 const string& value = kEmptyStr);
+    ~CHTML_button(void);
+
+    CHTML_button* SetType(EButtonType type);
+    CHTML_button* SetSubmitData(const string& name,
+                                const string& value = kEmptyStr);
+  };
 
 
 // <select> tag.
@@ -1599,6 +1610,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2005/04/11 19:16:12  ivanov
+ * CHTML_input:: made name parameter in the constructor optional.
+ * Added CHTML_input_button class for <input type=button>.
+ * Revival of CHTML_button class, many browsers already support <button> tag,
+ * specified in the HTML 4.0.
+ *
  * Revision 1.83  2005/03/28 18:29:07  jcherry
  * Added export specifiers
  *

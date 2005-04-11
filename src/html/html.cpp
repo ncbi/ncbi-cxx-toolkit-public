@@ -1505,7 +1505,9 @@ CHTML_input::CHTML_input(const char* type, const string& name)
     : CParent("input")
 {
     SetAttribute("type", type);
-    SetNameAttribute(name);
+    if ( !name.empty() ) {
+        SetNameAttribute(name);
+    }
 }
 
 CHTML_input::~CHTML_input(void)
@@ -1514,7 +1516,7 @@ CHTML_input::~CHTML_input(void)
 }
 
 
-// <input type=legend> tag.
+// <legend> tag.
 
 CHTML_legend::CHTML_legend(const string& legend)
     : CParent("legend", legend)
@@ -1533,7 +1535,7 @@ CHTML_legend::~CHTML_legend(void)
     return;
 }
 
-// <input type=fieldset> tag.
+// <fieldset> tag.
 
 CHTML_fieldset::CHTML_fieldset(void)
     : CParent("fieldset")
@@ -1559,7 +1561,7 @@ CHTML_fieldset::~CHTML_fieldset(void)
 }
 
 
-// <input tpe=label> tag.
+// <label> tag.
 
 CHTML_label::CHTML_label(const string& text)
     : CParent("label", text)
@@ -1584,12 +1586,14 @@ void CHTML_label::SetFor(const string& idRef)
 }
 
 
-// <input type=textarea> tag.
+// <textarea> tag.
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
     : CParent("textarea")
 {
-    SetNameAttribute(name);
+    if ( !name.empty() ) {
+        SetNameAttribute(name);
+    }
     SetAttribute("cols", cols);
     SetAttribute("rows", rows);
 }
@@ -1796,62 +1800,25 @@ CHTML_reset::~CHTML_reset(void)
 
 
 // <input type=button> tag
-/*
-  commented out because it's not supported in most browsers
-  CHTML_button::CHTML_button(const string& text, EButtonType type)
-  : CParent("button", text)
-  {
-  SetType(type);
-  }
 
-  CHTML_button::CHTML_button(CNCBINode* contents, EButtonType type)
-  : CParent("button", contents)
-  {
-  SetType(type);
-  }
+const char CHTML_input_button::sm_InputType[] = "button";
 
-  CHTML_button::CHTML_button(const string& text, const string& name,
-  const string& value)
-  : CParent("button", text)
-  {
-  SetSubmit(name, value);
-  }
+CHTML_input_button::CHTML_input_button(const string& label)
+    : CParent(sm_InputType, NcbiEmptyString)
+{
+    SetOptionalAttribute("value", label);
+}
 
-  CHTML_button::CHTML_button(CNCBINode* contents, const string& name,
-  const string& value)
-  : CParent("button", contents)
-  {
-  SetSubmit(name, value);
-  }
+CHTML_input_button::CHTML_input_button(const string& name, const string& label)
+    : CParent(sm_InputType, name)
+{
+    SetOptionalAttribute("value", label);
+}
 
-  CHTML_button* CHTML_button::SetType(EButtonType type)
-  {
-  switch ( type ) {
-  case eSubmit:
-  SetAttribute("type", "submit");
-  break;
-  case eReset:
-  SetAttribute("type", "reset");
-  break;
-  case eButton:
-  SetAttribute("type", "button");
-  break;
-  }
-  return this;
-  }
-
-  CHTML_button* CHTML_button::SetSubmit(const string& name,
-  const string& value)
-  {
-  SetNameAttribute(name);
-  SetOptionalAttribute("value", value);
-  return this;
-  }
-
-  CHTML_button::~CHTML_button(void)
-  {
-  }
-*/
+CHTML_input_button::~CHTML_input_button(void)
+{
+    return;
+}
 
 
 // <input type=text> tag.
@@ -1902,7 +1869,57 @@ CHTML_file::~CHTML_file(void)
 }
 
 
-// <input type=select> tag.
+// <button> tag
+
+const char CHTML_button::sm_TagName[] = "button";
+
+CHTML_button::CHTML_button(const string& text, EButtonType type,
+                           const string& name, const string& value)
+    : CParent(sm_TagName, text)
+{
+    SetType(type);
+    SetSubmitData(name, value);
+}
+
+CHTML_button::CHTML_button(CNCBINode* contents, EButtonType type,
+                           const string& name, const string& value)
+    : CParent(sm_TagName, contents)
+{
+    SetType(type);
+    SetSubmitData(name, value);
+}
+
+CHTML_button* CHTML_button::SetType(EButtonType type)
+{
+    switch ( type ) {
+        case eSubmit:
+            SetAttribute("type", "submit");
+            break;
+        case eReset:
+            SetAttribute("type", "reset");
+            break;
+        case eButton:
+            SetAttribute("type", "button");
+            break;
+    }
+    return this;
+}
+
+CHTML_button* CHTML_button::SetSubmitData(const string& name,
+                                          const string& value)
+{
+    SetOptionalAttribute("name", name);
+    SetOptionalAttribute("value", value);
+    return this;
+}
+
+CHTML_button::~CHTML_button(void)
+{
+    return;
+}
+
+
+// <select> tag.
 
 const char CHTML_select::sm_TagName[] = "select";
 
@@ -1918,7 +1935,7 @@ CHTML_select* CHTML_select::SetMultiple(void)
 }
 
 
-// <input type=option> tag.
+// <option> tag.
 
 const char CHTML_option::sm_TagName[] = "option";
 
@@ -2396,6 +2413,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2005/04/11 19:16:12  ivanov
+ * CHTML_input:: made name parameter in the constructor optional.
+ * Added CHTML_input_button class for <input type=button>.
+ * Revival of CHTML_button class, many browsers already support <button> tag,
+ * specified in the HTML 4.0.
+ *
  * Revision 1.113  2004/12/13 13:49:41  ivanov
  * Added CHTML_map and CHTML_area classes
  *
