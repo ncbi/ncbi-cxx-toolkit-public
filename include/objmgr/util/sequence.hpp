@@ -213,17 +213,6 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
  * @{
  */
 
-NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
-                                            CSeqFeatData::E_Choice feat_type,
-                                            EOverlapType overlap_type,
-                                            CScope& scope);
-NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
-                                            CSeqFeatData::ESubtype feat_type,
-                                            EOverlapType overlap_type,
-                                            CScope& scope);
-
 enum EBestFeatOpts {
     /// requires explicit association, rather than analysis based on overlaps
     fBestFeat_StrictMatch = 0x01,
@@ -236,6 +225,17 @@ enum EBestFeatOpts {
     fBestFeat_Defaults = 0
 };
 typedef int TBestFeatOpts;
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::E_Choice feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope);
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::ESubtype feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope);
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
@@ -288,7 +288,6 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
                        TBestFeatOpts opts = fBestFeat_Defaults);
-
 
 /// Get the best overlapping feature for a SNP (variation) feature
 /// @param snp_feat
@@ -691,6 +690,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.61  2005/04/11 14:47:54  dicuccio
+* Optimized feature overlap functions GetBestCdsForMrna(), GetBestMrnaForCds(),
+* GetBestGenForMrna(), GetBestMrnaForGene(), GetBestGeneForCds(): rearranged
+* order of tests; provide early check for only one possible feature and avoid
+* complex checks if so
+*
 * Revision 1.60  2005/02/17 15:58:41  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *
