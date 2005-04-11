@@ -334,7 +334,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
             inc_dir = CDirEntry::ConcatPath(try_dir, 
                 GetApp().GetConfig().GetString("ProjectTree", "include", ""));
             if (CDirEntry(inc_dir).Exists()) {
-                ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
+                try {
+                    ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
+                } catch (CFileException&) {
+                    ext_inc = inc_dir;
+                }
                 ext_inc = CDirEntry::AddTrailingPathSeparator(ext_inc);
                 break;
             }
@@ -442,11 +446,20 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
 // library folder
     const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
     if (all_projects) {
-        string lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_StaticLibRoot);
+        string lib_dir;
+        try {
+            lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_StaticLibRoot);
+        } catch (CFileException&) {
+            lib_dir = m_StaticLibRoot;
+        }
         lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
         dir_list.push_back(lib_dir);
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
-            lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_DynamicLibRoot);
+            try {
+                lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_DynamicLibRoot);
+            } catch (CFileException&) {
+                lib_dir = m_DynamicLibRoot;
+            }
             lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
             dir_list.push_back(lib_dir);
         }
@@ -1041,6 +1054,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/04/11 17:47:58  gouriano
+ * Do not fail when it is impossible to create a relative path
+ *
  * Revision 1.49  2005/04/08 17:30:24  gouriano
  * Made library search path to depend on build type
  *
