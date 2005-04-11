@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.12 2005/02/08 14:50:09 thiessen Exp $
+-- $Id: pcsubstance.asn,v 1.13 2005/04/11 14:54:12 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -227,7 +227,8 @@ PC-InfoData ::= SEQUENCE {
                           fval    REAL,                      -- Float or Double
                           fvec    SEQUENCE OF REAL,          -- Double Vector
                           sval    VisibleString,             -- String
-                          slist   SEQUENCE OF VisibleString  -- List of Strings
+                          slist   SEQUENCE OF VisibleString, -- List of Strings
+                          date    Date                       -- Date
                    }
 }
 
@@ -267,6 +268,7 @@ PC-UrnDataType ::= INTEGER {
         binary                        (12),  -- Base64 encoded Binary Blob         [maps to a VisibleString]
         url                           (13),  -- URL                                [maps to a VisibleString]
         unicode                       (14),  -- UniCode String                     [maps to a VisibleString]
+        date                          (15),  -- ISO8601 Date                       [maps to a Date]
 
         unknown                      (255)   -- Unknown Data Type               [maps to a set of VisibleString]
 }
@@ -646,6 +648,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.13  2005/04/11 14:54:12  bolton
+-- Added ability to use Date object in PC-InfoData.
+--
 -- Revision 1.12  2005/02/08 14:50:09  thiessen
 -- export PC-Substances, PC-Compounds
 --
@@ -726,4 +731,5 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
