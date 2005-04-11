@@ -62,7 +62,7 @@ public:
         CNetScheduleClient::PrintStatistics(out);
     }
 
-//    void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
+    void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
 };
 ///////////////////////////////////////////////////////////////////////
 
@@ -129,13 +129,12 @@ int CNetScheduleControl::Run(void)
     CNetScheduleClient_Control nc_client(host, port);
 
     if (args["log"]) {  // logging control
-/*        
+        
         bool on_off = args["log"].AsBoolean();
 
         nc_client.Logging(on_off);
         NcbiCout << "Logging turned " 
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
-*/
     }
     if (args["drop"]) {  
         string queue = args["drop"].AsString(); 
@@ -180,6 +179,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/11 13:52:51  kuznets
+ * Added logging control
+ *
  * Revision 1.5  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
