@@ -71,7 +71,7 @@ protected:
     virtual void ShowParamsPage(CGridCgiContext& ctx) const ;
 
     // Collect parameters from the HTML page.
-    virtual bool CollectParams(void);
+    virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
     virtual void PrepareJobData(CGridJobSubmiter& submiter);
@@ -160,7 +160,7 @@ void CGridCgiSampleApplication::ShowParamsPage(CGridCgiContext& ctx) const
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
-bool CGridCgiSampleApplication::CollectParams()
+bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
 {
     // You can catch CArgException& here to process argument errors,
     // or you can handle it in OnException()
@@ -357,6 +357,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/11 14:56:33  didenko
+ * + CGridCgiContext parameter to CollectParams method
+ *
  * Revision 1.8  2005/04/07 19:25:11  didenko
  * Cosmetics
  *
