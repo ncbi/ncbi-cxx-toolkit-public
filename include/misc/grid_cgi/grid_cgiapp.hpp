@@ -43,6 +43,8 @@
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netschedule_storage.hpp>
 
+#include <map>
+
 /// @file grid_cgiapp.hpp
 /// NetSchedule Framework specs. 
 ///
@@ -63,6 +65,8 @@ class CGridCgiApplication;
 class CGridCgiContext
 {
 public: 
+    ~CGridCgiContext();
+
     /// Get an HTML page 
     ///
     CHTMLPage&    GetHTMLPage(void)       { return m_Page; }
@@ -73,17 +77,44 @@ public:
 
     /// Get Current job key
     ///
-    const string& GetJobKey(void) const   { return m_JobKey; }
+    const string& GetJobKey(void) const;
+
+    /// Get a value from a cgi request. if there is no an entry with a
+    /// given name tries to find a cookie. If none is found returns 
+    /// an empty string.
+    const string& GetEntryValue(const string& entry_name) const;
+
+    /// Save this entry as a cookie add it to serf url
+    void PersistEntry(const string& entry_name);
+    
+    /// Get CGI Context
+    CCgiContext& GetCGIContext() { return m_CgiContext; }
 
 private:
+    /// Get a cookie value from a cgi request.
+    /// if there is no a cookie with a given name 
+    /// returns an empty string.
+    const string& GetCookieValue(const string& cookie_name) const;
+
+    /// Set a cookie to a cgi responese
+    void SetCookie(const string& name, const string& value);
+
+    /// 
+    void ExpierCookie(const string& name);
+
+    /// Remove all persisted entries from cookie and self url.
+    void Clear();
+
+private:
+    typedef map<string,string>    TPersistedEntries;
+
     friend class CGridCgiApplication;
-    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx, CGridCgiApplication& app);
+    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
     void SetJobKey(const string& job_key);
 
-    CHTMLPage&           m_Page;
-    CCgiContext&         m_CgiContext;
-    CGridCgiApplication& m_App;
-    string               m_JobKey;
+    CHTMLPage&                    m_Page;
+    CCgiContext&                  m_CgiContext;
+    TPersistedEntries             m_PersistedEntries;
     
     /// A copy constructor and an assignemt operator
     /// are prohibited
@@ -137,7 +168,7 @@ protected:
     /// not specified (or were incorrect). In this case method ShowParamsPage
     /// will be called.
     ///
-    virtual bool CollectParams(void) = 0;
+    virtual bool CollectParams(CGridCgiContext& ctx) = 0;
    
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
@@ -204,18 +235,16 @@ protected:
     ///
     virtual bool JobStopRequested(void) const { return false; }
 
-
-    virtual string AddToSelfUrl(void) const { return kEmptyStr; }
-
     /// Get a Grid Client.
     ///
     CGridClient& GetGridClient(void) { return *m_GridClient; }
 
+    static void RenderRefresh(CHTMLPage& page, 
+                              const string& url,
+                              int delay);
 
 private:
-    friend class CGridCgiContext;
     int m_RefreshDelay;
-    void x_RenderRefresh(CHTMLPage& page) const;
 
     auto_ptr<CNetScheduleClient> m_NSClient;
     auto_ptr<INetScheduleStorage> m_NSStorage;
@@ -231,6 +260,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/11 14:51:00  didenko
+ * + CGridCgiContext parameter to CollectParams method
+ * + saving user specified CGI entries as cookies
+ *
  * Revision 1.9  2005/04/07 19:26:54  didenko
  * Removed Run method
  *

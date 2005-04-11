@@ -41,31 +41,116 @@
 BEGIN_NCBI_SCOPE
 
 
-CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx, 
-                                 CGridCgiApplication& app)
-    : m_Page(page), m_CgiContext(ctx), m_App(app)
+CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
+    : m_Page(page), m_CgiContext(ctx)
 {
+}
+
+CGridCgiContext::~CGridCgiContext()
+{
+    /*
+    try {
+        TPersistedEntries::const_iterator it;
+        for (it = m_PersistedEntries.begin(); 
+             it != m_PersistedEntries.end(); ++it) {
+            const string& name = it->first;
+            const string& value = it->second;
+            if (!name.empty() && !value.empty()) {
+                SetCookie(name, value);
+            }
+        }
+    }
+    catch (...) {} // just to be sure we will not throw from the destructor
+    */
 }
 
 string CGridCgiContext::GetSelfURL() const
 {
     string url = m_CgiContext.GetSelfURL();
-    if (!m_JobKey.empty())
-        url += "?job_key=" + m_JobKey;
-    string add = m_App.AddToSelfUrl();
-    if (!add.empty()) {
-        if (!m_JobKey.empty()) 
-            url += '&';
-        else
-            url += '?';
-        url += add;
+    bool first = true;
+    TPersistedEntries::const_iterator it;
+    for (it = m_PersistedEntries.begin(); 
+         it != m_PersistedEntries.end(); ++it) {
+        const string& name = it->first;
+        const string& value = it->second;
+        if (!name.empty() && !value.empty()) {
+            if (first) {
+                url += '?';
+                first = false;
+            }
+            else
+                url += '&';
+            url += name + '=' + value;
+        }
     }        
     return url;
 }
 
 void CGridCgiContext::SetJobKey(const string& job_key)
 {
-    m_JobKey = job_key;
+    m_PersistedEntries["job_key"] = job_key;
+    SetCookie("job_key", job_key);
+
+}
+const string& CGridCgiContext::GetJobKey(void) const
+{
+    TPersistedEntries::const_iterator it = m_PersistedEntries.find("job_key");
+    if (it != m_PersistedEntries.end())
+        return it->second;
+    return kEmptyStr;
+}
+
+const string& CGridCgiContext::GetCookieValue(const string& cookie_name) const
+{
+    const CCgiCookie* c = 
+        m_CgiContext.GetRequest().GetCookies().Find(cookie_name, "", "" );
+    if (c)
+        return c->GetValue();
+    return kEmptyStr;   
+}
+
+void CGridCgiContext::SetCookie(const string& name, const string& value)
+{
+    m_CgiContext.GetResponse().Cookies().Add(name, value);
+}
+
+void CGridCgiContext::ExpierCookie(const string& cookie_name)
+{
+    CCgiCookie c(cookie_name, "");
+    CTime exp(CTime::eCurrent, CTime::eGmt);
+    c.SetExpTime(--exp);
+    m_CgiContext.GetResponse().Cookies().Add(c);
+}
+
+const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
+{
+    const CCgiRequest& request = m_CgiContext.GetRequest();
+    const TCgiEntries& entries = request.GetEntries();
+    TCgiEntries::const_iterator eit = entries.find(entry_name);
+    if (eit != entries.end())
+        return eit->second;
+    return GetCookieValue(entry_name);
+}
+
+void CGridCgiContext::PersistEntry(const string& entry_name)
+{
+    const string& value = GetEntryValue(entry_name);
+    if (!value.empty()) {
+        m_PersistedEntries[entry_name] = value;
+        SetCookie(entry_name, value);
+    }
+}
+
+void CGridCgiContext::Clear()
+{
+    TPersistedEntries::const_iterator it;
+    for (it = m_PersistedEntries.begin(); 
+         it != m_PersistedEntries.end(); ++it) {
+        const string& name = it->first;
+        if (!name.empty())
+            ExpierCookie(name);
+        }
+    m_PersistedEntries.clear();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -104,11 +189,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
-    const CCgiRequest& request  = ctx.GetRequest();
-    const CCgiCookies& req_cookies = request.GetCookies();
-    const TCgiEntries& entries = request.GetEntries();
+    //const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
-    CCgiCookies&       res_cookies = response.Cookies();
 
 
     // Create a HTML page (using template HTML file "grid_cgi_sample.html")
@@ -120,20 +202,12 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                                      << " HTML page: " << e.what());
         return 2;
     }
-
-    CGridCgiContext grid_ctx(*page, ctx, *this);
-    string job_key;
-    TCgiEntries::const_iterator eit = entries.find("job_key");
-    if (eit != entries.end())
-        job_key = eit->second;
-
+    CGridCgiContext grid_ctx(*page, ctx);
+    string job_key = grid_ctx.GetEntryValue("job_key");
     try {
-        const CCgiCookie* c = req_cookies.Find("job_key", "", "" );
-        if (c && job_key.empty()) {
-            job_key = c->GetValue();
-        }
         OnBeginProcessRequest(grid_ctx);
         if (!job_key.empty()) {
+            grid_ctx.PersistEntry("job_key");
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
             CNetScheduleClient::EJobStatus status;
             status = job_status.GetStatus();
@@ -163,48 +237,42 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 remove_cookie = true;
             }
             else {
-                grid_ctx.SetJobKey(job_key);
+                //grid_ctx.SetJobKey(job_key);
                 OnStatusCheck(grid_ctx);
-                x_RenderRefresh( *page );
+                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
             }
              
             if (JobStopRequested())
                 GetGridClient().CancelJob(job_key);
 
-            if (c && remove_cookie) {
-                CCgiCookie c1(*c);
-                CTime exp(CTime::eCurrent, CTime::eGmt);
-                c1.SetExpTime(--exp);
-                c1.SetValue("");
-                res_cookies.Add(c1);
-            }
+            if (remove_cookie) 
+                grid_ctx.Clear();
         }        
         else {
-            if (CollectParams()) {
+            if (CollectParams(grid_ctx)) {
                 // Get a job submiter
                 CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
-
-                // Get an ouptut stream
-                //                CNcbiOstream& os = job_submiter.GetOStream();
-                
                 PrepareJobData(job_submiter);
 
                 // Submit a job
                 try {
                     string job_key = job_submiter.Submit();
-                    res_cookies.Add("job_key", job_key);
+                    grid_ctx.SetCookie("job_key", job_key);
                     grid_ctx.SetJobKey(job_key);
                     OnJobSubmitted(grid_ctx);
                     
-                    x_RenderRefresh( *page );
+                    RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
         
                 } 
-                catch ( CNetScheduleException& ex ) {
+                catch (CNetScheduleException& ex) {
                     if (ex.GetErrCode() == 
-                        CNetScheduleException::eTooManyPendingJobs )
+                        CNetScheduleException::eTooManyPendingJobs)
                         OnQueueIsBusy(grid_ctx);
                     else
                         OnJobFailed(ex.what(), grid_ctx);
+                }
+                catch (exception& ex) {
+                    OnJobFailed(ex.what(), grid_ctx);
                 }
 
             }
@@ -212,7 +280,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 ShowParamsPage(grid_ctx);
             }
         }
-
 
         CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL());
         page->AddTagMap("SELF_URL", self_url);
@@ -231,21 +298,28 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
         ERR_POST("Failed to compose/send " << GetPageTitle() 
-                                           <<" HTML page: " << e.what());
+                 <<" HTML page: " << e.what());
         return 4;
     }
+
 
     return 0;
 }
 
-void CGridCgiApplication::x_RenderRefresh(CHTMLPage& page) const
+void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
+                                        const string& url,
+                                        int idelay)
 {
     CHTMLText* redirect = new CHTMLText(
              "<META HTTP-EQUIV=Refresh " 
-             "CONTENT=\"<@REFRESH_DELAY@>; URL=<@SELF_URL@>\">");
+             "CONTENT=\"<@REFRESH_DELAY@>; URL=<@REFRESH_URL@>\">");
     page.AddTagMap("REFRESH", redirect);
+
+    CHTMLPlainText* h_url = new CHTMLPlainText(url);
+    page.AddTagMap("REFRESH_URL",h_url);               
+
     CHTMLPlainText* delay = new CHTMLPlainText(
-                                NStr::IntToString(m_RefreshDelay)
+                                NStr::IntToString(idelay)
                                 );
     page.AddTagMap("REFRESH_DELAY",delay);               
 }
@@ -260,6 +334,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/11 14:51:35  didenko
+ * + CGridCgiContext parameter to CollectParams method
+ * + saving user specified CGI entries as cookies
+ *
  * Revision 1.8  2005/04/07 19:27:32  didenko
  * Removed Run method
  *
