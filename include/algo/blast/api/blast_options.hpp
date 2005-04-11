@@ -46,7 +46,6 @@
 
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
-class CBlastGapAlignTest;
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
 class CRPSTest; 
@@ -382,7 +381,6 @@ private:
     friend class ::CBlastTabularFormatThread; 
 
     /// @todo Strive to remove these classes
-    friend class ::CBlastGapAlignTest;     // unit test class
     friend class ::CBlastTraceBackTest;    // unit test class
     friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
@@ -400,6 +398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2005/04/11 14:29:04  madden
+* Remove CBlastGapAlignTest as friend class
+*
 * Revision 1.92  2005/04/06 19:44:32  dondosha
 * CBlastEngineTest unit test class does not need friendship any more
 *
