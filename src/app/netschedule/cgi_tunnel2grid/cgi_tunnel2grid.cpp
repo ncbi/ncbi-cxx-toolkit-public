@@ -98,13 +98,13 @@ protected:
     // Get the HTML page template file.
     virtual string GetPageTemplate() const;
 
-
 private:
     // This  function just demonstrate the use of cmd-line argument parsing
     // mechanism in CGI application -- for the processing of both cmd-line
     // arguments and HTTP entries
     void x_SetupArgs(void);
 
+    void static x_RenderView(CHTMLPage& page, const string& view_name);
     enum ERenderType {
         eUrlRedirect = 0,
         eHtmlPage
@@ -115,14 +115,8 @@ private:
     int    m_FallBackDelay;
 
     string m_HtmlTemplate;
-    string m_HtmlOnJobSubmitted;
-    string m_HtmlOnJobDone;
-    string m_HtmlOnJobCanceled;
-    string m_HtmlOnJobFailed;
-    string m_HtmlOnStatusCheck;
-    string m_HtmlOnQueueIsBusy;
-    string m_HtmlOnEmptyResult;
-
+    vector<string> m_HtmlIncs;
+    
     string m_ProgramVersion;
     
     ERenderType m_RenderType;
@@ -154,6 +148,10 @@ string CCgiTunnel2Grid::GetPageTemplate() const
 
 void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
 {
+    vector<string>::const_iterator it;
+    for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it)
+        ctx.GetHTMLPage().LoadTemplateLibFile(NStr::TruncateSpaces(*it));
+
     ctx.PersistEntry("fall_back");
 }
 
@@ -163,28 +161,12 @@ void CCgiTunnel2Grid::Init()
                                     "Grid Job Status Checker" );
     m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", 
                                            "cgi_tunnel2grid.html");
-    m_HtmlOnJobSubmitted = 
-        GetConfig().GetString("tunnel2grid", "on_job_sumitted_tlf", 
-                              "on_job_submitted.html.inc");
-    m_HtmlOnJobDone =
-        GetConfig().GetString("tunnel2grid", "on_job_done_tlf", 
-                              "on_job_done.html.inc");
-    m_HtmlOnJobCanceled =
-        GetConfig().GetString("tunnel2grid", "on_job_canceled_tlf", 
-                              "on_job_canceled.html.inc");
-    m_HtmlOnJobFailed =
-        GetConfig().GetString("tunnel2grid", "on_job_failed_tlf", 
-                              "on_job_failed.html.inc");
-    m_HtmlOnStatusCheck =
-        GetConfig().GetString("tunnel2grid", "on_status_check_tlf", 
-                              "on_status_check.html.inc");
-    m_HtmlOnQueueIsBusy =
-        GetConfig().GetString("tunnel2grid", "on_queue_is_busy_tlf", 
-                              "on_queue_is_busy.html.inc");
 
-    m_HtmlOnQueueIsBusy =
-        GetConfig().GetString("tunnel2grid", "on_empty_result_tlf", 
-                              "on_empty_result.html.inc");
+    string incs = GetConfig().GetString("tunnel2grid", "html_template_includes", 
+                                           "cgi_tunnel2grid.inc.html");
+
+    NStr::Tokenize(incs, ",", m_HtmlIncs);
+
 
     m_FallBackDelay = 
         GetConfig().GetInt("tunnel2grid", "fall_back_delay", 5, IRegistry::eReturn);
@@ -252,7 +234,7 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
 {   
     // Render a report page
-    ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnJobSubmitted);
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_SUBMITTED@>");
 }
 
 
@@ -265,14 +247,14 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
     string url;
     is >> url;
     if (url.empty()) {
-        ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnEmptyResult);    
+        x_RenderView(ctx.GetHTMLPage(), "<@VIEW_EMPTY_RESULT@>");
         string fall_back_url = ctx.GetEntryValue("fall_back");
         RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
     }
     else {
 
         if (m_RenderType == eUrlRedirect ) {
-            ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnJobDone);    
+            x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_DONE@>");
             RenderRefresh(ctx.GetHTMLPage(), url, 0);
         }
         else /*if (m_RenderType == eHtmlPage)*/ {
@@ -287,7 +269,7 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
                                   CGridCgiContext& ctx)
 {
     // Render a error page
-    ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnJobFailed);
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_FAILED@>");
 
     string fall_back_url = ctx.GetEntryValue("fall_back");
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
@@ -299,7 +281,7 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
 void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 {
     // Render a job cancelation page
-    ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnJobCanceled);
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
     string fall_back_url = ctx.GetEntryValue("fall_back");
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
@@ -309,7 +291,7 @@ void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 {
     // Render a page
-    ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnQueueIsBusy);
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_QUEUE_IS_BUSY@>");
 
     string fall_back_url = ctx.GetEntryValue("fall_back");
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
@@ -319,7 +301,7 @@ void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 void CCgiTunnel2Grid::OnStatusCheck(CGridCgiContext& ctx)
 {
     // Render a status report page
-    ctx.GetHTMLPage().LoadTemplateLibFile(m_HtmlOnStatusCheck);
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_STATUS_CHECK@>");
 }
 
 void CCgiTunnel2Grid::OnEndProcessRequest(CGridCgiContext& ctx)
@@ -336,6 +318,12 @@ bool CCgiTunnel2Grid::JobStopRequested(void) const
     if ( args["Cancel"] )
         return true;
     return false;
+}
+
+void /*static*/ CCgiTunnel2Grid::x_RenderView(CHTMLPage& page, 
+                                              const string& view_name)
+{
+    page.AddTagMap("VIEW", new CHTMLText(view_name));  
 }
 
 void CCgiTunnel2Grid::x_SetupArgs()
@@ -389,6 +377,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/11 17:49:16  didenko
+ * combine all view files into one inc.html file
+ *
  * Revision 1.5  2005/04/11 15:57:30  didenko
  * changed REFRESH to REDIRECT
  *
