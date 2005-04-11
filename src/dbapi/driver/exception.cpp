@@ -154,6 +154,14 @@ CDB_Exception::GetErrCodeString(void) const
     }
 }
 
+CDB_Exception* 
+CDB_Exception::Clone(void) const
+{
+    const CDB_Exception& result = dynamic_cast<const CDB_Exception&>( *x_Clone() );
+
+    return const_cast<CDB_Exception*>(&result);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_RPCEx::
 //
@@ -494,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/11 19:23:59  ssikorsk
+ * Added method Clone to the CDB_Exception class
+ *
  * Revision 1.15  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

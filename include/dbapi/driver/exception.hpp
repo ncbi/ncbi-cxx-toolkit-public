@@ -132,6 +132,7 @@ public:
 
 public:
     virtual void ReportExtra(ostream& out) const;
+    virtual CDB_Exception* Clone(void) const;
 
 protected:
     CDB_Exception(const CDiagCompileInfo& info,
@@ -455,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/11 19:23:31  ssikorsk
+ * Added method Clone to the CDB_Exception class
+ *
  * Revision 1.17  2005/04/04 13:03:02  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
