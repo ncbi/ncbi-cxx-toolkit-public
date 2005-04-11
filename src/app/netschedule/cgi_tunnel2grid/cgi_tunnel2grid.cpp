@@ -276,8 +276,8 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
             RenderRefresh(ctx.GetHTMLPage(), url, 0);
         }
         else /*if (m_RenderType == eHtmlPage)*/ {
-            string m_StrPage = "<html><head><title>Unsuppoted renderer</title></head>"
-                               "<body>Unsuppoted renderer.</body></html>";
+            m_StrPage = "<html><head><title>Unsuppoted renderer</title></head>"
+                        "<body>Unsuppoted renderer.</body></html>";
             ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
         }
     }
@@ -389,6 +389,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/11 15:57:30  didenko
+ * changed REFRESH to REDIRECT
+ *
  * Revision 1.4  2005/04/11 14:55:03  didenko
  * + On empty result handler
  * + On queue is busy handler
