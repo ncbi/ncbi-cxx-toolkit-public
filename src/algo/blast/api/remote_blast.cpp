@@ -40,6 +40,9 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/seqalign/seqalign__.hpp>
+#include <objects/blast/blastclient.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -311,6 +314,42 @@ CRef<CSeq_align_set> CRemoteBlast::GetAlignments(void)
     
     if (gsrr && gsrr->CanGetAlignments()) {
         rv = & (gsrr->SetAlignments());
+    }
+    
+    return rv;
+}
+
+TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
+{
+    CRef<CSeq_align_set> al = GetAlignments();
+    
+    TSeqAlignVector rv;
+    
+    if (al.Empty() || al->Get().empty()) {
+        return rv;
+    }
+    
+    CRef<CSeq_align_set> cur_set;
+    CConstRef<CSeq_id> current_id;
+    
+    ITERATE(CSeq_align_set::Tdata, it, al->Get()) {
+        // index 0 = query, index 1 = subject
+        const int query_index = 0;
+        CConstRef<CSeq_id> this_id( & (*it)->GetSeq_id(query_index) );
+        
+        if (current_id.Empty() || (CSeq_id::e_NO == this_id->Compare(*current_id))) {
+            if (cur_set.NotEmpty()) {
+                rv.push_back(cur_set);
+            }
+            cur_set.Reset(new CSeq_align_set);
+            current_id = this_id;
+        }
+        
+        cur_set->Set().push_back(*it);
+    }
+    
+    if (cur_set.NotEmpty()) {
+        rv.push_back(cur_set);
     }
     
     return rv;
@@ -1067,6 +1106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/04/11 15:21:48  bealer
+* - Add GetSeqAlignSets() functionality to CRemoteBlast.
+*
 * Revision 1.21  2004/10/12 14:19:18  camacho
 * Update for scoremat.asn reorganization
 *

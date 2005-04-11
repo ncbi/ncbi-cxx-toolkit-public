@@ -204,8 +204,31 @@ public:
     const string & GetRID(void);
     
     /// Get the seqalign set from the results.
+    ///
+    /// This method returns the alignment data as a seq align set.  If
+    /// this search contains multiple queries, this method will return
+    /// all data as a single set.  Most users will probably prefer to
+    /// call GetSeqAlignSets() in this case.
+    ///
     /// @return Reference to a seqalign set.
     CRef<objects::CSeq_align_set> GetAlignments(void);
+    
+    /// Get the seqalign vector from the results.
+    ///
+    /// This method returns the alignment data from the search as a
+    /// TSeqAlignVector, which is a vector of CSeq_align_set objects.
+    /// For multiple query searches, this method will normally return
+    /// each alignment as a seperate element of the TSeqAlignVector.
+    /// Note that in some cases, the TSeqAlignVector will not have an
+    /// entry for some queries.  If the vector contains fewer
+    /// alignments than there were queries, it may be necessary for
+    /// the calling code to match queries to alignments by comparing
+    /// Seq_ids.  This normally happens only if the same query is
+    /// specified multiple times, or if one of the searches does not
+    /// find any matches.
+    ///
+    /// @return A seqalign vector.
+    TSeqAlignVector GetSeqAlignSets();
     
     /// Get the results of a PHI-Align request, if PHI pattern was set.
     /// @return Reference to PHI alignment set.
@@ -388,9 +411,9 @@ private:
                        vector< CRef<objects::CBioseq> > & bioseqs,   // out
                        string                  & errors,    // out
                        string                  & warnings); // out
-    
+
+
     // Data
-    
     
     /// Options for new search.
     CRef<blast::CBlastOptionsHandle>   m_CBOH;
@@ -433,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/11 15:21:48  bealer
+ * - Add GetSeqAlignSets() functionality to CRemoteBlast.
+ *
  * Revision 1.16  2005/01/21 19:56:57  bealer
  * - Expand CheckDone() documentation.
  *
