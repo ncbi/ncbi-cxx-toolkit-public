@@ -631,43 +631,73 @@ void CGenbankFormatter::FormatBasecount
 //
 // SEQUENCE
 
+static inline
+char* s_FormatSeqPosBack(char* p, TSeqPos v, size_t l)
+{
+    do {
+        *--p = '0'+v%10;
+    } while ( (v /= 10) && --l );
+    return p;
+}
+
 void CGenbankFormatter::FormatSequence
 (const CSequenceItem& seq,
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    char line[100];
 
     const CSeqVector& vec = seq.GetSequence();
     TSeqPos from = seq.GetFrom();
     TSeqPos to = seq.GetTo();
     TSeqPos base_count = from;
     TSeqPos total = to - from + 1;
+    TSeqPos vec_pos = from-1;
+    TSeqPos vec_size = vec.size();
+    TSeqPos vec_remaining = vec_pos < vec_size? vec_size - vec_pos: 0;
+    if ( vec_remaining < total ) {
+        total = vec_remaining;
+    }
     
-    CSeqVector::const_iterator iter = vec.begin();
-    iter.SetPos(from - 1);
-    TSeqPos i = 0, j = 0;
-    char* linep;
-    while (iter  &&  total > 0) {
-        line[0] = '\0';
-        linep = line;
+    // format of sequence position
+    const size_t kSeqPosWidth = 9;
+    
+    // 60 bases in a line, a space between every 10 bases.
+    const TSeqPos kChunkSize = 10;
+    const TSeqPos kChunkCount = 6;
+    const TSeqPos kFullLineSize = kChunkSize*kChunkCount;
 
-        linep += sprintf(line, "%9lu", (unsigned long)base_count);
-        //linep += 9;
-        
-        // 60 bases in a line, a space between every 10 bases.
-        for (i = 0; iter  &&  total > 0  &&  i < 6; ++i) {
-            *linep = ' ';
+    const size_t kLineBufferSize = 100;
+    char line[kLineBufferSize];
+    // prefill the line buffer with spaces
+    fill(line, line+kLineBufferSize, ' ');
+
+    CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
+    while ( total >= kFullLineSize ) {
+        char* linep = line + kSeqPosWidth;
+        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+        for ( TSeqPos i = 0; i < kChunkCount; ++i) {
             ++linep;
-            for (j = 0; iter  &&  total > 0  &&  j < 10; ++j, ++iter, --total, ++linep) {
-                *linep = (char)tolower(*iter);
+            for ( TSeqPos j = 0; j < kChunkSize; ++j, ++iter, ++linep) {
+                *linep = *iter;
             }
         }
-        *linep = '\0';
-        base_count += (i - 1) * 10 + j;
-        
+        total -= kFullLineSize;
+        base_count += kFullLineSize;
+
+        *linep = 0;
         l.push_back(line);
-        
+    }
+    if ( total > 0 ) {
+        char* linep = line + kSeqPosWidth;
+        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+        for ( TSeqPos i = 0; total > 0  &&  i < kChunkCount; ++i) {
+            ++linep;
+            for ( TSeqPos j = 0; total > 0  &&  j < kChunkSize; ++j, ++iter, --total, ++linep) {
+                *linep = *iter;
+            }
+        }
+        *linep = 0;
+        l.push_back(line);
     }
 
     text_os.AddParagraph(l);
@@ -832,6 +862,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/04/11 15:26:29  vasilche
+* Optimized sequence formatter.
+*
 * Revision 1.31  2005/04/07 18:24:04  shomrat
 * Fixed sequence formatting
 *
