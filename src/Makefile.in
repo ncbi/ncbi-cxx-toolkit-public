@@ -14,10 +14,10 @@ include ./Makefile.mk
 MANDATORY_PROJ  = corelib util connect cgi html misc
 
 OPTIONAL_PROJ   = @serial@ @bdb@ sqlite @dbapi@ @objects@ objmgr objtools \
-   ctools @algo@ @app@ @internal@
+   ctools @algo@ @app@ @gui@ @internal@
 X_OPTIONAL_PROJ =  serial bdb sqlite dbapi objects objmgr objtools ctools \
    algo app internal gui
-EXPENDABLE_SUB_PROJ = @gui@ @check@
+EXPENDABLE_SUB_PROJ = @check@
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 srcdir = @srcdir@
