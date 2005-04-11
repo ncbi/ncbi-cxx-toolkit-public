@@ -65,6 +65,8 @@ class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
     CPPUNIT_TEST( Test_Variant );
     CPPUNIT_TEST( TestGetRowCount );
+    CPPUNIT_TEST( Test_StatementParameters );
+//    CPPUNIT_TEST( Test_Exception_Safety );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -94,12 +96,19 @@ public:
         ETransBehavior tb = eNoTrans,
         IStatement* stmt = NULL);
 
+    void Test_StatementParameters(void);
+
+public:
+    void Test_Exception_Safety(void);
+    void Test_ES_01(void);
+
+public:
+    // Not implemented yet ...
     void Test_Bind(void);
     void Test_Execute(void);
     void Test_Procedure(void);
 
     void Test_Exception(void);
-    void Test_Exception_Safety(void);
 
     // Test scenarios.
     void Create_Destroy(void);
@@ -146,6 +155,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/04/11 14:13:15  ssikorsk
+ * Explicitly clean a parameter list after Execute (because of the ctlib driver)
+ *
  * Revision 1.9  2005/04/07 20:29:12  ssikorsk
  * Added more dedicated statements to each test
  *

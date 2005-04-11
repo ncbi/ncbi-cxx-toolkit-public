@@ -174,16 +174,60 @@ CDBAPIUnitTest::setUp()
 }
 
 void
-CDBAPIUnitTest::tearDown()
+CDBAPIUnitTest::tearDown(void)
 {
 }
 
 
 void
+CDBAPIUnitTest::Test_Exception_Safety(void)
+{
+    // Very first test ...
+    CPPUNIT_ASSERT_THROW( Test_ES_01(), CDB_Exception );
+}
+
+// Throw CDB_Exception ...
+void 
+CDBAPIUnitTest::Test_ES_01(void)
+{
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+    auto_stmt->Execute( "select name from wrong table" );
+    while( auto_stmt->HasMoreResults() ) { 
+        if( auto_stmt->HasRows() ) { 
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            
+            while( rs->Next() ) { 
+                // int col1 = rs->GetVariant(1).GetInt4(); 
+            } 
+        } 
+    }
+}
+
+void 
+CDBAPIUnitTest::Test_StatementParameters(void)
+{
+    // Very first test ...
+    {
+        string sql;
+        sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( @value ) \n";
+
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        auto_stmt->SetParam( CVariant(0), "@value" );
+        // Execute a statement with parameters ...
+        auto_stmt->ExecuteUpdate( sql );
+
+        sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
+        // Execute a statement without parameters ...
+        auto_stmt->ExecuteUpdate( sql );
+    }
+}
+
+void
 CDBAPIUnitTest::TestGetRowCount()
 {
     enum {repeat_num = 5};
-
     for ( int i = 0; i < repeat_num; ++i ) {
         // Shared/Reusable statement
         {
@@ -377,20 +421,6 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
         int nRows2 = curr_stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
-    }
-
-    // Workaround for the CTLIB driver ...
-    {
-        IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
-        if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
-            curr_stmt = auto_stmt.get();
-        } else {
-            curr_stmt = stmt;
-        }
-
-        curr_stmt->ClearParamList();
     }
 
     // Check a SELECT statement
@@ -1428,11 +1458,6 @@ CDBAPIUnitTest::Test_Exception(void)
 }
 
 void
-CDBAPIUnitTest::Test_Exception_Safety(void)
-{
-}
-
-void
 CDBAPIUnitTest::Create_Destroy(void)
 {
 }
@@ -1575,6 +1600,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/04/11 14:13:15  ssikorsk
+ * Explicitly clean a parameter list after Execute (because of the ctlib driver)
+ *
  * Revision 1.13  2005/04/08 15:50:00  ssikorsk
  * Included test/test_assert.h
  *

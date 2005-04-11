@@ -146,6 +146,9 @@ void CStatement::Execute(const string& sql)
     m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql, m_params.size());
 
     ExecuteLast();
+
+    // Explicitly clear all parameters.
+    ClearParamList();
 }
 
 IResultSet* CStatement::ExecuteQuery(const string& sql)
@@ -281,6 +284,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.28  2005/04/11 14:13:15  ssikorsk
+* Explicitly clean a parameter list after Execute (because of the ctlib driver)
+*
 * Revision 1.27  2005/01/31 14:21:46  kholodov
 * Added: use of CDB_ITDescriptor for writing BLOBs
 *
