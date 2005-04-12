@@ -413,8 +413,9 @@ static void s_TEST_File(void)
         CTime mtime_new(mtime), atime_new(atime);
         mtime_new.AddDay(-2);
         atime_new.AddDay(-1);
-        assert( f.SetTime(&mtime_new, &atime_new) );
-        assert( f.GetTime(&mtime, &atime) );
+        assert( f.SetTime(&mtime_new, 0, &atime_new) );
+        assert( f.GetTime(&mtime, &ctime , &atime) );
+        cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
         assert( mtime == mtime_new );
@@ -985,6 +986,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/04/12 11:26:34  ivanov
+ * Fixed CDir::EntryGetTime/SetTime calls
+ *
  * Revision 1.46  2005/03/23 15:38:39  ivanov
  * Removed redundant fRF_Overwrite flag
  *
