@@ -108,7 +108,7 @@ public:
         }
         memlease.Clear();
         
-        int vector_size = m_GisOids.size() * sizeof(m_GisOids[0]);
+        int vector_size = int(m_GisOids.size() * sizeof(m_GisOids[0]));
         atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
     }
     

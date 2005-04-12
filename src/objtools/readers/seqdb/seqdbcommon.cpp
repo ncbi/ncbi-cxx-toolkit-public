@@ -329,7 +329,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 {
     InsureOrder(eGi);  // would assert be better?
     
-    int b(0), e(m_GisOids.size());
+    int b(0), e((int)m_GisOids.size());
     
     while(b < e) {
         int m = (b + e)/2;
