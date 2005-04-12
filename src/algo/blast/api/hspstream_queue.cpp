@@ -104,10 +104,15 @@ int CBlastHSPListQueueData::Read(BlastHSPList** hsp_list)
  */
 int CBlastHSPListQueueData::Write(BlastHSPList** hsp_list)
 {
-    /* If input is empty, don't do anything, but return success */
+    /* If input is Null, don't do anything, but return success */
     if (*hsp_list == NULL)
         return kBlastHSPStream_Success;
-    
+    /* If input HSP list is empty, free it and return success */
+    if ((*hsp_list)->hspcnt == 0) {
+        *hsp_list = Blast_HSPListFree(*hsp_list);
+        return kBlastHSPStream_Success;
+    }    
+
     CFastMutexGuard g(m_Mutex);
     if (m_writingDone)
         return kBlastHSPStream_Error;
