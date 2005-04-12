@@ -37,7 +37,6 @@
 /// - Command-line args  -- CNcbiArguments
 
 
-#include <corelib/ncbifile.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <map>
 #include <deque>
@@ -236,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/12 19:06:39  ucko
+ * Move EFollowLinks to ncbimisc.hpp.
+ *
  * Revision 1.17  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *

@@ -75,10 +75,17 @@ enum ESign {
 };
 
 
-/// Whether a value to truncate/round.
+/// Whether to truncate/round a value.
 enum ERound {
     eTrunc,             ///< Value must be truncated
     eRound              ///< Value must be rounded
+};
+
+
+/// Whether to follow symbolic links (also known as shortcuts or aliases)
+enum EFollowLinks {
+    eIgnoreLinks,
+    eFollowLinks
 };
 
 
@@ -488,6 +495,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2005/04/12 19:06:39  ucko
+ * Move EFollowLinks to ncbimisc.hpp.
+ *
  * Revision 1.78  2005/01/25 01:10:08  lavr
  * Explicit ptrdiff_t->ssize_t casting in CRawPointer::Sub
  *

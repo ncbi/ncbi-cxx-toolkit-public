@@ -91,13 +91,6 @@ public:
 };
 
 
-/// Whether to follow symbolic links (akin shortcuts or aliases)
-enum EFollowLinks {
-    eIgnoreLinks,
-    eFollowLinks
-};
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -2198,6 +2191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/04/12 19:06:39  ucko
+ * Move EFollowLinks to ncbimisc.hpp.
+ *
  * Revision 1.54  2005/04/12 11:25:09  ivanov
  * CDirEntry: added struct SStat and method Stat() to get additional non-posix
  * OS-dependent info. Now it can get only nanoseconds for entry times.
