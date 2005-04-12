@@ -32,6 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include <serial/soap/soap_server.hpp>
 #include <html/commentdiag.hpp>
 
@@ -262,6 +263,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/04/12 17:35:33  ucko
+* Explicitly include <corelib/ncbifile.hpp>
+*
 * Revision 1.4  2004/06/28 15:16:20  gouriano
 * More fixes for GCC 2.95
 *
