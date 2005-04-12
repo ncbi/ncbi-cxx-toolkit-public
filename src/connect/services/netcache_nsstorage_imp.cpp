@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
+#include <util/rwstream.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -51,6 +52,10 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
                                              size_t* blob_size)
 {
     size_t b_size = 0;
+    if (key.empty()) {
+        m_IStream.reset(new CNcbiIstrstream("",0));
+        return *m_IStream;
+    }
     auto_ptr<IReader> reader;
     int try_count = 0;
     while(1) {
@@ -122,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/12 15:12:42  didenko
+ * Added handling an empty netcache key in GetIStream method
+ *
  * Revision 1.4  2005/03/29 14:10:54  didenko
  * + removing a date from the storage
  *
