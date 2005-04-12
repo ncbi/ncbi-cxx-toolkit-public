@@ -52,7 +52,7 @@ CStatement::CStatement(CConnection* conn)
     , m_failed(false)
     , m_irs(0)
     , m_wr(0)
-    , m_AutoClearInParams(true)
+    , m_AutoClearInParams(false)
 {
     SetIdent("CStatement");
 }
@@ -291,6 +291,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.30  2005/04/12 19:11:10  ssikorsk
+* Do not clean a parameter list after Execute (previous behavior restored). This can cause problems with the ctlib driver.
+*
 * Revision 1.29  2005/04/12 18:12:10  ssikorsk
 * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
 *

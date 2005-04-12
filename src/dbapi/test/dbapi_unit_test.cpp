@@ -423,6 +423,20 @@ CDBAPIUnitTest::CheckGetRowCount2(
         CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
     }
 
+    // Workaround for the CTLIB driver ...
+    {
+        IStatement* curr_stmt = NULL;
+        auto_ptr<IStatement> auto_stmt;
+        if ( !stmt ) {
+            auto_stmt.reset( m_Conn->GetStatement() );
+            curr_stmt = auto_stmt.get();
+        } else {
+            curr_stmt = stmt;
+        }
+
+        curr_stmt->ClearParamList();
+    }
+
     // Check a SELECT statement
     {
         IStatement* curr_stmt = NULL;
@@ -1600,6 +1614,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/04/12 19:11:10  ssikorsk
+ * Do not clean a parameter list after Execute (previous behavior restored). This can cause problems with the ctlib driver.
+ *
  * Revision 1.14  2005/04/11 14:13:15  ssikorsk
  * Explicitly clean a parameter list after Execute (because of the ctlib driver)
  *
