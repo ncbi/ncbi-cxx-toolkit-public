@@ -26,33 +26,27 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition for CSeqMaskerIstatFactory class.
+ *   Definition for CSeqMaskerIstatBin class.
  *
  */
 
-#ifndef C_SEQ_MASKER_ISTAT_FACTORY_H
-#define C_SEQ_MASKER_ISTAT_FACTORY_H
+#ifndef C_SEQ_MASKER_ISTAT_BIN_H
+#define C_SEQ_MASKER_ISTAT_BIN_H
 
-#include <string>
-
-#include <corelib/ncbitype.h>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <algo/winmask/seq_masker_istat.hpp>
+#include <algo/winmask/seq_masker_uset_array.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CSeqMaskerIstat;
-
 /**
- **\brief Factory class to generate an appropriate CSeqMaskerIstat
- **       derived class based on the format name.
+ **\brief Read counts information from a binary file.
  **/
-class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
+class CSeqMaskerIstatBin : public CSeqMaskerIstat
 {
     public:
 
         /** 
-         **\brief Exceptions that CSeqMaskerIstatFactory might throw.
+         **\brief Exceptions that CSeqMaskerIstatBin might throw.
          **/
         class Exception : public CException
         {
@@ -60,9 +54,8 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
 
                 enum EErrCode
                 {
-                    eBadFormat,     /**< Unknown file format. */
-                    eCreateFail,    /**< Could not create the CSeqMaskerIstat object. */
-                    eOpen           /**< Could not open file. */
+                    eStreamOpenFail,    /**< File open failure. */
+                    eFormat             /**< File format error. */
                 };
 
                 /**
@@ -72,32 +65,56 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
                 virtual const char * GetErrCodeString() const;
     
                 NCBI_EXCEPTION_DEFAULT( Exception, CException );
-
         };
 
         /**
-         **\brief Create a unit counts container from a file.
+         **\brief Object constructor.
          **
-         ** All parameters after name are forwarded to the constructor of the
-         ** proper subclass of CSeqMaskerIstat.
+         ** arg_threshold, arg_textend, arg_max_count, and arg_min_count, if
+         ** non zero, override the values in the input file.
          **
-         **\param name name of the file containing the unit counts information
-         **\param threshold T_threshold
-         **\param textend T_extend
-         **\param max_count T_high
-         **\param use_max_count value to use for units with count > T_high
-         **\param min_count T_low
-         **\param use_min_count value to use for units with count < T_low
+         **\param name file name
+         **\param arg_threshold T_threshold
+         **\param arg_textend T_extend
+         **\param arg_max_count T_high
+         **\param arg_use_max_count value to use for units with count > T_high
+         **\param arg_min_count T_low
+         **\param arg_use_min_count value to use for units with count < T_low
          **/
-        static CSeqMaskerIstat * create( const string & name,
-                                         Uint4 threshold,
-                                         Uint4 textend,
-                                         Uint4 max_count,
-                                         Uint4 use_max_count,
-                                         Uint4 min_count,
-                                         Uint4 use_min_count );
+        explicit CSeqMaskerIstatBin(  const string & name,
+                                      Uint4 arg_threshold,
+                                      Uint4 arg_textend,
+                                      Uint4 arg_max_count,
+                                      Uint4 arg_use_max_count,
+                                      Uint4 arg_min_count,
+                                      Uint4 arg_use_min_count );
+
+        /**
+         **\brief Object destructor.
+         **/
+        virtual ~CSeqMaskerIstatBin() {}
+
+        /**
+         **\brief Get the value of the unit size
+         **\return unit size
+         **/
+        virtual Uint1 UnitSize() const { return uset.get_unit_size(); }
+
+    protected:
+
+        /**
+         **\brief Get the count of the given unit.
+         **\param unit the unit to look up
+         **\return the count value for the unit
+         **/
+        virtual Uint4 at( Uint4 unit ) const;
 
     private:
+
+        /**\internal
+         **\brief The unit counts container.
+         **/
+        CSeqMaskerUsetArray uset;
 };
 
 END_NCBI_SCOPE
@@ -107,13 +124,8 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/04/12 13:35:34  morgulis
+ * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
  *
  * ========================================================================
  */

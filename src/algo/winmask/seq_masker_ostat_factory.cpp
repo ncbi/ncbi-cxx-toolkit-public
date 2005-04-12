@@ -34,6 +34,7 @@
 
 #include <algo/winmask/seq_masker_ostat_factory.hpp>
 #include <algo/winmask/seq_masker_ostat_ascii.hpp>
+#include <algo/winmask/seq_masker_ostat_bin.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -57,6 +58,8 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
     {
         if( ustat_type == "ascii" )
             return new CSeqMaskerOstatAscii( name );
+        else if( ustat_type == "binary" )
+            return new CSeqMaskerOstatBin( name );
         else NCBI_THROW( CSeqMaskerOstatFactoryException,
                          eBadName,
                          "unkown unit counts format" );
@@ -74,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/04/12 13:35:34  morgulis
+ * Support for binary format of unit counts file.
+ *
  * Revision 1.2  2005/03/29 13:33:25  dicuccio
  * Use <> for includes
  *

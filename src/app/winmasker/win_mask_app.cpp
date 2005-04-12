@@ -244,7 +244,8 @@ void CWinMaskApplication::Init(void)
                              (new CArgAllow_Strings())->Allow( "interval" )
                              ->Allow( "fasta" ) );
     arg_desc->SetConstraint( "sformat",
-                             (new CArgAllow_Strings())->Allow( "ascii" ) );
+                             (new CArgAllow_Strings())->Allow( "ascii" )
+                             ->Allow( "binary" ) );
 #if 0
     arg_desc->SetConstraint( "trigger",
                              (new CArgAllow_Strings())->Allow( "mean" )
@@ -386,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/04/12 13:35:34  morgulis
+ * Support for binary format of unit counts file.
+ *
  * Revision 1.7  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

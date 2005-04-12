@@ -34,6 +34,7 @@
 
 #include "algo/winmask/seq_masker_istat_factory.hpp"
 #include "algo/winmask/seq_masker_istat_ascii.hpp"
+#include "algo/winmask/seq_masker_istat_bin.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +45,7 @@ const char * CSeqMaskerIstatFactory::Exception::GetErrCodeString() const
     {
         case eBadFormat:    return "unknown format";
         case eCreateFail:   return "creation failure";
+        case eOpen:         return "open failed";
         default:            return CException::GetErrCodeString();
     }
 }
@@ -59,11 +61,30 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
 {
     try
     {
+        {
+            CNcbiIfstream check( name.c_str() );
+
+            if( !check )
+                NCBI_THROW( Exception, eOpen, 
+                            string( "could not open " ) + name );
+
+            Uint4 data = 1;
+            check.read( (char *)&data, sizeof( Uint4 ) );
+
+            if( data == 0 )
+                return new CSeqMaskerIstatBin(  name,
+                                                threshold, textend,
+                                                max_count, use_max_count,
+                                                min_count, use_min_count );
+        }
+
         return new CSeqMaskerIstatAscii( name,
                                          threshold, textend,
                                          max_count, use_max_count,
                                          min_count, use_min_count );
     }
+    catch( Exception & )
+    { throw; }
     catch( ... )
     {
         NCBI_THROW( Exception, eCreateFail,
@@ -76,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/04/12 13:35:34  morgulis
+ * Support for binary format of unit counts file.
+ *
  * Revision 1.1  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit

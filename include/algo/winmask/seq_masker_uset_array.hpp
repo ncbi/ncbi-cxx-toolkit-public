@@ -26,30 +26,29 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition for CSeqMaskerUsetSimple class.
+ *   Definition for CSeqMaskerUsetArray class.
  *
  */
 
-#ifndef C_SEQ_MASKER_USET_SIMPLE_H
-#define C_SEQ_MASKER_USET_SIMPLE_H
-
-#include <vector>
+#ifndef C_SEQ_MASKER_USET_ARRAY_H
+#define C_SEQ_MASKER_USET_ARRAY_H
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimisc.hpp>
 
 BEGIN_NCBI_SCOPE
 
 /**
- **\brief This class implements simple, unoptimized unit counts container.
+ **\brief Unit counts container based on simple arrays.
  **/
-class CSeqMaskerUsetSimple
+class CSeqMaskerUsetArray
 {
     public:
 
         /** 
-         **\brief Exceptions that CSeqMaskerUsetSimple might throw.
+         **\brief Exceptions that CSeqMaskerUsetArray might throw.
          **/
         class Exception : public CException
         {
@@ -57,10 +56,7 @@ class CSeqMaskerUsetSimple
 
                 enum EErrCode
                 {
-                    eBadOrder,      /**< Units are being appended out of order. */
-                    eSizeMismatch   /**< When adding data in bulk (using 
-                                         add_info( vector, vector )), parameter 
-                                         vectors sizes are not equal */
+                    eSizeOdd   /**< The size of the data array is not even. */
                 };
 
                 /**
@@ -72,13 +68,8 @@ class CSeqMaskerUsetSimple
                 NCBI_EXCEPTION_DEFAULT( Exception, CException );
         };
 
-        /**
-         **\brief Object constructor.
-         **\param arg_unit_size the unit size
-         **/
-        CSeqMaskerUsetSimple( Uint1 arg_unit_size = 15 ) 
-            : unit_size( arg_unit_size )
-        {}
+        /**\brief Trivial default object constructor. */
+        CSeqMaskerUsetArray() {}
 
         /**
          **\brief Get the unit size.
@@ -94,16 +85,22 @@ class CSeqMaskerUsetSimple
         { unit_size = arg_unit_size; }
 
         /**
-         **\brief Add information about the given unit.
+         **\brief Add unit counts information to the container.
          **
-         ** When this method is called multiple times, units should be
-         ** in ascending order.
+         ** sz must be an even number. arg_unit_data is 
+         ** interpreted as an array of integer pairs with
+         ** the first element being a unit value and the second
+         ** element being the corresponding count.
          **
-         **\param unit the target unit
-         **\param count number of times unit and its reverse complement
-         **             appear in the genome
+         ** NOTE: CSeqMaskerUsetArray assumes ownership of
+         ** the arg_unit_data and will attempt to delete[]
+         ** it during destruction.
+         **
+         **\param arg_unit_data array of Uint4 values representing 
+         **                     unit counts information
+         **\param sz number of Uint4 values in arg_unit_data
          **/
-        void add_info( Uint4 unit, Uint4 count );
+        void add_info( const Uint4 * arg_unit_data, Uint4 sz );
 
         /**
          **\brief Lookup the count value for a given unit.
@@ -115,11 +112,45 @@ class CSeqMaskerUsetSimple
 
     private:
 
-        Uint1 unit_size;        /**<\internal The unit size. */
+        /**\name Provide reference semantics for the class. */
+        /**@{*/
+        CSeqMaskerUsetArray( const CSeqMaskerUsetArray & );
+        CSeqMaskerUsetArray & operator=( const CSeqMaskerUsetArray & );
+        /**@}*/
 
-        vector< Uint4 > units;  /**<\internal The vector of units. */
-        vector< Uint4 > counts; /**<\internal The vector of counts corresponding to units. */
+        /**\internal
+         **\brief One entry of unit counts data.
+         **/
+        struct entry
+        {
+            Uint4 u;    /**\internal The unit value. */ 
+            Uint4 c;    /**\internal The unit count. */
+        };
+
+        Uint1 unit_size;            /**<\internal The unit size. */
+        Uint4 asize;                /**<\internal The size of unit_data. */
+        
+        /**<\internal 
+         **\brief Unit counts data. 
+         **/
+        AutoPtr< const entry, ArrayDeleter< const entry > > unit_data;
+
+        friend bool operator<( const CSeqMaskerUsetArray::entry & lhs, 
+                               const CSeqMaskerUsetArray::entry & rhs );
 };
+
+/**\internal
+ **\brief Comparison of unit data entries.
+ **
+ ** Compared by the unit value.
+ **
+ **\param lhs left operand
+ **\param rhs right operand
+ **\return true if lhs.u < rhs.u; false otherwise
+ **/
+inline bool operator<( const CSeqMaskerUsetArray::entry & lhs, 
+                       const CSeqMaskerUsetArray::entry & rhs )
+{ return lhs.u < rhs.u; }
 
 END_NCBI_SCOPE
 
@@ -128,13 +159,8 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/04/12 13:35:34  morgulis
+ * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
  *
  * ========================================================================
  */

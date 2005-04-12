@@ -26,60 +26,59 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Implementation for CSeqMaskerUsetSimple class.
+ *   Implementation for CSeqMaskerUsetArray class.
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include <sstream>
 #include <algorithm>
 
-#include "algo/winmask/seq_masker_uset_simple.hpp"
-#include "algo/winmask/seq_masker_util.hpp"
+#include <algo/winmask/seq_masker_uset_array.hpp>
+#include <algo/winmask/seq_masker_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
-const char * CSeqMaskerUsetSimple::Exception::GetErrCodeString() const
+const char * CSeqMaskerUsetArray::Exception::GetErrCodeString() const
 {
     switch( GetErrCode() )
     {
-        case eBadOrder:     return "bad unit order";
-        case eSizeMismatch: return "size mismatch";
+        case eSizeOdd:      return "wrong array size";
         default:            return CException::GetErrCodeString();
     }
 }
 
 //------------------------------------------------------------------------------
-void CSeqMaskerUsetSimple::add_info( Uint4 unit, Uint4 count )
+void CSeqMaskerUsetArray::add_info( const Uint4 * arg_unit_data, Uint4 sz )
 {
-    if( !units.empty() && unit <= units[units.size() - 1] )
-    {
-        ostringstream s;
-        s << "last unit: " << hex << units[units.size() - 1]
-          << " ; adding " << hex << unit;
-        NCBI_THROW( Exception, eBadOrder, s.str() );
-    }
+    if( sz%2 != 0 )
+        NCBI_THROW( Exception, eSizeOdd, 
+                    "unit counts info must contain even number of words" );
 
-    units.push_back( unit );
-    counts.push_back( count );
+    unit_data = reinterpret_cast< const entry * >( arg_unit_data );
+    asize = sz/2;
 }
 
 //------------------------------------------------------------------------------
-Uint4 CSeqMaskerUsetSimple::get_info( Uint4 unit ) const
+Uint4 CSeqMaskerUsetArray::get_info( Uint4 unit ) const
 {
+    const entry * ud = unit_data.get();
+
+    if( ud == 0 )
+        return 0;
+
     Uint4 runit = CSeqMaskerUtil::reverse_complement( unit, unit_size );
-    
+
     if( runit < unit )
         unit = runit;
 
-    vector< Uint4 >::const_iterator res 
-        = lower_bound( units.begin(), units.end(), unit );
-
-    if( res == units.end() || *res != unit )
+    entry target = { unit, 0 };
+    const entry * r = lower_bound( ud, ud + asize, target, less< entry >() );
+    
+    if( r == ud + asize || r->u != unit )
         return 0;
-    else return counts[res - units.begin()];
+    else return r->c;
 }
 
 END_NCBI_SCOPE
@@ -87,13 +86,8 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/04/12 13:35:34  morgulis
+ * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
  *
  * ========================================================================
  */
