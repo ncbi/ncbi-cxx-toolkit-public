@@ -65,8 +65,47 @@ void CBioseq_CI::x_SetEntry(const CSeq_entry_Handle& entry)
 }
 
 
+inline
+bool IsNa(CSeq_inst::EMol mol)
+{
+    return mol == CSeq_inst::eMol_dna  ||
+        mol == CSeq_inst::eMol_rna  ||
+        mol == CSeq_inst::eMol_na;
+}
+
+
+bool CBioseq_CI::x_SkipClass(CBioseq_set::TClass set_class)
+{
+    CSeq_entry_Handle entry = m_CurrentEntry;
+    int depth = 0;
+    bool in_set = false;
+    while (entry  &&  entry.GetParentEntry()) {
+        if (entry.GetParentBioseq_set().GetClass() ==
+            set_class) {
+            in_set = true;
+            break;
+        }
+        depth++;
+        entry = entry.GetParentEntry();
+    }
+    if ( in_set ) {
+        // Remove bioseq-sets from the stack
+        for (int i = 0; i < depth; i++) {
+            _ASSERT(!m_EntryStack.empty());
+            m_EntryStack.pop();
+        }
+        if (!m_EntryStack.empty()) {
+            ++m_EntryStack.top();
+        }
+        m_CurrentEntry = CSeq_entry_Handle();
+    }
+    return in_set;
+}
+
+
 void CBioseq_CI::x_Settle(void)
 {
+    bool found_na = m_CurrentBioseq  &&  IsNa(m_Filter);
     m_CurrentBioseq.Reset();
     for ( ;; ) {
         if ( m_CurrentEntry  &&  m_CurrentEntry.IsSeq() ) {
@@ -76,6 +115,22 @@ void CBioseq_CI::x_Settle(void)
                 if ( x_IsValidMolType(seq) ) {
                     m_CurrentBioseq = m_CurrentEntry.GetSeq();
                     return; // valid bioseq found
+                }
+                else if (m_Level != eLevel_IgnoreClass  &&
+                    m_CurrentEntry.GetParentEntry()) {
+                    if (m_CurrentEntry.GetParentBioseq_set().GetClass() ==
+                        CBioseq_set::eClass_nuc_prot  &&
+                        found_na) {
+                        // Skip only the same level nuc-prot set
+                        x_SkipClass(CBioseq_set::eClass_nuc_prot);
+                    }
+                    else if ( !IsNa(m_Filter) ) {
+                        // Skip the whole nuc segset when collecting prots
+                        if (!x_SkipClass(CBioseq_set::eClass_segset)) {
+                            // Also skip conset
+                            x_SkipClass(CBioseq_set::eClass_conset);
+                        }
+                    }
                 }
             }
         }
@@ -90,7 +145,7 @@ void CBioseq_CI::x_Settle(void)
             CSeq_entry_CI parts_iter = m_EntryStack.top();
             CSeq_entry_Handle sub_entry = *entry_iter;
             ++entry_iter;
-            if (sub_entry.IsSet() &&
+            if ( sub_entry.IsSet() &&
                 sub_entry.GetSet().GetClass() == CBioseq_set::eClass_parts) {
                 if (m_Level == eLevel_Mains) {
                     m_CurrentEntry = CSeq_entry_Handle();
@@ -226,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/04/12 18:15:16  grichenk
+* Skip bioseq-sets not containing the requested types
+*
 * Revision 1.7  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

@@ -70,9 +70,11 @@ class NCBI_XOBJMGR_EXPORT CBioseq_CI
 public:
     /// Class of bioseqs to iterate
     enum EBioseqLevelFlag {
-        eLevel_All,    ///< Any bioseq
-        eLevel_Mains,  ///< Main bioseq only
-        eLevel_Parts   ///< Parts only
+        eLevel_All,          ///< Any bioseq
+        eLevel_Mains,        ///< Main bioseq only
+        eLevel_Parts,        ///< Parts only
+        eLevel_IgnoreClass   ///< Search for bioseqs in any bioseq-set
+                             ///< regardless of types and classes.
     };
 
     // 'ctors
@@ -122,6 +124,7 @@ private:
     void x_SetEntry(const CSeq_entry_Handle& entry);
     void x_Settle(void);
     bool x_IsValidMolType(const CBioseq_Info& seq) const;
+    bool x_SkipClass(CBioseq_set::TClass set_class);
 
     typedef stack<CSeq_entry_CI> TEntryStack;
 
@@ -165,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/04/12 18:15:16  grichenk
+* Skip bioseq-sets not containing the requested types
+*
 * Revision 1.21  2005/03/18 16:14:26  grichenk
 * Iterator with CSeq_inst::eMol_na includes both dna and rna.
 *
