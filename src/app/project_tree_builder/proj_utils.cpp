@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -47,6 +48,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/12 19:06:51  ucko
+ * Explicitly include <corelib/ncbifile.hpp>
+ *
  * Revision 1.4  2004/10/12 16:17:57  ivanov
  * + CSrcToFilterInserterWithPch::InsertFile(). Some cosmetics.
  *
