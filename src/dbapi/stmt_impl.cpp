@@ -46,8 +46,13 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CStatement::CStatement(CConnection* conn)
-    : m_conn(conn), m_cmd(0), m_rowCount(-1), m_failed(false),
-      m_irs(0), m_wr(0)
+    : m_conn(conn)
+    , m_cmd(0)
+    , m_rowCount(-1)
+    , m_failed(false)
+    , m_irs(0)
+    , m_wr(0)
+    , m_AutoClearInParams(true)
 {
     SetIdent("CStatement");
 }
@@ -147,8 +152,10 @@ void CStatement::Execute(const string& sql)
 
     ExecuteLast();
 
-    // Explicitly clear all parameters.
-    ClearParamList();
+    if ( IsAutoClearInParams() ) {
+        // Implicitely clear all parameters.
+        ClearParamList();
+    }
 }
 
 IResultSet* CStatement::ExecuteQuery(const string& sql)
@@ -219,9 +226,9 @@ void CStatement::FreeResources()
     m_cmd = 0;
     m_rowCount = -1;
     if( m_conn != 0 && m_conn->IsAux() ) {
-	    delete m_conn;
-	    m_conn = 0;
-	    Notify(CDbapiAuxDeletedEvent(this));
+        delete m_conn;
+        m_conn = 0;
+        Notify(CDbapiAuxDeletedEvent(this));
     }
 
     delete m_wr;
@@ -267,7 +274,7 @@ void CStatement::Action(const CDbapiEvent& e)
     }
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-	    RemoveListener(e.GetSource());
+        RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
@@ -284,6 +291,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.29  2005/04/12 18:12:10  ssikorsk
+* Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+*
 * Revision 1.28  2005/04/11 14:13:15  ssikorsk
 * Explicitly clean a parameter list after Execute (because of the ctlib driver)
 *

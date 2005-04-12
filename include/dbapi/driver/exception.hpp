@@ -319,7 +319,9 @@ public:
     // REsult is not owned by CDB_MultiEx
     CDB_Exception*    Pop(void);
 
-    unsigned int NofExceptions() const { return m_Bag->GetData().size();    }
+    unsigned int NofExceptions() const { 
+        return static_cast<unsigned int>( m_Bag->GetData().size() );    
+    }
     unsigned int Capacity()      const { return m_NofRooms;                 }
 
     string WhatThis(void) const;
@@ -456,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/04/12 18:09:39  ssikorsk
+ * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+ *
  * Revision 1.18  2005/04/11 19:23:31  ssikorsk
  * Added method Clone to the CDB_Exception class
  *

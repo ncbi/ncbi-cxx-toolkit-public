@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.17  2005/04/12 18:12:10  ssikorsk
+* Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+*
 * Revision 1.16  2004/09/22 14:27:57  kholodov
 * Modified: reference to unused basetmpl.hpp removed
 *
@@ -96,8 +99,8 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CCallableStatement::CCallableStatement(const string& proc,
-				       int nofArgs,
-				       CConnection* conn)
+                       int nofArgs,
+                       CConnection* conn)
   : CStatement(conn), m_status(0), m_nofParams(nofArgs)
 {
     SetIdent("CCallableStatement");
@@ -140,23 +143,28 @@ bool CCallableStatement::HasMoreResults()
 }
   
 void CCallableStatement::SetParam(const CVariant& v, 
-				  const string& name)
+                  const string& name)
 {
 
   GetRpcCmd()->SetParam(name, v.GetData(), false);
 }
-		
+        
 void CCallableStatement::SetOutputParam(const CVariant& v, 
-					const string& name)
+                    const string& name)
 {
   GetRpcCmd()->SetParam(name, v.GetData(), true);
 }
-		
-		
+        
+        
 void CCallableStatement::Execute()
 {
   SetFailed(false);
   GetRpcCmd()->Send();
+
+  if ( IsAutoClearInParams() ) {
+      // Implicitely clear all parameters.
+      ClearParamList();
+  }
 }
 
 void CCallableStatement::ExecuteUpdate()

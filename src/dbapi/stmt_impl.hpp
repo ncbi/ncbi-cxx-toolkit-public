@@ -91,6 +91,14 @@ public:
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
 
+public:
+    virtual void SetAutoClearInParams(bool flag = true) {
+        m_AutoClearInParams = flag;
+    }
+    virtual bool IsAutoClearInParams(void) const {
+        return m_AutoClearInParams;
+    }
+
 protected:    
     void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
     I_BaseCmd* GetBaseCmd() { return m_cmd; }
@@ -104,18 +112,19 @@ protected:
     void FreeResources();
 
 private:
-    class CConnection* m_conn;
-    I_BaseCmd *m_cmd;
-    //CDB_Result *m_rs;
-    int m_rowCount;
-    bool m_failed;
     typedef map<string, CVariant*> ParamList;
-    ParamList m_params;
+
+    class CConnection*  m_conn;
+    I_BaseCmd*          m_cmd;
+    //CDB_Result *m_rs;
+    int                 m_rowCount;
+    bool                m_failed;
+    ParamList           m_params;
     //typedef set<CDB_Result*> RequestedRsList;
     //RequestedRsList m_requestedRsList;
-    class CResultSet *m_irs;
-    class IWriter *m_wr;
-
+    class CResultSet*   m_irs;
+    class IWriter*      m_wr;
+    bool                m_AutoClearInParams;
 };
 
 END_NCBI_SCOPE
@@ -124,6 +133,9 @@ END_NCBI_SCOPE
 #endif // _STMT_IMPL_HPP_
 /*
 * $Log$
+* Revision 1.17  2005/04/12 18:12:10  ssikorsk
+* Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+*
 * Revision 1.16  2005/01/31 14:21:46  kholodov
 * Added: use of CDB_ITDescriptor for writing BLOBs
 *

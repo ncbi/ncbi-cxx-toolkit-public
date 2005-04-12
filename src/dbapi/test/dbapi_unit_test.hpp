@@ -66,7 +66,7 @@ class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST( Test_Variant );
     CPPUNIT_TEST( TestGetRowCount );
     CPPUNIT_TEST( Test_StatementParameters );
-//    CPPUNIT_TEST( Test_Exception_Safety );
+    CPPUNIT_TEST( Test_Exception_Safety );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/04/12 18:12:10  ssikorsk
+ * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+ *
  * Revision 1.10  2005/04/11 14:13:15  ssikorsk
  * Explicitly clean a parameter list after Execute (because of the ctlib driver)
  *

@@ -377,6 +377,21 @@ public:
     /// connection.
     virtual class IConnection* GetParentConn() = 0;
 
+    /// Set auto-clear input parameter flag
+    ///
+    /// @param flag
+    ///   auto-clear input parameter flag
+    /// In case when flag == true implicitly clear a statement's parameter list 
+    /// after each Execute, ExecuteUpdate and ExecuteQuery call. Default value 
+    //. is true.
+    virtual void SetAutoClearInParams(bool flag = true) = 0;
+
+    /// Get auto-clear input parameter flag value
+    ///
+    /// @return
+    ///   auto-clear input parameter flag value
+    virtual bool IsAutoClearInParams(void) const = 0;
+
 };
 
 
@@ -755,6 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/04/12 18:09:39  ssikorsk
+ * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+ *
  * Revision 1.38  2005/04/04 13:03:02  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
