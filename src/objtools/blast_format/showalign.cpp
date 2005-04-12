@@ -120,9 +120,30 @@ name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d',\
  'getSeqMaster')\">";
 
 static const string k_Checkbox = "<input type=\"checkbox\" \
-name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, \
+name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
 
+static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
+action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
+name=\"%s\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s', %d)\"><input \
+type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
+value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
+type=\"hidden\" name=\"cmd\" value=\"search\"></form>",
+                                     
+                                     "<FORM  method=\"POST\" \
+action=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi\" \
+name=\"%s\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s', %d)\"><input \
+type=\"hidden\" name=\"val\" value=\"\"><input \
+type=\"hidden\" name=\"cmd\" value=\"retrieve\"></form>"
+};
+
+static string k_GetSeqSelectForm = "<FORM><input \
+type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
+'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
+type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
+'getSeqAlignment%d', 'getSeqGi')\"></form>";
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
                                    CScope& scope,
@@ -139,7 +160,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SeqLocColor = eBlack;
     m_LineLen = 60;
     m_IsDbNa = true;
-    m_IsDbGi = false;
+    m_CanRetrieveSeq = false;
     m_DbName = NcbiEmptyString;
     m_NumAlignToShow = 1000000;
     m_AlignType = eNotSet;
@@ -415,23 +436,19 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
 ///@query_number: the query number
 ///@return: the from string
 ///
-static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number)
+static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
+                           int db_type)
 {
     char buf[2048] = {""};
     if(form_name){
-        sprintf(buf, "<table border=\"0\"><tr><td><FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
-name=\"%s\"><input type=button value=\"Get selected sequences\" \
-onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s')\"><input \
-type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
-value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
-type=\"hidden\" name=\"cmd\" value=\"search\"></form></td><td><FORM><input \
-type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
-'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
-type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
-'getSeqAlignment%d', 'getSeqGi')\"></form></td></tr></table>", form_name, \
-                db_is_na?1:0, query_number, form_name, query_number, 
-                query_number);
+        string template_str = "<table border=\"0\"><tr><td>" + \
+            k_GetSeqSubmitForm[db_type] + \
+            "</td><td>" + \
+            k_GetSeqSelectForm +\
+            "</td></tr></table>";
+        sprintf(buf, template_str.c_str(), form_name, \
+                db_is_na?1:0, query_number, form_name, db_type, query_number, 
+                query_number);      
         
     }
     return buf;
@@ -676,7 +693,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 }
                 if(row == 0&&(m_AlignOption&eHtml)
                    &&(m_AlignOption&eMultiAlign) 
-                   && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
+                   && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                     char checkboxBuf[200];
                     sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(), m_QueryNumber);
                     out << checkboxBuf;
@@ -698,9 +715,11 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         out<<"<a name="<<seqidArray[row]<<"></a>";
                     }
                     //get sequence checkbox
-                    if(m_AlignOption&eSequenceRetrieval && m_IsDbGi){
+                    if(m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq){
                         char checkBoxBuf[512];
-                        sprintf(checkBoxBuf, k_Checkbox.c_str(), gi, m_QueryNumber);
+                        sprintf(checkBoxBuf, k_Checkbox.c_str(), gi > 0 ?
+                                NStr::IntToString(gi).c_str() : seqidArray[row].c_str(),                       
+                                m_QueryNumber);
                         out << checkBoxBuf;        
                     }
                     urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).\
@@ -761,7 +780,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                             if((m_AlignOption&eHtml)
                                &&(m_AlignOption&eMultiAlign) 
                                && (m_AlignOption&eSequenceRetrieval 
-                                   && m_IsDbGi)){
+                                   && m_CanRetrieveSeq)){
                                 char checkboxBuf[200];
                                 sprintf(checkboxBuf, 
                                         k_UncheckabeCheckbox.c_str(),
@@ -777,7 +796,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         }
                         if((m_AlignOption&eHtml)
                            &&(m_AlignOption&eMultiAlign) 
-                           && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
+                           && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                             char checkboxBuf[200];
                             sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
                                     m_QueryNumber);
@@ -799,7 +818,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                      iter != bioseqFeature[row].end(); iter++){
                     if ( curRange.IntersectingWith((*iter)->aln_range)){  
                         if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)
-                           && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
+                           && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                             char checkboxBuf[200];
                             sprintf(checkboxBuf,  k_UncheckabeCheckbox.c_str(),
                                     m_QueryNumber);
@@ -874,8 +893,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         CGBDataLoader::RegisterInObjectManager(*m_FeatObj);
         m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
         m_featScope->AddDefaults();	     
-    }	
-    x_SetDbGi(actual_aln_list); //for whether to add get sequence feature
+    }
+    //for whether to add get sequence feature
+    m_CanRetrieveSeq = x_GetDbType(actual_aln_list) == eDbTypeNotSet ? false : true;
     if(m_AlignOption & eHtml || m_AlignOption & eDynamicFeature){
         //set config file
         m_ConfigFile = new CNcbiIfstream(".ncbirc");
@@ -891,8 +911,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         out<<"<script src=\"blastResult.js\"></script>";
     }
     //get sequence 
-    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){ 
-        out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber);
+    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){ 
+        out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
+                          x_GetDbType(actual_aln_list));
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
     }
     //begin to display
@@ -1153,9 +1174,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         } 
         delete [] mix;
     }
-    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){
+    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
         out<<"</form>\n";
-        out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber);
+        out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
+                          x_GetDbType(actual_aln_list));
     }
 }
 
@@ -1251,9 +1273,11 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         firstGi = gi;
                     }
                     if ((m_AlignOption&eSequenceRetrieval)
-                        && (m_AlignOption&eHtml) && m_IsDbGi && isFirst) {
+                        && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                         char buf[512];
-                        sprintf(buf, k_Checkbox.c_str(), gi, m_QueryNumber);
+                        sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
+                                NStr::IntToString(gi).c_str() : wid2->GetSeqIdString().c_str(),
+                                m_QueryNumber);
                         out << buf;
                     }
                 
@@ -1836,7 +1860,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     string segs = x_GetSegs(row);
     int gi = s_GetGiForSeqIdList(ids);
     if(!idGeneral.Empty() 
-       && idGeneral->AsFastaString().find("gnl|BL_ORD_ID")){
+       && idGeneral->AsFastaString().find("gnl|BL_ORD_ID") != string::npos){
         /* We do need to make security protected link to BLAST gnl */
         return NcbiEmptyString;
     }
@@ -1887,6 +1911,8 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
         if (idOther.Empty()){
             bestid = idAccession;
         }
+    } else {
+        bestid = idGeneral;
     }
     /*
      * Need to protect start and stop positions
@@ -1894,16 +1920,8 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
      * to retrive full sequences
      */
     char gnl[256];
-    unsigned char buf[32];
-    CMD5 urlHash;
     if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
-        length = (int)passwd.size();
-        urlHash.Update(passwd.c_str(), length);
         strcpy(gnl, bestid->AsFastaString().c_str());
-        urlHash.Update(gnl, strlen(gnl));
-        urlHash.Update(segs.c_str(), segs.size());
-        urlHash.Update(passwd.c_str(), length);
-        urlHash.Finalize(buf);
         
     } else {
         gnl[0] = '\0';
@@ -1934,19 +1952,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     if ( m_QueryNumber > 0){
         link += "QUERY_NUMBER=" + NStr::IntToString(m_QueryNumber) + "&";
     }
-    link += "segs=" + segs + "&";
-    
-    char tempBuf[128];
-    
-    sprintf(tempBuf,
-            "seal=%02X%02X%02X%02X"
-            "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-            buf[0], buf[1], buf[2], buf[3],
-            buf[4], buf[5], buf[6], buf[7],
-            buf[8], buf[9], buf[10], buf[11],
-            buf[12], buf[13], buf[14], buf[15]);
-    
-    link += tempBuf;
+    link += "segs=" + segs;
     link += "\">";
     if(nodb_path){
         delete [] dbtmp;
@@ -1956,45 +1962,27 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
 }
 
 
-void CDisplaySeqalign::x_SetDbGi(const CSeq_align_set& actual_aln_list) 
+CDisplaySeqalign::DbType CDisplaySeqalign::x_GetDbType(const CSeq_align_set& actual_aln_list) 
 {
-  //determine if the database has gi by looking at the 1st hit.  
+    //determine if the database has gi by looking at the 1st hit.  
     //Could be wrong but simple for now
- 
-    CTypeConstIterator<CSeq_align> saTemp = ConstBegin(actual_aln_list);
-    if(saTemp->IsSetSegs()){ 
-        if(saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
-            CTypeConstIterator<CDense_seg> dsTemp = ConstBegin(*saTemp); 
-            const vector< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
-            vector< CRef< CSeq_id > >::const_iterator iterTemp 
-                = idTemp.begin();
-            iterTemp++;
-            const CBioseq_Handle& handleTemp 
-                = m_Scope.GetBioseqHandle(**iterTemp);
-            if(handleTemp){
-                int giTemp 
-                    = s_GetGiForSeqIdList(handleTemp.GetBioseqCore()->GetId());
-                if(giTemp >0 ) { 
-                    m_IsDbGi = true;
-                }
+    DbType type = eDbTypeNotSet;
+    CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
+    const CSeq_id& subject_id = first_aln->GetSeq_id(1);
+    const CBioseq_Handle& handleTemp  = m_Scope.GetBioseqHandle(subject_id);
+    if(handleTemp){
+        int giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
+        if (giTemp >0) { 
+            type = eDbGi;
+        } else if (subject_id.Which() == CSeq_id::e_General){
+            const CDbtag& dtg = subject_id.GetGeneral();
+            const string& dbName = dtg.GetDb();
+            if(NStr::CompareNocase(dbName, "TI") == 0){
+                type = eDbGeneral;
             }
-        } else if (saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-            CTypeConstIterator<CStd_seg> dsTemp = ConstBegin(*saTemp); 
-            const CStd_seg::TIds& idTemp = (dsTemp->GetIds());
-            CStd_seg::TIds::const_iterator iterTemp = idTemp.begin();
-            iterTemp++;
-            const CBioseq_Handle& handleTemp
-                = m_Scope.GetBioseqHandle(**iterTemp);
-            if(handleTemp){
-                int giTemp 
-                    = s_GetGiForSeqIdList(handleTemp.GetBioseqCore()->GetId());
-                if(giTemp >0 ) { 
-                    m_IsDbGi = true;
-                }
-            }
-        }
+        }   
     }
-    
+    return type;
 }
 
 
@@ -2374,6 +2362,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.69  2005/04/12 16:39:51  jianye
+*Added subject seq retrieval for trace db, get rid of password seal and and gnl id to url
+*
 *Revision 1.68  2005/03/16 18:17:17  jianye
 *Added the missing a tag
 *
