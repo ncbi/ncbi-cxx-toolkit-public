@@ -201,7 +201,6 @@ Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start,
  * @param query_start Pointer to the start of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
  * @param word_params Initial word parameters with ungapped cutoff score [in]
- * @param hit_params Hit saving parameters containing score cut-off [in]
  * @param sbp Score block with Karlin-Altschul parameters [in]
  * @param translated Are sequences protein (with a translated subject)? [in]
  * @return Should this HSP be deleted after the score reevaluation?
@@ -211,7 +210,6 @@ Boolean
 Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, 
    Uint1* query_start, Uint1* subject_start,
    const BlastInitialWordParameters* word_params, 
-   const BlastHitSavingParameters* hit_params, 
    BlastScoreBlk* sbp, Boolean translated);
 
 /** Calculate number of identities in an HSP.
