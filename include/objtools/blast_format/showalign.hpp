@@ -74,6 +74,13 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eMinusStrand3 = -3
     };
 
+    ///db type
+    enum DbType {
+        eDbGi = 0,
+        eDbGeneral,
+        eDbTypeNotSet
+    };
+    
     /// Alignment display type, specific for showing blast-related info
     enum AlignType {
         eNotSet = 0,            // Default
@@ -300,7 +307,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     PrepareBlastUngappedSeqalign(CSeq_align_set & alnset);
     
 private:
-    
+ 
     ///internal insert information
     ///aln_start. insert right after this position
     struct SInsertInformation {
@@ -350,7 +357,7 @@ private:
     SeqLocColorOption m_SeqLocColor; // clolor for seqloc display
     size_t m_LineLen;                  // number of sequence character per line
     bool m_IsDbNa;
-    bool m_IsDbGi;
+    bool m_CanRetrieveSeq;
     string m_DbName;
     string m_BlastType;
     string m_Rid;
@@ -496,7 +503,7 @@ private:
     ///Set the database as gi type
     ///@param actual_aln_list: the alignment
     ///
-    void x_SetDbGi(const CSeq_align_set& actual_aln_list);
+    DbType x_GetDbType(const CSeq_align_set& actual_aln_list);
 
     ///get insert information
     ///@param insert_list: list to be filled
@@ -550,6 +557,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.28  2005/04/12 16:41:52  jianye
+*Added subject seq retrieval for trace db
+*
 *Revision 1.27  2005/03/14 15:50:12  jianye
 *minor naming change
 *
