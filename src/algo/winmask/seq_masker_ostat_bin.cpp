@@ -45,7 +45,7 @@ static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 //------------------------------------------------------------------------------
 CSeqMaskerOstatBin::CSeqMaskerOstatBin( const string & name )
     : CSeqMaskerOstat( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), ios_base::binary ) ) ),
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ) ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 { write_word( (Uint4)0 ); } // Format identifier.
 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/04/12 22:17:03  ucko
+ * s/ios_base/IOS_BASE/ for portability, at least to GCC 2.95.
+ *
  * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

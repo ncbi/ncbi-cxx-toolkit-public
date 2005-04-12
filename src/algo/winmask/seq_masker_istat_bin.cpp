@@ -78,7 +78,7 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
             NCBI_THROW( Exception, eFormat, "wrong file size" );
     }
 
-    CNcbiIfstream in_stream( name.c_str(), ios_base::binary );
+    CNcbiIfstream in_stream( name.c_str(), IOS_BASE::binary );
     Uint4 data;
     in_stream.read( (char *)&data, sizeof( Uint4 ) );
 
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/04/12 22:17:03  ucko
+ * s/ios_base/IOS_BASE/ for portability, at least to GCC 2.95.
+ *
  * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *
