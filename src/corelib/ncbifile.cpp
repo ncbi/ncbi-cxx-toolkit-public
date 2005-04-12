@@ -1153,7 +1153,7 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     // nanoseconds. If you know one more platform which have nanoseconds
     // support for file times, add it here.
     
-#  if defined(NCBI_OS_LINUX)
+#  if defined(NCBI_OS_LINUX)  &&  __GLIBC_PREREQ(2,3)
 #    if defined(__USE_MISC)
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
@@ -3283,6 +3283,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2005/04/12 14:24:05  ivanov
+ * Fix: On Linux nanoseconds file time precision is defined in
+ * the GNU C Library 2.3 and above
+ *
  * Revision 1.93  2005/04/12 11:25:25  ivanov
  * CDirEntry: added struct SStat and method Stat() to get additional non-posix
  * OS-dependent info. Now it can get only nanoseconds for entry times.
