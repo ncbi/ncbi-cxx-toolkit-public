@@ -1138,7 +1138,7 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     size_t bytes = memreg.m_Bytes;
     
     if (bytes > 0) {
-        _ASSERT(m_CurAlloc >= bytes);
+        _ASSERT((int)m_CurAlloc >= (int)bytes);
         m_CurAlloc     -= bytes;
         memreg.m_Bytes = 0;
     }
