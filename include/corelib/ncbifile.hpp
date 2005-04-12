@@ -43,6 +43,11 @@
 #include <corelib/ncbi_mask.hpp>
 #include <vector>
 
+#include <sys/types.h>
+#if defined(HAVE_SYS_STAT_H)
+#  include <sys/stat.h>
+#endif
+
 /** @addtogroup Files
  *
  * @{
@@ -91,6 +96,7 @@ enum EFollowLinks {
     eIgnoreLinks,
     eFollowLinks
 };
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -258,6 +264,7 @@ public:
     // Checks & manipulations
     //
 
+
     /// Match "name" against the filename "mask".
     static bool MatchesMask(const char* name, const char* mask,
                             NStr::ECase use_case = NStr::eCase);
@@ -265,6 +272,7 @@ public:
     /// Match "name" against the set of "masks"
     static bool MatchesMask(const char* name, const CMask& mask,
                             NStr::ECase use_case = NStr::eCase);
+
 
     /// Check entry existence.
     virtual bool Exists(void) const;
@@ -461,6 +469,30 @@ public:
     ///   CFile, CDir, CSymLink
     static CDirEntry* CreateObject(EType type, const string& path = kEmptyStr);
 
+    /// Alternative stat structure. Used instead standard struct stat, which can
+    /// have useful, but non-posix fields. And these field usualy named
+    /// differently on all systems.
+    struct SStat {
+        struct stat orig;  ///< Original stat structure
+        // Nanoseconds for dir entry times (if available)
+        long  mtime_nsec;  ///< Nanoseconds for modification time
+        long  ctime_nsec;  ///< Nanoseconds for creation time
+        long  atime_nsec;  ///< Nanoseconds for last access time
+    };
+
+    /// Get status information on a dir entry.
+    ///
+    /// By default have the same behaviour as UNIX's lstat().
+    /// @param buffer
+    ///   Pointer to structure that stores results
+    /// @param follow_links
+    ///   Whether to follow symlinks (shortcuts, aliases)
+    /// @return
+    ///   Return 0 if the file-status information is obtained.
+    ///   A return value of -1 indicates an error, in which case errno is set.
+    int Stat(struct SStat *buffer,
+             EFollowLinks follow_links = eIgnoreLinks) const;
+
     /// Get type of directory entry.
     ///
     /// @return
@@ -507,32 +539,45 @@ public:
     ///
     /// The creation time under MS windows is an actual creation time of the
     /// entry. Under UNIX "creation" time is the time of last entry status
-    /// change. 
+    /// change. If the OS or the file system does not support some time type
+    /// (modification/creation/last access), that returned CTime is "empty". 
+    /// Returned time always is in CTime's time zone format (eLocal/eGMT). 
+    /// Aware, that GetTime function may not return the same time information
+    /// set using SetTime, this depends from OS and used file system.
     /// @return
     ///   TRUE if time was acquired or FALSE otherwise.
     /// @sa
-    ///   GetTimeT, SetTime
-    bool GetTime(CTime* modification, CTime* creation = 0, 
+    ///   GetTimeT, SetTime, Stat
+    bool GetTime(CTime* modification,
+                 CTime* creation    = 0, 
                  CTime* last_access = 0) const;
 
-    /// Get time stamp of directory entry.
+    /// Get time stamp of directory entry (time_t version).
     ///
+    /// Use GetTime() if you need precision more than 1 second.
+    /// Returned time always is in GMT format. 
     /// @return
     ///   TRUE if time was acquired or FALSE otherwise.
     /// @sa
     ///   GetTime, SetTimeT
-    bool GetTimeT(time_t* modification, time_t* creation = 0, 
+    bool GetTimeT(time_t* modification,
+                  time_t* creation    = 0, 
                   time_t* last_access = 0) const;
 
     /// Set time stamp on directory entry.
     ///
     /// The process must be the owner of the file or have write permissions
-    /// in order to change the time. If value of parameters modification or
-    /// last access time is zero that current time will be used.
+    /// in order to change the time. If value of some parameter is zero that
+    /// this entry time will not be changed.
     /// Aware, that GetTime function may not return the same time information
     /// set using SetTime, this depends from OS and used file system. 
+    /// Also, on UNIX it is impossible to change creation time of the entry
+    /// (we ignore this parameter on this platform).
     /// @param modification
     ///   New file modification time.
+    /// @param creation
+    ///   New creation time. On some platforms it cannot be changed,
+    ///   so this parameter will be ignored.
     /// @param last_access
     ///   New last file access time. It cannot be less than the file
     ///   creation time. In last case it will be set equal to creation time.
@@ -540,12 +585,18 @@ public:
     ///   TRUE if time was changed or FALSE otherwise.
     /// @sa
     ///   SetTimeT, GetTime
-    bool SetTime(CTime* modification = 0 , CTime* last_access = 0) const;
+    bool SetTime(CTime* modification = 0,
+                 CTime* creation     = 0,
+                 CTime* last_access  = 0) const;
 
-    /// Set time stamp on directory entry.
+    /// Set time stamp on directory entry (time_t version).
     ///
+    /// Use SetTime() if you need precision more than 1 second.
     /// @param modification
     ///   New file modification time.
+    /// @param creation
+    ///   New creation time. On some platforms it cannot be changed,
+    ///   so this parameter will be ignored.
     /// @param last_access
     ///   New last file access time. It cannot be less than the file
     ///   creation time. In last case it will be set equal to creation time.
@@ -553,7 +604,9 @@ public:
     ///   TRUE if time was changed or FALSE otherwise.
     /// @sa
     ///   SetTime, GetTimeT
-    bool SetTimeT(time_t* modification = 0 , time_t* last_access = 0) const;
+    bool SetTimeT(time_t* modification = 0,
+                  time_t* creation     = 0,
+                  time_t* last_access  = 0) const;
 
     /// Check if current entry is newer than some other.
     ///
@@ -2145,6 +2198,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/04/12 11:25:09  ivanov
+ * CDirEntry: added struct SStat and method Stat() to get additional non-posix
+ * OS-dependent info. Now it can get only nanoseconds for entry times.
+ * CDirEntry::SetTime[T]() -- added parameter to change creation time
+ * (where possible). Minor comments changes and cosmetics.
+ *
  * Revision 1.53  2005/03/23 15:37:13  ivanov
  * + CDirEntry:: CreateObject, Get/SetTimeT
  * Changed Copy/Rename in accordance that flags "Update" and "Backup"

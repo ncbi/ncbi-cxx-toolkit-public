@@ -34,10 +34,6 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
 
-#include <sys/types.h>
-#if defined(HAVE_SYS_STAT_H)
-#  include <sys/stat.h>
-#endif
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -55,6 +51,7 @@
 #  include <dirent.h>
 #  include <pwd.h>
 #  include <fcntl.h>
+#  include <sys/time.h>
 #  include <sys/mman.h>
 #  include <utime.h>
 #  include <pwd.h>
@@ -110,6 +107,7 @@ BEGIN_NCBI_SCOPE
 
 // Default buffer size, used to read/write files
 const size_t kDefaultBufferSize = 32*1024;
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -827,23 +825,218 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
+#if defined(NCBI_OS_MSWIN)
+
+bool s_FileTimeToCTime(const FILETIME& filetime, CTime& t) 
+{
+    // Clear time object
+    t.Clear();
+
+    if ( !filetime.dwLowDateTime  &&  !filetime.dwHighDateTime ) {
+        // File time is undefined, just return "empty" time
+        return true;
+    }
+    SYSTEMTIME system;
+    FILETIME   local;
+
+    // Convert the file time to local time
+    if ( !FileTimeToLocalFileTime(&filetime, &local) ) {
+        return false;
+    }
+    // Convert the local file time from UTC to system time.
+    if ( !FileTimeToSystemTime(&local, &system) ) {
+        return false;
+    }
+
+    // Construct new time
+    CTime newtime(system.wYear,
+                  system.wMonth,
+                  system.wDay,
+                  system.wHour,
+                  system.wMinute,
+                  system.wSecond,
+                  system.wMilliseconds *
+                         (kNanoSecondsPerSecond / kMilliSecondsPerSecond),
+                  CTime::eLocal,
+                  t.GetTimeZonePrecision());
+
+    // And assign it
+    if ( t.GetTimeZoneFormat() == CTime::eLocal ) {
+        t = newtime;
+    } else {
+        t = newtime.GetGmtTime();
+    }
+    return true;
+}
+
+
+bool s_CTimeToFileTime(const CTime& t, FILETIME& filetime) 
+{
+    return false;
+}
+
+
+void s_UnixTimeToFileTime(time_t t, long nanosec, FILETIME& filetime) 
+{
+    // Note that LONGLONG is a 64-bit value
+    LONGLONG res;
+    // This algorithm was found in MSDN
+    res = Int32x32To64(t, 10000000) + 116444736000000000 + nanosec/100;
+    filetime.dwLowDateTime  = (DWORD)res;
+    filetime.dwHighDateTime = (DWORD)(res >> 32);
+}
+
+#endif
+
+
 bool CDirEntry::GetTime(CTime* modification,
                         CTime* creation, CTime* last_access) const
 {
-    struct stat st;
-    if (stat(GetPath().c_str(), &st) != 0) {
+#if defined(NCBI_OS_MSWIN)
+    HANDLE handle;
+    WIN32_FIND_DATA buf;
+
+    // Get file times using FindFile
+    handle = FindFirstFile(GetPath().c_str(), &buf);
+    if ( handle == INVALID_HANDLE_VALUE ) {
         return false;
     }
-    if ( modification ) {
-        modification->SetTimeT(st.st_mtime);
+    FindClose(handle);
+
+    // Convert file UTC times into CTime format
+    if ( modification  &&
+        !s_FileTimeToCTime(buf.ftLastWriteTime, *modification) ) {
+        return false;
     }
-    if ( creation ) {
-        creation->SetTimeT(st.st_ctime);
+    if ( creation  &&
+        !s_FileTimeToCTime(buf.ftCreationTime, *creation) ) {
+        return false;
     }
-    if ( last_access ) {
-        last_access->SetTimeT(st.st_atime);
+    if ( last_access  &&
+         !s_FileTimeToCTime(buf.ftLastAccessTime, *last_access) ) {
+        return false;
     }
     return true;
+
+#elif defined(NCBI_OS_UNIX)
+
+    struct SStat st;
+    if ( Stat(&st) != 0 ) {
+        return false;
+    }
+
+    if ( modification ) {
+        modification->SetTimeT(st.orig.st_mtime);
+	if ( st.mtime_nsec )
+            modification->SetNanoSecond(st.mtime_nsec);
+    }
+    if ( creation ) {
+        creation->SetTimeT(st.orig.st_ctime);
+	if ( st.ctime_nsec )
+            creation->SetNanoSecond(st.ctime_nsec);
+    }
+    if ( last_access ) {
+        last_access->SetTimeT(st.orig.st_atime);
+	if ( st.atime_nsec )
+            last_access->SetNanoSecond(st.atime_nsec);
+    }
+    return true;
+#endif
+}
+
+
+bool CDirEntry::SetTime(CTime* modification,
+                        CTime* creation, CTime* last_access) const
+{
+#if defined(NCBI_OS_MSWIN)
+
+    if ( !modification  &&  !creation  &&  !last_access ) {
+        return true;
+    }
+    FILETIME   x_modification, x_creation, x_lastaccess;
+    LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
+
+    // Convert times to FILETIME format
+    if ( modification ) {
+        s_UnixTimeToFileTime(modification->GetTimeT(),
+                             modification->NanoSecond(), x_modification);
+        p_modification = &x_modification;
+    }
+    if ( creation ) {
+        s_UnixTimeToFileTime(creation->GetTimeT(),
+                             creation->NanoSecond(), x_creation);
+        p_creation = &x_creation;
+    }
+    if ( last_access ) {
+        s_UnixTimeToFileTime(last_access->GetTimeT(),
+                             last_access->NanoSecond(), x_lastaccess);
+        p_lastaccess = &x_lastaccess;
+    }
+
+    // Change times
+    HANDLE h = CreateFile(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+                          FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                          FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
+    if ( h == INVALID_HANDLE_VALUE ) {
+        return false;
+    }
+    if ( !SetFileTime(h, p_creation, p_lastaccess, p_modification) ) {
+        CloseHandle(h);
+        return false;
+    }
+    CloseHandle(h);
+
+    return true;
+
+#elif defined(NCBI_OS_UNIX)
+
+    if ( !modification  &&  !last_access ) {
+        return true;
+    }
+
+#  if defined(HAVE_UTIMES)
+    // Get current times
+    CTime x_modification, x_lastaccess;
+    GetTime(modification ? &x_modification : 0,
+            0 /* creation */,
+	    last_access  ? &x_lastaccess : 0);
+
+    if ( !modification ) {
+        modification = &x_modification;
+    }
+    if ( !last_access ) {
+        last_access = &x_lastaccess;
+    }
+    // Change times
+    struct timeval tvp[2];
+    tvp[0].tv_sec  = last_access->GetTimeT();
+    tvp[0].tv_usec = last_access->NanoSecond() / 1000;
+    tvp[1].tv_sec  = modification->GetTimeT();;
+    tvp[1].tv_usec = modification->NanoSecond() / 1000;
+
+#    if defined(HAVE_LUTIMES)
+    return lutimes(GetPath().c_str(), tvp) == 0;
+#    else
+    return utimes(GetPath().c_str(), tvp) == 0;
+#    endif
+
+# else
+    // utimes() does not exists on current platform,
+    // so use less accurate utime().
+
+    // Get current times
+    time_t x_modification, x_lastaccess;
+    GetTimeT(&x_modification, 0, &x_lastaccess);
+
+    // Change times to new
+    struct utimbuf times;
+    times.modtime  = modification ? modification->GetTimeT() : x_modification;
+    times.actime   = last_access  ? last_access->GetTimeT()  : x_lastaccess;
+    return utime(GetPath().c_str(), &times) == 0;
+
+#  endif // HAVE_UTIMES
+
+#endif // OS selection
 }
 
 
@@ -867,23 +1060,154 @@ bool CDirEntry::GetTimeT(time_t* modification,
 }
 
 
-bool CDirEntry::SetTime(CTime* modification, CTime* last_access) const
+bool CDirEntry::SetTimeT(time_t* modification,
+                         time_t* creation, time_t* last_access) const
 {
-    struct utimbuf times;
+#if defined(NCBI_OS_MSWIN)
+    if ( !modification  &&  !creation  &&  !last_access ) {
+        return true;
+    }
+    FILETIME   x_modification, x_creation, x_lastaccess;
+    LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
 
-    times.modtime = modification ? modification->GetTimeT() : time(0);
-    times.actime = last_access ? last_access->GetTimeT() : time(0);
+    // Convert times to FILETIME format
+    if ( modification ) {
+        s_UnixTimeToFileTime(*modification, 0, x_modification);
+        p_modification = &x_modification;
+    }
+    if ( creation ) {
+        s_UnixTimeToFileTime(*creation, 0, x_creation);
+        p_creation = &x_creation;
+    }
+    if ( last_access ) {
+        s_UnixTimeToFileTime(*last_access, 0, x_lastaccess);
+        p_lastaccess = &x_lastaccess;
+    }
+
+    // Change times
+    HANDLE h = CreateFile(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+                          FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                          FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
+    if ( h == INVALID_HANDLE_VALUE ) {
+        return false;
+    }
+    if ( !SetFileTime(h, p_creation, p_lastaccess, p_modification) ) {
+        CloseHandle(h);
+        return false;
+    }
+    CloseHandle(h);
+
+    return true;
+
+#elif defined(NCBI_OS_UNIX)
+    if ( !modification  &&  !last_access ) {
+        return true;
+    }
+    // Get current times
+    time_t x_modification, x_lastaccess;
+    GetTimeT(&x_modification, 0, &x_lastaccess);
+
+    // Change times to new
+    struct utimbuf times;
+    times.modtime  = modification ? *modification : x_modification;
+    times.actime   = last_access  ? *last_access  : x_lastaccess;
     return utime(GetPath().c_str(), &times) == 0;
+
+#endif
 }
 
 
-bool CDirEntry::SetTimeT(time_t* modification, time_t* last_access) const
+int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 {
-    struct utimbuf times;
+    if ( !buffer ) {
+        errno = EFAULT;
+        return -1;
+    }
+    
+    int errcode;
+#if defined(NCBI_OS_MSWIN)
+    errcode = stat(GetPath().c_str(), &buffer->orig);
+#elif defined(NCBI_OS_UNIX)
+    if (follow_links == eFollowLinks) {
+        errcode = stat(GetPath().c_str(), &buffer->orig);
+    } else {
+        errcode = lstat(GetPath().c_str(), &buffer->orig);
+    }
+#endif
+    if (errcode != 0) {
+        return errcode;
+    }
+   
+    // Assign additional fields
+    buffer->mtime_nsec = 0;
+    buffer->ctime_nsec = 0;
+    buffer->atime_nsec = 0;
+    
+#if defined(NCBI_OS_MSWIN)
+    return 0;
 
-    times.modtime = modification ? *modification : time(0);
-    times.actime = last_access   ? *last_access  : time(0);
-    return utime(GetPath().c_str(), &times) == 0;
+#elif defined(NCBI_OS_UNIX)
+
+    // UNIX:
+    // Some systems have additional fields in the stat structure to store
+    // nanoseconds. If you know one more platform which have nanoseconds
+    // support for file times, add it here.
+    
+#  if defined(NCBI_OS_LINUX)
+#    if defined(__USE_MISC)
+    buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
+#    else
+    buffer->mtime_nsec = buffer->orig.st_mtimensec;
+    buffer->ctime_nsec = buffer->orig.st_ctimensec;
+    buffer->atime_nsec = buffer->orig.st_atimensec;
+#    endif
+#  endif
+
+
+#  if defined(NCBI_OS_SOLARIS)
+#    if !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE) || \
+	 defined(__EXTENSIONS__)
+    buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
+#    else
+    buffer->mtime_nsec = buffer->orig.st_mtim.__tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctim.__tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
+#    endif
+#  endif
+
+   
+#  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
+#    if defined(_POSIX_SOURCE)
+    buffer->mtime_nsec = buffer->orig.st_mtimensec;
+    buffer->ctime_nsec = buffer->orig.st_ctimensec;
+    buffer->atime_nsec = buffer->orig.st_atimensec;
+#    else
+    buffer->mtime_nsec = buffer->orig.st_mtimespec.tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctimespec.tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atimespec.tv_nsec;
+#    endif
+#  endif
+
+
+#  if defined(NCBI_OS_IRIX)
+#    if defined(tv_sec)
+    buffer->mtime_nsec = buffer->orig.st_mtim.__tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctim.__tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
+#    else
+    buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
+    buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
+#    endif
+#  endif
+    
+    return 0;
+    
+#endif  // NCBI_OS_*
 }
 
 
@@ -1069,12 +1393,12 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
 
 bool CDirEntry::IsNewer(const string& entry_name) const
 {
-    time_t current, other;
-    if ( !GetTimeT(&current) ) {
+    CTime current, other;
+    if ( !GetTime(&current) ) {
         return false;
     }
     CDirEntry entry(entry_name);
-    if ( !entry.GetTimeT(&other) ) {
+    if ( !entry.GetTime(&other) ) {
         return true;
     }
     return current > other;
@@ -1184,21 +1508,17 @@ bool CDirEntry::GetOwner(string* owner, string* group,
       return 1;
     }
     // Get owner
-    if ( owner ) {
-        if ( !s_LookupAccountSid(sid_owner, owner) ) {
-            LocalFree(sd);
-            return false;
-        }
+    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
+        LocalFree(sd);
+        return false;
     }
     // Get group
-    if ( group ) {
-        if ( !s_LookupAccountSid(sid_group, group) ) {
-            // This is not an error, because the group name on WINDOWS
-            // is an auxiliary information. Sometimes accounts can not
-            // belongs to groups, or we dont have permissions to get
-            // such information.
-            *group = kEmptyStr;
-        }
+    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
+        // This is not an error, because the group name on WINDOWS
+        // is an auxiliary information. Sometimes accounts can not
+        // belongs to groups, or we dont have permissions to get
+        // such information.
+        *group = kEmptyStr;
     }
     LocalFree(sd);
     return true;
@@ -1213,7 +1533,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     } else {
         errcode = lstat(GetPath().c_str(), &st);
     }
-    if ( errcode ) {
+    if ( errcode != 0 ) {
         return false;
     }
     
@@ -1238,6 +1558,10 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                          EFollowLinks follow) const
 {
 #if defined(NCBI_OS_MSWIN)
+
+    if ( owner.empty() ) {
+        return false;
+    }
 
     // Get access token
 
@@ -1334,6 +1658,10 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 
 #elif defined(NCBI_OS_UNIX)
 
+    if ( owner.empty() &&  group.empty() ) {
+        return false;
+    }
+
     struct stat st;
     int errcode;
     
@@ -1342,7 +1670,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     } else {
         errcode = lstat(GetPath().c_str(), &st);
     }
-    if ( errcode ) {
+    if ( errcode != 0 ) {
         return false;
     }
     
@@ -1367,9 +1695,11 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             return false;
         }
     } else {
+#  if defined(HAVE_LCHOWN)
         if ( lchown(GetPath().c_str(), uid, gid) ) {
             return false;
         }
+#  endif
     }
     return true;
 
@@ -1392,25 +1722,34 @@ static bool s_CopyAttrs(const char* from, const char* to,
 {
 #if defined(NCBI_OS_UNIX)
 
-    struct stat st;
-    int errcode;
-    if (type == CDirEntry::eLink) {
-        errcode = lstat(from, &st);
-    } else {
-        errcode = stat(from, &st);
-    }
-    if ( errcode ) {
+    CDirEntry::SStat st;
+    if ( CDirEntry(from).Stat(&st) != 0 ) {
         return false;
     }
 
-    // Date/time
+    // Date/time.
+    // Set time before chmod() call, because on some platforms
+    // setting time can affect file mode also.
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
+#  if defined(HAVE_UTIMES)
+        struct timeval tvp[2];
+        tvp[0].tv_sec  = st.orig.st_atime;
+        tvp[0].tv_usec = st.atime_nsec / 1000;
+        tvp[1].tv_sec  = st.orig.st_mtime;
+        tvp[1].tv_usec = st.mtime_nsec / 1000;
+#    if defined(HAVE_LUTIMES)
+        return lutimes(to, tvp) == 0;
+#    else
+        return utimes(to, tvp) == 0;
+#    endif
+# else  // !HAVE_UTIMES
+        // utimes() does not exists on current platform,
+        // so use less accurate utime().
         struct utimbuf times;
-        times.modtime = st.st_mtime;
-        times.actime = st.st_atime;
-        if ( utime(to, &times) ) {
-            return false;
-        }
+        times.modtime = st.orig.st_mtime;
+        times.actime  = st.orig.st_atime;
+        return utime(to, &times) == 0;
+#  endif // HAVE_UTIMES
     }
 
     // Owner. 
@@ -1419,29 +1758,31 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
         if ( type == CDirEntry::eLink ) {
-            if ( lchown(to, st.st_uid, st.st_gid) ) {
+#  if defined(HAVE_LCHOWN)
+            if ( lchown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if (errno != EPERM) {
                     return false;
                 }
             }
+#  endif
             // We cannot change permissions for sym.links.
             return true;
         } else {
             // Changing the ownership probably can fails, unless we're super-user.
             // The uid/gid bits can be cleared by OS. If chown() fails,
             // lose uid/gid bits.
-            if ( chown(to, st.st_uid, st.st_gid) ) {
+            if ( chown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if ( errno != EPERM ) {
                     return false;
                 }
-                st.st_mode &= ~(S_ISUID | S_ISGID);
+                st.orig.st_mode &= ~(S_ISUID | S_ISGID);
             }
         }
     }
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm)  &&
         type != CDirEntry::eLink ) {
-        if ( chmod(to, st.st_mode) ) {
+        if ( chmod(to, st.orig.st_mode) ) {
             return false;
         }
     }
@@ -1456,13 +1797,6 @@ static bool s_CopyAttrs(const char* from, const char* to,
     WIN32_FILE_ATTRIBUTE_DATA attr;
     if ( !::GetFileAttributesEx(from, GetFileExInfoStandard, &attr) ) {
         return false;
-    }
-
-    // Permissions
-    if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
-        if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
-            return false;
-        }
     }
 
     // Date/time
@@ -1483,20 +1817,11 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
-        CDirEntry::TMode user_mode, group_mode, other_mode;
-        if ( !efrom.GetMode(&user_mode, &group_mode, &other_mode)  ||
-            !eto.SetMode(user_mode, group_mode, other_mode) ) {
+        if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
             return false;
         }
     }
-    // Date/time
-    if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
-        time_t modification, last_access;
-        if ( !efrom.GetTimeT(&modification, 0, &last_access)  ||
-            !eto.SetTimeT(&modification, &last_access) ) {
-            return false;
-        }
-    }
+
     // Owner
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
         string owner, group;
@@ -2958,6 +3283,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2005/04/12 11:25:25  ivanov
+ * CDirEntry: added struct SStat and method Stat() to get additional non-posix
+ * OS-dependent info. Now it can get only nanoseconds for entry times.
+ * CDirEntry::SetTime[T]() -- added parameter to change creation time
+ * (where possible). Minor comments changes and cosmetics.
+ *
  * Revision 1.92  2005/03/23 15:37:13  ivanov
  * + CDirEntry:: CreateObject, Get/SetTimeT
  * Changed Copy/Rename in accordance that flags "Update" and "Backup"
