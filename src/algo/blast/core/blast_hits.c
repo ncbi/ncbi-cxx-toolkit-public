@@ -381,7 +381,6 @@ s_UpdateReevaluatedHSPUngapped(BlastHSP* hsp, Int4 cutoff_score, Int4 score,
 Boolean 
 Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start, 
    Uint1* subject_start, const BlastInitialWordParameters* word_params,
-   const BlastHitSavingParameters* hit_params,
    BlastScoreBlk* sbp, Boolean translated)
 {
    Int4 sum, score;
@@ -1787,6 +1786,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
 
    purge = FALSE;
    for (index = 0; index < hspcnt; ++index) {
+      Int4 start_shift = 0; /* Subject shift in case of partial translation. */
       if (hsp_array[index] == NULL)
          continue;
       else
@@ -1804,7 +1804,6 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
             Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_start, 
                subject_start, hit_params, score_params, sbp);
       } else {
-         Int4 start_shift = 0;
          if (kTranslateSubject) {
             if (partial_translation) {
                Int4 subject_length = 0; /* Dummy variable */
@@ -1820,10 +1819,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
 
          delete_hsp = 
             Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
-               subject_start, word_params, hit_params, sbp, kTranslateSubject);
-         /* If partial translation was done and subject sequence was shifted,
-            shift back offsets in the HSP structure. */
-         Blast_HSPAdjustSubjectOffset(hsp, start_shift);
+               subject_start, word_params, sbp, kTranslateSubject);
       }
    
       if (!delete_hsp) {
@@ -1833,6 +1829,9 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
                                              score_params->options, 
                                              hit_params->options);
       }
+      /* If partial translation was done and subject sequence was shifted,
+         shift back offsets in the HSP structure. */
+      Blast_HSPAdjustSubjectOffset(hsp, start_shift);
 
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
@@ -2581,8 +2580,11 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
             Blast_HitListNew(hit_options->prelim_hitlist_size);
       }
       Blast_HitListUpdate(results->hitlist_array[0], hsp_list);
+   } else {
+       /* Empty HSPList - free it. */
+       Blast_HSPListFree(hsp_list);
    }
-   
+       
    return status; 
 }
 
