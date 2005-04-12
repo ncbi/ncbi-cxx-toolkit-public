@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CWriter_HTMLEncoder : public IWriter
+class NCBI_XHTML_EXPORT CWriter_HTMLEncoder : public IWriter
 {
 public:
     enum EFlags {
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/12 14:50:30  ucko
+ * Add an export declaration.
+ *
  * Revision 1.1  2005/04/11 17:59:46  ucko
  * CWriter_HTMLEncoder -- HTML-encode supplied data on the fly before
  * passing it to a standard ostream.  (Initial revision.)
