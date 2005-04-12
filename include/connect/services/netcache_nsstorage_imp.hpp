@@ -32,7 +32,6 @@
 #include <corelib/ncbimisc.hpp>
 #include <connect/services/netschedule_storage.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <util/rwstream.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -59,8 +58,8 @@ public:
 
 private:
     auto_ptr<CNetCacheClient> m_NCClient;
-    auto_ptr<CRStream>        m_IStream;
-    auto_ptr<CWStream>        m_OStream;
+    auto_ptr<CNcbiIstream>    m_IStream;
+    auto_ptr<CNcbiOstream>    m_OStream;
 };
 
 class CNetCacheNSStorageException : public CNetScheduleStorageException
@@ -89,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/12 15:11:12  didenko
+ * Changed CRStream and CWStream to CNcbiIstream and CNcbiOstream
+ *
  * Revision 1.6  2005/03/29 14:10:16  didenko
  * + removing a date from the storage
  *
