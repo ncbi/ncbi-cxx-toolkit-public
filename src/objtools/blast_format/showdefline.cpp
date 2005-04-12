@@ -165,7 +165,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
                                                         CSeq_id::e_General);
         CConstRef<CSeq_id> id_other = GetSeq_idByType(ids, CSeq_id::e_Other);       
         if(!id_general.Empty() && 
-           id_general->AsFastaString().find("gnl|BL_ORD_ID")){ 
+           id_general->AsFastaString().find("gnl|BL_ORD_ID") != string::npos){ 
             /* We do need to make security protected link to BLAST gnl */
             return NcbiEmptyString;
         }
@@ -225,7 +225,10 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             if (id_other.Empty()){
                 bestid = wid;
             }
+        } else {
+            bestid = id_general;
         }
+        
         char gnl[256];
         if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
             strcpy(gnl, bestid->AsFastaString().c_str());
@@ -806,6 +809,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.11  2005/04/12 16:40:51  jianye
+*Added gnl id to url
+*
 *Revision 1.10  2005/02/23 16:28:03  jianye
 *change due to num_ident addition
 *
