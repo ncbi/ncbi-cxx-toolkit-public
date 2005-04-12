@@ -310,18 +310,19 @@ void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
                                         const string& url,
                                         int idelay)
 {
-    CHTMLText* redirect = new CHTMLText(
-             "<META HTTP-EQUIV=Refresh " 
-             "CONTENT=\"<@REFRESH_DELAY@>; URL=<@REFRESH_URL@>\">");
-    page.AddTagMap("REFRESH", redirect);
+    if (idelay >= 0) {
+        CHTMLText* redirect = new CHTMLText(
+                    "<META HTTP-EQUIV=Refresh " 
+                    "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
+        page.AddTagMap("REDIRECT", redirect);
+
+        CHTMLPlainText* delay = new CHTMLPlainText(NStr::IntToString(idelay));
+        page.AddTagMap("REDIRECT_DELAY",delay);               
+    }
 
     CHTMLPlainText* h_url = new CHTMLPlainText(url);
-    page.AddTagMap("REFRESH_URL",h_url);               
+    page.AddTagMap("REDIRECT_URL",h_url);               
 
-    CHTMLPlainText* delay = new CHTMLPlainText(
-                                NStr::IntToString(idelay)
-                                );
-    page.AddTagMap("REFRESH_DELAY",delay);               
 }
 
 
@@ -334,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/12 15:14:56  didenko
+ * Don't render a delay metatag if the delay time is less then 0
+ *
  * Revision 1.9  2005/04/11 14:51:35  didenko
  * + CGridCgiContext parameter to CollectParams method
  * + saving user specified CGI entries as cookies
