@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/hash_map.hpp>
 #include <corelib/hash_set.hpp>
 
@@ -335,6 +336,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/12 16:55:18  ucko
+ * Explicitly include <corelib/ncbitime.hpp>
+ *
  * Revision 1.3  2005/02/10 16:13:49  grichenk
  * Reduced number of test cycles
  *
