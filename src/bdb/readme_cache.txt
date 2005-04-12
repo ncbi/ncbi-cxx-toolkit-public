@@ -14,6 +14,18 @@ timeout.
 Mandatory.
 =========================================================================
 
+ttl_prolong : Maximum number of timeouts BLOB removal(expiration) delayed
+
+This parameter regulates BLOB expiration. If client constantly reads
+the BLOB and you do not want it to stuck in the database forever
+(timestamp=onread), set this parameter.
+If timeout is 3600 and ttl_prolong is 2, maximum possible timeout for
+the BLOB becomes 3600 * 2 = 7200 seconds.
+
+Optional.
+=========================================================================
+
+
 max_timeout   : Maximum possible timeout in seconds. 
 
 Individual timeouts cannot be more than this value.
@@ -91,14 +103,6 @@ Open cache as a read only database
 Optional.
 =========================================================================
 
-read_update_limit : Integer.
-
-This parameter regulates threashold of timestamp updates on read.
-Cache can remember read_update_limit of changed cache elements without writing 
-them to disk (increases overall performance).
-
-Optional.
-=========================================================================
 
 write_sync :  [true] | [false]
 Use syncronous or asyncronous transactions. (Asyncromous by default).
