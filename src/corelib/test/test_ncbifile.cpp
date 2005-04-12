@@ -418,7 +418,8 @@ static void s_TEST_File(void)
         cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
-        assert( mtime == mtime_new );
+        // Compare times with second precission (ignoring nanoseconds)
+        assert( mtime - mtime_new < CTimeSpan(1,0));
 
         // Remove the file
         assert( f.Remove() );
@@ -986,6 +987,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/04/12 13:07:35  ivanov
+ * Compare modification times with second precission (ignoring nanoseconds)
+ *
  * Revision 1.47  2005/04/12 11:26:34  ivanov
  * Fixed CDir::EntryGetTime/SetTime calls
  *
