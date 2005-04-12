@@ -1152,7 +1152,11 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     // Some systems have additional fields in the stat structure to store
     // nanoseconds. If you know one more platform which have nanoseconds
     // support for file times, add it here.
-    
+
+#  if !defined(__GLIBC_PREREQ)
+#    define __GLIBC_PREREQ(x, y) 0
+#  endif
+
 #  if defined(NCBI_OS_LINUX)  &&  __GLIBC_PREREQ(2,3)
 #    if defined(__USE_MISC)
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
@@ -3283,6 +3287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2005/04/12 16:51:32  ucko
+ * Define a dummy fallback version of __GLIBC_PREREQ if necessary.
+ *
  * Revision 1.94  2005/04/12 14:24:05  ivanov
  * Fix: On Linux nanoseconds file time precision is defined in
  * the GNU C Library 2.3 and above
