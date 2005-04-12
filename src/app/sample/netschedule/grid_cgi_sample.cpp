@@ -88,9 +88,9 @@ protected:
     // Report when the job is canceled
     virtual void OnJobCanceled(CGridCgiContext& ctx);
 
-    // Report a running status and allow the user to 
-    // cancel the job.
-    virtual void OnStatusCheck(CGridCgiContext& ctx);
+    virtual void OnJobPending(CGridCgiContext& ctx);
+
+    virtual void OnJobRunning(CGridCgiContext& ctx);
 
     // Return a job cancelation status.
     virtual bool JobStopRequested(void) const;
@@ -267,7 +267,18 @@ void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
-void CGridCgiSampleApplication::OnStatusCheck(CGridCgiContext& ctx)
+void CGridCgiSampleApplication::OnJobPending(CGridCgiContext& ctx)
+{
+    // Render a status report page
+    CHTMLText* inp_text = new CHTMLText(
+                  "<p/>Job is still in a queue...<br/>"
+                  "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check\">"
+                  "<INPUT TYPE=\"submit\" NAME=\"Cancel\" "
+                                         "VALUE=\"Cancel the job\">");
+   ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
+}
+
+void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
 {
     // Render a status report page
     CHTMLText* inp_text = new CHTMLText(
@@ -357,6 +368,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/12 19:12:04  didenko
+ * - OnStatusCheck method
+ * + OnJobPending method
+ * + OnJobRunning method
+ *
  * Revision 1.9  2005/04/11 14:56:33  didenko
  * + CGridCgiContext parameter to CollectParams method
  *

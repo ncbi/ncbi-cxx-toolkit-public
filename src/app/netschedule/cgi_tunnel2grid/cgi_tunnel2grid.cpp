@@ -80,9 +80,11 @@ protected:
     // Report when the job is canceled
     virtual void OnJobCanceled(CGridCgiContext& ctx);
 
-    // Report a running status and allow the user to 
-    // cancel the job.
-    virtual void OnStatusCheck(CGridCgiContext& ctx);
+    // the job is being processed by a worker node
+    virtual void OnJobRunning(CGridCgiContext& ctx);
+
+    // the job is in the Netschedule Queue 
+    virtual void OnJobPending(CGridCgiContext& ctx);
 
     // Return a job cancelation status.
     virtual bool JobStopRequested(void) const;
@@ -298,10 +300,16 @@ void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 }
 
 
-void CCgiTunnel2Grid::OnStatusCheck(CGridCgiContext& ctx)
+void CCgiTunnel2Grid::OnJobPending(CGridCgiContext& ctx)
 {
     // Render a status report page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_STATUS_CHECK@>");
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_PENDING@>");
+}
+
+void CCgiTunnel2Grid::OnJobRunning(CGridCgiContext& ctx)
+{
+    // Render a status report page
+    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_RUNNING@>");
 }
 
 void CCgiTunnel2Grid::OnEndProcessRequest(CGridCgiContext& ctx)
@@ -377,6 +385,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/12 19:10:39  didenko
+ * - OnStatusCheck method
+ * + OnJobPending method
+ * + OnJobRunning method
+ *
  * Revision 1.6  2005/04/11 17:49:16  didenko
  * combine all view files into one inc.html file
  *

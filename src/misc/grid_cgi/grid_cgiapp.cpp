@@ -213,35 +213,48 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             status = job_status.GetStatus();
         
             bool remove_cookie = false;
-            // A job is done here
-            if (status == CNetScheduleClient::eDone) {
+            switch (status) {
+            case CNetScheduleClient::eDone:
+                // a job is done
                 OnJobDone(job_status, grid_ctx);
                 remove_cookie = true;
-            }
-
-            // A job has failed
-            else if (status == CNetScheduleClient::eFailed) {
+                break;
+            case CNetScheduleClient::eFailed:
+                // a job has failed
                 OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
                 remove_cookie = true;
-            }
+                break;
 
-            // A job has been canceled
-            else if (status == CNetScheduleClient::eCanceled) {
+            case CNetScheduleClient::eCanceled :
+                // A job has been canceled
                 OnJobCanceled(grid_ctx);
                 remove_cookie = true;
-            }
+                break;
             
-            // A lost job
-            else if (status == CNetScheduleClient::eJobNotFound) {
+            case CNetScheduleClient::eJobNotFound:
+                // A lost job
                 OnJobFailed("Job is not found.", grid_ctx);
                 remove_cookie = true;
-            }
-            else {
-                //grid_ctx.SetJobKey(job_key);
-                OnStatusCheck(grid_ctx);
+                break;
+                
+            case CNetScheduleClient::ePending :
+            case CNetScheduleClient::eReturned:
+                // A job is in the Netscheduler's Queue
+                OnJobPending(grid_ctx);
+                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
+                break;
+
+            case CNetScheduleClient::eRunning:
+                // A job is being processed by a worker node
+                OnJobRunning(grid_ctx);
+                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
+                break;
+
+            default:
+                _ASSERT(0);
                 RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
             }
-             
+
             if (JobStopRequested())
                 GetGridClient().CancelJob(job_key);
 
@@ -335,6 +348,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/12 19:08:42  didenko
+ * - OnStatusCheck method
+ * + OnJobPending method
+ * + OnJobRunning method
+ *
  * Revision 1.10  2005/04/12 15:14:56  didenko
  * Don't render a delay metatag if the delay time is less then 0
  *

@@ -1,44 +1,52 @@
 <@VIEW_JOB_DONE@>
-<a href="<@REDIRECT_URL@>">Result page</a>
+<a href="<@REDIRECT_URL@>">Go to the result page</a>
 </@VIEW_JOB_DONE@>
 
 
 <@VIEW_EMPTY_RESULT@>
-No results are found.
-<a href="<@REDIRECT_URL@>">Go back</a>
+<p/>No results are found.<br/>
+<a href="<@REDIRECT_URL@>">Return to the start page</a>
 </@VIEW_EMPTY_RESULT@>
 
 
 <@VIEW_JOB_SUBMITTED@>
-<p/>Job has been submitted<br/>
+<p/>Job has been submitted.<br/>
 <INPUT TYPE="submit" NAME="Check Status" VALUE="Check Status">
 </@VIEW_JOB_SUBMITTED@>
 
 
-<@VIEW_STATUS_CHECK@>
-<p/>Job is still runnig.<br/>
+<@VIEW_JOB_PENDING@>
+<p/>Job is still in a queue...
+<br/>
 <INPUT TYPE="submit" NAME="Check Status" VALUE="Check">
 <INPUT TYPE="submit" NAME="Cancel" VALUE="Cancel the job">
-</@VIEW_STATUS_CHECK@>
+</@VIEW_JOB_PENDING@>
+
+<@VIEW_JOB_RUNNING@>
+<p/>Job is still runnig...
+<br/>
+<INPUT TYPE="submit" NAME="Check Status" VALUE="Check">
+<INPUT TYPE="submit" NAME="Cancel" VALUE="Cancel the job">
+</@VIEW_JOB_RUNNING@>
 
 
 <@VIEW_JOB_CANCELED@>
 <p/>Job is canceled.<br/>
-<A HREF="<@REDIRECT_URL@>">Go back</A>
+<A HREF="<@REDIRECT_URL@>">Return to the start page</A>
 </@VIEW_JOB_CANCELED@>
 
 
 <@VIEW_JOB_FAILED@>
 <p/>Job failed.<br/>
 Error Message : <@MSG@><br/>
-<A HREF="<@REDIRECT_URL@>">Go back</A>
+<A HREF="<@REDIRECT_URL@>">Return to the start page</A>
 </@VIEW_JOB_FAILED@>
 
 
 <@VIEW_QUEUE_IS_BUSY@>
 <p/>NetSchedule Queue is busy.<br/>
-Try again late.<br/>
-<A HREF="<@REDIRECT_URL@>">Go back</A>
+Try again later.<br/>
+<A HREF="<@REDIRECT_URL@>">Return to the start page</A>
 </@VIEW_QUEUE_IS_BUSY@>
 
 

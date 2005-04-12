@@ -198,13 +198,15 @@ protected:
     ///
     virtual void OnJobCanceled(CGridCgiContext& ctx) {}
 
-    /// When a job is running, the HTML page periodically (using java script)
-    /// calls this CGI to check job status. If the job is not ready yet
-    /// this method is called.
-    /// Override this method to render information HTML page with option
-    /// to cancel the job.
+    /// This method is call when a job is taken by a worker node 
+    /// to be processed.
     ///
-    virtual void OnStatusCheck(CGridCgiContext& ctx) {}
+    virtual void OnJobRunning(CGridCgiContext& ctx) {}
+
+    /// This method is call when a job is in NetSchedule queue and 
+    /// is waiting for a worker node.
+    ///
+    virtual void OnJobPending(CGridCgiContext& ctx) {}
 
     /// This method is call at the very end of the request processing
     ///
@@ -260,6 +262,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/12 19:08:19  didenko
+ * - OnStatusCheck method
+ * + OnJobPending method
+ * + OnJobRunning method
+ *
  * Revision 1.10  2005/04/11 14:51:00  didenko
  * + CGridCgiContext parameter to CollectParams method
  * + saving user specified CGI entries as cookies
