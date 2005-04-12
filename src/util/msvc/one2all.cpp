@@ -580,7 +580,7 @@ void CMainApplication::ProcessFile(const string& file_name)
         if ( !CFile(file_name_new).Rename(file_name) ) {
             throw (string)"cannot rename file";
         }
-        CFile(file_name).SetTime(&ftime, &ftime);
+        CFile(file_name).SetTime(&ftime);
     }
     catch (string& e) {
         ERR_POST(file_name << ": " << e << ".");
@@ -952,6 +952,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/12 11:40:50  ivanov
+ * Restore only file modification time
+ *
  * Revision 1.13  2004/11/22 17:20:50  ivanov
  * Use fCompile_* and fMatch_* flags.
  *
