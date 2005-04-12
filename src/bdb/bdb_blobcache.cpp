@@ -413,7 +413,7 @@ private:
 
         // CTime time_stamp(CTime::eCurrent);
         time_t curr = time(0);
-        m_AttrDB.time_stamp = (unsigned) curr; //(unsigned)time_stamp.GetTimeT();
+        m_AttrDB.time_stamp = (unsigned) curr; 
 
         if (m_OverflowFile) {
             m_AttrDB.overflow = 1;
@@ -421,6 +421,9 @@ private:
             m_OverflowFile = 0;
         }
         m_AttrDB.ttl = m_TTL;
+        m_AttrDB.max_time = 
+            curr + (m_Cache.GetTimeout() * m_Cache.GetTTL_Prolongation());
+
         m_AttrDB.UpdateInsert();
 
 		// Time stamp the key with empty subkey
@@ -432,7 +435,9 @@ private:
             m_AttrDB.ttl = m_TTL;
 
 			//CTime time_stamp(CTime::eCurrent);
-			m_AttrDB.time_stamp = (unsigned) curr; //(unsigned)time_stamp.GetTimeT();
+			m_AttrDB.time_stamp = (unsigned) curr; 
+            m_AttrDB.max_time = 
+                curr + (m_Cache.GetTimeout() * m_Cache.GetTTL_Prolongation());
 	        m_AttrDB.UpdateInsert();
 		}
 
@@ -485,7 +490,6 @@ CBDB_Cache::CBDB_Cache()
   m_PurgeBatchSize(150),
   m_BatchSleep(0),
   m_PurgeStopSignal(0, 100), // purge stop semaphore max 100
-//  m_PurgeStop(false),
   m_BytesWritten(0),
   m_CleanLogOnPurge(0),
   m_PurgeCount(0),
@@ -494,7 +498,8 @@ CBDB_Cache::CBDB_Cache()
   m_RunPurgeThread(false),
   m_PurgeThreadDelay(10),
   m_CheckPointInterval(24 * (1024 * 1024)),
-  m_OverflowLimit(512 * 1024)
+  m_OverflowLimit(512 * 1024),
+  m_MaxTTL_prolong(0)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -509,6 +514,10 @@ CBDB_Cache::~CBDB_Cache()
     {}
 }
 
+void CBDB_Cache::SetTTL_Prolongation(unsigned ttl_prolong) 
+{ 
+    m_MaxTTL_prolong = ttl_prolong;
+}
 
 void CBDB_Cache::x_PidLock(ELockMode lm)
 {
@@ -681,7 +690,7 @@ void CBDB_Cache::Open(const char* cache_path,
     string cache_db_name = 
        string("lcs_") + string(cache_name) + string(".db");
     string attr_db_name = 
-       string("lcs_") + string(cache_name) + string("_attr2") + string(".db");
+       string("lcs_") + string(cache_name) + string("_attr3") + string(".db");
 
     m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadWriteCreate);
     m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadWriteCreate);
@@ -772,7 +781,7 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
     string cache_db_name = 
        m_Path + string("lcs_") + string(cache_name) + string(".db");
     string attr_db_name = 
-       m_Path + string("lcs_") + string(cache_name) + string("_attr2")
+       m_Path + string("lcs_") + string(cache_name) + string("_attr3")
 	          + string(".db");
 
 
@@ -983,6 +992,7 @@ void CBDB_Cache::Store(const string&  key,
     m_CacheAttrDB->time_stamp = (unsigned)curr; //time_stamp.GetTimeT();
     m_CacheAttrDB->overflow = overflow;
     m_CacheAttrDB->ttl = time_to_live;
+    m_CacheAttrDB->max_time = curr + (GetTimeout() * GetTTL_Prolongation());
 
     m_CacheAttrDB->UpdateInsert();
     trans.Commit();
@@ -1748,12 +1758,6 @@ void CBDB_Cache::Purge(const string&    key,
                             SCacheDescr(x_key, version, x_subkey, overflow));
             continue;
         }
-/*
-        if ((keep_last_version == eDropOlder) &&
-            (subkey == x_subkey) && version < ) {
-                goto remove_blob;
-        }
-*/
     } // while
 
     }}
@@ -1954,9 +1958,12 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
 
         while (cur.Fetch() == eBDB_Ok) {
             unsigned old_ts = m_CacheAttrDB->time_stamp;
-            if (old_ts < timeout)  {
-                m_CacheAttrDB->time_stamp = timeout;
-                cur.Update();
+            if (old_ts < timeout) {
+                unsigned max_time = m_CacheAttrDB->max_time;
+                if (max_time == 0 || max_time >= timeout) {
+                    m_CacheAttrDB->time_stamp = timeout;
+                    cur.Update();
+                }
                 updated = true;
             }
 
@@ -2147,7 +2154,6 @@ static const string kCFParam_lock_pid_lock  = "pid_lock";
 
 static const string kCFParam_mem_size       = "mem_size";
 static const string kCFParam_read_only      = "read_only";
-//static const string kCFParam_read_update_limit = "read_update_limit";
 static const string kCFParam_write_sync        = "write_sync";
 static const string kCFParam_use_transactions  = "use_transactions";
 
@@ -2159,6 +2165,7 @@ static const string kCFParam_purge_thread_delay = "purge_thread_delay";
 static const string kCFParam_checkpoint_bytes   = "checkpoint_bytes";
 static const string kCFParam_log_file_max       = "log_file_max";
 static const string kCFParam_overflow_limit     = "overflow_limit";
+static const string kCFParam_ttl_prolong        = "ttl_prolong";
 
 
 
@@ -2237,6 +2244,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     unsigned batch_size = 
         GetParamInt(params, kCFParam_purge_batch_size, false, 70);
     drv->SetPurgeBatchSize(batch_size);
+
+    unsigned ttl_prolong = 
+        GetParamInt(params, kCFParam_ttl_prolong, false, 0);
+    drv->SetTTL_Prolongation(batch_size);
 
     unsigned batch_sleep = 
         GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
@@ -2331,6 +2342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2005/04/12 17:56:03  kuznets
+ * Added BLOB TTL read prolongation limit(to let BLOBs expire)
+ *
  * Revision 1.110  2005/04/07 17:46:37  kuznets
  * Use flexible oveflow limit instead of fixed constant
  *

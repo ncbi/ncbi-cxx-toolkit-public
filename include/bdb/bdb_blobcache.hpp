@@ -74,7 +74,8 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldString       subkey;
     CBDB_FieldUint4        time_stamp;
     CBDB_FieldInt4         overflow;
-    CBDB_FieldUint4        ttl;  ///< time-to-live
+    CBDB_FieldUint4        ttl;       ///< time-to-live
+    CBDB_FieldUint4        max_time;  ///< max ttl limit for BLOB
 
     SCache_AttrDB()
     {
@@ -87,6 +88,7 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
         BindData("time_stamp", &time_stamp);
         BindData("overflow",   &overflow);
         BindData("ttl",        &ttl);
+        BindData("max_time",   &max_time);
     }
 };
 
@@ -98,7 +100,7 @@ class CCacheCleanerThread;
 ///
 /// Class implements ICache interface using local Berkeley DB
 /// database.
-
+///
 class NCBI_BDB_CACHE_EXPORT CBDB_Cache : public ICache
 {
 public:
@@ -254,6 +256,14 @@ public:
 
     void SetOverflowLimit(unsigned limit);
     unsigned GetOverflowLimit() const { return m_OverflowLimit; }
+
+    /// Maximum limit for read updates 
+    /// (blob expires eventually even if it is accessed)
+    /// 0 - unlimited prolongation (default)
+    void SetTTL_Prolongation(unsigned ttl_prolong); 
+
+    /// Get max limit for read update
+    unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
 
 
 
@@ -439,7 +449,6 @@ private:
     unsigned                m_MaxTimeout;   ///< Maximum time to live
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
-//    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attrs
     EPageSize               m_PageSizeHint; ///< Suggested page size
     EWriteSyncMode          m_WSync;        ///< Write syncronization
     /// Number of records to process in Purge() (with locking)
@@ -469,6 +478,8 @@ private:
     unsigned                   m_CheckPointInterval;
     /// Overflow limit (objects lower than that stored as BLOBs)
     unsigned                   m_OverflowLimit;
+    /// Number of m_MaxTimeout values object lives (read-prolongation)
+    unsigned                   m_MaxTTL_prolong;
 };
 
 
@@ -547,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/04/12 17:55:49  kuznets
+ * Added BLOB TTL read prolongation limit(to let BLOBs expire)
+ *
  * Revision 1.52  2005/04/07 17:45:54  kuznets
  * Added overflow limit cache parameter
  *
