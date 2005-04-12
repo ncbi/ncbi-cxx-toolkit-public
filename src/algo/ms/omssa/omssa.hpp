@@ -279,7 +279,7 @@ int NumFixed, int *IsFixed)
 {
     int j, oldindex, highest;
     // iterate over indices
-    highest = NumMod - 1; // NumMod - (iMod - (j - NumFixed)) - 1
+    highest = NumMod; // NumMod - (iMod - (j - NumFixed)) - 1
     for(j = iMod + NumFixed; j >= NumFixed; j--) {
     	if(ModIndex[j] < highest) {
             oldindex = ModIndex[j];
@@ -288,8 +288,8 @@ int NumFixed, int *IsFixed)
             } while (IsFixed[ModIndex[j]] == 1 && ModIndex[j] < highest);
     	    if(IsFixed[ModIndex[j]] != 1 && ModIndex[j] <= highest) return true;
             ModIndex[j] = oldindex;
-            highest = oldindex - 1;
     	}
+        highest = ModIndex[j] - 1;
     }
     return false;
 }
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.22  2005/04/12 00:32:06  lewisg
+  fix modification enumeration
+
   Revision 1.21  2005/04/05 21:02:52  lewisg
   increase number of mods, fix gi problem, fix empty scan bug
 
