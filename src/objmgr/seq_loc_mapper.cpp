@@ -58,7 +58,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              ENa_strand         src_strand,
                              CSeq_id_Handle     dst_id,
                              TSeqPos            dst_from,
-                             ENa_strand         dst_strand)
+                             ENa_strand         dst_strand,
+                             bool               ext_to)
     : m_Src_id_Handle(src_id),
       m_Src_from(src_from),
       m_Src_to(src_from + src_length - 1),
@@ -66,7 +67,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Dst_id_Handle(dst_id),
       m_Dst_from(dst_from),
       m_Dst_strand(dst_strand),
-      m_Reverse(!SameOrientation(src_strand, dst_strand))
+      m_Reverse(!SameOrientation(src_strand, dst_strand)),
+      m_ExtTo(ext_to)
 {
     return;
 }
@@ -93,8 +95,32 @@ TSeqPos CMappingRange::Map_Pos(TSeqPos pos) const
 }
 
 
-CMappingRange::TRange CMappingRange::Map_Range(TSeqPos from, TSeqPos to) const
+CMappingRange::TRange CMappingRange::Map_Range(TSeqPos from,
+                                               TSeqPos to,
+                                               const TRangeFuzz* fuzz) const
 {
+    // Special case of mapping from a protein to a nucleotide through
+    // a partial cd-region. Extend the mapped interval to the end of
+    // destination range if all of the following conditions are true:
+    // - source is a protein (m_ExtTo)
+    // - destination is a nucleotide (m_ExtTo)
+    // - destination interval has partial "to" (m_ExtTo)
+    // - interval to be mapped has partial "to"
+    // - destination range is 1 or 2 bases beyond the end of the source range
+    if ( m_ExtTo ) {
+        bool partial_to = false;
+        if (!m_Reverse) {
+            partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
+                fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
+        }
+        else {
+            partial_to = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
+                fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
+        }
+        if (to < m_Src_to  &&  m_Src_to - to < 3) {
+            to = m_Src_to;
+        }
+    }
     if (!m_Reverse) {
         return TRange(Map_Pos(max(from, m_Src_from)),
             Map_Pos(min(to, m_Src_to)));
@@ -683,7 +709,8 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
                                       const CSeq_id& dst_id,
                                       TSeqPos        dst_start,
                                       ENa_strand     dst_strand,
-                                      TSeqPos        length)
+                                      TSeqPos        length,
+                                      bool           ext_right)
 {
     if (m_DstRanges.size() <= size_t(dst_strand)) {
         m_DstRanges.resize(size_t(dst_strand) + 1);
@@ -694,7 +721,8 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
             CRef<CMappingRange> cvt(new CMappingRange(
                 CSynonymsSet::GetSeq_id_Handle(syn_it),
                 src_start, length, src_strand,
-                CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand));
+                CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
+                ext_right));
             m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
                 TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
         }
@@ -710,7 +738,8 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
         CRef<CMappingRange> cvt(new CMappingRange(
             CSeq_id_Handle::GetHandle(src_id),
             src_start, length, src_strand,
-            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand));
+            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
+            ext_right));
         m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
             TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
         m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
@@ -726,7 +755,9 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
                                          const CSeq_id& dst_id,
                                          TSeqPos&       dst_start,
                                          TSeqPos&       dst_len,
-                                         ENa_strand     dst_strand)
+                                         ENa_strand     dst_strand,
+                                         const CInt_fuzz* fuzz_from,
+                                         const CInt_fuzz* fuzz_to)
 {
     TSeqPos cvt_src_start = src_start;
     TSeqPos cvt_dst_start = dst_start;
@@ -761,10 +792,26 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
         dst_len -= cvt_length;
         src_len = 0;
     }
+    // Special case: prepare to extend mapped "to" if:
+    // - mapping is from prot to nuc
+    // - destination "to" is partial
+    bool ext_to = false;
+    if ( m_Dst_width == 3 ) {
+        if ( IsReverse(dst_strand) && fuzz_from ) {
+            ext_to = fuzz_from  &&
+                fuzz_from->IsLim()  &&
+                fuzz_from->GetLim() == CInt_fuzz::eLim_lt;
+        }
+        else if ( !IsReverse(dst_strand) && fuzz_to ) {
+            ext_to = fuzz_to  &&
+                fuzz_to->IsLim()  &&
+                fuzz_to->GetLim() == CInt_fuzz::eLim_gt;
+        }
+    }
     x_AddConversion(
         src_id, cvt_src_start, src_strand,
         dst_id, cvt_dst_start, dst_strand,
-        cvt_length);
+        cvt_length, ext_to);
 }
 
 
@@ -834,7 +881,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
     while (src_it  &&  dst_it) {
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
-            dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand());
+            dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
+            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo());
         if (src_len == 0  &&  ++src_it) {
             src_start = src_it.GetRange().GetFrom()*m_Dst_width;
             src_len = x_GetRangeLength(src_it)*m_Dst_width;
@@ -1408,7 +1456,7 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
     }
 
     TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(fuzz);
-    TRange rg = cvt.Map_Range(left, right);
+    TRange rg = cvt.Map_Range(left, right, &src_fuzz);
     ENa_strand dst_strand;
     bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
         src_strand, &dst_strand);
@@ -2028,6 +2076,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/04/13 19:39:27  grichenk
+* Extend partial ranges when mapping prot to nuc.
+*
 * Revision 1.40  2005/03/02 22:10:38  grichenk
 * Removed strand check from CanMap()
 *

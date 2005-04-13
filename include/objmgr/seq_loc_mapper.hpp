@@ -74,7 +74,8 @@ public:
                   ENa_strand        src_strand,
                   CSeq_id_Handle    dst_id,
                   TSeqPos           dst_from,
-                  ENa_strand        dst_strand);
+                  ENa_strand        dst_strand,
+                  bool              ext_to = false);
 
     bool GoodSrcId(const CSeq_id& id) const;
     CRef<CSeq_id> GetDstId(void);
@@ -88,7 +89,9 @@ public:
                 bool is_set_strand,
                 ENa_strand strand) const;
     TSeqPos Map_Pos(TSeqPos pos) const;
-    TRange Map_Range(TSeqPos from, TSeqPos to) const;
+    TRange Map_Range(TSeqPos from,
+                     TSeqPos to,
+                     const TRangeFuzz* fuzz = 0) const;
     bool Map_Strand(bool is_set_strand, ENa_strand src, ENa_strand* dst) const;
     TRangeFuzz Map_Fuzz(const TRangeFuzz& fuzz) const;
 
@@ -103,6 +106,7 @@ private:
     TSeqPos             m_Dst_from;
     ENa_strand          m_Dst_strand;
     bool                m_Reverse;
+    bool                m_ExtTo;
 
     friend class CSeq_loc_Mapper;
     friend class CSeq_align_Mapper;
@@ -302,7 +306,8 @@ private:
                          const CSeq_id& dst_id,
                          TSeqPos        dst_start,
                          ENa_strand     dst_strand,
-                         TSeqPos        length);
+                         TSeqPos        length,
+                         bool           ext_right);
     void x_NextMappingRange(const CSeq_id&  src_id,
                             TSeqPos&        src_start,
                             TSeqPos&        src_len,
@@ -310,7 +315,9 @@ private:
                             const CSeq_id&  dst_id,
                             TSeqPos&        dst_start,
                             TSeqPos&        dst_len,
-                            ENa_strand      dst_strand);
+                            ENa_strand      dst_strand,
+                            const CInt_fuzz* fuzz_from = 0,
+                            const CInt_fuzz* fuzz_to = 0);
 
     // Optional frame is used for cd-region only
     void x_Initialize(const CSeq_loc& source,
@@ -550,6 +557,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/04/13 19:39:27  grichenk
+* Extend partial ranges when mapping prot to nuc.
+*
 * Revision 1.26  2005/03/29 19:22:12  jcherry
 * Added export specifiers
 *
