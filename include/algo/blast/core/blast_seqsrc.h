@@ -44,13 +44,13 @@ extern "C" {
 /** The BlastSeqSrc ADT is an opaque data type that defines an interface which
  *  is used by the core BLAST code to retrieve sequences.
  *  The interface currently provides the following services:
- *  - Retrieving number of sequences in set
- *  - Retrieving the total length (in bases/residues) of sequences in set.
- *  - Retrieving the length of the longest sequence in set
+ *  - Retrieving number of sequences in a set
+ *  - Retrieving the total length (in bases/residues) of sequences in a set.
+ *  - Retrieving the length of the longest sequence in a set
  *  - Retrieving an individual sequence in a user-specified encoding by ordinal
- *    id (index into the set)
- *  - Retrieving the length of a given sequence in set by ordinal id
- *  - Allow MT-safe iteration over sequences in set through the
+ *    id (index into a set)
+ *  - Retrieving the length of a given sequence in a set by ordinal id
+ *  - Allow MT-safe iteration over sequences in a set through the
  *    BlastSeqSrcIterator abstraction
  *  .
  *  Implementations of this interface should provide functions for all
@@ -59,9 +59,10 @@ extern "C" {
  *  C linkage.
  *
  *  Currently available client implementations of the BlastSeqSrc API include:
- *  @sa ReaddbBlastSeqSrcInit (C toolkit)
- *  @sa SeqDbBlastSeqSrcInit (C++ toolkit)
- *  @sa MultiSeqBlastSeqSrcInit (C/C++ toolkit)
+ *  - ReaddbBlastSeqSrcInit (C toolkit)
+ *  - SeqDbBlastSeqSrcInit (C++ toolkit)
+ *  - MultiSeqBlastSeqSrcInit (C/C++ toolkit)
+ *  .
  *  Please note that for consistency, C++ implementations should not throw 
  *  exceptions but rather use the error reporting mechanism which allows all
  *  implementations to uniformly retrieve initialization errors via
@@ -69,9 +70,9 @@ extern "C" {
  *
  *  For ease of maintenance, please follow the following conventions:
  *  - Client implementations' initialization function should be called 
- *    XBlastSeqSrcInit, where X is the name of the implementation
- *  - Client implementations should reside in a file named seqsrc_X.[hc] or
- *    seqsrc_X.[ch]pp, where X is the name of the implementation.
+ *    \c XBlastSeqSrcInit, where X is the name of the implementation
+ *  - Client implementations should reside in a file named \c seqsrc_X.[hc] or
+ *    \c seqsrc_X.[ch]pp, where X is the name of the implementation.
  */
 typedef struct BlastSeqSrc BlastSeqSrc;
 
