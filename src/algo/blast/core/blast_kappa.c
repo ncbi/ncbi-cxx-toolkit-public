@@ -1939,16 +1939,20 @@ WindowsFromHSPs(
   window_and_index = calloc(hspcnt, sizeof(Kappa_WindowIndexPair));
 
   for( k = 0; k < hspcnt; k++ ) { /* for all HSPs */
-    /* begin and end are the endpoints of the window */
-    Int4 begin = MAX(0, hsp_array[k]->subject.offset - border);
-    Int4 end   = MIN(sequence_length,
-                     begin + hsp_array[k]->subject.end - 
-                     hsp_array[k]->subject.offset + 2 * border);
+    /* length of the translation of the nucleotide sequence in this frame */
+    Int4 translated_length;
 
-    windows[k]->begin  = begin;
-    windows[k]->end    = end;
+    windows[k]->frame = hsp_array[k]->subject.frame;
+
+    if( windows[k]->frame > 0 ) {
+      translated_length = (sequence_length - windows[k]->frame + 1)/3;
+    } else {
+      translated_length = (sequence_length + windows[k]->frame - 1)/3;
+    }
+    windows[k]->begin = MAX(0, hsp_array[k]->subject.offset - border);
+    windows[k]->end   = MIN(translated_length,
+                            hsp_array[k]->subject.end + border);
     windows[k]->hspcnt = 1;
-    windows[k]->frame  = hsp_array[k]->subject.frame;
 
     window_and_index[k].index  = k;
     window_and_index[k].window = windows[k];
