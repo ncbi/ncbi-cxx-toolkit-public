@@ -65,6 +65,7 @@ class CGridCgiApplication;
 class CGridCgiContext
 {
 public: 
+    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
     ~CGridCgiContext();
 
     /// Get an HTML page 
@@ -109,7 +110,6 @@ private:
     typedef map<string,string>    TPersistedEntries;
 
     friend class CGridCgiApplication;
-    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
     void SetJobKey(const string& job_key);
 
     CHTMLPage&                    m_Page;
@@ -241,10 +241,13 @@ protected:
     ///
     CGridClient& GetGridClient(void) { return *m_GridClient; }
 
+    ///  Initialize grid client
+    ///
+    void InitGridClient();
+
     static void RenderRefresh(CHTMLPage& page, 
                               const string& url,
                               int delay);
-
 private:
     int m_RefreshDelay;
 
@@ -262,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/13 16:42:35  didenko
+ * + InitGridClient
+ *
  * Revision 1.11  2005/04/12 19:08:19  didenko
  * - OnStatusCheck method
  * + OnJobPending method

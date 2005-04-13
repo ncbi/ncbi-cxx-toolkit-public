@@ -162,10 +162,14 @@ void CGridCgiApplication::Init()
 {
     // Standard CGI framework initialization
     CCgiApplication::Init();
+    InitGridClient();
 
+}
+
+void CGridCgiApplication::InitGridClient()
+{
     m_RefreshDelay = 
-        GetConfig().GetInt("gridcgi", "refresh_delay", 5, IRegistry::eReturn);
-
+        GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
 
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
@@ -348,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/13 16:43:10  didenko
+ * + InitGridClient
+ *
  * Revision 1.11  2005/04/12 19:08:42  didenko
  * - OnStatusCheck method
  * + OnJobPending method
