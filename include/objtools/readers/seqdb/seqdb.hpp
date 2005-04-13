@@ -414,6 +414,7 @@ public:
     ///   Specify true to append to gis, keeping existing elements.
     void GetGis(int oid, vector<int> & gis, bool append = false) const;
     
+    /// @deprecated
     /// Returns the type of database opened - protein or nucleotide..
     /// [This method is obsolete; use GetSequenceType() instead.]
     /// 
@@ -617,6 +618,7 @@ public:
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> SeqidToBioseq(const CSeq_id & seqid) const;
     
+    /// @deprecated
     /// Find volume paths
     ///
     /// Find the base names of all volumes.  This method builds an
