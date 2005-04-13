@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.363 2005/04/13 18:57:34 ucko Exp $
+#  $Id: configure.ac,v 1.364 2005/04/13 19:48:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3737,8 +3737,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ## International Components for Unicode (ICU)
 if test -z "$ICU_PATH"  &&  icu-config --version >/dev/null 2>&1; then
-    p=`icu-config --prefix`
-    test "x$p" = "x/usr"  ||  ICU_PATH=$p
+    ICU_PATH=`icu-config --prefix`
 fi
 
 if test "$with_icu" != "no" ; then
@@ -3762,7 +3761,7 @@ if test "$with_icu" != "no" ; then
    ICU_LIBPATH=${ICU_LIBPATH:="$ICU_ARCH_PATH/lib"}
    ICU_INCLUDE=
    AC_CACHE_CHECK([for ICU in $ICU_ARCH_PATH], ncbi_cv_lib_icu,
-      [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir`/icu-config
+      [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
           ICU_LIBS=`$ICU_CONFIG --ldflags |\

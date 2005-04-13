@@ -21152,8 +21152,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ## International Components for Unicode (ICU)
 if test -z "$ICU_PATH"  &&  icu-config --version >/dev/null 2>&1; then
-    p=`icu-config --prefix`
-    test "x$p" = "x/usr"  ||  ICU_PATH=$p
+    ICU_PATH=`icu-config --prefix`
 fi
 
 if test "$with_icu" != "no" ; then
@@ -21181,7 +21180,7 @@ echo $ECHO_N "checking for ICU in $ICU_ARCH_PATH... $ECHO_C" >&6
 if test "${ncbi_cv_lib_icu+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir`/icu-config
+  ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
           ICU_LIBS=`$ICU_CONFIG --ldflags |\
