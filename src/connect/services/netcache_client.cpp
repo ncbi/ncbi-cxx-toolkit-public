@@ -500,7 +500,7 @@ void CNetCacheSock_RW::OwnSocket()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-const char* kNetCacheDriverName = "netcacheclient";
+const char* kNetCacheDriverName = "netcache_client";
 
 /// @internal
 class CNetCacheClientCF : public IClassFactory<CNetCacheClient>
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/13 13:37:10  didenko
+ * Changed NetCache PluginManager driver name to netcache_client
+ *
  * Revision 1.37  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *
