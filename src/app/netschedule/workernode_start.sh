@@ -44,10 +44,8 @@ AddRunpath()
 
 Usage() {
    cat <<EOF
-USAGE:  $script_name <rundir> <workernode> <mailto>
+USAGE:  $script_name workernode [mailto]
    Check if NetSchedule Worker Node is not running and run it.
-        rundir      Path where this script should be started from.
-                    (ini file must be in this directory)
         workernode  Full path to a worker node.
         mailto      e-mail adderss where messages will be sent.(optional)
 
@@ -60,22 +58,20 @@ EOF
 
 # ---------------------------------------------------- 
 
-test $# -ge 2  ||  Usage "Invalid number of arguments"
+test $# -ge 1  ||  Usage "Invalid number of arguments"
 
-run_dir=$1
-node=$2
-mail_to=$3
-node_name=`basename $2`
-ini_file=${node_name}.ini
-BIN_PATH=`dirname $2`
-ns_control=${BIN_PATH}/netschedule_control
+node_name=`basename $1`
+BIN_PATH=`dirname $1`
+BIN_PATH=`(cd "${BIN_PATH}" ; pwd)`
+node=${BIN_PATH}/${node_name}
+ini_file=${BIN_PATH}/${node_name}.ini
+mail_to=$2
 service_wait=15
+ns_control=${BIN_PATH}/netschedule_control
+
+cd ${BIN_PATH}
 
 AddRunpath $BIN_PATH
-
-if [ ! -d "$run_dir" ]; then
-    Usage "Startup directory ( $run_dir ) does not exist"
-fi
 
 cd $run_dir
 
@@ -83,8 +79,12 @@ if [ ! -f $node ]; then
     Usage "Cannot find $node"
 fi
 
+if [ ! -f $ns_control ]; then
+    Usage "Cannot find $ns_control"
+fi
+
 if [ ! -f $ini_file ]; then
-    Usage "Cannot find $ini_file at  $run_dir"
+    Usage "Cannot find $ini_file at $BIN_PATH"
 fi
 
 host=`hostname`
@@ -98,7 +98,7 @@ if test $? -ne 0; then
     echo "Service not responding"
     
     echo "Starting the $node_name node..."
-    cat ${node_name}.out >> ${node_name}_out.old
+    cat ${node_name}.out > ${node_name}_out.old
     echo "[`date`] ================= " > ${node_name}.out
     $node >> ${node_name}.out  2>&1 &
     node_pid=$!
