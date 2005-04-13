@@ -371,6 +371,12 @@ LIBOB           = @LIBOB@
 # LIBIMR should be empty for single-threaded builds
 LIBIMR          = @LIBIMR@
 
+# IBM's International Components for Unicode
+ICU_CONFIG      = @ICU_CONFIG@
+ICU_INCLUDE     = @ICU_INCLUDE@
+ICU_LIBS        = @ICU_LIBS@
+ICU_STATIC_LIBS = @ICU_STATIC_LIBS@
+
 # XML/XSL support:
 EXPAT_INCLUDE      = @EXPAT_INCLUDE@
 EXPAT_LIBS         = @EXPAT_LIBS@

@@ -76,6 +76,9 @@
    arguments it takes (normally 5 or 6). */
 #undef HAVE_GETSERVBYNAME_R
 
+/* Define to 1 if ICU libraries are available. */
+#undef HAVE_ICU
+
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 

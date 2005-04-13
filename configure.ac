@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.362 2005/04/04 19:36:52 ucko Exp $
+#  $Id: configure.ac,v 1.363 2005/04/13 18:57:34 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -234,6 +234,10 @@ AC_ARG_WITH(sqlite,
    [ --with-sqlite=DIR       use SQLite installation in DIR])
 AC_ARG_WITH(sqlite2,
    [ --without-sqlite,       do not use SQLite])
+AC_ARG_WITH(icu,
+   [ --with-icu=DIR          use ICU installation in DIR])
+AC_ARG_WITH(icu2,
+   [ --without-icu,          do not use ICU])
 AC_ARG_WITH(expat,
    [ --with-expat=DIR        use Expat installation in DIR])
 AC_ARG_WITH(expat2,
@@ -312,7 +316,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc python sqlite cppunit \
+fltk opengl mesa glut bdb odbc python sqlite icu cppunit \
 expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -353,7 +357,7 @@ for x_arg in "$@" ; do
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
       | --with-xerces=* | --with-xalan=* | --with-bdb=* | --with-odbc=* \
-      | --with-python=* | --with-gif=* | --with-jpeg=* \
+      | --with-python=* | --with-icu=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
@@ -3731,6 +3735,73 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
+## International Components for Unicode (ICU)
+if test -z "$ICU_PATH"  &&  icu-config --version >/dev/null 2>&1; then
+    p=`icu-config --prefix`
+    test "x$p" = "x/usr"  ||  ICU_PATH=$p
+fi
+
+if test "$with_icu" != "no" ; then
+   if test -z "$ICU_PATH"; then
+      if test -d "$with_icu"; then
+         ICU_PATH=$with_icu
+      else
+         ICU_PATH="$NCBI/icu"
+      fi
+   fi
+   if test -d "$ICU_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}/lib" \
+        -a -z "$ICU_ARCH_PATH"; then
+      ICU_ARCH_PATH="$ICU_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   elif test -d "$ICU_PATH/${compiler_pfx}${release_debug}${bit64_sfx}${mt_sfx}/lib" \
+        -a -z "$ICU_ARCH_PATH"; then
+      ICU_ARCH_PATH="$ICU_PATH/${compiler_pfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   else
+      ICU_ARCH_PATH="$ICU_PATH"
+   fi
+   ICU_BINPATH=${ICU_BINPATH:="$ICU_ARCH_PATH/bin"}
+   ICU_LIBPATH=${ICU_LIBPATH:="$ICU_ARCH_PATH/lib"}
+   ICU_INCLUDE=
+   AC_CACHE_CHECK([for ICU in $ICU_ARCH_PATH], ncbi_cv_lib_icu,
+      [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir`/icu-config
+       if test -x "$ICU_CONFIG" ; then
+          ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
+          ICU_LIBS=`$ICU_CONFIG --ldflags |\
+             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+
+          CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
+          LIBS="$ICU_LIBS $orig_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [[#include <unicode/unistr.h>]],
+            [[int32_t i = UNICODE_STRING_SIMPLE("foo").indexOf('f');]])],
+            [ncbi_cv_lib_icu=yes], [ncbi_cv_lib_icu=no])
+       else
+          ncbi_cv_lib_icu=no
+       fi])
+   if test "$ncbi_cv_lib_icu" = "no"; then
+      with_icu="no"
+   fi
+fi
+
+if test "$with_icu" = "no" ; then
+   ICU_PATH="No_ICU"
+   ICU_INCLUDE=
+   ICU_LIBS=
+   ICU_STATIC_LIBS=
+   WithoutPackages="$WithoutPackages ICU"
+else
+   WithPackages="$WithPackages ICU"
+   ICU_CONFIG="`$ICU_BINPATH/icu-config --bindir`/icu-config"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$ICU_INCLUDE"; then
+      ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
+      ICU_LIBS=`$ICU_CONFIG --ldflags |\
+         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+   fi
+   ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags | sed -e 's/-licu/-lsicu/g'`
+   AC_DEFINE(HAVE_ICU, 1, [Define to 1 if ICU libraries are available.])
+fi
+
+
 ### XML/XSL libraries
 : ${EXPAT_PATH=$NCBI/expat}
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
@@ -4513,6 +4584,10 @@ AC_SUBST(ORBACUS_INCLUDE)
 AC_SUBST(ORBACUS_LIBPATH)
 AC_SUBST(LIBOB)
 AC_SUBST(LIBIMR)
+AC_SUBST(ICU_CONFIG)
+AC_SUBST(ICU_INCLUDE)
+AC_SUBST(ICU_LIBS)
+AC_SUBST(ICU_STATIC_LIBS)
 AC_SUBST(EXPAT_STATIC_LIBS)
 AC_SUBST(SABLOT_STATIC_LIBS)
 AC_SUBST(LIBXML_STATIC_LIBS)
