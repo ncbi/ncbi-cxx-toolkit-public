@@ -49,55 +49,55 @@ class CSeqMaskerIstat;
  **/
 class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
 {
-    public:
+public:
 
-        /** 
-         **\brief Exceptions that CSeqMaskerIstatFactory might throw.
-         **/
-        class Exception : public CException
-        {
-            public:
+    /** 
+        **\brief Exceptions that CSeqMaskerIstatFactory might throw.
+        **/
+    class Exception : public CException
+    {
+        public:
 
-                enum EErrCode
-                {
-                    eBadFormat,     /**< Unknown file format. */
-                    eCreateFail,    /**< Could not create the CSeqMaskerIstat object. */
-                    eOpen           /**< Could not open file. */
-                };
+            enum EErrCode
+            {
+                eBadFormat,     /**< Unknown file format. */
+                eCreateFail,    /**< Could not create the CSeqMaskerIstat object. */
+                eOpen           /**< Could not open file. */
+            };
 
-                /**
-                 **\brief Get a description string for this exception.
-                 **\return C-style description string
-                 **/
-                virtual const char * GetErrCodeString() const;
-    
-                NCBI_EXCEPTION_DEFAULT( Exception, CException );
+            /**
+                **\brief Get a description string for this exception.
+                **\return C-style description string
+                **/
+            virtual const char * GetErrCodeString() const;
 
-        };
+            NCBI_EXCEPTION_DEFAULT( Exception, CException );
 
-        /**
-         **\brief Create a unit counts container from a file.
-         **
-         ** All parameters after name are forwarded to the constructor of the
-         ** proper subclass of CSeqMaskerIstat.
-         **
-         **\param name name of the file containing the unit counts information
-         **\param threshold T_threshold
-         **\param textend T_extend
-         **\param max_count T_high
-         **\param use_max_count value to use for units with count > T_high
-         **\param min_count T_low
-         **\param use_min_count value to use for units with count < T_low
-         **/
-        static CSeqMaskerIstat * create( const string & name,
-                                         Uint4 threshold,
-                                         Uint4 textend,
-                                         Uint4 max_count,
-                                         Uint4 use_max_count,
-                                         Uint4 min_count,
-                                         Uint4 use_min_count );
+    };
 
-    private:
+    /**
+        **\brief Create a unit counts container from a file.
+        **
+        ** All parameters after name are forwarded to the constructor of the
+        ** proper subclass of CSeqMaskerIstat.
+        **
+        **\param name name of the file containing the unit counts information
+        **\param threshold T_threshold
+        **\param textend T_extend
+        **\param max_count T_high
+        **\param use_max_count value to use for units with count > T_high
+        **\param min_count T_low
+        **\param use_min_count value to use for units with count < T_low
+        **/
+    static CSeqMaskerIstat * create( const string & name,
+                                        Uint4 threshold,
+                                        Uint4 textend,
+                                        Uint4 max_count,
+                                        Uint4 use_max_count,
+                                        Uint4 min_count,
+                                        Uint4 use_min_count );
+
+private:
 };
 
 END_NCBI_SCOPE
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/04/13 13:47:48  dicuccio
+ * Added export specifiers.  White space changes: reindented class body
+ *
  * Revision 1.2  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

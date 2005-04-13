@@ -41,80 +41,80 @@ BEGIN_NCBI_SCOPE
 /**
  **\brief Read counts information from a binary file.
  **/
-class CSeqMaskerIstatBin : public CSeqMaskerIstat
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatBin : public CSeqMaskerIstat
 {
-    public:
+public:
 
-        /** 
-         **\brief Exceptions that CSeqMaskerIstatBin might throw.
-         **/
-        class Exception : public CException
-        {
-            public:
+    /** 
+        **\brief Exceptions that CSeqMaskerIstatBin might throw.
+        **/
+    class Exception : public CException
+    {
+        public:
 
-                enum EErrCode
-                {
-                    eStreamOpenFail,    /**< File open failure. */
-                    eFormat             /**< File format error. */
-                };
+            enum EErrCode
+            {
+                eStreamOpenFail,    /**< File open failure. */
+                eFormat             /**< File format error. */
+            };
 
-                /**
-                 **\brief Get a description string for this exception.
-                 **\return C-style description string
-                 **/
-                virtual const char * GetErrCodeString() const;
-    
-                NCBI_EXCEPTION_DEFAULT( Exception, CException );
-        };
+            /**
+                **\brief Get a description string for this exception.
+                **\return C-style description string
+                **/
+            virtual const char * GetErrCodeString() const;
 
-        /**
-         **\brief Object constructor.
-         **
-         ** arg_threshold, arg_textend, arg_max_count, and arg_min_count, if
-         ** non zero, override the values in the input file.
-         **
-         **\param name file name
-         **\param arg_threshold T_threshold
-         **\param arg_textend T_extend
-         **\param arg_max_count T_high
-         **\param arg_use_max_count value to use for units with count > T_high
-         **\param arg_min_count T_low
-         **\param arg_use_min_count value to use for units with count < T_low
-         **/
-        explicit CSeqMaskerIstatBin(  const string & name,
-                                      Uint4 arg_threshold,
-                                      Uint4 arg_textend,
-                                      Uint4 arg_max_count,
-                                      Uint4 arg_use_max_count,
-                                      Uint4 arg_min_count,
-                                      Uint4 arg_use_min_count );
+            NCBI_EXCEPTION_DEFAULT( Exception, CException );
+    };
 
-        /**
-         **\brief Object destructor.
-         **/
-        virtual ~CSeqMaskerIstatBin() {}
+    /**
+        **\brief Object constructor.
+        **
+        ** arg_threshold, arg_textend, arg_max_count, and arg_min_count, if
+        ** non zero, override the values in the input file.
+        **
+        **\param name file name
+        **\param arg_threshold T_threshold
+        **\param arg_textend T_extend
+        **\param arg_max_count T_high
+        **\param arg_use_max_count value to use for units with count > T_high
+        **\param arg_min_count T_low
+        **\param arg_use_min_count value to use for units with count < T_low
+        **/
+    explicit CSeqMaskerIstatBin(  const string & name,
+                                    Uint4 arg_threshold,
+                                    Uint4 arg_textend,
+                                    Uint4 arg_max_count,
+                                    Uint4 arg_use_max_count,
+                                    Uint4 arg_min_count,
+                                    Uint4 arg_use_min_count );
 
-        /**
-         **\brief Get the value of the unit size
-         **\return unit size
-         **/
-        virtual Uint1 UnitSize() const { return uset.get_unit_size(); }
+    /**
+        **\brief Object destructor.
+        **/
+    virtual ~CSeqMaskerIstatBin() {}
 
-    protected:
+    /**
+        **\brief Get the value of the unit size
+        **\return unit size
+        **/
+    virtual Uint1 UnitSize() const { return uset.get_unit_size(); }
 
-        /**
-         **\brief Get the count of the given unit.
-         **\param unit the unit to look up
-         **\return the count value for the unit
-         **/
-        virtual Uint4 at( Uint4 unit ) const;
+protected:
 
-    private:
+    /**
+        **\brief Get the count of the given unit.
+        **\param unit the unit to look up
+        **\return the count value for the unit
+        **/
+    virtual Uint4 at( Uint4 unit ) const;
 
-        /**\internal
-         **\brief The unit counts container.
-         **/
-        CSeqMaskerUsetArray uset;
+private:
+
+    /**\internal
+        **\brief The unit counts container.
+        **/
+    CSeqMaskerUsetArray uset;
 };
 
 END_NCBI_SCOPE
@@ -124,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/04/13 13:47:48  dicuccio
+ * Added export specifiers.  White space changes: reindented class body
+ *
  * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

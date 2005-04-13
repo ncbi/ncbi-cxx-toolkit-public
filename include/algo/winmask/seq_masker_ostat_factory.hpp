@@ -48,44 +48,44 @@ class CSeqMaskerOstat;
  **/
 class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatFactory
 {
-    public:
+public:
 
-        /**
-        **\brief Exceptions that CSeqMaskerOstatFactory might throw.
+    /**
+    **\brief Exceptions that CSeqMaskerOstatFactory might throw.
+    **/
+    class CSeqMaskerOstatFactoryException : public CException
+    {
+        public:
+        
+            enum EErrCode
+            {
+                eBadName,   /**< Unknown format name. */
+                eCreateFail /**< Failure to create the requested object. */
+            };
+
+            /**
+                **\brief Get a description string for this exception.
+                **\return C-style description string
+                **/
+            virtual const char * GetErrCodeString() const;
+
+            NCBI_EXCEPTION_DEFAULT( 
+                CSeqMaskerOstatFactoryException, CException );
+    };
+
+    /**
+        **\brief Method used to create a CSeqMakserOstat object by format name.
+        **
+        ** The method instantiates the appropriate subclass of CSeqMaskerOstat
+        ** corresponding to the name of the file format, or throws an exception
+        ** if the format name is not recognized.
+        **
+        **\param ustat_type the name of the unit counts file format
+        **\param name the name of the file to save unit counts data to
+        **\return pointer to the newly created object
         **/
-        class CSeqMaskerOstatFactoryException : public CException
-        {
-            public:
-            
-                enum EErrCode
-                {
-                    eBadName,   /**< Unknown format name. */
-                    eCreateFail /**< Failure to create the requested object. */
-                };
-
-                /**
-                 **\brief Get a description string for this exception.
-                 **\return C-style description string
-                 **/
-                virtual const char * GetErrCodeString() const;
-
-                NCBI_EXCEPTION_DEFAULT( 
-                    CSeqMaskerOstatFactoryException, CException );
-        };
-
-        /**
-         **\brief Method used to create a CSeqMakserOstat object by format name.
-         **
-         ** The method instantiates the appropriate subclass of CSeqMaskerOstat
-         ** corresponding to the name of the file format, or throws an exception
-         ** if the format name is not recognized.
-         **
-         **\param ustat_type the name of the unit counts file format
-         **\param name the name of the file to save unit counts data to
-         **\return pointer to the newly created object
-         **/
-        static CSeqMaskerOstat * create( 
-            const string & ustat_type, const string & name );
+    static CSeqMaskerOstat * create( 
+        const string & ustat_type, const string & name );
 };
 
 END_NCBI_SCOPE
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/04/13 13:47:48  dicuccio
+ * Added export specifiers.  White space changes: reindented class body
+ *
  * Revision 1.3  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit

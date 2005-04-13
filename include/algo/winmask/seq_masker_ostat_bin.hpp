@@ -43,69 +43,69 @@ BEGIN_NCBI_SCOPE
 /**
  **\brief Compute and save counts information in simple binary format.
  **/
-class CSeqMaskerOstatBin : public CSeqMaskerOstat
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatBin : public CSeqMaskerOstat
 {
-    public:
+public:
 
-        /**
-         **\brief Object constructor.
-         **\param name the name of the output file stream
-         **/
-        explicit CSeqMaskerOstatBin( const string & name );
+    /**
+        **\brief Object constructor.
+        **\param name the name of the output file stream
+        **/
+    explicit CSeqMaskerOstatBin( const string & name );
 
-        /**
-         **\brief Object destructor.
-         **/
-        virtual ~CSeqMaskerOstatBin();
+    /**
+        **\brief Object destructor.
+        **/
+    virtual ~CSeqMaskerOstatBin();
 
-    protected:
+protected:
 
-        /**
-         **\brief Noop - comments are not available in the binary format.
-         **/
-        virtual void doSetComment( const string & msg ) {}
+    /**
+        **\brief Noop - comments are not available in the binary format.
+        **/
+    virtual void doSetComment( const string & msg ) {}
 
-        /**
-         **\brief Noop - blank lines do not make sense in the binary format.
-         **/
-        virtual void doSetBlank() {}
+    /**
+        **\brief Noop - blank lines do not make sense in the binary format.
+        **/
+    virtual void doSetBlank() {}
 
-        /**
-         **\brief Write the unit size value to the binary output.
-         **\param us the unit size
-         **/
-        virtual void doSetUnitSize( Uint4 us );
+    /**
+        **\brief Write the unit size value to the binary output.
+        **\param us the unit size
+        **/
+    virtual void doSetUnitSize( Uint4 us );
 
-        /**
-         **\brief Write count information for the unit to the binary output.
-         **\param unit the unit
-         **\param count the number of times the unit and its reverse complement
-         **             appears in the genome
-         **/
-        virtual void doSetUnitCount( Uint4 unit, Uint4 count );
+    /**
+        **\brief Write count information for the unit to the binary output.
+        **\param unit the unit
+        **\param count the number of times the unit and its reverse complement
+        **             appears in the genome
+        **/
+    virtual void doSetUnitCount( Uint4 unit, Uint4 count );
 
-        /**
-         **\brief Write a parameter value to the binary output.
-         **
-         ** Only recognized parameters will be written.
-         **
-         **\param name the parameter name
-         **\param value the parameter value
-         **/
-        virtual void doSetParam( const string & name, Uint4 value );
+    /**
+        **\brief Write a parameter value to the binary output.
+        **
+        ** Only recognized parameters will be written.
+        **
+        **\param name the parameter name
+        **\param value the parameter value
+        **/
+    virtual void doSetParam( const string & name, Uint4 value );
 
-    private:
+private:
 
-        /**\internal
-         **\brief Write a 32 bit value to the output binary stream.
-         **\param word a 32 bit value
-         **/
-        void write_word( Uint4 word );
+    /**\internal
+        **\brief Write a 32 bit value to the output binary stream.
+        **\param word a 32 bit value
+        **/
+    void write_word( Uint4 word );
 
-        /**\internal
-         **\brief Parameter values.
-         **/
-        vector< Uint4 > pvalues;
+    /**\internal
+        **\brief Parameter values.
+        **/
+    vector< Uint4 > pvalues;
 };
 
 END_NCBI_SCOPE
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/04/13 13:47:48  dicuccio
+ * Added export specifiers.  White space changes: reindented class body
+ *
  * Revision 1.1  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *
