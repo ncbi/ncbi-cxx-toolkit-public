@@ -229,14 +229,14 @@ s_MultiSeqGetIsProt(void* multiseq_handle, void*)
 
 /// Retrieves the sequence for a given index, in a given encoding.
 /// @param multiseq_handle Pointer to the structure containing sequences [in]
-/// @param args Pointer to GetSeqArg structure, containing sequence index and 
+/// @param args Pointer to BlastSeqSrcGetSeqArg structure, containing sequence index and 
 ///             encoding. [in]
 /// @return return codes defined in blast_seqsrc.h
 static Int2 
 s_MultiSeqGetSequence(void* multiseq_handle, void* args)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    GetSeqArg* seq_args = (GetSeqArg*) args;
+    BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
     Int4 index;
 
     ASSERT(seq_info);
@@ -266,17 +266,14 @@ s_MultiSeqGetSequence(void* multiseq_handle, void* args)
 }
 
 /// Deallocates the uncompressed sequence buffer if necessary.
-/// @param args Pointer to GetSeqArg structure [in]
-/// @return return codes defined in blast_seqsrc.h
-static Int2 
-s_MultiSeqRetSequence(void* /*multiseq_handle*/, void* args)
+/// @param args Pointer to BlastSeqSrcGetSeqArg structure [in]
+static void
+s_MultiSeqReleaseSequence(void* /*multiseq_handle*/, void* args)
 {
-    GetSeqArg* seq_args = (GetSeqArg*) args;
-
+    BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
     ASSERT(seq_args);
     if (seq_args->seq->sequence_start_allocated)
         sfree(seq_args->seq->sequence_start);
-    return 0;
 }
 
 /// Retrieve length of a given sequence.
@@ -412,7 +409,7 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     SetGetSeqLen(retval, &s_MultiSeqGetSeqLen);
     SetGetNextChunk(retval, &s_MultiSeqGetNextChunk);
     SetIterNext(retval, &s_MultiSeqIteratorNext);
-    SetRetSequence(retval, &s_MultiSeqRetSequence);
+    SetReleaseSequence(retval, &s_MultiSeqReleaseSequence);
 
     return retval;
 }
@@ -450,6 +447,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/04/13 22:34:47  camacho
+ * Renamed BlastSeqSrc RetSequence to ReleaseSequence
+ *
  * Revision 1.29  2005/04/06 21:06:18  dondosha
  * Use EBlastProgramType instead of EProgram in non-user-exposed functions
  *
@@ -505,7 +505,7 @@ END_NCBI_SCOPE
  * Commented out unused argument name
  *
  * Revision 1.14  2004/04/28 19:38:20  dondosha
- * Added implementation of BLASTSeqSrcRetSequence function
+ * Added implementation of BLASTSeqSrcReleaseSequence function
  *
  * Revision 1.13  2004/03/26 19:18:40  dondosha
  * Minor correction in assigning sequence pointer in returned sequence block

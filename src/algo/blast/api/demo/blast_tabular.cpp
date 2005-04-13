@@ -154,7 +154,7 @@ void* CBlastTabularFormatThread::Main(void)
    if (!m_pHspStream || !m_ipSeqSrc) 
       return NULL;
 
-   GetSeqArg seq_arg;
+   BlastSeqSrcGetSeqArg seq_arg;
 
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
@@ -207,7 +207,7 @@ void* CBlastTabularFormatThread::Main(void)
                seq_arg.seq, m_ipQueryInfo, m_ipGapAlign, m_ipGapAlign->sbp, 
                m_ipScoreParams, m_ipExtParams->options, m_ipHitParams, 
                m_iGenCodeString.get());
-           BLASTSeqSrcRetSequence(m_ipSeqSrc, (void*)&seq_arg);
+           BLASTSeqSrcReleaseSequence(m_ipSeqSrc, (void*)&seq_arg);
            /* Recalculate the bit scores, since they might have changed. */
            Blast_HSPListGetBitScores(hsp_list, 
                m_ipScoreParams->options->gapped_calculation, m_ipGapAlign->sbp);
@@ -280,6 +280,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/04/13 22:34:47  camacho
+* Renamed BlastSeqSrc RetSequence to ReleaseSequence
+*
 * Revision 1.14  2005/04/06 21:07:20  dondosha
 * Change due to BlastHSP structure size reduction
 *
@@ -311,7 +314,7 @@ void CBlastTabularFormatThread::OnExit(void)
 * Move FindGeneticCode
 *
 * Revision 1.4  2004/08/04 22:03:36  dondosha
-* Memset GetSeqArg structure in all cases, to prevent FUM error
+* Memset BlastSeqSrcGetSeqArg structure in all cases, to prevent FUM error
 *
 * Revision 1.3  2004/07/06 15:55:27  dondosha
 * Changed CDbBlast argument in constructor to const pointer

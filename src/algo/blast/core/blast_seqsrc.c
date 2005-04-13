@@ -61,12 +61,12 @@ struct BlastSeqSrc {
    /* Functions to get information about individual sequences */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
+    ReleaseSeqBlkFnPtr ReleaseSequence; /**< Deallocate individual sequence 
+                                         (if applicable) */
 
    /* Functions to iterate over sequences in the database */
     GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
-    GetSeqBlkFnPtr    RetSequence;    /**< Deallocate individual sequence 
-                                         buffer if necessary. */
    
     void*             DataStructure;  /**< ADT holding the sequence data */
 
@@ -238,9 +238,10 @@ DEFINE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(ReleaseSeqBlkFnPtr, ReleaseSequence, BlastSeqSrc*)
+
 DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*)
 
 DEFINE_ACCESSOR(char*, InitErrorStr, BlastSeqSrc*)
 DEFINE_MUTATOR(char*, InitErrorStr, BlastSeqSrc*)

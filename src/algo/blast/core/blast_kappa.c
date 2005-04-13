@@ -2096,7 +2096,7 @@ typedef struct Kappa_MatchingSequence {
                                      how sequence data should be obtained. */
   const Uint1*   genetic_code;   /**< genetic code for translated searches */
   const BlastSeqSrc* seq_src;   /**< BLAST sequence data source */
-  GetSeqArg seq_arg;            /**< argument to GetSequence method of the
+  BlastSeqSrcGetSeqArg seq_arg;            /**< argument to GetSequence method of the
                                   BlastSeqSrc (@todo this structure was
                                   designed to be allocated on the stack, i.e.:
                                   in Kappa_MatchingSequenceInitialize)
@@ -2147,7 +2147,7 @@ Kappa_MatchingSequenceInitialize(
 static void
 Kappa_MatchingSequenceRelease(Kappa_MatchingSequence * self)
 {
-  BLASTSeqSrcRetSequence(self->seq_src, (void*)&self->seq_arg);
+  BLASTSeqSrcReleaseSequence(self->seq_src, (void*)&self->seq_arg);
   BlastSequenceBlkFree(self->seq_arg.seq);
 }
 

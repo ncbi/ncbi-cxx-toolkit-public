@@ -704,7 +704,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastHSPList* hsp_list = NULL; 
-   GetSeqArg seq_arg;
+   BlastSeqSrcGetSeqArg seq_arg;
    Int2 status = 0;
    Int8 db_length = 0;
    Boolean prelim_traceback;
@@ -830,7 +830,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
       
-      BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
+      BLASTSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
    }
    
    BlastSequenceBlkFree(seq_arg.seq);

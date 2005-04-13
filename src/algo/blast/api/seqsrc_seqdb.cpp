@@ -108,13 +108,13 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
 
 /// Retrieves the sequence meeting the criteria defined by its second argument.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-/// @param args Pointer to GetSeqArg structure [in]
+/// @param args Pointer to BlastSeqSrcGetSeqArg structure [in]
 /// @return return codes defined in blast_seqsrc.h
 static Int2 
 s_SeqDbGetSequence(void* seqdb_handle, void* args)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    GetSeqArg* seqdb_args = (GetSeqArg*) args;
+    BlastSeqSrcGetSeqArg* seqdb_args = (BlastSeqSrcGetSeqArg*) args;
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
     Boolean buffer_allocated;
@@ -153,7 +153,7 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
        seqdb_args->seq->sequence = seqdb_args->seq->sequence_start;
 
     /* For preliminary stage, even though sequence buffer points to a memory
-       mapped location, we still need to call RetSequence. This can only be
+       mapped location, we still need to call ReleaseSequence. This can only be
        guaranteed by making the engine believe tat sequence is allocated.
     */
     if (!buffer_allocated)
@@ -167,22 +167,17 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
 /// Returns the memory allocated for the sequence buffer to the CSeqDB 
 /// interface.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-/// @param args Pointer to the GetSeqArgs structure, containing sequence block
-///             with the buffer that needs to be deallocated. [in]
-/// @return return codes defined in blast_seqsrc.h
-static Int2 
-s_SeqDbRetSequence(void* seqdb_handle, void* args)
+/// @param args Pointer to the BlastSeqSrcGetSeqArgs structure, 
+/// containing sequence block with the buffer that needs to be deallocated. [in]
+static void
+s_SeqDbReleaseSequence(void* seqdb_handle, void* args)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    GetSeqArg* seqdb_args = (GetSeqArg*) args;
+    BlastSeqSrcGetSeqArg* seqdb_args = (BlastSeqSrcGetSeqArg*) args;
 
-    if (!seqdb || !seqdb_args)
-        return BLAST_SEQSRC_ERROR;
-
-    if (!seqdb_args->seq) {
-        // Nothing to return, just return successful status
-        return BLAST_SEQSRC_SUCCESS;
-    }
+    ASSERT(seqdb);
+    ASSERT(seqdb_args);
+    ASSERT(seqdb_args->seq);
 
     if (seqdb_args->seq->sequence_start_allocated) {
         (*seqdb)->RetSequence((const char**)&seqdb_args->seq->sequence_start);
@@ -194,8 +189,6 @@ s_SeqDbRetSequence(void* seqdb_handle, void* args)
         seqdb_args->seq->sequence_allocated = FALSE;
         seqdb_args->seq->sequence = NULL;
     }
-
-    return BLAST_SEQSRC_SUCCESS;
 }
 
 /// Retrieve length of a given database sequence.
@@ -390,7 +383,7 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
     SetGetNextChunk  (retval, & s_SeqDbGetNextChunk);
     SetIterNext      (retval, & s_SeqDbIteratorNext);
-    SetRetSequence   (retval, & s_SeqDbRetSequence);
+    SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
 }
 
 /// Populates a BlastSeqSrc, creating a new reference to the already existing 
@@ -493,6 +486,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2005/04/13 22:34:47  camacho
+ * Renamed BlastSeqSrc RetSequence to ReleaseSequence
+ *
  * Revision 1.30  2005/03/31 16:15:03  dondosha
  * Some doxygen fixes
  *
@@ -572,7 +568,7 @@ END_NCBI_SCOPE
  * Return NULL from SeqDbGetName until CSeqDB gets a GetName method
  *
  * Revision 1.5  2004/04/28 19:38:20  dondosha
- * Added implementation of BLASTSeqSrcRetSequence function
+ * Added implementation of BLASTSeqSrcReleaseSequence function
  *
  * Revision 1.4  2004/04/12 14:58:42  ucko
  * Avoid placing static C functions inside namespace blocks to keep the

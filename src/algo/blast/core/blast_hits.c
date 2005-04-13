@@ -1766,15 +1766,15 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
       NB: for the BLAST 2 Sequences case, the uncompressed sequence must 
       already be there */
    if (seq_src) {
-      /* Wrap subject sequence block into a GetSeqArg structure, which is 
+      /* Wrap subject sequence block into a BlastSeqSrcGetSeqArg structure, which is 
          needed by the BlastSeqSrc API. */
-      GetSeqArg seq_arg;
+      BlastSeqSrcGetSeqArg seq_arg;
       seq_arg.oid = subject_blk->oid;
       seq_arg.encoding =
          (kTranslateSubject ? NCBI4NA_ENCODING : BLASTNA_ENCODING);
       seq_arg.seq = subject_blk;
       /* Return the packed sequence to the database */
-      BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
+      BLASTSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
       /* Get the unpacked sequence */
       BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg);
    }

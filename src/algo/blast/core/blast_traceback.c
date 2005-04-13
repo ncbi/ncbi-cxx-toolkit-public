@@ -770,7 +770,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
    Int4 **rpsblast_pssms = NULL;
    Int4 db_seq_start;
    Uint1 encoding;
-   GetSeqArg seq_arg;
+   BlastSeqSrcGetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
    BlastQueryInfo* concat_db_info = NULL;
@@ -838,7 +838,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
              *        need a warning here
              */
             hsp_list = Blast_HSPListFree(hsp_list);
-            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+            BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
             continue;
          }
          
@@ -854,7 +854,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
          one_query, one_query_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, NULL);
 
-      BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+      BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
 
       if (program_number != eBlastTypeRpsTblastn) {
          _PSIDeallocateMatrix((void**)sbp->psi_matrix->pssm->data, 
@@ -940,7 +940,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                               score_params, ext_params, hit_params, psi_options, 
                               results); 
    } else {
-      GetSeqArg seq_arg;
+      BlastSeqSrcGetSeqArg seq_arg;
       Uint1 encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = 
          (score_params->options->gapped_calculation && 
@@ -982,7 +982,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                seq_arg.seq, query_info, gap_align, sbp, score_params, 
                ext_params->options, hit_params, gen_code_string);
 
-            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+            BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
          }
          
          /* Free HSP list structure if all HSPs have been deleted. */
