@@ -414,9 +414,6 @@ void SAnnotSelector::x_InitializeAnnotTypesSet(bool default_value)
             m_AnnotTypesBitset.set(i);
         }
     }
-    // Do not call this->SetAnnotType() -- it will reset the types set.
-    // Set type to Ftable -- only feature types/subtypes may be selected.
-    SAnnotTypeSelector::SetAnnotType(CSeq_annot::C_Data::e_Ftable);
 }
 
 
@@ -459,6 +456,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
     }
     else if (!IncludedFeatType(type)) {
         x_InitializeAnnotTypesSet(false);
+        ForceAnnotType(CSeq_annot::C_Data::e_Ftable);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -474,6 +472,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  IncludedFeatType(type)) {
         x_InitializeAnnotTypesSet(true);
+        ForceAnnotType(CSeq_annot::C_Data::e_Ftable);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -491,6 +490,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatSubtype(TFeatSubtype subtype)
     }
     else if ( !IncludedFeatSubtype(subtype) ) {
         x_InitializeAnnotTypesSet(false);
+        ForceAnnotType(CSeq_annot::C_Data::e_Ftable);
         m_AnnotTypesBitset.set(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     return *this;
@@ -502,6 +502,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  IncludedFeatSubtype(subtype)) {
         x_InitializeAnnotTypesSet(true);
+        ForceAnnotType(CSeq_annot::C_Data::e_Ftable);
         m_AnnotTypesBitset.reset(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     return *this;
@@ -605,6 +606,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/04/13 15:11:22  grichenk
+* Fixed type/subtype filtering
+*
 * Revision 1.25  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.
