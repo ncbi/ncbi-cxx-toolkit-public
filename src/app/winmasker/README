@@ -14,7 +14,7 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list]
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format]
 
     windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list]
 
@@ -173,6 +173,16 @@ Stage 1 Options
         and standard output is used if it is not specified.  Section 
         FILES contains the description of format of the file.
 
+    -sformat unit_counts_format
+
+        default: ascii
+
+        The format in which the unit counts data should be generated.
+        The possible values are "ascii" and "binary". The former makes
+        windowmasker generate unit counts in human readable text form,
+        which is highly portable but slow to load during Stage 2.
+        The binary format is not portable but loads very fast.
+
     -t_low T_low
 
         default: <empty>
@@ -293,7 +303,8 @@ Stage 2 Options
         This option is required for Stage 2 processing. It specifies
         the name of the file containing the unit counts for the
         genome in use. Unit counts are typically created during
-        Stage 1 of WindowMasker processing.
+        Stage 1 of WindowMasker processing. The format of the unit
+        counts file is recognized automatically
 
     -window window_size
 
