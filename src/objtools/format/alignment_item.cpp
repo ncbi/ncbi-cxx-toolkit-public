@@ -42,8 +42,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CAlignmentItem::CAlignmentItem(CSeq_align& align, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_Align(&align)
+CAlignmentItem::CAlignmentItem(const CSeq_align& align, CBioseqContext& ctx)
+    : CFlatItem(&ctx), m_Align(&align)
 {
 }
 
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/13 14:37:01  ucko
+* Accept const Seq_align objects, as there's no reason not to.
+*
 * Revision 1.1  2004/06/21 18:52:45  ucko
 * Add an item type for Seq-aligns (handled by GFF 3)
 *

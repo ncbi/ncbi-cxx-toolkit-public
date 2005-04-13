@@ -52,7 +52,7 @@ class IFormatter;
 class CAlignmentItem : public CFlatItem
 {
 public:
-    CAlignmentItem(CSeq_align& align, CBioseqContext& ctx);
+    CAlignmentItem(const CSeq_align& align, CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const CSeq_align& GetAlign(void) const { return *m_Align; }
@@ -60,7 +60,7 @@ public:
 private:
     void x_GatherInfo(CBioseqContext& ctx);
     // data
-    CRef<CSeq_align> m_Align;
+    CConstRef<CSeq_align> m_Align;
 };
 
 
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/13 14:36:56  ucko
+* Accept const Seq_align objects, as there's no reason not to.
+*
 * Revision 1.1  2004/06/21 18:48:43  ucko
 * Add an item type for Seq-aligns (handled by GFF 3)
 *
