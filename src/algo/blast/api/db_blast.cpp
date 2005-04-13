@@ -213,7 +213,7 @@ void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo,
    }
 
    vector<string> dbpath;
-   CSeqDB::FindVolumePaths(dbname, 'p', dbpath);
+   CSeqDB::FindVolumePaths(dbname, CSeqDB::eProtein, dbpath);
    if (dbpath.empty()) {
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot retrieve path to RPS database");
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.62  2005/04/13 21:25:56  bealer
+ * - Change 'p' to eProtein.
+ *
  * Revision 1.61  2005/04/06 23:29:04  dondosha
  * Doxygen fixes
  *
