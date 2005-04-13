@@ -218,6 +218,10 @@ CDBAPIUnitTest::Test_StatementParameters(void)
         // Execute a statement with parameters ...
         auto_stmt->ExecuteUpdate( sql );
 
+        // !!! Do not forget to clear a parameter list ....
+        // Workaround for the ctlib driver ...
+        auto_stmt->ClearParamList();
+
         sql  = " SELECT int_val, int_val FROM " + m_TableName + " ORDER BY int_val";
         // Execute a statement without parameters ...
         auto_stmt->ExecuteUpdate( sql );
@@ -1614,6 +1618,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/04/13 13:27:09  ssikorsk
+ * Workaround for the ctlib driver in Test_StatementParameters
+ *
  * Revision 1.15  2005/04/12 19:11:10  ssikorsk
  * Do not clean a parameter list after Execute (previous behavior restored). This can cause problems with the ctlib driver.
  *
