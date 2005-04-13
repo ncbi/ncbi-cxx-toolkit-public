@@ -43,7 +43,12 @@
 
 #include <vector>
 
+
 USING_NCBI_SCOPE;
+
+const string kInputParamName = "ctg_input";
+const string kErrorUrlParamName = "ctg_error_url";
+const string kProjectParamName = "ctg_project";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -57,10 +62,12 @@ public:
     virtual void Init(void);
     virtual string GetProgramVersion(void) const;
 
+    virtual int  ProcessRequest(CCgiContext& ctx);
+
 protected:
 
     // Render the job input paramers HTML page
-    virtual void ShowParamsPage(CGridCgiContext& ctx) const ;
+    virtual void ShowParamsPage(CGridCgiContext& ctx) const {}
 
     // Collect parameters from the HTML page.
     virtual bool CollectParams(CGridCgiContext&);
@@ -105,6 +112,7 @@ private:
     // mechanism in CGI application -- for the processing of both cmd-line
     // arguments and HTTP entries
     void x_SetupArgs(void);
+    void x_Init(void);
 
     void static x_RenderView(CHTMLPage& page, const string& view_name);
     enum ERenderType {
@@ -151,43 +159,19 @@ string CCgiTunnel2Grid::GetPageTemplate() const
 void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
 {
     vector<string>::const_iterator it;
-    for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it)
-        ctx.GetHTMLPage().LoadTemplateLibFile(NStr::TruncateSpaces(*it));
+    string project = ctx.GetEntryValue(kProjectParamName);
+    for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it) {
+        string lib = project + '/' + NStr::TruncateSpaces(*it);
+        ctx.GetHTMLPage().LoadTemplateLibFile(lib);
+    }
 
-    ctx.PersistEntry("fall_back");
+    ctx.PersistEntry(kErrorUrlParamName);
 }
 
 void CCgiTunnel2Grid::Init()
 {
-    m_Title = GetConfig().GetString("tunnel2grid", "cgi_title", 
-                                    "Grid Job Status Checker" );
-    m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", 
-                                           "cgi_tunnel2grid.html");
-
-    string incs = GetConfig().GetString("tunnel2grid", "html_template_includes", 
-                                           "cgi_tunnel2grid.inc.html");
-
-    NStr::Tokenize(incs, ",", m_HtmlIncs);
-
-
-    m_FallBackDelay = 
-        GetConfig().GetInt("tunnel2grid", "fall_back_delay", 5, IRegistry::eReturn);
-
-    m_ProgramVersion =
-        GetConfig().GetString("tunnel2grid", "program", "" );
-
-    m_RenderType = eUrlRedirect;
-    const string& renderType = 
-        GetConfig().GetString("tunnel2grid", "render_type", "url_redirect" );
-
-    if (NStr::CompareNocase(renderType, "url_redirect")==0) {
-        m_RenderType = eUrlRedirect;
-    } else if (NStr::CompareNocase(renderType, "html_page")==0) {
-        m_RenderType = eHtmlPage;
-    }
-
    // Standard CGI framework initialization
-    CGridCgiApplication::Init();
+    CCgiApplication::Init();
 
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
@@ -202,10 +186,69 @@ void CCgiTunnel2Grid::Init()
 
 }
 
-
-void CCgiTunnel2Grid::ShowParamsPage(CGridCgiContext&) const 
+void CCgiTunnel2Grid::x_Init()
 {
+    m_Title = GetConfig().GetString("tunnel2grid", "cgi_title", 
+                                    "Grid Job Status Checker" );
+
+    m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", 
+                                           GetProgramDisplayName() +".html");
+
+    string incs = GetConfig().GetString("tunnel2grid", "html_template_includes", 
+                                         GetProgramDisplayName() +".inc.html");
+
+    NStr::Tokenize(incs, ",", m_HtmlIncs);
+
+
+    m_FallBackDelay = 
+        GetConfig().GetInt("tunnel2grid", "error_url_delay", 5, IRegistry::eReturn);
+
+    m_ProgramVersion =
+        GetConfig().GetString("tunnel2grid", "program", "" );
+
+    m_RenderType = eUrlRedirect;
+    const string& renderType = 
+        GetConfig().GetString("tunnel2grid", "render_type", "url_redirect" );
+
+    if (NStr::CompareNocase(renderType, "url_redirect")==0) {
+        m_RenderType = eUrlRedirect;
+    } else if (NStr::CompareNocase(renderType, "html_page")==0) {
+        m_RenderType = eHtmlPage;
+    }
 }
+
+int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
+{
+    string page_templ = GetProgramDisplayName() + "_err.html";
+    CHTMLPage page("Initializtion Error Page", page_templ );
+    CGridCgiContext grid_ctx(page,ctx);
+    string project = grid_ctx.GetEntryValue(kProjectParamName);
+    if (project.empty()) {
+        string mesg = "Parameter " + kProjectParamName + " is missing.";
+        OnJobFailed(mesg, grid_ctx);
+        ctx.GetResponse().WriteHeader();
+        page.Print(ctx.GetResponse().out(), CNCBINode::eHTML);
+        return 3;
+    }
+    string x_conf = project + "/" + GetProgramDisplayName() + ".ini";
+    try {
+        LoadConfig(GetConfig(), &x_conf);
+    }
+    catch (exception& ex) {
+        OnJobFailed(ex.what(), grid_ctx);
+        ctx.GetResponse().WriteHeader();
+        page.Print(ctx.GetResponse().out(), CNCBINode::eHTML);
+        return 3;
+    }
+
+    x_Init();
+    m_HtmlTemplate = project + '/' + m_HtmlTemplate;
+    grid_ctx.PersistEntry(kProjectParamName);
+
+    InitGridClient();
+    return CGridCgiApplication::ProcessRequest(ctx);
+}
+
 
 bool CCgiTunnel2Grid::CollectParams(CGridCgiContext&)
 {
@@ -216,8 +259,8 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext&)
     // "args" now contains both command line arguments and the arguments 
     // extracted from the HTTP request
 
-    if (args["js_input"]) {
-        m_Input = args["js_input"].AsString();
+    if (args[kInputParamName]) {
+        m_Input = args[kInputParamName].AsString();
         return true;
     }
 
@@ -250,7 +293,7 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
     is >> url;
     if (url.empty()) {
         x_RenderView(ctx.GetHTMLPage(), "<@VIEW_EMPTY_RESULT@>");
-        string fall_back_url = ctx.GetEntryValue("fall_back");
+        string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
         RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
     }
     else {
@@ -273,7 +316,7 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
     // Render a error page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_FAILED@>");
 
-    string fall_back_url = ctx.GetEntryValue("fall_back");
+    string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
 
     CHTMLPlainText* err = new CHTMLPlainText(msg);
@@ -285,7 +328,7 @@ void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
     // Render a job cancelation page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
-    string fall_back_url = ctx.GetEntryValue("fall_back");
+    string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
 
 }
@@ -295,7 +338,7 @@ void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
     // Render a page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_QUEUE_IS_BUSY@>");
 
-    string fall_back_url = ctx.GetEntryValue("fall_back");
+    string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
 }
 
@@ -348,14 +391,14 @@ void CCgiTunnel2Grid::x_SetupArgs()
                               "CGI sample application");
         
     // Describe possible cmd-line and HTTP entries
-    arg_desc->AddOptionalKey("js_input",
-                             "js_input",
+    arg_desc->AddOptionalKey(kInputParamName,
+                             kInputParamName,
                              "Job Input parameters",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("fall_back",
-                             "fall_back",
-                             "Fall back url",
+    arg_desc->AddOptionalKey(kErrorUrlParamName,
+                             kErrorUrlParamName,
+                             "Error url",
                              CArgDescriptions::eString);
    
     arg_desc->AddOptionalKey("Cancel",
@@ -385,6 +428,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/13 17:42:56  didenko
+ * Made configuration depended on a project name
+ *
  * Revision 1.7  2005/04/12 19:10:39  didenko
  * - OnStatusCheck method
  * + OnJobPending method
