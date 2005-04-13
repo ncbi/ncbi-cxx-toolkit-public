@@ -440,10 +440,6 @@ public:
             }
             return size;
         }
-    pair<double, size_type> stat(void) const
-        {
-            return make_pair(0.0, size_type(0));
-        }
     
     // iterators
     const_iterator end(void) const
@@ -662,6 +658,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/04/13 21:36:53  ucko
+* Remove unused stat() method, which collided badly with a macro on
+* some platforms.
+*
 * Revision 1.25  2005/01/24 17:04:46  vasilche
 * Safe boolean operators.
 *
