@@ -1159,9 +1159,17 @@ s_BlastHSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
          num2++;
       }
    }
-   
-   sfree(segments1);
-   sfree(segments2);
+
+   /* Free the segments linked lists that are no longer needed. */
+   for ( ; segments1; segments1 = new_segment1) {
+       new_segment1 = segments1->next;
+       sfree(segments1);
+   }
+
+   for ( ; segments2; segments2 = new_segment2) {
+       new_segment2 = segments2->next;
+       sfree(segments2);
+   }
 
    if (intersection_found) {
       esp = NULL;
