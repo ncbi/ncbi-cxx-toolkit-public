@@ -16,9 +16,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -28,9 +28,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -40,9 +40,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -52,9 +52,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -64,9 +64,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -76,9 +76,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 	</Configurations>

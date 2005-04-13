@@ -1,17 +1,17 @@
-%PTB_PATH%\project_tree_builder.exe -logfile %SLN_PATH%_configuration_log.txt -conffile %PTB_PATH%\..\..\..\project_tree_builder.ini %TREE_ROOT% scripts\projects\ncbi_gui.lst %SLN_PATH%
+"%PTB_PATH%\project_tree_builder.exe" -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_PATH%\..\..\..\project_tree_builder.ini" "%TREE_ROOT%" scripts\projects\ncbi_gui.lst "%SLN_PATH%"
 @echo off
 if errorlevel 1 goto report_error
 
 echo ******************************************************************************
 echo -CONFIGURE- has succeeded
-echo Configuration log was saved at "%SLN_PATH%_configuration_log.txt"
+echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
 exit 0
 
 :report_error
 echo ******************************************************************************
 echo -CONFIGURE- has failed
-echo Configuration log was saved at "%SLN_PATH%_configuration_log.txt"
+echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
 start "" "%SLN_PATH%_configuration_log.txt"
 exit 1
