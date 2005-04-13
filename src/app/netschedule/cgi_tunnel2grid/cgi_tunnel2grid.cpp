@@ -222,7 +222,7 @@ void CCgiTunnel2Grid::x_Init()
 int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
 {
     string page_templ = GetProgramDisplayName() + "_err.html";
-    CHTMLPage page("Initializtion Error Page", page_templ );
+    CHTMLPage page("Initialization Error", page_templ );
     CGridCgiContext grid_ctx(page,ctx);
     string project = grid_ctx.GetEntryValue(kProjectParamName);
     if (project.empty()) {
@@ -290,24 +290,33 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
 {
 
     CNcbiIstream& is = status.GetIStream();
-    string url;
-    is >> url;
-    if (url.empty()) {
+    size_t blob_size = status.GetBlobSize();
+    if (blob_size <= 0) {
         x_RenderView(ctx.GetHTMLPage(), "<@VIEW_EMPTY_RESULT@>");
         string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
         RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
     }
-    else {
+    switch (m_RenderType) {
+    case eUrlRedirect:
+        x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_DONE@>");
+        RenderRefresh(ctx.GetHTMLPage(), m_StrPage, 0);
+        break;
 
-        if (m_RenderType == eUrlRedirect ) {
-            x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_DONE@>");
-            RenderRefresh(ctx.GetHTMLPage(), url, 0);
+    case eHtmlPage:
+        {
+        char* buff = new char[blob_size+1];
+        is.read(buff,blob_size);
+        m_StrPage = buff;
+        delete[] buff;
+
+        ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
         }
-        else /*if (m_RenderType == eHtmlPage)*/ {
-            m_StrPage = "<html><head><title>Unsuppoted renderer</title></head>"
-                        "<body>Unsuppoted renderer.</body></html>";
-            ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
-        }
+        break;
+        
+    default:
+        m_StrPage = "<html><head><title>Unsuppoted renderer</title></head>"
+                    "<body>Unsuppoted renderer.</body></html>";
+        ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
     }
 }
 
@@ -429,6 +438,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/13 19:59:11  didenko
+ * Added html page render type
+ *
  * Revision 1.9  2005/04/13 18:28:35  didenko
  * + saving ctg_project CGI entry into a cookie
  *
