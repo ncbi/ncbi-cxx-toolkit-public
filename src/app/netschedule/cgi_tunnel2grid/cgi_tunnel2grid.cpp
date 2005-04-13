@@ -295,9 +295,11 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
         x_RenderView(ctx.GetHTMLPage(), "<@VIEW_EMPTY_RESULT@>");
         string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
         RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
+        return;
     }
     switch (m_RenderType) {
     case eUrlRedirect:
+        is >> m_StrPage;
         x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_DONE@>");
         RenderRefresh(ctx.GetHTMLPage(), m_StrPage, 0);
         break;
@@ -438,6 +440,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/13 20:19:40  didenko
+ * Fixed a bug in OnJobDone method
+ *
  * Revision 1.10  2005/04/13 19:59:11  didenko
  * Added html page render type
  *
