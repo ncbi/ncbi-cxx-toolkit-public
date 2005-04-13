@@ -238,7 +238,7 @@ void CTestRangeMap::TestRangeMap(void) const
     
     if ( m_PrintSize ) {
         Filled(m.size());
-        Stat(m.stat());
+        // Stat(m.stat());
     }
 
     for ( TMapCI i = m.begin(); i; ++i ) {
@@ -355,6 +355,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/13 22:43:09  ucko
+ * Remove reference to eliminate CRangeMap::stat(), which didn't do
+ * anything useful and clashed with macros on some platforms.
+ *
  * Revision 1.13  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
