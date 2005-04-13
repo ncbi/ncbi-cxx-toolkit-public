@@ -495,7 +495,7 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const char* kNetScheduleDriverName = "netscheduleclient";
+const char* kNetScheduleDriverName = "netschedule_client";
 
 /// @internal
 class CNetScheduleClientCF : public IClassFactory<CNetScheduleClient>
@@ -626,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/13 13:37:54  didenko
+ * Changed NetSchedule PluginManager driver name to netschedule_client
+ *
  * Revision 1.7  2005/04/11 13:50:45  kuznets
  * Implemented retries when queue cannot take job
  *
