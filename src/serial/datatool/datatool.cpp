@@ -229,7 +229,7 @@ bool CDataTool::ProcessModules(void)
     
     SourceFile::EType srctype =
         LoadDefinitions(generator.GetMainModules(),
-                        modulesPath, args["m"].AsString());
+                        modulesPath, args["m"].AsString(), false);
 
     if ( args["sxo"] ) {
         CDataType::SetEnforcedStdXml(true);
@@ -262,7 +262,7 @@ bool CDataTool::ProcessModules(void)
     
     if (srctype != SourceFile::eDTD) {
         LoadDefinitions(generator.GetImportModules(),
-                        modulesPath, args["M"].AsString(),srctype);
+                        modulesPath, args["M"].AsString(), true, srctype);
     }
 
     if ( !generator.Check() ) {
@@ -532,11 +532,15 @@ bool CDataTool::GenerateCode(void)
 
 SourceFile::EType CDataTool::LoadDefinitions(
     CFileSet& fileSet, const list<string>& modulesPath,
-    const string& nameList, SourceFile::EType srctype)
+    const string& nameList, bool split_names, SourceFile::EType srctype)
 {
     SourceFile::EType moduleType;
     list<string> names;
-    NStr::Split(nameList, " ", names);
+    if (split_names) {
+        NStr::Split(nameList, " ", names);
+    } else {
+        names.push_back(nameList);
+    }
     ITERATE ( list<string>, fi, names ) {
         const string& name = *fi;
         if ( !name.empty() ) {
@@ -602,6 +606,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2005/04/13 15:57:02  gouriano
+* Handle paths with spaces
+*
 * Revision 1.78  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *

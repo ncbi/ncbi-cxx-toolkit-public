@@ -404,15 +404,16 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 
     //CommandLine
     //exe location - path is supposed to be relative encoded
-    string tool_exe_location("");
+    string tool_exe_location("\"");
     if (prj.m_ProjType == CProjKey::eApp)
-        tool_exe_location = GetApp().GetDatatoolPathForApp();
+        tool_exe_location += GetApp().GetDatatoolPathForApp();
     else if (prj.m_ProjType == CProjKey::eLib)
-        tool_exe_location = GetApp().GetDatatoolPathForLib();
+        tool_exe_location += GetApp().GetDatatoolPathForLib();
     else if (prj.m_ProjType == CProjKey::eDll)
-        tool_exe_location = GetApp().GetDatatoolPathForApp();
+        tool_exe_location += GetApp().GetDatatoolPathForApp();
     else
         return;
+    tool_exe_location += "\"";
     //command line
     string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
     tool_cmd_prfx += " -or ";
@@ -460,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/04/13 15:57:33  gouriano
+ * Handle paths with spaces
+ *
  * Revision 1.40  2004/12/20 15:23:44  gouriano
  * Changed diagnostic output
  *

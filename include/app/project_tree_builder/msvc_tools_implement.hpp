@@ -551,9 +551,10 @@ public:
 #if 0
             command_line += "@echo on\n";
 #else
-            cmd = GetApp().GetProjectTreeRoot();
-            cmd += "asn_prebuild.bat";
-            cmd += " $(OutDir) $(ConfigurationName) $(SolutionPath)";
+            cmd = "\"";
+            cmd += GetApp().GetProjectTreeRoot();
+            cmd += "asn_prebuild.bat\"";
+            cmd += " \"$(OutDir)\" \"$(ConfigurationName)\" \"$(SolutionPath)\"";
 #endif
         }
         ITERATE(list<string>, p, m_LibDepends)
@@ -561,10 +562,10 @@ public:
             const string& lib = *p;
 #if 0
             
-            command_line += "IF EXIST $(OutDir)\\" + lib;
+            command_line += "IF EXIST \"$(OutDir)\"\\" + lib;
             command_line += " GOTO HAVE_" + lib + "\n";
 
-            command_line += "devenv /build $(ConfigurationName) /project ";
+            command_line += "devenv /build \"$(ConfigurationName)\" /project ";
             command_line += lib;
             command_line += " \"$(SolutionPath)\"\n";
 
@@ -749,6 +750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/04/13 15:56:34  gouriano
+ * Handle paths with spaces
+ *
  * Revision 1.22  2005/01/31 16:38:00  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *

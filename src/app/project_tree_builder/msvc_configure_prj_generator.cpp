@@ -72,10 +72,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
         ptb_path_par += "$(ConfigurationName)";
     }
 
-    string tree_root_par = "$(ProjectDir)" + 
-                           CDirEntry::AddTrailingPathSeparator
-                                 (CDirEntry::CreateRelativePath(m_ProjectDir,
-                                                                tree_root));
+    string tree_root_par = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
+                            CDirEntry::CreateRelativePath(m_ProjectDir,tree_root));
     string sln_path_par  = "$(SolutionPath)";
 
     m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
@@ -198,7 +196,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    ofs << "%PTB_PATH%\\project_tree_builder.exe";
+    ofs << "\"%PTB_PATH%\\project_tree_builder.exe\"";
 
     if ( m_DllBuild )
         ofs << " -dll";
@@ -215,9 +213,9 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
         ofs << " -extroot " << GetApp().m_BuildRoot;
     }
 
-    ofs << " -logfile %SLN_PATH%_configuration_log.txt"
-        << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
-        << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" << endl;
+    ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
+        << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" "
+        << "\"%TREE_ROOT%\"" << " " << m_SubtreeToBuild << " " << "\"%SLN_PATH%\"" << endl;
     ofs << "@echo off" << endl
         << "if errorlevel 1 goto report_error" << endl
         << endl
@@ -244,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/13 15:57:33  gouriano
+ * Handle paths with spaces
+ *
  * Revision 1.20  2005/04/08 19:08:53  gouriano
  * Use configuration-dependent PTB when it is not to be built
  *

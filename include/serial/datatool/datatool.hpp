@@ -56,7 +56,8 @@ private:
 
     SourceFile::EType LoadDefinitions(
         CFileSet& fileSet, const list <string>& modulesPath,
-        const string& names, SourceFile::EType srctype = SourceFile::eUnknown);
+        const string& names, bool split_names,
+        SourceFile::EType srctype = SourceFile::eUnknown);
 
     CCodeGenerator generator;
 };
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/04/13 15:56:07  gouriano
+* Handle paths with spaces
+*
 * Revision 1.3  2003/05/23 19:19:08  gouriano
 * modules of unknown type are assumed to be ASN
 * all modules must have the same type
