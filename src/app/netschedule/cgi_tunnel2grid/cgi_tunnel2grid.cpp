@@ -166,6 +166,8 @@ void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
     }
 
     ctx.PersistEntry(kErrorUrlParamName);
+    ctx.PersistEntry(kProjectParamName);
+
 }
 
 void CCgiTunnel2Grid::Init()
@@ -243,7 +245,6 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
 
     x_Init();
     m_HtmlTemplate = project + '/' + m_HtmlTemplate;
-    grid_ctx.PersistEntry(kProjectParamName);
 
     InitGridClient();
     return CGridCgiApplication::ProcessRequest(ctx);
@@ -428,6 +429,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/13 18:28:35  didenko
+ * + saving ctg_project CGI entry into a cookie
+ *
  * Revision 1.8  2005/04/13 17:42:56  didenko
  * Made configuration depended on a project name
  *
