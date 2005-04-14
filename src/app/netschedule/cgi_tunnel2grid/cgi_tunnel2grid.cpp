@@ -112,7 +112,7 @@ private:
     // mechanism in CGI application -- for the processing of both cmd-line
     // arguments and HTTP entries
     void x_SetupArgs(void);
-    void x_Init(void);
+    void x_Init(const string& project_name);
 
     void static x_RenderView(CHTMLPage& page, const string& view_name);
     enum ERenderType {
@@ -188,22 +188,23 @@ void CCgiTunnel2Grid::Init()
 
 }
 
-void CCgiTunnel2Grid::x_Init()
+void CCgiTunnel2Grid::x_Init(const string& project)
 {
     m_Title = GetConfig().GetString("tunnel2grid", "cgi_title", 
                                     "Grid Job Status Checker" );
 
-    m_HtmlTemplate = GetConfig().GetString("tunnel2grid", "html_template", 
-                                           GetProgramDisplayName() +".html");
+    m_HtmlTemplate = project + '/' +
+                     GetConfig().GetString("tunnel2grid", "html_template", 
+                                            project +".html");
 
     string incs = GetConfig().GetString("tunnel2grid", "html_template_includes", 
-                                         GetProgramDisplayName() +".inc.html");
+                                         project +".inc.html");
 
     NStr::Tokenize(incs, ",", m_HtmlIncs);
 
-
     m_FallBackDelay = 
-        GetConfig().GetInt("tunnel2grid", "error_url_delay", 5, IRegistry::eReturn);
+        GetConfig().GetInt("tunnel2grid", "error_url_delay", -1, 
+                           IRegistry::eReturn);
 
     m_ProgramVersion =
         GetConfig().GetString("tunnel2grid", "program", "" );
@@ -232,7 +233,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
         page.Print(ctx.GetResponse().out(), CNCBINode::eHTML);
         return 3;
     }
-    string x_conf = project + "/" + GetProgramDisplayName() + ".ini";
+    string x_conf = project + "/" + project + ".ini";
     try {
         LoadConfig(GetConfig(), &x_conf);
     }
@@ -243,8 +244,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
         return 3;
     }
 
-    x_Init();
-    m_HtmlTemplate = project + '/' + m_HtmlTemplate;
+    x_Init(project);
 
     InitGridClient();
     return CGridCgiApplication::ProcessRequest(ctx);
@@ -440,6 +440,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/14 14:11:57  didenko
+ * Names of configuration and template files are based on a project name
+ * Added some comments to the config file
+ *
  * Revision 1.11  2005/04/13 20:19:40  didenko
  * Fixed a bug in OnJobDone method
  *
