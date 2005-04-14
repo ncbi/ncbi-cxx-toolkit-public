@@ -742,7 +742,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, "Message");
     }
     catch (...) {
-        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
         CNcbiDiag(dci, eDiag_Trace) << "runtime_error: Message";
     }
     string mess = "ERROR";
@@ -750,7 +750,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, mess);
     }
     catch (...) {
-        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
         CNcbiDiag(dci, eDiag_Trace) << "runtime_error: ERROR";
     }
     int i = 123;
@@ -758,7 +758,7 @@ static void TestThrowTrace(void)
         THROW0p_TRACE(i);
     }
     catch (...) {
-        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
         CNcbiDiag(dci, eDiag_Trace) << "i: 123";
     }
     SetDiagTrace(eDT_Default);
@@ -891,6 +891,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2005/04/14 20:27:03  ssikorsk
+ * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
+ *
  * Revision 1.93  2005/02/16 15:04:35  ssikorsk
  * Tweaked kEmptyStr with Linux GCC
  *
@@ -903,7 +906,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.90  2004/05/14 13:59:51  gorelenk

@@ -134,11 +134,16 @@ void CTest::x_TestString(const char* str, int expects[])
 
 void CTest::x_TestPathes()
 {
-    CNcbiDiag p1( CDiagCompileInfo("somewhere/cpp/src/corelib/file.cpp", 0) );
-    CNcbiDiag p2( CDiagCompileInfo("somewhere/include/corelib/file.cpp", 0) );
-    CNcbiDiag p3( CDiagCompileInfo("somewhere/cpp/src/corelib/int/file.cpp", 0) );
-    CNcbiDiag p4( CDiagCompileInfo("somewhere/include/corelib/int/file.cpp", 0) );
-    CNcbiDiag p5( CDiagCompileInfo("somewhere/foo/corelib/file.cpp",     0) );
+    CNcbiDiag p1( CDiagCompileInfo("somewhere/cpp/src/corelib/file.cpp", 0, 
+                                   NCBI_CURRENT_FUNCTION) );
+    CNcbiDiag p2( CDiagCompileInfo("somewhere/include/corelib/file.cpp", 0, 
+                                   NCBI_CURRENT_FUNCTION) );
+    CNcbiDiag p3( CDiagCompileInfo("somewhere/cpp/src/corelib/int/file.cpp", 0, 
+                                   NCBI_CURRENT_FUNCTION) );
+    CNcbiDiag p4( CDiagCompileInfo("somewhere/include/corelib/int/file.cpp", 0,
+                                   NCBI_CURRENT_FUNCTION) );
+    CNcbiDiag p5( CDiagCompileInfo("somewhere/foo/corelib/file.cpp", 0,
+                                   NCBI_CURRENT_FUNCTION) );
 
     m_Diags.push_back(&p1);
     m_Diags.push_back(&p2);
@@ -370,6 +375,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/14 20:27:03  ssikorsk
+ * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
+ *
  * Revision 1.3  2005/03/15 15:05:34  dicuccio
  * Fixed typo: pathes -> paths
  *

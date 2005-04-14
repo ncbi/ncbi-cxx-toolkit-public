@@ -75,19 +75,61 @@ public:
     // DO NOT create CDiagCompileInfo directly
     // use macro DIAG_COMPILE_INFO instead!
     NCBI_XNCBI_EXPORT
-    CDiagCompileInfo(const char* file, int line, const char* module = 0);
+    CDiagCompileInfo(const char* file, 
+                     int line, 
+                     const char* curr_funct = NULL, 
+                     const char* module = 0);
 
-    const char* GetFile  () const { return m_File   ? m_File   : ""; }
-    const char* GetModule() const { return m_Module ? m_Module : ""; }
-    int         GetLine  () const { return m_Line; }
+    const char*   GetFile  () const { return m_File     ? m_File     : ""; }
+    const char*   GetModule() const { return m_Module   ? m_Module   : ""; }
+    int           GetLine  () const { return m_Line;                       }
+    const string& GetClass () const { return m_Class;                      }
+    const string& GetFunct () const { return m_Function;                   }
 
 private:
     const char* m_File;
     const char* m_Module;
     int         m_Line; 
+    string      m_Class;                 ///< Class    to report on
+    string      m_Function;              ///< Function to report on
 };
 
 
+/// Get current function name. Defined inside of either a method or a function body only.
+// Based ob boost's BOOST_CURRENT_FUNCTION
+#if defined(NCBI_SHOW_FUNCTION_NAME)
+
+#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
+
+# define NCBI_CURRENT_FUNCTION __PRETTY_FUNCTION__
+
+#elif defined(__FUNCSIG__)
+
+# define NCBI_CURRENT_FUNCTION __FUNCSIG__
+
+#elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
+
+# define NCBI_CURRENT_FUNCTION __FUNCTION__
+
+#elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
+
+# define NCBI_CURRENT_FUNCTION __FUNC__
+
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
+
+# define NCBI_CURRENT_FUNCTION __func__
+
+#else
+
+# define NCBI_CURRENT_FUNCTION NULL
+
+#endif
+
+#else
+
+# define NCBI_CURRENT_FUNCTION NULL
+
+#endif
 
 /// Make compile time diagnostic information object
 /// to use in CDiagInfo and CException
@@ -95,6 +137,7 @@ private:
 ///   CDiagCompileInfo
 
 #define DIAG_COMPILE_INFO NCBI_NS_NCBI::CDiagCompileInfo(__FILE__, __LINE__,  \
+                                                 NCBI_CURRENT_FUNCTION, \
                                                  NCBI_MAKE_MODULE(NCBI_MODULE))
 
     
@@ -228,7 +271,7 @@ enum EDiagPostFlag {
     eDPF_MergeLines         = 0x20000,///< Ask diag.handlers to remove EOLs
 
     /// Default flags to use when tracing.
-    eDPF_Trace              = 0x1F,
+    eDPF_Trace              = 0x81F,
 
     /// Print the posted message only; without severity, location, prefix, etc.
     eDPF_Log                = 0x0,
@@ -1107,6 +1150,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/04/14 20:24:31  ssikorsk
+ * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
+ *
  * Revision 1.79  2005/03/28 20:41:43  jcherry
  * Added export specifiers
  *
@@ -1122,7 +1168,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.75  2004/09/07 18:10:49  vakatov

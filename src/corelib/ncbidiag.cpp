@@ -84,15 +84,40 @@ static CDiagFilter s_PostFilter;
 
 CDiagCompileInfo::CDiagCompileInfo(const char* file, 
                                    int line, 
+                                   const char* curr_funct, 
                                    const char* module)
     : m_File(file), m_Module(0), m_Line(line)
 {
-    if (!file  ||  !module)
+    if (curr_funct && *curr_funct) {
+        // Parse curr_funct
+
+        string tmp_name(curr_funct);
+        string::size_type end_pos = tmp_name.find("(");
+        string::size_type start_pos = string::npos;
+        string::size_type len = 0;
+
+        // Get a function/method name
+        start_pos = tmp_name.rfind("::", end_pos);
+        start_pos = (start_pos == string::npos ? 0 : start_pos + 2);
+        len = (end_pos == string::npos ? end_pos : end_pos - start_pos);
+        m_Function = tmp_name.substr(start_pos, len);
+
+        // Get a class name
+        if (start_pos > 0) {
+            end_pos = start_pos - 2;
+            start_pos = tmp_name.rfind(" ", end_pos);
+            start_pos = (start_pos == string::npos ? 0 : start_pos + 1);
+            len = end_pos - start_pos;
+            m_Class = tmp_name.substr(start_pos, len);
+        }
+    }
+
+    if (!file || !module)
         return;
 
     string lfile(file);
     size_t pos = lfile.rfind('.');
-    if (pos == string::npos )
+    if ( pos == string::npos )
         return;
 
     string ext = lfile.substr(pos + 1);
@@ -457,8 +482,10 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
         }
 
         if (m_Class  &&  *m_Class) {
-            os << "::" << m_Class;
-            need_double_colon = m_Function && *m_Function;
+            if (need_double_colon)
+                os << "::";
+            os << m_Class;
+            need_double_colon = true;
         }
 
         if (m_Function  &&  *m_Function) {
@@ -1373,6 +1400,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.87  2005/04/14 20:25:16  ssikorsk
+ * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
+ *
  * Revision 1.86  2004/12/13 14:38:32  kuznets
  * Implemented severity filtering
  *
@@ -1392,7 +1422,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.81  2004/06/30 17:17:58  vasilche

@@ -196,7 +196,8 @@ string CException::ReportAll(TDiagPostFlags flags) const
     }
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0),
+        CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0, 
+                                           NCBI_CURRENT_FUNCTION),
                                           "(background reporting)",
                                           *this, eDPF_Trace);
         m_InReporter = false;
@@ -290,10 +291,12 @@ const CException* CException::x_Clone(void) const
 void CException::x_Init(const CDiagCompileInfo& info,const string& message,
                         const CException* prev_exception)
 {
-    m_File    = info.GetFile();
-    m_Line    = info.GetLine();
-    m_Module  = info.GetModule();
-    m_Msg     = message;
+    m_File     = info.GetFile();
+    m_Line     = info.GetLine();
+    m_Module   = info.GetModule();
+    m_Class    = info.GetClass();
+    m_Function = info.GetFunct();
+    m_Msg      = message;
     if (!m_Predecessor && prev_exception) {
         m_Predecessor = prev_exception->x_Clone();
     }
@@ -462,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/04/14 20:25:16  ssikorsk
+ * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
+ *
  * Revision 1.42  2004/10/04 20:50:01  gouriano
  * Corrected copying predecessor info in CException::x_Assign
  *
@@ -471,7 +477,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.40  2004/08/25 21:26:26  vakatov
