@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <util/transmissionrw.hpp>
 
@@ -175,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/14 14:12:26  ucko
+ * +ncbidbg.hpp for _ASSERT
+ *
  * Revision 1.1  2005/04/14 13:48:11  kuznets
  * Initial revision
  *
