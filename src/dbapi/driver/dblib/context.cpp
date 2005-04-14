@@ -135,7 +135,9 @@ CDBLibContext::CDBLibContext(DBINT version) :
     dbmsghandle(s_DBLIB_msg_callback);
 
     m_pDBLibContext = this;
+    m_Login = NULL;
     m_Login = dblogin();
+    _ASSERT(m_Login);
 }
 
 
@@ -267,7 +269,8 @@ CDBLibContext::~CDBLibContext()
     }
 
 #ifdef MS_DBLIB_IN_USE
-    dbfreelogin(m_Login);
+    // Fails for some reason (04/08/05) ...
+    // dbfreelogin(m_Login);
 #else
     dbloginfree(m_Login);
 #endif
@@ -742,6 +745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/04/14 18:35:32  ssikorsk
+ * Prepare code for correct driver deinitialization
+ *
  * Revision 1.38  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
