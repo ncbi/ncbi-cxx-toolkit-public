@@ -83,6 +83,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
 
 void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 {
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
     if ((oid_begin == 0) && (oid_end == 0)) {
         m_RestrictEnd = m_VolSet.GetNumOIDs();
     } else {
