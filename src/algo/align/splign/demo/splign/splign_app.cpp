@@ -72,7 +72,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.09");
+  string program_name ("Splign v.1.10");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -663,6 +663,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/04/14 15:29:05  kapustin
+ * Advance version number
+ *
  * Revision 1.36  2005/03/23 20:31:17  kapustin
  * Always set local type for not recognized SeqIds
  *
