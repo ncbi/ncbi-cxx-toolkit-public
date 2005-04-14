@@ -75,12 +75,8 @@
 		function VerifyTask(oShell, oTask)
 		{
             var err = false;
-            if (oShell.CurrentDirectory.search(/ /) != -1) {
-		        WScript.Echo("ERROR: Name of the current directory contains spaces");
-				err = true;
-            }
 			// Project name
-			var oRe = /^[a-z]([a-z]|\d|[_])*$/g;
+			var oRe = /^[a-z]([a-z]|\d|[_]|[ ])*$/g;
 			if (oTask.ProjectName.match(oRe) == null) {
 				WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
 				WScript.Echo("       Project name should start with a lower-case character");
@@ -101,7 +97,9 @@
 			// Path to C++ Toolkit
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			if ( !oFso.FolderExists(oTask.ToolkitPath) ||
-			     !oFso.FolderExists(oTask.ToolkitPath + "\\bin") ) {
+			     !((oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin") &&
+			      oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) ||
+			      oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
 				WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
 				err = true;
 			}
@@ -285,7 +283,8 @@
 				var old_line = old_file.ReadLine();
 				if (old_line.indexOf("APP_PROJ") == 0) {
 					new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
-					new_file.WriteLine("REQUIRES = CXX_Toolkit");
+// 06apr05: removed
+//					new_file.WriteLine("REQUIRES = CXX_Toolkit");
 				} else {
 					new_file.WriteLine(old_line);
 				}
@@ -355,29 +354,31 @@
 				ptb_command_line += " -dll";
 			}
 			ptb_command_line += " -nobuildptb";
-			ptb_command_line += " -logfile " + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt";
-			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
-			ptb_command_line += " " + oTree.TreeRoot;
-			ptb_command_line += " src\\";
+	        ptb_command_line += " -ext -nws -extroot \"";
+            ptb_command_line += oTask.ToolkitPath;
+			ptb_command_line += "\" -logfile \"" + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt\"";
+			ptb_command_line += " -conffile \"" + oTree.CompilersBranch + "\\project_tree_builder.ini\"";
+			ptb_command_line += " \"" + oTree.TreeRoot;
+			ptb_command_line += "\" src\\";
 			if ( oTask.DllBuild ) {
-				ptb_command_line += " " + oTree.CompilersBranchDll   + "\\build\\" + oTask.ProjectName + ".sln";
+				ptb_command_line += " \"" + oTree.CompilersBranchDll   + "\\build\\" + oTask.ProjectName + ".sln\"";
 			} else {
-				ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln";
+				ptb_command_line += " \"" + oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln\"";
 			}
 			execute(oShell, ptb_command_line);
 		}
 		// Open generated solution in  MSVC IDE
 		function LoadSolution(oShell, oTree, oTask)
 		{
-			var sln_path = " ";
+			var sln_path = " \"";
 			if ( oTask.DllBuild ) {
 				sln_path += oTree.CompilersBranchDll;
 			} else {
 				sln_path += oTree.CompilersBranchStatic;
 			}
-			sln_path += "\\build\\" + oTask.ProjectName + ".sln";
+			sln_path += "\\build\\" + oTask.ProjectName + ".sln\"";
 
-			execute(oShell, "start " + sln_path);
+			execute(oShell, "start \"\" " + sln_path);
 		}
 		
 		</script>
@@ -398,8 +399,8 @@
 		CreateTreeStructure(oTree, oTask);
         VerboseEcho("========================= FillTree ====================================");
 		FillTree           (oShell, oTree);
-        VerboseEcho("========================= AdjustLocalSite =============================");
- 		AdjustLocalSite    (oShell, oTree, oTask);
+//        VerboseEcho("========================= AdjustLocalSite =============================");
+// 		AdjustLocalSite    (oShell, oTree, oTask);
         VerboseEcho("========================= CopyProjectTemplate =========================");
  		CopyProjectTemplate(oShell, oTree, oTask);
         VerboseEcho("========================= AdjustProject ===============================");

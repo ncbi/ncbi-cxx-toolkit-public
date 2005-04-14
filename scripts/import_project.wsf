@@ -57,12 +57,8 @@ function VerifyArguments(oArgs)
 function VerifyTask(oTask)
 {
     var err = false;
-    if (oShell.CurrentDirectory.search(/ /) != -1) {
-		WScript.Echo("ERROR: Name of the current directory contains spaces");
-		err = true;
-    }
     //Project name
-    var oRe = /^[a-z]([a-z]|\d|[_]|[/])*$/g;
+    var oRe = /^[a-z]([a-z]|\d|[_]|[/]|[ ])*$/g;
     if (oTask.ProjectName.match(oRe) == null) {
         WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
 		WScript.Echo("       Project name should start with a lower-case character");
@@ -72,7 +68,9 @@ function VerifyTask(oTask)
     //Path to C++ Toolkit
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 	if ( !oFso.FolderExists(oTask.ToolkitPath) ||
- 		 !oFso.FolderExists(oTask.ToolkitPath + "\\bin") ) {
+			!((oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin") &&
+			oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) ||
+			oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
 		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
 		err = true;
     }
@@ -153,6 +151,7 @@ function FillTree(oShell, oTree, oTask)
 
     FillMakefileinTree(oShell, oTree, oTask);
 }
+/*
 // Project will require pre-built C++ Toolkit       
 function AdjustProject(oShell, oTree, oTask)
 {
@@ -170,6 +169,7 @@ function AdjustProject(oShell, oTree, oTask)
 		WScript.Quit(1);	
     }
 }
+*/
 // Generate solution name. Must be the same as we can import more projects
 function SolutionName(oTask)
 {
@@ -199,29 +199,31 @@ function RunPtb(oShell, oTree, oTask)
         ptb_command_line += " -dll";
     }
 	ptb_command_line += " -nobuildptb";
-    ptb_command_line += " -logfile " + oTree.TreeRoot + "\\" + SolutionName(oTask) + "_log.txt";
-    ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
-    ptb_command_line += " " + oTree.TreeRoot;
-    ptb_command_line += " src\\";
+	ptb_command_line += " -ext -nws -extroot \"";
+    ptb_command_line += oTask.ToolkitPath;
+    ptb_command_line += "\" -logfile \"" + oTree.TreeRoot + "\\" + SolutionName(oTask) + "_log.txt\"";
+    ptb_command_line += " -conffile \"" + oTree.CompilersBranch + "\\project_tree_builder.ini\"";
+    ptb_command_line += " \"" + oTree.TreeRoot;
+    ptb_command_line += "\" src\\";
     if ( oTask.DllBuild ) {
-        ptb_command_line += " " + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln";
+        ptb_command_line += " \"" + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln\"";
     } else {
-        ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln";
+        ptb_command_line += " \"" + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln\"";
     }
     execute(oShell, ptb_command_line);
 }
 // Open (re-)generated solution in  MSVC IDE
 function LoadSolution(oShell, oTree, oTask)
 {
-    var sln_path = " ";
+    var sln_path = " \"";
     if ( oTask.DllBuild ) {
         sln_path += oTree.CompilersBranchDll;
     } else {
         sln_path += oTree.CompilersBranchStatic;
     }
-    sln_path += "\\build\\" + SolutionName(oTask) + ".sln";
+    sln_path += "\\build\\" + SolutionName(oTask) + ".sln\"";
 
-    execute(oShell, "start " + sln_path);
+    execute(oShell, "start \"\" " + sln_path);
 }
 
 function FillMakefileinTree(oShell, oTree, oTask)
@@ -321,10 +323,10 @@ VerboseEcho("========================= CreateTreeStructure =====================
 CreateTreeStructure(oTree, oTask);
 VerboseEcho("========================= FillTree ====================================");
 FillTree           (oShell, oTree, oTask);
-VerboseEcho("========================= AdjustLocalSite =============================");
-AdjustLocalSite    (oShell, oTree, oTask);
-VerboseEcho("========================= AdjustProject ===============================");
-AdjustProject      (oShell, oTree, oTask);
+//VerboseEcho("========================= AdjustLocalSite =============================");
+//AdjustLocalSite    (oShell, oTree, oTask);
+//VerboseEcho("========================= AdjustProject ===============================");
+//AdjustProject      (oShell, oTree, oTask);
 VerboseEcho("========================= CopyDlls ====================================");
 CopyDlls           (oShell, oTree, oTask);
 VerboseEcho("========================= CopyRes =====================================");

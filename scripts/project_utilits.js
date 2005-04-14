@@ -69,8 +69,12 @@ function DumpTree(oTree)
     VerboseEcho("CompilersBranchStatic = " + oTree.CompilersBranchStatic);
     VerboseEcho("BinPathStatic         = " + oTree.BinPathStatic);
     VerboseEcho("CompilersBranchDll    = " + oTree.CompilersBranchDll);
+    VerboseEcho("BinPathDll            = " + oTree.BinPathDll);
+
     VerboseEcho("IncludeRootBranch     = " + oTree.IncludeRootBranch);
+    VerboseEcho("IncludeConfig         = " + oTree.IncludeConfig);
     VerboseEcho("IncludeProjectBranch  = " + oTree.IncludeProjectBranch);
+
     VerboseEcho("SrcRootBranch         = " + oTree.SrcRootBranch);
     VerboseEcho("SrcProjectBranch      = " + oTree.SrcProjectBranch);
 }
@@ -190,7 +194,7 @@ function CopyPtb(oShell, oTree, oTask)
         var target_path = oTree.BinPathStatic + "\\" + conf;
         var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
         if (!oFso.FileExists(source_file)) {
-            source_file = oTask.ToolkitPath + "\\bin"+ "\\" + conf + "\\project_tree_builder.exe";
+            source_file = oTask.ToolkitPath + "\\static\\bin"+ "\\" + conf + "\\project_tree_builder.exe";
             if (!oFso.FileExists(source_file)) {
                 WScript.Echo("WARNING: File not found: " + source_file);
                 continue;
@@ -219,15 +223,30 @@ function CopyDatatool(oShell, oTree, oTask)
         target_path += "\\" + conf;
         var source_file = oTask.ToolkitPath + "\\bin" + "\\datatool.exe";
         if (!oFso.FileExists(source_file)) {
-            source_file = oTask.ToolkitPath + "\\bin"+ "\\" + conf + "\\datatool.exe";
+            source_file = oTask.ToolkitPath;
+            if (oTask.DllBuild) {
+                source_file += "\\dll";
+            } else {
+                source_file += "\\static";
+            }
+            source_file += "\\bin"+ "\\" + conf + "\\datatool.exe";
             if (!oFso.FileExists(source_file)) {
                 WScript.Echo("WARNING: File not found: " + source_file);
                 continue;
             }
         }
         execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        if (oTask.DllBuild) {
+            source_file = oFso.GetParentFolderName( source_file) + "\\ncbi_core.dll";
+            if (!oFso.FileExists(source_file)) {
+                WScript.Echo("WARNING: File not found: " + source_file);
+                continue;
+            }
+            execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        }
     }
 }
+/*
 // Collect files names with particular extension
 function CollectFileNames(dir_path, ext)
 {
@@ -379,7 +398,7 @@ function AdjustLocalSite(oShell, oTree, oTask)
         AdjustLocalSiteStatic(oShell, oTree, oTask);
     }
 }
-
+*/
 function SetVerboseFlag(value)
 {
     g_verbose = value;
@@ -457,10 +476,14 @@ function GetDefaultCXX_ToolkitSubFolder()
 function CopyDlls(oShell, oTree, oTask)
 {
     if ( oTask.CopyDlls ) {
+        var oFso = new ActiveXObject("Scripting.FileSystemObject");
         var configs = GetConfigs(oTask);
         for( var config_i = 0; config_i < configs.length; config_i++ ) {
             var config = configs[config_i];
             var dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
+            if (!oFso.FolderExists(dlls_bin_path)) {
+                dlls_bin_path  = oTask.ToolkitPath + "\\dll\\bin\\" + config;
+            }
             var local_bin_path = oTree.BinPathDll  + "\\" + config;
 
             execute(oShell, "copy /Y \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
