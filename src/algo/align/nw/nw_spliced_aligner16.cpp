@@ -96,17 +96,7 @@ CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
 
 // Bit coding (eleven bits per value) for backtrace.
 // --------------------------------------------------
-// [11-8] donors (bitwise OR for multiple types)
-//        1000     ??    (??/??) - arbitrary pair
-//        0100     AT    (AT/AC)
-//        0010     GC    (GC/AG)
-//        0001     GT    (GT/AG)
-// [7-5]  acceptor type
-//        100      ?? (??/??)
-//        011      AC (AT/AC)
-//        010      AG (GC/AG)
-//        001      AG (GT/AG)
-//        000      no acceptor
+// [24-5] intron length, if non-zero
 // [4]    Fc:      1 if gap in 2nd sequence was extended; 0 if it is was opened
 // [3]    Ec:      1 if gap in 1st sequence was extended; 0 if it is was opened
 // [2]    E:       1 if space in 1st sequence; 0 if space in 2nd sequence
@@ -131,7 +121,9 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
     // index calculation: [i,j] = i*n2 + j
     vector<Uint2> stl_bm (N1*N2);
+    vector<Uint1> stl_bm_ext (N1*N2, 0);
     Uint2* backtrace_matrix = &stl_bm[0];
+    Uint1* backtrace_matrix_ext = &stl_bm_ext[0];
     TScore* pV = rowV - 1;
 
     const char* seq1 = m_Seq1 + data->m_offset1 - 1;
@@ -193,6 +185,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         for(unsigned char st = 0; st < splice_type_count_16; ++st) {
             jTail[st] = jHead[st] = 0;
             vBestDonor[st] = kInfMinus;
+            jBestDonor[st] = kMax_UInt;
         }
 
         if(i == N1 - 1 && bFreeGapRight1) {
@@ -280,27 +273,32 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             }
                 
             // check splice signal
-            size_t dnr_pos = 0;
-            Uint2 tracer_dnr = 0xFFFF;
-            Uint2 tracer_acc = 0;
+            size_t intron_length = kMax_UInt;
 	    for(unsigned char st = 0; st < splice_type_count_16; ++st) {
+
+                const bool some_donors = vBestDonor[st] > kInfMinus;
                 if(seq2[j-1] == g_nwspl_acceptor[st][0] &&
-                   seq2[j] == g_nwspl_acceptor[st][1] &&
-                   vBestDonor[st] > kInfMinus || st == g_topidx) {
+                   seq2[j] == g_nwspl_acceptor[st][1] && some_donors
+                   || st == g_topidx && some_donors) {
 
                     vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
                         V = vAcc;
-                        tracer_acc = (st+1) << 4;
-                        dnr_pos = k0 + jBestDonor[st];
-                        tracer_dnr = 0x0080 << st;
+                        intron_length = j - jBestDonor[st];
                     }
                 }
             }
 
-            if(tracer_dnr != 0xFFFF) {
-                backtrace_matrix[dnr_pos] |= tracer_dnr;
-                tracer |= tracer_acc;
+            if(intron_length != kMax_UInt) {
+
+                if(intron_length > 1048575) {
+                    // no space to record introns longer than 2^20
+                    NCBI_THROW(CAlgoAlignException, eInternal,
+                               g_msg_IntronTooLong);
+                }
+
+                backtrace_matrix_ext[k] = (0xFF000 & intron_length) >> 12;
+                tracer |= (0x00FFF & intron_length) << 4;
             }
 
             backtrace_matrix[k] = tracer;
@@ -339,7 +337,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     }
 
     try {
-        x_DoBackTrace(backtrace_matrix, data);
+        x_DoBackTrace(backtrace_matrix, backtrace_matrix_ext, data);
     }
     catch(exception&) { // GCC hack
         throw;
@@ -350,8 +348,10 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
 
 // perform backtrace step;
-void CSplicedAligner16::x_DoBackTrace (const Uint2* backtrace_matrix,
-                                       CNWAligner::SAlignInOut* data)
+void CSplicedAligner16::x_DoBackTrace (
+    const Uint2* backtrace_matrix,
+    const Uint1* backtrace_matrix_ext,
+    CNWAligner::SAlignInOut* data)
 {
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
@@ -366,19 +366,30 @@ void CSplicedAligner16::x_DoBackTrace (const Uint2* backtrace_matrix,
     while (k != 0) {
 
         Uint2 Key = backtrace_matrix[k];
-        while(Key & 0x0070) {  // acceptor
+        Uint2 Key_ext = backtrace_matrix_ext[k];
 
-            unsigned char acc_type = (Key & 0x0070) >> 4;
-            Uint2 dnr_mask = 0x0040 << acc_type;
-            ETranscriptSymbol ets = eTS_Intron;
-            do {
-                data->m_transcript.push_back(ets);
-                Key = backtrace_matrix[--k];
-                --i2;
+        if(Key_ext > 0 || Key & 0xFFF0) {
+
+            const size_t hi8 = Key_ext << 12;
+            const size_t lo12 = (Key & 0xFFF0) >> 4;
+            const size_t intron_length = hi8 | lo12;
+            data->m_transcript.insert(data->m_transcript.end(),
+                                      intron_length,
+                                      eTS_Intron);
+            k -= intron_length;
+            i2 -= intron_length;
+
+            if(intron_length < m_IntronMinSize) {
+                
+                NCBI_THROW(CAlgoAlignException,
+                           eInternal,
+                           "Min intron length violated");
             }
-            while(!(Key & dnr_mask));
 
-            if(Key & 0x0070) {
+            Key_ext = backtrace_matrix_ext[k];
+            Key = backtrace_matrix[k];
+
+            if(Key_ext > 0 || Key & 0xFFF0) {
                 NCBI_THROW(CAlgoAlignException,
                            eInternal,
                            "Adjacent splices encountered during backtrace");
@@ -586,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/14 15:28:17  kapustin
+ * Use extra byte per cell to keep splice jumps up to 1MB
+ *
  * Revision 1.20  2005/04/04 16:34:13  kapustin
  * Specify precise type of diags in raw alignment transcripts where feasible
  *

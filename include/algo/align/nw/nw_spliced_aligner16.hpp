@@ -59,7 +59,7 @@ public:
 
     // returns the size of a single backtrace matrix element
     virtual size_t GetElemSize(void) const {
-        return 2;
+        return 3;
     }
 
     virtual size_t GetSpliceTypeCount(void) {
@@ -80,6 +80,7 @@ protected:
     virtual TScore  x_Align (CNWAligner::SAlignInOut* data);
 
     void x_DoBackTrace(const Uint2* backtrace_matrix,
+                       const Uint1* backtrace_matrix_ext,
                        CNWAligner::SAlignInOut* data);
 };
 
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/14 15:28:04  kapustin
+ * Use extra byte per cell to keep splice jumps up to 1MB
+ *
  * Revision 1.13  2005/04/04 16:32:23  kapustin
  * Distinguish matches from mismatches in raw transcripts
  *
