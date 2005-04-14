@@ -37,6 +37,7 @@
 /// Reader writer with transmission checking
 /// @sa IReader, IWriter
 
+#include <corelib/ncbimisc.hpp>
 #include <util/reader_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -49,7 +50,12 @@ public:
     /// Constructed on another IReader 
     /// (supposed to implement the actual transmission)
     ///
-    CTransmissionReader(IReader* rdr);
+    /// @param rdr 
+    ///    Reader to transmit data (comm. level)
+    ///
+    CTransmissionReader(IReader* rdr, EOwnership own_reader = eNoOwnership);
+    virtual ~CTransmissionReader();
+
     size_t GetPacketBytesToRead() const { return m_PacketBytesToRead; }
 
     virtual ERW_Result Read(void*   buf,
@@ -72,6 +78,7 @@ private:
 
 private:
     IReader*   m_Rdr;
+    EOwnership m_OwnRdr;
     size_t     m_PacketBytesToRead;
     bool       m_ByteSwap;
     bool       m_StartRead;
@@ -82,9 +89,10 @@ private:
 class NCBI_XUTIL_EXPORT CTransmissionWriter : public IWriter
 {
 public:
-    /// Constructed on another IWriter (channel level)
+    /// Constructed on another IWriter (comm. level)
     ///
-    CTransmissionWriter(IWriter* wrt);
+    CTransmissionWriter(IWriter* wrt, EOwnership own_writer = eNoOwnership);
+    virtual ~CTransmissionWriter();
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -94,6 +102,7 @@ public:
 
 private:
     IWriter*     m_Wrt;
+    EOwnership   m_OwnWrt;
 };
 
 END_NCBI_SCOPE
@@ -102,6 +111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/14 16:28:00  kuznets
+ * Added ownership flags
+ *
  * Revision 1.1  2005/04/14 13:46:59  kuznets
  * Initial release
  *

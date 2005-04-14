@@ -36,8 +36,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CTransmissionWriter::CTransmissionWriter(IWriter* wrt)
-: m_Wrt(wrt)
+CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
+: m_Wrt(wrt),
+  m_OwnWrt(own_writer)
 {
     _ASSERT(wrt);
 
@@ -46,6 +47,13 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt)
     ERW_Result res = m_Wrt->Write(&start_word, sizeof(start_word), &written);
     if (res != eRW_Success || written != sizeof(start_word)) {
         _ASSERT(0);
+    }
+}
+
+CTransmissionWriter::~CTransmissionWriter()
+{
+    if (m_OwnWrt) {
+        delete m_Wrt;
     }
 }
 
@@ -82,12 +90,20 @@ ERW_Result CTransmissionWriter::Flush(void)
 
 
 
-CTransmissionReader::CTransmissionReader(IReader* rdr)
+CTransmissionReader::CTransmissionReader(IReader* rdr, EOwnership own_reader)
 : m_Rdr(rdr),
+  m_OwnRdr(own_reader),
   m_PacketBytesToRead(0),
   m_ByteSwap(false),
   m_StartRead(false)
 {
+}
+
+CTransmissionReader::~CTransmissionReader()
+{
+    if (m_OwnRdr) {
+        delete m_Rdr;
+    }
 }
 
 ERW_Result 
@@ -176,6 +192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/14 16:28:36  kuznets
+ * Added ownership flags
+ *
  * Revision 1.2  2005/04/14 14:12:26  ucko
  * +ncbidbg.hpp for _ASSERT
  *
