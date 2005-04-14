@@ -108,6 +108,16 @@ public:
     } while (0)
 
 
+/// Check ERW_Result, throw an exception if something is wrong
+///
+/// @sa ERW_Result
+#define NCBI_IO_CHECK_RW(errnum) \
+    do { \
+        if ( errnum != eRW_Success) { \
+            throw CIO_Exception(DIAG_COMPILE_INFO, \
+               0, (CIO_Exception::EErrCode)errnum, "IO error."); \
+        } \
+    } while (0)
 
 
 END_NCBI_SCOPE
@@ -119,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2005/04/14 18:15:47  kuznets
+ * +NCBI_IO_CHECK_RW
+ *
  * Revision 6.8  2004/10/01 16:06:25  kuznets
  * CIO_Exception placed in ncbi_conn_exception.hpp
  *
