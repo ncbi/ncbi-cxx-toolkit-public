@@ -49,7 +49,7 @@ class IFlatItem;
 //
 // TextOStream
 
-class IFlatTextOStream
+class IFlatTextOStream : public CObject
 {
 public:
     virtual void AddParagraph(const list<string>&  text,
@@ -67,6 +67,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/14 14:42:37  shomrat
+* IFlatTextOStream inherits from CObject
+*
 * Revision 1.1  2003/12/17 19:54:16  shomrat
 * Initial revision (adapted from flat lib)
 *
