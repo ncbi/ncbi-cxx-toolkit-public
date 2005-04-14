@@ -74,9 +74,11 @@ LIB =	xstruct_dp xblast \
 	xser xutil xctools xconnect xncbi
 
 CPPFLAGS = \
-	$(FAST_CPPFLAGS) \
+	$(ORIG_CPPFLAGS) \
 	$(WXWIN_INCLUDE) \
 	$(NCBI_C_INCLUDE)
+
+CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS = $(FAST_LDFLAGS)
 
