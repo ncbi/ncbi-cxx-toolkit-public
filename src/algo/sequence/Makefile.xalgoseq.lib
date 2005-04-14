@@ -3,7 +3,7 @@
 ASN_DEP = seq
 
 SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic \
-	   coiled_coil signal_seq make_cdr_prods find_pattern
+      coiled_coil signal_seq make_cdr_prods find_pattern gene_model
 LIB = xalgoseq
 
 CXXFLAGS = $(FAST_CXXFLAGS)
