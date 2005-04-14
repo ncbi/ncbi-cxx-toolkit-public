@@ -118,13 +118,14 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         lib_dir = CDirEntry::ConcatPath(lib_dir, 
                                         GetApp().GetRegSettings().m_CompilersSubdir);
     }
-    lib_dir = CDirEntry::ConcatPath(lib_dir, 
-                                    GetApp().GetBuildType().GetTypeStr());
-    m_StaticLibRoot = CDirEntry::ConcatPath(lib_dir, "lib");
-    m_DynamicLibRoot = CDirEntry::ConcatPath(lib_dir, "bin");
-// sometimes there is no lib/bin separation -
-// all libs are put into $ConfigurationName folders of the build root
-    if (!CDirEntry(m_StaticLibRoot).Exists()) {
+    string type_dir = CDirEntry::ConcatPath(lib_dir, 
+                                            GetApp().GetBuildType().GetTypeStr());
+// it is either root/buildtype/[lib|bin]/$ConfigurationName
+// or just      root/$ConfigurationName
+    if (CDirEntry(type_dir).Exists()) {
+        m_StaticLibRoot  = CDirEntry::ConcatPath(type_dir, "lib");
+        m_DynamicLibRoot = CDirEntry::ConcatPath(type_dir, "bin");
+    } else {
         m_StaticLibRoot = m_DynamicLibRoot = lib_dir;
     }
 
@@ -1054,6 +1055,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/14 14:22:23  gouriano
+ * Corrected identification of library root folder
+ *
  * Revision 1.50  2005/04/11 17:47:58  gouriano
  * Do not fail when it is impossible to create a relative path
  *
