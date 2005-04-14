@@ -134,14 +134,14 @@ CSeqDB::CSeqDB(const string & dbname, char seqtype)
                          0);
 }
 
-CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype)
+CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
 {
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
                          true,
-                         0);
+                         gi_list);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -481,8 +481,10 @@ CSeqDB::FindVolumePaths(const string   & dbname,
 {
     bool done = false;
     
-    if ((seqtype == 'p') || (seqtype == 'n')) {
-        CSeqDBImpl::FindVolumePaths(dbname, seqtype, paths);
+    if (seqtype == CSeqDB::eProtein) {
+        CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
+    } else if (seqtype == CSeqDB::eNucleotide) {
+        CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
     } else {
         try {
             CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
@@ -522,6 +524,11 @@ CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
             gis.push_back((**seqid).GetGi());
         }
     }
+}
+
+void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
+{
+    m_Impl->SetIterationRange(oid_begin, oid_end);
 }
 
 END_NCBI_SCOPE

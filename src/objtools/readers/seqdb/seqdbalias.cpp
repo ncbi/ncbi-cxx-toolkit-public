@@ -127,6 +127,25 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                                   locked);
         
         if (resolved_name.empty()) {
+            string p_or_n;
+            switch(prot_nucl) {
+            case 'p':
+                p_or_n = "protein";
+                break;
+                
+            case 'n':
+                p_or_n = "nucleotide";
+                break;
+                
+            default:
+                string msg("SeqDB: Internal error: bad sequence type for database [");
+                msg += m_DBList[i] + "]";
+                
+                NCBI_THROW(CSeqDBException,
+                           eFileErr,
+                           msg);
+            }
+            
             // Do over (to get the search path)
             
             string search_path;
@@ -138,7 +157,8 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                                   locked);
             
             string msg("No alias or index file found for component [");
-            msg += m_DBList[i] + "] in search path [" + search_path + "]";
+            msg += m_DBList[i] + "], type [" + p_or_n +
+                "] in search path [" + search_path + "]";
             
             NCBI_THROW(CSeqDBException,
                        eFileErr,

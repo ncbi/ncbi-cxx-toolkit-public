@@ -61,16 +61,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     m_Aliases.SetMasks(m_VolSet);
     m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
-    if ((oid_begin == 0) && (oid_end == 0)) {
-        m_RestrictEnd = m_VolSet.GetNumOIDs();
-    } else {
-        if ((oid_end == 0) || (m_RestrictEnd > m_VolSet.GetNumOIDs())) {
-            m_RestrictEnd = m_VolSet.GetNumOIDs();
-        }
-        if (m_RestrictBegin > m_RestrictEnd) {
-            m_RestrictBegin = m_RestrictEnd;
-        }
-    }
+    SetIterationRange(oid_begin, oid_end);
     
     m_NumSeqs      = x_GetNumSeqs();
     m_NumOIDs      = x_GetNumOIDs();
@@ -88,6 +79,20 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     // flush unconstructed memory leases).
     
     m_FlushCB.SetImpl(this);
+}
+
+void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
+{
+    if ((oid_begin == 0) && (oid_end == 0)) {
+        m_RestrictEnd = m_VolSet.GetNumOIDs();
+    } else {
+        if ((oid_end == 0) || (m_RestrictEnd > m_VolSet.GetNumOIDs())) {
+            m_RestrictEnd = m_VolSet.GetNumOIDs();
+        }
+        if (m_RestrictBegin > m_RestrictEnd) {
+            m_RestrictBegin = m_RestrictEnd;
+        }
+    }
 }
 
 CSeqDBImpl::~CSeqDBImpl()
@@ -207,7 +212,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
         return CSeqDB::eOidRange;
     }
     
-    // Case 3: Ones and Zeros
+    // Case 3: Ones and Zeros - The bitmap provides OIDs.
     
     int next_oid = *state_obj;
     int iter = 0;

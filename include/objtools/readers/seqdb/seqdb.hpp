@@ -195,7 +195,9 @@ public:
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
     ///   Either eProtein, eNucleotide, or eUnknown
-    CSeqDB(const string & dbname, ESeqType seqtype);
+    /// @param gi_list
+    ///   The database will be filtered by this GI list if non-null.
+    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list = 0);
     
     /// @deprecated
     /// Constructor with MMap Flag and OID Range.
@@ -659,13 +661,26 @@ public:
     
     /// Find volume paths
     ///
-    /// Find the base names of all volumes.  This method version of
-    /// this method returns the existing internal versions of the
-    /// resolved volume file base names from that hierarchy.
+    /// Find the base names of all volumes.  This method returns the
+    /// resolved base names of all referenced blast database volumes.
     ///
     /// @param paths
     ///   The returned set of resolved database path names
     void FindVolumePaths(vector<string> & paths) const;
+    
+    /// Set Iteration Range
+    ///
+    /// This method sets the iteration range as a pair of OIDs.
+    /// Iteration proceeds from begin, up to but not including end.
+    /// End will be adjusted to the number of OIDs in the case that it
+    /// is 0, negative, or greater than the number of OIDs.
+    ///
+    /// @param oid_begin
+    ///   Iterator will skip OIDs less than this value.  Only OIDs
+    ///   found in the OID lists (if any) will be returned.
+    /// @param oid_end
+    ///   Iterator will return up to (but not including) this OID.
+    void SetIterationRange(int oid_begin, int oid_end);
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
