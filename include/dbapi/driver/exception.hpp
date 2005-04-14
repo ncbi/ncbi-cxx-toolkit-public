@@ -134,7 +134,9 @@ public:
     virtual void ReportExtra(ostream& out) const;
     virtual CDB_Exception* Clone(void) const;
 
-protected:
+public:
+    // Warning: exception constructor must be "public" because MSVC 7.1 won't
+    // catch parent exceptions other way.
     CDB_Exception(const CDiagCompileInfo& info,
                   const CException* prev_exception,
                   EErrCode err_code,
@@ -147,8 +149,6 @@ protected:
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
 protected:
-    // data
-
     EDiagSev    m_Severity;
     int         m_DBErrCode;
 
@@ -458,6 +458,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/14 18:53:14  ssikorsk
+ * Made CDB_Exception constructor public because MSVC 7.1 does not want
+ * to catch parent exceptions other way.
+ *
  * Revision 1.19  2005/04/12 18:09:39  ssikorsk
  * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
  *
