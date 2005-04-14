@@ -118,8 +118,16 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 	}
     }
 
-    TScore wgleft1   = m_Wg;
-    TScore wsleft1   = m_Ws;
+    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_offset1 == 0;
+    bool bFreeGapRight1 = data->m_esf_R1 &&
+                          m_SeqLen1 == data->m_offset1 + data->m_len1; 
+
+    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_offset2 == 0;
+    bool bFreeGapRight2 = data->m_esf_R2 &&
+                          m_SeqLen2 == data->m_offset2 + data->m_len2; 
+
+    TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
+    TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
     // index calculation: [i,j] = i*N2 + j
@@ -144,8 +152,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     }
 
     // recurrences
-    TScore wgleft2   = m_Wg;
-    TScore wsleft2   = m_Ws;
+    TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
+    TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
     TScore V = 0;
     TScore V0 = wgleft2;
     TScore E, G, n0;
@@ -170,6 +178,10 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
         unsigned char ci = seq1[i];
         ++k;
 
+        if(i == N1 - 1 && bFreeGapRight1) {
+                wg1 = ws1 = 0;
+        }
+
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
         size_t jstart = (di <= 0)? 1: (di + 1);
@@ -191,6 +203,10 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
             else {
                 E = n0 + ws1;  // open a new gap
                 tracer = 0;
+            }
+
+            if(j == n2 - 1 && bFreeGapRight2) {
+                wg2 = ws2 = 0;
             }
 
             if(i == 1 || j < m_band + i) {
@@ -362,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/14 18:57:22  kapustin
+ * Allow end-space free mode
+ *
  * Revision 1.6  2005/04/04 16:34:13  kapustin
  * Specify precise type of diags in raw alignment transcripts where feasible
  *
