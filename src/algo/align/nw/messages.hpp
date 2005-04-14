@@ -29,6 +29,8 @@ const char g_msg_DataNotAvailable[] =
 
 const char g_msg_OutOfSpace[] = "Out of space";
 
+const char g_msg_IntronTooLong[] = "Cannot handle introns longer than 1MB";
+
 const char g_msg_NoAlignment[] = "Sequence not aligned yet";
 
 
@@ -36,6 +38,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2005/04/14 15:28:29  kapustin
+ * More messages added
+ *
  * Revision 1.2  2005/02/23 16:59:38  kapustin
  * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
  *
