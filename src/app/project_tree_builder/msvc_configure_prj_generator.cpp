@@ -210,7 +210,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
         ofs << " -nws";
     }
     if (!GetApp().m_BuildRoot.empty()) {
-        ofs << " -extroot " << GetApp().m_BuildRoot;
+        ofs << " -extroot \"" << GetApp().m_BuildRoot << "\"";
     }
 
     ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/04/14 14:35:58  gouriano
+ * Handle paths with spaces
+ *
  * Revision 1.21  2005/04/13 15:57:33  gouriano
  * Handle paths with spaces
  *
