@@ -135,7 +135,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         CNcbiOstrstream cigar;
         char            last_type = 0;
-        TSeqPos         last_count, tgt_width = alnmap.GetWidth(tgt_row);
+        TSeqPos         last_count = 0, tgt_width = alnmap.GetWidth(tgt_row);
         int             tgt_sign = alnmap.StrandSign(tgt_row);
         TRange          ref_range, tgt_range;
         bool            trivial = true;
@@ -144,7 +144,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         }
         CRef<CAlnMap::CAlnChunkVec> chunks
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
-                                  CAlnMap::fSkipUnalignedGaps);
+                                  CAlnMap::fAddUnalignedChunks);
         for (TNumchunk i0 = 0;  i0 < chunks->size();  ++i0) {
             TNumchunk i = (tgt_sign > 0) ? i0 : (chunks->size() - i0 - 1);
             CConstRef<CAlnMap::CAlnChunk> chunk     = (*chunks)[i];
@@ -285,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/04/14 14:38:22  shomrat
+* Changed CAlnMap flag
+*
 * Revision 1.2  2004/06/22 15:31:40  ucko
 * Remove debugging output.
 *
