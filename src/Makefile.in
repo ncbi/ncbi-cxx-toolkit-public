@@ -54,8 +54,12 @@ libs_to_drop = $(top_srcdir)/scripts/internal/projects/libs_to_drop
 dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
-	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
-	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ)
+	if "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" ; then \
+          find build/*/ -name SunWS_cache -prune -o \
+	    \( -type f -size +64 ! -name '*.o' -print \) | xargs rm -f ; \
+	else \
+	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check ; \
+	fi
 	@test \! -f "$(apps_to_drop)" || \
 	  while read app; do \
 	    test -f "$(bindir)/$$app" || continue; \
