@@ -2,18 +2,18 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "Users:rsmith:fltk" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- Whether to create projects in the specified category.
-property pCreateCoreLibs : false
-property pCreateSocketLibs : false (* whether to create/compile socket libs *)
-property pCreateObjectLibs : false (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : false
-property pCreateGuiLibs : false
+property pCreateCoreLibs : true
+property pCreateSocketLibs : true (* whether to create/compile socket libs *)
+property pCreateObjectLibs : true (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : true
+property pCreateGuiLibs : true
 property pCreatePluginLibs : true
 
 -- true if we want to save compilation errors in a file and continue.
@@ -442,7 +442,7 @@ on SetProjectData()
 		-- AddGuiProject("gui_config", {}, "config")
 		AddGuiProject("gui_math", {}, "math")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"settings.cpp", "settings_set.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"settings.cpp", "settings_set.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
@@ -520,30 +520,30 @@ on SetProjectData()
 			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_aln_multi", "w_seq_graphic"}, {}))
 		
 		-- PLUGINS --
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"xflat", "ncbi_xloader_lds", "entrezgene", "xalgophytree", "fastme", "xobjwrite"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"}) -- "ncbi_xreader_id1c",
+			{"entrezgene", "xobjwrite"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit"}) -- "ncbi_xreader_id1c",
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
+			{"xloader_cdd", "cdd", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
 			{mkFileData(gSourceDir & "gui:plugins:algo:external"), Â
 				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
-			{"xalgoseq", "xcgi"}, {"gui_core"}))
+			{"xcgi"}, {"gui_core"}))
 		AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", Â
 			{"xalgognomon"})
 		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
-		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
-		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
+		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", { "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
+		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", { "xcgi"})
 		
 		-- Document plugins
 		--  
@@ -551,17 +551,16 @@ on SetProjectData()
 			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
 		
 		-- View plugins
-		AddPlugin("gui_view_align", {}, "plugins:view:align", {"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_hit_matrix", "w_seq_graphic", "w_aln_table"})
+		AddPlugin("gui_view_align", {}, "plugins:view:align", {"w_aln_crossaln", "w_hit_matrix"})
 		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_seq_graphic", "gui_graph", "gui_dlg_feat_search", "gui_dlg_seq_goto"})
-		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
-		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
-		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare", "w_feat_table"})
+			{"gui_dlg_feat_search", "gui_dlg_seq_goto"})
+		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d"})
+		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_feat_compare", "w_feat_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"xflat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
+			{"taxon1", "w_taxtree", "w_seq"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
-		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree", "gui_graph", "gui_math", "xalgophytree", "fastme"})
+		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
 		
 	end if
 	
@@ -1080,7 +1079,6 @@ on SetupTarget(proj, targetIndex)
 				copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
-				copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 				-- copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 			end if
 		end if
