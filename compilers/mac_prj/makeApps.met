@@ -286,8 +286,7 @@ on SetProjectData()
 	set pCPlusPlusExt to saveCppExt
 	
 	---------- GENOME WORK BENCH ----------
-	AddAppProjectExcept("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"windows_registry.cpp"}, Â
-		{"w_table", "w_fltable", "w_workspace", "w_aln_multi"}, {"gui_core"})
+	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"w_workspace", "w_controls"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
@@ -306,12 +305,15 @@ on SetProjectData()
 	
 	if pBuildDemos then
 		---- DEMO ---
+		
+		AddAppProject("test_scoremat", {"cmdline", "C++"}, "util:tables:test", {"tables", "xncbi"}, {})
+		
 		AddAppProjectList("glsysinfo", {"fltk", "images", "cmdline"}, "gui:widgets:fl:demo", {"system_test.cpp"}, {"w_fltk", "gui_opengl", "gui_print", "gui_utils", "gui_math", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
 		
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
 		
-		-- AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
 		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
