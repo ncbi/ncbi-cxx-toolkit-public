@@ -401,7 +401,7 @@ void CFlatGeneSynonymsQVal::Format
     }
     string qual = name;
     string syns;
-    if (ctx.Config().GeneSynsToNote()) {
+    if (!ctx.IsRefSeq()  ||  ctx.Config().GeneSynsToNote()) {
         qual = "note";
         syns = (GetValue().size() > 1) ? "synonyms: " : "synonym: ";
     } 
@@ -885,9 +885,18 @@ void CFlatAnticodonQVal::Format
     }
 
     CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
+    bool minus = (m_Anticodon->GetStrand() == eNa_strand_minus);
+
     CNcbiOstrstream text;
-    text << "(pos:" << range.GetFrom() + 1 << ".." << range.GetTo() + 1
-         << ",aa:" << m_Aa << ")";
+    text << "(pos:";
+    if (minus) {
+        text << "complement(";
+    }
+    text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
+    if (minus) {
+        text << ')';
+    }
+    text << ",aa:" << m_Aa << ')';
 
     x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFormatQual::eUnquoted);
 }
@@ -936,6 +945,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/04/15 12:29:41  shomrat
+* Handle anticodon location on minus strand
+*
 * Revision 1.27  2005/03/31 14:55:14  shomrat
 * Bug fix - formatting pmid in go qual
 *
