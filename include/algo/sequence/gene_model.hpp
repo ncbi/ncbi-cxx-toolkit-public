@@ -40,7 +40,7 @@ BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_align;
     class CSeq_annot;
-END_SCOPE(objects);
+END_SCOPE(objects)
 
 
 class NCBI_XALGOSEQ_EXPORT CGeneModel
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/15 01:47:51  ucko
+ * Remove illegal semicolon after END_SCOPE macro.
+ *
  * Revision 1.1  2005/04/14 16:48:38  dicuccio
  * Initial revision of CGeneModel
  *
