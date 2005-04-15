@@ -1,4 +1,4 @@
---$Revision: 1.27 $ 
+--$Revision: 1.28 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -75,7 +75,8 @@ Gene-track ::= SEQUENCE {
     } DEFAULT live ,
     current-id SEQUENCE OF Dbtag OPTIONAL , -- see note 1 below
     create-date Date ,   -- date created in Entrez 
-    update-date Date }   -- last date updated in Entrez 
+    update-date Date ,   -- last date updated in Entrez 
+    discontinue-date Date OPTIONAL } --
  
 Gene-source ::= SEQUENCE { 
     src VisibleString ,                -- key to the source within NCBI locuslink, Ecoli, etc 
