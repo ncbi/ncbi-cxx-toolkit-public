@@ -252,7 +252,10 @@ void ParseVersionString(const string&  vstr,
 {
     _ASSERT(program_name);
     _ASSERT(ver);
-    _ASSERT(!vstr.empty());
+
+    if (vstr.empty()) {
+        NCBI_THROW2(CStringException, eFormat, "Version string is empty", 0);
+    }
 
     program_name->erase();
 
@@ -274,9 +277,34 @@ void ParseVersionString(const string&  vstr,
             pos = lo_vstr.find(version_pattern);
 
             if (pos == string::npos) {
-                // find the first digit and assume it's version
                 version_pattern = "";
-                pos = vstr.find_first_of("0123456789");
+                // find the first space-digit and assume it's version
+                const char* ch = vstr_str;
+                for (; *ch; ++ch) {
+                    if (isdigit(*ch)) {
+                        if (ch == vstr_str) {
+                            // check if it's version
+                            const char* ch2 = ch + 1;
+                            for (; *ch2; ++ch2) {
+                                if (!isdigit(*ch2)) {
+                                    break;
+                                }
+                            } // for
+                            if (*ch2 == '.') {
+                                pos = ch - vstr_str;
+                                break;
+                            } else {
+                                continue;
+                            }
+                        } else {
+                            if (isspace(*(ch-1))) {
+                                pos = ch - vstr_str;
+                                break;
+                            }
+                        }
+                    } // if digit
+                    
+                } // for
             }
         }
     }
@@ -326,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/18 14:26:03  kuznets
+ * Improved version string parser
+ *
  * Revision 1.12  2005/04/05 20:52:59  kuznets
  * Cosmetics...
  *
