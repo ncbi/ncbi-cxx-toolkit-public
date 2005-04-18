@@ -33,7 +33,8 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
@@ -102,6 +103,7 @@ CBioseqContext::CBioseqContext
     m_Gi(0),
     m_ShowGBBSource(false),
     m_PatSeqid(0),
+    m_HasOperon(false),
     m_FFCtx(ffctx),
     m_Master(mctx)
 {
@@ -169,6 +171,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     x_SetLocation(user_loc);
     
+    m_Encode.Reset(x_GetEncode());
     
     m_HasOperon = x_HasOperon();
 }
@@ -368,15 +371,18 @@ bool CBioseqContext::x_IsPart() const
          m_Repr == CSeq_inst::eRepr_const  ||
          m_Repr == CSeq_inst::eRepr_delta  ||
          m_Repr == CSeq_inst::eRepr_virtual ) {
-        CSeq_entry_Handle eh = m_Handle.GetParentEntry();
-        _ASSERT(eh  &&  eh.IsSeq());
+         const CSeq_entry_Handle& fftse = GetTopLevelEntry();
+         CSeq_entry_Handle eh = m_Handle.GetParentEntry();
+         _ASSERT(eh  &&  eh.IsSeq());
 
-        eh = eh.GetParentEntry();
-        if ( eh  &&  eh.IsSet() ) {
-            CBioseq_set_Handle bsst = eh.GetSet();
-            if ( bsst.IsSetClass()  &&  
-                 bsst.GetClass() == CBioseq_set::eClass_parts ) {
-                return true;
+         if (fftse != eh) {
+             eh = eh.GetParentEntry();
+             if ( eh  &&  eh.IsSet() ) {
+                 CBioseq_set_Handle bsst = eh.GetSet();
+                 if ( bsst.IsSetClass()  &&
+                     bsst.GetClass() == CBioseq_set::eClass_parts ) {
+                     return true;
+                 }
             }
         }
     }
@@ -475,6 +481,20 @@ bool CBioseqContext::DoContigStyle(void) const
     }
 
     return false;
+}
+
+
+const CUser_object* CBioseqContext::x_GetEncode(void) const
+{
+    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
+            if (NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE")) {
+                return &uo;
+            }
+        }
+    }
+    return NULL;
 }
 
 
@@ -632,6 +652,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/04/18 13:49:34  shomrat
+* Added support for ENCODE project
+*
 * Revision 1.37  2005/03/28 17:18:39  shomrat
 * Support for complex user location
 *

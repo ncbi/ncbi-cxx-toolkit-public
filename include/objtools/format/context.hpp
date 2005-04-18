@@ -34,7 +34,7 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-
+#include <objects/general/User_object.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -67,7 +67,7 @@ class CFlatFileContext;
 //
 // information on the bioseq being formatted
 
-class CBioseqContext : public CObject
+class NCBI_FORMAT_EXPORT CBioseqContext : public CObject
 {
 public:
     // types
@@ -165,6 +165,9 @@ public:
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
     
+    bool IsEncode             (void) const;  // provided by the ENCODE project
+    const CUser_object& GetEncode(void) const;
+
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
     // patent seqid
@@ -197,6 +200,7 @@ private:
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
     bool x_HasOperon(void) const;
+    const CUser_object* x_GetEncode(void) const;
 
     // data
     CBioseq_Handle        m_Handle;
@@ -241,6 +245,8 @@ private:
     bool m_ShowGBBSource;
     int  m_PatSeqid;
     bool m_HasOperon;
+
+    CConstRef<CUser_object> m_Encode;
     
     TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
@@ -428,6 +434,19 @@ bool CBioseqContext::IsRSWGSProt(void)  const
 }
 
 inline
+bool CBioseqContext::IsEncode(void)  const
+{
+    return m_Encode.NotEmpty();
+}
+
+inline
+const CUser_object& CBioseqContext::GetEncode(void)  const
+{
+    _ASSERT(IsEncode());
+    return *m_Encode;
+}
+
+inline
 const CFlatFileConfig& CBioseqContext::Config(void) const
 {
     return m_FFCtx.GetConfig();
@@ -538,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/04/18 13:47:13  shomrat
+* Added support for ENCODE project
+*
 * Revision 1.25  2005/03/28 17:04:00  shomrat
 * Support for complex user location
 *
