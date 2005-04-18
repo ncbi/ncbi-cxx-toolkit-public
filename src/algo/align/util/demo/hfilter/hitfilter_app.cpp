@@ -33,7 +33,7 @@
 
 #include "hitfilter_app.hpp"
 
-#include <algo/align/util/align_shadow.hpp>
+#include <algo/align/util/blast_tabular.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -53,21 +53,22 @@ void CAppHitFilter::Init()
 
 int CAppHitFilter::Run()
 { 
-    typedef CConstRef<CSeq_id>     TId;
-    typedef CAlignShadow<TId>      THit;
-    typedef CRef<THit>             THitRef;
-    typedef vector<THitRef>        THitRefs;
+    //typedef CConstRef<CSeq_id>     TId;
+    typedef Uint4     TId;
+    typedef CBlastTabular<TId>     THit;
+    typedef vector<THit>           THits;
     
     // read hits from stdin
-    THitRefs hits;
+    THits hits;
     while(cin) {
 
-        char line [2000];
+        char line [1024];
         cin.getline(line, sizeof line, '\n');
         string s (NStr::TruncateSpaces(line));
         if(s.size()) {
-            THitRef hitref(new THit(s.c_str()));
-            hits.push_back(hitref);
+
+            THit hit (s.c_str());
+            hits.push_back(hit);
         }
     }
 
@@ -75,8 +76,8 @@ int CAppHitFilter::Run()
     // ... ... ...
 
     // dump the result
-    ITERATE(THitRefs, ii, hits) {
-         cout << **ii << endl;
+    ITERATE(THits, ii, hits) {
+         cout << *ii << endl;
     }
 
     return 0;
@@ -103,8 +104,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/18 15:24:48  kapustin
+ * Split CAlignShadow into core and blast tabular representation
+ *
  * Revision 1.3  2004/12/22 21:26:18  kapustin
- * Move friend template definition to the header. Declare explicit specialization.
+ * Move friend template definition to the header. Declare explicit 
+ * specialization.
  *
  * Revision 1.2  2004/12/21 22:45:19  kapustin
  * Temporarily comment out the code

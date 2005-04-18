@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = align_shadow
+SRC = align_shadow blast_tabular
 
 LIB = xalgoalignutil
 
