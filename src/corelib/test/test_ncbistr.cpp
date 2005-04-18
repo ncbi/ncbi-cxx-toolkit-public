@@ -999,8 +999,8 @@ int CTestApplication::Run(void)
     assert(pname.empty());
     assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 2);
 
-    ParseVersionString("Program 1.3.3", &pname, &ver);
-    assert(pname == "Program");
+    ParseVersionString("My_Program21p32c 1.3.3", &pname, &ver);
+    assert(pname == "My_Program21p32c");
     assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 3);
 
     ParseVersionString("version 50.1.0", &pname, &ver);
@@ -1015,13 +1015,18 @@ int CTestApplication::Run(void)
     assert(pname ==  "MyProgram");
     assert(ver.GetMajor() == 50 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("MyOtherProgram ver 51.3.1", &pname, &ver);
-    assert(pname ==  "MyOtherProgram");
+    ParseVersionString("MyOtherProgram2 ver 51.3.1", &pname, &ver);
+    assert(pname ==  "MyOtherProgram2");
     assert(ver.GetMajor() == 51 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("Program v. 1.3.1", &pname, &ver);
-    assert(pname ==  "Program");
+    ParseVersionString("Program_ v. 1.3.1", &pname, &ver);
+    assert(pname ==  "Program_");
     assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+
+    ParseVersionString("MyProgram ", &pname, &ver);
+    assert(pname ==  "MyProgram");
+    assert(ver.IsAny());
+
 
     }}
 
@@ -1051,6 +1056,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.38  2005/04/18 14:26:34  kuznets
+ * More complicated version string cases
+ *
  * Revision 6.37  2005/04/04 16:17:41  kuznets
  * + Test for version strings
  *
