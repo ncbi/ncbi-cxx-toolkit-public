@@ -324,7 +324,8 @@ static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
             ++gc_count;
         }
     }
-    unsigned int gc_percent((100.0 * gc_count) / xcript_vec.size() + 0.5);
+    unsigned int gc_percent(static_cast<unsigned int>
+                            ((100.0 * gc_count) / xcript_vec.size() + 0.5));
     
     // Load models from file
     if (!ctx->HasKey("gnomon_model_file")) {
@@ -749,6 +750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/18 18:33:15  jcherry
+ * Explicit cast to eliminate compiler warning
+ *
  * Revision 1.12  2004/11/18 21:27:40  grichenk
  * Removed default value for scope argument in seq-loc related functions.
  *
