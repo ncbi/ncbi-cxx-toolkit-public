@@ -249,7 +249,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
-    if (kSeqTypeProt == m_SeqType) {
+    if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
             return vol->GetSeqLengthProt(vol_oid);
         }
@@ -271,7 +271,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
-    if (kSeqTypeProt == m_SeqType) {
+    if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
             return vol->GetSeqLengthProt(vol_oid);
         }
@@ -440,7 +440,7 @@ char CSeqDBImpl::GetSeqType() const
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return vol->GetSeqType();
     }
-    return kSeqTypeUnkn;
+    return '-';
 }
 
 string CSeqDBImpl::GetDate() const

@@ -47,7 +47,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
         for(int i = 0; i < (int) vol_names.size(); i++) {
             x_AddVolume(atlas, vol_names[i], prot_nucl, user_gilist, locked);
             
-            if (prot_nucl == kSeqTypeUnkn) {
+            if (prot_nucl == '-') {
                 // Once one volume picks a prot/nucl type, enforce that
                 // for the rest of the volumes.  This should happen at
                 // most once.

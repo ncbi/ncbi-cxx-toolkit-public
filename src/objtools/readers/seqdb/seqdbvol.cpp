@@ -115,7 +115,7 @@ int CSeqDBVol::GetSeqLengthProt(int oid) const
     
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT(kSeqTypeProt == m_Idx.GetSeqType());
+    _ASSERT('p' == m_Idx.GetSeqType());
     
     // Subtract one, for the inter-sequence null.
     return int(end_offset - start_offset - 1);
@@ -131,7 +131,7 @@ int CSeqDBVol::GetSeqLengthExact(int oid) const
     
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
+    _ASSERT(m_Idx.GetSeqType() == 'n');
     
     int whole_bytes = int(end_offset - start_offset - 1);
     
@@ -155,7 +155,7 @@ int CSeqDBVol::GetSeqLengthApprox(int oid) const
     
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
+    _ASSERT(m_Idx.GetSeqType() == 'n');
     
     int whole_bytes = int(end_offset - start_offset - 1);
     
@@ -1142,7 +1142,7 @@ CSeqDBVol::GetBioseq(int                   oid,
     
     CSeq_inst & seqinst = bioseq->SetInst();
     
-    bool is_prot = (x_GetSeqType() == kSeqTypeProt);
+    bool is_prot = (x_GetSeqType() == 'p');
     
     if (is_prot) {
         s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
@@ -1260,7 +1260,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
 {
     int base_length = -1;
     
-    if (kSeqTypeProt == m_Idx.GetSeqType()) {
+    if ('p' == m_Idx.GetSeqType()) {
         if (alloc_type == eAtlas) {
             base_length = x_GetSequence(oid, (const char**) buffer, true, locked, false);
         } else {
@@ -1338,7 +1338,7 @@ int CSeqDBVol::x_GetSequence(int              oid,
     
     char seqtype = m_Idx.GetSeqType();
     
-    if (kSeqTypeProt == seqtype) {
+    if ('p' == seqtype) {
         // Subtract one, for the inter-sequence null.
         
         end_offset --;
@@ -1351,7 +1351,7 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // walk off memory if a sequence ends on a slice boundary.
         
         *buffer = m_Seq.GetRegion(start_offset-1, end_offset+1, keep, locked) + 1;
-    } else if (kSeqTypeNucl == seqtype) {
+    } else if ('n' == seqtype) {
         // The last byte is partially full; the last two bits of
         // the last byte store the number of nucleotides in the
         // last byte (0 to 3).
@@ -1851,7 +1851,7 @@ int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
                    "Residue offset not in valid range.");
     }
     
-    if (kSeqTypeNucl == m_Idx.GetSeqType()) {
+    if ('n' == m_Idx.GetSeqType()) {
         // Input range is from 0 .. total_length
         // Require range from  0 .. byte_length
         
@@ -1883,7 +1883,7 @@ int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
     while(oid_beg < oid_end) {
         Uint8 offset = x_GetSeqResidueOffset(oid_mid);
         
-        if (kSeqTypeProt == m_Idx.GetSeqType()) {
+        if ('p' == m_Idx.GetSeqType()) {
             offset -= oid_mid;
         }
         

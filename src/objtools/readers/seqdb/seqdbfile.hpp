@@ -448,8 +448,8 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 {
     m_ProtNucl = prot_nucl;
     
-    if ((m_ProtNucl != kSeqTypeProt) &&
-        (m_ProtNucl != kSeqTypeNucl)) {
+    if ((m_ProtNucl != 'p') &&
+        (m_ProtNucl != 'n')) {
         
         NCBI_THROW(CSeqDBException, eArgErr,
                    "Invalid argument: seq type must be 'p' or 'n'.");
@@ -500,7 +500,7 @@ public:
         m_Atlas.RetRegion((const char *) m_HdrRegion);
         m_Atlas.RetRegion((const char *) m_SeqRegion);
         
-        _ASSERT((m_AmbRegion == 0) == (m_ProtNucl == kSeqTypeProt));
+        _ASSERT((m_AmbRegion == 0) == (m_ProtNucl == 'p'));
         
         if (m_AmbRegion) {
             m_Atlas.RetRegion((const char *) m_AmbRegion);
@@ -669,7 +669,7 @@ private:
 bool
 CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if (kSeqTypeNucl == x_GetSeqType()) {
+    if ('n' == x_GetSeqType()) {
         start = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
         end   = SeqDB_GetStdOrd(& m_SeqRegion[oid+1]);
         
@@ -691,7 +691,7 @@ CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
     start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
     
-    if (kSeqTypeProt == x_GetSeqType()) {
+    if ('p' == x_GetSeqType()) {
         end = SeqDB_GetStdOrd(& m_SeqRegion[oid+1]);
     } else {
         end = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
