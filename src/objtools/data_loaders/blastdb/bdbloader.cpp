@@ -91,7 +91,9 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string&        loader_name,
       m_dbtype(param.m_DbType)
      
 {
-    CRef<CSeqDB> seq_db(new CSeqDB(param.m_DbName, param.m_DbType ==  eProtein ? 'p' : 'n'));
+    CRef<CSeqDB> seq_db(new CSeqDB(param.m_DbName, (param.m_DbType == eProtein
+                                                    ? CSeqDB::eProtein
+                                                    : CSeqDB::eNucleotide)));
     m_seqdb = seq_db;
 }
 
@@ -254,6 +256,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.21  2005/04/18 16:11:29  bealer
+ * - Remove use of deprecated SeqDB methods.
+ *
  * Revision 1.20  2004/12/22 20:42:53  grichenk
  * Added entry points registration funcitons
  *
