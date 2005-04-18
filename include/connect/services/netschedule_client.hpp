@@ -621,11 +621,11 @@ public:
 };
 
 
-/// Parse blob key string into a CNetSchedule_Key structure
+/// Parse job key string into a CNetSchedule_Key structure
 extern NCBI_XCONNECT_EXPORT
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str);
 
-/// Parse blob key, extract job id
+/// Parse job key, extract job id
 extern NCBI_XCONNECT_EXPORT
 unsigned CNetSchedule_GetJobId(const string&  key_str);
 
@@ -674,6 +674,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/18 18:32:01  kuznets
+ * Comments correction
+ *
  * Revision 1.23  2005/04/11 13:50:10  kuznets
  * +Logging()
  *
