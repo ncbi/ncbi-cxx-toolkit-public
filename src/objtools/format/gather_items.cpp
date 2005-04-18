@@ -558,13 +558,18 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
         switch ( id.Which() ) {
         case CSeq_id::e_Other:
             {{
-                if ( ctx.IsRSCompleteGenomic() ) {
+                if ( ctx.IsRSCompleteGenomic() ) {  // NC
                     if ( !genome_build_number.empty() ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
                 if ( ctx.IsRSContig()  ||  ctx.IsRSIntermedWGS() ) {
-                    if ( !has_ref_track_status ) {
+                    if ( ctx.IsEncode() ) {
+                        string encode = CCommentItem::GetStringForEncode(ctx);
+                        if ( !NStr::IsBlank(encode) ) {
+                            x_AddComment(new CCommentItem(encode, ctx));
+                        }
+                    } else if ( !has_ref_track_status ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
@@ -758,6 +763,7 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
          mi.GetCompleteness() != CMolInfo::eCompleteness_unknown ) {
         string str = CCommentItem::GetStringForMolinfo(mi, ctx);
         if ( !str.empty() ) {
+            AddPeriod(str);
             x_AddComment(new CCommentItem(str, ctx, &(*desc)));
         }
     }
@@ -1543,7 +1549,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         }
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
-                loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_All, &scope);
+                loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
             }
         }
         if (!loc  ||  loc->IsNull()) {
@@ -1597,6 +1603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2005/04/18 13:50:26  shomrat
+* Added ENCODE comment
+*
 * Revision 1.45  2005/03/29 18:18:09  shomrat
 * Use CBarcodeComment
 *
