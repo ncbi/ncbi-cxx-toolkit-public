@@ -599,15 +599,15 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
    Int8 total_length;
    Int4 num_seqs;
 
-   total_length = BLASTSeqSrcGetTotLen(seq_src);
+   total_length = BlastSeqSrcGetTotLen(seq_src);
    
    if (total_length > 0) {
-      num_seqs = BLASTSeqSrcGetNumSeqs(seq_src);
+      num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
    } else {
       /* Not a database search; each subject sequence is considered
          individually */
       Int4 oid=0;  /* Get length of first sequence. */
-      if ((total_length=BLASTSeqSrcGetSeqLen(seq_src, (void*) &oid)) < 0)
+      if ((total_length=BlastSeqSrcGetSeqLen(seq_src, (void*) &oid)) < 0)
           return -1;
       num_seqs = 1;
    }
@@ -630,7 +630,7 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */
-   max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
+   max_subject_length = BlastSeqSrcGetMaxSeqLen(seq_src);
 
    if ((status = BLAST_GapAlignStructNew(*score_params, *ext_params, 
                     max_subject_length, sbp, gap_align)) != 0) {

@@ -35,6 +35,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_seqsrc_impl.h>
 #include "blast_setup.hpp"
 
 #include <memory>
@@ -294,33 +295,12 @@ s_MultiSeqGetSeqLen(void* multiseq_handle, void* args)
     return seq_info->GetSeqBlk(index)->length;
 }
 
-/// Gets the next sequence index, given a BlastSeqSrc pointer.
-/// @param seqsrc The BlastSeqSrc on which iteration occurs. [in]
-/// @param itr Iterator over seqsrc [in] [out]
-/// @return Next index in the sequence set
-static Int4 
-s_MultiSeqIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
-{
-    BlastSeqSrc* seq_src = (BlastSeqSrc*) seqsrc;
-    Int4 retval = BLAST_SEQSRC_EOF;
-    Int2 status = 0;
-
-    ASSERT(seq_src);
-    ASSERT(itr);
-
-    if ((status = BLASTSeqSrcGetNextChunk(seq_src, itr))
-        == BLAST_SEQSRC_EOF) {
-        return status;
-    }
-    retval = itr->current_pos++;
-
-    return retval;
-}
-
 /// Mirrors the database iteration interface. Next chunk of indices retrieval 
 /// is really just a check that current index has not reached the end.
 /// @todo Does this need to be so complicated? Why not simply have all logic in 
-///       s_MultiSeqIteratorNext?
+///       s_MultiSeqIteratorNext? - Answer: as explained in the comments, the
+///       GetNextChunk functionality is provided as a convenience to provide
+///       MT-safe iteration over a BlastSeqSrc implementation.
 /// @param multiseq_handle Pointer to the multiple sequence object [in]
 /// @param itr Iterator over multiseq_handle [in] [out]
 /// @return Status.
@@ -339,6 +319,28 @@ s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
         return BLAST_SEQSRC_EOF;
 
     return BLAST_SEQSRC_SUCCESS;
+}
+
+/// Gets the next sequence index, given a BlastSeqSrc pointer.
+/// @param seqsrc The BlastSeqSrc on which iteration occurs. [in]
+/// @param itr Iterator over seqsrc [in] [out]
+/// @return Next index in the sequence set
+static Int4 
+s_MultiSeqIteratorNext(void* multiseq_handle, BlastSeqSrcIterator* itr)
+{
+    Int4 retval = BLAST_SEQSRC_EOF;
+    Int2 status = 0;
+
+    ASSERT(multiseq_handle);
+    ASSERT(itr);
+
+    if ((status = s_MultiSeqGetNextChunk(multiseq_handle, itr))
+        == BLAST_SEQSRC_EOF) {
+        return status;
+    }
+    retval = itr->current_pos++;
+
+    return retval;
 }
 
 /// Encapsulates the arguments needed to initialize multi-sequence source.
@@ -360,7 +362,7 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
     if (!seq_src) 
         return NULL;
     CMultiSeqInfo* seq_info = static_cast<CMultiSeqInfo*>
-                                (GetDataStructure(seq_src));
+                                (_BlastSeqSrcImpl_GetDataStructure(seq_src));
 
     delete seq_info;
     sfree(seq_src);
@@ -375,41 +377,38 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
 static BlastSeqSrc* 
 s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 {
-    if ( !retval ) {
-        return (BlastSeqSrc*) NULL;
-    }
+    ASSERT(retval);
+    ASSERT(args);
 
     SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
-    ASSERT(seqsrc_args);
     
     CMultiSeqInfo* seq_info =  NULL;
     try {
         seq_info = new CMultiSeqInfo(seqsrc_args->seq_vector, 
                                      seqsrc_args->program);
     } catch (const ncbi::CException& e) {
-        SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
     } catch (const std::exception& e) {
-        SetInitErrorStr(retval, strdup(e.what()));
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.what()));
     } catch (...) {
-        SetInitErrorStr(retval, strdup("Caught unknown exception from "
-                                       "CMultiSeqInfo constructor"));
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, 
+             strdup("Caught unknown exception from CMultiSeqInfo constructor"));
     }
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
-    SetDeleteFnPtr(retval, &s_MultiSeqSrcFree);
-    SetDataStructure(retval, (void*) seq_info);
-    SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
-    SetGetMaxSeqLen(retval, &s_MultiSeqGetMaxLength);
-    SetGetAvgSeqLen(retval, &s_MultiSeqGetAvgLength);
-    SetGetTotLen(retval, &s_MultiSeqGetTotLen);
-    SetGetName(retval, &s_MultiSeqGetName);
-    SetGetIsProt(retval, &s_MultiSeqGetIsProt);
-    SetGetSequence(retval, &s_MultiSeqGetSequence);
-    SetGetSeqLen(retval, &s_MultiSeqGetSeqLen);
-    SetGetNextChunk(retval, &s_MultiSeqGetNextChunk);
-    SetIterNext(retval, &s_MultiSeqIteratorNext);
-    SetReleaseSequence(retval, &s_MultiSeqReleaseSequence);
+    _BlastSeqSrcImpl_SetDeleteFnPtr(retval, &s_MultiSeqSrcFree);
+    _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
+    _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_MultiSeqGetMaxLength);
+    _BlastSeqSrcImpl_SetGetAvgSeqLen(retval, &s_MultiSeqGetAvgLength);
+    _BlastSeqSrcImpl_SetGetTotLen(retval, &s_MultiSeqGetTotLen);
+    _BlastSeqSrcImpl_SetGetName(retval, &s_MultiSeqGetName);
+    _BlastSeqSrcImpl_SetGetIsProt(retval, &s_MultiSeqGetIsProt);
+    _BlastSeqSrcImpl_SetGetSequence(retval, &s_MultiSeqGetSequence);
+    _BlastSeqSrcImpl_SetGetSeqLen(retval, &s_MultiSeqGetSeqLen);
+    _BlastSeqSrcImpl_SetIterNext(retval, &s_MultiSeqIteratorNext);
+    _BlastSeqSrcImpl_SetReleaseSequence(retval, &s_MultiSeqReleaseSequence);
 
     return retval;
 }
@@ -447,6 +446,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2005/04/18 14:00:44  camacho
+ * Updates following BlastSeqSrc reorganization
+ *
  * Revision 1.30  2005/04/13 22:34:47  camacho
  * Renamed BlastSeqSrc RetSequence to ReleaseSequence
  *
@@ -505,7 +507,7 @@ END_NCBI_SCOPE
  * Commented out unused argument name
  *
  * Revision 1.14  2004/04/28 19:38:20  dondosha
- * Added implementation of BLASTSeqSrcReleaseSequence function
+ * Added implementation of BlastSeqSrcReleaseSequence function
  *
  * Revision 1.13  2004/03/26 19:18:40  dondosha
  * Minor correction in assigning sequence pointer in returned sequence block

@@ -40,6 +40,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/core/blast_seqsrc_impl.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -341,6 +342,26 @@ CBlastSeqSrc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 }
 
 void
+CBlastSeqSrcIterator::DebugDump(CDebugDumpContext ddc, 
+                                unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastSeqSrcIterator");
+    if (!m_Ptr)
+        return;
+
+    string iterator_type;
+    switch (m_Ptr->itr_type) {
+    case eOidList: iterator_type = "oid_list"; break;
+    case eOidRange: iterator_type = "oid_range"; break;
+    default: abort();
+    }
+
+    ddc.Log("itr_type", iterator_type);
+    ddc.Log("current_pos", m_Ptr->current_pos);
+    ddc.Log("chunk_sz", m_Ptr->chunk_sz);
+}
+
+void
 CBlast_Message::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CBlast_Message");
@@ -506,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.70  2005/04/18 14:00:44  camacho
+ * Updates following BlastSeqSrc reorganization
+ *
  * Revision 1.69  2005/03/28 16:26:06  camacho
  * + CBlastHSPResults::DebugDump
  *

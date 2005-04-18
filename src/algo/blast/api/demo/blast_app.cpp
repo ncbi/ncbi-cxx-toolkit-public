@@ -395,8 +395,8 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     if (args["searchsp"].AsDouble()) {
         opt.SetEffectiveSearchSpace((Int8) args["searchsp"].AsDouble());
     } else if (seq_src) {
-        opt.SetDbLength(BLASTSeqSrcGetTotLen(seq_src));
-        opt.SetDbSeqNum(BLASTSeqSrcGetNumSeqs(seq_src));
+        opt.SetDbLength(BlastSeqSrcGetTotLen(seq_src));
+        opt.SetDbSeqNum(BlastSeqSrcGetNumSeqs(seq_src));
     }
 
     if (args["hitlist"].AsInteger()) {

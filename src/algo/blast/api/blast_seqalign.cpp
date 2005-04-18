@@ -1208,6 +1208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2005/04/18 14:00:44  camacho
+* Updates following BlastSeqSrc reorganization
+*
 * Revision 1.56  2005/04/06 23:29:04  dondosha
 * Doxygen fixes
 *
@@ -1269,7 +1272,7 @@ END_NCBI_SCOPE
 * add use of eRPSBlast program
 *
 * Revision 1.36  2004/04/06 20:47:14  dondosha
-* Check if BLASTSeqSrcGetSeqId returns a pointer to CRef instead of a simple pointer to CSeq_id
+* Check if BlastSeqSrcGetSeqId returns a pointer to CRef instead of a simple pointer to CSeq_id
 *
 * Revision 1.35  2004/03/24 19:14:14  dondosha
 * BlastHSP structure does not have ordering_method field any more, but it does contain a splice_junction field

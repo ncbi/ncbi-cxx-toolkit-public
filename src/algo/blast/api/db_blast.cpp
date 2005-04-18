@@ -299,7 +299,7 @@ void CDbBlast::x_InitRPSFields()
 {
     EBlastProgramType program = m_OptsHandle->GetOptions().GetProgramType();
     if (program == eBlastTypeRpsBlast || program == eBlastTypeRpsTblastn) {
-        string dbname(BLASTSeqSrcGetName(m_pSeqSrc));
+        string dbname(BlastSeqSrcGetName(m_pSeqSrc));
         x_Blast_RPSInfoInit(&m_ipRpsInfo, &m_ipRpsMmap, 
                             &m_ipRpsPssmMmap, dbname);
         m_OptsHandle->SetOptions().SetMatrixName(m_ipRpsInfo->aux_info.orig_score_matrix);
@@ -425,7 +425,7 @@ void CDbBlast::SetupSearch()
     }
     
     // Check if subject sequence source is of correct molecule type
-    bool seqsrc_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
+    bool seqsrc_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
     bool db_is_prot = (x_eProgram == eBlastTypeBlastp || 
                        x_eProgram == eBlastTypeBlastx ||
                        x_eProgram == eBlastTypeRpsBlast ||
@@ -508,8 +508,8 @@ void CDbBlast::SetupSearch()
 
         // Fill the effective search space values in the BlastQueryInfo
         // structure, so it doesn't have to be done separately by each thread.
-        Int8 total_length = BLASTSeqSrcGetTotLen(m_pSeqSrc);
-        Int4 num_seqs = BLASTSeqSrcGetNumSeqs(m_pSeqSrc);
+        Int8 total_length = BlastSeqSrcGetTotLen(m_pSeqSrc);
+        Int4 num_seqs = BlastSeqSrcGetNumSeqs(m_pSeqSrc);
         BlastEffectiveLengthsParameters* eff_len_params = NULL;
 
         /* Initialize the effective length parameters with real values of
@@ -646,8 +646,8 @@ CDbBlast::x_Results2SeqAlign()
 
     bool gappedMode = GetOptionsHandle().GetGappedMode();
     bool outOfFrameMode = GetOptionsHandle().GetOptions().GetOutOfFrameMode();
-    string db_name(BLASTSeqSrcGetName(m_pSeqSrc));
-    bool db_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
+    string db_name(BlastSeqSrcGetName(m_pSeqSrc));
+    bool db_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
 
     // Create a source for retrieving sequence ids and lengths
     CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.63  2005/04/18 14:00:44  camacho
+ * Updates following BlastSeqSrc reorganization
+ *
  * Revision 1.62  2005/04/13 21:25:56  bealer
  * - Change 'p' to eProtein.
  *

@@ -1774,9 +1774,9 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
          (kTranslateSubject ? NCBI4NA_ENCODING : BLASTNA_ENCODING);
       seq_arg.seq = subject_blk;
       /* Return the packed sequence to the database */
-      BLASTSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+      BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
       /* Get the unpacked sequence */
-      BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg);
+      BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
    }
 
    if (kTranslateSubject) {

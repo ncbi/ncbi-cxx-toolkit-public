@@ -29,7 +29,8 @@
  */
 
 /** @file blast_seqsrc.c
- * Definition of ADT to retrieve sequences for the BLAST engine
+ * Definition of ADT to retrieve sequences for the BLAST engine and
+ * low level details of the implementation of the BlastSeqSrc framework.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -40,8 +41,12 @@ static char const rcsid[] =
 #endif
 
 #include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_seqsrc_impl.h>
 
-/** Complete type definition of Blast Sequence Source ADT */
+/** Complete type definition of Blast Sequence Source ADT.
+ * The members of this structure should only be accessed by BlastSeqSrc
+ * implementations using the _BlastSeqSrcImpl_* functions.
+ */
 struct BlastSeqSrc {
 
     BlastSeqSrcConstructor NewFnPtr;       /**< Constructor */
@@ -58,14 +63,13 @@ struct BlastSeqSrc {
     GetBoolFnPtr      GetIsProt;      /**< Find if database is a protein or 
                                          nucleotide */
 
-   /* Functions to get information about individual sequences */
+   /* Functions that deal with individual sequences */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
     ReleaseSeqBlkFnPtr ReleaseSequence; /**< Deallocate individual sequence 
                                          (if applicable) */
 
    /* Functions to iterate over sequences in the database */
-    GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
    
     void*             DataStructure;  /**< ADT holding the sequence data */
@@ -147,12 +151,92 @@ char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src)
     return strdup(seq_src->InitErrorStr);
 }
 
-/** How many database sequences to process in one database chunk. */
-const unsigned int kBlastSeqSrcDefaultChunkSize = 1024;
+Int4
+BlastSeqSrcGetNumSeqs(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetNumSeqs);
+    return (*seq_src->GetNumSeqs)(seq_src->DataStructure, NULL);
+}
+
+Int4
+BlastSeqSrcGetMaxSeqLen(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetMaxSeqLen);
+    return (*seq_src->GetMaxSeqLen)(seq_src->DataStructure, NULL);
+}
+
+Int4
+BlastSeqSrcGetAvgSeqLen(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetAvgSeqLen);
+    return (*seq_src->GetAvgSeqLen)(seq_src->DataStructure, NULL);
+}
+
+Int8
+BlastSeqSrcGetTotLen(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetTotLen);
+    return (*seq_src->GetTotLen)(seq_src->DataStructure, NULL);
+}
+
+const char*
+BlastSeqSrcGetName(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetName);
+    return (*seq_src->GetName)(seq_src->DataStructure, NULL);
+}
+
+Boolean
+BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetIsProt);
+    return (*seq_src->GetIsProt)(seq_src->DataStructure, NULL);
+}
+
+Int2
+BlastSeqSrcGetSequence(const BlastSeqSrc* seq_src, 
+                       void* sequence)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetSequence);
+    ASSERT(sequence);
+    return (*seq_src->GetSequence)(seq_src->DataStructure, sequence);
+}
+
+Int4
+BlastSeqSrcGetSeqLen(const BlastSeqSrc* seq_src, void* oid)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetSeqLen);
+    return (*seq_src->GetSeqLen)(seq_src->DataStructure, oid);
+}
+
+void
+BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
+                           void* sequence)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->ReleaseSequence);
+    ASSERT(sequence);
+    (*seq_src->ReleaseSequence)(seq_src->DataStructure, sequence);
+}
 
 /******************** BlastSeqSrcIterator API *******************************/
 
-BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz)
+BlastSeqSrcIterator* BlastSeqSrcIteratorNew()
+{
+    return BlastSeqSrcIteratorNewEx(0);
+}
+
+const unsigned int kBlastSeqSrcDefaultChunkSize = 1024;
+
+BlastSeqSrcIterator* BlastSeqSrcIteratorNewEx(unsigned int chunk_sz)
 {
     BlastSeqSrcIterator* itr = NULL;
 
@@ -190,25 +274,30 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr)
     return NULL;
 }
 
-Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr)
+Int4 BlastSeqSrcIteratorNext(BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr)
 {
     ASSERT(seq_src);
     ASSERT(itr);
     ASSERT(seq_src->IterNext);
 
-    return (*seq_src->IterNext)((void*) seq_src, itr);
+    return (*seq_src->IterNext)(seq_src->DataStructure, itr);
 }
 
 /*****************************************************************************/
 
+/* The following macros implement the "member functions" of the BlastSeqSrc
+ * structure so that its various fields can be accessed by the implementors of
+ * the BlastSeqSrc interface */
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 
-#define DEFINE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
-DEFINE_ACCESSOR(member_type, member, data_structure_type) \
-DEFINE_MUTATOR(member_type, member, data_structure_type)
+#define DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(member_type, member) \
+DEFINE_BLAST_SEQ_SRC_ACCESSOR(member_type, member) \
+DEFINE_BLAST_SEQ_SRC_MUTATOR(member_type, member)
 
-#define DEFINE_ACCESSOR(member_type, member, data_structure_type) \
-member_type Get##member(const data_structure_type var) \
+#define DEFINE_BLAST_SEQ_SRC_ACCESSOR(member_type, member) \
+member_type \
+_BlastSeqSrcImpl_Get##member(const BlastSeqSrc* var) \
 { \
     if (var) \
         return var->member; \
@@ -216,32 +305,30 @@ member_type Get##member(const data_structure_type var) \
         return (member_type) NULL; \
 }
 
-#define DEFINE_MUTATOR(member_type, member, data_structure_type) \
-void Set##member(data_structure_type var, member_type arg) \
+#define DEFINE_BLAST_SEQ_SRC_MUTATOR(member_type, member) \
+void \
+_BlastSeqSrcImpl_Set##member(BlastSeqSrc* var, member_type arg) \
 { if (var) var->member = arg; }
 
 #endif
 
 /* Note there's no ; after these macros! */
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr, BlastSeqSrc*)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr)
 
-DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(void*, DataStructure)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen)
 
-DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetStrFnPtr, GetName)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt)
 
-DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(ReleaseSeqBlkFnPtr, ReleaseSequence, BlastSeqSrc*)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(ReleaseSeqBlkFnPtr, ReleaseSequence)
 
-DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
-
-DEFINE_ACCESSOR(char*, InitErrorStr, BlastSeqSrc*)
-DEFINE_MUTATOR(char*, InitErrorStr, BlastSeqSrc*)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext)

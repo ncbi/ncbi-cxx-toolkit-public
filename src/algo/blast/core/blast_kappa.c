@@ -2137,9 +2137,9 @@ Kappa_MatchingSequenceInitialize(
     self->seq_arg.encoding = BLASTP_ENCODING;
   }
 
-  if (BLASTSeqSrcGetSequence(seqSrc, (void*) &self->seq_arg) < 0)
+  if (BlastSeqSrcGetSequence(seqSrc, (void*) &self->seq_arg) < 0)
     return;
-  self->length = BLASTSeqSrcGetSeqLen(seqSrc, &self->seq_arg);
+  self->length = BlastSeqSrcGetSeqLen(seqSrc, (void*) &self->seq_arg);
 }
 
 
@@ -2147,7 +2147,7 @@ Kappa_MatchingSequenceInitialize(
 static void
 Kappa_MatchingSequenceRelease(Kappa_MatchingSequence * self)
 {
-  BLASTSeqSrcReleaseSequence(self->seq_src, (void*)&self->seq_arg);
+  BlastSeqSrcReleaseSequence(self->seq_src, (void*)&self->seq_arg);
   BlastSequenceBlkFree(self->seq_arg.seq);
 }
 
@@ -2850,7 +2850,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
     SmithWaterman = FALSE;
 
   if ((status_code=BLAST_GapAlignStructNew(scoringParams, extendParams,
-                 BLASTSeqSrcGetMaxSeqLen(seqSrc), sbp, &gapAlign)) != 0)
+                 BlastSeqSrcGetMaxSeqLen(seqSrc), sbp, &gapAlign)) != 0)
       return status_code;
 
   /* Initialize the window list to have a single window -- the most

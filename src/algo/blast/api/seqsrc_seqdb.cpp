@@ -34,6 +34,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_seqsrc_impl.h>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "blast_setup.hpp"
 
@@ -245,24 +246,23 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 }
 
 /// Finds the next not searched ordinal id in the iteration over BLAST database.
-/// @param ptr BlastSeqSrc pointer, cast to void* to satisfy uniform signature
-///            requirement. [in]
+/// @param seqdb_handle Reference to the database object, cast to void* to 
+///                     satisfy the signature requirement. [in]
 /// @param itr Iterator of the BlastSeqSrc pointed by ptr. [in]
 /// @return Next ordinal id.
 static Int4 
-s_SeqDbIteratorNext(void* ptr, BlastSeqSrcIterator* itr)
+s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
-    BlastSeqSrc* seq_src = (BlastSeqSrc*) ptr;
     Int4 retval = BLAST_SEQSRC_EOF;
     Int4 status = BLAST_SEQSRC_SUCCESS;
 
-    ASSERT(seq_src);
+    ASSERT(seqdb_handle);
     ASSERT(itr);
 
     /* If internal iterator is uninitialized/invalid, retrieve the next chunk 
        from the BlastSeqSrc */
     if (itr->current_pos == UINT4_MAX) {
-        status = BLASTSeqSrcGetNextChunk(seq_src, itr);
+        status = s_SeqDbGetNextChunk(seqdb_handle, itr);
         if (status == BLAST_SEQSRC_ERROR || status == BLAST_SEQSRC_EOF) {
             return status;
         }
@@ -335,7 +335,8 @@ s_SeqDbSrcFree(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
+    CRef<CSeqDB>* seqdb = static_cast<CRef<CSeqDB>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
     delete seqdb;
     sfree(seq_src);
     return NULL;
@@ -350,10 +351,11 @@ s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
+    CRef<CSeqDB>* seqdb = static_cast<CRef<CSeqDB>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
     CRef<CSeqDB>* new_seqdb = new CRef<CSeqDB>(*seqdb);
 
-    SetDataStructure(seq_src, (void*) new_seqdb);
+    _BlastSeqSrcImpl_SetDataStructure(seq_src, (void*) new_seqdb);
     
     return seq_src;
 }
@@ -370,20 +372,19 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
-    SetDeleteFnPtr   (retval, & s_SeqDbSrcFree);
-    SetCopyFnPtr     (retval, & s_SeqDbSrcCopy);
-    SetDataStructure (retval, (void*) seqdb);
-    SetGetNumSeqs    (retval, & s_SeqDbGetNumSeqs);
-    SetGetMaxSeqLen  (retval, & s_SeqDbGetMaxLength);
-    SetGetAvgSeqLen  (retval, & s_SeqDbGetAvgLength);
-    SetGetTotLen     (retval, & s_SeqDbGetTotLen);
-    SetGetName       (retval, & s_SeqDbGetName);
-    SetGetIsProt     (retval, & s_SeqDbGetIsProt);
-    SetGetSequence   (retval, & s_SeqDbGetSequence);
-    SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
-    SetGetNextChunk  (retval, & s_SeqDbGetNextChunk);
-    SetIterNext      (retval, & s_SeqDbIteratorNext);
-    SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
+    _BlastSeqSrcImpl_SetDeleteFnPtr   (retval, & s_SeqDbSrcFree);
+    _BlastSeqSrcImpl_SetCopyFnPtr     (retval, & s_SeqDbSrcCopy);
+    _BlastSeqSrcImpl_SetDataStructure (retval, (void*) seqdb);
+    _BlastSeqSrcImpl_SetGetNumSeqs    (retval, & s_SeqDbGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetMaxSeqLen  (retval, & s_SeqDbGetMaxLength);
+    _BlastSeqSrcImpl_SetGetAvgSeqLen  (retval, & s_SeqDbGetAvgLength);
+    _BlastSeqSrcImpl_SetGetTotLen     (retval, & s_SeqDbGetTotLen);
+    _BlastSeqSrcImpl_SetGetName       (retval, & s_SeqDbGetName);
+    _BlastSeqSrcImpl_SetGetIsProt     (retval, & s_SeqDbGetIsProt);
+    _BlastSeqSrcImpl_SetGetSequence   (retval, & s_SeqDbGetSequence);
+    _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
+    _BlastSeqSrcImpl_SetIterNext      (retval, & s_SeqDbIteratorNext);
+    _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
 }
 
 /// Populates a BlastSeqSrc, creating a new reference to the already existing 
@@ -394,9 +395,8 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
 static BlastSeqSrc* 
 s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 {
-    if ( !retval ) {
-        return (BlastSeqSrc*) NULL;
-    }
+    ASSERT(retval);
+    ASSERT(args);
     
     CRef<CSeqDB> * seqdb = (CRef<CSeqDB> *) args;
     CRef<CSeqDB> * cref  = new CRef<CSeqDB>(*seqdb);
@@ -414,9 +414,8 @@ s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 static BlastSeqSrc* 
 s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
-    if ( !retval ) {
-        return (BlastSeqSrc*) NULL;
-    }
+    ASSERT(retval);
+    ASSERT(args);
     
     CSeqDbSrcNewArgs* seqdb_args = (CSeqDbSrcNewArgs*) args;
     ASSERT(seqdb_args);
@@ -429,13 +428,13 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
                                 seqdb_args->GetFinalOid(),
                                 seqdb_args->GetUseMmap()));
     } catch (const ncbi::CException& e) {
-        SetInitErrorStr(retval, 
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, 
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
     } catch (const std::exception& e) {
-        SetInitErrorStr(retval, strdup(e.what()));
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.what()));
     } catch (...) {
-        SetInitErrorStr(retval, strdup("Caught unknown exception from CSeqDB"
-                                       " constructor"));
+        _BlastSeqSrcImpl_SetInitErrorStr(retval, 
+             strdup("Caught unknown exception from CSeqDB constructor"));
     }
     
     /* Initialize the BlastSeqSrc structure fields with user-defined function
@@ -486,6 +485,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2005/04/18 14:00:44  camacho
+ * Updates following BlastSeqSrc reorganization
+ *
  * Revision 1.31  2005/04/13 22:34:47  camacho
  * Renamed BlastSeqSrc RetSequence to ReleaseSequence
  *
@@ -568,7 +570,7 @@ END_NCBI_SCOPE
  * Return NULL from SeqDbGetName until CSeqDB gets a GetName method
  *
  * Revision 1.5  2004/04/28 19:38:20  dondosha
- * Added implementation of BLASTSeqSrcReleaseSequence function
+ * Added implementation of BlastSeqSrcReleaseSequence function
  *
  * Revision 1.4  2004/04/12 14:58:42  ucko
  * Avoid placing static C functions inside namespace blocks to keep the

@@ -172,7 +172,7 @@ void* CBlastTabularFormatThread::Main(void)
       query_lengths.push_back(sequence::GetLength(*itr->seqloc, itr->scope));
    }
 
-   bool one_seq_update_params = (BLASTSeqSrcGetTotLen(m_ipSeqSrc) == 0);
+   bool one_seq_update_params = (BlastSeqSrcGetTotLen(m_ipSeqSrc) == 0);
    BlastHSPList* hsp_list = NULL;
  
    while (BlastHSPStreamRead(m_pHspStream, &hsp_list) 
@@ -186,7 +186,7 @@ void* CBlastTabularFormatThread::Main(void)
        if (m_ibPerformTraceback) {
            BlastSequenceBlkClean(seq_arg.seq);
            seq_arg.oid = hsp_list->oid;
-           if (BLASTSeqSrcGetSequence(m_ipSeqSrc, (void*) &seq_arg) < 0)
+           if (BlastSeqSrcGetSequence(m_ipSeqSrc, (void*) &seq_arg) < 0)
                continue;
          
            if (one_seq_update_params) {
@@ -207,7 +207,7 @@ void* CBlastTabularFormatThread::Main(void)
                seq_arg.seq, m_ipQueryInfo, m_ipGapAlign, m_ipGapAlign->sbp, 
                m_ipScoreParams, m_ipExtParams->options, m_ipHitParams, 
                m_iGenCodeString.get());
-           BLASTSeqSrcReleaseSequence(m_ipSeqSrc, (void*)&seq_arg);
+           BlastSeqSrcReleaseSequence(m_ipSeqSrc, (void*)&seq_arg);
            /* Recalculate the bit scores, since they might have changed. */
            Blast_HSPListGetBitScores(hsp_list, 
                m_ipScoreParams->options->gapped_calculation, m_ipGapAlign->sbp);
@@ -220,7 +220,7 @@ void* CBlastTabularFormatThread::Main(void)
 
        int index;
        char bit_score_buff[10], eval_buff[10];
-       Int4 subject_length = BLASTSeqSrcGetSeqLen(m_ipSeqSrc, (void*)&hsp_list->oid);
+       Int4 subject_length = BlastSeqSrcGetSeqLen(m_ipSeqSrc, (void*)&hsp_list->oid);
 
        for (index = 0; index < hsp_list->hspcnt; ++index) {
            BlastHSP* hsp = hsp_list->hsp_array[index];
@@ -280,6 +280,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/04/18 14:00:44  camacho
+* Updates following BlastSeqSrc reorganization
+*
 * Revision 1.15  2005/04/13 22:34:47  camacho
 * Renamed BlastSeqSrc RetSequence to ReleaseSequence
 *

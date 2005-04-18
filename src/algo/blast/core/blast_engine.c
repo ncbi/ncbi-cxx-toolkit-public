@@ -526,7 +526,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStruct*)
       calloc(1, sizeof(BlastCoreAuxStruct));
 
-   avg_subj_length = BLASTSeqSrcGetAvgSeqLen(seq_src);
+   avg_subj_length = BlastSeqSrcGetAvgSeqLen(seq_src);
      
    if ((status = BlastExtendWordNew(lookup_wrap, query->length, word_params, 
                                     avg_subj_length, &aux_struct->ewp)) != 0)
@@ -617,8 +617,8 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
       This figure must also include one trailing NULL for
       each DB sequence */
 
-   num_db_seqs = BLASTSeqSrcGetNumSeqs(seq_src);
-   dbsize = BLASTSeqSrcGetTotLen(seq_src) + num_db_seqs;
+   num_db_seqs = BlastSeqSrcGetNumSeqs(seq_src);
+   dbsize = BlastSeqSrcGetTotLen(seq_src) + num_db_seqs;
    if (dbsize > INT4_MAX)
       return -3;
 
@@ -718,7 +718,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    BlastInitialWordParametersNew(program_number, word_options, 
       hit_params, lookup_wrap, sbp, query_info, 
-      BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
+      BlastSeqSrcGetAvgSeqLen(seq_src), &word_params);
 
    if ((status = 
        s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_params, 
@@ -749,16 +749,16 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       sequences are retieved in ncbistdaa/ncbi2na encodings respectively. */
    seq_arg.encoding = BLASTP_ENCODING; 
 
-   db_length = BLASTSeqSrcGetTotLen(seq_src);
+   db_length = BlastSeqSrcGetTotLen(seq_src);
 
-   itr = BlastSeqSrcIteratorNew(0);
+   itr = BlastSeqSrcIteratorNew();
 
    /* iterate over all subject sequences */
    while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
       if (seq_arg.oid == BLAST_SEQSRC_ERROR)
          break;
-      if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+      if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
       if (db_length == 0) {
          /* This is not a database search, hence need to recalculate and save
@@ -830,7 +830,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
       
-      BLASTSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+      BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
    }
    
    BlastSequenceBlkFree(seq_arg.seq);

@@ -809,7 +809,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
          corresponding to this sequence. */
       seq_arg.oid = hsp_list->oid;
       seq_arg.encoding = encoding;
-      if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+      if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
       db_seq_start = concat_db_info->contexts[hsp_list->oid].query_offset;
@@ -838,7 +838,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
              *        need a warning here
              */
             hsp_list = Blast_HSPListFree(hsp_list);
-            BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+            BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
             continue;
          }
          
@@ -854,7 +854,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
          one_query, one_query_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, NULL);
 
-      BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+      BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
 
       if (program_number != eBlastTypeRpsTblastn) {
          _PSIDeallocateMatrix((void**)sbp->psi_matrix->pssm->data, 
@@ -957,10 +957,10 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             seq_arg.oid = hsp_list->oid;
             seq_arg.encoding = encoding;
             BlastSequenceBlkClean(seq_arg.seq);
-            if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+            if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
                continue;
             
-            if (BLASTSeqSrcGetTotLen(seq_src) == 0) {
+            if (BlastSeqSrcGetTotLen(seq_src) == 0) {
                /* This is not a database search, so effective search spaces
                 * need to be recalculated based on this subject sequence 
                 * length.
@@ -982,7 +982,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                seq_arg.seq, query_info, gap_align, sbp, score_params, 
                ext_params->options, hit_params, gen_code_string);
 
-            BLASTSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+            BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
          }
          
          /* Free HSP list structure if all HSPs have been deleted. */
@@ -999,7 +999,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed. Only do this for a database search. */
-   if (BLASTSeqSrcGetTotLen(seq_src) > 0)
+   if (BlastSeqSrcGetTotLen(seq_src) > 0)
       Blast_HSPResultsSortByEvalue(results);
 
    /* Eliminate extra hits from results, if preliminary hit list size is larger
