@@ -97,9 +97,9 @@
 			// Path to C++ Toolkit
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			if ( !oFso.FolderExists(oTask.ToolkitPath) ||
-			     !((oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin") &&
-			      oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) ||
-			      oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
+			     (!(!oTask.DllBuild && oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin")) &&
+			      !( oTask.DllBuild && oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) &&
+			      !oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
 				WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
 				err = true;
 			}
@@ -283,7 +283,6 @@
 				var old_line = old_file.ReadLine();
 				if (old_line.indexOf("APP_PROJ") == 0) {
 					new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
-// 06apr05: removed
 //					new_file.WriteLine("REQUIRES = CXX_Toolkit");
 				} else {
 					new_file.WriteLine(old_line);
@@ -345,10 +344,10 @@
 			var ptb_command_line;
 			if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
 			    var conf = GetConfigs(oTask)[0];
-			    var target_path = oTree.BinPathStatic + "\\" + conf;
-			    ptb_command_line = target_path + "\\project_tree_builder.exe";
+			    var target_path = "\"" + oTree.BinPathStatic + "\\" + conf;
+			    ptb_command_line = target_path + "\\project_tree_builder.exe\"";
 			} else {
-			    ptb_command_line = oTask.RemotePtb;
+			    ptb_command_line = "\"" + oTask.RemotePtb + "\"";
 			}
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";

@@ -10,7 +10,7 @@ var g_verbose = false;
 function execute(oShell, command)
 {
     VerboseEcho("+  " + command);
-    var oExec = oShell.Exec("cmd /c " + command);
+    var oExec = oShell.Exec("cmd /c \"" + command + "\"");
     while( oExec.Status == 0 && !oExec.StdOut.AtEndOfStream )
         WScript.StdOut.WriteLine(oExec.StdOut.ReadLine());
 
