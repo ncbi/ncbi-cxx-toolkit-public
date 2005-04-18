@@ -97,7 +97,15 @@ private:
 
 /// Get current function name. Defined inside of either a method or a function body only.
 // Based ob boost's BOOST_CURRENT_FUNCTION
-#if defined(NCBI_SHOW_FUNCTION_NAME)
+
+#ifndef NDEBUG
+
+#define NCBI_SHOW_FUNCTION_NAME
+
+#endif
+
+
+#ifdef NCBI_SHOW_FUNCTION_NAME
 
 #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
 
@@ -1150,6 +1158,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/04/18 14:25:58  ssikorsk
+ * Report a method/function name within an error message
+ *
  * Revision 1.80  2005/04/14 20:24:31  ssikorsk
  * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
  *
