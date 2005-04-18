@@ -2424,7 +2424,14 @@ int test1(int argc, char ** argv)
             phil.GetSequence(123, & buffer);
             phil.RetSequence(& buffer);
 
-            cout << "\nSeq type:     " << phil.GetSeqType();
+            string db_type("unknown");
+            switch (phil.GetSequenceType()) {
+            case CSeqDB::eProtein: db_type = "protein"; break;
+            case CSeqDB::eNucleotide: db_type = "nucleotide"; break;
+            default: abort();
+            }
+
+            cout << "\nSeq type:     " << db_type;
             cout << "\nTitle:        " << phil.GetTitle();
             cout << "\nDate:         " << phil.GetDate();
             cout << "\nNumSeqs:      " << phil.GetNumSeqs();
