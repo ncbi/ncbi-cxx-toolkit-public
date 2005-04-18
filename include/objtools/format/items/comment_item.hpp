@@ -122,6 +122,7 @@ public:
     static string GetStringForBarcode(CBioseqContext& ctx);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
+    static string GetStringForEncode(CBioseqContext& ctx);
 
     static void ResetFirst(void) { sm_FirstComment = true; }
 
@@ -271,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/04/18 13:48:21  shomrat
+* + GetStringForEncode
+*
 * Revision 1.13  2005/03/29 18:14:47  shomrat
 * + CBarcodeComment
 *

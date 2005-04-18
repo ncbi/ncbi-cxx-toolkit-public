@@ -323,11 +323,11 @@ string CCommentItem::GetStringForRefTrack
         oss << "This record has not yet been subject to final NCBI review.";
         break;
     case eRefTrackStatus_Predicted:
-        oss << "The mRNA record is supported by experimental evidence;"
+        oss << "The mRNA record is supported by experimental evidence; "
             << "however, the coding sequence is predicted.";
         break;
     case eRefTrackStatus_Validated:
-        oss << "This record has undergone preliminary review of the sequence,"
+        oss << "This record has undergone preliminary review of the sequence, "
             << "but has not yet been subject to final review.";
         break;
     case eRefTrackStatus_Reviewd:
@@ -715,6 +715,79 @@ string CCommentItem::GetStringForBarcode(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(comment);
 }
 
+static bool s_GetEncodeValues
+(string& chromosome,
+ string& assembly_date,
+ string& ncbi_annotation,
+ CBioseqContext& ctx)
+{
+    _ASSERT(ctx.IsEncode());
+
+    const CUser_object& uo = ctx.GetEncode();
+    if (uo.HasField("AssemblyDate")) {
+        const CUser_field& ad = uo.GetField("AssemblyDate");
+        if (ad.IsSetData()  &&  ad.GetData().IsStr()) {
+            assembly_date = ad.GetData().GetStr();
+        }
+    } else {
+        return false;
+    }
+    if (uo.HasField("NcbiAnnotation")) {
+        const CUser_field& na = uo.GetField("NcbiAnnotation");
+        if (na.IsSetData()  &&  na.GetData().IsStr()) {
+            assembly_date = na.GetData().GetStr();
+        }
+    } else {
+        return false;
+    }
+
+    const string* name = NULL;
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source); it; ++it) {
+        const CBioSource& bio = it->GetSource();
+        ITERATE (CBioSource::TSubtype, st, bio.GetSubtype()) {
+            if ((*st)->GetSubtype() == CSubSource::eSubtype_chromosome) {
+                name = &(*st)->GetName();
+                break;
+            }
+        }
+    }
+    if (name != NULL) {
+        chromosome = *name;
+    } else {
+        return false;
+    }
+
+    if (NStr::IsBlank(chromosome)) {
+        chromosome = "?";
+    }
+    if (NStr::IsBlank(assembly_date)) {
+        assembly_date = "?";
+    }
+    if (NStr::IsBlank(ncbi_annotation)) {
+        ncbi_annotation = "?";
+    }
+    return true;
+}
+
+
+string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
+{
+    if (!ctx.IsEncode()) {
+        return kEmptyStr;
+    }
+
+    CNcbiOstrstream str;
+    str << "REFSEQ:  This record was provided by the ENCODE project.";
+
+    string chromosome, assembly_date, ncbi_annotation;
+    if (s_GetEncodeValues(chromosome, assembly_date, ncbi_annotation, ctx)) {
+        str << "  It is defined by coordinates on the sequence of chromosome"
+            << chromosome << "from the" << assembly_date
+            << "assembly of the human genome (NCBI build" << ncbi_annotation
+            << ").";
+    }
+    return CNcbiOstrstreamToString(str);
+}
 
 /***************************************************************************/
 /*                                 PROTECTED                               */
@@ -1085,6 +1158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/04/18 13:48:55  shomrat
+* + GetStringForEncode
+*
 * Revision 1.19  2005/04/07 18:20:12  shomrat
 * Use \n instead of Endl()
 *
