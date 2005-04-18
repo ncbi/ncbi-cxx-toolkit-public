@@ -58,7 +58,9 @@ EOF
 
 StartNode() {
     echo "Starting the $node_name node..."
-    cat ${node_name}.out >>  ${node_name}_out.old
+    if [ -f ${node_name}.out ]; then 
+       cat ${node_name}.out >>  ${node_name}_out.old
+    fi
     echo "[`date`] ================= " > ${node_name}.out
     $node >  ${node_name}.out  2>&1 &
     node_pid=$!
