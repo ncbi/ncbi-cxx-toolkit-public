@@ -49,7 +49,9 @@ BEGIN_SCOPE(blast)
 
 CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(const string& dbname, bool is_protein)
 {
-    m_iSeqDb.Reset(new CSeqDB(dbname, (is_protein ? 'p' : 'n')));
+    m_iSeqDb.Reset(new CSeqDB(dbname, (is_protein
+                                       ? CSeqDB::eProtein
+                                       : CSeqDB::eNucleotide)));
 }
 
 CSeqDbSeqInfoSrc::~CSeqDbSeqInfoSrc()
@@ -75,6 +77,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/04/18 15:38:31  bealer
+ * - Remove usage of deprecated SeqDB parts.
+ *
  * Revision 1.2  2004/11/02 17:58:27  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *

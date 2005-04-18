@@ -104,7 +104,7 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
 
-    return ((*seqdb)->GetSeqType() == 'p');
+    return ((*seqdb)->GetSequenceType() == CSeqDB::eProtein);
 }
 
 /// Retrieves the sequence meeting the criteria defined by its second argument.
@@ -422,11 +422,15 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     
     CRef<CSeqDB>* seqdb = new CRef<CSeqDB>(NULL);
     try {
-        seqdb->Reset(new CSeqDB(seqdb_args->GetDbName(), 
-                                seqdb_args->GetDbType(), 
-                                seqdb_args->GetFirstOid(),
-                                seqdb_args->GetFinalOid(),
-                                seqdb_args->GetUseMmap()));
+        bool is_protein = (seqdb_args->GetDbType() == 'p');
+        
+        seqdb->Reset(new CSeqDB(seqdb_args->GetDbName(),
+                                (is_protein
+                                 ? CSeqDB::eProtein
+                                 : CSeqDB::eNucleotide)));
+        
+        (**seqdb).SetIterationRange(seqdb_args->GetFirstOid(),
+                                    seqdb_args->GetFinalOid());
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, 
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
@@ -485,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2005/04/18 15:38:31  bealer
+ * - Remove usage of deprecated SeqDB parts.
+ *
  * Revision 1.32  2005/04/18 14:00:44  camacho
  * Updates following BlastSeqSrc reorganization
  *
