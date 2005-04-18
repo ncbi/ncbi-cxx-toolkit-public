@@ -100,7 +100,7 @@ public:
 
     ~CGridJobStatus();
 
-    /// Get a job's outnput string.
+    /// Get a job's output string.
     ///
     /// This string can be used in two ways.
     /// 1. It can be an output data from a remote job (if that data is short)
@@ -111,7 +111,11 @@ public:
     ///
     const string& GetJobOutput() const    { return m_Output; }
     
+    /// Get a job's input sting
+    const string& GetJobInput() const    { return m_Input; }
+
     /// Get a job's return code
+    //
     int           GetReturnCode() const   { return m_RetCode; }
 
     /// If something bad has happend this method will return an
@@ -136,15 +140,17 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobStatus(CGridClient&);
+    CGridJobStatus(CGridClient&, bool auto_cleanup);
     void x_SetJobKey(const string& job_key);
 
     CGridClient& m_GridClient;
     string       m_JobKey;
     string       m_Output;
     string       m_ErrMsg;
+    string       m_Input;
     int          m_RetCode;
     size_t       m_BlobSize;
+    bool         m_AutoCleanUp;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -157,8 +163,23 @@ private:
 class NCBI_XCONNECT_EXPORT CGridClient
 {
 public:
+    /// Constructor
+    ///
+    /// @param ns_client
+    ///     NetSchedule client
+    /// @param storage
+    ///     NetSchedule storage
+    /// @param auto_cleanup
+    ///     if true the grid client will automatically remove
+    ///     a job's input data from a storage when the job is
+    ///     done or canceled
+    ///
     CGridClient(CNetScheduleClient& ns_client, 
-                INetScheduleStorage& storage);
+                INetScheduleStorage& storage,
+                bool auto_cleanup = true);
+
+    /// Destructor
+    ///
     ~CGridClient();
 
     /// Get a job submiter
@@ -193,7 +214,7 @@ private:
     CNetScheduleClient&  m_NSClient;
     INetScheduleStorage& m_NSStorage;
 
-    string m_Input;
+    string                     m_Input;
     auto_ptr<CGridJobSubmiter> m_JobSubmiter;
     auto_ptr<CGridJobStatus>   m_JobStatus;
 
@@ -211,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/18 18:53:57  didenko
+ * Added optional automatic NetScheduler storage cleanup
+ *
  * Revision 1.3  2005/03/29 14:10:16  didenko
  * + removing a date from the storage
  *
