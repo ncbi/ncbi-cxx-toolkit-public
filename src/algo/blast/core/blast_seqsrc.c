@@ -274,7 +274,8 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr)
     return NULL;
 }
 
-Int4 BlastSeqSrcIteratorNext(BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr)
+Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, 
+                             BlastSeqSrcIterator* itr)
 {
     ASSERT(seq_src);
     ASSERT(itr);

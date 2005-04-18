@@ -231,7 +231,8 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
  * @param seq_src the underlying BlastSeqSrc
  * @return one of the BLAST_SEQSRC_* defined in blast_seqsrc.h
  */
-Int4 BlastSeqSrcIteratorNext(BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr);
+Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, 
+                             BlastSeqSrcIterator* itr);
 
 /*****************************************************************************/
 
