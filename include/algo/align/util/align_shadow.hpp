@@ -48,6 +48,12 @@
 
 BEGIN_NCBI_SCOPE
 
+template <class TId> class CAlignShadow;
+
+template<class T>
+CNcbiOstream& operator << (CNcbiOstream& os, 
+                           const CAlignShadow<T>& align_shadow);
+
 template<class TId>
 class CAlignShadow
 {
@@ -599,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/18 20:44:39  ucko
+ * Add some forward declarations to unconfuse GCC 2.95.
+ *
  * Revision 1.6  2005/04/18 15:24:08  kapustin
  * Split CAlignShadow into core and blast tabular representation
  *
