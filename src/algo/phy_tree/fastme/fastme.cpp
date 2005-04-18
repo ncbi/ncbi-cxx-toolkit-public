@@ -318,7 +318,7 @@ meTree* fastme_run(double** D_in, int numSpecies_in, char **labels, int btype_in
     }
     switch(wtype) /*assign weights*/
         {
-            
+        case OLS: 
             break;
         case BAL:
             
@@ -395,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/18 18:38:31  jcherry
+ * Changed strange code to eliminate compiler warning
+ *
  * Revision 1.2  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
