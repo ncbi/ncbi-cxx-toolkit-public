@@ -219,10 +219,11 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
 
     // Do not add the port # for front-end URLs by default for NCBI front-ends
     if (use_port == eSelfUrlPort_Default) {
-        if (NStr::StartsWith(GetRequest().GetProperty(eCgi_ServerName),
-                             "www.ncbi", NStr::eNocase)  ||
-            NStr::StartsWith(GetRequest().GetProperty(eCgi_ServerName),
-                             "web.ncbi", NStr::eNocase)) {
+        string server(GetRequest().GetProperty(eCgi_ServerName));
+        if (NStr::StartsWith(server, "www.ncbi",   NStr::eNocase) ||
+            NStr::StartsWith(server, "web.ncbi",   NStr::eNocase) ||
+            NStr::StartsWith(server, "wwwqa.ncbi", NStr::eNocase) ||
+            NStr::StartsWith(server, "webqa.ncbi", NStr::eNocase)) {
             use_port = eSelfUrlPort_Strip;
         }
     }
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2005/04/18 21:59:10  yasmax
+* Do not add port number for wwwqa.ncbi and webqa.ncbi
+*
 * Revision 1.40  2005/02/16 15:04:35  ssikorsk
 * Tweaked kEmptyStr with Linux GCC
 *
