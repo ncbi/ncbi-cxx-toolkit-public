@@ -126,9 +126,7 @@ private:
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
-    
-    string m_ProgramVersion;
-    
+       
     ERenderType m_RenderType;
 
     string  m_StrPage;
@@ -141,7 +139,7 @@ private:
 //
 string CCgiTunnel2Grid::GetProgramVersion(void) const
 { 
-    return m_ProgramVersion; 
+    return "Cgi_Tunnel2Grid ver 1.0.0"; 
 }
 
 
@@ -205,9 +203,6 @@ void CCgiTunnel2Grid::x_Init(const string& project)
     m_FallBackDelay = 
         GetConfig().GetInt("tunnel2grid", "error_url_delay", -1, 
                            IRegistry::eReturn);
-
-    m_ProgramVersion =
-        GetConfig().GetString("tunnel2grid", "program", "" );
 
     m_RenderType = eUrlRedirect;
     const string& renderType = 
@@ -306,10 +301,10 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
 
     case eHtmlPage:
         {
-        char* buff = new char[blob_size+1];
-        is.read(buff,blob_size);
-        m_StrPage = buff;
-        delete[] buff;
+        AutoPtr<char, ArrayDeleter<char> > buff(new char[blob_size+1]);
+        is.read(buff.get(),blob_size);
+        buff.get()[blob_size] = 0;
+        m_StrPage = buff.get();
 
         ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
         }
@@ -440,6 +435,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/18 13:39:18  didenko
+ * Changed program version
+ * Added html renderer
+ *
  * Revision 1.12  2005/04/14 14:11:57  didenko
  * Names of configuration and template files are based on a project name
  * Added some comments to the config file
