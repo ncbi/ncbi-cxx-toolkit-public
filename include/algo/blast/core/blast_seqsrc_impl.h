@@ -247,22 +247,32 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
 /**
  * @page _impl_blast_seqsrc_howto Implementing the BlastSeqSrc interface
  *
- *  Implementations of this interface should life-cycle functions as well as 
- *  functions which satisfy the BlastSeqSrc interface. Furthermore, all these 
- *  functions must have C linkage, as they are invoked by the BlastSeqSrc
- *  framework. These functions can be named anything as long as they satisfy
- *  the signatures defined by the \c typedefs in blast_seqsrc_impl.h. For 
- *  example, MyBlastSeqSrc implementation would define the following functions:
+ *  Implementations of this interface should provide life-cycle functions as
+ *  well as functions which satisfy the BlastSeqSrc interface. These functions
+ *  must have C linkage, as these functions are invoked by the BlastSeqSrc
+ *  framework.
+ *  An initialization function must also be provided, this is intended to be
+ *  invoked by client code which wants to use a specific BlastSeqSrc
+ *  implementation through the BlastSeqSrc interface.
+ *  For example, MyDatabaseFormat implementation would define the following
+ *  functions:
  *  
+ *  - Initialization function
+ *  @code
+ *  // Calls BlastSeqSrcNew in behalf of client code, client should free using
+ *  // BlastSeqSrcFree
+ *  BlastSeqSrc* MyDatabaseFormatBlastSeqSrcInit(...);
+ *  @endcode
+ *
  *  - Life-cycle functions
  *  @code
  *  extern "C" {
  *  // required signature: BlastSeqSrcConstructor
- *  BlastSeqSrc* MyBlastSeqSrcNew(BlastSeqSrc*, void*);
+ *  BlastSeqSrc* MyDatabaseFormatNew(BlastSeqSrc*, void*);
  *  // required signature: BlastSeqSrcDestructor
- *  BlastSeqSrc* MyBlastSeqSrcFree(BlastSeqSrc*);
+ *  BlastSeqSrc* MyDatabaseFormatFree(BlastSeqSrc*);
  *  // required signature: BlastSeqSrcCopier
- *  BlastSeqSrc* MyBlastSeqSrcCopy(BlastSeqSrc*);
+ *  BlastSeqSrc* MyDatabaseFormatCopy(BlastSeqSrc*);
  *  }
  *  @endcode
  *  
@@ -270,35 +280,33 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  @code
  *  extern "C" {
  *  // required signature: GetInt4FnPtr
- *  Int4 MyBlastSeqSrcGetNumSeqs(void*, void*);
+ *  Int4 MyDatabaseFormatGetNumSeqs(void*, void*);
  *  // required signature: GetInt4FnPtr
- *  Int4 MyBlastSeqSrcGetMaxSeqLen(void*, void*);
+ *  Int4 MyDatabaseFormatGetMaxSeqLen(void*, void*);
  *  // required signature: GetInt4FnPtr
- *  Int4 MyBlastSeqSrcGetAvgSeqLen(void*, void*);
+ *  Int4 MyDatabaseFormatGetAvgSeqLen(void*, void*);
  *  // required signature: GetInt8FnPtr
- *  Int8 MyBlastSeqSrcGetTotLen(void*, void*);
+ *  Int8 MyDatabaseFormatGetTotLen(void*, void*);
  *  // required signature: GetStrFnPtr
- *  const char* MyBlastSeqSrcGetName(void*, void*);
+ *  const char* MyDatabaseFormatGetName(void*, void*);
  *  // required signature: GetBoolFnPtr
- *  Boolean MyBlastSeqSrcGetIsProt(void*, void*);
+ *  Boolean MyDatabaseFormatGetIsProt(void*, void*);
  *  // required signature: GetSeqBlkFnPtr
- *  Int2 MyBlastSeqSrcGetSequence(void*, void*);
+ *  Int2 MyDatabaseFormatGetSequence(void*, void*);
  *  // required signature: GetInt4FnPtr
- *  Int4 MyBlastSeqSrcGetSeqLen(void*, void*);
+ *  Int4 MyDatabaseFormatGetSeqLen(void*, void*);
  *  // required signature: ReleaseSeqBlkFnPtr
- *  void MyBlastSeqSrcReleaseSequence(void*, void*);
+ *  void MyDatabaseFormatReleaseSequence(void*, void*);
  *  // required signature: AdvanceIteratorFnPtr
- *  Int4 MyBlastSeqSrcItrNext(void*, BlastSeqSrcIterator* itr);
+ *  Int4 MyDatabaseFormatItrNext(void*, BlastSeqSrcIterator* itr);
  *  }
  *  @endcode
  *  
- *  Note that all the functions above are called by the BlastSeqSrc framework
- *  (BlastSeqSrc* functions declared in blast_seqsrc.h), so no exceptions
- *  should be thrown in C++ implementations. When not obvious, please see the 
- *  required signature's documentation for determining what to implement.
- *  .
- *  In addition, an initialization function must be provided by the 
- *  implementation to call BlastSeqSrcNew with the proper arguments.
+ *  Since the life-cycle and BlastSeqSrc interface functions above are
+ *  called by the BlastSeqSrc framework (BlastSeqSrc* functions declared in
+ *  blast_seqsrc.h), no exceptions should be thrown in C++ implementations.
+ *  When not obvious, please see the required signature's documentation for
+ *  determining what to implement.
  *  .
  *  For ease of maintenance, please follow the following conventions:
  *  - Client implementations' initialization function should be called 
