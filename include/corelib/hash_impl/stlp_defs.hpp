@@ -215,6 +215,7 @@ NCBI_USING_NAMESPACE_STD;
 #  define NO_STD_CONSTRUCT
 #  define NO_STD_DESTROY
 #  define NO_STD_IDENTITY
+#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
 #ifdef _DEBUG
@@ -457,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/18 13:43:46  rsmith
+ * Codewarrior + _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
+ *
  * Revision 1.7  2005/03/28 20:59:05  rsmith
  * add defines for Metrowerks/Codewarrior compiler.
  *
