@@ -182,14 +182,21 @@ function SolutionName(oTask)
 // Run project tree builder
 function RunPtb(oShell, oTree, oTask)
 {
-	var ptb_command_line;
+	var ptb;
 	if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
         var conf = GetConfigs(oTask)[0];
-        var target_path = "\"" + oTree.BinPathStatic + "\\" + conf;
-        ptb_command_line = target_path + "\\project_tree_builder.exe\"";
+        var target_path = oTree.BinPathStatic + "\\" + conf;
+        ptb = target_path + "\\project_tree_builder.exe";
     } else {
-		ptb_command_line = "\"" + oTask.RemotePtb + "\"";
+		ptb = oTask.RemotePtb;
     }
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    if (!oFso.FileExists(ptb)) {
+        WScript.Echo("ERROR: File not found: " + ptb);
+		WScript.Quit(1);	
+    }
+	var ptb_command_line;
+	ptb_command_line  = "\"" + ptb + "\"";
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
