@@ -116,9 +116,10 @@ void CGridCgiContext::SetCookie(const string& name, const string& value)
 
 void CGridCgiContext::ExpierCookie(const string& cookie_name)
 {
-    CCgiCookie c(cookie_name, "");
+    CCgiCookie c(cookie_name, "empty");
     CTime exp(CTime::eCurrent, CTime::eGmt);
-    c.SetExpTime(--exp);
+    exp.AddHour(-1);
+    c.SetExpTime(exp);
     m_CgiContext.GetResponse().Cookies().Add(c);
 }
 
@@ -352,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/18 13:34:29  didenko
+ * Fixed ExpierCookie method
+ *
  * Revision 1.12  2005/04/13 16:43:10  didenko
  * + InitGridClient
  *
