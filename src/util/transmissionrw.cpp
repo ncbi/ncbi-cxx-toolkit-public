@@ -140,6 +140,11 @@ CTransmissionReader::Read(void*   buf,
     m_PacketBytesToRead -= read;
     if (bytes_read)
         *bytes_read = read;
+/*
+if (res != eRW_Success) { 
+    _ASSERT(0);
+}
+*/
     return res;
 }
 
@@ -192,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/18 18:13:30  kuznets
+ * Cosmetics
+ *
  * Revision 1.3  2005/04/14 16:28:36  kuznets
  * Added ownership flags
  *
