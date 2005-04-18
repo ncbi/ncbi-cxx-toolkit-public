@@ -170,22 +170,6 @@ public:
     /// Sequence type accepted and returned for GI indexes.
     typedef int TGI;
     
-    /// @deprecated
-    /// Short Constructor
-    /// 
-    /// This version of the constructor assumes memory mapping and
-    /// that the entire possible OID range will be included.  [This
-    /// version is obsolete, because the sequence type is specified as
-    /// a character; eventually only the ESeqType version will exist.]
-    /// 
-    /// @param dbname
-    ///   A list of database or alias names, seperated by spaces.
-    /// @param seqtype
-    ///   Either kSeqTypeProt for a protein database, kSeqTypeNucl for
-    ///   nucleotide, or kSeqTypeUnkn to ask CSeqDB to try each one.
-    ///   These can also be specified as 'p', 'n', or '-'.
-    CSeqDB(const string & dbname, char seqtype);
-    
     /// Short Constructor
     /// 
     /// This version of the constructor assumes memory mapping and
@@ -194,42 +178,10 @@ public:
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
-    ///   Either eProtein, eNucleotide, or eUnknown
-    /// @param gi_list
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param gilist
     ///   The database will be filtered by this GI list if non-null.
-    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list = 0);
-    
-    /// @deprecated
-    /// Constructor with MMap Flag and OID Range.
-    ///
-    /// If the oid_end value is specified as zero, or as a value
-    /// larger than the number of OIDs, it will be adjusted to the
-    /// number of OIDs in the database.  Specifying 0,0 for the start
-    /// and end will cause inclusion of the entire database.  [This
-    /// version of the constructor is obsolete because the sequence
-    /// type is specified as a character; eventually only the ESeqType
-    /// version will exist.]
-    /// 
-    /// @param dbname
-    ///   A list of database or alias names, seperated by spaces.
-    /// @param seqtype
-    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
-    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
-    /// @param oid_begin
-    ///   Iterator will skip OIDs less than this value.  Only OIDs
-    ///   found in the OID lists (if any) will be returned.
-    /// @param oid_end
-    ///   Iterator will return up to (but not including) this OID.
-    /// @param use_mmap
-    ///   If kSeqDBMMap is specified (the default), memory mapping is
-    ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
-    ///   fails, this platform does not support it, the less efficient
-    ///   read and write calls are used instead.
-    CSeqDB(const string & dbname,
-           char           seqtype,
-           int            oid_begin,
-           int            oid_end,
-           bool           use_mmap);
+    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0);
     
     /// Constructor with MMap Flag and OID Range.
     ///
@@ -244,8 +196,7 @@ public:
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
     /// @param seqtype
-    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
-    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    ///   Specify eProtein, eNucleotide, or eUnknown.
     /// @param oid_begin
     ///   Iterator will skip OIDs less than this value.  Only OIDs
     ///   found in the OID lists (if any) will be returned.
@@ -415,13 +366,6 @@ public:
     /// @param append
     ///   Specify true to append to gis, keeping existing elements.
     void GetGis(int oid, vector<int> & gis, bool append = false) const;
-    
-    /// @deprecated
-    /// Returns the type of database opened - protein or nucleotide..
-    /// [This method is obsolete; use GetSequenceType() instead.]
-    /// 
-    /// This uses the same constants as the constructor.
-    char GetSeqType() const;
     
     /// Returns the type of database opened - protein or nucleotide.
     /// 
@@ -620,27 +564,6 @@ public:
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> SeqidToBioseq(const CSeq_id & seqid) const;
     
-    /// @deprecated
-    /// Find volume paths
-    ///
-    /// Find the base names of all volumes.  This method builds an
-    /// alias hierarchy (which should be much faster than constructing
-    /// an entire CSeqDB object), and returns the resolved volume file
-    /// base names from that hierarchy.  [This version of the method
-    /// is obsolete because the sequence type is specified as a
-    /// character; eventually only the ESeqType version will exist.]
-    ///
-    /// @param dbname
-    ///   The input name of the database
-    /// @param seqtype
-    ///   Indicates whether the database is protein or nucleotide
-    /// @param paths
-    ///   The set of resolved database path names
-    static void
-    FindVolumePaths(const string   & dbname,
-                    char             seqtype,
-                    vector<string> & paths);
-    
     /// Find volume paths
     ///
     /// Find the base names of all volumes.  This method builds an
@@ -651,7 +574,7 @@ public:
     /// @param dbname
     ///   The input name of the database
     /// @param seqtype
-    ///   Indicates whether the database is protein or nucleotide
+    ///   Specify eProtein, eNucleotide, or eUnknown.
     /// @param paths
     ///   The set of resolved database path names
     static void

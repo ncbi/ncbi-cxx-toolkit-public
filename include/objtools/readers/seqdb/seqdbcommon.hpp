@@ -84,29 +84,11 @@ public:
 };
 
 
-/// Used to indicate protein sequences.
-const char kSeqTypeProt = 'p';
-
-/// Used to indicate nucleotide sequences.
-const char kSeqTypeNucl = 'n';
-
-/// Used to indicate that sequence type should be selected by SeqDB;
-/// this is no longer supported and will probably be removed soon.
-const char kSeqTypeUnkn = '-';
-
-
 /// Used to request ambiguities in Ncbi/NA8 format.
 const int kSeqDBNuclNcbiNA8  = 0;
 
 /// Used to request ambiguities in BLAST/NA8 format.
 const int kSeqDBNuclBlastNA8 = 1;
-
-
-/// Used to request that memory mapping be used.
-const bool kSeqDBMMap   = true;
-
-/// Used to request that memory mapping not be used.
-const bool kSeqDBNoMMap = false;
 
 
 /// Certain methods have an "Alloc" version.  When these methods are

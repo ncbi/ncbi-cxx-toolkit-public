@@ -124,16 +124,6 @@ s_SeqDBInit(const string & dbname,
     return impl;
 }
 
-CSeqDB::CSeqDB(const string & dbname, char seqtype)
-{
-    m_Impl = s_SeqDBInit(dbname,
-                         seqtype,
-                         0,
-                         0,
-                         true,
-                         0);
-}
-
 CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
 {
     m_Impl = s_SeqDBInit(dbname,
@@ -142,20 +132,6 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
                          0,
                          true,
                          gi_list);
-}
-
-CSeqDB::CSeqDB(const string & dbname,
-               char           seqtype,
-               int            oid_begin,
-               int            oid_end,
-               bool           use_mmap)
-{
-    m_Impl = s_SeqDBInit(dbname,
-                         seqtype,
-                         oid_begin,
-                         oid_end,
-                         use_mmap,
-                         0);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -186,11 +162,6 @@ int CSeqDB::GetSeqLengthApprox(int oid) const
 CRef<CBlast_def_line_set> CSeqDB::GetHdr(int oid) const
 {
     return m_Impl->GetHdr(oid);
-}
-
-char CSeqDB::GetSeqType() const
-{
-    return m_Impl->GetSeqType();
 }
 
 CSeqDB::ESeqType CSeqDB::GetSequenceType() const
@@ -448,30 +419,6 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     }
     
     return bs;
-}
-
-void
-CSeqDB::FindVolumePaths(const string   & dbname,
-                        char             seqtype,
-                        vector<string> & paths)
-{
-    bool done = false;
-    
-    if ((seqtype == 'p') || (seqtype == 'n')) {
-        CSeqDBImpl::FindVolumePaths(dbname, seqtype, paths);
-    } else {
-        try {
-            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
-            done = true;
-        }
-        catch(...) {
-            done = false;
-        }
-        
-        if (! done) {
-            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
-        }
-    }
 }
 
 void

@@ -136,7 +136,7 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
       m_FileName(dbfilename),
       m_File    (atlas)
 {
-    if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
+    if ((prot_nucl != 'p') && (prot_nucl != 'n')) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Error: Invalid sequence type requested.");
@@ -171,7 +171,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                    "Error: dbname should not be an empty string.");
     }
     
-    if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
+    if ((prot_nucl != 'p') && (prot_nucl != 'n')) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Error: Invalid sequence type requested.");
@@ -222,9 +222,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     
     m_Atlas.RetRegion(lease);
     
-    char db_seqtype = ((f_db_seqtype == 1)
-                       ? kSeqTypeProt
-                       : kSeqTypeNucl);
+    char db_seqtype = ((f_db_seqtype == 1) ? 'p' : 'n');
     
     if (db_seqtype != x_GetSeqType()) {
         NCBI_THROW(CSeqDBException,
@@ -235,7 +233,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     m_HdrRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off1, off2, locked);
     m_SeqRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off2, off3, locked);
     
-    if (db_seqtype == kSeqTypeNucl) {
+    if (db_seqtype == 'n') {
         m_AmbRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off3, offend, locked);
     } else {
         m_AmbRegion = 0;
