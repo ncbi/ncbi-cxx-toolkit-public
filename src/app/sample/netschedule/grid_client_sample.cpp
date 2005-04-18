@@ -53,7 +53,7 @@ public:
         //   ProgramName v. 1.2.3
         //   ProgramName ver. 1.2.3
 
-        return "SampleNode version 1.0.1";
+        return "SampleNodeClient version 1.0.1";
     }
 
 };
@@ -97,6 +97,7 @@ int CGridClientSampleApp::Run(void)
     CNcbiOstream& os = job_submiter.GetOStream();
 
     // Send jobs input data
+    os << "doubles ";  // output_type - just a list of doubels
     os << vsize << ' ';
     srand( (unsigned)time( NULL ) );
     for (int j = 0; j < vsize; ++j) {
@@ -172,6 +173,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/18 13:36:15  didenko
+ * Changed program version
+ *
  * Revision 1.6  2005/04/07 16:49:29  didenko
  * + Program Version checking
  *

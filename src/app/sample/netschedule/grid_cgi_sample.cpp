@@ -62,7 +62,7 @@ public:
         //   ProgramName v. 1.2.3
         //   ProgramName ver. 1.2.3
 
-        return "SampleNode version 1.0.1";
+        return "SampleNodeCgiClient version 1.0.1";
     }
 
 protected:
@@ -192,6 +192,7 @@ void CGridCgiSampleApplication::PrepareJobData(CGridJobSubmiter& submiter)
 {   
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
+    os << "doubles ";  // request output type just a list of doubles
     os << m_Doubles.size() << ' ';
     for (size_t j = 0; j < m_Doubles.size(); ++j) {
         os << m_Doubles[j] << ' ';
@@ -368,6 +369,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/18 13:36:15  didenko
+ * Changed program version
+ *
  * Revision 1.10  2005/04/12 19:12:04  didenko
  * - OnStatusCheck method
  * + OnJobPending method

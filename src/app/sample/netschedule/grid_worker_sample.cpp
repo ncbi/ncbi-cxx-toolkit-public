@@ -68,6 +68,9 @@ public:
         //    (You can use ASN.1 de-serialization here)
         //
         CNcbiIstream& is = context.GetIStream();
+        string output_type;
+        is >> output_type; // could be "doubles" or "html"
+        LOG_POST( "Output type: " << output_type);
         int count;
         is >> count;
         vector<double> dvec;
@@ -112,7 +115,15 @@ public:
         //    (You can use ASN.1 serialization here)
         //
         CNcbiOstream& os = context.GetOStream();
-        os << dvec.size() << ' ';
+        if (output_type == "html") 
+            os << "<html><head><title>"
+                  "Sample Grid Worker Result Page"
+                  "</title></head><body>"
+                  "<p>Sample Grid Worker Result</p>";
+            
+        else
+            os << dvec.size() << ' ';
+
         for (int i = 0; i < count; ++i) {
             if (!os.good()) {
                 ERR_POST( "Output stream error. Index : " << i );
@@ -120,6 +131,8 @@ public:
             }
             os << dvec[i] << ' ';
         }
+        if (output_type == "html") 
+            os << "</body></html>";
 
         // 4. Indicate that the job is done and the result 
         // can be delivered to the client.
@@ -188,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/18 13:36:15  didenko
+ * Changed program version
+ *
  * Revision 1.7  2005/04/04 16:15:02  kuznets
  * Version string modified to match Program 1.2.3 mask
  *

@@ -53,7 +53,7 @@ public:
 
 string CGridClientTestApp::GetProgramVersion(void) const
 {
-    return "SampleNode version 1.0.1";
+    return "SampleNodeStressTest version 1.0.1";
 }
 
 
@@ -111,7 +111,7 @@ int CGridClientTestApp::Run(void)
         string ns_key;
         vector<double>* dvec = new vector<double>;
         CNcbiOstream& os = job_submiter.GetOStream();
-        os << vsize << ' ';
+        os << "doubles " << vsize << ' ';
         srand( (unsigned)time( NULL ) );
         for (int j = 0; j < vsize; ++j) {
             double d = rand()*0.2;
@@ -215,6 +215,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/18 13:37:45  didenko
+ * Changed program version
+ *
  * Revision 1.4  2005/04/07 18:51:54  didenko
  * Change a program version number
  *
