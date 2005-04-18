@@ -281,20 +281,22 @@ int CWinMaskApplication::Run (void)
 
     if( aConfig.MakeCounts() )
     {
-        CWinMaskCountsGenerator cg( aConfig.Input(),
-                                    aConfig.Output(),
-                                    aConfig.SFormat(),
-                                    aConfig.Th(),
-                                    aConfig.Mem(),
-                                    aConfig.UnitSize(),
-                                    aConfig.GenomeSize(),
-                                    aConfig.MinScore(),
-                                    aConfig.MaxScore(),
-                                    aConfig.CheckDup(),
-                                    aConfig.FaList(),
-                                    aConfig.Ids(),
-                                    aConfig.ExcludeIds() );
-        cg();
+        {
+            CWinMaskCountsGenerator cg( aConfig.Input(),
+                                        aConfig.Output(),
+                                        aConfig.SFormat(),
+                                        aConfig.Th(),
+                                        aConfig.Mem(),
+                                        aConfig.UnitSize(),
+                                        aConfig.GenomeSize(),
+                                        aConfig.MinScore(),
+                                        aConfig.MaxScore(),
+                                        aConfig.CheckDup(),
+                                        aConfig.FaList(),
+                                        aConfig.Ids(),
+                                        aConfig.ExcludeIds() );
+            cg();
+        }
         return 0;
     }
 
@@ -387,6 +389,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/04/18 20:11:36  morgulis
+ * Stage 1 can now take -t_high parameter.
+ * Unit counts generated do not contain counts above T_high.
+ *
  * Revision 1.8  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

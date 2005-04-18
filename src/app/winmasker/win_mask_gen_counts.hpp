@@ -142,8 +142,10 @@ private:
     Uint4 unit_size;                /**<\internal n-mer length in base pairs */
     Uint8 genome_size;              /**<\internal genome size in bases */
     Uint4 min_count;                /**<\internal minimal n-mer count to consider */
-    Uint4 max_count;                /**<\internal maximal n-mer count to consider */
-    bool has_min_count;             /**<\internal true iff -t_low was given on a command line */
+    Uint4 max_count;                /**<\internal maximal n-mer count to consider for thresholds computations */
+    Uint4 t_high;                   /**<\internal maximal n_mer count to consider */
+    bool has_min_count;             /**<\internal true iff -t_low was given on command line */
+    bool no_extra_pass;             /**<\internal true iff -t_low and -t_high was given on command line */
     bool check_duplicates;          /**<\internal whether to check input for duplicates */
     bool use_list;                  /**<\internal whether input is a fasta file or a file list */
 
@@ -160,6 +162,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/04/18 20:11:36  morgulis
+ * Stage 1 can now take -t_high parameter.
+ * Unit counts generated do not contain counts above T_high.
+ *
  * Revision 1.5  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *

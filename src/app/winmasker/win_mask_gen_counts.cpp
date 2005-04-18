@@ -159,11 +159,13 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
-    max_count( arg_max_count == 0 ? 500 : arg_max_count ),
+    max_count( 500 ),
+    t_high( arg_max_count ),
     has_min_count( arg_min_count != 0 ),
+    no_extra_pass( arg_min_count != 0 && arg_max_count != 0 ),
     check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
     total_ecodes( 0 ), 
-    score_counts( arg_max_count == 0 ? 500 : arg_max_count, 0 ),
+    score_counts( max_count, 0 ),
     ids( arg_ids ), exclude_ids( arg_exclude_ids )
 {
     // Parse arg_th to set up th[].
@@ -259,7 +261,7 @@ void CWinMaskCountsGenerator::operator()()
     cerr << "Pass " << passno << flush;
 
     for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix ) {
-        process( prefix, prefix_size, file_list, has_min_count );
+        process( prefix, prefix_size, file_list, no_extra_pass );
     }
 
     ++passno;
@@ -274,7 +276,7 @@ void CWinMaskCountsGenerator::operator()()
     double previous( 0.0 );
     double current;
 
-    if( has_min_count )
+    if( no_extra_pass )
     {
         ustat->setBlank();
         ostringstream s;
@@ -287,7 +289,7 @@ void CWinMaskCountsGenerator::operator()()
         current = 100.0*(((double)(score_counts[i - 1] + offset))
                   /((double)total_ecodes));
 
-        if( has_min_count )
+        if( no_extra_pass )
         {
             ostringstream s;
             s << " " << dec << i << "\t" << score_counts[i - 1] + offset << "\t"
@@ -302,11 +304,16 @@ void CWinMaskCountsGenerator::operator()()
         previous = current;
     }
 
-    // If min_count must be deduced do it and reprocess.
-    if( !has_min_count )
+    // If min_count or t_high must be deduced do it and reprocess.
+    if( !no_extra_pass )
     {
         total_ecodes = 0;
-        min_count = index[0];
+
+        if( !has_min_count )
+            min_count = index[0];
+
+        if( t_high == 0 )
+            t_high = index[3];
 
         if( min_count == 0 )
           min_count = 1;
@@ -470,7 +477,9 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
             else score_counts[counts[i] - 1] += 2;
 
             if( do_output )
-                ustat->setUnitCount( prefix + i, counts[i] );
+                ustat->setUnitCount( prefix + i,
+                                     (counts[i] > t_high) ? t_high
+                                                          : counts[i] );
         }
     }
 }
@@ -481,6 +490,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/04/18 20:11:36  morgulis
+ * Stage 1 can now take -t_high parameter.
+ * Unit counts generated do not contain counts above T_high.
+ *
  * Revision 1.10  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *

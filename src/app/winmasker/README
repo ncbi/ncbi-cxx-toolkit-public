@@ -14,7 +14,7 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format]
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format]
 
     windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list]
 
@@ -48,14 +48,18 @@ DESCRIPTION
         compute the unit length automatically.
 
         Pass 3 (optional). Compute unit score thresholds T_threshold, 
-        T_extend, T_low, and T_high. In particular the value of 
-        T_low is necessary for the final pass to save only the counts 
-        for the units with score above T_low. This pass can be 
-        avoided by using "-t_low" command line option that explicitly 
-        sets the value of T_low.
+        T_extend, T_low, and T_high. In particular the values of 
+        T_low and T_high are necessary for the final pass to save only 
+        the counts for the units with score above or equal to T_low 
+        and to change the counts of units that are below or equal to 
+        T_high to the value of T_high. This pass can be avoided by 
+        using "-t_low" and "-t_high" command line options that 
+        explicitly set the values of T_low and T_high.
 
         Pass 4. Generate the file containing the unit length, 
         significant (above T_low) unit counts, and threshold values.
+        The counts of units that appear more than T_high times
+        in the genome are assigned the count value of T_high.
         
     Stage 2 corresponds to "-mk_counts false", which is the default.
     WindowMasker reads the data generated in Stage 1 and a set of 
@@ -192,6 +196,16 @@ Stage 1 Options
         its value is computed so that 90% of all units present in the 
         genome have counts below T_low.
 
+    -t_high T_high
+
+        default: <empty>
+
+        The units that appear more than T_high times in the genome
+        are given the count value of T_high. If "-t_high" is not 
+        specified on command line, then its value is computed so that
+        99.8% of all units present in the genome have counts below
+        T_high.
+
     -unit unit_length
 
         default: <empty>
@@ -272,9 +286,13 @@ Stage 2 Options
         default: <the value from unit counts file>
 
         This parameter overrides the value contained in the unit
-        counts file. Units with counts greater than T_high will not 
-        be read from the unit_counts file and the value of
-        "-set_t_high" will be used as the result of unit count lookup.
+        counts file. Since the unit counts file does not contain
+        unit counts values larger than T_high value computed
+        at Stage 1, it only makes sense to specify a T_high value
+        that is less than the one in the unit counts file. Units 
+        with counts greater than T_high will not be read from the 
+        unit_counts file and the value of "-set_t_high" will be used 
+        as the result of unit count lookup.
 
     -t_low T_low
 
@@ -381,25 +399,22 @@ FILES
 
 
 15
-0 2389786
-1 65535
-2 300282
-3 124840
-4 38729
-5 21522
-6 2808
-7 18814
-8 193471
-9 38161
-a 57691
-b 55942
-c 30053
-d 31367
-e 19223
-f 68769
-10 27888
-11 7764
-12 9890
+0 154
+1 154
+2 154
+3 154
+4 154
+<...>
+1a0 154
+1a1 47
+1a2 95
+1a3 64
+1a4 71
+1a5 101
+1a7 80
+1a8 101
+1a9 63
+1aa 100
 <...>
 
 >t_low       16
