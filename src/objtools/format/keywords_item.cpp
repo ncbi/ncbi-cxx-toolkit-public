@@ -31,8 +31,6 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
 #include <objects/seqblock/PIR_block.hpp>
 #include <objects/seqblock/PRF_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
@@ -203,14 +201,8 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         break;
     }
 
-    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object& uo = it->GetUser();
-        if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
-            if (NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE")) {
-                x_AddKeyword("ENCODE");
-                break;
-            }
-        }
+    if (ctx.IsEncode()) {
+        x_AddKeyword("ENCODE");
     }
     
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
@@ -277,6 +269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/04/18 13:51:02  shomrat
+* Changed ENCODE implementation
+*
 * Revision 1.10  2005/04/15 14:03:06  shomrat
 * Added ENCODE
 *
