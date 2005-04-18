@@ -177,6 +177,7 @@ DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrc, BlastSeqSrcFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrcIterator, BlastSeqSrcIteratorFree);
 DECLARE_AUTO_CLASS_WRAPPER(Blast_Message, Blast_MessageFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastMaskLoc, BlastMaskLocFree);
@@ -192,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2005/04/18 14:00:18  camacho
+* + RAII class for BlastSeqSrcIterator
+*
 * Revision 1.55  2005/03/28 16:56:04  jcherry
 * Added export specifier to DECLARE_AUTO_CLASS_WRAPPER macro
 *
