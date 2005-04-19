@@ -197,10 +197,7 @@ void RowSourceTable::clear()
 //pending row starts at CCdCore::PENDING_ROW_START
 string RowSourceTable::makeCDRowKey(CCdCore* cd, int row) const
 {
-	char tmp[100];
-	sprintf(tmp, "r%d", row);
-	string key = cd->GetAccession() + tmp;
-	return key;
+	return cd->GetAccession() + 'r' + NStr::IntToString(row);;
 }
 
 void RowSourceTable::convertFromCDRows(CCdCore* cd, const vector<int>& cdRows, set<int>& colRows)const
