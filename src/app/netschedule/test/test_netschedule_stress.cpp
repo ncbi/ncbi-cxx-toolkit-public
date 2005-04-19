@@ -225,6 +225,15 @@ int CTestNetScheduleStress::Run(void)
     string job_key = cl.SubmitJob(input);
     NcbiCout << job_key << NcbiEndl;
 
+    // test progress message
+    string progress_msg = "progress report message";
+    cl.PutProgressMsg(job_key, progress_msg);
+
+    string pmsg = cl.GetProgressMsg(job_key);
+    NcbiCout << pmsg << NcbiEndl;
+    assert(pmsg == progress_msg);
+
+
     string err = "test error\r\nmessage";
     cl.PutFailure(job_key, err);
     string err_msg;
@@ -430,6 +439,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/19 19:34:58  kuznets
+ * + test for progress messages
+ *
  * Revision 1.10  2005/04/06 12:38:59  kuznets
  * Use version control
  *
