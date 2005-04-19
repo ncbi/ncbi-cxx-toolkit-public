@@ -38,6 +38,7 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
+#include <util/transmissionrw.hpp>
 #include <memory>
 
 
@@ -104,6 +105,44 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
     key->port = atoi(ch);
 }
 
+
+unsigned CNetCache_GetBlobId(const string& key_str)
+{
+    unsigned id = 0;
+
+    const char* ch = key_str.c_str();
+
+    if (*ch == 0) {
+err_throw:
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    }
+
+    // prefix
+    int prsum = (ch[0] - 'N') +
+                (ch[1] - 'C') +
+                (ch[2] - 'I') +
+                (ch[3] - 'D');
+    if (prsum != 0) {
+        goto err_throw;
+    }
+    ch += 4;
+    if (*ch != '_') {
+        goto err_throw;
+    }
+
+    // version
+    ch += 3;
+    if (*ch != '_') {
+        goto err_throw;
+    }
+    ++ch;
+
+    // id
+    id = (unsigned) atoi(ch);
+    return id;
+}
+
+
 void CNetCache_GenerateBlobKey(string*        key, 
                                unsigned       id, 
                                const string&  host, 
@@ -132,7 +171,8 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
-    : CNetServiceClient(client_name)
+    : CNetServiceClient(client_name),
+      m_PutVersion(0)
 {
 }
 
@@ -140,14 +180,16 @@ CNetCacheClient::CNetCacheClient(const string&  client_name)
 CNetCacheClient::CNetCacheClient(const string&  host,
                                  unsigned short port,
                                  const string&  client_name)
-    : CNetServiceClient(host, port, client_name)
+    : CNetServiceClient(host, port, client_name),
+      m_PutVersion(0)
 {
 }
 
 
 CNetCacheClient::CNetCacheClient(CSocket*      sock, 
                                  const string& client_name)
-    : CNetServiceClient(sock, client_name)
+    : CNetServiceClient(sock, client_name),
+      m_PutVersion(0)
 {
 }
 
@@ -191,12 +233,20 @@ string CNetCacheClient::PutData(const void*  buf,
     return CNetCacheClient::PutData(kEmptyStr, buf, size, time_to_live);
 }
 
-void CNetCacheClient::PutInitiate(string* key, unsigned int time_to_live)
+void CNetCacheClient::PutInitiate(string*   key, 
+                                  unsigned  time_to_live,
+                                  unsigned  put_version)
 {
     _ASSERT(key);
 
     string& request = m_Tmp;
-    MakeCommandPacket(&request, "PUT ");
+    string put_str = "PUT";
+    if (put_version) {
+        put_str += NStr::IntToString(put_version);
+    }
+    put_str.push_back(' ');
+
+    MakeCommandPacket(&request, put_str);
     
     request += NStr::IntToString(time_to_live);
     request += " ";
@@ -225,18 +275,28 @@ void CNetCacheClient::PutInitiate(string* key, unsigned int time_to_live)
     }
 }
 
+
+
 string  CNetCacheClient::PutData(const string& key,
                                  const void*   buf,
                                  size_t        size,
                                  unsigned int  time_to_live)
 {
+    _ASSERT(m_PutVersion == 0 || m_PutVersion == 2);
+
     CheckConnect(key);
     CSockGuard sg(*m_Sock);
 
     string k(key);
-    PutInitiate(&k, time_to_live);
+    PutInitiate(&k, time_to_live , m_PutVersion);
 
-    WriteStr((const char*) buf, size);
+    m_Sock->DisableOSSendDelay(false);
+    
+    if (m_PutVersion == 2) {
+        TransmitBuffer((const char*) buf, size);
+    } else {
+        WriteStr((const char*) buf, size);
+    }
 
     return k;
 }
@@ -247,11 +307,14 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
 
     CheckConnect(*key);
 
-    PutInitiate(key, time_to_live);
+    PutInitiate(key, time_to_live, 2);
 
     m_Sock->DisableOSSendDelay(false);
+
     IWriter* writer = new CNetCacheSock_RW(m_Sock);
-    return writer;
+    CTransmissionWriter* twriter = 
+        new CTransmissionWriter(writer, eTakeOwnership);
+    return twriter;
 }
 
 
@@ -482,6 +545,26 @@ bool CNetCacheClient::IsError(const char* str)
 }
 
 
+void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
+{
+    _ASSERT(m_Sock);
+
+    CSocketReaderWriter  wrt(m_Sock, eNoOwnership);
+    CTransmissionWriter twrt(&wrt, eNoOwnership);
+
+    const char* buf_ptr = buf;
+    size_t size_to_write = len;
+    while (size_to_write) {
+        size_t n_written;
+        ERW_Result io_res =
+            twrt.Write(buf_ptr, size_to_write, &n_written);
+        NCBI_IO_CHECK_RW(io_res);
+
+        size_to_write -= n_written;
+        buf_ptr       += n_written;
+    } // while
+}
+
 
 
 CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
@@ -605,6 +688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/04/19 14:17:48  kuznets
+ * Alternative put version
+ *
  * Revision 1.38  2005/04/13 13:37:10  didenko
  * Changed NetCache PluginManager driver name to netcache_client
  *

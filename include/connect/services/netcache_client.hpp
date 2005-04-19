@@ -212,13 +212,17 @@ protected:
 
     /// @return netcache key
     void PutInitiate(string*       key,
-                     unsigned int  time_to_live);
+                     unsigned      time_to_live,
+                     unsigned      put_version = 0);
+
+    void TransmitBuffer(const char* buf, size_t len);
 
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
 protected:
-    string   m_Tmp;
+    string    m_Tmp;
+    unsigned  m_PutVersion;
 };
 
 
@@ -378,6 +382,12 @@ struct CNetCache_Key
 extern NCBI_XCONNECT_EXPORT
 void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
 
+
+/// Parse blob key, extract id
+extern NCBI_XCONNECT_EXPORT
+unsigned CNetCache_GetBlobId(const string& key_str);
+
+
 /// Generate blob key string
 ///
 /// Please note that "id" is an integer issued by the netcache server.
@@ -427,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/04/19 14:17:13  kuznets
+ * Alternative put version
+ *
  * Revision 1.31  2005/04/07 13:51:02  kuznets
  * NetCache_ConfigureWithLB() removed from the public interface
  *
