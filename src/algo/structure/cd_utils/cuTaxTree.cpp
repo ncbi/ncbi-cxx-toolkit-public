@@ -32,6 +32,7 @@
 #include <algo/structure/cd_utils/cuTaxTree.hpp>
 #include <algo/structure/cd_utils/cuTaxClient.hpp>
 #include <fstream>
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -311,7 +312,10 @@ void TaxTreeData::addSeqTax(int rowID, string seqName, int taxid)
 void TaxTreeData::growAndInsertLineage(stack<TaxNode*>& lineage)
 {
 	TaxNode* top = lineage.top();
-	TaxonomyTree::iterator pos = find(begin(), end(), *top);
+	TaxonomyTree::iterator pos = begin();
+	while (pos != end()  &&  !(*pos == *top) ) {
+		++pos;
+	}
 	if (pos != end())  //top is alreaddy in the tree
 	{
 		lineage.pop();
@@ -548,6 +552,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 21:59:08  ucko
+ * +stdio.h() due to use of sprintf(); don't try to use find() on a
+ * tree<>, because it's not 100% STL-compatible.
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
