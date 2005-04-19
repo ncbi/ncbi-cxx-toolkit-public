@@ -268,14 +268,17 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
     //cout << "precision to start:  " << prec << endl;
 
     os << nrows << endl;
-    std::ios_base::fmtflags initFlags = os.setf(ios::scientific, ios::floatfield);
+    IOS_BASE::fmtflags initFlags = os.setf(IOS_BASE::scientific,
+                                           IOS_BASE::floatfield);
 //    os.setf(0, ios::floatfield);
     os.precision(OUTPUT_PRECISION);
     if (triangular) {  //  symmetric matrix with zero diagonal elements
         for (int row=0; row<nrows; ++row) {
             seqId.erase();
             if (!m_aligns->Get_GI_or_PDB_String_FromAlignment(row, seqId)) seqId = notFound;
-            os << setw(12) << left << seqId << " ";
+            os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            os << setw(12) << seqId << " ";
+            os.setf(initFlags, IOS_BASE::adjustfield);
             for (int col=0; col<row; ++col) {
                 os << setw(10) << (*(const_cast<DistanceMatrix*>(this)))[row][col]  << "  ";
             }
@@ -286,14 +289,16 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
         for (int row=0; row<nrows; ++row) {
             seqId.erase();
             if (!m_aligns->Get_GI_or_PDB_String_FromAlignment(row, seqId)) seqId = notFound;
-            os << setw(12) << left << seqId << " ";
+            os.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            os << setw(12) << seqId << " ";
+            os.setf(initFlags, IOS_BASE::adjustfield);
             for (int col=0; col<nrows; ++col) {
                 os << setw(10) << (*(const_cast<DistanceMatrix*>(this)))[row][col]  << "  ";
             }
             os << endl;
         }
     }
-    os.setf(initFlags, ios::floatfield);
+    os.setf(initFlags);
     os.precision(prec);
 }
 
@@ -303,6 +308,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/19 21:53:51  ucko
+* Accommodate GCC 2.95, which lacks a distinct ios_base and
+* manipulators such as LEFT.
+*
 * Revision 1.1  2005/04/19 14:27:18  lanczyck
 * initial version under algo/structure
 *
