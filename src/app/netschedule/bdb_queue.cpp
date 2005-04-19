@@ -869,6 +869,36 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     }
 }
 
+void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
+                                                const char*   msg)
+{
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
+
+    {{
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
+
+    if (cur.FetchFirst() != eBDB_Ok) {
+        // TODO: Integrity error or job just expired?
+        return;
+    }
+    db.progress_msg = msg;
+    cur.Update();
+    }}
+
+    trans.Commit();
+}
+
+
 void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
                                        const string& err_msg)
 {
@@ -1209,7 +1239,8 @@ bool CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
                                          int*         ret_code,
                                          char*        input,
                                          char*        output,
-                                         char*        err_msg)
+                                         char*        err_msg,
+                                         char*        progress_msg)
 {
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
@@ -1228,6 +1259,9 @@ bool CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
         }
         if (err_msg) {
             ::strcpy(err_msg, (const char* )db.err_msg);
+        }
+        if (progress_msg) {
+            ::strcpy(progress_msg, (const char* )db.progress_msg);
         }
 
         return true;
@@ -1628,6 +1662,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/04/19 19:34:05  kuznets
+ * Adde progress report messages
+ *
  * Revision 1.24  2005/04/11 13:53:25  kuznets
  * Code cleanup
  *

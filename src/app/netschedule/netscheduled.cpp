@@ -67,7 +67,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.1.0  " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.2.0  " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -86,6 +86,8 @@ typedef enum {
     eJobRunTimeout,
     eDropQueue,
     eDropJob,
+    eGetProgressMsg,
+    ePutProgressMsg,
 
     eShutdown,
     eVersion,
@@ -103,6 +105,7 @@ struct SJS_Request
     EJS_RequestType    req_type;
     char               input[kNetScheduleMaxDataSize];
     char               output[kNetScheduleMaxDataSize];
+    char               progress_msg[kNetScheduleMaxDataSize];
     char               err[kNetScheduleMaxErrSize];
     string             job_key_str;
     unsigned int       jcount;
@@ -115,7 +118,7 @@ struct SJS_Request
 
     void Init()
     {
-        input[0] = output[0] = 0;
+        input[0] = output[0] = progress_msg[0] = 0;
         job_key_str.erase(); err_msg.erase();
         jcount = job_id = job_return_code = port = timeout = 0;
     }
@@ -230,6 +233,14 @@ public:
     void ProcessPut(CSocket&                sock,
                     SThreadData&            tdata,
                     CQueueDataBase::CQueue& queue);
+
+    void ProcessMPut(CSocket&                sock,
+                     SThreadData&            tdata,
+                     CQueueDataBase::CQueue& queue);
+
+    void ProcessMGet(CSocket&                sock,
+                     SThreadData&            tdata,
+                     CQueueDataBase::CQueue& queue);
 
     void ProcessPutFailure(CSocket&                sock,
                            SThreadData&            tdata,
@@ -530,6 +541,12 @@ end_version_control:
             case eDropJob:
                 ProcessDropJob(socket, *tdata, queue);
                 break;
+            case eGetProgressMsg:
+                ProcessMGet(socket, *tdata, queue);
+                break;
+            case ePutProgressMsg:
+                ProcessMPut(socket, *tdata, queue);
+                break;
             case eShutdown:
                 LOG_POST("Shutdown request...");
                 SetShutdownFlag();
@@ -690,7 +707,7 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         bool b = queue.GetJobDescr(job_id, &ret_code, 
                              tdata.req.input,
                              tdata.req.output,
-                             0);
+                             0, 0);
 
         if (b) {
             sprintf(szBuf, 
@@ -708,7 +725,8 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         bool b = queue.GetJobDescr(job_id, 0, 
                              tdata.req.input,
                              0,
-                             tdata.req.err);
+                             tdata.req.err,
+                             0);
 
         if (b) {
             sprintf(szBuf, 
@@ -726,6 +744,39 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
     sprintf(szBuf, "%i", st);
     WriteMsg(sock, "OK:", szBuf);
 }
+
+void CNetScheduleServer::ProcessMGet(CSocket&                sock, 
+                                     SThreadData&            tdata,
+                                     CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    int ret_code;
+    bool b = queue.GetJobDescr(job_id, &ret_code, 
+                               0, 0, 0, tdata.req.progress_msg);
+
+    if (b) {
+        WriteMsg(sock, "OK:", tdata.req.progress_msg);
+    } else {
+        WriteMsg(sock, "ERR:", "Job not found");
+    }
+}
+
+void CNetScheduleServer::ProcessMPut(CSocket&                sock, 
+                                     SThreadData&            tdata,
+                                     CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+
+    queue.PutProgressMessage(job_id, tdata.req.progress_msg);
+    WriteMsg(sock, "OK:", "");
+}
+
+
+
 
 void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
                                          SThreadData&  tdata)
@@ -955,6 +1006,8 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 14.JRTO JSID_01_1 timeout
     // 15.DROJ JSID_01_1
     // 16.FPUT JSID_01_1 "error message"
+    // 17.MPUT JSID_01_1 "error message"
+    // 18.MGET JSID_01_1
 
     const char* s = reqstr.c_str();
 
@@ -1029,6 +1082,40 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         
         return;
     }
+
+    if (strncmp(s, "MPUT", 4) == 0) {
+        req->req_type = ePutProgressMsg;
+        s += 4;
+
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+
+        NS_SKIPSPACE(s)
+
+        if (*s !='"') {
+            NS_RETURN_ERROR("Misformed MPUT request")
+        }
+        char *ptr = req->progress_msg;
+        for (++s; *s; ++s) {
+            if (*s == '"' && *(s-1) != '\\') break;
+            NS_CHECKEND(s, "Misformed MPUT request")
+            *ptr++ = *s;            
+        }
+        *ptr = 0;
+
+        return;
+    }
+
+    if (strncmp(s, "MGET", 4) == 0) {
+        req->req_type = eGetProgressMsg;
+        s += 4;
+
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+
+        return;
+    }
+
 
     if (strncmp(s, "PUT", 3) == 0) {
         req->req_type = ePutJobResult;
@@ -1578,6 +1665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/04/19 19:34:12  kuznets
+ * Adde progress report messages
+ *
  * Revision 1.25  2005/04/11 13:53:51  kuznets
  * Implemented logging
  *

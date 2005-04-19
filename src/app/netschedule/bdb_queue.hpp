@@ -92,6 +92,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldString       output;          ///< Result data
 
     CBDB_FieldString       err_msg;         ///< Error message (exception::what())
+    CBDB_FieldString       progress_msg;    ///< Progress report message
+
 
     CBDB_FieldString       cout;            ///< Reserved
     CBDB_FieldString       cerr;            ///< Reserved
@@ -126,6 +128,7 @@ struct SQueueDB : public CBDB_File
         BindData("output", &output, kNetScheduleMaxDataSize);
 
         BindData("err_msg", &err_msg, kNetScheduleMaxErrSize);
+        BindData("progress_msg", &progress_msg, kNetScheduleMaxDataSize);
 
         BindData("cout",  &cout, kNetScheduleMaxDataSize);
         BindData("cerr",  &cerr, kNetScheduleMaxDataSize);
@@ -319,6 +322,9 @@ public:
         void PutResult(unsigned int  job_id,
                        int           ret_code,
                        const char*   output);
+
+        void PutProgressMessage(unsigned int  job_id,
+                                const char*   msg);
         
         void JobFailed(unsigned int  job_id,
                        const string& err_msg);
@@ -341,17 +347,8 @@ public:
                          int*         ret_code,
                          char*        input,
                          char*        output,
-                         char*        err_msg);
-/*
-        // Get output info for compeleted job
-        bool GetOutput(unsigned int job_id,
-                       int*         ret_code,
-                       char*        output);
-
-        // Get output for failed job
-        bool GetErrMsg(unsigned int job_id,
-                       char*        err_msg);
-*/
+                         char*        err_msg,
+                         char*        progress_msg);
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
@@ -478,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/19 19:34:05  kuznets
+ * Adde progress report messages
+ *
  * Revision 1.19  2005/04/11 13:53:25  kuznets
  * Code cleanup
  *
