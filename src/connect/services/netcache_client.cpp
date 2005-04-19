@@ -304,17 +304,21 @@ string  CNetCacheClient::PutData(const string& key,
 IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
 {
     _ASSERT(key);
+    _ASSERT(m_PutVersion == 0 || m_PutVersion == 2);
 
     CheckConnect(*key);
 
-    PutInitiate(key, time_to_live, 2);
+    PutInitiate(key, time_to_live, m_PutVersion);
 
     m_Sock->DisableOSSendDelay(false);
 
     IWriter* writer = new CNetCacheSock_RW(m_Sock);
-    CTransmissionWriter* twriter = 
-        new CTransmissionWriter(writer, eTakeOwnership);
-    return twriter;
+    if (m_PutVersion == 2) {
+        CTransmissionWriter* twriter = 
+            new CTransmissionWriter(writer, eTakeOwnership);
+        return twriter;
+    }
+    return writer;
 }
 
 
@@ -688,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/04/19 17:42:07  kuznets
+ * Fixed net protocol bug
+ *
  * Revision 1.39  2005/04/19 14:17:48  kuznets
  * Alternative put version
  *
