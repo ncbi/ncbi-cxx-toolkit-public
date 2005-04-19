@@ -40,6 +40,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbireg.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netschedule_storage.hpp>
@@ -226,6 +227,10 @@ public:
     ///
     virtual IWorkerNodeJob* CreateInstance(void) = 0;
 
+    /// Initialize a worker node factory
+    ///
+    virtual void Init(const IRegistry& config) {}
+
     /// Get the job version
     ///
     virtual string GetJobVersion(void) const = 0;
@@ -345,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/19 18:58:52  didenko
+ * Added Init method to CGridWorker
+ *
  * Revision 1.8  2005/04/07 16:46:28  didenko
  * + Program Version checking
  *

@@ -57,12 +57,13 @@ USING_NCBI_SCOPE;
 class CSampleJob : public IWorkerNodeJob
 {
 public:
-    CSampleJob() {}
+    CSampleJob(const string& param) : m_Param(param){}
     virtual ~CSampleJob() {} 
 
     int Do(CWorkerNodeJobContext& context) 
     {
         LOG_POST( context.GetJobKey() + " " + context.GetJobInput());
+        LOG_POST( "This parameter is read from a config file: " << m_Param);
 
         // 1. Get an input data from the client
         //    (You can use ASN.1 de-serialization here)
@@ -106,7 +107,7 @@ public:
                 == CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
-            SleepMicroSec(3000);
+            SleepSec(3);
         }
         sort(dvec.begin(), dvec.end());
 
@@ -142,6 +143,8 @@ public:
         LOG_POST( "Job " << context.GetJobKey() << " is done.");
         return 0;
     }
+private:
+    string m_Param;
 };
 
 /// Sample Job Factory
@@ -153,9 +156,16 @@ class CSampleJobFactory : public IWorkerNodeJobFactory
 public:
     virtual ~CSampleJobFactory() {}
 
+    virtual void Init(const IRegistry& reg) 
+    {
+        m_Param =
+            reg.GetString("sample", "parameter", "no parameter");
+        
+    }
+
     virtual IWorkerNodeJob* CreateInstance(void)
     {
-        return new CSampleJob;
+        return new CSampleJob(m_Param);
     }
     virtual string GetJobVersion() const 
     {
@@ -167,6 +177,9 @@ public:
 
         return "SampleNode version 1.0.1";
     }
+
+private:
+    string m_Param;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -201,6 +214,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/19 18:58:52  didenko
+ * Added Init method to CGridWorker
+ *
  * Revision 1.8  2005/04/18 13:36:15  didenko
  * Changed program version
  *

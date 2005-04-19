@@ -213,6 +213,7 @@ void CGridWorkerApp::Init(void)
         m_ClientFactory.reset(
             new CNetScheduleClientFactory(GetConfig())
                               );
+    GetJobFactory().Init(GetConfig());
 }
 
 int CGridWorkerApp::Run(void)
@@ -289,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/19 18:58:52  didenko
+ * Added Init method to CGridWorker
+ *
  * Revision 1.8  2005/04/07 13:19:17  didenko
  * Fixed a bug that could cause a core dump
  *
