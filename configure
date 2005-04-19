@@ -4289,7 +4289,7 @@ else
    if test "$with_64" = "no" ; then
       case "$host:$compiler" in
        sparc-sun-solaris*:WorkShop* | sparc-sun-solaris*:KCC )
-         ARCH_CFLAGS="-xtarget=native -xarch=v9"
+         ARCH_CFLAGS="-xtarget=native"
          ;;
        mips*:GCC )
          ARCH_CFLAGS="-mipsn32"

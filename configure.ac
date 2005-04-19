@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.364 2005/04/13 19:48:32 ucko Exp $
+#  $Id: configure.ac,v 1.365 2005/04/19 15:01:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -919,7 +919,7 @@ else
    if test "$with_64" = "no" ; then
       case "$host:$compiler" in
        sparc-sun-solaris*:WorkShop* | sparc-sun-solaris*:KCC )
-         ARCH_CFLAGS="-xtarget=native -xarch=v9"
+         ARCH_CFLAGS="-xtarget=native"
          ;;
        mips*:GCC )
          ARCH_CFLAGS="-mipsn32"
