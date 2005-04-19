@@ -97,8 +97,9 @@ s_SeqDbGetName(void* seqdb_handle, void*)
     return (*seqdb)->GetDBNameList().c_str();
 }
 
-/// Retrieves the date of the BLAST database.
+/// Checks whether database is protein or nucleotide.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @return TRUE if database is protein, FALSE if nucleotide.
 static Boolean 
 s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
@@ -489,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2005/04/19 20:13:25  dondosha
+ * Fixed comment for s_SeqDbGetIsProt
+ *
  * Revision 1.33  2005/04/18 15:38:31  bealer
  * - Remove usage of deprecated SeqDB parts.
  *
