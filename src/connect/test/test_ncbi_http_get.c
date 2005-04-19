@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Creating network info structure");
     if (!(net_info = ConnNetInfo_Create(0)))
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
-    net_info->req_method = eReqMethod_Get;
+    if (!getenv("CONN_REQ_METHOD"))
+        net_info->req_method = eReqMethod_Get;
     if ((s = getenv("CONN_TIMEOUT"))  &&  strcmp(s, "0") == 0) {
         memcpy(&net_info->tmo, &s_ZeroTmo, sizeof(s_ZeroTmo));
         net_info->timeout = &net_info->tmo;
@@ -135,6 +136,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/04/19 16:37:52  lavr
+ * Allow HTTP method to be overridden from the environment
+ *
  * Revision 6.12  2003/09/30 20:59:39  lavr
  * Fix typo in previous log message
  *
