@@ -57,32 +57,38 @@ typedef struct {
 /* Iterator structure
  */
 struct SSERV_IterTag {
-    const char*  service;        /* requested service name                 */
-    const char*  current;        /* current service name                   */
-    TSERV_Type   types;          /* requested server type(s)               */
-    unsigned int preferred_host; /* preferred host to select, network b.o. */
-    double       preference;     /* range [0..100] %%                      */
-    SSERV_Info** skip;           /* servers to skip                        */
-    size_t       n_skip;         /* number of servers in the array         */
-    size_t       n_max_skip;     /* number of allocated slots in the array */
-    SSERV_Info*  last;           /* last server info taken out             */
+    const char*  service;        /* requested service name, private storage */
+    const char*  current;        /* current service name, private storage   */
+    TSERV_Type   types;          /* requested server type(s)                */
+    unsigned int preferred_host; /* preferred host to select, network b.o.  */
+    double       preference;     /* range [0..100] %%                       */
+    SSERV_Info** skip;           /* servers to skip                         */
+    size_t       n_skip;         /* number of servers in the array          */
+    size_t       n_max_skip;     /* number of allocated slots in the array  */
+    SSERV_Info*  last;           /* last server info taken out              */
 
-    const SSERV_VTable* op;      /* table of virtual functions             */
+    const SSERV_VTable* op;      /* table of virtual functions              */
 
-    void*        data;           /* private data field                     */
-    int/*bool*/  external;       /* whether this is an external request    */
-    unsigned int origin;         /* IP of the origin                       */
-    const char*  arg;            /* argument to match                      */
-    size_t       arglen;
-    const char*  val;            /* value to match                         */
-    size_t       vallen;
+    void*        data;           /* private data field                      */
+    int/*bool*/  external;       /* whether this is an external request     */
+    unsigned int origin;         /* IP of the origin                        */
+    const char*  arg;            /* argument to match; original pointer     */
+    size_t       arglen;         /* == 0 for NULL pointer above             */
+    const char*  val;            /* value to match; original pointer        */
+    size_t       vallen;         /* == 0 for NULL pointer above             */
 };
 
 
-/* Modified 'fast track' routine for one-shot obtaining of a service info.
+/* Modified 'fast track' routine for obtaining of a service info in one-shot.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  * For now, this call is to exclusively support MYgethostbyname() replacement
  * of standard gethostbyname() libcall in Apache Web daemon (see in daemons/).
+ *
+ * CAUTION: unlike "service" parameter, "arg" and "val" are not copied from,
+ *          but the orignal pointers get stored -- take this into account
+ *          while dealing with dynamically allocated strings in the slow
+ *          "iterator" version of the call below -- the pointers must remain
+ *          valid as long as the iterator stays open (i.e. until SERV_Close()).
  *
  * NOTE: Preference 0.0 does not prohibit the preferred_host to be selected;
  *       nor preference 100.0 ultimately opts for the preferred_host; rather,
@@ -115,7 +121,7 @@ SERV_ITER SERV_OpenP
  );
 
 
-/* Return service name the iterator is working on.
+/* Return service name the iterator is currently working on.
  */
 const char* SERV_GetCurrentName(SERV_ITER iter);
 
@@ -172,6 +178,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2005/04/19 16:33:00  lavr
+ * More comments on how things work (SERV_{GetInfo|Open}P)
+ *
  * Revision 6.27  2005/03/05 21:05:07  lavr
  * +SERV_ITER::current;  +SERV_GetCurrentName()
  *
