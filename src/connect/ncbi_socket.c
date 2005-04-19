@@ -2102,6 +2102,19 @@ static EIO_Status s_WipeWBuf(SOCK sock)
 }
 
 
+#ifdef NCBI_OS_MSWIN
+static void s_Add(struct timeval* tv, int ms_addend)
+{
+    tv->tv_usec += (ms_addend % 1000) * 1000;
+    tv->tv_sec  +=  ms_addend / 1000;
+    if (tv->tv_usec >= 10000000) {
+        tv->tv_sec  += tv->tv_usec / 10000000;
+        tv->tv_usec %= 10000000;
+    }
+}
+#endif /*NCBI_OS_MSWIN*/
+
+
 /* Write data to the socket "as is" (as many bytes at once as possible).
  * Return eIO_Success if at least some bytes were written successfully.
  * Otherwise (no bytes written) return an error code to indicate the problem.
@@ -2113,10 +2126,12 @@ static EIO_Status s_Send(SOCK        sock,
                          size_t*     n_written,
                          int/*bool*/ oob)
 {
+    char _id[32];
 #ifdef NCBI_OS_MSWIN
     int no_buffer_wait = 0;
+    struct timeval timeout;
+    memset(&timeout, 0, sizeof(timeout));
 #endif /*NCBI_OS_MSWIN*/
-    char _id[32];
 
     assert(size > 0  &&  sock->type != eSOCK_Datagram  &&  *n_written == 0);
     for (;;) { /* optionally retry if interrupted by a signal */
@@ -2151,7 +2166,8 @@ static EIO_Status s_Send(SOCK        sock,
 
 #ifdef NCBI_OS_MSWIN
             if (x_errno == WSAENOBUFS) {
-                if (timeout  &&  (!*timeout  ||  no_buffer_wait > *timeout))
+                s_Add(&timeout, no_buffer_wait);
+                if (!s_Less(&timeout, sock->w_timeout))
                     return eIO_Timeout;
                 if (no_buffer_wait)
                     Sleep(no_buffer_wait);
@@ -2159,8 +2175,10 @@ static EIO_Status s_Send(SOCK        sock,
                     no_buffer_wait = 10;
                 else if (no_buffer_wait < 160)
                     no_buffer_wait *= 2;
-            } else
+            } else {
                 no_buffer_wait = 0;
+                memset(&timeout, 0, sizeof(timeout));
+            }
 #endif /*NCBI_OS_MSWIN*/
             poll.sock   = sock;
             poll.event  = eIO_Write;
@@ -4430,6 +4448,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.173  2005/04/19 18:14:23  lavr
+ * Fix MSWIN compilation errors (s_Send)
+ *
  * Revision 6.172  2005/04/19 16:33:54  lavr
  * Introduce write-wait timeouts for Windows (no buffer space situations)
  *
