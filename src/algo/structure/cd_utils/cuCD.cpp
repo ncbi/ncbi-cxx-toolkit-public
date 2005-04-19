@@ -560,10 +560,18 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 			break;
 	}
 	orgRef = new COrg_ref;
-	bool is_species;
-	bool is_uncultured;
+	//  bool is_species;
+	//  bool is_uncultured;
 	string blast_name;
-	orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
+
+    //  GetOrgRef returns a null CRef if comTax = 1.
+	//  orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
+    CRef< CTaxon2_data > taxon2Data = taxServer.GetById(comTax);
+    if (comTax >= 1 && taxon2Data->IsSetOrg()) {
+        orgRef.Reset(&(taxon2Data->SetOrg()));
+    } else {
+        orgRef.Reset();
+    }
 	return orgRef;
 }
 
@@ -610,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/04/19 20:13:50  lanczyck
+ * CTaxon1::GetOrgRef returns null CRef for root tax_id = 1; use CTaxon1::GetById instead
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
