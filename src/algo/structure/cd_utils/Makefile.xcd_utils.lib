@@ -1,0 +1,45 @@
+# $Id$
+
+# Build library "xcd_utils"
+##################################
+
+REQUIRES = objects ctools C-Toolkit
+
+LIB = xcd_utils
+
+SRC = \
+	cuAlign \
+	cuBlock \
+	cuCD \
+	cuConsensusMaker \
+	cuPssmMaker \
+	cuResidueProfile \
+	cuSequence \
+	cuCdCore \
+	cuMatrix \
+	cuUtils \
+	cuSort  \
+	structure_util \
+	cuCdFamily \
+	cuAlignedDM \
+	cuAlignmentCollection \
+	cuBlockExtender \
+	cuBlockIntersector \
+	cuDistmat \
+	cuDmAlignedOptimalScore \
+	cuDmAlignedscore \
+	cuDmIdentities \
+	cuRowSourceTable \
+	cuScoringMatrix \
+	cuSeqtree \
+	cuSeqTreeAlg \
+	cuSeqTreeFactory \
+	cuSeqTreeNj \
+	cuSeqTreeSlc \
+	cuSeqTreeStream \
+	cuSequenceTable \
+	cuTaxClient \
+	cuTaxTree
+
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+			$(NCBI_C_INCLUDE)

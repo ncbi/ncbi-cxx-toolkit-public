@@ -1,0 +1,8 @@
+# $Id$
+#################################
+
+LIB_PROJ = xcd_utils
+#SUB_PROJ = cddumper
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
