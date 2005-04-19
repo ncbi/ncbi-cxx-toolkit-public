@@ -230,7 +230,7 @@ CTSE_Chunk_Info::TChunkId CTSE_Chunk_Info::GetChunkId(void) const
 inline
 bool CTSE_Chunk_Info::NotLoaded(void) const
 {
-    return !m_LoadLock;
+    return !IsLoaded();
 }
 
 
@@ -247,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/04/19 21:00:42  ucko
+* Tweak to compile properly under WorkShop.
+*
 * Revision 1.15  2005/03/15 19:14:27  vasilche
 * Correctly update and check  bioseq ids in split blobs.
 *
