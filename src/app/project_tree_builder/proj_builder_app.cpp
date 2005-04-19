@@ -509,7 +509,7 @@ int CProjBulderApp::Run(void)
         output_dir = CDirEntry::ConcatPath(output_dir, 
                                            GetRegSettings().m_CompilersSubdir);
         output_dir = CDirEntry::ConcatPath(output_dir, 
-                                           "static");
+            m_BuildPtb ? "static" : GetBuildType().GetTypeStr());
         output_dir = CDirEntry::ConcatPath(output_dir, "bin");
         output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
         CMsvcConfigureProjectGenerator configure_generator
@@ -982,6 +982,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/04/19 14:50:53  gouriano
+ * Use PTB from the current build tree when PTB build is not requested
+ *
  * Revision 1.54  2005/04/07 16:58:16  gouriano
  * Make it possible to find and reference missing libraries
  * without creating project dependencies
