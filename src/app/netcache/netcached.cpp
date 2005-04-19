@@ -47,11 +47,13 @@
 #include <util/cache/icache.hpp>
 #include <util/cache/icache_clean_thread.hpp>
 #include <util/logrotate.hpp>
+#include <util/transmissionrw.hpp>
 
 #include <bdb/bdb_blobcache.hpp>
 
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -59,7 +61,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.2.4  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -84,29 +86,95 @@ DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
 class CIdBusyGuard
 {
 public:
+    CIdBusyGuard(bm::bvector<>* id_set)
+        : m_IdSet(id_set), m_Id(0)
+    {}
+
     CIdBusyGuard(bm::bvector<>* id_set, 
                  unsigned int   id,
                  unsigned       timeout)
-        : m_IdSet(id_set), m_Id(id)
+        : m_IdSet(id_set)
+    {
+        Lock(id, timeout);
+    }
+
+    void Lock(unsigned int   id,
+              unsigned       timeout)
     {
         _ASSERT(id);
         unsigned cnt = 0; unsigned sleep_ms = 10;
         while (true) {
             {{
             CFastMutexGuard guard(x_NetCacheMutex_ID);
-            if (!(*id_set)[id]) {
-                id_set->set(id);
+            if (!(*m_IdSet)[id]) {
+                m_IdSet->set(id);
                 break;
             }
             }}
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
                 NCBI_THROW(CNetServiceException, 
-                           eTimeout, "Failed to lock object");
+                           eTimeout, "Failed to lock BLOB object");
             }
             SleepMilliSec(sleep_ms);
         } // while
+        m_Id = id;
     }
+
+    void Lock(const string& blob_key, unsigned timeout)
+    {
+        unsigned cnt = 0; unsigned sleep_ms = 10;
+        unsigned id = 0;
+        while (true) {
+            {{
+            CFastMutexGuard guard(x_NetCacheMutex_ID);
+
+            if (id == 0) {
+                id = CNetCache_GetBlobId(blob_key);
+            }
+
+            if ((*m_IdSet)[id] == false) {
+                m_IdSet->set(id);
+                break;
+            }
+            }}
+            cnt += sleep_ms;
+            if (cnt > timeout * 1000) {
+                NCBI_THROW(CNetServiceException, 
+                           eTimeout, "Failed to lock BLOB object");
+            }
+            SleepMilliSec(sleep_ms);
+        } // while
+        m_Id = id;
+    }
+
+    void LockNewId(unsigned*  max_id, unsigned timeout)
+    {
+        unsigned cnt = 0; unsigned sleep_ms = 10;
+        unsigned id = 0;
+        while (true) {
+            {{
+            CFastMutexGuard guard(x_NetCacheMutex_ID);
+
+            if (id == 0) {
+                id = ++(*max_id);
+            }
+
+            if (!(*m_IdSet)[id]) {
+                m_IdSet->set(id);
+                break;
+            }
+            }}
+            cnt += sleep_ms;
+            if (cnt > timeout * 1000) {
+                NCBI_THROW(CNetServiceException, 
+                           eTimeout, "Failed to lock BLOB object");
+            }
+            SleepMilliSec(sleep_ms);
+        } // while
+        m_Id = id;
+    }
+
 
     ~CIdBusyGuard()
     {
@@ -121,6 +189,9 @@ public:
             m_Id = 0;
         }
     }
+
+    unsigned GetId() const { return m_Id; }
+
 private:
     CIdBusyGuard(const CIdBusyGuard&);
     CIdBusyGuard& operator=(const CIdBusyGuard&);
@@ -258,6 +329,7 @@ public:
     typedef enum {
         eError,
         ePut,
+        ePut2,   ///< PUT v.2 transmission protocol
         eGet,
         eShutdown,
         eVersion,
@@ -295,6 +367,11 @@ private:
                     Request&              req,
                     NetCache_RequestStat& stat);
 
+    /// Process "PUT2" request
+    void ProcessPut2(CSocket&              sock, 
+                    Request&              req,
+                    NetCache_RequestStat& stat);
+
     /// Process "GET" request
     void ProcessGet(CSocket&              sock, 
                     const Request&        req,
@@ -320,6 +397,13 @@ private:
 
     /// TRUE return means we have EOF in the socket (no more data is coming)
     bool ReadBuffer(CSocket& sock, 
+                    char*    buf, 
+                    size_t   buf_size,
+                    size_t*  read_length);
+
+    /// TRUE return means we have EOF in the socket (no more data is coming)
+    bool ReadBuffer(CSocket& sock,
+                    IReader* rdr, 
                     char*    buf, 
                     size_t   buf_size,
                     size_t*  read_length);
@@ -351,6 +435,7 @@ private:
                     size_t   bytes);
 
     void x_CreateLog();
+
 private:
     /// Host name where server runs
     string             m_Host;
@@ -478,6 +563,10 @@ void CNetCacheServer::Process(SOCK sock)
                     stat.req_code = 'P';
                     ProcessPut(socket, req, stat);
                     break;
+                case ePut2:
+                    stat.req_code = 'P';
+                    ProcessPut2(socket, req, stat);
+                    break;
                 case eGet:
                     stat.req_code = 'G';
                     ProcessGet(socket, req, stat);
@@ -536,7 +625,7 @@ void CNetCacheServer::Process(SOCK sock)
     }
     catch (CNetServiceException& ex)
     {
-        // ERR_POST("Server error: " << ex.what());
+        ERR_POST("Server error: " << ex.what());
     }
     catch (exception& ex)
     {
@@ -547,15 +636,6 @@ void CNetCacheServer::Process(SOCK sock)
 void CNetCacheServer::ProcessShutdown()
 {    
     SetShutdownFlag();
- 
-    // self reconnect to force the listening thread to rescan
-    // shutdown flag
-    /*
-    unsigned port = GetPort();
-    STimeout to;
-    to.sec = 10; to.usec = 0;
-    CSocket shut_sock("localhost", port, &to);    
-    */
 }
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
@@ -618,11 +698,8 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
         return;
     }
 
-    CNetCache_Key blob_id;
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
-        return;
-
-    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
+    CIdBusyGuard guard(&m_UsedIds);
+    guard.Lock(req_id, m_InactivityTimeout);
 
     ThreadData* tdata = s_tls->GetValue();
     _ASSERT(tdata);
@@ -635,9 +712,14 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
 
     m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
     if (ba_descr.blob_size == 0) { // not found
+        if (ba_descr.reader == 0) {
 blob_not_found:
-        WriteMsg(sock, "ERR:", "BLOB not found.");
-        return;
+            WriteMsg(sock, "ERR:", "BLOB not found.");
+            return;
+        } else {
+            WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+            return;
+        }
     }
 
     stat.blob_size = ba_descr.blob_size;
@@ -716,22 +798,20 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
                                  NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
-    unsigned int transaction_id;
     CNetCache_Key blob_id;
 
+    CIdBusyGuard guard(&m_UsedIds);
+
     if (!req.req_id.empty()) {  // UPDATE request
-        if (!x_CheckBlobId(sock, &blob_id, req.req_id))
-            return;
-        transaction_id = blob_id.id;
+        guard.Lock(req.req_id, m_InactivityTimeout * 2);
     } else {
-        GenerateRequestId(req, &rid, &transaction_id);
+        guard.LockNewId(&m_MaxId, m_InactivityTimeout);
+        unsigned int id = guard.GetId();
+        CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
-    CIdBusyGuard guard(&m_UsedIds, transaction_id, m_InactivityTimeout);
 
     WriteMsg(sock, "ID:", rid);
-    //LOG_POST(Info << "PUT request. Generated key=" << rid);
-
 
 
     auto_ptr<IWriter> iwrt;
@@ -756,10 +836,16 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
         not_eof = ReadBuffer(sock, buf, buf_size, &nn_read);
 
+        if (nn_read == 0 && !not_eof) {
+            m_Cache->Store(rid, 0, kEmptyStr, 
+                            buf, nn_read, req.timeout);
+            break;
+        }
+
         stat.comm_elapsed += sw.Elapsed();
+        stat.blob_size += nn_read;
 
         if (nn_read) {
-            stat.blob_size += nn_read;
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
@@ -788,6 +874,87 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     }
 }
 
+
+void CNetCacheServer::ProcessPut2(CSocket&              sock, 
+                                  Request&              req,
+                                  NetCache_RequestStat& stat)
+{
+    string& rid = req.req_id;
+
+    CIdBusyGuard guard(&m_UsedIds);
+
+    if (!req.req_id.empty()) {  // UPDATE request
+        guard.Lock(req.req_id, m_InactivityTimeout);
+    } else {
+        guard.LockNewId(&m_MaxId, m_InactivityTimeout);
+        unsigned int id = guard.GetId();
+        CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
+    }
+
+
+    WriteMsg(sock, "ID:", rid);
+
+
+    auto_ptr<IWriter> iwrt;
+
+    ThreadData* tdata = s_tls->GetValue();
+    _ASSERT(tdata);
+    char* buf = tdata->buffer.get();
+    size_t buf_size = GetTLS_Size();
+
+    bool not_eof;
+
+    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
+    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
+
+    do {
+        size_t nn_read = 0;
+
+        CStopWatch  sw(true);
+
+        not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
+
+        stat.comm_elapsed += sw.Elapsed();
+        stat.blob_size += nn_read;
+        
+
+        if (nn_read == 0 && !not_eof) {
+            m_Cache->Store(rid, 0, kEmptyStr, 
+                            buf, nn_read, req.timeout);
+            break;
+        }
+
+        if (nn_read) {
+            if (iwrt.get() == 0) { // first read
+
+                if (not_eof == false) { // complete read
+                    m_Cache->Store(rid, 0, kEmptyStr, 
+                                   buf, nn_read, req.timeout);
+                    break;
+                }
+
+                iwrt.reset(
+                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
+            }
+            size_t bytes_written;
+            ERW_Result res = 
+                iwrt->Write(buf, nn_read, &bytes_written);
+            if (res != eRW_Success) {
+                WriteMsg(sock, "Err:", "Server I/O error");
+                return;
+            }
+        } // if (nn_read)
+
+    } while (not_eof);
+
+    if (iwrt.get()) {
+        iwrt->Flush();
+        iwrt.reset(0);
+    }
+
+}
+
+
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
                                const string&  prefix, 
                                const string&  msg)
@@ -804,12 +971,23 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
 {
     const char* s = reqstr.c_str();
 
+    if (strncmp(s, "PUT2", 4) == 0) {
+        req->req_type = ePut2;
+        req->timeout = 0;
+        req->req_id.erase();
+
+        s += 4;
+        goto put_args_parse;
+
+    } // PUT2
+
     if (strncmp(s, "PUT", 3) == 0) {
         req->req_type = ePut;
         req->timeout = 0;
-        req->req_id = kEmptyStr;
+        req->req_id.erase();
 
         s += 3;
+put_args_parse:
         while (*s && isspace(*s)) {
             ++s;
         }
@@ -869,6 +1047,53 @@ parse_blob_id:
     req->req_type = eError;
     req->err_msg = "Unknown request";
 }
+
+bool CNetCacheServer::ReadBuffer(CSocket& sock,
+                                 IReader* rdr, 
+                                 char*    buf, 
+                                 size_t   buf_size,
+                                 size_t*  read_length)
+{
+    *read_length = 0;
+    size_t nn_read = 0;
+
+    bool ret_flag = true;
+
+    while (ret_flag) {
+        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+            break;
+        }
+
+        ERW_Result io_res = rdr->Read(buf, buf_size, &nn_read);
+        switch (io_res) 
+        {
+        case eRW_Success:
+            break;
+        case eRW_Timeout:
+            if (*read_length == 0) {
+                NCBI_THROW(CNetServiceException, eTimeout, "IReader timeout");
+            }
+            break;
+        case eRW_Eof:
+            ret_flag = false;
+            break;
+        default: // invalid socket or request
+            NCBI_THROW(CNetServiceException, eCommunicationError, kEmptyStr);
+
+        } // switch
+        *read_length += nn_read;
+        buf_size -= nn_read;
+
+        if (buf_size <= 10) {  // buffer too small to read again
+            break;
+        }
+        buf += nn_read;
+    }
+
+    return ret_flag;  // false means we hit "eIO_Closed"
+
+}
+
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock, 
                                  char*    buf, 
@@ -1189,6 +1414,8 @@ int CNetCacheDApp::Run(void)
             LOG_POST(Warning << 
                 "INI file sets 0 sec. network timeout. Assume 10 seconds.");
             network_timeout =  10;
+        } else {
+            LOG_POST("Network IO timeout " << network_timeout);
         }
 
         bool is_log =
@@ -1253,6 +1480,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/19 14:19:09  kuznets
+ * New protocol for puit blob
+ *
  * Revision 1.50  2005/03/31 19:31:15  kuznets
  * Corrected use of preprocessor
  *
