@@ -29,6 +29,16 @@
 
 /** @file blast_seqsrc.h
  * Declaration of ADT to retrieve sequences for the BLAST engine.
+ *
+ * @todo The following are pending items to be addressed in the BlastSeqSrc
+ * interface and implementations
+ * - Make "multi-sequence" BlastSeqSrc implementations MT-safe                  
+ * - Provide possibility of retrieving an error from BlastSeqSrc (not just 
+ *   initialization errors).                                               
+ * - Constrain all use of the BlastSeqSrc to CORE BLAST                         
+ * - Remove BlastSeqSrcCopier as MT-safe copying of BlastSeqSrc objects inside 
+ *   CORE BLAST should not be needed (threading should be done outside CORE
+ *   BLAST)
  */
 
 #ifndef BLAST_SEQSRC_H
