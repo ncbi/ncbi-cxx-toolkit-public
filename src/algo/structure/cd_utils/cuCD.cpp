@@ -496,7 +496,7 @@ CRef< CBioseq > GetBioseqWithFootprintForNthRow(CCdCore* cd, int N, string& errs
 	CRef< CBioseq > BioseqForNthRow(new CBioseq);
 	CRef< CBioseq > bioseq;
 
-    errstr.clear();
+    errstr.erase();
     if (N >= cd->GetNumRows()) {
         char buf[1024];
         sprintf(buf, "can't return bioseq for %dth row, because CD has only %d rows.\n", N, cd->GetNumRows());
@@ -618,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/04/19 22:03:35  ucko
+ * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
+ *
  * Revision 1.2  2005/04/19 20:13:50  lanczyck
  * CTaxon1::GetOrgRef returns null CRef for root tax_id = 1; use CTaxon1::GetById instead
  *

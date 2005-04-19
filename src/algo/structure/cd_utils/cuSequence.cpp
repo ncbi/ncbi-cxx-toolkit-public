@@ -211,7 +211,7 @@ bool GetSeqLength(const CRef< CSeq_entry >& Seq, int& len)
 void  NcbistdaaToNcbieaaString(const std::vector < char >& vec, std::string *str) 
 {
     if (str) {
-        str->clear();
+        str->erase();
         str->resize(vec.size());
         try {
             CSeqConvert::Convert(vec, CSeqUtil::e_Ncbistdaa, 0, vec.size(), *str, CSeqUtil::e_Ncbieaa);
@@ -323,6 +323,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 22:03:35  ucko
+ * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
