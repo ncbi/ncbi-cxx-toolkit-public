@@ -872,7 +872,7 @@ CTaxon1::GetOrgRef(int tax_id,
                    string& blast_name)
 {
     SetLastError(NULL);
-    if( tax_id > 1 ) {
+    if( tax_id > 0 ) {
         CTaxon2_data* pData = 0;
         if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
             is_species = pData->GetIs_species_level();
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.27  2005/04/19 22:08:40  domrach
+ * Return orgref for root node
+ *
  * Revision 6.26  2005/01/07 15:45:48  domrach
  * Bad bug with modifier conflicts fixed
  *
