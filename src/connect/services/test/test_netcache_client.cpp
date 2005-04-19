@@ -135,7 +135,7 @@ string s_PutBlob(const string&           host,
 
     CStopWatch sw(true);
     CNetCacheClient nc_client(host, port, "test");
-    STimeout to = {90, 0};
+    STimeout to = {120, 0};
     nc_client.SetCommunicationTimeout(to);
 
     info.connection_time = sw.Elapsed();
@@ -263,7 +263,8 @@ void s_StressTest(const string&             host,
 
             ch[i0] = ch[i1] = 0;
 
-            if (i % 1000 == 0) cout << "." << flush;
+            if (i % 1000 == 0) 
+                cout << "." << flush;
         }
 
         for (unsigned k = 0; k < j; ++k) {
@@ -280,6 +281,9 @@ void s_StressTest(const string&             host,
             bool exists = 
                 s_CheckExists(host, port, 
                               key, (unsigned char*)buf2.get(), size, log_read);
+            if (!exists) {
+                cerr << "Not found: " << key << endl;
+            }
             assert(exists);
 
             int cmp = memcmp(buf.get(), buf2.get(), size);
@@ -334,7 +338,7 @@ void CTestNetCacheClient::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    CONNECT_Init(&GetConfig());
+//    CONNECT_Init(&GetConfig());
 
     SetDiagPostLevel(eDiag_Info);
     SetDiagTrace(eDT_Enable);
@@ -352,6 +356,9 @@ void s_RemoveBLOB_Test(const string& host, unsigned short port)
     nc.Remove(key);
     z = 0;
 
+    SleepMilliSec(700);
+
+
     CNetCacheClient::EReadResult rr =  nc.GetData(key, &z, 1);
     assert(rr == CNetCacheClient::eNotFound);
 }
@@ -363,7 +370,7 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 100);
-
+    cout << endl << key << endl << endl;;
     z = 'Q';
     nc.PutData(key, &z, 1, 100);
 
@@ -375,6 +382,24 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
     assert(rr == CNetCacheClient::eReadComplete);
     assert(z == 'Q');
     assert(blob_size == 1);
+
+    for (int i = 0; i < 10; ++i) {
+        char z = 'X';
+        nc.PutData(key, &z, 1, 100);
+
+        z = 'Y';
+        nc.PutData(key, &z, 1, 100);
+
+        z = 0;
+        size_t blob_size = 0;
+        CNetCacheClient::EReadResult rr =  
+            nc.GetData(key, &z, 1, &blob_size);
+
+        assert(rr == CNetCacheClient::eReadComplete);
+        assert(z == 'Y');
+        assert(blob_size == 1);
+    }
+
 }
 
 
@@ -484,7 +509,32 @@ int CTestNetCacheClient::Run(void)
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "New data.";
     string key;
+/*
+string key1;
+  const string nc_server = "NC_Sage";
+  string client_application="sagexp1";
 
+{{
+size_t sz = 1024 * 1024;
+char* buf = new char[sz];
+
+  CNetCacheClient_LB nc_client1( client_application, nc_server);
+  key1=nc_client1.PutData(buf, sz);
+cout << key1 << endl;
+  delete buf;
+}}
+
+{{
+  CNetCacheClient_LB nc_client1( client_application, nc_server);
+  IReader* rd = nc_client1.GetData(key1);
+  if (rd == 0) {
+      cerr << "Problem" << endl;
+      return 1;
+  }
+  delete rd;
+}}
+return 1;
+*/
     // test load balancer
     /*
     {{
@@ -499,15 +549,37 @@ int CTestNetCacheClient::Run(void)
     */
 
     {{
+        CNetCacheClient nc_client(host, port, "test");
+
+        key = nc_client.PutData((const void*)0, 0, 120);
+        NcbiCout << key << NcbiEndl;
+        assert(!key.empty());
+
+        SleepMilliSec(700);
+       
+
+        size_t bsize;
+        auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
+
+        assert(bsize == 0);
+
+
+    }}
+
+
+    {{
         CSocket sock(host, port);
-//        STimeout to = {0,0};
-//        sock.SetTimeout(eIO_ReadWrite, &to);
         CNetCacheClient nc_client(&sock, "test");
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
-
         assert(!key.empty());
+
+        unsigned id = CNetCache_GetBlobId(key);
+        CNetCache_Key pk;
+        CNetCache_ParseBlobKey(&pk, key);
+        assert(pk.id == id);
+
     }}
 
     {{
@@ -567,7 +639,7 @@ int CTestNetCacheClient::Run(void)
         CSocket sock(host, port);
         CNetCacheClient nc_client(&sock, "test");
 
-        key = nc_client.PutData(test_data, sizeof(test_data), 60);
+        key = nc_client.PutData(test_data, sizeof(test_data), 80);
         assert(!key.empty());
         sock.Close();
     }}
@@ -683,6 +755,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/04/19 14:18:19  kuznets
+ * More test cases
+ *
  * Revision 1.33  2005/04/06 18:07:33  kuznets
  * Added test of 50M blobs
  *
