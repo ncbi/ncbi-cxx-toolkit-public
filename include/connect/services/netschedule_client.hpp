@@ -296,6 +296,29 @@ public:
                    int           ret_code, 
                    const string& output);
 
+    /// Put job interim (progress) message
+    /// 
+    /// @param job_key
+    ///     Job key
+    /// @param progress_msg
+    ///     Progress message (NetCache key)
+    /// @sa GetProgressMsg
+    ///
+    virtual
+    void PutProgressMsg(const string& job_key, 
+                        const string& progress_msg);
+
+    /// Get progress message
+    ///
+    /// @param job_key
+    ///     Job key
+    /// @return Interim (progress) message (NetCache key)
+    /// @sa GetProgressMsg
+    ///
+    virtual
+    string GetProgressMsg(const string& job_key);
+
+
     /// Submit job failure diagnostics. This method indicates that
     /// job failed because of some fatal, unrecoverable error.
     /// 
@@ -323,6 +346,10 @@ public:
     ///    When job is done input contains the job input string
     ///    (if it is a reference to an external BLOB it can be deleted,
     ///     since it is no longer needed)
+    /// @param progress_msg
+    ///    While job is running on the backend, worker node can 
+    ///    submit progress messages
+    ///
     virtual
     EJobStatus GetStatus(const string& job_key, 
                          int*          ret_code,
@@ -674,6 +701,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/04/19 19:33:17  kuznets
+ * Added methods to submit and receive progress messages
+ *
  * Revision 1.24  2005/04/18 18:32:01  kuznets
  * Comments correction
  *

@@ -809,6 +809,57 @@ void CNetScheduleClient::PutResult(const string& job_key,
     CheckOK(&m_Tmp);
 }
 
+void CNetScheduleClient::PutProgressMsg(const string& job_key, 
+                                        const string& progress_msg)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "MPUT ");
+
+    m_Tmp.append(job_key);
+    m_Tmp.append(" \"");
+    m_Tmp.append(NStr::PrintableString(progress_msg));
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+string CNetScheduleClient::GetProgressMsg(const string& job_key)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "MGET ");
+
+    m_Tmp.append(job_key);
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+
+    return NStr::ParseEscapes(m_Tmp);
+}
+
+
 void CNetScheduleClient::PutFailure(const string& job_key, 
                                     const string& err_msg)
 {
@@ -1066,6 +1117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/04/19 19:33:23  kuznets
+ * Added methods to submit and receive progress messages
+ *
  * Revision 1.22  2005/04/11 13:51:07  kuznets
  * Added logging
  *
