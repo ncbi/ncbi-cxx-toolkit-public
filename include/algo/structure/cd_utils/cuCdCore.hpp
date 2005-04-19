@@ -36,11 +36,10 @@
 #define CU_CDCORE_HPP
 
 #pragma warning (disable: 4786)
-#include <cassert>
-#include <map>
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuGlobalDefs.hpp>
 #include <algo/structure/cd_utils/cuMatrix.hpp>
+#include <map>
 //USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -244,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 21:46:20  ucko
+ * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
+ *
  * Revision 1.1  2005/04/19 14:28:00  lanczyck
  * initial version under algo/structure
  *

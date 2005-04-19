@@ -36,7 +36,7 @@
 #define CU_MATRIX_HPP
 #include <corelib/ncbistl.hpp>
 //#include <ncbierr.h>
-#include <cassert>
+#include <assert.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 21:46:20  ucko
+ * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

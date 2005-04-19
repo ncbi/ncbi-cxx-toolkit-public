@@ -38,11 +38,6 @@
 #pragma warning (disable : 4786 )
 #pragma warning (disable : 4018 )
 
-#include <vector>
-#include <string>
-#include <list>
-#include <cassert>
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -110,6 +105,8 @@
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/mmdb3/Chem_graph_alignment.hpp>
 
+#include <assert.h>
+
 
 //USING_NCBI_SCOPE;
 //USING_SCOPE(objects);
@@ -125,6 +122,9 @@
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 21:46:20  ucko
+ * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

@@ -45,7 +45,7 @@
 #ifndef tree_hh_
 #define tree_hh_
 
-#include <cassert>
+#include <assert.h>
 #include <memory>
 #include <stdexcept>
 #include <iterator>
@@ -1986,6 +1986,9 @@ typename tree<T, tree_node_allocator>::tree_node *tree<T, tree_node_allocator>::
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 21:46:20  ucko
+ * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
