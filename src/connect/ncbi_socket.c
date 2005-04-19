@@ -2114,7 +2114,7 @@ static EIO_Status s_Send(SOCK        sock,
                          int/*bool*/ oob)
 {
 #ifdef NCBI_OS_MSWIN
-    int no_buffer_count = 0;
+    int no_buffer_wait = 0;
 #endif /*NCBI_OS_MSWIN*/
     char _id[32];
 
@@ -2151,13 +2151,16 @@ static EIO_Status s_Send(SOCK        sock,
 
 #ifdef NCBI_OS_MSWIN
             if (x_errno == WSAENOBUFS) {
-                int ms = ((1 << no_buffer_count++) - 1) * 10;
-                if (ms)
-                    Sleep(ms);
-                if (no_buffer_count > 4)
-                    no_buffer_count = 4;
+                if (timeout  &&  (!*timeout  ||  no_buffer_wait > *timeout))
+                    return eIO_Timeout;
+                if (no_buffer_wait)
+                    Sleep(no_buffer_wait);
+                if (no_buffer_wait == 0)
+                    no_buffer_wait = 10;
+                else if (no_buffer_wait < 160)
+                    no_buffer_wait *= 2;
             } else
-                no_buffer_count = 0;
+                no_buffer_wait = 0;
 #endif /*NCBI_OS_MSWIN*/
             poll.sock   = sock;
             poll.event  = eIO_Write;
@@ -4427,6 +4430,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.172  2005/04/19 16:33:54  lavr
+ * Introduce write-wait timeouts for Windows (no buffer space situations)
+ *
  * Revision 6.171  2005/04/06 19:37:53  lavr
  * Use adaptive wait-off in case of MS-Win's WSAENOBUFS error on send()
  *
