@@ -328,7 +328,7 @@ const char* SERV_GetCurrentName(SERV_ITER iter)
 int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
     if (!iter || !iter->op || !iter->op->Penalize || !iter->last)
-        return 0;
+        return 0/*false*/;
     return (*iter->op->Penalize)(iter, fine);
 }
 
@@ -566,6 +566,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2005/04/19 16:32:19  lavr
+ * Cosmetics
+ *
  * Revision 6.59  2005/03/05 21:05:26  lavr
  * +SERV_ITER::current;  +SERV_GetCurrentName()
  *
