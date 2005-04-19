@@ -200,7 +200,7 @@ template < class ASNContainerClass >
 class CObjectIStreamHelper
 {
 private:
-    ncbi::auto_ptr<CObjectIStream> inStream;
+    auto_ptr<CObjectIStream> inStream;
 
 public:
     CObjectIStreamHelper(const string& filename, bool isBinary)
