@@ -87,6 +87,7 @@ typedef struct BlastSeqSrcNewInfo BlastSeqSrcNewInfo;
  *        invoked from this function [in]
  * @return a properly initialized BlastSeqSrc structure or NULL.
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
 
 /** Copy function: needed to guarantee thread safety.
@@ -113,36 +114,42 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src);
 /** Get the number of sequences contained in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetNumSeqs(const BlastSeqSrc* seq_src);
 
 /** Get the length of the longest sequence in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetMaxSeqLen(const BlastSeqSrc* seq_src);
 
 /** Get the average length of all sequences in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetAvgSeqLen(const BlastSeqSrc* seq_src);
 
 /** Get the total length of all sequences in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 Int8
 BlastSeqSrcGetTotLen(const BlastSeqSrc* seq_src);
 
 /** Get the Blast Sequence source name (e.g.: BLAST database name).
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 const char*
 BlastSeqSrcGetName(const BlastSeqSrc* seq_src);
 
 /** Find if the Blast Sequence Source contains protein or nucleotide sequences.
  * @param seq_src the BLAST sequence source [in]
  */
+NCBI_XBLAST_EXPORT
 Boolean
 BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src);
 
@@ -171,6 +178,7 @@ typedef struct BlastSeqSrcGetSeqArg {
  * @param sequence should be of type BlastSeqSrcGetSeqArg [in|out]
  * @return one of the BLAST_SEQSRC_* defined in blast_seqsrc.h
  */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSeqSrcGetSequence(const BlastSeqSrc* seq_src, 
                        void* sequence);
@@ -179,6 +187,7 @@ BlastSeqSrcGetSequence(const BlastSeqSrc* seq_src,
  * @param seq_src the BLAST sequence source [in]
  * @param oid ordinal id of the sequence desired (should be Uint4) [in]
  */
+NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetSeqLen(const BlastSeqSrc* seq_src, void* oid);
 
@@ -186,6 +195,7 @@ BlastSeqSrcGetSeqLen(const BlastSeqSrc* seq_src, void* oid);
  * @param seq_src the BLAST sequence source [in]
  * @param sequence should be of type BlastSeqSrcGetSeqArg [in|out]
  */
+NCBI_XBLAST_EXPORT
 void
 BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
                            void* sequence);
@@ -208,6 +218,7 @@ char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src);
  * size for MT-safe iteration.
  * @return pointer to initialized iterator for BlastSeqSrc
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew();
 
 /** How many database sequences to process in one database chunk. */
@@ -218,12 +229,14 @@ extern const unsigned int kBlastSeqSrcDefaultChunkSize;
  *    use kBlastSeqSrcDefaultChunkSize (above). [in]
  * @return pointer to initialized iterator for BlastSeqSrc
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrcIterator* BlastSeqSrcIteratorNewEx(unsigned int chunk_sz);
 
 /** Frees the BlastSeqSrcIterator structure. 
  * @param itr BlastSeqSrcIterator to free [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
 
 /** Increments the BlastSeqSrcIterator.
@@ -231,6 +244,7 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
  * @param seq_src the underlying BlastSeqSrc
  * @return one of the BLAST_SEQSRC_* defined in blast_seqsrc.h
  */
+NCBI_XBLAST_EXPORT
 Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, 
                              BlastSeqSrcIterator* itr);
 
