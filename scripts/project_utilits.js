@@ -191,10 +191,22 @@ function CopyPtb(oShell, oTree, oTask)
     var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
-        var target_path = oTree.BinPathStatic + "\\" + conf;
+        var target_path;
+        if (oTask.DllBuild) {
+            target_path = oTree.BinPathDll;
+        } else {
+            target_path = oTree.BinPathStatic;
+        }
+        target_path += "\\" + conf;
         var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
         if (!oFso.FileExists(source_file)) {
-            source_file = oTask.ToolkitPath + "\\static\\bin"+ "\\" + conf + "\\project_tree_builder.exe";
+            source_file = oTask.ToolkitPath;
+            if (oTask.DllBuild) {
+                source_file += "\\dll";
+            } else {
+                source_file += "\\static";
+            }
+            source_file += "\\bin"+ "\\" + conf + "\\project_tree_builder.exe";
             if (!oFso.FileExists(source_file)) {
                 WScript.Echo("WARNING: File not found: " + source_file);
                 continue;
@@ -205,6 +217,14 @@ function CopyPtb(oShell, oTree, oTask)
             remote_ptb_found = true;
         }
         execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        if (oTask.DllBuild) {
+            source_file = oFso.GetParentFolderName( source_file) + "\\ncbi_core.dll";
+            if (!oFso.FileExists(source_file)) {
+                WScript.Echo("WARNING: File not found: " + source_file);
+                continue;
+            }
+            execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        }
     }
 }
 // copy datatool app to appropriate places of the local tree

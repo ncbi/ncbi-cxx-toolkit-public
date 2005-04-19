@@ -413,11 +413,13 @@
  		AdjustProject      (oShell, oTree, oTask);
         VerboseEcho("========================= CopyPtb =====================================");
  		CopyPtb            (oShell, oTree, oTask);
+        VerboseEcho("========================= CopyDatatool ================================");
+        CopyDatatool       (oShell, oTree, oTask);
         VerboseEcho("========================= RunPtb ======================================");
  		RunPtb             (oShell, oTree, oTask);
         VerboseEcho("========================= LoadSolution ================================");
  		LoadSolution       (oShell, oTree, oTask);
- 		
+        VerboseEcho("========================= done ========================================");
 	 	</script>
 	</job>
 </package>
