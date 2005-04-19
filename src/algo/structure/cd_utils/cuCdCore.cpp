@@ -46,6 +46,8 @@
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuUtils.hpp>
 
+#include <stdio.h>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
@@ -2318,6 +2320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/19 22:05:04  ucko
+ * +<stdio.h> due to use of sprintf()
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

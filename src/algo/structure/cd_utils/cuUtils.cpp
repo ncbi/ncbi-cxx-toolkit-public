@@ -43,6 +43,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 
 #include <algorithm>
+#include <stdio.h>
 #include <algo/structure/cd_utils/cuUtils.hpp>
 
 //  comma is now allowed (4/15/04)
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 22:05:04  ucko
+ * +<stdio.h> due to use of sprintf()
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

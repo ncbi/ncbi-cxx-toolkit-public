@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -704,6 +705,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 22:05:04  ucko
+ * +<stdio.h> due to use of sprintf()
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
