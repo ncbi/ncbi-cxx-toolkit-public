@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <cassert>
 #include <corelib/ncbi_limits.h>
 #include <algo/structure/cd_utils/cuMatrix.hpp>
 
@@ -233,6 +232,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 22:01:49  ucko
+ * Don't include <cassert>, as MIPSpro lacks it and cuMatrix.h already
+ * supplies an appropriate include directive.
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
