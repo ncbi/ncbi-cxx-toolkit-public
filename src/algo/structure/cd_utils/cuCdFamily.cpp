@@ -98,7 +98,14 @@ bool CDFamily::removeChild(CCdCore* cd)
 //operations to navigate the family tree
 CDFamilyIterator CDFamily::findCD(CCdCore* cd) const
 {
-	return find(begin(), end(), CDNode(cd));
+	// return find(begin(), end(), CDNode(cd));
+	CDNode node(cd);
+	for (iterator it = begin();  it != end();  ++it) {
+		if (*it == cd) {
+			return it;
+		}
+	}
+	return end();
 }
 
 //parent=0, get from root
@@ -436,6 +443,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/04/19 22:00:22  ucko
+ * Don't try to use find() on a tree<>, because it's not 100% STL-compatible.
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
