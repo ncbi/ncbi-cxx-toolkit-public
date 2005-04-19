@@ -208,12 +208,15 @@ int main(int argc, const char* argv[])
 #endif
 
     CGridWorkerApp app(new CSampleJobFactory);
-    return app.AppMain(argc, argv, 0, eDS_Default, "grid_worker_sample.ini");
+    return app.AppMain(argc, argv);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/19 19:22:43  didenko
+ * Removed unnecessary parameters form call to AppMain method
+ *
  * Revision 1.9  2005/04/19 18:58:52  didenko
  * Added Init method to CGridWorker
  *
