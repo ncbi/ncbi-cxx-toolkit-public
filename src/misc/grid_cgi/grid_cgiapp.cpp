@@ -40,6 +40,8 @@
 
 BEGIN_NCBI_SCOPE
 
+//#define TUNNEL2DRID_USE_COOKIE 1
+
 
 CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
     : m_Page(page), m_CgiContext(ctx)
@@ -89,7 +91,9 @@ string CGridCgiContext::GetSelfURL() const
 void CGridCgiContext::SetJobKey(const string& job_key)
 {
     m_PersistedEntries["job_key"] = job_key;
+#ifdef TUNNEL2DRID_USE_COOKIE
     SetCookie("job_key", job_key);
+#endif
 
 }
 const string& CGridCgiContext::GetJobKey(void) const
@@ -102,25 +106,31 @@ const string& CGridCgiContext::GetJobKey(void) const
 
 const string& CGridCgiContext::GetCookieValue(const string& cookie_name) const
 {
+#ifdef TUNNEL2DRID_USE_COOKIE
     const CCgiCookie* c = 
         m_CgiContext.GetRequest().GetCookies().Find(cookie_name, "", "" );
     if (c)
         return c->GetValue();
+#endif
     return kEmptyStr;   
 }
 
 void CGridCgiContext::SetCookie(const string& name, const string& value)
 {
+#ifdef TUNNEL2DRID_USE_COOKIE
     m_CgiContext.GetResponse().Cookies().Add(name, value);
+#endif
 }
 
 void CGridCgiContext::ExpierCookie(const string& cookie_name)
 {
+#ifdef TUNNEL2DRID_USE_COOKIE
     CCgiCookie c(cookie_name, "empty");
     CTime exp(CTime::eCurrent, CTime::eGmt);
     exp.AddHour(-1);
     c.SetExpTime(exp);
     m_CgiContext.GetResponse().Cookies().Add(c);
+#endif
 }
 
 const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
@@ -130,7 +140,11 @@ const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
     TCgiEntries::const_iterator eit = entries.find(entry_name);
     if (eit != entries.end())
         return eit->second;
+#ifdef TUNNEL2DRID_USE_COOKIE
     return GetCookieValue(entry_name);
+#else
+    return kEmptyStr;
+#endif
 }
 
 void CGridCgiContext::PersistEntry(const string& entry_name)
@@ -138,12 +152,15 @@ void CGridCgiContext::PersistEntry(const string& entry_name)
     const string& value = GetEntryValue(entry_name);
     if (!value.empty()) {
         m_PersistedEntries[entry_name] = value;
+#ifdef TUNNEL2DRID_USE_COOKIE
         SetCookie(entry_name, value);
+#endif
     }
 }
 
 void CGridCgiContext::Clear()
 {
+#ifdef TUNNEL2DRID_USE_COOKIE
     TPersistedEntries::const_iterator it;
     for (it = m_PersistedEntries.begin(); 
          it != m_PersistedEntries.end(); ++it) {
@@ -151,6 +168,7 @@ void CGridCgiContext::Clear()
         if (!name.empty())
             ExpierCookie(name);
         }
+#endif
     m_PersistedEntries.clear();
 }
 
@@ -353,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/19 20:30:26  didenko
+ * Turned off saving a job information into cookies
+ *
  * Revision 1.13  2005/04/18 13:34:29  didenko
  * Fixed ExpierCookie method
  *
