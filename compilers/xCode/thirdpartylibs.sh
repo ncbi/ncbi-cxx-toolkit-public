@@ -77,6 +77,11 @@ for lib in $LIBS; do
 		cd $TEMP
 	fi
 	
+	if [ $name = "giflib-4.1.3" ]; then
+		conf="--prefix="$DEST" --with-x=no"
+	fi
+
+	
 	echo Configuring in $name
 	if [ $name = "db-4.3.27.NC" ]; then
 		cd $name/build_unix
