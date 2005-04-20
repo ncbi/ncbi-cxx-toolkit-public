@@ -45,11 +45,14 @@
 
 // Third Party Libraries specific includes
 #ifdef NCBI_WXWIN_USE_PCH
-  #include <wx/wxprec.h>
+#  include <wx/wxprec.h>
 #endif
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/20 16:31:24  vakatov
+ * '  #include'  -->  '#  include'
+ *
  * Revision 1.8  2004/06/29 14:46:15  ucko
  * Reduce to a non-redundant handful of headers with >40% usage.
  *
