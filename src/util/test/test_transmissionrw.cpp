@@ -119,7 +119,7 @@ public:
         return eRW_Success;
     }
 
-    ERW_Result PendingCount(size_t* count)
+    ERW_Result PendingCount(size_t* /*count*/)
     {
         return eRW_NotImplemented;
     }
@@ -166,11 +166,11 @@ void s_SaveTestData(IWriter* wrt, size_t size)
 }
 
 static
-void s_ReadCheck1(IReader*             rdr, 
-                  const unsigned char* buf1,
-                  unsigned char*       buf2,
-                  size_t               size,
-                  size_t               control_size)
+void s_ReadCheck1(IReader*               rdr, 
+                  const unsigned char* /*buf1*/,
+                  unsigned char*         buf2,
+                  size_t                 size,
+                  size_t                 control_size)
 {
     size_t read;
     size_t total_read = 0;
@@ -399,6 +399,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/20 20:09:13  lavr
+ * Comment out unused functions' parameters
+ *
  * Revision 1.2  2005/04/20 18:41:28  lavr
  * Pointer subtraction results in ptrdiff_t not compatible with size_t - fixed
  *
