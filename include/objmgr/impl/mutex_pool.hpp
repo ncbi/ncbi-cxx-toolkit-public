@@ -217,6 +217,10 @@ public:
         {
             return CConstRef<TObjectType>(GetPointer());
         }
+    operator bool(void) const
+        {
+            return m_Object.NotNull();
+        }
 };
 
 
@@ -273,6 +277,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/04/20 15:07:14  ucko
+* Reimplement operator bool in CInitMutex<>, as some versions of
+* WorkShop ignore the version defined for CInitMutex_Base.
+*
 * Revision 1.6  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
