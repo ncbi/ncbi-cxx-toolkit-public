@@ -72,6 +72,15 @@ function VerifyTask(oTask)
 			!( oTask.DllBuild && oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) &&
 			!oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
 		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
+		if (oTask.DllBuild) {
+			if (oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin")) {
+        		WScript.Echo("\nConsider using static build - do not specify -dll flag");
+			}
+		} else {
+			if (oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) {
+        		WScript.Echo("\nConsider using DLL build - specify -dll flag");
+			}
+		}
 		err = true;
 	}
 	if ( !oFso.FolderExists(oTask.ToolkitSrcPath) ||
