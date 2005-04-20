@@ -138,6 +138,10 @@ public:
     ///
     size_t        GetInputBlobSize() const { return m_InputBlobSize; }
 
+    /// Put progress message
+    ///
+    void          PutProgressMessage(const string& msg);
+
     /// Get a stream where a job can write its result
     ///
     CNcbiOstream& GetOStream();
@@ -150,7 +154,7 @@ public:
     /// to the queue (job is returned back to the NetSchedule queue 
     /// and re-executed in a while)
     ///
-    void CommitJob()                       { m_JobStatus = true; }
+    void CommitJob()                       { m_JobCommitted = true; }
 
     /// Check if node application shutdown was requested.
     ///
@@ -191,7 +195,7 @@ private:
     friend class CWorkerNodeRequest;  
     void Reset();
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
-    bool IsJobCommited() const       { return m_JobStatus; }
+    bool IsJobCommited() const       { return m_JobCommitted; }
 
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
@@ -203,11 +207,13 @@ private:
     string               m_JobKey;
     string               m_JobInput;
     string               m_JobOutput;
-    bool                 m_JobStatus;
+    string               m_ProgressMsgKey;
+    bool                 m_JobCommitted;
     size_t               m_InputBlobSize;
 
     INetScheduleStorage* m_Reader;
     INetScheduleStorage* m_Writer;
+    INetScheduleStorage* m_ProgressWriter;
     CNetScheduleClient*  m_Reporter;
 
     /// The copy constructor and the assignment operator
@@ -350,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.9  2005/04/19 18:58:52  didenko
  * Added Init method to CGridWorker
  *

@@ -107,7 +107,8 @@ public:
                 == CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
-            SleepSec(3);
+            context.PutProgressMessage("Iteration " + NStr::IntToString(i+1));
+            SleepSec(5);            
         }
         sort(dvec.begin(), dvec.end());
 
@@ -214,6 +215,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.10  2005/04/19 19:22:43  didenko
  * Removed unnecessary parameters form call to AppMain method
  *

@@ -265,6 +265,7 @@ void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
                "<p/>Job is canceled.<br/>"
                "<INPUT TYPE=\"submit\" NAME=\"Submit new Data\" "
                                       "VALUE=\"Submit new Data\">");
+
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
@@ -284,10 +285,13 @@ void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
     // Render a status report page
     CHTMLText* inp_text = new CHTMLText(
                   "<p/>Job is still runnig.<br/>"
+                  "Proress message: <@PROGRESS_MSG@><br/>"
                   "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check\">"
                   "<INPUT TYPE=\"submit\" NAME=\"Cancel\" "
                                          "VALUE=\"Cancel the job\">");
-   ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
+    CHTMLText* proress_text = new CHTMLText(ctx.GetJobProgressMessage());
+    ctx.GetHTMLPage().AddTagMap("PROGRESS_MSG", proress_text);
 }
 
 void CGridCgiSampleApplication::OnEndProcessRequest(CGridCgiContext& ctx)
@@ -369,6 +373,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.11  2005/04/18 13:36:15  didenko
  * Changed program version
  *

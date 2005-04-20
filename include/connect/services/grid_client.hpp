@@ -81,10 +81,11 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobSubmiter(CGridClient&);
+    CGridJobSubmiter(CGridClient&, bool use_progress);
 
     CGridClient& m_GridClient;
     string       m_Input;
+    bool         m_UseProgress;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -137,20 +138,29 @@ public:
     ///
     size_t        GetBlobSize() const     { return m_BlobSize; }
 
+    /// Get a job interim message
+    ///
+    /// @param data_key
+    ///     Blob key
+    ///
+    string GetProgressMessage();
+
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobStatus(CGridClient&, bool auto_cleanup);
+    CGridJobStatus(CGridClient&, bool auto_cleanup, bool use_progress);
     void x_SetJobKey(const string& job_key);
 
     CGridClient& m_GridClient;
     string       m_JobKey;
+    string       m_ProgressMsgKey;
     string       m_Output;
     string       m_ErrMsg;
     string       m_Input;
     int          m_RetCode;
     size_t       m_BlobSize;
     bool         m_AutoCleanUp;
+    bool         m_UseProgress;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -163,6 +173,17 @@ private:
 class NCBI_XCONNECT_EXPORT CGridClient
 {
 public:
+
+    enum ECleanUp {
+        eAutomaticCleanup = 0,
+        eManualCleanup
+    };
+    
+    enum EProgressMsg {
+        eProgressMsgOn = 0,
+        eProgressMsgOff
+    };
+
     /// Constructor
     ///
     /// @param ns_client
@@ -176,7 +197,8 @@ public:
     ///
     CGridClient(CNetScheduleClient& ns_client, 
                 INetScheduleStorage& storage,
-                bool auto_cleanup = true);
+                ECleanUp cleanup,
+                EProgressMsg progress_msg);
 
     /// Destructor
     ///
@@ -232,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.4  2005/04/18 18:53:57  didenko
  * Added optional automatic NetScheduler storage cleanup
  *

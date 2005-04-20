@@ -360,6 +360,8 @@ void CCgiTunnel2Grid::OnJobRunning(CGridCgiContext& ctx)
 {
     // Render a status report page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_RUNNING@>");
+    CHTMLText* err = new CHTMLText(ctx.GetJobProgressMessage());
+    ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",err);
 }
 
 void CCgiTunnel2Grid::OnEndProcessRequest(CGridCgiContext& ctx)
@@ -435,6 +437,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.13  2005/04/18 13:39:18  didenko
  * Changed program version
  * Added html renderer

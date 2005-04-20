@@ -38,11 +38,15 @@ BEGIN_NCBI_SCOPE
 //
 CGridClient::CGridClient(CNetScheduleClient& ns_client, 
                          INetScheduleStorage& storage,
-                         bool auto_cleanup)
+                         ECleanUp cleanup,
+                         EProgressMsg progress_msg)
 : m_NSClient(ns_client), m_NSStorage(storage)
 {
-    m_JobSubmiter.reset(new CGridJobSubmiter(*this));
-    m_JobStatus.reset(new CGridJobStatus(*this, auto_cleanup));
+    m_JobSubmiter.reset(new CGridJobSubmiter(*this,
+                                             progress_msg == eProgressMsgOn));
+    m_JobStatus.reset(new CGridJobStatus(*this, 
+                                         cleanup == eAutomaticCleanup,
+                                         progress_msg == eProgressMsgOn));
 }
  
 CGridClient::~CGridClient()
@@ -65,13 +69,13 @@ void CGridClient::CancelJob(const string& job_key)
 }
 void CGridClient::RemoveDataBlob(const string& data_key)
 {
-    m_NSStorage.RemoveData(data_key);
+    m_NSStorage.DeleteBlob(data_key);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client)
-: m_GridClient(grid_client)
+CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client, bool use_progress)
+    : m_GridClient(grid_client), m_UseProgress(use_progress)
 {
 }
 
@@ -89,21 +93,30 @@ CNcbiOstream& CGridJobSubmiter::GetOStream()
 
 string CGridJobSubmiter::Submit()
 {
-    string job_key = m_GridClient.GetNSClient().SubmitJob(m_Input);
     m_GridClient.GetStorage().Reset();
+    string progress_msg_key;
+    if (m_UseProgress)
+        progress_msg_key = m_GridClient.GetStorage().CreateEmptyBlob();
+    string job_key = m_GridClient.GetNSClient().SubmitJob(m_Input,
+                                                          progress_msg_key);
     m_Input.erase();
+
+    if (m_UseProgress)
+        job_key += "|" + progress_msg_key;
     return job_key;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //
 
-CGridJobStatus::CGridJobStatus(CGridClient& grid_client, bool auto_cleanup)
+CGridJobStatus::CGridJobStatus(CGridClient& grid_client, 
+                               bool auto_cleanup, 
+                               bool use_progress)
     : m_GridClient(grid_client), m_RetCode(0), m_BlobSize(0), 
-      m_AutoCleanUp(auto_cleanup)
-
+      m_AutoCleanUp(auto_cleanup), m_UseProgress(use_progress)
 {
 }
+
 CGridJobStatus::~CGridJobStatus()
 {
 }
@@ -116,26 +129,39 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
               status == CNetScheduleClient::eDone || 
               status == CNetScheduleClient::eCanceled) ) {
         m_GridClient.RemoveDataBlob(m_Input);
+        if (m_UseProgress)
+            m_GridClient.RemoveDataBlob(m_ProgressMsgKey);
         m_Input.erase();
+        m_ProgressMsgKey.erase();
     }
     return status;
 }
 
- CNcbiIstream& CGridJobStatus::GetIStream()
- {
-     return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize);
- }
+CNcbiIstream& CGridJobStatus::GetIStream()
+{
+    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize);
+}
 
- void CGridJobStatus::x_SetJobKey(const string& job_key)
- {
-     m_JobKey = job_key;
-     m_Output.erase();
-     m_ErrMsg.erase();
-     m_Input.erase();
-     m_RetCode = 0;
-     m_BlobSize = 0;
-     m_GridClient.GetStorage().Reset();
- }
+string CGridJobStatus::GetProgressMessage()
+{    
+    if (m_UseProgress)
+        return m_GridClient.GetStorage().GetBlobAsString(m_ProgressMsgKey);
+    return kEmptyStr;
+}
+
+void CGridJobStatus::x_SetJobKey(const string& job_key)
+{
+    if (m_UseProgress)
+        NStr::SplitInTwo(job_key, "|", m_JobKey, m_ProgressMsgKey);
+    else 
+        m_JobKey = job_key;
+    m_Output.erase();
+    m_ErrMsg.erase();
+    m_Input.erase();
+    m_RetCode = 0;
+    m_BlobSize = 0;
+    m_GridClient.GetStorage().Reset();
+}
 
 
 END_NCBI_SCOPE
@@ -143,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.3  2005/04/18 18:54:24  didenko
  * Added optional automatic NetScheduler storage cleanup
  *

@@ -43,10 +43,9 @@ BEGIN_NCBI_SCOPE
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
                                              const string&    job_input)
-  : m_WorkerNode(worker_node), m_JobKey(job_key), 
-    m_JobInput(job_input), m_JobOutput(kEmptyStr), 
-    m_JobStatus(false), 
-    m_Reader(NULL), m_Writer(NULL), m_Reporter(NULL)
+    : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
+    m_JobCommitted(false), 
+    m_Reader(NULL), m_Writer(NULL), m_ProgressWriter(NULL), m_Reporter(NULL)
 {
 }
 
@@ -70,7 +69,6 @@ CNcbiIstream& CWorkerNodeJobContext::GetIStream()
     }
     NCBI_THROW(CNetScheduleStorageException,
                eReader, "Reader is not set.");
-    //    return *(CNcbiIstream*)NULL;
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
@@ -79,15 +77,31 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
     }
     NCBI_THROW(CNetScheduleStorageException,
                eWriter, "Writer is not set.");
-    //    return *(CNcbiOstream*)NULL;
+}
+
+void CWorkerNodeJobContext::PutProgressMessage(const string& msg)
+{
+    if (m_ProgressMsgKey.empty()) {
+        m_ProgressMsgKey = m_Reporter->GetProgressMsg(m_JobKey);
+    }
+    if (!m_ProgressMsgKey.empty() && m_ProgressWriter ) {
+        CNcbiOstream& os = m_ProgressWriter->CreateOStream(m_ProgressMsgKey);
+        os << msg;
+        m_ProgressWriter->Reset();
+    }
+    else {
+        ERR_POST("Couldn't send a progress message.");
+    }
 }
 
 void CWorkerNodeJobContext::Reset()
 {
-    if (m_Writer) m_Reader->Reset();
+    if (m_Reader) m_Reader->Reset();
     if (m_Writer) m_Writer->Reset();
+    if (m_ProgressWriter) m_ProgressWriter->Reset();
     m_Reader = NULL;
     m_Writer = NULL;
+    m_ProgressWriter = NULL;
     m_Reporter = NULL;
 }
 
@@ -115,9 +129,10 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
 ///@internal
 struct SThreadContext
 {
-    auto_ptr<CNetScheduleClient> reporter;
+    auto_ptr<CNetScheduleClient>  reporter;
     auto_ptr<INetScheduleStorage> reader;
     auto_ptr<INetScheduleStorage> writer;
+    auto_ptr<INetScheduleStorage> progress_writer;
 };
 
 ///@internal
@@ -140,9 +155,9 @@ public:
 
 private:
     auto_ptr<CWorkerNodeJobContext> m_Context;
-    auto_ptr<IWorkerNodeJob> m_Job;
+    auto_ptr<IWorkerNodeJob>        m_Job;
 
-    SThreadContext& x_GetThreadContext();
+    SThreadContext&                 x_GetThreadContext();
 
 };
 
@@ -165,9 +180,12 @@ SThreadContext& CWorkerNodeRequest::x_GetThreadContext()
     SThreadContext* context = s_tls->GetValue();
     if (!context) {
         context = new SThreadContext();
-        context->reporter.reset(m_Context->GetWorkerNode().CreateClient());
+        context->reporter.reset(
+                              m_Context->GetWorkerNode().CreateClient());
         context->reader.reset(m_Context->GetWorkerNode().CreateStorage());
         context->writer.reset(m_Context->GetWorkerNode().CreateStorage());
+        context->progress_writer.reset(
+                              m_Context->GetWorkerNode().CreateStorage());
         s_tls->SetValue(context, s_TlsCleanup);
     }
     return *context;
@@ -184,6 +202,7 @@ void CWorkerNodeRequest::Process(void)
             m_Context->m_Reporter = thread_context->reporter.get();
             m_Context->m_Reader = thread_context->reader.get();
             m_Context->m_Writer = thread_context->writer.get();
+            m_Context->m_ProgressWriter = thread_context->progress_writer.get();
             int ret_code = m_Job->Do(*m_Context);
             int try_count = 0;
             while(1) {
@@ -353,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.7  2005/04/07 16:47:03  didenko
  * + Program Version checking
  *

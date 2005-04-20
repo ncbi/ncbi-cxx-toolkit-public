@@ -80,6 +80,10 @@ public:
     ///
     const string& GetJobKey(void) const;
 
+    /// Get current job progress message
+    const string& GetJobProgressMessage(void) const
+    { return m_ProgressMsg; }
+
     /// Get a value from a cgi request. if there is no an entry with a
     /// given name tries to find a cookie. If none is found returns 
     /// an empty string.
@@ -111,10 +115,13 @@ private:
 
     friend class CGridCgiApplication;
     void SetJobKey(const string& job_key);
+    void SetJobProgressMessage(const string& msg) 
+    { m_ProgressMsg = msg; }
 
     CHTMLPage&                    m_Page;
     CCgiContext&                  m_CgiContext;
     TPersistedEntries             m_PersistedEntries;
+    string                        m_ProgressMsg;
     
     /// A copy constructor and an assignemt operator
     /// are prohibited
@@ -265,6 +272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.12  2005/04/13 16:42:35  didenko
  * + InitGridClient
  *

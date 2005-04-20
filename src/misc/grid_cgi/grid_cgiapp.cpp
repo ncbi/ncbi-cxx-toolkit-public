@@ -189,6 +189,10 @@ void CGridCgiApplication::InitGridClient()
 {
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
+    bool automatic_cleanup = 
+        GetConfig().GetBool("grid_cgi", "automatic_cleaup", true, IRegistry::eReturn);
+    bool use_progress = 
+        GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
 
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
@@ -199,7 +203,13 @@ void CGridCgiApplication::InitGridClient()
         CNetScheduleStorageFactory_NetCache cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
-    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage));
+    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
+                                       automatic_cleanup? 
+                                            CGridClient::eAutomaticCleanup  :
+                                            CGridClient::eManualCleanup,
+                                       use_progress? 
+                                            CGridClient::eProgressMsgOn :
+                                            CGridClient::eProgressMsgOff));
 
 }
 
@@ -269,6 +279,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
             case CNetScheduleClient::eRunning:
                 // A job is being processed by a worker node
+                grid_ctx.SetJobProgressMessage(
+                                     job_status.GetProgressMessage());
                 OnJobRunning(grid_ctx);
                 RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
                 break;
@@ -371,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.14  2005/04/19 20:30:26  didenko
  * Turned off saving a job information into cookies
  *

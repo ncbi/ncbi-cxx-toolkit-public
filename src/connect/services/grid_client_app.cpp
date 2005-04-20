@@ -60,7 +60,9 @@ void CGridClientApp::Init(void)
         CNetScheduleStorageFactory_NetCache cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
-    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage));
+    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
+                                       CGridClient::eAutomaticCleanup, 
+                                       CGridClient::eProgressMsgOn));
 }
 
 END_NCBI_SCOPE
@@ -68,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/20 19:25:59  didenko
+ * Added support for progress messages passing from a worker node to a client
+ *
  * Revision 1.2  2005/04/07 16:47:03  didenko
  * + Program Version checking
  *
