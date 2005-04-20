@@ -647,7 +647,10 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
     }
 
     unsigned job_id =
-        queue.Submit(req.input, client_address, req.port, req.timeout);
+        queue.Submit(req.input, 
+                     client_address, 
+                     req.port, req.timeout, 
+                     req.progress_msg);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -982,6 +985,9 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
     while (*x && (*x == ' ' || *x == '\t')) { ++x; }
 #define NS_CHECKEND(x, msg) \
     if (!*s) { req->req_type = eError; req->err_msg = msg; return; }
+#define NS_CHECKSIZE(size, max_size) \
+    if (size >= max_size) \
+        { req->req_type = eError; req->err_msg = "Message too long"; return; }
 #define NS_GETSTRING(x, str) \
     for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
 
@@ -990,7 +996,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 {
     // Request formats and types:
     //
-    // 1. SUBMIT "NCID_01_1..." [udp_port notif_wait]
+    // 1. SUBMIT "NCID_01_1..." ["Progress msg"] [udp_port notif_wait] 
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
     // 4. GET udp_port
@@ -1033,12 +1039,30 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         char *ptr = req->input;
         for (++s; *s != '"'; ++s) {
             NS_CHECKEND(s, "Misformed SUBMIT request")
+            NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDataSize);
             *ptr++ = *s;
         }
         ++s;
         *ptr = 0;
 
         NS_SKIPSPACE(s)
+
+
+        // optional progress message
+
+        if (*s == '"') {
+            ptr = req->progress_msg;
+
+            for (++s; *s != '"'; ++s) {
+                NS_CHECKEND(s, "Misformed SUBMIT request")
+                NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
+                *ptr++ = *s;
+            }
+            ++s;
+            *ptr = 0;
+
+            NS_SKIPSPACE(s)
+        }
 
         // optional UDP notification parameters
 
@@ -1099,6 +1123,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         for (++s; *s; ++s) {
             if (*s == '"' && *(s-1) != '\\') break;
             NS_CHECKEND(s, "Misformed MPUT request")
+            NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
             *ptr++ = *s;            
         }
         *ptr = 0;
@@ -1148,6 +1173,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         for (++s; *s; ++s) {
             if (*s == '"' && *(s-1) != '\\') break;
             NS_CHECKEND(s, "Misformed PUT request")
+            NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
             *ptr++ = *s;            
         }
         *ptr = 0;
@@ -1665,6 +1691,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/04/20 15:59:33  kuznets
+ * Progress message to Submit
+ *
  * Revision 1.26  2005/04/19 19:34:12  kuznets
  * Adde progress report messages
  *

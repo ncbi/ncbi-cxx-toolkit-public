@@ -313,10 +313,11 @@ public:
     public:
         CQueue(CQueueDataBase& db, const string& queue_name);
 
-        unsigned int Submit(const string& input,
+        unsigned int Submit(const char*   input,
                             unsigned      host_addr = 0,
                             unsigned      port = 0,
-                            unsigned      wait_timeout = 0);
+                            unsigned      wait_timeout = 0,
+                            const char*   progress_msg = 0);
 
         void Cancel(unsigned int job_id);
         void PutResult(unsigned int  job_id,
@@ -475,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/20 15:59:33  kuznets
+ * Progress message to Submit
+ *
  * Revision 1.20  2005/04/19 19:34:05  kuznets
  * Adde progress report messages
  *

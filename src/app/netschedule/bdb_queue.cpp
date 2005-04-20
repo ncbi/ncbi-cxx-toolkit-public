@@ -669,10 +669,11 @@ void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
 
 
 unsigned int 
-CQueueDataBase::CQueue::Submit(const string& input,
+CQueueDataBase::CQueue::Submit(const char*   input,
                                unsigned      host_addr,
                                unsigned      port,
-                               unsigned      wait_timeout)
+                               unsigned      wait_timeout,
+                               const char*   progress_msg)
 {
     unsigned int job_id = m_Db.GetNextId();
 
@@ -713,13 +714,19 @@ CQueueDataBase::CQueue::Submit(const string& input,
     db.run_counter = 0;
     db.ret_code = 0;
 
-    db.input = input;
+    if (input) {
+        db.input = input;
+    }
     db.output = "";
 
     db.err_msg = "";
 
     db.cout = "";
     db.cerr = "";
+
+    if (progress_msg) {
+        db.progress_msg = progress_msg;
+    }
 
     db.Insert();
     }}
@@ -1662,6 +1669,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/04/20 15:59:33  kuznets
+ * Progress message to Submit
+ *
  * Revision 1.25  2005/04/19 19:34:05  kuznets
  * Adde progress report messages
  *
