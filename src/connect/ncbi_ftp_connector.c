@@ -39,6 +39,7 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_socket.h>
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -692,6 +693,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/04/20 18:15:59  lavr
+ * +<assert.h>
+ *
  * Revision 1.6  2005/01/27 18:59:52  lavr
  * Explicit cast of malloc()ed memory
  *

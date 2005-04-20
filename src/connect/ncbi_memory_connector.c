@@ -35,6 +35,7 @@
 
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_memory_connector.h>
+#include <assert.h>
 #include <stdlib.h>
 
 
@@ -272,6 +273,9 @@ extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf, MT_LOCK lock)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2005/04/20 18:15:59  lavr
+ * +<assert.h>
+ *
  * Revision 6.7  2004/10/27 19:16:33  lavr
  * Reuse MEMORY_CreateConnectorEx() in MEMORY_CreateConnector()
  *

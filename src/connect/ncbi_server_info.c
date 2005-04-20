@@ -32,6 +32,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_server_infop.h"
+#include <assert.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -838,6 +839,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2005/04/20 18:15:59  lavr
+ * +<assert.h>
+ *
  * Revision 6.53  2003/09/02 21:21:42  lavr
  * Cleanup included headers
  *
