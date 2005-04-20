@@ -124,7 +124,7 @@
 			usage_str += "    Create new MSVC7.1 application project from sample template:\n";
 			usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
 			usage_str += "      Copy and adjust sample code.\n";
-			usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
+//			usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
 			usage_str += "      Run project tree builder on local build tree.\n";
 			usage_str += "      Open created solution in MSVC7.1 IDE.\n";
 			usage_str += "ARGUMENTS:\n";
@@ -344,7 +344,13 @@
 			var ptb;
 			if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
 			    var conf = GetConfigs(oTask)[0];
-			    var target_path = oTree.BinPathStatic + "\\" + conf;
+                var target_path;
+                if (oTask.DllBuild) {
+                    target_path = oTree.BinPathDll;
+                } else {
+                    target_path = oTree.BinPathStatic;
+                }
+                target_path += "\\" + conf;
 			    ptb = target_path + "\\project_tree_builder.exe";
 			} else {
 			    ptb = oTask.RemotePtb;
