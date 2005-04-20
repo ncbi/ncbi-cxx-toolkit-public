@@ -55,11 +55,14 @@ class NCBI_XCONNECT_EXPORT INetScheduleStorage
 public:
     virtual ~INetScheduleStorage() {}
 
+    virtual string        GetBlobAsString(const string& data_id) = 0;
     virtual CNcbiIstream& GetIStream(const string& data_id, 
                                      size_t* blob_size = 0) = 0;
     virtual CNcbiOstream& CreateOStream(string& data_id) = 0;
 
-    virtual void RemoveData(const string& data_id) = 0;
+    virtual string CreateEmptyBlob() = 0;
+    virtual void DeleteBlob(const string& data_id) = 0;
+
     virtual void Reset() = 0;
 
 
@@ -117,20 +120,28 @@ public:
 class NCBI_XCONNECT_EXPORT CNullStorage : public INetScheduleStorage
 {
 public:
-    CNcbiIstream& GetIStream(const string&,
+    virtual ~CNullStorage() {}
+
+    virtual string        GetBlobAsString( const string& data_id)
+    {
+        return data_id;
+    }
+
+    virtual CNcbiIstream& GetIStream(const string&,
                              size_t* blob_size = 0)
     {
         if (blob_size) *blob_size = 0;
         NCBI_THROW(CNetScheduleStorageException,
                    eReader, "Empty Storage reader.");
     }
-    CNcbiOstream& CreateOStream(string&)
+    virtual CNcbiOstream& CreateOStream(string&)
     {
         NCBI_THROW(CNetScheduleStorageException,
                    eWriter, "Empty Storage writer.");
     }
 
-    virtual void RemoveData(const string& data_id) {}
+    virtual string CreateEmptyBlob() { return kEmptyStr; };
+    virtual void DeleteBlob(const string& data_id) {}
     virtual void Reset() {};
 };
 
@@ -142,6 +153,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/20 19:23:47  didenko
+ * Added GetBlobAsString, GreateEmptyBlob methods
+ * Remave RemoveData to DeleteBlob
+ *
  * Revision 1.6  2005/03/29 14:10:16  didenko
  * + removing a date from the storage
  *

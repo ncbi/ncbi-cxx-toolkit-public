@@ -49,24 +49,33 @@ public:
     CNetCacheNSStorage(CNetCacheClient* nc_client);
     virtual ~CNetCacheNSStorage(); 
 
+    virtual string        GetBlobAsString( const string& data_id);
+
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0);
     virtual CNcbiOstream& CreateOStream(string& data_id);
 
-    virtual void RemoveData(const string& data_id);
+    virtual string CreateEmptyBlob();
+    virtual void DeleteBlob(const string& data_id);
+    
     virtual void Reset();
 
 private:
     auto_ptr<CNetCacheClient> m_NCClient;
     auto_ptr<CNcbiIstream>    m_IStream;
     auto_ptr<CNcbiOstream>    m_OStream;
+
+    auto_ptr<IReader> x_GetReader(const string& key,
+                                  size_t& blob_size);
+    void x_Check();
 };
 
 class CNetCacheNSStorageException : public CNetScheduleStorageException
 {
 public:
     enum EErrCode {
-        eBlobNotFound
+        eBlobNotFound,
+        eBusy
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -74,6 +83,7 @@ public:
         switch (GetErrCode())
         {
         case eBlobNotFound: return "eBlobNotFoundError";
+        case eBusy:         return "eBusy";
         default:      return CNetScheduleStorageException::GetErrCodeString();
         }
     }
@@ -88,6 +98,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/20 19:23:47  didenko
+ * Added GetBlobAsString, GreateEmptyBlob methods
+ * Remave RemoveData to DeleteBlob
+ *
  * Revision 1.7  2005/04/12 15:11:12  didenko
  * Changed CRStream and CWStream to CNcbiIstream and CNcbiOstream
  *

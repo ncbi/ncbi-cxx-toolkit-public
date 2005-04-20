@@ -48,19 +48,26 @@ CNetCacheNSStorage::~CNetCacheNSStorage()
 {
 }
 
-CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
-                                             size_t* blob_size)
+void CNetCacheNSStorage::x_Check()
 {
-    size_t b_size = 0;
-    if (key.empty()) {
-        m_IStream.reset(new CNcbiIstrstream("",0));
-        return *m_IStream;
-    }
+    if (m_IStream.get() || m_OStream.get())
+        NCBI_THROW(CNetCacheNSStorageException,
+                   eBusy, "Communication channel is already in use.");
+}
+
+auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
+                                                  size_t& blob_size)
+{
+    x_Check();
+    blob_size = 0;
+
     auto_ptr<IReader> reader;
+    if (key.empty()) 
+        return reader;
     int try_count = 0;
     while(1) {
         try {
-            reader.reset(m_NCClient->GetData(key, &b_size));
+            reader.reset(m_NCClient->GetData(key, &blob_size));
             break;
         }
         catch (CNetServiceException& ex) {
@@ -72,20 +79,55 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
         }
     }
 
-    if (blob_size) *blob_size = b_size;
     if (!reader.get()) {
         NCBI_THROW(CNetCacheNSStorageException,
                    eBlobNotFound, "Requested blob is not found.");
     }
+    return reader;
+}
 
+CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
+                                             size_t* blob_size)
+{
+    if (blob_size) *blob_size = 0;
+    size_t b_size = 0;
+    auto_ptr<IReader> reader = x_GetReader(key, b_size);
+    if (!reader.get()) {
+        m_IStream.reset(new CNcbiIstrstream("",0));
+        return *m_IStream;
+    }
+
+    if (blob_size) *blob_size = b_size;
     m_IStream.reset(new CRStream(reader.release(), 0,0, 
                                  CRWStreambuf::fOwnReader));
     return *m_IStream;
 }
 
+string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
+{
+    size_t b_size = 0;
+    try {
+        auto_ptr<IReader> reader = x_GetReader(data_id, b_size);
+        if (!reader.get())
+            return data_id;
+        AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
+        if( reader->Read(buf.get(), b_size) != eRW_Success )
+            return data_id;
+        buf.get()[b_size] = 0;   
+
+        string ret(buf.get());
+        return ret;
+
+    } catch (CNetCacheNSStorageException& ex) {
+        if (ex.GetErrCode() == CNetCacheNSStorageException::eBlobNotFound)
+            return data_id;
+        throw;
+    }
+}
 
 CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
 {
+    x_Check();
     auto_ptr<IWriter> writer;
     int try_count = 0;
     while(1) {
@@ -110,8 +152,17 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
     return *m_OStream;
 }
 
-void CNetCacheNSStorage::RemoveData(const string& data_id)
+string CNetCacheNSStorage::CreateEmptyBlob()
 {
+    x_Check();
+    if (m_NCClient.get())
+        return m_NCClient->PutData((const void*)NULL,0);
+    return kEmptyStr;
+
+}
+void CNetCacheNSStorage::DeleteBlob(const string& data_id)
+{
+    x_Check();
     if (!data_id.empty() && m_NCClient.get()) 
         m_NCClient->Remove(data_id);
 }
@@ -127,6 +178,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/20 19:23:47  didenko
+ * Added GetBlobAsString, GreateEmptyBlob methods
+ * Remave RemoveData to DeleteBlob
+ *
  * Revision 1.5  2005/04/12 15:12:42  didenko
  * Added handling an empty netcache key in GetIStream method
  *
