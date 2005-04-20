@@ -91,7 +91,7 @@ UnicodeToAscii(TUnicode character, const TUnicodeTable* table=0);
 /// @return
 ///   Length of the translated UTF8 or 0 in case of error.
 NCBI_XUTIL_EXPORT
-int UTF8ToUnicode(const char* utf, TUnicode* unicode);
+size_t UTF8ToUnicode(const char* utf, TUnicode* unicode);
 
 /// Convert Unicode character into UTF8.
 ///
@@ -104,7 +104,7 @@ int UTF8ToUnicode(const char* utf, TUnicode* unicode);
 /// @return
 ///   Length of the generated UTF8 sequence
 NCBI_XUTIL_EXPORT
-int UnicodeToUTF8(TUnicode unicode, char *buffer, size_t buf_length);
+size_t UnicodeToUTF8(TUnicode unicode, char *buffer, size_t buf_length);
 
 /// Convert Unicode character into UTF8.
 ///
@@ -131,8 +131,8 @@ string UnicodeToUTF8(TUnicode unicode);
 /// @return
 ///   Length of decoded string or -1 if buffer is too small
 NCBI_XUTIL_EXPORT
-int UTF8ToAscii(const char* src, char* dst, size_t dst_len,
-                const TUnicodeTable* table=0);
+ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
+                    const TUnicodeTable* table=0);
 
 /// Convert UTF8 into ASCII string.
 ///
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/04/20 20:06:59  lavr
+ * More changes to use [s]size_t instead of plain int's
+ *
  * Revision 1.2  2005/04/20 18:40:09  lavr
  * Change buffer sizes from being 'int' to 'size_t'
  *

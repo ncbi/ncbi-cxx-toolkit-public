@@ -123,8 +123,8 @@ UnicodeToAscii(TUnicode character, const TUnicodeTable* table)
     if (!table) {
         table = &g_DefaultUnicodeTable;
     }
-    unsigned int thePlanNo   = (character & 0xFF00) >> 8;
-    unsigned int theOffset = character & 0xFF;
+    unsigned int thePlanNo = (character & 0xFF00) >> 8;
+    unsigned int theOffset =  character & 0xFF;
     const TUnicodePlan* thePlan = (*table)[thePlanNo];
     if ( !thePlan ) return 0;
     return &((*thePlan)[theOffset]);
@@ -133,13 +133,10 @@ UnicodeToAscii(TUnicode character, const TUnicodeTable* table)
 
 TUnicode UTF8ToUnicode( const char* theUTF )
 {
-    int seq_len;
     const char *p = theUTF;
     char counter = *p++;
-    unsigned char c;
 
-    if ( ((*theUTF) & 0xC0) != 0xC0 )
-    {
+    if ( ((*theUTF) & 0xC0) != 0xC0 ) {
         TUnicode RC = 0;
         RC |= (unsigned char)theUTF[0];
         return RC;
@@ -147,24 +144,22 @@ TUnicode UTF8ToUnicode( const char* theUTF )
 
     TUnicode acc = counter & 037;
 
-    while((counter <<= 1) < 0) {
-        c = *p++;
-        if((c & ~077) != 0200) { // Broken UTF-8 chain
-            seq_len = int(p - theUTF);
+    while ((counter <<= 1) < 0) {
+        unsigned char c = *p++;
+        if ((c & ~077) != 0200) { // Broken UTF-8 chain
             return ~0;
         }
         acc = (acc << 6) | (c & 077);
     }
+
     return acc;
 }
 
 
-int UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
+size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
 {
-    int seq_len;
     const char *p = theUTF;
     char counter = *p++;
-    unsigned char c;
 
     if ( (unsigned char )theUTF[0] < 0x80 ) {
         // This is one character UTF8. I.e. regular character.
@@ -179,17 +174,16 @@ int UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
 
     TUnicode acc = counter & 037;
 
-    while((counter <<= 1) < 0) {
-        c = *p++;
-        if((c & ~077) != 0200) { // Broken UTF-8 chain
-            seq_len = int(p - theUTF);
+    while ((counter <<= 1) < 0) {
+        unsigned char c = *p++;
+        if ((c & ~077) != 0200) { // Broken UTF-8 chain
             return ~0;
         }
         acc = (acc << 6) | (c & 077);
     } // while
-    seq_len = int(p - theUTF);
+
     *theUnicode = acc;
-    return seq_len;
+    return (size_t)(p - theUTF);
 }
 
 
@@ -201,7 +195,8 @@ string UnicodeToUTF8( TUnicode theUnicode )
 }
 
 
-int UnicodeToUTF8( TUnicode theUnicode, char *theBuffer, size_t theBufLength )
+size_t UnicodeToUTF8( TUnicode theUnicode, char *theBuffer,
+                      size_t theBufLength )
 {
     size_t Length = 0;
 
@@ -235,16 +230,15 @@ int UnicodeToUTF8( TUnicode theUnicode, char *theBuffer, size_t theBufLength )
 }
 
 
-int UTF8ToAscii( const char* src, char* dst,
-                 size_t dstLen, const TUnicodeTable* table)
+ssize_t UTF8ToAscii( const char* src, char* dst,
+                     size_t dstLen, const TUnicodeTable* table)
 {
     if ( !src || !dst || dstLen == 0 ) return 0;
     size_t srcPos = 0;
     size_t dstPos = 0;
     size_t srcLen = strlen( src );
 
-    for ( srcPos = 0; srcPos < srcLen; )
-    {
+    for ( srcPos = 0; srcPos < srcLen; ) {
         // Assign quck pointers
         char* pDst = &(dst[dstPos]);
         const char* pSrc = &(src[srcPos]);
@@ -270,14 +264,14 @@ int UTF8ToAscii( const char* src, char* dst,
         }
 
         // Check if type is eSkip or substituting string is empty.
-        if ( (pSubst->Type ==  eSkip) ||
+        if ( (pSubst->Type == eSkip) ||
              !(pSubst->Subst) ) {
             continue;
         }
 
 
         // Check if type is eAsIs
-        if (pSubst->Type ==  eAsIs) {
+        if (pSubst->Type == eAsIs) {
             memcpy( pDst, pSrc, utfLen );
 //            dstPos += utfLen;
             continue;
@@ -286,14 +280,14 @@ int UTF8ToAscii( const char* src, char* dst,
         // Check the remaining length and put the result in there.
         size_t substLen = strlen( pSubst->Subst );
         if ( (dstPos + substLen) > dstLen ) {
-            return -1; // Unsufficient space;
+            return -1; // Unsufficient space
         }
 
         // Copy the substituting value into the destignation string
         memcpy( pDst, pSubst->Subst, substLen );
         dstPos += substLen;
     }
-    return (int)dstPos;
+    return (ssize_t) dstPos;
 }
 
 
@@ -305,8 +299,7 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
     size_t srcPos = 0;
     size_t srcLen = strlen( src );
 
-    for ( srcPos = 0; srcPos < srcLen; )
-    {
+    for ( srcPos = 0; srcPos < srcLen; ) {
         // Assign quck pointers
         const char* pSrc = &(src[srcPos]);
         TUnicode theUnicode;
@@ -332,7 +325,7 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
         }
 
         // Check if type is eSkip or substituting string is empty.
-        if ( (pSubst->Type ==  eSkip) ||
+        if ( (pSubst->Type == eSkip) ||
              !(pSubst->Subst) ) {
 //            srcPos += utfLen;
             continue;
@@ -340,7 +333,7 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
 
 
         // Check if type is eAsIs
-        if (pSubst->Type ==  eAsIs) {
+        if (pSubst->Type == eAsIs) {
             dst += string( pSrc, utfLen );
 //            srcPos += utfLen;
             continue;
@@ -359,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2005/04/20 20:07:11  lavr
+ * More changes to use [s]size_t instead of plain int's
+ *
  * Revision 1.6  2005/04/20 18:40:26  lavr
  * Change buffer sizes from being 'int' to 'size_t'
  *
