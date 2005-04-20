@@ -54,7 +54,7 @@ extern "C" {
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
-extern char* strdup(const char* str);
+extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
 
 #endif /*HAVE_STRDUP*/
 
@@ -120,6 +120,9 @@ extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/04/20 18:12:16  lavr
+ * strdup() has got NCBI_XCONNECT_EXPORT
+ *
  * Revision 6.12  2004/03/12 23:25:37  gorelenk
  * Added export prefixes.
  *
