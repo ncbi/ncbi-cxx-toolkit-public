@@ -235,14 +235,15 @@ void CNetScheduleClient_LB::AddServiceAddress(const string&  hostname,
 }
 
 
-string CNetScheduleClient_LB::SubmitJob(const string& input)
+string CNetScheduleClient_LB::SubmitJob(const string& input,
+                                        const string& progress_msg)
 {
     ++m_Requests;
     // try to submit this job even if server does not take it
     unsigned max_retry = m_MaxRetry ? m_MaxRetry : 1;
     for (unsigned retry = 0; retry < max_retry; ++retry) {
         try {
-            return TParent::SubmitJob(input);
+            return TParent::SubmitJob(input, progress_msg);
         } 
         catch (CNetScheduleException& ex) {
             CNetScheduleException::TErrCode ec = ex.GetErrCode();
@@ -626,6 +627,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/20 15:42:29  kuznets
+ * Added progress message to SubmitJob()
+ *
  * Revision 1.8  2005/04/13 13:37:54  didenko
  * Changed NetSchedule PluginManager driver name to netschedule_client
  *

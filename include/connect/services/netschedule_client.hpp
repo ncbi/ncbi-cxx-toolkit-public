@@ -164,10 +164,14 @@ public:
     ///    Input data. Arbitrary string (cannot exceed 1K). This string
     ///    encodes input data for the job. It is suggested to use NetCache
     ///    to keep the actual data and pass NetCache key as job input.
+    /// @param progress_msg
+    ///    Initial progress message (in most cases a NetCache key for 
+    ///    message exchange)
     ///
     /// @return job key
     virtual
-    string SubmitJob(const string& input);
+    string SubmitJob(const string& input, 
+                     const string& progress_msg = kEmptyStr);
 
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
@@ -541,7 +545,8 @@ public:
 
 
     virtual
-    string SubmitJob(const string& input);
+    string SubmitJob(const string& input, 
+                     const string& progress_msg = kEmptyStr);
 
 
     virtual
@@ -701,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/04/20 15:42:09  kuznets
+ * Added progress message to SubmitJob()
+ *
  * Revision 1.25  2005/04/19 19:33:17  kuznets
  * Added methods to submit and receive progress messages
  *

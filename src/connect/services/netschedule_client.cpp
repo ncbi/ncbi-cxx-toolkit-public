@@ -216,7 +216,8 @@ void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
     m_RequestRateControl = on_off;
 }
 
-string CNetScheduleClient::SubmitJob(const string& input)
+string CNetScheduleClient::SubmitJob(const string& input,
+                                     const string& progress_msg)
 {
     if (input.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
@@ -232,6 +233,12 @@ string CNetScheduleClient::SubmitJob(const string& input)
     MakeCommandPacket(&m_Tmp, "SUBMIT \"");
     m_Tmp.append(input);
     m_Tmp.append("\"");
+
+    if (!progress_msg.empty()) {
+        m_Tmp.append(" \"");
+        m_Tmp.append(progress_msg);
+        m_Tmp.append("\"");
+    }
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -815,6 +822,10 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
+    if (progress_msg.length() >= kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+                   "Progress message too long");
+    }
 
     CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
@@ -1117,6 +1128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/20 15:42:29  kuznets
+ * Added progress message to SubmitJob()
+ *
  * Revision 1.23  2005/04/19 19:33:23  kuznets
  * Added methods to submit and receive progress messages
  *
