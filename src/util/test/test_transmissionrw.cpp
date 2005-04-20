@@ -96,7 +96,7 @@ public:
                             size_t* bytes_read = 0)
     {
         unsigned char* b = (unsigned char*)buf;
-        if (m_Ptr - m_Buf == m_Length) {
+        if ((size_t)(m_Ptr - m_Buf) == m_Length) {
             if (bytes_read)
                 *bytes_read = 0;
             return eRW_Eof;
@@ -399,6 +399,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/20 18:41:28  lavr
+ * Pointer subtraction results in ptrdiff_t not compatible with size_t - fixed
+ *
  * Revision 1.1  2005/04/14 13:49:30  kuznets
  * Initial revision
  *
