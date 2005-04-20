@@ -629,7 +629,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         int x_errno = 0;
         // Auto-resume if interrupted by a signal
         for (n = 0; ; n = 1) {
-            if (connect(sock, (struct sockaddr*) &addr, sizeof(addr)) == 0) {
+            if (connect(sock, (struct sockaddr*) &addr,
+                        (socklen_t) sizeof(addr)) == 0) {
                 break;
             }
             x_errno = errno;
@@ -753,7 +754,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 #endif
         strcpy(addr.sun_path, pipename.c_str());
         mode_t u = umask(0);
-        if (bind(m_LSocket, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
+        if (bind(m_LSocket, (struct sockaddr*) &addr,
+                 (socklen_t) sizeof(addr)) != 0) {
             umask(u);
             throw "UNIX socket bind(\"" + pipename + "\") failed: "
                 + strerror(errno);
@@ -1267,6 +1269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/04/20 20:51:29  lavr
+ * Use socklen_t in address length args of bind() and connect()
+ *
  * Revision 1.28  2005/04/20 19:14:46  lavr
  * +<assert.h>
  *
