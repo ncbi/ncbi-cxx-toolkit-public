@@ -31,6 +31,7 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_assert.h"
 #include <connect/ncbi_core.h>
 #include <stdlib.h>
 
@@ -461,6 +462,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2005/04/20 18:13:39  lavr
+ * +"ncbi_assert.h"
+ *
  * Revision 6.14  2003/08/28 18:47:51  ucko
  * Revert previous hack (now handled another way)
  *

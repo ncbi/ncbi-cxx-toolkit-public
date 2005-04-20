@@ -41,6 +41,7 @@
  *
  */
 
+#include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
 
 
@@ -183,6 +184,9 @@ extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2005/04/20 18:14:10  lavr
+ * +"ncbi_assert.h"
+ *
  * Revision 6.10  2004/03/12 23:25:37  gorelenk
  * Added export prefixes.
  *
