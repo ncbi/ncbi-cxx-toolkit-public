@@ -35,11 +35,6 @@
  */
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #define NCBID_WEBPATH           "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO    "Connection-Info:"
 #define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
@@ -48,6 +43,12 @@ extern "C" {
 #define DISPATCHER_CFGFILE      "servrc.cfg"
 #define DISP_PROTOCOL_VERSION   "1.0"
 #define DISPD_MESSAGE_FILE      ".dispd.msg"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef unsigned int ticket_t;
 
@@ -60,6 +61,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/04/20 18:13:10  lavr
+ * extern "C" limited to code only (not preprocessor macros)
+ *
  * Revision 6.9  2004/08/02 16:52:42  lavr
  * +DISPD_MESSAGE_FILE
  *
