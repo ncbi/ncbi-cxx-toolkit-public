@@ -1662,7 +1662,7 @@ static int s_AdjustInsert(string& cur_insert, string& new_insert,
     int insertLeftSpace = insert_alnpos - aln_start - curInsertSize + 2;  
     //plus2 because insert is put after the position
     if(curInsertSize > 0){
-        assert(insertLeftSpace >= 2);
+        _ASSERT(insertLeftSpace >= 2);
     }
     int newInsertSize = (int)new_insert.size();  
     if(insertLeftSpace - newInsertSize >= 1){ 
@@ -2362,6 +2362,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.70  2005/04/20 20:20:55  ucko
+*Use _ASSERT rather than assert
+*
 *Revision 1.69  2005/04/12 16:39:51  jianye
 *Added subject seq retrieval for trace db, get rid of password seal and and gnl id to url
 *
