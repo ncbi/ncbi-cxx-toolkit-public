@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <assert.h>
 #include <memory>
 #include <stdio.h>
 
@@ -1343,6 +1344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/20 19:13:59  lavr
+ * +<assert.h>
+ *
  * Revision 1.37  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

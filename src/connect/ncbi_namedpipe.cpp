@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <assert.h>
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -1266,6 +1267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/04/20 19:14:46  lavr
+ * +<assert.h>
+ *
  * Revision 1.27  2004/12/06 17:45:37  ivanov
  * Allow using simple pipe names (without pah information).
  * The OS-specific pipe name will be automaticaly generated for it.
