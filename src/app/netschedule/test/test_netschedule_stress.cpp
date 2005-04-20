@@ -222,14 +222,16 @@ int CTestNetScheduleStress::Run(void)
 
     const string input = "Hello " + queue_name;
 
-    string job_key = cl.SubmitJob(input);
+    string job_key = cl.SubmitJob(input, "pmsg");
     NcbiCout << job_key << NcbiEndl;
+    string pmsg = cl.GetProgressMsg(job_key);
+    assert(pmsg == "pmsg");
 
     // test progress message
     string progress_msg = "progress report message";
     cl.PutProgressMsg(job_key, progress_msg);
 
-    string pmsg = cl.GetProgressMsg(job_key);
+    pmsg = cl.GetProgressMsg(job_key);
     NcbiCout << pmsg << NcbiEndl;
     assert(pmsg == progress_msg);
 
@@ -439,6 +441,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/20 16:00:06  kuznets
+ * Test for progress message in submit
+ *
  * Revision 1.11  2005/04/19 19:34:58  kuznets
  * + test for progress messages
  *
