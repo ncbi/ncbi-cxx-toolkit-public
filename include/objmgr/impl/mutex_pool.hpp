@@ -217,10 +217,9 @@ public:
         {
             return CConstRef<TObjectType>(GetPointer());
         }
-    operator bool(void) const
-        {
-            return m_Object.NotNull();
-        }
+    // Some versions of Sun compiler fail to see operator bool defined
+    // in base class, so we have to reimplement it here.
+    DECLARE_OPERATOR_BOOL_REF(m_Object);
 };
 
 
@@ -277,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/04/20 15:42:40  vasilche
+* Use DECLARE_OPERATOR_BOOL* macro.
+*
 * Revision 1.7  2005/04/20 15:07:14  ucko
 * Reimplement operator bool in CInitMutex<>, as some versions of
 * WorkShop ignore the version defined for CInitMutex_Base.
