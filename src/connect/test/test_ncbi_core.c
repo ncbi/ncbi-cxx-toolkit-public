@@ -32,6 +32,7 @@
  *
  */
 
+#include "../ncbi_assert.h"
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -362,6 +363,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/04/20 18:23:11  lavr
+ * +"../ncbi_assert.h"
+ *
  * Revision 6.9  2002/08/14 03:35:26  lavr
  * Fix ELOG_Level test; add eIO_Interrupt to EIO_Status test
  *

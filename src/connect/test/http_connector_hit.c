@@ -31,6 +31,7 @@
  */
 
 #include "../ncbi_ansi_ext.h"
+#include "../ncbi_assert.h"
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 /* This header must go last */
@@ -199,6 +200,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2005/04/20 18:23:11  lavr
+ * +"../ncbi_assert.h"
+ *
  * Revision 6.15  2004/11/23 15:04:26  lavr
  * Use public bounce.cgi from "www"
  *

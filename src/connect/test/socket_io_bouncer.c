@@ -32,6 +32,7 @@
  */
 
 #include "../ncbi_ansi_ext.h"
+#include "../ncbi_assert.h"
 #include <connect/ncbi_socket.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,6 +158,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2005/04/20 18:23:11  lavr
+ * +"../ncbi_assert.h"
+ *
  * Revision 6.7  2002/12/04 19:50:31  lavr
  * #include "../ncbi_ansi_ext.h" instead of <string.h> to define strcasecmp()
  *
