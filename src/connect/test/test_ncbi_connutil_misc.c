@@ -32,6 +32,7 @@
 
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
+#include <stdlib.h>
 #include <string.h>
 /* This header must go last */
 #include "test_assert.h"
@@ -348,6 +349,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2005/04/20 18:23:26  lavr
+ * +<stdlib.h>
+ *
  * Revision 6.17  2005/03/21 17:04:51  lavr
  * BASE64_{En|De}code tests extended
  *
