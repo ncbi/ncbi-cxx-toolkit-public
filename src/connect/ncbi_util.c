@@ -30,7 +30,6 @@
  *
  */
 
-#include "ncbi_config.h"
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
 #  include <ncbistd.h>
@@ -500,6 +499,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2005/04/20 18:15:42  lavr
+ * -"ncbi_config.h"
+ *
  * Revision 6.31  2003/11/14 13:04:38  lavr
  * Little changes in comments [no code changes]
  *
