@@ -155,6 +155,7 @@ public:
         typedef CConstRef<CObject> TBlobId;
 
         STSE_Key(const CTSE_Info& tse, bool can_be_unloaded);
+        STSE_Key(const CTSE_ScopeInfo& tse);
         
         CDataLoader*    m_Loader;
         TBlobId         m_BlobId;
@@ -185,7 +186,7 @@ public:
     void UpdateTSELock(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
     void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
-    bool UnlockTSE(CTSE_ScopeInfo& tse);
+    void RemoveFromHistory(const CTSE_ScopeInfo& tse);
     bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
 
     CDataSource& GetDataSource(void);
@@ -215,9 +216,11 @@ protected:
                     const SSeqMatch_DS& ds_match);
 
     void x_IndexTSE(CTSE_ScopeInfo& tse);
-    bool x_IsBetter(const CSeq_id_Handle& idh,
-                    const CTSE_ScopeInfo& tse1,
-                    const CTSE_ScopeInfo& tse2);
+    void x_UnindexTSE(const CTSE_ScopeInfo& tse);
+    TTSE_ScopeInfo x_FindBestTSEInIndex(const CSeq_id_Handle& idh) const;
+    static bool x_IsBetter(const CSeq_id_Handle& idh,
+                           const CTSE_ScopeInfo& tse1,
+                           const CTSE_ScopeInfo& tse2);
 
 private: // members
     CScope_Impl*                m_Scope;
@@ -272,6 +275,7 @@ public:
     bool x_SameTSE(const CTSE_Info& tse) const;
 
     int GetLoadIndex(void) const;
+    TBlobId GetBlobId(void) const;
     TBlobOrder GetBlobOrder(void) const;
     const TBioseqsIds& GetBioseqsIds(void) const;
 
@@ -478,6 +482,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/04/20 15:45:36  vasilche
+* Fixed removal of TSE from scope's history.
+*
 * Revision 1.17  2005/03/14 18:17:14  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to

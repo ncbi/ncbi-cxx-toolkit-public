@@ -1305,7 +1305,7 @@ void CScope_Impl::RemoveFromHistory(CTSE_Handle& tse)
 
 void CScope_Impl::x_RemoveFromHistory(CTSE_Handle& tse)
 {
-    CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
+    const CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
     if ( tse_info.LockedMoreThanOnce() ) {
         return;
     }
@@ -1325,7 +1325,7 @@ void CScope_Impl::x_RemoveFromHistory(CTSE_Handle& tse)
         }
         m_Seq_idMap.erase(mapped_id);
     }
-    tse_info.GetDSInfo().UnlockTSE(tse_info);
+    tse_info.GetDSInfo().RemoveFromHistory(tse_info);
     tse.m_TSE.Release();
 }
 
@@ -1361,8 +1361,7 @@ void CScope_Impl::x_ResetHistory(void)
         m_Seq_idMap.erase(rm);
     }
     NON_CONST_ITERATE (set< CRef<CTSE_ScopeInfo> >, it, unlocked_infos) {
-        CTSE_ScopeInfo& tse_info = const_cast<CTSE_ScopeInfo&>(**it);
-        (*it)->GetDSInfo().UnlockTSE(tse_info);
+        (*it)->GetDSInfo().RemoveFromHistory(**it);
     }
 }
 

@@ -172,28 +172,42 @@ void CDataSource_ScopeInfo::x_IndexTSE(CTSE_ScopeInfo& tse)
     CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
     const CTSE_ScopeInfo::TBioseqsIds& ids = tse.GetBioseqsIds();
     ITERATE ( CTSE_ScopeInfo::TBioseqsIds, it, ids ) {
-        TTSE_BySeqId::iterator p = m_TSE_BySeqId.lower_bound(*it);
-        if ( p != m_TSE_BySeqId.end() && p->first != *it ) {
-            // There are old TSEs with this Seq-id.
-            if ( order > p->second->GetBlobOrder() ) {
-                // New TSE is worse than old ones.
-                // Skip this Seq-id.
-                continue;
+        m_TSE_BySeqId.insert(TTSE_BySeqId::value_type(*it, Ref(&tse)));
+    }
+}
+
+
+void CDataSource_ScopeInfo::x_UnindexTSE(const CTSE_ScopeInfo& tse)
+{
+    CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
+    const CTSE_ScopeInfo::TBioseqsIds& ids = tse.GetBioseqsIds();
+    ITERATE ( CTSE_ScopeInfo::TBioseqsIds, id_it, ids ) {
+        TTSE_BySeqId::iterator tse_it = m_TSE_BySeqId.lower_bound(*id_it);
+        while ( tse_it != m_TSE_BySeqId.end() && tse_it->first == *id_it ) {
+            if ( tse_it->second == &tse ) {
+                TTSE_BySeqId::iterator erase = tse_it;
+                ++tse_it;
+                m_TSE_BySeqId.erase(erase);
             }
-            
-            // New TSE is ok to insert.
-            if ( order < p->second->GetBlobOrder() ) {
-                // New TSE is better than all old TSEs.
-                // Remove old ones from index.
-                while ( p != m_TSE_BySeqId.end() && p->first == *it ) {
-                    TTSE_BySeqId::iterator to_erase = p++;
-                    m_TSE_BySeqId.erase(to_erase);
-                }
+            else {
+                ++tse_it;
             }
         }
-        // insert new
-        m_TSE_BySeqId.insert(p, TTSE_BySeqId::value_type(*it, Ref(&tse)));
     }
+}
+
+
+CDataSource_ScopeInfo::TTSE_ScopeInfo
+CDataSource_ScopeInfo::x_FindBestTSEInIndex(const CSeq_id_Handle& idh) const
+{
+    TTSE_ScopeInfo tse;
+    for ( TTSE_BySeqId::const_iterator it = m_TSE_BySeqId.lower_bound(idh);
+          it != m_TSE_BySeqId.end() && it->first == idh; ++it ) {
+        if ( !tse || x_IsBetter(idh, *it->second, *tse) ) {
+            tse = it->second;
+        }
+    }
+    return tse;
 }
 
 
@@ -250,33 +264,17 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
 }
 
 
-bool CDataSource_ScopeInfo::UnlockTSE(CTSE_ScopeInfo& tse)
+void CDataSource_ScopeInfo::RemoveFromHistory(const CTSE_ScopeInfo& tse)
 {
     TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
-    if ( tse.CanBeUnloaded() ) {
+    {{ // remove TSE lock completely
         m_TSE_UnlockQueue.Get(&tse);
-        TTSE_BySeqId::iterator id_it = m_TSE_BySeqId.begin();
-        while (id_it != m_TSE_BySeqId.end()) {
-            if (id_it->second == &tse) {
-                TTSE_BySeqId::iterator erase = id_it;
-                ++id_it;
-                m_TSE_BySeqId.erase(erase);
-            }
-            else {
-                ++id_it;
-            }
-        }
+    }}
+    if ( tse.CanBeUnloaded() ) {
+        x_UnindexTSE(tse);
     }
-    if (tse.m_TSE_Lock  &&  m_TSE_LockSet.RemoveLock(tse.m_TSE_Lock)) {
-        STSE_Key key(*tse.m_TSE_Lock, tse.CanBeUnloaded());
-        TTSE_InfoMap::iterator info_it = m_TSE_InfoMap.find(key);
-        if (info_it != m_TSE_InfoMap.end()) {
-            m_TSE_InfoMap.erase(info_it);
-        }
-        return true;
-    }
-    return false;
+    _VERIFY(m_TSE_InfoMap.erase(tse));
 }
 
 
@@ -368,6 +366,20 @@ CDataSource_ScopeInfo::STSE_Key::STSE_Key(const CTSE_Info& tse,
 }
 
 
+CDataSource_ScopeInfo::STSE_Key::STSE_Key(const CTSE_ScopeInfo& tse)
+{
+    if ( tse.CanBeUnloaded() ) {
+        m_Loader = tse.GetDSInfo().GetDataSource().GetDataLoader();
+        _ASSERT(m_Loader);
+    }
+    else {
+        m_Loader = 0;
+    }
+    m_BlobId = tse.GetBlobId();
+    _ASSERT(m_BlobId);
+}
+
+
 bool CDataSource_ScopeInfo::STSE_Key::operator<(const STSE_Key& tse2) const
 {
     _ASSERT(m_Loader == tse2.m_Loader);
@@ -426,14 +438,8 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_FindBestTSE(const CSeq_id_Handle& idh)
     SSeqMatch_Scope ret;
     if ( m_CanBeUnloaded ) {
         // We have full index of static TSEs.
-        TTSE_ScopeInfo tse;
         TTSE_InfoMapMutex::TReadLockGuard guard(GetTSE_InfoMapMutex());
-        for ( TTSE_BySeqId::const_iterator it = m_TSE_BySeqId.lower_bound(idh);
-              it != m_TSE_BySeqId.end() && it->first == idh; ++it ) {
-            if ( !tse || x_IsBetter(idh, *it->second, *tse) ) {
-                tse = it->second;
-            }
-        }
+        TTSE_ScopeInfo tse = x_FindBestTSEInIndex(idh);
         if ( tse ) {
             x_SetMatch(ret, *tse, idh);
         }
@@ -676,6 +682,19 @@ CTSE_ScopeInfo::TBlobOrder CTSE_ScopeInfo::GetBlobOrder(void) const
     else {
         _ASSERT(m_TSE_Lock);
         return m_TSE_Lock->GetBlobOrder();
+    }
+}
+
+
+CTSE_ScopeInfo::TBlobId CTSE_ScopeInfo::GetBlobId(void) const
+{
+    if ( CanBeUnloaded() ) {
+        _ASSERT(m_UnloadedInfo.get());
+        return m_UnloadedInfo->m_BlobId;
+    }
+    else {
+        _ASSERT(m_TSE_Lock);
+        return TBlobId(&*m_TSE_Lock);
     }
 }
 
@@ -1075,6 +1094,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/04/20 15:45:36  vasilche
+* Fixed removal of TSE from scope's history.
+*
 * Revision 1.15  2005/03/15 19:14:27  vasilche
 * Correctly update and check  bioseq ids in split blobs.
 *
