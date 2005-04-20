@@ -159,7 +159,7 @@ typedef struct {
 #define DEF_CONN_ARGS             ""
 
 #define REG_CONN_REQ_METHOD       "REQ_METHOD"
-#define DEF_CONN_REQ_METHOD       "POST"
+#define DEF_CONN_REQ_METHOD       "ANY"
 
 #define REG_CONN_TIMEOUT          "TIMEOUT"
 #define DEF_CONN_TIMEOUT          30.0
@@ -697,6 +697,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2005/04/20 15:47:24  lavr
+ * DEF_CONN_REQ_METHOD changed to ANY
+ *
  * Revision 6.41  2005/03/21 17:04:10  lavr
  * BASE64_{En|De}code buffer size estimation hints added
  *
