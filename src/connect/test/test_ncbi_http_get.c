@@ -34,6 +34,7 @@
 #include "../ncbi_priv.h"
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_UNIX
@@ -48,8 +49,11 @@ int main(int argc, char* argv[])
     static const STimeout s_ZeroTmo = {0, 0};
     CONNECTOR     connector;
     SConnNetInfo* net_info;
+    char          blk[512];
+    EIO_Status    status;
     THCC_Flags    flags;
     CONN          conn;
+    FILE*         fp;
     time_t        t;
     size_t        n;
     char*         s;
@@ -58,16 +62,22 @@ int main(int argc, char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    if (argc != 2 || !*argv[1]) {
-        CORE_LOG(eLOG_Error, "URL has to be supplied on the command line");
-        exit(1);
-    }
+    if (argc < 2 || !*argv[1])
+        CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");
+    if (argc > 3)
+        CORE_LOG(eLOG_Fatal, "Command cannot take more than 2 arguments");
+    if (argc == 3) {
+        fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb");
+        if (!fp) {
+            CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"",
+                                                argv[2] ? argv[2] : ""));
+        }
+    } else
+        fp = 0;
 
     CORE_LOG(eLOG_Note, "Creating network info structure");
     if (!(net_info = ConnNetInfo_Create(0)))
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
-    if (!getenv("CONN_REQ_METHOD"))
-        net_info->req_method = eReqMethod_Get;
     if ((s = getenv("CONN_TIMEOUT"))  &&  strcmp(s, "0") == 0) {
         memcpy(&net_info->tmo, &s_ZeroTmo, sizeof(s_ZeroTmo));
         net_info->timeout = &net_info->tmo;
@@ -94,12 +104,19 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
     CONN_SetTimeout(conn, eIO_Open,      net_info->timeout);
     CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout);
+    while (fp  &&  !feof(fp)) {
+        n = fread(blk, 1, sizeof(blk), fp);
+        status = CONN_Write(conn, blk, n, &n, eIO_WritePersist);
+        if (status != eIO_Success) {
+            CORE_LOGF(eLOG_Fatal, ("Write error: %s", IO_StatusStr(status)));
+        }
+    }
+    if (fp)
+        fclose(fp);
 
     t = time(0);
     for (;;) {
-        char blk[512];
-        EIO_Status status = CONN_Wait(conn, eIO_Read, net_info->timeout);
-
+        status = CONN_Wait(conn, eIO_Read, net_info->timeout);
         if (status != eIO_Success) {
             if (status == eIO_Closed)
                 break;
@@ -136,6 +153,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2005/04/20 15:51:19  lavr
+ * Allow addtl file argument to attach as a body ('-' for stdin)
+ *
  * Revision 6.13  2005/04/19 16:37:52  lavr
  * Allow HTTP method to be overridden from the environment
  *
