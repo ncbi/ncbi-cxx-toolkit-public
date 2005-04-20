@@ -146,8 +146,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->timeout = 0;
     } else {
         info->timeout = &info->tmo;
-        dbl = atof(str);
-        if (dbl <= 0.0)
+        if (!*str || (dbl = atof(str)) < 0.0)
             dbl = DEF_CONN_TIMEOUT;
         info->timeout->sec  = (unsigned int) dbl;
         info->timeout->usec = (unsigned int)
@@ -714,7 +713,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
     s_SaveString    (s, "req_method",     (info->req_method == eReqMethod_Any
-                                           ? DEF_CONN_REQ_METHOD
+                                           ? "ANY"
                                            : (info->req_method
                                               == eReqMethod_Get
                                               ? "GET"
@@ -794,10 +793,15 @@ extern SOCK URL_Connect
         return 0/*error*/;
     }
 
+    /* select request method and its verbal representation */
+    if (req_method == eReqMethod_Any) {
+        req_method = content_length ? eReqMethod_Post : eReqMethod_Get;
+    } else if (req_method == eReqMethod_Get  &&  content_length) {
+        CORE_LOG(eLOG_Warning,
+                 "[URL_Connect]  Content length ignored with method GET");
+        content_length = 0;
+    }
     switch (req_method) {
-    case eReqMethod_Any:
-        x_req_r = DEF_CONN_REQ_METHOD " ";
-        break;
     case eReqMethod_Post:
         x_req_r = "POST ";
         break;
@@ -809,11 +813,6 @@ extern SOCK URL_Connect
                                " (%d)", (int) req_method));
         assert(0);
         return 0/*error*/;
-    }
-    if (content_length  &&  strcasecmp(x_req_r, "GET ") == 0) {
-        CORE_LOG(eLOG_Warning,
-                 "[URL_Connect]  Content length ignored with GET");
-        content_length = 0;
     }
 
     /* URL-encode "args", if any specified */
@@ -1665,6 +1664,10 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.72  2005/04/20 15:50:30  lavr
+ * ConnNetInfo_Create(): Allow zero timeout
+ * URL_Connect(): Automagically figure out ANY method based upon body size
+ *
  * Revision 6.71  2005/03/21 17:10:03  lavr
  * BASE64_Decode(): unnecessary re-init of "k" removed
  *
