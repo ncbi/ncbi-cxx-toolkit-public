@@ -201,9 +201,9 @@ string UnicodeToUTF8( TUnicode theUnicode )
 }
 
 
-int UnicodeToUTF8( TUnicode theUnicode, char *theBuffer, int theBufLength )
+int UnicodeToUTF8( TUnicode theUnicode, char *theBuffer, size_t theBufLength )
 {
-    int Length = 0;
+    size_t Length = 0;
 
     if (theUnicode < 0x80) {
         Length = 1;
@@ -236,7 +236,7 @@ int UnicodeToUTF8( TUnicode theUnicode, char *theBuffer, int theBufLength )
 
 
 int UTF8ToAscii( const char* src, char* dst,
-                 int dstLen, const TUnicodeTable* table)
+                 size_t dstLen, const TUnicodeTable* table)
 {
     if ( !src || !dst || dstLen == 0 ) return 0;
     size_t srcPos = 0;
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2005/04/20 18:40:26  lavr
+ * Change buffer sizes from being 'int' to 'size_t'
+ *
  * Revision 1.5  2005/02/07 16:02:28  ivanov
  * Fixed Workshop compiler warnings in 64bit mode
  *

@@ -104,7 +104,7 @@ int UTF8ToUnicode(const char* utf, TUnicode* unicode);
 /// @return
 ///   Length of the generated UTF8 sequence
 NCBI_XUTIL_EXPORT
-int UnicodeToUTF8(TUnicode unicode, char *buffer, int buf_length);
+int UnicodeToUTF8(TUnicode unicode, char *buffer, size_t buf_length);
 
 /// Convert Unicode character into UTF8.
 ///
@@ -131,7 +131,7 @@ string UnicodeToUTF8(TUnicode unicode);
 /// @return
 ///   Length of decoded string or -1 if buffer is too small
 NCBI_XUTIL_EXPORT
-int UTF8ToAscii(const char* src, char* dst, int dst_len,
+int UTF8ToAscii(const char* src, char* dst, size_t dst_len,
                 const TUnicodeTable* table=0);
 
 /// Convert UTF8 into ASCII string.
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/04/20 18:40:09  lavr
+ * Change buffer sizes from being 'int' to 'size_t'
+ *
  * Revision 1.1  2004/05/06 18:14:53  gouriano
  * Imported from pubmed/xmldb
  *
