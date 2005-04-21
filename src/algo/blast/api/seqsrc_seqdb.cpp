@@ -454,7 +454,7 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
-                     Uint4 first_seq, Uint4 last_seq, void*)
+                     Uint4 first_seq, Uint4 last_seq)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2005/04/21 14:58:40  dondosha
+ * Removed unused void* argument in SeqDbBlastSeqSrcInit
+ *
  * Revision 1.34  2005/04/19 20:13:25  dondosha
  * Fixed comment for s_SeqDbGetIsProt
  *

@@ -54,13 +54,11 @@ BEGIN_SCOPE(blast)
  * @param first_seq First ordinal id in the database to search [in]
  * @param last_seq Last ordinal id in the database to search 
  *                 (full database if 0) [in]
- * @param extra_arg Reserved for the future implementation of other database
- *                  restrictions [in]
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
-                     Uint4 first_seq = 0, Uint4 last_seq = 0, void* extra_arg = NULL);
+                     Uint4 first_seq = 0, Uint4 last_seq = 0);
 
 /** Initialize the sequence source structure using an existing SeqDB object.
  * @param seqdb CSeqDB object [in]
@@ -77,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/21 14:58:36  dondosha
+ * Removed unused void* argument in SeqDbBlastSeqSrcInit
+ *
  * Revision 1.11  2005/01/26 21:02:57  dondosha
  * Made internal functions static, moved internal class to .cpp file
  *
