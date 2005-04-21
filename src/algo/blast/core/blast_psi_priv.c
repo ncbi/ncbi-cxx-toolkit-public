@@ -523,7 +523,7 @@ static int
 s_PSIValidateNoGapsInQuery(const _PSIMsa* msa)
 {
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
-    Uint4 p = 0;            /* index on positions sequences */
+    Uint4 p = 0;            /* index on positions */
     ASSERT(msa);
 
     for (p = 0; p < msa->dimensions->query_length; p++) {
@@ -545,7 +545,7 @@ s_PSIValidateNoFlankingGaps(const _PSIMsa* msa)
 {
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
-    Int4 p = 0;            /* index on positions sequences */
+    Int4 p = 0;            /* index on positions */
     ASSERT(msa);
 
     /* Look for starting gaps in alignments */
@@ -590,7 +590,10 @@ s_PSIValidateNoFlankingGaps(const _PSIMsa* msa)
 }
 
 /** Validate that there are no unaligned columns or columns which only contain
- * gaps in the multiple sequence alignment.
+ * gaps in the multiple sequence alignment. Note that this test is a bit
+ * redundant with s_PSIValidateNoGapsInQuery(), but it is left in here just in
+ * case the query sequence is manually disabled (normally it shouldn't, but we
+ * have seen cases where this is done).
  * @param msa multiple sequence alignment data structure [in]
  * @return PSIERR_UNALIGNEDCOLUMN or PSIERR_COLUMNOFGAPS if validation fails, 
  * else PSI_SUCCESS
@@ -600,7 +603,7 @@ s_PSIValidateAlignedColumns(const _PSIMsa* msa)
 {
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
-    Uint4 p = 0;            /* index on positions sequences */
+    Uint4 p = 0;            /* index on positions */
     ASSERT(msa);
 
     for (p = 0; p < msa->dimensions->query_length; p++) {
@@ -608,7 +611,7 @@ s_PSIValidateAlignedColumns(const _PSIMsa* msa)
         Boolean found_aligned_sequence = FALSE;
         Boolean found_non_gap_residue = FALSE;
 
-        for (s = kQueryIndex + 1; s < msa->dimensions->num_seqs + 1; s++) {
+        for (s = kQueryIndex; s < msa->dimensions->num_seqs + 1; s++) {
 
             if (msa->cell[s][p].is_aligned) {
                 found_aligned_sequence = TRUE;
@@ -2355,6 +2358,11 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/04/21 20:26:57  camacho
+ * Relax validation in s_PSIValidateAlignedColumns so that query sequence can be
+ * the only aligned sequence for a given column of the multiple sequence
+ * alignment.
+ *
  * Revision 1.52  2005/03/22 15:35:10  camacho
  * Fix to enable backwards compatibility with old PSSM engine when the query is
  * the only sequence aligned for a given column of the multiple sequence
