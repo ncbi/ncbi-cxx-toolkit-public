@@ -229,7 +229,7 @@ char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src);
  * @return pointer to initialized iterator for BlastSeqSrc
  */
 NCBI_XBLAST_EXPORT
-BlastSeqSrcIterator* BlastSeqSrcIteratorNew();
+BlastSeqSrcIterator* BlastSeqSrcIteratorNew(void);
 
 /** How many database sequences to process in one database chunk. */
 extern const unsigned int kBlastSeqSrcDefaultChunkSize;
