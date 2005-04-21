@@ -283,7 +283,7 @@ class TWorkerNodeJob##Factory : public CSimpleJobFactory<TWorkerNodeJob> \
 public: \
     virtual string GetJobVersion() const  \
     { \
-        return #TWorkerNodeJob " version " Version; \
+        return #TWorkerNodeJob " version " #Version; \
     } \
 }
 
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/21 19:53:19  didenko
+ * Minor fix
+ *
  * Revision 1.12  2005/04/21 19:38:52  didenko
  * Fixed version generation
  *
