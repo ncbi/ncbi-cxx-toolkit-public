@@ -71,9 +71,9 @@ public:
     ///
     /// @param max_size
     ///   The maximum size of tht queue
-    CBlockingQueue(unsigned int max_size = kMax_UInt)
+    CBlockingQueue(size_t max_size = kMax_UInt)
         : m_GetSem(0,1), m_PutSem(1,1), 
-          m_MaxSize(min<unsigned int>(max_size,0xFFFFFF)),
+          m_MaxSize(min(max_size, size_t(0xFFFFFF))),
           m_RequestCounter(0xFFFFFF)  {}
 
     /// Put a request into the queue. Throws exception if full.
@@ -106,11 +106,11 @@ public:
     TRequest     Get(unsigned int timeout_sec  = kMax_UInt,
                      unsigned int timeout_nsec = 0);
 
-    /// Get a number of requests in the queue
-    unsigned int GetSize    (void) const;
+    /// Get the number of requests in the queue
+    size_t       GetSize    (void) const;
 
     /// Get the maximun number of requests that can be put into the queue
-    unsigned int GetMaxSize (void) const { return m_MaxSize; }
+    size_t       GetMaxSize (void) const { return m_MaxSize; }
 
     /// Check if the queue is empty
     bool         IsEmpty    (void) const { return GetSize() == 0; }
@@ -153,7 +153,7 @@ protected:
     mutable CMutex      m_Mutex;  /// Guards access to queue
 
 private:
-    unsigned int        m_MaxSize;        /// The maximum size of the queue
+    size_t              m_MaxSize;        /// The maximum size of the queue
     Uint4               m_RequestCounter; ///
 };
 
@@ -538,7 +538,7 @@ TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
 
 
 template <typename TRequest>
-unsigned int CBlockingQueue<TRequest>::GetSize(void) const
+size_t CBlockingQueue<TRequest>::GetSize(void) const
 {
     CMutexGuard guard(m_Mutex);
     return const_cast<const TQueue&>(m_Queue).size();
@@ -664,6 +664,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/04/21 13:44:39  ucko
+* CBlockingQueue<>: replace unsigned int with size_t where appropriate.
+*
 * Revision 1.22  2005/04/07 13:12:45  didenko
 * + destructor to CStdPoolOfThreads call
 *
