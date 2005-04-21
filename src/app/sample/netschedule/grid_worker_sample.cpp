@@ -154,12 +154,15 @@ private:
 //  Routine magic spells
 
 // Use this marcos to implement the main function for the CSampleJob version 1.0.1
-NCBI_WORKERNODE_MAIN(CSampleJob, "1.0.1")
+NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1)
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/21 19:53:59  didenko
+ * Changed version generation
+ *
  * Revision 1.12  2005/04/21 19:10:01  didenko
  * Added IWorkerNodeInitContext
  * Added some convenient macros
