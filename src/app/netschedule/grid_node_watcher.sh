@@ -111,7 +111,7 @@ CopyFile() {
        cd $start_dir
        exit 2
     fi
-    rm ${new_version_dir}/$1 
+    rm -f ${new_version_dir}/$1 
 }
 
 # ---------------------------------------------------- 
@@ -174,7 +174,7 @@ if [ -f ${new_version_dir}/rdist_me ]; then
          CopyFile $fname
       fi
    done
-   rm ${new_version_dir}/rdist_me
+   rm -f ${new_version_dir}/rdist_me
 fi
 
 echo "Testing if $node_name is alive on $host:$port"
