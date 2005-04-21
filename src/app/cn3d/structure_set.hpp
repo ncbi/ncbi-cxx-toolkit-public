@@ -223,6 +223,8 @@ public:
         int masterDomainID, int slaveDomainID);
     void RemoveStructureAlignments(void);
 
+    bool MonitorAlignments(void) const;
+
 private:
     ASNDataManager *dataManager;
 
@@ -309,6 +311,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.80  2004/10/05 14:57:54  thiessen
 * add distance selection dialog
 *

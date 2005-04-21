@@ -1428,6 +1428,11 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
         }
     }
 
+    if (!glCanvas->structureSet->MonitorAlignments()) {
+        ERRORMSG("StructureWindow::LoadData() - MonitorAlignments() returned error");
+        return false;
+    }
+
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
 
@@ -1634,6 +1639,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.38  2005/01/04 16:06:59  thiessen
 * make MultiTextDialog remember its position+size
 *

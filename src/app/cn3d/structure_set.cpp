@@ -766,6 +766,11 @@ void StructureSet::RemoveUnusedSequences(void)
     dataManager->RemoveUnusedSequences(alignmentSet, updateSequences);
 }
 
+bool StructureSet::MonitorAlignments(void) const
+{
+    return dataManager->MonitorAlignments();
+}
+
 bool StructureSet::SaveASNData(const char *filename, bool doBinary, unsigned int *changeFlags)
 {
     // force a save of any edits to alignment and updates first (it's okay if this has already been done)
@@ -786,7 +791,11 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary, unsigned int
         dataManager->SetUserAnnotations(*userAnnotations);
 
     string err;
-    bool writeOK = dataManager->WriteDataToFile(filename, doBinary, &err, eFNP_Replace);
+    bool writeOK = MonitorAlignments();
+    if (!writeOK)
+        err = "MonitorAlignments() returned error, no file written";
+    else
+        writeOK = dataManager->WriteDataToFile(filename, doBinary, &err, eFNP_Replace);
 
     // remove style dictionary and annotations from asn
     dataManager->RemoveStyleDictionary();
@@ -1511,6 +1520,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.146  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.145  2005/03/23 18:39:37  thiessen
 * split out RMSD calculator as function
 *

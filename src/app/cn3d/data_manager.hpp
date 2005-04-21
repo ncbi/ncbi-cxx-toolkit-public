@@ -97,6 +97,9 @@ public:
     ASNDataManager(ncbi::objects::CCdd *cdd);
     ~ASNDataManager(void);
 
+    // validate alignments (as per CDTree2)
+    bool MonitorAlignments(void) const;
+
     // dump data to file
     bool WriteDataToFile(const char *filename, bool isBinary,
         std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default) const;
@@ -176,6 +179,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.14  2004/05/21 17:29:51  thiessen
 * allow conversion of mime to cdd data
 *

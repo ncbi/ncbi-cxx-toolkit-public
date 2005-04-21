@@ -119,8 +119,6 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
             PTHROW("FillInAlignmentData() - master range error");
         masterStart = range->from;
         masterWidth = range->to - range->from + 1;
-//        if (masterWidth == 0)
-//            continue;
 
         for (row=0; row<bma->NRows(); row++) {
             seq = bma->GetSequenceOfRow(row);
@@ -211,10 +209,6 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
                             seq->sequenceString[slaveStart + slaveWidth - masterWidth + column]);
                     cell.is_aligned = true;
                 }
-
-                // test to see if query row is used at all:
-//                if (row == 0)
-//                    cell.letter = LookupNCBIStdaaNumberFromCharacter('X');
             }
         }
     }
@@ -247,7 +241,7 @@ double GetStandardProbability(char ch)
     return 0.0;
 }
 
-static double CalculateInformationContent(const PSIMsa *data)
+static double CalculateInformationContent(const PSIMsa *data, bool ignoreMaster)
 {
     double infoContent = 0.0;
 
@@ -266,8 +260,8 @@ static double CalculateInformationContent(const PSIMsa *data)
         nRes = 0;
 
         // build profile
-        for (unsigned int r=1; r<=data->dimensions->num_seqs; ++r) {    // don't include master row
-            if (data->data[r][c].letter != gap) {                       // and don't include gaps
+        for (unsigned int r=(ignoreMaster ? 1 : 0); r<=data->dimensions->num_seqs; ++r) {
+            if (data->data[r][c].letter != gap) {                       // don't include gaps
                 p = profile.find(data->data[r][c].letter);
                 if (p == profile.end())
                     profile[data->data[r][c].letter] = 1;
@@ -326,7 +320,7 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     // create PSIMsa
     PSIMsaDimensions dim;
     dim.query_length = bma->GetMaster()->Length();
-    dim.num_seqs = bma->NRows() - 1;    // don't include master
+    dim.num_seqs = bma->NRows() - 1;    // not including master
     data = PSIMsaNew(&dim);
     FillInAlignmentData(bma, data);
 
@@ -334,13 +328,13 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     diag.information_content = false;
     diag.residue_frequencies = false;
     diag.weighted_residue_frequencies = false;
-    diag.frequency_ratios = true;
+    diag.frequency_ratios = false;      // true to match cdtree
     diag.gapless_column_weights = false;
 
     // create PSIBlastOptions
     PSIBlastOptionsNew(&options);
-    options->nsg_compatibility_mode = true;
-    double infoContent = CalculateInformationContent(data);
+    options->nsg_compatibility_mode = false;    // false for now, since we're not using a consensus
+    double infoContent = CalculateInformationContent(data, false);
     if      (infoContent > 84  ) options->pseudo_count = 10;
     else if (infoContent > 55  ) options->pseudo_count =  7;
     else if (infoContent > 43  ) options->pseudo_count =  5;
@@ -352,7 +346,7 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
 #ifdef DEBUG_PSSM
     CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
     if (ofs) {
-        diag.residue_frequencies = true;
+//        diag.residue_frequencies = true;
         ofs << "information content: " << setprecision(6) << infoContent << '\n'
             << "pseudocount: " << options->pseudo_count << '\n'
             << "query length: " << GetQueryLength() << '\n'
@@ -583,6 +577,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.3  2005/03/25 15:10:45  thiessen
 * matched self-hit E-values with CDTree2
 *

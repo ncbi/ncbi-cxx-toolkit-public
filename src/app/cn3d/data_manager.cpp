@@ -52,6 +52,7 @@
 #include <objects/cdd/Cdd_id.hpp>
 #include <objects/cdd/Global_id.hpp>
 #include <objects/cdd/Cdd_id_set.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 #include "asn_reader.hpp"
 #include "data_manager.hpp"
@@ -806,11 +807,184 @@ const StructureSet::RejectList * ASNDataManager::GetRejects(void) const
     return &(cdd->GetRejects());
 }
 
+// the following three Check... functions are taken from CDTree2
+
+bool CheckOneDenDiag(CRef<CDense_diag>& DenDiag, string& Str) {
+//---------------------------------------------------------------------------
+// check integrity of DenDiag.
+//---------------------------------------------------------------------------
+    int  Start1, Start2, Len, Dim;
+    char buf[1024];
+    bool RetVal = true;
+
+    // check that Dim of this dense-diag is exactly 2
+    Dim = DenDiag->GetDim();
+    if (Dim != 2) {
+        sprintf(buf, "Dense-diag Dim = %d. It should always be exactly 2.\n", Dim);
+        RetVal = false;
+    }
+
+    // check that Len of this dense-diag is at least 1
+    Len = DenDiag->GetLen();
+    if (Len < 0) {
+        sprintf(buf, "Dense-diag Len = %d. It should always be non-negative.\n", Len);
+        RetVal = false;
+    }
+
+    // check that Start of first row is sensible.
+    Start1 = DenDiag->GetStarts().front();
+    if (Start1 < 0) {
+        sprintf(buf, "Dense-diag has 1st row Start %d. It should always be non-negative.\n", Start1);
+        RetVal = false;
+    }
+
+    // check that Start of second row is sensible.
+    Start2 = DenDiag->GetStarts().back();
+    if (Start2 < 0) {
+        sprintf(buf, "Dense-diag has 2nd row start %d. It should always be non-negative.\n", Start2);
+        RetVal = false;
+    }
+
+    if (!RetVal) {
+        Str += buf;
+    }
+    return(RetVal);
+}
+
+bool CheckTwoDenDiags(CRef<CDense_diag>& DenDiag1, CRef<CDense_diag>& DenDiag2, string& Str) {
+//---------------------------------------------------------------------------
+// check that DenDiag2 follows DenDiag1.
+//---------------------------------------------------------------------------
+    int  Start11, Start12, Start21, Start22, Len;
+    char buf[1024];
+    bool RetVal = true;
+
+    // get starts for first den-diag, and get its len
+    Start11 = DenDiag1->GetStarts().front();
+    Start12 = DenDiag1->GetStarts().back();
+    Len = DenDiag1->GetLen();
+
+    // get starts for second den-diag
+    Start21 = DenDiag2->GetStarts().front();
+    Start22 = DenDiag2->GetStarts().back();
+
+    // make sure starts for second den-diag follow starts for first
+    if (Start21 < (Start11 + Len)) {
+        sprintf(buf, "Dense-diag has 1st row Start %d, Len %d. Next Dense-diag has Start %d.\n", Start11, Len, Start21);
+        RetVal = false;
+    }
+
+    if (Start22 < (Start12 + Len)) {
+        sprintf(buf, "Dense-diag has 2nd row Start %d, Len %d. Next Dense-diag has Start %d.\n", Start12, Len, Start22);
+        RetVal = false;
+    }
+
+    if (!RetVal) {
+        Str += buf;
+    }
+    return(RetVal);
+}
+
+bool CheckOneAlignment(const CRef<CSeq_align>& SeqAlign, string& Str) {
+//---------------------------------------------------------------------------
+// check integrity of one aligment
+//---------------------------------------------------------------------------
+    list< CRef< CDense_diag > >            DenDiags;
+    list< CRef< CDense_diag > >::iterator  dd_iter;
+          CRef< CDense_diag >              DenDiag1, DenDiag2;
+    bool  RetVal = true;
+
+    // if alignment has no dense-diags go to next alignment
+    if (!SeqAlign->GetSegs().IsDendiag()) return(RetVal);
+
+    // get den-diags of alignment
+    DenDiags = SeqAlign->GetSegs().GetDendiag();
+
+    // get first den-diag
+    dd_iter = DenDiags.begin();
+    DenDiag1 = *dd_iter;
+
+    // check integrity of first den-diag
+    if (!CheckOneDenDiag(DenDiag1, Str)) RetVal = false;
+
+    // handle case when there's just one den-diag in the alignment
+    if (dd_iter == DenDiags.end()) return(RetVal);
+    dd_iter++;
+
+    // loop through the den-diags.  make sure we're ascending.
+    for (; dd_iter != DenDiags.end(); dd_iter++) {
+        // get next den-diag
+        DenDiag2 = *dd_iter;
+        // check integrity of this den-diag
+        if (!CheckOneDenDiag(DenDiag2, Str)) RetVal = false;
+        // check that this den-diag is later in the sequence than preceeding den-diag
+        if (!CheckTwoDenDiags(DenDiag1, DenDiag2, Str)) RetVal = false;
+        DenDiag1 = DenDiag2;
+    }
+    return(RetVal);
+}
+
+bool ASNDataManager::MonitorAlignments(void) const
+{
+    bool okay = true;
+    string messages;
+    char buf[1024];
+
+    // check regular alignments
+    const SeqAnnotList *seqAnnots = GetSequenceAlignments();
+    if (seqAnnots) {
+        SeqAnnotList::const_iterator a, ae = seqAnnots->end();
+        for (a=seqAnnots->begin(); a!=ae; ++a) {
+            if ((*a)->GetData().IsAlign()) {
+                CSeq_annot::C_Data::TAlign::const_iterator s, se = (*a)->GetData().GetAlign().end();
+                int n = 1;
+                for (s=(*a)->GetData().GetAlign().begin(); s!=se; ++s, ++n) {
+                    if (!CheckOneAlignment(*s, messages)) {
+                        okay = false;
+                        sprintf(buf, "Normal Alignment #%i\n\n", n);
+                        messages += buf;
+                    }
+                }
+            }
+        }
+    }
+
+    // check update alignments
+    const UpdateAlignList *updates = GetUpdates();
+    if (updates) {
+        UpdateAlignList::const_iterator u, ue = updates->end();
+        for (u=updates->begin(); u!=ue; ++u) {
+            if ((*u)->IsSetSeqannot() && (*u)->GetSeqannot().GetData().IsAlign()) {
+                CSeq_annot::C_Data::TAlign::const_iterator s, se = (*u)->GetSeqannot().GetData().GetAlign().end();
+                int n = 1;
+                for (s=(*u)->GetSeqannot().GetData().GetAlign().begin(); s!=se; ++s, ++n) {
+                    if (!CheckOneAlignment(*s, messages)) {
+                        okay = false;
+                        sprintf(buf, "Pending Alignment #%i\n\n", n);
+                        messages += buf;
+                    }
+                }
+            }
+        }
+    }
+
+    if (okay)
+        TRACEMSG("MonitorAlignments() succeeded");
+    else {
+        ERRORMSG("MonitorAlignments() found errors, see log for details; please copy&paste and send a complete report to cdt-swg");
+        WARNINGMSG("MonitorAlignments() found errors:\n\n" << messages);
+    }
+    return okay;
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/04/21 14:31:19  thiessen
+* add MonitorAlignments()
+*
 * Revision 1.23  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
