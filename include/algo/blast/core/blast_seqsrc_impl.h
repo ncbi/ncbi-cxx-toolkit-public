@@ -74,7 +74,8 @@ struct BlastSeqSrcNewInfo {
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure, always 
  * returns NULL. This function's implementation should free resources allocated
- * in the BlastSeqSrcConstructor except the error initialization string */
+ * in the BlastSeqSrcConstructor and BlastSeqSrcNew except the error 
+ * initialization string */
 typedef BlastSeqSrc* (*BlastSeqSrcDestructor) 
     (BlastSeqSrc* seqrc /**< BlastSeqSrc structure to free */
      );

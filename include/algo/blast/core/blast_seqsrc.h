@@ -114,7 +114,9 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
 /** Frees the BlastSeqSrc structure by invoking the destructor function set by
  * the user-defined constructor function when the structure is initialized
  * (indirectly, by BlastSeqSrcNew). If the destructor function pointer is not
- * set, a memory leak could occur.
+ * set, a memory leak could occur. Note that it is the implementation's
+ * destructor responsibility to free the BlastSeqSrc structure by calling
+ * sfree.
  * @param seq_src BlastSeqSrc to free [in]
  * @return NULL
  */
