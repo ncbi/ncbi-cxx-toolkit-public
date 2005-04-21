@@ -39,7 +39,10 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+//#include <util/map_serial.hpp>
+
 #include <misc/grid_cgi/grid_cgiapp.hpp>
+
 
 #include <vector>
 
@@ -58,6 +61,7 @@ const string kProjectParamName = "ctg_project";
 class CCgiTunnel2Grid : public  CGridCgiApplication
 {
 public:
+    CCgiTunnel2Grid() : m_CgiEntries(NULL) {}
 
     virtual void Init(void);
     virtual string GetProgramVersion(void) const;
@@ -123,6 +127,7 @@ private:
     string m_Title;
     string m_Input;
     int    m_FallBackDelay;
+    int    m_CancelGoBackDelay;
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
@@ -130,6 +135,9 @@ private:
     ERenderType m_RenderType;
 
     string  m_StrPage;
+
+    const TCgiEntries* m_CgiEntries;
+
 
 };
 
@@ -204,6 +212,10 @@ void CCgiTunnel2Grid::x_Init(const string& project)
         GetConfig().GetInt("tunnel2grid", "error_url_delay", -1, 
                            IRegistry::eReturn);
 
+    m_CancelGoBackDelay = 
+        GetConfig().GetInt("tunnel2grid", "cancel_goback_delay", 0, 
+                           IRegistry::eReturn);
+
     m_RenderType = eUrlRedirect;
     const string& renderType = 
         GetConfig().GetString("tunnel2grid", "render_type", "url_redirect" );
@@ -246,7 +258,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
 }
 
 
-bool CCgiTunnel2Grid::CollectParams(CGridCgiContext&)
+bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 {
     // You can catch CArgException& here to process argument errors,
     // or you can handle it in OnException()
@@ -257,6 +269,8 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext&)
 
     if (args[kInputParamName]) {
         m_Input = args[kInputParamName].AsString();
+        //        if (m_Input == "CTG_CGIENTRIES")
+        //            m_CgiEntries = &ctx.GetCGIContext().GetRequest().GetEntries();
         return true;
     }
 
@@ -268,7 +282,10 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 {   
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
-    os << m_Input;
+    //    if (m_CgiEntries)
+    //        WriteMap(*m_CgiEntries, os);
+    //    else
+        os << m_Input;
 }
 
   
@@ -336,7 +353,7 @@ void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
     string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
-    RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
+    RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_CancelGoBackDelay);
 
 }
 
@@ -437,6 +454,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/21 14:40:12  didenko
+ * Added additional parameter which sets a delay between the cancelation page is shown and a browser redirected to the error page
+ *
  * Revision 1.14  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *
