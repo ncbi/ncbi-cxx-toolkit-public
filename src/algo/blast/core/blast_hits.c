@@ -2258,9 +2258,55 @@ s_BlastHitListInsertHSPListInHeap(BlastHitList* hit_list,
       hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
+/** Verifies that the best_evalue field on the BlastHSPList is correct.
+ * @param hsp_list object to check [in]
+ * @return TRUE if OK, FALSE otherwise.
+ */
+static Boolean
+s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
+{
+    int index = 0;
+    double best_evalue = (double) INT4_MAX;
+    double diff;
+
+    /* There are no HSP's here. */
+    if (hsp_list->hspcnt == 0)
+       return TRUE;
+
+    for (index=0; index<hsp_list->hspcnt; index++)
+       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
+
+    diff = ABS(best_evalue-hsp_list->best_evalue)/best_evalue;
+    /* check that it's within 1%. */
+    if (best_evalue > 0.0  && diff > 0.01)
+       return FALSE;
+
+    return TRUE;
+}
+
+/** Gets the best (lowest) evalue from the BlastHSPList.
+ * @param hsp_list object containing the evalues [in]
+ * @return TRUE if OK, FALSE otherwise.
+ */
+static double
+s_BlastGetBestEvalue(const BlastHSPList* hsp_list)
+{
+    int index = 0;
+    double best_evalue = (double) INT4_MAX;
+
+    for (index=0; index<hsp_list->hspcnt; index++)
+       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
+
+    return best_evalue;
+}
+
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, 
                          BlastHSPList* hsp_list)
 {
+   hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
+
+   ASSERT(s_BlastCheckBestEvalue(hsp_list) == TRUE);
+ 
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
       /* If the array of HSP lists for this query is not yet allocated, 
          do it here */
@@ -2505,9 +2551,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options)
 {
    Int2 status = 0;
-   BlastHSPList** hsp_list_array;
    BlastHSP* hsp;
-   Int4 index;
 
    if (!hsp_list)
       return 0;
@@ -2519,13 +2563,18 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
     * Still check that this assumption is true.
     */
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
+   ASSERT(s_BlastCheckBestEvalue(hsp_list) == TRUE);
    
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
+      BlastHSPList** hsp_list_array;
       BlastHSPList* tmp_hsp_list;
-      Int4 query_index;
+      Int4 index;
+
       hsp_list_array = calloc(results->num_queries, sizeof(BlastHSPList*));
+
       for (index = 0; index < hsp_list->hspcnt; index++) {
+         Int4 query_index;
          hsp = hsp_list->hsp_array[index];
          query_index = Blast_GetQueryIndexFromContext(hsp->context, program);
          tmp_hsp_list = hsp_list_array[query_index];
