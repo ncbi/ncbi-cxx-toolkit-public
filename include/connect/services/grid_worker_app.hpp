@@ -51,13 +51,14 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+/// Default implementation of a worker node initialization 
+/// interface
 class CDefalutWorkerNodeInitContext : public IWorkerNodeInitContext
 {
 public:
     CDefalutWorkerNodeInitContext(const CNcbiApplication& app)
         : m_App(app) 
-    {
-    }
+    {}
 
     virtual ~CDefalutWorkerNodeInitContext() {}
 
@@ -108,7 +109,7 @@ public:
 
 protected:
 
-    virtual IWorkerNodeInitContext&  GetInitContext();
+    virtual const IWorkerNodeInitContext&  GetInitContext() const;
 
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
     INetScheduleStorageFactory& GetStorageFactory() 
@@ -121,8 +122,8 @@ private:
     auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
 
-    auto_ptr<CGridWorkerNode>            m_WorkerNode;
-    auto_ptr<IWorkerNodeInitContext>     m_WorkerNodeInitContext;
+    auto_ptr<CGridWorkerNode>                m_WorkerNode;
+    mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 };
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version) \
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/21 20:15:52  didenko
+ * Added some comments
+ *
  * Revision 1.6  2005/04/21 19:10:01  didenko
  * Added IWorkerNodeInitContext
  * Added some convenient macros

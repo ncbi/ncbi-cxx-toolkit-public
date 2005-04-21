@@ -57,15 +57,29 @@ class CArgs;
 class IRegistry;
 class CNcbiEnvironment;
 
+/// Worker Node initialize context
+///
+/// An instance of a class which implements this interface
+/// is passed to a constructor of a worker node job class
+/// The worker node job class can use this class to get 
+/// configuration parameters.
+///
 class IWorkerNodeInitContext
 {
 public:
     virtual ~IWorkerNodeInitContext() {}
 
+    /// Get a config file regestry
+    ///
     virtual const IRegistry&        GetConfig() const;
-    virtual const CArgs&            GetArgs() const;
-    virtual const CNcbiEnvironment& GetEnvironment() const;
 
+    /// Get command line arguments
+    ///
+    virtual const CArgs&            GetArgs() const;
+
+    /// Get environment variables
+    ///
+    virtual const CNcbiEnvironment& GetEnvironment() const;
 };
 
 class CWorkerNodeJobContext;
@@ -77,7 +91,7 @@ class CWorkerNodeJobContext;
 /// Worker node application may be configured to execute several jobs at once
 /// using threads, so implementation must be thread safe.
 ///
-/// @sa CWorkerNodeJobContext
+/// @sa CWorkerNodeJobContext, IWorkerNodeInitContext
 ///
 class IWorkerNodeJob
 {
@@ -262,8 +276,7 @@ class CSimpleJobFactory : public IWorkerNodeJobFactory
 public:
     virtual void Init(const IWorkerNodeInitContext& context) 
     {
-        m_WorkerNodeInitContext = &context;
-        
+        m_WorkerNodeInitContext = &context;       
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
@@ -272,7 +285,6 @@ public:
 
 private:
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
-
 };
 
 
@@ -401,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/21 20:15:52  didenko
+ * Added some comments
+ *
  * Revision 1.13  2005/04/21 19:53:19  didenko
  * Minor fix
  *

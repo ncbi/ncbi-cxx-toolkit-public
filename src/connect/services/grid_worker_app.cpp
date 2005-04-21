@@ -243,10 +243,11 @@ void CGridWorkerApp::Init(void)
     GetJobFactory().Init(GetInitContext());
 }
 
-IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() 
+const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const 
 {
     if ( !m_WorkerNodeInitContext.get() )
-        m_WorkerNodeInitContext.reset(new CDefalutWorkerNodeInitContext(*this));
+        m_WorkerNodeInitContext.reset(
+                       new CDefalutWorkerNodeInitContext(*this));
     return *m_WorkerNodeInitContext;
 }
 
@@ -324,6 +325,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/21 20:15:52  didenko
+ * Added some comments
+ *
  * Revision 1.10  2005/04/21 19:10:01  didenko
  * Added IWorkerNodeInitContext
  * Added some convenient macros
