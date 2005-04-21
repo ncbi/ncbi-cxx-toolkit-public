@@ -560,15 +560,12 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 			break;
 	}
 	orgRef = new COrg_ref;
-	//  bool is_species;
-	//  bool is_uncultured;
+	bool is_species;
+	bool is_uncultured;
 	string blast_name;
 
-    //  GetOrgRef returns a null CRef if comTax = 1.
-	//  orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
-    CRef< CTaxon2_data > taxon2Data = taxServer.GetById(comTax);
-    if (comTax >= 1 && taxon2Data->IsSetOrg()) {
-        orgRef.Reset(&(taxon2Data->SetOrg()));
+    if (comTax > 0) {
+        orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
     } else {
         orgRef.Reset();
     }
@@ -618,6 +615,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2005/04/21 18:34:36  lanczyck
+ * revert to GetOrgRef: it was fixed to allow tax_id = 1
+ *
  * Revision 1.3  2005/04/19 22:03:35  ucko
  * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
  *
