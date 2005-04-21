@@ -33,9 +33,30 @@
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/grid_worker.hpp>
 #include <util/thread_pool.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 #include <signal.h>
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//     IWorkerNodeInitContext     -- 
+
+const IRegistry& IWorkerNodeInitContext::GetConfig() const
+{
+    NCBI_THROW(CCoreException,
+               eInvalidArg, "Not Implemented.");
+}
+const CArgs& IWorkerNodeInitContext::GetArgs() const
+{
+    NCBI_THROW(CCoreException,
+               eInvalidArg, "Not Implemented.");
+}
+const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
+{
+    NCBI_THROW(CCoreException,
+               eInvalidArg, "Not Implemented.");
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -372,6 +393,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/21 19:10:01  didenko
+ * Added IWorkerNodeInitContext
+ * Added some convenient macros
+ *
  * Revision 1.8  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

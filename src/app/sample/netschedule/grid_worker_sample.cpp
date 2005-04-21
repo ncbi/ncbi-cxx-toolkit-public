@@ -38,11 +38,6 @@
 
 #include <vector>
 
-
-#if defined(NCBI_OS_UNIX)
-# include <signal.h>
-#endif
-
 USING_NCBI_SCOPE;
 
     
@@ -57,7 +52,12 @@ USING_NCBI_SCOPE;
 class CSampleJob : public IWorkerNodeJob
 {
 public:
-    CSampleJob(const string& param) : m_Param(param){}
+    CSampleJob(const IWorkerNodeInitContext& context)
+    {
+        const IRegistry& reg = context.GetConfig();
+        m_Param = reg.GetString("sample", "parameter", "no parameter" );
+    }
+
     virtual ~CSampleJob() {} 
 
     int Do(CWorkerNodeJobContext& context) 
@@ -148,73 +148,22 @@ private:
     string m_Param;
 };
 
-/// Sample Job Factory
-/// Creates new job class every time worker node receives a request 
-///  from the queue
-///
-class CSampleJobFactory : public IWorkerNodeJobFactory
-{
-public:
-    virtual ~CSampleJobFactory() {}
 
-    virtual void Init(const IRegistry& reg) 
-    {
-        m_Param =
-            reg.GetString("sample", "parameter", "no parameter");
-        
-    }
-
-    virtual IWorkerNodeJob* CreateInstance(void)
-    {
-        return new CSampleJob(m_Param);
-    }
-    virtual string GetJobVersion() const 
-    {
-        // Next formats are valid and supported:
-        //   ProgramName 1.2.3
-        //   ProgramName version 1.2.3
-        //   ProgramName v. 1.2.3
-        //   ProgramName ver. 1.2.3
-
-        return "SampleNode version 1.0.1";
-    }
-
-private:
-    string m_Param;
-};
 
 /////////////////////////////////////////////////////////////////////////////
-//
+//  Routine magic spells
 
-#if defined(NCBI_OS_UNIX)
-/// @internal
-extern "C" 
-void GridWorker_SignalHandler( int )
-{
-    CGridWorkerApp* app = 
-        dynamic_cast<CGridWorkerApp*>(CNcbiApplication::Instance());
-    if (app) {
-        app->RequestShutdown();
-    }
-}
-#endif
+// Use this marcos to implement the main function for the CSampleJob version 1.0.1
+NCBI_WORKERNODE_MAIN(CSampleJob, "1.0.1")
 
-
-int main(int argc, const char* argv[])
-{
-#if defined(NCBI_OS_UNIX)
-    // attempt to get server gracefully shutdown on signal
-       signal( SIGINT, GridWorker_SignalHandler);
-       signal( SIGTERM, GridWorker_SignalHandler);    
-#endif
-
-    CGridWorkerApp app(new CSampleJobFactory);
-    return app.AppMain(argc, argv);
-}
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/21 19:10:01  didenko
+ * Added IWorkerNodeInitContext
+ * Added some convenient macros
+ *
  * Revision 1.11  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

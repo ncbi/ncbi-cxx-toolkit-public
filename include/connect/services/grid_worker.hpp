@@ -53,6 +53,20 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class CArgs;
+class IRegistry;
+class CNcbiEnvironment;
+
+class IWorkerNodeInitContext
+{
+public:
+    virtual ~IWorkerNodeInitContext() {}
+
+    virtual const IRegistry&        GetConfig() const;
+    virtual const CArgs&            GetArgs() const;
+    virtual const CNcbiEnvironment& GetEnvironment() const;
+
+};
 
 class CWorkerNodeJobContext;
 
@@ -235,12 +249,43 @@ public:
 
     /// Initialize a worker node factory
     ///
-    virtual void Init(const IRegistry& config) {}
+    virtual void Init(const IWorkerNodeInitContext& context) {}
 
     /// Get the job version
     ///
     virtual string GetJobVersion(void) const = 0;
 };
+
+template <typename TWorkerNodeJob>
+class CSimpleJobFactory : public IWorkerNodeJobFactory
+{
+public:
+    virtual void Init(const IWorkerNodeInitContext& context) 
+    {
+        m_WorkerNodeInitContext = &context;
+        
+    }
+    virtual IWorkerNodeJob* CreateInstance(void)
+    {
+        return new TWorkerNodeJob(*m_WorkerNodeInitContext);
+    }
+
+private:
+    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
+
+};
+
+
+#define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version) \
+\
+class TWorkerNodeJob##Factory : public CSimpleJobFactory<TWorkerNodeJob> \
+{ \
+public: \
+    virtual string GetJobVersion() const  \
+    { \
+        return Version; \
+    } \
+}
 
 
 /// Grid Worker Node
@@ -254,9 +299,9 @@ public:
 
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(IWorkerNodeJobFactory& job_creator,
+    CGridWorkerNode(IWorkerNodeJobFactory&      job_creator,
                     INetScheduleStorageFactory& ns_storage_creator,
-                    INetScheduleClientFactory& ns_client_creator);
+                    INetScheduleClientFactory&  ns_client_creator);
 
     virtual ~CGridWorkerNode();
 
@@ -356,6 +401,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/21 19:10:01  didenko
+ * Added IWorkerNodeInitContext
+ * Added some convenient macros
+ *
  * Revision 1.10  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

@@ -41,6 +41,22 @@
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/threaded_server.hpp>
 
+#if defined(NCBI_OS_UNIX)
+# include <signal.h>
+/// @internal
+extern "C" 
+void GridWorker_SignalHandler( int )
+{
+    try {
+        ncbi::CGridWorkerApp* app = 
+            dynamic_cast<ncbi::CGridWorkerApp*>(ncbi::CNcbiApplication::Instance());
+        if (app) {
+            app->RequestShutdown();
+        }
+    }
+    catch (...) {}   // Make sure we don't throw an exception through the "C" layer
+}
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -188,16 +204,27 @@ void CWorkerNodeThreadedServer::Process(SOCK sock)
 
 /////////////////////////////////////////////////////////////////////////////
 //
+
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
                                INetScheduleStorageFactory* storage_factory,
-                               INetScheduleClientFactory* client_factory)
+                               INetScheduleClientFactory* client_factory,
+                               ESignalHandling signal_handling)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
   m_ClientFactory(client_factory)
 {
     if (!m_JobFactory.get())
-        NCBI_THROW(CGridWorkerAppException,
-                   eJobFactoryIsNotSet, "The JobFactory is not set.");
+        NCBI_THROW(CGridWorkerAppException, 
+                 eJobFactoryIsNotSet, "The JobFactory is not set.");
+
+#if defined(NCBI_OS_UNIX)
+    if (signal_handling == eStandardSignalHandling) {
+    // attempt to get server gracefully shutdown on signal
+        signal(SIGINT,  GridWorker_SignalHandler);
+        signal(SIGTERM, GridWorker_SignalHandler);    
+    }
+#endif
 }
+
 CGridWorkerApp::~CGridWorkerApp()
 {
 }
@@ -213,7 +240,14 @@ void CGridWorkerApp::Init(void)
         m_ClientFactory.reset(
             new CNetScheduleClientFactory(GetConfig())
                               );
-    GetJobFactory().Init(GetConfig());
+    GetJobFactory().Init(GetInitContext());
+}
+
+IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() 
+{
+    if ( !m_WorkerNodeInitContext.get() )
+        m_WorkerNodeInitContext.reset(new CDefalutWorkerNodeInitContext(*this));
+    return *m_WorkerNodeInitContext;
 }
 
 int CGridWorkerApp::Run(void)
@@ -290,6 +324,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/21 19:10:01  didenko
+ * Added IWorkerNodeInitContext
+ * Added some convenient macros
+ *
  * Revision 1.9  2005/04/19 18:58:52  didenko
  * Added Init method to CGridWorker
  *

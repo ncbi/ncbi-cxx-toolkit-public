@@ -51,6 +51,28 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class CDefalutWorkerNodeInitContext : public IWorkerNodeInitContext
+{
+public:
+    CDefalutWorkerNodeInitContext(const CNcbiApplication& app)
+        : m_App(app) 
+    {
+    }
+
+    virtual ~CDefalutWorkerNodeInitContext() {}
+
+    virtual const IRegistry&        GetConfig() const
+    { return m_App.GetConfig(); }
+
+    virtual const CArgs&            GetArgs() const
+    { return m_App.GetArgs(); }
+
+    virtual const CNcbiEnvironment& GetEnvironment() const
+    { return m_App.GetEnvironment(); }
+
+private:
+    const CNcbiApplication& m_App;
+};
 
 /// Main Worker Node application
 ///
@@ -62,9 +84,15 @@ class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
 public:
 
+    enum ESignalHandling {
+        eStandardSignalHandling = 0,
+        eManualSignalHandling
+    };
+
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
                    INetScheduleStorageFactory* storage_factory = NULL,
-                   INetScheduleClientFactory* client_factory = NULL);
+                   INetScheduleClientFactory* client_factory = NULL,
+                   ESignalHandling signal_handling = eStandardSignalHandling);
     virtual ~CGridWorkerApp();
 
     /// If you override this method, do call CGridWorkerApp::Init()
@@ -80,6 +108,8 @@ public:
 
 protected:
 
+    virtual IWorkerNodeInitContext&  GetInitContext();
+
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
     INetScheduleStorageFactory& GetStorageFactory() 
                                            { return *m_StorageFactory; }
@@ -91,9 +121,20 @@ private:
     auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
 
-    auto_ptr<CGridWorkerNode> m_WorkerNode;
-
+    auto_ptr<CGridWorkerNode>            m_WorkerNode;
+    auto_ptr<IWorkerNodeInitContext>     m_WorkerNodeInitContext;
 };
+
+#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version) \
+\
+NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version); \
+int main(int argc, const char* argv[]) \
+{ \
+    CGridWorkerApp app(new TWorkerNodeJob##Factory); \
+    return app.AppMain(argc, argv); \
+}
+
+
 
 class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
 {
@@ -123,6 +164,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/21 19:10:01  didenko
+ * Added IWorkerNodeInitContext
+ * Added some convenient macros
+ *
  * Revision 1.5  2005/03/28 14:38:49  didenko
  * Removed signal handling
  *
