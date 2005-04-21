@@ -476,8 +476,6 @@ typedef CMSHit * TMSHitList;
 // number of above cull states
 #define MSNUMDATA 4
 
-// the number of top hits to retain -- will be replaced by dynamic value
-#define MSNUMTOP 3
 
 // the maximum charge state that can be considered
 #define MSMAXCHARGE 10
@@ -917,6 +915,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.26  2005/04/21 21:54:03  lewisg
+  fix Jeri's mem bug, split off mod file, add aspn and gluc
+
   Revision 1.25  2005/01/31 17:30:57  lewisg
   adjustable intensity, z dpendence of precursor mass tolerance
 

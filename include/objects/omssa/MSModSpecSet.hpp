@@ -61,7 +61,7 @@ public:
     ~CMSModSpecSet(void);
 
     //! concatenates in another CMSModSpecSet 
-  //  void Append(const CMSModSpecSet &ModsIn);
+    void Append(const CMSModSpecSet &ModsIn);
 
     //! creates arrays for the existing set
     void CreateArrays(void);
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/21 21:54:03  lewisg
+* fix Jeri's mem bug, split off mod file, add aspn and gluc
+*
 * Revision 1.1  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

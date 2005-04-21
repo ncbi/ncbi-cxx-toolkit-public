@@ -758,7 +758,7 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     copy(MZI[Which], MZI[Which] + Num[Which], Temp);
     sort(Temp, Temp + Num[Which], CMZICompareIntensity());
 
-    if(Num[Which] > MSNUMTOP)  Num[MSTOPHITS] = Tophitnum;
+    if(Num[Which] > Tophitnum)  Num[MSTOPHITS] = Tophitnum;
     else  Num[MSTOPHITS] = Num[Which];
 
     MZI[MSTOPHITS] = new CMZI [Num[MSTOPHITS]]; // holds highest hits

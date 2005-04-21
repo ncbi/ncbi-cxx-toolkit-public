@@ -469,6 +469,30 @@ public:
 };
 
 
+//! Asp-N, Nterm of D
+class NCBI_XOMSSA_EXPORT CAspN: public CCleave {
+public:
+    CAspN(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+//! Glu-C, Cterm of E
+class NCBI_XOMSSA_EXPORT CGluC: public CCleave {
+public:
+    CGluC(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+//! Glu-C and Asp-N
+class NCBI_XOMSSA_EXPORT CGluCAspN: public CCleave {
+public:
+    CGluCAspN(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
 
 ///
 /// factory to return back object for enzyme
@@ -500,6 +524,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.20  2005/04/21 21:54:03  lewisg
+  fix Jeri's mem bug, split off mod file, add aspn and gluc
+
   Revision 1.19  2005/03/14 22:29:54  lewisg
   add mod file input
 

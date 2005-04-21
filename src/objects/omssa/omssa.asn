@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.20 2005/03/14 22:29:54 lewisg Exp $
+-- $Id: omssa.asn,v 1.21 2005/04/21 21:54:03 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -56,7 +56,10 @@ MSEnzymes ::= INTEGER {
 	tryp-chymo (9),
 	trypsin-p (10),
 	whole-protein (11),
-        max(12),
+	aspn (12),
+	gluc (13),
+	aspngluc (14),
+        max(15),
 	none (255)
 	}
 
@@ -193,7 +196,9 @@ MSMod ::= INTEGER {
     usermod8 (126),
     usermod9 (127),
     usermod10 (128), -- end of user defined mods
-    max (129), -- maximum number of mods
+    icatlight (129),
+    icatheavy (130),
+    max (131), -- maximum number of mods
     none(10000)
     }
 

@@ -421,57 +421,117 @@ bool CWholeProtein::CheckCleave(char SeqChar, const char *iPepStart)
     return false;
 }
 
+//!  CAspN
+
+CAspN::CAspN(void)
+{
+    CleaveAt = "\x04";
+    kCleave = 1;
+}
+
+bool CAspN::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(*(iPepStart+1) ==  CleaveAt[0]) { 
+        return true;
+    }
+    return false;
+}
+
+//!  CGluC
+
+CGluC::CGluC(void)
+{
+    CleaveAt = "\x05";
+    kCleave = 1;
+}
+
+bool CGluC::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ) { 
+        return true;
+    }
+    return false;
+}
+
+//!  GluCAspN
+
+CGluCAspN::CGluCAspN(void)
+{
+    CleaveAt = "\x05\x04";
+    kCleave = 2;
+}
+
+bool CGluCAspN::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] || *(iPepStart+1) == CleaveAt[1] ) { 
+        return true;
+    }
+    return false;
+}
+
 ///
 /// Simple minded factory to return back object for enzyme
 ///
 
 CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
 {
-  if(enzyme >= eMSEnzymes_max) return 0;
-  switch(enzyme) {
-  case eMSEnzymes_trypsin:
-    return new CTrypsin;
-    break;
-  case eMSEnzymes_argc:
-    return new CArgC;
-    break;
-  case eMSEnzymes_cnbr:
-    return new CCNBr;
-    break;
-  case eMSEnzymes_chymotrypsin:
-    return new CChymotrypsin;
-    break;
-  case eMSEnzymes_formicacid:
-    return new CFormicAcid;
-    break;
-  case eMSEnzymes_lysc:
-    return new CLysC;
-    break;
-  case eMSEnzymes_lysc_p:
-    return new CLysCP;
-    break;
-  case eMSEnzymes_pepsin_a:
-    return new CPepsinA;
-    break;
-  case eMSEnzymes_tryp_cnbr:
-    return new CTrypCNBr;
-    break;
-  case eMSEnzymes_tryp_chymo:
-    return new CTrypChymo;
-    break;
-  case eMSEnzymes_trypsin_p:
-    return new CTrypsinP;
-    break;
-  case eMSEnzymes_whole_protein:
-    return new CWholeProtein;
-    break;
-  default:
+    if (enzyme >= eMSEnzymes_max) return 0;
+    switch (enzyme) {
+    case eMSEnzymes_trypsin:
+        return new CTrypsin;
+        break;
+    case eMSEnzymes_argc:
+        return new CArgC;
+        break;
+    case eMSEnzymes_cnbr:
+        return new CCNBr;
+        break;
+    case eMSEnzymes_chymotrypsin:
+        return new CChymotrypsin;
+        break;
+    case eMSEnzymes_formicacid:
+        return new CFormicAcid;
+        break;
+    case eMSEnzymes_lysc:
+        return new CLysC;
+        break;
+    case eMSEnzymes_lysc_p:
+        return new CLysCP;
+        break;
+    case eMSEnzymes_pepsin_a:
+        return new CPepsinA;
+        break;
+    case eMSEnzymes_tryp_cnbr:
+        return new CTrypCNBr;
+        break;
+    case eMSEnzymes_tryp_chymo:
+        return new CTrypChymo;
+        break;
+    case eMSEnzymes_trypsin_p:
+        return new CTrypsinP;
+        break;
+    case eMSEnzymes_whole_protein:
+        return new CWholeProtein;
+        break;
+    case eMSEnzymes_aspn:
+        return new CAspN;
+        break;
+    case eMSEnzymes_gluc:
+        return new CGluC;
+        break;
+    case eMSEnzymes_aspngluc:
+        return new CGluCAspN;
+        break;
+    default:
+        return 0;
+        break;
+    }
     return 0;
-    break;
-  }
-  return 0;
 }
-     
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -536,6 +596,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.19  2005/04/21 21:54:03  lewisg
+  fix Jeri's mem bug, split off mod file, add aspn and gluc
+
   Revision 1.18  2005/04/05 21:02:52  lewisg
   increase number of mods, fix gi problem, fix empty scan bug
 

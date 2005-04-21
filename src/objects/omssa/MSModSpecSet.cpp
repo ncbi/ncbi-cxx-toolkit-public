@@ -93,6 +93,17 @@ void CMSModSpecSet::CreateArrays(void)
     isArrayed = true;
 }
 
+//! concatenates in another CMSModSpecSet 
+void CMSModSpecSet::Append(const CMSModSpecSet &ModsIn)
+{
+    CMSModSpecSet::Tdata::const_iterator i;
+    if(ModsIn.CanGet()) {   
+        for(i = ModsIn.Get().begin(); i != ModsIn.Get().end(); ++i) {
+            Set().push_back(*i);
+        }
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -103,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/04/21 21:54:03  lewisg
+* fix Jeri's mem bug, split off mod file, add aspn and gluc
+*
 * Revision 1.2  2005/04/07 16:35:27  lewisg
 * fix array out of bounds
 *

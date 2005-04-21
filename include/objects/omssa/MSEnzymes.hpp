@@ -61,10 +61,13 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "Lys-C",
     "Lys-C, no P rule",
     "Pepsin A",
-    "Trypsin-CNBr",
-    "Trypsin-Chymotrypsin",
+    "Trypsin+CNBr",
+    "Trypsin+Chymotrypsin",
     "Trypsin, no P rule",
-    "Whole protein"
+    "Whole protein",
+    "Asp-N",
+    "Glu-C",
+    "Asp-N+Glu-C"
 };
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -76,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/21 21:54:03  lewisg
+* fix Jeri's mem bug, split off mod file, add aspn and gluc
+*
 * Revision 1.1  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

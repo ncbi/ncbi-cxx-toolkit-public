@@ -79,12 +79,15 @@ private:
     void PrintMods(CRef <CMSModSpecSet> Modset);
     void PrintEnzymes(void);
     void PrintIons(void);
+
+    //! reads in modification files
+    int ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset);
     template <class T> void InsertList(const string& List, T& ToInsert, string error); 
 };
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 11));
+    SetVersion(CVersionInfo(0, 9, 12));
 }
 
 
@@ -235,6 +238,10 @@ void COMSSA::Init()
 			   "file containing modification data",
 			   CArgDescriptions::eString,
 			   "mods.xml");
+    argDesc->AddDefaultKey("mux", "usermodinputfile", 
+                "file containing user modification data",
+                CArgDescriptions::eString,
+                "usermods.xml");
     argDesc->AddDefaultKey("mm", "maxmod", 
 			   "the maximum number of mass ladders to generate per database peptide",
 			   CArgDescriptions::eInteger, NStr::IntToString(MAXMOD2));
@@ -274,6 +281,42 @@ int main(int argc, const char* argv[])
 }
 
 
+//! reads in modification files
+
+int COMSSA::ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset)
+{  
+    CDirEntry DirEntry(GetProgramExecutablePath());
+    string ModFileName = DirEntry.GetDir() + args["mx"].AsString();
+    auto_ptr<CObjectIStream> 
+    modsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
+    if(modsin->fail()) {	    
+        ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
+                 ModFileName);
+        return 1;
+    }
+    modsin->Read(ObjectInfo(*Modset));
+    modsin->Close();
+
+    // read in user mod file, if any
+    if(args["mux"].AsString() != "") {
+        CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
+        ModFileName = DirEntry.GetDir() + args["mux"].AsString();
+        auto_ptr<CObjectIStream> 
+         usermodsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
+        usermodsin->Open(ModFileName.c_str(), eSerial_Xml);
+        if(usermodsin->fail()) {	    
+             ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
+                      ModFileName);
+             return 0;
+         }
+        usermodsin->Read(ObjectInfo(*UserModset));
+        usermodsin->Close();
+        Modset->Append(*UserModset);
+    }
+    return 0;
+}
+
+
 int COMSSA::Run()
 {    
 
@@ -283,19 +326,8 @@ int COMSSA::Run()
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
 
     // read in modifications
-    {  
-        CDirEntry DirEntry(GetProgramExecutablePath());
-        string ModFileName = DirEntry.GetDir() + args["mx"].AsString();
-        auto_ptr<CObjectIStream> 
-        modsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
-        if(modsin->fail()) {	    
-            ERR_POST(Fatal << "ommsacl: unable open modification file" << 
-                     ModFileName);
-    	    return 1;
-        }
-        modsin->Read(ObjectInfo(*Modset));
-    }
-
+    if(ReadModFiles(args, Modset))
+        return 1;
 
 	// print out the modification list
 	if(args["ml"]) {
@@ -529,6 +561,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.33  2005/04/21 21:54:03  lewisg
+  fix Jeri's mem bug, split off mod file, add aspn and gluc
+
   Revision 1.32  2005/04/05 21:26:34  lewisg
   adjust ht parameter
 
