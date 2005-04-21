@@ -1084,6 +1084,7 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
 {
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
+    unsigned fetch_attempts = 0;
     const unsigned kMaxGetAttempts = 1000;
 
 get_job_id:
@@ -1102,6 +1103,14 @@ get_job_id:
 
     time_t curr = time(0);
 
+fetch_db:
+    ++fetch_attempts;
+    if (fetch_attempts > kMaxGetAttempts) {
+        LOG_POST(Error << "Failed to fetch the job record job_id=" << *job_id);
+        *job_id = 0;
+        goto get_job_id; // fall back and try to get another id
+    }
+
     try {
         SQueueDB& db = m_LQueue.db;
         CBDB_Transaction trans(*db.GetEnv(), 
@@ -1118,11 +1127,14 @@ get_job_id:
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << *job_id;
-        if (cur.Fetch() != eBDB_Ok) {
+        if (cur.FetchFirst() != eBDB_Ok) {
             m_LQueue.status_tracker.ChangeStatus(*job_id, 
                                          CNetScheduleClient::ePending);
             *job_id = 0; 
             return;
+        } else {
+            // not yet in the database?
+            goto fetch_db;
         }
         int status = db.status;
 
@@ -1669,6 +1681,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/04/21 13:37:35  kuznets
+ * Fixed race condition between Submit job and Get job
+ *
  * Revision 1.26  2005/04/20 15:59:33  kuznets
  * Progress message to Submit
  *
