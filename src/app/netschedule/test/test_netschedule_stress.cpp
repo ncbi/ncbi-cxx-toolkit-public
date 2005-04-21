@@ -225,7 +225,7 @@ int CTestNetScheduleStress::Run(void)
     string job_key = cl.SubmitJob(input, "pmsg");
     NcbiCout << job_key << NcbiEndl;
     string pmsg = cl.GetProgressMsg(job_key);
-    assert(pmsg == "pmsg");
+    _ASSERT(pmsg == "pmsg");
 
     // test progress message
     string progress_msg = "progress report message";
@@ -233,7 +233,7 @@ int CTestNetScheduleStress::Run(void)
 
     pmsg = cl.GetProgressMsg(job_key);
     NcbiCout << pmsg << NcbiEndl;
-    assert(pmsg == progress_msg);
+    _ASSERT(pmsg == progress_msg);
 
 
     string err = "test error\r\nmessage";
@@ -441,6 +441,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/21 01:12:42  ucko
+ * Use _ASSERT, not assert.
+ *
  * Revision 1.12  2005/04/20 16:00:06  kuznets
  * Test for progress message in submit
  *
