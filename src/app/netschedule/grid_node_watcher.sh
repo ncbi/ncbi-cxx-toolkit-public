@@ -13,6 +13,12 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 
 start_dir=`pwd`
 
+SendMailMsg() {
+    if [ "x$mail_to" != "x" ]; then
+        echo "Sending an email notification to $mail_to..."
+        echo $2 | mail -s "$1" $mail_to    
+    fi
+}
 
 SendMail() {
     if [ "x$mail_to" != "x" ]; then
@@ -84,15 +90,17 @@ StopNode() {
 
 CopyFile() {
     if [ -f $1 ]; then
-       cp -p $1 ${backup_dir}/
+       cp -fp $1 ${backup_dir}/
        if test $? -ne 0; then
+          SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't copy ${BIN_PATH}/$1 to ${backup_dir}/$1"
           echo "Couldn't copy ${BIN_PATH}/$1 to ${backup_dir}/$1" >& 2
           cd $start_dir
           exit 2
        fi
     fi
-    cp -p ${new_version_dir}/$1 $1.new
+    cp -fp ${new_version_dir}/$1 $1.new
     if test $? -ne 0; then
+       SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't copy ${new_version_dir}/$1 to ${BIN_PATH}/$1.new"
        echo "Couldn't copy ${new_version_dir}/$1 to ${BIN_PATH}/$1.new" >& 2
        cd $start_dir
        exit 2
@@ -100,13 +108,15 @@ CopyFile() {
     if [ -f $1 ]; then
        rm -f ${BIN_PATH}/$1 
        if test $? -ne 0; then
+          SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't remove ${BIN_PATH}/$1"
           echo "Couldn't remove ${BIN_PATH}/$1" >& 2
           cd $start_dir
           exit 2
        fi
     fi
-    mv ${BIN_PATH}/$1.new ${BIN_PATH}/$1 
+    mv -f ${BIN_PATH}/$1.new ${BIN_PATH}/$1 
     if test $? -ne 0; then
+       SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't move ${BIN_PATH}/$1.new to ${BIN_PATH}/$1"
        echo "Couldn't move ${BIN_PATH}/$1.new to ${BIN_PATH}/$1" >& 2
        cd $start_dir
        exit 2
@@ -166,8 +176,9 @@ host=`hostname`
 port=`cat $ini_file | grep control_port= | sed -e 's/control_port=//'`
 
 if [ -f ${new_version_dir}/rdist_me ]; then
+   SendMailMsg "New Version of $node_name on $host:$port" "New version of $node_name is found for $host:$port"   
    StopNode
-   echo "Updating the $node_name node..." 
+   echo "Upgrading the $node_name node..." 
    for file in ${new_version_dir}/* ; do
       fname=`basename $file`
       if [ $fname != "rdist_me" ]; then
@@ -175,6 +186,7 @@ if [ -f ${new_version_dir}/rdist_me ]; then
       fi
    done
    rm -f ${new_version_dir}/rdist_me
+   SendMailMsg "$node_name on $host:$port has been upgraded" "New version of $node_name on $host:$port has been installed"   
 fi
 
 echo "Testing if $node_name is alive on $host:$port"
