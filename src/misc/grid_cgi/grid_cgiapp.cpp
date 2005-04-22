@@ -150,6 +150,11 @@ const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
 void CGridCgiContext::PersistEntry(const string& entry_name)
 {
     const string& value = GetEntryValue(entry_name);
+    PersistEntry(entry_name, value);
+}
+void CGridCgiContext::PersistEntry(const string& entry_name, 
+                                   const string& value)
+{   
     if (!value.empty()) {
         m_PersistedEntries[entry_name] = value;
 #ifdef TUNNEL2DRID_USE_COOKIE
@@ -383,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/22 13:39:33  didenko
+ * Added elapsed time message
+ *
  * Revision 1.15  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

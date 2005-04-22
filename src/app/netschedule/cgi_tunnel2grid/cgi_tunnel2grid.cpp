@@ -52,7 +52,7 @@ USING_NCBI_SCOPE;
 const string kInputParamName = "ctg_input";
 const string kErrorUrlParamName = "ctg_error_url";
 const string kProjectParamName = "ctg_project";
-
+const string kElapsedTime = "ctg_time";
 
 /////////////////////////////////////////////////////////////////////////////
 //  CGridCgiSampleApplication::
@@ -128,6 +128,8 @@ private:
     string m_Input;
     int    m_FallBackDelay;
     int    m_CancelGoBackDelay;
+    string m_DateFormat;
+    string m_ElapsedTimeFormat;
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
@@ -173,6 +175,7 @@ void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
 
     ctx.PersistEntry(kErrorUrlParamName);
     ctx.PersistEntry(kProjectParamName);
+    ctx.PersistEntry(kElapsedTime);   
 
 }
 
@@ -215,6 +218,12 @@ void CCgiTunnel2Grid::x_Init(const string& project)
     m_CancelGoBackDelay = 
         GetConfig().GetInt("tunnel2grid", "cancel_goback_delay", 0, 
                            IRegistry::eReturn);
+
+    m_DateFormat = 
+        GetConfig().GetString("tunnel2grid", "date_format", "M B Y, h:m:s" );
+
+    m_ElapsedTimeFormat = 
+        GetConfig().GetString("tunnel2grid", "elapsed_time_format", "S" );
 
     m_RenderType = eUrlRedirect;
     const string& renderType = 
@@ -292,6 +301,10 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
 {   
     // Render a report page
+    CTime time(CTime::eCurrent);
+    time_t tt = time.GetTimeT();
+    string st = NStr::IntToString(tt);
+    ctx.PersistEntry(kElapsedTime,st);   
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_SUBMITTED@>");
 }
 
@@ -383,8 +396,19 @@ void CCgiTunnel2Grid::OnJobRunning(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::OnEndProcessRequest(CGridCgiContext& ctx)
 {
+    CTime now(CTime::eCurrent);
+    string st = ctx.GetEntryValue(kElapsedTime);
+    if (!st.empty()) {
+        time_t tt = NStr::StringToInt(st);
+        CTime start(tt); 
+        CTimeSpan ts = now - start.GetLocalTime();
+        ctx.GetHTMLPage().AddTagMap("ELAPSED_TIME_MSG_HERE",
+                     new CHTMLText("<@ELAPSED_TIME_MSG@>"));
+        ctx.GetHTMLPage().AddTagMap("ELAPSED_TIME",
+                     new CHTMLText(ts.AsString(m_ElapsedTimeFormat)));
+    }
     ctx.GetHTMLPage().AddTagMap("DATE",
-        new CHTMLText(CTime(CTime::eCurrent).AsString("M B Y, h:m:s")));
+        new CHTMLText(now.AsString(m_DateFormat)));
 }
 
 bool CCgiTunnel2Grid::JobStopRequested(void) const
@@ -454,6 +478,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/22 13:39:33  didenko
+ * Added elapsed time message
+ *
  * Revision 1.15  2005/04/21 14:40:12  didenko
  * Added additional parameter which sets a delay between the cancelation page is shown and a browser redirected to the error page
  *

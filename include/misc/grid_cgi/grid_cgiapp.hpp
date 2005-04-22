@@ -91,6 +91,7 @@ public:
 
     /// Save this entry as a cookie add it to serf url
     void PersistEntry(const string& entry_name);
+    void PersistEntry(const string& entry_name, const string& value);
     
     /// Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }
@@ -272,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/22 13:39:33  didenko
+ * Added elapsed time message
+ *
  * Revision 1.13  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *
