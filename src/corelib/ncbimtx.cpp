@@ -217,23 +217,59 @@ void SSystemMutex::ThrowNotOwned(void)
 
 
 #if defined(NEED_AUTO_INITIALIZE_MUTEX)
+//#define USE_STATIC_INIT_MUTEX_HANDLE 1
 
-const char* kInitMutexName = "NCBI_CAutoInitializeStaticMutex";
+static const char* kInitMutexName = "NCBI_CAutoInitializeStaticMutex";
+
+#ifdef USE_STATIC_INIT_MUTEX_HANDLE
+
+static volatile TSystemMutex s_InitMutexHandle = 0;
+static TSystemMutex s_GetInitMutexHandle(void)
+{
+    TSystemMutex init_mutex = s_InitMutexHandle;
+    if ( !init_mutex ) {
+        init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+        xncbi_Verify(init_mutex);
+        assert(!s_InitMutexHandle || s_InitMutexHandle == init_mutex);
+        s_InitMutexHandle = init_mutex;
+    }
+    return init_mutex;
+}
+
+static inline void s_ReleaseInitMutexHandle(TSystemMutex _DEBUG_ARG(mutex))
+{
+    assert(mutex == s_InitMutexHandle);
+}
+
+#else
+
+static inline TSystemMutex s_GetInitMutexHandle(void)
+{
+    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+    xncbi_Verify(init_mutex);
+    return init_mutex;
+}
+
+static inline void s_ReleaseInitMutexHandle(TSystemMutex mutex)
+{
+    CloseHandle(mutex);
+}
+
+#endif
 
 void CAutoInitializeStaticFastMutex::Initialize(void)
 {
     if ( m_Mutex.IsInitialized() ) {
         return;
     }
-    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
-    assert(init_mutex);
-    assert(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    TSystemMutex init_mutex = s_GetInitMutexHandle();
+    xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
     }
-    assert(ReleaseMutex(init_mutex));
+    xncbi_Verify(ReleaseMutex(init_mutex));
     assert(m_Mutex.IsInitialized());
-    CloseHandle(init_mutex);
+    s_ReleaseInitMutexHandle(init_mutex);
 }
 
 void CAutoInitializeStaticMutex::Initialize(void)
@@ -241,15 +277,14 @@ void CAutoInitializeStaticMutex::Initialize(void)
     if ( m_Mutex.IsInitialized() ) {
         return;
     }
-    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
-    assert(init_mutex);
-    assert(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    TSystemMutex init_mutex = s_GetInitMutexHandle();
+    xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
     }
-    assert(ReleaseMutex(init_mutex));
+    xncbi_Verify(ReleaseMutex(init_mutex));
     assert(m_Mutex.IsInitialized());
-    CloseHandle(init_mutex);
+    s_ReleaseInitMutexHandle(init_mutex);
 }
 
 #endif
@@ -982,6 +1017,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/04/22 19:34:35  vasilche
+ * Use xncbi_Verify() instead of assert when checking result of function call.
+ *
  * Revision 1.18  2005/03/30 15:51:43  kuznets
  * Fixed timeout of CSemaphore::TryWait() on Posix.
  *
