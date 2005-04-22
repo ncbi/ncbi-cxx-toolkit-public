@@ -841,11 +841,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, CRef <CMSMod
 	}
 	
 	// read out hits
-	SetResult(PeakSet, MyResponse, MyRequest.GetSettings().GetCutlo(), 
-		  MyRequest.GetSettings().GetCuthi(),
-		  MyRequest.GetSettings().GetCutinc(),
-		  MyRequest.GetSettings().GetTophitnum(),
-          MyRequest.GetSettings().GetCutoff());
+	SetResult(PeakSet, MyResponse, 
+                  MyRequest);
 	
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Info << "Exception caught in CSearch::Search: " << e.what());
@@ -908,9 +905,15 @@ void CSearch::MakeModString(string& seqstring, string& modseqstring, CMSHit *MSH
 
 
 void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
-			double ThreshStart, double ThreshEnd,
-			double ThreshInc, int Tophitnum, double Evalcutoff)
+                        CMSRequest& MyRequest)
 {
+
+    double ThreshStart = MyRequest.GetSettings().GetCutlo(); 
+    double ThreshEnd = MyRequest.GetSettings().GetCuthi();
+    double ThreshInc = MyRequest.GetSettings().GetCutinc();
+    double Tophitnum = MyRequest.GetSettings().GetTophitnum();
+    double Evalcutoff = MyRequest.GetSettings().GetCutoff();
+
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
 	
@@ -973,6 +976,9 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 #endif
 , Peaks, true, Tophitnum);
 		
+	int taxid;
+	const CMSSearchSettings::TTaxids& Tax = MyRequest.GetSettings().GetTaxids();
+	CMSSearchSettings::TTaxids::const_iterator iTax;
 		
 	// keep a list of redundant peptides
 	map <string, CMSHits * > PepDone;
@@ -988,9 +994,19 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 			
 	    MSHit = iScoreList->second;
 	    header = 0;
-	    while (readdb_get_header(rdfp, MSHit->GetSeqIndex(), &header,
+
+
+	    while (readdb_get_header_ex(rdfp, MSHit->GetSeqIndex(), &header,
 				     &sip,
-				     &blastdefline)) {
+				     &blastdefline, &taxid, NULL, NULL)) {
+
+       	        if(MyRequest.GetSettings().IsSetTaxids()) {
+		    for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
+			if(taxid == *iTax) goto TaxContinue2;
+		    } 
+                }
+                continue;
+TaxContinue2:
 		string seqstring, modseqstring;
 		string deflinestring(blastdefline);
 		int iseq;
@@ -1263,6 +1279,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.41  2005/04/22 15:31:21  lewisg
+fix tax filter on output
+
 Revision 1.40  2005/04/05 21:02:52  lewisg
 increase number of mods, fix gi problem, fix empty scan bug
 

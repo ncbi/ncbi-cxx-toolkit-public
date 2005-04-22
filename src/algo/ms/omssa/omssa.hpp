@@ -169,10 +169,7 @@ public:
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
-		   double ThreshStart, double ThreshEnd,
-		   double ThreshInc, 
-		   int Tophitnum, // the number of top hits where at least one has to match
-           double Evalcutoff  // max eval to allow
+                   CMSRequest& MyRequest
 		   );
     // calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
@@ -305,6 +302,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.23  2005/04/22 15:31:21  lewisg
+  fix tax filter on output
+
   Revision 1.22  2005/04/12 00:32:06  lewisg
   fix modification enumeration
 
