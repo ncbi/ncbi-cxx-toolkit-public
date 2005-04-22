@@ -153,8 +153,8 @@ public:
     int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const;
 
     // called when user selects some part of a row
-    void SelectedRange(int row, int alnIndexFrom, int alnIndexTo,
-        eUnalignedJustification justification, bool toggle) const;
+    void SelectedRange(int row, int alnIndexFrom, int alnIndexTo, eUnalignedJustification justification, bool toggle) const;
+    void SelectBlocks(int alnIndexFrom, int alnIndexTo, bool toggle) const;
 
     // fill in a vector of Blocks
     typedef std::vector < const Block * > ConstBlockList;
@@ -435,6 +435,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.48  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

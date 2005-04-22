@@ -284,7 +284,12 @@ int Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector 
     int nCoords = 0;
     for (int i=0; i<nResidues; ++i) {
 
+        coords[i] = NULL;
+
+        if (seqIndexes[i] < 0)
+            continue;
         int rID = seqIndexes[i] + 1;    // residueIDs start at 1
+
         ResidueMap::const_iterator r = residues.find(rID);
         if (r == residues.end()) {
             ERRORMSG("Can't find residueID " << rID
@@ -298,7 +303,6 @@ int Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector 
             WARNINGMSG("No alpha atom in residueID " << rID
                 << " from " << identifier->pdbID << " chain '"
                 << (char) identifier->pdbChain << "'");
-            coords[i] = NULL;
             continue;
         }
 
@@ -307,7 +311,6 @@ int Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector 
         if (!atomCoord) {
             WARNINGMSG("Can't get AtomCoord for (m"
                 << id << ",r" << rID << ",a" << aID << ")");
-            coords[i] = NULL;
             continue;
         }
 
@@ -405,6 +408,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.44  2005/03/15 18:53:49  thiessen
 * don't draw single-residue heterogens in aa/nuc style
 *

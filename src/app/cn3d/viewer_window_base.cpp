@@ -117,16 +117,18 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     mouseModeMenu->Append(MID_SELECT_RECT, "&Select Rectangle", "", true);
     mouseModeMenu->Append(MID_SELECT_COLS, "Select &Columns", "", true);
     mouseModeMenu->Append(MID_SELECT_ROWS, "Select &Rows", "", true);
+    mouseModeMenu->Append(MID_SELECT_BLOCKS, "Select &Blocks", "", true);
     mouseModeMenu->Append(MID_DRAG_HORIZ, "&Horizontal Drag", "", true);
     menuBar->Append(mouseModeMenu, "&Mouse Mode");
 
     // accelerators for special mouse mode keys
-    wxAcceleratorEntry entries[4];
+    wxAcceleratorEntry entries[5];
     entries[0].Set(wxACCEL_NORMAL, 's', MID_SELECT_RECT);
     entries[1].Set(wxACCEL_NORMAL, 'c', MID_SELECT_COLS);
     entries[2].Set(wxACCEL_NORMAL, 'r', MID_SELECT_ROWS);
-    entries[3].Set(wxACCEL_NORMAL, 'h', MID_DRAG_HORIZ);
-    wxAcceleratorTable accel(4, entries);
+    entries[3].Set(wxACCEL_NORMAL, 'b', MID_SELECT_BLOCKS);
+    entries[4].Set(wxACCEL_NORMAL, 'h', MID_DRAG_HORIZ);
+    wxAcceleratorTable accel(5, entries);
     SetAcceleratorTable(accel);
 
     justificationMenu = new wxMenu;
@@ -237,7 +239,8 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 }
                 EnableBaseEditorMenuItems(false);
                 viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
-                if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
+                if (!(menuBar->IsChecked(MID_SELECT_COLS) || menuBar->IsChecked(MID_SELECT_ROWS) ||
+                        menuBar->IsChecked(MID_SELECT_BLOCKS)))
                     Command(MID_SELECT_RECT);
             }
             break;
@@ -312,6 +315,8 @@ void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
             viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns); break;
         case MID_SELECT_ROWS:
             viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRows); break;
+        case MID_SELECT_BLOCKS:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectBlocks); break;
         case MID_DRAG_HORIZ:
             viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal); break;
     }
@@ -417,6 +422,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.54  2004/10/01 15:13:20  thiessen
 * use new pattern dialog from DialogBlocks
 *

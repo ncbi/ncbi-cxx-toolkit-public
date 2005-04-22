@@ -96,6 +96,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
 
     // Mouse mode menu
     menuBar->Enable(MID_SELECT_COLS, false);
+    menuBar->Enable(MID_SELECT_BLOCKS, false);
 
     // Algorithms menu
     wxMenu *menu = new wxMenu;
@@ -659,6 +660,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.63  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

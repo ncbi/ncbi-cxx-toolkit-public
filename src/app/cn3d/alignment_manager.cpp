@@ -369,36 +369,40 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     return multipleAlignment;
 }
 
-static void GetAlignedResidueIndexes(
+static int GetAlignedResidueIndexes(
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& b,
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& be,
-    int row, int *seqIndexes)
+    int row, int *seqIndexes, bool countHighlights = false, const BlockMultipleAlignment *multiple = NULL)
 {
-    int i = 0, c;
+    int i = 0, c, highlighted = 0;
     const Block::Range *range;
     for (; b!=be; ++b) {
         range = (*b)->GetRangeOfRow(row);
-        for (c=0; c<(*b)->width; ++c) {
-            seqIndexes[i++] = range->from + c;
+        for (c=0; c<(*b)->width; ++c, ++i) {
+            seqIndexes[i] = range->from + c;
+            if (countHighlights) {
+                if (GlobalMessenger()->IsHighlighted(multiple->GetSequenceOfRow(row), seqIndexes[i]))
+                    ++highlighted;
+                else
+                    seqIndexes[i] = -1;
+            }
         }
     }
+    return highlighted;
 }
 
-void AlignmentManager::RealignAllSlaveStructures(void) const
+void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
 {
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
     if (!multiple) return;
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
-    if (blocks.size() == 0) {
-        WARNINGMSG("Can't realign slaves with no aligned residues!");
-        return;
-    }
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     int nResidues = 0;
-    for (b=blocks.begin(); b!=be; ++b) nResidues += (*b)->width;
-    if (nResidues <= 2) {
-        WARNINGMSG("Can't realign slaves with < 3 aligned residues!");
+    for (b=blocks.begin(); b!=be; ++b)
+        nResidues += (*b)->width;
+    if (nResidues == 0) {
+        WARNINGMSG("Can't realign slaves with no aligned residues!");
         return;
     }
 
@@ -411,10 +415,15 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
 
     int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
     b = blocks.begin();
-    GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes);
+    int nHighlightedAligned = GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes, highlightedOnly, multiple);
+    if ((highlightedOnly ? nHighlightedAligned : nResidues) < 3) {
+        WARNINGMSG("Can't realign slaves using < 3 residues!");
+        delete[] masterSeqIndexes;
+        delete[] slaveSeqIndexes;
+        return;
+    }
 
     double *weights = new double[nResidues];
-
     const StructureObject *slaveObj;
 
     typedef const Vector * CVP;
@@ -442,16 +451,23 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
             if (!slaveMol->GetParentOfType(&slaveObj)) continue;
 
             // if any Vector* is NULL, make sure that weight is 0 so the pointer won't be accessed
+            int nWeighted = 0;
             for (int j=0; j<nResidues; ++j) {
-                if (!masterCoords[j] || !slaveCoords[j])
+                if (!masterCoords[j] || !slaveCoords[j] || (highlightedOnly && masterSeqIndexes[j] < 0)) {
                     weights[j] = 0.0;
-                else
+               } else {
                     weights[j] = 1.0; // for now, just use flat weighting
+                    ++nWeighted;
+               }
+            }
+            if (nWeighted < 3) {
+                WARNINGMSG("Can't realign slave #" << (i+1) << " using < 3 residues!");
+                continue;
             }
 
-            INFOMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID);
-            (const_cast<StructureObject*>(slaveObj))->
-                RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
+            INFOMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID
+                << " using coordinates of " << nWeighted << " residues");
+            (const_cast<StructureObject*>(slaveObj))->RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
             ++nStructureAlignments;
         }
 
@@ -1142,6 +1158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.100  2004/09/28 14:18:28  thiessen
 * turn on editor automatically on merge
 *

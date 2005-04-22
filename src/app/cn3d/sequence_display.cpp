@@ -669,7 +669,8 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 		(*viewerWindow)->GetCurrentJustification();
 
     BlockMultipleAlignment *alignment = GetAlignmentForRow(rowTop);
-    if (alignment && alignment == GetAlignmentForRow(rowBottom)) {
+    bool singleAlignment = (alignment && alignment == GetAlignmentForRow(rowBottom));
+    if (singleAlignment) {
         if ((*viewerWindow)->DoMergeBlocks()) {
             if (alignment->MergeBlocks(columnLeft, columnRight)) {
                 if (!controlDown) (*viewerWindow)->MergeBlocksOff();
@@ -689,8 +690,12 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
     if (!shiftDown && !controlDown)
         GlobalMessenger()->RemoveAllHighlights(true);
 
-    for (int i=rowTop; i<=rowBottom; ++i)
-        rows[i]->SelectedRange(columnLeft, columnRight, justification, controlDown); // toggle if control down
+    if (singleAlignment && (*viewerWindow)->SelectBlocksIsOn()) {
+        alignment->SelectBlocks(columnLeft, columnRight, controlDown);
+    } else {
+        for (int i=rowTop; i<=rowBottom; ++i)
+            rows[i]->SelectedRange(columnLeft, columnRight, justification, controlDown); // toggle if control down
+    }
 }
 
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
@@ -1317,6 +1322,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.78  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

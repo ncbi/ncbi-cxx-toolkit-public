@@ -624,6 +624,36 @@ void BlockMultipleAlignment::SelectedRange(int row, int alnIndexFrom, int alnInd
         GlobalMessenger()->AddHighlights(sequence, fromSeqIndex, toSeqIndex);
 }
 
+void BlockMultipleAlignment::SelectBlocks(int alnIndexFrom, int alnIndexTo, bool toggle) const
+{
+    typedef vector < pair < int, int > > VecPair;
+    VecPair highlightRanges;
+
+    BlockList::const_iterator b, be = blocks.end();
+    int start = 0, from, to;
+    for (b=blocks.begin(); b!=be; ++b) {
+        if ((*b)->IsAligned()) {
+            from = start;
+            to = start + (*b)->width - 1;
+            // highlight if the block intersects with the selection
+            if ((alnIndexFrom >= from && alnIndexFrom <= to) || (alnIndexTo >= from && alnIndexTo <= to)
+                    || (alnIndexFrom < from && alnIndexTo > to))
+                highlightRanges.push_back(make_pair(from, to));
+        }
+        start += (*b)->width;
+    }
+
+    if (highlightRanges.size() == 0)
+        return;
+
+    // select all ranges in each row; justification is irrelevant since we're in aligned blocks only
+    for (int row=0; row<NRows(); ++row) {
+        VecPair::const_iterator p, pe = highlightRanges.end();
+        for (p=highlightRanges.begin(); p!=pe; ++p)
+            SelectedRange(row, p->first, p->second, eLeft, toggle);
+    }
+}
+
 void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex,
     int *blockColumn, int *blockWidth) const
 {
@@ -1873,6 +1903,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.67  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

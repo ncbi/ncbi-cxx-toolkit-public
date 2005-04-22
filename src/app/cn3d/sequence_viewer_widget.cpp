@@ -448,11 +448,11 @@ void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int 
     dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberbandColor, 1, wxSOLID)));
 
     // draw sides (should draw in order, due to pixel roundoff)
-    if (mouseMode != SequenceViewerWidget::eSelectColumns)
+    if (mouseMode != SequenceViewerWidget::eSelectColumns && mouseMode != SequenceViewerWidget::eSelectBlocks)
         DrawLine(dc, minX, minY, maxX, minY);   // top
     if (mouseMode != SequenceViewerWidget::eSelectRows)
         DrawLine(dc, maxX, minY, maxX, maxY);   // right
-    if (mouseMode != SequenceViewerWidget::eSelectColumns)
+    if (mouseMode != SequenceViewerWidget::eSelectColumns && mouseMode != SequenceViewerWidget::eSelectBlocks)
         DrawLine(dc, maxX, maxY, minX, maxY);   // bottom
     if (mouseMode != SequenceViewerWidget::eSelectRows)
         DrawLine(dc, minX, maxY, minX, minY);   // left
@@ -629,7 +629,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         return;
 
     // adjust for column/row selection
-    if (mouseMode == SequenceViewerWidget::eSelectColumns)
+    if (mouseMode == SequenceViewerWidget::eSelectColumns || mouseMode == SequenceViewerWidget::eSelectBlocks)
         cellY = vsY + GetClientSize().GetHeight() / cellHeight;
     else if (mouseMode == SequenceViewerWidget::eSelectRows)
         cellX = vsX + GetClientSize().GetWidth() / cellWidth;
@@ -678,9 +678,10 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             currentRubberbandType =
                 (mouseMode == SequenceViewerWidget::eSelectRectangle ||
                  mouseMode == SequenceViewerWidget::eSelectColumns ||
-                 mouseMode == SequenceViewerWidget::eSelectRows) ? eDot : eSolid;
+                 mouseMode == SequenceViewerWidget::eSelectRows ||
+                 mouseMode == SequenceViewerWidget::eSelectBlocks) ? eDot : eSolid;
 
-            if (mouseMode == SequenceViewerWidget::eSelectColumns) {
+            if (mouseMode == SequenceViewerWidget::eSelectColumns || mouseMode == SequenceViewerWidget::eSelectBlocks) {
                 fromY = vsY;
                 prevToY = cellY;
                 DrawRubberband(dc, fromX, fromY, fromX, cellY, vsX, vsY);
@@ -710,9 +711,11 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         // remove rubberband
         if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
             mouseMode == SequenceViewerWidget::eSelectColumns ||
-            mouseMode == SequenceViewerWidget::eSelectRows)
+            mouseMode == SequenceViewerWidget::eSelectRows ||
+            mouseMode == SequenceViewerWidget::eSelectBlocks)
+        {
             RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
-        else {
+        } else {
             DrawCell(dc, fromX, fromY, vsX, vsY, true);
             if (cellX != fromX || cellY != fromY)
                 DrawCell(dc, cellX, cellY, vsX, vsY, true);
@@ -720,7 +723,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         dc.EndDrawing();
 
         // adjust for column/row selection
-        if (mouseMode == SequenceViewerWidget::eSelectColumns) {
+        if (mouseMode == SequenceViewerWidget::eSelectColumns || mouseMode == SequenceViewerWidget::eSelectBlocks) {
             fromY = 0;
             cellY = areaHeight - 1;
         } else if (mouseMode == SequenceViewerWidget::eSelectRows) {
@@ -731,14 +734,17 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         // do appropriate callback
         if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
             mouseMode == SequenceViewerWidget::eSelectColumns ||
-            mouseMode == SequenceViewerWidget::eSelectRows)
+            mouseMode == SequenceViewerWidget::eSelectRows ||
+            mouseMode == SequenceViewerWidget::eSelectBlocks)
+        {
             alignment->SelectedRectangle(
                 (fromX < cellX) ? fromX : cellX,
                 (fromY < cellY) ? fromY : cellY,
                 (cellX > fromX) ? cellX : fromX,
                 (cellY > fromY) ? cellY : fromY);
-        else
+        } else {
             alignment->DraggedCell(fromX, fromY, cellX, cellY);
+        }
     }
 
     // process continuation of selection - redraw rectangle
@@ -750,7 +756,9 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         currentRubberbandType = eDot;
         if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
             mouseMode == SequenceViewerWidget::eSelectColumns ||
-            mouseMode == SequenceViewerWidget::eSelectRows) {
+            mouseMode == SequenceViewerWidget::eSelectRows ||
+            mouseMode == SequenceViewerWidget::eSelectBlocks)
+        {
             MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY, vsX, vsY);
         } else {
             if (prevToX != fromX || prevToY != fromY)
@@ -1112,6 +1120,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.42  2004/05/22 15:45:53  thiessen
 * support mouse wheel; update status bar on scroll
 *

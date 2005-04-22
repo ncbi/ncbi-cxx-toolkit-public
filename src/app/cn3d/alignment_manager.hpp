@@ -89,8 +89,8 @@ public:
         const std::vector < int >& rowOrder);
 
     // recomputes structure alignments for all slave structures in the current
-    // sequence alignment
-    void RealignAllSlaveStructures(void) const;
+    // sequence alignment; uses only highlighted aligned residues (on master) if highlightedOnly == true
+    void RealignAllSlaveStructures(bool highlightedOnly) const;
 
     // stuff relating to show/hide of alignment rows (slaves)
     void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
@@ -169,6 +169,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.50  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

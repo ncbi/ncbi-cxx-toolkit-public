@@ -144,6 +144,7 @@ protected:
         MID_SELECT_RECT,
         MID_SELECT_COLS,
         MID_SELECT_ROWS,
+        MID_SELECT_BLOCKS,
         MID_DRAG_HORIZ,
 
         // unaligned justification
@@ -235,6 +236,8 @@ public:
     bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
     bool DoDeleteBlock(void) const { return menuBar->IsChecked(MID_DELETE_BLOCK); }
 
+    bool SelectBlocksIsOn(void) const { return (viewerWidget->GetMouseMode() == SequenceViewerWidget::eSelectBlocks); }
+
     void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
 };
@@ -246,6 +249,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.29  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *

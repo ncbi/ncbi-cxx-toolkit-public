@@ -1297,7 +1297,7 @@ void StructureObject::RealignStructure(int nCoords,
     ComposeInto(transformToMaster, single, combined);
 
     // print out RMSD
-    INFOMSG("RMSD of aligned alpha coordinates between master structure and " << pdbID << ": "
+    INFOMSG("RMSD of alpha coordinates used to align master structure and " << pdbID << ": "
         << setprecision(3) << ComputeRMSD(nCoords, masterCoords, slaveCoords, transformToMaster) << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment
@@ -1520,6 +1520,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.147  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.146  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

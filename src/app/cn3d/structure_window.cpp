@@ -1221,8 +1221,35 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
 
 void StructureWindow::OnAlignStructures(wxCommandEvent& event)
 {
-    if (glCanvas->structureSet) {
-        glCanvas->structureSet->alignmentManager->RealignAllSlaveStructures();
+    if (glCanvas->structureSet && glCanvas->structureSet->alignmentManager->GetCurrentMultipleAlignment()) {
+
+        // count aligned vs. highlighted+aligned residues (on master)
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        glCanvas->structureSet->alignmentManager->GetCurrentMultipleAlignment()->GetUngappedAlignedBlocks(&blocks);
+        const Sequence *master = glCanvas->structureSet->alignmentManager->GetCurrentMultipleAlignment()->GetMaster();
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
+        int nAligned = 0, nHighlighted = 0;
+        for (b=blocks.begin(); b!=be; ++b) {
+            nAligned += (*b)->width;
+            const Block::Range *range = (*b)->GetRangeOfRow(0);
+            for (int i=0; i<(*b)->width; ++i)
+                if (GlobalMessenger()->IsHighlighted(master, range->from + i))
+                    ++nHighlighted;
+        }
+
+        // if count is different, ask user whether to use aligned or highlighted
+        bool highlightedOnly = false;
+        if (nHighlighted > 0 && nHighlighted < nAligned) {
+            wxString message;
+            message.Printf("Do you want to do the alignment using only the %i highlighted+aligned residues (on the master)? "
+                "Answering 'no' will use all %i aligned residues regardless of highlights.", nHighlighted, nAligned);
+            int answer = wxMessageBox(message, "Use highlighted+aligned residues?", wxYES_NO | wxCANCEL | wxICON_QUESTION, this);
+            if (answer == wxCANCEL)
+                return;
+            highlightedOnly = (answer == wxYES);
+        }
+
+        glCanvas->structureSet->alignmentManager->RealignAllSlaveStructures(highlightedOnly);
         glCanvas->SetCurrent();
         glCanvas->Refresh(false);
     }
@@ -1639,6 +1666,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.39  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

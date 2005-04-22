@@ -96,6 +96,7 @@ public:
         eSelectRectangle,   // select rectangle of cells
         eSelectColumns,     // select whole columns
         eSelectRows,        // select whole rows
+        eSelectBlocks,      // select whole blocks
         eDrag,              // move one cell
         eDragHorizontal,    // move one cell only horizontally
         eDragVertical       // move one cell only vertically
@@ -143,6 +144,9 @@ private:
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/04/22 13:43:01  thiessen
+* add block highlighting and structure alignment based on highlighted positions only
+*
 * Revision 1.20  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
