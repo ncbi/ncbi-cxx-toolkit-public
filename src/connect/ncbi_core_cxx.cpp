@@ -263,19 +263,18 @@ extern void CONNECT_Init(IRWRegistry*      reg,
                          CRWLock*          lock,
                          FConnectInitFlags flags)
 {
-    s_ConnectInitMutex.Lock();
+    CFastMutexGuard guard(s_ConnectInitMutex);
     try {
         s_Init(reg, lock, flags, eConnectInit_Explicit);
     }
     STD_CATCH_ALL("CONNECT_Init() failed");
-    s_ConnectInitMutex.Unlock();
 }
 
 
 /* PRIVATE */
 extern void CONNECT_InitInternal(void)
 {
-    s_ConnectInitMutex.Lock();
+    CFastMutexGuard guard(s_ConnectInitMutex);
     if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
@@ -287,7 +286,6 @@ extern void CONNECT_InitInternal(void)
     } else {
         s_ConnectInit = eConnectInit_Explicit;
     }
-    s_ConnectInitMutex.Unlock();
 }
 
 
@@ -297,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2005/04/22 17:44:28  vasilche
+ * Use mutex guard to avoid possibility of abandoned mutex.
+ *
  * Revision 6.26  2004/12/20 16:45:07  ucko
  * Accept any IRWRegistry rather than specifically requiring a CNcbiRegistry.
  * Even with ownership passed, don't delete registries that still have
