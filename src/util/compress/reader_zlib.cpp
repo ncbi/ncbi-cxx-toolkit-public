@@ -146,11 +146,11 @@ void CResultZBtSrcX::ReadLength(void)
         NCBI_THROW(CCompressionException, eCompression,
                    "Too few header bytes");
     }
-    unsigned int compr_size = 0;
+    size_t compr_size = 0;
     for ( size_t i = 0; i < 4; ++i ) {
         compr_size = (compr_size<<8) | (unsigned char)header[i];
     }
-    unsigned int uncompr_size = 0;
+    size_t uncompr_size = 0;
     for ( size_t i = 4; i < 8; ++i ) {
         uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
     }
@@ -405,13 +405,13 @@ ERW_Result CNlmZipReader::x_DecompressBuffer(void)
     if ( result != eRW_Success || bytes != kLengthsLength ) {
         return eRW_Error;
     }
-    Uint4 compr_size = 0;
+    size_t compr_size = 0;
     for ( size_t i = 0; i < 4; ++i ) {
-        compr_size = (compr_size<<8) | Uint1(header[i]);
+        compr_size = (compr_size<<8) | (unsigned char)header[i];
     }
-    Uint4 uncompr_size = 0;
+    size_t uncompr_size = 0;
     for ( size_t i = 4; i < 8; ++i ) {
-        uncompr_size = (uncompr_size<<8) | Uint1(header[i]);
+        uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
     }
 
     if ( compr_size > kMax_ComprSize ) {
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.7  2005/03/14 17:32:22  vasilche
  * Removed obsolete methods and data members.
  *

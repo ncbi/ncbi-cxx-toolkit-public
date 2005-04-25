@@ -119,7 +119,7 @@ int CTestLogrotateApplication::Run(void)
     me += '/' + NStr::IntToString(getpid());
 #endif
     SetDiagPostPrefix(me.c_str());
-    srand(time(0));
+    srand((unsigned int)time(0));
 
     for (unsigned int n = 0;  n < 1000000;  ++n) {
         static const char* messages[] = { "foo", "bar", "baz", "quux" };
@@ -167,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.5  2004/09/22 20:12:10  ucko
  * Tweak to avoid confusing older GCC versions.
  *

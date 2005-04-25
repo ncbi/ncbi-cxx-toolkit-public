@@ -147,7 +147,7 @@ TUnicode UTF8ToUnicode( const char* theUTF )
     while ((counter <<= 1) < 0) {
         unsigned char c = *p++;
         if ((c & ~077) != 0200) { // Broken UTF-8 chain
-            return ~0;
+            return 0;
         }
         acc = (acc << 6) | (c & 077);
     }
@@ -161,7 +161,7 @@ size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
     const char *p = theUTF;
     char counter = *p++;
 
-    if ( (unsigned char )theUTF[0] < 0x80 ) {
+    if ( (unsigned char)theUTF[0] < 0x80 ) {
         // This is one character UTF8. I.e. regular character.
         *theUnicode = *theUTF;
         return 1;
@@ -177,7 +177,7 @@ size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
     while ((counter <<= 1) < 0) {
         unsigned char c = *p++;
         if ((c & ~077) != 0200) { // Broken UTF-8 chain
-            return ~0;
+            return 0;
         }
         acc = (acc << 6) | (c & 077);
     } // while
@@ -190,7 +190,7 @@ size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
 string UnicodeToUTF8( TUnicode theUnicode )
 {
     char theBuffer[10];
-    int theLength = UnicodeToUTF8( theUnicode, theBuffer, 10 );
+    size_t theLength = UnicodeToUTF8( theUnicode, theBuffer, 10 );
     return string( theBuffer, theLength );
 }
 
@@ -244,9 +244,9 @@ ssize_t UTF8ToAscii( const char* src, char* dst,
         const char* pSrc = &(src[srcPos]);
         TUnicode theUnicode;
 
-        int utfLen = UTF8ToUnicode( pSrc, &theUnicode );
+        size_t utfLen = UTF8ToUnicode( pSrc, &theUnicode );
 
-        if ( (utfLen == 0) || (utfLen == -1) ) {
+        if ( utfLen == 0 ) {
             // Skip the error.
             srcPos++;
             continue;
@@ -304,9 +304,9 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
         const char* pSrc = &(src[srcPos]);
         TUnicode theUnicode;
 
-        int utfLen = UTF8ToUnicode( pSrc, &theUnicode );
+        size_t utfLen = UTF8ToUnicode( pSrc, &theUnicode );
 
-        if ( (utfLen == 0) || (utfLen == -1) ) {
+        if ( utfLen == 0 ) {
             // Skip the error.
             srcPos++;
             continue;
@@ -352,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.7  2005/04/20 20:07:11  lavr
  * More changes to use [s]size_t instead of plain int's
  *

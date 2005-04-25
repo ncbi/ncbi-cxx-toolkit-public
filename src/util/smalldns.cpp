@@ -129,7 +129,7 @@ string CSmallDNS::GetLocalHost(void)
         char buffer[MAXHOSTNAMELEN];
         buffer[0] = buffer[MAXHOSTNAMELEN-1] = '\0';
         errno = 0;
-        if ( gethostname(buffer, sizeof(buffer)) == 0 ) {
+        if ( gethostname(buffer, (int)sizeof(buffer)) == 0 ) {
             if ( buffer[MAXHOSTNAMELEN - 1] ) {
                 ERR_POST(Warning <<
                     "CSmallDNS: Host name buffer too small");
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.8  2004/05/18 14:58:25  gorelenk
  * Roll-back to inclusion of winsock2.h on MSVC
  *

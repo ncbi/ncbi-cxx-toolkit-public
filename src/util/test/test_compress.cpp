@@ -72,9 +72,7 @@ public:
         eDecompress 
     };
     static void PrintResult(EPrintType type, int last_errcode,
-                            unsigned int src_len,
-                            unsigned int dst_len,
-                            unsigned int out_len);
+                            size_t src_len, size_t dst_len, size_t out_len);
 };
 
 
@@ -96,7 +94,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     char* dst_buf = new char[kBufLen];
     char* cmp_buf = new char[kBufLen];
 
-    unsigned int dst_len, out_len;
+    size_t dst_len, out_len;
     bool result;
 
     assert(dst_buf);
@@ -153,14 +151,14 @@ void CTestCompressor<TCompression, TCompressionFile,
         cout << "File compress/decompress test...\n";
         INIT_BUFFERS;
 
-        int n;
+        size_t n;
 
         TCompressionFile zfile;
         const string kFileName = "compressed.file";
 
         // Compress data to file
         assert(zfile.Open(kFileName, TCompressionFile::eMode_Write)); 
-        for (unsigned int i=0; i < kDataLen/1024; i++) {
+        for (size_t i=0; i < kDataLen/1024; i++) {
             n = zfile.Write(src_buf + i*1024, 1024);
             assert(n == 1024);
         }
@@ -185,7 +183,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         }}
         {{
             TCompressionFile zf(kFileName, TCompressionFile::eMode_Read);
-            int nread = 0;
+            size_t nread = 0;
             do {
                 n = zf.Read(cmp_buf + nread, 100);
                 assert(n >= 0);
@@ -360,7 +358,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         {{
             INIT_BUFFERS;
 
-            CNcbiStrstream stm(dst_buf, kBufLen);
+            CNcbiStrstream stm(dst_buf, (int)kBufLen);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
@@ -407,7 +405,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         {{
             INIT_BUFFERS;
 
-            CNcbiStrstream stm(dst_buf, kBufLen);
+            CNcbiStrstream stm(dst_buf, (int)kBufLen);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
@@ -483,9 +481,9 @@ template<class TCompression,
 void CTestCompressor<TCompression, TCompressionFile,
                      TStreamCompressor, TStreamDecompressor>
     ::PrintResult(EPrintType type, int last_errcode, 
-                  unsigned int src_len,
-                  unsigned int dst_len,
-                  unsigned int out_len)
+                  size_t src_len,
+                  size_t dst_len,
+                  size_t out_len)
 {
     cout << ((type == eCompress) ? "Compress   ": "Decompress ");
     cout << "errcode = ";
@@ -521,7 +519,7 @@ int CTest::Run(void)
     assert(src_buf);
 
     // Preparing a data for compression
-    unsigned int seed = time(0);
+    unsigned int seed = (unsigned int)time(0);
     cout << "Random seed = " << seed << endl << endl;
     srand(seed);
     for (size_t i=0; i<kDataLen; i++) {
@@ -566,6 +564,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.10  2004/06/14 17:05:10  ivanov
  * Added missed brackets in the PrintResult()
  *

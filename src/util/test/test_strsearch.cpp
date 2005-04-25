@@ -56,7 +56,7 @@ void s_TEST_BoyerMooreMatcher(void)
     cout << "======== String search test (Boyer-Moore)." << endl;
 
     const char* str = "123 567 BB";
-    unsigned len = strlen(str);
+    size_t len = strlen(str);
     {{    
     CBoyerMooreMatcher matcher("BB");
     size_t pos = matcher.Search(str, 0, len);
@@ -155,10 +155,10 @@ void s_TEST_BoyerMooreMatcher(void)
     const char* str1 = 
        "eukaryotic initiation factor 4E-I [Drosophila melanogaster]";
 
-    int    len1 = strlen(str1);
-    int    pos = matcher.Search(str1, 0, len1);
+    size_t len1 = strlen(str1);
+    size_t pos = matcher.Search(str1, 0, len1);
 
-    assert((int)pos != -1l);
+    assert(pos != (SIZE_TYPE)-1);
     }}
 
     cout << "======== String search test (Boyer-Moore) ok." << endl;
@@ -219,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.7  2005/02/02 19:49:55  grichenk
  * Fixed more warnings
  *

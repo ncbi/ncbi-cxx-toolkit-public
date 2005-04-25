@@ -95,14 +95,14 @@ void CheckValue(const pair<const int, int>& value1,
 inline
 int distance(const int* p1, const int* p2)
 {
-    return p2 - p1;
+    return int(p2 - p1);
 }
 
 
 inline
 int distance(const pair<int, int>* p1, const pair<int, int>* p2)
 {
-    return p2 - p1;
+    return int(p2 - p1);
 }
 
 
@@ -129,7 +129,7 @@ void TestAll(const typename TRef::key_type& key, const TRef& ref,
     {{ // test index_of()
         typename TRef::const_iterator ref_iter = ref.find(key);
         typename TTst::const_iterator tst_iter = tst.find(key);
-        int tst_index = tst.index_of(key);
+        ssize_t tst_index = tst.index_of(key);
         _ASSERT((ref_iter == ref.end()) == (tst_index == tst.eNpos));
         if ( ref_iter != ref.end() ) {
             _ASSERT(tst_index >= 0 && tst_index < int(ref.size()));
@@ -347,6 +347,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/25 19:05:24  ivanov
+ * Fixed compilation warnings on 64-bit Worshop compiler
+ *
  * Revision 1.6  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
