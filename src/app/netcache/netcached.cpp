@@ -245,7 +245,9 @@ public:
       : m_Log(filename, limit)
     {}
 
-    void Put(const string& auth, const NetCache_RequestStat& stat)
+    void Put(const string& auth, 
+             const NetCache_RequestStat& stat,
+             const string&  blob_key)
     {
         string msg, tmp;
         msg += auth;
@@ -262,6 +264,8 @@ public:
         msg += NStr::DoubleToString(stat.elapsed, 5);
         msg += ';';
         msg += NStr::DoubleToString(stat.comm_elapsed, 5);
+        msg += ';';
+        msg += blob_key;
         msg += "\n";
 
         m_Log << msg;
@@ -547,6 +551,7 @@ void CNetCacheServer::Process(SOCK sock)
         }
 
         // Process request
+        Request req;
 
         s_WaitForReadSocket(socket, m_InactivityTimeout);
 
@@ -555,7 +560,6 @@ void CNetCacheServer::Process(SOCK sock)
             s_WaitForReadSocket(socket, m_InactivityTimeout);
 
             if (ReadStr(socket, &request)) {                
-                Request req;
                 ParseRequest(request, &req);
 
                 switch (req.req_type) {
@@ -616,7 +620,7 @@ void CNetCacheServer::Process(SOCK sock)
             stat.elapsed = sw.Elapsed();
             CNetCache_Logger* lg = GetLogger();
             _ASSERT(lg);
-            lg->Put(auth, stat);
+            lg->Put(auth, stat, req.req_id);
         }
     } 
     catch (CNetCacheException &ex)
@@ -1480,6 +1484,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/04/25 15:37:58  kuznets
+ * Improved logging
+ *
  * Revision 1.51  2005/04/19 14:19:09  kuznets
  * New protocol for puit blob
  *
