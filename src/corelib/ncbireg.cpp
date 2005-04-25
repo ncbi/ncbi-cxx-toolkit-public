@@ -181,7 +181,8 @@ void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
 // Somewhat inefficient, but that can't really be helped....
 bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 {
-    x_CheckFlags("IRegistry::Write", flags, fLayerFlags | fInternalSpaces);
+    x_CheckFlags("IRegistry::Write", flags,
+                 (TFlags)fLayerFlags | fInternalSpaces);
     if ( !(flags & fTransient) ) {
         flags |= fPersistent;
     }
@@ -234,7 +235,8 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 const string& IRegistry::Get(const string& section, const string& name,
                              TFlags flags) const
 {
-    x_CheckFlags("IRegistry::Get", flags, fLayerFlags | fInternalSpaces);
+    x_CheckFlags("IRegistry::Get", flags,
+                 (TFlags)fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -257,7 +259,8 @@ const string& IRegistry::Get(const string& section, const string& name,
 bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
-    x_CheckFlags("IRegistry::HasEntry", flags, fLayerFlags | fInternalSpaces);
+    x_CheckFlags("IRegistry::HasEntry", flags,
+                 (TFlags)fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -374,7 +377,7 @@ const string& IRegistry::GetComment(const string& section, const string& name,
                                     TFlags flags) const
 {
     x_CheckFlags("IRegistry::GetComment", flags,
-                 fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRegistry::GetComment: bad section name \""
@@ -394,7 +397,7 @@ const string& IRegistry::GetComment(const string& section, const string& name,
 void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateSections", flags,
-                 fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -408,7 +411,7 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
                                  TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateEntries", flags,
-                 fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -456,7 +459,8 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 
 void IRWRegistry::Clear(TFlags flags)
 {
-    x_CheckFlags("IRWRegistry::Clear", flags, fLayerFlags | fInternalSpaces);
+    x_CheckFlags("IRWRegistry::Clear", flags,
+                 (TFlags)fLayerFlags | fInternalSpaces);
     TWriteGuard LOCK(*this);
     if ( (flags & fPersistent)  &&  !x_Empty(fPersistent) ) {
         x_SetModifiedFlag(true, flags & ~fTransient);
@@ -1399,6 +1403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/25 19:48:42  ivanov
+ * Fixed Workshop compilation warnings
+ *
  * Revision 1.50  2005/03/22 13:36:31  rsmith
  * Allow internal space in sections names when initializing a registry.
  *
