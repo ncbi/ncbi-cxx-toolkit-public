@@ -180,7 +180,7 @@ CTransmissionReader::x_ReadStart()
 ERW_Result 
 CTransmissionReader::x_ReadRepeated(void*   buf, size_t  count)
 {
-    ERW_Result res;
+    ERW_Result res = eRW_Success;
     char* ptr = (char*)buf;
     size_t read;
     
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/25 15:08:58  kuznets
+ * Warning fixed
+ *
  * Revision 1.4  2005/04/18 18:13:30  kuznets
  * Cosmetics
  *
