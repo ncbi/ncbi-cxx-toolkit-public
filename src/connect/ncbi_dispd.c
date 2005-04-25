@@ -42,6 +42,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
+#  define SERV_DISPD_DEBUG 1
+#endif /*_DEBUG && !NDEBUG*/
+
 /* Lower bound of up-to-date/out-of-date ratio */
 #define SERV_DISPD_STALE_RATIO_OK  0.8
 /* Default rate increase if svc runs locally */
@@ -55,7 +59,7 @@ static FDISP_MessageHook s_MessageHook = 0;
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /*__cplusplus*/
     static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
     static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*);
@@ -66,7 +70,7 @@ extern "C" {
     };
 #ifdef __cplusplus
 } /* extern "C" */
-#endif
+#endif /*__cplusplus*/
 
 
 static int s_RandomSeed = 0;
@@ -210,7 +214,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
              " (C++ Toolkit)"
 #else
              " (C Toolkit)"
-#endif
+#endif /*NCBI_CXX_TOOLKIT*/
              "\r\n");
         data->disp_fail = 0;
         /* All the rest in the net_info structure is fine with us */
@@ -265,7 +269,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
             p++;
         if (data->net_info->debug_printout)
             CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", p));
-#endif
+#endif /*_DEBUG && !NDEBUG*/
         data->disp_fail = 1;
         return 1/*updated*/;
     } else if (len >= sizeof(HTTP_DISP_MESSAGE) &&
@@ -357,11 +361,11 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     if (point > 0.0  &&  iter->preference) {
         if (total != access) {
             p = SERV_Preference(iter->preference, access/total, data->n_node);
-#if 0
+#ifdef SERV_DISPD_DEBUG
             CORE_LOGF(eLOG_Note, ("(P = %lf, A = %lf, T = %lf, N = %d)"
                                   " -> Pref = %lf", iter->preference,
                                   access, total, (int) data->n_node, p));
-#endif
+#endif /*SERV_DISPD_DEBUG*/
             status = total*p;
             p = total*(1.0 - p)/(total - access);
             for (i = 0; i < data->n_node; i++) {
@@ -369,7 +373,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 if (p*point <= data->s_node[i].status) 
                     data->s_node[i].status += status - p*access;
             }
-#if 0
+#ifdef SERV_DISPD_DEBUG
             for (i = 0; i < data->n_node; i++) {
                 char addr[16];
                 SOCK_ntoa(data->s_node[i].info->host, addr, sizeof(addr));
@@ -378,7 +382,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 CORE_LOGF(eLOG_Note, ("%s %lf %.2lf%%", addr,
                                       status, status/total*100.0));
             }
-#endif
+#endif /*SERV_DISPD_DEBUG*/
         }
         point = -1.0;
     }
@@ -485,6 +489,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2005/04/25 18:46:13  lavr
+ * Made parallel with ncbi_lbsmd.c
+ *
  * Revision 6.64  2005/03/16 20:15:25  lavr
  * Allow local B services to have a preference
  *
