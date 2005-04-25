@@ -1207,6 +1207,9 @@ void CSeq_loc::SetId(CSeq_id& id)
 {
     x_InvalidateCache();
     switch (Which()) {
+    case e_Null:
+        break;
+
     case e_Int:
         SetInt().SetId(id);
         break;
@@ -2443,6 +2446,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.55  2005/04/25 12:38:00  shomrat
+ * Handle Null variant in SetId()
+ *
  * Revision 6.54  2005/02/18 15:01:53  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *
