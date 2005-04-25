@@ -679,6 +679,7 @@ void CBDB_Cache::Open(const char* cache_path,
     {
     case eLarge:
         m_CacheDB->SetPageSize(32 * 1024);
+//        m_CacheDB->SetPageSize(64 * 1024);
         break;
     case eSmall:
         // nothing to do
@@ -1370,6 +1371,7 @@ void CBDB_Cache::Remove(const string& key)
 
     }}
 
+    {{
     CCacheTransaction trans(*this);
 
     // Now delete all objects
@@ -1382,11 +1384,13 @@ void CBDB_Cache::Remove(const string& key)
     }
 
 	trans.Commit();
+    }}
 
     // Second pass scan if for some resons some cache elements are 
     // still in the database
 
     cache_elements.resize(0);
+    CCacheTransaction trans(*this);
 
     {{
 
@@ -2342,6 +2346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2005/04/25 14:01:35  kuznets
+ * Code cleanup
+ *
  * Revision 1.111  2005/04/12 17:56:03  kuznets
  * Added BLOB TTL read prolongation limit(to let BLOBs expire)
  *
