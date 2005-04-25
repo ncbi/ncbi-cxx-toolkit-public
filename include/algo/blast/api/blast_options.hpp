@@ -47,7 +47,6 @@
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
 class CBlastTraceBackTest; 
-class CScoreBlkTest; 
 class CRPSTest; 
 class CBlastSetupTest;
 
@@ -381,7 +380,6 @@ private:
 
     /// @todo Strive to remove these classes
     friend class ::CBlastTraceBackTest;    // unit test class
-    friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
     friend class ::CBlastSetupTest;        // unit test class
 };
@@ -397,6 +395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.95  2005/04/25 14:47:48  madden
+* Remove CScoreBlkTest as friend
+*
 * Revision 1.94  2005/04/11 16:56:10  dondosha
 * Removed unused forward declaration of CBlastEngineTest class
 *
