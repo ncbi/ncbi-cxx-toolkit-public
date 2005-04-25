@@ -219,11 +219,11 @@ SERV_ITER SERV_OpenEx(const char* service,
 
 SERV_ITER SERV_OpenP(const char* service, TSERV_Type types,
                      unsigned int preferred_host, double preference,
-                     int/*bool*/ external, unsigned int origin,
-                     const char* arg, const char* val)
+                     int/*bool*/ external, SConnNetInfo* net_info,
+                     unsigned int origin, const char* arg, const char* val)
 {
     return s_Open(service, types, preferred_host, preference,
-                  0/*net_info*/, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*hinfo*/,
+                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*hinfo*/,
                   external, origin, arg, val);
 }
 
@@ -261,11 +261,11 @@ SSERV_Info* SERV_GetInfoEx(const char* service, TSERV_Type types,
 
 SSERV_Info* SERV_GetInfoP(const char* service, TSERV_Type types,
                           unsigned int preferred_host, double preference,
-                          int/*bool*/ external, unsigned int origin,
-                          const char* arg, const char* val)
+                          int/*bool*/ external, SConnNetInfo* net_info,
+                          unsigned int origin, const char* arg,const char* val)
 {
     return s_GetInfo(service, types, preferred_host, preference,
-                     0/*net_info*/, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
+                     net_info, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
                      external, origin, arg, val);
 }
 
@@ -420,6 +420,7 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
     static const char referrer_header[] = "Referer: "/*standard misspelling*/;
     static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
     static const char accepted_types[] = "Accepted-Server-Types:";
+    static const char server_count[] = "Server-Count: all\r\n";
     char buffer[128], *str;
     TSERV_Type types, t;
     size_t buflen, i;
@@ -490,6 +491,13 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
             strcpy(&buffer[buflen], "\r\n");
             assert(strlen(buffer) == buflen+2  &&  buflen+2 < sizeof(buffer));
             if (!BUF_Write(&buf, buffer, buflen + 2)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        }
+        /* how many for the dispatcher to send to us */
+        if (iter->preference) {
+            if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)) {
                 BUF_Destroy(buf);
                 return 0;
             }
@@ -566,6 +574,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2005/04/25 18:47:29  lavr
+ * Private API to accept SConnNetInfo* for network dispatching to work too
+ *
  * Revision 6.60  2005/04/19 16:32:19  lavr
  * Cosmetics
  *

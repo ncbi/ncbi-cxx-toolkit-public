@@ -103,6 +103,7 @@ SSERV_Info* SERV_GetInfoP
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  double              preference,    /* [0=min..100=max] preference in %%     */
  int/*bool*/         external,      /* whether mapping is not local to NCBI  */
+ SConnNetInfo*       net_info,      /* for connection to dispatcher, m.b. 0  */
  unsigned int        origin,        /* origin IP                             */
  const char*         arg,           /* environment variable name to search   */
  const char*         val            /* environment variable value to match   */
@@ -115,6 +116,7 @@ SERV_ITER SERV_OpenP
  unsigned int        preferred_host,
  double              preference,
  int/*bool*/         external,
+ SConnNetInfo*       net_info,
  unsigned int        origin,
  const char*         arg,
  const char*         val
@@ -178,6 +180,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2005/04/25 18:47:29  lavr
+ * Private API to accept SConnNetInfo* for network dispatching to work too
+ *
  * Revision 6.28  2005/04/19 16:33:00  lavr
  * More comments on how things work (SERV_{GetInfo|Open}P)
  *
