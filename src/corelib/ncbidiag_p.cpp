@@ -426,6 +426,8 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
         return ePath;
     case eStart :
         break;
+    default:
+        break;
     }
 
     return eEnd;
@@ -720,6 +722,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/04/25 19:49:28  ivanov
+ * Fixed compilation warning
+ *
  * Revision 1.7  2005/04/25 16:44:33  ssikorsk
  * Fixed DIAG_FILTER parser and expression evaluation bugs
  *
