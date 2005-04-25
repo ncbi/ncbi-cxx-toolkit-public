@@ -692,7 +692,6 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 	db.SetTransaction(&trans);
 
     db.id = job_id;
-
     db.status = (int) CNetScheduleClient::ePending;
 
     db.time_submit = time(0);
@@ -1085,7 +1084,7 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
     unsigned fetch_attempts = 0;
-    const unsigned kMaxGetAttempts = 1000;
+    const unsigned kMaxGetAttempts = 100;
 
 get_job_id:
 
@@ -1127,15 +1126,16 @@ fetch_db:
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << *job_id;
-        if (cur.FetchFirst() != eBDB_Ok) {
+        if (cur.Fetch() != eBDB_Ok) {
+            if (fetch_attempts < kMaxGetAttempts) {
+                goto fetch_db;
+            }
             m_LQueue.status_tracker.ChangeStatus(*job_id, 
                                          CNetScheduleClient::ePending);
             *job_id = 0; 
             return;
-        } else {
-            // not yet in the database?
-            goto fetch_db;
         }
+
         int status = db.status;
 
         // internal integrity check
@@ -1681,6 +1681,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/04/25 14:42:53  kuznets
+ * Fixed bug in GetJob()
+ *
  * Revision 1.27  2005/04/21 13:37:35  kuznets
  * Fixed race condition between Submit job and Get job
  *
