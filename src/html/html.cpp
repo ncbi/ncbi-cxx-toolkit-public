@@ -1413,7 +1413,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
                 for ( CNCBINode::TChildren::iterator iRow = ChildBegin(),
                     iRowEnd = ChildEnd(); iRow != iRowEnd; ++iRow ) {
                     try {
-                        CHTML_tc* cell = Cell(row, w->first);
+                        CHTML_tc* cell = Cell(row, (TIndex)w->first);
                         if ( cell ) {
                         cell->SetWidth(w->second);
                         }
@@ -2413,6 +2413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2005/04/25 19:29:16  ivanov
+ * Fixed compilation warnings on 64-bit Workshop compiler
+ *
  * Revision 1.114  2005/04/11 19:16:12  ivanov
  * CHTML_input:: made name parameter in the constructor optional.
  * Added CHTML_input_button class for <input type=button>.
