@@ -268,14 +268,14 @@ int CTestHash::Run(void)
     for (int i = 0; i < MaxHashSize + 1; i++) {
         int key = i;
         keys.push_back(GetKey(key));
-        hashes.insert(hash<string>()(keys.back()));
+        hashes.insert((int)hash<string>()(keys.back()));
         b_hs.insert(keys.back());
     }
     random_shuffle(keys.begin(), keys.end());
 
     set<int> bhashes;
     for (int i = 0; i < MaxHashSize + 1; i++) {
-        bhashes.insert(hash<string>()(keys[i])%b_hs.bucket_count());
+        bhashes.insert(hash<string>()(keys[i]) % (int)b_hs.bucket_count());
     }
     NcbiCout << "keys: " << keys.size()
         << ", hashes: " << hashes.size()
@@ -336,6 +336,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/25 20:52:29  ivanov
+ * Get rid of 64-bit Workshop compilation warnings
+ *
  * Revision 1.4  2005/04/12 16:55:18  ucko
  * Explicitly include <corelib/ncbitime.hpp>
  *
