@@ -706,7 +706,8 @@ void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
 #ifdef _DEBUG
         const char * datap = ml.m_Data;
 #endif
-        _ASSERT(ml.m_RMap && ml.m_RMap->InRange(datap));
+        _ASSERT(ml.m_RMap);
+        _ASSERT(ml.m_RMap->InRange(datap));
         
         ml.m_RMap->RetRef();
         
