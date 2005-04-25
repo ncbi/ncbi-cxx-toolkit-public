@@ -115,17 +115,17 @@ public:
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
     virtual bool CompressBuffer(
-        const void* src_buf, unsigned int  src_len,
-        void*       dst_buf, unsigned int  dst_size,
-        /* out */            unsigned int* dst_len
+        const void* src_buf, size_t  src_len,
+        void*       dst_buf, size_t  dst_size,
+        /* out */            size_t* dst_len
     );
     virtual bool DecompressBuffer(
-        const void* src_buf, unsigned int  src_len,
-        void*       dst_buf, unsigned int  dst_size,
-        /* out */            unsigned int* dst_len
+        const void* src_buf, size_t  src_len,
+        void*       dst_buf, size_t  dst_size,
+        /* out */            size_t* dst_len
     );
 
-    // (De)compress file "src_file" and put result to file with name "dst_file".
+    // (De)compress file "src_file" and put result to "dst_file".
     // Return TRUE on success, FALSE on error.
     virtual bool CompressFile(
         const string& src_file,
@@ -196,11 +196,11 @@ public:
     // into the buffer "buf". Return the number of bytes actually read
     // (0 for end of file, -1 for error).
     // The number of really readed bytes can be less than requested.
-    virtual int Read(void* buf, int len);
+    virtual long Read(void* buf, size_t len);
 
     // Writes the given number of uncompressed bytes into the compressed file.
     // Return the number of bytes actually written or -1 for error.
-    virtual int Write(const void* buf, int len);
+    virtual long Write(const void* buf, size_t len);
 
     // Flushes all pending output if necessary, closes the compressed file.
     // Return TRUE on success, FALSE on error.
@@ -232,14 +232,14 @@ public:
 
 protected:
     virtual EStatus Init   (void);
-    virtual EStatus Process(const char* in_buf,  unsigned long  in_len,
-                            char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* in_avail,
-                            /* out */            unsigned long* out_avail);
-    virtual EStatus Flush  (char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* out_avail);
-    virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* out_avail);
+    virtual EStatus Process(const char* in_buf,  size_t  in_len,
+                            char*       out_buf, size_t  out_size,
+                            /* out */            size_t* in_avail,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Flush  (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Finish (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
     virtual EStatus End    (void);
 };
 
@@ -261,14 +261,14 @@ public:
 
 protected:
     virtual EStatus Init   (void); 
-    virtual EStatus Process(const char* in_buf,  unsigned long  in_len,
-                            char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* in_avail,
-                            /* out */            unsigned long* out_avail);
-    virtual EStatus Flush  (char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* out_avail);
-    virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
-                            /* out */            unsigned long* out_avail);
+    virtual EStatus Process(const char* in_buf,  size_t  in_len,
+                            char*       out_buf, size_t  out_size,
+                            /* out */            size_t* in_avail,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Flush  (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Finish (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
     virtual EStatus End    (void);
 };
 
@@ -323,6 +323,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/25 19:01:44  ivanov
+ * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
+ * 'unsigned long' to unified 'size_t'
+ *
  * Revision 1.10  2004/11/17 23:24:42  ucko
  * +<stdio.h> for FILE*
  *

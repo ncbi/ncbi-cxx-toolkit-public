@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_limits.h>
 #include <util/compress/bzip2.hpp>
 #include <bzlib.h>
 
@@ -38,6 +39,10 @@ BEGIN_NCBI_SCOPE
 
 // Get compression stream pointer
 #define STREAM ((bz_stream*)m_Stream)
+
+// Convert 'size_t' to '[unsigned] int' which used internally in bzip2
+#define LIMIT_SIZE_PARAM(value) if (value > (size_t)kMax_Int) value = kMax_Int
+#define LIMIT_SIZE_PARAM_U(value) if (value > kMax_UInt) value = kMax_UInt
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -79,9 +84,9 @@ CCompression::ELevel CBZip2Compression::GetLevel(void) const
 
 
 bool CBZip2Compression::CompressBuffer(
-                        const void* src_buf, unsigned int  src_len,
-                        void*       dst_buf, unsigned int  dst_size,
-                        /* out */            unsigned int* dst_len)
+                        const void* src_buf, size_t  src_len,
+                        void*       dst_buf, size_t  dst_size,
+                        /* out */            size_t* dst_len)
 {
     // Check parameters
     if ( !src_buf || !src_len ) {
@@ -94,12 +99,17 @@ bool CBZip2Compression::CompressBuffer(
         ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
+    LIMIT_SIZE_PARAM_U(src_len);
+    LIMIT_SIZE_PARAM_U(dst_size);
+
     // Destination buffer size
-    *dst_len = dst_size;
+    unsigned int x_dst_len = (unsigned int)dst_size;
     // Compress buffer
-    int errcode = BZ2_bzBuffToBuffCompress((char*)dst_buf, dst_len,
-                                           (char*)src_buf, src_len,
-                                           GetLevel(), 0, 0 );
+    int errcode = BZ2_bzBuffToBuffCompress(
+                      (char*)dst_buf, &x_dst_len,
+                      (char*)src_buf, (unsigned int)src_len,
+                      GetLevel(), 0, 0 );
+    *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK) {
         ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
@@ -110,9 +120,9 @@ bool CBZip2Compression::CompressBuffer(
 
 
 bool CBZip2Compression::DecompressBuffer(
-                        const void* src_buf, unsigned int  src_len,
-                        void*       dst_buf, unsigned int  dst_size,
-                        /* out */            unsigned int* dst_len)
+                        const void* src_buf, size_t  src_len,
+                        void*       dst_buf, size_t  dst_size,
+                        /* out */            size_t* dst_len)
 {
     // Check parameters
     if ( !src_buf || !src_len ) {
@@ -124,11 +134,16 @@ bool CBZip2Compression::DecompressBuffer(
         SetError(BZ_PARAM_ERROR, "bad argument");
         return false;
     }
+    LIMIT_SIZE_PARAM_U(src_len);
+    LIMIT_SIZE_PARAM_U(dst_size);
+
     // Destination buffer size
-    *dst_len = dst_size;
+    unsigned int x_dst_len = (unsigned int)dst_size;
     // Decompress buffer
-    int errcode = BZ2_bzBuffToBuffDecompress((char*)dst_buf, dst_len,
-                                             (char*)src_buf, src_len, 0, 0 );
+    int errcode = BZ2_bzBuffToBuffDecompress(
+                      (char*)dst_buf, &x_dst_len,
+                      (char*)src_buf, (unsigned int)src_len, 0, 0 );
+    *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK ) {
         ERR_POST(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
@@ -285,13 +300,15 @@ bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
 } 
 
 
-int CBZip2CompressionFile::Read(void* buf, int len)
+long CBZip2CompressionFile::Read(void* buf, size_t len)
 {
     if ( m_EOF ) {
         return 0;
     }
+    LIMIT_SIZE_PARAM(len);
+
     int errcode;
-    int nread = BZ2_bzRead(&errcode, m_File, buf, len);
+    int nread = BZ2_bzRead(&errcode, m_File, buf, (int)len);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
@@ -305,10 +322,12 @@ int CBZip2CompressionFile::Read(void* buf, int len)
 }
 
 
-int CBZip2CompressionFile::Write(const void* buf, int len)
+long CBZip2CompressionFile::Write(const void* buf, size_t len)
 {
+    LIMIT_SIZE_PARAM(len);
+
     int errcode;
-    BZ2_bzWrite(&errcode, m_File, const_cast<void*>(buf), len);
+    BZ2_bzWrite(&errcode, m_File, const_cast<void*>(buf), (int)len);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
@@ -388,15 +407,18 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
 
 
 CCompressionProcessor::EStatus CBZip2Compressor::Process(
-                      const char* in_buf,  unsigned long  in_len,
-                      char*       out_buf, unsigned long  out_size,
-                      /* out */            unsigned long* in_avail,
-                      /* out */            unsigned long* out_avail)
+                      const char* in_buf,  size_t  in_len,
+                      char*       out_buf, size_t  out_size,
+                      /* out */            size_t* in_avail,
+                      /* out */            size_t* out_avail)
 {
+    LIMIT_SIZE_PARAM_U(in_len);
+    LIMIT_SIZE_PARAM_U(out_size);
+
     STREAM->next_in   = const_cast<char*>(in_buf);
-    STREAM->avail_in  = in_len;
+    STREAM->avail_in  = (unsigned int)in_len;
     STREAM->next_out  = out_buf;
-    STREAM->avail_out = out_size;
+    STREAM->avail_out = (unsigned int)out_size;
 
     int errcode = BZ2_bzCompress(STREAM, BZ_RUN);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
@@ -414,16 +436,18 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
 
 
 CCompressionProcessor::EStatus CBZip2Compressor::Flush(
-                      char* out_buf, unsigned long  out_size,
-                      /* out */      unsigned long* out_avail)
+                      char* out_buf, size_t  out_size,
+                      /* out */      size_t* out_avail)
 {
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+    LIMIT_SIZE_PARAM_U(out_size);
+
     STREAM->next_in   = 0;
     STREAM->avail_in  = 0;
     STREAM->next_out  = out_buf;
-    STREAM->avail_out = out_size;
+    STREAM->avail_out = (unsigned int)out_size;
 
     int errcode = BZ2_bzCompress(STREAM, BZ_FLUSH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
@@ -442,16 +466,18 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
 
 
 CCompressionProcessor::EStatus CBZip2Compressor::Finish(
-                      char* out_buf, unsigned long  out_size,
-                      /* out */      unsigned long* out_avail)
+                      char* out_buf, size_t  out_size,
+                      /* out */      size_t* out_avail)
 {
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+    LIMIT_SIZE_PARAM_U(out_size);
+
     STREAM->next_in   = 0;
     STREAM->avail_in  = 0;
     STREAM->next_out  = out_buf;
-    STREAM->avail_out = out_size;
+    STREAM->avail_out = (unsigned int)out_size;
 
     int errcode = BZ2_bzCompress(STREAM, BZ_FINISH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
@@ -522,18 +548,21 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
 
 
 CCompressionProcessor::EStatus CBZip2Decompressor::Process(
-                      const char* in_buf,  unsigned long  in_len,
-                      char*       out_buf, unsigned long  out_size,
-                      /* out */            unsigned long* in_avail,
-                      /* out */            unsigned long* out_avail)
+                      const char* in_buf,  size_t  in_len,
+                      char*       out_buf, size_t  out_size,
+                      /* out */            size_t* in_avail,
+                      /* out */            size_t* out_avail)
 {
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+    LIMIT_SIZE_PARAM_U(in_len);
+    LIMIT_SIZE_PARAM_U(out_size);
+
     STREAM->next_in   = const_cast<char*>(in_buf);
-    STREAM->avail_in  = in_len;
+    STREAM->avail_in  = (unsigned int)in_len;
     STREAM->next_out  = out_buf;
-    STREAM->avail_out = out_size;
+    STREAM->avail_out = (unsigned int)out_size;
 
     int errcode = BZ2_bzDecompress(STREAM);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
@@ -555,14 +584,14 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 
 
 CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
-                      char*, unsigned long, unsigned long*)
+                      char*, size_t, size_t*)
 {
     return eStatus_Success;
 }
 
 
 CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
-                      char*, unsigned long, unsigned long*)
+                      char*, size_t, size_t*)
 {
     return eStatus_Success;
 }
@@ -586,6 +615,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/25 19:01:41  ivanov
+ * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
+ * 'unsigned long' to unified 'size_t'
+ *
  * Revision 1.11  2004/11/23 16:57:21  ivanov
  * Fixed compilation warning
  *

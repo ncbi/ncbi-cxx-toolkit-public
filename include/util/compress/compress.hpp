@@ -145,14 +145,14 @@ public:
     // be little more then size of the source buffer. 
 
     virtual bool CompressBuffer(
-        const void* src_buf, unsigned int  src_len,
-        void*       dst_buf, unsigned int  dst_size,
-        /* out */            unsigned int* dst_len
+        const void* src_buf, size_t  src_len,
+        void*       dst_buf, size_t  dst_size,
+        /* out */            size_t* dst_len
     ) = 0;
     virtual bool DecompressBuffer(
-        const void* src_buf, unsigned int  src_len,
-        void*       dst_buf, unsigned int  dst_size,
-        /* out */            unsigned int* dst_len
+        const void* src_buf, size_t  src_len,
+        void*       dst_buf, size_t  dst_size,
+        /* out */            size_t* dst_len
     ) = 0;
     
     // (De)compress file "src_file" and put result to file "dst_file".
@@ -232,11 +232,11 @@ public:
     // Read up to "len" uncompressed bytes from the compressed file "file"
     // into the buffer "buf". Return the number of bytes actually read
     // (0 for end of file, -1 for error)
-    virtual int Read(void* buf, int len) = 0;
+    virtual long Read(void* buf, size_t len) = 0;
 
     // Writes the given number of uncompressed bytes into the compressed file.
     // Return the number of bytes actually written or -1 for error.
-    virtual int Write(const void* buf, int len) = 0;
+    virtual long Write(const void* buf, size_t len) = 0;
 
     // Flushes all pending output if necessary, closes the compressed file.
     // Return TRUE on success, FALSE on error.
@@ -297,21 +297,21 @@ protected:
     // introduce some output latency (reading input without producing any
     // output).
     virtual EStatus Process
-    (const char*    in_buf,      // [in]  input buffer 
-     unsigned long  in_len,      // [in]  input data length
-     char*          out_buf,     // [in]  output buffer
-     unsigned long  out_size,    // [in]  output buffer size
-     unsigned long* in_avail,    // [out] count unproc.bytes in input buffer
-     unsigned long* out_avail    // [out] count bytes putted into out buffer
+    (const char* in_buf,      // [in]  input buffer 
+     size_t      in_len,      // [in]  input data length
+     char*       out_buf,     // [in]  output buffer
+     size_t      out_size,    // [in]  output buffer size
+     size_t*     in_avail,    // [out] count unproc.bytes in input buffer
+     size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
     // Flush compressed/decompressed data from the output buffer. 
     // Flushing may degrade compression for some compression algorithms
     // and so it should be used only when necessary.
     virtual EStatus Flush
-    (char*          out_buf,     // [in]  output buffer
-     unsigned long  out_size,    // [in]  output buffer size
-     unsigned long* out_avail    // [out] count bytes putted into out buffer
+    (char*       out_buf,     // [in]  output buffer
+     size_t      out_size,    // [in]  output buffer size
+     size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
     // Finish the compression/decompression process.
@@ -319,9 +319,9 @@ protected:
     // This function slightly like to Flush(), but it must be called only
     // at the end of compression process before End().
     virtual EStatus Finish
-    (char*          out_buf,     // [in]  output buffer
-     unsigned long  out_size,    // [in]  output buffer size
-     unsigned long* out_avail    // [out] count bytes putted into out buffer
+    (char*       out_buf,     // [in]  output buffer
+     size_t      out_size,    // [in]  output buffer size
+     size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
     // Free all dynamically allocated data structures.
@@ -455,6 +455,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/25 19:01:44  ivanov
+ * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
+ * 'unsigned long' to unified 'size_t'
+ *
  * Revision 1.9  2004/08/19 13:10:56  dicuccio
  * Dropped export specifier on inlined exceptions
  *

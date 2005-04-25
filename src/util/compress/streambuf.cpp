@@ -135,7 +135,7 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         return;
     }
     CT_CHAR_TYPE* buf = sp->m_OutBuf;
-    unsigned long out_size = sp->m_OutBufSize, out_avail = 0;
+    size_t out_size = sp->m_OutBufSize, out_avail = 0;
 
     do {
         if ( dir == CCompressionStream::eRead ) {
@@ -152,8 +152,8 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         } else {
             // Write the data to the underlying stream
             if ( out_avail  &&
-                 m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
-                 (streamsize)out_avail) {
+                 (size_t)m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
+                     out_avail) {
                 break;
             }
         }
@@ -171,7 +171,8 @@ int CCompressionStreambuf::sync()
         return -1;
     }
     // If not yet finalized, sync write processor buffers
-    CCompressionStreamProcessor* sp = GetStreamProcessor(CCompressionStream::eWrite);
+    CCompressionStreamProcessor* sp =
+        GetStreamProcessor(CCompressionStream::eWrite);
     if ( sp  &&  !sp->m_Finalized  ) {
         if ( Sync(CCompressionStream::eWrite) != 0 ) {
             return -1;
@@ -196,7 +197,7 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
     // Flush
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
     CT_CHAR_TYPE* buf = sp->m_OutBuf;
-    unsigned long out_size = sp->m_OutBufSize, out_avail = 0;
+    size_t out_size = sp->m_OutBufSize, out_avail = 0;
     do {
         if ( dir == CCompressionStream::eRead ) {
             buf = egptr();
@@ -213,8 +214,8 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
         } else {
             // Write the data to the underlying stream
             if ( out_avail  &&
-                 m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
-                 (streamsize)out_avail) {
+                 (size_t)m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
+                     out_avail) {
                 return -1;
             }
         }
@@ -272,8 +273,8 @@ CT_INT_TYPE CCompressionStreambuf::underflow(void)
 
 bool CCompressionStreambuf::ProcessStreamRead()
 {
-    unsigned long in_len, in_avail, out_size, out_avail;
-    streamsize    n_read;
+    size_t     in_len, in_avail, out_size, out_avail;
+    streamsize n_read;
 
     // End of stream has been detected
     if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
@@ -304,8 +305,8 @@ bool CCompressionStreambuf::ProcessStreamRead()
             // Process next data portion
             in_len = m_Reader->m_End - m_Reader->m_Begin;
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
-				m_Reader->m_Begin, in_len, egptr(), out_size,
-				&in_avail, &out_avail);
+                                m_Reader->m_Begin, in_len, egptr(), out_size,
+                                &in_avail, &out_avail);
             if ( m_Reader->m_LastStatus != CP::eStatus_Success  &&
                  m_Reader->m_LastStatus != CP::eStatus_EndOfData ) {
                 return false;
@@ -341,7 +342,7 @@ bool CCompressionStreambuf::ProcessStreamWrite()
 {
     const char*      in_buf    = pbase();
     const streamsize count     = pptr() - pbase();
-    unsigned long    in_avail  = count;
+    size_t           in_avail  = count;
 
     // End of stream has been detected
     if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
@@ -350,7 +351,7 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     // Loop until no data is left
     while ( in_avail ) {
         // Process next data piece
-        unsigned long out_avail = 0;
+        size_t out_avail = 0;
         m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
             in_buf + count - in_avail, in_avail,
             m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
@@ -367,7 +368,7 @@ bool CCompressionStreambuf::ProcessStreamWrite()
         }
     }
     // Decrease the put pointer
-    pbump(-count);
+    pbump((int)-count);
     return true;
 }
 
@@ -396,7 +397,7 @@ streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
         memcpy(pptr(), buf + done, block_size);
 
         // Update the write pointer
-        pbump(block_size);
+        pbump((int)block_size);
 
         // Process block if necessary
         if ( pptr() >= epptr()  &&  !ProcessStreamWrite() ) {
@@ -439,7 +440,7 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
                      m_Reader->m_OutBuf + 1);
             } else {
                 // Update the read pointer
-                gbump(block_size);
+                gbump((int)block_size);
             }
         }
         // Process block if necessary
@@ -457,6 +458,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/25 19:01:41  ivanov
+ * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
+ * 'unsigned long' to unified 'size_t'
+ *
  * Revision 1.17  2005/02/25 15:43:06  ivanov
  * Restore and fix change introduced in R1.14.
  * CCompressionStreambuf::sync(): do not forget to sync underlying stream
