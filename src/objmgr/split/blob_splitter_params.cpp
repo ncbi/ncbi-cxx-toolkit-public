@@ -111,7 +111,7 @@ void CId2Compressor::CompressChunk(const SSplitterParams& params,
         size_t pos = dst.size();
         CZipCompression compr(CCompression::eLevel_Default);
         dst.resize(pos + 32 + size_t(double(size)*1.01));
-        unsigned real_size = 0;
+        size_t real_size = 0;
         if ( !compr.CompressBuffer(data, size,
                                    &dst[pos+8], dst.size()-(pos+8),
                                    &real_size) ) {
@@ -173,6 +173,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/04/25 19:15:02  ucko
+* Update CompressChunk for recent compression API changes.
+*
 * Revision 1.14  2004/09/01 19:07:29  vasilche
 * By default do not join small chunks.
 *
