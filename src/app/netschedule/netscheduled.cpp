@@ -57,6 +57,7 @@
 #include <db.h>
 
 #if defined(NCBI_OS_UNIX)
+# include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 #endif
 
@@ -986,7 +987,7 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 #define NS_CHECKEND(x, msg) \
     if (!*s) { req->req_type = eError; req->err_msg = msg; return; }
 #define NS_CHECKSIZE(size, max_size) \
-    if (size >= max_size) \
+    if (unsigned(size) >= unsigned(max_size)) \
         { req->req_type = eError; req->err_msg = "Message too long"; return; }
 #define NS_GETSTRING(x, str) \
     for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
@@ -1601,14 +1602,24 @@ int CNetScheduleDApp::Run(void)
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds. ");
         min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
+        
+        
+#if defined(NCBI_OS_UNIX)
+        bool is_daemon =
+            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+        if (is_daemon) {
+            bool daemon = Daemonize();
+            if (!daemon) {
+                return 0;
+            }
+
+        }
+#endif        
+
+        
         qdb->RunExecutionWatcherThread(min_run_timeout);
-
         qdb->RunPurgeThread();
-
-
-
         qdb->RunNotifThread();
-
 
 
         unsigned max_threads =
@@ -1634,7 +1645,8 @@ int CNetScheduleDApp::Run(void)
                                    network_timeout,
                                    is_log));
 
-
+        
+        
         LOG_POST(Info << "Running server on port " << port);
 
         // All errors redirected to rotated log
@@ -1691,6 +1703,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/04/25 18:20:59  kuznets
+ * Added daeminization.
+ *
  * Revision 1.28  2005/04/21 13:38:05  kuznets
  * Version increment
  *
