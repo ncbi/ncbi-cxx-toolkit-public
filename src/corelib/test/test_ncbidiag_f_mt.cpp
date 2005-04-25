@@ -87,47 +87,159 @@ static CNcbiOstrstream s_Sout;
 
 void CTestDiagApp::SetCase(int case_num)
 {
+    string filter;
+
     switch(case_num){
     case 1 :
-        m_Case = "no filter";
+        filter = string();
         x_SetExpects("111111111");
         break;
     case 2 :
-        SetDiagFilter(eDiagFilter_All, "module");
-        m_Case = "filter \"module\"";
+        filter = "module";
         x_SetExpects("111100000");
         break;
     case 3 :
-        SetDiagFilter(eDiagFilter_All, "::class");
-        m_Case = "filter \"::class\"";
+        filter = "::class";
         x_SetExpects("110011000");
         break;
     case 4:
-        SetDiagFilter(eDiagFilter_All, "function()");
-        m_Case = "filter \"function()\"";
+        filter = "function()";
         x_SetExpects("101010100");
         break;
     case 5:
-        SetDiagFilter(eDiagFilter_All, "?");
-        m_Case = "filter \"?\"";
+        filter = "?";
         x_SetExpects("000011110");
         break;
     case 6:
-        SetDiagFilter(eDiagFilter_All, "!foo");
-        m_Case = "filter \"!foo\"";
+        filter = "!foo";
         x_SetExpects("111111110");
         break;
     case 7:
-        SetDiagFilter(eDiagFilter_All, "/corelib");
-        m_Case = "filter \"/corelib\"";
+        filter = "/corelib";
         x_SetExpects("111111111");
         break;
     case 8:
-        SetDiagFilter(eDiagFilter_All, "/corelib/");
-        m_Case = "filter \"/corelib/\"";
+        filter = "/corelib/";
         x_SetExpects("000000000");
         break;
+    case 9:
+        filter = "module::class::function()";
+        x_SetExpects("100000000");
+        break;
+    case 10:
+        filter = "module::class";
+        x_SetExpects("110000000");
+        break;
+    case 11:
+        filter = "::class::function()";
+        x_SetExpects("100010000");
+        break;
+    case 12:
+        filter = "module foo";
+        x_SetExpects("111100001");
+        break;
+    case 13:
+        filter = "::class ::boo";
+        x_SetExpects("110011001");
+        break;
+    case 14:
+        // TWO spaces ...
+        filter = "::class  ::boo";
+        x_SetExpects("110011001");
+        break;
+    case 15:
+        filter = "function() doo()";
+        x_SetExpects("101010101");
+        break;
+    case 16:
+        filter = "module ::boo";
+        x_SetExpects("111100001");
+        break;
+    case 17:
+        filter = "module doo()";
+        x_SetExpects("111100001");
+        break;
+    case 18:
+        filter = "::class doo()";
+        x_SetExpects("110011001");
+        break;
+    case 19:
+        filter = "!module";
+        x_SetExpects("000011111");
+        break;
+    case 20:
+        filter = "!::class";
+        x_SetExpects("001100111");
+        break;
+    case 21:
+        filter = "!function()";
+        x_SetExpects("010101011");
+        break;
+    case 22:
+        filter = "!module foo";
+        x_SetExpects("000011111");
+        break;
+    case 23:
+        filter = "!module ::class";
+        x_SetExpects("110011111");
+        break;
+    case 24:
+        filter = "!module function()";
+        x_SetExpects("101011111");
+        break;
+    case 25:
+        filter = "!::class module";
+        x_SetExpects("111100111");
+        break;
+    case 26:
+        filter = "!function() module";
+        x_SetExpects("111101011");
+        break;
+    case 27:
+        filter = "module !foo";
+        x_SetExpects("111111110");
+        break;
+    case 28:
+        filter = "module !::class";
+        x_SetExpects("111100111");
+        break;
+    case 29:
+        filter = "module !function()";
+        x_SetExpects("111101011");
+        break;
+    case 30:
+        filter = "!module !foo";
+        x_SetExpects("111111111");
+        break;
+    case 31:
+        filter = "!module !::class";
+        x_SetExpects("001111111");
+        break;
+    case 32:
+        filter = "!module !function()";
+        x_SetExpects("010111111");
+        break;
+    case 33:
+        filter = "!foo !module";
+        x_SetExpects("111111111");
+        break;
+    case 34:
+        filter = "!::class !module";
+        x_SetExpects("001111111");
+        break;
+    case 35:
+        filter = "!function() !module";
+        x_SetExpects("010111111");
+        break;
     }
+
+    if ( !filter.empty() ) {
+        SetDiagFilter(eDiagFilter_All, filter.c_str());
+    } else {
+        filter = "no filter";
+    }
+    m_Case = "filter \"" + filter + "\"";
+
 }
 
 
@@ -205,7 +317,7 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
         }
         catch (const  CException& ex) {
             throw NCBI_EXCEPTION_EX(ex, CException, eUnknown, "exception2")
-                .SetModule("foo").SetClass("foo").SetFunction("foo");
+                .SetModule(module).SetClass(nclass).SetFunction(function);
 
         }
     }
@@ -229,7 +341,7 @@ bool CTestDiagApp::Thread_Run(int idx)
     x_PrintMessages(testnum++, idx, "",       "class", ""        );
     x_PrintMessages(testnum++, idx, "",       "",      "function");
     x_PrintMessages(testnum++, idx, "",       "",      ""        );
-    x_PrintMessages(testnum++, idx, "foo",    "foo",   "foo"     );
+    x_PrintMessages(testnum++, idx, "foo",    "boo",   "doo"     );
 
     return true;
 }
@@ -242,7 +354,7 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
                        CArgDescriptions::eInteger);
 
     args.SetConstraint("case_number",
-                       new CArgAllow_Integers(1, 8));
+                       new CArgAllow_Integers(1, 35));
 
     return true;
 }
@@ -339,6 +451,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/25 16:44:33  ssikorsk
+ * Fixed DIAG_FILTER parser and expression evaluation bugs
+ *
  * Revision 1.3  2005/02/01 21:47:14  grichenk
  * Fixed warnings
  *

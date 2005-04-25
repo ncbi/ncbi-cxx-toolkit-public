@@ -274,8 +274,12 @@ EDiagFilterAction CDiagFilter::x_Check(const char* module,
             int(sev) < int((*i)->GetSeverity())) {
             continue;
         }
-        if( action != eDiagFilter_None )
-            return action;
+            if( action != eDiagFilter_None ) {
+                if ( action == eDiagFilter_Reject && i != m_Matchers.end() ) {
+                    continue;
+                }
+                return action;
+            }
     }
 
     return eDiagFilter_None;
@@ -313,7 +317,8 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
         eExpectClosePar, 
         eExpectCloseBracket,
         eInsideId,
-        eInsidePath
+        eInsidePath,
+        eSpace,
     };
     EState state = eStart;
 
@@ -349,12 +354,22 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 break;
             default :
                 if ( isspace(symbol) )
+                {
+                    state = eSpace;
                     break;
+                }
                 if ( !isalpha(symbol)  &&  symbol != '_' )
                     throw CDiagSyntaxParser::TErrorInfo("wrong symbol", 
                                                         m_Pos);
                 m_Str = symbol;
                 state = eInsideId;
+            }
+            break;
+        case eSpace :
+            if ( !isspace(symbol) ) {
+                in.putback( symbol );
+                --m_Pos;
+                return eDone;
             }
             break;
         case eExpectColon :
@@ -705,6 +720,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2005/04/25 16:44:33  ssikorsk
+ * Fixed DIAG_FILTER parser and expression evaluation bugs
+ *
  * Revision 1.6  2004/12/17 12:15:37  kuznets
  * A parser state situation tracked more carefully
  *
