@@ -34,12 +34,11 @@
 #include <corelib/ncbimisc.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
+#include <cgi/cgi_serial.hpp>
 #include <connect/email_diag_handler.hpp>
 #include <html/commentdiag.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
-
-//#include <util/map_serial.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 
@@ -278,8 +277,8 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 
     if (args[kInputParamName]) {
         m_Input = args[kInputParamName].AsString();
-        //        if (m_Input == "CTG_CGIENTRIES")
-        //            m_CgiEntries = &ctx.GetCGIContext().GetRequest().GetEntries();
+        if (m_Input == "CTG_CGIENTRIES")
+            m_CgiEntries = &ctx.GetCGIContext().GetRequest().GetEntries();
         return true;
     }
 
@@ -291,9 +290,9 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 {   
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
-    //    if (m_CgiEntries)
-    //        WriteMap(*m_CgiEntries, os);
-    //    else
+    if (m_CgiEntries)
+        WriteMap(os, *m_CgiEntries);
+    else
         os << m_Input;
 }
 
@@ -478,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/25 20:01:59  didenko
+ * Added Cgi Entries serialization
+ *
  * Revision 1.16  2005/04/22 13:39:33  didenko
  * Added elapsed time message
  *
