@@ -353,7 +353,10 @@ public:
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     {
-        WriteMsg(sock, "ERR:", "Server busy");
+        const char* msg = "ERR:Server busy";
+        
+        size_t n_written;
+        SOCK_Write(sock, (void *)msg, 16, &n_written, eIO_WritePlain);
         SOCK_Close(sock); 
         ERR_POST("ProcessOverflow! Server is busy.");
     }
@@ -1485,6 +1488,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/04/25 16:42:59  kuznets
+ * Fixed err message transmission
+ *
  * Revision 1.53  2005/04/25 16:35:08  kuznets
  * Send a short error message when we hit thread pool overflow
  *
