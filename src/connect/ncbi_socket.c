@@ -4276,7 +4276,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         }
 #else /* use some variant of gethostbyname */
         struct hostent* he;
-#  if defined(HAVE_GETHOSTBYNAME_R)
+#  ifdef HAVE_GETHOSTBYNAME_R
         static const char suffix[] = "_r";
         struct hostent  x_he;
         char            x_buf[1024];
@@ -4313,7 +4313,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
                 x_errno = EINVAL;
         }
 
-#  if !defined(HAVE_GETHOSTBYNAME_R)
+#  ifndef HAVE_GETHOSTBYNAME_R
         CORE_UNLOCK;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
@@ -4448,6 +4448,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.174  2005/04/25 18:48:04  lavr
+ * Touch up for preprocessor (#if def) usage consistency
+ *
  * Revision 6.173  2005/04/19 18:14:23  lavr
  * Fix MSWIN compilation errors (s_Send)
  *
