@@ -352,9 +352,10 @@ public:
 
 protected:
     virtual void ProcessOverflow(SOCK sock) 
-    { 
+    {
+        WriteMsg(sock, "ERR:", "Server busy");
         SOCK_Close(sock); 
-        ERR_POST("ProcessOverflow!");
+        ERR_POST("ProcessOverflow! Server is busy.");
     }
 
 private:
@@ -865,7 +866,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
             ERW_Result res = 
                 iwrt->Write(buf, nn_read, &bytes_written);
             if (res != eRW_Success) {
-                WriteMsg(sock, "Err:", "Server I/O error");
+                WriteMsg(sock, "ERR:", "Server I/O error");
                 return;
             }
         } // if (nn_read)
@@ -1484,6 +1485,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/04/25 16:35:08  kuznets
+ * Send a short error message when we hit thread pool overflow
+ *
  * Revision 1.52  2005/04/25 15:37:58  kuznets
  * Improved logging
  *
