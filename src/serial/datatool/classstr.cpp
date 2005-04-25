@@ -872,8 +872,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate conversion operators
             if ( i->cName.empty() ) {
                 if ( i->optional ) {
+                    string loc(code.GetClassNameDT());
+                    if (i->dataType) {
+                        loc = i->dataType->LocationString();
+                    }
                     NCBI_THROW(CDatatoolException,eInvalidData,
-                        "the only member of adaptor class is optional");
+                        loc + ": the only member of adaptor class is optional");
                 }
                 code.ClassPublic() <<
                     "    /// Conversion operator to \'const "<<i->tName<<"\' type.\n"
@@ -1457,6 +1461,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2005/04/25 15:45:33  gouriano
+* Improve diagnostics
+*
 * Revision 1.67  2005/01/24 20:19:39  ucko
 * When describing a field with a default value, note what it is rather
 * than just that it exists.
