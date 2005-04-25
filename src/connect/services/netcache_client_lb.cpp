@@ -120,12 +120,12 @@ NetCache_ConfigureWithLB(
                     int              backup_mode_mask)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
-#if 1
+#if 0
     SERV_ITER srv_it = SERV_Open(service_name.c_str(),
         fSERV_Any, SERV_LOCALHOST, net_info);
 #else
     SERV_ITER srv_it = SERV_OpenP(service_name.c_str(),
-        fSERV_Any, SERV_LOCALHOST, 90.0, 0, 0, 0, 0);
+        fSERV_Any, SERV_LOCALHOST, 90.0, 0, net_info, 0, 0, 0);
 #endif
     ConnNetInfo_Destroy(net_info);
 
@@ -440,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/25 19:01:39  kuznets
+ * Local host affinity turned ON
+ *
  * Revision 1.16  2005/04/08 13:23:32  kuznets
  * Temp commented out local serv preference (problem on Win)
  *
