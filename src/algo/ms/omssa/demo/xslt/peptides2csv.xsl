@@ -88,7 +88,16 @@ Created by Tom Laudeman, 2005.
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pephits/ncbi:MSPepHit/ncbi:MSPepHit_accession"/>
 	<xsl:text>,"</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pephits/ncbi:MSPepHit/ncbi:MSPepHit_defline"/>
-	<xsl:text>"
+        <xsl:text>","</xsl:text>
+
+        <xsl:for-each select="ancestor::*/ncbi:MSHits_mods/ncbi:MSModHit">
+          <xsl:value-of select="child::ncbi:MSModHit_modtype/ncbi:MSMod/@value"/>
+          <xsl:text>:</xsl:text>
+          <xsl:value-of select="child::ncbi:MSModHit_site+1"/>
+          <xsl:text>,</xsl:text>
+        </xsl:for-each>
+
+        <xsl:text>"
 </xsl:text>
     </xsl:for-each>
   </xsl:template>

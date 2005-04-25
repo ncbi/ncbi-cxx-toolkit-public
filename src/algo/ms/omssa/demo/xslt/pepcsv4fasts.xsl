@@ -37,7 +37,7 @@ Created by Tom Laudeman, 2005.
 <xsl:strip-space elements="*"/>
 
   <xsl:template match="/">
-<xsl:text>Peptide sequence	MSHits_pvalue	ID	accession number
+<xsl:text>Peptide sequence	MSHits_pvalue	ID	MSModHit_site	MSModHit_modtype	MSModHit_value	accession number	Description
 </xsl:text>
 
     <xsl:for-each select="//ncbi:MSHits_pepstring">
@@ -46,11 +46,17 @@ Created by Tom Laudeman, 2005.
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pvalue"/>
 	<xsl:text>	</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHitSet_ids/ncbi:MSHitSet_ids_E"/>
+	<xsl:text>	</xsl:text>
+	<xsl:value-of select="ancestor::*/ncbi:MSHits_mods/ncbi:MSModHit/ncbi:MSModHit_site"/>
+	<xsl:text>	</xsl:text>
+	<xsl:value-of select="ancestor::*/ncbi:MSHits_mods/ncbi:MSModHit/ncbi:MSModHit_modtype/ncbi:MSMod/@value"/>
+	<xsl:text>	</xsl:text>
+	<xsl:value-of select="ancestor::*/ncbi:MSHits_mods/ncbi:MSModHit/ncbi:MSModHit_modtype/ncbi:MSMod"/>
 	<xsl:text>	gi|</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pephits/ncbi:MSPepHit/ncbi:MSPepHit_gi"/>
 	<xsl:text>|ncbi|</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pephits/ncbi:MSPepHit/ncbi:MSPepHit_accession"/>
-	<xsl:text>|</xsl:text>
+	<xsl:text>|	</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pephits/ncbi:MSPepHit/ncbi:MSPepHit_defline"/>
 	<xsl:text>
 </xsl:text>
