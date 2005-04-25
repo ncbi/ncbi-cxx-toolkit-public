@@ -179,7 +179,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if( gi == 6320304){
+    if( gi == 6323138){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -997,15 +997,15 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 
 
 	    while (readdb_get_header_ex(rdfp, MSHit->GetSeqIndex(), &header,
-				     &sip,
-				     &blastdefline, &taxid, NULL, NULL)) {
+                                    &sip,
+                                    &blastdefline, &taxid, NULL, NULL)) {
 
-       	        if(MyRequest.GetSettings().IsSetTaxids()) {
-		    for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
-			if(taxid == *iTax) goto TaxContinue2;
-		    } 
-                }
+            if(MyRequest.GetSettings().IsSetTaxids()) {
+                for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
+                    if(taxid == *iTax) goto TaxContinue2;
+                } 
                 continue;
+            }
 TaxContinue2:
 		string seqstring, modseqstring;
 		string deflinestring(blastdefline);
@@ -1279,6 +1279,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.42  2005/04/25 21:50:33  lewisg
+fix bug in tax filter
+
 Revision 1.41  2005/04/22 15:31:21  lewisg
 fix tax filter on output
 
