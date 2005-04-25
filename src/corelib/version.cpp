@@ -311,7 +311,7 @@ void ParseVersionString(const string&  vstr,
 
 
     if (pos != string::npos) {
-        int pname_end = pos - 1;
+        string::size_type pname_end = pos - 1;
         for (; pname_end >= 0; --pname_end) {
             char ch = vstr[pname_end];
             if (!isspace(ch)) 
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/25 20:21:55  ivanov
+ * Get rid of Workshop compilation warnings
+ *
  * Revision 1.13  2005/04/18 14:26:03  kuznets
  * Improved version string parser
  *

@@ -1888,7 +1888,7 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
       m_Timezone(0), m_Daylight(-1), m_IsTuneup(false)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
-    m_Timezone = TimeZone();
+    m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
     m_LocalTime.SetTimeZonePrecision(CTime::eHour);
@@ -1920,7 +1920,7 @@ void CFastLocalTime::x_Tuneup(time_t timer)
     m_TunedTime.x_SetTime(&timer);
 
 #if !defined(TIMEZONE_IS_UNDEFINED)
-    m_Timezone = TimeZone();
+    m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
     m_LastTuneupTime = timer;
@@ -2086,6 +2086,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/04/25 20:21:55  ivanov
+ * Get rid of Workshop compilation warnings
+ *
  * Revision 1.61  2005/02/17 20:16:31  ivanov
  * CTime::IsValid(): Added leapsecond support.
  * Improved CFastLocalTime work in MT environment -- do not block all

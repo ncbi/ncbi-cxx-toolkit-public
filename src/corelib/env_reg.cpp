@@ -80,7 +80,7 @@ void CEnvironmentRegistry::RemoveMapper(const IEnvRegMapper& mapper)
                 " unknown mapper (already removed?)", 0);
 }
 
-bool CEnvironmentRegistry::x_Empty(TFlags flags) const
+bool CEnvironmentRegistry::x_Empty(TFlags /*flags*/) const
 {
     // return (flags & fTransient) ? m_PriorityMap.empty() : true;
     list<string> l;
@@ -189,7 +189,7 @@ void CEnvironmentRegistry::x_Clear(TFlags flags)
 
 bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
                                  const string& value, TFlags flags,
-                                 const string& comment)
+                                 const string& /*comment*/)
 {
     REV_ITERATE (TPriorityMap, it,
                  const_cast<const TPriorityMap&>(m_PriorityMap)) {
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/25 20:21:55  ivanov
+ * Get rid of Workshop compilation warnings
+ *
  * Revision 1.2  2005/03/14 18:12:20  ucko
  * Tweak for compatibility with WorkShop's STL implementation.
  *

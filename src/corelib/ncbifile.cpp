@@ -948,11 +948,12 @@ bool CDirEntry::GetTime(CTime* modification,
 bool CDirEntry::SetTime(CTime* modification,
                         CTime* creation, CTime* last_access) const
 {
-#if defined(NCBI_OS_MSWIN)
-
     if ( !modification  &&  !creation  &&  !last_access ) {
         return true;
     }
+
+#if defined(NCBI_OS_MSWIN)
+
     FILETIME   x_modification, x_creation, x_lastaccess;
     LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
 
@@ -989,10 +990,6 @@ bool CDirEntry::SetTime(CTime* modification,
     return true;
 
 #elif defined(NCBI_OS_UNIX)
-
-    if ( !modification  &&  !last_access ) {
-        return true;
-    }
 
 #  if defined(HAVE_UTIMES)
     // Get current times
@@ -1063,10 +1060,12 @@ bool CDirEntry::GetTimeT(time_t* modification,
 bool CDirEntry::SetTimeT(time_t* modification,
                          time_t* creation, time_t* last_access) const
 {
-#if defined(NCBI_OS_MSWIN)
     if ( !modification  &&  !creation  &&  !last_access ) {
         return true;
     }
+
+#if defined(NCBI_OS_MSWIN)
+
     FILETIME   x_modification, x_creation, x_lastaccess;
     LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
 
@@ -1100,9 +1099,6 @@ bool CDirEntry::SetTimeT(time_t* modification,
     return true;
 
 #elif defined(NCBI_OS_UNIX)
-    if ( !modification  &&  !last_access ) {
-        return true;
-    }
     // Get current times
     time_t x_modification, x_lastaccess;
     GetTimeT(&x_modification, 0, &x_lastaccess);
@@ -1332,7 +1328,8 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         if ( F_ISSET(flags, fRF_Backup) ) {
             // Use new CDirEntry object for 'dst', because its path
             // will be changed after backup
-            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+            CDirEntry dst_tmp(dst);
+            if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                 return false;
             }
         }
@@ -1956,7 +1953,8 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
         if ( F_ISSET(flags, fCF_Backup) ) {
             // Use new CDirEntry object for 'dst', because its path
             // will be changed after backup
-            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+            CDirEntry dst_tmp(dst);
+            if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                 return false;
             }
         }
@@ -2553,8 +2551,8 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
             if ( F_ISSET(flags, fCF_Backup) ) {
                 // Use new CDirEntry object for 'dst', because its path
                 // will be changed after backup
-                if ( !CDirEntry(dst).Backup(GetBackupSuffix(),
-                                            eBackup_Rename) ) {
+                CDirEntry dst_tmp(dst);
+                if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                     return false;
                 }
                 // Create target directory
@@ -2716,7 +2714,8 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
         if ( F_ISSET(flags, fCF_Backup) ) {
             // Use a new CDirEntry object for 'dst', because its path
             // will be changed after backup
-            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+            CDirEntry dst_tmp(dst);
+            if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                 return false;
             }
         }
@@ -3287,6 +3286,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2005/04/25 20:21:55  ivanov
+ * Get rid of Workshop compilation warnings
+ *
  * Revision 1.95  2005/04/12 16:51:32  ucko
  * Define a dummy fallback version of __GLIBC_PREREQ if necessary.
  *

@@ -131,7 +131,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             if ( !(flags & fPrivate) ) {
                 m_Contents.push_back(result);
                 m_Index[SKey(name0, style0, flags, reg_flags)]
-                    = m_Contents.size() - 1;
+                    = (unsigned int)m_Contents.size() - 1;
             }
             return result;
         }
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/04/25 20:21:55  ivanov
+ * Get rid of Workshop compilation warnings
+ *
  * Revision 1.15  2005/01/25 19:56:41  ucko
  * Hold the single instance with a CSafeStaticPtr rather than a static auto_ptr.
  *
