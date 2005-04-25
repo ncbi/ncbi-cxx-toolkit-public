@@ -2267,7 +2267,7 @@ s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
 {
     int index = 0;
     double best_evalue = (double) INT4_MAX;
-    double diff;
+    const double kDelta = 1.0e-200;
 
     /* There are no HSP's here. */
     if (hsp_list->hspcnt == 0)
@@ -2276,9 +2276,8 @@ s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
     for (index=0; index<hsp_list->hspcnt; index++)
        best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
 
-    diff = ABS(best_evalue-hsp_list->best_evalue)/best_evalue;
     /* check that it's within 1%. */
-    if (best_evalue > 0.0  && diff > 0.01)
+    if (ABS(best_evalue-hsp_list->best_evalue)/(best_evalue+kDelta) > 0.01)
        return FALSE;
 
     return TRUE;
