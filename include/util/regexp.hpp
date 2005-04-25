@@ -189,7 +189,7 @@ public:
     ///   EMatch, GetSub(), GetResult()
     string GetMatch(
         const string& str,
-        TSeqPos       offset   = 0,
+        size_t        offset   = 0,
         size_t        idx      = 0,
         TMatch        flags    = fMatch_default,
         bool          noreturn = false
@@ -577,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/25 18:51:51  ivanov
+ * Using size_t instead TSeqPos
+ *
  * Revision 1.13  2004/11/22 18:02:39  ivanov
  * Added flag CRegexp::fCompile_extended.
  *

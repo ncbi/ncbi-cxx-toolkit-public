@@ -171,7 +171,7 @@ string CRegexp::GetSub(const string& str, size_t idx) const
 
 string CRegexp::GetMatch(
     const string& str,
-    TSeqPos       offset,
+    size_t        offset,
     size_t        idx,
     TMatch        flags,
     bool          noreturn)
@@ -411,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/25 18:51:49  ivanov
+ * Using size_t instead TSeqPos
+ *
  * Revision 1.12  2005/03/04 16:27:36  ivanov
  * Fixed number of round brackets in the F_ISSET macro
  *
