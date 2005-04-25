@@ -201,7 +201,7 @@ void CNetServiceClient::CreateSocket(const string& hostname,
         m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     } else {
         unsigned conn_repeats = 0;
-        const unsigned max_repeats = 3;
+        const unsigned max_repeats = 10;
         
         do {
             EIO_Status io_st = 
@@ -216,7 +216,12 @@ void CNetServiceClient::CreateSocket(const string& hostname,
                     //
                     
                     if (++conn_repeats > max_repeats) {
-                        NCBI_IO_CHECK(io_st);
+                        if ( io_st != eIO_Success) {
+                            throw CIO_Exception(DIAG_COMPILE_INFO,
+                            0, (CIO_Exception::EErrCode)io_st, 
+                               "IO error. Failed to connect to server.");
+                        } 
+                        //NCBI_IO_CHECK(io_st);
                     }
                     // give system a chance to recover
                     
@@ -266,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/25 13:59:58  kuznets
+ * Increased number of reconnect attempts when OS has no more sockets
+ *
  * Revision 1.8  2005/03/24 16:42:17  didenko
  * Changed connection timeout defualt value
  *
