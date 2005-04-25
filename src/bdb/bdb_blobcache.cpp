@@ -2251,7 +2251,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
     unsigned ttl_prolong = 
         GetParamInt(params, kCFParam_ttl_prolong, false, 0);
-    drv->SetTTL_Prolongation(batch_size);
+    drv->SetTTL_Prolongation(ttl_prolong);
 
     unsigned batch_sleep = 
         GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
@@ -2346,6 +2346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2005/04/25 15:34:46  kuznets
+ * Fixed bug in setting blob prolongation limit
+ *
  * Revision 1.112  2005/04/25 14:01:35  kuznets
  * Code cleanup
  *
