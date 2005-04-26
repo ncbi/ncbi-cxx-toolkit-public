@@ -551,7 +551,7 @@ void CReaderRequestResult::EndRecursion(double saved_time)
 }
 
 
-double CReaderRequestResult::GetCurrentTime(double time)
+double CReaderRequestResult::GetCurrentRequestTime(double time)
 {
     double rec_time = m_RecursiveTime;
     if ( rec_time > time ) {

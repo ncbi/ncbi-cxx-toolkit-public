@@ -884,7 +884,7 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
                               CStopWatch& sw)
 {
 #ifdef GB_COLLECT_STATS
-    double time = command.GetResult().GetCurrentTime(sw.Elapsed());
+    double time = command.GetResult().GetCurrentRequestTime(sw.Elapsed());
     command.GetStatistics().add(time);
     if ( CollectStatistics() <= 1 ) {
         return;

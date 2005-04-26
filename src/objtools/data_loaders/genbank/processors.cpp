@@ -1797,7 +1797,7 @@ void CProcessor::LogStat(const char* type,
                          CReaderRequestResult& result)
 {
 #ifdef GB_COLLECT_STATS
-    double time = result.GetCurrentTime(sw.Elapsed());
+    double time = result.GetCurrentRequestTime(sw.Elapsed());
     stat.add(time, size);
     if ( CollectStatistics() <= 1 ) {
         return;

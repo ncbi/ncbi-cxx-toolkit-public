@@ -557,7 +557,7 @@ public:
         double m_SaveTime;
     };
 
-    double GetCurrentTime(double time);
+    double GetCurrentRequestTime(double time);
 
 private:
     friend class CLoadInfoLock;
