@@ -456,7 +456,7 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
             }
         }
     }
-    catch (CException& e) {
+    catch (CException& _DEBUG_ARG(e)) {
         _TRACE("test for circularity failed: " << e.GetMsg());
     }
 
@@ -2768,6 +2768,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.127  2005/04/26 15:36:18  vasilche
+* Fixed warning about unused variable.
+*
 * Revision 1.126  2005/04/11 14:47:57  dicuccio
 * Optimized feature overlap functions GetBestCdsForMrna(), GetBestMrnaForCds(),
 * GetBestGenForMrna(), GetBestMrnaForGene(), GetBestGeneForCds(): rearranged

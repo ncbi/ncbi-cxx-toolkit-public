@@ -196,7 +196,7 @@ void AgpRead(CNcbiIstream& is,
                 try {
                     comp_id.Reset(new CSeq_id(fields[5]));
                 }
-                catch (invalid_argument& e) {
+                catch (invalid_argument& /*e*/) {
                     comp_id.Reset(new CSeq_id);
                 }
             } else {
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.13  2005/04/26 15:36:18  vasilche
+ * Fixed warning about unused variable.
+ *
  * Revision 1.12  2005/02/28 16:05:31  jcherry
  * Initialize variable to eliminate compilation warning
  *
