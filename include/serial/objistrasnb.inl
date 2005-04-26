@@ -127,7 +127,9 @@ CObjectIStreamAsnBinary::TTag
 CObjectIStreamAsnBinary::PeekTag(Uint1 first_tag_byte,
                                  EClass cls, bool constructed)
 {
-    ExpectTagClassByte(first_tag_byte, MakeTagByte(cls, constructed));
+    ExpectTagClassByte(first_tag_byte,
+                       CObjectStreamAsnBinaryDefs::MakeTagByte(cls,
+                                                               constructed));
     return PeekTag(first_tag_byte);
 }
 
@@ -178,6 +180,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/04/26 20:30:25  vasilche
+* Use CObjectStreamAsnBinaryDefs:: scope prefix.
+*
 * Revision 1.7  2005/04/26 15:14:09  vasilche
 * Use scope prefix.
 *
