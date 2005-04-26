@@ -75,7 +75,8 @@ public:
                                   &Equals, &Assign);
         }
 
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return new CTime();
         }
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.6  2004/08/17 14:39:40  dicuccio
 * Dropped unnecessary export specifiers
 *

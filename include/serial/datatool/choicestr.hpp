@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.15  2003/11/20 14:32:11  gouriano
 * changed generated C++ code so NULL data types have no value
 *
@@ -124,7 +127,8 @@ public:
         eSimpleMember,
         eStringMember,
         ePointerMember,
-        eObjectPointerMember
+        eObjectPointerMember,
+        eBufferMember
     };
     struct SVariantInfo {
         string externalName;
@@ -132,6 +136,7 @@ public:
         EMemberType memberType;
         AutoPtr<CTypeStrings> type;
         bool delayed;
+        bool in_union;
         int memberTag;
         bool noPrefix;
         bool attlist;
@@ -140,8 +145,9 @@ public:
         const CDataType* dataType;
 
         SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-            bool delayed, int tag, bool noPrefx, bool attlst, bool noTg,
-            bool simpl, const CDataType* dataTp);
+                     bool delayed, bool in_union,
+                     int tag, bool noPrefx, bool attlst, bool noTg,
+                     bool simpl, const CDataType* dataTp);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -154,7 +160,8 @@ public:
         }
 
     void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed, int tag, bool noPrefix, bool attlist,
+                    bool delayed, bool in_union, int tag,
+                    bool noPrefix, bool attlist,
                     bool noTag, bool simple, const CDataType* dataType);
 
 protected:

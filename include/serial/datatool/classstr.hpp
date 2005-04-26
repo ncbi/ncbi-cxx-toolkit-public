@@ -114,8 +114,6 @@ public:
 
     EKind GetKind(void) const;
 
-    string NewInstance(const string& init) const;
-
     void SetObject(bool isObject)
         {
             m_IsObject = isObject;
@@ -182,8 +180,6 @@ public:
     EKind GetKind(void) const;
     const CNamespace& GetNamespace(void) const;
 
-    string NewInstance(const string& init) const;
-
     string GetResetCode(const string& var) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
@@ -201,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.23  2004/05/19 17:23:25  gouriano
 * Corrected generation of C++ code by DTD for containers
 *

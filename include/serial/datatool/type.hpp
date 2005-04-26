@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.24  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -223,6 +226,7 @@ public:
     string InheritFromClass(void) const;
     const CDataType* InheritFromType(void) const;
     const string GetVar(const string& value) const;
+    bool GetBoolVar(const string& value, bool default_value = false) const;
     void  ForbidVar(const string& var, const string& value);
     void  AllowVar(const string& var, const string& value);
     const string GetAndVerifyVar(const string& value) const;

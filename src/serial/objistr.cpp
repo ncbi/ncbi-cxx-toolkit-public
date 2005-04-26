@@ -525,6 +525,11 @@ void CObjectIStream::SetPathSkipVariantHook(const string& path,
     WatchPathHooks();
 }
 
+void CObjectIStream::UseMemoryPool(void)
+{
+    SetMemoryPool(new CObjectMemoryPool);
+}
+
 string CObjectIStream::GetStackTrace(void) const
 {
     return GetStackTraceASN();
@@ -759,10 +764,14 @@ CObjectInfo CObjectIStream::ReadObject(void)
     TObjectPtr objectPtr;
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
-    objectPtr = typeInfo->Create();
     CRef<CObject> ref;
-    if ( typeInfo->IsCObject() )
+    if ( typeInfo->IsCObject() ) {
+        objectPtr = typeInfo->Create(GetMemoryPool());
         ref.Reset(static_cast<CObject*>(objectPtr));
+    }
+    else {
+        objectPtr = typeInfo->Create();
+    }
     RegisterObject(objectPtr, typeInfo);
     ReadObject(objectPtr, typeInfo);
     if ( typeInfo->IsCObject() )
@@ -834,10 +843,14 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
     case eThisPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: new");
-            objectPtr = declaredType->Create();
             CRef<CObject> ref;
-            if ( declaredType->IsCObject() )
+            if ( declaredType->IsCObject() ) {
+                objectPtr = declaredType->Create(GetMemoryPool());
                 ref.Reset(static_cast<CObject*>(objectPtr));
+            }
+            else {
+                objectPtr = declaredType->Create();
+            }
             RegisterObject(objectPtr, declaredType);
             ReadObject(objectPtr, declaredType);
             if ( declaredType->IsCObject() )
@@ -853,13 +866,17 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 
             BEGIN_OBJECT_FRAME2(eFrameNamed, objectType);
                 
-            objectPtr = objectType->Create();
             CRef<CObject> ref;
-            if ( declaredType->IsCObject() )
+            if ( objectType->IsCObject() ) {
+                objectPtr = objectType->Create(GetMemoryPool());
                 ref.Reset(static_cast<CObject*>(objectPtr));
+            }
+            else {
+                objectPtr = objectType->Create();
+            }
             RegisterObject(objectPtr, objectType);
             ReadObject(objectPtr, objectType);
-            if ( declaredType->IsCObject() )
+            if ( objectType->IsCObject() )
                 ref.Release();
                 
             END_OBJECT_FRAME();
@@ -1524,6 +1541,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.136  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.135  2005/02/09 14:26:00  gouriano
 * Check type name for being non-empty when skipping file header
 *

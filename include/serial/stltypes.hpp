@@ -208,7 +208,8 @@ public:
             return CTypeConverter<TObjectType>::Get(objectPtr);
         }
 
-    static TObjectPtr CreateContainer(TTypeInfo /*objectType*/)
+    static TObjectPtr CreateContainer(TTypeInfo /*objectType*/,
+                                      CObjectMemoryPool* /*memoryPool*/)
         {
             return new TObjectType();
         }
@@ -772,6 +773,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.74  2005/02/09 14:22:57  gouriano
 * Added CreateSetTypeInfo() with name argument - to fix serialization
 *

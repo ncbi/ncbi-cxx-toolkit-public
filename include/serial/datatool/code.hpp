@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.12  2004/05/03 19:31:21  gouriano
 * Made generation of DOXYGEN-style comments optional
 *
@@ -148,10 +151,12 @@ public:
     TIncludes& CPPIncludes(void);
     void AddForwardDeclaration(const string& s, const CNamespace& ns);
     void AddInitializer(const string& member, const string& init);
+    void AddConstructionCode(const string& code);
     void AddDestructionCode(const string& code);
 
     bool HaveInitializers(void) const;
     CNcbiOstream& WriteInitializers(CNcbiOstream& out) const;
+    CNcbiOstream& WriteConstructionCode(CNcbiOstream& out) const;
     CNcbiOstream& WriteDestructionCode(CNcbiOstream& out) const;
 
     CNcbiOstream& ClassPublic(void)
@@ -221,6 +226,7 @@ private:
     CNcbiOstrstream m_ClassProtected;
     CNcbiOstrstream m_ClassPrivate;
     CNcbiOstrstream m_Initializers;
+    list<string> m_ConstructionCode;
     list<string> m_DestructionCode;
     CNcbiOstrstream m_InlineMethods;
     CNcbiOstrstream m_Methods;

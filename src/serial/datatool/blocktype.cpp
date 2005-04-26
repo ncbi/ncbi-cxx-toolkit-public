@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.58  2005/02/22 17:44:15  gouriano
 * removed unused variable
 *
@@ -271,7 +274,8 @@ public:
         }
 
 protected:
-    static TObjectPtr CreateAnyTypeClass(TTypeInfo objectType)
+    static TObjectPtr CreateAnyTypeClass(TTypeInfo objectType,
+                                         CObjectMemoryPool* /*memoryPool*/)
         {
             size_t size = objectType->GetSize();
             TObjectPtr obj = new char[size];
@@ -787,7 +791,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         isObject = true;
     }
     else {
-        isObject = !GetVar("_object").empty();
+        isObject = GetBoolVar("_object");
     }
 */
     code->SetHaveUserClass(haveUserClass);
@@ -801,7 +805,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
             _ASSERT(!defaultCode.empty());
         }
 
-        bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
+        bool delayed = GetBoolVar((*i)->GetName()+"._delay");
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("_pointer"),

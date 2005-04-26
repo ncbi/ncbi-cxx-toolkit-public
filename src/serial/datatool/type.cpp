@@ -263,6 +263,26 @@ const string CDataType::GetVar(const string& varName) const
     }
 }
 
+bool CDataType::GetBoolVar(const string& varName, bool default_value) const
+{
+    string value = GetVar(varName);
+    NStr::TruncateSpacesInPlace(value);
+    if ( value.empty() ) {
+        return default_value;
+    }
+    try {
+        return NStr::StringToBool(value);
+    }
+    catch ( CException& /*ignored*/ ) {
+    }
+    try {
+        return NStr::StringToInt(value) != 0;
+    }
+    catch ( CException& /*ignored*/ ) {
+    }
+    return default_value;
+}
+
 void  CDataType::ForbidVar(const string& var, const string& value)
 {
     typedef multimap<string, string> TMultimap;
@@ -684,6 +704,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.81  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *

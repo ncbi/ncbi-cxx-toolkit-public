@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.2  2004/09/07 14:09:45  grichenk
 * Fixed assignment of default value to aliased types
 *
@@ -70,7 +73,7 @@ public:
     bool CanBeCopied(void) const;
     // bool NeedSetFlag(void) const;
 
-    string NewInstance(const string& init) const;
+    string NewInstance(const string& init, const string& place) const;
 
     string GetInitializer(void) const;
     string GetDestructionCode(const string& expr) const;
@@ -117,8 +120,6 @@ public:
     // bool NeedSetFlag(void) const;
 
     const CNamespace& GetNamespace(void) const;
-
-    string NewInstance(const string& init) const;
 
     string GetInitializer(void) const;
     string GetDestructionCode(const string& expr) const;

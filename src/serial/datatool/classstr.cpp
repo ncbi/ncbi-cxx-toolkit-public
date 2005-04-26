@@ -181,11 +181,6 @@ string CClassTypeStrings::GetRef(const CNamespace& /*ns*/) const
     return "CLASS, ("+GetClassNameDT()+')';
 }
 
-string CClassTypeStrings::NewInstance(const string& init) const
-{
-    return "new "+GetCType(CNamespace::KEmptyNamespace)+"("+init+')';
-}
-
 string CClassTypeStrings::GetResetCode(const string& var) const
 {
     return var+".Reset();\n";
@@ -268,10 +263,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
     code.Methods() <<
         "{\n";
-    if (typeid(*this) == typeid(CClassTypeStrings)) {
-        code.Methods() <<
-            "    memset("SET_PREFIX",0,sizeof("SET_PREFIX"));\n";
-    }
+    code.WriteConstructionCode(code.Methods());
     code.Methods() <<
         "}\n"
         "\n";
@@ -453,7 +445,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     // use special boolean flag
                     inlineMethods <<
                         "    return (("SET_PREFIX"["<<set_index<<"] & 0x"<<
-                            hex<<set_mask<<dec<<") != 0);\n";
+                        hex<<set_mask<<dec<<") != 0);\n";
                 }
                 else {
                     if ( i->delayed ) {
@@ -506,7 +498,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"
                     "bool "<<methodPrefix<<"CanGet"<<i->cName<<"(void) const\n"
                     "{\n";
-                if (!i->defaultValue.empty() || i->type->GetKind() == eKindContainer) {
+                if (!i->defaultValue.empty() ||
+                    i->type->GetKind() == eKindContainer ||
+                    (i->ref && !i->canBeNull)) {
                     inlineMethods <<"    return true;\n";
                 } else {
                     if (isNull || isNullWithAtt) {
@@ -547,6 +541,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
             }
             WriteTabbed(code.Methods(inl), destructionCode);
+            if ( (i->ref && !i->canBeNull) ) {
+                if ( assignValue.empty() )
+                    assignValue = i->type->GetInitializer();
+                code.Methods(inl) <<
+                    "    if ( !"<<i->mName<<" ) {\n"
+                    "        "<<i->mName<<".Reset(new "<<i->tName<<"("<<assignValue<<"));\n"
+                    "        return;\n"
+                    "    }\n";
+            }
             if ( i->ref ) {
                 if ( !i->optional ) {
                     // just reset value
@@ -555,6 +558,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         WriteTabbed(code.Methods(inl), resetCode);
                     }
                     else {
+                        // WHEN DOES THIS HAPPEN???
                         code.Methods(inl) <<
                             "    "<<i->valueName<<" = "<<i->type->GetInitializer()<<";\n";
                     }
@@ -633,8 +637,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.Methods(inl) <<
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
-                if (i->defaultValue.empty() &&
-                    i->type->GetKind() != eKindContainer && !isNullWithAtt) {
+                if ( (i->ref && !i->canBeNull) ) {
+                    code.Methods(inl) <<
+                        "    if ( !"<<i->mName<<" ) {\n"
+                        "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<i->cName<<"();\n"
+                        "    }\n";
+                }
+                else if (i->defaultValue.empty() &&
+                         i->type->GetKind() != eKindContainer &&
+                         !isNullWithAtt) {
                     code.Methods(inl) <<
                         "    if (!CanGet"<< i->cName<<"()) {\n"
                         "        ThrowUnassigned("<<member_index<<");\n"
@@ -714,6 +725,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         inlineMethods <<
                             "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                     }
+                    if ( (i->ref && !i->canBeNull) ) {
+                        inlineMethods <<
+                            "    if ( !"<<i->mName<<" ) {\n"
+                            "        Reset"<<i->cName<<"();\n"
+                            "    }\n";
+                    }
                     if ( i->haveFlag) {
                         inlineMethods <<
                             "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
@@ -735,7 +752,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             ITERATE ( TMembers, ir, typeStr->m_Members ) {
                                 if (ir->simple) {
                                     string ircType(ir->type->GetCType(
-                                        code.GetNamespace()));
+                                                       code.GetNamespace()));
                                     if (CClassCode::GetDoxygenComments()) {
                                         setters <<
                                             "\n"
@@ -954,23 +971,23 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "\n";
         code.ClassPrivate() <<
             "    // data\n";
-		{
-	        if (m_Members.size() !=0) {
-	            code.ClassPrivate() <<
+        {
+            if (m_Members.size() !=0) {
+                code.ClassPrivate() <<
                     "    Uint4 "SET_PREFIX<<"["<<
                     (2*m_Members.size()-1+8*sizeof(Uint4))/(8*sizeof(Uint4)) <<"];\n";
             }
         }
-		{
-	        ITERATE ( TMembers, i, m_Members ) {
-		        if ( i->delayed ) {
-			        code.ClassPrivate() <<
-				        "    mutable NCBI_NS_NCBI::CDelayBuffer "DELAY_PREFIX<<i->cName<<";\n";
-				}
-			}
+        {
+            ITERATE ( TMembers, i, m_Members ) {
+                if ( i->delayed ) {
+                    code.ClassPrivate() <<
+                        "    mutable NCBI_NS_NCBI::CDelayBuffer "DELAY_PREFIX<<i->cName<<";\n";
+                }
+            }
         }
-		{
-			ITERATE ( TMembers, i, m_Members ) {
+        {
+            ITERATE ( TMembers, i, m_Members ) {
                 if ( i->ref ) {
                     code.ClassPrivate() <<
                         "    "<<ncbiNamespace<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
@@ -981,34 +998,35 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    "<<i->tName<<" "<<i->mName<<";\n";
                     }
                 }
-		    }
-		}
+            }
+        }
     }
 
     // generate member initializers
     {
-        {
+        bool has_non_null_refs = false;
+        ITERATE ( TMembers, i, m_Members ) {
+            if ( (i->ref && !i->canBeNull) ) {
+                has_non_null_refs = true;
+            }
+            else if ( !i->ref && !x_IsNullType(i) ) {
+                string init = i->defaultValue;
+                if ( init.empty() )
+                    init = i->type->GetInitializer();
+                if ( !init.empty() )
+                    code.AddInitializer(i->mName, init);
+            }
+        }
+        code.AddConstructionCode
+            ("memset("SET_PREFIX",0,sizeof("SET_PREFIX"));\n");
+        if ( has_non_null_refs ) {
+            code.AddConstructionCode("if ( !IsAllocatedInPool() ) {\n");
             ITERATE ( TMembers, i, m_Members ) {
-                if ( i->ref ) {
-                    if ( !i->canBeNull ) {
-                        string init = i->defaultValue;
-                        if ( init.empty() ) {
-                            init = i->type->GetInitializer();
-                        }
-                        code.AddInitializer(i->mName,
-                                            i->type->NewInstance(init));
-                    }
-                }
-                else {
-                    if (!x_IsNullType(i)) {
-                        string init = i->defaultValue;
-                        if ( init.empty() )
-                            init = i->type->GetInitializer();
-                        if ( !init.empty() )
-                            code.AddInitializer(i->mName, init);
-                    }
+                if ( (i->ref && !i->canBeNull) ) {
+                    code.AddConstructionCode("    Reset"+i->cName+"();\n");
                 }
             }
+            code.AddConstructionCode("}\n");
         }
     }
 
@@ -1092,14 +1110,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {
                     NCBI_THROW(CDatatoolException,eInvalidData,
-                        "No explicit tag for some members in " +
-                        GetModuleName());
+                               "No explicit tag for some members in " +
+                               GetModuleName());
                 }
                 if ( tag_map[i->memberTag] )
                     NCBI_THROW(CDatatoolException,eInvalidData,
-                        "Duplicate tag: " + i->cName +
-                        " [" + NStr::IntToString(i->memberTag) + "] in " +
-                        GetModuleName());
+                               "Duplicate tag: " + i->cName +
+                               " [" + NStr::IntToString(i->memberTag) + "] in " +
+                               GetModuleName());
                 tag_map[i->memberTag] = true;
                 useTags = true;
             }
@@ -1107,8 +1125,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 hasUntagged = true;
                 if ( useTags ) {
                     NCBI_THROW(CDatatoolException,eInvalidData,
-                        "No explicit tag for " + i->cName + " in " +
-                        GetModuleName());
+                               "No explicit tag for " + i->cName + " in " +
+                               GetModuleName());
                 }
             }
 
@@ -1177,7 +1195,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( ref )
                     methods << ')';
                 methods << ')';
-              if ( i->haveFlag )
+                if ( i->haveFlag )
                     methods <<
                         "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
             }
@@ -1445,11 +1463,6 @@ string CClassRefTypeStrings::GetRef(const CNamespace& ns) const
     return "CLASS, ("+GetCType(ns)+')';
 }
 
-string CClassRefTypeStrings::NewInstance(const string& init) const
-{
-    return "new "+GetCType(CNamespace::KEmptyNamespace)+"("+init+')';
-}
-
 string CClassRefTypeStrings::GetResetCode(const string& var) const
 {
     return var+".Reset();\n";
@@ -1461,6 +1474,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.68  2005/04/25 15:45:33  gouriano
 * Improve diagnostics
 *

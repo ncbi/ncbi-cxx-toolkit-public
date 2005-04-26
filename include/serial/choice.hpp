@@ -60,7 +60,8 @@ public:
     typedef void (*TResetFunction)(const CChoiceTypeInfo* choiceType,
                                    TObjectPtr choicePtr);
     typedef void (*TSelectFunction)(const CChoiceTypeInfo* choiceType,
-                                    TObjectPtr choicePtr, TMemberIndex index);
+                                    TObjectPtr choicePtr, TMemberIndex index,
+                                    CObjectMemoryPool* memPool);
     typedef void (*TSelectDelayFunction)(const CChoiceTypeInfo* choiceType,
                                          TObjectPtr choicePtr,
                                          TMemberIndex index);
@@ -115,7 +116,8 @@ public:
     // iterators interface
     TMemberIndex GetIndex(TConstObjectPtr object) const;
     void ResetIndex(TObjectPtr object) const;
-    void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    void SetIndex(TObjectPtr object, TMemberIndex index,
+                  CObjectMemoryPool* pool = 0) const;
     void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
 
     TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const;
@@ -150,6 +152,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.23  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

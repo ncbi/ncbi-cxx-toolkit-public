@@ -467,7 +467,7 @@ void CVariantInfoFunctions::ReadInlineVariant(CObjectIStream& in,
     _ASSERT(variantInfo->IsInline());
     const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
     TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
+    choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
     in.ReadObject(variantInfo->GetItemPtr(choicePtr),
                   variantInfo->GetTypeInfo());
 }
@@ -480,7 +480,7 @@ void CVariantInfoFunctions::ReadPointerVariant(CObjectIStream& in,
     _ASSERT(variantInfo->IsNonObjectPointer());
     const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
     TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
+    choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
     TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
     variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
     _ASSERT(variantPtr != 0 );
@@ -495,7 +495,7 @@ void CVariantInfoFunctions::ReadObjectPointerVariant(CObjectIStream& in,
     _ASSERT(variantInfo->IsObjectPointer());
     const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
     TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
+    choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
     TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
     variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
     _ASSERT(variantPtr != 0 );
@@ -510,7 +510,7 @@ void CVariantInfoFunctions::ReadSubclassVariant(CObjectIStream& in,
     _ASSERT(variantInfo->IsSubClass());
     const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
     TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
+    choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
     const CChoicePointerTypeInfo* choicePtrType =
         CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
     TObjectPtr variantPtr =
@@ -546,7 +546,7 @@ void CVariantInfoFunctions::ReadDelayedVariant(CObjectIStream& in,
         _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
     }
     // select for reading
-    choiceType->SetIndex(choicePtr, index);
+    choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
 
     TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
     if ( variantInfo->IsPointer() ) {
@@ -884,6 +884,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.16  2004/09/09 19:18:24  vasilche
 * Some object streams require class/choice to be in stack.
 *

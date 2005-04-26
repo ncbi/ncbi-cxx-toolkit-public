@@ -57,9 +57,9 @@ bool CTypeInfo::IsOrMayContainType(TTypeInfo typeInfo) const
 }
 
 inline
-TObjectPtr CTypeInfo::Create(void) const
+TObjectPtr CTypeInfo::Create(CObjectMemoryPool* memoryPool) const
 {
-    return m_CreateFunction(this);
+    return m_CreateFunction(this, memoryPool);
 }
 
 inline
@@ -125,6 +125,9 @@ bool CTypeInfo::IsCObject(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.11  2003/12/01 19:04:22  grichenk
 * Moved Add and Sub from serialutil to ncbimisc, made them methods
 * of CRawPointer class.

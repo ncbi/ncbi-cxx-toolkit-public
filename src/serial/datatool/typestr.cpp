@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.24  2004/09/07 14:09:45  grichenk
 * Fixed assignment of default value to aliased types
 *
@@ -221,9 +224,16 @@ bool CTypeStrings::NeedSetFlag(void) const
     }
 }
 
-string CTypeStrings::NewInstance(const string& init) const
+string CTypeStrings::NewInstance(const string& init,
+                                 const string& place) const
 {
-    return "new "+GetCType(CNamespace::KEmptyNamespace)+'('+init+')';
+    CNcbiOstrstream s;
+    s << "new";
+    if ( GetKind() == eKindObject ) {
+        s << place;
+    }
+    s << ' ' << GetCType(CNamespace::KEmptyNamespace) << '(' << init << ')';
+    return CNcbiOstrstreamToString(s);
 }
 
 string CTypeStrings::GetIsSetCode(const string& /*var*/) const

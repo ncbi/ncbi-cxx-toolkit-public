@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.52  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()
@@ -290,22 +293,22 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     const AutoPtr<CTypeStrings>& type,
-                                    bool delayed, int tag,
+                                    bool delayed, bool in_union, int tag,
                                     bool noPrefix, bool attlist, bool noTag,
                                     bool simple, const CDataType* dataType)
 {
-    m_Variants.push_back(SVariantInfo(name, type, delayed, tag,
+    m_Variants.push_back(SVariantInfo(name, type, delayed, in_union, tag,
                                       noPrefix,attlist,noTag,simple,dataType));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
                                                const AutoPtr<CTypeStrings>& t,
-                                               bool del, int tag,
+                                               bool del, bool in_un, int tag,
                                                bool noPrefx, bool attlst,
                                                bool noTg,bool simpl,
                                                const CDataType* dataTp)
     : externalName(name), cName(Identifier(name)),
-      type(t), delayed(del), memberTag(tag),
+      type(t), delayed(del), in_union(in_un), memberTag(tag),
       noPrefix(noPrefx), attlist(attlst), noTag(noTg), simple(simpl),
       dataType(dataTp)
 {
@@ -326,7 +329,7 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
         memberType = ePointerMember;
         break;
     default:
-        memberType = ePointerMember;
+        memberType = in_union? eBufferMember: ePointerMember;
         break;
     }
 }
@@ -366,6 +369,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     bool haveString = false;
     bool delayed = false;
     bool haveAttlist = false;
+    bool haveBuffer = false;
     string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
@@ -389,7 +393,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 haveSimple = true;
                 i->type->GenerateTypeCode(code);
                 break;
+            case eBufferMember:
+                haveBuffer = true;
+                i->type->GenerateTypeCode(code);
+                break;
             case eStringMember:
+                if ( i->in_union ) {
+                    haveBuffer = true;
+                }
                 haveString = true;
                 i->type->GenerateTypeCode(code);
                 break;
@@ -401,9 +412,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     if ( delayed )
         code.HPPIncludes().insert("serial/delaybuf");
 
-    bool haveUnion = havePointers || haveSimple ||
+    bool haveUnion = havePointers || haveSimple || haveBuffer ||
         (haveString && haveObjectPointer);
-    if ( haveString && haveUnion ) {
+    if ( haveString && haveUnion && !haveBuffer ) {
         // convert string member to pointer member
         havePointers = true;
     }
@@ -547,6 +558,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     }
     setters <<
         "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
+    setters <<
+        "    /// Select the requested variant if needed,\n"
+        "    /// allocating CObject variants from memory pool.\n";
+    setters <<
+        "    void Select("STATE_ENUM" index,\n"
+        "                "<<ncbiNamespace<<"EResetVariant reset,\n"
+        "                "<<ncbiNamespace<<"CObjectMemoryPool* pool);\n";
     if ( delayed ) {
         setters <<
             "    /// Select the requested variant using delay buffer (for internal use).\n";
@@ -580,13 +598,19 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset)\n"
+        "void "<<methodPrefix<<"Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
         "{\n"
         "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || "STATE_MEMBER" != index ) {\n"
         "        if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
         "            Reset();\n"
-        "        DoSelect(index);\n"
+        "        DoSelect(index, pool);\n"
         "    }\n"
+        "}\n"
+        "\n"
+        "inline\n"
+        "void "<<methodPrefix<<"Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset)\n"
+        "{\n"
+        "    Select(index, reset, 0);\n"
         "}\n"
         "\n";
     if ( delayed ) {
@@ -626,7 +650,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "    // choice state\n"
         "    "STATE_ENUM" "STATE_MEMBER";\n"
         "    // helper methods\n"
-        "    void DoSelect("STATE_ENUM" index);\n";
+        "    void DoSelect("STATE_ENUM" index, "<<ncbiNamespace<<"CObjectMemoryPool* pool = 0);\n";
     if ( HaveAssignment() ) {
         code.ClassPrivate() <<
             "    void DoAssign(const "<<codeClassName<<"& src);\n";
@@ -667,7 +691,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
         }
-        if ( haveObjectPointer || havePointers || haveString ) {
+        if ( haveObjectPointer || havePointers || haveString || haveBuffer ) {
             if ( delayed ) {
                 methods <<
                     "    if ( "DELAY_MEMBER" )\n"
@@ -691,6 +715,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "        delete m_"<<i->cName<<";\n"
                         "        break;\n";
                 }
+                if ( i->memberType == eBufferMember ) {
+                    methods <<
+                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                    WriteTabbed(methods, 
+                                i->type->GetDestructionCode("*m_"+i->cName),
+                                "        ");
+                    methods <<
+                        "        m_"<<i->cName<<".Destruct();\n"
+                        "        break;\n";
+                }
             }
             if ( haveString ) {
                 // generate destruction code for string
@@ -705,8 +739,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( haveUnion ) {
                     // string is pointer inside union
-                    methods <<
-                        "        delete "STRING_MEMBER";\n";
+                    if ( haveBuffer ) {
+                        methods <<
+                            "        "STRING_MEMBER".Destruct();\n";
+                    }
+                    else {
+                        methods <<
+                            "        delete "STRING_MEMBER";\n";
+                    }
                 }
                 else {
                     methods <<
@@ -762,6 +802,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "        m_"<<i->cName<<" = new T"<<i->cName<<"(*src.m_"<<i->cName<<");\n"
                     "        break;\n";
                 break;
+            case eBufferMember:
+                methods <<
+                    "    case "STATE_PREFIX<<i->cName<<":\n"
+                    "        m_"<<i->cName<<".Construct();\n"
+                    "        *m_"<<i->cName<<" = *src.m_"<<i->cName<<";\n"
+                    "        break;\n";
+                break;
             case eStringMember:
                 _ASSERT(haveString);
                 // will be handled specially
@@ -781,13 +828,20 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
             if ( haveUnion ) {
-                // string is pointer
-                methods <<
-                    "        "STRING_MEMBER" = src."STRING_MEMBER";\n";
+                if ( haveBuffer ) {
+                    methods <<
+                        "        "STRING_MEMBER".Construct();\n"
+                        "        *"STRING_MEMBER" = *src."STRING_MEMBER";\n";
+                }
+                else {
+                    // string is pointer
+                    methods <<
+                        "        "STRING_MEMBER" = new "STRING_TYPE_FULL"(*src."STRING_MEMBER");\n";
+                }
             }
             else {
                 methods <<
-                    "        "STRING_MEMBER" = new "STRING_TYPE_FULL"(*src."STRING_MEMBER");\n";
+                    "        "STRING_MEMBER" = src."STRING_MEMBER";\n";
             }
             methods <<
                 "        break;\n";
@@ -817,7 +871,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Select method
     {
         methods <<
-            "void "<<methodPrefix<<"DoSelect("STATE_ENUM" index)\n"
+            "void "<<methodPrefix<<"DoSelect("STATE_ENUM" index, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
             "{\n";
         if ( haveUnion || haveObjectPointer ) {
             methods <<
@@ -842,10 +896,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "        m_"<<i->cName<<" = "<<i->type->NewInstance(NcbiEmptyString)<<";\n"
                         "        break;\n";
                     break;
+                case eBufferMember:
+                    methods <<
+                        "    case "STATE_PREFIX<<i->cName<<":\n"
+                        "        m_"<<i->cName<<".Construct();\n"
+                        "        break;\n";
+                    break;
                 case eObjectPointerMember:
                     methods <<
                         "    case "STATE_PREFIX<<i->cName<<":\n"
-                        "        ("OBJECT_MEMBER" = "<<i->type->NewInstance(NcbiEmptyString)<<")->AddReference();\n"
+                        "        ("OBJECT_MEMBER" = "<<i->type->NewInstance(NcbiEmptyString, "(pool)")<<")->AddReference();\n"
                         "        break;\n";
                     break;
                 case eStringMember:
@@ -860,9 +920,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                             "    case "STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
-                methods <<
-                    "        "STRING_MEMBER" = new "STRING_TYPE_FULL";\n"
-                    "        break;\n";
+                if ( haveBuffer ) {
+                    methods <<
+                        "        "STRING_MEMBER".Construct();\n"
+                        "        break;\n";
+                }
+                else {
+                    methods <<
+                        "        "STRING_MEMBER" = new "STRING_TYPE_FULL";\n"
+                        "        break;\n";
+                }
             }
             methods <<
                 "    default:\n"
@@ -1085,6 +1152,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 memberRef = constMemberRef = "m_"+i->cName;
                 break;
             case ePointerMember:
+            case eBufferMember:
                 memberRef = constMemberRef = "*m_"+i->cName;
                 break;
             case eStringMember:
@@ -1301,14 +1369,30 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     code.ClassPrivate() <<
                         "        T"<<i->cName<<" *m_"<<i->cName<<";\n";
                 }
+                else if ( i->memberType == eBufferMember ) {
+                    code.ClassPrivate() <<
+                        "        NCBI_NS_NCBI::CUnionBuffer<T"<<i->cName<<"> m_"<<i->cName<<";\n";
+                }
             }
             if ( haveString ) {
-                code.ClassPrivate() <<
-                    "        "STRING_TYPE_FULL" *"STRING_MEMBER";\n";
+                if ( haveBuffer ) {
+                    code.ClassPrivate() <<
+                        "        NCBI_NS_NCBI::CUnionBuffer<"STRING_TYPE_FULL"> "STRING_MEMBER";\n";
+                }
+                else {
+                    code.ClassPrivate() <<
+                        "        "STRING_TYPE_FULL" *"STRING_MEMBER";\n";
+                }
             }
             if ( haveObjectPointer ) {
                 code.ClassPrivate() <<
                     "        "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
+            }
+            if ( haveBuffer && !havePointers && !haveObjectPointer ) {
+                // we should add some union member to force alignment
+                // any pointer seems enough for this
+                code.ClassPrivate() <<
+                    "        void* m_dummy_pointer_for_alignment;\n";
             }
             code.ClassPrivate() <<
                 "    };\n";
@@ -1396,6 +1480,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << "PTR_";
                 addRef = true;
                 break;
+            case eBufferMember:
+                methods << "BUF_";
+                addRef = true;
+                break;
             case eObjectPointerMember:
                 methods << "REF_";
                 addCType = true;
@@ -1420,7 +1508,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 break;
             case eStringMember:
                 if ( haveUnion ) {
-                    methods << "PTR_";
+                    if ( haveBuffer ) {
+                        methods << "BUF_";
+                    }
+                    else {
+                        methods << "PTR_";
+                    }
                     addRef = true;
                 }
                 else if ( i->type->HaveSpecialRef() ) {

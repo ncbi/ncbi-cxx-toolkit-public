@@ -72,7 +72,8 @@ protected:
                                     TConstObjectPtr choicePtr);
     static void SetPtrIndex(const CChoiceTypeInfo* choiceType,
                             TObjectPtr choicePtr,
-                            TMemberIndex index);
+                            TMemberIndex index,
+                            CObjectMemoryPool* memPool);
     static void ResetPtrIndex(const CChoiceTypeInfo* choiceType,
                               TObjectPtr choicePtr);
 
@@ -105,6 +106,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.25  2003/04/15 14:14:55  siyan
 * Added doxygen support
 *

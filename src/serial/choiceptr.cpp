@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.30  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -285,7 +288,8 @@ void CChoicePointerTypeInfo::ResetPtrIndex(const CChoiceTypeInfo* choiceType,
 
 void CChoicePointerTypeInfo::SetPtrIndex(const CChoiceTypeInfo* choiceType,
                                          TObjectPtr choicePtr,
-                                         TMemberIndex index)
+                                         TMemberIndex index,
+                                         CObjectMemoryPool* memPool)
 {
     const CChoicePointerTypeInfo* choicePtrType = 
         CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
@@ -294,13 +298,14 @@ void CChoicePointerTypeInfo::SetPtrIndex(const CChoiceTypeInfo* choiceType,
     _ASSERT(!ptrType->GetObjectPointer(choicePtr));
     const CVariantInfo* variantInfo = choicePtrType->GetVariantInfo(index);
     ptrType->SetObjectPointer(choicePtr,
-                              variantInfo->GetTypeInfo()->Create());
+                              variantInfo->GetTypeInfo()->Create(memPool));
 }
 
 class CNullFunctions
 {
 public:
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return 0;
         }

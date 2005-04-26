@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.43  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -267,6 +270,13 @@ void CClassCode::AddInitializer(const string& member, const string& init)
     m_Initializers << member << '(' << init << ')';
 }
 
+void CClassCode::AddConstructionCode(const string& code)
+{
+    if ( code.empty() )
+        return;
+    m_ConstructionCode.push_back(code);
+}
+
 void CClassCode::AddDestructionCode(const string& code)
 {
     if ( code.empty() )
@@ -277,6 +287,14 @@ void CClassCode::AddDestructionCode(const string& code)
 CNcbiOstream& CClassCode::WriteInitializers(CNcbiOstream& out) const
 {
     return Write(out, m_Initializers);
+}
+
+CNcbiOstream& CClassCode::WriteConstructionCode(CNcbiOstream& out) const
+{
+    ITERATE ( list<string>, i, m_ConstructionCode ) {
+        WriteTabbed(out, *i);
+    }
+    return out;
 }
 
 CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const

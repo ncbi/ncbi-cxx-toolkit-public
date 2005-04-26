@@ -47,7 +47,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT CVoidTypeFunctions
 {
 public:
-    static TObjectPtr Create(TTypeInfo objectType);
+    static TObjectPtr Create(TTypeInfo objectType,
+                             CObjectMemoryPool* memPool);
 
     static bool IsDefault(TConstObjectPtr objectPtr);
     static void SetDefault(TObjectPtr objectPtr);
@@ -80,6 +81,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.5  2004/03/25 15:57:55  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

@@ -46,9 +46,10 @@ void CChoiceTypeInfo::ResetIndex(TObjectPtr object) const
 
 inline
 void CChoiceTypeInfo::SetIndex(TObjectPtr object,
-                               TMemberIndex index) const
+                               TMemberIndex index,
+                               CObjectMemoryPool* memPool) const
 {
-    m_SelectFunction(this, object, index);
+    m_SelectFunction(this, object, index, memPool);
 }
 
 inline
@@ -98,6 +99,9 @@ TObjectPtr CChoiceTypeInfo::GetData(TObjectPtr object,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.4  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

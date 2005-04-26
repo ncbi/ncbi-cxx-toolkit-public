@@ -90,7 +90,8 @@ protected:
                            TObjectPtr objectPtr,
                            TObjectPtr dataPtr);
 
-    static TObjectPtr CreatePointer(TTypeInfo objectType);
+    static TObjectPtr CreatePointer(TTypeInfo objectType,
+                                    CObjectMemoryPool* memoryPool);
 
     static void ReadPointer(CObjectIStream& in,
                             TTypeInfo objectType,
@@ -126,6 +127,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.29  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

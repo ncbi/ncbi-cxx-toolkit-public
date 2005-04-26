@@ -83,7 +83,8 @@ public:
                                 const string& value) const;
 
 protected:
-    static TObjectPtr CreateEnum(TTypeInfo objectType);
+    static TObjectPtr CreateEnum(TTypeInfo objectType,
+                                 CObjectMemoryPool* memoryPool);
     static void ReadEnum(CObjectIStream& in,
                          TTypeInfo objectType, TObjectPtr objectPtr);
     static void WriteEnum(CObjectOStream& out,
@@ -114,6 +115,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.16  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

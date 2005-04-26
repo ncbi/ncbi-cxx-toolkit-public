@@ -66,6 +66,7 @@ class CCopyObjectHook;
 class CTypeInfoFunctions;
 
 class CNamespaceInfoItem;
+class CObjectMemoryPool;
 
 // CTypeInfo class contains all information about C++ types (both basic and
 // classes): members and layout in memory.
@@ -77,7 +78,8 @@ protected:
     CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name);
 public:
     // various function pointers
-    typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType);
+    typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType,
+                                      CObjectMemoryPool* memoryPool);
 
     virtual ~CTypeInfo(void);
 
@@ -105,7 +107,7 @@ public:
     size_t GetSize(void) const;
 
     // creates object of this type in heap (can be deleted by operator delete)
-    TObjectPtr Create(void) const;
+    TObjectPtr Create(CObjectMemoryPool* memoryPool = 0) const;
 
     // deletes object
     virtual void Delete(TObjectPtr object) const;
@@ -226,6 +228,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.46  2004/03/25 15:57:55  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

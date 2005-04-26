@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.6  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -106,7 +109,8 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
     return new COldAsnTypeInfo(name, newProc, freeProc, readProc, writeProc);
 }
 
-static TObjectPtr CreateAsnStruct(TTypeInfo info)
+static TObjectPtr CreateAsnStruct(TTypeInfo info,
+                                  CObjectMemoryPool* /*memoryPool*/)
 {
     TObjectPtr object = calloc(info->GetSize(), 1);
     if ( !object )
@@ -137,7 +141,8 @@ static TMemberIndex WhichAsn(const CChoiceTypeInfo* /*choiceType*/,
 
 static void SelectAsn(const CChoiceTypeInfo* /*choiceType*/,
                       TObjectPtr choicePtr,
-                      TMemberIndex index)
+                      TMemberIndex index,
+                      CObjectMemoryPool* /*memoryPool*/)
 {
     valnode* node = static_cast<valnode*>(choicePtr);
     node->choice = Uint1(index - (kEmptyChoice - 0));

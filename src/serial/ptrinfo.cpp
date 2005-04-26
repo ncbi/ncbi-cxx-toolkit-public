@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.35  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -272,7 +275,8 @@ void CPointerTypeInfo::SetPointer(const CPointerTypeInfo* /*objectType*/,
     CTypeConverter<TObjectPtr>::Get(objectPtr) = dataPtr;
 }
 
-TObjectPtr CPointerTypeInfo::CreatePointer(TTypeInfo /*objectType*/)
+TObjectPtr CPointerTypeInfo::CreatePointer(TTypeInfo /*objectType*/,
+                                           CObjectMemoryPool* /*memoryPool*/)
 {
     return new void*(0);
 }

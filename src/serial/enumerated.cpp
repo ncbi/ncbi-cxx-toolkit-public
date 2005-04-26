@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.29  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -374,7 +377,8 @@ void CEnumeratedTypeInfo::SetValueString(TObjectPtr objectPtr,
     m_ValueType->SetValueInt(objectPtr, Values().FindValue(value));
 }
 
-TObjectPtr CEnumeratedTypeInfo::CreateEnum(TTypeInfo objectType)
+TObjectPtr CEnumeratedTypeInfo::CreateEnum(TTypeInfo objectType,
+                                           CObjectMemoryPool* /*memoryPool*/)
 {
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);

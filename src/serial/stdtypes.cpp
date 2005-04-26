@@ -106,7 +106,8 @@ public:
                                   &Equals, &Assign);
         }
 
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return new TObjectType(0);
         }
@@ -255,7 +256,8 @@ void CVoidTypeFunctions::Skip(CObjectIStream& in, TTypeInfo )
                   "CVoidTypeFunctions::Skip cannot skip");
 }
 
-TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType)
+TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType,
+                                      CObjectMemoryPool* /*memoryPool*/)
 {
     ThrowException("CVoidTypeFunctions::Create cannot create", objectType);
     return 0;
@@ -499,9 +501,11 @@ CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfo(void)
 class CNullBoolFunctions : public CPrimitiveTypeFunctions<bool>
 {
 public:
-    static TObjectPtr Create(TTypeInfo /* type */)
+    static TObjectPtr Create(TTypeInfo /* type */,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
-            NCBI_THROW(CSerialException,eIllegalCall, "Cannot create NULL object");
+            NCBI_THROW(CSerialException,eIllegalCall,
+                       "Cannot create NULL object");
             return 0;
         }
     static bool IsDefault(TConstObjectPtr)
@@ -1043,7 +1047,8 @@ class CStringFunctions : public CPrimitiveTypeFunctions<T>
 {
     typedef CPrimitiveTypeFunctions<T> CParent;
 public:
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return new T();
         }
@@ -1328,7 +1333,8 @@ public:
     static const TChar* ToTChar(const char* p)
         { return reinterpret_cast<const TChar*>(p); }
 
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return new TObjectType();
         }
@@ -1488,7 +1494,8 @@ CTypeInfo* CStdTypeInfo< vector<unsigned char> >::CreateTypeInfo(void)
 class CAnyContentFunctions : public CPrimitiveTypeFunctions<ncbi::CAnyContentObject>
 {
 public:
-    static TObjectPtr Create(TTypeInfo )
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
         {
             return new TObjectType();
         }
@@ -1551,6 +1558,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.45  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *

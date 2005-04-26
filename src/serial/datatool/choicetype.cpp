@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.30  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -174,7 +177,8 @@ struct CAnyTypeChoice {
         }
 };
 
-static TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
+static TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/,
+                                      CObjectMemoryPool* /*memoryPool*/)
 {
     return new CAnyTypeChoice();
 }
@@ -191,7 +195,8 @@ TMemberIndex GetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
 static
 void SetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
                            TObjectPtr choicePtr,
-                           TMemberIndex index)
+                           TMemberIndex index,
+                           CObjectMemoryPool* /*memoryPool*/)
 {
     CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(choicePtr);
     choice->index = index;
@@ -286,7 +291,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GenerateCode(void) const
 
 AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 {
-    if ( !GetVar("_virtual_choice").empty() ) {
+    if ( GetBoolVar("_virtual_choice") ) {
         AutoPtr<CTypeStrings> cls(new CClassRefTypeStrings(ClassName(),
                                                            Namespace(),
                                                            FileName()));
@@ -301,7 +306,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 
 AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
-    if ( !GetVar("_virtual_choice").empty() ) {
+    if ( GetBoolVar("_virtual_choice") ) {
         AutoPtr<CChoicePtrTypeStrings>
             code(new CChoicePtrTypeStrings(GlobalName(),
                                            ClassName()));
@@ -321,8 +326,9 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         code->SetObject(true);
         ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
-            bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
-            code->AddVariant((*i)->GetName(), varType, delayed,
+            bool delayed = GetBoolVar((*i)->GetName()+"._delay");
+            bool in_union = GetBoolVar((*i)->GetName()+"._in_union", true);
+            code->AddVariant((*i)->GetName(), varType, delayed, in_union,
                              (*i)->GetType()->GetTag(),
                              (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
                              (*i)->SimpleType(),(*i)->GetType());

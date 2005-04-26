@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.12  2004/09/07 14:09:45  grichenk
 * Fixed assignment of default value to aliased types
 *
@@ -153,7 +156,8 @@ public:
 
     static void AdaptForSTL(AutoPtr<CTypeStrings>& type);
 
-    virtual string NewInstance(const string& init) const;
+    virtual string NewInstance(const string& init,
+                               const string& place = kEmptyStr) const;
 
     virtual string GetInitializer(void) const;
     virtual string GetDestructionCode(const string& expr) const;

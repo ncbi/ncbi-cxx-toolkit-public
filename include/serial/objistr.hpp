@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimempool.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
@@ -127,6 +128,17 @@ public:
     static  void SetSkipUnknownThread(ESerialSkipUnknown skip);
     // for streams created by the current process
     static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
+
+    // memory pool
+    void SetMemoryPool(CObjectMemoryPool* memory_pool)
+        {
+            m_MemoryPool = memory_pool;
+        }
+    CObjectMemoryPool* GetMemoryPool(void)
+        {
+            return m_MemoryPool;
+        }
+    void UseMemoryPool(void);
 
     // constructors
 protected:
@@ -602,6 +614,8 @@ private:
     CStreamPathHook<CVariantInfo*,CReadChoiceVariantHook*> m_PathReadVariantHooks;
     CStreamPathHook<CVariantInfo*,CSkipChoiceVariantHook*> m_PathSkipVariantHooks;
 
+    CRef<CObjectMemoryPool> m_MemoryPool;
+
 public:
     // hook support
     CLocalHookSet<CReadObjectHook> m_ObjectHookKey;
@@ -681,6 +695,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.108  2005/02/23 21:07:44  vasilche
 * Allow to skip underlying stream flush.
 *

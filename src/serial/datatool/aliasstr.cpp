@@ -100,9 +100,10 @@ bool CAliasTypeStrings::CanBeCopied(void) const
     return m_RefType->CanBeCopied();
 }
 
-string CAliasTypeStrings::NewInstance(const string& init) const
+string CAliasTypeStrings::NewInstance(const string& init,
+                                      const string& place) const
 {
-    return m_RefType->NewInstance(init);
+    return m_RefType->NewInstance(init, place);
 }
 
 string CAliasTypeStrings::GetInitializer(void) const
@@ -399,11 +400,6 @@ bool CAliasRefTypeStrings::CanBeCopied(void) const
     return m_RefType->CanBeCopied();
 }
 
-string CAliasRefTypeStrings::NewInstance(const string& init) const
-{
-    return "new "+GetCType(CNamespace::KEmptyNamespace)+"("+init+')';
-}
-
 string CAliasRefTypeStrings::GetInitializer(void) const
 {
     return m_IsObject ?
@@ -462,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.10  2005/04/01 16:17:48  gouriano
 * Fixed compiler warnings
 *

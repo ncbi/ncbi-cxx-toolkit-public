@@ -15,7 +15,7 @@ if test ! -x "@build_root@/bin/datatool" ;  then
 fi
 
 "@build_root@/bin/datatool" \
-    -m twebenv.asn -oA -oph webenv -opc webenv -oc webenv -orq
+    -m twebenv.asn -oA -oph webenv -opc webenv -oc webenv -orq -pch ncbi_pch.hpp
 
 sed 's% "% "webenv/%' webenv/webenv__.cpp  > we_cpp__.cpp
 sed 's% "% "webenv/%' webenv/webenv___.cpp > we_cpp___.cpp

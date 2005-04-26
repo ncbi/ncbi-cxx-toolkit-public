@@ -63,7 +63,8 @@ protected:
                                    TObjectPtr choicePtr);
     typedef void (*TSelectFunction)(const CChoiceTypeInfo* choiceType,
                                     TObjectPtr choicePtr,
-                                    TMemberIndex index);
+                                    TMemberIndex index,
+                                    CObjectMemoryPool* memPool);
     typedef void (*TSelectDelayFunction)(TObjectPtr object,
                                          TMemberIndex index);
 
@@ -119,13 +120,15 @@ public:
             return *static_cast<const CClassType*>(object);
         }
 
-    static void* Create(TTypeInfo /*typeInfo*/)
+    static void* Create(TTypeInfo /*typeInfo*/,
+                        CObjectMemoryPool* memPool)
         {
-            return new CClassType();
+            return new(memPool) CClassType();
         }
-    static void* CreateCObject(TTypeInfo /*typeInfo*/)
+    static void* CreateCObject(TTypeInfo /*typeInfo*/,
+                               CObjectMemoryPool* memPool)
         {
-            return new CClassType();
+            return new(memPool) CClassType();
         }
 
 
@@ -155,11 +158,12 @@ public:
         }
     static void SelectChoice(const CChoiceTypeInfo* choiceType,
                              void* choicePtr,
-                             TMemberIndex index)
+                             TMemberIndex index,
+                             CObjectMemoryPool* memPool)
         {
             typedef typename CClassType::E_Choice E_Choice;
             if (WhichChoice(choiceType,choicePtr) != index) {
-                Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice));
+                Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice), NCBI_NS_NCBI::eDoResetVariant, memPool);
             }
         }
     static void SelectDelayBuffer(void* choicePtr,
@@ -270,6 +274,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/04/26 14:18:49  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
 * Revision 1.12  2005/02/24 14:38:44  gouriano
 * Added PreRead/PostWrite hooks
 *
