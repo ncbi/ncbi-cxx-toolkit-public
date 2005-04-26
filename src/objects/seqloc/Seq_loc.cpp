@@ -517,8 +517,10 @@ ENa_strand CSeq_loc::GetStrand(void) const
             GetPacked_pnt().GetStrand() : eNa_strand_unknown;
     case e_Mix:
         return GetMix().GetStrand();
-    case e_Equiv:
     case e_Bond:
+        return GetBond().GetStrand();
+
+    case e_Equiv:
     case e_Feat:
     default:
         NCBI_THROW(CException, eUnknown,
@@ -562,8 +564,12 @@ TSeqPos CSeq_loc::GetStart(ESeqLocExtremes ext) const
         {
             return GetMix().GetStart(ext);
         }
-    case e_Equiv:
     case e_Bond:
+        {
+            return GetBond().GetStart(ext);
+        }
+
+    case e_Equiv:
     case e_Feat:
     default:
         {
@@ -609,8 +615,12 @@ TSeqPos CSeq_loc::GetStop(ESeqLocExtremes ext) const
         {
             return GetMix().GetStop(ext);
         }
-    case e_Equiv:
     case e_Bond:
+        {
+            return GetBond().GetStop(ext);
+        }
+
+    case e_Equiv:
     case e_Feat:
     default:
         {
@@ -1533,6 +1543,8 @@ bool s_CanAdd(const CSeq_loc& loc1, const CSeq_loc& loc2)
                 return s_CanAdd(loc1.GetPnt(), loc2.GetPnt());
             case CSeq_loc::e_Packed_pnt:
                 return s_CanAdd(loc1.GetPnt(), loc2.GetPacked_pnt());
+            default:
+                break;
             }
             break;
         }
@@ -1543,6 +1555,8 @@ bool s_CanAdd(const CSeq_loc& loc1, const CSeq_loc& loc2)
                 return s_CanAdd(loc1.GetPacked_pnt(), loc2.GetPnt());
             case CSeq_loc::e_Packed_pnt:
                 return s_CanAdd(loc1.GetPacked_pnt(), loc2.GetPacked_pnt());
+            default:
+                break;
             }
             break;
         }
@@ -2446,6 +2460,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.56  2005/04/26 14:33:14  shomrat
+ * Handle bond variant in GetStart, GetStop and GetStrand
+ *
  * Revision 6.55  2005/04/25 12:38:00  shomrat
  * Handle Null variant in SetId()
  *
