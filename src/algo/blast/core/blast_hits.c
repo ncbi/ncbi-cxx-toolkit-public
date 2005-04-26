@@ -1374,6 +1374,47 @@ s_BlastHSPListInsertHSPInHeap(BlastHSPList* hsp_list,
     }
 }
 
+/** Verifies that the best_evalue field on the BlastHSPList is correct.
+ * @param hsp_list object to check [in]
+ * @return TRUE if OK, FALSE otherwise.
+ */
+static Boolean
+s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
+{
+    int index = 0;
+    double best_evalue = (double) INT4_MAX;
+    const double kDelta = 1.0e-200;
+
+    /* There are no HSP's here. */
+    if (hsp_list->hspcnt == 0)
+       return TRUE;
+
+    for (index=0; index<hsp_list->hspcnt; index++)
+       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
+
+    /* check that it's within 1%. */
+    if (ABS(best_evalue-hsp_list->best_evalue)/(best_evalue+kDelta) > 0.01)
+       return FALSE;
+
+    return TRUE;
+}
+
+/** Gets the best (lowest) evalue from the BlastHSPList.
+ * @param hsp_list object containing the evalues [in]
+ * @return TRUE if OK, FALSE otherwise.
+ */
+static double
+s_BlastGetBestEvalue(const BlastHSPList* hsp_list)
+{
+    int index = 0;
+    double best_evalue = (double) INT4_MAX;
+
+    for (index=0; index<hsp_list->hspcnt; index++)
+       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
+
+    return best_evalue;
+}
+
 /* Comments in blast_hits.h
  */
 Int2 
@@ -1487,7 +1528,7 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
       attained for the first HSP in the list. Check that the incoming
       HSP list is properly sorted by score. */
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
-   hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
+   hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
 
    return 0;
 }
@@ -1531,7 +1572,7 @@ void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
       must be the first in the list. Check that HSPs are sorted by score
       to make sure this assumption is correct. */
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
-   hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
+   hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
 }
 
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
@@ -2258,46 +2299,6 @@ s_BlastHitListInsertHSPListInHeap(BlastHitList* hit_list,
       hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
-/** Verifies that the best_evalue field on the BlastHSPList is correct.
- * @param hsp_list object to check [in]
- * @return TRUE if OK, FALSE otherwise.
- */
-static Boolean
-s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
-{
-    int index = 0;
-    double best_evalue = (double) INT4_MAX;
-    const double kDelta = 1.0e-200;
-
-    /* There are no HSP's here. */
-    if (hsp_list->hspcnt == 0)
-       return TRUE;
-
-    for (index=0; index<hsp_list->hspcnt; index++)
-       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
-
-    /* check that it's within 1%. */
-    if (ABS(best_evalue-hsp_list->best_evalue)/(best_evalue+kDelta) > 0.01)
-       return FALSE;
-
-    return TRUE;
-}
-
-/** Gets the best (lowest) evalue from the BlastHSPList.
- * @param hsp_list object containing the evalues [in]
- * @return TRUE if OK, FALSE otherwise.
- */
-static double
-s_BlastGetBestEvalue(const BlastHSPList* hsp_list)
-{
-    int index = 0;
-    double best_evalue = (double) INT4_MAX;
-
-    for (index=0; index<hsp_list->hspcnt; index++)
-       best_evalue = MIN(hsp_list->hsp_array[index]->evalue, best_evalue);
-
-    return best_evalue;
-}
 
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, 
                          BlastHSPList* hsp_list)
