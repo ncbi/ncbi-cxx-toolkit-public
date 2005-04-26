@@ -394,8 +394,8 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
     : m_Level(0),
       m_Cached(false),
       m_RequestedId(requested_id),
-      m_RecursiveTime(0),
-      m_RecursiveSize(0)
+      m_RecursionLevel(0),
+      m_RecursiveTime(0)
 {
 }
 
@@ -531,6 +531,36 @@ void CReaderRequestResult::ReleaseLocks(void)
     }
     m_BlobLoadLocks.clear();
     m_TSE_LockSet.clear();
+}
+
+
+double CReaderRequestResult::StartRecursion(void)
+{
+    double rec_time = m_RecursiveTime;
+    m_RecursiveTime = 0;
+    ++m_RecursionLevel;
+    return rec_time;
+}
+
+
+void CReaderRequestResult::EndRecursion(double saved_time)
+{
+    _ASSERT(m_RecursionLevel>0);
+    m_RecursiveTime += saved_time;
+    --m_RecursionLevel;
+}
+
+
+double CReaderRequestResult::GetCurrentTime(double time)
+{
+    double rec_time = m_RecursiveTime;
+    if ( rec_time > time ) {
+        return 0;
+    }
+    else {
+        m_RecursiveTime = time;
+        return time - rec_time;
+    }
 }
 
 

@@ -534,10 +534,30 @@ public:
     const CSeq_id_Handle& GetRequestedId(void) const { return m_RequestedId; }
     void SetRequestedId(const CSeq_id_Handle& requested_id);
 
-    void AddRecursiveTime(double time) { m_RecursiveTime += time; }
-    double GetRecursiveTime(void) { return m_RecursiveTime; }
-    void AddRecursiveSize(size_t sz) { m_RecursiveSize += sz; }
-    size_t GetRecursiveSize(void) { return m_RecursiveSize; }
+    int GetRecursionLevel(void) const
+        {
+            return m_RecursionLevel;
+        }
+    double StartRecursion(void);
+    void EndRecursion(double saved_time);
+    friend class CRecurse;
+    class CRecurse
+    {
+    public:
+        CRecurse(CReaderRequestResult& result)
+            : m_Result(result), m_SaveTime(result.StartRecursion())
+            {
+            }
+        ~CRecurse(void)
+            {
+                m_Result.EndRecursion(m_SaveTime);
+            }
+    private:
+        CReaderRequestResult& m_Result;
+        double m_SaveTime;
+    };
+
+    double GetCurrentTime(double time);
 
 private:
     friend class CLoadInfoLock;
@@ -553,8 +573,8 @@ private:
     TLevel          m_Level;
     bool            m_Cached;
     CSeq_id_Handle  m_RequestedId;
+    int             m_RecursionLevel;
     double          m_RecursiveTime;
-    size_t          m_RecursiveSize;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
