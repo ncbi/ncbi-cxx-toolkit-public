@@ -95,9 +95,10 @@ public:
 
 
     /// Alternative & easy way to choose alphabet, etc.
-    void SetClustal(EAlphabet alpha);
-    void SetPhylip(EAlphabet alpha);
-    void SetPaup(EAlphabet alpha);
+    void SetFastaGap(EAlphabet alpha);
+    void SetClustal (EAlphabet alpha);
+    void SetPhylip  (EAlphabet alpha);
+    void SetPaup    (EAlphabet alpha);
 
 
     /// Read the file
@@ -278,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/26 17:28:12  dicuccio
+ * Added Fasta + Gap API
+ *
  * Revision 1.2  2004/03/01 15:26:32  dicuccio
  * Code clean-up.  Added enum for standard alphabets.  Added new APIs to set
  * standard parameters for other alignment types (implemented with unclear details

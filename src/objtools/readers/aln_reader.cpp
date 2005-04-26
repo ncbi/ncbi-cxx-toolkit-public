@@ -149,6 +149,13 @@ void CAlnReader::Read()
 }
 
 
+void CAlnReader::SetFastaGap(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
+
+
 void CAlnReader::SetClustal(EAlphabet alpha)
 {
     SetAlphabet(alpha);
@@ -371,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/26 17:28:12  dicuccio
+ * Added Fasta + Gap API
+ *
  * Revision 1.12  2005/03/07 20:05:42  todorov
  * Again, handle the special case when all sequences are gapped in the
  * first segment, but do not delete the segment, so that the original aln
