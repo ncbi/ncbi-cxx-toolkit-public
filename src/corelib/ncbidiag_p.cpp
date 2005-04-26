@@ -111,10 +111,8 @@ bool CDiagStrPathMatcher::Match(const char* str) const
     if (m_Pattern[m_Pattern.size()-1] != '/')
         return true;
 
-    // '/' should not be after place we found m_Pattern + 1
-    string curr_str = lstr.substr(pos+m_Pattern.size());
-    bool curr_result = (lstr.find('/', pos + m_Pattern.size()) == string::npos);
-    return (lstr.substr(pos+m_Pattern.size()+1).find('/') == string::npos);
+    // '/' should not be after place we found m_Pattern
+    return (lstr.find('/', pos + m_Pattern.size()) == string::npos);
 }
 
 
@@ -824,6 +822,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2005/04/26 19:37:49  ssikorsk
+ * Code cleanup
+ *
  * Revision 1.10  2005/04/26 19:04:14  ssikorsk
  * Fixed DIAG_FILTER bugs in parsing of string-based expressions and evaluation of
  * string-based filters.
