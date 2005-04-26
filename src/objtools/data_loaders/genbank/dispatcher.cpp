@@ -53,35 +53,8 @@ static STimeStatistics s_Stat_StringSeq_ids;
 static STimeStatistics s_Stat_Seq_idSeq_ids;
 static STimeStatistics s_Stat_Seq_idGi;
 static STimeStatistics s_Stat_Seq_idBlob_ids;
+static STimeStatistics s_Stat_BlobVersion;
 static STimeStatistics s_Stat_LoadBlobs;
-
-static STimeStatistics* s_TimeStat[] = {
-    &s_Stat_LoadBlobs,
-    &s_Stat_StringSeq_ids,
-    &s_Stat_Seq_idSeq_ids,
-    &s_Stat_Seq_idGi,
-    &s_Stat_Seq_idBlob_ids,
-    &s_Stat_LoadBlobs,
-    &s_Stat_LoadBlobs,
-    &s_Stat_LoadBlobs,
-    &s_Stat_LoadBlobs,
-    &s_Stat_LoadBlobs,
-    &s_Stat_LoadBlobs
-};
-
-static char* s_StatName[] = {
-    "unknown",
-    "string seq-ids",
-    "seq-ids",
-    "gi",
-    "blob ids",
-    "blob version",
-    "blobs",
-    "string blobs",
-    "seq-id blobs",
-    "blob",
-    "chunk"
-};
 
 #endif
 
@@ -191,8 +164,7 @@ class CReadDispatcherCommand
 {
 public:
     CReadDispatcherCommand(CReaderRequestResult& result)
-        : m_StatIdx(0),
-          m_Result(result)
+        : m_Result(result)
         {
         }
     
@@ -211,12 +183,12 @@ public:
         {
             return m_Result;
         }
-
-      int GetStatIdx(void) { return m_StatIdx; }
-
-protected:
-    int m_StatIdx;
-
+    
+#ifdef GB_COLLECT_STATS
+    virtual STimeStatistics& GetStatistics(void) const = 0;
+    virtual string GetStatisticsDescription(void) const = 0;
+#endif
+    
 private:
     CReaderRequestResult& m_Result;
 };
@@ -233,7 +205,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 1;
             }
 
         bool IsDone(void)
@@ -249,6 +220,17 @@ namespace {
                 return "LoadStringSeq_ids("+m_Key+"): "
                     "data not found";
             }
+
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_StringSeq_ids;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "Seq-ids(string "+m_Key+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -265,7 +247,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 2;
             }
 
         bool IsDone(void)
@@ -281,6 +262,17 @@ namespace {
                 return "LoadSeq_idSeq_ids("+m_Key.AsString()+"): "
                     "data not found";
             }
+
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_Seq_idSeq_ids;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "Seq-ids("+m_Key.AsString()+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -297,7 +289,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 3;
             }
 
         bool IsDone(void)
@@ -313,6 +304,17 @@ namespace {
                 return "LoadSeq_idGi("+m_Key.AsString()+"): "
                     "data not found";
             }
+
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_Seq_idGi;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "gi("+m_Key.AsString()+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -329,7 +331,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 4;
             }
 
         bool IsDone(void)
@@ -346,6 +347,17 @@ namespace {
                     "data not found";
             }
         
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_Seq_idBlob_ids;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blob-ids("+m_Key.AsString()+")";
+            }
+#endif
+        
     private:
         TKey m_Key;
         TLock m_Lock;
@@ -361,7 +373,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 5;
             }
 
         bool IsDone(void)
@@ -377,6 +388,17 @@ namespace {
                 return "LoadBlobVersion("+m_Key.ToString()+"): "
                     "data not found";
             }
+        
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_BlobVersion;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blob-version("+m_Key.ToString()+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -431,7 +453,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Ids(ids), m_Mask(mask)
             {
-                m_StatIdx = 6;
             }
 
         bool IsDone(void)
@@ -447,6 +468,17 @@ namespace {
                 return "LoadBlobs(CLoadInfoBlob_ids): "
                     "data not found";
             }
+        
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blobs(...)";
+            }
+#endif
         
     private:
         TIds m_Ids;
@@ -464,7 +496,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Ids(result, key), m_Mask(mask)
             {
-                m_StatIdx = 7;
             }
 
         bool IsDone(void)
@@ -482,6 +513,17 @@ namespace {
                     "data not found";
             }
         
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blobs(string "+m_Key+")";
+            }
+#endif
+
     private:
         TKey m_Key;
         TIds m_Ids;
@@ -499,7 +541,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Ids(result, key), m_Mask(mask)
             {
-                m_StatIdx = 8;
             }
 
         bool IsDone(void)
@@ -517,6 +558,17 @@ namespace {
                     "data not found";
             }
         
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blobs("+m_Key.AsString()+")";
+            }
+#endif
+        
     private:
         TKey m_Key;
         TIds m_Ids;
@@ -533,7 +585,6 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
-                m_StatIdx = 9;
             }
 
         bool IsDone(void)
@@ -549,6 +600,17 @@ namespace {
                 return "LoadBlob("+m_Key.ToString()+"): "
                     "data not found";
             }
+        
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blob("+m_Key.ToString()+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -570,7 +632,6 @@ namespace {
               m_ChunkId(chunk_id),
               m_ChunkInfo(m_Lock->GetSplitInfo().GetChunk(chunk_id))
             {
-                m_StatIdx = 10;
             }
 
         bool IsDone(void)
@@ -587,6 +648,18 @@ namespace {
                     NStr::IntToString(m_ChunkId)+"): "
                     "data not found";
             }
+        
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "chunk("+m_Key.ToString()+"."+
+                    NStr::IntToString(m_ChunkId)+")";
+            }
+#endif
         
     private:
         TKey m_Key;
@@ -613,14 +686,15 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             ++retry_count;
             try {
 #ifdef GB_COLLECT_STATS
-                bool stat = CollectStatistics() > 0;
-                CStopWatch sw(stat);
+                bool collect_stat = CollectStatistics() > 0;
+                CReaderRequestResult::CRecurse r(command.GetResult());
+                CStopWatch sw(collect_stat);
 #endif
                 if ( !command.Execute(reader) ) {
                     retry_count = kMax_Int;
                 }
 #ifdef GB_COLLECT_STATS
-                if ( stat ) {
+                if ( collect_stat ) {
                     LogStat(command, sw);
                 }
 #endif
@@ -810,21 +884,19 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
                               CStopWatch& sw)
 {
 #ifdef GB_COLLECT_STATS
-    double time = sw.Restart();
-    double rec_time = command.GetResult().GetRecursiveTime();
-    time -= rec_time;
-    command.GetResult().AddRecursiveTime(time);
-    STimeStatistics& stat = *s_TimeStat[command.GetStatIdx()];
-    stat.add(time);
+    double time = command.GetResult().GetCurrentTime(sw.Elapsed());
+    command.GetStatistics().add(time);
     if ( CollectStatistics() <= 1 ) {
         return;
     }
+    string descr = command.GetStatisticsDescription();
     const CSeq_id_Handle& idh = command.GetResult().GetRequestedId();
-    string id = idh ? (" for " + idh.AsString()) : "";
-    LOG_POST((rec_time > 0 ? "+" : "") <<
+    if ( idh ) {
+        descr = descr + " for " + idh.AsString();
+    }
+    LOG_POST(setw(command.GetResult().GetRecursionLevel()) << "" <<
              "Dispatcher: read " <<
-             s_StatName[command.GetStatIdx()] <<
-             id << " in " <<
+             descr << " in " <<
              setprecision(3) << (time*1000) << " ms");
 #endif
 }
@@ -837,6 +909,7 @@ void CReadDispatcher::PrintStatistics(void) const
     PrintStat("resolved", "seq-ids", s_Stat_Seq_idSeq_ids);
     PrintStat("resolved", "gi", s_Stat_Seq_idGi);
     PrintStat("resolved", "blob ids", s_Stat_Seq_idBlob_ids);
+    PrintStat("resolved", "blob version", s_Stat_BlobVersion);
     PrintStat("loaded", "blobs", s_Stat_LoadBlobs);
 #endif
 }
