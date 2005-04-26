@@ -177,59 +177,59 @@ void CTestDiagApp::SetCase(int case_num)
         break;
     case 22:
         filter = "!module foo";
-        x_SetExpects("000011111");
+        x_SetExpects("000000001");
         break;
     case 23:
         filter = "!module ::class";
-        x_SetExpects("110011111");
+        x_SetExpects("000011000");
         break;
     case 24:
         filter = "!module function()";
-        x_SetExpects("101011111");
+        x_SetExpects("000010100");
         break;
     case 25:
         filter = "!::class module";
-        x_SetExpects("111100111");
+        x_SetExpects("001100000");
         break;
     case 26:
         filter = "!function() module";
-        x_SetExpects("111101011");
+        x_SetExpects("010100000");
         break;
     case 27:
         filter = "module !foo";
-        x_SetExpects("111111110");
+        x_SetExpects("111100000");
         break;
     case 28:
         filter = "module !::class";
-        x_SetExpects("111100111");
+        x_SetExpects("001100000");
         break;
     case 29:
         filter = "module !function()";
-        x_SetExpects("111101011");
+        x_SetExpects("010100000");
         break;
     case 30:
         filter = "!module !foo";
-        x_SetExpects("111111111");
+        x_SetExpects("000011110");
         break;
     case 31:
         filter = "!module !::class";
-        x_SetExpects("001111111");
+        x_SetExpects("000000111");
         break;
     case 32:
         filter = "!module !function()";
-        x_SetExpects("010111111");
+        x_SetExpects("000001011");
         break;
     case 33:
         filter = "!foo !module";
-        x_SetExpects("111111111");
+        x_SetExpects("000011110");
         break;
     case 34:
         filter = "!::class !module";
-        x_SetExpects("001111111");
+        x_SetExpects("000000111");
         break;
     case 35:
         filter = "!function() !module";
-        x_SetExpects("010111111");
+        x_SetExpects("000001011");
         break;
     }
 
@@ -451,6 +451,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/26 14:46:28  ssikorsk
+ * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
+ * with the DIAG_FILTER expression evaluation.
+ *
  * Revision 1.4  2005/04/25 16:44:33  ssikorsk
  * Fixed DIAG_FILTER parser and expression evaluation bugs
  *

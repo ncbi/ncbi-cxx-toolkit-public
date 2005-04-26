@@ -41,6 +41,7 @@
 ///            programming_manual/diag.html
 
 #include <corelib/ncbiutil.hpp>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -206,8 +207,8 @@ class NCBI_XNCBI_EXPORT CDiagFilter
 {
 public:
     // 'tors
-    CDiagFilter() {}
-    ~CDiagFilter()  { Clean(); }
+    CDiagFilter(void);
+    ~CDiagFilter(void);
 
     // Check if the filter accepts the pass
     EDiagFilterAction CheckFile(const char* file) const;
@@ -243,11 +244,20 @@ private:
     void InsertMatcher(CDiagMatcher *matcher)
     { m_Matchers.push_back(matcher); }
 
-    // Remove and destroy all matchers, if any
-    void Clean()  { m_Matchers.clear(); }
+    // Negative matchers should be processed first
+    // because they are *AND NOT* matchers, not just *NOT*.
+    void InsertNegativeMatcher(CDiagMatcher *matcher)
+    { 
+        m_Matchers.push_front(matcher); 
+        ++m_NotMatchersNum;
+    }
 
-    typedef vector< AutoPtr<CDiagMatcher> >  TMatchers;
+    // Remove and destroy all matchers, if any
+    void Clean(void);
+
+    typedef deque< AutoPtr<CDiagMatcher> >  TMatchers;
     TMatchers m_Matchers;
+    size_t m_NotMatchersNum;
 };
 
 
@@ -346,6 +356,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/04/26 14:46:28  ssikorsk
+ * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
+ * with the DIAG_FILTER expression evaluation.
+ *
  * Revision 1.4  2004/12/13 14:38:32  kuznets
  * Implemented severity filtering
  *

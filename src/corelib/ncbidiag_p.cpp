@@ -186,6 +186,22 @@ void CDiagMatcher::Print(ostream& out) const
 ///////////////////////////////////////////////////////
 //  CDiagFilter::
 
+CDiagFilter::CDiagFilter(void) 
+: m_NotMatchersNum(0)
+{
+}
+
+CDiagFilter::~CDiagFilter(void)  
+{ 
+    Clean(); 
+}
+
+void CDiagFilter::Clean(void)  
+{ 
+    m_Matchers.clear(); 
+    m_NotMatchersNum = 0;
+}
+
 void CDiagFilter::Fill(const char* filter_string)
 {
     try {
@@ -268,18 +284,57 @@ EDiagFilterAction CDiagFilter::x_Check(const char* module,
                                        const char* function,
                                        EDiagSev    sev) const
 {
+    size_t not_matchers_processed = 0;
+    size_t curr_ind = 0;
+
     ITERATE(TMatchers, i, m_Matchers) {
+        ++curr_ind;
         EDiagFilterAction action = (*i)->Match(module, nclass, function);
-        if (action == eDiagFilter_Accept && 
-            int(sev) < int((*i)->GetSeverity())) {
-            continue;
-        }
-            if( action != eDiagFilter_None ) {
-                if ( action == eDiagFilter_Reject && i != m_Matchers.end() ) {
+
+        switch( action )
+        {
+        case eDiagFilter_Accept:
+            // Process all *AND NOT* conditions.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                // Not all *AND* conditions are still processed. 
+                // Continue to check.
+                ++not_matchers_processed;
+
+                // Check severity ...
+                if ( int(sev) < int((*i)->GetSeverity()) ) {
+                    return eDiagFilter_Reject;
+                } 
+
+                if ( curr_ind != m_Matchers.size() ) {
                     continue;
+                } else {
+                    return action;
                 }
-                return action;
             }
+
+            // Process *OR* conditions *PLUS* severity
+            if ( int(sev) < int((*i)->GetSeverity()) ) {
+                continue;
+            } 
+
+            return action;
+        case eDiagFilter_Reject:
+            // Process all *AND NOT* and *OR* conditions.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                // *AND* failed ...
+                ++not_matchers_processed;
+                return eDiagFilter_Reject;
+            }
+            if ( curr_ind != m_Matchers.size() ) {
+                // It is still not the end of a list of the *OR* matchers.
+                // Continue to check for a success.
+                continue;
+            }
+            return action;
+        case eDiagFilter_None:
+            // Continue the loop.
+            break;
+        }
     }
 
     return eDiagFilter_None;
@@ -506,7 +561,12 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     matcher->SetSeverity(m_DiagSev);
 
     _ASSERT( matcher );
-    to.InsertMatcher(matcher);
+
+    if ( m_Negative ) {
+        to.InsertNegativeMatcher( matcher );
+    } else {
+        to.InsertMatcher( matcher );
+    }
 }
 
 
@@ -722,6 +782,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2005/04/26 14:46:28  ssikorsk
+ * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
+ * with the DIAG_FILTER expression evaluation.
+ *
  * Revision 1.8  2005/04/25 19:49:28  ivanov
  * Fixed compilation warning
  *
