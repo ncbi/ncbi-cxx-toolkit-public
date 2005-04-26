@@ -156,7 +156,7 @@ CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(int /*gi*/)
 void CSeq_id_Which_Tree::Initialize(CSeq_id_Mapper* mapper,
                                     vector<CRef<CSeq_id_Which_Tree> >& v)
 {
-    v.resize(CSeq_id::e_Tpd+1);
+    v.resize(CSeq_id::e_MaxChoice);
     v[CSeq_id::e_not_set].Reset(new CSeq_id_not_set_Tree(mapper));
     v[CSeq_id::e_Local].Reset(new CSeq_id_Local_Tree(mapper));
     v[CSeq_id::e_Gibbsq].Reset(new CSeq_id_Gibbsq_Tree(mapper));
@@ -1699,6 +1699,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/04/26 20:21:42  vasilche
+* Use e_MaxChoice as size of Seq-id types array.
+*
 * Revision 1.20  2005/03/29 16:01:24  grichenk
 * Removed CSeq_id_not_set_Tree::HaveReverseMatch()
 *

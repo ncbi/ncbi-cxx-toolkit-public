@@ -380,7 +380,8 @@ int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
 }
 
 
-static const char* const s_TextId[20] = {   // FASTA_LONG formats
+static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
+{   // FASTA_LONG formats
     "???" , // not-set = ???
     "lcl",  // local = lcl|integer or string
     "bbs",  // gibbsq = bbs|integer
@@ -697,7 +698,7 @@ static inline
 void x_GetLabel_Type(const CSeq_id& id, string* label,
                      CSeq_id::TLabelFlags flags)
 {
-    CSeq_id::E_Choice choice = id.Which();
+    unsigned choice = id.Which();
     _ASSERT(choice < CSeq_id::e_MaxChoice);
     if (choice >= CSeq_id::e_MaxChoice) {
         return;
@@ -870,8 +871,8 @@ string CSeq_id::GetSeqIdString(bool with_version) const
 void CSeq_id::WriteAsFasta(ostream& out)
     const
 {
-    E_Choice the_type = Which();
-    if (the_type > e_Tpd)  // New SeqId type
+    unsigned the_type = Which();
+    if (the_type >= e_MaxChoice)  // New SeqId type
         the_type = e_not_set;
 
     out << s_TextId[the_type] << '|';
@@ -1549,6 +1550,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.103  2005/04/26 20:21:42  vasilche
+ * Use e_MaxChoice as size of Seq-id types array.
+ *
  * Revision 6.102  2005/04/05 15:22:46  ucko
  * IdentifyAccession: DR -> eAcc_gb_sts.
  *
