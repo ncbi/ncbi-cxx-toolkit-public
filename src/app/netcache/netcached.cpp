@@ -57,11 +57,12 @@
 #include <connect/services/netcache_client.hpp>
 
 #if defined(NCBI_OS_UNIX)
+# include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.1  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -463,9 +464,9 @@ private:
     unsigned int                m_TLS_Size;
     
     /// Accept timeout for threaded server
-    STimeout                    m_ThrdSrvAcceptTimeout;
+    STimeout                     m_ThrdSrvAcceptTimeout;
     /// Quick local timer
-    CFastLocalTime              m_LocalTimer;
+    CFastLocalTime               m_LocalTimer;
 };
 
 /// @internal
@@ -1290,6 +1291,8 @@ public:
     int Run(void);
 private:
     CRef<CCacheCleanerThread>  m_PurgeThread;
+    /// Error message logging
+    auto_ptr<CNetCacheLogStream> m_ErrLog;
 };
 
 void CNetCacheDApp::Init(void)
@@ -1312,6 +1315,18 @@ void CNetCacheDApp::Init(void)
 }
 
 
+/// @internal
+extern "C" 
+void Threaded_Server_SignalHandler( int )
+{
+    if (s_netcache_server && 
+        (!s_netcache_server->ShutdownRequested()) ) {
+        s_netcache_server->SetShutdownFlag();
+        LOG_POST("Interrupt signal. Shutdown requested.");
+    }
+}
+
+
 
 int CNetCacheDApp::Run(void)
 {
@@ -1324,6 +1339,27 @@ int CNetCacheDApp::Run(void)
         const CNcbiRegistry& reg = GetConfig();
 
         CConfig conf(reg);
+        
+#if defined(NCBI_OS_UNIX)
+        bool is_daemon =
+            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+        if (is_daemon) {
+            LOG_POST("Entering UNIX daemon mode...");
+            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            if (!daemon) {
+                return 0;
+            }
+
+        }
+        
+        // attempt to get server gracefully shutdown on signal
+        signal( SIGINT, Threaded_Server_SignalHandler);
+        signal( SIGTERM, Threaded_Server_SignalHandler);
+#endif
+        m_ErrLog.reset(new CNetCacheLogStream("nc_err.log", 25 * 1024 * 1024));
+        // All errors redirected to rotated log
+        // from this moment on the server is silent...
+        SetDiagStream(m_ErrLog.get());
 
         const CConfig::TParamTree* param_tree = conf.GetTree();
         const TPluginManagerParamTree* bdb_tree = 
@@ -1460,27 +1496,10 @@ int CNetCacheDApp::Run(void)
 
 
 
-/// @internal
-extern "C" 
-void Threaded_Server_SignalHandler( int )
-{
-    if (s_netcache_server && 
-        (!s_netcache_server->ShutdownRequested()) ) {
-        s_netcache_server->SetShutdownFlag();
-        LOG_POST("Interrupt signal. Shutdown requested.");
-    }
-}
-
 
 
 int main(int argc, const char* argv[])
 {
-
-#if defined(NCBI_OS_UNIX)
-    // attempt to get server gracefully shutdown on signal
-     signal( SIGINT, Threaded_Server_SignalHandler);
-     signal( SIGTERM, Threaded_Server_SignalHandler);    
-#endif
 
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
 }
@@ -1488,6 +1507,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/04/26 18:53:50  kuznets
+ * Added optional daemonization
+ *
  * Revision 1.54  2005/04/25 16:42:59  kuznets
  * Fixed err message transmission
  *
