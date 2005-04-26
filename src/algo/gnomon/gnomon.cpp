@@ -299,7 +299,7 @@ void CGnomon::Run(void)
         vector<IPair> mrna_vec;
         vector<IPair> cds_vec;
 
-        for (int j = 0;  j < igene.size();  ++j) {
+        for (size_t j = 0;  j < igene.size();  ++j) {
             const ExonData& exon = igene[j];
             int a = exon.Start();
             int b = exon.Stop();
@@ -393,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/26 17:28:26  dicuccio
+ * Fix compiler warning
+ *
  * Revision 1.9  2004/11/18 21:27:40  grichenk
  * Removed default value for scope argument in seq-loc related functions.
  *
