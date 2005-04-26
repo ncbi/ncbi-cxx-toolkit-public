@@ -56,6 +56,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObjectMemoryPool;
+
 /// Define "null" pointer value.
 enum ENull {
     null = 0
@@ -139,6 +141,9 @@ public:
     /// Check if object can be deleted.
     bool CanBeDeleted(void) const THROWS_NONE;
 
+    /// Check if object is allocated in memory pool (not system heap)
+    bool IsAllocatedInPool(void) const THROWS_NONE;
+
     /// Check if object is referenced.
     bool Referenced(void) const THROWS_NONE;
 
@@ -190,6 +195,14 @@ public:
     NCBI_XNCBI_EXPORT
     void operator delete(void* ptr, void* place);
 
+    /// Define new operator using memory pool.
+    NCBI_XNCBI_EXPORT
+    void* operator new(size_t size, CObjectMemoryPool* place);
+
+    /// Define delete operator.
+    NCBI_XNCBI_EXPORT
+    void operator delete(void* ptr, CObjectMemoryPool* place);
+
     /// Define method for dumping debug information.
     NCBI_XNCBI_EXPORT
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -229,7 +242,9 @@ private:
     enum EObjectState {
         eStateBitsInHeap        = 1 << 0, ///< Detected as in heap
         eStateBitsHeapSignature = 1 << 1, ///< Heap signature was found
-        eStateBitsMemory        = eStateBitsInHeap | eStateBitsHeapSignature,
+
+        /// Mask for 'in heap' state flags
+        eStateBitsInHeapMask    = eStateBitsInHeap | eStateBitsHeapSignature,
 
 #ifdef NCBI_COUNTER_UNSIGNED
         /// 1 in the left most of the valid bits -- unsigned case
@@ -239,31 +254,47 @@ private:
         eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 2)),
 #endif
         /// Valid object, and object in heap. 
-        eStateMask        = eStateBitsValid | eStateBitsMemory,
+        eStateMask        = eStateBitsValid | eStateBitsInHeapMask,
 
-        /// Shift over the "memory" bits
+        /// Skip over the "in heap" bits
         eCounterStep      = 1 << 2, 
 
-        /// Mask for testing if counter is for valid object, not in heap
-        eCounterNotInHeap = eStateBitsValid,
-
-        /// Mask for testing if counter is for valid object, in heap
-        eCounterInHeap    = eStateBitsValid | eStateBitsInHeap,
-
-        /// Mask for testing if counter is for a valid object
+        /// Minimal value for valid objects (reference counter is zero)
         eCounterValid     = eStateBitsValid,
 
-        /// Special mask value: lsb three bits 0, and msb (or one bit after)
-        /// is 0 and all other bits are 1
-        eSpecialValueMask = (unsigned int)eStateBitsValid -
-                            (unsigned int)eCounterStep,
+        /// Minimal value for referenced valid objects (reference counter = 1)
+        eCounterValidRef1 = eCounterValid + eCounterStep,
 
-        /// Mask for testing if counter is for a deleted object
-        eCounterDeleted   = (unsigned int)(0x5b4d9f34 & eSpecialValueMask),
+        /// Minimal value for double referenced objects (reference counter = 2)
+        eCounterValidRef2 = eCounterValid + eCounterStep*2,
 
-        /// Mask for testing if counter is for a new object
-        eCounterNew       = (unsigned int)(0x3423cb13 & eSpecialValueMask)
+        /// Initial counter value for non-heap objects
+        eInitCounterNotInHeap   = eStateBitsValid,
+
+        /// Initial counter value for in-heap objects
+        eInitCounterInHeap      = eStateBitsValid | eStateBitsHeapSignature |
+                                  eStateBitsInHeap,
+
+        /// Initial counter value for objects allocated in memory pool
+        eInitCounterInPool      = eStateBitsValid | eStateBitsInHeap,
+
+        /// Initial counter value for probably non-heap objects (w/ signature)
+        eInitCounterInStack     = eStateBitsValid | eStateBitsHeapSignature,
+
+        /// All magic counter values should have all their state bits off.
+        /// Magic counter value for deleted objects
+        eMagicCounterDeleted    = 0x5b4d9f34 & ~eStateMask,
+
+        /// Magic counter value for object allocated in heap
+        eMagicCounterNew        = 0x3423cb13 & ~eStateMask,
+
+        /// Magic counter value for deleted object allocated in memory pool
+        eMagicCounterPoolDeleted= 0x4229775b & ~eStateMask,
+
+        /// Magic counter value for objects allocated in memory pool
+        eMagicCounterPoolNew    = 0x54917ec2 & ~eStateMask
     };
+    friend class CObjectMemoryPool;
 
     // special methods for parsing object state number
 
@@ -273,14 +304,14 @@ private:
     /// Check if object can be deleted.
     static bool ObjectStateCanBeDeleted(TCount count);
 
-    /// Check if object can not be deleted (stack object)
-    static bool ObjectStateCanNotBeDeleted(TCount count);
+    /// Check if object is allocated in memory pool.
+    static bool ObjectStateIsAllocatedInPool(TCount count);
+
+    /// Check if object can be referenced.
+    static bool ObjectStateUnreferenced(TCount count);
 
     /// Check if object can be referenced.
     static bool ObjectStateReferenced(TCount count);
-
-    /// Check if object can be double referenced.
-    static bool ObjectStateDoubleReferenced(TCount count);
 
     /// Check if object can be referenced only once.
     static bool ObjectStateReferencedOnlyOnce(TCount count);
@@ -1485,6 +1516,10 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/04/26 14:08:33  vasilche
+ * Allow allocation of CObjects from CObjectMemoryPool.
+ * Documented CObject counter bits.
+ *
  * Revision 1.62  2005/03/17 20:24:29  ucko
  * Update comments to reflect change in bit usage of counter.
  *

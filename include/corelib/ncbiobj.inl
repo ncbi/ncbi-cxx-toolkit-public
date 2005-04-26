@@ -43,9 +43,10 @@ bool CObject::ObjectStateCanBeDeleted(TCount count)
 
 
 inline
-bool CObject::ObjectStateCanNotBeDeleted(TCount count)
+bool CObject::ObjectStateIsAllocatedInPool(TCount count)
 {
-    return (count & eStateBitsMemory) == 0;
+    return (count & eStateBitsInHeapMask) ==
+        (eInitCounterInPool & eStateBitsInHeapMask);
 }
 
 
@@ -59,22 +60,21 @@ bool CObject::ObjectStateValid(TCount count)
 inline
 bool CObject::ObjectStateReferenced(TCount count)
 {
-    return count >= TCount(eCounterValid + eCounterStep);
+    return count >= TCount(eCounterValidRef1);
 }
 
 
 inline
-bool CObject::ObjectStateDoubleReferenced(TCount count)
+bool CObject::ObjectStateUnreferenced(TCount count)
 {
-    return count >= TCount(eCounterValid + eCounterStep * 2);
+    return (count & ~eStateBitsInHeapMask) == eCounterValid;
 }
 
 
 inline
 bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
 {
-    return ObjectStateReferenced(count) &&
-        !ObjectStateDoubleReferenced(count);
+    return (count & ~eStateBitsInHeapMask) == eCounterValidRef1;
 }
 
 
@@ -82,6 +82,13 @@ inline
 bool CObject::CanBeDeleted(void) const THROWS_NONE
 {
     return ObjectStateCanBeDeleted(m_Counter.Get());
+}
+
+
+inline
+bool CObject::IsAllocatedInPool(void) const THROWS_NONE
+{
+    return ObjectStateIsAllocatedInPool(m_Counter.Get());
 }
 
 
@@ -130,6 +137,10 @@ void CObject::RemoveReference(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/26 14:08:33  vasilche
+ * Allow allocation of CObjects from CObjectMemoryPool.
+ * Documented CObject counter bits.
+ *
  * Revision 1.11  2005/03/17 19:54:30  grichenk
  * DoDeleteThisObject() fails for objects not in heap.
  *

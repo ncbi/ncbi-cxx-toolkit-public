@@ -35,6 +35,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbimempool.hpp>
 
 //#define USE_SINGLE_ALLOC
 //#define USE_DEBUG_NEW
@@ -53,11 +54,11 @@
 //    there, it still may have been created on the heap).
 //    This method requires thread synchronization.
 //
-// 2. operator new puts a special mask (eCounterNew two times) in the
+// 2. operator new puts a special mask (eMagicCounterNew two times) in the
 //    newly allocated memory. Object constructor looks for this mask,
 //    if it finds it there - yes, it has been created on the heap.
 //
-// 3. operator new puts a special mask (single eCounterNew) in the
+// 3. operator new puts a special mask (single eMagicCounterNew) in the
 //    newly allocated memory. Object constructor looks for this mask,
 //    if it finds it there, it also compares addresses of a variable
 //    on the stack and itself (also using STACK_THRESHOLD). If these two
@@ -138,13 +139,12 @@ void* single_alloc(size_t size)
     size_t pool_size = single_alloc_pool_size;
     char* pool;
     if ( size > pool_size ) {
-        pool_size = SINGLE_ALLOC_THRESHOLD;
+        pool_size = SINGLE_ALLOC_POOL_SIZE;
         pool = (char*) malloc(pool_size);
         if ( !pool ) {
             sx_SingleAllocMutex.Unlock();
             throw bad_alloc();
         }
-        memset(pool, 0, pool_size);
         single_alloc_pool = pool;
         single_alloc_pool_size = pool_size;
     }
@@ -166,10 +166,8 @@ void* CObject::operator new(size_t size)
 
 #ifdef USE_SINGLE_ALLOC
     void* ptr = single_alloc(size);
-#  if USE_COMPLEX_MASK
-    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eCounterNew);
-#  endif// USE_COMPLEX_MASK
-    static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
+    memset(ptr, 0, size);
+    //static_cast<CObject*>(ptr)->m_Counter.Set(0);
     return ptr;
 #else
     void* ptr = ::operator new(size);
@@ -182,45 +180,10 @@ void* CObject::operator new(size_t size)
 #else// USE_HEAPOBJ_LIST
     memset(ptr, 0, size);
 #  if USE_COMPLEX_MASK
-    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eCounterNew);
+    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterNew);
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
-    static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
-    return ptr;
-#endif
-}
-
-
-// CObject local new operator to mark allocation in other memory chunk
-void* CObject::operator new(size_t size, void* place)
-{
-    _ASSERT(size >= sizeof(CObject));
-#ifdef USE_SINGLE_ALLOC
-    return place;
-#else
-    memset(place, 0, size);
-    return place;
-#endif
-}
-
-// complement placement delete operator -> do nothing
-void CObject::operator delete(void* /*ptr*/, void* /*place*/)
-{
-}
-
-
-// CObject local new operator to mark allocation in heap
-void* CObject::operator new[](size_t size)
-{
-#ifdef USE_SINGLE_ALLOC
-    return single_alloc(size);
-#else
-# ifdef NCBI_OS_MSWIN
-    void* ptr = ::operator new(size);
-# else
-    void* ptr = ::operator new[](size);
-# endif
-    memset(ptr, 0, size);
+    static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterNew);
     return ptr;
 #endif
 }
@@ -228,26 +191,94 @@ void* CObject::operator new[](size_t size)
 
 void CObject::operator delete(void* ptr)
 {
-#ifdef USE_SINGLE_ALLOC
-#else
-# ifdef _DEBUG
+#ifdef _DEBUG
     CObject* objectPtr = static_cast<CObject*>(ptr);
-    _ASSERT(objectPtr->m_Counter.Get() == eCounterDeleted  ||
-            objectPtr->m_Counter.Get() == eCounterNew);
-# endif
+    TCount magic = objectPtr->m_Counter.Get();
+    // magic can be equal to:
+    // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
+    // 2. eMagicCounterNew when memory is freed before CObject constructor.
+    _ASSERT(magic == eMagicCounterDeleted  || magic == eMagicCounterNew);
+#endif
     ::operator delete(ptr);
+}
+
+
+// CObject local new operator to mark allocation in other memory chunk
+void* CObject::operator new(size_t size, void* place)
+{
+    _ASSERT(size >= sizeof(CObject));
+    memset(place, 0, size);
+    //static_cast<CObject*>(ptr)->m_Counter.Set(0);
+    return place;
+}
+
+// complement placement delete operator -> do nothing
+void CObject::operator delete(void* _DEBUG_ARG(ptr), void* /*place*/)
+{
+#ifdef _DEBUG
+    CObject* objectPtr = static_cast<CObject*>(ptr);
+    TCount magic = objectPtr->m_Counter.Get();
+    // magic can be equal to:
+    // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
+    // 2. 0 when memory is freed before CObject constructor.
+    _ASSERT(magic == eMagicCounterDeleted  || magic == 0);
 #endif
 }
 
+
+// CObject new operator from memory pool
+void* CObject::operator new(size_t size, CObjectMemoryPool* memory_pool)
+{
+    _ASSERT(size >= sizeof(CObject));
+    if ( !memory_pool ) {
+        return operator new(size);
+    }
+    void* ptr = memory_pool->Allocate(size);
+    if ( !ptr ) {
+        return operator new(size);
+    }
+#  if USE_COMPLEX_MASK
+    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterPoolNew);
+#  endif// USE_COMPLEX_MASK
+    static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterPoolNew);
+    return ptr;
+}
+
+// complement pool delete operator
+void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
+{
+#ifdef _DEBUG
+    CObject* objectPtr = static_cast<CObject*>(ptr);
+    TCount magic = objectPtr->m_Counter.Get();
+    // magic can be equal to:
+    // 1. eMagicCounterPoolDeleted when freed after CObject destructor.
+    // 2. eMagicCounterPoolNew when freed before CObject constructor.
+    _ASSERT(magic == eMagicCounterPoolDeleted ||
+            magic == eMagicCounterPoolNew);
+#endif
+    memory_pool->Deallocate(ptr);
+}
+
+
+// CObject local new operator to mark allocation in heap
+void* CObject::operator new[](size_t size)
+{
+# ifdef NCBI_OS_MSWIN
+    void* ptr = ::operator new(size);
+# else
+    void* ptr = ::operator new[](size);
+# endif
+    memset(ptr, 0, size);
+    return ptr;
+}
+
+
 void CObject::operator delete[](void* ptr)
 {
-#ifdef USE_SINGLE_ALLOC
-#else
-#  ifdef NCBI_OS_MSWIN
+#ifdef NCBI_OS_MSWIN
     ::operator delete(ptr);
-#  else
+#else
     ::operator delete[](ptr);
-#  endif
 #endif
 }
 
@@ -258,9 +289,11 @@ void CObject::InitCounter(void)
     // This code can't use Get(), which may block waiting for an
     // update that will never happen.
     // ATTENTION:  this code can cause UMR (Uninit Mem Read) -- it's okay here!
-    if ( m_Counter.m_Value != eCounterNew ) {
+    TCount main_counter = m_Counter.m_Value;
+    if ( main_counter != eMagicCounterNew &&
+         main_counter != eMagicCounterPoolNew ) {
         // takes care of statically allocated case
-        m_Counter.Set(eCounterNotInHeap);
+        m_Counter.Set(eInitCounterNotInHeap);
     }
     else {
         bool inStack = false;
@@ -277,32 +310,41 @@ void CObject::InitCounter(void)
         }}
 #else // USE_HEAPOBJ_LIST
 #  if USE_COMPLEX_MASK
-        inStack = GetSecondCounter(this)->m_Value != eCounterNew;
+        inStack = GetSecondCounter(this)->m_Value != main_counter;
 #  endif // USE_COMPLEX_MASK
-        // m_Counter == eCounterNew -> possibly in heap
-        if (!inStack) {
-        char stackObject;
-        const char* stackObjectPtr = &stackObject;
-        const char* objectPtr = reinterpret_cast<const char*>(this);
-        inStack =
-#  ifdef STACK_GROWS_UP
-            (objectPtr < stackObjectPtr) &&
+        // m_Counter == main_counter -> possibly in heap
+        if ( !inStack ) {
+            char stackObject;
+            const char* stackObjectPtr = &stackObject;
+            const char* objectPtr = reinterpret_cast<const char*>(this);
+#  if defined STACK_GROWS_UP
+            inStack =
+                (objectPtr < stackObjectPtr) && 
+                (objectPtr > stackObjectPtr - STACK_THRESHOLD);
+#  elif defined STACK_GROWS_DOWN
+            inStack =
+                (objectPtr > stackObjectPtr) &&
+                (objectPtr < stackObjectPtr + STACK_THRESHOLD);
 #  else
-            (objectPtr < stackObjectPtr + STACK_THRESHOLD) &&
-#  endif
-#  ifdef STACK_GROWS_DOWN
-            (objectPtr > stackObjectPtr);
-#  else
-            (objectPtr > stackObjectPtr - STACK_THRESHOLD);
+            inStack =
+                (objectPtr < stackObjectPtr + STACK_THRESHOLD) && 
+                (objectPtr > stackObjectPtr - STACK_THRESHOLD);
 #  endif
         }
 #endif // USE_HEAPOBJ_LIST
-
-        // surely not in heap
-        if ( inStack )
-            m_Counter.Set(eCounterNotInHeap | eStateBitsHeapSignature);
-        else
-            m_Counter.Set(eCounterInHeap | eStateBitsHeapSignature);
+        
+        if ( inStack ) {
+            // surely not in heap
+            m_Counter.Set(eInitCounterInStack);
+        }
+        else if ( main_counter == eMagicCounterNew ) {
+            // allocated in heap
+            m_Counter.Set(eInitCounterInHeap);
+        }
+        else {
+            // allocated in memory pool
+            m_Counter.Set(eInitCounterInPool);
+        }
     }
 }
 
@@ -328,9 +370,7 @@ CObject::CObject(const CObject& /*src*/)
 CObject::~CObject(void)
 {
     TCount count = m_Counter.Get();
-    TCount count_no_sig = count & (~eStateBitsHeapSignature);
-    if ( count_no_sig == TCount(eCounterInHeap)  ||
-         count_no_sig == TCount(eCounterNotInHeap) ) {
+    if ( ObjectStateUnreferenced(count) ) {
         // reference counter is zero -> ok
     }
     else if ( ObjectStateValid(count) ) {
@@ -339,7 +379,8 @@ CObject::~CObject(void)
         ERR_POST(ObjFatal << "CObject::~CObject: "
                  "Referenced CObject may not be deleted");
     }
-    else if ( count == eCounterDeleted ) {
+    else if ( count == eMagicCounterDeleted ||
+              count == eMagicCounterPoolDeleted ) {
         // deleted object
         ERR_POST(ObjFatal << "CObject::~CObject: "
                  "CObject is already deleted");
@@ -350,7 +391,14 @@ CObject::~CObject(void)
                  "CObject is corrupted");
     }
     // mark object as deleted
-    m_Counter.Set(eCounterDeleted);
+    TCount final_magic;
+    if ( ObjectStateIsAllocatedInPool(count) ) {
+        final_magic = eMagicCounterPoolDeleted;
+    }
+    else {
+        final_magic = eMagicCounterDeleted;
+    }
+    m_Counter.Set(final_magic);
 }
 
 
@@ -359,16 +407,20 @@ void CObject::CheckReferenceOverflow(TCount count) const
     if ( ObjectStateValid(count) ) {
         // counter overflow
         NCBI_THROW(CObjectException, eRefOverflow,
+                   "CObject::CheckReferenceOverflow: "
                    "CObject's reference counter overflow");
     }
-    else if ( count == eCounterDeleted ) {
+    else if ( count == eMagicCounterDeleted ||
+              count == eMagicCounterPoolDeleted ) {
         // deleted object
         NCBI_THROW(CObjectException, eDeleted,
+                   "CObject::CheckReferenceOverflow: "
                    "CObject is already deleted");
     }
     else {
         // bad object
         NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::CheckReferenceOverflow: "
                    "CObject is corrupted");
     }
 }
@@ -378,8 +430,15 @@ void CObject::RemoveLastReference(void) const
 {
     TCount count = m_Counter.Get();
     if ( ObjectStateCanBeDeleted(count) ) {
-        if ( ObjectStateValid(count) ) {
-            delete this;
+        // last reference to heap object -> delete it
+        if ( ObjectStateUnreferenced(count) ) {
+            if ( count == eInitCounterInHeap ) {
+                delete this;
+            }
+            else {
+                _ASSERT(count == eInitCounterInPool);
+                CObjectMemoryPool::Delete(this);
+            }
             return;
         }
     }
@@ -389,56 +448,75 @@ void CObject::RemoveLastReference(void) const
             return;
         }
     }
+
     // Error here
     // restore original value
-    m_Counter.Add(eCounterStep);
-    _ASSERT(!ObjectStateValid(count + eCounterStep));
+    count = m_Counter.Add(eCounterStep);
     // bad object
-    ERR_POST(ObjFatal << "CObject::RemoveLastReference: "
-             "Unreferenced CObject may not be released");
+    if ( ObjectStateValid(count) ) {
+        ERR_POST(ObjFatal << "CObject::RemoveLastReference: "
+                 "CObject was referenced again");
+    }
+    else if ( count == eMagicCounterDeleted ||
+              count == eMagicCounterPoolDeleted ) {
+        ERR_POST(ObjFatal << "CObject::RemoveLastReference: "
+                 "CObject is already deleted");
+    }
+    else {
+        ERR_POST(ObjFatal << "CObject::RemoveLastReference: "
+                 "CObject is corrupted");
+    }
 }
 
 
 void CObject::ReleaseReference(void) const
 {
-    TCount count = m_Counter.Add(-eCounterStep) + eCounterStep;
-    if ( ObjectStateReferenced(count) ) {
+    TCount count = m_Counter.Add(-eCounterStep);
+    if ( ObjectStateValid(count) ) {
         return;
     }
     m_Counter.Add(eCounterStep); // undo
 
     // error
-    if ( !ObjectStateValid(count) ) {
+    if ( count == eMagicCounterDeleted ||
+         count == eMagicCounterPoolDeleted ) {
+        // deleted object
         NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::ReleaseReference: "
+                   "CObject is already deleted");
+    }
+    else {
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::ReleaseReference: "
                    "CObject is corrupted");
-    } else {
-        NCBI_THROW(CObjectException, eNoRef,
-                   "Unreferenced CObject may not be released");
     }
 }
 
 
 void CObject::DoNotDeleteThisObject(void)
 {
-    bool is_valid;
+    TCount count;
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        TCount count = m_Counter.Get();
-        is_valid = ObjectStateValid(count);
-        if (is_valid  &&  !ObjectStateReferenced(count)) {
-            // Preserve heap signature flag
-            m_Counter.Set(eCounterNotInHeap |
-                (count & eStateBitsHeapSignature));
+        count = m_Counter.Get();
+        if ( ObjectStateValid(count) ) {
+            // valid and unreferenced
+            // reset all 'in heap' flags -> make it non-heap without signature
+            m_Counter.Add(-(count & eStateBitsInHeapMask));
             return;
         }
     }}
     
-    if ( is_valid ) {
-        NCBI_THROW(CObjectException, eRefUnref,
-                   "Referenced CObject cannot be made unreferenced one");
+    if ( count == eMagicCounterDeleted ||
+         count == eMagicCounterPoolDeleted ) {
+        // deleted object
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::DoNotDeleteThisObject: "
+                   "CObject is already deleted");
     }
     else {
         NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::DoNotDeleteThisObject: "
                    "CObject is corrupted");
     }
 }
@@ -446,20 +524,41 @@ void CObject::DoNotDeleteThisObject(void)
 
 void CObject::DoDeleteThisObject(void)
 {
+#ifndef USE_SINGLE_ALLOC
+    TCount count;
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        TCount count = m_Counter.Get();
+        count = m_Counter.Get();
         // DoDeleteThisObject is not allowed for stack objects
-        _ASSERT(count & eStateBitsHeapSignature);
-        if ( ObjectStateValid(count) ) {
+        enum {
+            eCheckBits = eStateBitsValid | eStateBitsHeapSignature
+        };
+
+        if ( (count & eCheckBits) == eCheckBits ) {
             if ( !(count & eStateBitsInHeap) ) {
+                // set 'in heap' flag
                 m_Counter.Add(eStateBitsInHeap);
             }
             return;
         }
     }}
-    NCBI_THROW(CObjectException, eCorrupted,
-               "CObject is corrupted");
+    if ( ObjectStateValid(count) ) {
+        ERR_POST(ObjFatal << "CObject::DoDeleteThisObject: "
+                 "object was created without heap signature");
+    }
+    else if ( count == eMagicCounterDeleted ||
+         count == eMagicCounterPoolDeleted ) {
+        // deleted object
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::DoDeleteThisObject: "
+                   "CObject is already deleted");
+    }
+    else {
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject::DoDeleteThisObject: "
+                   "CObject is corrupted");
+    }
+#endif
 }
 
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
@@ -796,6 +895,10 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/04/26 14:08:33  vasilche
+ * Allow allocation of CObjects from CObjectMemoryPool.
+ * Documented CObject counter bits.
+ *
  * Revision 1.49  2005/03/17 19:54:30  grichenk
  * DoDeleteThisObject() fails for objects not in heap.
  *
