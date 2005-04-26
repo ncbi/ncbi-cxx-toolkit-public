@@ -122,14 +122,6 @@ CId1Reader::~CId1Reader()
 }
 
 
-static string ToString(const CID1server_maxcomplex& maxplex)
-{
-    CNcbiOstrstream str;
-    str << "TSE("<<maxplex.GetSat()<<','<<maxplex.GetEnt()<<')';
-    return CNcbiOstrstreamToString(str);
-}
-
-
 int CId1Reader::GetMaximumConnectionsLimit(void) const
 {
 #ifdef NCBI_THREADS
