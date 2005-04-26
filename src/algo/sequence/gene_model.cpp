@@ -178,26 +178,6 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         mrna_feat->SetData().SetRna().SetExt()
             .SetName(sequence::GetTitle(handle));
 
-        /**
-        /// generate our location
-        CRef<CAlnVec::CAlnChunkVec> aln_chunks
-                (alnmgr.GetAlnChunks(row, range,
-                                    CAlnVec::fSeqOnly |
-                                    CAlnVec::fChunkSameAsSeg));
-        CPacked_seqint::TRanges ranges;
-        for (int i = 0;  i < aln_chunks->size();  ++i) {
-            CConstRef<CAlnVec::CAlnChunk> chunk((*aln_chunks)[i]);
-            TSeqPos start = chunk->GetRange().GetFrom();
-            start = alnmgr.GetSeqPosFromSeqPos(target_row, row, start);
-
-            TSeqPos stop = chunk->GetRange().GetTo();
-            stop = alnmgr.GetSeqPosFromSeqPos(target_row, row, stop);
-
-            ranges.push_back(TSeqRange(start, stop));
-        }
-        CRef<CSeq_loc> loc(new CSeq_loc(*target_id, ranges));
-        **/
-
         CRef<CSeq_loc> loc(new CSeq_loc());
         loc->SetWhole().Assign(alnmgr.GetSeqId(row));
         loc = mapper.Map(*loc);
@@ -272,7 +252,6 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             SAnnotSelector sel;
             sel.SetResolveAll()
                 .SetAdaptiveDepth(true)
-                .SetAnnotType(CSeq_annot::TData::e_Ftable)
                 .ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene)
                 .ExcludeFeatSubtype(CSeqFeatData::eSubtype_mRNA)
                 .ExcludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
@@ -295,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/26 17:28:44  dicuccio
+ * Remove dead code
+ *
  * Revision 1.1  2005/04/14 16:48:38  dicuccio
  * Initial revision of CGeneModel
  *
