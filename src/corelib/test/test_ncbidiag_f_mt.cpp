@@ -231,6 +231,54 @@ void CTestDiagApp::SetCase(int case_num)
         filter = "!function() !module";
         x_SetExpects("000001011");
         break;
+    case 38:
+        filter = "!function() !module !foo";
+        x_SetExpects("000001010");
+        break;
+    case 36:
+        filter = "!/corelib";
+        x_SetExpects("000000000");
+        break;
+    case 37:
+        filter = "!/corelib/";
+        x_SetExpects("111111111");
+        break;
+    case 39:
+        filter = "!/corelib/test";
+        x_SetExpects("000000000");
+        break;
+    case 40:
+        filter = "!/corelib/test/";
+        x_SetExpects("000000000");
+        break;
+    case 41:
+        filter = "/corelib !/dbapi";
+        x_SetExpects("111111111");
+        break;
+    case 42:
+        filter = "!/dbapi /corelib";
+        x_SetExpects("111111111");
+        break;
+    case 43:
+        filter = "!/dbapi !/corelib";
+        x_SetExpects("000000000");
+        break;
+    case 44:
+        filter = "/dbapi !/corelib";
+        x_SetExpects("000000000");
+        break;
+    case 45:
+        filter = "!/corelib /dbapi";
+        x_SetExpects("000000000");
+        break;
+    case 46:
+        filter = "!/dbapi !/corelib/";
+        x_SetExpects("111111111");
+        break;
+    case 47:
+        filter = "!/corelib/ !/dbapi";
+        x_SetExpects("111111111");
+        break;
     }
 
     if ( !filter.empty() ) {
@@ -354,7 +402,7 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
                        CArgDescriptions::eInteger);
 
     args.SetConstraint("case_number",
-                       new CArgAllow_Integers(1, 35));
+                       new CArgAllow_Integers(1, 47));
 
     return true;
 }
@@ -451,6 +499,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/26 19:04:14  ssikorsk
+ * Fixed DIAG_FILTER bugs in parsing of string-based expressions and evaluation of
+ * string-based filters.
+ *
  * Revision 1.5  2005/04/26 14:46:28  ssikorsk
  * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
  * with the DIAG_FILTER expression evaluation.

@@ -112,6 +112,8 @@ bool CDiagStrPathMatcher::Match(const char* str) const
         return true;
 
     // '/' should not be after place we found m_Pattern + 1
+    string curr_str = lstr.substr(pos+m_Pattern.size());
+    bool curr_result = (lstr.find('/', pos + m_Pattern.size()) == string::npos);
     return (lstr.substr(pos+m_Pattern.size()+1).find('/') == string::npos);
 }
 
@@ -269,10 +271,48 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex,
 
 EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
 {
+    size_t not_matchers_processed = 0;
+    size_t curr_ind = 0;
+
     ITERATE(TMatchers, i, m_Matchers) {
+        ++curr_ind;
         EDiagFilterAction action = (*i)->MatchFile(file);
-        if( action != eDiagFilter_None )
-            return action;
+
+        switch( action )
+        {
+        case eDiagFilter_Accept:
+            // Process all *AND NOT* conditions.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                // Not all *AND* conditions are still processed. 
+                // Continue to check.
+                ++not_matchers_processed;
+
+                if ( curr_ind != m_Matchers.size() ) {
+                    continue;
+                } else {
+                    return eDiagFilter_Accept;
+                }
+            }
+
+            // Process *OR* conditions
+            return eDiagFilter_Accept;
+        case eDiagFilter_Reject:
+            // Process all *AND NOT* and *OR* conditions.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                // *AND* failed ...
+                ++not_matchers_processed;
+                return eDiagFilter_Reject;
+            }
+            if ( curr_ind != m_Matchers.size() ) {
+                // It is still not the end of a list of the *OR* matchers.
+                // Continue to check for a success.
+                continue;
+            }
+            return eDiagFilter_Reject;
+        case eDiagFilter_None:
+            // Continue the loop.
+            break;
+        }
     }
 
     return eDiagFilter_None;
@@ -650,6 +690,7 @@ void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
                 case CDiagLexParser::ePath:
                     m_FileMatcher = new CDiagStrPathMatcher(lexer.GetId());
                     x_PutIntoFilter(to, eModule);
+                    m_Negative = false;
                     break;
                 case CDiagLexParser::eBrackets:
                     {
@@ -681,6 +722,7 @@ void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
                 case CDiagLexParser::ePath:
                     m_FileMatcher = new CDiagStrPathMatcher(lexer.GetId());
                     x_PutIntoFilter(to, eModule);
+                    m_Negative = false;
                     state = eStart;
                     break;
                 default :
@@ -782,6 +824,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2005/04/26 19:04:14  ssikorsk
+ * Fixed DIAG_FILTER bugs in parsing of string-based expressions and evaluation of
+ * string-based filters.
+ *
  * Revision 1.9  2005/04/26 14:46:28  ssikorsk
  * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
  * with the DIAG_FILTER expression evaluation.
