@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/04/26 15:44:31  vasilche
+* Added option -no_external. More detailed error report.
+*
 * Revision 1.15  2005/02/28 17:11:54  vasilche
 * Use correct AppMain() arguments.
 *
@@ -211,16 +214,20 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
-    typedef map<CSeq_id_Handle, int> TValueMap;
+    typedef vector<CConstRef<CSeq_feat> >   TFeats;
+    typedef CSeq_id_Handle                  TMapKey;
+    typedef map<TMapKey, TFeats>            TFeatMap;
+    typedef map<CSeq_id_Handle, int>        TIntMap;
     typedef vector<CSeq_id_Handle> TIds;
 
     CRef<CObjectManager> m_ObjMgr;
 
-    TValueMap m_mapGiToDesc;
-    TValueMap m_mapGiToFeat0;
-    TValueMap m_mapGiToFeat1;
+    TIntMap     m_DescMap;
+    TFeatMap    m_Feat0Map;
+    TFeatMap    m_Feat1Map;
 
-    void SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value);
+    void SetValue(TIntMap& vm, const CSeq_id_Handle& id, int value);
+    void SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value);
 
     TIds m_Ids;
 
@@ -228,6 +235,7 @@ protected:
     bool m_no_seq_map;
     bool m_no_snp;
     bool m_no_named;
+    bool m_no_external;
     bool m_adaptive;
     int  m_pause;
     bool m_prefetch;
@@ -240,22 +248,50 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 
-void CTestOM::SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value)
+void CTestOM::SetValue(TIntMap& vm, const CSeq_id_Handle& id, int value)
 {
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
-        old_value = vm.insert(TValueMap::value_type(id, value)).first->second;
+        old_value = vm.insert(TIntMap::value_type(id, value)).first->second;
     }}
     if ( old_value != value ) {
         string name;
-        if ( &vm == &m_mapGiToDesc ) name = "desc";
-        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
-        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
+        if ( &vm == &m_DescMap ) name = "desc";
         ERR_POST("Inconsistent "<<name<<" on "<<id.AsString()<<
                  " was "<<old_value<<" now "<<value);
     }
     _ASSERT(old_value == value);
+}
+
+
+void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
+{
+    const TFeats* old_value;
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        TFeatMap::iterator it = vm.lower_bound(key);
+        if ( it == vm.end() || it->first != key ) {
+            it = vm.insert(it, TFeatMap::value_type(key, value));
+        }
+        old_value = &it->second;
+    }}
+    if ( old_value->size() != value.size() ) {
+        CNcbiOstrstream s;
+        string name;
+        if ( &vm == &m_Feat0Map ) name = "feat0";
+        if ( &vm == &m_Feat1Map ) name = "feat1";
+        s << "Inconsistent "<<name<<" on "<<key.AsString()<<
+            " was "<<old_value->size()<<" now "<<value.size() << NcbiEndl;
+        ITERATE ( TFeats, it, *old_value ) {
+            s << " old: " << MSerial_AsnText << **it;
+        }
+        ITERATE ( TFeats, it, value ) {
+            s << " new: " << MSerial_AsnText << **it;
+        }
+        ERR_POST(string(CNcbiOstrstreamToString(s)));
+    }
+    _ASSERT(old_value->size() == value.size());
 }
 
 
@@ -323,6 +359,7 @@ bool CTestOM::Thread_Run(int idx)
 
         const int kMaxErrorCount = 30;
         int error_count = 0;
+        TFeats feats;
         for ( int i = from, end = to+delta; i != end; i += delta ) {
             CSeq_id_Handle sih = m_Ids[i];
             if ( i != from && pause ) {
@@ -388,7 +425,7 @@ bool CTestOM::Thread_Run(int idx)
                         count++;
                     }
                     // verify result
-                    SetValue(m_mapGiToDesc, sih, count);
+                    SetValue(m_DescMap, sih, count);
 
                     // enumerate features
                     SAnnotSelector sel(CSeqFeatData::e_not_set);
@@ -398,31 +435,34 @@ bool CTestOM::Thread_Run(int idx)
                     else if ( m_no_snp ) {
                         sel.ExcludeNamedAnnots("SNP");
                     }
+                    if ( m_no_external ) {
+                        sel.SetExcludeExternal();
+                    }
                     if ( m_adaptive ) {
                         sel.SetAdaptiveDepth();
                     }
 
-                    count = 0;
+                    feats.clear();
                     if ( idx%2 == 0 ) {
                         sel.SetResolveMethod(sel.eResolve_All);
                         for ( CFeat_CI it(handle, sel); it; ++it ) {
-                            count++;
+                            feats.push_back(ConstRef(&it->GetOriginalFeature()));
                         }
                         if ( m_verbose ) {
                             NcbiCout << " features: " << count << NcbiEndl;
                         }
                         // verify result
-                        SetValue(m_mapGiToFeat0, sih, count);
+                        SetValue(m_Feat0Map, sih, feats);
                     }
                     else {
                         sel.SetOverlapType(sel.eOverlap_Intervals);
                         CSeq_loc loc;
                         loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
                         for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
-                            count++;
+                            feats.push_back(ConstRef(&it->GetOriginalFeature()));
                         }
                         // verify result
-                        SetValue(m_mapGiToFeat1, sih, count);
+                        SetValue(m_Feat1Map, sih, feats);
                     }
                 }
                 if ( m_no_reset && m_keep_handles ) {
@@ -482,6 +522,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("no_seq_map", "Do not scan CSeqMap on the sequence");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
     args.AddFlag("no_named", "Exclude features from named Seq-annots");
+    args.AddFlag("no_external", "Exclude all external annotations");
     args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
     args.AddFlag("verbose", "Print each Seq-id before processing");
     args.AddDefaultKey
@@ -542,6 +583,7 @@ bool CTestOM::TestApp_Init(void)
     m_no_seq_map = args["no_seq_map"];
     m_no_snp = args["no_snp"];
     m_no_named = args["no_named"];
+    m_no_external = args["no_external"];
     m_adaptive = args["adaptive"];
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
@@ -559,13 +601,13 @@ bool CTestOM::TestApp_Init(void)
 bool CTestOM::TestApp_Exit(void)
 {
 /*
-    TValueMap::iterator it;
-    for (it = m_mapGiToDesc.begin(); it != m_mapGiToDesc.end(); ++it) {
+    TIntMap::iterator it;
+    for (it = m_DescMap.begin(); it != m_DescMap.end(); ++it) {
         LOG_POST(
             "id = "         << it->first.AsString()
             << ": desc = "  << it->second
-            << ", feat0 = " << m_mapGiToFeat0[it->first]
-            << ", feat1 = " << m_mapGiToFeat1[it->first]
+            << ", feat0 = " << m_Feat0Map[it->first]
+            << ", feat1 = " << m_Feat1Map[it->first]
             );
     }
 */
