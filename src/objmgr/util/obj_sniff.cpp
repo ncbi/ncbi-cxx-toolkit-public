@@ -255,7 +255,8 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         catch (CEofException& ) {
             break;
         }
-        catch (CException& ) {
+        catch (CException& _DEBUG_ARG(e)) {
+            _TRACE("  failed to read: " << e.GetMsg());
             Reset();
             input.SetStreamOffset(m_StreamOffset);
             ++it; // trying the next type.
@@ -271,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2005/04/26 17:31:54  dicuccio
+* Added tracing on failure to read
+*
 * Revision 1.20  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *
