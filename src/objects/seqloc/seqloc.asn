@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -22,7 +22,7 @@ IMPORTS Object-id, Int-fuzz, Dbtag, Date FROM NCBI-General
 --*
 
 Seq-id ::= CHOICE {
-    local Object-id ,      -- local use
+    local Object-id ,        -- local use
     gibbsq INTEGER ,         -- Geninfo backbone seqid
     gibbmt INTEGER ,         -- Geninfo backbone moltype
     giim Giimport-id ,       -- Geninfo import id
@@ -39,7 +39,9 @@ Seq-id ::= CHOICE {
     pdb PDB-seq-id ,         -- PDB sequence
     tpg Textseq-id ,         -- Third Party Annot/Seq Genbank
     tpe Textseq-id ,         -- Third Party Annot/Seq EMBL
-    tpd Textseq-id }         -- Third Party Annot/Seq DDBJ
+    tpd Textseq-id ,         -- Third Party Annot/Seq DDBJ
+    gpipe Textseq-id         -- Internal NCBI genome pipeline processing ID
+}
 
 
 Patent-seq-id ::= SEQUENCE {
@@ -53,14 +55,14 @@ Textseq-id ::= SEQUENCE {
     version INTEGER OPTIONAL }
 
 Giimport-id ::= SEQUENCE {
-    id INTEGER ,               -- the id to use here
-    db VisibleString OPTIONAL ,  -- dbase used in
-    release VisibleString OPTIONAL }   -- the release
+    id INTEGER ,                     -- the id to use here
+    db VisibleString OPTIONAL ,      -- dbase used in
+    release VisibleString OPTIONAL } -- the release
 
 PDB-seq-id ::= SEQUENCE {
-    mol PDB-mol-id ,          -- the molecule name
-    chain INTEGER DEFAULT 32 ,-- a single ASCII character, chain id
-    rel Date OPTIONAL }   -- release date, month and year
+    mol PDB-mol-id ,           -- the molecule name
+    chain INTEGER DEFAULT 32 , -- a single ASCII character, chain id
+    rel Date OPTIONAL }        -- release date, month and year
 
 PDB-mol-id ::= VisibleString  -- name of mol, 4 chars
     
@@ -103,7 +105,7 @@ Packed-seqpnt ::= SEQUENCE {
     fuzz Int-fuzz OPTIONAL ,
     points SEQUENCE OF INTEGER }
 
-Na-strand ::= ENUMERATED {          -- strand of nucleid acid
+Na-strand ::= ENUMERATED {          -- strand of nucleic acid
     unknown (0) ,
     plus (1) ,
     minus (2) ,               
