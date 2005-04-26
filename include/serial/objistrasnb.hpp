@@ -194,16 +194,21 @@ private:
     // low level interface
 private:
     Uint1 PeekTagByte(size_t index = 0);
-    Uint1 StartTag(void);
-    TTag PeekTag(void);
-    TTag PeekTag(EClass c, bool constructed);
+    Uint1 StartTag(Uint1 first_tag_byte);
+    TTag PeekTag(Uint1 first_tag_byte);
+    void ExpectTagClassByte(Uint1 first_tag_byte, Uint1 expected_class_byte);
+    void UnexpectedTagClassByte(Uint1 first_tag_byte, Uint1 expected_class_byte);
+    TTag PeekTag(Uint1 first_tag_byte, EClass c, bool constructed);
     string PeekClassTag(void);
     Uint1 PeekAnyTag(void);
+    void ExpectSysTagByte(Uint1 byte);
+    void UnexpectedSysTagByte(Uint1 byte);
     void ExpectSysTag(EClass c, bool constructed, ETag tag);
     void ExpectSysTag(ETag tag);
     Uint1 FlushTag(void);
     void ExpectIndefiniteLength(void);
     bool PeekIndefiniteLength(void);
+    void ExpectContainer(bool random);
 public:
     size_t ReadShortLength(void);
 private:
@@ -218,13 +223,13 @@ public:
     void ExpectByte(Uint1 byte);
 private:
     void ReadBytes(char* buffer, size_t count);
+    void ReadBytes(string& str, size_t count);
     void SkipBytes(size_t count);
 
     void ReadStringValue(size_t length, string& s, EFixNonPrint fix_type);
     void SkipTagData(void);
     bool HaveMoreElements(void);
     void UnexpectedMember(TTag tag);
-    void UnexpectedTag(TTag tag);
     void UnexpectedByte(Uint1 byte);
 
     friend class CObjectOStreamAsnBinary;
@@ -244,6 +249,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/04/26 14:13:27  vasilche
+* Optimized binary ASN.1 parsing.
+*
 * Revision 1.45  2004/08/30 18:13:24  gouriano
 * use CNcbiStreamoff instead of size_t for stream offset operations
 *

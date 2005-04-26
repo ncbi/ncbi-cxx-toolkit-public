@@ -41,7 +41,13 @@ Uint1 MakeTagByte(EClass c, bool constructed, ETag tag)
 inline
 Uint1 MakeTagByte(EClass c, bool constructed)
 {
-    return MakeTagByte(c, constructed, eNone);
+    return static_cast<Uint1>(constructed? (c << 6)|0x20: (c<<6));
+}
+
+inline
+Uint1 MakeContainerTagByte(bool random_order)
+{
+    return static_cast<Uint1>(0x30 + random_order);
 }
 
 inline
@@ -68,6 +74,9 @@ Uint1 ExtractClassAndConstructed(Uint1 byte)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/04/26 14:13:27  vasilche
+* Optimized binary ASN.1 parsing.
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

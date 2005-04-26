@@ -111,6 +111,7 @@ namespace CObjectStreamAsnBinaryDefs
 
     inline Uint1 MakeTagByte(EClass c, bool constructed, ETag tag);
     inline Uint1 MakeTagByte(EClass c, bool constructed);
+    inline Uint1 MakeContainerTagByte(bool random_order);
     inline ETag ExtractTag(Uint1 byte);
     inline bool ExtractConstructed(Uint1 byte);
     inline Uint1 ExtractClassAndConstructed(Uint1 byte);
@@ -131,6 +132,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/04/26 14:13:27  vasilche
+* Optimized binary ASN.1 parsing.
+*
 * Revision 1.9  2003/04/15 16:18:35  siyan
 * Added doxygen support
 *

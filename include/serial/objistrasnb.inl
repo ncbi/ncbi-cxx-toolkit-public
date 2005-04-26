@@ -42,9 +42,9 @@ CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 
 inline
 Uint1
-CObjectIStreamAsnBinary::StartTag(void)
+CObjectIStreamAsnBinary::StartTag(Uint1 first_tag_byte)
 {
-    return PeekTagByte();
+    return first_tag_byte;
 }
 
 inline
@@ -63,7 +63,7 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 inline
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
-    if ( FlushTag() != 0x80 )
+    if ( !m_Input.SkipExpectedChar(0x80, m_CurrentTagLength) )
         ThrowError(eFormatError, "indefinite length is expected");
 }
 
@@ -75,14 +75,10 @@ size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
 #endif
 
 inline
-void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
-                                           ETag tag)
+void CObjectIStreamAsnBinary::ExpectSysTagByte(Uint1 byte)
 {
-    _ASSERT(tag != CObjectStreamAsnBinaryDefs::eLongTag);
-    if ( StartTag() != CObjectStreamAsnBinaryDefs::MakeTagByte(c,
-                                                               constructed,
-                                                               tag) )
-        UnexpectedTag(tag);
+    if ( StartTag(PeekTagByte()) != byte )
+        UnexpectedSysTagByte(byte);
     m_CurrentTagLength = 1;
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagParsed;
@@ -90,9 +86,46 @@ void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
 }
 
 inline
+void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
+                                           ETag tag)
+{
+    _ASSERT(tag != CObjectStreamAsnBinaryDefs::eLongTag);
+    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeTagByte
+                     (c, constructed, tag));
+}
+
+inline
 void CObjectIStreamAsnBinary::ExpectSysTag(ETag tag)
 {
-    ExpectSysTag(CObjectStreamAsnBinaryDefs::eUniversal, false, tag);
+    _ASSERT(tag != CObjectStreamAsnBinaryDefs::eLongTag);
+    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeTagByte
+                     (CObjectStreamAsnBinaryDefs::eUniversal, false, tag));
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectContainer(bool random)
+{
+    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeContainerTagByte(random));
+    ExpectIndefiniteLength();
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectTagClassByte(Uint1 first_tag_byte,
+                                                 Uint1 expected_class_byte)
+{
+    if ( CObjectStreamAsnBinaryDefs::ExtractClassAndConstructed(first_tag_byte)
+         != expected_class_byte ) {
+        UnexpectedTagClassByte(first_tag_byte, expected_class_byte);
+    }
+}
+
+inline
+CObjectIStreamAsnBinary::TTag
+CObjectIStreamAsnBinary::PeekTag(Uint1 first_tag_byte,
+                                 EClass cls, bool constructed)
+{
+    ExpectTagClassByte(first_tag_byte, MakeTagByte(cls, constructed));
+    return PeekTag(first_tag_byte);
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -104,9 +137,10 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 inline
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
-    ExpectSysTag(CObjectStreamAsnBinaryDefs::eNone);
-    if ( FlushTag() != 0 )
-        ThrowError(eFormatError, "zero length expected");
+    if ( !m_Input.SkipExpectedChars(0, 0) ) {
+        ThrowError(eFormatError, "end of content expected");
+    }
+    m_CurrentTagLength = 0;
 }
 
 inline
@@ -141,6 +175,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/04/26 14:13:27  vasilche
+* Optimized binary ASN.1 parsing.
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

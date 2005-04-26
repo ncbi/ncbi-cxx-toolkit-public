@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/04/26 14:13:27  vasilche
+* Optimized binary ASN.1 parsing.
+*
 * Revision 1.71  2004/08/30 18:19:39  gouriano
 * Use CNcbiStreamoff instead of size_t for stream offset operations
 *
@@ -388,18 +391,19 @@ Uint1 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
     return m_Input.PeekChar(index);
 }
 
-Uint1 CObjectIStreamAsnBinary::StartTag(void)
+Uint1 CObjectIStreamAsnBinary::StartTag(Uint1 first_tag_byte)
 {
     if ( m_CurrentTagLength != 0 )
         ThrowError(fIllegalCall,
             "illegal StartTag call: current tag length != 0");
-    return PeekTagByte();
+    _ASSERT(PeekTagByte() == first_tag_byte);
+    return first_tag_byte;
 }
 #endif
 
-TTag CObjectIStreamAsnBinary::PeekTag(void)
+TTag CObjectIStreamAsnBinary::PeekTag(Uint1 first_tag_byte)
 {
-    Uint1 byte = StartTag();
+    Uint1 byte = StartTag(first_tag_byte);
     ETag sysTag = ExtractTag(byte);
     if ( sysTag != eLongTag ) {
         m_CurrentTagLength = 1;
@@ -426,20 +430,17 @@ TTag CObjectIStreamAsnBinary::PeekTag(void)
     return tag;
 }
 
-TTag CObjectIStreamAsnBinary::PeekTag(EClass cls, bool constructed)
+void CObjectIStreamAsnBinary::UnexpectedTagClassByte(Uint1 first_tag_byte,
+                                                     Uint1 expected_class_byte)
 {
-    if ( ExtractClassAndConstructed(PeekTagByte()) !=
-         MakeTagByte(cls, constructed) ) {
-        ThrowError(fFormatError, "unexpected tag class/constructed: #"
-            + NStr::UIntToString(PeekTagByte()) + ", should be #"
-            + NStr::UIntToString(MakeTagByte(cls, constructed)));
-    }
-    return PeekTag();
+    ThrowError(fFormatError, "unexpected tag class/constructed: #"
+               + NStr::UIntToString(first_tag_byte) + ", should be #"
+               + NStr::UIntToString(expected_class_byte));
 }
 
 string CObjectIStreamAsnBinary::PeekClassTag(void)
 {
-    Uint1 byte = StartTag();
+    Uint1 byte = StartTag(PeekTagByte());
     if ( ExtractTag(byte) != eLongTag ) {
         ThrowError(fFormatError, "long tag expected");
     }
@@ -462,7 +463,7 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
 
 Uint1 CObjectIStreamAsnBinary::PeekAnyTag(void)
 {
-    Uint1 fByte = StartTag();
+    Uint1 fByte = StartTag(PeekTagByte());
     if ( ExtractTag(fByte) != eLongTag ) {
         m_CurrentTagLength = 1;
 #if CHECK_STREAM_INTEGRITY
@@ -485,11 +486,11 @@ Uint1 CObjectIStreamAsnBinary::PeekAnyTag(void)
     return fByte;
 }
 
-void CObjectIStreamAsnBinary::UnexpectedTag(TTag tag)
+void CObjectIStreamAsnBinary::UnexpectedSysTagByte(Uint1 tag_byte)
 {
     ThrowError(fFormatError,
-               "unexpected tag: " + NStr::IntToString(m_Input.PeekChar()) +
-               ", should be: " + NStr::IntToString(tag));
+               "unexpected tag: " + NStr::IntToString(PeekTagByte()) +
+               ", should be: " + NStr::IntToString(tag_byte));
 }
 
 void CObjectIStreamAsnBinary::UnexpectedByte(Uint1 byte)
@@ -612,11 +613,10 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
-    if ( m_CurrentTagState != eTagStart )
+    if ( m_CurrentTagState != eTagStart || m_CurrentTagLength != 0 )
         ThrowError(fFormatError, "illegal ExpectEndOfContent call");
-    ExpectSysTag(eNone);
-    if ( FlushTag() != 0 ) {
-        ThrowError(fFormatError, "zero length expected");
+    if ( !m_Input.SkipExpectedChars(0, 0) ) {
+        ThrowError(eFormatError, "end of content expected");
     }
     _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());
     // restore tag limit from stack
@@ -653,6 +653,24 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
         ThrowError(fOverflow, "tag size overflow");
 #endif
     m_Input.GetChars(buffer, count);
+}
+
+void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eData ) {
+        ThrowError(fIllegalCall, "illegal ReadBytes call");
+    }
+#endif
+    if ( count == 0 )
+        return;
+#if CHECK_STREAM_INTEGRITY
+    CNcbiStreamoff cur_pos = m_Input.GetStreamOffset();
+    CNcbiStreamoff end_pos = cur_pos + count;
+    if ( end_pos < cur_pos || end_pos > m_CurrentTagLimit )
+        ThrowError(fOverflow, "tag size overflow");
+#endif
+    m_Input.GetChars(str, count);
 }
 
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
@@ -830,11 +848,103 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     return data;
 }
 
-void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
-{
-    ExpectSysTag(eVisibleString);
-    ReadStringValue(ReadLength(), s,
-                    type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
+namespace {
+    inline
+    bool BadVisibleChar(char c)
+    {
+        return Uint1(c-' ') > Uint1('~' - ' ');
+    }
+
+    inline
+    void ReplaceVisibleCharMethod(char& c, EFixNonPrint fix_method)
+    {
+        c = ReplaceVisibleChar(c, fix_method, 0);
+    }
+
+    inline
+    void FixVisibleCharAlways(char& c)
+    {
+        if ( BadVisibleChar(c) ) {
+            c = '#';
+        }
+    }
+    inline
+    void FixVisibleCharMethod(char& c, EFixNonPrint fix_method)
+    {
+        if ( BadVisibleChar(c) ) {
+            ReplaceVisibleCharMethod(c, fix_method);
+        }
+    }
+
+#define FIND_BAD_CHAR(ptr)                      \
+        do {                                    \
+            if ( !count ) {                     \
+                return false;                   \
+            }                                   \
+            --count;                            \
+        } while ( !BadVisibleChar(*ptr++) );    \
+        --ptr
+
+#define REPLACE_BAD_CHARS_ALWAYS(ptr)           \
+        *--ptr = '#';                           \
+        while ( count-- ) {                     \
+            FixVisibleCharAlways(*++ptr);       \
+        }                                       \
+        return true
+    
+#define REPLACE_BAD_CHARS_METHOD(ptr, fix_method)          \
+        ReplaceVisibleCharMethod(*--ptr, fix_method);      \
+        while ( count-- ) {                                \
+            FixVisibleCharMethod(*++ptr, fix_method);      \
+        }                                                  \
+        return true
+    
+    bool FixVisibleCharsAlways(char* ptr, size_t count)
+    {
+        FIND_BAD_CHAR(ptr);
+        REPLACE_BAD_CHARS_ALWAYS(ptr);
+    }
+
+    bool FixVisibleCharsMethod(char* ptr, size_t count,
+                               EFixNonPrint fix_method)
+    {
+        FIND_BAD_CHAR(ptr);
+        REPLACE_BAD_CHARS_METHOD(ptr, fix_method);
+    }
+
+    bool FixVisibleCharsAlways(string& s)
+    {
+        size_t count = s.size();
+        const char* ptr = s.data();
+        FIND_BAD_CHAR(ptr);
+        string::iterator it = s.begin()+(ptr-s.data());
+        REPLACE_BAD_CHARS_ALWAYS(it);
+    }
+
+    bool FixVisibleCharsMethod(string& s, EFixNonPrint fix_method)
+    {
+        size_t count = s.size();
+        const char* ptr = s.data();
+        FIND_BAD_CHAR(ptr);
+        string::iterator it = s.begin()+(ptr-s.data());
+        REPLACE_BAD_CHARS_METHOD(it, fix_method);
+    }
+
+    inline
+    bool FixVisibleChars(char* ptr, size_t count, EFixNonPrint fix_method)
+    {
+        return fix_method == eFNP_Allow? false:
+            fix_method == eFNP_Replace? FixVisibleCharsAlways(ptr, count):
+            FixVisibleCharsMethod(ptr, count, fix_method);
+    }
+
+    inline
+    bool FixVisibleChars(string& s, EFixNonPrint fix_method)
+    {
+        return fix_method == eFNP_Allow? false:
+            fix_method == eFNP_Replace? FixVisibleCharsAlways(s):
+            FixVisibleCharsMethod(s, fix_method);
+    }
 }
 
 void CObjectIStreamAsnBinary::ReadString(string& s,
@@ -843,11 +953,12 @@ void CObjectIStreamAsnBinary::ReadString(string& s,
 {
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();
-    char buffer[1024];
-    if ( length > sizeof(buffer) || length > pack_string.GetLengthLimit() ) {
+    static const size_t BUFFER_SIZE = 1024;
+    char buffer[BUFFER_SIZE];
+    if ( length > BUFFER_SIZE || length > pack_string.GetLengthLimit() ) {
         pack_string.Skipped();
         ReadStringValue(length, s,
-                        type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
+                        type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
     }
     else {
         ReadBytes(buffer, length);
@@ -858,26 +969,28 @@ void CObjectIStreamAsnBinary::ReadString(string& s,
             pack_string.AddOld(s, found.first);
         }
         else {
-            if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
-                // check contents of string
-                for ( size_t i = 0; i < length; ++i ) {
-                    if ( !GoodVisibleChar(buffer[i]) ) {
-                        for ( ; i < length; ++i ) {
-                            FixVisibleChar(buffer[i], m_FixMethod);
-                        }
-                        pack_string.Pack(s, buffer, length);
-                        return;
-                    }
-                }
+            if ( type == eStringTypeVisible &&
+                 FixVisibleChars(buffer, length, m_FixMethod) ) {
+                // do not remember fixed strings
+                pack_string.Pack(s, buffer, length);
+                return;
             }
             pack_string.AddNew(s, buffer, length, found.first);
         }
     }
 }
 
+void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
+{
+    ExpectSysTag(eVisibleString);
+    ReadStringValue(ReadLength(), s,
+                    type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
+}
+
+
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 {
-    ExpectSysTag(eApplication, false, eStringStore);
+    ExpectSysTagByte(MakeTagByte(eApplication, false, eStringStore));
     ReadStringValue(ReadLength(), s, m_FixMethod);
 }
 
@@ -885,32 +998,19 @@ void CObjectIStreamAsnBinary::ReadStringValue(size_t length,
                                               string& s,
                                               EFixNonPrint fix_method)
 {
-    s.reserve(length);
-    char buffer[1024];
-    if ( length < sizeof(buffer) ) {
-        // try to reuse old value
-        ReadBytes(buffer, length);
-        if ( fix_method != eFNP_Allow ) {
-            for ( size_t i = 0; i < length; ++i ) {
-                FixVisibleChar(buffer[i], fix_method);
-            }
-        }
-        if ( s.size() != length || memcmp(s.data(), buffer, length) != 0 ) {
-            s.assign(buffer, length);
-        }
+    static const size_t BUFFER_SIZE = 1024;
+    if ( length != s.size() || length > BUFFER_SIZE ) {
+        // new string
+        ReadBytes(s, length);
+        FixVisibleChars(s, fix_method);
     }
     else {
-        s.erase();
-        while ( length ) {
-            size_t count = min(length, sizeof(buffer));
-            ReadBytes(buffer, count);
-            if ( fix_method != eFNP_Allow ) {
-                for ( size_t i = 0; i < count; ++i ) {
-                    FixVisibleChar(buffer[i], fix_method);
-                }
-            }
-            s.append(buffer, count);
-            length -= count;
+        char buffer[BUFFER_SIZE];
+        // try to reuse old value
+        ReadBytes(buffer, length);
+        FixVisibleChars(buffer, length, fix_method);
+        if ( memcmp(s.data(), buffer, length) != 0 ) {
+            s.assign(buffer, length);
         }
     }
     EndOfTag();
@@ -923,23 +1023,14 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     char* s = static_cast<char*>(malloc(length + 1));
     ReadBytes(s, length);
     s[length] = 0;
-    if ( m_FixMethod != eFNP_Allow ) {
-        // Check the string for non-printable characters
-        for ( char* ptr = s; length; ++ptr, --length ) {
-            FixVisibleChar(*ptr, m_FixMethod);
-        }
-    }
+    FixVisibleChars(s, length, m_FixMethod);
     EndOfTag();
     return s;
 }
 
-void CObjectIStreamAsnBinary::BeginContainer(const CContainerTypeInfo* containerType)
+void CObjectIStreamAsnBinary::BeginContainer(const CContainerTypeInfo* contType)
 {
-    if ( containerType->RandomElementsOrder() )
-        ExpectSysTag(eUniversal, true, eSet);
-    else
-        ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
+    ExpectContainer(contType->RandomElementsOrder());
 }
 
 void CObjectIStreamAsnBinary::EndContainer(void)
@@ -956,11 +1047,7 @@ bool CObjectIStreamAsnBinary::BeginContainerElement(TTypeInfo /*elementType*/)
 void CObjectIStreamAsnBinary::ReadContainer(const CContainerTypeInfo* cType,
                                             TObjectPtr containerPtr)
 {
-    if ( cType->RandomElementsOrder() )
-        ExpectSysTag(eUniversal, true, eSet);
-    else
-        ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
+    ExpectContainer(cType->RandomElementsOrder());
 
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
 
@@ -987,11 +1074,7 @@ void CObjectIStreamAsnBinary::ReadContainer(const CContainerTypeInfo* cType,
 
 void CObjectIStreamAsnBinary::SkipContainer(const CContainerTypeInfo* cType)
 {
-    if ( cType->RandomElementsOrder() )
-        ExpectSysTag(eUniversal, true, eSet);
-    else
-        ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
+    ExpectContainer(cType->RandomElementsOrder());
 
     TTypeInfo elementType = cType->GetElementType();
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
@@ -1008,11 +1091,7 @@ void CObjectIStreamAsnBinary::SkipContainer(const CContainerTypeInfo* cType)
 
 void CObjectIStreamAsnBinary::BeginClass(const CClassTypeInfo* classInfo)
 {
-    if ( classInfo->RandomOrder() )
-        ExpectSysTag(eUniversal, true, eSet);
-    else
-        ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
+    ExpectContainer(classInfo->RandomOrder());
 }
 
 void CObjectIStreamAsnBinary::EndClass(void)
@@ -1029,10 +1108,11 @@ void CObjectIStreamAsnBinary::UnexpectedMember(TTag tag)
 TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
 {
-    if ( !HaveMoreElements() )
+    Uint1 first_tag_byte = PeekTagByte();
+    if ( first_tag_byte == CObjectStreamAsnBinaryDefs::eEndOfContentsByte )
         return kInvalidMember;
 
-    TTag tag = PeekTag(eContextSpecific, true);
+    TTag tag = PeekTag(first_tag_byte, eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember )
@@ -1050,10 +1130,11 @@ TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos)
 {
-    if ( !HaveMoreElements() )
+    Uint1 first_tag_byte = PeekTagByte();
+    if ( first_tag_byte == CObjectStreamAsnBinaryDefs::eEndOfContentsByte )
         return kInvalidMember;
 
-    TTag tag = PeekTag(eContextSpecific, true);
+    TTag tag = PeekTag(first_tag_byte, eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember )
@@ -1140,7 +1221,7 @@ void CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classTyp
 
 TMemberIndex CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    TTag tag = PeekTag(eContextSpecific, true);
+    TTag tag = PeekTag(PeekTagByte(), eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = choiceType->GetVariants().Find(tag);
     if ( index == kInvalidMember )
