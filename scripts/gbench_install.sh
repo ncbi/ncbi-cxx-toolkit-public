@@ -124,7 +124,11 @@ RelativeCP()
         # trying to find the relative path
         path1=`dirname $1`
         path2=$2
-        pdiff=`RelativePath $path1 $path2`
+        if [ "$path1" != "$last_path1" -o "$path2" != "$last_path2" ]; then
+            pdiff=`RelativePath $path1 $path2`
+            last_path1=$path1
+            last_path2=$path2
+        fi
 
         if [ "$pdiff" = "" ]; then
             COMMON_ExecRB $BINCOPY $1 $2
