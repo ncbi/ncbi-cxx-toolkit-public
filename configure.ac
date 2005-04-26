@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.365 2005/04/19 15:01:16 ucko Exp $
+#  $Id: configure.ac,v 1.366 2005/04/26 14:53:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1437,14 +1437,23 @@ fi
 
 
 #### Release/Debug
-if test "$with_debug" = "no" ; then
-   release_debug="Release"
-   D_SFX=
-else
-   release_debug="Debug"
-   D_SFX=d
-fi
-DEBUG_SFX=${release_debug}
+case "${with_debug}:${with_optimization}" in
+   no:*)
+      release_debug=Release
+      DEBUG_SFX=Release
+      D_SFX=
+      ;;
+   yes:yes)
+      release_debug=DebugOpt
+      DEBUG_SFX=Debug
+      D_SFX=d
+      ;;
+   *)
+      release_debug=Debug
+      DEBUG_SFX=Debug
+      D_SFX=d
+      ;;
+esac
 
 
 #### Profiling; try to turn on both function weight and basic-block counting
@@ -1768,8 +1777,7 @@ if test "$compiler" != "MSVC" ; then
          CFLAGS="$CFLAGS -g"     ; fi
       if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
-      if test "$with_optimization" = "no" ; then
-         CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
+      CPPFLAGS="-D_DEBUG $CPPFLAGS"
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP="@:"
@@ -1790,7 +1798,8 @@ if test "$compiler" != "MSVC" ; then
          CFLAGS="$CFLAGS -O" ; fi
       if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      CPPFLAGS="-DNDEBUG $CPPFLAGS"
+      if test "$with_debug" != "yes" ; then
+         CPPFLAGS="-DNDEBUG $CPPFLAGS" ; fi
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
@@ -2826,9 +2835,9 @@ if test "$with_bdb" != "no" ; then
    fi
    : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
-      for d in "${compiler_vpfx}${release_debug}${bit64_sfx}" \
-               "${compiler_pfx}${release_debug}${bit64_sfx}" \
-               "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+      for d in "${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}" \
+               "${compiler_pfx}${DEBUG_SFX}${bit64_sfx}" \
+               "${DEBUG_SFX}${bit64_sfx}" "lib${bit64_sfx}" lib; do
          for sfx in "$bit64_sfx$mt_sfx" "$bit64_sfx" "$mt_sfx" ""; do
             BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d$sfx
             test -d ${BERKELEYDB_LIBPATH}  &&  break
@@ -3216,12 +3225,12 @@ if test "$with_fltk" != "no"; then
          FLTK_PATH="$NCBI/fltk"
       fi
    fi
-   if test -d "$FLTK_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+   if test -d "$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$FLTK_ARCH_PATH"; then
-      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
-   elif test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   elif test -d "$FLTK_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$FLTK_ARCH_PATH"; then
-      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
+      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    else
       FLTK_ARCH_PATH="$FLTK_PATH"
    fi
@@ -3283,12 +3292,12 @@ if test "$with_wxwin" != "no" ; then
          WXWIN_PATH="$NCBI/wxwin"
       fi
    fi
-   if test -d "$WXWIN_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+   if test -d "$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIN_ARCH_PATH"; then
-      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
-   elif test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   elif test -d "$WXWIN_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIN_ARCH_PATH"; then
-      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
+      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    else
       WXWIN_ARCH_PATH="$WXWIN_PATH"
    fi
@@ -3420,7 +3429,7 @@ if test "$with_sss" != "no" ; then
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
-      NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${release_debug}${bit64_sfx}"
+      NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
       if test "$with_mt" = "yes" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
@@ -3528,7 +3537,7 @@ if test "$with_geo" != "no" ; then
    NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/production"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
-      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_vpfx}${release_debug}${bit64_sfx}"
+      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
    fi
    AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
    if test "$with_included_geo" = "yes"; then
@@ -3598,7 +3607,7 @@ if test "$with_sp" != "no" ; then
       SP_GENERIC="$SP_PATH/generic"
    fi
    if test -z "$SP_LIBPATH" ; then
-      SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
+      SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    fi
    AC_MSG_CHECKING([for SP directories in $SP_PATH])
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
@@ -3649,7 +3658,7 @@ if test "$with_pubmed" != "no" ; then
       *$bit64_sfx ) ;;
       * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
    esac
-   pmtag=${release_debug}${bit64_sfx:-32}
+   pmtag=${DEBUG_SFX}${bit64_sfx:-32}
    vpath="$NCBI_PM_PATH/${compiler_vpfx}build"
    test -d "$vpath"  &&  NCBI_PM_PATH=$vpath
 
@@ -3687,7 +3696,7 @@ elif test "$with_orbacus" != no; then
     ORBACUS_PATH=$with_orbacus
 fi
 if test "$with_orbacus" != no; then
-   fullpath=${ORBACUS_PATH}/${release_debug}${mt_sfx}${bit64_sfx}
+   fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    LIBOB="-lOB"
    if test "$with_mt" = "yes" ; then
       LIBOB="$LIBOB -lJTC"
@@ -3748,12 +3757,12 @@ if test "$with_icu" != "no" ; then
          ICU_PATH="$NCBI/icu"
       fi
    fi
-   if test -d "$ICU_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}/lib" \
+   if test -d "$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}/lib" \
         -a -z "$ICU_ARCH_PATH"; then
-      ICU_ARCH_PATH="$ICU_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
-   elif test -d "$ICU_PATH/${compiler_pfx}${release_debug}${bit64_sfx}${mt_sfx}/lib" \
+      ICU_ARCH_PATH="$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+   elif test -d "$ICU_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}/lib" \
         -a -z "$ICU_ARCH_PATH"; then
-      ICU_ARCH_PATH="$ICU_PATH/${compiler_pfx}${release_debug}${bit64_sfx}${mt_sfx}"
+      ICU_ARCH_PATH="$ICU_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    else
       ICU_ARCH_PATH="$ICU_PATH"
    fi
@@ -3826,7 +3835,7 @@ else
 fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
-vpath="$LIBXML_PATH/${compiler_vpfx}${release_debug}${mt_sfx}"
+vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}"
 test -d "$vpath"  &&  LIBXML_PATH=$vpath
 NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
  AC_LANG_PROGRAM([#include <libxml/parser.h>],
@@ -3845,7 +3854,7 @@ if test "$with_xerces" != no; then
    if test -d "$XERCES_PATH"; then
       XERCES_PATH=`cd $XERCES_PATH && $smart_pwd`
    fi
-   vpath="$XERCES_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   vpath="$XERCES_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
       XERCES_PATH=$vpath
    elif test -d "$vpath"; then
@@ -3897,7 +3906,7 @@ if test "$with_xalan" != no; then
    if test -d "$XALAN_PATH"; then
       XALAN_PATH=`cd $XALAN_PATH && $smart_pwd`
    fi
-   vpath="$XALAN_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   vpath="$XALAN_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
       XALAN_PATH=$vpath
    elif test -d "$vpath"; then
