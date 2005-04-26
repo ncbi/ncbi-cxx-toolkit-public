@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/04/26 14:11:04  vasilche
+* Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
+*
 * Revision 1.33  2005/02/23 21:06:13  vasilche
 * Added HasMore().
 *
@@ -209,9 +212,14 @@ public:
     void SkipChars(size_t count);
     // equivalent of SkipChars(1)
     void SkipChar(void);
+    bool SkipExpectedChar(char c, size_t offset = 0);
+    bool SkipExpectedChars(char c1, char c2, size_t offset = 0);
 
     // read chars in buffer
     void GetChars(char* buffer, size_t count)
+        THROWS1((CIOException));
+    // read chars in string
+    void GetChars(string& str, size_t count)
         THROWS1((CIOException));
     // skip chars which may not be in buffer
     void GetChars(size_t count)

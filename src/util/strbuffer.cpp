@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/04/26 14:11:04  vasilche
+* Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
+*
 * Revision 1.46  2005/02/23 21:06:13  vasilche
 * Added HasMore().
 *
@@ -514,6 +517,35 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
             m_CurrentPos = pos += c;
             pos = FillBuffer(pos);
         }
+    }
+}
+
+void CIStreamBuffer::GetChars(string& str, size_t count)
+    THROWS1((CIOException))
+{
+    // cache pos
+    char* pos = m_CurrentPos;
+    size_t in_buffer = m_DataEndPos - pos;
+    if ( in_buffer >= count ) {
+        // simplest case - plain copy
+        str.assign(pos, count);
+        m_CurrentPos = pos + count;
+        return;
+    }
+    str.reserve(count);
+    str.assign(pos, in_buffer);
+    for ( ;; ) {
+        count -= in_buffer;
+        m_CurrentPos = pos += in_buffer;
+        pos = FillBuffer(pos);
+        in_buffer = m_DataEndPos - pos;
+        if ( in_buffer >= count ) {
+            // all data is already in buffer -> copy it
+            str.append(pos, count);
+            m_CurrentPos = pos + count;
+            return;
+        }
+        str.append(pos, in_buffer);
     }
 }
 

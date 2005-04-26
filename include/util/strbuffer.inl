@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/04/26 14:11:04  vasilche
+* Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
+*
 * Revision 1.7  2005/02/23 21:06:13  vasilche
 * Added HasMore().
 *
@@ -93,6 +96,30 @@ char CIStreamBuffer::PeekCharNoEOF(size_t offset)
     if ( pos >= m_DataEndPos )
         return FillBufferNoEOF(pos);
     return *pos;
+}
+
+inline
+bool CIStreamBuffer::SkipExpectedChar(char c, size_t offset)
+{
+    char* pos = m_CurrentPos+offset;
+    if ( pos >= m_DataEndPos )
+        pos = FillBuffer(pos);
+    if ( *pos != c )
+        return false;
+    m_CurrentPos = pos+1;
+    return true;
+}
+
+inline
+bool CIStreamBuffer::SkipExpectedChars(char c1, char c2, size_t offset)
+{
+    char* pos = m_CurrentPos+offset+1;
+    if ( pos >= m_DataEndPos )
+        pos = FillBuffer(pos);
+    if ( pos[-1] != c1 || pos[0] != c2 )
+        return false;
+    m_CurrentPos = pos+1;
+    return true;
 }
 
 inline
