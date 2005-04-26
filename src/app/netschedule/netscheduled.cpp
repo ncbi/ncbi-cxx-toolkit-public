@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.2.1  " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.2.2  " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1447,13 +1447,12 @@ class CNetScheduleDApp : public CNcbiApplication
 {
 public:
     CNetScheduleDApp() 
-        : CNcbiApplication(),  
-          m_ErrLog("ns_err.log", 25 * 1024 * 1024)
+        : CNcbiApplication()
     {}
     void Init(void);
     int Run(void);
 private:
-    CRotatingLogStream m_ErrLog;
+    auto_ptr<CRotatingLogStream> m_ErrLog;
 };
 
 void CNetScheduleDApp::Init(void)
@@ -1476,15 +1475,50 @@ void CNetScheduleDApp::Init(void)
 }
 
 
+/// @internal
+extern "C" void Threaded_Server_SignalHandler( int )
+{
+    if (s_netschedule_server && 
+        (!s_netschedule_server->ShutdownRequested()) ) {
+        s_netschedule_server->SetShutdownFlag();
+        LOG_POST("Interrupt signal. Shutdown requested.");
+    }
+}
+
+
+
 
 int CNetScheduleDApp::Run(void)
 {
     LOG_POST(NETSCHEDULED_VERSION);
-
+    
     CArgs args = GetArgs();
 
     try {
         const CNcbiRegistry& reg = GetConfig();
+
+#if defined(NCBI_OS_UNIX)
+        bool is_daemon =
+            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+        if (is_daemon) {
+            LOG_POST("Entering UNIX daemon mode...");
+            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            if (!daemon) {
+                return 0;
+            }
+
+        }
+        
+     // attempt to get server gracefully shutdown on signal
+     signal( SIGINT, Threaded_Server_SignalHandler);
+     signal( SIGTERM, Threaded_Server_SignalHandler);    
+#endif
+                   
+        m_ErrLog.reset(new CNetScheduleLogStream("ns_err.log", 25 * 1024 * 1024));     
+        // All errors redirected to rotated log
+        // from this moment on the server is silent...
+        SetDiagStream(m_ErrLog.get());
+        
 
         CConfig conf(reg);
 
@@ -1604,19 +1638,6 @@ int CNetScheduleDApp::Run(void)
         min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
         
         
-#if defined(NCBI_OS_UNIX)
-        bool is_daemon =
-            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
-        if (is_daemon) {
-            bool daemon = Daemonize();
-            if (!daemon) {
-                return 0;
-            }
-
-        }
-#endif        
-
-        
         qdb->RunExecutionWatcherThread(min_run_timeout);
         qdb->RunPurgeThread();
         qdb->RunNotifThread();
@@ -1649,10 +1670,6 @@ int CNetScheduleDApp::Run(void)
         
         LOG_POST(Info << "Running server on port " << port);
 
-        // All errors redirected to rotated log
-        // from this moment on the server is silent...
-        SetDiagStream(&m_ErrLog);
-
         thr_srv->Run();
 
         LOG_POST("NetSchedule server stoped.");
@@ -1660,12 +1677,17 @@ int CNetScheduleDApp::Run(void)
     }
     catch (CBDB_ErrnoException& ex)
     {
-        NcbiCerr << "Error: DBD errno exception:" << ex.what();
+        LOG_POST(Error << "Error: DBD errno exception:" << ex.what());
         return 1;
     }
     catch (CBDB_LibException& ex)
     {
-        NcbiCerr << "Error: DBD library exception:" << ex.what();
+        LOG_POST(Error << "Error: DBD library exception:" << ex.what());
+        return 1;
+    }
+    catch (exception& ex)
+    {
+        LOG_POST(Error << "Error: STD exception:" << ex.what());
         return 1;
     }
 
@@ -1674,26 +1696,9 @@ int CNetScheduleDApp::Run(void)
 
 
 
-/// @internal
-extern "C" void Threaded_Server_SignalHandler( int )
-{
-    if (s_netschedule_server && 
-        (!s_netschedule_server->ShutdownRequested()) ) {
-        s_netschedule_server->SetShutdownFlag();
-        LOG_POST("Interrupt signal. Shutdown requested.");
-    }
-}
-
-
 
 int main(int argc, const char* argv[])
 {
-
-#if defined(NCBI_OS_UNIX)
-    // attempt to get server gracefully shutdown on signal
-     signal( SIGINT, Threaded_Server_SignalHandler);
-     signal( SIGTERM, Threaded_Server_SignalHandler);    
-#endif
 
      return 
         CNetScheduleDApp().AppMain(argc, argv, 0, 
@@ -1703,6 +1708,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/04/26 18:31:04  kuznets
+ * Corrected bug in daemonization
+ *
  * Revision 1.29  2005/04/25 18:20:59  kuznets
  * Added daeminization.
  *
