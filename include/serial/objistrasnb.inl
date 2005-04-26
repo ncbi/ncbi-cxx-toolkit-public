@@ -63,7 +63,8 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 inline
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
-    if ( !m_Input.SkipExpectedChar(char(eIndefiniteLengthByte),
+    if ( !m_Input.SkipExpectedChar
+             (char(CObjectStreamAsnBinaryDefs::eIndefiniteLengthByte),
                                    m_CurrentTagLength) ) {
         ThrowError(eFormatError, "indefinite length is expected");
     }
@@ -177,6 +178,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/04/26 15:14:09  vasilche
+* Use scope prefix.
+*
 * Revision 1.6  2005/04/26 14:55:48  vasilche
 * Use named constant for indefinite length byte.
 *
