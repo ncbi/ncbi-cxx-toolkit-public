@@ -101,6 +101,7 @@ namespace CObjectStreamAsnBinaryDefs
         eStringStore = 1,
 
         // combined bytes
+        eIndefiniteLengthByte = 0x80,
         eEndOfContentsByte = 0
     };
 
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/04/26 14:55:48  vasilche
+* Use named constant for indefinite length byte.
+*
 * Revision 1.10  2005/04/26 14:13:27  vasilche
 * Optimized binary ASN.1 parsing.
 *

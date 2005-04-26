@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/04/26 14:55:48  vasilche
+* Use named constant for indefinite length byte.
+*
 * Revision 1.72  2005/04/26 14:13:27  vasilche
 * Optimized binary ASN.1 parsing.
 *
@@ -513,7 +516,8 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 {
     if ( m_CurrentTagState != eTagParsed )
         ThrowError(fIllegalCall, "illegal PeekIndefiniteLength call");
-    return Uint1(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    return
+        Uint1(m_Input.PeekChar(m_CurrentTagLength)) == eIndefiniteLengthByte;
 }
 
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
@@ -521,7 +525,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
     // indefinite length allowed only for constructed tags
     if ( !ExtractConstructed(m_Input.PeekChar()) )
         ThrowError(fFormatError, "illegal ExpectIndefiniteLength call");
-    if ( FlushTag() != 0x80 ) {
+    if ( FlushTag() != eIndefiniteLengthByte ) {
         ThrowError(fFormatError, "indefinite length is expected");
     }
     _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());

@@ -297,7 +297,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
 inline
 void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
 {
-    WriteByte(0x80);
+    WriteByte(eIndefiniteLengthByte);
 }
 
 inline
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2005/04/26 14:55:48  vasilche
+* Use named constant for indefinite length byte.
+*
 * Revision 1.92  2004/09/01 14:22:53  ucko
 * Tweak for our LFS-enabled version of GCC 3.3.3, which doesn't provide
 * ++ or -- for streamoff.

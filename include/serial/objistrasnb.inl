@@ -63,8 +63,10 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 inline
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
-    if ( !m_Input.SkipExpectedChar(0x80, m_CurrentTagLength) )
+    if ( !m_Input.SkipExpectedChar(char(eIndefiniteLengthByte),
+                                   m_CurrentTagLength) ) {
         ThrowError(eFormatError, "indefinite length is expected");
+    }
 }
 
 inline
@@ -175,6 +177,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/04/26 14:55:48  vasilche
+* Use named constant for indefinite length byte.
+*
 * Revision 1.5  2005/04/26 14:13:27  vasilche
 * Optimized binary ASN.1 parsing.
 *
