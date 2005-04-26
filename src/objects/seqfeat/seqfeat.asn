@@ -1,4 +1,4 @@
---$Revision: 6.12 $
+--$Revision: 6.13 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -54,7 +54,10 @@ Seq-feat ::= SEQUENCE {
     xref SET OF SeqFeatXref OPTIONAL ,   -- cite other relevant features
     dbxref SET OF Dbtag OPTIONAL ,  -- support for xref to other databases
     pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
-    except-text VisibleString OPTIONAL } -- explain if except=TRUE
+    except-text VisibleString OPTIONAL , -- explain if except=TRUE
+    ids SET OF Feat-id OPTIONAL ,       -- set of Ids; will replace 'id' field
+    exts SET OF User-object OPTIONAL    -- set of extensions; will replace 'ext' field
+}
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
