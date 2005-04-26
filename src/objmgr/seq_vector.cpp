@@ -252,11 +252,12 @@ bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
 }
 
 
-CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
+CSeqVectorTypes::TResidue
+CSeqVectorTypes::sx_GetGapChar(TCoding coding, ECaseConversion case_cvt)
 {
     switch (coding) {
     case CSeq_data::e_Iupacna: // DNA - N
-        return 'N';
+        return case_cvt == eCaseConversion_lower? 'n': 'N';
     
     case CSeq_data::e_Ncbi8na: // DNA - bit representation
     case CSeq_data::e_Ncbi4na:
@@ -264,7 +265,7 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
 
     case CSeq_data::e_Ncbieaa: // Proteins - X
     case CSeq_data::e_Iupacaa:
-        return 'X';
+        return case_cvt == eCaseConversion_lower? 'x': 'X';
     
     case CSeq_data::e_Ncbi8aa: // Protein - numeric representation
     case CSeq_data::e_Ncbistdaa:
@@ -288,14 +289,13 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
 
 DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex2);
 
-const char* CSeqVector::sx_GetConvertTable(TCoding src,
-                                           TCoding dst,
-                                           bool reverse,
-                                           TCaseConversion case_conversion)
+const char*
+CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
+                                    bool reverse, ECaseConversion case_cvt)
 {
     CFastMutexGuard guard(s_ConvertTableMutex2);
     typedef pair<TCoding, TCoding> TMainConversion;
-    typedef pair<bool, CSeqVector_CI::ECaseConversion> TConversionFlags;
+    typedef pair<bool, ECaseConversion> TConversionFlags;
     typedef pair<TMainConversion, TConversionFlags> TConversionKey;
     typedef vector<char> TConversionTable;
     typedef map<TConversionKey, TConversionTable> TTables;
@@ -303,7 +303,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
 
     TConversionKey key;
     key.first = TMainConversion(src, dst);
-    key.second = TConversionFlags(reverse, case_conversion);
+    key.second = TConversionFlags(reverse, case_cvt);
     TTables::iterator it = tables.find(key);
     if ( it != tables.end() ) {
         // already created
@@ -334,10 +334,12 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             reverse = false;
         }
     }
-    if ( case_conversion != CSeqVector_CI::eCaseConversion_none ) {
+    if ( case_cvt != eCaseConversion_none ) {
         // check if dst is text format
-        if ( dst != CSeq_data::e_Iupacaa && dst != CSeq_data::e_Iupacna ) {
-            case_conversion = CSeqVector_CI::eCaseConversion_none;
+        if ( dst != CSeq_data::e_Iupacaa &&
+             dst != CSeq_data::e_Iupacna &&
+             dst != CSeq_data::e_Ncbieaa ) {
+            case_cvt = eCaseConversion_none;
         }
     }
 
@@ -358,8 +360,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             return 0;
         }
     }
-    else if ( !reverse &&
-              case_conversion == CSeqVector_CI::eCaseConversion_none ) {
+    else if ( !reverse && case_cvt == eCaseConversion_none ) {
         // no need to convert at all
         return 0;
     }
@@ -375,10 +376,10 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
                 code = CSeqportUtil::GetMapToIndex(src, dst, code);
             }
             code = min(kInvalidCode, code);
-            if ( case_conversion == CSeqVector_CI::eCaseConversion_upper ) {
+            if ( case_cvt == eCaseConversion_upper ) {
                 code = toupper(char(code));
             }
-            else if( case_conversion == CSeqVector_CI::eCaseConversion_lower ) {
+            else if( case_cvt == eCaseConversion_lower ) {
                 code = tolower(char(code));
             }
             table[i] = char(code);
@@ -467,6 +468,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/04/26 18:48:00  vasilche
+* Use case conversion to get gap symbol.
+* Removed obsolete structur SSeqData.
+* Put common code for CSeqVector and CSeqVector_CI into CSeqVectorTypes.
+*
 * Revision 1.73  2005/04/11 15:23:23  vasilche
 * Added option to change letter case in CSeqVector_CI.
 *

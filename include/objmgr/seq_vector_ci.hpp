@@ -49,27 +49,41 @@ class CRandom;
 
 BEGIN_SCOPE(objects)
 
-class CSeqVector;
-class CNcbi2naRandomizer;
 
-class NCBI_XOBJMGR_EXPORT CSeqVector_CI
+class NCBI_XOBJMGR_EXPORT CSeqVectorTypes
 {
 public:
-    typedef unsigned char TResidue;
-    typedef TResidue value_type;
-    typedef CSeq_data::E_Choice   TCoding;
-
+    typedef unsigned char       TResidue;
+    typedef CSeq_data::E_Choice TCoding;
+    typedef TResidue            value_type;
+    typedef TSeqPos             size_type;
+    typedef TSignedSeqPos       difference_type;
+    
     enum ECaseConversion {
         eCaseConversion_none,
         eCaseConversion_upper,
         eCaseConversion_lower
     };
 
+protected:
+    static TResidue sx_GetGapChar(TCoding coding,
+                                  ECaseConversion case_cvt);
+    static const char* sx_GetConvertTable(TCoding src, TCoding dst,
+                                          bool reverse,
+                                          ECaseConversion case_cvt);
+};
+
+class CSeqVector;
+class CNcbi2naRandomizer;
+
+class NCBI_XOBJMGR_EXPORT CSeqVector_CI : public CSeqVectorTypes
+{
+public:
     CSeqVector_CI(void);
     ~CSeqVector_CI(void);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos = 0);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
-                  ECaseConversion case_conversion);
+                  ECaseConversion case_cvt);
     CSeqVector_CI(const CSeqVector_CI& sv_it);
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
@@ -144,6 +158,8 @@ public:
 
     /// true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
+    /// returns character representation of gap in sequence
+    TResidue GetGapChar(void) const;
     /// returns number of gap symbols ahead including current symbol
     /// returns 0 if current position is not in gap
     TSeqPos GetGapSizeForward(void) const;
@@ -505,6 +521,13 @@ CSeqVector_CI::TCoding CSeqVector_CI::x_GetCoding(TCoding cacheCoding,
 }
 
 
+inline
+CSeqVector_CI::TResidue CSeqVector_CI::GetGapChar(void) const
+{
+    return sx_GetGapChar(m_Coding, m_CaseConversion);
+}
+
+
 /* @} */
 
 
@@ -514,6 +537,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/04/26 18:48:00  vasilche
+* Use case conversion to get gap symbol.
+* Removed obsolete structur SSeqData.
+* Put common code for CSeqVector and CSeqVector_CI into CSeqVectorTypes.
+*
 * Revision 1.29  2005/04/11 15:23:23  vasilche
 * Added option to change letter case in CSeqVector_CI.
 *

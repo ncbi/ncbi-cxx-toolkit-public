@@ -225,13 +225,13 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
 
 
 CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
-                             ECaseConversion case_conversion)
+                             ECaseConversion case_cvt)
     : m_Scope(seq_vector.m_Scope),
       m_SeqMap(seq_vector.m_SeqMap),
       m_TSE(seq_vector.m_TSE),
       m_Strand(seq_vector.m_Strand),
       m_Coding(seq_vector.m_Coding),
-      m_CaseConversion(case_conversion),
+      m_CaseConversion(case_cvt),
       m_Cache(0),
       m_CachePos(0),
       m_CacheData(0),
@@ -484,8 +484,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
     {
         const CSeq_data& data = m_Seg.GetRefData();
 
-        CSeqVector::TCoding dataCoding = data.Which();
-        CSeqVector::TCoding cacheCoding = x_GetCoding(m_Coding, dataCoding);
+        TCoding dataCoding = data.Which();
+        TCoding cacheCoding = x_GetCoding(m_Coding, dataCoding);
         bool reverse = m_Seg.GetRefMinusStrand();
 
         bool randomize = false;
@@ -497,10 +497,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         const char* table = 0;
         if ( cacheCoding != dataCoding || reverse ||
              m_CaseConversion != eCaseConversion_none ) {
-            table = CSeqVector::sx_GetConvertTable(dataCoding,
-                                                   cacheCoding,
-                                                   reverse,
-                                                   m_CaseConversion);
+            table = sx_GetConvertTable(dataCoding, cacheCoding,
+                                       reverse, m_CaseConversion);
             if ( !table && cacheCoding != dataCoding ) {
                 NCBI_THROW(CSeqVectorException, eCodingError,
                            "Incompatible sequence codings");
@@ -569,11 +567,11 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
     case CSeqMap::eSeqGap:
         if (m_Coding == CSeq_data::e_Ncbi2na  &&  m_Randomizer) {
             fill(m_Cache, m_Cache + count,
-                CSeqVector::x_GetGapChar(CSeq_data::e_Ncbi4na));
+                 sx_GetGapChar(CSeq_data::e_Ncbi4na, eCaseConversion_none));
             m_Randomizer->RandomizeData(m_Cache, count, start);
         }
         else {
-            fill(m_Cache, m_Cache + count, CSeqVector::x_GetGapChar(m_Coding));
+            fill(m_Cache, m_Cache + count, GetGapChar());
         }
         break;
     default:
@@ -821,6 +819,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/04/26 18:48:00  vasilche
+* Use case conversion to get gap symbol.
+* Removed obsolete structur SSeqData.
+* Put common code for CSeqVector and CSeqVector_CI into CSeqVectorTypes.
+*
 * Revision 1.42  2005/04/11 15:23:23  vasilche
 * Added option to change letter case in CSeqVector_CI.
 *

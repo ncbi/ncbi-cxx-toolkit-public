@@ -37,8 +37,6 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_vector_ci.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -54,22 +52,8 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CSeq_loc;
 class CSeqMap;
-class CSeq_data;
 class CSeqVector_CI;
 class CNcbi2naRandomizer;
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  SSeqData --
-///
-///  Sequence data
-
-struct NCBI_XOBJMGR_EXPORT SSeqData {
-    TSeqPos              length;      ///< Length of the sequence data piece
-    TSeqPos              dest_start;  ///< Starting pos in the dest. Bioseq
-    TSeqPos              src_start;   ///< Starting pos in the source Bioseq
-    CConstRef<CSeq_data> src_data;    ///< Source sequence data
-};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -77,17 +61,11 @@ struct NCBI_XOBJMGR_EXPORT SSeqData {
 ///
 ///  Provide sequence data in the selected coding
 
-class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject
+class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject, public CSeqVectorTypes
 {
 public:
-    typedef CSeqVector_CI::TResidue TResidue;
-    typedef CSeqVector_CI::TCoding  TCoding;
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
-
     typedef CSeqVector_CI const_iterator;
-    typedef TResidue value_type;
-    typedef TSeqPos size_type;
-    typedef TSignedSeqPos difference_type;
 
     CSeqVector(void);
     CSeqVector(const CBioseq_Handle& bioseq,
@@ -148,7 +126,7 @@ public:
     void SetCoding(EVectorCoding coding);
 
     /// Return gap symbol corresponding to the selected coding
-    TResidue GetGapChar(void) const;
+    TResidue GetGapChar(ECaseConversion case_cvt = eCaseConversion_none) const;
 
     bool CanGetRange(TSeqPos from, TSeqPos to) const;
     bool CanGetRange(const const_iterator& from,
@@ -169,15 +147,9 @@ private:
     friend class CSeqVector_CI;
 
     void x_InitSequenceType(void);
-    static TResidue x_GetGapChar(TCoding coding);
     CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
     void x_InitRandomizer(CRandom& random_gen);
-
-    typedef CSeqVector_CI::ECaseConversion TCaseConversion;
-    static const char* sx_GetConvertTable(TCoding src, TCoding dst,
-                                          bool reverse,
-                                          TCaseConversion case_conversion);
 
     CHeapScope               m_Scope;
     CConstRef<CSeqMap>       m_SeqMap;
@@ -283,9 +255,9 @@ CSeqVector::TCoding CSeqVector::GetCoding(void) const
 }
 
 inline
-CSeqVector::TResidue CSeqVector::GetGapChar(void) const
+CSeqVector::TResidue CSeqVector::GetGapChar(ECaseConversion case_cvt) const
 {
-    return x_GetGapChar(GetCoding());
+    return sx_GetGapChar(GetCoding(), case_cvt);
 }
 
 inline
@@ -361,6 +333,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2005/04/26 18:48:00  vasilche
+* Use case conversion to get gap symbol.
+* Removed obsolete structur SSeqData.
+* Put common code for CSeqVector and CSeqVector_CI into CSeqVectorTypes.
+*
 * Revision 1.58  2005/04/11 15:23:23  vasilche
 * Added option to change letter case in CSeqVector_CI.
 *
