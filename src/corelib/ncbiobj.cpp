@@ -502,7 +502,7 @@ void CObject::DoNotDeleteThisObject(void)
         if ( ObjectStateValid(count) ) {
             // valid and unreferenced
             // reset all 'in heap' flags -> make it non-heap without signature
-            m_Counter.Add(-(count & eStateBitsInHeapMask));
+            m_Counter.Add(-int(count & eStateBitsInHeapMask));
             return;
         }
     }}
@@ -895,6 +895,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/26 14:52:11  vasilche
+ * Fixed warning.
+ *
  * Revision 1.50  2005/04/26 14:08:33  vasilche
  * Allow allocation of CObjects from CObjectMemoryPool.
  * Documented CObject counter bits.
