@@ -173,8 +173,15 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 
     // severe errors get a special error dialog
     if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace && dialogSevereErrors) {
-        wxMessageDialog dlg(NULL, errMsg.c_str(), "Severe Error!", wxOK | wxCENTRE | wxICON_EXCLAMATION);
-        dlg.ShowModal();
+        // a bug in wxWidgets makes the error message dialog non-modal w.r.t some windows; this avoids a
+        // strange recursion problem that brings up multiple error dialogs (but doesn't fix the underlying problem)
+        static bool avoidRecursion = false;
+        if (!avoidRecursion) {
+            avoidRecursion = true;
+            wxMessageDialog dlg(NULL, errMsg.c_str(), "Severe Error!", wxOK | wxCENTRE | wxICON_EXCLAMATION);
+            dlg.ShowModal();
+            avoidRecursion = false;
+        }
     }
 
     // info messages and less severe errors get added to the log
@@ -644,6 +651,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/04/26 14:29:19  thiessen
+* avoid error dialog recursion
+*
 * Revision 1.24  2005/03/25 15:10:45  thiessen
 * matched self-hit E-values with CDTree2
 *
