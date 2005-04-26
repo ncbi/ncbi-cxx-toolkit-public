@@ -203,6 +203,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
     SERIAL_REF(TypeMacro)TypeMacroArgs
 
+
 template<typename T>
 struct Check
 {
@@ -228,6 +229,7 @@ private:
     Check(const Check<T>&);
     Check<T>& operator=(const Check<T>&);
 };
+
 
 // Functions preventing memory leaks due to undestroyed type info objects
 NCBI_XSERIAL_EXPORT
@@ -278,6 +280,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // macros for specifying differents members
 #define SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
+#define SERIAL_BUF_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::Check<NCBI_NS_NCBI::CUnionBuffer<SERIAL_TYPE(TypeMacro)TypeMacroArgs > >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
 #define SERIAL_STD_MEMBER(MemberName) \
     MEMBER_PTR(MemberName),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(MemberName))
 #define SERIAL_CLASS_MEMBER(MemberName) \
@@ -342,6 +346,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define ADD_NAMED_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
         SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
+#define ADD_NAMED_BUF_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_BUF_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_STD_CHOICE_VARIANT(MemberAlias,MemberName) \
     NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
         SERIAL_STD_MEMBER(MemberName))

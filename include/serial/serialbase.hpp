@@ -311,6 +311,38 @@ public:
 };
 
 
+template<typename T>
+class CUnionBuffer
+{   // char buffer support, used in choices
+public:
+    typedef T    TObject;                  // object type
+    typedef char TBuffer[sizeof(TObject)]; // char buffer type
+
+    // cast to object type
+    TObject& operator*(void)
+        {
+            return *reinterpret_cast<TObject*>(m_Buffer);
+        }
+    const TObject& operator*(void) const
+        {
+            return *reinterpret_cast<const TObject*>(m_Buffer);
+        }
+
+    // construct/destruct object
+    void Construct(void)
+        {
+            ::new(static_cast<void*>(m_Buffer)) TObject();
+        }
+    void Destruct(void)
+        {
+            (**this).~TObject();
+        }
+    
+private:
+    TBuffer m_Buffer;
+};
+
+
 /////////////////////////////////////////////////////////////////////
 //
 //  Assignment and comparison for serializable objects
@@ -488,6 +520,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/04/26 14:17:51  vasilche
+* Implemented CUnionBuffer for inlined objects in choices.
+*
 * Revision 1.37  2005/02/24 14:38:44  gouriano
 * Added PreRead/PostWrite hooks
 *
