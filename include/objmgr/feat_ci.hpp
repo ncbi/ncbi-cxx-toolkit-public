@@ -89,7 +89,7 @@ public:
 
     bool IsSetId(void) const
         { return GetOriginalFeature().IsSetId(); }
-    const CFeat_id& GetId(void) const
+    const CSeq_feat::TId& GetId(void) const
         { return GetOriginalFeature().GetId(); }
 
     const CSeqFeatData& GetData(void) const
@@ -362,6 +362,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/04/26 17:27:42  dicuccio
+* Use CSeq_feat::TId instead of CFeat_id
+*
 * Revision 1.52  2005/03/07 17:30:01  vasilche
 * Added methods to get feature type and subtype
 *
