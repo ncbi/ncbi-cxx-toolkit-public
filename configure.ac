@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.366 2005/04/26 14:53:35 ucko Exp $
+#  $Id: configure.ac,v 1.367 2005/04/26 20:06:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1443,7 +1443,7 @@ case "${with_debug}:${with_optimization}" in
       DEBUG_SFX=Release
       D_SFX=
       ;;
-   yes:yes)
+   yes:yes | :yes)
       release_debug=DebugOpt
       DEBUG_SFX=Debug
       D_SFX=d
