@@ -160,8 +160,6 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
    Uint1*   ambiguous_res; /**< Array of ambiguous res. (e.g, 'X', 'N')*/
    Int2     ambig_size, /**< size of array above. FIXME: not needed here? */
          ambig_occupy;  /**< How many occupied? */
-   Int8  effective_search_sp; /**< used in PHI-BLAST @todo fix this to use the
-                                BlastQueryInfo structure */
 } BlastScoreBlk;
 
 /** 
