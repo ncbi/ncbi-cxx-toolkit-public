@@ -619,7 +619,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
 {
     bool did_tpa = false, did_ref_track = false, did_genome = false;
-
+    
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User);  it;  ++it) {
         const CUser_object& uo = it->GetUser();
 
@@ -649,7 +649,8 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
             if ( !did_ref_track ) {
                 CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
                     CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
-                string str = CCommentItem::GetStringForRefTrack(uo, format);
+                string str = 
+                    CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format);
                 if ( !str.empty() ) {
 
                     x_AddComment(new CCommentItem(str, ctx, &uo));
@@ -1603,6 +1604,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/04/27 17:12:07  shomrat
+* GetStringForRefTrack signature change
+*
 * Revision 1.46  2005/04/18 13:50:26  shomrat
 * Added ENCODE comment
 *
