@@ -94,7 +94,7 @@ enum EBlastOptIdx {
     eBlastOpt_HitlistSize,
     eBlastOpt_PrelimHitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
-    eBlastOpt_CullingMode,
+    eBlastOpt_CullingLimit,
     eBlastOpt_RequiredStart,
     eBlastOpt_RequiredEnd,
     eBlastOpt_EvalueThreshold,
@@ -248,8 +248,8 @@ public:
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
 
-    bool GetCullingMode() const;
-    void SetCullingMode(bool m = true);
+    int GetCullingLimit() const;
+    void SetCullingLimit(int s);
 
     /// Start of the region required to be part of the alignment
     int GetRequiredStart() const;
@@ -1509,16 +1509,16 @@ CBlastOptionsLocal::SetMaxNumHspPerSequence(int m)
     m_HitSaveOpts->hsp_num_max = m;
 }
 
-inline bool
-CBlastOptionsLocal::GetCullingMode() const
+inline int
+CBlastOptionsLocal::GetCullingLimit() const
 {
-    return m_HitSaveOpts->perform_culling ? true : false;
+    return m_HitSaveOpts->culling_limit;
 }
 
 inline void
-CBlastOptionsLocal::SetCullingMode(bool m)
+CBlastOptionsLocal::SetCullingLimit(int s)
 {
-    m_HitSaveOpts->perform_culling = m;
+    m_HitSaveOpts->culling_limit = s;
 }
 
 inline int
@@ -2762,22 +2762,22 @@ CBlastOptions::SetMaxNumHspPerSequence(int m)
     }
 }
 
-bool 
-CBlastOptions::GetCullingMode() const
+int 
+CBlastOptions::GetCullingLimit() const
 {
     if (! m_Local) {
         x_Throwx("Error: GetCullingMode() not available.");
     }
-    return m_Local->GetCullingMode();
+    return m_Local->GetCullingLimit();
 }
 void 
-CBlastOptions::SetCullingMode(bool m)
+CBlastOptions::SetCullingLimit(int s)
 {
     if (m_Local) {
-        m_Local->SetCullingMode(m);
+        m_Local->SetCullingLimit(s);
     }
     if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_CullingMode, m);
+        m_Remote->SetValue(eBlastOpt_CullingLimit, s);
     }
 }
 
@@ -3368,6 +3368,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/04/27 14:40:28  papadopo
+* modify member functions that set/get culling limits
+*
 * Revision 1.61  2005/03/31 13:45:35  camacho
 * BLAST options API clean-up
 *
