@@ -282,12 +282,10 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     BlastScoreBlk* retval = NULL;
     Blast_Message* errors = NULL;
     const double kScaleFactor = 1.0;
-    const bool kIsPhiBlast = false;
     status = BlastSetup_ScoreBlkInit(query_blk,
                                      query_info,
                                      opts,
                                      kProgramType,
-                                     kIsPhiBlast,
                                      &retval,
                                      kScaleFactor,
                                      &errors);
@@ -457,6 +455,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2005/04/27 19:58:34  dondosha
+ * BlastSetup_ScoreBlkInit no longer has a phi-blast boolean argument
+ *
  * Revision 1.32  2005/03/21 18:05:36  camacho
  * Added code to write matrix by row to aid in testing
  *
