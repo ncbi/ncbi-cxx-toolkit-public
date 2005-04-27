@@ -6,5 +6,7 @@
 USR_PROJ = we_cpp
 APP_PROJ = test_serial
 
+EXTRA_CONFIGURABLES = make_webenv.sh
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
