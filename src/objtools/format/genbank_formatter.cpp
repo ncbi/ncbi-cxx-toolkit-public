@@ -422,7 +422,9 @@ void CGenbankFormatter::x_Consortium
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    Wrap(l, "CONSRTM", ref.GetConsortium(), eSubp);
+    if (!NStr::IsBlank(ref.GetConsortium())) {
+        Wrap(l, "CONSRTM", ref.GetConsortium(), eSubp);
+    }
 }
 
 
@@ -431,7 +433,9 @@ void CGenbankFormatter::x_Title
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    Wrap(l, "TITLE", ref.GetTitle(),   eSubp);
+    if (!NStr::IsBlank(ref.GetTitle())) {
+        Wrap(l, "TITLE", ref.GetTitle(),   eSubp);
+    }
 }
 
 
@@ -442,8 +446,10 @@ void CGenbankFormatter::x_Journal
 {
     string journal;
     x_FormatRefJournal(ref, journal, ctx);
-
-    Wrap(l, "JOURNAL", journal, eSubp);
+    
+    if (!NStr::IsBlank(journal)) {
+        Wrap(l, "JOURNAL", journal, eSubp);
+    }
 }
 
 
@@ -474,7 +480,9 @@ void CGenbankFormatter::x_Remark
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    Wrap(l, "REMARK", ref.GetRemark(), eSubp);
+    if (!NStr::IsBlank(ref.GetRemark())) {
+        Wrap(l, "REMARK", ref.GetRemark(), eSubp);
+    }
 }
 
 
@@ -862,6 +870,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/04/27 17:12:37  shomrat
+* Addapt to changes in NStr::Wrap
+*
 * Revision 1.32  2005/04/11 15:26:29  vasilche
 * Optimized sequence formatter.
 *
