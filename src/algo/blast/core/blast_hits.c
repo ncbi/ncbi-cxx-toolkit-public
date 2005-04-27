@@ -52,6 +52,7 @@ BlastHSP* Blast_HSPFree(BlastHSP* hsp)
    if (!hsp)
       return NULL;
    hsp->gap_info = GapEditScriptDelete(hsp->gap_info);
+   sfree(hsp->pat_info);
    sfree(hsp);
    return NULL;
 }
@@ -106,7 +107,14 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    return 0;
 }
 
-void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
+/** Calculate e-value for an HSP found by PHI BLAST.
+ * @param hsp An HSP found by PHI BLAST [in]
+ * @param sbp Scoring block with statistical parameters [in]
+ * @param query_info Structure containing information about pattern counts [in]
+ */
+static void 
+s_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp, 
+                  const BlastQueryInfo* query_info)
 {
    double paramC;
    double Lambda;
@@ -114,9 +122,12 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
   
    if (!hsp || !sbp)
       return;
+
    paramC = sbp->kbp[0]->paramC;
    Lambda = sbp->kbp[0]->Lambda;
-   pattern_space = sbp->effective_search_sp;
+
+   pattern_space = query_info->contexts[0].eff_searchsp;
+
    hsp->evalue = pattern_space*paramC*(1+Lambda*hsp->score)*
                     exp(-Lambda*hsp->score);
 }
@@ -616,7 +627,7 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
 }
 
 void 
-Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
+Blast_HSPCalcLengthAndGaps(const BlastHSP* hsp, Int4* length_out,
                            Int4* gaps_out, Int4* gap_opens_out)
 {
    Int4 length = hsp->query.end - hsp->query.offset;
@@ -653,7 +664,7 @@ Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
  *            coordinates, 1-offset [out]
  */
 static void 
-s_BlastSegGetTranslatedOffsets(BlastSeg* segment, Int4 seq_length, 
+s_BlastSegGetTranslatedOffsets(const BlastSeg* segment, Int4 seq_length, 
                               Int4* start, Int4* end)
 {
    if (segment->frame < 0)	{
@@ -1510,16 +1521,10 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
          for RPS BLAST, where scores are scaled, but Lambda is not. */
       kbp[hsp->context]->Lambda /= scaling_factor;
 
-      /* Get effective search space from the score block, or from the 
-         query information block, in order of preference */
-      if (sbp->effective_search_sp) {
-         hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          sbp->effective_search_sp);
-      } else {
-          Int8 effsp = query_info->contexts[hsp->context].eff_searchsp;
-          hsp->evalue =
-              BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], effsp);
-      }
+      /* Get effective search space from the query information block */
+      hsp->evalue =
+          BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], 
+                               query_info->contexts[hsp->context].eff_searchsp);
       hsp->evalue /= gap_decay_divisor;
       /* Put back the unscaled value of Lambda. */
       kbp[hsp->context]->Lambda *= scaling_factor;
@@ -1557,7 +1562,29 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
    return 0;
 }
 
-void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
+void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
+{
+    Int4 index;
+   
+    double lambda, logC;
+    
+    ASSERT(sbp && sbp->kbp_gap && sbp->kbp_gap[0]);
+
+    lambda = sbp->kbp_gap[0]->Lambda;
+    logC = log(sbp->kbp_gap[0]->paramC);
+
+    for (index=0; index<hsp_list->hspcnt; index++) {
+        BlastHSP* hsp = hsp_list->hsp_array[index];
+        ASSERT(hsp != NULL);
+        hsp->bit_score = 
+            (hsp->score*lambda - logC - log(1.0 + hsp->score*lambda))
+            / NCBIMATH_LN2;
+    }
+}
+
+void 
+Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp, 
+                           const BlastQueryInfo* query_info)
 {
    Int4 index;
    BlastHSP* hsp;
@@ -1567,7 +1594,7 @@ void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       hsp = hsp_list->hsp_array[index];
-      Blast_HSPPHIGetEvalue(hsp, sbp);
+      s_HSPPHIGetEvalue(hsp, sbp, query_info);
    }
    /* The best e-value is the one for the highest scoring HSP, which 
       must be the first in the list. Check that HSPs are sorted by score
@@ -2417,6 +2444,9 @@ Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results)
 {
    Int4 index;
    BlastHitList* hit_list;
+
+   if (!results)
+       return 0;
 
    for (index = 0; index < results->num_queries; ++index) {
       hit_list = results->hitlist_array[index];
