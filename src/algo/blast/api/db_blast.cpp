@@ -506,6 +506,16 @@ void CDbBlast::SetupSearch()
                                 &m_ipLookupTable, m_ipRpsInfo);
         }
 
+        /* For PHI BLAST, save information about pattern occurrences in
+           query in the BlastQueryInfo structure. */
+        if (x_eProgram == eBlastTypePhiBlastn || 
+            x_eProgram == eBlastTypePhiBlastp) {
+            SPHIPatternSearchBlk* pattern_blk =
+                (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
+            Blast_SetPHIPatternInfo(x_eProgram, pattern_blk, m_iclsQueries, 
+                                    m_ipLookupSegments, m_iclsQueryInfo);
+        }
+
         // Fill the effective search space values in the BlastQueryInfo
         // structure, so it doesn't have to be done separately by each thread.
         Int8 total_length = BlastSeqSrcGetTotLen(m_pSeqSrc);
@@ -624,13 +634,23 @@ void CDbBlast::x_RunTracebackSearch()
 
     const CBlastOptions& options = GetOptionsHandle().GetOptions();
 
+    EBlastProgramType program = options.GetProgramType();
+    SPHIPatternSearchBlk* pattern_blk = NULL;
+    // For PHI BLAST we need to pass the pattern search items structure to the
+    // traceback code.
+    if (program == eBlastTypePhiBlastn || program == eBlastTypePhiBlastp) {
+        PHIPatternSpaceCalc(m_iclsQueryInfo, m_ipDiagnostics);
+        pattern_blk = (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
+    }
+
     if ((status = 
          Blast_RunTracebackSearch(options.GetProgramType(), 
              m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, 
              options.GetScoringOpts(), options.GetExtnOpts(), 
              options.GetHitSaveOpts(), options.GetEffLenOpts(), 
              options.GetDbOpts(), options.GetPSIBlastOpts(), 
-             m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, &m_ipResults)) != 0)
+             m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, pattern_blk,
+             &m_ipResults)) != 0)
         NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
 
     return;
@@ -669,6 +689,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.64  2005/04/27 19:58:52  dondosha
+ * PHI BLAST changes
+ *
  * Revision 1.63  2005/04/18 14:00:44  camacho
  * Updates following BlastSeqSrc reorganization
  *
