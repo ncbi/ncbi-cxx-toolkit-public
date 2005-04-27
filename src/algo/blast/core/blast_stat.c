@@ -905,6 +905,7 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     long lineno = 0;
     double  xscore;
     register int  index1, index2;
+    int x_index, u_index;
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
     
@@ -1016,6 +1017,15 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
         return 2;
     }
     
+    /* Use the X scores for selenocysteines; if this is not done
+       then U will never align to a non-gap residue */
+    x_index = AMINOACID_TO_NCBISTDAA['X'];
+    u_index = AMINOACID_TO_NCBISTDAA['U'];
+    for (index1 = 0; index1 < sbp->alphabet_size; index1++) {
+        matrix[u_index][index1] = matrix[x_index][index1];
+        matrix[index1][u_index] = matrix[index1][x_index];
+    }
+
     return 0;
 }
 
@@ -1072,6 +1082,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
+    int x_index, u_index;
 
     ASSERT(sbp);
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
@@ -1116,6 +1127,15 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
             matrix[i][j] = NCBISM_GetScore((const SNCBIPackedScoreMatrix*) psm,
                                            i, j);
         }
+    }
+
+    /* Use the X scores for selenocysteines; if this is not done
+       then U will never align to a non-gap residue */
+    x_index = AMINOACID_TO_NCBISTDAA['X'];
+    u_index = AMINOACID_TO_NCBISTDAA['U'];
+    for (i = 0; i < sbp->alphabet_size; i++) {
+        matrix[u_index][i] = matrix[x_index][i];
+        matrix[i][u_index] = matrix[i][x_index];
     }
 
     return status;
@@ -3663,6 +3683,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.115  2005/04/27 17:20:15  papadopo
+ * copy X scores to U scores when building score matrix
+ *
  * Revision 1.114  2005/02/14 14:09:00  camacho
  * Replaced SBLASTMatrixStructure by SBlastScoreMatrix.
  * Added SPsiBlastScoreMatrix structure to support PSSMs.
