@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/pattern.h>
 
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
@@ -184,21 +185,25 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
 		*number = eBlastTypeRpsTblastn;
     else if (strcasecmp("psiblast", program) == 0)
         *number = eBlastTypePsiBlast;
+    else if (strcasecmp("phiblastn", program) == 0)
+        *number = eBlastTypePhiBlastn;
+    else if (strcasecmp("phiblastp", program) == 0)
+        *number = eBlastTypePhiBlastp;
 
 	return 0;
 }
 
 Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 {
-
+    
 	if (program == NULL)
 		return 1;
-
+    
 	switch (number) {
-		case eBlastTypeBlastn:
+		case eBlastTypeBlastn: case eBlastTypePhiBlastn:
 			*program = strdup("blastn");
 			break;
-		case eBlastTypeBlastp:
+		case eBlastTypeBlastp: case eBlastTypePhiBlastp:
 			*program = strdup("blastp");
 			break;
 		case eBlastTypeBlastx:
@@ -219,7 +224,7 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
         case eBlastTypePsiBlast:
             *program = strdup("psiblast");
             break;
-		default:
+        default:
 			*program = strdup("unknown");
 			break;
 	}
@@ -651,7 +656,9 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
    } else if (prog_number == eBlastTypeBlastp   ||
               prog_number == eBlastTypeRpsBlast ||
               prog_number == eBlastTypePsiBlast ||
-              prog_number == eBlastTypeTblastn) {
+              prog_number == eBlastTypeTblastn  ||
+              prog_number == eBlastTypePhiBlastn||
+              prog_number == eBlastTypePhiBlastp) {
       /* Query and subject are protein, no frame. */
       frame = 0;
    } else if (prog_number == eBlastTypeBlastx  ||
@@ -685,6 +692,8 @@ Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
    case eBlastTypeRpsBlast: 
    case eBlastTypePsiBlast:
    case eBlastTypeRpsTblastn:
+   case eBlastTypePhiBlastn:
+   case eBlastTypePhiBlastp:
       index = context; 
       break;
    case eBlastTypeBlastx: 
@@ -701,6 +710,8 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
 {
     if (query_info) {
         sfree(query_info->contexts);
+        query_info->pattern_info = 
+            SPHIQueryInfoFree(query_info->pattern_info);
         sfree(query_info);
     }
     return NULL;
@@ -714,6 +725,11 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
    retval->contexts =
        BlastMemDup(query_info->contexts, num_contexts * sizeof(BlastContextInfo));
    
+   if (query_info->pattern_info) {
+       retval->pattern_info = 
+           SPHIQueryInfoCopy(query_info->pattern_info);
+   }
+
    return retval;
 }
 
@@ -1285,4 +1301,3 @@ BLAST_GetStandardAaProbabilities()
     sbp = BlastScoreBlkFree(sbp);
     return retval;
 }
-
