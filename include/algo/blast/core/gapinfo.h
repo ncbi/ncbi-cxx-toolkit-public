@@ -124,6 +124,16 @@ void
 GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block, 
                  EGapAlignOpType op_type, Int4 num_ops);
 
+/** Append one GapPrelimEditBlock to the end of the other.
+ * @param edit_block1 First traceback block [in]
+ * @param edit_block2 Second traceback block, to be appended at the end of
+ *                    the first.
+ */
+void
+GapPrelimEditBlockAppend(GapPrelimEditBlock *edit_block1,
+                         GapPrelimEditBlock *edit_block2);
+
+
 /** Reset a preliminary edit block without freeing it 
  * @param edit_block The preliminary edit block to reset
  */
