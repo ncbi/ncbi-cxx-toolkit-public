@@ -327,20 +327,10 @@ double BLAST_Factorial(Int4 n)
 
 double BLAST_LnGammaInt(Int4 n)
 {
-   static double precomputed[DIM(kPrecomputedFactorial)];
-   static Int4	nlim = 0;
-
-   if (nlim == 0) {
-      Int4 i;
-      for (i = 2; i < DIM(kPrecomputedFactorial); i++) {
-         precomputed[i] = log(kPrecomputedFactorial[i-1]);
-      }
-      nlim = i;
+   if ( (n > 1) && (n < DIM(kPrecomputedFactorial) ) ) {
+      return log(kPrecomputedFactorial[n-1]);
    }
 
-   if (n >= 0 && n < nlim) {
-      return precomputed[n];
-   }
    return s_LnGamma((double)n);
 }
 
@@ -498,6 +488,9 @@ double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/04/27 19:06:25  coulouri
+ * remove incorrect optimization
+ *
  * Revision 1.15  2005/03/10 16:10:58  papadopo
  * doxygen fixes
  *
