@@ -232,8 +232,6 @@ private:
     BlastRPSInfo*       m_ipRpsInfo;      ///< RPS BLAST database information
     CMemoryFile*        m_ipRpsMmap;      ///< Memory mapped RPS lookup table file
     CMemoryFile*        m_ipRpsPssmMmap;  ///< Memory mapped RPS PSSM file
-
-    friend class ::CRPSTest;              ///< unit test class
 };
 
 inline void
@@ -319,6 +317,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2005/04/27 14:41:12  papadopo
+* remove friendship for CRPSTest class
+*
 * Revision 1.34  2005/03/31 13:43:49  camacho
 * BLAST options API clean-up
 *
