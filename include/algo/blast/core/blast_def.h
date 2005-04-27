@@ -54,6 +54,8 @@ typedef enum {
     eBlastTypePsiBlast,
     eBlastTypeRpsBlast,
     eBlastTypeRpsTblastn,
+    eBlastTypePhiBlastn,
+    eBlastTypePhiBlastp,
     eBlastTypeUndefined
 } EBlastProgramType;
 
@@ -188,15 +190,34 @@ typedef struct BlastContextInfo {
     Int1 frame;             /**< Frame number (-1, -2, -3, 0, 1, 2, or 3) */
 } BlastContextInfo;
 
+/** Information about a single pattern occurence in the query. */
+typedef struct SPHIPatternInfo {
+    Int4 offset;  /**< Starting offset of this pattern occurrence. */
+    Int4 length;  /**< Length of this pattern occurrence. */
+} SPHIPatternInfo;
+
+/** In PHI BLAST, structure containing information about all pattern 
+ * occurrences in query.
+ */
+typedef struct SPHIQueryInfo {
+    Int4 num_patterns;  /**< Number of pattern occurrences in query. */
+    SPHIPatternInfo *occurrences; /**< Array of pattern occurrence information
+                                        structures. */
+    Int4 allocated_size; /**< Allocated size of the occurrences array. */
+    double probability; /**< Probability of the pattern */
+} SPHIQueryInfo;
+
 /** The query related information 
  */
 typedef struct BlastQueryInfo {
-   Int4 first_context;  /**< Index of the first element of the context array */
-   Int4 last_context;   /**< Index of the last element of the context array */
-   int num_queries;     /**< Number of query sequences */
-   BlastContextInfo * contexts; /**< Information per context */
-   Uint4 max_length;    /**< Length of the longest among the concatenated
-                           queries */
+    Int4 first_context;  /**< Index of the first element of the context array */
+    Int4 last_context;   /**< Index of the last element of the context array */
+    int num_queries;     /**< Number of query sequences */
+    BlastContextInfo * contexts; /**< Information per context */
+    Uint4 max_length;    /**< Length of the longest among the concatenated
+                            queries */
+    SPHIQueryInfo* pattern_info; /**< Counts of PHI BLAST pattern
+                                      occurrences, used in PHI BLAST only. */
 } BlastQueryInfo;
 
 
