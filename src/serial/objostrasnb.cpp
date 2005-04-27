@@ -49,8 +49,6 @@
 #include <stdio.h>
 #include <math.h>
 
-using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
-
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
 
@@ -100,7 +98,7 @@ void CObjectOStreamAsnBinary::StartTag(Uint1 code)
     m_Limits.push(m_CurrentTagLimit);
     m_CurrentTagCode = code;
     m_CurrentTagPosition = m_CurrentPosition;
-    m_CurrentTagState = (code & 0x1f) == eLongTag? eTagValue: eLengthStart;
+    m_CurrentTagState = GetTagValue(code) == eLongTag? eTagValue: eLengthStart;
 }
 
 inline
@@ -121,7 +119,7 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     else
         m_CurrentTagLimit = limit;
-    if ( m_CurrentTagCode & 0x20 ) // constructed
+    if ( GetTagConstructed(m_CurrentTagCode) ) // constructed
         m_CurrentTagState = eTagStart;
     else
         m_CurrentTagState = eData;
@@ -154,7 +152,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
                 EndTag();
         }
         else if ( byte == 0x80 ) {
-            if ( !(m_CurrentTagCode & 0x20) ) {
+            if ( !GetTagConstructed(m_CurrentTagCode) ) {
                 ThrowError(fIllegalCall,
                            "cannot use indefinite form for primitive tag");
             }
@@ -228,50 +226,54 @@ void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 }
 
 inline
-void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed,
-                                            TTag tag)
+void CObjectOStreamAsnBinary::WriteShortTag(ETagClass tag_class,
+                                            ETagConstructed tag_constructed,
+                                            ETagValue tag_value)
 {
-    WriteByte((c << 6) | (constructed ? (1<<5) : 0) | tag);
+    WriteByte(MakeTagByte(tag_class, tag_constructed, tag_value));
 }
 
 inline
-void CObjectOStreamAsnBinary::WriteSysTag(ETag tag)
+void CObjectOStreamAsnBinary::WriteSysTag(ETagValue tag_value)
 {
-    WriteShortTag(eUniversal, false, tag);
+    WriteShortTag(eUniversal, ePrimitive, tag_value);
 }
 
-void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
-                                           TTag tag)
+void CObjectOStreamAsnBinary::WriteLongTag(ETagClass tag_class,
+                                           ETagConstructed tag_constructed,
+                                           TLongTag tag_value)
 {
-    if ( tag <= 0 )
+    if ( tag_value <= 0 )
         ThrowError(fFormatError, "negative tag number");
     
     // long form
-    WriteShortTag(c, constructed, eLongTag);
+    WriteShortTag(tag_class, tag_constructed, eLongTag);
     // calculate largest shift enough for TTag to fit
-    size_t shift = (sizeof(TTag) * 8 - 1) / 7 * 7;
+    size_t shift = (sizeof(TLongTag) * 8 - 1) / 7 * 7;
     Uint1 bits;
     // find first non zero 7bits
-    while ( (bits = (tag >> shift) & 0x7f) == 0 ) {
+    while ( (bits = (tag_value >> shift) & 0x7f) == 0 ) {
         shift -= 7;
     }
     
     // beginning of tag
     while ( shift != 0 ) {
         shift -= 7;
-        WriteByte((tag >> shift) | 0x80);
+        WriteByte((tag_value >> shift) | 0x80);
     }
     // write remaining bits
-    WriteByte(tag & 0x7f);
+    WriteByte(tag_value & 0x7f);
 }
 
 inline
-void CObjectOStreamAsnBinary::WriteTag(EClass c, bool constructed, TTag tag)
+void CObjectOStreamAsnBinary::WriteTag(ETagClass tag_class,
+                                       ETagConstructed tag_constructed,
+                                       TLongTag tag_value)
 {
-    if ( tag >= 0 && tag < eLongTag )
-        WriteShortTag(c, constructed, tag);
+    if ( tag_value >= 0 && tag_value < eLongTag )
+        WriteShortTag(tag_class, tag_constructed, ETagValue(tag_value));
     else
-        WriteLongTag(c, constructed, tag);
+        WriteLongTag(tag_class, tag_constructed, tag_value);
 }
 
 void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
@@ -283,7 +285,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
     _ASSERT( tag[0] > eLongTag );
 
     // long form
-    WriteShortTag(eApplication, true, eLongTag);
+    WriteShortTag(eApplication, eConstructed, eLongTag);
     SIZE_TYPE last = tag.size() - 1;
     for ( SIZE_TYPE i = 0; i <= last; ++i ) {
         char c = tag[i];
@@ -303,7 +305,7 @@ void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
 inline
 void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
 {
-    WriteByte(Uint1(length));
+    WriteByte(TByte(length));
 }
 
 void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
@@ -326,7 +328,7 @@ void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
             }
         }
     }
-    WriteByte(Uint1(0x80 + count));
+    WriteByte(TByte(0x80 + count));
     WriteBytesOf(*this, length, count);
 }
 
@@ -596,7 +598,7 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 
 void CObjectOStreamAsnBinary::WriteStringStore(const string& str)
 {
-    WriteShortTag(eApplication, false, eStringStore);
+    WriteShortTag(eApplication, ePrimitive, eStringStore);
     size_t length = str.size();
     WriteLength(length);
     WriteBytes(str.data(), length);
@@ -649,11 +651,11 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in)
 
 void CObjectOStreamAsnBinary::CopyStringStore(CObjectIStream& in)
 {
-    WriteShortTag(eApplication, false, eStringStore);
+    WriteShortTag(eApplication, ePrimitive, eStringStore);
     if ( in.GetDataFormat() == eSerial_AsnBinary ) {
         CObjectIStreamAsnBinary& bIn =
             *CTypeConverter<CObjectIStreamAsnBinary>::SafeCast(&in);
-        bIn.ExpectSysTag(eApplication, false, eStringStore);
+        bIn.ExpectSysTag(eApplication, ePrimitive, eStringStore);
         CopyStringValue(bIn);
     }
     else {
@@ -724,7 +726,7 @@ void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
 {
-    WriteTag(eApplication, false, eObjectReference);
+    WriteTag(eApplication, ePrimitive, eObjectReference);
     if ( sizeof(TObjectIndex) == sizeof(Int4) )
         WriteNumberValue(Int4(index));
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
@@ -760,12 +762,9 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
     WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::BeginContainer(const CContainerTypeInfo* containerType)
+void CObjectOStreamAsnBinary::BeginContainer(const CContainerTypeInfo* cType)
 {
-    if ( containerType->RandomElementsOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
 }
 
@@ -778,10 +777,7 @@ void CObjectOStreamAsnBinary::EndContainer(void)
 void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
                                              TConstObjectPtr containerPtr)
 {
-    if ( cType->RandomElementsOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
     
     CContainerTypeInfo::CConstIterator i;
@@ -815,10 +811,7 @@ void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArray, cType);
     copier.In().BeginContainer(cType);
 
-    if ( cType->RandomElementsOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
 
     TTypeInfo elementType = cType->GetElementType();
@@ -843,10 +836,7 @@ void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
 
 void CObjectOStreamAsnBinary::BeginClass(const CClassTypeInfo* classType)
 {
-    if ( classType->RandomOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
 }
 
@@ -857,7 +847,7 @@ void CObjectOStreamAsnBinary::EndClass(void)
 
 void CObjectOStreamAsnBinary::BeginClassMember(const CMemberId& id)
 {
-    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteTag(eContextSpecific, eConstructed, id.GetTag());
     WriteIndefiniteLength();
 }
 
@@ -870,10 +860,7 @@ void CObjectOStreamAsnBinary::EndClassMember(void)
 void CObjectOStreamAsnBinary::WriteClass(const CClassTypeInfo* classType,
                                          TConstObjectPtr classPtr)
 {
-    if ( classType->RandomOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
     
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -888,7 +875,7 @@ void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
                                                TConstObjectPtr memberPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
-    WriteTag(eContextSpecific, true, memberId.GetTag());
+    WriteTag(eContextSpecific, eConstructed, memberId.GetTag());
     WriteIndefiniteLength();
     
     WriteObject(memberPtr, memberType);
@@ -904,7 +891,7 @@ bool CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
         return false;
 
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
-    WriteTag(eContextSpecific, true, memberId.GetTag());
+    WriteTag(eContextSpecific, eConstructed, memberId.GetTag());
     WriteIndefiniteLength();
     
     Write(buffer.GetSource());
@@ -921,13 +908,10 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
     copier.In().BeginClass(classType);
 
-    if ( classType->RandomOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
 
-    vector<bool> read(classType->GetMembers().LastIndex() + 1);
+    vector<Uint1> read(classType->GetMembers().LastIndex() + 1);
 
     BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
@@ -944,7 +928,9 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         else {
             read[index] = true;
 
-            WriteTag(eContextSpecific, true, memberInfo->GetId().GetTag());
+            WriteTag(eContextSpecific,
+                     eConstructed,
+                     memberInfo->GetId().GetTag());
             WriteIndefiniteLength();
 
             memberInfo->CopyMember(copier);
@@ -976,10 +962,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
     copier.In().BeginClass(classType);
 
-    if ( classType->RandomOrder() )
-        WriteShortTag(eUniversal, true, eSet);
-    else
-        WriteShortTag(eUniversal, true, eSequence);
+    WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
     
     CClassTypeInfo::CIterator pos(classType);
@@ -997,7 +980,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
             classType->GetMemberInfo(i)->CopyMissingMember(copier);
         }
 
-        WriteTag(eContextSpecific, true, memberInfo->GetId().GetTag());
+        WriteTag(eContextSpecific, eConstructed, memberInfo->GetId().GetTag());
         WriteIndefiniteLength();
 
         memberInfo->CopyMember(copier);
@@ -1026,7 +1009,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
 void CObjectOStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* ,
                                                  const CMemberId& id)
 {
-    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteTag(eContextSpecific, eConstructed, id.GetTag());
     WriteIndefiniteLength();
 }
 
@@ -1042,7 +1025,7 @@ void CObjectOStreamAsnBinary::WriteChoice(const CChoiceTypeInfo* choiceType,
     TMemberIndex index = choiceType->GetIndex(choicePtr);
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
-    WriteTag(eContextSpecific, true, variantInfo->GetId().GetTag());
+    WriteTag(eContextSpecific, eConstructed, variantInfo->GetId().GetTag());
     WriteIndefiniteLength();
     
     variantInfo->WriteVariant(*this, choicePtr);
@@ -1066,7 +1049,7 @@ void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     copier.In().SetTopMemberId(variantInfo->GetId());
     copier.Out().SetTopMemberId(variantInfo->GetId());
-    WriteTag(eContextSpecific, true, variantInfo->GetId().GetTag());
+    WriteTag(eContextSpecific, eConstructed, variantInfo->GetId().GetTag());
     WriteIndefiniteLength();
 
     variantInfo->CopyVariant(copier);
@@ -1136,6 +1119,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.94  2005/04/27 17:02:17  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+* Use vector<Uint1> instead of inefficient vector<bool>.
+*
 * Revision 1.93  2005/04/26 14:55:48  vasilche
 * Use named constant for indefinite length byte.
 *
