@@ -274,19 +274,23 @@ static void s_MergeDuplicates
                 curr_ref.GetPMID() != 0) {
                 remove = true;
             } else if (curr_ref.GetMUID() == prev_ref.GetMUID()  &&
-                       curr_ref.GetMUID() != 0) {
+                curr_ref.GetMUID() != 0) {
                 remove = true;
-            } else if (NStr::EqualNocase(curr_ref.GetUniqueStr(),
-                                         prev_ref.GetUniqueStr())  &&
-                       !NStr::IsBlank(curr_ref.GetUniqueStr())) {
-                const CSeq_loc& curr_loc = curr_ref.GetLoc();
-                const CSeq_loc& prev_loc = prev_ref.GetLoc();
-                if (Compare(curr_loc, prev_loc, &ctx.GetScope()) == eSame) {
-                    string curr_auth, prev_auth;
-                    CReferenceItem::FormatAuthors(curr_ref.GetAuthors(), curr_auth);
-                    CReferenceItem::FormatAuthors(prev_ref.GetAuthors(), prev_auth);
-                    if (NStr::EqualNocase(curr_auth, prev_auth)) {
-                        remove = true;
+            } else if (curr_ref.GetPMID() == 0  &&  curr_ref.GetMUID() == 0  &&
+                prev_ref.GetPMID() == 0  &&  prev_ref.GetMUID() == 0) {
+                const string& curr_unique = curr_ref.GetUniqueStr();
+                const string& prev_unique = prev_ref.GetUniqueStr();
+                if (NStr::EqualNocase(curr_unique, prev_unique)  &&
+                    !NStr::IsBlank(curr_unique)) {
+                    const CSeq_loc& curr_loc = curr_ref.GetLoc();
+                    const CSeq_loc& prev_loc = prev_ref.GetLoc();
+                    if (Compare(curr_loc, prev_loc, &ctx.GetScope()) == eSame) {
+                        string curr_auth, prev_auth;
+                        CReferenceItem::FormatAuthors(curr_ref.GetAuthors(), curr_auth);
+                        CReferenceItem::FormatAuthors(prev_ref.GetAuthors(), prev_auth);
+                        if (NStr::EqualNocase(curr_auth, prev_auth)) {
+                            remove = true;
+                        }
                     }
                 }
             }
@@ -307,11 +311,6 @@ static void s_MergeDuplicates
                     (*prev)->GetLoc(),
                     CSeq_loc::fSort | CSeq_loc::fMerge_All,
                     &ctx.GetScope());
-                /*merged_loc->Assign(curr_ref.GetLoc());
-                merged_loc->Add((*prev)->GetLoc());
-
-                merged_loc =
-                    Seq_loc_Merge(*merged_loc, CSeq_loc::fMerge_All, &ctx.GetScope());*/
                 (*prev)->SetLoc(merged_loc);
             }
             curr = refs.erase(curr);
@@ -376,13 +375,14 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
 
 static bool s_IsOnlySerial(const CPub& pub)
 {
-    if (!pub.IsGen()  ||  !pub.GetGen().IsSetCit()) {
+    if (!pub.IsGen()) {
         return false;
     }
 
     const CCit_gen& gen = pub.GetGen();
 
-    if (!NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase)) {
+    if (!gen.IsSetCit()  ||
+        !NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase)) {
         if (!gen.IsSetJournal()  &&  !gen.IsSetDate()  &&
             gen.IsSetSerial_number()  &&  gen.GetSerial_number() > 0) {
             return true;
@@ -395,10 +395,10 @@ static bool s_IsOnlySerial(const CPub& pub)
     
 void CReferenceItem::x_CreateUniqueStr(void) const
 {
-    if (!NStr::IsBlank(m_UniqueStr)) {
+    if (!NStr::IsBlank(m_UniqueStr)) {  // already created
         return;
     }
-    if (m_Pubdesc.Empty()) {
+    if (m_Pubdesc.Empty()) {  // not pub to generate from
         return;
     }
 
@@ -431,7 +431,8 @@ bool CReferenceItem::x_Matches(const CPub& pub) const
     default:
         // compare based on unique string
         {{
-            const string& uniquestr = GetUniqueStr();
+            x_CreateUniqueStr();
+            const string& uniquestr = m_UniqueStr;
 
             string pub_unique;
             pub.GetLabel(&pub_unique, CPub::eContent, true);
@@ -442,8 +443,10 @@ bool CReferenceItem::x_Matches(const CPub& pub) const
             }
             len = min(len , uniquestr.length());
             pub_unique.resize(len);
-            if (NStr::StartsWith(uniquestr, pub_unique, NStr::eNocase)) {
-                return true;
+            if (!NStr::IsBlank(uniquestr)  &&  !NStr::IsBlank(pub_unique)) {
+                if (NStr::StartsWith(uniquestr, pub_unique, NStr::eNocase)) {
+                    return true;
+                }
             }
         break;
         }}
@@ -475,12 +478,12 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
         x_Init(**it, ctx);
     }
 
-    x_CleanData();
-
     // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
     if ( ctx.IsGenbankFormat() ) {
         x_GatherRemark(ctx);
     }
+
+    x_CleanData();
 }
  
 
@@ -973,6 +976,9 @@ void CReferenceItem::x_CleanData(void)
     StripSpaces(m_Title);   // internal spaces
     ConvertQuotes(m_Title);
     s_RemovePeriod(m_Title);
+    // remark
+    ConvertQuotes(m_Remark);
+    ExpandTildes(m_Remark, eTilde_newline);
 }
 
 
@@ -1117,8 +1123,74 @@ static size_t s_CountFields(const CDate& date)
     if ( std.IsSetSecond() ) {
         ++count;
     }
+    if ( std.IsSetSeason() ) {
+        ++count;
+    }
 
     return count;
+}
+
+
+static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
+{
+    CDate::ECompare status = d1.Compare(d2);
+    if (status != CDate::eCompare_unknown) {
+        return status;
+    }
+
+    // NB: handle cases not handled by CDate::Compare(...)
+
+    if (d1.IsStr()  &&  d2.IsStr()) {
+        int diff = NStr::CompareNocase(d1.GetStr(), d2.GetStr());
+        if (diff == 0) {
+            return CDate::eCompare_same;
+        } else {
+            return (diff < 0) ? CDate::eCompare_before : CDate::eCompare_after;
+        }
+    }
+
+    // arbitrary ordering (std before str)
+    if (d1.Which() != d2.Which()) {
+        return d1.IsStd() ? CDate::eCompare_before : CDate::eCompare_after;
+    }
+
+    _ASSERT(d1.IsStd()  &&  d2.IsStd());
+
+    const CDate::TStd& std1 = d1.GetStd();
+    const CDate::TStd& std2 = d2.GetStd();
+
+    if (std1.IsSetMonth()  ||  std2.IsSetMonth()) {
+        CDate_std::TMonth m1 = std1.IsSetMonth() ? std1.GetMonth() : 0;
+        CDate_std::TMonth m2 = std2.IsSetMonth() ? std2.GetMonth() : 0;
+        if (m1 < m2) {
+            return CDate::eCompare_before;
+        } else if (m1 > m2) {
+            return CDate::eCompare_after;
+        }
+    }
+    if (std1.IsSetDay()  ||  std2.IsSetDay()) {
+        CDate_std::TDay day1 = std1.IsSetDay() ? std1.GetDay() : 0;
+        CDate_std::TDay day2 = std2.IsSetDay() ? std2.GetDay() : 0;
+        if (day1 < day2) {
+            return CDate::eCompare_before;
+        } else if (day1 > day2) {
+            return CDate::eCompare_after;
+        }
+    }
+    if (std1.IsSetSeason()  &&  !std2.IsSetSeason()) {
+        return CDate::eCompare_after;
+    } else if (!std1.IsSetSeason()  &&  std2.IsSetSeason()) {
+        return CDate::eCompare_before;
+    } else if (std1.IsSetSeason()  && std2.IsSetSeason()) {
+        int diff = NStr::CompareNocase(std1.GetSeason(), std2.GetSeason());
+        if (diff == 0) {
+            return CDate::eCompare_same;
+        } else {
+            return (diff < 0) ? CDate::eCompare_before : CDate::eCompare_after;
+        }
+    }
+
+    return CDate::eCompare_same;
 }
 
 
@@ -1151,19 +1223,21 @@ bool LessEqual::operator()
     }
     
     if (ref1->IsSetDate()  &&  ref2->IsSetDate()) {
-        const CDate& d1 = ref1->GetDate();
-        const CDate& d2 = ref2->GetDate();
-        CDate::ECompare status = d1.Compare(d2);
-        if (status == CDate::eCompare_unknown  &&  d1.IsStd()  &&  d2.IsStd()) {
-            // one object is more specific than the other.
-            size_t s1 = s_CountFields(d1);
-            size_t s2 = s_CountFields(d2);
-            return m_IsRefSeq ? s1 > s2 : s1 < s2;
-        } else if (status != CDate::eCompare_same) {
+        CDate::ECompare status = s_CompareDates(ref1->GetDate(), ref2->GetDate());
+        //const CDate& d1 = ref1->GetDate();
+        //const CDate& d2 = ref2->GetDate();
+        //CDate::ECompare status = d1.Compare(d2);
+        //if (status == CDate::eCompare_unknown  &&  d1.IsStd()  &&  d2.IsStd()) {
+        //    // one object is more specific than the other.
+        //    size_t s1 = s_CountFields(d1);
+        //    size_t s2 = s_CountFields(d2);
+        //    return m_IsRefSeq ? s1 > s2 : s1 < s2;
+        if (status != CDate::eCompare_same) {
             return m_IsRefSeq ? (status == CDate::eCompare_after) :
                                 (status == CDate::eCompare_before);
         }
     }
+    //}
     // after: dates are the same, or both missing.
     
     // distinguish by uids (swap order for RefSeq)
@@ -1248,8 +1322,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/04/27 17:13:47  shomrat
+* Fixed reference comparison
+*
 * Revision 1.30  2005/03/29 18:18:09  shomrat
-* Expand tildes in title; Fixed reference merging
+* Use
 *
 * Revision 1.29  2005/02/09 14:47:16  shomrat
 * Set date for patent
