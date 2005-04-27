@@ -34,7 +34,7 @@
 
 #define ClassRandomContentsBegin(classType) \
 { \
-    vector<bool> read(classType->GetMembers().LastIndex() + 1); \
+    vector<Uint1> read(classType->GetMembers().LastIndex() + 1); \
     BEGIN_OBJECT_FRAME(eFrameClassMember); \
     {
 
@@ -124,6 +124,9 @@
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/04/27 16:58:28  vasilche
+* Use vector<Uint1> instead of inefficient vector<bool>.
+*
 * Revision 1.5  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *
