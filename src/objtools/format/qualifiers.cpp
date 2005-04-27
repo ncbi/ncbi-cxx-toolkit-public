@@ -884,17 +884,13 @@ void CFlatAnticodonQVal::Format
         return;
     }
 
-    CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
-    bool minus = (m_Anticodon->GetStrand() == eNa_strand_minus);
-
     CNcbiOstrstream text;
-    text << "(pos:";
-    if (minus) {
-        text << "complement(";
-    }
-    text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
-    if (minus) {
-        text << ')';
+    text << "(pos:" ;
+    if (ctx.Config().IsModeRelease()) {
+        CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
+        text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
+    } else {
+        text << CFlatSeqLoc(*m_Anticodon, ctx).GetString();
     }
     text << ",aa:" << m_Aa << ')';
 
@@ -916,7 +912,10 @@ void CFlatTrnaCodonsQVal::Format
     size_t num = s_ComposeCodonRecognizedStr(*m_Value, recognized);
     if (num > 0) {
         if (num == 1) {
-            x_AddFQ(q, name, "codon recognized: " + recognized);
+            string str = "codon recognized: " + recognized;
+            if (NStr::Find(m_Seqfeat_note, str) == NPOS) {
+                x_AddFQ(q, name, str);
+            }
         } else {
             x_AddFQ(q, name, "codons recognized: " + recognized);
         }
@@ -945,6 +944,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/04/27 17:13:18  shomrat
+* Changed anticodon formatting
+*
 * Revision 1.28  2005/04/15 12:29:41  shomrat
 * Handle anticodon location on minus strand
 *
