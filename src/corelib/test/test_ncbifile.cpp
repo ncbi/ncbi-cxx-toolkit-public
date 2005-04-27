@@ -537,7 +537,8 @@ static void s_TEST_Dir(void)
     assert( !CDir("dir2").Exists() );
     assert( !CDir("dir3").Exists() );
 
-    CDir dir(".");
+    const string kFFTestPath = "..";
+    CDir dir(kFFTestPath);
 
     // Current directory list
     {{
@@ -557,7 +558,7 @@ static void s_TEST_Dir(void)
 
         vector<string> files;
         vector<string> paths;
-        paths.push_back(".");
+        paths.push_back(kFFTestPath);
 
         FindFiles(files, paths.begin(), paths.end(), 
                          masks.begin(), masks.end());
@@ -987,6 +988,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/04/27 15:04:37  ivanov
+ * Use ".." instead of "." as test directory for FindFiles algorithms,
+ * because current directory changes very often.
+ *
  * Revision 1.48  2005/04/12 13:07:35  ivanov
  * Compare modification times with second precission (ignoring nanoseconds)
  *
