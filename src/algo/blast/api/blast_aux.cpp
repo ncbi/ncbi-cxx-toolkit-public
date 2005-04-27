@@ -177,7 +177,7 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("hsp_num_max", m_Ptr->hsp_num_max);
     ddc.Log("total_hsp_limit", m_Ptr->total_hsp_limit);
     ddc.Log("hsp_range_max", m_Ptr->hsp_range_max);
-    ddc.Log("perform_culling", m_Ptr->perform_culling);
+    ddc.Log("culling_limit", m_Ptr->culling_limit);
     ddc.Log("required_start", m_Ptr->required_start);
     ddc.Log("required_end", m_Ptr->required_end);
     ddc.Log("expect_value", m_Ptr->expect_value);
@@ -527,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.71  2005/04/27 14:38:21  papadopo
+ * modify debug output to show culling limit
+ *
  * Revision 1.70  2005/04/18 14:00:44  camacho
  * Updates following BlastSeqSrc reorganization
  *
