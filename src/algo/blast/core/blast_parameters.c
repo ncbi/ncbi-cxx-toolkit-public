@@ -661,7 +661,8 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    if (options->cutoff_score > 0) {
       params->cutoff_score_max = params->cutoff_score = 
                             options->cutoff_score * (Int4) sbp->scale_factor;
-   } else if (!options->phi_align) {
+   } else if (program_number != eBlastTypePhiBlastn &&
+              program_number != eBlastTypePhiBlastp) {
       Int4 context;
       Int4 cutoff_score_max = INT4_MAX;
 
@@ -828,6 +829,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/04/27 19:54:03  dondosha
+ * Change due to elimination of BlastHitSavingOptions::phi_align field
+ *
  * Revision 1.7  2005/03/29 14:52:40  papadopo
  * for a query seq. with multiple contexts, compute the minimum gapped/ungapped cutoff score and the maximum gapped/ungapped X-dropoff across all contexts
  *
