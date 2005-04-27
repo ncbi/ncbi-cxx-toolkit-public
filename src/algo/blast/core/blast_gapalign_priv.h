@@ -39,6 +39,26 @@
 extern "C" {
 #endif
 
+/** Auxiliary structure for dynamic programming gapped extension */
+typedef struct BlastGapDP {
+  Int4 best;            /**< score of best path that ends in a match
+                             at this position */
+  Int4 best_gap;        /**< score of best path that ends in a gap
+                             at this position */
+  Int4 best_decline;    /**< score of best path that ends in a decline
+                             at this position */
+} BlastGapDP;
+
+/** Reduced version of BlastGapDP, for alignments that 
+ *  don't use a decline penalty
+ */
+typedef struct {
+  Int4 best;            /**< score of best path that ends in a match
+                             at this position */
+  Int4 best_gap;        /**< score of best path that ends in a gap
+                             at this position */
+} BlastGapSmallDP;
+
 Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Int4* b_offset, GapPrelimEditBlock *edit_block, 
@@ -46,6 +66,30 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         const BlastScoringParameters* scoringParams, Int4 query_offset,
         Boolean reversed, Boolean reverse_sequence);
 
+/** Low level function to perform gapped extension in one direction with 
+ * or without traceback.
+ * @param A The query sequence [in]
+ * @param B The subject sequence [in]
+ * @param M Maximal extension length in query [in]
+ * @param N Maximal extension length in subject [in]
+ * @param a_offset Resulting starting offset in query [out]
+ * @param b_offset Resulting starting offset in subject [out]
+ * @param score_only Only find the score, without saving traceback [in]
+ * @param edit_block Structure to hold generated traceback [out]
+ * @param gap_align Structure holding various information and allocated 
+ *        memory for the gapped alignment [in]
+ * @param score_params Parameters related to scoring [in]
+ * @param query_offset The starting offset in query [in]
+ * @param reversed Has the sequence been reversed? Used for psi-blast [in]
+ * @param reverse_sequence Do reverse the sequence [in]
+ * @return The best alignment score found.
+ */
+Int4 
+Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+                  Int4* a_offset, Int4* b_offset, Boolean score_only, 
+                  GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
+                  const BlastScoringParameters* score_params, 
+                  Int4 query_offset, Boolean reversed, Boolean reverse_sequence);
 
 /** Convert the initial list of traceback actions from a non-OOF
  *  gapped alignment into a blast edit script. Note that this routine
@@ -125,6 +169,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/04/27 19:52:39  dondosha
+ * Added Blast_SemiGappedAlign and dynamic programming structures declarations
+ *
  * Revision 1.9  2005/04/06 21:00:10  dondosha
  * GapEditBlock structure removed, use only GapEditScript; length removed from BlastSeg
  *
