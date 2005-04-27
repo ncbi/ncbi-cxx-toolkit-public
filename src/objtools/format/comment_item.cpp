@@ -254,19 +254,19 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
     const CUser_field& field = uo.GetField("Status");
     if ( field.GetData().IsStr() ) {
         string status = field.GetData().GetStr();
-        if ( status == "Inferred" ) { 
+        if (NStr::EqualNocase(status, "Inferred")) { 
             retval = eRefTrackStatus_Inferred;
-        } else if ( status == "Provisional" ) {
+        } else if (NStr::EqualNocase(status, "Provisional")) {
             retval = eRefTrackStatus_Provisional;
-        } else if ( status == "Predicted" ) {
+        } else if (NStr::EqualNocase(status, "Predicted")) {
             retval = eRefTrackStatus_Predicted;
-        } else if ( status == "Validated" ) {
+        } else if (NStr::EqualNocase(status, "Validated")) {
             retval = eRefTrackStatus_Validated;
-        } else if ( status == "Reviewed" ) {
+        } else if (NStr::EqualNocase(status, "Reviewed")) {
             retval = eRefTrackStatus_Reviewd;
-        } else if ( status == "Model" ) {
+        } else if (NStr::EqualNocase(status, "Model")) {
             retval = eRefTrackStatus_Model;
-        } else if ( status == "WGS" ) {
+        } else if (NStr::EqualNocase(status, "WGS")) {
             retval = eRefTrackStatus_WGS;
         }
 
@@ -281,15 +281,23 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
 
 string CCommentItem::GetStringForRefTrack
 (const CUser_object& uo,
+ const CBioseq_Handle& bsh,
  ECommentFormat format)
 {
-    if ( !uo.CanGetType()  ||  !uo.GetType().IsStr()  ||
+    if ( !uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "RefGeneTracking" ) {
         return kEmptyStr;
     }
 
+    TRefTrackStatus status = eRefTrackStatus_Unknown;
     string status_str;
-    TRefTrackStatus status = GetRefTrackStatus(uo, &status_str);
+    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
+        status = GetRefTrackStatus(uo, &status_str);
+        if (status != eRefTrackStatus_Unknown) {
+            break;
+        }
+    }
+    
     if ( status == eRefTrackStatus_Unknown ) {
         return kEmptyStr;
     }
@@ -346,11 +354,11 @@ string CCommentItem::GetStringForRefTrack
     }
 
     if ( status != eRefTrackStatus_Reviewd  &&  !collaborator.empty() ) {
-        oss << "This record has been curated by " << collaborator << '.';
+        oss << " This record has been curated by " << collaborator << '.';
     }
 
     if ( !source.empty() ) {
-        oss << "This record is derived from an annotated genomic sequence ("
+        oss << " This record is derived from an annotated genomic sequence ("
             << source << ").";
     }
 
@@ -1158,6 +1166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/04/27 17:10:12  shomrat
+* Fixed RefSeq comments
+*
 * Revision 1.20  2005/04/18 13:48:55  shomrat
 * + GetStringForEncode
 *
