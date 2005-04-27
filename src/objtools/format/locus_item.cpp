@@ -389,6 +389,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     }
 
     bool is_transgenic = false;
+    bool is_env_sample = false;
 
     CBioSource::TOrigin origin = CBioSource::eOrigin_unknown;
     if ( bsrc ) {
@@ -400,16 +401,20 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             }
         }
 
-        ITERATE(CBioSource::TSubtype, subsource, bsrc->GetSubtype() ) {
-            if ( (*subsource)->CanGetSubtype()  &&
-                (*subsource)->GetSubtype() == CSubSource::eSubtype_transgenic ) {
+        ITERATE(CBioSource::TSubtype, it, bsrc->GetSubtype() ) {
+            CSubSource::TSubtype subtype = (*it)->IsSetSubtype() ?
+                (*it)->GetSubtype() : CSubSource::eSubtype_other;
+            if (subtype == CSubSource::eSubtype_transgenic) {
                 is_transgenic = true;
-                break;
+            } else if (subtype == CSubSource::eSubtype_environmental_sample) {
+                is_env_sample = true;
             }
         }
     }
 
-    switch ( ctx.GetTech() ) {
+    CMolInfo::TTech tech = ctx.GetTech();
+
+    switch (tech) {
     case CMolInfo::eTech_est:
         m_Division = "EST";
         break;
@@ -436,6 +441,12 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         origin == CBioSource::eOrigin_artificial  ||
         is_transgenic ) {
         m_Division = "SYN";
+    } else if (is_env_sample) {
+        if (tech == CMolInfo::eTech_unknown  ||
+            tech == CMolInfo::eTech_standard ||
+            tech == CMolInfo::eTech_other) {
+            m_Division = "ENV";
+        }
     }
 
     ITERATE (CBioseq_Handle::TId, iter, bsh.GetId()) {
@@ -605,6 +616,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/04/27 15:55:59  shomrat
+* Added ENV division
+*
 * Revision 1.17  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.
