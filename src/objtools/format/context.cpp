@@ -174,6 +174,10 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_Encode.Reset(x_GetEncode());
     
     m_HasOperon = x_HasOperon();
+
+    if (IsRefSeq()) {
+        m_FFCtx.GetConfig().SetRefSeqConventions();
+    }
 }
 
 
@@ -652,6 +656,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/04/27 17:10:37  shomrat
+* Modify config for RefSeq
+*
 * Revision 1.38  2005/04/18 13:49:34  shomrat
 * Added support for ENCODE project
 *
