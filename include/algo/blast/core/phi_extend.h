@@ -34,8 +34,8 @@
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_util.h>
 
-#ifndef PHI_EXTEND__H
-#define PHI_EXTEND__H
+#ifndef ALGO_BLAST_CORE__PHI_EXTEND_H
+#define ALGO_BLAST_CORE__PHI_EXTEND_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,4 +53,4 @@ Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
 }
 #endif
 
-#endif /* PHI_EXTEND__H */
+#endif /* ALGO_BLAST_CORE__PHI_EXTEND_H */
