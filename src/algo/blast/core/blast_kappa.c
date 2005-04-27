@@ -2834,7 +2834,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                   reported, no matter how many. */
 
   if (program_number != eBlastTypeBlastp &&
-      program_number != eBlastTypePsiBlast) { /* tblastn ported but not fully
+      program_number != eBlastTypePsiBlast &&
+      program_number != eBlastTypePhiBlastp) { /* tblastn ported but not fully
                                                  implemented */
         return BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED;
   }
