@@ -531,7 +531,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             }
             if (!delete_hsp) {
                Blast_HSPAdjustSubjectOffset(hsp, start_shift);
-               BlastIntervalTreeAddHSP(hsp, tree, query_info);
+               BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+                                       eQueryAndSubject);
             } else {
                hsp_array[index] = Blast_HSPFree(hsp);
             }
@@ -576,7 +577,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
            hsp_array[index] = Blast_HSPFree(hsp);
        }
        else {
-           BlastIntervalTreeAddHSP(hsp, tree, query_info);
+           BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+                                   eQueryAndSubject);
        }
    }
    tree = Blast_IntervalTreeFree(tree);
@@ -996,6 +998,11 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       }
       BlastSequenceBlkFree(seq_arg.seq);
    }
+
+   if (hit_params->options->culling_limit > 0)
+      Blast_HSPResultsPerformCulling(results, query_info, 
+                                    hit_params->options->culling_limit,
+                                    query->length);
 
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed. Only do this for a database search. */
