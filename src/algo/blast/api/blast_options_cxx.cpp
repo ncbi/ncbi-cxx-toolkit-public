@@ -1793,7 +1793,6 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
        m_LutOpts->lut_type = PHI_AA_LOOKUP;
 
     m_LutOpts->phi_pattern = strdup(pattern);
-    m_HitSaveOpts->phi_align = TRUE;
 }
 
 #define GENCODE_STRLEN 64
@@ -3368,6 +3367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/04/27 19:58:15  dondosha
+* BlastScoreBlk::effective_search_sp field no longer exists
+*
 * Revision 1.62  2005/04/27 14:40:28  papadopo
 * modify member functions that set/get culling limits
 *

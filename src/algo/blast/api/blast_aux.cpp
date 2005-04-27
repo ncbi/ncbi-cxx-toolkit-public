@@ -256,7 +256,6 @@ CBlastScoreBlk::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     ddc.Log("name", m_Ptr->name);
     ddc.Log("ambig_size", m_Ptr->ambig_size);
     ddc.Log("ambig_occupy", m_Ptr->ambig_occupy);
-    ddc.Log("effective_search_sp", m_Ptr->effective_search_sp);
 }
 
 void
@@ -527,6 +526,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2005/04/27 19:57:58  dondosha
+ * BlastScoreBlk::effective_search_sp field no longer exists
+ *
  * Revision 1.71  2005/04/27 14:38:21  papadopo
  * modify debug output to show culling limit
  *
