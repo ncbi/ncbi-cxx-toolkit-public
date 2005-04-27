@@ -637,18 +637,19 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
 
    for (index=0; index < hsp_list->hspcnt; index++) {
-       const Int4 kQueryPatternLength = 
-           pattern_info->occurrences[hsp->pat_info->index].length;
+       Int4 query_pattern_length;
        hsp = hsp_array[index];
        
        q_start = hsp->query.gapped_start;
        s_start = hsp->subject.gapped_start;
+       query_pattern_length =
+           pattern_info->occurrences[hsp->pat_info->index].length;
        
        /* Perform the gapped extension with traceback */
        PHIGappedAlignmentWithTraceback(query, subject, gap_align, 
                                        score_params, q_start, s_start, 
                                        query_length, subject_length,
-                                       kQueryPatternLength, 
+                                       query_pattern_length, 
                                        hsp->pat_info->length, pattern_blk);
        
        if (gap_align->score >= hit_params->cutoff_score) {
