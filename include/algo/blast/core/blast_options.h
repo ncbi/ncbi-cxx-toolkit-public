@@ -315,9 +315,9 @@ typedef struct BlastHitSavingOptions {
    Int4 total_hsp_limit; /**< Maximal total number of HSPs to keep */
    Int4 hsp_range_max; /**< Maximal number of HSPs to save in a region: 
                           used for culling only */
-   Boolean perform_culling;/**< Perform culling of hit lists by keeping at 
-                              most a certain number of HSPs in a range
-                              (not implemented) */
+   Int4 culling_limit; /**< If the query range of an HSP is contained in
+                            at least this many higher-scoring HSPs, throw
+                            away the HSP as redundant (turned off if zero) */
    /* PSI-BLAST Hit saving options */
    Int4 required_start;  /**< Start of the region required to be part of the
                             alignment */
@@ -796,12 +796,16 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program,
  * @param evalue The expected value threshold [in]
  * @param hitlist_size How many database sequences to save per query? [in]
  * @param is_gapped is this a gapped alignment? [in]
+ * @param culling_limit Number of higher-scoring HSPs that must contain
+ *                      the query range of an HSP before that HSP is declared
+ *                      to be redundant (ignored if zero) [in]
 */
 NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size,
-                           Boolean is_gapped);
+                           Boolean is_gapped,
+                           Int4 culling_limit);
 
 /** Initialize default options for PSI BLAST 
  * @param psi_options pointer to pointer where structure will be allocated [in]
