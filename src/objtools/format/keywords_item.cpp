@@ -37,6 +37,8 @@
 #include <objects/seqblock/SP_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <util/static_set.hpp>
 #include <algorithm>
@@ -143,7 +145,19 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("Third Party Annotation");
         x_AddKeyword("TPA");
     }
-    
+   
+    // add ENV keyword
+    bool is_env_sample = false;
+    CSeqdesc_CI src_desc(ctx.GetHandle(), CSeqdesc::e_Source);
+    if (src_desc) {
+        ITERATE(CBioSource::TSubtype, it, src_desc->GetSource().GetSubtype()) {
+            if ((*it)->IsSetSubtype()  &&  (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                is_env_sample = true;
+                break;
+            }
+        }
+    }
+
     // add keywords based on mol-info
     ETechFlags tech = e_not_set;
     switch ( ctx.GetTech() ) {
@@ -195,6 +209,14 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         
     case CMolInfo::eTech_barcode:
         x_AddKeyword("BARCODE");
+        break;
+
+    case CMolInfo::eTech_unknown:
+    case CMolInfo::eTech_standard:
+    case CMolInfo::eTech_other:
+        if (is_env_sample) {
+            x_AddKeyword("ENV");
+        }
         break;
 
     default:
@@ -269,6 +291,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/04/27 17:14:31  shomrat
+* Added ENV keyword
+*
 * Revision 1.11  2005/04/18 13:51:02  shomrat
 * Changed ENCODE implementation
 *
