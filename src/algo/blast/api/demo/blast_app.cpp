@@ -204,6 +204,11 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("hitlist", "hitlist_size",
         "How many best matching sequences to find?",
         CArgDescriptions::eInteger, "500");
+    arg_desc->AddDefaultKey("cull", "culling_limit",
+        "If the query range of a hit is enveloped by that of at "
+        "least this many higher-scoring hits, delete the hit "
+        "(ignored if zero)",
+        CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gencode", "gencode", "Query genetic code",
                             CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("dbgencode", "dbgencode", "Database genetic code",
@@ -409,6 +414,10 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
             opt.SetPrelimHitlistSize(MIN(2*args["hitlist"].AsInteger(),
                                          args["hitlist"].AsInteger() + 50));
         }
+    }
+
+    if (args["cull"].AsInteger()) {
+        opt.SetCullingLimit(args["cull"].AsInteger());
     }
 
     if (args["perc"].AsDouble()) {
