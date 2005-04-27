@@ -268,7 +268,11 @@ int CGridWorkerApp::Run(void)
     unsigned int control_port = 
        reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
     bool server_log = 
-        reg.GetBool("server","log",false,0,IRegistry::eReturn);
+       reg.GetBool("server","log",false,0,IRegistry::eReturn);
+
+    bool max_total_jobs = 
+       reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
+
     if (server_log)
         SetDiagPostLevel(eDiag_Info);
 
@@ -281,6 +285,7 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
+    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
 
 
     {{
@@ -325,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/27 14:10:36  didenko
+ * Added max_total_jobs parameter to a worker node configuration file
+ *
  * Revision 1.11  2005/04/21 20:15:52  didenko
  * Added some comments
  *

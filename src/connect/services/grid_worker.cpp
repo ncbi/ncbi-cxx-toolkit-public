@@ -280,7 +280,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
       m_NSClientFactory(client_factory), 
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(20),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
-      m_ShutdownLevel(CNetScheduleClient::eNoShutdown)
+      m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
+      m_MaxProcessedJob(0), m_ProcessedJob(0)
 {
 }
 
@@ -357,6 +358,8 @@ void CGridWorkerNode::Start()
                     _ASSERT(0);
                     m_NSReadClient->ReturnJob(job_key);
                 }
+                if (m_MaxProcessedJob > 0 && m_ProcessedJob++ > m_MaxProcessedJob) 
+                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
             }
         } 
         catch (exception& ex) {
@@ -393,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/27 14:10:36  didenko
+ * Added max_total_jobs parameter to a worker node configuration file
+ *
  * Revision 1.9  2005/04/21 19:10:01  didenko
  * Added IWorkerNodeInitContext
  * Added some convenient macros
