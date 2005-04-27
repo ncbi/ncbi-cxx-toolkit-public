@@ -251,6 +251,9 @@ public:
     bool ForGBRelease        (void) const;
     bool HideUnclassPartial  (void) const;
     
+    // adjust mode dependant flags for RefSeq
+    void SetRefSeqConventions(void);
+
     // setters (for customization flags)
     void SetFlags(const TFlags& flags) { m_Flags = flags; }
     CFlatFileConfig& SetDoHTML               (bool val = true);
@@ -284,6 +287,8 @@ public:
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
 
+    
+
 private:
     // mode specific flags
     static const bool sm_ModeFlags[4][26];
@@ -294,6 +299,7 @@ private:
     TStyle      m_Style;
     TView       m_View;
     TFlags      m_Flags;  // custom flags
+    bool        m_RefSeqConventions;
 };
 
 
@@ -358,6 +364,12 @@ CUSTOM_FLAG_IMP(NeverTranslateCDS)
 #undef CUSTOM_FLAG_GET
 #undef CUSTOM_FLAG_SET
 
+inline
+void CFlatFileConfig::SetRefSeqConventions(void)
+{
+    m_RefSeqConventions = true;
+}
+
 // end of inline methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -369,6 +381,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/04/27 17:09:43  shomrat
+* Modify for RefSeq
+*
 * Revision 1.6  2005/03/02 16:25:30  shomrat
 * Added NeverTranslateCDS
 *

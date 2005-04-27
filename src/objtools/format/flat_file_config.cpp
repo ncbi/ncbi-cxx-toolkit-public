@@ -46,7 +46,8 @@ CFlatFileConfig::CFlatFileConfig
  TStyle style,
  TFlags flags,
  TView view) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_View(view), m_Flags(flags)
+    m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
+    m_Flags(flags), m_RefSeqConventions(false)
 {
 }
 
@@ -112,15 +113,30 @@ MODE_FLAG_GET(UseEmblMolType, 15);
 MODE_FLAG_GET(HideBankItComment, 16);
 MODE_FLAG_GET(CheckCDSProductId, 17);
 MODE_FLAG_GET(SuppressSegLoc, 18);
-MODE_FLAG_GET(SrcQualsToNote, 19);
+//MODE_FLAG_GET(SrcQualsToNote, 19);
 MODE_FLAG_GET(HideEmptySource, 20);
 MODE_FLAG_GET(GoQualsToNote, 21);
-MODE_FLAG_GET(GeneSynsToNote, 22);
-MODE_FLAG_GET(SelenocysteineToNote, 23);
+//MODE_FLAG_GET(GeneSynsToNote, 22);
+//MODE_FLAG_GET(SelenocysteineToNote, 23);
 MODE_FLAG_GET(ForGBRelease, 24);
 MODE_FLAG_GET(HideUnclassPartial, 25);
 
 #undef MODE_FLAG_GET
+
+bool CFlatFileConfig::SrcQualsToNote(void) const 
+{
+    return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][19];
+}
+
+bool CFlatFileConfig::GeneSynsToNote(void) const 
+{
+    return !m_RefSeqConventions ? true : sm_ModeFlags[static_cast<size_t>(m_Mode)][22];
+}
+
+bool CFlatFileConfig::SelenocysteineToNote(void) const 
+{
+    return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][23];
+}
 
 
 END_SCOPE(objects)
@@ -131,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/04/27 17:11:37  shomrat
+* Modify for RefSeq
+*
 * Revision 1.3  2004/11/24 16:52:50  shomrat
 * Standardize flat-file customization flags
 *
