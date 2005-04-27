@@ -37,50 +37,32 @@
 #include <algo/blast/core/pattern.h>
 #include <algo/blast/core/lookup_wrap.h>
 
-#ifndef PHI_LOOKUP__H
-#define PHI_LOOKUP__H
+#ifndef ALGO_BLAST_CORE__PHI_LOOKUP_H
+#define ALGO_BLAST_CORE__PHI_LOOKUP_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** The following 3 flags define 3 options for running the program */
-#define SEED_FLAG 1         
-#define PATTERN_FLAG 2
-#define PAT_SEED_FLAG 3
-#define PAT_MATCH_FLAG 4
-#define PATTERN_TOO_LONG  2
-
-/** Original allocation size for the starts and lengths arrays for pattern 
- * occurrencies in the query.
+/** Initialize the pattern items structure, serving as a "pseudo" lookup table
+ * in a PHI BLAST search.
+ * @param pattern String describing the pattern to search for [in]
+ * @param is_dna boolean describing whether the strings are DNA or protein [in]
+ * @param sbp Scoring block with statistical parameters [in]
+ * @param pattern_blk The initialized structure [out]
+ * @param error_msg Error message, if any.
+ * @return 0 on success, -1 on failure.
  */
-#define MIN_PHI_LOOKUP_SIZE 1000
+Int2 SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp, 
+                            SPHIPatternSearchBlk* *pattern_blk, 
+                            Blast_Message* *error_msg);
 
-/** Pseudo lookup table structure for PHI-BLAST. Contains starting and ending
- * offsets of pattern occurrences in the query sequence. 
+/** Deallocate memory for the PHI BLAST lookup table.
+ * @param pattern_blk The structure to deallocate [in]
+ * @return NULL.
  */
-typedef struct BlastPHILookupTable {
-   patternSearchItems* pattern_info;
-   Boolean is_dna;
-   Int4 num_matches;
-   Int4 allocated_size;
-   Int4* start_offsets;
-   Int4* lengths;
-} BlastPHILookupTable;
-
-/** Initialize the pseudo lookup table for PHI BLAST */
-Int2 PHILookupTableNew(const LookupTableOptions* opt, 
-                       BlastPHILookupTable* * lut,
-                       Boolean is_dna, BlastScoreBlk* sbp);
-
-/** Deallocate memory for the PHI BLAST lookup table */
-BlastPHILookupTable* PHILookupTableDestruct(BlastPHILookupTable* lut);
-
-/** Find all occurrencies of a pattern in query, and save starts/stops in the
- * PHILookupTable structure.
- */
-Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
-        BLAST_SequenceBlk* query, BlastSeqLoc* location, Boolean is_dna);
+SPHIPatternSearchBlk* 
+SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* pattern_blk);
 
 
 /**
@@ -91,7 +73,7 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
  * "offset". 
  *
  * @param lookup_wrap contains the pseudo lookup table with offsets of pattern
- *                    occurrencies in query [in]
+ *                    occurrences in query [in]
  * @param query_blk the query sequence [in]
  * @param subject the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
@@ -108,4 +90,4 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
 }
 #endif
 
-#endif /* PHI_LOOKUP__H */
+#endif /* ALGO_BLAST_CORE__PHI_LOOKUP_H */
