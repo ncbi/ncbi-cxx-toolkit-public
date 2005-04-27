@@ -315,7 +315,7 @@ public:
     const CSubmit_block* GetSubmitBlock(void) const { return m_Submit; }
     void SetSubmit(const CSubmit_block& sub) { m_Submit = &sub; }
 
-    const CFlatFileConfig& GetConfig(void) const { return m_Cfg; }
+    CFlatFileConfig& GetConfig(void) { return m_Cfg; }
 
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/04/27 17:08:57  shomrat
+* GetConfig return non-const
+*
 * Revision 1.26  2005/04/18 13:47:13  shomrat
 * Added support for ENCODE project
 *
