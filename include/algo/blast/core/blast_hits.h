@@ -50,6 +50,12 @@ typedef struct BlastSeg {
    Int4 gapped_start;/**< Where the gapped extension started. */
 } BlastSeg;
 
+/** In PHI BLAST: information about pattern match in a given HSP. */
+typedef struct SPHIHspInfo {
+    Int4 index; /**< Index of query pattern occurrence for this HSP. */ 
+    Int4 length; /**< Length of this pattern occurrence in subject. */
+} SPHIHspInfo;
+
 /** Structure holding all information about an HSP */
 typedef struct BlastHSP {
    Int4 score;           /**< This HSP's raw score */
@@ -64,8 +70,8 @@ typedef struct BlastHSP {
                               statistics evaluation? If unset (0), this HSP is
                               not part of a linked set, i.e. value 0 is treated
                               the same way as 1. */
-   Uint4 pattern_length; /**< Length of pattern occurrence in this HSP, in 
-                            PHI BLAST */
+   SPHIHspInfo* pat_info; /**< In PHI BLAST, information about this pattern
+                                 match. */
 } BlastHSP;
 
 /** The structure to hold all HSPs for a given sequence after the gapped 
@@ -168,13 +174,6 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
               Int4 query_context, Int2 query_frame, Int2 subject_frame,
               Int4 score, GapEditScript* *gap_edit, BlastHSP** ret_hsp);
 
-/** Calculate e-value for an HSP found by PHI BLAST.
- * @param hsp An HSP found by PHI BLAST [in]
- * @param sbp Scoring block with statistical parameters [in]
- */
-NCBI_XBLAST_EXPORT
-void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
-
 /** Reevaluate the HSP's score and percent identity after taking
  * into account the ambiguity information. Used only for blastn after a greedy
  * gapped extension with traceback. This function can remove part of the 
@@ -266,7 +265,7 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
  * @param gap_opens Number of gap openings in this HSP [out] 
  */
 NCBI_XBLAST_EXPORT
-void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
+void Blast_HSPCalcLengthAndGaps(const BlastHSP* hsp, Int4* length,
                                 Int4* gaps, Int4* gap_opens);
 
 /** Adjust HSP endpoint offsets according to strand/frame; return values in
@@ -367,9 +366,11 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
 /** Calculate e-values for a PHI BLAST HSP list.
  * @param hsp_list HSP list found by PHI BLAST [in] [out]
  * @param sbp Scoring block with statistical parameters [in]
+ * @param query_info Structure containing information about pattern counts [in]
  */
 NCBI_XBLAST_EXPORT
-void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
+void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp, 
+                                const BlastQueryInfo* query_info);
 
 /** Calculate bit scores from raw scores in an HSP list.
  * @param hsp_list List of HSPs [in] [out]
@@ -380,6 +381,12 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
                                Boolean gapped_calculation, BlastScoreBlk* sbp);
 
+/** Calculate bit scores from raw scores in an HSP list for a PHI BLAST search.
+ * @param hsp_list List of HSPs [in] [out]
+ * @param sbp Scoring block with statistical parameters [in]
+ */
+void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
+    
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param hit_options Options block containing the e-value cut-off [in]
