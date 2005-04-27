@@ -37,6 +37,7 @@
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/pattern.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,6 +106,7 @@ Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp);
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options for iterative searches [in]
  * @param rps_info RPS BLAST auxiliary data structure [in]
+ * @param pattern_blk PHI BLAST auxiliary data structure [in]
  * @param results All results from the BLAST search [out]
  * @return nonzero indicates failure, otherwise zero
  */
@@ -119,7 +121,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    BlastEffectiveLengthsParameters* eff_len_params,
    const BlastDatabaseOptions* db_options,
    const PSIBlastOptions* psi_options, const BlastRPSInfo* rps_info, 
-   BlastHSPResults** results);
+   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results);
 
 /** Entry point from the API level to perform the traceback stage of a BLAST 
  * search, given the source of HSP lists, obtained from the preliminary stage. 
@@ -140,6 +142,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
  * @param sbp Scoring block with statistical parameters and matrix [in]
  * @param hsp_stream Source of HSP lists. [in]
  * @param rps_info RPS database information structure [in]
+ * @param pattern_blk PHI BLAST auxiliary data structure [in]
  * @param results Where to save the results after traceback. [out]
  */
 NCBI_XBLAST_EXPORT
@@ -153,7 +156,7 @@ Blast_RunTracebackSearch(EBlastProgramType program,
    const BlastDatabaseOptions* db_options, 
    const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info, 
-   BlastHSPResults** results);
+   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results);
 
 
 #ifdef __cplusplus
