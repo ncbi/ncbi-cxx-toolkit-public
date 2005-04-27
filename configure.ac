@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.367 2005/04/26 20:06:46 ucko Exp $
+#  $Id: configure.ac,v 1.368 2005/04/27 16:28:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1771,6 +1771,7 @@ if test "$compiler" != "MSVC" ; then
       CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
       CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
       LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
    else
       with_optimization=${with_optimization:="no"}
       if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
@@ -1798,17 +1799,11 @@ if test "$compiler" != "MSVC" ; then
          CFLAGS="$CFLAGS -O" ; fi
       if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      if test "$with_debug" != "yes" ; then
-         CPPFLAGS="-DNDEBUG $CPPFLAGS" ; fi
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
       FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
-   fi
-
-   if test "$with_debug" = "no"  -a  "$with_optimization" = "no" ; then
-      CPPFLAGS="-DNDEBUG $CPPFLAGS"
    fi
 fi
 changequote([, ])dnl
