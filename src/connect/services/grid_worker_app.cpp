@@ -274,6 +274,8 @@ int CGridWorkerApp::Run(void)
        reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
     bool server_log = 
        reg.GetBool("server","log",false,0,IRegistry::eReturn);
+    unsigned int log_size = 
+       reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
 
     bool max_total_jobs = 
        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
@@ -291,7 +293,7 @@ int CGridWorkerApp::Run(void)
 #endif
 
     m_ErrLog.reset(new CRotatingLogStream(GetProgramDisplayName() +"_err.log", 
-                                          25 * 1024 * 1024));
+                                          log_size));
     // All errors redirected to rotated log
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
@@ -307,6 +309,7 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
+    m_WorkerNode->ActivateServerLog(server_log);
 
     {{
     CRef<CGridWorkerNodeThread> worker_thread(
@@ -350,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/27 16:17:20  didenko
+ * Fixed logging system for worker node
+ *
  * Revision 1.13  2005/04/27 15:16:29  didenko
  * Added rotating log
  * Added optional deamonize

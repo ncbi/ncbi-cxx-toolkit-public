@@ -282,7 +282,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(20),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
-      m_MaxProcessedJob(0), m_ProcessedJob(0)
+      m_MaxProcessedJob(0), m_ProcessedJob(0),
+      m_LogRequested(false)
 {
 }
 
@@ -397,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/27 16:17:20  didenko
+ * Fixed logging system for worker node
+ *
  * Revision 1.11  2005/04/27 15:16:29  didenko
  * Added rotating log
  * Added optional deamonize
