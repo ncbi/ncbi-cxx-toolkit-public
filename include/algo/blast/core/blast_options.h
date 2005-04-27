@@ -336,7 +336,6 @@ typedef struct BlastHitSavingOptions {
 
    Int4 min_hit_length;    /**< optional minimum alignment length; alignments
                                 not at least this long are discarded */
-   Boolean phi_align;   /**< Is this a PHI BLAST search? */
    Int4 min_diag_separation; /**< How many diagonals separate a hit from a substantial alignment
                                   before it's not blocked out. Must be > 0 to be used. */
 } BlastHitSavingOptions;
