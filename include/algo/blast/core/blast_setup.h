@@ -39,6 +39,7 @@
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/pattern.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,7 +177,6 @@ Int2 Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
  * @param query_info Additional query information [in]
  * @param scoring_options Scoring options [in]
  * @param program_number BLAST program type [in]
- * @param phi_align Is this a PHI BLAST search? [in]
  * @param sbpp Initialized score block [out]
  * @param scale_factor Matrix scaling factor for this search [in]
  * @param blast_message Error message [out]
@@ -186,7 +186,6 @@ Int2 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     BlastQueryInfo* query_info, 
     const BlastScoringOptions* scoring_options, 
     EBlastProgramType program_number, 
-    Boolean phi_align, 
     BlastScoreBlk* *sbpp, 
     double scale_factor, 
     Blast_Message* *blast_message);
@@ -203,6 +202,34 @@ void
 BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 
 
+/** In a PHI BLAST search, adds pattern information to the BlastQueryInfo 
+ * structure.
+ * @param program Type of PHI BLAST program [in]
+ * @param pattern_blk Auxiliary pattern items structure [in]
+ * @param query Query sequence [in]
+ * @param lookup_segments Locations on query sequence to find pattern on [in]
+ * @param query_info Query information structure, where pattern occurrences
+ *                   will be saved. [in][out]
+ * @return Status, 0 on success, -1 on error.
+ */
+Int2 
+Blast_SetPHIPatternInfo(EBlastProgramType program, 
+                        SPHIPatternSearchBlk* pattern_blk, 
+                        BLAST_SequenceBlk* query, BlastSeqLoc* lookup_segments,
+                        BlastQueryInfo* query_info);
+
+/** Calculates pattern space, which is used instead of search space in PHI BLAST
+ * e-value calculations. Pattern space is equal to the product of the number of 
+ * effective occurrences of pattern in query, and the number of pattern 
+ * occurrences in database.
+ * @param query_info The query information structure [in][out]
+ * @param diagnostics The diagnostics structure containing the pattern count in 
+ *                    database [in]
+ */
+void
+PHIPatternSpaceCalc(BlastQueryInfo* query_info, 
+                    const BlastDiagnostics* diagnostics);
+
 #ifdef __cplusplus
 }
 #endif
@@ -211,6 +238,10 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 /*
  *
 * $Log$
+* Revision 1.51  2005/04/27 19:49:01  dondosha
+* Added Blast_SetPHIPatternInfo function for PHI BLAST query pattern occurrences calculation, and
+* PHIPatternSpaceCalc for calculation of pattern space after all database occurrences are found.
+*
 * Revision 1.50  2004/12/29 13:32:43  madden
 * Replaced include of blast_options.h with include of blast_parameters.h
 *
