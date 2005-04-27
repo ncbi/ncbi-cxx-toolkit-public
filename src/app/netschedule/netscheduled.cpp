@@ -440,6 +440,8 @@ void CNetScheduleServer::Process(SOCK sock)
                 }
 
                 string lmsg;
+                lmsg += peer;
+                lmsg += ';';
                 lmsg += conn_tm.AsString();
                 lmsg += ';';
                 lmsg += tdata->auth;
@@ -978,9 +980,14 @@ void CNetScheduleServer::ProcessLog(CSocket&                sock,
             m_LogFlag.Set(1);
             m_AccessLog.Rotate();
         }
-    }
-    if (NStr::strcasecmp(str, "OFF")==0) {
-        m_LogFlag.Set(0);
+        LOG_POST("Logging turned ON");
+    } else {
+        if (NStr::strcasecmp(str, "OFF")==0) {
+            m_LogFlag.Set(0);
+            LOG_POST("Logging turned OFF");
+        } else {
+            WriteMsg(sock, "ERR:", "Incorrect LOG syntax");
+        }
     }
     WriteMsg(sock, "OK:", "");
 }
@@ -1743,6 +1750,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/04/27 18:12:16  kuznets
+ * Logging improved
+ *
  * Revision 1.31  2005/04/27 15:00:18  kuznets
  * Improved error messaging
  *
