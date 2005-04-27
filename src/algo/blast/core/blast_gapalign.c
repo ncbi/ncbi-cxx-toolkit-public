@@ -58,26 +58,6 @@ static Int2 s_BlastProtGappedAlignment(EBlastProgramType program,
    BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp);
 
-/** Auxiliary structure for dynamic programming gapped extension */
-typedef struct BlastGapDP {
-  Int4 best;            /**< score of best path that ends in a match
-                             at this position */
-  Int4 best_gap;        /**< score of best path that ends in a gap
-                             at this position */
-  Int4 best_decline;    /**< score of best path that ends in a decline
-                             at this position */
-} BlastGapDP;
-
-/** Reduced version of BlastGapDP, for alignments that 
- *  don't use a decline penalty
- */
-typedef struct {
-  Int4 best;            /**< score of best path that ends in a match
-                             at this position */
-  Int4 best_gap;        /**< score of best path that ends in a gap
-                             at this position */
-} BlastGapSmallDP;
-
 /** Lower bound for scores. Divide by two to prevent underflows. */
 #define MININT INT4_MIN/2
 
@@ -553,7 +533,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Boolean reversed, Boolean reverse_sequence)
 	
 { 
-    /* See s_SemiGappedAlign for more general comments on 
+    /* See Blast_SemiGappedAlign for more general comments on 
        what this code is doing; comments in this function
        only apply to the traceback computations */
 
@@ -763,7 +743,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
                tains all of the actions to perform, and is
                written to edit_script[a_index][b_index]. Otherwise,
                this inner loop is exactly the same as the one
-               in s_SemiGappedAlign() */
+               in Blast_SemiGappedAlign() */
 
             if (score_decline > score) {
                 script = SCRIPT_DECLINE;
@@ -976,8 +956,8 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
  * @param reverse_sequence Do reverse the sequence [in]
  * @return The best alignment score found.
  */
-static Int4 
-s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+Int4 
+Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset, Boolean score_only, 
    GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params, 
@@ -2387,7 +2367,7 @@ s_GetRelativeCoordinates(const BLAST_SequenceBlk* query,
    Int4 context = 0;
    Int4 query_start = 0, query_length = 0;
 
-   context = BSearchContextInfo(init_hsp->q_off, query_info);
+   context = BSearchContextInfo(init_hsp->offsets.qs_offsets.q_off, query_info);
 
    if (query && query->oof_sequence) {
        /* Out-of-frame blastx case: all frames of the same parity are mixed
@@ -2418,8 +2398,10 @@ s_GetRelativeCoordinates(const BLAST_SequenceBlk* query,
    }
 
    if (init_hsp_out) {
-      init_hsp_out->q_off = init_hsp->q_off - query_start;
-      init_hsp_out->s_off = init_hsp->s_off;
+      init_hsp_out->offsets.qs_offsets.q_off = 
+          init_hsp->offsets.qs_offsets.q_off - query_start;
+      init_hsp_out->offsets.qs_offsets.s_off = 
+          init_hsp->offsets.qs_offsets.s_off;
       if (init_hsp->ungapped_data) {
          if (!init_hsp_out->ungapped_data) {
             init_hsp_out->ungapped_data = (BlastUngappedData*) 
@@ -2432,7 +2414,7 @@ s_GetRelativeCoordinates(const BLAST_SequenceBlk* query,
             init_hsp->ungapped_data->q_start - query_start;
       }
    } else {
-      init_hsp->q_off -= query_start;
+      init_hsp->offsets.qs_offsets.q_off -= query_start;
       if (init_hsp->ungapped_data)
          init_hsp->ungapped_data->q_start -= query_start;
    }
@@ -2478,8 +2460,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
                              &context);
 
       if (!init_hsp->ungapped_data) {
-         q_start = q_end = init_hsp->q_off;
-         s_start = s_end = init_hsp->s_off;
+         q_start = q_end = init_hsp->offsets.qs_offsets.q_off;
+         s_start = s_end = init_hsp->offsets.qs_offsets.s_off;
          score = INT4_MIN;
       } else {
          q_start = init_hsp->ungapped_data->q_start;
@@ -2506,7 +2488,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
 
          BLAST_GreedyGappedAlignment(query_tmp.sequence, 
             subject->sequence, query_tmp.length, subject->length, gap_align, 
-            score_params, init_hsp->q_off, init_hsp->s_off, (Boolean) TRUE, 
+            score_params, init_hsp->offsets.qs_offsets.q_off, 
+            init_hsp->offsets.qs_offsets.s_off, (Boolean) TRUE, 
             (Boolean) (ext_options->ePrelimGapExt == eGreedyWithTracebackExt));
 
          if (gap_align->score >= hit_options->cutoff_score) {
@@ -2516,7 +2499,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
             BlastHSP* new_hsp;
             Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
                           gap_align->subject_start, gap_align->subject_stop,
-                          init_hsp->q_off, init_hsp->s_off, context, 
+                          init_hsp->offsets.qs_offsets.q_off, 
+                          init_hsp->offsets.qs_offsets.s_off, context, 
                           query_info->contexts[context].frame, 1, 
                           gap_align->score, &(gap_align->edit_script), 
                           &new_hsp);
@@ -2729,9 +2713,10 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
       s_BlastAlignPackedNucl won't work, so shift the alignment start
       to the left */
    offset_adjustment = 
-      COMPRESSION_RATIO - (init_hsp->s_off % COMPRESSION_RATIO);
-   q_length = init_hsp->q_off + offset_adjustment;
-   s_length = init_hsp->s_off + offset_adjustment;
+       COMPRESSION_RATIO - 
+       (init_hsp->offsets.qs_offsets.s_off % COMPRESSION_RATIO);
+   q_length = init_hsp->offsets.qs_offsets.q_off + offset_adjustment;
+   s_length = init_hsp->offsets.qs_offsets.s_off + offset_adjustment;
    if (q_length != 0 && s_length != 0) {
       found_start = TRUE;
       score_left = s_BlastAlignPackedNucl(query, subject, q_length, s_length, 
@@ -2761,13 +2746,13 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
 
    if (found_start == FALSE) {
       /* Start never found */
-      gap_align->query_start = init_hsp->q_off;
-      gap_align->subject_start = init_hsp->s_off;
+      gap_align->query_start = init_hsp->offsets.qs_offsets.q_off;
+      gap_align->subject_start = init_hsp->offsets.qs_offsets.s_off;
    }
 
    if (found_end == FALSE) {
-      gap_align->query_stop = init_hsp->q_off - 1;
-      gap_align->subject_stop = init_hsp->s_off - 1;
+      gap_align->query_stop = init_hsp->offsets.qs_offsets.q_off - 1;
+      gap_align->subject_stop = init_hsp->offsets.qs_offsets.s_off - 1;
    }
 
    gap_align->score = score_right+score_left;
@@ -3125,7 +3110,9 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
     Int2 status = 0;
 
     cutoff_score = hit_params->cutoff_score;
-    is_prot = (program_number != eBlastTypeBlastn);
+    is_prot = (program_number != eBlastTypeBlastn &&
+               program_number != eBlastTypePhiBlastn);
+
     if (program_number == eBlastTypeRpsTblastn || 
         program_number == eBlastTypeRpsBlast) {
         rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
@@ -3170,8 +3157,9 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
                                                     init_hsp_tmp.ungapped_data->length,
                                                     init_hsp_tmp.ungapped_data->s_start,
                                                     init_hsp_tmp.ungapped_data->length);
-                init_hsp_tmp.s_off += max_offset - init_hsp_tmp.q_off;
-                init_hsp_tmp.q_off = max_offset;
+                init_hsp_tmp.offsets.qs_offsets.s_off += 
+                    max_offset - init_hsp_tmp.offsets.qs_offsets.q_off;
+                init_hsp_tmp.offsets.qs_offsets.q_off = max_offset;
             }
 
             if (is_prot) {
@@ -3241,7 +3229,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    if (init_hitlist->total == 0)
       return 0;
 
-   is_prot = (program_number != eBlastTypeBlastn);
+   is_prot = (program_number != eBlastTypeBlastn &&
+              program_number != eBlastTypePhiBlastn);
+
    if (program_number == eBlastTypeRpsTblastn || 
        program_number == eBlastTypeRpsBlast) {
        rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
@@ -3292,8 +3282,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
              query_info->contexts[context].query_offset;
 
       if (!init_hsp->ungapped_data) {
-         q_start = q_end = init_hsp->q_off;
-         s_start = s_end = init_hsp->s_off;
+         q_start = q_end = init_hsp->offsets.qs_offsets.q_off;
+         s_start = s_end = init_hsp->offsets.qs_offsets.s_off;
          score = INT4_MIN;
       } else {
          q_start = init_hsp->ungapped_data->q_start;
@@ -3329,8 +3319,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                   init_hsp->ungapped_data->length,
                   init_hsp->ungapped_data->s_start,
                   init_hsp->ungapped_data->length);
-            init_hsp->s_off += max_offset - init_hsp->q_off;
-            init_hsp->q_off = max_offset;
+            init_hsp->offsets.qs_offsets.s_off += 
+                max_offset - init_hsp->offsets.qs_offsets.q_off;
+            init_hsp->offsets.qs_offsets.q_off = max_offset;
          }
 
          if (is_prot) {
@@ -3340,8 +3331,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
             /*  Start the gapped alignment on the fourth character of the
              *  eight character word that seeded the alignment; the start
              *  is included in the leftward extension. */
-            init_hsp->s_off += 3;
-            init_hsp->q_off += 3;
+            init_hsp->offsets.qs_offsets.s_off += 3;
+            init_hsp->offsets.qs_offsets.q_off += 3;
             status = s_BlastDynProgNtGappedAlignment(&query_tmp, subject, 
                          gap_align, score_params, init_hsp);
          }
@@ -3368,8 +3359,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
              Blast_HSPInit(gap_align->query_start, 
                            gap_align->query_stop, gap_align->subject_start, 
-                           gap_align->subject_stop, init_hsp->q_off, 
-                           init_hsp->s_off, context, 
+                           gap_align->subject_stop, 
+                           init_hsp->offsets.qs_offsets.q_off, 
+                           init_hsp->offsets.qs_offsets.s_off, context, 
                            query_frame, subject->frame, gap_align->score, 
                            &(gap_align->edit_script), &new_hsp);
              Blast_HSPListSaveHSP(hsp_list, new_hsp);
@@ -3504,13 +3496,13 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
       return -1;
    
    if (score_options->is_ooframe) {
-      q_length = init_hsp->q_off;
+      q_length = init_hsp->offsets.qs_offsets.q_off;
       /* For negative subject frames, make subject offset relative to the part
          of the mixed-frame sequence corresponding to the reverse strand. */
       if (program == eBlastTypeTblastn && subject_blk->frame < 0)
-          init_hsp->s_off -= subject_length + 1;
+          init_hsp->offsets.qs_offsets.s_off -= subject_length + 1;
       
-      s_length = init_hsp->s_off;
+      s_length = init_hsp->offsets.qs_offsets.s_off;
 
       if (program == eBlastTypeBlastx) {
          subject = subject_blk->sequence + s_length;
@@ -3523,8 +3515,8 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
          subject_length -= CODON_LENGTH - 1;
       }
    } else {
-      q_length = init_hsp->q_off + 1;
-      s_length = init_hsp->s_off + 1;
+      q_length = init_hsp->offsets.qs_offsets.q_off + 1;
+      s_length = init_hsp->offsets.qs_offsets.s_off + 1;
       query = query_blk->sequence;
       subject = subject_blk->sequence;
    }
@@ -3546,10 +3538,11 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
                  gap_align, score_params, q_length, TRUE, switch_seq);
       } else {
          score_left = 
-             s_SemiGappedAlign(query, subject+subject_shift, q_length, s_length,
-                                &private_q_start, &private_s_start, TRUE, 
-                               NULL, gap_align, score_params, init_hsp->q_off, 
-                               FALSE, TRUE);
+             Blast_SemiGappedAlign(query, subject+subject_shift, q_length, s_length,
+                                   &private_q_start, &private_s_start, TRUE, 
+                                   NULL, gap_align, score_params, 
+                                   init_hsp->offsets.qs_offsets.q_off, 
+                                   FALSE, TRUE);
       }
         
       gap_align->query_start = q_length - private_q_start;
@@ -3571,22 +3564,25 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
          gap_align->subject_stop += s_length + subject_shift;
       } else {
          score_right = 
-             s_SemiGappedAlign(query+init_hsp->q_off, subject+init_hsp->s_off, 
-                               query_length-q_length, subject_length-s_length, 
-                               &(gap_align->query_stop), 
-                               &(gap_align->subject_stop), 
-                               TRUE, NULL, gap_align, 
-                               score_params, init_hsp->q_off, FALSE, FALSE);
+             Blast_SemiGappedAlign(query+init_hsp->offsets.qs_offsets.q_off, 
+                                   subject+init_hsp->offsets.qs_offsets.s_off, 
+                                   query_length-q_length, 
+                                   subject_length-s_length, 
+                                   &(gap_align->query_stop), 
+                                   &(gap_align->subject_stop), 
+                                   TRUE, NULL, gap_align, score_params, 
+                                   init_hsp->offsets.qs_offsets.q_off, FALSE, 
+                                   FALSE);
          /* Make end offsets point to the byte after the end of the 
             alignment */
-         gap_align->query_stop += init_hsp->q_off + 1;
-         gap_align->subject_stop += init_hsp->s_off + 1;
+         gap_align->query_stop += init_hsp->offsets.qs_offsets.q_off + 1;
+         gap_align->subject_stop += init_hsp->offsets.qs_offsets.s_off + 1;
       }
    }
    
    if (found_start == FALSE) {  /* impossible for in-frame */
-      gap_align->query_start = init_hsp->q_off;
-      gap_align->subject_start = init_hsp->s_off;
+      gap_align->query_start = init_hsp->offsets.qs_offsets.q_off;
+      gap_align->subject_start = init_hsp->offsets.qs_offsets.s_off;
    }
    if (found_end == FALSE) {    /* impossible for out-of-frame */
       gap_align->query_stop = q_length;
@@ -3836,7 +3832,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
        /* NB: The left extension includes the starting point 
           [q_start,s_start]; the right extension does not. */
        score_left = 
-          s_SemiGappedAlign(query, subject, q_start+1, s_start+1,
+          Blast_SemiGappedAlign(query, subject, q_start+1, s_start+1,
              &private_q_length, &private_s_length, FALSE, rev_prelim_tback,
              gap_align, score_params, q_start, FALSE, TRUE);
        gap_align->query_start = q_start - private_q_length + 1;
@@ -3855,7 +3851,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
                 gap_align, score_params, q_start, FALSE, switch_seq);
         } else {
             score_right = 
-               s_SemiGappedAlign(query+q_start, subject+s_start, 
+               Blast_SemiGappedAlign(query+q_start, subject+s_start, 
                   q_length-q_start-1, s_length-s_start-1, &private_q_length, 
                   &private_s_length, FALSE, fwd_prelim_tback, gap_align, 
                   score_params, q_start, FALSE, FALSE);
@@ -3895,83 +3891,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
     }
 
     gap_align->score = score_right + score_left;
-    return status;
-}
-
-/** Returns length of a pattern in a PHI BLAST search, saved in the gapped
- * alignment structure.
- * @param gap_align The gapped alignment structure [in]
- * @return Pattern length
- */
-static Int4 
-s_GetPatternLengthFromGapAlignStruct(BlastGapAlignStruct* gap_align)
-{
-   /* Kludge: pattern lengths are saved in the output structure member 
-      query_stop. Probably should be changed??? */
-   return gap_align->query_stop;
-}
-
-Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject, 
-        BlastGapAlignStruct* gap_align, 
-        const BlastScoringParameters* score_params,
-        Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
-{
-    Boolean found_end;
-    Int4 score_right, score_left, private_q_length, private_s_length;
-    Int2 status = 0;
-    Int4 pat_length;
-    GapPrelimEditBlock *fwd_prelim_tback;
-    GapPrelimEditBlock *rev_prelim_tback;
-    
-    if (gap_align == NULL)
-        return -1;
-    
-    fwd_prelim_tback = gap_align->fwd_prelim_tback;
-    rev_prelim_tback = gap_align->rev_prelim_tback;
-    GapPrelimEditBlockReset(fwd_prelim_tback);
-    GapPrelimEditBlockReset(rev_prelim_tback);
-
-    found_end = FALSE;
-    score_left = 0;
-        
-    score_left = 
-       s_SemiGappedAlign(query, subject, q_start, s_start, 
-           &private_q_length, &private_s_length, FALSE, rev_prelim_tback,
-          gap_align, score_params, q_start, FALSE, TRUE);
-    gap_align->query_start = q_start - private_q_length;
-    gap_align->subject_start = s_start - private_s_length;
-    
-    pat_length = s_GetPatternLengthFromGapAlignStruct(gap_align);
-    /* the region matching the pattern has no gaps */
-    GapPrelimEditBlockAdd(rev_prelim_tback, eGapAlignSub, pat_length);
-
-    score_right = 0;
-    q_start += pat_length - 1;
-    s_start += pat_length - 1;
-
-    if ((q_start < query_length) && (s_start < subject_length)) {
-       found_end = TRUE;
-       score_right = 
-          s_SemiGappedAlign(query+q_start, subject+s_start, 
-             query_length-q_start-1, subject_length-s_start-1, 
-             &private_q_length, &private_s_length, FALSE, fwd_prelim_tback,
-             gap_align, score_params, q_start, FALSE, FALSE);
-
-       gap_align->query_stop = q_start + private_q_length + 1;
-       gap_align->subject_stop = s_start + private_s_length + 1; 
-    }
-    
-    if (found_end == FALSE) {
-        gap_align->query_stop = q_start;
-        gap_align->subject_stop = s_start;
-    }
-
-    gap_align->edit_script = 
-        Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
-                                         fwd_prelim_tback);
-
-    gap_align->score = score_right + score_left;
-    
     return status;
 }
 
@@ -4018,7 +3937,8 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
                     ungapped_data->length+ungapped_data->q_start,
                     ungapped_data->s_start, 
                     ungapped_data->length+ungapped_data->s_start,
-                    init_hsp->q_off, init_hsp->s_off, 
+                    init_hsp->offsets.qs_offsets.q_off, 
+                    init_hsp->offsets.qs_offsets.s_off, 
                     context, query_info->contexts[context].frame, 
                     subject->frame, ungapped_data->score, NULL, &new_hsp);
       Blast_HSPListSaveHSP(hsp_list, new_hsp);
@@ -4028,154 +3948,5 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    Blast_HSPListSortByScore(hsp_list);
 
    return 0;
-}
-
-/** Performs gapped extension for PHI BLAST, given two
- * sequence blocks, scoring and extension options, and an initial HSP 
- * with information from the previously performed ungapped extension
- * @param query_blk The query sequence block [in]
- * @param subject_blk The subject sequence block [in]
- * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_params Parameters related to scoring [in]
- * @param init_hsp The initial HSP information [in]
- */
-static Int2 
-s_PHIGappedAlignment(BLAST_SequenceBlk* query_blk, 
-                   BLAST_SequenceBlk* subject_blk, 
-                   BlastGapAlignStruct* gap_align,
-                   const BlastScoringParameters* score_params, 
-                   BlastInitHSP* init_hsp)
-{
-   Boolean found_start, found_end;
-   Int4 q_length=0, s_length=0, score_right, score_left;
-   Int4 private_q_start, private_s_start;
-   Uint1* query,* subject;
-    
-   if (gap_align == NULL)
-      return FALSE;
-   
-   q_length = init_hsp->q_off;
-   s_length = init_hsp->s_off;
-   query = query_blk->sequence;
-   subject = subject_blk->sequence;
-
-   found_start = FALSE;
-   found_end = FALSE;
-    
-   /* Looking for "left" score */
-   score_left = 0;
-   if (q_length != 0 && s_length != 0) {
-      found_start = TRUE;
-      score_left = 
-         s_SemiGappedAlign(query, subject, q_length, s_length,
-            &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
-            score_params, init_hsp->q_off, FALSE, TRUE);
-        
-      gap_align->query_start = q_length - private_q_start + 1;
-      gap_align->subject_start = s_length - private_s_start + 1;
-      
-   } else {
-      q_length = init_hsp->q_off;
-      s_length = init_hsp->s_off;
-   }
-
-   /* Pattern itself is not included in the gapped alignment */
-   q_length += init_hsp->ungapped_data->length - 1;
-   s_length += init_hsp->ungapped_data->length - 1;
-
-   score_right = 0;
-   if (init_hsp->q_off < query_blk->length && 
-       init_hsp->s_off < subject_blk->length) {
-      found_end = TRUE;
-      score_right = s_SemiGappedAlign(query+q_length,
-         subject+s_length, query_blk->length-q_length, 
-         subject_blk->length-s_length, &(gap_align->query_stop), 
-         &(gap_align->subject_stop), TRUE, NULL, gap_align, 
-         score_params, q_length, FALSE, FALSE);
-      gap_align->query_stop += q_length;
-      gap_align->subject_stop += s_length;
-   }
-   
-   if (found_start == FALSE) {	/* Start never found */
-      gap_align->query_start = init_hsp->q_off;
-      gap_align->subject_start = init_hsp->s_off;
-   }
-   
-   if (found_end == FALSE) {
-      gap_align->query_stop = init_hsp->q_off - 1;
-      gap_align->subject_stop = init_hsp->s_off - 1;
-   }
-   
-   gap_align->score = score_right+score_left;
-
-   return 0;
-}
-
-Int2 PHIGetGappedScore (EBlastProgramType program_number, 
-        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-        BLAST_SequenceBlk* subject, 
-        BlastGapAlignStruct* gap_align,
-        const BlastScoringParameters* score_params,
-        const BlastExtensionParameters* ext_params,
-        const BlastHitSavingParameters* hit_params,
-        BlastInitHitList* init_hitlist,
-        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats)
-
-{
-   BlastHSPList* hsp_list;
-   BlastInitHSP* init_hsp;
-   Int4 index;
-   Int2 status = 0;
-   BlastHitSavingOptions* hit_options;
-   BLAST_SequenceBlk query_tmp;
-   Int4 context;
-
-   if (!query || !subject || !gap_align || !score_params || !ext_params ||
-       !hit_params || !init_hitlist || !hsp_list_ptr)
-      return 1;
-
-   if (init_hitlist->total == 0)
-      return 0;
-
-   hit_options = hit_params->options;
-   if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
-   else 
-      hsp_list = *hsp_list_ptr;
-
-   for (index=0; index<init_hitlist->total; index++)
-   {
-      BlastHSP* new_hsp;
-      init_hsp = &init_hitlist->init_hsp_array[index];
-
-      if (gapped_stats)
-         ++gapped_stats->extensions;
-
-      /* Adjust the initial HSP's coordinates to ones relative to an 
-         individual query sequence */
-      s_GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
-                             NULL, &context);
-      status =  s_PHIGappedAlignment(&query_tmp, subject, gap_align, 
-                                   score_params, init_hsp);
-
-      if (status) {
-         return status;
-      }
-
-      Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
-                    gap_align->subject_start, gap_align->subject_stop, 
-                    init_hsp->q_off, init_hsp->s_off, 
-                    context, query_info->contexts[context].frame, 
-                    subject->frame, gap_align->score,
-                    &(gap_align->edit_script), &new_hsp);
-      new_hsp->pattern_length = init_hsp->ungapped_data->length;
-      Blast_HSPListSaveHSP(hsp_list, new_hsp);
-   }   
-
-   /* Sort the HSP array by score */
-   Blast_HSPListSortByScore(hsp_list);
-
-   *hsp_list_ptr = hsp_list;
-   return status;
 }
 
