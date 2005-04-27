@@ -34,37 +34,37 @@
 
 #if !CHECK_STREAM_INTEGRITY
 inline
-Uint1
+CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
-    return static_cast<Uint1>(m_Input.PeekChar(index));
+    return TByte(m_Input.PeekChar(index));
 }
 
 inline
-Uint1
-CObjectIStreamAsnBinary::StartTag(Uint1 first_tag_byte)
+CObjectIStreamAsnBinary::TByte
+CObjectIStreamAsnBinary::StartTag(TByte first_tag_byte)
 {
     return first_tag_byte;
 }
 
 inline
-Uint1 CObjectIStreamAsnBinary::FlushTag(void)
+CObjectIStreamAsnBinary::TByte
+CObjectIStreamAsnBinary::FlushTag(void)
 {
     m_Input.SkipChars(m_CurrentTagLength);
-    return static_cast<Uint1>(m_Input.GetChar());
+    return TByte(m_Input.GetChar());
 }
 
 inline
 bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 {
-    return Uint1(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    return TByte(m_Input.PeekChar(m_CurrentTagLength))==eIndefiniteLengthByte;
 }
 
 inline
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
-    if ( !m_Input.SkipExpectedChar
-             (char(CObjectStreamAsnBinaryDefs::eIndefiniteLengthByte),
+    if ( !m_Input.SkipExpectedChar(char(eIndefiniteLengthByte),
                                    m_CurrentTagLength) ) {
         ThrowError(eFormatError, "indefinite length is expected");
     }
@@ -78,7 +78,7 @@ size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
 #endif
 
 inline
-void CObjectIStreamAsnBinary::ExpectSysTagByte(Uint1 byte)
+void CObjectIStreamAsnBinary::ExpectSysTagByte(TByte byte)
 {
     if ( StartTag(PeekTagByte()) != byte )
         UnexpectedSysTagByte(byte);
@@ -89,47 +89,45 @@ void CObjectIStreamAsnBinary::ExpectSysTagByte(Uint1 byte)
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
-                                           ETag tag)
+void CObjectIStreamAsnBinary::ExpectSysTag(ETagClass tag_class,
+                                           ETagConstructed tag_constructed,
+                                           ETagValue tag_value)
 {
-    _ASSERT(tag != CObjectStreamAsnBinaryDefs::eLongTag);
-    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeTagByte
-                     (c, constructed, tag));
+    _ASSERT(tag_value != eLongTag);
+    ExpectSysTagByte(MakeTagByte(tag_class, tag_constructed, tag_value));
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectSysTag(ETag tag)
+void CObjectIStreamAsnBinary::ExpectSysTag(ETagValue tag_value)
 {
-    _ASSERT(tag != CObjectStreamAsnBinaryDefs::eLongTag);
-    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeTagByte
-                     (CObjectStreamAsnBinaryDefs::eUniversal, false, tag));
+    _ASSERT(tag_value != eLongTag);
+    ExpectSysTagByte(MakeTagByte(eUniversal, ePrimitive, tag_value));
 }
 
 inline
 void CObjectIStreamAsnBinary::ExpectContainer(bool random)
 {
-    ExpectSysTagByte(CObjectStreamAsnBinaryDefs::MakeContainerTagByte(random));
+    ExpectSysTagByte(MakeContainerTagByte(random));
     ExpectIndefiniteLength();
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectTagClassByte(Uint1 first_tag_byte,
-                                                 Uint1 expected_class_byte)
+void CObjectIStreamAsnBinary::ExpectTagClassByte(TByte first_tag_byte,
+                                                 TByte expected_class_byte)
 {
-    if ( CObjectStreamAsnBinaryDefs::ExtractClassAndConstructed(first_tag_byte)
-         != expected_class_byte ) {
+    if ( GetTagClassAndConstructed(first_tag_byte) != expected_class_byte ) {
         UnexpectedTagClassByte(first_tag_byte, expected_class_byte);
     }
 }
 
 inline
-CObjectIStreamAsnBinary::TTag
-CObjectIStreamAsnBinary::PeekTag(Uint1 first_tag_byte,
-                                 EClass cls, bool constructed)
+CObjectIStreamAsnBinary::TLongTag
+CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte,
+                                 ETagClass tag_class,
+                                 ETagConstructed tag_constructed)
 {
     ExpectTagClassByte(first_tag_byte,
-                       CObjectStreamAsnBinaryDefs::MakeTagByte(cls,
-                                                               constructed));
+                       MakeTagClassAndConstructed(tag_class, tag_constructed));
     return PeekTag(first_tag_byte);
 }
 
@@ -142,7 +140,8 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 inline
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
-    if ( !m_Input.SkipExpectedChars(0, 0) ) {
+    if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
+                                    char(eZeroLengthByte)) ) {
         ThrowError(eFormatError, "end of content expected");
     }
     m_CurrentTagLength = 0;
@@ -151,14 +150,14 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 inline
 Uint1 CObjectIStreamAsnBinary::ReadByte(void)
 {
-    return static_cast<Uint1>(m_Input.GetChar());
+    return Uint1(m_Input.GetChar());
 }
 #endif
 
 inline
 Int1 CObjectIStreamAsnBinary::ReadSByte(void)
 {
-    return static_cast<Int1>(ReadByte());
+    return Int1(ReadByte());
 }
 
 inline
@@ -171,7 +170,7 @@ void CObjectIStreamAsnBinary::ExpectByte(Uint1 byte)
 inline
 bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 {
-    return PeekTagByte() != CObjectStreamAsnBinaryDefs::eEndOfContentsByte;
+    return PeekTagByte() != eEndOfContentsByte;
 }
 
 #endif /* def OBJISTRASNB__HPP  &&  ndef OBJISTRASNB__INL */
@@ -180,6 +179,10 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/04/27 17:01:38  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+*
 * Revision 1.8  2005/04/26 20:30:25  vasilche
 * Use CObjectStreamAsnBinaryDefs:: scope prefix.
 *

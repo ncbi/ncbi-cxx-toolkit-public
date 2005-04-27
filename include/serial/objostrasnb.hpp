@@ -48,13 +48,10 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStreamAsnBinary;
 
-class NCBI_XSERIAL_EXPORT CObjectOStreamAsnBinary : public CObjectOStream
+class NCBI_XSERIAL_EXPORT CObjectOStreamAsnBinary : public CObjectOStream,
+                                                    public CAsnBinaryDefs
 {
 public:
-    typedef CObjectStreamAsnBinaryDefs::TTag TTag;
-    typedef CObjectStreamAsnBinaryDefs::ETag ETag;
-    typedef CObjectStreamAsnBinaryDefs::EClass EClass;
-
     CObjectOStreamAsnBinary(CNcbiOstream& out,
                             EFixNonPrint how = eFNP_Default);
     CObjectOStreamAsnBinary(CNcbiOstream& out,
@@ -71,7 +68,9 @@ public:
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
-    void WriteLongTag(EClass c, bool constructed, TTag index);
+    void WriteLongTag(ETagClass tag_class,
+                      ETagConstructed tag_constructed,
+                      TLongTag tag_value);
     void WriteClassTag(TTypeInfo typeInfo);
     void WriteLongLength(size_t length);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
@@ -84,9 +83,13 @@ public:
     void WriteByte(Uint1 byte);
 protected:
     void WriteBytes(const char* bytes, size_t size);
-    void WriteShortTag(EClass c, bool constructed, TTag index);
-    void WriteSysTag(ETag index);
-    void WriteTag(EClass c, bool constructed, TTag index);
+    void WriteShortTag(ETagClass tag_class, 
+                       ETagConstructed tag_constructed,
+                       ETagValue tag_value);
+    void WriteSysTag(ETagValue tag);
+    void WriteTag(ETagClass tag_class,
+                  ETagConstructed tag_constructed,
+                  TLongTag tag_value);
     void WriteIndefiniteLength(void);
     void WriteShortLength(size_t length);
     void WriteLength(size_t length);
@@ -188,7 +191,7 @@ private:
     CNcbiStreamoff m_CurrentTagLimit;
     stack<CNcbiStreamoff> m_Limits;
 
-    void StartTag(Uint1 code);
+    void StartTag(TByte code);
     void EndTag(void);
     void SetTagLength(size_t length);
 #endif
@@ -209,6 +212,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/04/27 17:01:38  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+*
 * Revision 1.45  2004/08/30 18:13:24  gouriano
 * use CNcbiStreamoff instead of size_t for stream offset operations
 *

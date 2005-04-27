@@ -49,90 +49,107 @@ BEGIN_NCBI_SCOPE
 #undef CHECK_STREAM_INTEGRITY
 #endif
 
-namespace CObjectStreamAsnBinaryDefs
+class NCBI_XSERIAL_EXPORT CAsnBinaryDefs
 {
-    typedef Int4 TTag;
+public:
+    typedef Uint1 TByte;
+    typedef Int4 TLongTag;
 
-    enum EClass {
-        eUniversal,
-        eApplication,
-        eContextSpecific,
-        ePrivate
+    enum ETagClass {
+        eUniversal          = 0 << 6,
+        eApplication        = 1 << 6,
+        eContextSpecific    = 2 << 6,
+        ePrivate            = 3 << 6,
+        eTagClassMask       = 3 << 6
     };
 
-    enum ETag {
-        eNone = 0,
-        eBoolean = 1,
-        eInteger = 2,
-        eBitString = 3,
-        eOctetString = 4,
-        eNull = 5,
-        eObjectIdentifier = 6,
-        eObjectDescriptor = 7,
-        eExternal = 8,
-        eReal = 9,
-        eEnumerated = 10,
+    enum ETagConstructed {
+        ePrimitive          = 0 << 5,
+        eConstructed        = 1 << 5,
+        eTagConstructedMask = 1 << 5
+    };
 
-        eSequence = 16,
-        eSequenceOf = eSequence,
-        eSet = 17,
-        eSetOf = eSet,
-        eNumericString = 18,
-        ePrintableString = 19,
-        eTeletextString = 20,
-        eT61String = 20,
-        eVideotextString = 21,
-        eIA5String = 22,
+    enum ETagValue {
+        eNone               = 0,
+        eBoolean            = 1,
+        eInteger            = 2,
+        eBitString          = 3,
+        eOctetString        = 4,
+        eNull               = 5,
+        eObjectIdentifier   = 6,
+        eObjectDescriptor   = 7,
+        eExternal           = 8,
+        eReal               = 9,
+        eEnumerated         = 10,
 
-        eUTCTime = 23,
-        eGeneralizedTime = 24,
+        eSequence           = 16,
+        eSequenceOf         = eSequence,
+        eSet                = 17,
+        eSetOf              = eSet,
+        eNumericString      = 18,
+        ePrintableString    = 19,
+        eTeletextString     = 20,
+        eT61String          = 20,
+        eVideotextString    = 21,
+        eIA5String          = 22,
 
-        eGraphicString = 25,
-        eVisibleString = 26,
-        eISO646String = 26,
-        eGeneralString = 27,
+        eUTCTime            = 23,
+        eGeneralizedTime    = 24,
 
-        eMemberReference = 29, // non standard use with eApplication class
-        eObjectReference = 30, // non standard use with eApplication class
+        eGraphicString      = 25,
+        eVisibleString      = 26,
+        eISO646String       = 26,
+        eGeneralString      = 27,
 
-        eLongTag = 31,
+        eMemberReference    = 29, // non standard, use with eApplication class
+        eObjectReference    = 30, // non standard, use with eApplication class
 
-        // eApplication class
-        eStringStore = 1,
+        eLongTag            = 31,
 
+        eStringStore        = 1, // non standard, use with eApplication class
+
+        eTagValueMask       = 31
+    };
+
+    enum ESpecialOctets {
         // combined bytes
-        eIndefiniteLengthByte = 0x80,
-        eEndOfContentsByte = 0
+        eContainterTagByte      = TByte(eConstructed) | TByte(eSequence),
+        eIndefiniteLengthByte   = 0x80,
+        eEndOfContentsByte      = 0,
+        eZeroLengthByte         = 0
     };
 
     enum ERealRadix {
-        eDecimal = 0
+        eDecimal            = 0
     };
 
 
-    inline Uint1 MakeTagByte(EClass c, bool constructed, ETag tag);
-    inline Uint1 MakeTagByte(EClass c, bool constructed);
-    inline Uint1 MakeContainerTagByte(bool random_order);
-    inline ETag ExtractTag(Uint1 byte);
-    inline bool ExtractConstructed(Uint1 byte);
-    inline Uint1 ExtractClassAndConstructed(Uint1 byte);
-
-
-/* @} */
-
+    static TByte MakeTagByte(ETagClass tag_class,
+                             ETagConstructed tag_constructed,
+                             ETagValue tag_value);
+    static TByte MakeTagClassAndConstructed(ETagClass tag_class,
+                                            ETagConstructed tag_constructed);
+    static TByte MakeContainerTagByte(bool random_order);
+    static ETagValue GetTagValue(TByte byte);
+    static ETagConstructed GetTagConstructed(TByte byte);
+    static TByte GetTagClassAndConstructed(TByte byte);
+};
 
 #include <serial/objstrasnb.inl>
 
-}
-
 END_NCBI_SCOPE
+
+/* @} */
 
 #endif  /* OBJSTRASNB__HPP */
 
 
-
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/04/27 17:01:38  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+*
 * Revision 1.11  2005/04/26 14:55:48  vasilche
 * Use named constant for indefinite length byte.
 *

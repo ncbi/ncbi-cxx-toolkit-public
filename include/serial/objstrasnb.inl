@@ -33,39 +33,48 @@
 */
 
 inline
-Uint1 MakeTagByte(EClass c, bool constructed, ETag tag)
+CAsnBinaryDefs::TByte
+CAsnBinaryDefs::MakeTagByte(ETagClass tag_class,
+                            ETagConstructed tag_constructed,
+                            ETagValue tag_value)
 {
-    return static_cast<Uint1>((c << 6) | (constructed? 0x20: 0) | tag);
+    return TByte(TByte(tag_class) | TByte(tag_value) | TByte(tag_constructed));
 }
     
 inline
-Uint1 MakeTagByte(EClass c, bool constructed)
+CAsnBinaryDefs::TByte
+CAsnBinaryDefs::MakeTagClassAndConstructed(ETagClass tag_class,
+                                           ETagConstructed tag_constructed)
 {
-    return static_cast<Uint1>(constructed? (c << 6)|0x20: (c<<6));
+    return TByte(TByte(tag_class) | TByte(tag_constructed));
 }
 
 inline
-Uint1 MakeContainerTagByte(bool random_order)
+CAsnBinaryDefs::TByte
+CAsnBinaryDefs::MakeContainerTagByte(bool random_order)
 {
-    return static_cast<Uint1>(0x30 + random_order);
+    return TByte(eContainterTagByte + random_order);
 }
 
 inline
-ETag ExtractTag(Uint1 byte)
+CAsnBinaryDefs::ETagValue
+CAsnBinaryDefs::GetTagValue(TByte tag_byte)
 {
-    return ETag(byte & 0x1f);
+    return ETagValue(tag_byte & eTagValueMask);
 }
 
 inline
-bool ExtractConstructed(Uint1 byte)
+CAsnBinaryDefs::ETagConstructed
+CAsnBinaryDefs::GetTagConstructed(TByte tag_byte)
 {
-    return (byte & 0x20) != 0;
+    return ETagConstructed(tag_byte & eTagConstructedMask);
 }
 
 inline
-Uint1 ExtractClassAndConstructed(Uint1 byte)
+CAsnBinaryDefs::TByte
+CAsnBinaryDefs::GetTagClassAndConstructed(TByte tag_byte)
 {
-    return static_cast<Uint1>(byte & 0xE0);
+    return TByte(tag_byte & (TByte(eTagClassMask)|TByte(eTagConstructedMask)));
 }
 
 #endif /* def OBJSTRASNB__HPP  &&  ndef OBJSTRASNB__INL */
@@ -74,6 +83,10 @@ Uint1 ExtractClassAndConstructed(Uint1 byte)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/04/27 17:01:38  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+*
 * Revision 1.5  2005/04/26 14:13:27  vasilche
 * Optimized binary ASN.1 parsing.
 *

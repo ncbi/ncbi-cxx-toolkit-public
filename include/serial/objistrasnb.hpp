@@ -48,13 +48,10 @@ BEGIN_NCBI_SCOPE
 
 class CObjectOStreamAsnBinary;
 
-class NCBI_XSERIAL_EXPORT CObjectIStreamAsnBinary : public CObjectIStream
+class NCBI_XSERIAL_EXPORT CObjectIStreamAsnBinary : public CObjectIStream,
+                                                    public CAsnBinaryDefs
 {
 public:
-    typedef CObjectStreamAsnBinaryDefs::TTag TTag;
-    typedef CObjectStreamAsnBinaryDefs::ETag ETag;
-    typedef CObjectStreamAsnBinaryDefs::EClass EClass;
-
     CObjectIStreamAsnBinary(EFixNonPrint how = eFNP_Default);
     CObjectIStreamAsnBinary(CNcbiIstream& in,
                             EFixNonPrint how = eFNP_Default);
@@ -193,19 +190,25 @@ private:
 
     // low level interface
 private:
-    Uint1 PeekTagByte(size_t index = 0);
-    Uint1 StartTag(Uint1 first_tag_byte);
-    TTag PeekTag(Uint1 first_tag_byte);
-    void ExpectTagClassByte(Uint1 first_tag_byte, Uint1 expected_class_byte);
-    void UnexpectedTagClassByte(Uint1 first_tag_byte, Uint1 expected_class_byte);
-    TTag PeekTag(Uint1 first_tag_byte, EClass c, bool constructed);
+    TByte PeekTagByte(size_t index = 0);
+    TByte StartTag(TByte first_tag_byte);
+    TLongTag PeekTag(TByte first_tag_byte);
+    void ExpectTagClassByte(TByte first_tag_byte,
+                            TByte expected_class_byte);
+    void UnexpectedTagClassByte(TByte first_tag_byte,
+                                TByte expected_class_byte);
+    TLongTag PeekTag(TByte first_tag_byte,
+                     ETagClass tag_class,
+                     ETagConstructed tag_constructed);
     string PeekClassTag(void);
-    Uint1 PeekAnyTag(void);
-    void ExpectSysTagByte(Uint1 byte);
-    void UnexpectedSysTagByte(Uint1 byte);
-    void ExpectSysTag(EClass c, bool constructed, ETag tag);
-    void ExpectSysTag(ETag tag);
-    Uint1 FlushTag(void);
+    TByte PeekAnyTagFirstByte(void);
+    void ExpectSysTagByte(TByte byte);
+    void UnexpectedSysTagByte(TByte byte);
+    void ExpectSysTag(ETagClass tag_class,
+                      ETagConstructed tag_constructed,
+                      ETagValue tag_value);
+    void ExpectSysTag(ETagValue tag_value);
+    TByte FlushTag(void);
     void ExpectIndefiniteLength(void);
     bool PeekIndefiniteLength(void);
     void ExpectContainer(bool random);
@@ -229,8 +232,8 @@ private:
     void ReadStringValue(size_t length, string& s, EFixNonPrint fix_type);
     void SkipTagData(void);
     bool HaveMoreElements(void);
-    void UnexpectedMember(TTag tag);
-    void UnexpectedByte(Uint1 byte);
+    void UnexpectedMember(TLongTag tag);
+    void UnexpectedByte(TByte byte);
 
     friend class CObjectOStreamAsnBinary;
 };
@@ -249,6 +252,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/04/27 17:01:38  vasilche
+* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
+* Used enums to represent ASN.1 constants whenever possible.
+*
 * Revision 1.46  2005/04/26 14:13:27  vasilche
 * Optimized binary ASN.1 parsing.
 *
