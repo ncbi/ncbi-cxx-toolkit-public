@@ -3,7 +3,7 @@
 # Meta-makefile("TEST_SERIAL" project)
 #################################
 
-USR_PROJ = we_cpp
+ASN_PROJ = we_cpp
 APP_PROJ = test_serial
 
 srcdir = @srcdir@
