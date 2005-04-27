@@ -259,7 +259,8 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
 }
 
 Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist, 
-                  Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data) 
+                             Int4 q_off, Int4 s_off, 
+                             BlastUngappedData* ungapped_data) 
 {
    BlastInitHSP* match_array;
    Int4 num, num_avail;
@@ -283,8 +284,8 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
       }
    }
 
-   match_array[num].q_off = q_off;
-   match_array[num].s_off = s_off;
+   match_array[num].offsets.qs_offsets.q_off = q_off;
+   match_array[num].offsets.qs_offsets.s_off = s_off;
    match_array[num].ungapped_data = ungapped_data;
 
    init_hitlist->total++;
