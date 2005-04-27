@@ -513,7 +513,6 @@ s_PHIBlastAlignPatterns(Uint1 *querySeq, Uint1 *dbSeq, Int4 lenQuerySeq,
                       SBlastScoreMatrix* score_matrix, 
                       SPHIPatternSearchBlk *pattern_blk)
 {
-    const int kMaskAllBits = (1 << BLASTAA_SIZE) - 1;
     const int kBandLow = -5;
     const int kBandHigh = 5;
 
