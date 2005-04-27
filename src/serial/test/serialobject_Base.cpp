@@ -7,7 +7,7 @@
 # include <asn.h>
 # include "twebenv.h"
 #else
-# include "webenv/Web_Env.hpp"
+# include <serial/test/Web_Env.hpp>
 #endif
 
 CTestSerialObject::CTestSerialObject(void)

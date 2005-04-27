@@ -11,14 +11,25 @@
 
 
 #ifdef HAVE_NCBI_C
+
 struct struct_Web_Env;
 typedef struct_Web_Env TWebEnv;
+USING_NCBI_SCOPE;
+
 #else
+
+BEGIN_NCBI_SCOPE;
+BEGIN_SCOPE(objects);
 class CWeb_Env;
 typedef CWeb_Env TWebEnv;
-#endif
+END_SCOPE(objects);
+END_NCBI_SCOPE;
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+#endif
+
 
 class CTestSerialObject : public CSerialObject
 {

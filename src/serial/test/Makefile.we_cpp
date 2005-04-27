@@ -1,0 +1,15 @@
+DATATOOL  = $(builddir)/../bin/datatool
+InputName = we_cpp
+InputPath = $(srcdir)/$(InputName).asn
+
+		 
+STAMP  = $(srcdir)/$(InputName).files
+
+$(STAMP): $(srcdir)/$(InputName).asn
+	$(DATATOOL) -oex "" -pch ncbi_pch.hpp -m $(InputPath) -oA -oc $(InputName) -od $(srcdir)/$(InputName).def -odi -ocvs -or serial/test/ -oR $(srcdir)/../../../
+	
+all:    $(STAMP)
+
+purge:  clean
+clean:
+	-rm $(STAMP)

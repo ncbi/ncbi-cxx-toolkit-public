@@ -52,12 +52,10 @@
 # include <asn.h>
 # include "twebenv.h"
 #else
-# include "webenv/Web_Env.hpp"
+# include <serial/test/Web_Env.hpp>
 #endif
 
 #include <test/test_assert.h>  /* This header must go last */
-
-
 
 int main(int argc, char** argv)
 {
@@ -774,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/04/27 16:07:16  gouriano
+ * Generated required sources automatically
+ *
  * Revision 1.64  2004/05/17 21:03:33  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
