@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.2.2  " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.2.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -407,15 +407,15 @@ void CNetScheduleServer::Process(SOCK sock)
     socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
     bool is_log = IsLog();
+    tdata = x_GetThreadData();
 
     try {
         x_SetSocketParams(&socket);
 
-        tdata = x_GetThreadData();
-
         // Process requests
 
         while (1) {
+            tdata->auth.erase();
             s_WaitForReadSocket(socket, m_InactivityTimeout);
             io_st = socket.ReadLine(tdata->auth);
             JS_CHECK_IO_STATUS(io_st)
@@ -549,8 +549,14 @@ end_version_control:
                 ProcessMPut(socket, *tdata, queue);
                 break;
             case eShutdown:
-                LOG_POST("Shutdown request...");
+                {
+                string msg = "Shutdown request... ";
+                msg += socket.GetPeerAddress();
+                msg += " ";
+                msg += CTime(CTime::eCurrent).AsString();
+                LOG_POST(Info << msg);
                 SetShutdownFlag();
+                }
                 break;
             case eVersion:
                 WriteMsg(socket, "OK:", NETSCHEDULED_VERSION);
@@ -585,33 +591,52 @@ end_version_control:
             string err = NStr::PrintableString(ex.what());
             WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
         }
-        ERR_POST("Server error: " << ex.what() 
-                 << " Peer=" << socket.GetPeerAddress());
+        string msg = "Server error: ";
+        msg += ex.what();
+        msg += " Peer=";
+        msg += socket.GetPeerAddress();
+        msg += " ";
+        msg += tdata->auth;
+        ERR_POST(msg);
     }
     catch (CNetServiceException &ex)
     {
         WriteMsg(socket, "ERR:", ex.what(), false /*no control*/);
-        ERR_POST("Server error: " << ex.what() 
-                 << " Peer=" << socket.GetPeerAddress());
+        string msg = "Server error: ";
+        msg += ex.what();
+        msg += " Peer=";
+        msg += socket.GetPeerAddress();
+        msg += " ";
+        msg += tdata->auth;
+        ERR_POST(msg);
     }
     catch (CBDB_ErrnoException& ex)
     {
         int err_no = ex.BDB_GetErrno();
         if (err_no == DB_RUNRECOVERY) {
-            ERR_POST(
-              "Fatal Berkeley DB error: DB_RUNRECOVERY. "
-              "Emergency shutdown initiated!" 
-              << " Peer=" << socket.GetPeerAddress());
+            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. ";
+            msg += "Emergency shutdown initiated!";
+            msg += ex.what();
+            msg += " Peer=";
+            msg += socket.GetPeerAddress();
+            msg += " ";
+            msg += tdata->auth;
+            ERR_POST(msg);
+
             SetShutdownFlag();
         } else {
+            string msg = "BDB error:";
+            msg += ex.what();
+            msg += " Peer=";
+            msg += socket.GetPeerAddress();
+            msg += " ";
+            msg += tdata->auth;
+            ERR_POST(msg);
+
             string err = "Internal database error:";
             err += ex.what();
             err = NStr::PrintableString(err);
             WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
-
-            ERR_POST(Error << "BDB Error : " 
-                           << ex.what()
-                           << " Peer=" << socket.GetPeerAddress());
         }
     }
     catch (CBDB_Exception &ex)
@@ -620,9 +645,15 @@ end_version_control:
         err += ex.what();
         err = NStr::PrintableString(err);
         WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
-        ERR_POST(Error << "NCBI BDB Error : " 
-                        << ex.what()
-                        << " Peer=" << socket.GetPeerAddress());
+
+        string msg = "BDB error:";
+        msg += ex.what();
+        msg += " Peer=";
+        msg += socket.GetPeerAddress();
+        msg += " ";
+        msg += tdata->auth;
+        ERR_POST(msg);
+
     }
     catch (exception& ex)
     {
@@ -632,8 +663,14 @@ end_version_control:
         msg += ex.what();
         string err = NStr::PrintableString(ex.what());
         WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
-        ERR_POST("STL exception:" << msg
-                 << " Peer=" << socket.GetPeerAddress());
+
+        msg = "STL exception:";
+        msg += ex.what();
+        msg += " Peer=";
+        msg += socket.GetPeerAddress();
+        msg += " ";
+        msg += tdata->auth;
+        ERR_POST(msg);
     }
 }
 
@@ -826,8 +863,6 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
     unsigned job_id;
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
-
-    //cerr << sock.GetPeerAddress() << " " << req.port << " " << req.timeout << endl;
 
     char key_buf[1024];
     queue.GetJob(key_buf,
@@ -1708,6 +1743,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/04/27 15:00:18  kuznets
+ * Improved error messaging
+ *
  * Revision 1.30  2005/04/26 18:31:04  kuznets
  * Corrected bug in daemonization
  *

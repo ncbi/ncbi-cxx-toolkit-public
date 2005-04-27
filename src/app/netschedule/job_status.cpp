@@ -317,12 +317,16 @@ CNetScheduler_JobStatusTracker::x_SetClearStatusNoLock(
 }
 
 void 
-CNetScheduler_JobStatusTracker::ReportInvalidStatus(unsigned int /*job_id*/, 
-                         CNetScheduleClient::EJobStatus          /*status*/,
-                         CNetScheduleClient::EJobStatus      /*old_status*/)
+CNetScheduler_JobStatusTracker::ReportInvalidStatus(unsigned int job_id, 
+                         CNetScheduleClient::EJobStatus          status,
+                         CNetScheduleClient::EJobStatus      old_status)
 {
-    NCBI_THROW(CNetScheduleException, 
-                eInvalidJobStatus, "Job status cannot be changed.");
+    string msg = "Job status cannot be changed. ";
+    msg += "Old status ";
+    msg += CNetScheduleClient::StatusToString(old_status);
+    msg += ". New status ";
+    msg += CNetScheduleClient::StatusToString(status);
+    NCBI_THROW(CNetScheduleException, eInvalidJobStatus, msg);
 }
 
 
@@ -370,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/27 14:59:46  kuznets
+ * Improved error messaging
+ *
  * Revision 1.9  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
