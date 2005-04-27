@@ -29,7 +29,29 @@
 
 /** @file pattern.c
  * Functions for finding pattern matches in sequence.
- * @todo FIXME needs doxygen comments and lines shorter than 80 characters
+ * The following functions are defined here.
+ *
+ * <pre>
+ * SPHIQueryInfoNew, SPHIQueryInfoFree, SPHIQueryInfoCopy - life cycle functions
+ * for the SPHIQueryInfo structure for saving pattern occurrences in query. 
+ * 
+ * Main API function to find and save pattern occurrences in query, and functions 
+ * called from it:
+ *
+ * PHIGetPatternOccurrences
+ *     FindPatternHits
+ *         if ( pattern fits into a single word)
+ *             s_FindHitsShortHead
+ *         else if ( pattern fits into several words )
+ *             s_FindHitsLong
+ *         else if ( pattern contains parts longer than a word )
+ *             s_FindHitsVeryLong
+ *                 calls s_FindHitsShortHead for every word and extends them
+ * 
+ * For pattern occurrences in subject (database), 
+ * FindPatternHits is called from PHIBlastScanSubject. @sa phi_lookup.h
+ * </pre>
+ *
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -37,47 +59,55 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/pattern.h>
 
 
+void 
+_PHIGetRightOneBits(Int4 s, Int4 mask, Int4* rightOne, Int4* rightMaskOnly)
+{
+    const int kCheckingMatches = s & mask;  /*look for 1 bits in same position*/
+    Int4 right_index; /*loop index looking for 1 in kCheckingMatches*/
+    Int4 left_index; /*rightmost bit that is 1 in the mask only*/
+
+    left_index = -1;
+
+    for (right_index = 0; right_index < PHI_BITS_PACKED_PER_WORD; right_index++) {
+       if ((kCheckingMatches >> right_index) % 2  == 1) 
+           break;
+       if ((mask >> right_index) %2  == 1) 
+          left_index = right_index;
+    }
+    /* If there was no break from the loop, s and mask have no 1 bits in same
+       position, so rightOne should be 0. */
+    if (right_index == PHI_BITS_PACKED_PER_WORD)
+        right_index = 0;
+
+    *rightOne = right_index;
+    *rightMaskOnly = left_index;
+}
+
 /** Looks for 1 bits in the same position of s and mask
- * Let rightOne be the rightmost position where s and mask both have a 1.
- * Let rightMaskOnly < rightOne be the rightmost position where mask has a 1, 
- * if any or -1 otherwise.
+ * Let R be the rightmost position where s and mask both have a 1.
+ * Let L < R be the rightmost position where mask has a 1, if any, 
+ * or -1 otherwise.
  * @param s Some number [in]
  * @param mask Mask [in]
- * @return (rightOne - rightMaskOnly) 
+ * @return (R - L). 
  */
 static Int4 
 s_LenOf(Int4 s, Int4 mask)
 {
-    Int4 checkingMatches = s & mask;  /*look for 1 bits in same position*/
-    Int4 rightOne; /*loop index looking for 1 in checkingMatches*/
-    Int4 rightMaskOnly; /*rightnost bit that is 1 in the mask only*/
-    rightMaskOnly = -1;
-    /*AAS Changed upper bound on loop here*/
-    for (rightOne = 0; rightOne < BITS_PACKED_PER_WORD; rightOne++) {
-       if ((checkingMatches >> rightOne) % 2  == 1) 
-          return rightOne - rightMaskOnly;
-       if ((mask >> rightOne) %2  == 1) 
-          rightMaskOnly = rightOne;
-    }
-    /*ErrPostEx(SEV_FATAL, 1, 0, "wrong\n");*/
-    return(-1);
+    Int4 rightOne; /*loop index looking for 1 in kCheckingMatches*/
+    Int4 rightMaskOnly; /*rightmost bit that is 1 in the mask only*/
+
+    _PHIGetRightOneBits(s, mask, &rightOne, &rightMaskOnly);
+
+    return (rightOne - rightMaskOnly);
 }
 
-/** Routine to find hits of pattern to sequence when sequence is proteins
- * @param hitArray An array of matches to pass back [out]
- * @param seq The input sequence [in]
- * @param len1 Length of the input sequence. [in]
- * @param patternSearch Carries variables that keep track of search 
- *                      parameters. [in]
- * @return the number of matches found.
- */
-static Int4 
-s_FindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-            patternSearchItems *patternSearch)
+Int4 
+_PHIBlastFindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1, 
+                      SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 i; /*loop index on sequence*/
     Int4 prefixMatchedBitPattern = 0; /*indicates where pattern aligns
@@ -88,8 +118,9 @@ s_FindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1,
     Int4 mask;  /*mask of input pattern positions after which
                   a match can be declared*/
     Int4 maskShiftPlus1; /*mask shifted left 1 plus 1 */
+    SShortPatternItems* pattern_items = pattern_blk->one_word_items;
 
-    mask = patternSearch->match_mask; 
+    mask = pattern_items->match_mask; 
     maskShiftPlus1 = (mask << 1) + 1;
     for (i = 0; i < len1; i++) {
       /*shift the positions matched by 1 and try to match up against
@@ -97,17 +128,17 @@ s_FindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1,
         first position*/
       prefixMatchedBitPattern =  
          ((prefixMatchedBitPattern << 1) | maskShiftPlus1) & 
-         patternSearch->whichPositionPtr[seq[i]];
+         pattern_items->whichPositionPtr[seq[i]];
       if (prefixMatchedBitPattern & mask) { 
          /*first part of pair is index of place in seq where match
            ends; second part is where match starts*/
          hitArray[numMatches++] = i;
          hitArray[numMatches++] = i - s_LenOf(prefixMatchedBitPattern, mask)+1;
-         if (numMatches == MAX_HIT)
+         if (numMatches == PHI_MAX_HIT)
          {
-            /*ErrPostEx(SEV_WARNING, 0, 0, 
-              "%ld matches saved, discarding others", numMatches);*/
-            break;
+             /** @todo FIXME: Pass back an error message saying that
+                 numMatches matches are saved, others discarded. */
+             break;
          }
       }
     }
@@ -120,69 +151,71 @@ s_FindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1,
  * @param seq The input sequence [in]
  * @param pos Starting position [in]
  * @param len Length of sequence seq [in]
- * @param patternSearch Carries variables that keep track of search 
+ * @param pattern_blk Carries variables that keep track of search 
  *                      parameters. [in]
  * @return Number of hits found.
  */
 static Int4 
 s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
-	       patternSearchItems *patternSearch)
+                   SPHIPatternSearchBlk *pattern_blk)
 {
-  /*Some variables and the algorithm are similar to what is
-    used in find_hits() above; see more detailed comments there*/
-  Uint4 prefixMatchedBitPattern; /*indicates where pattern aligns
-                                  with sequence*/
-  Uint4 mask2; /*mask to match agaist*/
-  Int4 maskShiftPlus1; /*mask2 shifted plus 1*/
-  Uint4 tmp; /*intermediate result of masked comparisons*/
-  Int4 i; /*index on seq*/
-  Int4 end; /*count of number of 4-mer iterations needed*/
-  Int4 remain; /*0,1,2,3 DNA letters left over*/
-  Int4 j; /*index on suffixRemnant*/
-  Int4 twiceNumHits = 0; /*twice the number of hits*/
-
-  mask2 = patternSearch->match_mask*BITS_PACKED_PER_WORD+15; 
-  maskShiftPlus1 = (patternSearch->match_mask << 1)+1;
-
-  if (pos != 0) {
-    pos = 4 - pos;
-    prefixMatchedBitPattern = ((patternSearch->match_mask * ((1 << (pos+1))-1)*2) +
-	 (1 << (pos+1))-1)& patternSearch->DNAwhichSuffixPosPtr[seq[0]];
-    seq++;
-    end = (len-pos)/4; 
-    remain = (len-pos) % 4;
-  } 
-  else {
-    prefixMatchedBitPattern = maskShiftPlus1;
-    end = len/4; 
-    remain = len % 4;
-  }
-  for (i = 0; i < end; i++) {
-    if ( (tmp = (prefixMatchedBitPattern &
-                 patternSearch->DNAwhichPrefixPosPtr[seq[i]]))) {
-      for (j = 0; j < 4; j++) {
-	if (tmp & patternSearch->match_mask) {
-	  hitArray[twiceNumHits++] = i*4+j + pos;
-	  hitArray[twiceNumHits++] = i*4+j + pos -s_LenOf(tmp & patternSearch->match_mask, 
-					  patternSearch->match_mask)+1;
-	}
-	tmp = (tmp << 1);
-      }
+    Uint4 prefixMatchedBitPattern; /*indicates where pattern aligns
+                                     with sequence*/
+    Uint4 tmp; /*intermediate result of masked comparisons*/
+    Int4 i; /*index on seq*/
+    Int4 end; /*count of number of 4-mer iterations needed*/
+    Int4 remain; /*0,1,2,3 DNA letters left over*/
+    Int4 j; /*index on suffixRemnant*/
+    Int4 twiceNumHits = 0; /*twice the number of hits*/
+    SShortPatternItems* pattern_items = pattern_blk->one_word_items;
+    const Int4 kMatchMask = pattern_items->match_mask;
+    /* Mask to match agaist */
+    const Uint4 kMask2 = kMatchMask*PHI_BITS_PACKED_PER_WORD+15; 
+    const Int4 kMaskShiftPlus1 = (kMatchMask << 1)+1; /* kMask2 shifted plus 1*/
+    
+    if (pos != 0) {
+        pos = 4 - pos;
+        prefixMatchedBitPattern = 
+            ((kMatchMask * ((1 << (pos+1))-1)*2) + (1 << (pos+1))-1) & 
+            pattern_items->dna_items->DNAwhichSuffixPosPtr[seq[0]];
+        seq++;
+        end = (len-pos)/4; 
+        remain = (len-pos) % 4;
+    } 
+    else {
+        prefixMatchedBitPattern = kMaskShiftPlus1;
+        end = len/4; 
+        remain = len % 4;
     }
-    prefixMatchedBitPattern = (((prefixMatchedBitPattern << 4) | mask2) & patternSearch->DNAwhichSuffixPosPtr[seq[i]]);
-  }
-  /* In the last byte check bits only up to 'remain' */
-  if ( (tmp = (prefixMatchedBitPattern &
-               patternSearch->DNAwhichPrefixPosPtr[seq[i]]))) {
-     for (j = 0; j < remain; j++) {
-        if (tmp & patternSearch->match_mask) {
-           hitArray[twiceNumHits++] = i*4+j + pos;
-           hitArray[twiceNumHits++] = i*4+j + pos - s_LenOf(tmp & patternSearch->match_mask, patternSearch->match_mask)+1;
+    for (i = 0; i < end; i++) {
+        if ( (tmp = (prefixMatchedBitPattern &
+                     pattern_items->dna_items->DNAwhichPrefixPosPtr[seq[i]]))) {
+            for (j = 0; j < 4; j++) {
+                if (tmp & kMatchMask) {
+                    hitArray[twiceNumHits++] = i*4 + j + pos;
+                    hitArray[twiceNumHits++] = i*4 + j + pos - 
+                        s_LenOf(tmp & kMatchMask, kMatchMask) + 1;
+                }
+                tmp = (tmp << 1);
+            }
         }
-        tmp = (tmp << 1);
-     }
-  }
-  return twiceNumHits;
+        prefixMatchedBitPattern = 
+            (((prefixMatchedBitPattern << 4) | kMask2) & 
+             pattern_items->dna_items->DNAwhichSuffixPosPtr[seq[i]]);
+    }
+    /* In the last byte check bits only up to 'remain' */
+    if ( (tmp = (prefixMatchedBitPattern &
+                 pattern_items->dna_items->DNAwhichPrefixPosPtr[seq[i]]))) {
+        for (j = 0; j < remain; j++) {
+            if (tmp & kMatchMask) {
+                hitArray[twiceNumHits++] = i*4+j + pos;
+                hitArray[twiceNumHits++] = i*4+j + pos - 
+                    s_LenOf(tmp & kMatchMask, kMatchMask) + 1;
+            }
+            tmp = (tmp << 1);
+        }
+    }
+    return twiceNumHits;
 }
 
 /** Top level routine to find hits when pattern has a short description.
@@ -191,147 +224,134 @@ s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
  * @param start Position to start at in seq [in]
  * @param len Length of seq [in]
  * @param is_dna 1 if and only if seq is a DNA sequence [in]
- * @param patternSearch Carries variables that keep track of search 
+ * @param pattern_blk Carries variables that keep track of search 
  *                      parameters. [in]
  * @return Number of matches found.
  */
 static Int4  
 s_FindHitsShortHead(Int4* hitArray, const Uint1* seq, Int4 start, Int4 len, 
-                Uint1 is_dna, patternSearchItems *patternSearch)
+                Uint1 is_dna, SPHIPatternSearchBlk *pattern_blk)
 {
   if (is_dna) 
-    return s_FindHitsShortDNA(hitArray, &seq[start/4], start % 4, len, patternSearch);
-  return s_FindHitsShort(hitArray, &seq[start], len, patternSearch);
+    return s_FindHitsShortDNA(hitArray, &seq[start/4], start % 4, len, pattern_blk);
+  return _PHIBlastFindHitsShort(hitArray, &seq[start], len, pattern_blk);
 }
 
-/** Shift each word in the array left by 1 bit and add bit b,
- * if the new values is bigger that OVERFLOW1, then subtract OVERFLOW1.
- * @param a Array to work with [in] [out]
- * @param b Bit to add [in]
- * @param patternSearch Carries variables that keep track of search 
- *                      parameters. [in]
- */
-static void 
-s_MoveLeft(Int4 *a, Uint1 b, patternSearchItems *patternSearch)
+void 
+_PHIPatternWordsLeftShift(Int4 *a, Uint1 b, Int4 numWords)
 {
     Int4 x;
     Int4 i; /*index on words*/
-    for (i = 0; i < patternSearch->numWords; i++) {
-      x = (a[i] << 1) + b;
-      if (x >= OVERFLOW1) {
-	a[i] = x - OVERFLOW1; 
-	b = 1;
-      }
-      else { 
-	a[i] = x; 
-	b = 0;
-      }
+    /* Overflow threshold */
+    const Int4 kOverflowThreshold = (1 << PHI_BITS_PACKED_PER_WORD);
+
+    for (i = 0; i < numWords; i++) {
+        x = (a[i] << 1) + b;
+        if (x >= kOverflowThreshold) {
+            a[i] = x - kOverflowThreshold; 
+            b = 1;
+        }
+        else { 
+            a[i] = x; 
+            b = 0;
+        }
     }
 }  
 
-/** Do a word-by-word bit-wise or of a and b and put the result back in a.
- * @param a First array [in] [out]
- * @param b Second array [in]
- * @param patternSearch Carries variables that keep track of search 
- *                      parameters. [in]
- */
-static void 
-s_BitwiseOr(Int4 *a, Int4 *b, patternSearchItems *patternSearch)
+void 
+_PHIPatternWordsBitwiseOr(Int4 *a, Int4 *b, Int4 numWords)
 {
     Int4 i; /*index over words*/
-    for (i = 0; i < patternSearch->numWords; i++) 
-	a[i] = (a[i] | b[i]);
+    for (i = 0; i < numWords; i++) 
+        a[i] = (a[i] | b[i]);
 }
 
-/** Do a word-by-word bit-wise or of a and b and put the result in
- * result.
- * @param result Resulting value [out]
- * @param a First array [in]
- * @param b Second array [in]
- * @param patternSearch Carries variables that keep track of search 
- *                      parameters. [in]
- * @return 1 if there are any non-zero words, otherwise 0.
- */
-static Int4 
-s_BitwiseAnd(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
+Int4
+_PHIPatternWordsBitwiseAnd(Int4 *result, Int4 *a, Int4 *b, Int4 numWords) 
 {
     Int4 i; /*index over words*/
     Int4 returnValue = 0;
-
-    for (i = 0; i < patternSearch->numWords; i++) 
-      if ( (result[i] = (a[i] & b[i]) ) ) 
-	returnValue = 1;
+    
+    for (i = 0; i < numWords; i++) {
+        if ((result[i] = (a[i] & b[i])))
+            returnValue = 1;
+    }
     return returnValue;
 }
 
-/** Let F be the number of the first bit in s that is 1.
- * Let G be the first bit in mask that is one such that G < F;
- * Else let G = -1;
+/** Returns the difference between the offset F of a first 1-bit in a word
+ * sequence and the first offset G < F of a 1-bit in the pattern mask. If 
+ * such G does not exist, it is set to -1.
  * @param s Input sequence [in]
  * @param mask Array of word masks [in]
- * @param patternSearch Carries variables that keep track of search 
- *                      parameters. [in]
- * @return F - G
+ * @param numWords Number of words in s. [in]
+ * @return F - G, see explanation above.
  */
 static Int4 
-s_LenOfL(Int4 *s, Int4 *mask, patternSearchItems *patternSearch)
+s_LenOfL(Int4 *s, Int4 *mask, Int4 numWords)
 {
     Int4 bitIndex; /*loop index over bits in a word*/
     Int4 wordIndex;  /*loop index over words*/
     Int4 firstOneInMask;
 
     firstOneInMask = -1;
-    for (wordIndex = 0; wordIndex < patternSearch->numWords; wordIndex++) {
-      for (bitIndex = 0; bitIndex < BITS_PACKED_PER_WORD; bitIndex++) { 
-	if ((s[wordIndex] >> bitIndex) % 2  == 1) 
-	  return wordIndex*BITS_PACKED_PER_WORD+bitIndex-firstOneInMask;
-	if ((mask[wordIndex] >> bitIndex) %2  == 1) 
-	  firstOneInMask = wordIndex*BITS_PACKED_PER_WORD+bitIndex;
-      }
+    for (wordIndex = 0; wordIndex < numWords; wordIndex++) {
+        for (bitIndex = 0; bitIndex < PHI_BITS_PACKED_PER_WORD; bitIndex++) { 
+            if ((s[wordIndex] >> bitIndex) % 2  == 1) 
+                return wordIndex*PHI_BITS_PACKED_PER_WORD+bitIndex-firstOneInMask;
+            if ((mask[wordIndex] >> bitIndex) %2  == 1) 
+                firstOneInMask = wordIndex*PHI_BITS_PACKED_PER_WORD+bitIndex;
+        }
     }
-    /*ErrPostEx(SEV_FATAL, 1, 0, "wrong\n");*/
-    return(-1);
+    /* This point should never be reached. */
+    return -1;
 }
 
 /** Finds places where pattern matches seq and returns them as
  * pairs of positions in consecutive entries of hitArray;
- * similar to s_FindHitsShort
+ * similar to _PHIBlastFindHitsShort
  * @param hitArray Array of hits to return [out]
  * @param seq Input sequence [in]
  * @param len1 Length of seq [in]
- * @param patternSearch carries all the pattern variables
+ * @param pattern_blk carries all the pattern variables
  * @return twice the number of hits.
  */
 static Int4 
 s_FindHitsLong(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-               patternSearchItems *patternSearch)
+               SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 wordIndex; /*index on words in mask*/
     Int4 i; /*loop index on seq */
     Int4  *prefixMatchedBitPattern; /*see similar variable in
-                                      s_FindHitsShort*/
+                                      _PHIBlastFindHitsShort*/
     Int4 twiceNumHits = 0; /*counter for hitArray*/
     Int4 *mask; /*local copy of match_maskL version of pattern
                   indicates after which positions a match can be declared*/
     Int4 *matchResult; /*Array of words to hold the result of the
                          final test for a match*/
+    SLongPatternItems* pattern_items = pattern_blk->multi_word_items;
+    Int4 num_words = pattern_items->numWords;
 
-    matchResult = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
-    mask = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
-    prefixMatchedBitPattern = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
-    for (wordIndex = 0; wordIndex < patternSearch->numWords; wordIndex++) {
-      mask[wordIndex] = patternSearch->match_maskL[wordIndex];
+    matchResult = (Int4 *) calloc(num_words, sizeof(Int4));
+    mask = (Int4 *) calloc(num_words, sizeof(Int4));
+    prefixMatchedBitPattern = (Int4 *) calloc(num_words, sizeof(Int4));
+    for (wordIndex = 0; wordIndex < num_words; wordIndex++) {
+      mask[wordIndex] = pattern_items->match_maskL[wordIndex];
       prefixMatchedBitPattern[wordIndex] = 0;
     }
-    /*This is a multiword version of the algorithm in s_FindHitsShort*/
-    s_MoveLeft(mask, 1, patternSearch);
+    /* This is a multiword version of the algorithm in _PHIBlastFindHitsShort */
+    _PHIPatternWordsLeftShift(mask, 1, num_words);
     for (i = 0; i < len1; i++) {
-      s_MoveLeft(prefixMatchedBitPattern, 0, patternSearch);
-      s_BitwiseOr(prefixMatchedBitPattern, mask, patternSearch); 
-      s_BitwiseAnd(prefixMatchedBitPattern, prefixMatchedBitPattern, patternSearch->bitPatternByLetter[seq[i]], patternSearch);
-      if (s_BitwiseAnd(matchResult, prefixMatchedBitPattern, patternSearch->match_maskL, patternSearch)) { 
-	hitArray[twiceNumHits++] = i; 
-	hitArray[twiceNumHits++] = i-s_LenOfL(matchResult, patternSearch->match_maskL, patternSearch)+1;
+      _PHIPatternWordsLeftShift(prefixMatchedBitPattern, 0, num_words);
+      _PHIPatternWordsBitwiseOr(prefixMatchedBitPattern, mask, num_words); 
+      _PHIPatternWordsBitwiseAnd(prefixMatchedBitPattern, prefixMatchedBitPattern, 
+                                pattern_items->bitPatternByLetter[seq[i]], 
+                                num_words);
+      if (_PHIPatternWordsBitwiseAnd(matchResult, prefixMatchedBitPattern, 
+                                    pattern_items->match_maskL, num_words)) { 
+          hitArray[twiceNumHits++] = i; 
+          hitArray[twiceNumHits++] = i - 
+              s_LenOfL(matchResult, pattern_items->match_maskL, num_words) + 1;
       }
     }
     sfree(prefixMatchedBitPattern); 
@@ -346,49 +366,59 @@ s_FindHitsLong(Int4 *hitArray, const Uint1* seq, Int4 len1,
  * @param seq Input sequence [in]
  * @param len Length of seq [in]
  * @param is_dna Is sequence DNA or protein? [in]
- * @param patternSearch carries all the pattern variables [in]
+ * @param pattern_blk carries all the pattern variables [in]
  * @return Twice the number of hits found.
  */
 static Int4 
 s_FindHitsVeryLong(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
-             patternSearchItems *patternSearch)
+             SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 twiceNumHits; /*twice the number of matches*/
     Int4 twiceHitsOneCall; /*twice the number of hits in one call to 
-                                 s_FindHitsShort */
+                                 _PHIBlastFindHitsShort */
     Int4 wordIndex;  /*index over words in pattern*/
-    Int4 start; /*start position in sequence for calls to s_FindHitsShort */
-    Int4 hitArray1[MAX_HIT]; /*used to get hits against different words*/
+    Int4 start; /*start position in sequence for calls to _PHIBlastFindHitsShort */
+    Int4 hitArray1[PHI_MAX_HIT]; /*used to get hits against different words*/
     Int4 nextPosInHitArray; /*next available position in hitArray1 */
     Int4 hitIndex1, hitIndex2;  /*indices over hitArray1*/
-
-    patternSearch->whichPositionPtr = 
-      patternSearch->SLL[patternSearch->whichMostSpecific]; 
-    patternSearch->match_mask = 
-      patternSearch->match_maskL[patternSearch->whichMostSpecific];
+    SLongPatternItems* multiword_items = pattern_blk->multi_word_items;
+    SShortPatternItems* word_items = pattern_blk->one_word_items;
+    SExtraLongPatternItems* extra_items = multiword_items->extra_long_items;
+    Int4 most_specific_word = extra_items->whichMostSpecific;
+    
+    word_items->whichPositionPtr = multiword_items->SLL[most_specific_word]; 
+    word_items->match_mask = multiword_items->match_maskL[most_specific_word];
     if (is_dna) {
-      patternSearch->DNAwhichPrefixPosPtr = patternSearch->DNAprefixSLL[patternSearch->whichMostSpecific];
-      patternSearch->DNAwhichSuffixPosPtr = patternSearch->DNAsuffixSLL[patternSearch->whichMostSpecific];
+      word_items->dna_items->DNAwhichPrefixPosPtr = 
+          multiword_items->dna_items->DNAprefixSLL[most_specific_word];
+      word_items->dna_items->DNAwhichSuffixPosPtr = 
+          multiword_items->dna_items->DNAsuffixSLL[most_specific_word];
     }
     /*find matches to most specific word of pattern*/
-    twiceNumHits = s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, patternSearch);
+    twiceNumHits = 
+        s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, pattern_blk);
     if (twiceNumHits < 2) 
       return 0;
     /*extend matches word by word*/
-    for (wordIndex = patternSearch->whichMostSpecific+1; 
-	 wordIndex < patternSearch->numWords; wordIndex++) {
-	patternSearch->whichPositionPtr = 
-	  patternSearch->SLL[wordIndex]; 
-	patternSearch->match_mask = patternSearch->match_maskL[wordIndex];
-	if (is_dna) {
-	  patternSearch->DNAwhichPrefixPosPtr = patternSearch->DNAprefixSLL[wordIndex]; 
-	  patternSearch->DNAwhichSuffixPosPtr = patternSearch->DNAsuffixSLL[wordIndex];
-	}
-	nextPosInHitArray = 0;
-	for (hitIndex2 = 0; hitIndex2 < twiceNumHits; hitIndex2 += 2) {
-	  twiceHitsOneCall = s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, 
-       hitArray[hitIndex2]+1, MIN(len-hitArray[hitIndex2]-1, 
-       patternSearch->spacing[wordIndex-1] + patternSearch->numPlacesInWord[wordIndex]), is_dna, patternSearch);
+    for (wordIndex = most_specific_word+1; 
+         wordIndex < multiword_items->numWords; wordIndex++) {
+        word_items->whichPositionPtr = multiword_items->SLL[wordIndex]; 
+        word_items->match_mask = multiword_items->match_maskL[wordIndex];
+        if (is_dna) {
+            word_items->dna_items->DNAwhichPrefixPosPtr = 
+                multiword_items->dna_items->DNAprefixSLL[wordIndex]; 
+            word_items->dna_items->DNAwhichSuffixPosPtr = 
+                multiword_items->dna_items->DNAsuffixSLL[wordIndex];
+        }
+        nextPosInHitArray = 0;
+        for (hitIndex2 = 0; hitIndex2 < twiceNumHits; hitIndex2 += 2) {
+            twiceHitsOneCall = 
+                s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, 
+                                    hitArray[hitIndex2]+1, 
+                                    MIN(len-hitArray[hitIndex2]-1, 
+                                        extra_items->spacing[wordIndex-1] +
+                                        extra_items->numPlacesInWord[wordIndex]),
+                                    is_dna, pattern_blk);
 	  for (hitIndex1 = 0; hitIndex1 < twiceHitsOneCall; hitIndex1+= 2) {
 	    hitArray1[nextPosInHitArray+hitIndex1] = 
 	      hitArray[hitIndex2]+hitArray1[nextPosInHitArray+hitIndex1]+1;
@@ -404,45 +434,154 @@ s_FindHitsVeryLong(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
 	  hitArray[hitIndex2] = hitArray1[hitIndex2];
     }
     /*extend each match back one word at a time*/
-    for (wordIndex = patternSearch->whichMostSpecific-1; wordIndex >=0; 
+    for (wordIndex = most_specific_word-1; wordIndex >=0; 
 	 wordIndex--) {
-      patternSearch->whichPositionPtr = 
-	patternSearch->SLL[wordIndex]; 
-      patternSearch->match_mask = patternSearch->match_maskL[wordIndex];
-      if (is_dna) {
-	patternSearch->DNAwhichPrefixPosPtr = patternSearch->DNAprefixSLL[wordIndex]; 
-	patternSearch->DNAwhichSuffixPosPtr = patternSearch->DNAsuffixSLL[wordIndex];
+        word_items->whichPositionPtr = multiword_items->SLL[wordIndex]; 
+        word_items->match_mask = multiword_items->match_maskL[wordIndex];
+        if (is_dna) {
+            word_items->dna_items->DNAwhichPrefixPosPtr = 
+                multiword_items->dna_items->DNAprefixSLL[wordIndex]; 
+            word_items->dna_items->DNAwhichSuffixPosPtr = 
+                multiword_items->dna_items->DNAsuffixSLL[wordIndex];
       }
       nextPosInHitArray = 0;
       for (hitIndex2 = 0; hitIndex2 < twiceNumHits; hitIndex2 += 2) {
-	start = hitArray[hitIndex2+1]-patternSearch->spacing[wordIndex]-patternSearch->numPlacesInWord[wordIndex];
-	if (start < 0) 
-	  start = 0;
-	twiceHitsOneCall = s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, start, 
-			    hitArray[hitIndex2+1]-start, is_dna, patternSearch);
-	for (hitIndex1 = 0; hitIndex1 < twiceHitsOneCall; hitIndex1+= 2) {
-	  hitArray1[nextPosInHitArray+hitIndex1] = hitArray[hitIndex2];
-	  hitArray1[nextPosInHitArray+hitIndex1+1] = start + 
-	    hitArray1[nextPosInHitArray+hitIndex1+1];
-	}
-	nextPosInHitArray += twiceHitsOneCall;
+          start = hitArray[hitIndex2+1] - extra_items->spacing[wordIndex] - 
+              extra_items->numPlacesInWord[wordIndex];
+          if (start < 0) 
+              start = 0;
+          twiceHitsOneCall = 
+              s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, start, 
+                                  hitArray[hitIndex2+1]-start, is_dna, pattern_blk);
+          for (hitIndex1 = 0; hitIndex1 < twiceHitsOneCall; hitIndex1+= 2) {
+              hitArray1[nextPosInHitArray+hitIndex1] = hitArray[hitIndex2];
+              hitArray1[nextPosInHitArray+hitIndex1+1] = start + 
+                  hitArray1[nextPosInHitArray+hitIndex1+1];
+          }
+          nextPosInHitArray += twiceHitsOneCall;
       }
       twiceNumHits = nextPosInHitArray;
       if (twiceNumHits < 2) 
-	return 0;
+          return 0;
       /*copy back matches that extend*/
       for (hitIndex2 = 0; hitIndex2 < nextPosInHitArray; hitIndex2++) 
-	hitArray[hitIndex2] = hitArray1[hitIndex2];
+          hitArray[hitIndex2] = hitArray1[hitIndex2];
     }
     return twiceNumHits;
 }
 
 Int4 FindPatternHits(Int4 *hitArray, const Uint1* seq, Int4 len, 
-               Boolean is_dna, patternSearchItems * patternSearch)
+               Boolean is_dna, SPHIPatternSearchBlk * pattern_blk)
 {
-    if (patternSearch->flagPatternLength == ONE_WORD_PATTERN) 
-      return s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, patternSearch);
-    if (patternSearch->flagPatternLength == MULTI_WORD_PATTERN) 
-      return s_FindHitsLong(hitArray, seq, len, patternSearch);
-    return s_FindHitsVeryLong(hitArray, seq, len, is_dna, patternSearch);
+    if (pattern_blk->flagPatternLength == eOneWord) 
+      return s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, pattern_blk);
+    if (pattern_blk->flagPatternLength == eMultiWord) 
+      return s_FindHitsLong(hitArray, seq, len, pattern_blk);
+    return s_FindHitsVeryLong(hitArray, seq, len, is_dna, pattern_blk);
 }
+
+SPHIQueryInfo* SPHIQueryInfoNew()
+{
+    SPHIQueryInfo* pattern_info;
+    const Int4 kMinPhiLookupSize = 8; /* Minimal allocation size for the array
+                                          of pattern occurrences. */
+
+    if ((pattern_info = 
+         (SPHIQueryInfo*) calloc(1, sizeof(SPHIQueryInfo))) == NULL)
+        return NULL;
+    pattern_info->allocated_size = kMinPhiLookupSize;
+    if ((pattern_info->occurrences = 
+         (SPHIPatternInfo*) malloc(kMinPhiLookupSize*sizeof(SPHIPatternInfo)))
+        == NULL)
+        return NULL;
+    return pattern_info;
+}
+
+SPHIQueryInfo*
+SPHIQueryInfoFree(SPHIQueryInfo* pat_info)
+{
+    if (pat_info) {
+        sfree(pat_info->occurrences);
+        sfree(pat_info);
+    }
+    return NULL;
+}
+
+SPHIQueryInfo* 
+SPHIQueryInfoCopy(SPHIQueryInfo* pat_info)
+{
+    SPHIQueryInfo* retval = NULL;
+    
+    if (!pat_info)
+        return retval;
+
+    retval = 
+        (SPHIQueryInfo*) BlastMemDup(pat_info, sizeof(SPHIQueryInfo));
+    retval->occurrences = (SPHIPatternInfo*)
+        BlastMemDup(pat_info->occurrences, 
+                    pat_info->num_patterns*sizeof(SPHIPatternInfo));
+    return retval;
+}
+
+/** Adds a new pattern hit to the PHI BLAST pseudo lookup table.
+ * @param lookup The lookup table structure [in] [out]
+ * @param offset Offset in query at which pattern was found. [in]
+ * @param length Length of the pattern at this offset. [in] 
+ */
+static Int2 
+s_PHIBlastAddPatternHit(SPHIQueryInfo* pattern_info, 
+                        Int4 offset, Int4 length)
+{
+    SPHIPatternInfo* occurrence_array;
+    Int4 pat_index = pattern_info->num_patterns;
+    
+   if (pat_index >= pattern_info->allocated_size) {
+       if ((occurrence_array = (SPHIPatternInfo*) 
+            realloc(pattern_info->occurrences, 
+                    2*pattern_info->allocated_size*sizeof(SPHIPatternInfo)))
+           == NULL)
+           return -1;
+       pattern_info->occurrences = occurrence_array;
+       pattern_info->allocated_size *= 2;
+   }      
+   
+   pattern_info->occurrences[pat_index].offset = offset;
+   pattern_info->occurrences[pat_index].length = length;
+   ++pattern_info->num_patterns;
+
+   return 0;
+}
+
+Int4 PHIGetPatternOccurrences(SPHIPatternSearchBlk* pattern_blk, 
+                              BLAST_SequenceBlk* query, BlastSeqLoc* location, 
+                              Boolean is_dna, SPHIQueryInfo* pattern_info)
+{
+   BlastSeqLoc* loc;
+   Int4 from, to;
+   Int4 loc_length;
+   Uint1* sequence;
+   Int4* hitArray;
+   Int4 i, twiceNumHits;
+   
+   hitArray = (Int4 *) calloc(2*query->length, sizeof(Int4));
+
+   for(loc=location; loc; loc=loc->next) {
+      from = loc->ssr->left;
+      to = loc->ssr->right;
+      loc_length = to - from + 1;
+      sequence = query->sequence + from;
+      
+      twiceNumHits = FindPatternHits(hitArray, sequence, loc_length, is_dna,
+                                     pattern_blk);
+      
+      for (i = 0; i < twiceNumHits; i += 2) {
+         s_PHIBlastAddPatternHit(pattern_info, hitArray[i+1]+from, 
+                                 hitArray[i]-hitArray[i+1]+1);
+      }
+   }
+
+   sfree(hitArray);
+
+   return pattern_info->num_patterns;
+}
+
