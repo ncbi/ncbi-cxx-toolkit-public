@@ -113,7 +113,7 @@ public:
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
     static string GetStringForRefTrack(const CUser_object& uo,
-        ECommentFormat format = eFormat_Text);
+        const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text);
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/04/27 17:06:25  shomrat
+* GetStringForRefTrack signature change
+*
 * Revision 1.14  2005/04/18 13:48:21  shomrat
 * + GetStringForEncode
 *
