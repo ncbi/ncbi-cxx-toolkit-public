@@ -262,8 +262,8 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
       return 1;
    
    if (strand_option && 
-       (program == eBlastTypeBlastn || program == eBlastTypeBlastx ||
-       program == eBlastTypeTblastx)) {
+       (program == eBlastTypeBlastn || program == eBlastTypePhiBlastn || 
+        program == eBlastTypeBlastx || program == eBlastTypeTblastx)) {
       options->strand_option = strand_option;
    }
 
@@ -299,7 +299,8 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    if (*options == NULL)
       return 1;
 
-   if (program != eBlastTypeBlastn) {	/* protein-protein options. */
+   if (program != eBlastTypeBlastn &&
+       program != eBlastTypePhiBlastn) {	/* protein-protein options. */
       (*options)->window_size = BLAST_WINDOW_SIZE_PROT;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_PROT;
@@ -326,8 +327,11 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 
    ASSERT(options);
 
-   /* For some blastn variants (i.e., megablast) there is no ungapped extension. */
-   if (program_number != eBlastTypeBlastn && options->x_dropoff <= 0.0)
+   /* For some blastn variants (i.e., megablast), and for PHI BLAST there is no
+    * ungapped extension. */
+   if (program_number != eBlastTypeBlastn  &&
+       program_number != eBlastTypePhiBlastn  &&
+       program_number != eBlastTypePhiBlastp && options->x_dropoff <= 0.0)
    {
       Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode,
                             "x_dropoff must be greater than zero");
@@ -379,7 +383,8 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 	if (*options == NULL)
 		return 1;
 
-	if (program != eBlastTypeBlastn) /* protein-protein options. */
+	if (program != eBlastTypeBlastn &&
+        program != eBlastTypePhiBlastn) /* protein-protein options. */
 	{
 		(*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
 		(*options)->gap_x_dropoff_final = 
@@ -402,7 +407,8 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    if (!options)
       return 1;
 
-   if (program == eBlastTypeBlastn) {
+   if (program == eBlastTypeBlastn ||
+       program == eBlastTypePhiBlastn) {
       switch (greedy) {
       case 1:
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
@@ -484,7 +490,8 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
    if (*options == NULL)
       return 1;
    
-   if (program_number != eBlastTypeBlastn) {	/* protein-protein options. */
+   if (program_number != eBlastTypeBlastn &&
+       program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
       (*options)->shift_pen = INT2_MAX;
       (*options)->is_ooframe = FALSE;
       (*options)->gap_open = BLAST_GAP_OPEN_PROT;
@@ -512,7 +519,8 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
    if (!options)
       return 1;
 
-   if (program_number != eBlastTypeBlastn) {	/* protein-protein options. */
+   if (program_number != eBlastTypeBlastn &&
+       program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
       /* If matrix name is not provided, keep the default "BLOSUM62" value filled in 
          BlastScoringOptionsNew, otherwise reset it. */
       if (matrix)
@@ -557,7 +565,8 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 		return (Int2) code;
    }
 
-	if (program_number == eBlastTypeBlastn)
+	if (program_number == eBlastTypeBlastn ||
+        program_number == eBlastTypePhiBlastn)
 	{
 		if (options->penalty >= 0)
 		{
@@ -725,40 +734,45 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    if (*options == NULL)
       return 1;
    
-   if (program_number == eBlastTypeBlastn)
-   {     /* Blastn default is megablast. */
-         (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
-         (*options)->lut_type = MB_LOOKUP_TABLE;
-         (*options)->max_positions = INT4_MAX;
-         /* Discontig mb scanning default is one byte at at time. */
-         (*options)->full_byte_scan = TRUE; 
+   switch (program_number) {
+   case eBlastTypeBlastn:
+       /* Blastn default is megablast. */
+       (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
+       (*options)->lut_type = MB_LOOKUP_TABLE;
+       (*options)->max_positions = INT4_MAX;
+       /* Discontig mb scanning default is one byte at at time. */
+       (*options)->full_byte_scan = TRUE; 
+       break;
+   case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
+       (*options)->word_size = BLAST_WORDSIZE_PROT;
+       (*options)->lut_type = RPS_LOOKUP_TABLE;
+       
+       if (program_number == eBlastTypeRpsBlast)
+           (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
+       else 
+           (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
+       break;
+   case eBlastTypePhiBlastn:
+       (*options)->lut_type = PHI_NA_LOOKUP;
+       break;
+   case eBlastTypePhiBlastp:
+       (*options)->lut_type = PHI_AA_LOOKUP;
+       break;
+   default:
+       (*options)->word_size = BLAST_WORDSIZE_PROT;
+       (*options)->lut_type = AA_LOOKUP_TABLE;
+       
+       if (program_number == eBlastTypeBlastp)
+           (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
+       else if (program_number == eBlastTypeBlastx)
+           (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
+       else if (program_number == eBlastTypeTblastn)
+           (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
+       else if (program_number == eBlastTypeTblastx)
+           (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
+       break;
    }
-   else if (program_number == eBlastTypeRpsBlast ||
-       program_number == eBlastTypeRpsTblastn)
-   {
-      (*options)->word_size = BLAST_WORDSIZE_PROT;
-      (*options)->lut_type = RPS_LOOKUP_TABLE;
-
-      if (program_number == eBlastTypeRpsBlast)
-         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-      else 
-         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-   }
-   else if (program_number != eBlastTypeBlastn) 
-   {
-      (*options)->word_size = BLAST_WORDSIZE_PROT;
-      (*options)->lut_type = AA_LOOKUP_TABLE;
-      
-      if (program_number == eBlastTypeBlastp)
-         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-      else if (program_number == eBlastTypeBlastx)
-         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-      else if (program_number == eBlastTypeTblastn)
-         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-      else if (program_number == eBlastTypeTblastx)
-         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
-   }
-
+   
    return 0;
 }
 
@@ -840,17 +854,21 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 {
    Int4 code=2;
    Int4 subcode=1;
+   const Boolean kPhiBlast = (program_number == eBlastTypePhiBlastn || 
+                              program_number == eBlastTypePhiBlastp);
 
 	if (options == NULL)
 		return 1;
 
-    if (options->phi_pattern && 
-        program_number != eBlastTypeBlastp && 
-        program_number != eBlastTypeBlastn) {
+    if (options->phi_pattern && !kPhiBlast) {
         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
             "PHI pattern can be specified only for blastp and blastn");
         return (Int2) code;
     }
+
+    /* For PHI BLAST, the subsequent word size tests are not needed. */
+    if (kPhiBlast)
+        return 0;
 
 	if (program_number != eBlastTypeBlastn && 
             program_number != eBlastTypeRpsBlast &&
@@ -1175,6 +1193,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.163  2005/04/27 19:53:45  dondosha
+ * Added handling of PHI BLAST program enumeration values
+ *
  * Revision 1.162  2005/04/27 14:46:18  papadopo
  * set culling limit in BlastHitSavingOptions, and validate it
  *
