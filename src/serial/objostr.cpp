@@ -514,7 +514,8 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr objectPtr,
 
 bool CObjectOStream::Write(CByteSource& source)
 {
-    m_Output.Write(*source.Open());
+    CRef<CByteSourceReader> reader = source.Open();
+    m_Output.Write(*reader);
     return true;
 }
 
@@ -766,7 +767,7 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
     copier.In().BeginClass(classType);
     BeginClass(classType);
 
-    vector<bool> read(classType->GetMembers().LastIndex() + 1);
+    vector<Uint1> read(classType->GetMembers().LastIndex() + 1);
 
     BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
@@ -1012,6 +1013,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2005/04/27 16:52:56  vasilche
+* Use vector<Uint1> instead of inefficient vector<bool>.
+* Fixed warning on Sun WorkShop.
+*
 * Revision 1.99  2005/02/23 21:07:44  vasilche
 * Allow to skip underlying stream flush.
 *
