@@ -954,7 +954,7 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size,
-                           Boolean is_gapped)
+                           Boolean is_gapped, Int4 culling_limit)
 {
    if (!options)
       return 1;
@@ -965,6 +965,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->expect_value = evalue;
    if(!is_gapped)
      options->hsp_num_max = kUngappedHSPNumMax;
+   options->culling_limit = culling_limit;
 
    return 0;
 
@@ -1004,6 +1005,15 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
          "Uneven gap linking of HSPs is allowed for blastx and tblastn only");
 		return (Int2) code;
    }
+
+	if (options->culling_limit < 0)
+	{
+		Int4 code=2;
+		Int4 subcode=1;
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                    "culling limit must be greater than or equal to zero");
+		return (Int2) code;
+	}	
 
 	return 0;
 }
@@ -1165,6 +1175,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.162  2005/04/27 14:46:18  papadopo
+ * set culling limit in BlastHitSavingOptions, and validate it
+ *
  * Revision 1.161  2005/03/21 15:20:31  papadopo
  * Allow RPS searches in LookupTableOptionsValidate
  *
