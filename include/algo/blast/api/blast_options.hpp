@@ -47,7 +47,6 @@
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
 class CBlastTraceBackTest; 
-class CRPSTest; 
 class CBlastSetupTest;
 
 class CBlastTabularFormatThread;
@@ -223,8 +222,8 @@ public:
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
 
-    bool GetCullingMode() const;
-    void SetCullingMode(bool m = true);
+    int GetCullingLimit() const;
+    void SetCullingLimit(int s);
 
     /// Start of the region required to be part of the alignment
     int GetRequiredStart() const;
@@ -380,7 +379,6 @@ private:
 
     /// @todo Strive to remove these classes
     friend class ::CBlastTraceBackTest;    // unit test class
-    friend class ::CRPSTest;               // unit test class
     friend class ::CBlastSetupTest;        // unit test class
 };
 
@@ -395,6 +393,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.96  2005/04/27 14:41:53  papadopo
+* 1. Remove friendship for CRPSTest
+* 2. Modify options to set/get HSP culling limit
+*
 * Revision 1.95  2005/04/25 14:47:48  madden
 * Remove CScoreBlkTest as friend
 *
