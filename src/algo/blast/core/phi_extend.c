@@ -40,47 +40,51 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/phi_extend.h>
 
-
-Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
-        BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
-        Int4** matrix, const BlastInitialWordParameters* word_params,
-        Blast_ExtendWord* ewp, BlastOffsetPair* offset_pairs,
-        Int4 max_hits, BlastInitHitList* init_hitlist, 
-        BlastUngappedStats* ungapped_stats)
+/** Saves a pattern hit in a BlastInitHitList.
+ * @param offset_pair Pattern start and stop in subject [in]
+ * @param init_hitlist Initial hit list structure to save the hit in. [in] [out]
+ */
+static Int2 
+s_PHISaveInitialHit(BlastInitHitList* init_hitlist, BlastOffsetPair* offset_pair)
 {
-   BlastPHILookupTable* lookup = (BlastPHILookupTable*) lookup_wrap->lut;
+    /* BlastOffsetPair is a union of two structures representing a pair of 
+       offsets. Use common function BLAST_SaveInitialHit, with correct order of
+       offsets to be saved. */
+    return 
+        BLAST_SaveInitialHit(init_hitlist, offset_pair->phi_offsets.s_start, 
+                             offset_pair->phi_offsets.s_end, NULL);
+}
+
+Int2 
+PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
+                   BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
+                   Int4** matrix, const BlastInitialWordParameters* word_params,
+                   Blast_ExtendWord* ewp, BlastOffsetPair* offset_pairs,
+                   Int4 max_hits, BlastInitHitList* init_hitlist, 
+                   BlastUngappedStats* ungapped_stats)
+{
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;
    Int4 last_offset  = subject->length;
-   Int4 hit_index;
-   Int4* start_offsets = lookup->start_offsets;
-   Int4* lengths = lookup->lengths;
-   Int4 pat_index;
 
    while(first_offset < last_offset)
    {
+       Int4 hit_index;
       /* scan the subject sequence for hits */
 
       hits = PHIBlastScanSubject(lookup_wrap, query, subject, &first_offset, 
                                  offset_pairs, max_hits);
 
       totalhits += hits;
-      /* For each query occurrence. */
-      for (pat_index = 0; pat_index < lookup->num_matches; ++pat_index) {
-          Uint4 query_offset = start_offsets[pat_index];
-          Uint4 query_end = query_offset + lengths[pat_index];
-          /* for each hit, */
-          for (hit_index = 0; hit_index < hits; ++hit_index) {
-             BlastSaveInitHsp(init_hitlist, query_offset, 
-                              offset_pairs[hit_index].phi_offsets.s_start, 
-                              query_end, 
-                              offset_pairs[hit_index].phi_offsets.s_end, 0, 
-                              pat_index);
-          } /* End loop over hits. */
-      } /* End loop over query occurrences */
+
+      /* Save all database pattern hits. */
+      for (hit_index = 0; hit_index < hits; ++hit_index) {
+          s_PHISaveInitialHit(init_hitlist, &offset_pairs[hit_index]);
+      } /* End loop over hits. */
    } /* end while */
 
-   Blast_UngappedStatsUpdate(ungapped_stats, totalhits, totalhits, totalhits);
+   Blast_UngappedStatsUpdate(ungapped_stats, totalhits, 0, 0);
    return 0;
 }
+
