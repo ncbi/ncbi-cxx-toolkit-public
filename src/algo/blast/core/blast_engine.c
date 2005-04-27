@@ -70,6 +70,8 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
 #include "blast_gapalign_priv.h"
+#include <algo/blast/core/phi_gapalign.h>
+#include <algo/blast/core/phi_lookup.h>
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
@@ -137,31 +139,35 @@ s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
             Int4 frame_pos      = 0; /* Start of this frame in DNA */
             
             /* Find context containing this HSP */
-            context_idx = BSearchContextInfo(init_hsp->q_off, query_info);
+            context_idx = 
+                BSearchContextInfo(init_hsp->offsets.qs_offsets.q_off, 
+                                   query_info);
             
             frame_idx = context_idx % 3;
             init_frame_idx = context_idx - frame_idx;
             
             frame_pos = contexts[init_frame_idx].query_offset + frame_idx;
             
-            init_hsp->q_off =
-                (init_hsp->q_off -
+            init_hsp->offsets.qs_offsets.q_off =
+                (init_hsp->offsets.qs_offsets.q_off -
                  contexts[context_idx].query_offset) * CODON_LENGTH + frame_pos;
             
             init_hsp->ungapped_data->q_start =
                 (init_hsp->ungapped_data->q_start -
                  contexts[context_idx].query_offset) * CODON_LENGTH + frame_pos;
         } else {
-            init_hsp->s_off += offset;
+            init_hsp->offsets.qs_offsets.s_off += offset;
             init_hsp->ungapped_data->s_start += offset;
             if (subject_frame > 0) {
-                init_hsp->s_off = 
-                    (init_hsp->s_off * CODON_LENGTH) + subject_frame - 1;
+                init_hsp->offsets.qs_offsets.s_off = 
+                    (init_hsp->offsets.qs_offsets.s_off * CODON_LENGTH) + 
+                    subject_frame - 1;
                 init_hsp->ungapped_data->s_start = 
                     (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
                     subject_frame - 1;
             } else {
-                init_hsp->s_off = (init_hsp->s_off * CODON_LENGTH) + 
+                init_hsp->offsets.qs_offsets.s_off = 
+                    (init_hsp->offsets.qs_offsets.s_off * CODON_LENGTH) + 
                     subject_length - subject_frame;
                 init_hsp->ungapped_data->s_start = 
                     (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
@@ -241,9 +247,12 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    Boolean prelim_traceback = 
       (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
 
-   const Boolean kTranslatedSubject = (program_number == eBlastTypeTblastn
-                         || program_number == eBlastTypeTblastx
-                         || program_number == eBlastTypeRpsTblastn);
+   const Boolean kTranslatedSubject = 
+       (program_number == eBlastTypeTblastn ||
+        program_number == eBlastTypeTblastx ||
+        program_number == eBlastTypeRpsTblastn);
+   const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
+                                program_number == eBlastTypePhiBlastn);
 
    if (kTranslatedSubject) {
       first_context = 0;
@@ -266,7 +275,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             &frame_offsets, NULL);
          frame_offsets_a = frame_offsets;
       }
-   } else if (program_number == eBlastTypeBlastn) {
+   } else if (kNucleotide) {
       first_context = 1;
       last_context = 1;
    } else {
@@ -327,7 +336,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       for (chunk = 0; chunk < num_chunks; ++chunk) {
          if (chunk > 0) {
             offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-            if (program_number == eBlastTypeBlastn) {
+            if (kNucleotide) {
                subject->sequence += 
                   (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
             } else {
@@ -346,7 +355,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             
          if (init_hitlist->total == 0)
             continue;
-         
+
          if (score_options->gapped_calculation) {
             Int4 prot_length = 0;
             if (score_options->is_ooframe) {
@@ -408,20 +417,16 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       status = BLAST_LinkHsps(program_number, hsp_list, query_info,
                   subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
-   } else if (hit_options->phi_align) {
-      /* These e-values will not be accurate yet, since we don't know
-         the number of pattern occurrencies in the database. That
-         is arbitrarily set to 1 at this time. */
-      Blast_HSPListPHIGetEvalues(hsp_list, gap_align->sbp);
-   } else {
-      /* Calculate e-values for all HSPs. Skip this step
-         for RPS blast, since calculating the E values 
-         requires precomputation that has not been done yet */
-      if (program_number != eBlastTypeRpsBlast &&
-          program_number != eBlastTypeRpsTblastn)
-         status = Blast_HSPListGetEvalues(query_info, hsp_list, 
-                                          score_options->gapped_calculation, 
-                                          gap_align->sbp, 0, 1.0);
+   } else if (program_number != eBlastTypePhiBlastn &&
+              program_number != eBlastTypePhiBlastp &&
+              program_number != eBlastTypeRpsBlast &&
+          program_number != eBlastTypeRpsTblastn) {
+       /* Calculate e-values for all HSPs. Skip this step
+          for PHI and RPS BLAST, since calculating the E values 
+          requires precomputation that has not been done yet */
+       status = Blast_HSPListGetEvalues(query_info, hsp_list, 
+                                        score_options->gapped_calculation, 
+                                        gap_align->sbp, 0, 1.0);
    }
    
    /* Free the local query info structure when needed (in RPS BLAST). */
@@ -715,6 +720,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    Boolean gapped_calculation = score_options->gapped_calculation;
    BlastScoreBlk* sbp = gap_align->sbp;
    BlastSeqSrcIterator* itr;
+   const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
+                                program_number == eBlastTypePhiBlastn);
 
    BlastInitialWordParametersNew(program_number, word_options, 
       hit_params, lookup_wrap, sbp, query_info, 
@@ -774,7 +781,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
       /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
          protein searches. */
-      if (hit_params->link_hsp_params && program_number != eBlastTypeBlastn &&
+      if (hit_params->link_hsp_params && !kNucleotide &&
           !gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
             hit_params->link_hsp_params, word_params, db_length, 
@@ -794,8 +801,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          if (!gapped_calculation || prelim_traceback) {
             /* The following must be performed for any ungapped search with a 
                nucleotide database. */
-            if (program_number == eBlastTypeBlastn ||
-                program_number == eBlastTypeTblastn ||
+            if (kNucleotide || program_number == eBlastTypeTblastn ||
                 program_number == eBlastTypeTblastx) {
                status = 
                   Blast_HSPListReevaluateWithAmbiguities(program_number, 
@@ -840,15 +846,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    if (diagnostics && diagnostics->cutoffs) {
       s_FillReturnCutoffsInfo(diagnostics->cutoffs, score_params, word_params, 
                               ext_params, hit_params);
-   }
-
-   if (hit_options->phi_align) {
-      /* Save the product of effective occurrencies of pattern in query and
-         occurrencies of pattern in database */
-      Int8 db_hits = 1;
-      if (diagnostics && diagnostics->ungapped_stat)
-         db_hits = diagnostics->ungapped_stat->lookup_hits;
-      gap_align->sbp->effective_search_sp *= db_hits;
    }
 
    word_params = BlastInitialWordParametersFree(word_params);
@@ -935,6 +932,7 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    BlastHitSavingParameters* hit_params = NULL;
    BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align;
+   SPHIPatternSearchBlk* pattern_blk = NULL;
 
    if ((status = 
         BLAST_GapAlignSetUp(program_number, seq_src, score_options, 
@@ -953,11 +951,19 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    /* Prohibit any subsequent writing to the HSP stream. */
    BlastHSPStreamClose(hsp_stream);
 
-   if((status = 
-      BLAST_ComputeTraceback(program_number, hsp_stream, query, query_info,
-         seq_src, gap_align, score_params, ext_params, hit_params,
-         eff_len_params, db_options, psi_options, rps_info, results)) != 0)
-      return status;
+   if (program_number == eBlastTypePhiBlastn || 
+       program_number == eBlastTypePhiBlastp) {
+       PHIPatternSpaceCalc(query_info, diagnostics);
+       pattern_blk = ((SPHIPatternSearchBlk*) lookup_wrap->lut);
+   } 
+
+   if ((status = 
+        BLAST_ComputeTraceback(program_number, hsp_stream, query, query_info,
+                               seq_src, gap_align, score_params, ext_params, 
+                               hit_params, eff_len_params, db_options, 
+                               psi_options, rps_info, pattern_blk, results))
+       != 0)
+       return status;
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;
