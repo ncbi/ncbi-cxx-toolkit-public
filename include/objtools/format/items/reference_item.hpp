@@ -214,7 +214,10 @@ private:
 inline
 const string& CReferenceItem::GetUniqueStr(void) const
 {
-    x_CreateUniqueStr();
+    // supress creation if other identifiers exist.
+    if (m_MUID == 0  &&  m_PMID == 0) {
+        x_CreateUniqueStr();
+    }
     return m_UniqueStr;
 }
 
@@ -240,6 +243,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/04/27 17:08:15  shomrat
+* Suppress unique string creation if other identifiers exist
+*
 * Revision 1.16  2005/02/07 14:57:33  shomrat
 * Added support for submissions
 *
