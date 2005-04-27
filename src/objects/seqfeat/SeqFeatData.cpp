@@ -465,6 +465,7 @@ START_SUBTYPE(prot)
 END_SUBTYPE
 
 START_SUBTYPE(preprotein)
+    ADD_QUAL(EC_number);
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
@@ -476,6 +477,7 @@ START_SUBTYPE(preprotein)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1724,6 +1726,7 @@ START_SUBTYPE(region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
@@ -1984,6 +1987,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.21  2005/04/27 17:17:16  shomrat
+* Added EC_number and product as legal quals for preprotein, and number as legal for region
+*
 * Revision 6.20  2004/10/22 15:32:40  shomrat
 * Add qual compare to unsure, map and note to gap
 *
