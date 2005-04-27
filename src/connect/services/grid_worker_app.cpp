@@ -42,6 +42,7 @@
 #include <connect/threaded_server.hpp>
 
 #if defined(NCBI_OS_UNIX)
+# include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 /// @internal
 extern "C" 
@@ -231,6 +232,9 @@ CGridWorkerApp::~CGridWorkerApp()
 
 void CGridWorkerApp::Init(void)
 {
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_DateTime);
+
     CNcbiApplication::Init();
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(
@@ -253,6 +257,7 @@ const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const
 
 int CGridWorkerApp::Run(void)
 {
+    LOG_POST("Grid Worker Node \"" << GetJobFactory().GetJobVersion() << "\""); 
     const IRegistry& reg = GetConfig();
 
     unsigned int udp_port =
@@ -273,8 +278,24 @@ int CGridWorkerApp::Run(void)
     bool max_total_jobs = 
        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
-    if (server_log)
-        SetDiagPostLevel(eDiag_Info);
+#if defined(NCBI_OS_UNIX)
+    bool is_daemon =
+        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+    if (is_daemon) {
+        LOG_POST("Entering UNIX daemon mode...");
+        bool daemon = Daemonize(0, fDaemon_DontChroot);
+        if (!daemon) {
+            return 0;
+        }
+    }
+#endif
+
+    m_ErrLog.reset(new CRotatingLogStream(GetProgramDisplayName() +"_err.log", 
+                                          25 * 1024 * 1024));
+    // All errors redirected to rotated log
+    // from this moment on the server is silent...
+    SetDiagStream(m_ErrLog.get());
+
 
     m_WorkerNode.reset( new CGridWorkerNode(GetJobFactory(), 
                                             GetStorageFactory(), 
@@ -286,7 +307,6 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
-
 
     {{
     CRef<CGridWorkerNodeThread> worker_thread(
@@ -330,6 +350,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/27 15:16:29  didenko
+ * Added rotating log
+ * Added optional deamonize
+ *
  * Revision 1.12  2005/04/27 14:10:36  didenko
  * Added max_total_jobs parameter to a worker node configuration file
  *

@@ -43,6 +43,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/grid_worker.hpp>
+#include <util/logrotate.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -124,6 +125,8 @@ private:
 
     auto_ptr<CGridWorkerNode>                m_WorkerNode;
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+
+    auto_ptr<CRotatingLogStream> m_ErrLog;
 };
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version) \
@@ -165,6 +168,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/27 15:16:29  didenko
+ * Added rotating log
+ * Added optional deamonize
+ *
  * Revision 1.7  2005/04/21 20:15:52  didenko
  * Added some comments
  *

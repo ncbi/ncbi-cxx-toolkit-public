@@ -63,10 +63,11 @@ const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 //     CWorkerNodeJobContext     -- 
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
-                                             const string&    job_input)
+                                             const string&    job_input,
+                                             bool log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
-    m_JobCommitted(false), 
-    m_Reader(NULL), m_Writer(NULL), m_ProgressWriter(NULL), m_Reporter(NULL)
+      m_JobCommitted(false), m_LogRequested(log_requested),
+      m_Reader(NULL), m_Writer(NULL), m_ProgressWriter(NULL), m_Reporter(NULL)
 {
 }
 
@@ -348,7 +349,7 @@ void CGridWorkerNode::Start()
                     break;
                 }
                 auto_ptr<CWorkerNodeJobContext> 
-                    context(new CWorkerNodeJobContext(*this, job_key, input));
+                    context(new CWorkerNodeJobContext(*this, job_key, input, m_LogRequested));
                 CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
                 try {
                     m_ThreadsPool->AcceptRequest(job_req);
@@ -396,6 +397,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/27 15:16:29  didenko
+ * Added rotating log
+ * Added optional deamonize
+ *
  * Revision 1.10  2005/04/27 14:10:36  didenko
  * Added max_total_jobs parameter to a worker node configuration file
  *

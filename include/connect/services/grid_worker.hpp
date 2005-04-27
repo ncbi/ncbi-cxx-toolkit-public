@@ -219,6 +219,10 @@ public:
     ///
     void SetJobRunTimeout(unsigned time_to_run);
 
+    /// Check if logging was requested in config file
+    ///
+    bool IsLogRequested(void) const { return m_LogRequested; }
+
 private:    
     friend class CWorkerNodeRequest;  
     void Reset();
@@ -229,7 +233,8 @@ private:
     friend class CGridWorkerNode;
     CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                           const string&    job_key,
-                          const string&    job_input);
+                          const string&    job_input,
+                          bool log_requested);
 
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
@@ -238,6 +243,7 @@ private:
     string               m_ProgressMsgKey;
     bool                 m_JobCommitted;
     size_t               m_InputBlobSize;
+    bool                 m_LogRequested;
 
     INetScheduleStorage* m_Reader;
     INetScheduleStorage* m_Writer;
@@ -327,11 +333,15 @@ public:
                       { m_MaxThreads = max_threads; }
 
     void SetInitThreads(unsigned int init_threads) 
-                       { m_InitThreads = init_threads; }
+                      { m_InitThreads = init_threads; }
 
     void SetNSTimeout(unsigned int timeout) { m_NSTimeout = timeout; }
     void SetThreadsPoolTimeout(unsigned int timeout)
-                              { m_ThreadsPoolTimeout = timeout; }
+                      { m_ThreadsPoolTimeout = timeout; }
+    void SetMaxTotalJobs(unsigned int number) 
+                      { m_MaxProcessedJob = number; }
+    void ActivateServerLog(bool on_off) 
+                      { m_LogRequested = on_off; }
 
     /// Start jobs execution.
     ///
@@ -339,13 +349,13 @@ public:
 
     /// Request node shutdown
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
-                        { m_ShutdownLevel = level; }
+                      { m_ShutdownLevel = level; }
 
 
     /// Check if shutdown was requested.
     ///
     CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) 
-                        { return m_ShutdownLevel; }
+                      { return m_ShutdownLevel; }
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -379,6 +389,10 @@ private:
     mutable CMutex               m_JobFactoryMutex;
     CMutex                       m_StorageFactoryMutex;
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
+    unsigned int                 m_MaxProcessedJob;
+    unsigned int                 m_ProcessedJob;
+    bool                         m_LogRequested;
+
 
     friend class CWorkerNodeRequest;
     IWorkerNodeJob* CreateJob()
@@ -413,6 +427,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/27 15:16:29  didenko
+ * Added rotating log
+ * Added optional deamonize
+ *
  * Revision 1.14  2005/04/21 20:15:52  didenko
  * Added some comments
  *
