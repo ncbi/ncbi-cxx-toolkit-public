@@ -2521,7 +2521,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
                           gap_align->score, &(gap_align->edit_script), 
                           &new_hsp);
             Blast_HSPListSaveHSP(hsp_list, new_hsp);
-            BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
+            BlastIntervalTreeAddHSP(new_hsp, tree, query_info, 
+                                    eQueryAndSubject);
          }
       }
    }
@@ -3372,7 +3373,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                            query_frame, subject->frame, gap_align->score, 
                            &(gap_align->edit_script), &new_hsp);
              Blast_HSPListSaveHSP(hsp_list, new_hsp);
-             BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
+             BlastIntervalTreeAddHSP(new_hsp, tree, query_info, 
+                                     eQueryAndSubject);
          }
       }
    }   
