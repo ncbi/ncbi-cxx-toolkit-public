@@ -37,14 +37,16 @@
 #  error "Class CTar defined only for MS Windows and UNIX platforms"
 #endif
 
-#include <sys/types.h>
-#if defined(HAVE_SYS_STAT_H)
-#  include <sys/stat.h>
-#endif
+#include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_system.hpp>
 
-//#if defined(NCBI_OS_MSWIN)
-//#  include <windows.h>
-//#endif
+#if defined(NCBI_OS_MSWIN)
+#  include <io.h>
+#elif defined(NCBI_OS_UNIX)
+#  endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -73,11 +75,6 @@ void s_NumToOctal(unsigned long value, char* ptr, size_t size)
 /// TAR block size
 static const streamsize kBlockSize = 512;
 
-/// Name field size
-static const size_t kNameFieldSize   = 100;
-/// Name prefix field size
-static const size_t kPrefixFieldSize = 155;
-
 /// Default buffer size (must be multiple kBlockSize)
 static const streamsize kDefaultBufferSize = 16*1024;
 
@@ -91,8 +88,11 @@ static const char kSlash = '/';
         size = (size / kBlockSize + 1) * kBlockSize; \
     }
 
-/// Macro to check bits
+/// Macro to check that all mask bits are set in flags
 #define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
+
+/// Macro to check that at least one of mask bits is set in flags
+#define F_ISSET_ONEOF(mask) ((GetFlags() & (mask)) > 0)
 
 
 /// TAR POSIX file header
@@ -121,6 +121,41 @@ union TBlock {
   SHeader  header;
 };
 
+/// Name field size
+static const size_t kNameFieldSize   = 100;
+/// Name prefix field size
+static const size_t kPrefixFieldSize = 155;
+/// User/group name field size
+static const size_t kAccountFieldSize = 32;
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CTarEntryInfo
+//
+
+void CTarEntryInfo::GetMode(CDirEntry::TMode* user_mode,
+                         CDirEntry::TMode* group_mode,
+                         CDirEntry::TMode* other_mode) const
+{
+    unsigned int mode = m_Mode;
+    // Other
+    if (other_mode) {
+        *other_mode = mode & 0007;
+    }
+    mode >>= 3;
+    // Group
+    if (group_mode) {
+        *group_mode = mode & 0007;
+    }
+    mode >>= 3;
+    // User
+    if (user_mode) {
+        *user_mode = mode & 0007;
+    }
+    return;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -130,13 +165,14 @@ union TBlock {
 CTar::CTar(const string& file_name)
     : m_FileName(file_name),
       m_Stream(0),
-      m_FileStreamMode(eUnknown),
+      m_FileStreamMode(eUndefined),
       m_StreamPos(0),
       m_BufferSize(kDefaultBufferSize),
       m_Buffer(0),
       m_Flags(fDefault),
       m_Mask(0),
-      m_MaskOwned(eNoOwnership)
+      m_MaskOwned(eNoOwnership),
+      m_MaskUseCase(NStr::eCase)
 {
     // Create new file stream
     m_FileStream = new CNcbiFstream();
@@ -146,7 +182,8 @@ CTar::CTar(const string& file_name)
     // Allocate I/O bufer
     m_Buffer = new char[m_BufferSize];
     if ( !m_Buffer ) {
-        NCBI_THROW(CTarException, eMemory, "Unable to allocate memory");
+        NCBI_THROW(CTarException, eMemory,
+                   "Cannot allocate memory for I/O buffer");
     }
     return;
 }
@@ -156,18 +193,20 @@ CTar::CTar(CNcbiIos& stream)
     : m_FileName(kEmptyStr),
       m_Stream(&stream),
       m_FileStream(0),
-      m_FileStreamMode(eUnknown),
+      m_FileStreamMode(eUndefined),
       m_StreamPos(0),
       m_BufferSize(kDefaultBufferSize),
       m_Buffer(0),
       m_Flags(fDefault),
       m_Mask(0),
-      m_MaskOwned(eNoOwnership)
+      m_MaskOwned(eNoOwnership),
+      m_MaskUseCase(NStr::eCase)
 {
     // Allocate I/O bufer
     m_Buffer = new char[m_BufferSize];
     if ( !m_Buffer ) {
-        NCBI_THROW(CTarException, eMemory, "Unable to allocate memory");
+        NCBI_THROW(CTarException, eMemory,
+                   "Cannot allocate memory for I/O buffer");
     }
     return;
 }
@@ -190,6 +229,19 @@ CTar::~CTar()
         delete m_Buffer;
     }
     return;
+}
+
+
+void CTar::Extract(const string& dst_dir)
+{
+    SProcessData data;
+    data.dir = dst_dir;
+    // Extract 
+    x_ReadAndProcess(eExtract, &data);
+    // Restore attributes for delayed entries (usually for directories)
+    ITERATE(TEntries, i, data.entries) {
+        x_RestoreAttrs(**i);
+    }
 }
 
 
@@ -292,7 +344,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     }
     if ( sum == 0 ) {
         // Empty block found
-        return F_ISSET(fIgnoreZeroBlocks) ? eZeroBlock : eEOF;
+        return eZeroBlock;
     }
 
     // Compare checksums
@@ -306,7 +358,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     }
 
     // Mode 
-    //...
+    info.SetMode(NStr::StringToUInt(NStr::TruncateSpaces(h->mode),
+                                    8, NStr::eCheck_Skip));
 
     // Name is null-terminated unless every character is non-null.
     h->mode[0] = kNull;
@@ -318,6 +371,11 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Size
     info.SetSize(NStr::StringToInt8(NStr::TruncateSpaces(h->size),
                                     8, NStr::eCheck_Skip));
+
+    // Modification time.
+    // This field is terminated with a space only.
+    info.SetModificationTime(NStr::StringToULong(
+        NStr::TruncateSpaces(h->mtime), 8, NStr::eCheck_Skip));
 
     // Analize entry type 
     switch(h->typeflag) {
@@ -360,6 +418,18 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         info.SetLinkName(h->linkname);
     }
 
+    // User Id
+    info.SetUserId(NStr::StringToUInt(NStr::TruncateSpaces(h->uid),
+                                      8, NStr::eCheck_Skip));
+    // Group Id
+    info.SetGroupId(NStr::StringToUInt(NStr::TruncateSpaces(h->gid),
+                                       8, NStr::eCheck_Skip));
+    // User name
+    info.SetUserName(h->uname);
+
+    // Group name
+    info.SetGroupName(h->gname);
+
     return eSuccess;
 }
 
@@ -372,15 +442,10 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     SHeader* h = &block.header;
 
     // Get status information
-    struct stat st;
-    int errcode = -1;
 
-#  if defined(NCBI_OS_MSWIN)
-    errcode = stat(entry_name.c_str(), &st);
-#  elif defined(NCBI_OS_UNIX)
-    errcode = lstat(entry_name.c_str(), &st);
-#  endif
-    if (errcode != 0) {
+    CDirEntry::SStat st;
+    CDirEntry entry(entry_name.c_str());
+    if ( entry.Stat(&st, eIgnoreLinks) != 0 ) {
         NCBI_THROW(CTarException, eOpen,
                    "Unable to get status information for '" +
                    entry_name + "'");
@@ -418,23 +483,23 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     }
 
     // --- Mode ---
-    NUM_TO_OCTAL(st.st_mode, h->mode);
+    NUM_TO_OCTAL(st.orig.st_mode, h->mode);
 
     // --- User ID ---
-    NUM_TO_OCTAL(st.st_uid, h->uid);
+    NUM_TO_OCTAL(st.orig.st_uid, h->uid);
 
     // --- Group ID ---
-    NUM_TO_OCTAL(st.st_gid, h->gid);
+    NUM_TO_OCTAL(st.orig.st_gid, h->gid);
 
     // --- Size ---
     unsigned long size = 0;
     if ( type == CDirEntry::eFile ) {
-        size = st.st_size;
+        size = st.orig.st_size;
     }
     NUM_TO_OCTAL(size, h->size);
 
     // --- Modification time ---
-    NUM_TO_OCTAL(st.st_mtime, h->mtime);
+    NUM_TO_OCTAL(st.orig.st_mtime, h->mtime);
 
     // --- Typeflag ---
     switch(type) {
@@ -461,10 +526,16 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     strncpy(h->version, "00", 2);
 
     // --- User name ---
-    // not supported yet - empty string
-
     // --- Group name ---
-    // not supported yet - empty string
+    string user, group;
+    if ( entry.GetOwner(&user, &group, eIgnoreLinks) ) {
+        if ( user.length() <= kAccountFieldSize ) {
+            memcpy(&h->uname, user.c_str(), user.length());
+        }
+        if ( group.length() <= kAccountFieldSize ) {
+            memcpy(&h->gname, group.c_str(), group.length());
+        }
+    }
 
     // --- Device ---
     // not supported yet
@@ -486,32 +557,61 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
 }
 
 
-void CTar::x_ReadAndProcess(EAction action, void* data)
+void CTar::x_AddEntryInfoToList(const CTarEntryInfo& info,
+                                TEntries& entries) const
+{
+    CTarEntryInfo* pinfo = new CTarEntryInfo(info);
+    if ( !pinfo ) {
+        NCBI_THROW(CTarException, eMemory,
+                    "CTar::x_AddEntryInfoToList(): " \
+                    "Cannot allocate memory for entry info");
+    }
+    entries.push_back(pinfo);
+}
+
+
+void CTar::x_ReadAndProcess(EAction action, SProcessData* data)
 {
     // Open file for reading
     x_Open(eRead);
+    bool prev_zeroblock = false;
 
     for(;;) {
         // Next block supposed to be a header
         CTarEntryInfo info;
         EStatus status = x_ReadEntryInfo(info);
         switch(status) {
-        case eEOF:
-            return;
-        case eZeroBlock:
-            // skip zero blocks
-            continue;
-        case eFailure:
-            NCBI_THROW(CCoreException, eCore, "Unknown error");
-        case eSuccess:
-            ; // processed below
+            case eEOF:
+                return;
+            case eZeroBlock:
+                // Skip zero blocks
+                if ( F_ISSET(fIgnoreZeroBlocks) ) {
+                    continue;
+                }
+                // Check previous status
+                if ( prev_zeroblock ) {
+                    // eEOF
+                    return;
+                }
+                prev_zeroblock = true;
+                continue;
+            case eFailure:
+                NCBI_THROW(CCoreException, eCore, "Unknown error");
+            case eSuccess:
+                ; // processed below
         }
+        prev_zeroblock = false;
 
+        //
         // Process entry
-        {{
+        //
+
+        // Some preprocess work
+        switch(info.GetType()) {
+
             // Correct 'info' if long names are defined
-            if ( info.GetType() == CTarEntryInfo::eFile  ||
-                 info.GetType() == CTarEntryInfo::eDir) {
+            case CTarEntryInfo::eFile:
+            case CTarEntryInfo::eDir:
                 if ( !m_LongName.empty() ) {
                     info.SetName(m_LongName);
                     m_LongName.erase();
@@ -520,64 +620,119 @@ void CTar::x_ReadAndProcess(EAction action, void* data)
                     info.SetLinkName(m_LongLinkName);
                     m_LongLinkName.erase();
                 }
-            }
+                break;
 
-            // Match file name by set of masks
-            bool matched = true;
-            if ( m_Mask ) {
-                matched = m_Mask->Match(info.GetName());
-            }
+            // Do not process some dummy entries.
+            // They already processed in x_ReadEntryInfo(), just skip.
+            case CTarEntryInfo::eGNULongName:
+            case CTarEntryInfo::eGNULongLink:
+                continue;
 
-            // Process
-            switch(action) {
-                case eList:
-                    {{
-                    CTarEntryInfo* pinfo = new CTarEntryInfo(info);
-                    if ( !pinfo ) {
-                        NCBI_THROW(CTarException, eMemory,
-                                   "Cannot allocate memory");
-                    }
-                    // Save entry info
-                    if ( matched ) {
-                        ((TEntries*)data)->push_back(pinfo);
-                    }
-                    // Skip entry contents
-                    x_ProcessEntry(info, matched, eList);
-                    }}
-                    break;
+            // Otherwise -- nothing to do
+            default:
+                break;
+        }
 
-                case eExtract:
-                    // Create entry
-                    x_ProcessEntry(info, matched, eExtract, data);
-                    break;
+        // Match file name by set of masks
+        bool matched = true;
+        if ( m_Mask ) {
+            matched = m_Mask->Match(info.GetName(), m_MaskUseCase);
+        }
 
-                case eTest:
-                    // Test entry integrity
-                    x_ProcessEntry(info, matched, eTest);
-                    break;
-            }
-        }}
+        // Process
+        switch(action) {
+            case eList:
+                // Save entry info
+                if ( matched ) {
+                    x_AddEntryInfoToList(info, data->entries);
+                }
+                // Skip entry contents
+                x_ProcessEntry(info, false, eList);
+                break;
+
+            case eExtract:
+                // Create entry
+                x_ProcessEntry(info, matched, eExtract, data);
+                break;
+
+            case eTest:
+                // Test entry integrity
+                x_ProcessEntry(info, matched, eTest);
+                break;
+        }
     }
 }
 
 
-void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
-                          EAction action, void* data)
+void CTar::x_ProcessEntry(CTarEntryInfo& info, bool do_process, EAction action,
+                          SProcessData* data)
 {
-    string dst_dir;
-    if ( data ) {
-        dst_dir = *(string*)data;
-    }
-    string dst_path = CDir::ConcatPath(dst_dir, info.GetName());
+    // Next variables have a value only when extracting is possible.
+    string dst_path;
+    auto_ptr<CDirEntry> dst;
 
-    // fKeepOldFiles
-    if ( action == eExtract  &&  F_ISSET(fKeepOldFiles)  &&
-         CDirEntry(dst_path).Exists() )  {
-        action = eList;
+    //
+    // Check on existent destination entry
+    //
+
+    if ( do_process  &&  action == eExtract ) {
+        _ASSERT(data);
+        dst_path = CDir::ConcatPath(data->dir, info.GetName());
+        dst.reset(CDirEntry::CreateObject(
+            CDirEntry::EType(info.GetType()), dst_path));
+
+        // Dereference link
+        if ( info.GetType() != CTarEntryInfo::eLink ) {
+            if ( F_ISSET(fFollowLinks) ) {
+                dst->DereferenceLink();
+                dst_path = dst->GetPath();
+            }
+        }
+        CDirEntry::EType dst_type = dst->GetType();
+        bool dst_exists = (dst_type != CDirEntry::eUnknown);
+        if ( dst_exists )  {
+            try {
+                // Can overwrite it?
+                if ( !F_ISSET(fOverwrite) ) {
+                    // Entry already exists, and cannot be changed
+                    throw(0);
+                }
+                // Can update?
+                if ( F_ISSET(fUpdate) ) {
+                    time_t dst_mtime;
+                    if ( !dst->GetTimeT(&dst_mtime)  ||
+                         dst_mtime >= info.GetModificationTime()) {
+                        throw(0);
+                    }
+                }
+                // Backup destination entry first
+                if ( F_ISSET(fBackup) ) {
+                    if ( !CDirEntry(*dst).Backup(kEmptyStr,
+                                                 CDirEntry::eBackup_Rename)) {
+                        NCBI_THROW(CTarException, eBackup,
+                                   "Backup existing entry '" +
+                                   dst->GetPath() + "' failed");
+                    }
+                }
+                // Overwrite destination entry
+                if ( F_ISSET(fOverwrite) ) {
+                    dst->Remove();
+                } 
+            } catch (int) {
+                // Just skip current extracting entry
+                do_process = false;
+            }
+        }
     }
+
+    //
+    // Read/skip entry content
+    //
+
     auto_ptr<CNcbiOfstream> os;
+    bool need_restore_attrs = false;
 
-    // Skip entry contents
+    // Read entry contents
     switch(info.GetType()) {
 
         // File
@@ -587,20 +742,21 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
             streamsize aligned_size = info.m_Size;
             ALIGN_BLOCK_SIZE(aligned_size);
 
-            if ( m_FileStream  &&  (!do_process || action == eList) ) {
+            // Just skip current entry if possible
+            if ( m_FileStream  &&  !do_process ) {
                 m_FileStream->seekg(aligned_size, IOS_BASE::cur);
                 break;
             }
+            // Otherwise, read it
             if ( do_process  &&  action == eExtract ) {
                 // Create base directory
-                string base_dir = CDirEntry(dst_path).GetDir();
+                string base_dir = dst->GetDir();
                 CDir dir(base_dir);
                 if ( !dir.CreatePath() ) {
                     NCBI_THROW(CTarException, eCreate,
                                "Unable to create directory '" +
                                base_dir + "'");
                 }
-
                 // Create output file
                 auto_ptr<CNcbiOfstream> osp(
                    new CNcbiOfstream(dst_path.c_str(),
@@ -611,11 +767,11 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
                                "Unable to create file '" + dst_path + "'");
                 }
             }
-            // Read file contents
+            // Read file content
             streamsize to_read  = aligned_size;
             streamsize to_write = info.m_Size;
 
-            while ( m_Stream->good() &&  to_read > 0 ) {
+            while (m_Stream->good()  &&  to_read > 0) {
                 // Read archive
                 streamsize x_nread = (to_read > m_BufferSize) ? m_BufferSize :
                                                                 to_read;
@@ -627,7 +783,7 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
                 to_read -= nread;
 
                 // Write file to disk
-                if ( do_process  &&  action == eExtract ) {
+                if (do_process  &&  action == eExtract) {
                     if (to_write > 0) {
                         os->write(m_Buffer, min(nread, to_write));
                         if ( !*os ) {
@@ -641,6 +797,8 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
             // Clean up
             if ( do_process  &&  action == eExtract  &&  *os) {
                 os->close();
+                // Enable to set attrs for entry
+                need_restore_attrs = F_ISSET_ONEOF(fPreserveAll);
             }
             }}
             break;
@@ -648,10 +806,16 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
         // Directory
         case CTarEntryInfo::eDir:
             if ( do_process  &&  action == eExtract ) {
-                CDir dir(dst_path);
-                if ( !dir.CreatePath() ) {
+                if ( !CDir(dst_path).CreatePath() ) {
                     NCBI_THROW(CTarException, eCreate,
                                "Unable to create directory '" + dst_path+"'");
+                }
+                // Attributes for directories must be set only when all
+                // its files already extracted. Now add it to the waiting
+                // list to set attributes later.
+                if ( F_ISSET_ONEOF(fPreserveAll) ) {
+                    info.SetName(dst_path);
+                    x_AddEntryInfoToList(info, data->entries);
                 }
             }
             break;
@@ -667,10 +831,74 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
         default:
             ERR_POST(Warning << "Unsupported entry type. Skipped.");
     }
+
+    // Restore attributes
+    if ( need_restore_attrs ) {
+        x_RestoreAttrs(info, dst.get());
+    }
 }
 
 
-string CTar::x_ToArchiveName(const string& path)
+void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* target)
+{
+    string dst_path;
+    CDirEntry* dst = 0;
+    auto_ptr<CDirEntry> dst_ptr;
+
+    if ( target ) {
+        dst_path = target->GetPath();
+        dst = target;    
+    } else {
+        dst_path = info.GetName();
+        dst_ptr.reset(CDirEntry::CreateObject(
+                                 CDirEntry::EType(info.GetType()), dst_path));
+        dst = dst_ptr.get();
+    }
+
+    // Date/time.
+    // Set the time before permissions because on some platforms setting
+    // time can affect file permissions also.
+    if ( F_ISSET(fPreserveTime) ) {
+        time_t modification = info.GetModificationTime();
+        if ( !dst->SetTimeT(&modification) ) {
+            NCBI_THROW(CTarException, eRestoreAttrs,
+                        "Restore date/time for '" + dst_path + "' failed");
+        }
+    }
+
+    // Owner
+    // Change owner must precede changing permissions because on some
+    // systems chown clears the set[ug]id bits for non-superusers,
+    // resulting in incorrect permissions.
+    if ( F_ISSET(fPreserveOwner) ) {
+        // We dont check result here, because often is not impossible
+        // to save an original owner name without super-user rights.
+        dst->SetOwner(info.GetUserName(), info.GetGroupName(), eIgnoreLinks);
+    }
+
+    // Permissions.
+    // Set it after times and owner.
+    if ( F_ISSET(fPreservePerm) ) {
+#if defined(NCBI_OS_MSWIN)
+        int mode = (int)info.GetMode();
+#else
+        mode_t mode = info.GetMode();
+#endif
+        if ( info.GetType() == CTarEntryInfo::eLink ) {
+            // We cannot change permissions for sym.links.
+            // lchmod() is not portable and doesn't implemented on some
+            // platforms. So, do nothing.
+        } else {
+            if ( chmod(dst_path.c_str(), mode) != 0 ) {
+                NCBI_THROW(CTarException, eRestoreAttrs,
+                    "Restore permissions for '" + dst_path + "' failed");
+            }
+        }
+    }
+}
+
+
+string CTar::x_ToArchiveName(const string& path) const
 {
     // Assumes that "path" already in Unix format with "/" slashes.
 
@@ -734,7 +962,7 @@ void CTar::x_Append(const string& entry_name)
             {{
                 // Append directory info
                 x_WriteEntryInfo(x_name, CDirEntry::eDir);
-                // Append all files in directory
+                // Append all files from directory
                 CDir::TEntries contents = 
                     entry.GetEntries("*", CDir::eIgnoreRecursive);
                 ITERATE(CDir::TEntries, i, contents) {
@@ -818,6 +1046,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/27 13:53:02  ivanov
+ * Added support for (re)storing permissions/owner/times
+ *
  * Revision 1.9  2005/02/03 14:01:21  rsmith
  * must initialize  m_StreamPos since streampos may not have a default cnstr.
  *

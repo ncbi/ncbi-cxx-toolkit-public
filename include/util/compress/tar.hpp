@@ -70,7 +70,9 @@ public:
         eOpen,
         eRead,
         eWrite,
-        eMemory
+        eBackup,
+        eMemory,
+        eRestoreAttrs
     };
 
     /// Translate from an error code value to its string representation.
@@ -86,7 +88,9 @@ public:
         case eOpen:                 return "eOpen";
         case eRead:                 return "eRead";
         case eWrite:                return "eWrite";
+        case eBackup:               return "eBackup";
         case eMemory:               return "eMemory";
+        case eRestoreAttrs:         return "eRestoreAttrs";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -119,22 +123,44 @@ public:
         : m_Type(eUnknown), m_Size(0) {}
 
     // Setters
-    void SetName(const string& name)     { m_Name = name; }
-    void SetType(EType type)             { m_Type = type; }
-    void SetSize(Int8 size)              { m_Size = (streamsize)size; }
-    void SetLinkName(const string& name) { m_LinkName = name; }
+    void SetName(const string& name)      { m_Name      = name; }
+    void SetType(EType type)              { m_Type      = type; }
+    void SetSize(Int8 size)               { m_Size      = (streamsize)size; }
+    void SetMode(unsigned int mode)       { m_Mode      = mode; }
+    void SetLinkName(const string& name)  { m_LinkName  = name; }
+    void SetUserId(unsigned int uid)      { m_UserId    = uid;   }
+    void SetGroupId(unsigned int gid)     { m_GroupId   = gid;   }
+    void SetUserName(const string& name)  { m_UserName  = name; }
+    void SetGroupName(const string& name) { m_GroupName = name; }
+    void SetModificationTime(time_t t)    { m_MTime     = t;    }
 
     // Getters
-    string GetName(void) const     { return m_Name; }
-    EType  GetType(void) const     { return m_Type; }
-    Int8   GetSize(void) const     { return m_Size; }
-    string GetLinkName(void) const { return m_LinkName; }
+    string       GetName(void)      const { return m_Name;      }
+    EType        GetType(void)      const { return m_Type;      }
+    Int8         GetSize(void)      const { return m_Size;      }
+    unsigned int GetMode(void)      const { return m_Mode;      }
+    void         GetMode(CDirEntry::TMode* user_mode,
+                         CDirEntry::TMode* group_mode = 0,
+                         CDirEntry::TMode* other_mode = 0) const;
+    string       GetLinkName(void)  const { return m_LinkName;  }
+    unsigned int GetUserId(void)    const { return m_UserId;    }
+    unsigned int GetGroupId(void)   const { return m_GroupId;   }
+    string       GetUserName(void)  const { return m_UserName;  }
+    string       GetGroupName(void) const { return m_GroupName; }
+    time_t       GetModificationTime(void) const { return m_MTime; }
 
 private:
-    string      m_Name;       //< Name of file
-    string      m_LinkName;   //< Name of linked file if type is eLink
-    EType       m_Type;       //< Type
-    streamsize  m_Size;       //< File size (or 0)
+    string       m_Name;       ///< Name of file
+    string       m_LinkName;   ///< Name of linked file if type is eLink
+    EType        m_Type;       ///< Type
+    streamsize   m_Size;       ///< File size (or 0)
+    unsigned int m_Mode;       ///< File mode, 9 permission bits +
+                               ///< 3 bits for SUID, SGID, SVTX (Unix only)
+    unsigned int m_UserId;     ///< User Id (0 for MSWin)
+    unsigned int m_GroupId;    ///< Group Id (0 for MSWin)
+    string       m_UserName;   ///< User name
+    string       m_GroupName;  ///< Group name (empty string for MSWin)
+    time_t       m_MTime;      ///< Modification time
 
     friend class CTar;
 };
@@ -155,28 +181,37 @@ class NCBI_XUTIL_EXPORT CTar
 public:
     /// General flags
     enum EFlags {
-        // create
+        // --- Extract/List/Test ---
+        /// Ignore blocks of zeros in archive.
+        /// Generally, 2 or more consecutive zero blocks indicate EOF.
+        fIgnoreZeroBlocks  = (1<<1),
 
-        // Don't put in archive symlinks; put the files they point to
-        // list / extract 
-        // fDereferenceLinks    = 0x001,   
-        // Ignore blocks of zeros in archive (normally mean EOF)
-        fIgnoreZeroBlocks    = 0x002,
-        // Keep existing files; don't overwrite them from archive
-        fKeepOldFiles        = 0x004,
-        // Create extracted files with the same ownership
-        //fRestoreOwner        = 0x010,
-        // Create extracted files with the same permissions
-        //fRestorePermissions  = 0x020,
-        // Restore timestamp for extracted files
-        //fRestoreTimestamp    = 0x040,
-        //fRestoreAll          = fRestoreOwner | fRestorePermissions |
-        //                       fRestoreTimestamp,
+        // --- Extract/Append ---
+        ///< Add/overwrite entries instead of sym.links
+        fFollowLinks       = (1<<2),  
 
-        // Default flags
-        fDefault             = 0
+        // --- Extract ---
+        /// Allow to overwrite existent entries with entries from archive
+        fOverwrite         = (1<<3),  
+        /// Update entries that is older than entries in archive
+        fUpdate            = (1<<4) | fOverwrite,
+        /// Backup destination if it exists (all entries including dirs)
+        fBackup            = (1<<5) | fOverwrite,
+        ///< If destination entry exists, it must have the same type as source
+        fEqualTypes        = (1<<6),
+        /// Create extracted files with the same ownership
+        fPreserveOwner     = (1<<7),
+        /// Create extracted files with the same permissions
+        fPreservePerm      = (1<<8),
+        /// Preserve date/times for extracted files
+        fPreserveTime      = (1<<9),
+        /// Preserve all attributes
+        fPreserveAll       = fPreserveOwner | fPreservePerm | fPreserveTime,
+
+        /// Default flags
+        fDefault           = fOverwrite | fPreserveAll
     };
-    typedef int TFlags;  ///< Binary OR of "EFlags"
+    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
 
     /// Constructors
@@ -202,7 +237,7 @@ public:
     /// Append entries to the end of an archive that already exists.
     ///
     /// Append entries can be directories and files. Entries names cannot
-    /// contains '..'. Leading slash for absolute pathes wil be removed.
+    /// contains '..'. Leading slash for absolute paths will be removed.
     /// All names will be converted to Unix format.
     /// The entry will be added to the end of archive.
     void Append(const string& entry_name);
@@ -212,16 +247,18 @@ public:
     ///
     /// Add more recent copies of archive members to the end of an
     /// archive, if they exist.
+    /// @sa
+    ///   Append
     void Update();
 
-    // delete from the archive (not for use on magnetic tapes :-))
+    // Delete from the archive (not for use on magnetic tapes :-))
     void Delete();
 
     // Add one or more pre-existing archives to the end of another archive.
     void Concatenate();
 
     // Find differences between entries in archive and their counterparts
-    // in the file system
+    // in the file system.
     TEntries Diff(const string& diff_dir);
 */
 
@@ -267,7 +304,11 @@ public:
     ///   Set of masks.
     /// @param if_to_own
     ///   Flag to take ownership on the masks (delete on destruction).
-    void SetMask(CMask *mask, EOwnership if_to_own = eNoOwnership);
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
+    void SetMask(CMask *mask, EOwnership if_to_own = eNoOwnership,
+                 NStr::ECase use_case = NStr::eCase);
 
     /// Unset used name masks.
     ///
@@ -288,7 +329,7 @@ protected:
         eCreate,
         eRead,
         eUpdate,
-        eUnknown
+        eUndefined
     };
     enum EStatus {
         eSuccess = 0,
@@ -301,6 +342,13 @@ protected:
         eExtract,
         eTest
     };
+
+    /// Structure with additional info for processing entries.
+    /// Each action interpret field in this structure differently.
+    struct SProcessData {
+        TEntries entries;
+        string   dir;
+    };
     
     // Open/close file
     void  x_Open(EOpenMode mode);
@@ -308,17 +356,27 @@ protected:
     
     // Read information about next entry in the TAR archive
     EStatus x_ReadEntryInfo(CTarEntryInfo& info);
-
+    
     // Write information about entry into TAR archive
     void x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type);
 
+    // Add entry info to list of entries
+    void x_AddEntryInfoToList(const CTarEntryInfo& info,
+                              TEntries& entries) const;
+
     // Reader. Read archive and process some "action".
-    void x_ReadAndProcess(EAction action, void *data = 0);
+    void x_ReadAndProcess(EAction action, SProcessData *data = 0);
 
     // Process next entry from archive accordingly to specified action.
     // If do_process == TRUE, just skip entry in the stream.
-    void x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
-                        EAction action, void *data = 0);
+    void x_ProcessEntry(CTarEntryInfo& info, bool do_process, EAction action,
+                        SProcessData *data = 0);
+
+    // Restore attributes for specified entry.
+    // If 'target' not specified, than CDirEntry will be constructed
+    // from 'info'. In this case, 'info' should have correct name for
+    // destination dir entry.
+    void x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* target = 0);
 
     // Increase absolute position in the stream
     void x_IncreaseStreamPos(streamsize size);
@@ -328,27 +386,29 @@ protected:
     void       x_WriteStream(char *buffer, streamsize n);
 
     // Check path and convert it to archive name
-    string x_ToArchiveName(const string& path);
+    string x_ToArchiveName(const string& path) const;
 
     // Append dir entry to archive
     void x_Append(const string& entry_name);
     void x_AppendFile(const string& entry_name);
 
 protected:
-    string         m_FileName;       ///< TAR archive file name
-    CNcbiIos*      m_Stream;         ///< Achive stream (used for I/O)
-    CNcbiFstream*  m_FileStream;     ///< File archive stream
-    EOpenMode      m_FileStreamMode; ///< File stream open mode
-    streampos      m_StreamPos;      ///< Current position in m_Stream
-    streamsize     m_BufferSize;     ///< Buffer size for IO operations
-    char*          m_Buffer;         ///< Pointer to working I/O buffer
-    TFlags         m_Flags;          ///< Bitwise OR of flags
-    CMask*         m_Mask;           ///< Masks for list/test/extract
-    EOwnership     m_MaskOwned;      ///< Flag to take ownership for m_Mask
+    string         m_FileName;       ///< TAR archive file name.
+    CNcbiIos*      m_Stream;         ///< Archive stream (used for I/O).
+    CNcbiFstream*  m_FileStream;     ///< File archive stream.
+    EOpenMode      m_FileStreamMode; ///< File stream open mode.
+    streampos      m_StreamPos;      ///< Current position in m_Stream.
+    streamsize     m_BufferSize;     ///< Buffer size for IO operations.
+    char*          m_Buffer;         ///< Pointer to working I/O buffer.
+    TFlags         m_Flags;          ///< Bitwise OR of flags.
+    CMask*         m_Mask;           ///< Masks for list/test/extract.
+    EOwnership     m_MaskOwned;      ///< Flag to take ownership for m_Mask.
+    NStr::ECase    m_MaskUseCase;    ///< Flag for case sensitive/insensitive
+                                     ///< matching by mask.
     string         m_BaseDir;        ///< Base directory to seek added files
-                                     ///<  without full pathes
-    string         m_LongName;       ///< Previously defined long name
-    string         m_LongLinkName;   ///< Previously defined long link name
+                                     ///< without full path.
+    string         m_LongName;       ///< Previously defined long name.
+    string         m_LongLinkName;   ///< Previously defined long link name.
 };
 
 
@@ -373,15 +433,9 @@ void CTar::Append(const string& entry_name)
 inline
 CTar::TEntries CTar::List(void)
 {
-    TEntries entries;
-    x_ReadAndProcess(eList, &entries);
-    return entries;
-}
-
-inline
-void CTar::Extract(const string& dst_dir)
-{
-    x_ReadAndProcess(eExtract, (void*)&dst_dir);
+    SProcessData data;
+    x_ReadAndProcess(eList, &data);
+    return data.entries;
 }
 
 inline
@@ -403,11 +457,12 @@ void CTar::SetFlags(TFlags flags)
 }
 
 inline
-void CTar::SetMask(CMask *mask, EOwnership if_to_own)
+void CTar::SetMask(CMask *mask, EOwnership if_to_own, NStr::ECase use_case)
 {
     UnsetMask();
     m_Mask = mask;
     m_MaskOwned = if_to_own;
+    m_MaskUseCase = use_case;
 }
 
 inline
@@ -466,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/27 13:52:58  ivanov
+ * Added support for (re)storing permissions/owner/times
+ *
  * Revision 1.4  2005/01/31 15:30:59  ivanov
  * Lines wrapped at 79th column
  *
