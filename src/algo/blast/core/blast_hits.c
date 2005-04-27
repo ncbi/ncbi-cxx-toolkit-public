@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_util.h>
 #include "blast_hits_priv.h"
+#include "blast_itree.h"
 
 /********************************************************************************
           Functions manipulating BlastHSP's
@@ -1655,9 +1656,6 @@ typedef enum EHSPInclusionStatus {
    eDiagDistant     /**< Diagonals are far apart, or different contexts */
 } EHSPInclusionStatus;
 
-/** Are the two HSPs within a given diagonal distance of each other? */
-#define MB_HSP_CLOSE(q1, q2, s1, s2, c) (ABS(((q1)-(s1)) - ((q2)-(s2))) < (c))
-
 /** Diagonal distance between HSPs, outside of which one HSP cannot be 
  * considered included in the other.
  */ 
@@ -2470,6 +2468,121 @@ Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results)
    }
    return 0;
 }
+
+/** Auxiliary structure for sorting HSPs */
+typedef struct SHspWrap {
+    BlastHSPList *hsplist;  /**< The HSPList to which this HSP belongs */
+    BlastHSP *hsp;          /**< HSP described by this structure */
+} SHspWrap;
+
+/** callback used to sort a list of encapsulated HSP
+ *  structures in order of increasing e-value, using
+ *  the raw score as a tiebreaker
+ */
+int s_SortHspWrapEvalue(const void *x, const void *y)
+{
+    SHspWrap *wrap1 = (SHspWrap *)x;
+    SHspWrap *wrap2 = (SHspWrap *)y;
+    if (wrap1->hsp->evalue < wrap2->hsp->evalue)
+        return -1;
+    if (wrap1->hsp->evalue > wrap2->hsp->evalue)
+        return 1;
+
+    return (wrap2->hsp->score - wrap1->hsp->score);
+}
+
+
+Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
+                                    const BlastQueryInfo *query_info,
+                                    Int4 culling_limit, Int4 query_length)
+{
+   Int4 i, j, k, m;
+   Int4 hsp_count;
+   SHspWrap *hsp_array;
+   BlastIntervalTree *tree;
+
+   /* set up the interval tree; subject offsets are not needed */
+
+   tree = Blast_IntervalTreeInit(0, query_length + 1, 0, 0);
+
+   for (i = 0; i < results->num_queries; i++) {
+      BlastHitList *hitlist = results->hitlist_array[i];
+      if (hitlist == NULL)
+         continue;
+
+      /* count the number of HSPs in this hitlist. If this is
+         less than the culling limit, no HSPs will be pruned */
+
+      for (j = hsp_count = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         hsp_count += hsplist->hspcnt;
+      }
+      if (hsp_count < culling_limit)
+          continue;
+
+      /* empty each HSP into a combined HSP array, then
+         sort the array by e-value */
+
+      hsp_array = (SHspWrap *)malloc(hsp_count * sizeof(SHspWrap));
+
+      for (j = k = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         for (m = 0; m < hsplist->hspcnt; k++, m++) {
+            BlastHSP *hsp = hsplist->hsp_array[m];
+            hsp_array[k].hsplist = hsplist;
+            hsp_array[k].hsp = hsp;
+         }
+         hsplist->hspcnt = 0;
+      }
+
+      qsort(hsp_array, hsp_count, sizeof(SHspWrap), s_SortHspWrapEvalue);
+
+      /* Starting with the best HSP, use the interval tree to
+         check that the query range of each HSP in the list has
+         not already been enveloped by too many higher-scoring
+         HSPs. If this is not the case, add the HSP back into results */
+
+      Blast_IntervalTreeReset(tree);
+
+      for (j = 0; j < hsp_count; j++) {
+         BlastHSPList *hsplist = hsp_array[j].hsplist;
+         BlastHSP *hsp = hsp_array[j].hsp;
+
+         if (BlastIntervalTreeNumRedundant(tree, 
+                         hsp, query_info) >= culling_limit) {
+             Blast_HSPFree(hsp);
+         }
+         else {
+             BlastIntervalTreeAddHSP(hsp, tree, query_info, eQueryOnly);
+             Blast_HSPListSaveHSP(hsplist, hsp);
+
+             /* the first HSP added back into an HSPList
+                automatically has the best e-value */
+             if (hsplist->hspcnt == 1)
+                 hsplist->best_evalue = hsp->evalue;
+         }
+      }
+      sfree(hsp_array);
+
+      /* remove any HSPLists that are still empty after the 
+         culling process. Sort any remaining lists by score */
+
+      for (j = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         if (hsplist->hspcnt == 0) {
+             hitlist->hsplist_array[j] = 
+                   Blast_HSPListFree(hitlist->hsplist_array[j]);
+         }
+         else {
+             Blast_HSPListSortByScore(hitlist->hsplist_array[j]);
+         }
+      }
+      s_BlastHitListPurgeNullHSPLists(hitlist);
+   }
+
+   tree = Blast_IntervalTreeFree(tree);
+}
+
 
 Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsplist_in, const BlastHitSavingOptions* hit_options)
