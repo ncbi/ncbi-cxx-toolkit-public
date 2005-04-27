@@ -2581,6 +2581,7 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
    }
 
    tree = Blast_IntervalTreeFree(tree);
+   return 0;
 }
 
 
