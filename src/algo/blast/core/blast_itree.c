@@ -485,7 +485,8 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
 /* see blast_itree.h for description */
 void 
 BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
-                        const BlastQueryInfo *query_info)
+                        const BlastQueryInfo *query_info,
+                        EITreeIndexMethod index_method)
 {
     Int4 query_start;
     Int4 old_region_start;
@@ -514,32 +515,36 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     nodes = tree->nodes;
     ASSERT(region_start >= nodes->leftend);
     ASSERT(region_end <= nodes->rightend);
-    ASSERT(hsp->subject.offset >= tree->s_min);
-    ASSERT(hsp->subject.end <= tree->s_max);
     ASSERT(hsp->query.offset <= hsp->query.end);
     ASSERT(hsp->subject.offset <= hsp->subject.end);
 
-    /* Before adding the HSP, determine whether one or more
-       HSPs already in the tree share a common endpoint with
-       in_hsp. Remove from the tree any leaves containing 
-       such an HSP whose score is lower than in_hsp.
-
-       Note that in_hsp might share an endpoint with a
-       higher-scoring HSP already in the tree, in which case
-       in_hsp should not be added. There is thus a possibility
-       that in_hsp will remove an alignment from the tree and
-       then another alignment will remove in_hsp. This is arguably
-       not the right behavior, but since the tree is only for
-       containment tests the worst that can happen is that
-       a rare extra gapped alignment will be computed */
-
-    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
-                                     eIntervalTreeLeft)) {
-        return;
-    }
-    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
-                                     eIntervalTreeRight)) {
-        return;
+    if (index_method == eQueryAndSubject) {
+            
+        ASSERT(hsp->subject.offset >= tree->s_min);
+        ASSERT(hsp->subject.end <= tree->s_max);
+    
+        /* Before adding the HSP, determine whether one or more
+           HSPs already in the tree share a common endpoint with
+           in_hsp. Remove from the tree any leaves containing 
+           such an HSP whose score is lower than in_hsp.
+    
+           Note that in_hsp might share an endpoint with a
+           higher-scoring HSP already in the tree, in which case
+           in_hsp should not be added. There is thus a possibility
+           that in_hsp will remove an alignment from the tree and
+           then another alignment will remove in_hsp. This is arguably
+           not the right behavior, but since the tree is only for
+           containment tests the worst that can happen is that
+           a rare extra gapped alignment will be computed */
+    
+        if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
+                                         eIntervalTreeLeft)) {
+            return;
+        }
+        if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
+                                         eIntervalTreeRight)) {
+            return;
+        }
     }
 
     /* begin by indexing the HSP query offsets */
@@ -617,10 +622,12 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
             /* the new interval crosses the center of the node, and
                so has a "shadow" in both subtrees */
 
-            if (index_subject_range) {
+            if (index_subject_range || index_method == eQueryOnly) {
 
                 /* If indexing subject offsets already, prepend the 
-                   new node to the list of "midpoint" nodes and return */
+                   new node to the list of "midpoint" nodes and return.
+                   midptr is always a linked list if only the query
+                   offsets are indexed */
 
                 nodes[new_index].midptr = nodes[root_index].midptr;
                 nodes[root_index].midptr = new_index;
@@ -702,7 +709,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                must be allocated from scratch, just to accomodate the
                old leaf */
 
-            if (index_subject_range) {
+            if (index_subject_range || index_method == eQueryOnly) {
                 nodes[mid_index].midptr = old_index;
             }
             else {
@@ -926,4 +933,104 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
     return s_HSPIsContained(hsp, query_start, 
                             node->hsp, node->leftptr,
                             min_diag_separation);
+}
+
+/** Determine whether the query range of an HSP is contained 
+ *  within the query range of another HSP.
+ *  @param in_hsp The input HSP 
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
+ *  @param tree_hsp An HSP from the interval tree, assumed to have
+ *                  score equal to or exceeding that of in_hsp [in]
+ *  @param tree_q_start The start offset of the strand of the query
+ *                      sequence containing tree_hsp [in]
+ *  @return 1 if query range of the second HSP envelops that of
+ *           the first, 0 otherwise
+ */
+static Int4
+s_HSPQueryRangeIsContained(const BlastHSP *in_hsp,
+                           Int4 in_q_start,
+                           const BlastHSP *tree_hsp,
+                           Int4 tree_q_start)
+{
+    /* check if alignments are from different query sequences 
+       or query strands. Also check if tree_hsp has score strictly
+       higher than in_hsp */
+
+    if (in_q_start != tree_q_start ||
+        in_hsp->score >= tree_hsp->score)
+        return 0;
+       
+    if (tree_hsp->query.offset <= in_hsp->query.offset &&
+        tree_hsp->query.end >= in_hsp->query.end)
+        return 1;
+
+    return 0;
+}
+
+/* see blast_itree.h for description */
+Int4
+BlastIntervalTreeNumRedundant(const BlastIntervalTree *tree, 
+                              const BlastHSP *hsp,
+                              const BlastQueryInfo *query_info)
+{
+    SIntervalNode *node = tree->nodes;
+    Int4 in_query_start = s_GetQueryStrandOffset(query_info, hsp->context);
+    Int4 region_start = in_query_start + hsp->query.offset;
+    Int4 region_end = in_query_start + hsp->query.end;
+    Int4 middle;
+    Int4 tmp_index = 0;
+    Int4 num_redundant = 0;
+
+    ASSERT(region_start >= node->leftend);
+    ASSERT(region_end <= node->rightend);
+    ASSERT(hsp->query.offset <= hsp->query.end);
+    ASSERT(hsp->subject.offset <= hsp->subject.end);
+
+    /* Descend the tree */
+
+    while (node->hsp == NULL) {
+
+        ASSERT(region_start >= node->leftend);
+        ASSERT(region_end <= node->rightend);
+
+        /* First perform containment tests on all of the HSPs
+           in the midpoint list for the current node. All HSPs
+           in the list must be examined */
+
+        tmp_index = node->midptr;
+        while (tmp_index != 0) {
+            SIntervalNode *tmp_node = tree->nodes + tmp_index;
+
+            num_redundant += s_HSPQueryRangeIsContained(hsp, in_query_start,
+                                           tmp_node->hsp, tmp_node->leftptr);
+            tmp_index = tmp_node->midptr;
+        }
+
+        /* Descend to the left subtree if the input HSP lies completely
+           to the left of this node's center, or to the right subtree if
+           it lies completely to the right */
+
+        tmp_index = 0;
+        middle = (node->leftend + node->rightend) / 2;
+        if (region_end < middle)
+            tmp_index = node->leftptr;
+        else if (region_start > middle)
+            tmp_index = node->rightptr;
+
+        /* If there is no such subtree, or the HSP straddles the center
+           of the current node, then all of the HSPs that could possibly
+           contain it have already been examined */
+
+        if (tmp_index == 0)
+            return num_redundant;
+
+        node = tree->nodes + tmp_index;
+    }
+
+    /* Reached a leaf of the tree */
+
+    return num_redundant + 
+           s_HSPQueryRangeIsContained(hsp, in_query_start,
+                                      node->hsp, node->leftptr);
 }

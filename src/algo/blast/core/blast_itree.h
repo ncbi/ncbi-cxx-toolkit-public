@@ -82,6 +82,12 @@ typedef struct BlastIntervalTree {
     Int4 s_max;              /**< maximum subject offset possible */
 } BlastIntervalTree;
 
+/** How HSPs added to an interval tree are indexed */
+typedef enum EITreeIndexMethod {
+    eQueryOnly,              /**< Index by query offset only */
+    eQueryAndSubject         /**< Index by query and then by subject offset */
+} EITreeIndexMethod;
+
 /** Initialize an interval tree structure
  *  @param q_start Minimum query offset [in]
  *  @param q_end Maximum query offset; for multiple concatenated 
@@ -111,11 +117,13 @@ Blast_IntervalTreeReset(BlastIntervalTree *tree);
  * @param hsp The HSP to add [in]
  * @param tree The tree to update [in][out]
  * @param query_info Structure with query offset information [in]
+ * @param index_method How HSP will be indexed within the tree [in]
  */
 void 
 BlastIntervalTreeAddHSP(BlastHSP *hsp, 
                         BlastIntervalTree *tree,
-                        const BlastQueryInfo *query_info);
+                        const BlastQueryInfo *query_info,
+                        EITreeIndexMethod index_method);
 
 /** Determine whether an interval tree contains an HSP 
  *  that envelops an input HSP. An HSP is "contained" or 
@@ -137,6 +145,23 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
                              const BlastHSP *hsp,
                              const BlastQueryInfo *query_info,
                              Int4 min_diag_separation);
+
+/** Determine the number of HSPs within an interval tree whose
+ *  query range envelops the input HSP. The tree is assumed to
+ *  only index the query offsets of HSPs, and all HSPs within
+ *  the tree are assumed to have score >= that of the input HSP.
+ *  Finally, the interval tree is allowed to contain HSPs that
+ *  describe hits to multiple different subject sequences.
+ *  @param tree Interval tree to search [in]
+ *  @param hsp The HSP used to query the tree [in]
+ *  @param query_info Structure with query offset information [in]
+ *  @return Number of HSPs in the tree whose query range envelops
+ *          the query range of in_hsp
+ */
+Int4
+BlastIntervalTreeNumRedundant(const BlastIntervalTree *tree, 
+                              const BlastHSP *hsp,
+                              const BlastQueryInfo *query_info);
 
 #ifdef __cplusplus
 }
