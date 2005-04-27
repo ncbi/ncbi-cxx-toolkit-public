@@ -54,10 +54,10 @@ typedef struct BlastUngappedData {
 
 /** Structure to hold the initial HSP information */
 typedef struct BlastInitHSP {
-   Int4 q_off; /**< Offset in query */
-   Int4 s_off; /**< Offset in subject */
-   BlastUngappedData* ungapped_data; /**< Pointer to a structure holding
-                                          ungapped alignment information */
+    BlastOffsetPair offsets; /**< Offsets in query and subject, or, in PHI
+                                BLAST, start and end of pattern in subject. */
+    BlastUngappedData* ungapped_data; /**< Pointer to a structure holding
+                                         ungapped alignment information */
 } BlastInitHSP;
 
 /** Structure to hold all initial HSPs for a given subject sequence */
