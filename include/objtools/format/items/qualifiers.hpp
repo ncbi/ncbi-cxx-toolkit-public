@@ -550,14 +550,15 @@ private:
 class CFlatTrnaCodonsQVal : public IFlatQVal
 {
 public:
-    CFlatTrnaCodonsQVal(const CTrna_ext& trna) : 
-      IFlatQVal(&kEmptyStr, &kSemicolon), m_Value(&trna)
+    CFlatTrnaCodonsQVal(const CTrna_ext& trna, const string& comment) : 
+      IFlatQVal(&kEmptyStr, &kSemicolon), m_Value(&trna), m_Seqfeat_note(comment)
     {}
     void Format(TFlatQuals& q, const string& n, CBioseqContext& ctx,
                 TFlags) const;
 
 private:
     CConstRef<CTrna_ext> m_Value;
+    const string& m_Seqfeat_note;
 };
 
 
@@ -583,6 +584,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/04/27 17:06:55  shomrat
+* Changed constructor for CFlatTRnaCodonsQVal
+*
 * Revision 1.21  2005/04/11 15:29:16  vasilche
 * Avoid copying of list<string> when gathering protein names.
 *
