@@ -182,3 +182,16 @@ GapPrelimEditBlockReset(GapPrelimEditBlock *edit_block)
         edit_block->last_op = eGapAlignInvalid;
     }
 }
+
+void
+GapPrelimEditBlockAppend(GapPrelimEditBlock *edit_block1,
+                         GapPrelimEditBlock *edit_block2)
+{
+    Int4 index;
+    GapPrelimEditScript *op;
+
+    for (index = 0, op = edit_block2->edit_ops; index < edit_block2->num_ops; 
+         ++index, ++op) {
+        GapPrelimEditBlockAdd(edit_block1, op->op_type, op->num);
+    }
+}
