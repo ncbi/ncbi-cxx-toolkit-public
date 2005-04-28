@@ -38,12 +38,14 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CEnvironmentRegistry::CEnvironmentRegistry()
     : m_Env(new CNcbiEnvironment), m_EnvOwnership(eTakeOwnership),
       m_Modified(false)
 {
     AddMapper(*new CNcbiEnvRegMapper);
 }
+
 
 CEnvironmentRegistry::CEnvironmentRegistry(CNcbiEnvironment& env,
                                            EOwnership own)
@@ -52,6 +54,7 @@ CEnvironmentRegistry::CEnvironmentRegistry(CNcbiEnvironment& env,
     AddMapper(*new CNcbiEnvRegMapper);
 }
 
+
 CEnvironmentRegistry::~CEnvironmentRegistry()
 {
     if (m_EnvOwnership) {
@@ -59,12 +62,14 @@ CEnvironmentRegistry::~CEnvironmentRegistry()
     }
 }
 
+
 void CEnvironmentRegistry::AddMapper(const IEnvRegMapper& mapper,
                                      TPriority prio)
 {
     m_PriorityMap.insert(TPriorityMap::value_type
                      (prio, CConstRef<IEnvRegMapper>(&mapper)));
 }
+
 
 void CEnvironmentRegistry::RemoveMapper(const IEnvRegMapper& mapper)
 {
@@ -96,10 +101,12 @@ bool CEnvironmentRegistry::x_Empty(TFlags /*flags*/) const
     return true;
 }
 
+
 bool CEnvironmentRegistry::x_Modified(TFlags flags) const
 {
     return (flags & fTransient) ? m_Modified : false;
 }
+
 
 void CEnvironmentRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
@@ -108,8 +115,6 @@ void CEnvironmentRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
     }
 }
 
-#define REV_ITERATE(Type, Var, Cont) \
-    for ( Type::const_reverse_iterator Var = (Cont).rbegin(), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 const string& CEnvironmentRegistry::x_Get(const string& section,
                                           const string& name,
@@ -118,7 +123,7 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
     if (flags & fPersistent) {
         return kEmptyStr;
     }
-    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+    REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         string        var_name = it->second->RegToEnv(section, name);
         const string* resultp  = &m_Env->Get(var_name);
         if (resultp->empty()) {
@@ -132,6 +137,7 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
     return kEmptyStr;
 }
 
+
 bool CEnvironmentRegistry::x_HasEntry(const string& section,
                                       const string& name,
                                       TFlags flags) const
@@ -139,11 +145,13 @@ bool CEnvironmentRegistry::x_HasEntry(const string& section,
     return !x_Get(section, name, flags).empty();
 }
 
+
 const string& CEnvironmentRegistry::x_GetComment(const string&, const string&,
                                                  TFlags) const
 {
     return kEmptyStr;
 }
+
 
 void CEnvironmentRegistry::x_Enumerate(const string& section,
                                        list<string>& entries,
@@ -176,9 +184,11 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
     }
 }
 
+
 void CEnvironmentRegistry::x_ChildLockAction(FLockAction)
 {
 }
+
 
 void CEnvironmentRegistry::x_Clear(TFlags flags)
 {
@@ -187,11 +197,12 @@ void CEnvironmentRegistry::x_Clear(TFlags flags)
     }
 }
 
+
 bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
                                  const string& value, TFlags flags,
                                  const string& /*comment*/)
 {
-    REV_ITERATE (TPriorityMap, it,
+    REVERSE_ITERATE (TPriorityMap, it,
                  const_cast<const TPriorityMap&>(m_PriorityMap)) {
         string var_name = it->second->RegToEnv(section, name);
         if ( !var_name.empty() ) {
@@ -215,6 +226,7 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
     return false;
 }
 
+
 bool CEnvironmentRegistry::x_SetComment(const string&, const string&,
                                         const string&, TFlags)
 {
@@ -231,11 +243,13 @@ CSimpleEnvRegMapper::CSimpleEnvRegMapper(const string& section,
 {
 }
 
+
 string CSimpleEnvRegMapper::RegToEnv(const string& section, const string& name)
     const
 {
     return (section == m_Section ? (m_Prefix + name + m_Suffix) : kEmptyStr);
 }
+
 
 bool CSimpleEnvRegMapper::EnvToReg(const string& env, string& section,
                                    string& name) const
@@ -251,6 +265,7 @@ bool CSimpleEnvRegMapper::EnvToReg(const string& env, string& section,
     return false;
 }
 
+
 string CSimpleEnvRegMapper::GetPrefix(void) const
 {
     return m_Prefix;
@@ -258,6 +273,7 @@ string CSimpleEnvRegMapper::GetPrefix(void) const
 
 
 const char* CNcbiEnvRegMapper::sm_Prefix = "NCBI_CONFIG_";
+
 
 string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
     const
@@ -268,6 +284,7 @@ string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
         return string(sm_Prefix) + "_" + section + "__" + name;
     }
 }
+
 
 bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
                                  string& name) const
@@ -292,6 +309,7 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
     return true;
 }
 
+
 string CNcbiEnvRegMapper::GetPrefix(void) const
 {
     return sm_Prefix;
@@ -303,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/28 14:03:47  ivanov
+ * Replace internal REV_ITERATE with REVERSE_ITERATE macro from ncbimisc.hpp
+ *
  * Revision 1.3  2005/04/25 20:21:55  ivanov
  * Get rid of Workshop compilation warnings
  *

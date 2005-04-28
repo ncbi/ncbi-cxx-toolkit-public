@@ -49,8 +49,7 @@ typedef CRegistryReadGuard  TReadGuard;
 typedef CRegistryWriteGuard TWriteGuard;
 
 
-/* Valid symbols for a section/entry name
- */
+// Valid symbols for a section/entry name
 inline bool s_IsNameSectionSymbol(char ch, IRegistry::TFlags flags)
 {
     return (isalnum(ch)
@@ -59,8 +58,7 @@ inline bool s_IsNameSectionSymbol(char ch, IRegistry::TFlags flags)
 }
 
 
-/* Check if "str" consists of alphanumeric and '_' only
- */
+// Check if "str" consists of alphanumeric and '_' only
 static bool s_IsNameSection(const string& str, IRegistry::TFlags flags)
 {
     if (str.empty()) {
@@ -76,8 +74,7 @@ static bool s_IsNameSection(const string& str, IRegistry::TFlags flags)
 }
 
 
-/* Convert "comment" from plain text to comment
- */
+// Convert "comment" from plain text to comment
 static const string s_ConvertComment(const string& comment,
                                      bool is_file_comment = false)
 {
@@ -107,8 +104,7 @@ static const string s_ConvertComment(const string& comment,
 }
 
 
-/* Dump the comment to stream "os"
- */
+// Dump the comment to stream "os"
 static bool s_WriteComment(CNcbiOstream& os, const string& comment)
 {
     if (!comment.length())
@@ -158,6 +154,7 @@ bool IRegistry::Empty(TFlags flags) const
     return x_Empty(flags);
 }
 
+
 bool IRegistry::Modified(TFlags flags) const
 {
     x_CheckFlags("IRegistry::Modified", flags, fLayerFlags);
@@ -168,6 +165,7 @@ bool IRegistry::Modified(TFlags flags) const
     return x_Modified(flags);
 }
 
+
 void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
 {
     x_CheckFlags("IRegistry::SetModifiedFlag", flags, fLayerFlags);
@@ -177,6 +175,7 @@ void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
     TReadGuard LOCK(*this); // Treat the flag as semi-mutable
     x_SetModifiedFlag(modified, flags);
 }
+
 
 // Somewhat inefficient, but that can't really be helped....
 bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
@@ -232,6 +231,7 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
     return true;
 }
 
+
 const string& IRegistry::Get(const string& section, const string& name,
                              TFlags flags) const
 {
@@ -255,6 +255,7 @@ const string& IRegistry::Get(const string& section, const string& name,
     TReadGuard LOCK(*this);
     return x_Get(clean_section, clean_name, flags);
 }
+
 
 bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
@@ -280,6 +281,7 @@ bool IRegistry::HasEntry(const string& section, const string& name,
     return x_HasEntry(clean_section, clean_name, flags);
 }
 
+
 const string& IRegistry::GetString(const string& section, const string& name,
                                    const string& default_value, TFlags flags)
     const
@@ -287,6 +289,7 @@ const string& IRegistry::GetString(const string& section, const string& name,
     const string& value = Get(section, name, flags);
     return value.empty() ? default_value : value;
 }
+
 
 int IRegistry::GetInt(const string& section, const string& name,
                       int default_value, TFlags flags, EErrAction err_action)
@@ -316,6 +319,7 @@ int IRegistry::GetInt(const string& section, const string& name,
     }
 }
 
+
 bool IRegistry::GetBool(const string& section, const string& name,
                         bool default_value, TFlags flags,
                         EErrAction err_action) const
@@ -343,6 +347,7 @@ bool IRegistry::GetBool(const string& section, const string& name,
         return default_value;
     }
 }
+
 
 double IRegistry::GetDouble(const string& section, const string& name,
                             double default_value, TFlags flags,
@@ -373,6 +378,7 @@ double IRegistry::GetDouble(const string& section, const string& name,
     }
 }
 
+
 const string& IRegistry::GetComment(const string& section, const string& name,
                                     TFlags flags) const
 {
@@ -394,6 +400,7 @@ const string& IRegistry::GetComment(const string& section, const string& name,
     return x_GetComment(clean_section, clean_name, flags);
 }
 
+
 void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateSections", flags,
@@ -406,6 +413,7 @@ void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
     TReadGuard LOCK(*this);
     x_Enumerate(kEmptyStr, *sections, flags);
 }
+
 
 void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
                                  TFlags flags) const
@@ -427,11 +435,13 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
     x_Enumerate(clean_section, *entries, flags);
 }
 
+
 void IRegistry::ReadLock (void)
 {
     x_ChildLockAction(&IRegistry::ReadLock);
     m_Lock.ReadLock();
 }
+
 
 void IRegistry::WriteLock(void)
 {
@@ -439,11 +449,13 @@ void IRegistry::WriteLock(void)
     m_Lock.WriteLock();
 }
 
+
 void IRegistry::Unlock(void)
 {
     m_Lock.Unlock();
     x_ChildLockAction(&IRegistry::Unlock);
 }
+
 
 void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 {
@@ -452,6 +464,7 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
                << setiosflags(IOS_BASE::hex) << flags);
     flags &= allowed;
 }
+
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -471,6 +484,7 @@ void IRWRegistry::Clear(TFlags flags)
     x_Clear(flags);
 }
 
+
 void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Read", flags,
@@ -478,12 +492,13 @@ void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
     x_Read(is, flags);
 }
 
+
 void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 {
     // Whether to consider this read to be (unconditionally) non-modifying
     EFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
     bool   non_modifying = Empty(layer)  &&  !Modified(layer);
-    bool   ignore_errors = flags & fIgnoreErrors;
+    bool   ignore_errors = (flags & fIgnoreErrors) > 0;
 
     // Adjust flags for Set()
     flags = (flags & ~fTPFlags & ~fIgnoreErrors) | layer;
@@ -630,6 +645,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     }
 }
 
+
 bool IRWRegistry::Set(const string& section, const string& name,
                       const string& value, TFlags flags,
                       const string& comment)
@@ -669,6 +685,7 @@ bool IRWRegistry::Set(const string& section, const string& name,
     }
 }
 
+
 bool IRWRegistry::SetComment(const string& comment, const string& section,
                              const string& name, TFlags flags)
 {
@@ -696,6 +713,7 @@ bool IRWRegistry::SetComment(const string& comment, const string& section,
     }
 }
 
+
 bool IRWRegistry::MaybeSet(string& target, const string& value, TFlags flags)
 {
     if (target.empty()) {
@@ -719,6 +737,7 @@ bool CMemoryRegistry::x_Empty(TFlags) const
     TReadGuard LOCK(*this);
     return m_Sections.empty()  &&  m_RegistryComment.empty();
 }
+
 
 const string& CMemoryRegistry::x_Get(const string& section, const string& name,
                                      TFlags) const
@@ -746,6 +765,7 @@ bool CMemoryRegistry::x_HasEntry(const string& section, const string& name,
     return eit != entries.end();
 }
 
+
 const string& CMemoryRegistry::x_GetComment(const string& section,
                                             const string& name,
                                             TFlags) const
@@ -763,6 +783,7 @@ const string& CMemoryRegistry::x_GetComment(const string& section,
     TEntries::const_iterator eit = entries.find(name);
     return (eit == entries.end()) ? kEmptyStr : eit->second.comment;
 }
+
 
 void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
                                   TFlags flags) const
@@ -784,6 +805,7 @@ void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
         }
     }
 }
+
 
 void CMemoryRegistry::x_Clear(TFlags)
 {
@@ -832,6 +854,7 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
         return false;
     }
 }
+
 
 bool CMemoryRegistry::x_SetComment(const string& comment,
                                    const string& section, const string& name,
@@ -893,6 +916,7 @@ void CCompoundRegistry::Add(const IRegistry& reg, TPriority prio,
     }
 }
 
+
 void CCompoundRegistry::Remove(const IRegistry& reg)
 {
     NON_CONST_ITERATE (TNameMap, it, m_NameMap) {
@@ -913,20 +937,19 @@ void CCompoundRegistry::Remove(const IRegistry& reg)
                 " reg is not a (direct) subregistry of this.", 0);
 }
 
+
 CConstRef<IRegistry> CCompoundRegistry::FindByName(const string& name) const
 {
     TNameMap::const_iterator it = m_NameMap.find(name);
     return it == m_NameMap.end() ? CConstRef<IRegistry>() : it->second;
 }
 
-#define REV_ITERATE(Type, Var, Cont) \
-    for ( Type::const_reverse_iterator Var = (Cont).rbegin(), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 CConstRef<IRegistry> CCompoundRegistry::FindByContents(const string& section,
                                                        const string& entry,
                                                        TFlags flags) const
 {
-    REV_ITERATE(TPriorityMap, it, m_PriorityMap) {
+    REVERSE_ITERATE(TPriorityMap, it, m_PriorityMap) {
         if (it->second->HasEntry(section, entry, flags & ~fJustCore)) {
             return it->second;
         }
@@ -934,9 +957,10 @@ CConstRef<IRegistry> CCompoundRegistry::FindByContents(const string& section,
     return null;
 }
 
+
 bool CCompoundRegistry::x_Empty(TFlags flags) const
 {
-    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+    REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
             break;
         }
@@ -947,9 +971,10 @@ bool CCompoundRegistry::x_Empty(TFlags flags) const
     return true;
 }
 
+
 bool CCompoundRegistry::x_Modified(TFlags flags) const
 {
-    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+    REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
             break;
         }
@@ -959,6 +984,7 @@ bool CCompoundRegistry::x_Modified(TFlags flags) const
     }
     return false;
 }
+
 
 void CCompoundRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
@@ -972,6 +998,7 @@ void CCompoundRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
     }
 }
 
+
 const string& CCompoundRegistry::x_Get(const string& section,
                                        const string& name,
                                        TFlags flags) const
@@ -981,11 +1008,13 @@ const string& CCompoundRegistry::x_Get(const string& section,
     return reg ? reg->Get(section, name, flags & ~fJustCore) : kEmptyStr;
 }
 
+
 bool CCompoundRegistry::x_HasEntry(const string& section, const string& name,
                                    TFlags flags) const
 {
     return FindByContents(section, name, flags).NotEmpty();
 }
+
 
 const string& CCompoundRegistry::x_GetComment(const string& section,
                                               const string& name, TFlags flags)
@@ -1005,11 +1034,12 @@ const string& CCompoundRegistry::x_GetComment(const string& section,
         : kEmptyStr;
 }
 
+
 void CCompoundRegistry::x_Enumerate(const string& section,
                                     list<string>& entries, TFlags flags) const
 {
     set<string> accum;
-    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+    REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
             break;
         }
@@ -1023,6 +1053,7 @@ void CCompoundRegistry::x_Enumerate(const string& section,
         entries.push_back(*it);
     }
 }
+
 
 void CCompoundRegistry::x_ChildLockAction(FLockAction action)
 {
@@ -1042,6 +1073,7 @@ CTwoLayerRegistry::CTwoLayerRegistry(IRWRegistry* persistent)
 {
 }
 
+
 bool CTwoLayerRegistry::x_Empty(TFlags flags) const
 {
     // mask out fTPFlags whe 
@@ -1055,6 +1087,7 @@ bool CTwoLayerRegistry::x_Empty(TFlags flags) const
     }
 }
 
+
 bool CTwoLayerRegistry::x_Modified(TFlags flags) const
 {
     if (flags & fTransient  &&  m_Transient->Modified(flags | fTPFlags)) {
@@ -1067,6 +1100,7 @@ bool CTwoLayerRegistry::x_Modified(TFlags flags) const
     }
 }
 
+
 void CTwoLayerRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
     if (flags & fTransient) {
@@ -1076,6 +1110,7 @@ void CTwoLayerRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
         m_Persistent->SetModifiedFlag(modified, flags | fTPFlags);
     }
 }
+
 
 const string& CTwoLayerRegistry::x_Get(const string& section,
                                        const string& name, TFlags flags) const
@@ -1090,6 +1125,7 @@ const string& CTwoLayerRegistry::x_Get(const string& section,
     return m_Persistent->Get(section, name, flags & ~fTPFlags);
 }
 
+
 bool CTwoLayerRegistry::x_HasEntry(const string& section, const string& name,
                                    TFlags flags) const
 {
@@ -1098,6 +1134,7 @@ bool CTwoLayerRegistry::x_HasEntry(const string& section, const string& name,
             ((flags & fPersistent)
              &&  m_Persistent->HasEntry(section, name, flags & ~fTPFlags)));
 }
+
 
 const string& CTwoLayerRegistry::x_GetComment(const string& section,
                                               const string& name,
@@ -1112,6 +1149,7 @@ const string& CTwoLayerRegistry::x_GetComment(const string& section,
     }
     return m_Persistent->GetComment(section, name, flags & ~fTPFlags);
 }
+
 
 void CTwoLayerRegistry::x_Enumerate(const string& section,
                                     list<string>& entries, TFlags flags) const
@@ -1137,11 +1175,13 @@ void CTwoLayerRegistry::x_Enumerate(const string& section,
     }
 }
 
+
 void CTwoLayerRegistry::x_ChildLockAction(FLockAction action)
 {
     ((*m_Transient).*action)();
     ((*m_Persistent).*action)();
 }
+
 
 void CTwoLayerRegistry::x_Clear(TFlags flags)
 {
@@ -1152,6 +1192,7 @@ void CTwoLayerRegistry::x_Clear(TFlags flags)
         m_Persistent->Clear(flags | fTPFlags);
     }
 }
+
 
 bool CTwoLayerRegistry::x_Set(const string& section, const string& name,
                               const string& value, TFlags flags,
@@ -1165,6 +1206,7 @@ bool CTwoLayerRegistry::x_Set(const string& section, const string& name,
                                 comment);
     }
 }
+
 
 bool CTwoLayerRegistry::x_SetComment(const string& comment,
                                      const string& section, const string& name,
@@ -1210,10 +1252,12 @@ void CNcbiRegistry::x_Init(void)
     m_AllRegistries->Add(*m_FileRegistry, ePriority_File);
 }
 
+
 CNcbiRegistry::CNcbiRegistry(void)
 {
     x_Init();
 }
+
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
 {
@@ -1222,19 +1266,23 @@ CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
     m_FileRegistry->Read(is, flags);
 }
 
+
 CNcbiRegistry::~CNcbiRegistry()
 {
 }
+
 
 CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void)
 {
     return m_AllRegistries->GetCoreCutoff();
 }
 
+
 void CNcbiRegistry::SetCoreCutoff(TPriority prio)
 {
     m_AllRegistries->SetCoreCutoff(prio);
 }
+
 
 void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
                         const string& name)
@@ -1251,6 +1299,7 @@ void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
     m_AllRegistries->Add(reg, prio, name);
 }
 
+
 void CNcbiRegistry::Remove(const IRegistry& reg)
 {
     if (&reg == m_MainRegistry.GetPointer()) {
@@ -1262,10 +1311,12 @@ void CNcbiRegistry::Remove(const IRegistry& reg)
     }
 }
 
+
 CConstRef<IRegistry> CNcbiRegistry::FindByName(const string& name) const
 {
     return m_AllRegistries->FindByName(name);
 }
+
 
 CConstRef<IRegistry> CNcbiRegistry::FindByContents(const string& section,
                                                    const string& entry,
@@ -1274,15 +1325,18 @@ CConstRef<IRegistry> CNcbiRegistry::FindByContents(const string& section,
     return m_AllRegistries->FindByContents(section, entry, flags);
 }
 
+
 bool CNcbiRegistry::x_Empty(TFlags flags) const
 {
     return m_AllRegistries->Empty(flags);
 }
 
+
 bool CNcbiRegistry::x_Modified(TFlags flags) const
 {
     return m_AllRegistries->Modified(flags);
 }
+
 
 void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
@@ -1293,6 +1347,7 @@ void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
         m_AllRegistries->SetModifiedFlag(modified, flags);
     }
 }
+
 
 const string& CNcbiRegistry::x_Get(const string& section, const string& name,
                                    TFlags flags) const
@@ -1308,6 +1363,7 @@ const string& CNcbiRegistry::x_Get(const string& section, const string& name,
     return m_AllRegistries->Get(section, name, flags);
 }
 
+
 bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
                                TFlags flags) const
 {
@@ -1322,12 +1378,14 @@ bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
     return m_AllRegistries->HasEntry(section, name, flags);
 }
 
+
 const string& CNcbiRegistry::x_GetComment(const string& section,
                                           const string& name,
                                           TFlags flags) const
 {
     return m_AllRegistries->GetComment(section, name, flags);
 }
+
 
 void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
                                 TFlags flags) const
@@ -1336,16 +1394,19 @@ void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
     m_AllRegistries->EnumerateEntries(section, &entries, flags);
 }
 
+
 void CNcbiRegistry::x_ChildLockAction(FLockAction action)
 {
     m_AllRegistries->x_ChildLockAction(action);
 }
+
 
 void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 {
     m_MainRegistry->Clear(flags);
     m_FileRegistry->Clear(flags);
 }
+
 
 bool CNcbiRegistry::x_Set(const string& section, const string& name,
                           const string& value, TFlags flags,
@@ -1375,11 +1436,13 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
     return m_MainRegistry->Set(section, name, value, flags, comment);
 }
 
+
 bool CNcbiRegistry::x_SetComment(const string& comment, const string& section,
                                  const string& name, TFlags flags)
 {
     return m_MainRegistry->SetComment(comment, section, name, flags);
 }
+
 
 void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 {
@@ -1399,10 +1462,12 @@ void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 END_NCBI_SCOPE
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/04/28 14:03:47  ivanov
+ * Replace internal REV_ITERATE with REVERSE_ITERATE macro from ncbimisc.hpp
+ *
  * Revision 1.51  2005/04/25 19:48:42  ivanov
  * Fixed Workshop compilation warnings
  *
