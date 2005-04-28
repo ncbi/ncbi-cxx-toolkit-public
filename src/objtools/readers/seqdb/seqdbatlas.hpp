@@ -53,6 +53,53 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef _DEBUG
+
+#include <iostream>
+
+// These defines implement a system for testing memory corruption,
+// especially overwritten pointers and clobbered objects.  They are
+// only enabled in debug mode.
+
+// If this is required for release mode as well, be sure to replace
+// _ASSERT() with something useful for release mode.
+
+/// Define memory marker for class (4+ bytes of uppercase ascii).
+#define CLASS_MARKER_FIELD(a) \
+    static int    x_GetClassMark()  { return *((int *)(a a)); } \
+    static string x_GetMarkString() { return string((a a), sizeof(int)); } \
+    int m_ClassMark;
+
+/// Marker initializer for constructor
+#define INIT_CLASS_MARK() m_ClassMark = x_GetClassMark()
+
+/// Assertion to verify the marker
+#define CHECK_MARKER() \
+   if (m_ClassMark != x_GetClassMark()) { \
+       cout << "\n!! Broken  [" << x_GetMarkString() << "] mark detected.\n" \
+            << "!! Mark is [" << hex << m_ClassMark << "], should be [" \
+            << hex << x_GetClassMark() << "]." << endl; \
+       _ASSERT(m_ClassMark == x_GetClassMark()); \
+   }
+
+#define BREAK_MARKER() m_ClassMark |= 0x20202020;
+
+#else
+
+/// Define memory marker for class.
+#define CLASS_MARKER_FIELD(a)
+
+/// Initializer for constructor
+#define INIT_CLASS_MARK()
+
+/// Assertion to verify the marker
+#define CHECK_MARKER()
+
+#define BREAK_MARKER()
+
+#endif
+
+
 /// CSeqDBAtlas class - a collection of memory maps.
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
 
@@ -179,6 +226,7 @@ public:
         : m_Atlas(atlas),
           m_Locked(false)
     {
+        INIT_CLASS_MARK();
     }
     
     /// Destructor
@@ -188,6 +236,8 @@ public:
     inline ~CSeqDBLockHold();
     
 private:
+    CLASS_MARKER_FIELD("LHLD");
+    
     /// Private method to prevent copy construction.
     CSeqDBLockHold(CSeqDBLockHold & oth);
     
@@ -328,6 +378,7 @@ public:
     /// and expects it to remain intact for the duration.
     void AddRef()
     {
+        CHECK_MARKER();
         _ASSERT(m_Ref >= 0);
         m_Ref ++;
         m_Clock = 0;
@@ -341,6 +392,13 @@ public:
     /// indicates that an operation is done using this memory region.
     void RetRef()
     {
+        CHECK_MARKER();
+#ifdef _DEBUG
+        if (! (m_Ref > 0)) {
+            cout << "refcount non-positive  = " << m_Ref << endl;
+        }
+#endif
+        
         _ASSERT(m_Ref > 0);
         m_Ref --;
     }
@@ -354,6 +412,7 @@ public:
     ///   true if memory region has current users.
     bool InUse()
     {
+        CHECK_MARKER();
         return m_Ref != 0;
     }
     
@@ -368,6 +427,7 @@ public:
     ///   true if this memory region contains the pointer
     bool InRange(const char * p) const
     {
+        CHECK_MARKER();
         _ASSERT(m_Data);
         return ((p >= m_Data) && (p < (m_Data + (m_End - m_Begin))));
     }
@@ -381,6 +441,7 @@ public:
     ///   A const reference to the file name string.
     const string & Name()
     {
+        CHECK_MARKER();
         return *m_Fname;
     }
     
@@ -393,6 +454,7 @@ public:
     ///   The index of the beginning of this mapping.
     TIndx Begin()
     {
+        CHECK_MARKER();
         return m_Begin;
     }
     
@@ -405,12 +467,14 @@ public:
     ///   The index of the end of this mapping.
     TIndx End()
     {
+        CHECK_MARKER();
         return m_End;
     }
     
     /// Return the length of this mapping in bytes.
     TIndx Length()
     {
+        CHECK_MARKER();
         return m_End - m_Begin;
     }
     
@@ -436,7 +500,11 @@ public:
     /// 
     /// @return
     ///   A pointer to the beginning of the region's data.
-    const char * Data() { return m_Data; }
+    const char * Data()
+    {
+        CHECK_MARKER();
+        return m_Data;
+    }
     
     /// Return the file id associated with this region.
     /// 
@@ -449,6 +517,7 @@ public:
     ///   An integer identifying the file this mapping is of.
     int Fid()
     {
+        CHECK_MARKER();
         return m_Fid;
     }
     
@@ -466,6 +535,7 @@ public:
     ///   The clock value plus the penalty for this region.
     int GetClock()
     {
+        CHECK_MARKER();
         return m_Clock + m_Penalty;
     }
     
@@ -478,6 +548,7 @@ public:
     /// collection code.
     void BumpClock()
     {
+        CHECK_MARKER();
         _ASSERT(! m_Ref);
         m_Clock++;
     }
@@ -528,6 +599,7 @@ public:
                        TIndx      &  begin_offset,
                        TIndx      &  end_offset)
     {
+        CHECK_MARKER();
         *region_start = m_Data;
         begin_offset  = m_Begin;
         end_offset    = m_End;
@@ -548,7 +620,20 @@ public:
     ///   True if this object is before "other" in the ordering.
     inline bool operator < (const CRegionMap & other) const;
     
+    void Verify()
+    {
+#ifdef _DEBUG
+        // Cannot do too much, as the client code creates a CRegionMap
+        // to use as a key, and it will not be completely specified.
+        
+        CHECK_MARKER();
+        _ASSERT(m_Begin < m_End);
+#endif
+    }
+    
 private:
+    CLASS_MARKER_FIELD("REGM");
+    
     /// Compute the penalty and the expanded offset range.
     /// 
     /// The files are normally divided into "slices".  When a mapping
@@ -639,6 +724,7 @@ public:
           m_End  (0),
           m_RMap (0)
     {
+        INIT_CLASS_MARK();
     }
     
     /// Destructor
@@ -646,7 +732,9 @@ public:
     /// Verifies this object is not active at time of destruction.
     ~CSeqDBMemLease()
     {
+        CHECK_MARKER();
         _ASSERT(m_Data == 0);
+        BREAK_MARKER();
     }
     
     /// Clears the lease object.
@@ -681,6 +769,7 @@ public:
     ///   A pointer to the data at the requested location.
     const char * GetPtr(TIndx offset) const
     {
+        CHECK_MARKER();
         return (m_Data + (offset - m_Begin));
     }
     
@@ -693,6 +782,7 @@ public:
     ///   true, if this object does not hold a reference.
     bool Empty() const
     {
+        CHECK_MARKER();
         return m_Data == 0;
     }
     
@@ -710,6 +800,8 @@ public:
     inline void IncrementRefCnt();
     
 private:
+    CLASS_MARKER_FIELD("LEAS");
+    
     /// This method is declared private to prevent copy construction.
     CSeqDBMemLease(const CSeqDBMemLease & ml);
     
@@ -736,6 +828,7 @@ private:
                      const char * data,
                      CRegionMap * rmap)
     {
+        CHECK_MARKER();
         Clear();
         
         m_Data  = data;
@@ -957,6 +1050,7 @@ public:
     ///   Pointer to the data to release or deallocate.
     void RetRegion(const char * datap)
     {
+        Verify();
         for(int i = 0; i<eNumRecent; i++) {
             CRegionMap * rec_map = m_Recent[i];
             
@@ -975,6 +1069,7 @@ public:
         }
         
         x_RetRegionNonRecent(datap);
+        Verify();
     }
     
     /// Clean up unreferenced objects
@@ -1194,6 +1289,16 @@ public:
     TIndx GetCurrentAllocationTotal()
     {
         return m_CurAlloc;
+    }
+    
+    void Verify()
+    {
+#ifdef _DEBUG
+        ITERATE(TNameOffsetTable, iter, m_NameOffsetLookup) {
+            CRegionMap & rmp = **iter;
+            rmp.Verify();
+        }
+#endif
     }
     
 private:
@@ -1466,12 +1571,14 @@ private:
 
 inline void CSeqDBMemLease::Clear()
 {
+    CHECK_MARKER();
     m_Atlas.RetRegion(*this);
 }
 
 // ASSUMES lock is held.
 inline bool CSeqDBMemLease::Contains(TIndx begin, TIndx end) const
 {
+    CHECK_MARKER();
     return m_Data && (m_Begin <= begin) && (end <= m_End);
 }
 
@@ -1482,6 +1589,7 @@ CRegionMap::MatchAndUse(int              fid,
                         TIndx          & end,
                         const char    ** start)
 {
+    CHECK_MARKER();
     _ASSERT(fid);
     _ASSERT(m_Fid);
     
@@ -1493,6 +1601,7 @@ CRegionMap::MatchAndUse(int              fid,
         begin  = m_Begin;
         end    = m_End;
         *start = m_Data;
+        _ASSERT(*start);
         
         return location;
     }
@@ -1502,6 +1611,7 @@ CRegionMap::MatchAndUse(int              fid,
 
 bool CRegionMap::operator < (const CRegionMap & other) const
 {
+    CHECK_MARKER();
     // Sort ascending by fid
     
     if (m_Fid < other.m_Fid)
@@ -1523,7 +1633,9 @@ bool CRegionMap::operator < (const CRegionMap & other) const
 
 inline CSeqDBLockHold::~CSeqDBLockHold()
 {
+    CHECK_MARKER();
     m_Atlas.Unlock(*this);
+    BREAK_MARKER();
 }
 
 inline CSeqDBMemReg::~CSeqDBMemReg()
@@ -1533,6 +1645,7 @@ inline CSeqDBMemReg::~CSeqDBMemReg()
 
 inline void CSeqDBMemLease::IncrementRefCnt()
 {
+    CHECK_MARKER();
     _ASSERT(m_Data && m_RMap);
     m_RMap->AddRef();
 }

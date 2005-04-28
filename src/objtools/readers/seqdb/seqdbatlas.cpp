@@ -91,10 +91,12 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
     for(int i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
     }
+    Verify();
 }
 
 CSeqDBAtlas::~CSeqDBAtlas()
 {
+    Verify();
     x_GarbageCollect(0);
     
     // Clear mapped file regions
@@ -124,12 +126,14 @@ CSeqDBAtlas::~CSeqDBAtlas()
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
 {
+    Verify();
     TIndx length(0);
     return GetFileSize(fname, length, locked);
 }
 
 const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked)
 {
+    Verify();
     if (! GetFileSize(fname, length, locked)) {
         NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
     }
@@ -194,6 +198,7 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
     }
     
     Lock(locked);
+    Verify();
     GetRegion(lease, fname, 0, length);
 }
 
@@ -202,12 +207,14 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
                               CSeqDBLockHold & locked)
 {
     Lock(locked);
+    Verify();
     return GetFileSizeL(fname, length);
 }
 
 bool CSeqDBAtlas::GetFileSizeL(const string & fname,
                                TIndx        & length)
 {
+    Verify();
     // Fields: file-exists, file-length
     pair<bool, TIndx> data;
     
@@ -230,6 +237,7 @@ bool CSeqDBAtlas::GetFileSizeL(const string & fname,
     } else {
         data = (*i).second;
     }
+    Verify();
     
     length = data.second;
     return data.first;
@@ -243,6 +251,7 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
 
 void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 {
+    Verify();
     if (Uint8(m_CurAlloc) <= reduce_to) {
         return;
     }
@@ -278,6 +287,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
                        : max_distinct_clock); //min
     }
     
+    Verify();
     while(num_gcs >= 0) {
         num_gcs --;
         
@@ -311,6 +321,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
             }
         }
     }
+    Verify();
 }
 
 
@@ -473,6 +484,8 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
                                        const char ** start,
                                        CRegionMap ** region)
 {
+    Verify();
+    
     // Try recent matches first.
     
     for(int i = 0; i<eNumRecent; i++) {
@@ -491,6 +504,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
                 x_AddRecent(m_Recent[i]);
             }
             
+            _ASSERT(*start);
             return retval;
         }
     }
@@ -521,6 +535,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
         if (rmap->End() >= end) {
             const char * retval = rmap->MatchAndUse(fid, begin, end, start);
             _ASSERT(retval);
+            _ASSERT(*start);
             
             if (region) {
                 *region = rmap;
@@ -530,6 +545,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
             return retval;
         }
     }
+    Verify();
     
     return 0;
 }
@@ -538,6 +554,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
 
 void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
 {
+    Verify();
     if ((int) m_Regions.size() >= m_OpenRegionsTrigger) {
         // If we are collecting because of the number of open regions,
         // we use zero as the size.  This kind of flush is probably
@@ -578,6 +595,7 @@ void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
             x_GarbageCollect(m_MemoryBound - space_needed);
         }
     }
+    Verify();
 }
 
 
@@ -588,6 +606,8 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
                          const char    ** start,
                          CRegionMap    ** rmap)
 {
+    Verify();
+    
     const char * dummy = 0;
     
     if (start == 0) {
@@ -603,6 +623,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     const char * retval = 0;
     
     if ((retval = x_FindRegion(fid, begin, end, start, rmap))) {
+        _ASSERT(*start);
         return retval;
     }
     
@@ -646,9 +667,9 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
             retval = newmap->Data(begin, end);
             newmap->AddRef();
         }
-
+        
         newmap->GetBoundaries(start, begin, end);
-    
+        
         if (retval == 0) {
             NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
         }
@@ -663,6 +684,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         NCBI_THROW(CSeqDBException, eMemErr,
                    "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
+    Verify();
     
     return retval;
 }
@@ -673,6 +695,7 @@ const char * CSeqDBAtlas::GetRegion(const string   & fname,
                                     CSeqDBLockHold & locked)
 {
     Lock(locked);
+    Verify();
     
     return x_GetRegion(fname, begin, end, 0, 0);
 }
@@ -683,6 +706,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
                             TIndx            begin,
                             TIndx            end)
 {
+    Verify();
     RetRegion(lease);
     
     const char * start(0);
@@ -691,10 +715,18 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
     const char * result = x_GetRegion(fname, begin, end, & start, & rmap);
     
     if (result) {
+#ifdef _DEBUG
+        if (! (start)) {
+            cout << "fname [" << fname << "] begin " << begin << " end " << end
+                 << " start " << size_t(start) << " result " << size_t(result)
+                 << " rmap " << unsigned(rmap) << endl;
+        }
+#endif
         _ASSERT(start);
         
         lease.x_SetRegion(begin, end, start, rmap);
     }
+    Verify();
 }
 
 // Assumes lock is held
@@ -702,9 +734,19 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
 /// Releases a hold on a partial mapping of the file.
 void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
 {
+    Verify();
     if (ml.m_Data) {
 #ifdef _DEBUG
         const char * datap = ml.m_Data;
+	if (! ml.m_RMap) {
+            cout << "m_RMap is null" << endl;
+	}
+	if (! ml.m_RMap->InRange(datap)) {
+            cout << "datap not in range; datap  = " << ((size_t)(datap)) << endl;
+            cout << "datap not in range; m.data = " << ((size_t)(ml.m_RMap->Data())) << endl;
+            cout << "datap not in range; begin  = " << ((size_t)(ml.m_RMap->Data() + ml.m_RMap->Begin())) << endl;
+            cout << "datap not in range; begin  = " << ((size_t)(ml.m_RMap->Data() + ml.m_RMap->End())) << endl;
+	}
 #endif
         _ASSERT(ml.m_RMap);
         _ASSERT(ml.m_RMap->InRange(datap));
@@ -715,11 +757,13 @@ void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
         ml.m_Begin = 0;
         ml.m_End   = 0;
     }
+    Verify();
 }
 
 /// Releases a hold on a partial mapping of the file.
 void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
 {
+    Verify();
     CSeqDBAtlas::TAddressTable::iterator iter = m_AddressLookup.upper_bound(datap);
     
     if (iter != m_AddressLookup.begin()) {
@@ -740,6 +784,7 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
     if (! worked) {
         cerr << "Address leak in CSeqDBAtlas::RetRegion" << endl;
     }
+    Verify();
 }
 
 void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
@@ -865,6 +910,7 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
 
 void CRegionMap::Show()
 {
+    CHECK_MARKER();
     // This odd looking construction is for debugging existing
     // binaries with the help of a debugger.  By setting the static
     // value (in the debugger) the user can override the default
@@ -898,10 +944,13 @@ CRegionMap::CRegionMap(const string * fname, int fid, TIndx begin, TIndx end)
       m_Clock    (0),
       m_Penalty  (0)
 {
+    INIT_CLASS_MARK();
+    CHECK_MARKER();
 }
 
 CRegionMap::~CRegionMap()
 {
+    CHECK_MARKER();
     if (m_MemFile) {
         delete m_MemFile;
         m_MemFile = 0;
@@ -911,10 +960,12 @@ CRegionMap::~CRegionMap()
         delete[] ((char*) m_Data);
         m_Data = 0;
     }
+    BREAK_MARKER();
 }
 
 bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
 {
+    CHECK_MARKER();
     bool rv = false;
     
     TIndx flength(0);
@@ -972,6 +1023,7 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
 
 bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
 {
+    CHECK_MARKER();
     // Okay, rethink:
     
     // 1. Unlike mmap, the file state disappears, the only state here
@@ -1071,6 +1123,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
 
 const char * CRegionMap::Data(TIndx begin, TIndx end)
 {
+    CHECK_MARKER();
     _ASSERT(m_Data != 0);
     _ASSERT(begin  >= m_Begin);
     
@@ -1085,6 +1138,7 @@ const char * CRegionMap::Data(TIndx begin, TIndx end)
 int CSeqDBAtlas::x_LookupFile(const string  & fname,
                               const string ** map_fname_ptr)
 {
+    Verify();
     map<string, int>::iterator i = m_FileIDs.find(fname);
     
     if (i == m_FileIDs.end()) {
@@ -1096,12 +1150,14 @@ int CSeqDBAtlas::x_LookupFile(const string  & fname,
     // Get address of string in string->fid table.
     
     *map_fname_ptr = & (*i).first;
+    Verify();
     
     return (*i).second;
 }
 
 void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
 {
+    Verify();
     SeqDB_CheckLength<Uint8,size_t>(mb);
     SeqDB_CheckLength<Uint8,size_t>(ss);
     

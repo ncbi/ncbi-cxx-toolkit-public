@@ -58,6 +58,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_OidListSetup (false),
       m_UserGiList   (gi_list)
 {
+    INIT_CLASS_MARK();
     m_Aliases.SetMasks(m_VolSet);
     m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
@@ -79,10 +80,12 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     // flush unconstructed memory leases).
     
     m_FlushCB.SetImpl(this);
+    CHECK_MARKER();
 }
 
 void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
@@ -103,6 +106,7 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 
 CSeqDBImpl::~CSeqDBImpl()
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
@@ -117,10 +121,12 @@ CSeqDBImpl::~CSeqDBImpl()
     if (m_OIDList.NotEmpty()) {
         m_OIDList->UnLease();
     }
+    BREAK_MARKER();
 }
 
 void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
 {
+    CHECK_MARKER();
     if (! m_OidListSetup) {
         m_Atlas.Lock(locked);
         
@@ -137,12 +143,14 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
 
 bool CSeqDBImpl::CheckOrFindOID(int & next_oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     return x_CheckOrFindOID(next_oid, locked);
 }
 
 bool CSeqDBImpl::x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked) const
 {
+    CHECK_MARKER();
     bool success = true;
     
     if (next_oid < m_RestrictBegin) {
@@ -174,6 +182,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
                             vector<int> & oid_list,    // out
                             int         * state_obj)   // in+out
 {
+    CHECK_MARKER();
     CFastMutexGuard guard(m_OIDLock);
     
     if (! state_obj) {
@@ -246,6 +255,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 
 int CSeqDBImpl::GetSeqLength(int oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -268,6 +278,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
 
 int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -289,6 +300,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 CRef<CBioseq>
 CSeqDBImpl::GetBioseq(int oid, int target_gi) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -315,6 +327,7 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi) const
 
 void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
+    CHECK_MARKER();
     // This can return either an allocated object or a reference to
     // part of a memory mapped region.
     CSeqDBLockHold locked(m_Atlas);
@@ -326,6 +339,7 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
 
 int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -343,6 +357,7 @@ int CSeqDBImpl::GetAmbigSeq(int             oid,
                               int             nucl_code,
                               ESeqDBAllocType alloc_type) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
     int vol_oid = 0;
@@ -357,6 +372,7 @@ int CSeqDBImpl::GetAmbigSeq(int             oid,
 
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -381,31 +397,37 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
 
 int CSeqDBImpl::GetNumSeqs() const
 {
+    CHECK_MARKER();
     return m_NumSeqs;
 }
 
 int CSeqDBImpl::GetNumOIDs() const
 {
+    CHECK_MARKER();
     return m_NumOIDs;
 }
 
 Uint8 CSeqDBImpl::GetTotalLength() const
 {
+    CHECK_MARKER();
     return m_TotalLength;
 }
 
 Uint8 CSeqDBImpl::GetVolumeLength() const
 {
+    CHECK_MARKER();
     return m_VolumeLength;
 }
 
 int CSeqDBImpl::x_GetNumSeqs() const
 {
+    CHECK_MARKER();
     return m_Aliases.GetNumSeqs(m_VolSet);
 }
 
 int CSeqDBImpl::x_GetNumOIDs() const
 {
+    CHECK_MARKER();
     int num_oids = m_VolSet.GetNumOIDs();
     
     // The aliases file may have more of these, because walking the
@@ -422,21 +444,25 @@ int CSeqDBImpl::x_GetNumOIDs() const
 
 Uint8 CSeqDBImpl::x_GetTotalLength() const
 {
+    CHECK_MARKER();
     return m_Aliases.GetTotalLength(m_VolSet);
 }
 
 Uint8 CSeqDBImpl::x_GetVolumeLength() const
 {
+    CHECK_MARKER();
     return m_VolSet.GetVolumeSetLength();
 }
 
 string CSeqDBImpl::GetTitle() const
 {
+    CHECK_MARKER();
     return x_FixString( m_Aliases.GetTitle(m_VolSet) );
 }
 
 char CSeqDBImpl::GetSeqType() const
 {
+    CHECK_MARKER();
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return vol->GetSeqType();
     }
@@ -445,6 +471,7 @@ char CSeqDBImpl::GetSeqType() const
 
 string CSeqDBImpl::GetDate() const
 {
+    CHECK_MARKER();
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return x_FixString( vol->GetDate() );
     }
@@ -453,6 +480,7 @@ string CSeqDBImpl::GetDate() const
 
 CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
@@ -473,6 +501,7 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
 
 int CSeqDBImpl::GetMaxLength() const
 {
+    CHECK_MARKER();
     int max_len = 0;
     
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
@@ -487,6 +516,7 @@ int CSeqDBImpl::GetMaxLength() const
 
 const string & CSeqDBImpl::GetDBNameList() const
 {
+    CHECK_MARKER();
     return m_DBNames;
 }
 
@@ -500,6 +530,7 @@ const string & CSeqDBImpl::GetDBNameList() const
 
 string CSeqDBImpl::x_FixString(const string & s) const
 {
+    CHECK_MARKER();
     for(int i = 0; i < (int) s.size(); i++) {
         if (s[i] == char(0)) {
             return string(s,0,i);
@@ -524,6 +555,7 @@ void CSeqDBImpl::FlushSeqMemory()
 
 bool CSeqDBImpl::PigToOid(int pig, int & oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
@@ -538,6 +570,7 @@ bool CSeqDBImpl::PigToOid(int pig, int & oid) const
 
 bool CSeqDBImpl::OidToPig(int oid, int & pig) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid(0);
     
@@ -552,6 +585,7 @@ bool CSeqDBImpl::OidToPig(int oid, int & pig) const
 
 bool CSeqDBImpl::GiToOid(int gi, int & oid) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
     // This could be accellerated (a little) if a GI list is used.
@@ -577,6 +611,7 @@ bool CSeqDBImpl::GiToOid(int gi, int & oid) const
 
 bool CSeqDBImpl::OidToGi(int oid, int & gi) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid(0);
     
@@ -591,6 +626,7 @@ bool CSeqDBImpl::OidToGi(int oid, int & gi) const
 
 void CSeqDBImpl::AccessionToOids(const string & acc, vector<int> & oids) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
     oids.clear();
@@ -624,6 +660,7 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<int> & oids) const
 
 void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids) const
 {
+    CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
     // The lower level functions modify the seqid - namely, changing
@@ -666,6 +703,7 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids) const
 
 int CSeqDBImpl::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
+    CHECK_MARKER();
     if (first_seq >= m_NumOIDs) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
@@ -728,6 +766,7 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
 void
 CSeqDBImpl::FindVolumePaths(vector<string> & paths) const
 {
+    CHECK_MARKER();
     paths = m_Aliases.GetVolumeNames();
 }
 

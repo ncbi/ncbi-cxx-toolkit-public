@@ -371,6 +371,7 @@ public:
     /// performance.
     void SetMemoryBound(Uint8 membound, Uint8 slicesize)
     {
+        CHECK_MARKER();
         m_Atlas.SetMemoryBound(membound, slicesize);
     }
 
@@ -448,6 +449,8 @@ public:
     void SetIterationRange(int oid_begin, int oid_end);
     
 private:
+    CLASS_MARKER_FIELD("IMPL");
+    
     /// Adjust string length to offset of first embedded NUL byte.
     ///
     /// This is a work-around for bad data in the database; probably
