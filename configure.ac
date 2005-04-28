@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.369 2005/04/28 14:20:44 ucko Exp $
+#  $Id: configure.ac,v 1.370 2005/04/28 14:26:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3083,7 +3083,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           . ./conftest.sh
           rm -f contest*
          ])
-   if test -d `echo $BOOST_INCLUDE | sed -e s/^-I//`/boost-${ncbi_cv_lib_boost_version}/boost; then
+   if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
    if test "$ncbi_compiler" = "MIPSPRO"; then

@@ -18111,8 +18111,11 @@ _ACEOF
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_version" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
-   if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//`/boost-${ncbi_cv_lib_boost_version}/boost; then
+   if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
+   fi
+   if test "$ncbi_compiler" = "MIPSPRO"; then
+      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/compatibility/cpp_c_headers"
    fi
    echo "$as_me:$LINENO: checking for Boost library name tag" >&5
 echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
