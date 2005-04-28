@@ -59,7 +59,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
       m_Hdr     (atlas, name, prot_nucl, locked)
 {
     if (user_gilist) {
-        m_GiList.Reset(user_gilist);
+        m_UserGiList.Reset(user_gilist);
     }
     
     // ISAM files are optional
@@ -1437,11 +1437,13 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
     
+    m_Atlas.Lock(locked);
+    
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
     // 2. filter based on "rdfp->membership_bit" or similar.
     
-    if (m_GiList.NotEmpty() || (have_oidlist && (membership_bit != 0))) {
+    if (x_HaveGiList() || (have_oidlist && (membership_bit != 0))) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
         
@@ -1469,10 +1471,10 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
                 }
             }
             
-            if (have_memb && m_GiList.NotEmpty() && defline.CanGetSeqid()) {
+            if (have_memb && x_HaveGiList() && defline.CanGetSeqid()) {
                 ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
                     if ((**seqid).IsGi()) {
-                        if (! m_GiList->FindGi((**seqid).GetGi())) {
+                        if (! x_FilterHasGi((**seqid).GetGi())) {
                             have_memb = false;
                             break;
                         }

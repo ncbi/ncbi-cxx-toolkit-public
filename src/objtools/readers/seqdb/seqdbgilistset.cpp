@@ -205,9 +205,10 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     
     // If there is a volume GI list, it will also be attached to the
     // volume, and replaces the user GI list attachment (if there was
-    // one).
+    // one).  There can be one user GI list or multiple volume GI
+    // lists for each volume.
     
-    volp->AttachGiList(gilist);
+    volp->AttachVolumeGiList(gilist);
     
     return gilist;
 }

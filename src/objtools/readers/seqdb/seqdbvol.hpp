@@ -461,12 +461,35 @@ public:
     ///
     /// @param gilist
     ///   A list of GIs to use as a filter.
-    void AttachGiList(CRef<CSeqDBGiList> gilist) const
+    void AttachVolumeGiList(CRef<CSeqDBGiList> gilist) const
     {
-        m_GiList = gilist;
+        m_UserGiList.Reset();
+        m_VolumeGiLists.push_back(gilist);
     }
     
 private:
+    typedef vector< CRef<CSeqDBGiList> > TGiLists;
+    
+    bool x_HaveGiList() const
+    {
+        return ! (m_UserGiList.Empty() && m_VolumeGiLists.empty());
+    }
+    
+    bool x_FilterHasGi(int gi) const
+    {
+        if (m_UserGiList.NotEmpty()) {
+            return m_UserGiList->FindGi(gi);
+        }
+        
+        NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
+            if ((*gilist)->FindGi(gi)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     /// Get sequence header object
     /// 
     /// This method reads the sequence header information into an
@@ -770,8 +793,11 @@ private:
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable map< int, CRef<CSeqdesc> > m_TaxCache;
     
-    /// The User GI list, or volume GI list, if available.
-    mutable CRef<CSeqDBGiList> m_GiList;
+    /// The user GI list, if one exists.
+    mutable CRef<CSeqDBGiList> m_UserGiList;
+    
+    /// The volume GI lists, if any exist.
+    mutable TGiLists m_VolumeGiLists;
 };
 
 END_NCBI_SCOPE
