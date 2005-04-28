@@ -51,6 +51,8 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 
+#include <algo/blast/api/blast_options_handle.hpp>
+
 #include <iostream>
 #include <memory>
 
@@ -72,10 +74,12 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.10");
+  string program_name ("Splign v.1.11");
+
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
+
   argdescr->SetUsageContext(GetArguments().GetProgramName(), program_name);
 
   argdescr->AddOptionalKey
@@ -101,6 +105,8 @@ void CSplignApp::Init()
     ("subj", "subj",
      "FastA file with the genomic sequence. Use in pairwise mode only.",
      CArgDescriptions::eString);
+
+  argdescr->AddFlag("cross", "Cross-species mode");
 
   argdescr->AddDefaultKey
     ("log", "log", "Splign log file",
@@ -298,9 +304,14 @@ void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
 }
 
 
-istream* CSplignApp::x_GetPairwiseHitStream(
-                         CSeqLoaderPairwise& seq_loader) const
+istream* CSplignApp::x_GetPairwiseHitStream (
+    CSeqLoaderPairwise& seq_loader,
+    bool cross_species_mode ) const
 {
+
+    USING_SCOPE(blast);
+
+
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CSeq_loc> seqloc_query;
     CRef<CScope> scope(new CScope(*objmgr));
@@ -320,13 +331,32 @@ istream* CSplignApp::x_GetPairwiseHitStream(
     seqloc_subj->SetWhole().Assign(*(se->GetSeq().GetId().front()));
     }}
 
-    blast::CBl2Seq Blast(blast::SSeqLoc(seqloc_query.GetNonNullPointer(),
-                                        scope.GetNonNullPointer()),
-                         blast::SSeqLoc(seqloc_subj.GetNonNullPointer(),
-                                        scope.GetNonNullPointer()),
-                         blast::eMegablast);
+    CRef<CBlastOptionsHandle> blast_options_handle
+        (CBlastOptionsFactory::Create(eMegablast));
+    
+    blast_options_handle->SetDefaults();
+    
+    if(cross_species_mode) {
+        
+        CBlastOptions& opt = blast_options_handle->SetOptions();
+        opt.SetGapExtensionCost(2);
+        opt.SetEvalueThreshold(1e-9);
+        opt.SetGapOpeningCost(4);
+        opt.SetMismatchPenalty(-4);
+        opt.SetMatchReward(3);
+        opt.SetWordSize(12);
+        opt.SetXDropoff(20);
+    }
+    
+    CBl2Seq Blast( SSeqLoc(seqloc_query.GetNonNullPointer(),
+                           scope.GetNonNullPointer()),
+                   SSeqLoc(seqloc_subj.GetNonNullPointer(),
+                           scope.GetNonNullPointer()),
+                   eMegablast );
+    
+    Blast.SetOptionsHandle() = *blast_options_handle;
 
-    blast::TSeqAlignVector blast_output (Blast.Run());
+    TSeqAlignVector blast_output (Blast.Run());
 
     if (!blast_output.empty() && blast_output.front().NotEmpty() &&
         !blast_output.front()->Get().empty() &&
@@ -377,13 +407,23 @@ int CSplignApp::Run()
   bool is_subj = args["subj"];
   bool is_index = args["index"];
   bool is_hits = args["hits"];
+  bool is_cross = args["cross"];
 
   if(is_query ^ is_subj) {
       NCBI_THROW(CSplignAppException,
                  eBadParameter,
-                 "Both query and subj must be specified in pairwise mode." );
+                 "Both query and subj must be "
+                 "specified in the pairwise mode." );
   }
   
+  if(is_cross && !is_query) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "Cross-species flag only affects blast parameters and "
+                 "as such is only available in the pairwise mode."
+                 );
+  }
+
   if(is_query && (is_hits || is_index)) {
       NCBI_THROW(CSplignAppException,
                  eBadParameter,
@@ -490,7 +530,7 @@ int CSplignApp::Run()
   if(mode_pairwise) {
       CSeqLoaderPairwise* pseq_loader_pw = 
           static_cast<CSeqLoaderPairwise*>(seq_loader.GetNonNullPointer());
-      hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw));
+      hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw, is_cross));
       if(hit_stream.get() == 0) {
           NCBI_THROW(CSplignAppException,
                      eNoHits,
@@ -663,6 +703,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/28 19:17:13  kapustin
+ * Add cross-species mode flag
+ *
  * Revision 1.37  2005/04/14 15:29:05  kapustin
  * Advance version number
  *

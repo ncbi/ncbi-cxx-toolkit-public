@@ -56,7 +56,8 @@ protected:
     string    x_RunOnPair(vector<CHit>* hits, int model_id,
                           size_t range_left, size_t range_right);
     bool      x_GetNextPair(istream* ifs, vector<CHit>* hits);
-    istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw) const;
+    istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw,
+                                     bool cross_species_mode) const;
 
     // status log
     ofstream m_logstream;
@@ -87,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/28 19:17:13  kapustin
+ * Add cross-species mode flag
+ *
  * Revision 1.10  2004/06/21 18:16:45  kapustin
  * Support computation on both query strands
  *
