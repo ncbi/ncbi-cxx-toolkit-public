@@ -31,11 +31,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiexpt.hpp>
 #include <connect/services/grid_worker.hpp>
 #include <util/thread_pool.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include <util/request_control.hpp>
 
-#include <signal.h>
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -103,10 +104,13 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg)
 {
+    if (m_RateControl && 
+        !m_RateControl->Approve(CRequestRateControl::eErrCode))
+        return;
     if (m_ProgressMsgKey.empty()) {
         m_ProgressMsgKey = m_Reporter->GetProgressMsg(m_JobKey);
     }
-    if (!m_ProgressMsgKey.empty() && m_ProgressWriter ) {
+    if (!m_ProgressMsgKey.empty() && m_ProgressWriter) {
         CNcbiOstream& os = m_ProgressWriter->CreateOStream(m_ProgressMsgKey);
         os << msg;
         m_ProgressWriter->Reset();
@@ -121,10 +125,12 @@ void CWorkerNodeJobContext::Reset()
     if (m_Reader) m_Reader->Reset();
     if (m_Writer) m_Writer->Reset();
     if (m_ProgressWriter) m_ProgressWriter->Reset();
+    if (m_RateControl) m_RateControl->Reset(1);
     m_Reader = NULL;
     m_Writer = NULL;
     m_ProgressWriter = NULL;
     m_Reporter = NULL;
+    m_RateControl = NULL;
 }
 
 void CWorkerNodeJobContext::SetJobRunTimeout(unsigned time_to_run)
@@ -151,10 +157,12 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
 ///@internal
 struct SThreadContext
 {
+    SThreadContext() : rate_control(1) {}
     auto_ptr<CNetScheduleClient>  reporter;
     auto_ptr<INetScheduleStorage> reader;
     auto_ptr<INetScheduleStorage> writer;
     auto_ptr<INetScheduleStorage> progress_writer;
+    CRequestRateControl           rate_control; 
 };
 
 ///@internal
@@ -225,6 +233,7 @@ void CWorkerNodeRequest::Process(void)
             m_Context->m_Reader = thread_context->reader.get();
             m_Context->m_Writer = thread_context->writer.get();
             m_Context->m_ProgressWriter = thread_context->progress_writer.get();
+            m_Context->m_RateControl = &thread_context->rate_control;
             int ret_code = m_Job->Do(*m_Context);
             int try_count = 0;
             while(1) {
@@ -398,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/28 18:46:55  didenko
+ * Added Request rate control to PutProgressMessage method
+ *
  * Revision 1.12  2005/04/27 16:17:20  didenko
  * Fixed logging system for worker node
  *

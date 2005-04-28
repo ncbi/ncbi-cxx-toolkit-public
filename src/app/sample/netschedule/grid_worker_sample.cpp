@@ -102,13 +102,15 @@ public:
         // immediate shutdown has been requested and gracefully return 
         // without calling context.CommitJob()
         //
-        for (int i = 0; i < 5; ++i) {
+        int iters = 3000;
+        for (int i = 0; i < iters; ++i) {
             if (context.GetShutdownLevel() 
                 == CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
-            context.PutProgressMessage("Iteration " + NStr::IntToString(i+1));
-            SleepSec(5);            
+            context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +
+                                       " from " + NStr::IntToString(iters));
+            SleepMicroSec(200);            
         }
         sort(dvec.begin(), dvec.end());
 
@@ -160,6 +162,9 @@ NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/28 18:46:55  didenko
+ * Added Request rate control to PutProgressMessage method
+ *
  * Revision 1.13  2005/04/21 19:53:59  didenko
  * Changed version generation
  *

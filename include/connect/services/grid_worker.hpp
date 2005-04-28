@@ -119,6 +119,7 @@ public:
 
 class CGridWorkerNode;
 class CWorkerNodeRequest;
+class CRequestRateControl;
 
 /// Worker Node job context
 ///
@@ -249,6 +250,7 @@ private:
     INetScheduleStorage* m_Writer;
     INetScheduleStorage* m_ProgressWriter;
     CNetScheduleClient*  m_Reporter;
+    CRequestRateControl* m_RateControl;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -427,6 +429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/28 18:46:55  didenko
+ * Added Request rate control to PutProgressMessage method
+ *
  * Revision 1.15  2005/04/27 15:16:29  didenko
  * Added rotating log
  * Added optional deamonize
