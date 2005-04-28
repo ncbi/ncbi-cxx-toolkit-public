@@ -277,7 +277,7 @@ int CGridWorkerApp::Run(void)
     unsigned int log_size = 
        reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
 
-    bool max_total_jobs = 
+    unsigned int max_total_jobs = 
        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
 #if defined(NCBI_OS_UNIX)
@@ -353,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/28 17:50:14  didenko
+ * Fixing the type of max_total_jobs var
+ *
  * Revision 1.14  2005/04/27 16:17:20  didenko
  * Fixed logging system for worker node
  *
