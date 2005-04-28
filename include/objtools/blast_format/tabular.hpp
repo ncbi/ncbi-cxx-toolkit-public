@@ -93,8 +93,7 @@ public:
     /// Print one line of tabular output
     virtual void Print(ETabularOption opt = eDefault);
     /// Print the tabular output header
-    virtual void PrintHeader(const string& program, 
-                             const CBioseq_Handle& bioseq_handle, 
+    virtual void PrintHeader(const string& program, const CBioseq& bioseq, 
                              const string& dbname, int iteration, 
                              ETabularOption opt = eDefault); 
 
@@ -167,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/04/28 19:28:17  dondosha
+* Changed CBioseq_Handle argument in PrintHeader to CBioseq, needed for web formatting
+*
 * Revision 1.1  2005/03/14 20:12:06  dondosha
 * Tabular formatting of BLAST results
 *
