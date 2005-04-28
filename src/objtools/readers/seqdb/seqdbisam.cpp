@@ -1619,9 +1619,18 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
     case CSeq_id::e_Local:     /* local */
         simpler = true;
         result = eStringID;
-        str_id = bestid.GetLocal().GetStr();
+        {
+            const CObject_id & objid = bestid.GetLocal();
+            
+            if (objid.IsStr()) {
+                // sparse version will leave "lcl|" off.
+                str_id = objid.GetStr();
+            } else {
+                // Local numeric ids are stored as strings.
+                str_id = "lcl|" + NStr::IntToString(objid.GetId());
+            }
+        }
         break;
-        
         
         // tsip types
         
