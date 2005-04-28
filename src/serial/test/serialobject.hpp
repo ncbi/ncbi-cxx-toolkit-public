@@ -18,12 +18,12 @@ USING_NCBI_SCOPE;
 
 #else
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 class CWeb_Env;
 typedef CWeb_Env TWebEnv;
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
