@@ -367,18 +367,20 @@ extern char* strdup(const char* str);
 //
 
 /// ITERATE macro to sequence through container elements.
-///
-/// @sa
-///   iterate
 #define ITERATE(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
-/// Non constant version of iterate macro.
-///
-/// @sa
-///   non_const_iterate
+/// Non constant version of ITERATE macro.
 #define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+
+/// ITERATE macro to reverse sequence through container elements.
+#define REVERSE_ITERATE(Type, Var, Cont) \
+    for ( Type::const_reverse_iterator Var = (Cont).rbegin(), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
+
+/// Non constant version of REVERSE_ITERATE macro.
+#define NON_CONST_REVERSE_ITERATE(Type, Var, Cont) \
+    for ( Type::reverse_iterator Var = (Cont).rbegin();  Var != (Cont).rend();  ++Var )
 
 
 #if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
@@ -495,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2005/04/28 14:01:02  ivanov
+ * Added REVERSE_ITERATE and NON_CONST_REVERSE_ITERATE macros
+ *
  * Revision 1.79  2005/04/12 19:06:39  ucko
  * Move EFollowLinks to ncbimisc.hpp.
  *
