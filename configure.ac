@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.370 2005/04/28 14:26:11 ucko Exp $
+#  $Id: configure.ac,v 1.371 2005/04/28 15:00:41 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3087,13 +3087,13 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
    if test "$ncbi_compiler" = "MIPSPRO"; then
-      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/compatibility/cpp_c_headers"
+      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
    fi
    AC_MSG_CHECKING([for Boost library name tag])
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
-            Darwin:GCC)  BOOST_TAG=""     ;;
+            darwin*:GCC) BOOST_TAG=""     ;;
             *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
             *:ICC)       BOOST_TAG="-icc" ;;
@@ -3103,10 +3103,16 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             *:COMPAQ)    BOOST_TAG="-tru" ;;
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
-         test "$with_mt"    = "yes"  &&  BOOST_TAG="${BOOST_TAG}-mt"
+         if test "$with_mt" = "yes"; then
+            case "$host_os" in
+               darwin* ) ;; # threading always implicitly enabled
+               IRIX*   ) ;; # threading always disabled (unsupported)
+               *       ) BOOST_TAG="${BOOST_TAG}-mt" ;;
+            esac 
+         fi
          test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
-	 BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
-	 test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
+         BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
+         test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
          AC_MSG_RESULT([$BOOST_TAG (autodetected)])
          ;;
       no )

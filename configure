@@ -18115,14 +18115,14 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
    if test "$ncbi_compiler" = "MIPSPRO"; then
-      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/compatibility/cpp_c_headers"
+      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
    fi
    echo "$as_me:$LINENO: checking for Boost library name tag" >&5
 echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
-            Darwin:GCC)  BOOST_TAG=""     ;;
+            darwin*:GCC) BOOST_TAG=""     ;;
             *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
             *:ICC)       BOOST_TAG="-icc" ;;
@@ -18132,10 +18132,16 @@ echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
             *:COMPAQ)    BOOST_TAG="-tru" ;;
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
-         test "$with_mt"    = "yes"  &&  BOOST_TAG="${BOOST_TAG}-mt"
+         if test "$with_mt" = "yes"; then
+            case "$host_os" in
+               darwin* ) ;; # threading always implicitly enabled
+               IRIX*   ) ;; # threading always disabled (unsupported)
+               *       ) BOOST_TAG="${BOOST_TAG}-mt" ;;
+            esac
+         fi
          test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
-	 BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
-	 test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
+         BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
+         test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
          echo "$as_me:$LINENO: result: $BOOST_TAG (autodetected)" >&5
 echo "${ECHO_T}$BOOST_TAG (autodetected)" >&6
          ;;
