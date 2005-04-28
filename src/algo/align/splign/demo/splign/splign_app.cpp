@@ -93,7 +93,8 @@ void CSplignApp::Init()
     ("hits", "hits",
      "Batch mode hit file. "
      "This file defines the set of sequences to align and "
-     "is also used to guide alignments.",
+     "is also used to guide alignments. "
+     "The file must be collated (e.g. sorted) by query and subject.",
      CArgDescriptions::eString);
 
   argdescr->AddOptionalKey
@@ -703,6 +704,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/04/28 19:26:56  kapustin
+ * Note in parameter description that input hit files must be sorted.
+ *
  * Revision 1.38  2005/04/28 19:17:13  kapustin
  * Add cross-species mode flag
  *
