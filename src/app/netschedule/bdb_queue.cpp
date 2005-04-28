@@ -167,7 +167,6 @@ void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
 
 CQueueDataBase::CQueueDataBase()
 : m_Env(0),
-//  m_MaxId(0),
   m_StopPurge(false),
   m_PurgeLastId(0),
   m_PurgeSkipCnt(0),
@@ -667,6 +666,37 @@ void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
     db.PrintStat(out);
 }
 
+void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
+{
+    unsigned       host;
+    unsigned short port;
+    time_t         last_connect;
+    string         auth;
+
+
+    SLockedQueue::TListenerList&  wnodes = m_LQueue.wnodes;
+    SLockedQueue::TListenerList::size_type lst_size;
+    {{
+        CReadLockGuard guard(m_LQueue.wn_lock);
+        lst_size = wnodes.size();
+    }}
+
+    for (SLockedQueue::TListenerList::size_type i = 0; i < lst_size; ++i) {
+        {{
+        CReadLockGuard guard(m_LQueue.wn_lock);  
+        const SQueueListener* ql = wnodes[i];
+        host = ql->host;
+        port = ql->udp_port;
+        last_connect = ql->last_connect;
+        auth = ql->auth;
+        }}
+
+        CTime lc_time(last_connect);
+        lc_time.ToLocalTime();
+        out << auth << " @ " << CSocketAPI::gethostbyaddr(host) 
+            << "  UDP:" << port << "  " << lc_time.AsString() << "\n";
+    }
+}
 
 unsigned int 
 CQueueDataBase::CQueue::Submit(const char*   input,
@@ -1289,54 +1319,9 @@ bool CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
     return false; // job not found
 }
 
-/*
-bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
-                                       int*         ret_code,
-                                       char*        output)
-{
-    _ASSERT(ret_code);
-    _ASSERT(output);
-
-    SQueueDB& db = m_LQueue.db;
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(0);
-
-    db.id = job_id;
-    if (db.Fetch() == eBDB_Ok) {
-        *ret_code = db.ret_code;
-        const char* out_str = db.output;
-        ::strcpy(output, out_str);
-        return true;
-    }
-
-    return false; // job not found
-
-}
-
-bool CQueueDataBase::CQueue::GetErrMsg(unsigned int job_id,
-                                       char*        err_msg)
-{
-    _ASSERT(err_msg);
-
-    SQueueDB& db = m_LQueue.db;
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(0);
-
-    db.id = job_id;
-    if (db.Fetch() == eBDB_Ok) {
-        const char* str = db.err_msg;
-        ::strcpy(err_msg, str);
-        return true;
-    }
-
-    return false; // job not found
-}
-*/
-
 CNetScheduleClient::EJobStatus 
 CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
 {
-//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
     return m_LQueue.status_tracker.GetStatus(job_id);
 }
 
@@ -1447,7 +1432,8 @@ void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
 void CQueueDataBase::CQueue::RegisterNotificationListener(
                                             unsigned int    host_addr,
                                             unsigned short  udp_port,
-                                            int             timeout)
+                                            int             timeout,
+                                            const string&   auth)
 {
     // check if listener is already in the list
 
@@ -1477,6 +1463,7 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
     if (ql_ptr) {  // update registration timestamp
         if ( (ql_ptr->timeout = timeout)!= 0 ) {
             ql_ptr->last_connect = curr;
+            ql_ptr->auth = auth;
         } else {
         }
 
@@ -1487,7 +1474,7 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
 
     if (timeout) {
         wnodes.push_back(
-            new SQueueListener(host_addr, udp_port, curr, timeout));
+            new SQueueListener(host_addr, udp_port, curr, timeout, auth));
     }
 }
 
@@ -1681,6 +1668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/04/28 17:40:26  kuznets
+ * Added functions to rack down forgotten nodes
+ *
  * Revision 1.28  2005/04/25 14:42:53  kuznets
  * Fixed bug in GetJob()
  *

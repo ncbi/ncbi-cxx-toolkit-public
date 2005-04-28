@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.2.3  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.2.4  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -430,7 +430,7 @@ void CNetScheduleServer::Process(SOCK sock)
             // Logging
             //
 
-            if (is_log && (tdata->request != "VERSION")) {
+            if (is_log) {
                 CTime conn_tm = m_LocalTimer.GetLocalTime();
                 string peer = socket.GetPeerAddress();
                 // get only host name
@@ -853,7 +853,8 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
 
     if (req.port) {  // unregister notification
         sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-        queue.RegisterNotificationListener(client_address, req.port, 0);
+        queue.RegisterNotificationListener(
+            client_address, req.port, 0, tdata.auth);
    }
 }
 
@@ -880,7 +881,7 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-    queue.RegisterNotificationListener(client_address, req.port, req.timeout);
+    queue.RegisterNotificationListener(client_address, req.port, req.timeout, tdata.auth);
 
 }
 
@@ -955,16 +956,41 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
     WriteMsg(sock, "OK:", recs.c_str());
     WriteMsg(sock, "OK:", "[Database statistics]:");
 
-    CNcbiOstrstream ostr;
-    queue.PrintStat(ostr);
+    {{
+        CNcbiOstrstream ostr;
+        queue.PrintStat(ostr);
+        ostr << " ";
 
-    const char* stat_str = ostr.str();
-    try {
-        WriteMsg(sock, "OK:", stat_str);
-    } catch (...) {
+        char* stat_str = ostr.str();
+        size_t os_str_len = ostr.pcount()-1;
+        stat_str[os_str_len] = 0;
+        try {
+            WriteMsg(sock, "OK:", stat_str);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
         ostr.freeze(false);
-        throw;
-    }
+    }}
+
+    WriteMsg(sock, "OK:", "[Worker node statistics]:");
+
+    {{
+        CNcbiOstrstream ostr;
+        queue.PrintNodeStat(ostr);
+        ostr << " ";
+
+        char* stat_str = ostr.str();
+        size_t os_str_len = ostr.pcount()-1;
+        stat_str[os_str_len] = 0;
+        try {
+            WriteMsg(sock, "OK:", stat_str);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+    }}
 
     WriteMsg(sock, "OK:", "END");
 }
@@ -1750,6 +1776,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/04/28 17:40:26  kuznets
+ * Added functions to rack down forgotten nodes
+ *
  * Revision 1.32  2005/04/27 18:12:16  kuznets
  * Logging improved
  *

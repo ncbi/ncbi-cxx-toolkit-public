@@ -158,17 +158,20 @@ struct SQueueListener
     unsigned short             udp_port;     ///< Listening UDP port
     time_t                     last_connect; ///< Last registration timestamp
     int                        timeout;      ///< Notification expiration timeout
+    string                     auth;         ///< Authentication string
     TNetScheduleListenerType   client_type;  ///< Client type mask
 
-    SQueueListener(unsigned int   host_addr,
-                   unsigned short udp_port_number,
-                   time_t         curr,
-                   int            expiration_timeout,
+    SQueueListener(unsigned int             host_addr,
+                   unsigned short           udp_port_number,
+                   time_t                   curr,
+                   int                      expiration_timeout,
+                   const string&            client_auth,
                    TNetScheduleListenerType ctype = eNS_Worker)
     : host(host_addr),
       udp_port(udp_port_number),
       last_connect(curr),
       timeout(expiration_timeout),
+      auth(client_auth),
       client_type(ctype)
     {}
 };
@@ -389,7 +392,8 @@ public:
         ///
         void RegisterNotificationListener(unsigned int    host_addr, 
                                           unsigned short  udp_port,
-                                          int             timeout);
+                                          int             timeout,
+                                          const string&   auth);
 
         /// UDP notification to all listeners
         void NotifyListeners();
@@ -409,6 +413,7 @@ public:
         unsigned CountRecs();
 
         void PrintStat(CNcbiOstream & out);
+        void PrintNodeStat(CNcbiOstream & out) const;
 
         bool IsVersionControl() const
         {
@@ -476,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/04/28 17:40:26  kuznets
+ * Added functions to rack down forgotten nodes
+ *
  * Revision 1.21  2005/04/20 15:59:33  kuznets
  * Progress message to Submit
  *
