@@ -1394,15 +1394,32 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
 
 bool CDirEntry::IsNewer(const string& entry_name) const
 {
-    CTime current, other;
+    CDirEntry entry(entry_name);
+    CTime entry_time;
+    if ( !entry.GetTime(&entry_time) ) {
+        return true;
+    }
+    return IsNewer(entry_time);
+}
+
+
+bool CDirEntry::IsNewer(time_t tm) const
+{
+    time_t current;
+    if ( !GetTimeT(&current) ) {
+        return false;
+    }
+    return current > tm;
+}
+
+
+bool CDirEntry::IsNewer(const CTime& tm) const
+{
+    CTime current;
     if ( !GetTime(&current) ) {
         return false;
     }
-    CDirEntry entry(entry_name);
-    if ( !entry.GetTime(&other) ) {
-        return true;
-    }
-    return current > other;
+    return current > tm;
 }
 
 
@@ -3286,6 +3303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2005/04/28 14:08:26  ivanov
+ * Added time_t and CTime versions of CDirEntry::IsNewer()
+ *
  * Revision 1.96  2005/04/25 20:21:55  ivanov
  * Get rid of Workshop compilation warnings
  *

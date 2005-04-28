@@ -613,6 +613,28 @@ public:
     ///   GetTime
     bool IsNewer(const string& entry_name) const;
 
+    /// Check if current entry is newer than specified date/time.
+    ///
+    /// @param tm
+    ///   Time used to compare with entry modification time.
+    /// @return
+    ///   Return TRUE is modification time of current entry is newer than
+    ///   specified time. Return FALSE otherwise.
+    /// @sa
+    ///   GetTime
+    bool IsNewer(time_t tm) const;
+
+    /// Check if current entry is newer than specified date/time.
+    ///
+    /// @param tm
+    ///   Time used to compare with entry modification time.
+    /// @return
+    ///   Return TRUE is modification time of current entry is newer than
+    ///   specified time. Return FALSE otherwise.
+    /// @sa
+    ///   GetTime
+    bool IsNewer(const CTime& tm) const;
+
     /// Get owner
     ///
     /// WINDOWS:
@@ -2191,6 +2213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/04/28 14:08:16  ivanov
+ * Added time_t and CTime versions of CDirEntry::IsNewer()
+ *
  * Revision 1.55  2005/04/12 19:06:39  ucko
  * Move EFollowLinks to ncbimisc.hpp.
  *
