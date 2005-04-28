@@ -52,7 +52,7 @@ static const string s_Html_3 =
                      "</script>\n"
                      "</body></html>\n";
 
-static string s_GetCgiTunnel2GridUrl(const CCgiRequest&  cgi_request)
+string s_GetCgiTunnel2GridUrl(const CCgiRequest&  cgi_request)
 {
     string ret = "http://";
     string server(cgi_request.GetProperty(eCgi_ServerName));
@@ -163,6 +163,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/28 20:18:57  ucko
+ * Make s_GetCgiTunnel2GridUrl non-static for the sake of compilers
+ * (WorkShop) that don't let templates access statics.
+ *
  * Revision 1.1  2005/04/28 17:40:53  didenko
  * Added CGI2GRID_ComposeHtmlPage(...) fuctions
  *
