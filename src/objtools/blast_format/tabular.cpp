@@ -125,15 +125,33 @@ void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
                             align.GetSegs().GetDenseg());
 
     CAlnVec alnVec(ds, scope);
-
+    
     // Extract the full list of subject ids
-    const CBioseq_Handle& bh = alnVec.GetBioseqHandle(1);
-    SetSubjectId(bh);
+    const CBioseq_Handle& query_bh = alnVec.GetBioseqHandle(0);
+    SetQueryId(query_bh);
+    const CBioseq_Handle& subject_bh = alnVec.GetBioseqHandle(1);
+    SetSubjectId(subject_bh);
 
 
     int align_length, num_gaps, num_gap_opens;
     CBlastFormatUtil::GetAlignLengths(alnVec, align_length, num_gaps, 
                                       num_gap_opens);
+
+    // Do not trust the identities count in the Seq-align, because if masking 
+    // was used, then masked residues were not counted as identities. 
+    // Hence retrieve the sequences present in the alignment and count the 
+    // identities again.
+    alnVec.SetGapChar('-');
+    alnVec.GetWholeAlnSeqString(0, m_QuerySeq);
+    alnVec.GetWholeAlnSeqString(1, m_SubjectSeq);
+
+    _ASSERT(m_QuerySeq.size() == m_SubjectSeq.size());
+    num_ident = 0;
+    for (unsigned int i = 0; i < m_QuerySeq.size(); ++i) {
+        if (m_QuerySeq[i] == m_SubjectSeq[i])
+            ++num_ident;
+    }
+
     SetCounts(num_ident, align_length, num_gaps, num_gap_opens);
 
     int q_start, q_end, s_start, s_end;
@@ -197,8 +215,7 @@ void CBlastTabularInfo::Print(ETabularOption opt)
 }
 
 void 
-CBlastTabularInfo::PrintHeader(const string& program_in, 
-                               const CBioseq_Handle& bioseq_handle, 
+CBlastTabularInfo::PrintHeader(const string& program_in, const CBioseq& bioseq, 
                                const string& dbname, int iteration, 
                                ETabularOption opt)
 {
@@ -212,8 +229,8 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
 
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
-    CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq_handle.GetBioseqCore(), 0, 
-                                            m_Ostream, false, false, true);
+    CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, 0, m_Ostream, false, false,
+                                            true);
     
     m_Ostream << endl << "# Database: " << dbname << endl;
     m_Ostream << "# Fields: Query id, Subject id, % identity, alignment length,"
@@ -238,6 +255,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/04/28 19:29:28  dondosha
+* Changed CBioseq_Handle argument in PrintHeader to CBioseq, needed for web formatting; do not rely on Seq-align in determining number of identities
+*
 * Revision 1.2  2005/03/14 21:12:29  ucko
 * Print: use DoubleToString rather than sprintf, which hasn't
 * necessarily been declared.
