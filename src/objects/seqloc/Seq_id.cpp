@@ -607,10 +607,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 // no specific assignments for DF-DM yet
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
-            case 'N':                               return eAcc_gb_est;
+            case 'N': case 'R':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
-            case 'R':                               return eAcc_gb_sts;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1550,6 +1549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.104  2005/04/28 19:05:14  ucko
+ * Correction: DR is for ESTs, not STSs.
+ *
  * Revision 6.103  2005/04/26 20:21:42  vasilche
  * Use e_MaxChoice as size of Seq-id types array.
  *
