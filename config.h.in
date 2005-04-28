@@ -25,6 +25,9 @@
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #undef HAVE_BERKELEY_DB_CXX
 
+/* Define to 1 if the `Boost.Test' libraries are available. */
+#undef HAVE_BOOST_TEST
+
 /* Define to 1 if CPPUNIT libraries are available. */
 #undef HAVE_CPPUNIT
 

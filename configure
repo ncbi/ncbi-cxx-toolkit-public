@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -940,6 +940,10 @@ Optional Packages:
  --without-python        do not use Python
  --with-cppunit=DIR      use CPPUNIT installation in DIR
  --without-cppunit       do not use CPPUNIT
+ --with-boost=DIR        use Boost installation in DIR
+ --without-boost=DIR     do not use Boost
+ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names
+ --without-boost-tag     use untagged Boost library names
  --with-sqlite=DIR       use SQLite installation in DIR
  --without-sqlite,       do not use SQLite
  --with-icu=DIR          use ICU installation in DIR
@@ -1947,6 +1951,30 @@ if test "${with_cppunit2+set}" = set; then
 
 fi;
 
+# Check whether --with-boost or --without-boost was given.
+if test "${with_boost+set}" = set; then
+  withval="$with_boost"
+
+fi;
+
+# Check whether --with-boost2 or --without-boost2 was given.
+if test "${with_boost2+set}" = set; then
+  withval="$with_boost2"
+
+fi;
+
+# Check whether --with-boost-tag or --without-boost-tag was given.
+if test "${with_boost_tag+set}" = set; then
+  withval="$with_boost_tag"
+
+fi;
+
+# Check whether --with-boost-tag2 or --without-boost-tag2 was given.
+if test "${with_boost_tag2+set}" = set; then
+  withval="$with_boost_tag2"
+
+fi;
+
 # Check whether --with-sqlite or --without-sqlite was given.
 if test "${with_sqlite+set}" = set; then
   withval="$with_sqlite"
@@ -2176,7 +2204,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc python sqlite icu cppunit \
+fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -2220,6 +2248,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --with-python=* | --with-icu=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
+      | --with-boost=* | --with-boost-tag=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -18048,6 +18077,179 @@ _ACEOF
 fi
 
 
+## Boost
+if test "$with_boost" != "no"; then
+   if test "${with_boost-yes}" = yes; then
+      : ${BOOST_PATH=$NCBI/boost}
+   else
+      BOOST_PATH=$with_boost
+   fi
+   : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
+   BOOST_LIBPATH_=$BOOST_PATH/lib
+   : ${BOOST_LIBPATH="-L$BOOST_LIBPATH_ ${CONF_f_runpath}$BOOST_LIBPATH_"}
+      echo "$as_me:$LINENO: checking Boost version" >&5
+echo $ECHO_N "checking Boost version... $ECHO_C" >&6
+if test "${ncbi_cv_lib_boost_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <boost/version.hpp>
+ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
+
+_ACEOF
+          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
+             2>&5 | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+          . ./conftest.sh
+          rm -f contest*
+
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_version" >&5
+echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
+   if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//`/boost-${ncbi_cv_lib_boost_version}/boost; then
+      BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
+   fi
+   echo "$as_me:$LINENO: checking for Boost library name tag" >&5
+echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
+   case "$with_boost_tag" in
+      yes | "" )
+         case "$host_os:$ncbi_compiler" in
+            Darwin:GCC)  BOOST_TAG=""     ;;
+            *:GCC)       BOOST_TAG="-gcc" ;;
+            *:KCC)       BOOST_TAG="-kcc" ;;
+            *:ICC)       BOOST_TAG="-icc" ;;
+            *:WORKSHOP)  BOOST_TAG="-sw"  ;;
+            *:MIPSPRO)   BOOST_TAG="-mp"  ;;
+            *:VISUALAGE) BOOST_TAG="-xlc" ;;
+            *:COMPAQ)    BOOST_TAG="-tru" ;;
+            *:MSVC)      BOOST_TAG="-vc"  ;;
+         esac
+         test "$with_mt"    = "yes"  &&  BOOST_TAG="${BOOST_TAG}-mt"
+         test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
+	 BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
+	 test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
+         echo "$as_me:$LINENO: result: $BOOST_TAG (autodetected)" >&5
+echo "${ECHO_T}$BOOST_TAG (autodetected)" >&6
+         ;;
+      no )
+         BOOST_TAG=""
+         echo "$as_me:$LINENO: result: none (by explicit request)" >&5
+echo "${ECHO_T}none (by explicit request)" >&6
+         ;;
+      *)
+         BOOST_TAG=$with_boost_tag
+         echo "$as_me:$LINENO: result: $BOOST_TAG (by explicit request)" >&5
+echo "${ECHO_T}$BOOST_TAG (by explicit request)" >&6
+         ;;
+   esac
+
+   BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
+       BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
+   else
+       BOOST_TEST_PEM_STATIC_LIBS=$BOOST_TEST_PEM_LIBS
+   fi
+
+   BOOST_TEST_TEM_LIBS=-lboost_test_exec_monitor${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_test_exec_monitor${BOOST_TAG}-static.a"; then
+       BOOST_TEST_TEM_STATIC_LIBS=-lboost_test_exec_monitor${BOOST_TAG}-static
+   else
+       BOOST_TEST_TEM_STATIC_LIBS=$BOOST_TEST_TEM_LIBS
+   fi
+
+   BOOST_TEST_UTF_LIBS=-lboost_unit_test_framework${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_unit_test_framework${BOOST_TAG}-static.a"; then
+       BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
+   else
+       BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
+   fi
+
+   echo "$as_me:$LINENO: checking for Boost.Test in $BOOST_PATH" >&5
+echo $ECHO_N "checking for Boost.Test in $BOOST_PATH... $ECHO_C" >&6
+if test "${ncbi_cv_lib_boost_test+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH -lboost_unit_test_framework${BOOST_TAG} $RT_LIBS $orig_LIBS"
+      cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <boost/test/unit_test.hpp>
+                using boost::unit_test::test_suite;
+                static void s_Test1(void) { BOOST_CHECK(1 == 1); }
+                test_suite* init_unit_test_suite(int, char*[])
+                {
+                    test_suite* test = BOOST_TEST_SUITE("foo");
+                    test->add(BOOST_TEST_CASE(&s_Test1), 0);
+                    return test;
+                }
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_boost_test=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_boost_test=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_test" >&5
+echo "${ECHO_T}$ncbi_cv_lib_boost_test" >&6
+else
+   BOOST_INCLUDE=
+   BOOST_LIBPATH=
+   BOOST_TAG=
+   ncbi_cv_lib_boost_test=no
+fi
+if test "$ncbi_cv_lib_boost_test" != "no"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_TEST 1
+_ACEOF
+
+   WithPackages="$WithPackages Boost.Test"
+else
+   BOOST_TEST_PEM_LIBS=
+   BOOST_TEST_PEM_STATIC_LIBS=
+   BOOST_TEST_TEM_LIBS=
+   BOOST_TEST_TEM_STATIC_LIBS=
+   BOOST_TEST_UTF_LIBS=
+   BOOST_TEST_UTF_STATIC_LIBS=
+   WithoutPackages="$WithoutPackages Boost.Test"
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -23253,6 +23455,15 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
+
+
+
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -24095,6 +24306,15 @@ s,@PYTHON_INCLUDE@,$PYTHON_INCLUDE,;t t
 s,@PYTHON_LIBS@,$PYTHON_LIBS,;t t
 s,@CPPUNIT_INCLUDE@,$CPPUNIT_INCLUDE,;t t
 s,@CPPUNIT_LIBS@,$CPPUNIT_LIBS,;t t
+s,@BOOST_INCLUDE@,$BOOST_INCLUDE,;t t
+s,@BOOST_LIBPATH@,$BOOST_LIBPATH,;t t
+s,@BOOST_TAG@,$BOOST_TAG,;t t
+s,@BOOST_TEST_PEM_LIBS@,$BOOST_TEST_PEM_LIBS,;t t
+s,@BOOST_TEST_PEM_STATIC_LIBS@,$BOOST_TEST_PEM_STATIC_LIBS,;t t
+s,@BOOST_TEST_TEM_LIBS@,$BOOST_TEST_TEM_LIBS,;t t
+s,@BOOST_TEST_TEM_STATIC_LIBS@,$BOOST_TEST_TEM_STATIC_LIBS,;t t
+s,@BOOST_TEST_UTF_LIBS@,$BOOST_TEST_UTF_LIBS,;t t
+s,@BOOST_TEST_UTF_STATIC_LIBS@,$BOOST_TEST_UTF_STATIC_LIBS,;t t
 s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t

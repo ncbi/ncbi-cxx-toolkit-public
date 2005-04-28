@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.368 2005/04/27 16:28:46 ucko Exp $
+#  $Id: configure.ac,v 1.369 2005/04/28 14:20:44 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -230,6 +230,14 @@ AC_ARG_WITH(cppunit,
    [ --with-cppunit=DIR      use CPPUNIT installation in DIR])
 AC_ARG_WITH(cppunit2,
    [ --without-cppunit       do not use CPPUNIT])
+AC_ARG_WITH(boost,
+   [ --with-boost=DIR        use Boost installation in DIR])
+AC_ARG_WITH(boost2,
+   [ --without-boost=DIR     do not use Boost])
+AC_ARG_WITH(boost-tag,
+   [ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names])
+AC_ARG_WITH(boost-tag2,
+   [ --without-boost-tag     use untagged Boost library names])
 AC_ARG_WITH(sqlite,
    [ --with-sqlite=DIR       use SQLite installation in DIR])
 AC_ARG_WITH(sqlite2,
@@ -316,7 +324,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc python sqlite icu cppunit \
+fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -360,6 +368,7 @@ for x_arg in "$@" ; do
       | --with-python=* | --with-icu=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
+      | --with-boost=* | --with-boost-tag=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -3053,6 +3062,120 @@ else
 fi
 
 
+## Boost
+if test "$with_boost" != "no"; then
+   if test "${with_boost-yes}" = yes; then
+      : ${BOOST_PATH=$NCBI/boost}
+   else
+      BOOST_PATH=$with_boost
+   fi
+   : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
+   BOOST_LIBPATH_=$BOOST_PATH/lib
+   : ${BOOST_LIBPATH="-L$BOOST_LIBPATH_ ${CONF_f_runpath}$BOOST_LIBPATH_"}
+      AC_CACHE_CHECK([Boost version],
+         ncbi_cv_lib_boost_version,
+         [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
+#include <boost/version.hpp>
+ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
+          ]])])
+          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+          . ./conftest.sh
+          rm -f contest*
+         ])
+   if test -d `echo $BOOST_INCLUDE | sed -e s/^-I//`/boost-${ncbi_cv_lib_boost_version}/boost; then
+      BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
+   fi
+   if test "$ncbi_compiler" = "MIPSPRO"; then
+      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/compatibility/cpp_c_headers"
+   fi
+   AC_MSG_CHECKING([for Boost library name tag])
+   case "$with_boost_tag" in
+      yes | "" )
+         case "$host_os:$ncbi_compiler" in
+            Darwin:GCC)  BOOST_TAG=""     ;;
+            *:GCC)       BOOST_TAG="-gcc" ;;
+            *:KCC)       BOOST_TAG="-kcc" ;;
+            *:ICC)       BOOST_TAG="-icc" ;;
+            *:WORKSHOP)  BOOST_TAG="-sw"  ;;
+            *:MIPSPRO)   BOOST_TAG="-mp"  ;;
+            *:VISUALAGE) BOOST_TAG="-xlc" ;;
+            *:COMPAQ)    BOOST_TAG="-tru" ;;
+            *:MSVC)      BOOST_TAG="-vc"  ;;
+         esac
+         test "$with_mt"    = "yes"  &&  BOOST_TAG="${BOOST_TAG}-mt"
+         test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
+	 BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
+	 test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
+         AC_MSG_RESULT([$BOOST_TAG (autodetected)])
+         ;;
+      no )
+         BOOST_TAG=""
+         AC_MSG_RESULT([none (by explicit request)])
+         ;;
+      *)
+         BOOST_TAG=$with_boost_tag
+         AC_MSG_RESULT([$BOOST_TAG (by explicit request)])
+         ;;
+   esac
+
+   BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
+       BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
+   else
+       BOOST_TEST_PEM_STATIC_LIBS=$BOOST_TEST_PEM_LIBS
+   fi
+
+   BOOST_TEST_TEM_LIBS=-lboost_test_exec_monitor${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_test_exec_monitor${BOOST_TAG}-static.a"; then
+       BOOST_TEST_TEM_STATIC_LIBS=-lboost_test_exec_monitor${BOOST_TAG}-static
+   else
+       BOOST_TEST_TEM_STATIC_LIBS=$BOOST_TEST_TEM_LIBS
+   fi
+
+   BOOST_TEST_UTF_LIBS=-lboost_unit_test_framework${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_unit_test_framework${BOOST_TAG}-static.a"; then
+       BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
+   else
+       BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
+   fi
+      
+   AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH -lboost_unit_test_framework${BOOST_TAG} $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_SOURCE(
+              [[#include <boost/test/unit_test.hpp>
+                using boost::unit_test::test_suite;
+                static void s_Test1(void) { BOOST_CHECK(1 == 1); }
+                test_suite* init_unit_test_suite(int, char*[])
+                {
+                    test_suite* test = BOOST_TEST_SUITE("foo");
+                    test->add(BOOST_TEST_CASE(&s_Test1), 0);
+                    return test;
+                }]])],
+                [ncbi_cv_lib_boost_test=yes], [ncbi_cv_lib_boost_test=no])])
+else
+   BOOST_INCLUDE=
+   BOOST_LIBPATH=
+   BOOST_TAG=
+   ncbi_cv_lib_boost_test=no
+fi
+if test "$ncbi_cv_lib_boost_test" != "no"; then
+   AC_DEFINE(HAVE_BOOST_TEST, 1,
+             [Define to 1 if the `Boost.Test' libraries are available.])
+   WithPackages="$WithPackages Boost.Test"
+else
+   BOOST_TEST_PEM_LIBS=
+   BOOST_TEST_PEM_STATIC_LIBS=
+   BOOST_TEST_TEM_LIBS=
+   BOOST_TEST_TEM_STATIC_LIBS=
+   BOOST_TEST_UTF_LIBS=
+   BOOST_TEST_UTF_STATIC_LIBS=
+   WithoutPackages="$WithoutPackages Boost.Test"
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -4545,6 +4668,15 @@ AC_SUBST(PYTHON_INCLUDE)
 AC_SUBST(PYTHON_LIBS)
 AC_SUBST(CPPUNIT_INCLUDE)
 AC_SUBST(CPPUNIT_LIBS)
+AC_SUBST(BOOST_INCLUDE)
+AC_SUBST(BOOST_LIBPATH)
+AC_SUBST(BOOST_TAG)
+AC_SUBST(BOOST_TEST_PEM_LIBS)
+AC_SUBST(BOOST_TEST_PEM_STATIC_LIBS)
+AC_SUBST(BOOST_TEST_TEM_LIBS)
+AC_SUBST(BOOST_TEST_TEM_STATIC_LIBS)
+AC_SUBST(BOOST_TEST_UTF_LIBS)
+AC_SUBST(BOOST_TEST_UTF_STATIC_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)
