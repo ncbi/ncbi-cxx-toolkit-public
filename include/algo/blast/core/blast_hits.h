@@ -495,20 +495,6 @@ void Blast_HSPListSortByScore(BlastHSPList* hsp_list);
 NCBI_XBLAST_EXPORT
 void Blast_HSPListSortByEvalue(BlastHSPList* hsp_list);
 
-/** Check HSP for percent identity and hit length.
- * @param program Type of BLAST program [in]
- * @param hsp_list HSP list for a single query/subject pair. [in][out]
- * @param query Query sequence [in]
- * @param subject Subject sequence [in]
- * @param score_options Scoring options [in]
- * @param hit_options Hit saving options [in]
- */
-Boolean
-Blast_HSPTestIdentityAndLength(EBlastProgramType program, 
-                               BlastHSP* hsp, Uint1* query, Uint1* subject,
-                               const BlastScoringOptions* score_options,
-                               const BlastHitSavingOptions* hit_options);
-
 /********************************************************************************
           HitList API.
 ********************************************************************************/
