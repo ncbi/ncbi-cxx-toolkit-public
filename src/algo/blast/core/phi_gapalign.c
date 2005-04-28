@@ -352,8 +352,7 @@ s_PHIGetShortPattern(Uint1 *seq, Int4 len, Int4 *start, Int4 *end,
             ((prefixMatchedBitPattern << 1) | maskShiftPlus1) & 
             word_items->whichPositionPtr[seq[i]];
     }
-    /* Do the work of s_LenOf here, because we need more data than that function
-       returns. @todo FIXME: can this code duplication be avoided? */
+
     _PHIGetRightOneBits(prefixMatchedBitPattern, mask, 
                         &rightOne, &rightMaskOnly);
     
@@ -796,10 +795,8 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
                return status;
            }
 
-           /** PHI BLAST does not support query concatenation, so context is 
-               always 0.
-               @todo FIXME: Shouldn't score be checked against the score 
-               threshold here? */
+           /* PHI BLAST does not support query concatenation, so context is 
+              always 0. */
            if (gap_align->score >= hit_params->cutoff_score) {
                Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
                              gap_align->subject_start, gap_align->subject_stop, 
