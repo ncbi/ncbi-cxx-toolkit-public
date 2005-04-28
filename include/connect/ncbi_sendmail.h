@@ -72,8 +72,8 @@ typedef struct {
 /* NOTE about recipient lists:
  * They are not parsed; valid recipient (according to the standard)
  * can be specified in the form "Name" <address>; recipients should
- * be separated by commas. In case of address-only recipients (no "Name"
- * part above), angle brackets around the address may be omitted.
+ * be separated by commas. In case of address-only recipients (with no
+ * "Name" part above), angle brackets around the address may be omitted.
  *
  * NOTE about message body size:
  * If not specified (0) and by default the message body size is calculated
@@ -148,6 +148,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2005/04/28 14:18:12  lavr
+ * A bit of clarification about multiple/single email address formats
+ *
  * Revision 6.16  2003/12/09 15:38:02  lavr
  * +SSendMailInfo::body_size and remarks about its use
  *
