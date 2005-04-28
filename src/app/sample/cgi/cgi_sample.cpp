@@ -46,6 +46,9 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+
+#include <cgi/cgi2grid.hpp>
+
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
 
@@ -108,17 +111,35 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
                                                 client_tracking_env);
     int is_local_client = NcbiIsLocalCgiClient(client_tracking_env);
     */
+   
 
     // Try to retrieve the message ('message=...') from the HTTP request.
     // NOTE:  the case sensitivity was turned off in Init().
     bool is_message = false;
     string message    = request.GetEntry("Message", &is_message);
     if ( is_message ) {
+        if (message == "tunnel2grid.cgi") {
+            // This is a special case. Just to demonstrate how
+            // cgi_tunnel2grid.cgi can be invoked from another CGI
+            response.WriteHeader();
+            CGI2GRID_ComposeHtmlPage( response.out(), request, 
+                                      "sample", ctx.GetSelfURL(),
+                                      "html 3 22 3 11");
+            
+            /* Or all CGI entires can be sent to the worker node.
+            const TCgiEntries& cgi_entries = request.GetEntries();
+            CGI2GRID_ComposeHtmlPage( response.out(), request, 
+                                      "sample", ctx.GetSelfURL(),
+                                      cgi_entries);
+            */
+            SetDiagNode(NULL);
+            return 0;
+        }
         message = "'" + message + "'";
     } else {
         message = "<NONE>";
     }
-
+    
     // Create a HTML page (using template HTML file "cgi_sample.html")
     auto_ptr<CHTMLPage> page;
     try {
@@ -234,6 +255,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/28 17:40:53  didenko
+ * Added CGI2GRID_ComposeHtmlPage(...) fuctions
+ *
  * Revision 1.15  2005/03/10 17:57:00  vakatov
  * Move the CArgs demo code to separate methods to avoid cluttering the
  * mainstream demo code
