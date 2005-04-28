@@ -36,18 +36,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/////////////////////////////////////////////////////////////////////////////
-// to make map<string, something> case-insensitive
-
-struct seqid_string_less
-{
-    bool operator()(const string& s1, const string& s2) const
-    {
-        return (NStr::CompareNocase(s1, s2) < 0);
-    }
-};
-
-
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_***_Tree::
@@ -179,6 +167,7 @@ void CSeq_id_Which_Tree::Initialize(CSeq_id_Mapper* mapper,
     v[CSeq_id::e_Tpg].Reset(new CSeq_id_Tpg_Tree(mapper));
     v[CSeq_id::e_Tpe].Reset(new CSeq_id_Tpe_Tree(mapper));
     v[CSeq_id::e_Tpd].Reset(new CSeq_id_Tpd_Tree(mapper));
+    v[CSeq_id::e_Gpipe].Reset(new CSeq_id_Gpipe_Tree(mapper));
 }
 
 
@@ -934,7 +923,7 @@ const CTextseq_id& CSeq_id_Prf_Tree::x_Get(const CSeq_id& id) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_id_Tpd_Tree
+// CSeq_id_Tpg_Tree
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Tpg_Tree::CSeq_id_Tpg_Tree(CSeq_id_Mapper* mapper)
@@ -996,6 +985,28 @@ bool CSeq_id_Tpd_Tree::x_Check(const CSeq_id& id) const
 const CTextseq_id& CSeq_id_Tpd_Tree::x_Get(const CSeq_id& id) const
 {
     return id.GetTpd();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Gpipe_Tree
+/////////////////////////////////////////////////////////////////////////////
+
+CSeq_id_Gpipe_Tree::CSeq_id_Gpipe_Tree(CSeq_id_Mapper* mapper)
+    : CSeq_id_Textseq_Tree(mapper)
+{
+}
+
+
+bool CSeq_id_Gpipe_Tree::x_Check(const CSeq_id& id) const
+{
+    return id.IsGpipe();
+}
+
+
+const CTextseq_id& CSeq_id_Gpipe_Tree::x_Get(const CSeq_id& id) const
+{
+    return id.GetGpipe();
 }
 
 
@@ -1699,6 +1710,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/04/28 16:29:19  vasilche
+* Added Seq-id tree for gpipe type.
+* Removed obsolete structure.
+*
 * Revision 1.21  2005/04/26 20:21:42  vasilche
 * Use e_MaxChoice as size of Seq-id types array.
 *

@@ -415,6 +415,20 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////
+// Gpipe tree
+
+
+class CSeq_id_Gpipe_Tree : public CSeq_id_Textseq_Tree
+{
+public:
+    CSeq_id_Gpipe_Tree(CSeq_id_Mapper* mapper);
+protected:
+    virtual bool x_Check(const CSeq_id& id) const;
+    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
+};
+
+
+////////////////////////////////////////////////////////////////////
 // Other tree
 
 
@@ -623,6 +637,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/04/28 16:29:19  vasilche
+* Added Seq-id tree for gpipe type.
+* Removed obsolete structure.
+*
 * Revision 1.12  2005/03/29 16:01:24  grichenk
 * Removed CSeq_id_not_set_Tree::HaveReverseMatch()
 *
