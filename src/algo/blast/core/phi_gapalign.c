@@ -445,7 +445,7 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
     Int4 hitArray1[PHI_MAX_HIT];
     const int kMaxHitsInWord = 64; /* Maximal possible size of the hits 
                                       array for one word of pattern. */
-    Int4 oneWordHitArray[kMaxHitsInWord]; /*hits for one word of 
+    Int4 oneWordHitArray[64 /*kMaxHitsInWord*/]; /*hits for one word of 
                                             pattern representation*/
     SShortPatternItems* one_word_items = pattern_blk->one_word_items; 
     SLongPatternItems* multiword_items = pattern_blk->multi_word_items; 
