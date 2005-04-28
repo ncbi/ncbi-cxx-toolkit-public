@@ -387,12 +387,183 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/**
+  @page blast_opts_cookbook C++ BLAST Options Cookbook
+
+  The purpose of the C++ BLAST options APIs is to provide convenient access to
+  the various algorithm options for a variety of users of BLAST as well as a 
+  means to validating the options, while isolating them from the details of 
+  the CORE BLAST implementation.
+
+  @section _basic_opts_usage Basic usage
+  For users who only want to perform a single BLAST searches using default 
+  options for a specific task (EProgram) \em without modifying the options, 
+  one can let the @ref blast_search_classes create 
+  and validate the appropriate BLAST options object internally:
+  
+  @code
+  using ncbi::blast;
+  try {
+      // Task is specified by the eBlastp argument
+      CBl2Seq bl2seq(query, subject, eBlastp);
+      TSeqAlignVector results = bl2seq.Run();
+  } catch (const CBlastException& e) { 
+      // Handle exception ... 
+  }
+  @endcode
+
+  Using the approach above guarantees that the BLAST options will be valid.
+  
+  An alternative to this approach is to use the CBlastOptionsFactory to create
+  a CBlastOptionsHandle object, which allows the caller to set options which
+  are applicable to all variants of BLAST (e.g.: E-value threshold, effective
+  search space, window size). Furthermore, this approach allows the caller to
+  reuse the CBlastOptionsHandle object with multiple BLAST search objects:
+
+  @code
+  using ncbi::blast;
+  CRef<CBlastOptionsHandle> opts_handle(CBlastOptionsFactory::Create(eBlastn));
+  ...
+  opts_handle.SetEvalueThreshold(1e-20);
+  CBl2Seq bl2seq(query, subjects, opts_handle);
+  ...
+  opts_handle.SetEvalueThreshold(1e-10);
+  CDbBlast blast(query, seq_src, opts_handle);
+  @endcode
+
+  @section _validating_opts Options validation
+  The CBlastOptionsHandle classes offers a <tt>Validate</tt> method in
+  its interface which is called by the @ref blast_search_classes prior to
+  performing the actual search, but users of the C++ BLAST options APIs might
+  also want to invoke this method so that any exceptions thrown by the @ref
+  blast_search_classes can be guaranteed not originate from an incorrect
+  setting of BLAST options. Please note that the <tt>Validate</tt> method 
+  throws a CBlastException in case of failure.
+
+  @section _intermediate_opts_usage Intermediate options usage
+  For users who want to obtain default options, yet modify the most popular
+  options, one should create instances of derived classes of the 
+  CBlastOptionsHandle, because these should expose an interface that is 
+  relevant to the task at hand (although not an exhaustive interface, for that
+  see @ref _advanced_opts_usage):
+
+  @code
+  using ncbi::blast;
+  CBlastNucleotideOptionsHandle opts_handle;
+  opts_handle.SetTraditionalBlastnDefaults();
+  opts_handle.SetStrandOption(objects::eNa_strand_plus);
+  CBl2Seq bl2seq(query, subject, opts_handle);
+  TSeqAlignVector results = bl2seq.Run();
+  @endcode
+
+  By using this interface, the likelihood of setting invalid options is
+  reduced, but the validity of the options cannot be fully guaranteed.
+  @note BLAST help desk and developers reserve the right to determine which 
+  options are popular.
+
+  @section _advanced_opts_usage Advanced options usage
+  For users who want to have full control over setting the algorithm's options,
+  or whose options of interest are not available in any of the classes in the
+  CBlastOptionsHandle hierarchy, the <tt>GetOptions</tt> and
+  <tt>SetOptions</tt> methods of the CBlastOptionsHandle hierarchy allow 
+  access to the CBlastOptions class, the lowest level class in the C++ BLAST 
+  options API which contains all options available to all variants of the 
+  BLAST algorithm. No guarantees about the validity of the options are made 
+  if this interface is used, therefore invoking <tt>Validate</tt> is 
+  \em strongly recommended.
+
+  @code
+  using ncbi::blast;
+  try {
+      CBlastProteinOptionsHandle opts_handle;
+      opts_handle.SetMatrixName("PAM30");
+      opts_handle.SetGapOpeningCost(9);
+      opts_handle.SetGapExtensionCost(1);
+      opts_handle.SetOptions().SetCompositionBasedStatsMode();
+      opts_handle.Validate();
+
+      CBl2Seq bl2seq(query, subject, opts_handle);
+      TSeqAlignVector results = bl2seq.Run();
+  } catch (const CBlastException& e) {
+      // Handle exception ...
+  }
+  @endcode
+
+  @sa @ref blast_opts_cpp_design.
+
+  @author Christiam Camacho <camacho@ncbi.nlm.nih.gov>
+ */
+
+/**
+  @page blast_opts_cpp_design C++ BLAST Options Design
+
+  @section _blast_opts_cpp_goals Design goals
+  - Isolate C++ toolkit users from details of CORE BLAST
+  - Allow easy setting of default options for common tasks for which BLAST is
+    used
+  - Expose in an interface only those options that are relevant to the task at
+    hand
+  - Provide a means of validating BLAST options
+  - Allow 'power' users to have unrestricted access to all BLAST options
+  - Design should be flexible to accomodate introduction/removal of options
+
+  @section Components
+
+  - CBlastOptionsFactory:
+  This class offers a single static method to create CBlastOptionsHandle
+  subclasses so that options that are applicable to all variants of BLAST can
+  be inspected or modified. The actual type of the CBlastOptionsHandle returned
+  by Create is determined by its EProgram argument. The returned
+  value of this function is guaranteed to have reasonable defaults set for the
+  selected task.
+
+  - CBlastOptionsHandle hierarchy:
+  The intent of this class is to encapsulate options that are common to all
+  variants of BLAST, from which more specific tasks can inherit the common
+  options. The subclasses of CBlastOptionsHandle should present an interface
+  that is more specific, i.e.: only contain options relevant to the task at 
+  hand, although it might not be an exhaustive interface for all options 
+  available for the task. Please note that the initialization of this class' 
+  data members follows the template method design pattern, and this should be 
+  followed by subclasses also.
+
+  - CBlastOptions:
+  This class contains all available BLAST options and it is provided to
+  satisfy the design goal of allowing qualified users unrestricted access to
+  all BLAST options. Because of this, it is very easy to set incorrect options,
+  and hence it should be use sparingly. The use of its <tt>Validate</tt> 
+  method is <em>strongly</em> recommended.
+
+  @section _blast_opts_cpp_deficiencies Known deficiencies
+
+  The current design in noticeably weak in fulfilling the last design goal, in
+  that it uses an inheritance hierarchy of CBlastOptionsHandle classes to
+  provide specific interfaces for tasks, but this approach is breaks when an
+  option is applicable to a parent class and not its child.
+
+  Furthermore, the EProgram enumeration is misnamed, as it should convey the
+  notion of a task, similar to those exposed in the BLAST web page.
+
+  @section _blast_opts_cpp_future Future plans
+  A redesign of the C++ BLAST options API might be available in the future to
+  overcome the deficiencies of the current APIs. Additional design goals
+  include:
+  - Consistent local/remote behavior
+  - Provide distinction between algorithm options and application options
+  - Provide well defined guarantees about the validity of BLAST options
+  - <em>Easy to use correctly, difficult to use incorrectly</em>
+
+  @author Christiam Camacho <camacho@ncbi.nlm.nih.gov>
+ */
 /* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.97  2005/04/28 19:37:49  camacho
+* Added design docs and cookbook
+*
 * Revision 1.96  2005/04/27 14:41:53  papadopo
 * 1. Remove friendship for CRPSTest
 * 2. Modify options to set/get HSP culling limit
