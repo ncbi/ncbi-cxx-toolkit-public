@@ -121,9 +121,9 @@ public:
         }
 
     static void* Create(TTypeInfo /*typeInfo*/,
-                        CObjectMemoryPool* memPool)
+                        CObjectMemoryPool* /*memPool*/)
         {
-            return new(memPool) CClassType();
+            return new CClassType();
         }
     static void* CreateCObject(TTypeInfo /*typeInfo*/,
                                CObjectMemoryPool* memPool)
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/04/29 19:04:17  golikov
+* vasilchenko: do not use memorypool for non cobjects
+*
 * Revision 1.13  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
