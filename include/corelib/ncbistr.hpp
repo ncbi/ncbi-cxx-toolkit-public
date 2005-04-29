@@ -1417,13 +1417,12 @@ public:
                                list<string>& arr,
                                EMergeDelims  merge = eMergeDelims);
 
-    /// Tokenize a string using the specified delimiters.
-    ///
+    /// Tokenize a string using the specified set of char delimiters.
     ///
     /// @param str
     ///   String to be tokenized.
     /// @param delim
-    ///   Delimiters used to tokenize string "str".
+    ///   Set of char delimiters used to tokenize string "str".
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
     ///   The tokens defined in "str" by using symbols from "delim" are added
@@ -1435,14 +1434,36 @@ public:
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
-    ///   Split()
+    ///   Split, TokenizePattern, TokenizeInTwo
     static vector<string>& Tokenize(const string&   str,
                                     const string&   delim,
                                     vector<string>& arr,
                                     EMergeDelims    merge = eNoMergeDelims);
 
-    /// Split a string into two pieces using the specified delimiters
+    /// Tokenize a string using the specified delimiter (string).
     ///
+    /// @param str
+    ///   String to be tokenized.
+    /// @param delim
+    ///   Delimiter used to tokenize string "str".
+    ///   If delimiter is empty, then input string is appended to "arr" as is.
+    /// @param arr
+    ///   The tokens defined in "str" by using delimeter "delim" are added
+    ///   to the list "arr" and also returned by the function. 
+    /// @param merge
+    ///   Whether to merge the delimiters or not. The default setting of
+    ///   eNoMergeDelims means that delimiters that immediately follow each other
+    ///   are treated as separate delimiters.
+    /// @return 
+    ///   The list "arr" is also returned.
+    /// @sa
+    ///   Split, Tokenize
+    static vector<string>& TokenizePattern(const string&   str,
+                                           const string&   delim,
+                                           vector<string>& arr,
+                                           EMergeDelims    merge = eNoMergeDelims);
+
+    /// Split a string into two pieces using the specified delimiters
     ///
     /// @param str 
     ///   String to be split.
@@ -1462,7 +1483,7 @@ public:
     ///   This lets you distinguish when there were no delimiters and when
     ///   the very last character was the first delimiter.
     /// @sa
-    ///   Split()
+    ///   Split, Tokenoze, TokenizePattern
     static bool SplitInTwo(const string& str, 
                            const string& delim,
                            string& str1,
@@ -2604,6 +2625,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/04/29 14:41:15  ivanov
+ * + NStr::TokenizePattern()
+ *
  * Revision 1.78  2005/03/16 15:28:30  ivanov
  * MatchesMask(): Added parameter for case sensitive/insensitive matching
  *
