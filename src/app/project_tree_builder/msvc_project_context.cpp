@@ -579,8 +579,20 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, config, &lib_info);
         
-        if ( lib_info.IsEmpty() ) 
+        if ( lib_info.IsEmpty() ) {
+            if (requires == "MT" &&
+                (config.m_rtType == SConfigInfo::rtSingleThreaded ||
+                 config.m_rtType == SConfigInfo::rtSingleThreadedDebug)) {
+                if (unmet) {
+                    if (!unmet->empty()) {
+                        *unmet += ", ";
+                    }
+                    *unmet += requires;
+                }
+                result = false;
+            }
             continue;
+        }
 
         if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) ) {
             if (unmet) {
@@ -1055,6 +1067,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/04/29 14:13:44  gouriano
+ * Prohibit single-threaded configurations if a project requires MT
+ *
  * Revision 1.51  2005/04/14 14:22:23  gouriano
  * Corrected identification of library root folder
  *
