@@ -582,61 +582,6 @@ int CTestApplication::Run(void)
 
     
     //------------------------------------------------------------------------
-    // NStr::Tokenize()
-    //------------------------------------------------------------------------
-
-    NcbiCout << NcbiEndl << "NStr::Tokenize() tests...";
-
-    static const string s_TokStr[] = {
-        "ab+cd+ef",
-        "123;45,78",
-        "1;",
-        ";1",
-        "emptydelim"
-    };
-    static const string s_TokDelim[] = {
-        "+", ";,", ";", ";", ""
-    };
-
-    static const string tok_result[] = {
-        "ab", "cd", "ef",
-        "123", "45", "78",
-        "1", "", 
-        "", "1",
-        "emptydelim"
-    };
-
-    vector<string> tok;
-
-    for (size_t i = 0; i < sizeof(s_TokStr) / sizeof(s_TokStr[0]); ++i) {
-        NStr::Tokenize(s_TokStr[i], s_TokDelim[i], tok);               
-    }
-
-    {{
-        int i = 0;
-        ITERATE(vector<string>, it, tok) {
-            assert(NStr::Compare(*it, tok_result[i++]) == 0);
-        }
-    }}
-    
-    tok.clear();
-
-    for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
-        NStr::Tokenize(s_SplitStr[i], s_SplitDelim[i], tok,
-                       NStr::eMergeDelims);
-    }
-
-    {{
-        int i = 0;
-        ITERATE(vector<string>, it, tok) {
-            assert(NStr::Compare(*it, split_result[i++]) == 0);
-        }
-    }}
-
-    OK;
-
-
-    //------------------------------------------------------------------------
     // NStr::SplitInTo()
     //------------------------------------------------------------------------
 
@@ -675,6 +620,104 @@ int CTestApplication::Run(void)
         }
     }}
     
+    OK;
+
+
+    //------------------------------------------------------------------------
+    // NStr::Tokenize()
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "NStr::Tokenize() tests...";
+
+    static const string s_TokStr[] = {
+        "ab+cd+ef",
+        "123;45,78",
+        "1;",
+        ";1",
+        "emptydelim"
+    };
+    static const string s_TokDelim[] = {
+        "+", ";,", ";", ";", ""
+    };
+
+    static const string tok_result[] = {
+        "ab", "cd", "ef",
+        "123", "45", "78",
+        "1", "", 
+        "", "1",
+        "emptydelim"
+    };
+
+    vector<string> tok;
+
+    for (size_t i = 0; i < sizeof(s_TokStr) / sizeof(s_TokStr[0]); ++i) {
+        NStr::Tokenize(s_TokStr[i], s_TokDelim[i], tok);               
+    }
+    {{
+        int i = 0;
+        ITERATE(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, tok_result[i++]) == 0);
+        }
+    }}
+    
+    tok.clear();
+
+    for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
+        NStr::Tokenize(s_SplitStr[i], s_SplitDelim[i], tok,
+                       NStr::eMergeDelims);
+    }
+    {{
+        int i = 0;
+        ITERATE(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, split_result[i++]) == 0);
+        }
+    }}
+
+    OK;
+
+
+    //------------------------------------------------------------------------
+    // NStr::TokenizePattern()
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "NStr::TokenizePattern() tests...";
+
+    static const string tok_pattern_str =
+        "<tag>begin<tag>text<tag><tag><tag>end<tag>";
+    static const string tok_pattern_delim = "<tag>";
+    static const string tok_pattern_result_m[] = {
+        "begin", "text", "end"
+    };
+    static const string tok_pattern_result_nm[] = {
+        "", "begin", "text",  "", "", "end", ""
+    };
+
+    tok.clear();
+
+    NStr::TokenizePattern(tok_pattern_str, tok_pattern_delim,
+                          tok, NStr::eMergeDelims);
+    {{
+        assert(sizeof(tok_pattern_result_m)/sizeof(tok_pattern_result_m[0])
+               == tok.size());
+        int i = 0;
+        ITERATE(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, tok_pattern_result_m[i++]) == 0);
+        }
+    }}
+    
+    tok.clear();
+
+    NStr::TokenizePattern(tok_pattern_str, tok_pattern_delim,
+                          tok, NStr::eNoMergeDelims);
+    {{
+        assert(sizeof(tok_pattern_result_nm)/sizeof(tok_pattern_result_nm[0])
+               == tok.size());
+        int i = 0;
+        ITERATE(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, tok_pattern_result_nm[i++]) == 0);
+        }
+    }}
+
     OK;
 
 
@@ -1056,6 +1099,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.39  2005/04/29 14:42:05  ivanov
+ * Added test for NStr::TokenizePattern()
+ *
  * Revision 6.38  2005/04/18 14:26:34  kuznets
  * More complicated version string cases
  *
