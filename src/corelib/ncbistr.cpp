@@ -994,20 +994,20 @@ string& NStr::Replace(const string& src,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
     // source and destination should not be the same
-    if (&src == &dst) {
+    if ( &src == &dst ) {
         NCBI_THROW2(CStringException, eBadArgs,
                     "String replace called with source == destination", 0);
     }
 
     dst = src;
 
-    if( start_pos + search.size() > src.size() ||
-        search == replace)
+    if ( start_pos + search.size() > src.size() ||
+         search == replace)
         return dst;
 
-    for(size_t count = 0; !(max_replace && count >= max_replace); count++) {
+    for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
         start_pos = dst.find(search, start_pos);
-        if(start_pos == NPOS)
+        if (start_pos == NPOS)
             break;
         dst.replace(start_pos, search.size(), replace);
         start_pos += replace.size();
@@ -1030,17 +1030,17 @@ list<string>& NStr::Split(const string& str, const string& delim,
                           list<string>& arr, EMergeDelims merge)
 {
     // Special cases
-    if (str.empty()) {
+    if ( str.empty() ) {
         return arr;
-    } else if (delim.empty()) {
+    } else if ( delim.empty() ) {
         arr.push_back(str);
         return arr;
     }
 
-    for (size_t pos = 0; ; ) {
-        size_t prev_pos = (merge == eMergeDelims
-                           ? str.find_first_not_of(delim, pos)
-                           : pos);
+    for (SIZE_TYPE pos = 0; ; ) {
+        SIZE_TYPE prev_pos = (merge == eMergeDelims
+                              ? str.find_first_not_of(delim, pos)
+                              : pos);
         if (prev_pos == NPOS) {
             break;
         }
@@ -1061,35 +1061,34 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
                                vector<string>& arr, EMergeDelims merge)
 {
     // Special cases
-    if (str.empty()) {
+    if ( str.empty() ) {
         return arr;
-    } else if (delim.empty()) {
+    } else if ( delim.empty() ) {
         arr.push_back(str);
         return arr;
     }
 
-    size_t pos, prev_pos;
+    SIZE_TYPE pos, prev_pos;
 
     // Count number of tokens to determine the array size
     size_t tokens = 0;
 
-    for (pos = prev_pos = 0; pos < str.length(); ++pos) {
+    for (pos = 0; pos < str.length(); ++pos) {
         char c = str[pos];
-        size_t dpos = delim.find(c);
-        if (dpos != string::npos) ++tokens;
+        SIZE_TYPE dpos = delim.find(c);
+        ++tokens;
     }
-
-    arr.reserve(arr.size() + tokens + 1);
+    arr.reserve(arr.size() + tokens);
 
     // Tokenization
     for (pos = 0; ; ) {
         prev_pos = (merge == eMergeDelims ? str.find_first_not_of(delim, pos)
                     : pos);
-        if (prev_pos == NPOS) {
+        if ( prev_pos == NPOS ) {
             break;
         }
         pos = str.find_first_of(delim, prev_pos);
-        if (pos == NPOS) {
+        if ( pos == NPOS ) {
             arr.push_back(str.substr(prev_pos));
             break;
         } else {
@@ -1097,7 +1096,44 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
             ++pos;
         }
     }
+    return arr;
+}
 
+
+vector<string>& NStr::TokenizePattern(const string& str,
+                                      const string& pattern,
+                                      vector<string>& arr, EMergeDelims merge)
+{
+    // Special cases
+    if ( str.empty() ) {
+        return arr;
+    } else if ( pattern.empty() ) {
+        arr.push_back(str);
+        return arr;
+    }
+
+    SIZE_TYPE pos, prev_pos;
+
+    // Count number of tokens to determine the array size
+    size_t tokens = 0;
+
+    for (pos = 0, prev_pos = 0; pos != NPOS; ) {
+        pos = str.find(pattern, prev_pos);
+        if ( merge != eMergeDelims  ||  (pos != NPOS  &&  pos > prev_pos) ) {
+            ++tokens;
+        }
+        prev_pos = pos + pattern.length();
+    }
+    arr.reserve(arr.size() + tokens);
+
+    // Tokenization
+    for (pos = 0, prev_pos = 0; pos != NPOS; ) {
+        pos = str.find(pattern, prev_pos);
+        if ( merge != eMergeDelims  ||  (pos != NPOS  &&  pos > prev_pos) ) {
+            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+        }
+        prev_pos = pos + pattern.length();
+    }
     return arr;
 }
 
@@ -1106,7 +1142,7 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
                       string& str1, string& str2)
 {
     SIZE_TYPE delim_pos = str.find_first_of(delim);
-    if (NPOS == delim_pos) {   // only one piece.
+    if ( NPOS == delim_pos ) {   // only one piece.
         str1 = str;
         str2 = kEmptyStr;
         return false;
@@ -1121,13 +1157,14 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
 template <typename T>
 string s_NStr_Join(const T& arr, const string& delim)
 {
-    if (arr.empty()) {
+    if ( arr.empty() ) {
         return kEmptyStr;
     }
 
-    string                       result = arr.front();
-    typename T::const_iterator   it     = arr.begin();
+    string result = arr.front();
+    typename T::const_iterator it = arr.begin();
     SIZE_TYPE needed = result.size();
+
     while (++it != arr.end()) {
         needed += delim.size() + it->size();
     }
@@ -1209,6 +1246,7 @@ string NStr::ParseEscapes(const string& str)
     string out;
     out.reserve(str.size()); // can only be smaller
     SIZE_TYPE pos = 0;
+
     while (pos < str.size()) {
         SIZE_TYPE pos2 = str.find('\\', pos);
         if (pos2 == NPOS) {
@@ -1483,8 +1521,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         if (hyphen) {
             arr.back() += '-';
         }
-        pos    = best_pos;
-        pfx    = prefix;
+        pos = best_pos;
+        pfx = prefix;
 
         if (best_score == eSpace  ||  best_score == eNewline) {
             ++pos;
@@ -1513,6 +1551,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
     SIZE_TYPE     column   = s_VisibleWidth(s,     is_html);
     SIZE_TYPE     delwidth = s_VisibleWidth(delim, is_html);
     bool          at_start = true;
+
     ITERATE (list<string>, it, l) {
         SIZE_TYPE term_width = s_VisibleWidth(*it, is_html);
         if (at_start) {
@@ -1552,9 +1591,9 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
 {
-    if ( !str )
+    if ( !str ) {
         return 0;
-
+    }
     size_t size   = strlen(str) + 1;
     void*  result = malloc(size);
     return (char*) (result ? memcpy(result, str, size) : 0);
@@ -1569,6 +1608,7 @@ void CStringUTF8::x_Append(const char* src)
 {
     const char* srcBuf;
     size_t needed = 0;
+
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         Uint1 ch = *srcBuf;
         if (ch < 0x80) {
@@ -1599,6 +1639,7 @@ void CStringUTF8::x_Append(const wchar_t* src)
 {
     const wchar_t* srcBuf;
     size_t needed = 0;
+
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         Uint2 ch = *srcBuf;
         if (ch < 0x80) {
@@ -1639,6 +1680,7 @@ string CStringUTF8::AsAscii(void) const
     size_t needed = 0;
     bool bad = false;
     bool enough = true;
+
     for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
         Uint1 ch = *srcBuf;
         if ((ch & 0x80) == 0) {
@@ -1667,6 +1709,7 @@ string CStringUTF8::AsAscii(void) const
         }
     }
     result.reserve( needed+1);
+
     for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
         Uint1 chRes;
         size_t more;
@@ -1752,6 +1795,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.138  2005/04/29 14:41:26  ivanov
+ * + NStr::TokenizePattern(). Minor changes in the NStr::Tokenize().
+ *
  * Revision 1.137  2005/04/07 16:28:00  vasilche
  * Take care of several sequential backspaces in Wrap().
  * Allow return class value optimization in Replace().
