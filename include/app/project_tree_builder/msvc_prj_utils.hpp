@@ -102,10 +102,20 @@ struct SConfigInfo
     SConfigInfo(const string& name, 
                 bool          debug, 
                 const string& runtime_library);
+    void DefineRtType();
 
     string m_Name;
     bool   m_Debug;
     string m_RuntimeLibrary;
+    enum {
+        rtMultiThreaded = 0,
+        rtMultiThreadedDebug = 1,
+        rtMultiThreadedDLL = 2,
+        rtMultiThreadedDebugDLL = 3,
+        rtSingleThreaded = 4,
+        rtSingleThreadedDebug = 5,
+        rtUnknown = 6
+    } m_rtType;
 };
 
 // Helper to load configs from ini files
@@ -465,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/04/29 14:10:26  gouriano
+ * Added definition of runtime library type
+ *
  * Revision 1.26  2004/12/06 18:12:40  gouriano
  * Improved diagnostics
  *

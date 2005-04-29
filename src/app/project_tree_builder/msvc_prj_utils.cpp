@@ -255,7 +255,7 @@ string SourceFileExt(const string& file_path)
 
 //-----------------------------------------------------------------------------
 SConfigInfo::SConfigInfo(void)
-    :m_Debug(false)
+    :m_Debug(false), m_rtType(rtUnknown)
 {
 }
 
@@ -264,10 +264,28 @@ SConfigInfo::SConfigInfo(const string& name,
                          const string& runtime_library)
     :m_Name          (name),
      m_Debug         (debug),
-     m_RuntimeLibrary(runtime_library)
+     m_RuntimeLibrary(runtime_library),
+     m_rtType(rtUnknown)
 {
+    DefineRtType();
 }
 
+void SConfigInfo::DefineRtType()
+{
+    if (m_RuntimeLibrary == "0") {
+        m_rtType = rtMultiThreaded;
+    } else if (m_RuntimeLibrary == "1") {
+        m_rtType = rtMultiThreadedDebug;
+    } else if (m_RuntimeLibrary == "2") {
+        m_rtType = rtMultiThreadedDLL;
+    } else if (m_RuntimeLibrary == "3") {
+        m_rtType = rtMultiThreadedDebugDLL;
+    } else if (m_RuntimeLibrary == "4") {
+        m_rtType = rtSingleThreaded;
+    } else if (m_RuntimeLibrary == "5") {
+        m_rtType = rtSingleThreadedDebug;
+    }
+}
 
 void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
                            const list<string>&  config_names, 
@@ -284,6 +302,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
         config.m_RuntimeLibrary = registry.GetString(config_name, 
                                                      "runtimeLibraryOption",
                                                      "0");
+        config.DefineRtType();
         configs->push_back(config);
     }
 }
@@ -1053,6 +1072,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/04/29 14:11:12  gouriano
+ * Added definition of runtime library type
+ *
  * Revision 1.35  2004/12/20 21:07:33  gouriano
  * Eliminate compiler warnings
  *
