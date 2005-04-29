@@ -1076,9 +1076,11 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
     for (pos = 0; pos < str.length(); ++pos) {
         char c = str[pos];
         SIZE_TYPE dpos = delim.find(c);
-        ++tokens;
+        if (dpos != string::npos) {
+            ++tokens;
+        }
     }
-    arr.reserve(arr.size() + tokens);
+    arr.reserve(arr.size() + tokens + 1);
 
     // Tokenization
     for (pos = 0; ; ) {
@@ -1795,6 +1797,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.139  2005/04/29 14:46:43  ivanov
+ * Restoring changes in the NStr::Tokenize()
+ *
  * Revision 1.138  2005/04/29 14:41:26  ivanov
  * + NStr::TokenizePattern(). Minor changes in the NStr::Tokenize().
  *
