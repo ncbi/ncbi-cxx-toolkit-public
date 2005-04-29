@@ -236,7 +236,7 @@ public:
     inline ~CSeqDBLockHold();
     
 private:
-    CLASS_MARKER_FIELD("LHLD");
+    CLASS_MARKER_FIELD("LHLD")
     
     /// Private method to prevent copy construction.
     CSeqDBLockHold(CSeqDBLockHold & oth);
@@ -632,7 +632,7 @@ public:
     }
     
 private:
-    CLASS_MARKER_FIELD("REGM");
+    CLASS_MARKER_FIELD("REGM")
     
     /// Compute the penalty and the expanded offset range.
     /// 
@@ -800,7 +800,7 @@ public:
     inline void IncrementRefCnt();
     
 private:
-    CLASS_MARKER_FIELD("LEAS");
+    CLASS_MARKER_FIELD("LEAS")
     
     /// This method is declared private to prevent copy construction.
     CSeqDBMemLease(const CSeqDBMemLease & ml);

@@ -449,7 +449,7 @@ public:
     void SetIterationRange(int oid_begin, int oid_end);
     
 private:
-    CLASS_MARKER_FIELD("IMPL");
+    CLASS_MARKER_FIELD("IMPL")
     
     /// Adjust string length to offset of first embedded NUL byte.
     ///
