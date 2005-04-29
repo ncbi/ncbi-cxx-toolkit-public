@@ -33,26 +33,37 @@
 
 BEGIN_NCBI_SCOPE
 
-static const string s_Html_1 = 
-                   "<html><head></head><body>\n"
-                   "<form name=\"startform\" action=\"";
-static const string s_Html_2 = 
-                    "<INPUT TYPE=\"submit\" NAME=\"Submit\" VALUE=\"Submit\">\n";
+// Embed statics to be used by templates in a dummy class for the sake
+// of WorkShop.
+class C_CGI2GRID_Helper {
+public:
+    static const char* sm_Html[3];
 
-static const string s_Html_3 = 
-                    "</form>\n\n"
-                    "<script language=\"JavaScript1.2\">\n"
-                    "<!--\n"
-                    "function onLoad() {\n"
-                    "     document.startform.submit()\n"
-                    "}\n"
-                    "// For IE & NS6\n"
-                    "if (!document.layers) onLoad();\n"
-                     "//-->\n"
-                     "</script>\n"
-                     "</body></html>\n";
+    static string GetCgiTunnel2GridUrl(const CCgiRequest& cgi_request);
+};
 
-string s_GetCgiTunnel2GridUrl(const CCgiRequest&  cgi_request)
+const char* C_CGI2GRID_Helper::sm_Html[3] = {
+    // 0
+    "<html><head></head><body>\n"
+    "<form name=\"startform\" action=\"",
+    // 1
+    "<INPUT TYPE=\"submit\" NAME=\"Submit\" VALUE=\"Submit\">\n",
+    // 2
+    "</form>\n\n"
+    "<script language=\"JavaScript1.2\">\n"
+    "<!--\n"
+    "function onLoad() {\n"
+    "     document.startform.submit()\n"
+    "}\n"
+    "// For IE & NS6\n"
+    "if (!document.layers) onLoad();\n"
+    "//-->\n"
+    "</script>\n"
+    "</body></html>\n"
+};
+
+inline
+string C_CGI2GRID_Helper::GetCgiTunnel2GridUrl(const CCgiRequest& cgi_request)
 {
     string ret = "http://";
     string server(cgi_request.GetProperty(eCgi_ServerName));
@@ -114,12 +125,13 @@ CNcbiOstream& s_ComposeHtmlPage(CNcbiOstream&       os,
                                 const string&      return_url,
                                 const TAgs&        cgi_args)
 {
-    string url = s_GetCgiTunnel2GridUrl(cgi_request);
-    os << s_Html_1 << url << "\">\n" << s_Html_2;
+    string url = C_CGI2GRID_Helper::GetCgiTunnel2GridUrl(cgi_request);
+    os << C_CGI2GRID_Helper::sm_Html[0] << url << "\">\n"
+       << C_CGI2GRID_Helper::sm_Html[1];
     s_WriteHiddenField(os, "ctg_project", project_name);
     s_WriteHiddenField(os, "ctg_input", cgi_args);
     s_WriteHiddenField(os, "ctg_error_url", return_url);
-    os << s_Html_3;
+    os << C_CGI2GRID_Helper::sm_Html[2];
 
     return os;
 }
@@ -163,6 +175,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/29 14:00:20  ucko
+ * Eliminate remaining file-statics by wrapping them in a new
+ * C_CGI2GRID_Helper class, allowing GetCgiTunnel2GridUrl to be inline
+ * again.  Also, use const char* for string constants for robustness.
+ *
  * Revision 1.2  2005/04/28 20:18:57  ucko
  * Make s_GetCgiTunnel2GridUrl non-static for the sake of compilers
  * (WorkShop) that don't let templates access statics.
