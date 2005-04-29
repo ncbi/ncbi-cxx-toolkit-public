@@ -589,24 +589,16 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         CNcbiOfstream ofsd(disabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
         if ( !ofsd )
             NCBI_THROW(CProjBulderAppException, eFileCreation, disabled);
-/*
-    rtMultiThreaded = 0,
-    rtMultiThreadedDebug = 1,
-    rtMultiThreadedDLL = 2,
-    rtMultiThreadedDebugDLL = 3,
-    rtSingleThreaded = 4,
-    rtSingleThreadedDebug = 5
-*/
-        if (c->m_RuntimeLibrary == "0") {
+        if (c->m_rtType == SConfigInfo::rtMultiThreaded) {
             ofs << "MT" << endl;
-        } else if (c->m_RuntimeLibrary == "1") {
+        } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDebug) {
             ofs << "MT" << endl << "Debug" << endl;
-        } else if (c->m_RuntimeLibrary == "2") {
+        } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDLL) {
             ofs << "MT" << endl;
-        } else if (c->m_RuntimeLibrary == "3") {
+        } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDebugDLL) {
             ofs << "MT" << endl << "Debug" << endl;
-        } else if (c->m_RuntimeLibrary == "4") {
-        } else if (c->m_RuntimeLibrary == "5") {
+        } else if (c->m_rtType == SConfigInfo::rtSingleThreaded) {
+        } else if (c->m_rtType == SConfigInfo::rtSingleThreadedDebug) {
             ofs << "Debug" << endl;
         }
         if (GetBuildType().GetType() == CBuildType::eDll) {
@@ -982,6 +974,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/04/29 14:12:02  gouriano
+ * Use runtime library type instead of string
+ *
  * Revision 1.55  2005/04/19 14:50:53  gouriano
  * Use PTB from the current build tree when PTB build is not requested
  *
