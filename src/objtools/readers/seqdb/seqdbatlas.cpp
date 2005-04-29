@@ -719,7 +719,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
         if (! (start)) {
             cout << "fname [" << fname << "] begin " << begin << " end " << end
                  << " start " << size_t(start) << " result " << size_t(result)
-                 << " rmap " << unsigned(rmap) << endl;
+                 << " rmap " << static_cast<void*>(rmap) << endl;
         }
 #endif
         _ASSERT(start);
