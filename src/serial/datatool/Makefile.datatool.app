@@ -19,7 +19,7 @@ LIB = xser xutil xncbi
 APP_OR_NULL = app
 
 CHECK_CMD = datatool.sh
-CHECK_CMD = datatool.sh /net/coleman/vol/export3/coremake_builds/test_data/objects
+CHECK_CMD = datatool.sh /am/ncbiapdata/test_data/objects
 CHECK_CMD = datatool_xml.sh
 CHECK_REQUIRES = unix
 CHECK_TIMEOUT = 600
