@@ -65,9 +65,20 @@ BEGIN_NCBI_SCOPE
 // _ASSERT() with something useful for release mode.
 
 /// Define memory marker for class (4+ bytes of uppercase ascii).
+
+// Note: this is now strictly 4 bytes and little-endian-centric (on
+// big endian architectures the bytes will be in the other order than
+// the string would imply.  This should not matter to the code.
+
+#define INT4IFY_STRING(a)    \
+    (((a[3] & 0xFF) << 24) | \
+     ((a[2] & 0xFF) << 16) | \
+     ((a[1] & 0xFF) <<  8) | \
+     ((a[0] & 0xFF)))
+
 #define CLASS_MARKER_FIELD(a) \
-    static int    x_GetClassMark()  { return *((int *)(a a)); } \
-    static string x_GetMarkString() { return string((a a), sizeof(int)); } \
+    static int    x_GetClassMark()  { return INT4IFY_STRING(a);  } \
+    static string x_GetMarkString() { return string((a a), 4); } \
     int m_ClassMark;
 
 /// Marker initializer for constructor
@@ -877,7 +888,7 @@ class CSeqDBAtlas {
     enum {
         eTriggerGC         = 1024 * 1024 * 128,
         eDefaultBound      = 1024 * 1024 * 1024,
-        eDefaultSliceSize  = 1024 * 1024 * 128,
+        eDefaultSliceSize  = 1024 * 1024 * 64,
         eDefaultOverhang   = 1024 * 1024 * 4,
         eMaxOpenRegions    = 500,
         eOpenRegionsWindow = 100
