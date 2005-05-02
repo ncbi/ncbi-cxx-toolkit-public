@@ -1673,6 +1673,176 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
         return 0;
 }
 
+/** Callback for sorting HSPs by starting offset in query. The sorting criteria
+ * in order of priority: context, starting offset in query, starting offset in 
+ * subject. Null HSPs are moved to the end of the array.
+ * @param v1 pointer to first HSP [in]
+ * @param v2 pointer to second HSP [in]
+ * @return Result of comparison.
+ */
+static int
+s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
+{
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
+
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
+	h1 = *hp1;
+	h2 = *hp2;
+
+   if (!h1 && !h2)
+      return 0;
+   else if (!h1) 
+      return 1;
+   else if (!h2)
+      return -1;
+
+   /* If these are from different contexts, don't compare offsets */
+   if (h1->context < h2->context) 
+      return -1;
+   if (h1->context > h2->context)
+      return 1;
+
+	if (h1->query.offset < h2->query.offset)
+		return -1;
+	if (h1->query.offset > h2->query.offset)
+		return 1;
+
+	if (h1->subject.offset < h2->subject.offset)
+		return -1;
+	if (h1->subject.offset > h2->subject.offset)
+		return 1;
+
+	return 0;
+}
+
+/** Callback for sorting HSPs by ending offset in query. The sorting criteria
+ * in order of priority: context, ending offset in query, ending offset in 
+ * subject. Null HSPs are moved to the end of the array.
+ * @param v1 pointer to first HSP [in]
+ * @param v2 pointer to second HSP [in]
+ * @return Result of comparison.
+ */
+static int
+s_QueryEndCompareHSPs(const void* v1, const void* v2)
+{
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
+
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
+	h1 = *hp1;
+	h2 = *hp2;
+
+   if (!h1 && !h2)
+      return 0;
+   else if (!h1) 
+      return 1;
+   else if (!h2)
+      return -1;
+
+   /* If these are from different contexts, don't compare offsets */
+   if (h1->context < h2->context) 
+      return -1;
+   if (h1->context > h2->context)
+      return 1;
+
+	if (h1->query.end < h2->query.end)
+		return -1;
+	if (h1->query.end > h2->query.end)
+		return 1;
+
+	if (h1->subject.end < h2->subject.end)
+		return -1;
+	if (h1->subject.end > h2->subject.end)
+		return 1;
+
+	return 0;
+}
+
+Int4
+Blast_HSPListPurgeHSPsWithCommonEndpoints(BlastHSPList* hsp_list)
+
+{
+   BlastHSP** hsp_array;  /* hsp_array to purge. */
+   Int4 index = 0;        /* loop index. */
+   Int4 increment = 1;    
+   Int2 retval = 0;
+   Int4 hsp_count;
+
+   if (hsp_list == NULL || hsp_list->hspcnt == 0)
+            return 0;
+
+   hsp_array = hsp_list->hsp_array;
+   hsp_count = hsp_list->hspcnt;
+
+   qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryOffsetCompareHSPs);
+   while (index < hsp_count-increment) 
+   {
+      if (hsp_array[index+increment] == NULL) 
+      {
+         increment++;
+         continue;
+      }
+      
+      if (hsp_array[index] && hsp_array[index]->query.offset == hsp_array[index+increment]->query.offset &&
+          hsp_array[index]->subject.offset == hsp_array[index+increment]->subject.offset &&
+          hsp_array[index]->context == hsp_array[index+increment]->context)
+      {
+         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
+            hsp_array[index+increment] = 
+                                Blast_HSPFree(hsp_array[index+increment]);
+            increment++;
+         } else {
+            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+            index++;
+            increment = 1;
+         }
+      } else {
+         index++;
+         increment = 1;
+      }
+   }
+   
+   qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryEndCompareHSPs);
+   index=0;
+   increment=1;
+   while (index < hsp_count-increment)
+   { 
+      if (hsp_array[index+increment] == NULL)
+      {
+         increment++;
+         continue;
+      }
+      
+      if (hsp_array[index] &&
+          hsp_array[index]->query.end == hsp_array[index+increment]->query.end &&
+          hsp_array[index]->subject.end == hsp_array[index+increment]->subject.end &&
+          hsp_array[index]->context == hsp_array[index+increment]->context)
+      {
+         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
+            hsp_array[index+increment] = 
+                                Blast_HSPFree(hsp_array[index+increment]);
+            increment++;
+         } else	{
+            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+            index++;
+            increment = 1;
+         }
+      } else {
+         index++;
+         increment = 1;
+      }
+   }
+
+   retval = Blast_HSPListPurgeNullHSPs(hsp_list);
+   if (retval < 0)
+      return retval;
+
+   return hsp_list->hspcnt;
+}
+
 /** Status values returned by an HSP inclusion test function. */
 typedef enum EHSPInclusionStatus {
    eEqual = 0,      /**< Identical */
