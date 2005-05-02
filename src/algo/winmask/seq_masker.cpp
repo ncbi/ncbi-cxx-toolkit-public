@@ -241,7 +241,9 @@ CSeqMasker::operator()( const CSeqVector& data ) const
         {
             Uint4 ldist = (i != masked.begin())
                 ? i->start - k->end - 1 : 0;
-            Uint4 rdist = (i != --masked.end())
+	    TMList::iterator tmpend = masked.end();
+            --tmpend;
+            Uint4 rdist = (i != tmpend)
                 ? l->start - i->end - 1 : 0;
             double lavg = 0.0, ravg = 0.0;
             bool can_go_left =  count && ldist
@@ -343,8 +345,8 @@ CSeqMasker::operator()( const CSeqVector& data ) const
 
         mask->clear();
 
-        for( TMList::const_iterator i = masked.begin(); i != masked.end(); ++i )
-            mask->push_back( TMaskedInterval( i->start, i->end ) );
+        for( TMList::const_iterator ii = masked.begin(); ii != masked.end(); ++ii )
+            mask->push_back( TMaskedInterval( ii->start, ii->end ) );
     }
 
     return mask.release();
@@ -498,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2005/05/02 17:58:01  morgulis
+ * Fixed a few warnings for solaris.
+ *
  * Revision 1.12  2005/04/06 15:57:10  morgulis
  * Fix in the output fasta formatter for skipping a base in the case of two
  * adjacent masked intervals.

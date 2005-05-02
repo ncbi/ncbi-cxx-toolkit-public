@@ -374,7 +374,7 @@ void CWinMaskCountsGenerator::operator()()
 //------------------------------------------------------------------------------
 void CWinMaskCountsGenerator::process( Uint4 prefix, 
                                        Uint1 prefix_size, 
-                                       const vector< string > & input,
+                                       const vector< string > & input_list,
                                        bool do_output )
 {
     Uint1 suffix_size( unit_size - prefix_size );
@@ -389,8 +389,8 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
-    for( vector< string >::const_iterator it( input.begin() );
-         it != input.end(); ++it )
+    for( vector< string >::const_iterator it( input_list.begin() );
+         it != input_list.end(); ++it )
     {
         CNcbiIfstream input_stream( it->c_str() );
         CWinMaskFastaReader reader( input_stream );
@@ -491,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2005/05/02 17:58:01  morgulis
+ * Fixed a few warnings for solaris.
+ *
  * Revision 1.12  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

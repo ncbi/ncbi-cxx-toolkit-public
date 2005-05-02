@@ -149,7 +149,7 @@ private:
     bool check_duplicates;          /**<\internal whether to check input for duplicates */
     bool use_list;                  /**<\internal whether input is a fasta file or a file list */
 
-    Uint8 total_ecodes;             /**<\internal total number of different n-mers found */
+    Uint4 total_ecodes;             /**<\internal total number of different n-mers found */
     vector< Uint4 > score_counts;   /**<\internal counts table for each suffix */
     double th[4];                   /**<\internal percentages used to determine threshold scores */
 
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/05/02 17:58:01  morgulis
+ * Fixed a few warnings for solaris.
+ *
  * Revision 1.6  2005/04/18 20:11:36  morgulis
  * Stage 1 can now take -t_high parameter.
  * Unit counts generated do not contain counts above T_high.

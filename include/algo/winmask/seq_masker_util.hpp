@@ -81,9 +81,9 @@ public:
     static pair< Uint4, Uint1 > hash_code( Uint4 unit, 
                                            Uint1 k, Uint1 roff )
     {
-        return make_pair( (unit>>roff)&((1UL<<k) - 1),
-                          ((unit>>(roff + k))<<roff) 
-                            + (unit&((1<<roff) - 1)) );
+        return make_pair( (unit>>roff)&((((Uint4)1)<<k) - 1),
+                          (Uint1)(((unit>>(roff + k))<<roff) 
+                            + (unit&((1<<roff) - 1))) );
     }
 };
 
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/05/02 17:58:01  morgulis
+ * Fixed a few warnings for solaris.
+ *
  * Revision 1.4  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

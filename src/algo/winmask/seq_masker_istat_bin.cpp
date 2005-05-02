@@ -72,7 +72,7 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
         if( !input_file.Exists() )
             NCBI_THROW( Exception, eStreamOpenFail, name + " does not exist" );
 
-        iflen = input_file.GetLength();
+        iflen = (streamsize)input_file.GetLength();
 
         if( iflen < HEADER_LEN + TRAILER_LEN )
             NCBI_THROW( Exception, eFormat, "wrong file size" );
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/05/02 17:58:01  morgulis
+ * Fixed a few warnings for solaris.
+ *
  * Revision 1.3  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *
