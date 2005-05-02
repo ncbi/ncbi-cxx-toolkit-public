@@ -15,6 +15,9 @@
 #               and all errors occured during the script execution 
 #    stdout  -- routine script progress messages
 #
+# USAGE:
+#    netcache_start.sh <rundir> <bindir>
+
 
 start_dir=`pwd`
 
@@ -35,12 +38,11 @@ Success() {
 # ---------------------------------------------------- 
 
 
-run_dir=$1
+run_dir="$1"
+BIN_PATH="$2"
 ini_file=netcached.ini
-BIN_PATH=
-#~/cxx/GCC340-ReleaseMT/build/app/netcache/
-nc_control=${BIN_PATH}netcache_control
-netcached=${BIN_PATH}netcached
+nc_control=${BIN_PATH}/netcache_control
+netcached=${BIN_PATH}/netcached
 service_wait=10
 mail_to="kuznets@ncbi -c vakatov@ncbi"
 
@@ -50,10 +52,14 @@ if [ ! -d "$run_dir" ]; then
     Die "Startup directory ( $run_dir ) does not exist"
 fi
 
+if [ ! -d "$BIN_PATH" ]; then
+    Die "Binary directory ( $BIN_PATH ) does not exist"
+fi
+
 cd $run_dir
 
 if [ ! -f $ini_file ]; then
-    Die "Cannot find $ini_file at  $run_dir"
+    Die "Cannot find $ini_file at $run_dir"
 fi
 
 host=`hostname`
