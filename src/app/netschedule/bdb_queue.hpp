@@ -57,6 +57,7 @@
 #include "notif_thread.hpp"
 #include "job_time_line.hpp"
 #include "queue_vc.hpp"
+#include "queue_monitor.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -212,6 +213,10 @@ struct SLockedQueue
 
     // Client program version control
     CQueueClientInfoList         program_version_list;
+
+
+    // Queue monitor
+    CNetScheduleMonitor          monitor;
 
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
@@ -395,6 +400,11 @@ public:
                                           int             timeout,
                                           const string&   auth);
 
+        void SetMonitorSocket(SOCK sock);
+
+        /// Return monitor (no ownership transfer)
+        CNetScheduleMonitor* GetMonitor() { return &m_LQueue.monitor; }
+
         /// UDP notification to all listeners
         void NotifyListeners();
 
@@ -481,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/02 14:44:40  kuznets
+ * Implemented remote monitoring
+ *
  * Revision 1.22  2005/04/28 17:40:26  kuznets
  * Added functions to rack down forgotten nodes
  *

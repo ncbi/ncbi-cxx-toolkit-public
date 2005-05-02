@@ -61,6 +61,10 @@ public:
     {
         CNetScheduleClient::PrintStatistics(out);
     }
+    void Monitor(CNcbiOstream & out) 
+    {
+        CNetScheduleClient::Monitor(out);
+    }
 
     void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
 };
@@ -114,6 +118,10 @@ void CNetScheduleControl::Init(void)
                              "Print queue statistics",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("monitor",
+                             "monitor",
+                             "Queue monitoring",
+                             CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -150,6 +158,12 @@ int CNetScheduleControl::Run(void)
         NcbiCout << NcbiEndl;
     }
 
+    if (args["monitor"]) {
+        string queue = args["monitor"].AsString(); 
+        CNetScheduleClient_Control cl(host, port, queue);
+        cl.Monitor(NcbiCout);
+    }
+
     if (args["s"]) {  // shutdown
         nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
@@ -179,6 +193,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/02 14:44:40  kuznets
+ * Implemented remote monitoring
+ *
  * Revision 1.6  2005/04/11 13:52:51  kuznets
  * Added logging control
  *

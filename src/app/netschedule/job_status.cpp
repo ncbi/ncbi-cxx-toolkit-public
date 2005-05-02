@@ -276,7 +276,6 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
         }        
         Return2PendingNoLock();
     }
-    
     return job_id;
 }
 
@@ -374,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/02 14:44:40  kuznets
+ * Implemented remote monitoring
+ *
  * Revision 1.10  2005/04/27 14:59:46  kuznets
  * Improved error messaging
  *

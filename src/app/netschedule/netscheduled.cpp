@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.2.4  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.3.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -95,7 +95,8 @@ typedef enum {
     eLogging,
     eStatistics,
     eQuitSession,
-    eError
+    eError,
+    eMonitor
 } EJS_RequestType;
 
 /// Request context
@@ -144,6 +145,8 @@ struct SThreadData
     string      answer;
 
     char        msg_buf[kMaxMessageSize];
+
+    string      lmsg; /// < LOG message
 
     SJS_Request req;
 };
@@ -267,6 +270,10 @@ public:
                            SThreadData&            tdata,
                            CQueueDataBase::CQueue& queue);
 
+    void ProcessMonitor(CSocket&                sock,
+                        SThreadData&            tdata,
+                        CQueueDataBase::CQueue& queue);
+
     void ProcessLog(CSocket&                sock,
                     SThreadData&            tdata);
 
@@ -309,6 +316,8 @@ private:
                          SThreadData& tdata);
 
     void x_CreateLog();
+
+    void x_MakeLogMessage(CSocket& sock, SThreadData& tdata);
 private:
     /// Host name where server runs
     string             m_Host;
@@ -401,13 +410,14 @@ CNetScheduleServer::~CNetScheduleServer()
 
 void CNetScheduleServer::Process(SOCK sock)
 {
-    SThreadData* tdata = 0;
     EIO_Status io_st;
     CSocket socket;
     socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
     bool is_log = IsLog();
-    tdata = x_GetThreadData();
+    SThreadData* tdata = x_GetThreadData();
+
+    CNetScheduleMonitor* monitor = 0;
 
     try {
         x_SetSocketParams(&socket);
@@ -431,30 +441,24 @@ void CNetScheduleServer::Process(SOCK sock)
             //
 
             if (is_log) {
-                CTime conn_tm = m_LocalTimer.GetLocalTime();
-                string peer = socket.GetPeerAddress();
-                // get only host name
-                string::size_type offs = peer.find_first_of(":");
-                if (offs != string::npos) {
-                    peer.erase(offs, peer.length());
-                }
-
-                string lmsg;
-                lmsg += peer;
-                lmsg += ';';
-                lmsg += conn_tm.AsString();
-                lmsg += ';';
-                lmsg += tdata->auth;
-                lmsg += ';';
-                lmsg += tdata->queue;
-                lmsg += ';';
-                lmsg += tdata->request;
-                lmsg += "\n";
-                m_AccessLog << lmsg;
+                x_MakeLogMessage(socket, *tdata);
+                m_AccessLog << tdata->lmsg;
             }
 
 
             CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue);
+
+            monitor = queue.GetMonitor();
+            if (monitor) {
+                if (!monitor->IsMonitorActive()) {
+                    monitor = 0;
+                } else {
+                    if (tdata->lmsg.empty()) {
+                        x_MakeLogMessage(socket, *tdata);
+                    }
+                    monitor->SendString(tdata->lmsg);
+                }
+            }
 
             SJS_Request& req = tdata->req;
             req.Init();
@@ -569,6 +573,9 @@ end_version_control:
             case eLogging:
                 ProcessLog(socket, *tdata);
                 break;
+            case eMonitor:
+                ProcessMonitor(socket, *tdata, queue);
+                break;
             case eStatistics:
                 ProcessStatistics(socket, *tdata, queue);
                 break;
@@ -599,7 +606,13 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+
         ERR_POST(msg);
+
+        msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+        if (monitor) {
+            monitor->SendString(msg);
+        }
     }
     catch (CNetServiceException &ex)
     {
@@ -610,7 +623,14 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+
         ERR_POST(msg);
+
+        msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+        if (monitor) {
+            monitor->SendString(msg);
+        }
+
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -623,7 +643,13 @@ end_version_control:
             msg += socket.GetPeerAddress();
             msg += " ";
             msg += tdata->auth;
+
             ERR_POST(msg);
+
+            msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+            if (monitor) {
+                monitor->SendString(msg);
+            }
 
             SetShutdownFlag();
         } else {
@@ -633,7 +659,13 @@ end_version_control:
             msg += socket.GetPeerAddress();
             msg += " ";
             msg += tdata->auth;
+
             ERR_POST(msg);
+
+            msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+            if (monitor) {
+                monitor->SendString(msg);
+            }
 
             string err = "Internal database error:";
             err += ex.what();
@@ -654,8 +686,13 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+
         ERR_POST(msg);
 
+        msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+        if (monitor) {
+            monitor->SendString(msg);
+        }
     }
     catch (exception& ex)
     {
@@ -672,7 +709,13 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+
         ERR_POST(msg);
+
+        msg = m_LocalTimer.GetLocalTime().AsString() + msg;
+        if (monitor) {
+            monitor->SendString(msg);
+        }
     }
 }
 
@@ -697,6 +740,20 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
                  job_id, m_Host.c_str(), unsigned(GetPort()));
 
     WriteMsg(sock, "OK:", buf);
+
+    CNetScheduleMonitor* monitor = queue.GetMonitor();
+    if (monitor->IsMonitorActive()) {
+        string msg = "::ProcessSubmit ";
+        msg += m_LocalTimer.GetLocalTime().AsString();
+        msg += buf;
+        msg += " ==> ";
+        msg += sock.GetPeerAddress();
+        msg += " ";
+        msg += tdata.auth;
+
+        monitor->SendString(msg);
+    }
+
 }
 
 void CNetScheduleServer::ProcessCancel(CSocket&                sock, 
@@ -848,8 +905,22 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
         x_MakeGetAnswer(key_buf, tdata);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
-        WriteMsg(sock, "OK:", kEmptyStr.c_str());
+        WriteMsg(sock, "OK:", "");
     }
+
+    CNetScheduleMonitor* monitor = queue.GetMonitor();
+    if (monitor->IsMonitorActive() && job_id) {
+        string msg = "::ProcessGet ";
+        msg += m_LocalTimer.GetLocalTime().AsString();
+        msg += tdata.answer;
+        msg += " ==> ";
+        msg += sock.GetPeerAddress();
+        msg += " ";
+        msg += tdata.auth;
+
+        monitor->SendString(msg);
+    }
+
 
     if (req.port) {  // unregister notification
         sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
@@ -926,6 +997,18 @@ void CNetScheduleServer::ProcessDropQueue(CSocket&                sock,
 {
     queue.Truncate();
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
+void CNetScheduleServer::ProcessMonitor(CSocket&                sock, 
+                                        SThreadData&            tdata,
+                                        CQueueDataBase::CQueue& queue)
+{
+    sock.DisableOSSendDelay(false);
+    WriteMsg(sock, "OK:", NETSCHEDULED_VERSION);
+    string started = "Started: " + m_StartTime.AsString();
+    WriteMsg(sock, "OK:", started.c_str());
+    sock.SetOwnership(eNoOwnership);
+    queue.SetMonitorSocket(sock.GetSOCK());
 }
 
 
@@ -1083,6 +1166,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 16.FPUT JSID_01_1 "error message"
     // 17.MPUT JSID_01_1 "error message"
     // 18.MGET JSID_01_1
+    // 19.MONI
 
     const char* s = reqstr.c_str();
 
@@ -1401,6 +1485,10 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         return;
     } // LOG
 
+    if (strncmp(s, "MONI", 4) == 0) {
+        req->req_type = eMonitor;
+        return;
+    }
 
     if (strncmp(s, "SHUTDOWN", 8) == 0) {
         req->req_type = eShutdown;
@@ -1503,6 +1591,32 @@ void CNetScheduleServer::x_SetSocketParams(CSocket* sock)
     STimeout to = {m_InactivityTimeout, 0};
     sock->SetTimeout(eIO_ReadWrite, &to);
 }
+
+void CNetScheduleServer::x_MakeLogMessage(CSocket& sock, SThreadData& tdata)
+{
+    CTime conn_tm = m_LocalTimer.GetLocalTime();
+    string peer = sock.GetPeerAddress();
+    // get only host name
+    string::size_type offs = peer.find_first_of(":");
+    if (offs != string::npos) {
+        peer.erase(offs, peer.length());
+    }
+
+    string& lmsg = tdata.lmsg;
+    lmsg.erase();
+
+    lmsg += peer;
+    lmsg += ';';
+    lmsg += conn_tm.AsString();
+    lmsg += ';';
+    lmsg += tdata.auth;
+    lmsg += ';';
+    lmsg += tdata.queue;
+    lmsg += ';';
+    lmsg += tdata.request;
+    lmsg += "\n";
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1776,6 +1890,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/05/02 14:44:40  kuznets
+ * Implemented remote monitoring
+ *
  * Revision 1.33  2005/04/28 17:40:26  kuznets
  * Added functions to rack down forgotten nodes
  *

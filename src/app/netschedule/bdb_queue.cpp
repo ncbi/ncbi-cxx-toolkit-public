@@ -43,6 +43,7 @@
 
 #include "bdb_queue.hpp"
 
+
 BEGIN_NCBI_SCOPE
 
 /// Mutex to guard vector of busy IDs 
@@ -830,6 +831,14 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
     db.id = job_id;
     db.Delete(CBDB_File::eIgnoreError);
     trans.Commit();
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::DropJob() job id=";
+        msg += NStr::IntToString(job_id);
+        m_LQueue.monitor.SendString(msg);
+    }
 }
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
@@ -903,6 +912,19 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
             m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
                                      CSocketAPI::ntoa(subm_addr), subm_port);
     }
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::PutResult() job id=";
+        msg += NStr::IntToString(job_id);
+        msg += " ret_code=";
+        msg += NStr::IntToString(ret_code);
+        msg += " output=";
+        msg += output;
+
+        m_LQueue.monitor.SendString(msg);
+    }
 }
 
 void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
@@ -932,6 +954,18 @@ void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
     }}
 
     trans.Commit();
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string mmsg = tmp_t.AsString();
+        mmsg += " CQueue::PutProgressMessage() job id=";
+        mmsg += NStr::IntToString(job_id);
+        mmsg += " msg=";
+        mmsg += msg;
+
+        m_LQueue.monitor.SendString(mmsg);
+    }
+
 }
 
 
@@ -992,6 +1026,16 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
         //EIO_Status status = 
             m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
                                      CSocketAPI::ntoa(subm_addr), subm_port);
+    }
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::JobFailed() job id=";
+        msg += NStr::IntToString(job_id);
+        msg += " err_msg=";
+        msg += err_msg;
+        m_LQueue.monitor.SendString(msg);
     }
 
 }
@@ -1055,6 +1099,23 @@ void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
         tl.MoveObject(exp_time, curr + tm, job_id);
     }}
 
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::SetJobRunTimeout: Job id=";
+        msg += NStr::IntToString(job_id);
+        tmp_t.SetTimeT(curr + tm);
+        tmp_t.ToLocalTime();
+        msg += " new_expiration_time=";
+        msg += tmp_t.AsString();
+        msg += " job_timeout(sec)=";
+        msg += NStr::IntToString(tm);
+        msg += " job_timeout(minutes)=";
+        msg += NStr::IntToString(tm/60);
+
+        m_LQueue.monitor.SendString(msg);
+    }
+
 }
 
 void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
@@ -1105,6 +1166,13 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     js_guard.Release();
     RemoveFromTimeLine(job_id);
 
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::ReturnJob: job id=";
+        msg += NStr::IntToString(job_id);
+        m_LQueue.monitor.SendString(msg);
+    }
 }
 
 void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
@@ -1177,7 +1245,7 @@ fetch_db:
                 // this job has been canceled while i'm fetching
                 goto get_job_id;
             }
-            LOG_POST(Error << "Status integrity violation " 
+            ERR_POST(Error << "Status integrity violation " 
                             << " job = " << *job_id 
                             << " status = " << status
                             << " expected status = " 
@@ -1211,6 +1279,15 @@ fetch_db:
             db.status = (int) CNetScheduleClient::eFailed;
             m_LQueue.status_tracker.ChangeStatus(*job_id, 
                                          CNetScheduleClient::eFailed);
+
+            if (m_LQueue.monitor.IsMonitorActive()) {
+                CTime tmp_t(CTime::eCurrent);
+                string msg = tmp_t.AsString();
+                msg += " CQueue::GetJob() timeout expired job id=";
+                msg += NStr::IntToString(*job_id);
+                m_LQueue.monitor.SendString(msg);
+            }
+
         } else {
 
             switch (run_counter) {
@@ -1230,13 +1307,24 @@ fetch_db:
                 db.worker_node5 = worker_node;
                 break;
             default:
+
                 m_LQueue.status_tracker.ChangeStatus(*job_id, 
                                             CNetScheduleClient::eFailed);
-                LOG_POST(Error << "Too many run attempts. job=" << *job_id);
-                *job_id = 0; 
+                ERR_POST(Error << "Too many run attempts. job=" << *job_id);
                 db.status = (int) CNetScheduleClient::eFailed;
                 db.time_run = 0;
                 db.run_counter = --run_counter;
+
+                if (m_LQueue.monitor.IsMonitorActive()) {
+                    CTime tmp_t(CTime::eCurrent);
+                    string msg = tmp_t.AsString();
+                    msg += " CQueue::GetJob() Too many run attempts job id=";
+                    msg += NStr::IntToString(*job_id);
+                    m_LQueue.monitor.SendString(msg);
+                }
+
+                *job_id = 0; 
+
             } // switch
 
         }
@@ -1245,6 +1333,16 @@ fetch_db:
 
         }}
         trans.Commit();
+
+        if (m_LQueue.monitor.IsMonitorActive() && *job_id) {
+            CTime tmp_t(CTime::eCurrent);
+            string msg = tmp_t.AsString();
+            msg += " CQueue::GetJob() job id=";
+            msg += NStr::IntToString(*job_id);
+            msg += " worker_node=";
+            msg += CSocketAPI::gethostbyaddr(worker_node);
+            m_LQueue.monitor.SendString(msg);
+        }
 
     } 
     catch (exception&)
@@ -1348,6 +1446,8 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
                            CBDB_Transaction::eNoAssociation);
 
     time_t curr = time(0);
+    unsigned time_done;
+    int job_ttl;
 
     {{
     CFastMutexGuard guard(m_LQueue.lock);
@@ -1362,17 +1462,22 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
         return true; // already deleted
     }
     int status = db.status;
-    if (status != (int) CNetScheduleClient::eDone) {
+    if (! (
+           (status == (int) CNetScheduleClient::eDone) ||
+           (status == (int) CNetScheduleClient::eCanceled) ||
+           (status == (int) CNetScheduleClient::eFailed) 
+           )
+        ) {
         return true;
     }
 
     unsigned queue_ttl = m_LQueue.timeout;
-    int job_ttl = db.timeout;
-    if (job_ttl == 0) {
+    job_ttl = db.timeout;
+    if (job_ttl <= 0) {
         job_ttl = queue_ttl;
     }
 
-    unsigned time_done = db.time_done;
+    time_done = db.time_done;
     if (time_done == 0) {  // job not done yet
         return false;
     }
@@ -1380,13 +1485,30 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
         return false;
     }
     cur.Delete(CBDB_File::eIgnoreError);
-//cerr << "Job deleted: " << job_id << endl;
 
     }}
     trans.Commit();
 
     m_LQueue.status_tracker.SetStatus(job_id, 
                                       CNetScheduleClient::eJobNotFound);
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tm(CTime::eCurrent);
+        string msg = tm.AsString();
+        msg += " CQueue::CheckDelete: Job deleted id=";
+        msg += NStr::IntToString(job_id);
+        tm.SetTimeT(time_done);
+        tm.ToLocalTime();
+        msg += " time_done=";
+        msg += tm.AsString();
+        msg += " job_ttl(sec)=";
+        msg += NStr::IntToString(job_ttl);
+        msg += " job_ttl(minutes)=";
+        msg += NStr::IntToString(job_ttl/60);
+
+        m_LQueue.monitor.SendString(msg);
+    }
+
     return true;
 }
 
@@ -1426,6 +1548,15 @@ void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
         CWriteLockGuard guard(m_LQueue.rtl_lock);
         m_LQueue.run_time_line->RemoveObject(job_id);
     }
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::RemoveFromTimeLine: job id=";
+        msg += NStr::IntToString(job_id);
+        m_LQueue.monitor.SendString(msg);
+    }
+
 }
 
 
@@ -1476,6 +1607,14 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
         wnodes.push_back(
             new SQueueListener(host_addr, udp_port, curr, timeout, auth));
     }
+}
+
+void CQueueDataBase::CQueue::SetMonitorSocket(SOCK sock)
+{
+    auto_ptr<CSocket> s(new CSocket());
+    s->Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+    m_LQueue.monitor.SetSocket(s.get());
+    s.release();
 }
 
 
@@ -1602,7 +1741,8 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
                         CBDB_Transaction::eNoAssociation);
 
     // TODO: get current job status from the status index
-
+    unsigned time_run, run_timeout;
+    time_t   exp_time;
     {{
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
@@ -1620,8 +1760,8 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
         return 0;
     }
 
-    unsigned time_run = db.time_run;
-    unsigned run_timeout = db.run_timeout;
+    time_run = db.time_run;
+    run_timeout = db.run_timeout;
 /*
     if (run_timeout == 0) {
         run_timeout = m_LQueue.run_timeout;
@@ -1630,12 +1770,13 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
         return 0;
     }
 */
-    time_t exp_time = x_ComputeExpirationTime(time_run, run_timeout);
-        //time_run + run_timeout;
+    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
     if (!(curr_time < exp_time)) { 
         return exp_time;
     }
     db.status = (int) CNetScheduleClient::ePending;
+    db.time_done = 0;
+
     cur.Update();
 
     }}
@@ -1643,6 +1784,29 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     trans.Commit();
 
     m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eReturned);
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tm(CTime::eCurrent);
+        string msg = tm.AsString();
+        msg += " CQueue::CheckExecutionTimeout: Job rescheduled id=";
+        msg += NStr::IntToString(job_id);
+        tm.SetTimeT(time_run);
+        tm.ToLocalTime();
+        msg += " time_run=";
+        msg += tm.AsString();
+
+        tm.SetTimeT(exp_time);
+        tm.ToLocalTime();
+        msg += " exp_time=";
+        msg += tm.AsString();
+
+        msg += " run_timeout(sec)=";
+        msg += NStr::IntToString(run_timeout);
+        msg += " run_timeout(minutes)=";
+        msg += NStr::IntToString(run_timeout/60);
+
+        m_LQueue.monitor.SendString(msg);
+    }
 
     return 0;
 }
@@ -1668,6 +1832,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/05/02 14:44:40  kuznets
+ * Implemented remote monitoring
+ *
  * Revision 1.29  2005/04/28 17:40:26  kuznets
  * Added functions to rack down forgotten nodes
  *
