@@ -30,12 +30,15 @@
  *
  */
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
+
 
 
 /***********************************************************************
@@ -334,6 +337,9 @@ static void TEST_ConnNetInfo(void)
 
 int main(void)
 {
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    srand(g_NCBI_ConnectRandomSeed);
+
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     TEST_URL_Encoding();
@@ -349,6 +355,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2005/05/02 16:12:16  lavr
+ * Use global random seed
+ *
  * Revision 6.18  2005/04/20 18:23:26  lavr
  * +<stdlib.h>
  *

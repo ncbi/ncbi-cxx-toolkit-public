@@ -82,10 +82,14 @@ int main(void)
     short mx_port;
     FILE* fp;
 
+
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    srand(g_NCBI_ConnectRandomSeed);
+
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    srand(time(0));
+
     if ((p = getenv("CONN_DEBUG_PRINTOUT")) != 0) {
         if (strncasecmp(p, "1",    1) == 0  ||
             strncasecmp(p, "YES",  3) == 0  ||
@@ -257,6 +261,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2005/05/02 16:12:38  lavr
+ * Use global random seed
+ *
  * Revision 6.13  2005/03/21 17:30:28  lavr
  * Include "../ncbi_ansi_ext.h" (essential for Windows)
  *

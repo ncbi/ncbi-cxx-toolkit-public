@@ -73,7 +73,8 @@ int main(void)
     USING_NCBI_SCOPE;
     size_t i, j, k, l;
 
-    srand((unsigned int) time(0));
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    srand(g_NCBI_ConnectRandomSeed);
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
@@ -239,6 +240,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2005/05/02 16:12:08  lavr
+ * Use global random seed
+ *
  * Revision 6.35  2004/11/22 20:25:11  lavr
  * "yar" replaced with "www"
  *

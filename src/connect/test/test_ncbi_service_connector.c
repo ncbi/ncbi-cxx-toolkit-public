@@ -34,6 +34,7 @@
 #include "../ncbi_priv.h"
 #include <connect/ncbi_service_connector.h>
 #include <stdlib.h>
+#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -50,6 +51,9 @@ int main(int argc, const char* argv[])
     char ibuf[1024];
     CONN conn;
     size_t n;
+
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFormatFlags(fLOG_Full | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
@@ -162,6 +166,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2005/05/02 16:12:43  lavr
+ * Use global random seed
+ *
  * Revision 6.31  2005/01/28 17:44:48  lavr
  * Fix:  forgotten to merge status variable relocation
  *

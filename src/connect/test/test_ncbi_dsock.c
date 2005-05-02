@@ -37,9 +37,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
-#ifdef NCBI_OS_UNIX
-#  include <unistd.h>
-#endif /*NCBI_OS_UNIX*/
 /* This header must go last */
 #include "test_assert.h"
 
@@ -346,16 +343,13 @@ int main(int argc, const char* argv[])
     if (argc < 2 || argc > 5)
         return s_Usage(argv[0]);
 
-    if (argc <= 4) {
-#ifdef NCBI_OS_UNIX
-        seed = (unsigned long) time(0) + (unsigned long) getpid();
-#else
-        seed = (unsigned long) time(0);
-#endif /*NCBI_OS_UNIX*/
-    } else
+    if (argc <= 4)
+        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    else
         sscanf(argv[4], "%lu", &seed);
     CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
-    srand(seed);
+    g_NCBI_ConnectRandomSeed = seed;
+    srand(g_NCBI_ConnectRandomSeed);
 
     if (env && (strcasecmp(env, "1") == 0     ||
                 strcasecmp(env, "yes") == 0   ||
@@ -387,6 +381,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2005/05/02 16:12:27  lavr
+ * Use global random seed
+ *
  * Revision 6.15  2005/01/05 21:33:58  lavr
  * Introduce MTU and use it on AMD-64 buggy kernels
  *
