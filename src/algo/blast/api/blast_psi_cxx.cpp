@@ -363,8 +363,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
             }
         }
     }
-    /* FIXME: use a constant here? */
-    if (opts->impala_scaling_factor != 1.0) {
+    if (opts->impala_scaling_factor != kPSSM_NoImpalaScaling) {
         asn1_pssm.SetFinalData().
             SetScalingFactor(static_cast<int>(opts->impala_scaling_factor));
     }
@@ -455,6 +454,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2005/05/02 19:39:07  camacho
+ * Introduced constant for IMPALA-style PSSM scaling
+ *
  * Revision 1.33  2005/04/27 19:58:34  dondosha
  * BlastSetup_ScoreBlkInit no longer has a phi-blast boolean argument
  *

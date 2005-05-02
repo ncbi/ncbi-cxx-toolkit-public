@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_filter.h>
 
 const int kUngappedHSPNumMax = 400;
+const double kPSSM_NoImpalaScaling = 1.0;
 
 SDustOptions* SDustOptionsFree(SDustOptions* dust_options)
 {
@@ -1053,7 +1054,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    options->use_best_alignment = TRUE;
 
    options->nsg_compatibility_mode = FALSE;
-   options->impala_scaling_factor = 1.0;    /* 1.0 indicates not to use this */
+   options->impala_scaling_factor = kPSSM_NoImpalaScaling;
    
    return 0;
 }
@@ -1193,6 +1194,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.164  2005/05/02 19:38:47  camacho
+ * Introduced constant for IMPALA-style PSSM scaling
+ *
  * Revision 1.163  2005/04/27 19:53:45  dondosha
  * Added handling of PHI BLAST program enumeration values
  *

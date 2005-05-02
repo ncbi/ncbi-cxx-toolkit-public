@@ -165,6 +165,10 @@ extern "C" {
                                    groups of three nucleotide bases to protein
                                    letters */
 
+/** Value used to indicate that no IMPALA-style scaling should be performed
+ * when scaling a PSSM */
+extern const double kPSSM_NoImpalaScaling;
+
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
