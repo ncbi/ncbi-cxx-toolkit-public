@@ -4,7 +4,17 @@
 #
 # Author: Anatoliy Kuznetsov
 #
-#  Check if netcached is not running and run it
+#  Check if netcached is not running and run it.
+#
+# RETURN:
+#    zero      -- if already running or successfully launched by this script
+#    non-zero  -- if is not already running and cannot be launched
+#
+# PRINTOUT  (specifically adapted to run as a cronjob):
+#    stderr  -- all changes in the server status (includin successful launch)
+#               and all errors occured during the script execution 
+#    stdout  -- routine script progress messages
+#
 
 start_dir=`pwd`
 
@@ -15,7 +25,7 @@ Die() {
 }
 
 Success() {
-    echo "$@"
+    echo "$@" >& 2
     echo $nc_pid > netcached.pid    
     cat netcached.out | mail -s "$@" $mail_to    
     cd $start_dir
