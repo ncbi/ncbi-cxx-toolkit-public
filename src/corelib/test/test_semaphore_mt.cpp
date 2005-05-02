@@ -138,10 +138,10 @@ bool CTestSemaphoreApp::Thread_Run(int idx)
     xncbi_SetValidateAction(eValidate_Throw);
 
     if ( idx % 2 != 1) {
-        Consume((idx/2)%3 + 1);
+        Produce((idx/2)%3 + 1);
     } 
     else {
-        Produce((idx/2)%3 + 1);
+        Consume((idx/2)%3 + 1);
     }
     return true;
 }
@@ -192,6 +192,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2005/05/02 13:16:36  grichenk
+ * Enable test in non-MT builds
+ *
  * Revision 6.9  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
