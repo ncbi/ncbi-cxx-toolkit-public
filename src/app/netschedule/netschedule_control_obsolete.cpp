@@ -67,6 +67,12 @@ public:
     }
 
     void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
+
+    virtual void CheckConnect(const string& key)
+    {
+        CNetScheduleClient::CheckConnect(key);
+    }
+
 };
 ///////////////////////////////////////////////////////////////////////
 
@@ -86,8 +92,6 @@ public:
 
 void CNetScheduleControl::Init(void)
 {
-    // Setup command line arguments and parameters
-
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -123,6 +127,12 @@ void CNetScheduleControl::Init(void)
                              "Queue monitoring",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("retry",
+                             "retry",
+                             "Number of re-try attempts if connection failed",
+                             CArgDescriptions::eInteger);
+
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -134,7 +144,24 @@ int CNetScheduleControl::Run(void)
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
 
+
     CNetScheduleClient_Control nc_client(host, port);
+
+    if (args["retry"]) {
+        int retry = args["retry"].AsInteger();
+        if (retry < 0) {
+            ERR_POST(Error << "Invalid retry count: " << retry);
+        }
+        for (int i = 0; i < retry; ++i) {
+            try {
+                nc_client.CheckConnect(kEmptyStr);
+                break;
+            } 
+            catch (exception&) {
+                SleepMilliSec(5 * 1000);
+            }
+        }
+    }
 
     if (args["log"]) {  // logging control
         
@@ -170,8 +197,7 @@ int CNetScheduleControl::Run(void)
         return 0;
     }
 
-
-    if (args["v"]) {  // shutdown
+    if (args["v"]) {  // version
         string version = nc_client.ServerVersion();
         if (version.empty()) {
             NcbiCout << "NetCache server communication error." << NcbiEndl;
@@ -193,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/05/02 16:37:41  kuznets
+ * + -retry cmd arg
+ *
  * Revision 1.7  2005/05/02 14:44:40  kuznets
  * Implemented remote monitoring
  *
