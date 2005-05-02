@@ -73,7 +73,10 @@ public:
     void SetCounts(int num_ident, int length, 
                    int gaps, int gap_opens);
     /// Set all member fields, given a Seq-align
-    virtual void SetFields(const CSeq_align& sal, CScope& scope);
+    /// @param sal Seq-align to get data from [in]
+    /// @param scope Scope for Bioseq retrieval [in]
+    /// @return 0 on success, 1 if query or subject Bioseq is not found.
+    virtual int SetFields(const CSeq_align& sal, CScope& scope);
 
     /// Tabular formatting options enumeration. Any non-default values request to
     /// add extra fields to the output on every line.
@@ -166,6 +169,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/05/02 17:32:58  dondosha
+* Changed return value of SetFields to int, to allow error return
+*
 * Revision 1.2  2005/04/28 19:28:17  dondosha
 * Changed CBioseq_Handle argument in PrintHeader to CBioseq, needed for web formatting
 *
