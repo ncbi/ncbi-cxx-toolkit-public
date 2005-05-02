@@ -404,6 +404,17 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
 
+/** Check for an overlap of two different alignments and remove redundant HSPs.
+ * A sufficient overlap is when two alignments have the same start or end values
+ * If an overlap is found the HSP with the lowest score is removed, if both scores
+ * are the same then the first is removed.
+ * @param hsp_list Contains array of pointers to HSPs to purge [in]
+ * @return The number of valid alignments remaining. 
+*/
+NCBI_XBLAST_EXPORT
+Int4
+Blast_HSPListPurgeHSPsWithCommonEndpoints(BlastHSPList* hsp_list);
+
 /** Reevaluate all HSPs in an HSP list, using ambiguity information. 
  * This is/can only done either for an ungapped search, or if traceback is 
  * already available.
