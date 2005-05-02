@@ -56,7 +56,12 @@ public:
 
     void ShutdownServer() { CNetCacheClient::ShutdownServer(); }
     void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
+    virtual void CheckConnect(const string& key)
+    {
+        CNetCacheClient::CheckConnect(key);
+    }
 };
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -97,6 +102,11 @@ void CNetCacheControl::Init(void)
                              "Switch server side logging",
                              CArgDescriptions::eBoolean);
 
+    arg_desc->AddOptionalKey("retry",
+                             "retry",
+                             "Number of re-try attempts if connection failed",
+                             CArgDescriptions::eInteger);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -109,6 +119,23 @@ int CNetCacheControl::Run(void)
     unsigned short port = args["port"].AsInteger();
 
     CNetCacheClient_Control nc_client(host, port);
+
+    if (args["retry"]) {
+        int retry = args["retry"].AsInteger();
+        if (retry < 0) {
+            ERR_POST(Error << "Invalid retry count: " << retry);
+        }
+        for (int i = 0; i < retry; ++i) {
+            try {
+                nc_client.CheckConnect(kEmptyStr);
+                break;
+            } 
+            catch (exception&) {
+                SleepMilliSec(5 * 1000);
+            }
+        }
+    }
+
 
     if (args["log"]) {  // logging control
         bool on_off = args["log"].AsBoolean();
@@ -143,6 +170,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/02 16:47:18  kuznets
+ * + -retry cmd arg
+ *
  * Revision 1.5  2005/03/22 18:55:18  kuznets
  * Reflecting changes in connect library layout
  *
