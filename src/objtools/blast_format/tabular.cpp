@@ -42,6 +42,8 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast_format/tabular.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <serial/iterator.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -71,11 +73,41 @@ void CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
         m_QueryId.erase(m_QueryId.size() - 1);
 }
 
+static string 
+s_GetTitleFirstToken(const CBioseq_Handle& bh)
+{
+    string id_token = NcbiEmptyString;
+    string title = sequence::GetTitle(bh).c_str();
+
+    if (title != NcbiEmptyString) {
+        string::size_type pos = title.find(" ");
+        if (pos == string::npos)
+            pos = title.size();
+        id_token = title.substr(0, pos);
+    }
+    return id_token;
+}
+
 void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
 {
     m_QueryId = NcbiEmptyString;
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-        m_QueryId += itr->AsString() + "|";
+        string id_token;
+        // Local ids are usually fake. If a title exists, use the first token
+        // of the title instead of the local id. If no title, use the local
+        // id, but without the "lcl|" prefix.
+        if (itr->GetSeqId()->IsLocal()) {
+            if ((id_token = s_GetTitleFirstToken(bh)) == NcbiEmptyString) {
+                const CObject_id& obj_id = itr->GetSeqId()->GetLocal();
+                if (obj_id.IsStr())
+                    id_token = obj_id.GetStr();
+                else 
+                    id_token = NStr::IntToString(obj_id.GetId());
+            }
+        } else {
+            id_token = itr->AsString();
+        }
+        m_QueryId += id_token + "|";
     }
     if (m_QueryId.size() > 0)
         m_QueryId.erase(m_QueryId.size() - 1);
@@ -95,13 +127,22 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 {
     m_SubjectId = NcbiEmptyString;
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-        m_SubjectId += itr->AsString() + "|";
+        string id_token = NcbiEmptyString;
+        // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
+        // created in a BLAST database when it is formatted without indexing.
+        // For such ids, use first token of the title, if it's available.
+        if (!itr->GetSeqId()->IsGeneral() || 
+            itr->GetSeqId()->AsFastaString().find("gnl|BL_ORD_ID") == 
+            string::npos ||
+            ((id_token = s_GetTitleFirstToken(bh)) == NcbiEmptyString))
+            id_token = itr->AsString();
+        m_SubjectId += id_token + "|";
     }
     if (m_SubjectId.size() > 0)
         m_SubjectId.erase(m_SubjectId.size() - 1);
 }
 
-void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
+int CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
 {
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
@@ -111,28 +152,51 @@ void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
     double evalue;
     int sum_n;
     list<int> use_this_gi;
+
+    bool query_is_na, subject_is_na;
+    // Extract the full list of subject ids
+    try {
+        const CBioseq_Handle& query_bh = 
+            scope.GetBioseqHandle(align.GetSeq_id(0));
+        SetQueryId(query_bh);
+        query_is_na = query_bh.IsNa();
+        const CBioseq_Handle& subject_bh = 
+            scope.GetBioseqHandle(align.GetSeq_id(1));
+        SetSubjectId(subject_bh);
+        subject_is_na = subject_bh.IsNa();
+    } catch (const CException&) {
+        // Either query or subject sequence not found - skip the remainder of 
+        // the set up, and return error status.
+        return -1;
+    }
+
     CBlastFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
                                    num_ident, use_this_gi);
     SetScores(score, bit_score, evalue);
-    CRef<CSeq_align> finalAln;
-    bool translated = align.GetSegs().IsStd();
-    // For translated searches, convert a Std-seg alignment into a special form of 
-    // Dense-seg. 
-    if (translated)
-        finalAln = align.CreateDensegFromStdseg();
+    CRef<CSeq_align> finalAln(0);
+   
+    // Convert Std-seg and Dense-diag alignments to Dense-seg.
+    // Std-segs are produced only for translated searches; Dense-diags only for 
+    // ungapped, not translated searches.
+    const bool kTranslated = align.GetSegs().IsStd();
 
-    const CDense_seg& ds = (translated ? finalAln->GetSegs().GetDenseg() :
+    if (kTranslated) {
+        CRef<CSeq_align> densegAln = align.CreateDensegFromStdseg();
+        // When both query and subject are translated, i.e. tblastx, convert
+        // to a special type of Dense-seg.
+        if (query_is_na && subject_is_na)
+            finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
+        else
+            finalAln = densegAln;
+    } else if (align.GetSegs().IsDendiag()) {
+        finalAln = CBlastFormatUtil::CreateDensegFromDendiag(align);
+    }
+
+    const CDense_seg& ds = (finalAln ? finalAln->GetSegs().GetDenseg() :
                             align.GetSegs().GetDenseg());
 
     CAlnVec alnVec(ds, scope);
     
-    // Extract the full list of subject ids
-    const CBioseq_Handle& query_bh = alnVec.GetBioseqHandle(0);
-    SetQueryId(query_bh);
-    const CBioseq_Handle& subject_bh = alnVec.GetBioseqHandle(1);
-    SetSubjectId(subject_bh);
-
-
     int align_length, num_gaps, num_gap_opens;
     CBlastFormatUtil::GetAlignLengths(alnVec, align_length, num_gaps, 
                                       num_gap_opens);
@@ -158,7 +222,7 @@ void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
 
     // For translated search, for a negative query frame, reverse its start and
     // end offsets.
-    if (translated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus) {
+    if (kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus) {
         q_start = alnVec.GetSeqStop(kQueryRow) + 1;
         q_end = alnVec.GetSeqStart(kQueryRow) + 1;
     } else {
@@ -170,7 +234,7 @@ void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
     // Also do that for a nucleotide-nucleotide search, if query is on the 
     // reverse strand, because BLAST output always reverses subject, not query.
     if (ds.GetSeqStrand(kSubjectRow) == eNa_strand_minus ||
-        (!translated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus)) {
+        (!kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus)) {
         s_end = alnVec.GetSeqStart(kSubjectRow) + 1;
         s_start = alnVec.GetSeqStop(kSubjectRow) + 1;
     } else {
@@ -180,7 +244,7 @@ void CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
 
     SetEndpoints(q_start, q_end, s_start, s_end);
 
-
+    return 0;
 }
 
 
@@ -255,6 +319,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/02 17:36:23  dondosha
+* 1. Return error from SetFields if Bioseq handle cannot be found for query or subject;
+* 2. Added extra logic for local query ids and BL_ORD_ID database ids.
+* 3. Convert Dense-diag to Denseg for ungapped search.
+*
 * Revision 1.3  2005/04/28 19:29:28  dondosha
 * Changed CBioseq_Handle argument in PrintHeader to CBioseq, needed for web formatting; do not rely on Seq-align in determining number of identities
 *
