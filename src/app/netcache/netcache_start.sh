@@ -46,7 +46,8 @@ netcached=${BIN_PATH}/netcached
 service_wait=10
 mail_to="kuznets@ncbi -c vakatov@ncbi"
 
-
+LD_LIBRARY_PATH="$BIN_PATH;$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
 
 if [ ! -d "$run_dir" ]; then
     Die "Startup directory ( $run_dir ) does not exist"
