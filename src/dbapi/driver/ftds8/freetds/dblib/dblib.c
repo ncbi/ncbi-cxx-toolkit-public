@@ -81,7 +81,7 @@ int i = 0;
 
 	while (i<TDS_MAX_CONN && ctx->connection_list[i]) i++;
 	if (i==TDS_MAX_CONN) {
-		fprintf(stderr,"Max connections reached, increase value of TDS_MAX_CONN\n");
+		/*fprintf(stderr,"Max connections reached, increase value of TDS_MAX_CONN\n");*/
 		return 1;
 	} else {
 		ctx->connection_list[i] = tds;
@@ -591,7 +591,7 @@ DBPROCESS *dbproc;
       /* tds_set_parent( dbproc->tds_socket, dbproc); */
       dblib_add_connection(g_dblib_ctx, dbproc->tds_socket);
    } else {
-      fprintf(stderr,"DB-Library: Login incorrect.\n");
+       /*fprintf(stderr,"DB-Library: Login incorrect.\n");*/
       free(dbproc); /* memory leak fix (mlilback, 11/17/01) */
       return NULL;
    }
@@ -1195,8 +1195,10 @@ DBNUMERIC   *num;
         case SYBIMAGE:
 
              if (len > destlen && destlen >= 0) {
+#if 0
                 fprintf(stderr,"%s: Line %d: Data-conversion resulted in overflow.\n", __FILE__, __LINE__);
                 fprintf(stderr,"\tlen (%d) > destlen (%d).\n", len, destlen);
+#endif
                 ret = -1;
              } else {
                 memcpy(dest, dres.ib, len);
