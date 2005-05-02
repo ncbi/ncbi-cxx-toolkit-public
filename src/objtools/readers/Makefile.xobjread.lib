@@ -3,5 +3,5 @@
 ASN_DEP = seq
 
 LIB = xobjread
-SRC = fasta readfeat gff_reader agp_read aln_reader cigar getfeature
+SRC = fasta readfeat gff_reader agp_read aln_reader cigar getfeature phrap
 DLL_LIB = creaders
