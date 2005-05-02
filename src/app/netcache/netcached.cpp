@@ -62,7 +62,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.1  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.2  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1374,8 +1374,10 @@ int CNetCacheDApp::Run(void)
             const string& db_path = 
                 bdb_conf.GetString("netcached", "path", 
                                     CConfig::eErr_Throw, kEmptyStr);
+            bool reinit =
+            reg.GetBool("server", "reinit", false, 0, CNcbiRegistry::eReturn);
 
-            if (args["reinit"]) {  // Drop the database directory
+            if (args["reinit"] || reinit) {  // Drop the database directory
                 CDir dir(db_path);
                 dir.Remove();
             }
@@ -1507,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/05/02 17:42:57  kuznets
+ * Added support of reinit flag in the ini file
+ *
  * Revision 1.55  2005/04/26 18:53:50  kuznets
  * Added optional daemonization
  *
