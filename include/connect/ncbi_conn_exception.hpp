@@ -33,9 +33,9 @@
  *
  */
 
-#include <connect/connect_export.h>
-#include <corelib/ncbiexpt.hpp>
 #include <connect/ncbi_core.h>
+#include <corelib/ncbiexpt.hpp>
+
 
 /** @addtogroup ConnExcep
  *
@@ -46,7 +46,8 @@
 BEGIN_NCBI_SCOPE
 
 
-class CConnException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XCONNECT_EXPORT CConnException
+    : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -66,7 +67,8 @@ public:
 /// Thrown if error is specific to the NCBI BDB C++ library.
 ///
 /// @sa EIO_Status
-class CIO_Exception : public CException
+class NCBI_XCONNECT_EXPORT CIO_Exception
+    : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     /// @sa EIO_Status
@@ -129,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/05/02 16:01:23  lavr
+ * Proper order of included headers and exception class derivation
+ *
  * Revision 6.9  2005/04/14 18:15:47  kuznets
  * +NCBI_IO_CHECK_RW
  *
