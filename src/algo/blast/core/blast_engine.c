@@ -377,6 +377,12 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             aux_struct->GetGappedScore(program_number, query, query_info, 
                subject, gap_align, score_params, ext_params, hit_params, 
                init_hitlist, &hsp_list, gapped_stats);
+
+            /* Removes redundant HSPs. */
+             Blast_HSPListPurgeHSPsWithCommonEndpoints(hsp_list);
+
+             Blast_HSPListSortByScore(hsp_list);
+
             if (score_options->is_ooframe && kTranslatedSubject)
                subject->length = prot_length;
          } else {
