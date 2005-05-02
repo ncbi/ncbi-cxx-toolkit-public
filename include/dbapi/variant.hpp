@@ -53,18 +53,22 @@ BEGIN_NCBI_SCOPE
 //
 //  
 
-class NCBI_DBAPI_EXPORT CVariantException : public std::exception 
+//class NCBI_DBAPI_EXPORT CVariantException : public std::exception 
+class NCBI_DBAPI_EXPORT CVariantException : EXCEPTION_VIRTUAL_BASE public CException 
 {
 
 public:
-    CVariantException(const string& msg);
-    
-    virtual ~CVariantException() throw();
-  
-    virtual const char* what() const throw();
-
-private:
-    const string m_msg;
+    enum EErrCode {
+         eVariant
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eVariant:    return "eVariant";
+        default:       return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CVariantException, CException);
 };
 
 
@@ -202,6 +206,7 @@ protected:
 private:
 
     void VerifyType(bool e) const;
+    void CheckNull() const;
 
     class CDB_Object* m_data;
 };
@@ -242,8 +247,17 @@ void CVariant::VerifyType(bool e) const
         _TRACE("CVariant::VerifyType(): Wrong type");
         _ASSERT(0); 
 #else
-        throw CVariantException("CVariant::VerifyType(): Wrong type");
+        NCBI_THROW(CVariantException, eVariant, "Wrong type");
 #endif
+    }
+}
+
+inline
+void CVariant::CheckNull() const
+{
+    if( IsNull() ) 
+    {
+        NCBI_THROW(CVariantException, eVariant, "Attempt to get value from NULL column");
     }
 }
 
@@ -254,6 +268,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/02 21:12:22  kholodov
+ * Modified: made CException base class for CVariantException
+ * Added: throw exception if attempt to get value from NULL column is made
+ *
  * Revision 1.22  2004/09/29 14:58:21  kholodov
  * Added: SetNull() method
  *
