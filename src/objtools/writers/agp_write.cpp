@@ -40,6 +40,8 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -48,30 +50,54 @@ static char s_DetermineComponentType(const CSeq_id& id, CScope& scope);
 
 /// Write to stream in agp format.
 /// Based on www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html
-void AgpWrite(CNcbiOstream& os,
-              const CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage,
-              CScope& scope)
+static void s_AgpWrite(CNcbiOstream& os,
+                       const CSeqMap& seq_map,
+                       TSeqPos start_pos,
+                       TSeqPos stop_pos,
+                       const string& object_id,
+                       const string& gap_type,
+                       bool linkage,
+                       CScope& scope)
 {
     int part_num = 1;
-    int next_start = 1;
-    for (CSeqMap_CI iter = seq_map.Begin(&scope);
-         iter != seq_map.End(&scope);  iter.Next()) {
 
-        // col 1
+    for (CSeqMap_CI iter(seq_map.Begin(&scope));  iter;  ++iter) {
+        TSeqPos seg_pos = iter.GetPosition();
+        TSeqPos seg_end = iter.GetPosition() + iter.GetLength();
+        if (start_pos > seg_end) {
+            continue;
+        }
+
+        TSeqPos start_offs = 0;
+        if (start_pos > seg_pos) {
+            start_offs = start_pos - seg_pos;
+        }
+
+        if (stop_pos < seg_pos) {
+            /// done!
+            break;
+        }
+
+        TSeqPos end_offs = 0;
+        if (seg_end > stop_pos) {
+            end_offs = seg_end - stop_pos;
+        }
+
+        // col 1: the object ID
         os << object_id;
-        // col 2
-        os << '\t' << next_start;
-        // col 3
-        os << '\t' << next_start + iter.GetLength() - 1;
-        next_start += iter.GetLength();
-        // col 4
+
+        // col 2: start position on this object
+        os << '\t' << seg_pos + start_offs + 1;
+
+        // col 3: end position on this object
+        os << '\t' << seg_end - end_offs;
+
+        // col 4: part number
         os << '\t' << part_num;
         part_num += 1;
 
-        if (iter.GetType() == CSeqMap::eSeqGap) {
+        switch (iter.GetType()) {
+        case CSeqMap::eSeqGap:
             // col 5
             os << "\tN";
             // col 6b
@@ -83,26 +109,76 @@ void AgpWrite(CNcbiOstream& os,
             // col 9; write an empty column (Or should there be no column,
             //        i.e., no tab?  Our reader doesn't care.)
             os << '\t';
-        } else if (iter.GetType() == CSeqMap::eSeqRef) {
+            break;
+
+        case CSeqMap::eSeqRef:
             // col 5; Should be A, D, F, G, P, O, or W
             os << "\t" <<
                 s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
                                          scope);
             // col 6a
-            os << '\t' << iter.GetRefSeqid().GetSeqId()->GetSeqIdString(true);
+            os << '\t';
+            {{
+                CSeq_id_Handle idh =
+                    sequence::GetId(*iter.GetRefSeqid().GetSeqId(), scope,
+                                    sequence::eGetId_Best);
+                string id_str;
+                idh.GetSeqId()->GetLabel(&id_str);
+                os << id_str;
+            }}
+
+
             // col 7a
-            os << '\t' << iter.GetRefPosition() + 1;
+            os << '\t' << iter.GetRefPosition() + start_offs + 1;
             // col 8a
-            os << '\t' << iter.GetRefEndPosition();
+            os << '\t' << iter.GetRefEndPosition() - end_offs;
             // col 9
             if (iter.GetRefMinusStrand()) {
                 os << "\t-";
             } else {
                 os << "\t+";
             }
+            break;
+
+        default:
+            break;
         }
         os << endl;
     }
+}
+
+
+void AgpWrite(CNcbiOstream& os,
+              const CSeqMap& seq_map,
+              const string& object_id,
+              const string& gap_type,
+              bool linkage,
+              CScope& scope)
+{
+    s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
+               object_id, gap_type, linkage, scope);
+}
+
+void AgpWrite(CNcbiOstream& os,
+              const CBioseq_Handle& handle,
+              const string& object_id,
+              const string& gap_type,
+              bool linkage)
+{
+    s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
+               object_id, gap_type, linkage, handle.GetScope());
+}
+
+
+void AgpWrite(CNcbiOstream& os,
+              const CBioseq_Handle& handle,
+              TSeqPos from, TSeqPos to,
+              const string& object_id,
+              const string& gap_type,
+              bool linkage)
+{
+    s_AgpWrite(os, handle.GetSeqMap(), from, to,
+               object_id, gap_type, linkage, handle.GetScope());
 }
 
 
@@ -132,41 +208,50 @@ static char s_DetermineComponentType(const CSeq_id& id, CScope& scope)
 {
     EAgpType type = eO;
 
-    CConstRef<CBioseq> bioseq = scope.GetBioseqHandle(id).GetCompleteBioseq();
-    if (bioseq->CanGetDescr()) {
-        const CSeq_descr::Tdata& descs = bioseq->GetDescr().Get();
-        ITERATE (CSeq_descr::Tdata, desc, descs) {
-            if ((*desc)->IsMolinfo()) {
-                switch ((*desc)->GetMolinfo().GetTech()) {
-                case CMolInfo::eTech_wgs:
-                    return 'W';
-                case CMolInfo::eTech_htgs_0:
-                case CMolInfo::eTech_htgs_1:
-                case CMolInfo::eTech_htgs_2:
-                    type = max(type, eP);
-                    break;
-                case CMolInfo::eTech_htgs_3:
-                    type = max(type, eF);
-                    break;
-                default:
-                    break;
-                }
+    CSeqdesc_CI::TDescChoices ch;
+    ch.push_back(CSeqdesc::e_Molinfo);
+    ch.push_back(CSeqdesc::e_Genbank);
+
+    CSeqdesc_CI desc_iter(scope.GetBioseqHandle(id), ch);
+    for ( ;  desc_iter;  ++desc_iter) {
+        switch (desc_iter->Which()) {
+        case CSeqdesc::e_Molinfo:
+            switch (desc_iter->GetMolinfo().GetTech()) {
+            case CMolInfo::eTech_wgs:
+                return 'W';
+            case CMolInfo::eTech_htgs_0:
+            case CMolInfo::eTech_htgs_1:
+            case CMolInfo::eTech_htgs_2:
+                type = max(type, eP);
+                break;
+            case CMolInfo::eTech_htgs_3:
+                type = max(type, eF);
+                break;
+            default:
+                break;
             }
-            if ((*desc)->IsGenbank()) {
-                if ((*desc)->GetGenbank().CanGetKeywords()) {
-                    ITERATE (CGB_block::TKeywords, kw,
-                             (*desc)->GetGenbank().GetKeywords()) {
-                        if (*kw == "HTGS_DRAFT" || *kw == "HTGS_FULLTOP") {
-                            type = max(type, eD);
-                        }
-                        if (*kw == "HTGS_ACTIVEFIN") {
-                            type = max(type, eA);
-                        }
+            break;
+
+        case CSeqdesc::e_Genbank:
+            if (desc_iter->GetGenbank().CanGetKeywords()) {
+                ITERATE (CGB_block::TKeywords, kw,
+                         desc_iter->GetGenbank().GetKeywords()) {
+                    if (*kw == "HTGS_DRAFT" || *kw == "HTGS_FULLTOP") {
+                        type = max(type, eD);
+                    }
+                    if (*kw == "HTGS_ACTIVEFIN") {
+                        type = max(type, eA);
                     }
                 }
             }
+            break;
+
+        default:
+            _ASSERT(false);
+            break;
         }
     }
+
     switch (type) {
     case eP:
         return 'P';
@@ -187,6 +272,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/02 16:07:36  dicuccio
+ * Updated AgpWrite(): added additional constructors to write data from CSeqMap,
+ * CBioseqHandle, and CBioseqHandle with sequence range.  Refactored internals.
+ * Dump best seq-id instead of gi for component accession
+ *
  * Revision 1.5  2004/07/09 11:54:52  dicuccio
  * Dropped version of AgpWrite() that takes the object manager - use only one API,
  * taking a CScope

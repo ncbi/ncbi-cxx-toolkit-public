@@ -36,6 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
+///
 /// This version takes a scope.  This is useful when
 /// the sequence being written has components that
 /// are not in the database but have been added to
@@ -49,11 +50,38 @@ void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
                                     bool linkage,
                                     objects::CScope& scope);
 
+
+///
+/// Write a bioseq in AGP format
+void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
+                                    const objects::CBioseq_Handle& handle,
+                                    const string& object_id,
+                                    const string& gap_type,
+                                    bool linkage);
+
+///
+/// Write a location in AGP format
+///
+void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
+                                    const objects::CBioseq_Handle& handle,
+                                    TSeqPos from, TSeqPos to,
+                                    const string& object_id,
+                                    const string& gap_type,
+                                    bool linkage);
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/05/02 16:07:30  dicuccio
+ * Updated AgpWrite(): added additional constructors to write data from CSeqMap,
+ * CBioseqHandle, and CBioseqHandle with sequence range.  Refactored internals.
+ * Dump best seq-id instead of gi for component accession
+ *
  * Revision 1.4  2004/07/09 11:54:52  dicuccio
  * Dropped version of AgpWrite() that takes the object manager - use only one API,
  * taking a CScope
