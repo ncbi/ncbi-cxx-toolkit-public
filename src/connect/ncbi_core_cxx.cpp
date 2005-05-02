@@ -41,6 +41,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
+#include <time.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -251,7 +252,11 @@ static void s_Init(IRWRegistry*      reg = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
 {
-    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flags & eConnectInit_OwnLock ? true : false));
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    srand(g_NCBI_ConnectRandomSeed);
+
+    CORE_SetLOCK(MT_LOCK_cxx2c(lock,
+                               flags & eConnectInit_OwnLock ? true : false));
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
     s_ConnectInit = how;
@@ -295,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2005/05/02 16:03:53  lavr
+ * Set random seed at initialization
+ *
  * Revision 6.27  2005/04/22 17:44:28  vasilche
  * Use mutex guard to avoid possibility of abandoned mutex.
  *
