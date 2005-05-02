@@ -196,50 +196,50 @@ void CNetServiceClient::WriteStr(const char* str, size_t len)
 void CNetServiceClient::CreateSocket(const string& hostname,
                                      unsigned      port)
 {
+    EIO_Status io_st;
     if (m_Sock == 0) {
-        m_Sock = new CSocket(hostname, port);
-        m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
-    } else {
-        unsigned conn_repeats = 0;
-        const unsigned max_repeats = 10;
-        
-        do {
-            EIO_Status io_st = 
-                m_Sock->Connect(hostname, port, &m_Timeout, eOn);
-            
-            if (io_st != eIO_Success) {
-                if (io_st == eIO_Unknown) {
-                    
-                    // most likely this is an indication we have too many 
-                    // open ports on the client side 
-                    // (this kernel limitation manifests itself on Linux)
-                    //
-                    
-                    if (++conn_repeats > max_repeats) {
-                        if ( io_st != eIO_Success) {
-                            throw CIO_Exception(DIAG_COMPILE_INFO,
-                            0, (CIO_Exception::EErrCode)io_st, 
-                               "IO error. Failed to connect to server.");
-                        } 
-                        //NCBI_IO_CHECK(io_st);
-                    }
-                    // give system a chance to recover
-                    
-                    SleepMilliSec(1000 * conn_repeats);
-                } else {
-                    NCBI_IO_CHECK(io_st);
+        m_Sock = new CSocket();
+        m_OwnSocket = eTakeOwnership;
+    } //else {
+
+    unsigned conn_repeats = 0;
+    const unsigned max_repeats = 10;
+    
+    do {
+        io_st = m_Sock->Connect(hostname, port, &m_Timeout, eOn);
+        if (io_st != eIO_Success) {
+            if (io_st == eIO_Unknown) {
+                
+                // most likely this is an indication we have too many 
+                // open ports on the client side 
+                // (this kernel limitation manifests itself on Linux)
+                //
+                
+                if (++conn_repeats > max_repeats) {
+                    if ( io_st != eIO_Success) {
+                        throw CIO_Exception(DIAG_COMPILE_INFO,
+                        0, (CIO_Exception::EErrCode)io_st, 
+                            "IO error. Failed to connect to server.");
+                    } 
+                    //NCBI_IO_CHECK(io_st);
                 }
+                // give system a chance to recover
+                
+                SleepMilliSec(1000 * conn_repeats);
             } else {
-                break;
+                NCBI_IO_CHECK(io_st);
             }
-            
-        } while (1);
+        } else {
+            break;
+        }
         
-        m_Sock->SetDataLogging(eDefault);
+    } while (1);
+    
+    m_Sock->SetDataLogging(eDefault);
         
-    }
+//    }
+    m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_Sock->DisableOSSendDelay();
-    m_OwnSocket = eTakeOwnership;
 
     m_Host = hostname;
     m_Port = port;
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/02 16:21:52  kuznets
+ * CreateSocket() changed to better handle connection failures
+ *
  * Revision 1.9  2005/04/25 13:59:58  kuznets
  * Increased number of reconnect attempts when OS has no more sockets
  *
