@@ -97,7 +97,7 @@ struct SSERV_IterTag {
  *       optimal, i.e. preference 0.0 actually means not to favor the preferred
  *       host at all, while 100.0 means to opt for that as much as possible.
  */
-SSERV_Info* SERV_GetInfoP
+extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
 (const char*         service,       /* service name                          */
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
@@ -110,7 +110,7 @@ SSERV_Info* SERV_GetInfoP
  );
 
 /* same as the above but creates an iterator to get services one by one */
-SERV_ITER SERV_OpenP
+extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
 (const char*         service,
  TSERV_Type          type,
  unsigned int        preferred_host,
@@ -125,13 +125,16 @@ SERV_ITER SERV_OpenP
 
 /* Return service name the iterator is currently working on.
  */
-const char* SERV_GetCurrentName(SERV_ITER iter);
+extern NCBI_XCONNECT_EXPORT const char* SERV_GetCurrentName(SERV_ITER iter);
 
 
 /* Private interface: update mapper information from the given text
  * (<CR><LF> separated lines, usually taken from HTTP header).
  */
-int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Update
+(SERV_ITER   iter,
+ const char* text
+ );
 
 
 /* Private interface: print and return the HTTP-compliant header portion
@@ -139,14 +142,17 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
  * contained in the iterator; to be used in mapping requests to DISPD.
  * Return value must be 'free'd.
  */
-char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer);
+extern NCBI_XCONNECT_EXPORT char* SERV_PrintEx
+(SERV_ITER           iter,
+ const SConnNetInfo* referrer
+ );
 
 #define SERV_Print(iter) SERV_PrintEx(iter, 0)
 
 
 /* Get name of underlying service mapper.
  */
-const char* SERV_MapperName(SERV_ITER iter);
+extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
 
 
 /* Get final service name, using CONN_SERVICE_NAME_service environment
@@ -156,20 +162,24 @@ const char* SERV_MapperName(SERV_ITER iter);
  * is to be freed by a caller when no longer needed. Return NULL on error.
  * NOTE: This procedure does not detect cyclical redefinitions.
  */
-char* SERV_ServiceName(const char* service);
+extern NCBI_XCONNECT_EXPORT char* SERV_ServiceName(const char* service);
 
 
 /* Get configuration file name. Returned '\0'-terminated string
  * is to be free()'d by a caller when no longer needed.
  * Return NULL if no configuration file name available.
  */
-char* SERV_GetConfig(void);
+extern NCBI_XCONNECT_EXPORT char* SERV_GetConfig(void);
 
 
 /* Given the status gap and wanted preference, calculate
  * acceptable stretch for the gap (the number of candidates is n).
  */
-double SERV_Preference(double pref, double gap, unsigned int n);
+extern NCBI_XCONNECT_EXPORT double SERV_Preference
+(double       pref,
+ double       gap,
+ unsigned int n
+ );
 
 
 #ifdef __cplusplus
@@ -180,6 +190,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2005/05/02 16:04:52  lavr
+ * Added export prefixes for most of internal API calls
+ *
  * Revision 6.29  2005/04/25 18:47:29  lavr
  * Private API to accept SConnNetInfo* for network dispatching to work too
  *
