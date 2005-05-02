@@ -32,6 +32,9 @@
  *    Private aux. code for the "ncbi_*.[ch]"
  *
  *********************************
+ * Random generator seeding support
+ *    private global:  g_NCBI_ConnectRandomSeed
+ *    macro:           NCBI_CONNECT_SRAND_ADDENT
  * Critical section (basic multi-thread synchronization):
  *    private global:  g_CORE_MT_Lock
  *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
@@ -48,6 +51,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+/******************************************************************************
+ *  Random generator seeding support
+ */
+
+extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectRandomSeed;
+
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#  define NCBI_CONNECT_SRAND_ADDENT ((int) getpid()) 
+#else
+#  define NCBI_CONNECT_SRAND_ADDENT ((int) SOCK_gethostbyname(0))
+#endif /*NCBI_OS_UNIX*/
+
 
 
 /******************************************************************************
@@ -184,6 +202,9 @@ extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2005/05/02 16:04:17  lavr
+ * Use global random seed
+ *
  * Revision 6.11  2005/04/20 18:14:10  lavr
  * +"ncbi_assert.h"
  *

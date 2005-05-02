@@ -35,9 +35,11 @@
 #include <string.h>
 
 
-MT_LOCK g_CORE_MT_Lock = 0;
-LOG     g_CORE_Log = 0;
-REG     g_CORE_Registry = 0;
+int     g_NCBI_ConnectRandomSeed = 0;
+
+MT_LOCK g_CORE_MT_Lock           = 0;
+LOG     g_CORE_Log               = 0;
+REG     g_CORE_Registry          = 0;
 
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
@@ -73,6 +75,9 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2005/05/02 16:04:20  lavr
+ * Use global random seed
+ *
  * Revision 6.4  2002/09/24 15:06:40  lavr
  * Log moved to end
  *
