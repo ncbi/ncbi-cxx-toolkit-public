@@ -135,16 +135,6 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
 (qo1>=qo2 && qo1<=qe2 && so1>=so2 && so1<=se2 && \
 MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
 
-/** Check the gapped alignments for an overlap of two different alignments.
- * A sufficient overlap is when two alignments have the same start values
- * of have the same final values. 
- * @param hsp_array Pointer to an array of BlastHSP structures [in]
- * @param hsp_count The size of the hsp_array [in]
- * @return The number of valid alignments remaining. 
-*/
-Int4
-Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count);
-
 /** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
  * involves allocating a SPsiBlastScoreMatrix structure so that the PSSMs 
  * memory mapped from the RPS-BLAST database files can be assigned to that
@@ -169,6 +159,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/05/02 13:07:34  madden
+ * Remove Blast_CheckHSPsForCommonEndpoints
+ *
  * Revision 1.10  2005/04/27 19:52:39  dondosha
  * Added Blast_SemiGappedAlign and dynamic programming structures declarations
  *

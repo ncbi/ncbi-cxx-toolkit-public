@@ -61,173 +61,6 @@ static Int2 s_BlastProtGappedAlignment(EBlastProgramType program,
 /** Lower bound for scores. Divide by two to prevent underflows. */
 #define MININT INT4_MIN/2
 
-/** Callback for sorting HSPs by starting offset in query. The sorting criteria
- * in order of priority: context, starting offset in query, starting offset in 
- * subject. Null HSPs are moved to the end of the array.
- * @param v1 pointer to first HSP [in]
- * @param v2 pointer to second HSP [in]
- * @return Result of comparison.
- */
-static int
-s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
-{
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
-
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
-
-   if (!h1 && !h2)
-      return 0;
-   else if (!h1) 
-      return 1;
-   else if (!h2)
-      return -1;
-
-   /* If these are from different contexts, don't compare offsets */
-   if (h1->context < h2->context) 
-      return -1;
-   if (h1->context > h2->context)
-      return 1;
-
-	if (h1->query.offset < h2->query.offset)
-		return -1;
-	if (h1->query.offset > h2->query.offset)
-		return 1;
-
-	if (h1->subject.offset < h2->subject.offset)
-		return -1;
-	if (h1->subject.offset > h2->subject.offset)
-		return 1;
-
-	return 0;
-}
-
-/** Callback for sorting HSPs by ending offset in query. The sorting criteria
- * in order of priority: context, ending offset in query, ending offset in 
- * subject. Null HSPs are moved to the end of the array.
- * @param v1 pointer to first HSP [in]
- * @param v2 pointer to second HSP [in]
- * @return Result of comparison.
- */
-static int
-s_QueryEndCompareHSPs(const void* v1, const void* v2)
-{
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
-
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
-
-   if (!h1 && !h2)
-      return 0;
-   else if (!h1) 
-      return 1;
-   else if (!h2)
-      return -1;
-
-   /* If these are from different contexts, don't compare offsets */
-   if (h1->context < h2->context) 
-      return -1;
-   if (h1->context > h2->context)
-      return 1;
-
-	if (h1->query.end < h2->query.end)
-		return -1;
-	if (h1->query.end > h2->query.end)
-		return 1;
-
-	if (h1->subject.end < h2->subject.end)
-		return -1;
-	if (h1->subject.end > h2->subject.end)
-		return 1;
-
-	return 0;
-}
-
-/* See blast_gapalign_priv.h for description */
-Int4
-Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
-{
-   Int4 index = 0;
-   Int4 increment = 1;
-   Int4 retval = 0;
-
-   if (hsp_array == NULL || hsp_count == 0)
-      return 0;
-   
-   qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryOffsetCompareHSPs);
-   while (index < hsp_count-increment) {
-      /* Check if both HSP's start on the same digonal. */
-      if (hsp_array[index+increment] == NULL) {
-         increment++;
-         continue;
-      }
-      
-      if (hsp_array[index] && hsp_array[index]->query.offset == hsp_array[index+increment]->query.offset &&
-          hsp_array[index]->subject.offset == hsp_array[index+increment]->subject.offset &&
-          hsp_array[index]->context == hsp_array[index+increment]->context)
-      {
-         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            hsp_array[index+increment] = 
-                                Blast_HSPFree(hsp_array[index+increment]);
-            increment++;
-         } else {
-            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-            index++;
-            increment = 1;
-         }
-      } else {
-         index++;
-         increment = 1;
-      }
-   }
-   
-   qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryEndCompareHSPs);
-   index=0;
-   increment=1;
-   while (index < hsp_count-increment)
-   { /* Check if both HSP's end on the same digonal. */
-      if (hsp_array[index+increment] == NULL)
-      {
-         increment++;
-         continue;
-      }
-      
-      if (hsp_array[index] &&
-          hsp_array[index]->query.end == hsp_array[index+increment]->query.end &&
-          hsp_array[index]->subject.end == hsp_array[index+increment]->subject.end &&
-          hsp_array[index]->context == hsp_array[index+increment]->context)
-      {
-         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            hsp_array[index+increment] = 
-                                Blast_HSPFree(hsp_array[index+increment]);
-            increment++;
-         } else	{
-            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-            index++;
-            increment = 1;
-         }
-      } else {
-         index++;
-         increment = 1;
-      }
-   }
-
-   /* squeeze out HSPs that are NULL, count those that are not */
-   for (index=0; index<hsp_count; index++)
-   {
-      if (hsp_array[index] != NULL)
-         hsp_array[retval++] = hsp_array[index];
-   }
-
-   return retval;
-}
-
 /** Minimal size of a chunk for state array allocation. */
 #define	CHUNKSIZE	2097152
 
@@ -2513,9 +2346,6 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
 
    tree = Blast_IntervalTreeFree(tree);
 
-   /* Sort the HSP array by score */
-   Blast_HSPListSortByScore(hsp_list);
-
    return 0;
 }
 
@@ -3375,15 +3205,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    if (rpsblast_pssms) {
        gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
    }
-
-   /* Remove any HSPs that share a starting or ending diagonal
-      with a higher-scoring HSP. */
-   hsp_list->hspcnt =
-       Blast_CheckHSPsForCommonEndpoints(hsp_list->hsp_array,
-                                         hsp_list->hspcnt);
-      
-   /* Sort the HSP array by score */
-   Blast_HSPListSortByScore(hsp_list);
 
    *hsp_list_ptr = hsp_list;
    return status;
