@@ -424,6 +424,8 @@ protected:
 
     void PrintStatistics(CNcbiOstream & out);
 
+    void Monitor(CNcbiOstream & out);
+
     /// Turn server-side logging on(off)
     ///
     void Logging(bool on_off);
@@ -706,6 +708,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/02 14:40:20  kuznets
+ * +Monitor()
+ *
  * Revision 1.26  2005/04/20 15:42:09  kuznets
  * Added progress message to SubmitJob()
  *

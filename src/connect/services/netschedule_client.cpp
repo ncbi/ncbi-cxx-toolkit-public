@@ -996,6 +996,39 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
     }
 }
 
+void CNetScheduleClient::Monitor(CNcbiOstream & out)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "MONI ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    m_Tmp = "QUIT";
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    STimeout rto;
+    rto.sec = 1;
+    rto.usec = 0;
+    m_Sock->SetTimeout(eIO_Read, &rto);
+
+    string line;
+    while (1) {
+
+        EIO_Status st = m_Sock->ReadLine(line);       
+        if (st == eIO_Success) {
+            if (m_Tmp == "END")
+                break;
+            out << line << "\n";
+        } else {
+            EIO_Status st = m_Sock->GetStatus(eIO_Open);
+            if (st != eIO_Success) {
+                break;
+            }
+        }
+    }
+
+}
+
 
 void CNetScheduleClient::DropQueue()
 {
@@ -1128,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/02 14:41:15  kuznets
+ * +Monitor()
+ *
  * Revision 1.24  2005/04/20 15:42:29  kuznets
  * Added progress message to SubmitJob()
  *
