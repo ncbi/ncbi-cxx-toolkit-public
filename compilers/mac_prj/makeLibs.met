@@ -84,7 +84,7 @@ on ProjectData(projName, features, aFileData)
 		set myFeatures to features
 		
 		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
-			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, syspaths:{}, fileData:Â
+			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, sysPaths:{}, fileData:Â
 			aFileData}
 		
 	end tell
@@ -286,24 +286,6 @@ on SetProjectData()
 		AddSimpleProject("sequtil", {}, "util:sequtil")
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
-		AddSimpleProject("xalgosplign", {}, "algo:align:splign")
-		AddSimpleProject("xalgoalignnw", {}, "algo:align:nw")
-		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
-		
-		AddSimpleProject("xalgoseq", {}, "algo:sequence")
-		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
-		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
-		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
-		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
-		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
-		set xblastfiles to {Â
-			mkFileData(gSourceDir & "algo:blast:api"), Â
-			mkFileData(gSourceDir & "algo:blast:core") Â
-				}
-		AddProject(ProjectData("xblast", {}, xblastfiles))
-		
-		AddSimpleProject("blast", {}, "algo:blast:core")
-		
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
 		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"})
 		
@@ -430,7 +412,22 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 		
+		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
+		AddSimpleProject("xalgoseq", {}, "algo:sequence")
+		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
+		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
+		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
+		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
+		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
+		AddSimpleProject("blast", {}, "algo:blast:core")
+		AddSimpleProject("xalgoalignnw", {}, "algo:align:nw")
 		AddSimpleProject("xobjsimple", {}, "objtools:simple")
+		AddSimpleProject("xalgosplign", {}, "algo:align:splign")
+		set xblastfiles to {Â
+			mkFileData(gSourceDir & "algo:blast:api"), Â
+			mkFileData(gSourceDir & "algo:blast:core") Â
+				}
+		AddProject(ProjectData("xblast", {}, xblastfiles))
 	end if
 	
 	-- GUI libs.
@@ -464,9 +461,8 @@ on SetProjectData()
 		-- AddProject(ProjectData("w_aln_multi", {"fltk"}, {GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		AddGuiProject("w_flu", {}, "widgets:FLU")
-		-- AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
-		AddProject(ProjectData("w_seq_graphic", {"fltk"}, Â
-			{GuiFileDataExcept("widgets:seq_graphic", {"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"})}))
+		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
+		--AddProject(ProjectData("w_seq_graphic", {"fltk"}, {GuiFileDataExcept("widgets:seq_graphic", {"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"})}))
 		
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
@@ -511,7 +507,6 @@ on SetProjectData()
 		
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
-		
 		
 		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
 		
@@ -562,6 +557,11 @@ on SetProjectData()
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
 		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
 		
+		set proteusFiles to {Â
+			mkFileDataListFiles(gSourceDir & "internal:gbench:plugins:proteus:Tree", {"AlignView.cpp", "data_source.cpp", "dll_register.cpp", "InfoTable.cpp", "tax_tree.cpp", "TaxonTree.cpp", "ClusterAlignment.cpp", "ClusterAlignment_1.cpp", "ClusterHandle.cpp", "ClusterHandle_1.cpp", "TaxTreeProteusHandle.cpp", "TaxTreeProteusHandle_1.cpp", "tools.cpp", "LocusTag.cpp"}), Â
+			mkFileDataListFiles(gSourceDir & "internal:gbench:plugins:proteus:Proteus", {"cls_check.cpp", "Handler.cpp", "Table.cpp"})}
+		set ProteusProj to ProjectData("Tree", {"fltk", "plugin"}, proteusFiles)
+		AddProject(DataPlusLibs(ProteusProj, {"taxon1", "dbapi"}, {"gui_core"}))
 	end if
 	
 end SetProjectData
@@ -906,7 +906,7 @@ on SetupTarget(proj, targetIndex)
 		-- initialize variables
 		set projRsrcs to {}
 		set projFeatures to {}
-		set syspaths to {}
+		set sysPaths to {}
 		
 		-- Grab the fields of our project record and store them in local variables.
 		set projName to proj's name
@@ -915,7 +915,7 @@ on SetupTarget(proj, targetIndex)
 			set projFeatures to proj's features
 		end try
 		try
-			set syspaths to proj's syspaths
+			set sysPaths to proj's sysPaths
 		end try
 		try
 			set projRsrcs to proj's rsrcs
@@ -1135,6 +1135,10 @@ on GetTargetFiles(i)
 			tell application "CodeWarrior IDE"
 				set f to (location of tf)
 			end tell
+			if (exists f of application "Finder") then
+				set f to POSIX path of f
+				set f to POSIX file f
+			end if
 			tell application "Finder"
 				-- convert the file's to strings (colon style paths)
 				try
