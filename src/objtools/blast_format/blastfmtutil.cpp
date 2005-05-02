@@ -50,6 +50,7 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp> 
@@ -543,6 +544,67 @@ CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
             }
         }
     }
+}
+
+CRef<CSeq_align> 
+CBlastFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln) 
+{
+    CRef<CSeq_align> sa(new CSeq_align);
+    if ( !aln.GetSegs().IsDendiag()) {
+        NCBI_THROW(CException, eUnknown, "Input Seq-align should be Dendiag!");
+    }
+    
+    if(aln.IsSetType()){
+        sa->SetType(aln.GetType());
+    }
+    if(aln.IsSetDim()){
+        sa->SetDim(aln.GetDim());
+    }
+    if(aln.IsSetScore()){
+        sa->SetScore() = aln.GetScore();
+    }
+    if(aln.IsSetBounds()){
+        sa->SetBounds() = aln.GetBounds();
+    }
+    
+    CDense_seg& ds = sa->SetSegs().SetDenseg();
+    
+    int counter = 0;
+    ds.SetNumseg() = 0;
+    ITERATE (CSeq_align::C_Segs::TDendiag, iter, aln.GetSegs().GetDendiag()){
+        
+        if(counter == 0){//assume all dendiag segments have same dim and ids
+            if((*iter)->IsSetDim()){
+                ds.SetDim((*iter)->GetDim());
+            }
+            if((*iter)->IsSetIds()){
+                ds.SetIds() = (*iter)->GetIds();
+            }
+        }
+        ds.SetNumseg() ++;
+        if((*iter)->IsSetStarts()){
+            ITERATE(CDense_diag::TStarts, iterStarts, (*iter)->GetStarts()){
+                ds.SetStarts().push_back(*iterStarts);
+            }
+        }
+        if((*iter)->IsSetLen()){
+            ds.SetLens().push_back((*iter)->GetLen());
+        }
+        if((*iter)->IsSetStrands()){
+            ITERATE(CDense_diag::TStrands, iterStrands, (*iter)->GetStrands()){
+                ds.SetStrands().push_back(*iterStrands);
+            }
+        }
+        if((*iter)->IsSetScores()){
+            ITERATE(CDense_diag::TScores, iterScores, (*iter)->GetScores()){
+                ds.SetScores().push_back(*iterScores); //this might not have
+                                                       //right meaning
+            }
+        }
+        counter ++;
+    }
+    
+    return sa;
 }
 
 END_NCBI_SCOPE

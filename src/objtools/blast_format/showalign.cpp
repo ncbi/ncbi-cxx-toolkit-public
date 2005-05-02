@@ -326,71 +326,6 @@ static void s_ColorDifferentBases(string& seq, char identity_char,
     } 
 }
 
-///Create denseseg representation for densediag seqalign
-///@param aln: the input densediag seqalign
-///@return: the new denseseg seqalign
-///
-static CRef<CSeq_align> s_CreateDensegFromDendiag(const CSeq_align& aln) 
-{
-    CRef<CSeq_align> sa(new CSeq_align);
-    if ( !aln.GetSegs().IsDendiag()) {
-        NCBI_THROW(CException, eUnknown, "Input Seq-align should be Dendiag!");
-    }
-    
-    if(aln.IsSetType()){
-        sa->SetType(aln.GetType());
-    }
-    if(aln.IsSetDim()){
-        sa->SetDim(aln.GetDim());
-    }
-    if(aln.IsSetScore()){
-        sa->SetScore() = aln.GetScore();
-    }
-    if(aln.IsSetBounds()){
-        sa->SetBounds() = aln.GetBounds();
-    }
-    
-    CDense_seg& ds = sa->SetSegs().SetDenseg();
-    
-    int counter = 0;
-    ds.SetNumseg() = 0;
-    ITERATE (CSeq_align::C_Segs::TDendiag, iter, aln.GetSegs().GetDendiag()){
-        
-        if(counter == 0){//assume all dendiag segments have same dim and ids
-            if((*iter)->IsSetDim()){
-                ds.SetDim((*iter)->GetDim());
-            }
-            if((*iter)->IsSetIds()){
-                ds.SetIds() = (*iter)->GetIds();
-            }
-        }
-        ds.SetNumseg() ++;
-        if((*iter)->IsSetStarts()){
-            ITERATE(CDense_diag::TStarts, iterStarts, (*iter)->GetStarts()){
-                ds.SetStarts().push_back(*iterStarts);
-            }
-        }
-        if((*iter)->IsSetLen()){
-            ds.SetLens().push_back((*iter)->GetLen());
-        }
-        if((*iter)->IsSetStrands()){
-            ITERATE(CDense_diag::TStrands, iterStrands, (*iter)->GetStrands()){
-                ds.SetStrands().push_back(*iterStrands);
-            }
-        }
-        if((*iter)->IsSetScores()){
-            ITERATE(CDense_diag::TScores, iterScores, (*iter)->GetScores()){
-                ds.SetScores().push_back(*iterScores); //this might not have
-                                                       //right meaning
-            }
-        }
-        counter ++;
-    }
-    
-    return sa;
-}
-
-
 ///return the frame for a given strand
 ///Note that start is zero bases.  It returns frame +/-(1-3). 0 indicates error
 ///@param start: sequence start position
@@ -955,7 +890,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 }
             } else if((*iter)->GetSegs().Which() == 
                       CSeq_align::C_Segs::e_Dendiag){
-                CRef<CSeq_align> densegAln = s_CreateDensegFromDendiag(**iter);
+                CRef<CSeq_align> densegAln = 
+                    CBlastFormatUtil::CreateDensegFromDendiag(**iter);
                 if (m_AlignOption & eTranslateNucToNucAlignment) { 
                     finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
                 } else {
@@ -1117,7 +1053,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
                           e_Dendiag){
                     alnVector[0]->Set().\
-                        push_back(s_CreateDensegFromDendiag(**alnIter));
+                        push_back(CBlastFormatUtil::CreateDensegFromDendiag(**alnIter));
                 } else {
                     NCBI_THROW(CException, eUnknown, 
                                "Input Seq-align should be Denseg, Stdseg or Dendiag!");
@@ -2362,6 +2298,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.71  2005/05/02 17:34:33  dondosha
+*Moved static function s_CreateDensegFromDendiag in showalign.cpp to a static method CreateDensegFromDendiag in CBlastFormatUtil class
+*
 *Revision 1.70  2005/04/20 20:20:55  ucko
 *Use _ASSERT rather than assert
 *
