@@ -82,7 +82,7 @@ string CGridCgiContext::GetSelfURL() const
             }
             else
                 url += '&';
-            url += name + '=' + value;
+            url += name + '=' + URL_EncodeString(value);
         }
     }        
     return url;
@@ -334,7 +334,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             }
         }
 
-        CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL());
+        CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
         page->AddTagMap("SELF_URL", self_url);
         OnEndProcessRequest(grid_ctx);
     }
@@ -373,7 +373,7 @@ void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
         page.AddTagMap("REDIRECT_DELAY",delay);               
     }
 
-    CHTMLPlainText* h_url = new CHTMLPlainText(url);
+    CHTMLPlainText* h_url = new CHTMLPlainText(url,true);
     page.AddTagMap("REDIRECT_URL",h_url);               
 
 }
@@ -388,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/02 14:48:05  didenko
+ * Fixed bug this url cutting
+ *
  * Revision 1.16  2005/04/22 13:39:33  didenko
  * Added elapsed time message
  *

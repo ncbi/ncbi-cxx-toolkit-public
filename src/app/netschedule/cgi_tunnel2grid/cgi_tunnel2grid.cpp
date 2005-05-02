@@ -172,10 +172,9 @@ void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
         ctx.GetHTMLPage().LoadTemplateLibFile(lib);
     }
 
-    ctx.PersistEntry(kErrorUrlParamName);
     ctx.PersistEntry(kProjectParamName);
     ctx.PersistEntry(kElapsedTime);   
-
+    ctx.PersistEntry(kErrorUrlParamName);
 }
 
 void CCgiTunnel2Grid::Init()
@@ -290,8 +289,9 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 {   
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
-    if (m_CgiEntries)
+    if (m_CgiEntries) {
         WriteMap(os, *m_CgiEntries);
+    }
     else
         os << m_Input;
 }
@@ -477,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/02 14:48:05  didenko
+ * Fixed bug this url cutting
+ *
  * Revision 1.17  2005/04/25 20:01:59  didenko
  * Added Cgi Entries serialization
  *
