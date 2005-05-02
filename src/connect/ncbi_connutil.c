@@ -1295,7 +1295,7 @@ extern void BASE64_Encode
     for (;;) {
         unsigned char c = i < src_size ? src[i] : 0;
         unsigned char bits = (c >> shift) & 0x3F;
-        assert((temp | bits) < sizeof(syms) - 1);
+        assert((size_t)(temp | bits) < sizeof(syms) - 1);
         dst[j++] = syms[temp | bits];
         if (max_len  &&  ++len >= max_len) {
             dst[j++] = '\n';
@@ -1664,6 +1664,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.73  2005/05/02 16:03:24  lavr
+ * Better assert() in BASE64_Encode()
+ *
  * Revision 6.72  2005/04/20 15:50:30  lavr
  * ConnNetInfo_Create(): Allow zero timeout
  * URL_Connect(): Automagically figure out ANY method based upon body size
