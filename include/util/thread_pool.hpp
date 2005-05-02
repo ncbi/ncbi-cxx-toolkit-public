@@ -72,7 +72,7 @@ public:
     /// @param max_size
     ///   The maximum size of the queue (may not be zero!)
     CBlockingQueue(size_t max_size = kMax_UInt)
-        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0, kMax_UInt),
+        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0, kMax_Int),
           m_MaxSize(min(max_size, size_t(0xFFFFFF))),
           m_RequestCounter(0xFFFFFF)
         { _ASSERT(max_size > 0); }
@@ -735,6 +735,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/05/02 16:41:29  didenko
+* Fixed creating of m_HungerSem on Windows. The maximum count is *signed* long there.
+*
 * Revision 1.24  2005/05/02 15:51:06  ucko
 * Allow a pool to have a "queue size" of zero, in which case it accepts
 * requests only if it will be able to process them immediately.
