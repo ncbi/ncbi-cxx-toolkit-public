@@ -288,7 +288,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
       m_NSClientFactory(client_factory), 
-      m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(20),
+      m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
       m_MaxProcessedJob(0), m_ProcessedJob(0),
@@ -305,8 +305,9 @@ CGridWorkerNode::~CGridWorkerNode()
 void CGridWorkerNode::Start()
 {
     try {
+        _ASSERT(m_MaxThreads > 0);
         m_NSReadClient.reset(CreateClient());
-        m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_MaxThreads));
+        m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_MaxThreads-1));
         m_ThreadsPool->Spawn(m_InitThreads);
     }
     catch (exception& ex) {
@@ -328,14 +329,14 @@ void CGridWorkerNode::Start()
         if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
             break;
         try {
-            if (m_ThreadsPool->IsFull()) {
+            //            if (m_ThreadsPool->IsFull()) {
                 try {
                     m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
                 }
                 catch (CBlockingQueueException&) {
                     continue;
                 }
-            }
+                //            }
             int try_count = 0;
             while(1) {
                 try {
@@ -354,6 +355,7 @@ void CGridWorkerNode::Start()
             }
 
             if (job_exists) {
+                LOG_POST( "Got Job : " << job_key << "  " << input);
                 if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                     m_NSReadClient->ReturnJob(job_key);
                     break;
@@ -407,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/05/02 19:48:38  didenko
+ * Removed unnecessary checking if the pool of threads is full.
+ *
  * Revision 1.13  2005/04/28 18:46:55  didenko
  * Added Request rate control to PutProgressMessage method
  *
