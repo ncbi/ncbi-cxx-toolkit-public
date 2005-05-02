@@ -952,7 +952,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                 // any data source
                 const CTSE_Handle& tse = bh.GetTSE_Handle();
                 if ( m_Selector->m_ExcludeExternal ) {
-                    if ( tse.x_GetTSE_Info().HasMatchingAnnotIds() ) {
+                    const CTSE_Info& tse_info = tse.x_GetTSE_Info();
+                    tse_info.UpdateAnnotIndex();
+                    if ( tse_info.HasMatchingAnnotIds() ) {
                         CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
                         ITERATE(CSynonymsSet, syn_it, *syns) {
                             found |= x_SearchTSE(tse,
@@ -962,7 +964,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                     }
                     else {
                         const CBioseq_Handle::TId& syns = bh.GetId();
-                        bool only_gi = tse.x_GetTSE_Info().OnlyGiAnnotIds();
+                        bool only_gi = tse_info.OnlyGiAnnotIds();
                         ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                             if ( !only_gi || syn_it->IsGi() ) {
                                 found |= x_SearchTSE(tse, *syn_it,
@@ -989,6 +991,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                 bool syns_initialized = false;
                 ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
                     const CTSE_Info& tse_info = *tse_it->first;
+                    tse_info.UpdateAnnotIndex();
                     if ( tse_info.HasMatchingAnnotIds() ) {
                         if ( !syns_initialized ) {
                             syns = m_Scope->GetSynonyms(bh);
@@ -1830,7 +1833,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     continue;
                 }
                 _ASSERT(tse);
-                if ( tse->x_GetTSE_Info().HasMatchingAnnotIds() ) {
+                const CTSE_Info& tse_info = tse->x_GetTSE_Info();
+                tse_info.UpdateAnnotIndex();
+                if ( tse_info.HasMatchingAnnotIds() ) {
                     CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
                     ITERATE(CSynonymsSet, syn_it, *syns) {
                         found |= x_SearchTSE(*tse,
@@ -1840,7 +1845,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                 }
                 else {
                     const CBioseq_Handle::TId& syns = bh.GetId();
-                    bool only_gi = tse->x_GetTSE_Info().OnlyGiAnnotIds();
+                    bool only_gi = tse_info.OnlyGiAnnotIds();
                     ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(*tse, *syn_it,
@@ -1869,6 +1874,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
             bool syns_initialized = false;
             ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
                 const CTSE_Info& tse_info = *tse_it->first;
+                tse_info.UpdateAnnotIndex();
                 if ( tse_info.HasMatchingAnnotIds() ) {
                     if ( !syns_initialized ) {
                         syns = m_Scope->GetSynonyms(idit->first,
@@ -2052,6 +2058,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2005/05/02 20:01:31  vasilche
+* Update TSE annot index before callinf HasMatchingAnnotIds().
+*
 * Revision 1.58  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.
