@@ -249,6 +249,11 @@ public:
     /// @param target Resulting Seq-align-set
     static void ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
                                                const CSeq_align_set& source);
+
+    ///Create denseseg representation for densediag seqalign
+    ///@param aln: the input densediag seqalign
+    ///@return: the new denseseg seqalign
+    static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 };
 
 END_NCBI_SCOPE
@@ -256,6 +261,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.12  2005/05/02 17:32:30  dondosha
+Added static method CreateDensegFromDendiag, previously static function in showalign.cpp
+
 Revision 1.11  2005/03/14 20:09:41  dondosha
 Added 2 static methods, needed for tabular output; added boolean argument to AcknowledgeBlastQuery for tabular version
 
