@@ -71,7 +71,8 @@ class CPipeHandle;
 /// CPipeException inherits its basic functionality from CCoreException
 /// and defines additional error codes for CPipe.
 
-class CPipeException : public CCoreException
+class NCBI_XCONNECT_EXPORT CPipeException
+    : EXCEPTION_VIRTUAL_BASE public CCoreException
 {
 public:
     /// Error types for pipe exceptions.
@@ -371,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/02 16:01:36  lavr
+ * Proper exception class derivation
+ *
  * Revision 1.22  2005/03/17 18:01:08  lavr
  * Clarify about argv[0] not being part of args
  *

@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 
 /// Exceptions thrown by CThreadedServer::Run
-class CThreadedServerException
+class NCBI_XCONNECT_EXPORT CThreadedServerException
     : EXCEPTION_VIRTUAL_BASE public CConnException
 {
 public:
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2005/05/02 16:01:42  lavr
+ * Proper exception class derivation
+ *
  * Revision 6.13  2005/01/05 15:09:44  ucko
  * Complete "DOXYGENization"
  *
