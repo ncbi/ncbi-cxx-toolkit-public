@@ -69,6 +69,22 @@ public:
      **
      **/
     static Uint4 reverse_complement( Uint4 seq, Uint1 size );
+
+    /**
+     **\brief Compute a hash code of a unit.
+     **\param unit the target unit
+     **\param k length (int bits) of the hash key
+     **\param roff offset in bits from the right end of the unit
+     **\return the hash code and concatenation of high and
+     **         low remaining bits
+     **/
+    static pair< Uint4, Uint1 > hash_code( Uint4 unit, 
+                                           Uint1 k, Uint1 roff )
+    {
+        return make_pair( (unit>>roff)&((1UL<<k) - 1),
+                          ((unit>>(roff + k))<<roff) 
+                            + (unit&((1<<roff) - 1)) );
+    }
 };
 
 END_NCBI_SCOPE
@@ -76,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.3  2005/03/17 20:21:22  morgulis
  * Only store half of the units in unit counts file.
  *

@@ -131,6 +131,12 @@ public:
         **/
     void setBlank() { doSetBlank(); }
 
+    /**
+        **\brief Perform any final tasks required to generate unit
+        **       counts in the particular format.
+        **/
+    void finalize();
+
 protected:
 
     /**\name Methods used to delegate functionality to derived classes */
@@ -140,6 +146,7 @@ protected:
     virtual void doSetComment( const string & msg ) = 0;
     virtual void doSetParam( const string & name, Uint4 value ) = 0;
     virtual void doSetBlank() = 0;
+    virtual void doFinalize() {}
     /**@}*/
 
     /**
@@ -164,7 +171,8 @@ private:
         start, /**<\internal The object has just been created. */
         ulen,  /**<\internal The unit size has been set. */
         udata, /**<\internal The unit counts data is being added. */
-        thres  /**<\internal The parameters values are being set. */
+        thres, /**<\internal The parameters values are being set. */
+        final  /**<\internal The finalization of the data structure. */
     } state;
 };
 
@@ -173,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.6  2005/04/13 13:47:48  dicuccio
  * Added export specifiers.  White space changes: reindented class body
  *

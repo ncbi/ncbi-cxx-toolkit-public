@@ -35,6 +35,8 @@
 #include <algo/winmask/seq_masker_ostat_factory.hpp>
 #include <algo/winmask/seq_masker_ostat_ascii.hpp>
 #include <algo/winmask/seq_masker_ostat_bin.hpp>
+#include <algo/winmask/seq_masker_ostat_opt_ascii.hpp>
+#include <algo/winmask/seq_masker_ostat_opt_bin.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,10 +58,20 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
 {
     try
     {
-        if( ustat_type == "ascii" )
+        if( ustat_type.substr( 0, 5 ) == "ascii" )
             return new CSeqMaskerOstatAscii( name );
-        else if( ustat_type == "binary" )
+        else if( ustat_type.substr( 0, 6 ) == "binary" )
             return new CSeqMaskerOstatBin( name );
+        else if( ustat_type.substr( 0, 6 ) == "oascii" )
+        {
+            Uint4 size = atoi( ustat_type.substr( 6 ).c_str() );
+            return new CSeqMaskerOstatOptAscii( name, size );
+        }
+        else if( ustat_type.substr( 0, 7 ) == "obinary" )
+        {
+            Uint4 size = atoi( ustat_type.substr( 7 ).c_str() );
+            return new CSeqMaskerOstatOptBin( name, size );
+        }
         else NCBI_THROW( CSeqMaskerOstatFactoryException,
                          eBadName,
                          "unkown unit counts format" );
@@ -77,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.3  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

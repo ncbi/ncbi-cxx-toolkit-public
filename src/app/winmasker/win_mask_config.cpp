@@ -97,7 +97,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       dust_level( 20 ),
       dust_linker( 1 ),
       checkdup( args["checkdup"].AsBoolean() ),
-      sformat( args["sformat"].AsString() )
+      sformat( args["sformat"].AsString() ),
+      smem( args["smem"].AsInteger() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.7  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

@@ -14,7 +14,7 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format]
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory]
 
     windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list]
 
@@ -182,10 +182,29 @@ Stage 1 Options
         default: ascii
 
         The format in which the unit counts data should be generated.
-        The possible values are "ascii" and "binary". The former makes
-        windowmasker generate unit counts in human readable text form,
-        which is highly portable but slow to load during Stage 2.
-        The binary format is not portable but loads very fast.
+        The possible values are "ascii", "binary", "oascii", or 
+        "obinary". "ascii" makes windowmasker generate unit counts 
+        in human readable text form, which is highly portable but 
+        slow to load during Stage 2.  The "binary" format is not 
+        portable but loads very fast. The last two formats 
+        correspond to optimized (via hash tables) unit counts data
+        structures. They require more memory to create during Stage 1.
+        However using them results in 2.5 - 4 times imrovement in
+        performance of the WinMask module. "obinary" stores data in 
+        a binary form which is not portable. "oascii" stores data 
+        in a portable text format at the expense of startup performance
+        during Stage 2.
+
+    -smem available_memory
+
+        default: 512
+
+        This option is ignored for "ascii" and "binary" unit counts
+        formats. For "oascii" and "obinary" this option specifies
+        the upper limit (in megabytes) for the size of the unit counts 
+        data structure in memory. WindowMasker will try to produce 
+        the data structure smaller than the specified size. If that
+        is not possible, error is reported.
 
     -t_low T_low
 
@@ -364,12 +383,12 @@ FILES
 
     Unit Counts
 
-    This file is the output of WindowMasker Stage 1 processing.  The 
-    file is an ASCII text file. It also serves as input for Stage 2 
-    processing. When WindowMasker reads the unit counts file during 
-    Stage 2 empty lines and lines starting with '#' character are 
-    ignored. This way comments could be introduced into the unit 
-    counts file.
+    This file is the output of WindowMasker Stage 1 processing if
+    "ascii" unit counts format has been chosen.  The file is an ASCII
+    text file. It also serves as input for Stage 2 processing. When 
+    WindowMasker reads the unit counts file during Stage 2 empty lines 
+    and lines starting with '#' character are ignored. This way 
+    comments could be introduced into the unit counts file.
 
     The first line of the file contains one integer number which is 
     the unit size.
@@ -421,6 +440,60 @@ FILES
 >t_extend    57
 >t_threshold 86
 >t_high      154
+
+    Optimized Unit Counts
+
+    This file is an output of WindowMasker Stage 1 processing when
+    "oascii" unit counts format has been chosen. The file is also
+    used as an input for the Stage 2 processing via "-ustat" command
+    line option. 
+    
+    The first line of the file contains the number
+    AAAA and serves as a file format identifier.
+
+    The second line must contain a single integer between 1 and 16
+    which is the unit size.
+
+    The third line contains 4 integer values separated by spaces:
+
+       the number of units with collisions M (32 bit integer)
+       the hash key size (8 bit integer)
+       the right offset r of the hash key (8 bit integer)
+       the width w (in bits) of the field containing the number of 
+            collisions (8 bit integer)
+
+    The next 4 lines contain windowmasker thresholds, one per
+    line in the following order:
+
+    T_low
+    T_extend
+    T_threshold
+    T_high
+
+    Then go 2^k 32-bit integers, one per line that for the hash
+    table. Each integer has the following form:
+
+    The low order w bits contain the number c of units that have
+    a hash key equal to the index of this integer in the table.
+
+        If c = 0 then the rest of the bits are 0.
+        If c = 1 then bits [w,23] contain the count of the uniq
+                 unit with this hash key. Bits [24-31] contain
+                 the bits [0,r-1] and [k + r,31] of the unit
+                 value.
+        If c > 1 then bits [w,31] contain the index of the start
+                 of the list of counts in the counts table (see
+                 below) of units with this hash key.
+
+    The last M lines contain 1 16-bit integer each and form the counts
+    table. Each number has the following form:
+
+        bits [0-8] - unit count;
+        bits [9-15] are bits [0,r-1] and [k + r,31] of the
+            corresponding unit value.
+
+    Note that unit counts file in "oascii" format contains exactly
+    10 + 2^k + M lines.
 
 
     List of Sequence Ids to Process

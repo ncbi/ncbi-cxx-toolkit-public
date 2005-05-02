@@ -173,6 +173,9 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "mem", "available_memory",
                              "memory available for mk_counts option in megabytes",
                              CArgDescriptions::eInteger, "1536" );
+    arg_desc->AddDefaultKey( "smem", "available_memory",
+                             "memory available for masking stage in megabytes",
+                             CArgDescriptions::eInteger, "512" );
     arg_desc->AddOptionalKey( "unit", "unit_length",
                               "number of bases in a unit",
                               CArgDescriptions::eInteger );
@@ -244,8 +247,11 @@ void CWinMaskApplication::Init(void)
                              (new CArgAllow_Strings())->Allow( "interval" )
                              ->Allow( "fasta" ) );
     arg_desc->SetConstraint( "sformat",
-                             (new CArgAllow_Strings())->Allow( "ascii" )
-                             ->Allow( "binary" ) );
+                             (new CArgAllow_Strings())
+                             ->Allow( "ascii" )
+                             ->Allow( "binary" )
+                             ->Allow( "oascii" )
+                             ->Allow( "obinary" ) );
 #if 0
     arg_desc->SetConstraint( "trigger",
                              (new CArgAllow_Strings())->Allow( "mean" )
@@ -389,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.9  2005/04/18 20:11:36  morgulis
  * Stage 1 can now take -t_high parameter.
  * Unit counts generated do not contain counts above T_high.

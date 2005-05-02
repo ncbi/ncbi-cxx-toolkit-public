@@ -138,12 +138,12 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
 //------------------------------------------------------------------------------
 Uint4 CSeqMaskerIstatBin::at( Uint4 unit ) const
 {
-  Uint4 res = uset.get_info( unit );
+    Uint4 res = uset.get_info( unit );
 
-  if( res == 0 )
-    return get_use_min_count();
+    if( res == 0 )
+        return get_use_min_count();
 
-  return (res > get_max_count()) ? get_use_max_count() : res;
+    return (res > get_max_count()) ? get_use_max_count() : res;
 }
 
 END_NCBI_SCOPE
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.2  2005/04/12 22:17:03  ucko
  * s/ios_base/IOS_BASE/ for portability, at least to GCC 2.95.
  *

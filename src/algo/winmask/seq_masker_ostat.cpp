@@ -91,11 +91,29 @@ void CSeqMaskerOstat::setParam( const string & name, Uint4 value )
     state = thres;
 }
 
+//------------------------------------------------------------------------------
+void CSeqMaskerOstat::finalize()
+{
+    if( state != udata && state != thres )
+    {
+        CNcbiOstrstream ostr;
+        ostr << "can not finalize data structure in state " << state;
+        string s = CNcbiOstrstreamToString(ostr);
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s );
+    }
+
+    state = final;
+    doFinalize();
+}
+
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.2  2005/03/29 13:33:15  dicuccio
  * Use <> for includes.  Use CNcbiOstrstream instead of raw ostrstream
  *

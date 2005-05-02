@@ -367,6 +367,7 @@ void CWinMaskCountsGenerator::operator()()
     ustat->setParam( "t_threshold", index[2] );
     ustat->setParam( "t_high     ", index[3] );
     ustat->setBlank();
+    ustat->finalize();
     cerr << endl;
 }
 
@@ -490,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.11  2005/04/18 20:11:36  morgulis
  * Stage 1 can now take -t_high parameter.
  * Unit counts generated do not contain counts above T_high.

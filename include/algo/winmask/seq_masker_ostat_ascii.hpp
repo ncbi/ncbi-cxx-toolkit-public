@@ -26,7 +26,7 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition of CSeqMaskerUStatAscii class.
+ *   Definition of CSeqMaskerOStatAscii class.
  *
  */
 
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.4  2005/04/13 13:47:48  dicuccio
  * Added export specifiers.  White space changes: reindented class body
  *

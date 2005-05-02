@@ -32,9 +32,11 @@
 
 #include <ncbi_pch.hpp>
 
-#include "algo/winmask/seq_masker_istat_factory.hpp"
-#include "algo/winmask/seq_masker_istat_ascii.hpp"
-#include "algo/winmask/seq_masker_istat_bin.hpp"
+#include <algo/winmask/seq_masker_istat_factory.hpp>
+#include <algo/winmask/seq_masker_istat_ascii.hpp>
+#include <algo/winmask/seq_masker_istat_oascii.hpp>
+#include <algo/winmask/seq_masker_istat_bin.hpp>
+#include <algo/winmask/seq_masker_istat_obinary.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -76,6 +78,16 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                 threshold, textend,
                                                 max_count, use_max_count,
                                                 min_count, use_min_count );
+            else if( data == 0x41414141 )
+                return new CSeqMaskerIstatOAscii( name,
+                                                  threshold, textend,
+                                                  max_count, use_max_count,
+                                                  min_count, use_min_count );
+            else if( data == 1 ) 
+                return new CSeqMaskerIstatOBinary( name,
+                                                   threshold, textend,
+                                                   max_count, use_max_count,
+                                                   min_count, use_min_count );
         }
 
         return new CSeqMaskerIstatAscii( name,
@@ -83,7 +95,7 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                          max_count, use_max_count,
                                          min_count, use_min_count );
     }
-    catch( Exception & )
+    catch( CException & )
     { throw; }
     catch( ... )
     {
@@ -97,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.2  2005/04/12 13:35:34  morgulis
  * Support for binary format of unit counts file.
  *

@@ -35,6 +35,7 @@
 
 #include <string>
 #include <set>
+#include <sstream>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
@@ -446,7 +447,12 @@ public:
      **\return unit counts file format
      **
      **/
-    const string SFormat() const { return sformat; }
+    const string SFormat() const 
+    { 
+        ostringstream r;
+        r << sformat << smem;
+        return r.str(); 
+    }
 
     /**
      **\brief The list of query ids to process.
@@ -664,6 +670,7 @@ private:
     Uint4 dust_linker;              /**< number of bases to use for linking */
     bool checkdup;                  /**< check for duplicate contigs */
     string sformat;                 /**< unit counts format for counts generator */
+    Uint4 smem;                     /**< memory (in megabytes available for masking stage) */
     set< objects::CSeq_id_Handle > ids;              /**< list of ids to process */
     set< objects::CSeq_id_Handle > exclude_ids;      /**< list of ids to exclude from processing */
     //@}
@@ -674,6 +681,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/05/02 14:27:46  morgulis
+ * Implemented hash table based unit counts formats.
+ *
  * Revision 1.4  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for
