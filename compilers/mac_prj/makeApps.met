@@ -74,7 +74,7 @@ on ProjectData(projName, features, aFileData)
 		set myFeatures to features
 		
 		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
-			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, syspaths:{}, fileData:Â
+			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, sysPaths:{}, fileData:Â
 			aFileData}
 		
 	end tell
@@ -285,13 +285,13 @@ on SetProjectData()
 	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib", "cmdline", "images"}, {fluidFileData}), {"fltk", "z"}, {}))
 	set pCPlusPlusExt to saveCppExt
 	
+	---------- SERIAL ----------	
+	AddProject(datatoolData)
+	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"w_workspace", "w_controls"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
-	
-	---------- SERIAL ----------	
-	AddProject(datatoolData)
 	
 	---------- OBJECTS ----------	
 	AddProject(DataPlusLibs(SimpleProjectData("ini2reg", "gui:objutils:test", {"cmdline", "C++"}), objMgrLibs & {"gui_objutils", "gui_utils", "xalnmgr", "tables"}, {}))
@@ -312,6 +312,7 @@ on SetProjectData()
 		
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
+		AddAppProjectList("demo_multialign", {"fltk", "libdl", "images"}, "gui:widgets:aln_multiple:demo", {"multi_demo.cpp", "multi_demo_ui.cpp"}, {"w_aln_multi", "w_aln_data", "w_gl", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "biotree", "ximage", "xformat", "gbseq", "xalnmgr", "tables", "xobjutils"} & objMgrLibs, {})
 		
 		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
@@ -600,7 +601,7 @@ on SetupTarget(proj, targetIndex)
 		-- initialize variables
 		set projRsrcs to {}
 		set projFeatures to {}
-		set syspaths to {}
+		set sysPaths to {}
 		
 		-- Grab the fields of our project record and store them in local variables.
 		set projName to proj's name
@@ -609,7 +610,7 @@ on SetupTarget(proj, targetIndex)
 			set projFeatures to proj's features
 		end try
 		try
-			set syspaths to proj's syspaths
+			set sysPaths to proj's sysPaths
 		end try
 		try
 			set projRsrcs to proj's rsrcs
@@ -812,6 +813,10 @@ on GetTargetFiles(i)
 			tell application "CodeWarrior IDE"
 				set f to (location of tf)
 			end tell
+			if (exists f of application "Finder") then
+				set f to POSIX path of f
+				set f to POSIX file f
+			end if
 			tell application "Finder"
 				-- convert the file's to strings (colon style paths)
 				try
