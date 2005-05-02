@@ -70,11 +70,12 @@ public:
     /// Constructor
     ///
     /// @param max_size
-    ///   The maximum size of tht queue
+    ///   The maximum size of the queue (may not be zero!)
     CBlockingQueue(size_t max_size = kMax_UInt)
-        : m_GetSem(0,1), m_PutSem(1,1), 
+        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0, kMax_UInt),
           m_MaxSize(min(max_size, size_t(0xFFFFFF))),
-          m_RequestCounter(0xFFFFFF)  {}
+          m_RequestCounter(0xFFFFFF)
+        { _ASSERT(max_size > 0); }
 
     /// Put a request into the queue. Throws exception if full.
     ///
@@ -91,9 +92,19 @@ public:
     /// @param timeout_sec
     ///   Number of seconds
     /// @param timeout_nsec
-    ///   Number of nonoseconds
+    ///   Number of nanoseconds
     void         WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
                              unsigned int timeout_nsec = 0) const;
+
+    /// Wait for the queue to have waiting readers, for up to
+    /// timeout_sec + timeout_nsec/1E9 seconds.
+    ///
+    /// @param timeout_sec
+    ///   Number of seconds
+    /// @param timeout_nsec
+    ///   Number of nanoseconds
+    void         WaitForHunger(unsigned int timeout_sec  = kMax_UInt,
+                               unsigned int timeout_nsec = 0) const;
 
     /// Get the first available requst from the queue. 
     /// Blocks politely if empty. 
@@ -102,7 +113,7 @@ public:
     /// @param timeout_sec
     ///   Number of seconds
     /// @param timeout_nsec
-    ///   Number of nonoseconds
+    ///   Number of nanoseconds
     TRequest     Get(unsigned int timeout_sec  = kMax_UInt,
                      unsigned int timeout_nsec = 0);
 
@@ -137,8 +148,8 @@ protected:
     };
     
     struct SQueueItemGreater {
-    	bool operator()(const CQueueItem& i1, const CQueueItem& i2)
-    	{ return i1 > i2; }
+        bool operator()(const CQueueItem& i1, const CQueueItem& i2)
+        { return i1 > i2; }
     };
     // WorkShop otherwise won't let it see CQueueItem.
     friend struct SQueueItemGreater;
@@ -147,13 +158,14 @@ protected:
     typedef set<CQueueItem, SQueueItemGreater > TQueue;
 
     // Derived classes should take care to use these members properly.
-    volatile TQueue     m_Queue;  /// The Queue
-    CSemaphore          m_GetSem; /// Raised if the queue contains data
-    mutable CSemaphore  m_PutSem; /// Raised if the queue has room
-    mutable CMutex      m_Mutex;  /// Guards access to queue
+    volatile TQueue     m_Queue;     ///< The queue
+    CSemaphore          m_GetSem;    ///< Raised if the queue contains data
+    mutable CSemaphore  m_PutSem;    ///< Raised if the queue has room
+    mutable CSemaphore  m_HungerSem; ///< Raised if Get has to wait
+    mutable CMutex      m_Mutex;     ///< Guards access to queue
 
 private:
-    size_t              m_MaxSize;        /// The maximum size of the queue
+    size_t              m_MaxSize;        ///< The maximum size of the queue
     Uint4               m_RequestCounter; ///
 };
 
@@ -232,17 +244,18 @@ public:
     /// @param max_threads
     ///   The maximum number of threads that this pool can run
     /// @param queue_size
-    ///   The maximum number of requsets in the queue
+    ///   The maximum number of requests in the queue
     /// @param spawn_threashold
     ///   The number of requests in the queue after which 
-    ///   a new thread is statred
+    ///   a new thread is started
     /// @param max_urgent_threads
     ///   The maximum number of urgent threads running simultaneously
     CPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
                    int spawn_threshold = 1, 
                    unsigned int max_urgent_threads = kMax_UInt)
         : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
-          m_Threshold(spawn_threshold), m_Queue(queue_size)
+          m_Threshold(spawn_threshold), m_Queue(max(queue_size, 1U)),
+          m_QueuingForbidden(queue_size == 0)
         { m_ThreadCount.Set(0); m_UrgentThreadCount.Set(0); m_Delta.Set(0);}
 
     /// Destructor
@@ -277,13 +290,18 @@ public:
     /// @param timeout_sec
     ///   Number of seconds
     /// @param timeout_nsec
-    ///   Number of nonoseconds
+    ///   Number of nanoseconds
     void WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
-                     unsigned int timeout_nsec = 0) 
-        { m_Queue.WaitForRoom(timeout_sec, timeout_nsec); }
+                     unsigned int timeout_nsec = 0);
   
     /// Check if the queue is full
     bool IsFull(void) const { return m_Queue.IsFull(); }
+
+    /// Check whether a new request could be immediately processed
+    ///
+    /// @param urgent
+    ///  Whether the request would be urgent.
+    bool HasImmediateRoom(bool urgent = false) const;
 
 protected:
 
@@ -313,17 +331,18 @@ protected:
     volatile TACValue        m_MaxThreads;
     /// The maximum number of urgent threads running simultaneously
     volatile TACValue        m_MaxUrgentThreads;
-    TACValue                 m_Threshold; // for delta
+    TACValue                 m_Threshold; ///< for delta
     /// The current number of threads the pool
     CAtomicCounter           m_ThreadCount;
     /// The current number of urgent threads running now
     CAtomicCounter           m_UrgentThreadCount;
-    /// numbet unfinished requests - number threads in the pool
+    /// number unfinished requests - number threads in the pool
     CAtomicCounter           m_Delta;     
     /// The guard for m_MaxThreads and m_MaxUrgentThreads
     CMutex                   m_Mutex;
-    /// The requests queue
+    /// The request queue
     CBlockingQueue<TRequest> m_Queue;
+    bool                     m_QueuingForbidden;
 
 private:
     friend class CThreadInPool<TRequest>;
@@ -348,7 +367,7 @@ public:
     ///Destructor
     virtual ~CStdRequest(void) {}
 
-    /// Do the actial job
+    /// Do the actual job
     /// Called by whichever thread handles this request.
     virtual void Process(void) = 0;
 };
@@ -398,10 +417,10 @@ public:
     /// @param max_threads
     ///   The maximum number of threads that this pool can run
     /// @param queue_size
-    ///   The maximum number of requsets in the queue
-    /// @param spawn_threashold
+    ///   The maximum number of requests in the queue
+    /// @param spawn_threshold
     ///   The number of requests in the queue after which 
-    ///   a new thread is statred
+    ///   a new thread is started
     /// @param max_urgent_threads
     ///   The maximum number of urgent threads running simultaneously
     CStdPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
@@ -483,6 +502,7 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
     /// in FIFO order
     Uint4 real_priority = (priority << 24) + m_RequestCounter--;
     q.insert( CQueueItem(real_priority,data) );
+    m_HungerSem.TryWait();
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
@@ -508,14 +528,32 @@ void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
     }
 }
 
+template <typename TRequest>
+void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
+                                             unsigned int timeout_nsec) const
+{
+    if (m_HungerSem.TryWait(timeout_sec, timeout_nsec)) {
+        CMutexGuard guard(m_Mutex);
+        m_HungerSem.Post();
+    } else {
+        NCBI_THROW(CBlockingQueueException, eTimedOut,
+                   "CBlockingQueue<>::WaitForHunger: timed out");        
+    }
+}
+
 
 template <typename TRequest>
 TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
                                        unsigned int timeout_nsec)
 {
-    if ( !m_GetSem.TryWait(timeout_sec, timeout_nsec) ) {
-        NCBI_THROW(CBlockingQueueException, eTimedOut,
-                   "CBlockingQueue<>::Get: timed out");        
+    if ( !m_GetSem.TryWait() ) {
+        // nothing available at present
+        m_HungerSem.Post();
+        if ( !m_GetSem.TryWait(timeout_sec, timeout_nsec) ) {
+            m_HungerSem.TryWait();
+            NCBI_THROW(CBlockingQueueException, eTimedOut,
+                       "CBlockingQueue<>::Get: timed out");        
+        }
     }
 
     CMutexGuard guard(m_Mutex);
@@ -574,7 +612,6 @@ void CThreadInPool<TRequest>::OnExit(void)
     try {
         x_OnExit();
     } STD_CATCH_ALL("x_OnExit")
-    m_Pool->m_Delta.Add(-1);
     if (m_RunMode != eRunOnce)
         m_Pool->m_ThreadCount.Add(-1);
     else 
@@ -623,6 +660,35 @@ void CPoolOfThreads<TRequest>::AcceptUrgentRequest(const TRequest& req)
 
 template <typename TRequest>
 inline
+bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
+{
+    if (m_Delta.Get() < 0) {
+        return true;
+    } else if (m_ThreadCount.Get() < m_MaxThreads) {
+        return true;
+    } else if (urgent  &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+template <typename TRequest>
+inline
+void CPoolOfThreads<TRequest>::WaitForRoom(unsigned int timeout_sec,
+                                           unsigned int timeout_nsec) 
+{
+    if (HasImmediateRoom()) {
+        return;
+    } else if (m_QueuingForbidden) {
+        m_Queue.WaitForHunger(timeout_sec, timeout_nsec);
+    } else {
+        m_Queue.WaitForRoom(timeout_sec, timeout_nsec);
+    }
+}
+
+template <typename TRequest>
+inline
 void CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req, 
                                                Uint1 priority,
                                                bool urgent)
@@ -633,6 +699,11 @@ void CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
         // we reserved 0xFF priority for urgent requests
         if( priority == 0xFF && !urgent ) 
             --priority;
+        if (m_QueuingForbidden  &&  !HasImmediateRoom(urgent) ) {
+            NCBI_THROW(CBlockingQueueException, eFull,
+                       "CPoolOfThreads<>::x_AcceptRequest: "
+                       "attempt to insert into a full queue");
+        }
         m_Queue.Put(req, priority);
         if (m_Delta.Add(1) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
@@ -664,6 +735,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/05/02 15:51:06  ucko
+* Allow a pool to have a "queue size" of zero, in which case it accepts
+* requests only if it will be able to process them immediately.
+* Fix various typos.
+*
 * Revision 1.23  2005/04/21 13:44:39  ucko
 * CBlockingQueue<>: replace unsigned int with size_t where appropriate.
 *
