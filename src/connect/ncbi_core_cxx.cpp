@@ -37,6 +37,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_core_cxxp.hpp"
 #include "ncbi_priv.h"
+#include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2005/05/02 16:21:55  lavr
+ * +<connect/ncbi_socket.h>
+ *
  * Revision 6.28  2005/05/02 16:03:53  lavr
  * Set random seed at initialization
  *
