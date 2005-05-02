@@ -2947,13 +2947,44 @@ int test1(int argc, char ** argv)
                 }
             }
             
-            if (gis.size() > num_show) {
+            if ((int)gis.size() > num_show) {
                 cout << " ...";
             }
             cout << "\n" << endl;
             
             return 0;
         } else desc += " [-simple-iteration]";
+        
+        if (s == "-bioseq-iteration") {
+            CTimedTask t1("iterate over db");
+            CSeqDB db(dbname, seqtype);
+            vector<int> gis;
+            int count =0;
+            for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count++;
+                db.GetGis(oid, gis, true);
+            }
+            double spent = t1.Mark();
+            cout << "OIDs found: " << count << " per second: " << (count / spent) << endl;
+            cout << "GIs found:  " << gis.size() << " per second: " << (gis.size() / spent) << endl;
+            
+            int num_show = (num_display > 0) ? num_display : 10;
+            
+            for(int i = 0; (i<num_show) && (i<(int)gis.size()); i++) {
+                if (! i) { // said the duck
+                    cout << "\nFirst few GIs: " << gis[0];
+                } else {
+                    cout << ", " << gis[i];
+                }
+            }
+            
+            if ((int)gis.size() > num_show) {
+                cout << " ...";
+            }
+            cout << "\n" << endl;
+            
+            return 0;
+        } else desc += " [-bioseq-iteration]";
         
         if (s == "-megabarley") {
             CStopWatch sw(true);
