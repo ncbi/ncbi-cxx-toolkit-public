@@ -322,7 +322,8 @@ s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 }
 
 /// Gets the next sequence index, given a BlastSeqSrc pointer.
-/// @param seqsrc The BlastSeqSrc on which iteration occurs. [in]
+/// @param multiseq_handle Handle to access the underlying object over which
+///                        iteration occurs. [in]
 /// @param itr Iterator over seqsrc [in] [out]
 /// @return Next index in the sequence set
 static Int4 
@@ -446,6 +447,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2005/05/03 21:04:50  dondosha
+ * Small doxygen fix
+ *
  * Revision 1.31  2005/04/18 14:00:44  camacho
  * Updates following BlastSeqSrc reorganization
  *
