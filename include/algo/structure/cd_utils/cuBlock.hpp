@@ -112,7 +112,7 @@ public:
     bool completeModelExtendsIntoUnallowedGappedRegion(const BlockModel& completeModel, int sequenceLength, const vector<int>* commonBlockExt = NULL) const;
 	int getLastAlignedPosition()const ;
 	int getFirstAlignedPosition()const;
-	int getTotalBlockLength();
+	int getTotalBlockLength() const;
 	int getGapToNTerminal(int bn) const;
 	int getGapToCTerminal(int bn, int len=-1)const ;
 	bool isValid(int seqLen, int& errBlock) const;

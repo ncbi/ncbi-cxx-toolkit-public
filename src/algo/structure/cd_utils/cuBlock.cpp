@@ -642,7 +642,7 @@ int BlockModel::getFirstAlignedPosition()const
 	return firstBlock.getStart();
 }
 
-int BlockModel::getTotalBlockLength()
+int BlockModel::getTotalBlockLength () const 
 {
 	int len = 0;
 	for (int i = 0; i < m_blocks.size(); i++)
@@ -916,6 +916,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/05/03 15:30:37  lanczyck
+ * make 'getTotalBlockLength' const
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
