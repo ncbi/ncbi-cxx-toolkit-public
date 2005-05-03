@@ -536,7 +536,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
             }
         }
         
-        if (gis[gilist_index].gi > last_key) {
+        if ((gilist_index >= gis_size) || (gis[gilist_index].gi > last_key)) {
             break;
         }
         
