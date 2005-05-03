@@ -140,7 +140,7 @@ extern unsigned long GetVirtualMemoryPageSize(void);
 /// Sleep for at least the specified number of microsec/millisec/seconds.
 /// Time slice restrictions are imposed by platform/OS.
 /// On UNIX the sleep can be interrupted by a signal.
-/// Sleep*(0) have no effect.
+/// Sleep*Sec(0) have no effect (but may cause context switches).
 ///
 /// [UNIX & Windows]
 
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/03 18:15:39  lavr
+ * Sleep*Sec(0) may cause context switches (but otherwise cause no delays)
+ *
  * Revision 1.17  2005/05/03 18:06:59  lavr
  * Mention Sleep*(0) have no effect (i.e. should return immediately)
  *
