@@ -1762,7 +1762,8 @@ s_QueryEndCompareHSPs(const void* v1, const void* v2)
 }
 
 Int4
-Blast_HSPListPurgeHSPsWithCommonEndpoints(BlastHSPList* hsp_list)
+Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program, 
+                                          BlastHSPList* hsp_list)
 
 {
    BlastHSP** hsp_array;  /* hsp_array to purge. */
@@ -1770,9 +1771,15 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(BlastHSPList* hsp_list)
    Int4 increment = 1;    
    Int2 retval = 0;
    Int4 hsp_count;
-
+   
+   /* If HSP list is empty, return immediately. */
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
-            return 0;
+       return 0;
+
+   /* Do nothing for PHI BLAST, because HSPs corresponding to different pattern
+      occurrences may have common end points, but should all be kept. */
+   if (program == eBlastTypePhiBlastp || program == eBlastTypePhiBlastn)
+       return hsp_list->hspcnt;
 
    hsp_array = hsp_list->hsp_array;
    hsp_count = hsp_list->hspcnt;
