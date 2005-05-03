@@ -42,6 +42,7 @@
 #  include <sys/resource.h>
 #  include <sys/times.h>
 #  include <limits.h>
+#  include <time.h>
 #  include <unistd.h>
 #  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
 #    include <sys/sysctl.h>
@@ -58,7 +59,7 @@ extern "C" {
 #  include <mach/mach.h>
 #  include <mach/mach_host.h>
 #  include <mach/host_info.h>
-}
+} /* extern "C" */
 #endif
 
 #if defined(USE_SETCPULIMIT)
@@ -158,12 +159,22 @@ static void s_ExitHandler(void)
                 ERR_POST("Error in getting CPU time consumed by program");
                 break;
             }
+            clock_t tick = sysconf(_SC_CLK_TCK);
+#ifdef CLK_TCK
+            if (!tick  ||  tick == (clock_t)(-1))
+                tick = CLK_TCK;
+#endif /*CLK_TCK*/
+            if (tick == (clock_t)(-1))
+                tick = 0;
             LOG_POST("\tuser CPU time   : " << 
-                     buffer.tms_utime/CLK_TCK << " sec");
+                     buffer.tms_utime/(tick ? tick : 1) <<
+                     (tick ? " sec" : " tick"));
             LOG_POST("\tsystem CPU time : " << 
-                     buffer.tms_stime/CLK_TCK << " sec");
-            LOG_POST("\ttotal CPU time  : " << 
-                     (buffer.tms_stime + buffer.tms_utime)/CLK_TCK << " sec");
+                     buffer.tms_stime/(tick ? tick : 1) <<
+                     (tick ? " sec" : " tick"));
+            LOG_POST("\ttotal CPU time  : " <<
+                     (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) <<
+                     (tick ? " sec" : " tick"));
             break;
         }
 
@@ -420,13 +431,21 @@ void SleepMicroSec(unsigned long mc_sec)
 #if defined(NCBI_OS_MSWIN)
     Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
+#  ifdef NCBI_OS_LINUX
+    struct timespec delay, unslept;
+    delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
+    delay.tv_nsec = (mc_sec % kMicroSecondsPerSecond) * 1000;
+    nanosleep(&delay, &unslept);
+#  else
+    /* portable but ugly */
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
-    select(0, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL, &delay);
+    select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay);
+#  endif /*NCBI_OS_LINUX*/
 #elif defined(NCBI_OS_MAC)
     OTDelay((mc_sec + 500) / 1000);
-#endif
+#endif /*NCBI_OS_...*/
 }
 
 
@@ -487,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/05/03 18:08:21  lavr
+ * Better implementation of Sleep*() on Linux; better CLK_TCK usage
+ *
  * Revision 1.41  2005/03/01 17:40:23  ivanov
  * SleepMicroSec(): when converting sleeping time to milliseconds on OS which
  * doesn't support it round sleeping time instead of truncate.
