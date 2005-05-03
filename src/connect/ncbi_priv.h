@@ -58,14 +58,8 @@ extern "C" {
  */
 
 extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectRandomSeed;
-
-#ifdef NCBI_OS_UNIX
-#  include <unistd.h>
-#  define NCBI_CONNECT_SRAND_ADDENT ((int) getpid()) 
-#else
-#  define NCBI_CONNECT_SRAND_ADDENT ((int) SOCK_gethostbyname(0))
-#endif /*NCBI_OS_UNIX*/
-
+extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddent();
+#define NCBI_CONNECT_SRAND_ADDENT g_NCBI_ConnectSrandAddent()
 
 
 /******************************************************************************
@@ -202,6 +196,10 @@ extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/05/03 11:50:19  ivanov
+ * Added MS Win specific for NCBI_CONNECT_SRAND_ADDENT, removing dependency
+ * from socket library.
+ *
  * Revision 6.12  2005/05/02 16:04:17  lavr
  * Use global random seed
  *

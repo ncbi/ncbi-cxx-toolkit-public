@@ -34,12 +34,30 @@
 #include <stdarg.h>
 #include <string.h>
 
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#elif NCBI_OS_MSWIN
+#  include <windows.h>
+#endif
+
 
 int     g_NCBI_ConnectRandomSeed = 0;
 
 MT_LOCK g_CORE_MT_Lock           = 0;
 LOG     g_CORE_Log               = 0;
 REG     g_CORE_Registry          = 0;
+
+
+extern int g_NCBI_ConnectSrandAddent(void)
+{
+#ifdef NCBI_OS_UNIX
+    return (int) getpid(); 
+#elif NCBI_OS_MSWIN
+    return (int) GetCurrentProcessId();
+#else
+    return SOCK_gethostbyname(0);
+#endif /* NCBI_OS_* */ 
+}
 
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
@@ -75,6 +93,10 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2005/05/03 11:50:19  ivanov
+ * Added MS Win specific for NCBI_CONNECT_SRAND_ADDENT, removing dependency
+ * from socket library.
+ *
  * Revision 6.5  2005/05/02 16:04:20  lavr
  * Use global random seed
  *
