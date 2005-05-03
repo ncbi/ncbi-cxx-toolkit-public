@@ -1018,7 +1018,7 @@ void CNetScheduleClient::Monitor(CNcbiOstream & out)
         if (st == eIO_Success) {
             if (m_Tmp == "END")
                 break;
-            out << line << "\n";
+            out << line << "\n" << flush;
         } else {
             EIO_Status st = m_Sock->GetStatus(eIO_Open);
             if (st != eIO_Success) {
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/03 18:06:17  kuznets
+ * Added strem flush to make monitoring immediate
+ *
  * Revision 1.25  2005/05/02 14:41:15  kuznets
  * +Monitor()
  *
