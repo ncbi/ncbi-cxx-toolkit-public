@@ -61,6 +61,12 @@ public:
     enum EErrCode {
          eVariant
     };
+
+    CVariantException(const string& message) 
+        : CException(DIAG_COMPILE_INFO, 0, (CException::EErrCode)eVariant,  message)
+    {
+    }
+
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -244,22 +250,22 @@ void CVariant::VerifyType(bool e) const
 {
     if( !e ) {
 #ifdef _DEBUG
-        _TRACE("CVariant::VerifyType(): Wrong type");
+        _TRACE("CVariant::VerifyType(): Invalid type");
         _ASSERT(0); 
 #else
-        NCBI_THROW(CVariantException, eVariant, "Wrong type");
+        NCBI_THROW(CVariantException, eVariant, "Invalid type");
 #endif
     }
 }
 
-inline
-void CVariant::CheckNull() const
-{
-    if( IsNull() ) 
-    {
-        NCBI_THROW(CVariantException, eVariant, "Attempt to get value from NULL column");
-    }
-}
+//inline
+//void CVariant::CheckNull() const
+//{
+//    if( IsNull() ) 
+//    {
+//        NCBI_THROW(CVariantException, eVariant, "Attempt to get value from NULL column");
+//    }
+//}
 
 
 END_NCBI_SCOPE
@@ -268,6 +274,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/03 19:14:15  kholodov
+ * Modified: NULL CVariants return "natural empty values", no exception thrown
+ * Added: CVariantException(const string&) constructor for backward compatibility.
+ *
  * Revision 1.23  2005/05/02 21:12:22  kholodov
  * Modified: made CException base class for CVariantException
  * Added: throw exception if attempt to get value from NULL column is made

@@ -293,72 +293,100 @@ void CVariant::SetData(CDB_Object* o) {
 
 string CVariant::GetString(void) const 
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_Char:
-        return ((CDB_Char*)GetData())->Value();
-    case eDB_VarChar:
-        return ((CDB_VarChar*)GetData())->Value();
-    case eDB_LongChar:
-        return ((CDB_LongChar*)GetData())->Value();
-    case eDB_Binary:
-        {
-            CDB_Binary *b = (CDB_Binary*)GetData();
-            return string((char*)b->Value(), b->Size());
+    if( IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_Char:
+        case eDB_VarChar:
+        case eDB_LongChar:
+        case eDB_Binary:
+        case eDB_LongBinary:
+        case eDB_VarBinary:
+        case eDB_Bit:
+            return "";
+        case eDB_TinyInt:
+        case eDB_SmallInt:      
+        case eDB_Int:
+        case eDB_BigInt:
+        case eDB_Numeric:
+            return "0";
+        case eDB_Float:
+        case eDB_Double:
+            return "0.0";
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
+            return CTime().AsString();
+        default:
+            break;
         }
-    case eDB_LongBinary:
-        {
-            CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
-            return string((char*)vb->Value(), vb->Size());
-        }
-    case eDB_VarBinary:
-        {
-            CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
-            return string((char*)vb->Value(), vb->Size());
-        }
-    case eDB_TinyInt:
-        return NStr::IntToString((long)GetByte()); 
-    case eDB_SmallInt:      
-        return NStr::IntToString(GetInt2()); 
-    case eDB_Int:
-        return NStr::IntToString(GetInt4()); 
-    case eDB_BigInt:
-        return NStr::Int8ToString(GetInt8()); 
-    case eDB_Float:
-        return NStr::DoubleToString(GetFloat()); 
-    case eDB_Double:
-        return NStr::DoubleToString(GetDouble()); 
-    case eDB_Bit:
-        return NStr::BoolToString(GetBit()); 
-    case eDB_Numeric:
-        return ((CDB_Numeric*)GetData())->Value(); 
-    case eDB_DateTime:
-    case eDB_SmallDateTime:
-        return GetCTime().AsString();
-    default:
-        break;
     }
-  
-    NCBI_THROW(CVariantException, eVariant, "CVariant::GetString(): type not supported");
+    else
+    {
+        switch( GetType() ) {
+        case eDB_Char:
+            return ((CDB_Char*)GetData())->Value();
+        case eDB_VarChar:
+            return ((CDB_VarChar*)GetData())->Value();
+        case eDB_LongChar:
+            return ((CDB_LongChar*)GetData())->Value();
+        case eDB_Binary:
+            {
+                CDB_Binary *b = (CDB_Binary*)GetData();
+                return string((char*)b->Value(), b->Size());
+            }
+        case eDB_LongBinary:
+            {
+                CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
+                return string((char*)vb->Value(), vb->Size());
+            }
+        case eDB_VarBinary:
+            {
+                CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
+                return string((char*)vb->Value(), vb->Size());
+            }
+        case eDB_TinyInt:
+            return NStr::IntToString((long)GetByte()); 
+        case eDB_SmallInt:      
+            return NStr::IntToString(GetInt2()); 
+        case eDB_Int:
+            return NStr::IntToString(GetInt4()); 
+        case eDB_BigInt:
+            return NStr::Int8ToString(GetInt8()); 
+        case eDB_Float:
+            return NStr::DoubleToString(GetFloat()); 
+        case eDB_Double:
+            return NStr::DoubleToString(GetDouble()); 
+        case eDB_Bit:
+            return NStr::BoolToString(GetBit()); 
+        case eDB_Numeric:
+            return ((CDB_Numeric*)GetData())->Value(); 
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
+            return GetCTime().AsString();
+        default:
+            break;
+        }
+    }  
+    NCBI_THROW(CVariantException, eVariant, "Type not supported");
 }
 
 
 Int8 CVariant::GetInt8() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_BigInt:
-        return ((CDB_BigInt*)GetData())->Value();
-    case eDB_Int:
-        return ((CDB_Int*)GetData())->Value();
-    case eDB_SmallInt:
-        return ((CDB_SmallInt*)GetData())->Value();
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( !IsNull() ) 
+    {
+        switch( GetType() ) {
+        case eDB_BigInt:
+            return ((CDB_BigInt*)GetData())->Value();
+        case eDB_Int:
+            return ((CDB_Int*)GetData())->Value();
+        case eDB_SmallInt:
+            return ((CDB_SmallInt*)GetData())->Value();
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
     return 0;
 }
@@ -366,117 +394,128 @@ Int8 CVariant::GetInt8() const
 
 Int4 CVariant::GetInt4() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_Int:
-        return ((CDB_Int*)GetData())->Value();
-    case eDB_SmallInt:
-        return ((CDB_SmallInt*)GetData())->Value();
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( ! IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_Int:
+            return ((CDB_Int*)GetData())->Value();
+        case eDB_SmallInt:
+            return ((CDB_SmallInt*)GetData())->Value();
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
     return 0;
 }
 
 Int2 CVariant::GetInt2() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_SmallInt:
-        return ((CDB_SmallInt*)GetData())->Value();
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( !IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_SmallInt:
+            return ((CDB_SmallInt*)GetData())->Value();
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
     return 0;
 }
 
 Uint1 CVariant::GetByte() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( !IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
     return 0;
 }
 
 float CVariant::GetFloat() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_Float:
-        return ((CDB_Float*)GetData())->Value();
-    //case eDB_Int:
-    //    return ((CDB_Int*)GetData())->Value();
-    case eDB_SmallInt:
-        return ((CDB_SmallInt*)GetData())->Value();
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( !IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_Float:
+            return ((CDB_Float*)GetData())->Value();
+        case eDB_SmallInt:
+            return ((CDB_SmallInt*)GetData())->Value();
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
-    return 0;
+    return 0.;
 }
 
 double CVariant::GetDouble() const
 {
-    CheckNull();
-
-    switch( GetType() ) {
-    case eDB_Float:
-        return ((CDB_Float*)GetData())->Value();
-    case eDB_Double:
-        return ((CDB_Double*)GetData())->Value();
-    case eDB_Int:
-        return ((CDB_Int*)GetData())->Value();
-    case eDB_SmallInt:
-        return ((CDB_SmallInt*)GetData())->Value();
-    case eDB_TinyInt:
-        return ((CDB_TinyInt*)GetData())->Value();
-    default:
-        VerifyType(false);
+    if( !IsNull() )
+    {
+        switch( GetType() ) {
+        case eDB_Float:
+            return ((CDB_Float*)GetData())->Value();
+        case eDB_Double:
+            return ((CDB_Double*)GetData())->Value();
+        case eDB_Int:
+            return ((CDB_Int*)GetData())->Value();
+        case eDB_SmallInt:
+            return ((CDB_SmallInt*)GetData())->Value();
+        case eDB_TinyInt:
+            return ((CDB_TinyInt*)GetData())->Value();
+        default:
+            VerifyType(false);
+        }
     }
-    return 0;
+    return 0.;
 }
 
 bool CVariant::GetBit() const
 {
-    CheckNull();
-
-    VerifyType( GetType() == eDB_Bit );
-    return ((CDB_Bit*)GetData())->Value() != 0;
+    if( !IsNull() )
+    {
+        VerifyType( GetType() == eDB_Bit );
+        return ((CDB_Bit*)GetData())->Value() != 0;
+    }
+    return false;
 }
 
 string CVariant::GetNumeric() const
 {
-    CheckNull();
-
-    VerifyType( GetType() == eDB_Numeric );
-    return ((CDB_Numeric*)GetData())->Value();
+    if( !IsNull() )
+    {
+        VerifyType( GetType() == eDB_Numeric );
+        return ((CDB_Numeric*)GetData())->Value();
+    }
+    return "";
 }
 
 const CTime& CVariant::GetCTime() const
 {
-    CheckNull();
-
+    CTime *ptr;
     switch(GetType()) {
     case eDB_DateTime:
-        return ((CDB_DateTime*)GetData())->Value();
+        ptr = const_cast<CTime*>(&((CDB_DateTime*)GetData())->Value());
+        break;
     case eDB_SmallDateTime:
-        return ((CDB_SmallDateTime*)GetData())->Value();
+        ptr = const_cast<CTime*>(&((CDB_SmallDateTime*)GetData())->Value());
+        break;
     default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::GetCTime(): invalid type");
+        VerifyType(false);
     }
+    if( IsNull() )
+        ptr->Clear();
+    return *ptr;
 }
 
 string CVariant::AsNotNullString(const string& v) const 
@@ -500,48 +539,49 @@ void CVariant::SetNull()
 
 size_t CVariant::Read(void* buf, size_t len) const
 {
-    CheckNull();
-
-    switch(GetType()) {
-    case eDB_Image:
-    case eDB_Text:
-        return ((CDB_Stream*)GetData())->Read(buf, len);
-
-    default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::Read(): invalid type");
+    if( !IsNull() )
+    {
+        switch(GetType()) {
+        case eDB_Image:
+        case eDB_Text:
+            return ((CDB_Stream*)GetData())->Read(buf, len);
+        default:
+            VerifyType(false);
+        }
     }
+    return 0;
 }
 
 size_t CVariant::Append(const void* buf, size_t len)
 {
-
     switch(GetType()) {
     case eDB_Image:
     case eDB_Text:
         return ((CDB_Stream*)GetData())->Append(buf, len);
 
     default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::Append(): invalid type");
+        VerifyType(false);
     }
+    return 0;
 }
 
 size_t CVariant::GetBlobSize() const
 {
-    CheckNull();
-
-    switch(GetType()) {
-    case eDB_Image:
-    case eDB_Text:
-        return ((CDB_Stream*)GetData())->Size();
-
-    default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::GetBlobSize(): invalid type");
+    if( !IsNull() )
+    {
+        switch(GetType()) {
+        case eDB_Image:
+        case eDB_Text:
+            return ((CDB_Stream*)GetData())->Size();
+        default:
+            VerifyType(false);
+        }
     }
+    return 0;
 }
 
 void CVariant::Truncate(size_t len)
 {
-
     switch(GetType()) {
     case eDB_Image:
         ((CDB_Image*)GetData())->Truncate(len);
@@ -550,7 +590,7 @@ void CVariant::Truncate(size_t len)
         ((CDB_Text*)GetData())->Truncate(len);
         break;
     default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::Truncate(): invalid type");
+        VerifyType(false);
     }
     return;
 }
@@ -563,7 +603,7 @@ bool CVariant::MoveTo(size_t pos) const
     case eDB_Text:
         return ((CDB_Text*)GetData())->MoveTo(pos);
     default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::MoveTo(): invalid type");
+        VerifyType(false);
     }
     return false;
 }
@@ -722,6 +762,10 @@ bool CVariant::operator< (const CVariant& v) const
 }
 /*
 * $Log$
+* Revision 1.34  2005/05/03 19:13:35  kholodov
+* Modified: NULL CVariants return "natural empty values", no exception thrown
+* Added: CVariantException(const string&) constructor for backward compatibility.
+*
 * Revision 1.33  2005/05/02 21:13:31  kholodov
 * Modified: made CException base class for CVariantException
 * Added: throw exception if attempt to get value from NULL column is made
