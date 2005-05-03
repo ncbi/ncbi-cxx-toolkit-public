@@ -85,6 +85,9 @@ typedef enum {
  * @param end2 Length of the second sequence segment [in]
  * @param lowDiag Low diagonal for the alignment [in]
  * @param highDiag High diagonal for the alignment [in]
+ * @param matrix Scoring matrix [in]
+ * @param gapOpen Gap opening cost [in]
+ * @param gapExtend Gap extension cost [in]
  * @param alignScript Stores traceback information. [out]
  */
 static Int4 
@@ -423,6 +426,9 @@ s_PHIGetLongPattern(Uint1 *seq, Int4 len, Int4 *start, Int4 *end,
     *end = wordIndex*PHI_BITS_PACKED_PER_WORD+j;
 }
 
+/** Maximal possible size of the hits array for one word of pattern. */
+#define MAX_HITS_IN_WORD 64
+
 /** Find pattern occurrences in seq when the pattern description is
  * extra long, report the results back in hitArray
  * @param seq Sequence to find pattern in [in]
@@ -442,9 +448,7 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
     Int4 pos; /*keeps track of how many intermediate hits*/
     Int4 placeIndex; /*index over the number of places in the pattern rep*/
     Int4 hitArray1[PHI_MAX_HIT];
-    const int kMaxHitsInWord = 64; /* Maximal possible size of the hits 
-                                      array for one word of pattern. */
-    Int4 oneWordHitArray[64 /*kMaxHitsInWord*/]; /*hits for one word of 
+    Int4 oneWordHitArray[MAX_HITS_IN_WORD]; /*hits for one word of 
                                             pattern representation*/
     SShortPatternItems* one_word_items = pattern_blk->one_word_items; 
     SLongPatternItems* multiword_items = pattern_blk->multi_word_items; 
@@ -498,14 +502,13 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
  * @param dbSeq Pointer to start of pattern in subject [in]
  * @param lenQuerySeq Length of pattern occurrence in query [in]
  * @param lenDbSeq Length of pattern occurrence in subject [in]
- * alignScript is alignment script; NULL if only score is desired
- * tback will hold adjusted alignment script for return
- * gap_align keeps track of parameters for a gapped alignment
- * multiple is related to significance of the pattern match
- * the overal match score is returned; a variant of the
- * score is passed back in useful_score
+ * @param alignScript Traceback script [out]
+ * @param score_options Scoring options [in]
+ * @param score_matrix Scoring matrix [in]
+ * @param pattern_blk Structure with information about pattern [in]
+ * @return Score for this alignment.
  */
-static Int2 
+static Int4 
 s_PHIBlastAlignPatterns(Uint1 *querySeq, Uint1 *dbSeq, Int4 lenQuerySeq, 
                       Int4 lenDbSeq, GapPrelimEditBlock *alignScript,  
                       const BlastScoringOptions* score_options, 

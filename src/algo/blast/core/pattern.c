@@ -524,7 +524,7 @@ SPHIQueryInfoCopy(SPHIQueryInfo* pat_info)
 }
 
 /** Adds a new pattern hit to the PHI BLAST pseudo lookup table.
- * @param lookup The lookup table structure [in] [out]
+ * @param pattern_info The query pattern information structure. [in] [out]
  * @param offset Offset in query at which pattern was found. [in]
  * @param length Length of the pattern at this offset. [in] 
  */

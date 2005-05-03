@@ -96,7 +96,7 @@ extern const int kMaskAaAlphabetBits;
  * @param s Number to check bits in [in]
  * @param mask Mask to apply [in]
  * @param rightOne The rightmost position where s and mask both have a 1 [out]
- * @param rightMaskLonly The rightmost position < rightOne, where mask has a 1,
+ * @param rightMaskOnly The rightmost position < rightOne, where mask has a 1,
  *                       if any, or -1 otherwise [out]
  */
 void
