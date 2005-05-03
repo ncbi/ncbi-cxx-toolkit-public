@@ -303,6 +303,8 @@ string CVariant::GetString(void) const
         case eDB_LongBinary:
         case eDB_VarBinary:
         case eDB_Bit:
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
             return "";
         case eDB_TinyInt:
         case eDB_SmallInt:      
@@ -313,9 +315,6 @@ string CVariant::GetString(void) const
         case eDB_Float:
         case eDB_Double:
             return "0.0";
-        case eDB_DateTime:
-        case eDB_SmallDateTime:
-            return CTime().AsString();
         default:
             break;
         }
@@ -762,6 +761,9 @@ bool CVariant::operator< (const CVariant& v) const
 }
 /*
 * $Log$
+* Revision 1.35  2005/05/03 19:25:45  kholodov
+* Modified: return empty string for NULL datetime columns instead of CTime().AsString()
+*
 * Revision 1.34  2005/05/03 19:13:35  kholodov
 * Modified: NULL CVariants return "natural empty values", no exception thrown
 * Added: CVariantException(const string&) constructor for backward compatibility.
