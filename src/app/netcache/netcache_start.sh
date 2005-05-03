@@ -44,7 +44,7 @@ ini_file=netcached.ini
 nc_control=${BIN_PATH}/netcache_control
 netcached=${BIN_PATH}/netcached
 service_wait=10
-mail_to="kuznets@ncbi -c vakatov@ncbi"
+mail_to="kuznets@ncbi -c service@ncbi"
 
 LD_LIBRARY_PATH="$BIN_PATH;$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH
@@ -69,7 +69,7 @@ port=`cat netcached.ini | grep port= | sed -e 's/port=//'`
 echo "Testing if netcached is alive on $host:$port"
 
 
-if ! $nc_control -v $host $port > /dev/null  2>&1; then
+if ! $nc_control -retry 7 -v $host $port > /dev/null  2>&1; then
     echo "Service not responding"
     
     echo "Starting the netcached service..."
