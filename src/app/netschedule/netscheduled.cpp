@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.3.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.3.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -413,7 +413,6 @@ void CNetScheduleServer::Process(SOCK sock)
     EIO_Status io_st;
     CSocket socket;
     socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-
     bool is_log = IsLog();
     SThreadData* tdata = x_GetThreadData();
 
@@ -424,14 +423,14 @@ void CNetScheduleServer::Process(SOCK sock)
 
         // Process requests
 
-        while (1) {
-            tdata->auth.erase();
-            s_WaitForReadSocket(socket, m_InactivityTimeout);
-            io_st = socket.ReadLine(tdata->auth);
-            JS_CHECK_IO_STATUS(io_st)
+        tdata->auth.erase();
+        s_WaitForReadSocket(socket, m_InactivityTimeout);
+        io_st = socket.ReadLine(tdata->auth);
+        JS_CHECK_IO_STATUS(io_st)
+        io_st = socket.ReadLine(tdata->queue);
+        JS_CHECK_IO_STATUS(io_st)
 
-            io_st = socket.ReadLine(tdata->queue);
-            JS_CHECK_IO_STATUS(io_st)
+        while (1) {
 
             io_st = socket.ReadLine(tdata->request);
             JS_CHECK_IO_STATUS(io_st)
@@ -453,7 +452,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 if (!monitor->IsMonitorActive()) {
                     monitor = 0;
                 } else {
-                    if (tdata->lmsg.empty()) {
+                    if (!is_log) {
                         x_MakeLogMessage(socket, *tdata);
                     }
                     monitor->SendString(tdata->lmsg);
@@ -1890,6 +1889,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/05/03 19:46:00  kuznets
+ * Fixed bug in remote monitoring
+ *
  * Revision 1.34  2005/05/02 14:44:40  kuznets
  * Implemented remote monitoring
  *
