@@ -60,6 +60,184 @@ const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// 
+///@internal
+class CGridThreadContext
+{
+public:
+    CGridThreadContext(CWorkerNodeJobContext& job_context);
+
+    CWorkerNodeJobContext& GetJobContext();
+    CNetScheduleClient& GetReporter();
+
+    void SetJobContext(CWorkerNodeJobContext& job_context);
+    void Reset();
+
+    CNcbiIstream& GetIStream();
+    CNcbiOstream& GetOStream();
+    void PutProgressMessage(const string& msg);
+
+    void SetJobRunTimeout(unsigned time_to_run);
+
+    bool IsJobCommitted() const;
+    void PutResult(int ret_code);
+    void ReturnJob();
+    void PutFailure(const string& msg);
+   
+    IWorkerNodeJob* CreateJob();
+private:
+    CWorkerNodeJobContext*        m_JobContext;
+    auto_ptr<CNetScheduleClient>  m_Reporter;
+    auto_ptr<INetScheduleStorage> m_Reader;
+    auto_ptr<INetScheduleStorage> m_Writer;
+    auto_ptr<INetScheduleStorage> m_ProgressWriter;
+    CRequestRateControl           m_RateControl; 
+};
+/// @internal
+CGridThreadContext::CGridThreadContext(CWorkerNodeJobContext& job_context)
+    : m_JobContext(&job_context), m_RateControl(1)
+{
+    job_context.SetThreadContext(this);
+    m_Reporter.reset(job_context.GetWorkerNode().CreateClient());
+    m_Reader.reset(job_context.GetWorkerNode().CreateStorage());
+    m_Writer.reset(job_context.GetWorkerNode().CreateStorage());
+    m_ProgressWriter.reset(job_context.GetWorkerNode().CreateStorage());
+}
+/// @internal
+void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
+{
+    _ASSERT(!m_JobContext);
+    m_JobContext = &job_context;
+    job_context.SetThreadContext(this);
+}
+/// @internal
+void CGridThreadContext::Reset()
+{
+    m_JobContext->SetThreadContext(NULL);
+    m_JobContext = NULL;
+    m_Reader->Reset();
+    m_Writer->Reset();
+    m_ProgressWriter->Reset();
+    m_RateControl.Reset(1);
+ 
+}
+/// @internal
+CWorkerNodeJobContext& CGridThreadContext::GetJobContext()
+{
+    _ASSERT(m_JobContext);
+    return *m_JobContext;
+}
+/// @internal
+CNetScheduleClient& CGridThreadContext::GetReporter()
+{
+    _ASSERT(m_Reporter.get());
+    return *m_Reporter;
+}
+
+/// @internal
+CNcbiIstream& CGridThreadContext::GetIStream()
+{
+    _ASSERT(m_JobContext);
+    if (m_Reader.get()) {
+        return m_Reader->GetIStream(m_JobContext->GetJobInput(),
+                                    &m_JobContext->SetJobInputBlobSize());
+    }
+    NCBI_THROW(CNetScheduleStorageException,
+               eReader, "Reader is not set.");
+}
+/// @internal
+CNcbiOstream& CGridThreadContext::GetOStream()
+{
+    _ASSERT(m_JobContext);
+    if (m_Writer.get()) {
+        return m_Writer->CreateOStream(m_JobContext->SetJobOutput());
+    }
+    NCBI_THROW(CNetScheduleStorageException,
+               eWriter, "Writer is not set.");
+}
+/// @internal
+void CGridThreadContext::PutProgressMessage(const string& msg)
+{
+    _ASSERT(m_JobContext);
+    if (!m_RateControl.Approve(CRequestRateControl::eErrCode))
+        return;
+    try {
+        string& blob_id = m_JobContext->SetJobProgressMsgKey();
+        if (blob_id.empty() && m_Reporter.get()) {
+            blob_id = m_Reporter->GetProgressMsg(m_JobContext->GetJobKey());
+        }
+        if (!blob_id.empty() && m_ProgressWriter.get()) {
+            CNcbiOstream& os = m_ProgressWriter->CreateOStream(blob_id);
+            os << msg;
+            m_ProgressWriter->Reset();
+        }
+        else {
+            ERR_POST("Couldn't send a progress message.");
+        }
+    } catch (exception& ex) {
+        ERR_POST("Couldn't send a progress message: " << ex.what());
+    }
+}
+/// @internal
+void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
+{
+    _ASSERT(m_JobContext);
+    if (m_Reporter.get()) {
+        try {
+            m_Reporter->SetRunTimeout(m_JobContext->GetJobKey(), time_to_run);
+        }
+        catch(exception& ex) {
+            ERR_POST("CWorkerNodeJobContext::SetJobRunTimeout : " 
+                     << ex.what());
+        } 
+    }
+    else {
+        NCBI_THROW(CNetScheduleStorageException,
+                   eWriter, "Reporter is not set.");
+    }
+}
+
+/// @internal
+void CGridThreadContext::PutResult(int ret_code)
+{
+    _ASSERT(m_JobContext);
+    if (m_Reporter.get()) {
+        m_Reporter->PutResult(m_JobContext->GetJobKey(),
+                              ret_code,
+                              m_JobContext->GetJobOutput());
+    }
+}
+/// @internal
+void CGridThreadContext::ReturnJob()
+{
+    _ASSERT(m_JobContext);
+    if (m_Reporter.get()) {
+        m_Reporter->ReturnJob(m_JobContext->GetJobKey());
+    }
+}
+/// @internal
+void CGridThreadContext::PutFailure(const string& msg)
+{
+    _ASSERT(m_JobContext);
+    if (m_Reporter.get()) {
+        m_Reporter->PutFailure(m_JobContext->GetJobKey(),msg);
+    }
+}
+
+/// @internal
+bool CGridThreadContext::IsJobCommitted() const
+{
+    _ASSERT(m_JobContext);
+    return m_JobContext->IsJobCommitted();
+}
+/// @internal
+IWorkerNodeJob* CGridThreadContext::CreateJob()
+{
+    _ASSERT(m_JobContext);
+    return m_JobContext->GetWorkerNode().CreateJob();
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //     CWorkerNodeJobContext     -- 
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
@@ -67,8 +245,8 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_input,
                                              bool log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
-      m_JobCommitted(false), m_LogRequested(log_requested),
-      m_Reader(NULL), m_Writer(NULL), m_ProgressWriter(NULL), m_Reporter(NULL)
+      m_JobCommitted(false), m_LogRequested(log_requested), 
+      m_ThreadContext(NULL)
 {
 }
 
@@ -87,62 +265,30 @@ const string& CWorkerNodeJobContext::GetClientName()const
 
 CNcbiIstream& CWorkerNodeJobContext::GetIStream()
 {   
-    if (m_Reader) {
-        return m_Reader->GetIStream(m_JobInput, &m_InputBlobSize);
-    }
-    NCBI_THROW(CNetScheduleStorageException,
-               eReader, "Reader is not set.");
+    _ASSERT(m_ThreadContext);
+    return m_ThreadContext->GetIStream();
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
-    if (m_Writer) {
-        return m_Writer->CreateOStream(m_JobOutput);
-    }
-    NCBI_THROW(CNetScheduleStorageException,
-               eWriter, "Writer is not set.");
+    _ASSERT(m_ThreadContext);
+    return m_ThreadContext->GetOStream();
 }
 
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg)
 {
-    if (m_RateControl && 
-        !m_RateControl->Approve(CRequestRateControl::eErrCode))
-        return;
-    if (m_ProgressMsgKey.empty()) {
-        m_ProgressMsgKey = m_Reporter->GetProgressMsg(m_JobKey);
-    }
-    if (!m_ProgressMsgKey.empty() && m_ProgressWriter) {
-        CNcbiOstream& os = m_ProgressWriter->CreateOStream(m_ProgressMsgKey);
-        os << msg;
-        m_ProgressWriter->Reset();
-    }
-    else {
-        ERR_POST("Couldn't send a progress message.");
-    }
+    _ASSERT(m_ThreadContext);
+    m_ThreadContext->PutProgressMessage(msg);
 }
 
-void CWorkerNodeJobContext::Reset()
+void CWorkerNodeJobContext::SetThreadContext(CGridThreadContext* thr_context)
 {
-    if (m_Reader) m_Reader->Reset();
-    if (m_Writer) m_Writer->Reset();
-    if (m_ProgressWriter) m_ProgressWriter->Reset();
-    if (m_RateControl) m_RateControl->Reset(1);
-    m_Reader = NULL;
-    m_Writer = NULL;
-    m_ProgressWriter = NULL;
-    m_Reporter = NULL;
-    m_RateControl = NULL;
+    m_ThreadContext = thr_context;
 }
 
 void CWorkerNodeJobContext::SetJobRunTimeout(unsigned time_to_run)
-{
-    _ASSERT(m_Reporter);
-    try {
-        m_Reporter->SetRunTimeout(m_JobKey, time_to_run);
-    }
-    catch(exception& ex) {
-        LOG_POST(Error << "CWorkerNodeJobContext::SetJobRunTimeout : " 
-                       << ex.what());
-    } 
+{   
+    _ASSERT(m_ThreadContext);
+    m_ThreadContext->SetJobRunTimeout(time_to_run);
 }
 
 CNetScheduleClient::EShutdownLevel 
@@ -151,28 +297,15 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
     return m_WorkerNode.GetShutdownLevel();
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 // 
 ///@internal
-struct SThreadContext
-{
-    SThreadContext() : rate_control(1) {}
-    auto_ptr<CNetScheduleClient>  reporter;
-    auto_ptr<INetScheduleStorage> reader;
-    auto_ptr<INetScheduleStorage> writer;
-    auto_ptr<INetScheduleStorage> progress_writer;
-    CRequestRateControl           rate_control; 
-};
-
-///@internal
-static void s_TlsCleanup(SThreadContext* p_value, void* /* data */ )
+static void s_TlsCleanup(CGridThreadContext* p_value, void* /* data */ )
 {
     delete p_value;
 }
-
 /// @internal
-static CRef< CTls<SThreadContext> > s_tls(new CTls<SThreadContext>);
+static CRef< CTls<CGridThreadContext> > s_tls(new CTls<CGridThreadContext>);
 
 ///@internal
 class CWorkerNodeRequest : public CStdRequest
@@ -185,9 +318,7 @@ public:
 
 private:
     auto_ptr<CWorkerNodeJobContext> m_Context;
-    auto_ptr<IWorkerNodeJob>        m_Job;
-
-    SThreadContext&                 x_GetThreadContext();
+    CGridThreadContext&             x_GetThreadContext();
 
 };
 
@@ -195,9 +326,6 @@ private:
 CWorkerNodeRequest::CWorkerNodeRequest(auto_ptr<CWorkerNodeJobContext> context)
   : m_Context(context)
 {
-    if (m_Context.get())
-        m_Job.reset(m_Context->GetWorkerNode().CreateJob());
-
 }
 
 
@@ -205,76 +333,69 @@ CWorkerNodeRequest::~CWorkerNodeRequest(void)
 {
 }
 
-SThreadContext& CWorkerNodeRequest::x_GetThreadContext()
+CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
 {
-    SThreadContext* context = s_tls->GetValue();
+    CGridThreadContext* context = s_tls->GetValue();
     if (!context) {
-        context = new SThreadContext();
-        context->reporter.reset(
-                              m_Context->GetWorkerNode().CreateClient());
-        context->reader.reset(m_Context->GetWorkerNode().CreateStorage());
-        context->writer.reset(m_Context->GetWorkerNode().CreateStorage());
-        context->progress_writer.reset(
-                              m_Context->GetWorkerNode().CreateStorage());
+        context = new CGridThreadContext(*m_Context);
         s_tls->SetValue(context, s_TlsCleanup);
-    }
+    } else {
+        context->SetJobContext(*m_Context);
+    }   
     return *context;
 }
 
-
-void CWorkerNodeRequest::Process(void)
-{
-    if (m_Job.get()) {
-        SThreadContext* thread_context = NULL;
-        try {
-            thread_context = &x_GetThreadContext();
-            CNetScheduleClient& ns_client = *thread_context->reporter;
-            m_Context->m_Reporter = thread_context->reporter.get();
-            m_Context->m_Reader = thread_context->reader.get();
-            m_Context->m_Writer = thread_context->writer.get();
-            m_Context->m_ProgressWriter = thread_context->progress_writer.get();
-            m_Context->m_RateControl = &thread_context->rate_control;
-            int ret_code = m_Job->Do(*m_Context);
-            int try_count = 0;
-            while(1) {
-                try {
-                    if (m_Context->IsJobCommited()) {
-                        ns_client.PutResult(m_Context->GetJobKey(),
-                                            ret_code,
-                                            m_Context->m_JobOutput);
-                    }
-                    else
-                        ns_client.ReturnJob(m_Context->GetJobKey());
-                    break;
+static void s_RunJob(CGridThreadContext& thr_context)
+{    
+    try {
+        auto_ptr<IWorkerNodeJob> job( thr_context.CreateJob());
+        int ret_code = job->Do(thr_context.GetJobContext());
+        int try_count = 0;
+        while(1) {
+            try {
+                if (thr_context.IsJobCommitted()) {
+                    thr_context.PutResult(ret_code);
                 }
-                catch (CNetServiceException& ex) {
-                    LOG_POST(Error << "Communication Error : " 
-                                  << ex.what());
-                    if (++try_count >= 2)
-                        throw;
-                    SleepMilliSec(1000 + try_count*2000);
-                }
+                else
+                    thr_context.ReturnJob();
+                break;
             }
-
-            m_Context->Reset();
-        }
-        catch (exception& ex) {
-            LOG_POST(Error << "Error in Job execution : " 
-                           << ex.what());
-            if (thread_context) {
-                try {
-                    thread_context->reporter->PutFailure(
-                                            m_Context->GetJobKey(),
-                                            ex.what());
-                }
-                catch(exception& ex) {
-                    LOG_POST(Error << "Failed to report an exception : " 
-                                   << ex.what());
-                }
+            catch (CNetServiceException& ex) {
+                LOG_POST(Error << "Communication Error : " 
+                         << ex.what());
+                if (++try_count >= 2)
+                    throw;
+                SleepMilliSec(1000 + try_count*2000);
             }
-            m_Context->Reset();
         }
     }
+    catch (exception& ex) {
+        ERR_POST("Error in Job execution : " 
+                 << ex.what());
+        try {
+            thr_context.PutFailure(ex.what());
+        }
+        catch(exception& ex1) {
+            ERR_POST("Failed to report an exception : " 
+                     << ex1.what());
+        }
+    }
+    catch(...) {
+        ERR_POST( "Unkown Error in Job execution" );
+        try {
+            thr_context.PutFailure("Unkown Error in Job execution");
+        }
+        catch(exception& ex) {
+            ERR_POST("Failed to report an exception : " 
+                     << ex.what());
+        }
+    }
+    thr_context.Reset();
+
+}
+void CWorkerNodeRequest::Process(void)
+{
+    s_RunJob(x_GetThreadContext());
 }
 
 
@@ -301,9 +422,74 @@ CGridWorkerNode::~CGridWorkerNode()
 {
 }
 
+void CGridWorkerNode::StartSingleThreaded()
+{
+    try {
+        _ASSERT(m_MaxThreads == 1);
+        m_NSReadClient.reset(CreateClient());
+    }
+    catch (exception& ex) {
+        LOG_POST(Error << ex.what());
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return;
+    }
+    catch (...) {
+        LOG_POST(Error << "Unkown error");
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return;
+    }
+
+
+    string    job_key;
+    string    input;
+    bool      job_exists = false;
+    while (1) {
+        if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
+            break;
+        int try_count = 0;
+        try {
+            job_exists = 
+                m_NSReadClient->WaitJob(&job_key, &input, 
+                                        m_NSTimeout, m_UdpPort);
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST("Communication Error : " 
+                      << ex.what());
+            if (++try_count >= 2) {
+                LOG_POST(Error << ex.what());
+                RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                continue;
+            }
+            SleepMilliSec(1000 + try_count*2000);
+        }
+        
+        if (job_exists) {
+            if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                m_NSReadClient->ReturnJob(job_key);
+                break;
+            }
+            LOG_POST( "Got Job : " << job_key << "  " << input);
+            CWorkerNodeJobContext job_context(*this, 
+                                              job_key, 
+                                              input, 
+                                              m_LogRequested);
+            CGridThreadContext thr_context(job_context);
+            s_RunJob(thr_context);
+
+            if (m_MaxProcessedJob > 0 && m_ProcessedJob++ > m_MaxProcessedJob) 
+                RequestShutdown(CNetScheduleClient::eNormalShutdown);
+        }
+    }
+    LOG_POST(Info << "Worker Node has been stopped.");
+    m_NSReadClient.reset(0);
+}
 
 void CGridWorkerNode::Start()
 {
+    if (m_MaxThreads == 1) {
+        StartSingleThreaded();
+        return;
+    }
     try {
         _ASSERT(m_MaxThreads > 0);
         m_NSReadClient.reset(CreateClient());
@@ -329,14 +515,12 @@ void CGridWorkerNode::Start()
         if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
             break;
         try {
-            //            if (m_ThreadsPool->IsFull()) {
-                try {
-                    m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
-                }
-                catch (CBlockingQueueException&) {
-                    continue;
-                }
-                //            }
+            try {
+                m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
+            }
+            catch (CBlockingQueueException&) {
+                continue;
+            }
             int try_count = 0;
             while(1) {
                 try {
@@ -355,11 +539,11 @@ void CGridWorkerNode::Start()
             }
 
             if (job_exists) {
-                LOG_POST( "Got Job : " << job_key << "  " << input);
                 if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                     m_NSReadClient->ReturnJob(job_key);
                     break;
                 }
+                LOG_POST( "Got Job : " << job_key << "  " << input);
                 auto_ptr<CWorkerNodeJobContext> 
                     context(new CWorkerNodeJobContext(*this, job_key, input, m_LogRequested));
                 CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
@@ -409,6 +593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/03 19:54:17  didenko
+ * Don't start the threads pool then a worker node is running in a single threaded mode.
+ *
  * Revision 1.14  2005/05/02 19:48:38  didenko
  * Removed unnecessary checking if the pool of threads is full.
  *

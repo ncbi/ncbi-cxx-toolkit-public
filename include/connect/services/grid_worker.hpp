@@ -117,9 +117,8 @@ public:
     virtual int Do(CWorkerNodeJobContext& context) = 0;
 };
 
+class CGridThreadContext;
 class CGridWorkerNode;
-class CWorkerNodeRequest;
-class CRequestRateControl;
 
 /// Worker Node job context
 ///
@@ -225,10 +224,16 @@ public:
     bool IsLogRequested(void) const { return m_LogRequested; }
 
 private:    
-    friend class CWorkerNodeRequest;  
-    void Reset();
+    friend struct CGridThreadContext;
+    void SetThreadContext(CGridThreadContext*);
+    const string& GetJobOutput() const { return m_JobOutput; }
+    string& SetJobOutput() { return m_JobOutput; }
+    string& SetJobProgressMsgKey() { return m_ProgressMsgKey; }
+    size_t& SetJobInputBlobSize() {return m_InputBlobSize; }
+    //    string& SetJobInput() { return m_JobInput; }
+
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
-    bool IsJobCommited() const       { return m_JobCommitted; }
+    bool IsJobCommitted() const       { return m_JobCommitted; }
 
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
@@ -246,11 +251,7 @@ private:
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
 
-    INetScheduleStorage* m_Reader;
-    INetScheduleStorage* m_Writer;
-    INetScheduleStorage* m_ProgressWriter;
-    CNetScheduleClient*  m_Reporter;
-    CRequestRateControl* m_RateControl;
+    CGridThreadContext*  m_ThreadContext;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -308,6 +309,7 @@ public: \
 }
 
 
+class CGridThreadContext;
 /// Grid Worker Node
 /// 
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -396,7 +398,7 @@ private:
     bool                         m_LogRequested;
 
 
-    friend class CWorkerNodeRequest;
+    friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
     {
         CMutexGuard guard(m_JobFactoryMutex);
@@ -416,6 +418,9 @@ private:
         return ns_client.release();
     }
 
+    // start a single threaded version
+    void StartSingleThreaded();
+
     CGridWorkerNode(const CGridWorkerNode&);
     CGridWorkerNode& operator=(const CGridWorkerNode&);
 
@@ -429,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/03 19:54:17  didenko
+ * Don't start the threads pool then a worker node is running in a single threaded mode.
+ *
  * Revision 1.16  2005/04/28 18:46:55  didenko
  * Added Request rate control to PutProgressMessage method
  *
