@@ -140,7 +140,8 @@ extern unsigned long GetVirtualMemoryPageSize(void);
 /// Sleep for at least the specified number of microsec/millisec/seconds.
 /// Time slice restrictions are imposed by platform/OS.
 /// On UNIX the sleep can be interrupted by a signal.
-
+/// Sleep*(0) have no effect.
+///
 /// [UNIX & Windows]
 
 NCBI_XNCBI_EXPORT
@@ -189,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/03 18:06:59  lavr
+ * Mention Sleep*(0) have no effect (i.e. should return immediately)
+ *
  * Revision 1.16  2005/02/23 13:45:25  ivanov
  * + SuppressSystemMessageBox() (Windows specific)
  *
