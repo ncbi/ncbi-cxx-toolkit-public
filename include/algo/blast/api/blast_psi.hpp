@@ -133,13 +133,15 @@ private:
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
     /// @param opts options to be used in the PSSM engine [in]
+    /// @param matrix_name name of the underlying scoring matrix used
     /// @param diagnostics contains diagnostics data from PSSM creation process
     /// to save into the return value [in]
     /// @return CPssmWithParameters object with equivalent contents to
     /// those in pssm argument
-    CRef<objects::CPssmWithParameters>
+    static CRef<objects::CPssmWithParameters>
     x_PSIMatrix2Asn1(const PSIMatrix* pssm,
                      const PSIBlastOptions* opts,
+                     const char* matrix_name,
                      const PSIDiagnosticsResponse* diagnostics = NULL);
 
     /// Convert a PSSM return status into a string
@@ -169,6 +171,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/05/03 20:32:52  camacho
+ * Minor
+ *
  * Revision 1.22  2005/03/28 18:27:35  jcherry
  * Added export specifiers
  *

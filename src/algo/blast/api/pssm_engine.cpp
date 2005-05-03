@@ -193,7 +193,8 @@ CPssmEngine::Run()
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
     CRef<CPssmWithParameters> retval(NULL);
-    retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetOptions(), diagnostics);
+    retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetOptions(), 
+                              m_PssmInput->GetMatrixName(), diagnostics);
 
     return retval;
 }
@@ -228,7 +229,8 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
     retval->num_queries              = 1;
     retval->first_context            = 0;
     retval->last_context             = 0;
-    retval->contexts                 = (BlastContextInfo*) calloc(1, sizeof(BlastContextInfo));
+    retval->contexts                 = (BlastContextInfo*) 
+                                       calloc(1, sizeof(BlastContextInfo));
     retval->contexts[0].query_offset = 0;
     retval->contexts[0].query_length = query_length;
     retval->max_length               = query_length;
@@ -327,6 +329,7 @@ CPssmEngine::x_Validate()
 CRef<CPssmWithParameters>
 CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
                               const PSIBlastOptions* opts,
+                              const char* matrix_name,
                               const PSIDiagnosticsResponse* diagnostics)
 {
     ASSERT(pssm);
@@ -335,13 +338,15 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
 
     // Record the parameters
     retval->SetParams().SetPseudocount(opts->pseudo_count);
-    string mtx(m_PssmInput->GetMatrixName());
+    string mtx(matrix_name);
     mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
     retval->SetParams().SetRpsdbparams().SetMatrixName(mtx);
 
     CPssm& asn1_pssm = retval->SetPssm();
     asn1_pssm.SetIsProtein(true);
+    // number of rows is alphabet size
     asn1_pssm.SetNumRows(pssm->nrows);
+    // number of columns is query length
     asn1_pssm.SetNumColumns(pssm->ncols);
     asn1_pssm.SetByRow(false);  // this is the default
 
@@ -454,6 +459,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2005/05/03 20:33:11  camacho
+ * Minor
+ *
  * Revision 1.34  2005/05/02 19:39:07  camacho
  * Introduced constant for IMPALA-style PSSM scaling
  *
