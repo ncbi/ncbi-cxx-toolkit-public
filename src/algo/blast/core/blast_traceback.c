@@ -542,7 +542,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    
    /* Remove any HSPs that share a starting or ending diagonal
       with a higher-scoring HSP. */
-   Blast_HSPListPurgeHSPsWithCommonEndpoints(hsp_list);
+   Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
 
    /* Sort HSPs by score again, as the scores might have changed. */
    Blast_HSPListSortByScore(hsp_list);

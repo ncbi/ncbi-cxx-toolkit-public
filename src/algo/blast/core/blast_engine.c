@@ -379,7 +379,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
                init_hitlist, &hsp_list, gapped_stats);
 
             /* Removes redundant HSPs. */
-             Blast_HSPListPurgeHSPsWithCommonEndpoints(hsp_list);
+             Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
 
              Blast_HSPListSortByScore(hsp_list);
 
