@@ -209,10 +209,6 @@ inline const char* CDiagCompileInfo::GetFunction(void) const
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
-inline CNcbiDiag::~CNcbiDiag(void) {
-    m_Buffer.Detach(this);
-}
-
 #ifdef NCBIDIAG_DEFER_GENERIC_PUT
 template<class X>
 inline const CNcbiDiag& CNcbiDiag::operator<< (const X& x) const {
@@ -559,6 +555,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/05/04 14:14:30  ssikorsk
+ * Made CNcbiDiag dtor not inline.
+ *
  * Revision 1.46  2005/05/04 13:18:54  ssikorsk
  * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
  *
