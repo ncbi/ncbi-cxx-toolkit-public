@@ -2075,20 +2075,24 @@ public:
 /// Used as arguments to template functions for specifying the type of 
 /// comparison.
 
-struct PCase
+template <typename T>
+struct PCase_Generic
 {
     /// Return difference between "s1" and "s2".
-    int Compare(const string& s1, const string& s2) const;
+    int Compare(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2.
-    bool Less(const string& s1, const string& s2) const;
+    bool Less(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 == s2.
-    bool Equals(const string& s1, const string& s2) const;
+    bool Equals(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2.
-    bool operator()(const string& s1, const string& s2) const;
+    bool operator()(const T& s1, const T& s2) const;
 };
+
+typedef PCase_Generic<string>       PCase;
+typedef PCase_Generic<const char *> PCase_CStr;
 
 
 
@@ -2099,22 +2103,26 @@ struct PCase
 /// Used as arguments to template functions for specifying the type of 
 /// comparison.
 ///
-/// @sa PNocase_Conditional
+/// @sa PNocase_Conditional_Generic
 
-struct PNocase
+template <typename T>
+struct PNocase_Generic
 {
     /// Return difference between "s1" and "s2".
-    int Compare(const string& s1, const string& s2) const;
+    int Compare(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2.
-    bool Less(const string& s1, const string& s2) const;
+    bool Less(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 == s2.
-    bool Equals(const string& s1, const string& s2) const;
+    bool Equals(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2 ignoring case.
-    bool operator()(const string& s1, const string& s2) const;
+    bool operator()(const T& s1, const T& s2) const;
 };
+
+typedef PNocase_Generic<string>       PNocase;
+typedef PNocase_Generic<const char *> PNocase_CStr;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2125,13 +2133,14 @@ struct PNocase
 /// Used as arguments to template functions for specifying the type of 
 /// comparison.
 ///
-/// @sa PNocase
+/// @sa PNocase_Generic
 
-class PNocase_Conditional
+template <typename T>
+class PNocase_Conditional_Generic
 {
 public:
     /// Construction
-    PNocase_Conditional(NStr::ECase case_sens = NStr::eCase);
+    PNocase_Conditional_Generic(NStr::ECase case_sens = NStr::eCase);
 
     /// Get comparison type
     NStr::ECase GetCase() const { return m_CaseSensitive; }
@@ -2140,19 +2149,22 @@ public:
     void SetCase(NStr::ECase case_sens) { m_CaseSensitive = case_sens; }
 
     /// Return difference between "s1" and "s2".
-    int Compare(const string& s1, const string& s2) const;
+    int Compare(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2.
-    bool Less(const string& s1, const string& s2) const;
+    bool Less(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 == s2.
-    bool Equals(const string& s1, const string& s2) const;
+    bool Equals(const T& s1, const T& s2) const;
 
     /// Return TRUE if s1 < s2 ignoring case.
-    bool operator()(const string& s1, const string& s2) const;
+    bool operator()(const T& s1, const T& s2) const;
 private:
     NStr::ECase m_CaseSensitive; ///< case sensitive when TRUE
 };
+
+typedef PNocase_Conditional_Generic<string>       PNocase_Conditional;
+typedef PNocase_Conditional_Generic<const char *> PNocase_Conditional_CStr;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2526,29 +2538,33 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  PCase::
+//  PCase_Generic::
 //
 
+template <typename T>
 inline
-int PCase::Compare(const string& s1, const string& s2) const
+int PCase_Generic<T>::Compare(const T& s1, const T& s2) const
 {
     return NStr::Compare(s1, s2, NStr::eCase);
 }
 
+template <typename T>
 inline
-bool PCase::Less(const string& s1, const string& s2) const
+bool PCase_Generic<T>::Less(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) < 0;
 }
 
+template <typename T>
 inline
-bool PCase::Equals(const string& s1, const string& s2) const
+bool PCase_Generic<T>::Equals(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) == 0;
 }
 
+template <typename T>
 inline
-bool PCase::operator()(const string& s1, const string& s2) const
+bool PCase_Generic<T>::operator()(const T& s1, const T& s2) const
 {
     return Less(s1, s2);
 }
@@ -2556,62 +2572,72 @@ bool PCase::operator()(const string& s1, const string& s2) const
 
 
 ////////////////////////////////////////////////////////////////////////////
-//  PNocase::
+//  PNocase_Generic<T>::
 //
 
+
+template <typename T>
 inline
-int PNocase::Compare(const string& s1, const string& s2) const
+int PNocase_Generic<T>::Compare(const T& s1, const T& s2) const
 {
     return NStr::Compare(s1, s2, NStr::eNocase);
 }
 
+template <typename T>
 inline
-bool PNocase::Less(const string& s1, const string& s2) const
+bool PNocase_Generic<T>::Less(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) < 0;
 }
 
+template <typename T>
 inline
-bool PNocase::Equals(const string& s1, const string& s2) const
+bool PNocase_Generic<T>::Equals(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) == 0;
 }
 
+template <typename T>
 inline
-bool PNocase::operator()(const string& s1, const string& s2) const
+bool PNocase_Generic<T>::operator()(const T& s1, const T& s2) const
 {
     return Less(s1, s2);
 }
 
 ////////////////////////////////////////////////////////////////////////////
-//  PNocase_Conditional::
+//  PNocase_Conditional_Generic<T>::
 //
 
+template <typename T>
 inline
-PNocase_Conditional::PNocase_Conditional(NStr::ECase case_sens)
-    : m_CaseSensitive(case_sens)
+PNocase_Conditional_Generic<T>::PNocase_Conditional_Generic(NStr::ECase cs)
+    : m_CaseSensitive(cs)
 {}
 
+template <typename T>
 inline
-int PNocase_Conditional::Compare(const string& s1, const string& s2) const
+int PNocase_Conditional_Generic<T>::Compare(const T& s1, const T& s2) const
 {
     return NStr::Compare(s1, s2, m_CaseSensitive);
 }
 
+template <typename T>
 inline
-bool PNocase_Conditional::Less(const string& s1, const string& s2) const
+bool PNocase_Conditional_Generic<T>::Less(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) < 0;
 }
 
+template <typename T>
 inline
-bool PNocase_Conditional::Equals(const string& s1, const string& s2) const
+bool PNocase_Conditional_Generic<T>::Equals(const T& s1, const T& s2) const
 {
     return Compare(s1, s2) == 0;
 }
 
+template <typename T>
 inline
-bool PNocase_Conditional::operator()(const string& s1, const string& s2) const
+bool PNocase_Conditional_Generic<T>::operator()(const T& s1, const T& s2) const
 {
     return Less(s1, s2);
 }
@@ -2625,6 +2651,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/05/04 15:56:01  ucko
+ * Genericize PCase et al. to allow for C-string-based variants, mainly
+ * useful in conjunction with CStaticArray{Map,Set}.
+ *
  * Revision 1.79  2005/04/29 14:41:15  ivanov
  * + NStr::TokenizePattern()
  *
