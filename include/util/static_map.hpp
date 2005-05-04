@@ -66,7 +66,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Then, declare a static variable such as:
 ///
-///     typedef StaticArraySet<const char*, PNocase> TStaticArray;
+///     typedef StaticArraySet<const char*, PNocase_CStr> TStaticArray;
 ///     static TStaticArray sc_Array(sc_MyArray, sizeof(sc_MyArray));
 ///
 /// In debug mode, the constructor will scan the list of items and insure
@@ -178,6 +178,11 @@ public:
     {
         return this->value_comp().first_comp();
     }
+
+    const key_type& extract_key(const value_type& value) const
+    {
+        return value.first;
+    }
 };
 
 
@@ -188,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/04 15:59:46  ucko
+ * Suggest PNocase_CStr when using const char*; make validation errors clearer.
+ *
  * Revision 1.5  2004/08/19 13:09:48  dicuccio
  * Removed redundant inlcude of <utility>
  *

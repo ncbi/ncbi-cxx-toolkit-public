@@ -67,7 +67,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Then, declare a static variable such as:
 ///
-///     typedef StaticArraySet<const char*, PNocase> TStaticArray;
+///     typedef StaticArraySet<const char*, PNocase_CStr> TStaticArray;
 ///     static TStaticArray sc_Array(sc_MyArray, sizeof(sc_MyArray));
 ///
 /// In debug mode, the constructor will scan the list of items and insure
@@ -203,6 +203,8 @@ public:
         return m_Compare;
     }
 
+    virtual const key_type& extract_key(const value_type& value) const = 0;
+
 private:
     const_iterator m_Begin;
     const_iterator m_End;
@@ -221,7 +223,12 @@ private:
         if ( !empty() ) {
             const_iterator curr = begin(), prev = curr;
             while ( ++curr != end() ) {
-                _ASSERT( m_Compare(*prev, *curr) );
+                bool in_order = m_Compare(*prev, *curr);
+                if ( !in_order ) {
+                    ERR_POST("keys out of order: " << extract_key(*prev)
+                             << " vs. " << extract_key(*curr));
+                }
+                _ASSERT( in_order );
                 prev = curr;
             }
         }
@@ -266,6 +273,11 @@ public:
     {
         return value_compare();
     }
+
+    const key_type& extract_key(const value_type& value) const
+    {
+        return value;
+    }
 };
 
 
@@ -275,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/04 15:59:46  ucko
+ * Suggest PNocase_CStr when using const char*; make validation errors clearer.
+ *
  * Revision 1.2  2004/08/19 13:10:09  dicuccio
  * Added include for ncbistd.hpp for standard definitions
  *
