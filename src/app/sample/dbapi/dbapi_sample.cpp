@@ -96,7 +96,8 @@ int CDbapiTest::Run()
     CArgs args = GetArgs();
 
     IDataSource *ds = 0;
-
+    //CNcbiOfstream log("debug.log");
+    //SetDiagStream(&log);
     try {
         
         CDriverManager &dm = CDriverManager::GetInstance();
@@ -127,7 +128,8 @@ int CDbapiTest::Run()
         // data source object (global). Default output is sent
         // to standard error
         //
-        //ds->SetLogStream(0);
+        //CNcbiOfstream logfile("test.log");
+        //ds->SetLogStream(&log);
 
 
         // Create connection. 
@@ -149,27 +151,7 @@ int CDbapiTest::Run()
     
         NcbiCout << "Using server: " << server
                  << ", driver: " << driver << endl;
-/*
-        // Test section start
-        try {
-            IDataSource *ds2 = dm.CreateDs(driver);
 
-            IConnection* conn2 = ds2->CreateConnection();
-            
-            conn2->Connect("kholodov",
-                           "newuser",
-                           "MOZART");
-            IStatement *stmt = conn2->CreateStatement();
-            stmt->ExecuteUpdate("print 'Test print from MOZART'");
-            delete conn2;
-        }
-        catch (exception& e) {
-            NcbiCerr << e.what() << endl;
-        }
-
-        exit(0);
-        // Test section end
-*/    
         IStatement *stmt = conn->GetStatement();
         string sql;
         // Begin transaction
@@ -254,7 +236,6 @@ int CDbapiTest::Run()
             NcbiCout << "Exception: " << e.what() << endl;
             NcbiCout << conn->GetErrorInfo();
         } 
-
 
         //stmt->PurgeResults();
 
@@ -392,9 +373,9 @@ begin \
   select @o = 555 \
   select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
   print 'Print test output' \
+  raiserror('Raise Error test output', 1, 1) \
   return @id \
 end";
-        //  raiserror('Raise Error test output', 1, 1) 
         stmt->ExecuteUpdate(sql);
 #if 0
         // commit transaction
@@ -466,6 +447,8 @@ end";
          }
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
         NcbiCout << endl << ds->GetErrorInfo() << endl;
+
+
 
         cstmt->Close();
         delete cstmt;
@@ -586,6 +569,10 @@ from SelectSample where int_val = 1");
             }
         }
 
+        IStatement *stmt2 = conn->CreateStatement();
+        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
+        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
+        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
     
         // create a table
         NcbiCout << endl << "Creating BlobSample table..." << endl;
@@ -600,7 +587,7 @@ end";
 
         sql = "create table BlobSample (\
 	id int null, \
-	blob text null, unique (id))";
+	blob2 text null, blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
 
         // Write BLOB several times
@@ -616,16 +603,19 @@ end";
 
         //Initialize table using bulk insert
         NcbiCout << "Initializing BlobSample table..." << endl;
-        IBulkInsert *bi = conn->CreateBulkInsert("BlobSample", 2);
+        IBulkInsert *bi = conn->CreateBulkInsert("BlobSample", 3);
         CVariant col1 = CVariant(eDB_Int);
         CVariant col2 = CVariant(eDB_Text);
+        CVariant col3 = CVariant(eDB_Text);
         bi->Bind(1, &col1);
         bi->Bind(2, &col2);
+        bi->Bind(3, &col3);
+
         for(int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             col1 = i;
-            col2.Truncate();
-            col2.Append(im.c_str(), im.size());
+            col3.Truncate();
+            col3.Append(im.c_str(), im.size());
             bi->AddRow();
         }
         bi->Complete();
@@ -671,20 +661,22 @@ end";
         //    sql += " at isolation read uncommitted";
 
         stmt->Execute(sql);
-    
+        IConnection *newConn = conn->CloneConnection();
+
         cnt = 0;
         while( stmt->HasMoreResults() ) {
             if( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
                 while(rs->Next()) {
                     NcbiCout << "Writing BLOB " << ++cnt << endl;
-                    ostream& out = rs->GetBlobOStream(blob.size(), eDisableLog);
+                    ostream& out = rs->GetBlobOStream(newConn, blob.size(), eDisableLog);
                     out.write(buf, blob.size());
                     out.flush();
                 }
             }
         }
 
+        delete newConn;
 #endif
 
         delete buf;
@@ -707,16 +699,30 @@ from BlobSample where id = 1");
 
         // Reading text blobs
         NcbiCout << "Reading text BLOB..." << endl;
-        IResultSet *brs = stmt->ExecuteQuery("select id, blob from BlobSample");
-        brs->BindBlobToVariant(true);
+        IResultSet *brs = stmt->ExecuteQuery("select id, blob2, blob from BlobSample");
+        //brs->BindBlobToVariant(true);
         char *bbuf = new char[50000];
         while(brs->Next()) {
-            NcbiCout << brs->GetVariant(1).GetString() << "  ";
-            const CVariant &v = brs->GetVariant(2);
+            NcbiCout << brs->GetVariant(1).GetString() << "|";
+            CNcbiIstream &is = brs->GetBlobIStream();
+            while( !is.eof() ) {
+                NcbiCout << is.get();
+            }
+            NcbiCout << "|";
+            CNcbiIstream &is2 = brs->GetBlobIStream();
+            while( !is2.eof() ) {
+                NcbiCout << (char)is2.get();
+            }
+            NcbiCout << endl;
+/*
+            if( brs->GetVariant(2).IsNull() ) {
+                NcbiCout << " null ";
+            }
+            const CVariant &v = brs->GetVariant(3);
             v.Read(bbuf, v.GetBlobSize());
             bbuf[v.GetBlobSize()] = '\0';
-            //NcbiCout << bbuf << endl;
-
+            NcbiCout << bbuf << endl;
+*/
         }
         delete[] bbuf;
 
@@ -774,6 +780,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/05/04 14:35:35  kholodov
+* Removed: outdated code
+*
 * Revision 1.15  2005/01/14 20:15:16  ssikorsk
 * Fixed a couple of "unused variable" warnings
 *
