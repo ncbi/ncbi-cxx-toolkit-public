@@ -90,18 +90,19 @@ public:
     ~CDiagCompileInfo(void);
 
     NCBI_XNCBI_EXPORT
-    // We provide a copy operator because we will take ownership of
+    // We provide a copy operator and ctor because we will take ownership of
     // m_ClassName and m_FunctName from "other" and have to set
     // value of other.m_Parsed to false.
     CDiagCompileInfo& operator=(const CDiagCompileInfo& other);
 
-    const char* GetFile    (void) const { return m_File   ? m_File   : ""; }
-    const char* GetModule  (void) const { return m_Module ? m_Module : ""; }
-    int         GetLine    (void) const { return m_Line;                   }
+    const char* GetFile    (void) const;
+    const char* GetModule  (void) const;
+    int         GetLine    (void) const;
     const char* GetClass   (void) const;
     const char* GetFunction(void) const;
 
 private:
+    NCBI_XNCBI_EXPORT
     void ParseCurrFunctName(void) const;
     static void ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len);
     void Copy(const CDiagCompileInfo& other);
@@ -1188,6 +1189,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/05/04 15:26:13  ssikorsk
+ * Moved getters into inl-file. Initialised m_File and m_Module with empty
+ * string in ctor instead of checking for NULL in getters every time.
+ *
  * Revision 1.83  2005/05/04 14:14:15  ssikorsk
  * Made CNcbiDiag dtor not inline. Added copy ctor and dtor to CDiagCompileInfo.
  *

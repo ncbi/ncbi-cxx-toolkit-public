@@ -188,7 +188,23 @@ extern CDiagBuffer& GetDiagBuffer(void);
 
 
 ///////////////////////////////////////////////////////
-//  CNcbiDiag::
+//  CDiagCompileInfo
+
+inline const char* CDiagCompileInfo::GetFile (void) const 
+{ 
+    return m_File; 
+}
+
+inline const char* CDiagCompileInfo::GetModule(void) const 
+{ 
+    return m_Module; 
+}
+
+inline int CDiagCompileInfo::GetLine(void) const 
+{ 
+    return m_Line;                   
+}
+
 inline const char* CDiagCompileInfo::GetClass (void) const 
 { 
     if (!m_Parsed) {
@@ -555,6 +571,10 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/05/04 15:26:13  ssikorsk
+ * Moved getters into inl-file. Initialised m_File and m_Module with empty
+ * string in ctor instead of checking for NULL in getters every time.
+ *
  * Revision 1.47  2005/05/04 14:14:30  ssikorsk
  * Made CNcbiDiag dtor not inline.
  *
