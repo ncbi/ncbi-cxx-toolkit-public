@@ -77,10 +77,16 @@ typedef struct {
 /* The functions */
 
 
-extern int    regcomp(regex_t *, const char *, int);
-extern int    regexec(regex_t *, const char *, size_t, regmatch_t *, int);
-extern size_t regerror(int, const regex_t *, char *, size_t);
-extern void   regfree(regex_t *);
+extern int    pcreposix_regcomp(regex_t *, const char *, int);
+extern int    pcreposix_regexec(regex_t *, const char *, size_t, regmatch_t *,
+                                int);
+extern size_t pcreposix_regerror(int, const regex_t *, char *, size_t);
+extern void   pcreposix_regfree(regex_t *);
+
+#define regcomp  pcreposix_regcomp
+#define regexec  pcreposix_regexec
+#define regerror pcreposix_regerror
+#define regfree  pcreposix_regfree
 
 #ifdef __cplusplus
 }   /* extern "C" */
