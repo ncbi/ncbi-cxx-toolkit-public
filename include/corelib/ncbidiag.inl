@@ -205,20 +205,20 @@ inline int CDiagCompileInfo::GetLine(void) const
     return m_Line;                   
 }
 
-inline const char* CDiagCompileInfo::GetClass (void) const 
+inline const string& CDiagCompileInfo::GetClass (void) const 
 { 
     if (!m_Parsed) {
         ParseCurrFunctName();
     }
-    return (m_ClassName.get() ? m_ClassName.get() : "");
+    return m_ClassName;
 }
 
-inline const char* CDiagCompileInfo::GetFunction(void) const 
+inline const string& CDiagCompileInfo::GetFunction(void) const 
 { 
     if (!m_Parsed) {
         ParseCurrFunctName();
     }
-    return (m_FunctName.get() ? m_FunctName.get() : "");
+    return m_FunctName;
 }
 
 
@@ -235,6 +235,7 @@ inline const CNcbiDiag& CNcbiDiag::operator<< (const X& x) const {
 
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
     m_Line = line;
+    m_ValChngFlags |= fLineIsChanged;
     return *this;
 }
 
@@ -250,26 +251,41 @@ inline EDiagSev CNcbiDiag::GetSeverity(void) const {
 
 inline const char* CNcbiDiag::GetModule(void) const 
 { 
-    return m_Module.get() ? m_Module.get() : m_CompileInfo.GetModule();
+    if (m_ValChngFlags & fModuleIsChanged) {
+        return m_Module.c_str();
+    }
+    return m_CompileInfo.GetModule();
 }
 
 inline const char* CNcbiDiag::GetFile(void) const 
 { 
-    return m_File.get() ? m_File.get() : m_CompileInfo.GetFile();
+    if (m_ValChngFlags & fFileIsChanged) {
+        return m_File.c_str();
+    }
+    return m_CompileInfo.GetFile();
 }
 
 inline const char* CNcbiDiag::GetClass(void) const 
 { 
-    return m_Class.get() ? m_Class.get() : m_CompileInfo.GetClass();
+    if (m_ValChngFlags & fClassIsChanged) {
+        return m_Class.c_str();
+    }
+    return m_CompileInfo.GetClass().c_str();
 }
 
 inline const char* CNcbiDiag::GetFunction(void) const 
 { 
-    return m_Function.get() ? m_Function.get() : m_CompileInfo.GetFunction();
+    if (m_ValChngFlags & fFunctionIsChanged) {
+        return m_Function.c_str();
+    }
+    return m_CompileInfo.GetFunction().c_str();
 }
 
 inline size_t CNcbiDiag::GetLine(void) const {
-    return m_Line;
+    if (m_ValChngFlags & fLineIsChanged) {
+        return m_Line;
+    }
+    return m_CompileInfo.GetLine();
 }
 
 inline int CNcbiDiag::GetErrorCode(void) const {
@@ -571,6 +587,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/05/04 19:54:13  ssikorsk
+ * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag.
+ *
  * Revision 1.48  2005/05/04 15:26:13  ssikorsk
  * Moved getters into inl-file. Initialised m_File and m_Module with empty
  * string in ctor instead of checking for NULL in getters every time.

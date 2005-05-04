@@ -41,7 +41,6 @@
 
 
 #include <corelib/ncbistre.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <list>
 #include <map>
 #include <stdexcept>
@@ -64,7 +63,6 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_MAKE_MODULE(module) NULL
 #endif 
 
-typedef AutoPtr<char, ArrayDeleter<char> > TAutoStr;
 
 /// Incapsulate compile time information such as
 /// _FILE_ _LINE NCBI_MODULE
@@ -85,37 +83,27 @@ public:
                      const char* curr_funct = NULL, 
                      const char* module = 0);
     NCBI_XNCBI_EXPORT
-    CDiagCompileInfo(const CDiagCompileInfo& other);
-    NCBI_XNCBI_EXPORT
     ~CDiagCompileInfo(void);
 
-    NCBI_XNCBI_EXPORT
-    // We provide a copy operator and ctor because we will take ownership of
-    // m_ClassName and m_FunctName from "other" and have to set
-    // value of other.m_Parsed to false.
-    CDiagCompileInfo& operator=(const CDiagCompileInfo& other);
-
-    const char* GetFile    (void) const;
-    const char* GetModule  (void) const;
-    int         GetLine    (void) const;
-    const char* GetClass   (void) const;
-    const char* GetFunction(void) const;
+    const char*   GetFile    (void) const;
+    const char*   GetModule  (void) const;
+    int           GetLine    (void) const;
+    const string& GetClass   (void) const;
+    const string& GetFunction(void) const;
 
 private:
     NCBI_XNCBI_EXPORT
     void ParseCurrFunctName(void) const;
-    static void ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len);
-    void Copy(const CDiagCompileInfo& other);
 
 private:
-    const char*      m_File;
-    const char*      m_Module;
-    int              m_Line; 
+    const char*    m_File;
+    const char*    m_Module;
+    int            m_Line; 
 
-    const char*      m_CurrFunctName;
-    mutable bool     m_Parsed;
-    mutable TAutoStr m_ClassName;
-    mutable TAutoStr m_FunctName;
+    const char*    m_CurrFunctName;
+    mutable bool   m_Parsed;
+    mutable string m_ClassName;
+    mutable string m_FunctName;
 };
 
 
@@ -578,9 +566,15 @@ public:
                              const char* expression, const char* message);
 
 private:
-    static void ResetAutoStr(TAutoStr& auto_str, const char* str);
+    enum EValChngFlags {
+        fFileIsChanged = 0x1,
+        fLineIsChanged = 0x2,
+        fModuleIsChanged = 0x4,
+        fClassIsChanged = 0x8,
+        fFunctionIsChanged = 0x10
+    };
+    typedef int TValChngFlags;
 
-private:
     mutable EDiagSev       m_Severity;       ///< Severity level of current msg.
     mutable int            m_ErrCode;        ///< Error code
     mutable int            m_ErrSubCode;     ///< Error subcode
@@ -590,11 +584,12 @@ private:
 
     CDiagCompileInfo       m_CompileInfo;
 
-    mutable TAutoStr       m_File;           ///< File name
+    mutable string         m_File;           ///< File name
     mutable size_t         m_Line;           ///< Line number
-    mutable TAutoStr       m_Module;         ///< Module name
-    mutable TAutoStr       m_Class;          ///< Class name
-    mutable TAutoStr       m_Function;       ///< Function name
+    mutable string         m_Module;         ///< Module name
+    mutable string         m_Class;          ///< Class name
+    mutable string         m_Function;       ///< Function name
+    mutable TValChngFlags  m_ValChngFlags;
 
     /// Private copy constructor to prohibit copy.
     CNcbiDiag(const CNcbiDiag&);
@@ -1189,6 +1184,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/05/04 19:54:13  ssikorsk
+ * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag.
+ *
  * Revision 1.84  2005/05/04 15:26:13  ssikorsk
  * Moved getters into inl-file. Initialised m_File and m_Module with empty
  * string in ctor instead of checking for NULL in getters every time.
