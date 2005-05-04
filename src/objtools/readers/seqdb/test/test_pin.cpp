@@ -2959,8 +2959,11 @@ int test1(int argc, char ** argv)
             CTimedTask t1("iterate over db");
             CSeqDB db(dbname, seqtype);
             vector<int> gis;
+
+            int num_show = (num_display > 0) ? num_display : 10;
+            
             int count =0;
-            for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+            for(int oid = 0; ((int)gis.size() < num_show) && db.CheckOrFindOID(oid); oid++) {
                 count++;
                 db.GetGis(oid, gis, true);
             }
@@ -2968,14 +2971,11 @@ int test1(int argc, char ** argv)
             cout << "OIDs found: " << count << " per second: " << (count / spent) << endl;
             cout << "GIs found:  " << gis.size() << " per second: " << (gis.size() / spent) << endl;
             
-            int num_show = (num_display > 0) ? num_display : 10;
-            
             for(int i = 0; (i<num_show) && (i<(int)gis.size()); i++) {
-                if (! i) { // said the duck
-                    cout << "\nFirst few GIs: " << gis[0];
-                } else {
-                    cout << ", " << gis[i];
-                }
+                cout << "--- Seq #" << i << ", gi = " << gis[i] << " ---" << endl;
+                auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                *outpstr << *db.GiToBioseq(gis[i]);
+                cout << endl;
             }
             
             if ((int)gis.size() > num_show) {
