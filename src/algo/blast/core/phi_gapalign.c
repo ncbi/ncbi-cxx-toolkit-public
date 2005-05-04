@@ -446,7 +446,6 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
                               word of the pattern*/
     Int4  hitIndex; /*index over hits against one word*/
     Int4 pos; /*keeps track of how many intermediate hits*/
-    Int4 placeIndex; /*index over the number of places in the pattern rep*/
     Int4 hitArray1[PHI_MAX_HIT];
     Int4 oneWordHitArray[MAX_HITS_IN_WORD]; /*hits for one word of 
                                             pattern representation*/
@@ -457,41 +456,37 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
 
     i = 1; 
 
-    hitArray[0] = extra_items->numPlacesInWord[0] - 1;
+    hitArray[0] = extra_items->numPlacesInWord[0];
     for (wordIndex = 1; wordIndex < num_words; wordIndex++) {
         one_word_items->whichPositionPtr = multiword_items->SLL[wordIndex]; 
         one_word_items->match_mask = multiword_items->match_maskL[wordIndex];
         pos = 0;
         for (j = 0; j < i; j += wordIndex) {
+            Int4 lastOffset = hitArray[j+wordIndex-1];
             twiceHitsOneWord = 
                 _PHIBlastFindHitsShort(oneWordHitArray, 
-                    (Uint1*) &seq[hitArray[j]+1], 
-                    MIN(len-hitArray[j]-1, extra_items->spacing[wordIndex-1] +
+                    seq + lastOffset,
+                    MIN(len-lastOffset, extra_items->spacing[wordIndex-1] +
                         extra_items->numPlacesInWord[wordIndex]),
-                                      pattern_blk);
+                    pattern_blk);
             for (hitIndex = 0; hitIndex < twiceHitsOneWord; 
                  hitIndex+= 2, pos+= wordIndex+1) {
-                hitArray1[pos] = hitArray[j]+oneWordHitArray[hitIndex]+1;
-                for (wordIndex2 = 1; wordIndex2 < wordIndex; wordIndex2++)
+                for (wordIndex2 = 0; wordIndex2 < wordIndex; wordIndex2++)
                     hitArray1[pos+wordIndex2] = hitArray[j+wordIndex2];
-                hitArray1[pos+wordIndex] = oneWordHitArray[hitIndex+1];
+                hitArray1[pos+wordIndex2] = hitArray1[pos+wordIndex2-1] +
+                                             oneWordHitArray[hitIndex] + 1;
             }
         }
         i = pos;
         for (j = 0; j < pos; j++) 
             hitArray[j] = hitArray1[j];
     }
-    for (j = 0; j < pos; j+= wordIndex) {
-        for (placeIndex = extra_items->numPlacesInWord[0], i=j+1; 
-             i < j+wordIndex; i++) 
-            placeIndex += hitArray[i]+extra_items->numPlacesInWord[i-j];
-        if (placeIndex != len) 
-            continue;
-        if (j == 0) 
+    for (j = 0; j < pos; j+= num_words) {
+        if (hitArray[j+num_words-1] == len) {
+            for (i = 0; i < num_words; i++) 
+                hitArray[i] = hitArray[i+j];
             return 0;
-        for (i = 0; i < wordIndex; i++) 
-            hitArray[i] = hitArray[i+j];
-        return 0;
+        }
     }
     /* This point should never be reached. */
     return -1;
@@ -528,11 +523,9 @@ s_PHIBlastAlignPatterns(Uint1 *querySeq, Uint1 *dbSeq, Int4 lenQuerySeq,
                                             used as indices*/
     Int4 patternPosQuery, patternPosDb; /*positions in pattern
                             for matches to query and database sequences*/
-    Int4 wordIndex; /*index over words*/
 
-    Int4 placeIndex1, placeIndex2; /*indices over places in pattern*/
+    Int4 placeIndex; /*index over places in pattern*/
     Int4  *hitArray1=NULL, *hitArray2=NULL;
-    Int4 numPlacesInWord[PHI_MAX_WORDS_IN_PATTERN];
     Int4 gap_open; /*gap opening penalty*/
     Int4 gap_extend; /*gap extension penalty*/
     Int4** matrix = score_matrix->data;
@@ -558,9 +551,8 @@ s_PHIBlastAlignPatterns(Uint1 *querySeq, Uint1 *dbSeq, Int4 lenQuerySeq,
         s_PHIGetLongPattern(dbSeq, lenDbSeq, &startDbMatch, 
                             &endDbMatch, pattern_blk);
     } else {
-        Uint1* endQuerySeq = querySeq + lenQuerySeq;
-        Uint1* endDbSeq = dbSeq + lenDbSeq;
-        Int4 num_words = multiword_items->numWords;
+        Int4 QueryWord, DbWord;
+        Int4 QueryVarSize, DbVarSize;
         SExtraLongPatternItems* extra_items = multiword_items->extra_long_items;
 
         hitArray1 = calloc(PHI_MAX_HIT, sizeof(Int4));
@@ -571,41 +563,58 @@ s_PHIBlastAlignPatterns(Uint1 *querySeq, Uint1 *dbSeq, Int4 lenQuerySeq,
                                  pattern_blk);
         s_PHIGetExtraLongPattern(dbSeq, lenDbSeq, hitArray2, pattern_blk);
 
-        for (wordIndex = 0; wordIndex < num_words; wordIndex++) 
-            numPlacesInWord[wordIndex] = 
-                extra_items->numPlacesInWord[wordIndex];
-        for (placeIndex1 = 0, wordIndex = 0; 
-             placeIndex1 < extra_items->highestPlace; placeIndex1++) {
-            if (multiword_items->inputPatternMasked[placeIndex1] < 0) {
-                for (placeIndex2 = placeIndex1-1; placeIndex2 >=0; 
-                     placeIndex2--) {
-                    if (multiword_items->inputPatternMasked[placeIndex2] != 
-                        kMaskAaAlphabetBits) 
-                        break;
-                }
-                numPlacesInWord[wordIndex++]-= placeIndex1-placeIndex2-1;
-                hitArray1[wordIndex] += placeIndex1-placeIndex2-1;
-                hitArray2[wordIndex] += placeIndex1-placeIndex2-1;
-            }
-        }
         queryMatchOffset = dbMatchOffset = 0;
-        for (wordIndex = 0; wordIndex < num_words; wordIndex++) {
-            for (placeIndex1 = 0; placeIndex1 < numPlacesInWord[wordIndex]; 
-                 placeIndex1++) {
+        QueryWord = DbWord = 0;
+        QueryVarSize = DbVarSize = 0;
+
+        for (placeIndex = 0; 
+             placeIndex < extra_items->highestPlace; placeIndex++) {
+
+            Int4 patternWord = 
+                    multiword_items->inputPatternMasked[placeIndex];
+
+            if (patternWord < 0) {
+                QueryVarSize += hitArray1[QueryWord] - 
+                                hitArray1[QueryWord-1] -
+                                extra_items->numPlacesInWord[QueryWord];
+                DbVarSize += hitArray2[DbWord] - 
+                             hitArray2[DbWord-1] -
+                             extra_items->numPlacesInWord[DbWord];
+            }
+            else if (patternWord == kMaskAaAlphabetBits) {
+                QueryVarSize++;
+                DbVarSize++;
+            }
+            else {
+                if (QueryVarSize || DbVarSize) {
+                    if (QueryVarSize == DbVarSize) {
+                        GapPrelimEditBlockAdd(alignScript, eGapAlignSub, 
+                                              QueryVarSize);
+                    }
+                    else {
+                        local_score += s_BandedAlign(querySeq-1, dbSeq-1, 
+                                         QueryVarSize, DbVarSize, 
+                                         kBandLow, kBandHigh, matrix, 
+                                         gap_open, gap_extend, alignScript);
+                    }
+                    queryMatchOffset += QueryVarSize;
+                    querySeq += QueryVarSize;
+                    dbMatchOffset += DbVarSize;
+                    dbSeq += DbVarSize;
+                }
+
                 GapPrelimEditBlockAdd(alignScript, eGapAlignSub, 1);
+                queryMatchOffset++;
                 querySeq++;
+                dbMatchOffset++;
                 dbSeq++;
-                if (querySeq == endQuerySeq || dbSeq == endDbSeq)
-                    break;
+                QueryVarSize = DbVarSize = 0;
             }
-            if (wordIndex < num_words-1) { 
-                local_score += 
-                    s_BandedAlign(querySeq-1, dbSeq-1, hitArray1[wordIndex+1], 
-                            hitArray2[wordIndex+1], kBandLow, kBandHigh, matrix, 
-                            gap_open, gap_extend, alignScript);
-                querySeq += hitArray1[wordIndex+1];
-                dbSeq += hitArray2[wordIndex+1];
-            }
+
+            if (queryMatchOffset + QueryVarSize >= hitArray1[QueryWord])
+                QueryWord++;
+            if (dbMatchOffset + DbVarSize >= hitArray2[DbWord])
+                DbWord++;
         }
 
         sfree(hitArray1);
@@ -896,6 +905,5 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
                                              fwd_prelim_tback);
 
     gap_align->score = score_right + score_left;
-
     return status;
 }
