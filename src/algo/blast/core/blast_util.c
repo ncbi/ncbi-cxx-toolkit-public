@@ -1311,13 +1311,13 @@ char* BLAST_StrToUpper(const char* string)
         return NULL;
     }
 
-    p = retval = strdup(string);
+    retval = strdup(string);
     if ( !retval ) {
         return NULL;
     }
 
-    while (*p) {
-        *p++ = toupper(*p);
+    for (p = retval; *p != NULLB; p++) {
+        *p = toupper(*p);
     }
     return retval;
 }
