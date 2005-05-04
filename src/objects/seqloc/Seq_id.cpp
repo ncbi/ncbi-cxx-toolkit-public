@@ -489,7 +489,7 @@ static const TRefSeqType sc_RefSeqArray[] = {
     TRefSeqType("YP_", CSeq_id::eAcc_refseq_prot_predicted),
     TRefSeqType("ZP_", CSeq_id::eAcc_refseq_wgs_prot)
 };
-typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PCase> TRefSeqMap;
+typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PCase_CStr> TRefSeqMap;
 static const TRefSeqMap sc_RefSeqMap(sc_RefSeqArray, sizeof(sc_RefSeqArray));
 
 
@@ -1549,6 +1549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.105  2005/05/04 19:03:32  ucko
+ * Take advantage of PCase_CStr when comparing C strings.
+ *
  * Revision 6.104  2005/04/28 19:05:14  ucko
  * Correction: DR is for ESTs, not STSs.
  *

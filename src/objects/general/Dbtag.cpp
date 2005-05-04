@@ -132,7 +132,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
 };
 
 // case sensetive
-typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase> TDbxrefTypeMap;
+typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
 static const TDbxrefTypeMap sc_ApprovedDb(kApprovedDbXrefs,
                                           sizeof(kApprovedDbXrefs));
 static const TDbxrefTypeMap sc_ApprovedRefSeqDb(kApprovedRefSeqDbXrefs,
@@ -417,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2005/05/04 19:03:32  ucko
+ * Take advantage of PCase_CStr when comparing C strings.
+ *
  * Revision 6.22  2005/03/31 19:01:05  shomrat
  * Added CCDS and ECOCYC as approved RefSeq databases
  *
