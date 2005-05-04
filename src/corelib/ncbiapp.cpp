@@ -528,7 +528,7 @@ void CNcbiApplication::SetVersion(const CVersionInfo& version)
 }
 
 
-CVersionInfo CNcbiApplication::GetVersion(void)
+CVersionInfo CNcbiApplication::GetVersion(void) const
 {
     return *m_Version;
 }
@@ -1260,6 +1260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2005/05/04 14:20:22  kapustin
+ * Make GetVersion() const
+ *
  * Revision 1.105  2005/03/10 18:01:53  vakatov
  * Moved CNcbiApplication::GetArgs() implementation to here from the header
  *

@@ -323,7 +323,7 @@ protected:
     void SetVersion(const CVersionInfo& version);
 
     /// Get the program version information.
-    CVersionInfo GetVersion(void);
+    CVersionInfo GetVersion(void) const;
 
     /// Setup the command line argument descriptions.
     ///
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/05/04 14:20:05  kapustin
+ * Make GetVersion() const
+ *
  * Revision 1.51  2005/04/11 17:20:09  ucko
  * Doxygen fix for LoadConfig: replace out-of-date information with a
  * pointer to CMetaRegistry::GetDefaultSearchPath.
