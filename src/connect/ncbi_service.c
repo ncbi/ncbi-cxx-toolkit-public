@@ -333,12 +333,6 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 }
 
 
-char* SERV_GetConfig(void)
-{
-    return SERV_LBSMD_GetConfig();
-}
-
-
 void SERV_Reset(SERV_ITER iter)
 {
     size_t i;
@@ -574,6 +568,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2005/05/04 16:14:48  lavr
+ * -SERV_GetConfig()
+ *
  * Revision 6.61  2005/04/25 18:47:29  lavr
  * Private API to accept SConnNetInfo* for network dispatching to work too
  *

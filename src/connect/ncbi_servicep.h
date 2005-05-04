@@ -165,13 +165,6 @@ extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
 extern NCBI_XCONNECT_EXPORT char* SERV_ServiceName(const char* service);
 
 
-/* Get configuration file name. Returned '\0'-terminated string
- * is to be free()'d by a caller when no longer needed.
- * Return NULL if no configuration file name available.
- */
-extern NCBI_XCONNECT_EXPORT char* SERV_GetConfig(void);
-
-
 /* Given the status gap and wanted preference, calculate
  * acceptable stretch for the gap (the number of candidates is n).
  */
@@ -190,6 +183,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2005/05/04 16:14:57  lavr
+ * -SERV_GetConfig()
+ *
  * Revision 6.30  2005/05/02 16:04:52  lavr
  * Added export prefixes for most of internal API calls
  *
