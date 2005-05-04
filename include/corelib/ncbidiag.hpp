@@ -85,6 +85,11 @@ public:
                      const char* curr_funct = NULL, 
                      const char* module = 0);
     NCBI_XNCBI_EXPORT
+    CDiagCompileInfo(const CDiagCompileInfo& other);
+    NCBI_XNCBI_EXPORT
+    ~CDiagCompileInfo(void);
+
+    NCBI_XNCBI_EXPORT
     // We provide a copy operator because we will take ownership of
     // m_ClassName and m_FunctName from "other" and have to set
     // value of other.m_Parsed to false.
@@ -417,6 +422,7 @@ public:
              );
 
     /// Destructor.
+    NCBI_XNCBI_EXPORT
     ~CNcbiDiag(void);
 
     /// Put object to be formatted to diagnostic stream.
@@ -1182,6 +1188,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/05/04 14:14:15  ssikorsk
+ * Made CNcbiDiag dtor not inline. Added copy ctor and dtor to CDiagCompileInfo.
+ *
  * Revision 1.82  2005/05/04 13:18:54  ssikorsk
  * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
  *

@@ -139,6 +139,16 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
         m_Module = module;
 }
 
+CDiagCompileInfo::CDiagCompileInfo(const CDiagCompileInfo& other)
+{
+    Copy(other);
+}
+
+CDiagCompileInfo::~CDiagCompileInfo(void)
+{
+    return;
+}
+
 void CDiagCompileInfo::ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len)
 {
     char* new_str = new char[str_len + 1];
@@ -990,6 +1000,10 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
     SetModule( info.GetModule() );
 }
 
+CNcbiDiag::~CNcbiDiag(void) 
+{
+    m_Buffer.Detach(this);
+}
 
 // service function to set char[] field
 inline 
@@ -1499,6 +1513,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.89  2005/05/04 14:13:19  ssikorsk
+ * Made CNcbiDiag dtor not inline. Added copy ctor and dtor to CDiagCompileInfo.
+ *
  * Revision 1.88  2005/05/04 13:19:18  ssikorsk
  * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
  *
