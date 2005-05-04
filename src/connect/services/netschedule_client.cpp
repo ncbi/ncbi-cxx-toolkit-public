@@ -962,6 +962,22 @@ string CNetScheduleClient::ServerVersion()
     return m_Tmp;
 }
 
+void CNetScheduleClient::DumpQueue(CNcbiOstream & out)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "DUMP ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    WaitForServer();
+    PrintServerOut(out);
+}
+
 void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
 {
     if (m_RequestRateControl) {
@@ -974,6 +990,12 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
     MakeCommandPacket(&m_Tmp, "STAT ");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
+    WaitForServer();
+    PrintServerOut(out);
+}
+
+void CNetScheduleClient::PrintServerOut(CNcbiOstream & out)
+{
     WaitForServer();
     while (1) {
         if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -995,6 +1017,7 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
         out << m_Tmp << "\n";
     }
 }
+
 
 void CNetScheduleClient::Monitor(CNcbiOstream & out)
 {
@@ -1161,6 +1184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/04 19:08:01  kuznets
+ * +DumpQueue()
+ *
  * Revision 1.26  2005/05/03 18:06:17  kuznets
  * Added strem flush to make monitoring immediate
  *

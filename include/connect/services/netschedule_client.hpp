@@ -424,6 +424,8 @@ protected:
 
     void PrintStatistics(CNcbiOstream & out);
 
+    void DumpQueue(CNcbiOstream & out);
+
     void Monitor(CNcbiOstream & out);
 
     /// Turn server-side logging on(off)
@@ -465,6 +467,8 @@ protected:
                           string*    input, 
                           unsigned   wait_time,
                           unsigned short udp_port);
+
+    void PrintServerOut(CNcbiOstream & out);
 
 private:
     CNetScheduleClient(const CNetScheduleClient&);
@@ -708,6 +712,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/05/04 19:07:35  kuznets
+ * +DumpQueue()
+ *
  * Revision 1.27  2005/05/02 14:40:20  kuznets
  * +Monitor()
  *
