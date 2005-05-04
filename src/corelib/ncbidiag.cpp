@@ -133,34 +133,29 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     if (!module)
         return;
 
-    string lfile(file);
-    size_t pos = lfile.rfind('.');
-    if ( pos == string::npos )
+    // Checking for a file extension without creating of temporary string objects.
+    char* cur_extension = strrchr(file, '.');
+    if (cur_extension == NULL)
+        return; 
+
+    if (*(cur_extension + 1) != '\0') {
+        ++cur_extension;
+    } else {
         return;
+    }
 
-    string ext = lfile.substr(pos + 1);
-    if (ext == "cpp"  ||  ext == "C"  ||  ext == "c"  ||  ext == "cxx")
+    if (strcmp(cur_extension, "cpp") == 0 || 
+        strcmp(cur_extension, "C") == 0 || 
+        strcmp(cur_extension, "c") == 0 || 
+        strcmp(cur_extension, "cxx") == 0 ) {
         m_Module = module;
-}
-
-CDiagCompileInfo::CDiagCompileInfo(const CDiagCompileInfo& other)
-{
-    Copy(other);
+    }
 }
 
 CDiagCompileInfo::~CDiagCompileInfo(void)
 {
     return;
 }
-
-void CDiagCompileInfo::ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len)
-{
-    char* new_str = new char[str_len + 1];
-    strncpy(new_str, str, str_len);
-    new_str[str_len] = '\0';
-    auto_str.reset(new_str);
-}
-
 
 void 
 CDiagCompileInfo::ParseCurrFunctName(void) const
@@ -187,7 +182,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
 
             const char* cur_funct_name = (start_str == NULL ? m_CurrFunctName : start_str);
             size_t cur_funct_name_len = end_str - cur_funct_name;
-            ResetAutoStr(m_FunctName, cur_funct_name, cur_funct_name_len);
+            m_FunctName = string(cur_funct_name, cur_funct_name_len);
 
            // Get a class name
            if (has_class) {
@@ -195,35 +190,13 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
                start_str = str_rev_str(m_CurrFunctName, end_str, " ");
                const char* cur_class_name = (start_str == NULL ? m_CurrFunctName : start_str + 1);
                size_t cur_class_name_len = end_str - cur_class_name;
-               ResetAutoStr(m_ClassName, cur_class_name, cur_class_name_len);
+               m_ClassName = string(cur_class_name, cur_class_name_len);
            }
         }
     }
     m_Parsed = true;
 }
 
-CDiagCompileInfo& 
-CDiagCompileInfo::operator=(const CDiagCompileInfo& other)
-{
-    if (this != &other) {
-        Copy(other);
-    }
-    return *this;
-}
-
-void CDiagCompileInfo::Copy(const CDiagCompileInfo& other)
-{
-    m_File = other.m_File;
-    m_Module = other.m_Module;
-    m_Line = other.m_Line; 
-
-    m_CurrFunctName = other.m_CurrFunctName;
-    m_Parsed = other.m_Parsed;
-    m_ClassName = other.m_ClassName;
-    m_FunctName = other.m_FunctName;
-
-    other.m_Parsed = false;
-}
 
 ///////////////////////////////////////////////////////
 //  CDiagRecycler::
@@ -984,7 +957,8 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
       m_Buffer(GetDiagBuffer()), 
       m_PostFlags(post_flags),
       m_CheckFilters(true),
-      m_Line(0)
+      m_Line(0),
+      m_ValChngFlags(0)
 {
 }
 
@@ -998,7 +972,8 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_PostFlags(post_flags),
       m_CheckFilters(true),
       m_CompileInfo(info),
-      m_Line(info.GetLine())
+      m_Line(info.GetLine()),
+      m_ValChngFlags(0)
 {
     SetFile(   info.GetFile()   );
     SetModule( info.GetModule() );
@@ -1009,51 +984,34 @@ CNcbiDiag::~CNcbiDiag(void)
     m_Buffer.Detach(this);
 }
 
-// service function to set char[] field
-inline 
-void s_SetStrField(char* to, const char* from, size_t size)
-{
-    if (!from  ||  *from == 0) {
-        *to = '\0';
-        return;
-    }
-    strncpy(to, from, size);
-    to[size - 1] = '\0';
-}
-
-void CNcbiDiag::ResetAutoStr(TAutoStr& auto_str, const char* str)
-{
-    size_t str_len = strlen(str);
-    char* new_str = new char[str_len + 1];
-    strncpy(new_str, str, str_len);
-    new_str[str_len] = '\0';
-    auto_str.reset(new_str);
-}
-
 const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 {
-    ResetAutoStr(m_File, file);
+    m_File = file;
+    m_ValChngFlags |= fFileIsChanged;
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetModule(const char* module) const
 {
-    ResetAutoStr(m_Module, module);
+    m_Module = module;
+    m_ValChngFlags |= fModuleIsChanged;
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass ) const
 {
-    ResetAutoStr(m_Class, nclass);
+    m_Class = nclass;
+    m_ValChngFlags |= fClassIsChanged;
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
 {
-    ResetAutoStr(m_Function, function);
+    m_Function = function;
+    m_ValChngFlags |= fFunctionIsChanged;
     return *this;
 }
 
@@ -1517,6 +1475,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.91  2005/05/04 19:53:42  ssikorsk
+ * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag. Optimized module name parsing and checking algorithm.
+ *
  * Revision 1.90  2005/05/04 15:27:54  ssikorsk
  * Initialize m_File and m_Module with empty strins.
  *
