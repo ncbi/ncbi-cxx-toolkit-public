@@ -294,6 +294,8 @@ s_ReportInconsistentBlockLine
 }
 
 
+#if 0
+/* this section was removed by indexer request */
 /* This function creates and sends an error message regarding mismatched
  * definition lines
  */
@@ -316,6 +318,7 @@ s_ReportDefinitionLineMismatch
     eip->message = strdup ("Mismatched definition lines");
     report_error (eip, report_error_userdata);
 }
+#endif
 
 
 /* This function recursively creates and sends an error message 
@@ -5263,8 +5266,8 @@ s_FindBadDataCharsInSequence
 {
     TLineInfoReaderPtr lirp, master_lirp;
     int                data_position;
-    int                middle_start;
-    int                middle_end;
+    int                middle_start = 0;
+    int                middle_end = 0;
     char               curr_char, master_char;
     EBool              found_middle_start;
     EBool              rval = eFalse;
@@ -5771,6 +5774,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/04 18:54:42  bollin
+ * removed Linux warnings
+ *
  * Revision 1.17  2005/01/13 14:56:42  bollin
  * be sure to skip over segment brackets when reading segments for alignment of
  * segmented sets
