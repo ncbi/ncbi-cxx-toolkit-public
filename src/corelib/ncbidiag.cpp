@@ -108,8 +108,8 @@ str_rev_str(const char* begin_str, const char* end_str, const char* str_search)
 /// CDiagCompileInfo::
 
 CDiagCompileInfo::CDiagCompileInfo(void)
-    : m_File(0),
-      m_Module(0),
+    : m_File(""),
+      m_Module(""),
       m_Line(0),
       m_CurrFunctName(0),
       m_Parsed(false)
@@ -121,12 +121,16 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
                                    const char* curr_funct, 
                                    const char* module)
     : m_File(file),
-      m_Module(0),
+      m_Module(""),
       m_Line(line),
       m_CurrFunctName(curr_funct),
       m_Parsed(false)
 {
-    if (!file || !module)
+    if (!file) {
+        m_File = "";
+        return;
+    }
+    if (!module)
         return;
 
     string lfile(file);
@@ -1513,6 +1517,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.90  2005/05/04 15:27:54  ssikorsk
+ * Initialize m_File and m_Module with empty strins.
+ *
  * Revision 1.89  2005/05/04 14:13:19  ssikorsk
  * Made CNcbiDiag dtor not inline. Added copy ctor and dtor to CDiagCompileInfo.
  *
