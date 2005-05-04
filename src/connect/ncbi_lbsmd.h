@@ -42,11 +42,16 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, HOST_INFO* host_info);
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
+                                    SSERV_Info** info,
+                                    HOST_INFO*   host_info);
 
 
-char* SERV_LBSMD_GetConfig(void);
+/* Get configuration file name. Returned '\0'-terminated string
+ * is to be free()'d by a caller when no longer needed.
+ * Return NULL if no configuration file name is available.
+ */
+extern NCBI_XCONNECT_EXPORT char* LBSMD_GetConfig(void);
 
 
 typedef const void* LBSM_HINFO;
@@ -75,6 +80,10 @@ int/*bool*/ LBSM_HINFO_BLASTParams(LBSM_HINFO hinfo, unsigned int blast[8]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/05/04 16:17:32  lavr
+ * +<connect/ncbi_service_misc.h>, +LBSMD_GetConfig(), +LBSM_KeepHeapAttached()
+ * LBSM_UnLBSMD() added in potential heap detaching places
+ *
  * Revision 6.9  2002/10/28 21:55:38  lavr
  * LBSM_HINFO introduced for readability to replace plain "const void*"
  *
