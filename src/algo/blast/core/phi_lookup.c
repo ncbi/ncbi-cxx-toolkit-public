@@ -566,6 +566,29 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
     /* Free the residue frequencies structure - it's no longer needed */
     rfp = Blast_ResFreqFree(rfp);
     
+    /* Pattern should not end in a variable region */
+    while (multiword_items->inputPatternMasked[posIndex-1] < 0)
+        posIndex--;
+
+    /* The first pattern region should also be of fixed size */
+    for (charIndex = 0; charIndex < posIndex; charIndex++) {
+        if (multiword_items->inputPatternMasked[charIndex] != 
+                                             kMaskAaAlphabetBits)
+            break;
+    }
+    if (multiword_items->inputPatternMasked[charIndex] < 0) {
+        for (secondIndex = charIndex + 1; secondIndex < posIndex; 
+                                            secondIndex++) {
+            if (multiword_items->inputPatternMasked[secondIndex] > 0)
+                break;
+        }
+        for (; secondIndex < posIndex; secondIndex++, charIndex++) {
+              multiword_items->inputPatternMasked[charIndex] =
+                        multiword_items->inputPatternMasked[secondIndex];
+        }
+        posIndex = charIndex;
+    }
+    
     localPattern[posIndex-1] = 1;
     if (pattern_blk->patternProbability > 1.0)
         pattern_blk->patternProbability = 1.0;
