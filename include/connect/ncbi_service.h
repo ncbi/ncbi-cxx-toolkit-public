@@ -30,8 +30,6 @@
  *
  * File Description:
  *   Top-level API to resolve NCBI service name to the server meta-address.
- *   More elaborate documentation could be found in:
- *   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/libs/conn.html#ref_ServiceAPI
  *
  */
 
@@ -39,7 +37,7 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.100 */
+/* Revision 6.101 */
 #define SERV_CLIENT_REVISION_MAJOR  6
 #define SERV_CLIENT_REVISION_MINOR  101
 
@@ -128,7 +126,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
  */
 extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfoEx
 (SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- HOST_INFO*          host_info      /* ptr to store host info to [may be 0]  */
+ HOST_INFO*          host_info      /* ptr to store host info at [may be 0]  */
  );
 
 #define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
@@ -149,7 +147,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
  const SConnNetInfo* net_info,      /* connection information                */
  const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
  size_t              n_skip,        /* number of servers in preceding array  */
- HOST_INFO*          host_info      /* ptr to store host info to [may be 0]  */
+ HOST_INFO*          host_info      /* ptr to store host info at [may be 0]  */
  );
 
 
@@ -182,17 +180,6 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  );
 
 
-/* Set message hook procedure for messages originating from NCBI network
- * dispatcher (if used).  Any hook will be called not more than once.
- * If no hook is installed, warning message will be generated in the
- * standard log file, not more than once.
- */
-
-typedef void (*FDISP_MessageHook)(const char* message);
-
-extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
-
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -204,6 +191,9 @@ extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2005/05/04 16:13:57  lavr
+ * DISP_SetMessageHook() moved to <connect/ncbi_service_misc.h>
+ *
  * Revision 6.36  2005/03/05 21:04:11  lavr
  * +fSERV_ReverseDns
  *
