@@ -367,12 +367,36 @@ CNetScheduler_JobStatusTracker::IsStatusNoLock(unsigned int job_id,
     return CNetScheduleClient::eJobNotFound;
 }
 
+void 
+CNetScheduler_JobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
+{
+    CReadLockGuard guard(m_Lock);
+    for (size_t i = CNetScheduleClient::ePending; 
+                i < m_StatusStor.size(); ++i) {
+        out << "status:" 
+            << CNetScheduleClient::StatusToString(
+                        (CNetScheduleClient::EJobStatus)i) << "\n\n";
+        const TBVector& bv = *m_StatusStor[i];
+        TBVector::enumerator en(bv.first());
+        for (int cnt = 0;en.valid(); ++en, ++cnt) {
+            out << *en << ", ";
+            if (cnt % 10 == 0) {
+                out << "\n";
+            }
+        } // for
+        out << "\n\n";
+        if (!out.good()) break;
+    } // for
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.11  2005/05/02 14:44:40  kuznets
  * Implemented remote monitoring
  *

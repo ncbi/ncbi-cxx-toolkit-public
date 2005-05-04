@@ -49,6 +49,7 @@
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_client.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <bdb/bdb_expt.hpp>
 #include <bdb/bdb_cursor.hpp>
@@ -68,7 +69,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.3.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.4.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -96,7 +97,8 @@ typedef enum {
     eStatistics,
     eQuitSession,
     eError,
-    eMonitor
+    eMonitor,
+    eDumpQueue
 } EJS_RequestType;
 
 /// Request context
@@ -273,6 +275,10 @@ public:
     void ProcessMonitor(CSocket&                sock,
                         SThreadData&            tdata,
                         CQueueDataBase::CQueue& queue);
+
+    void ProcessDump(CSocket&                sock,
+                     SThreadData&            tdata,
+                     CQueueDataBase::CQueue& queue);
 
     void ProcessLog(CSocket&                sock,
                     SThreadData&            tdata);
@@ -575,6 +581,9 @@ end_version_control:
             case eMonitor:
                 ProcessMonitor(socket, *tdata, queue);
                 break;
+            case eDumpQueue:
+                ProcessDump(socket, *tdata, queue);
+                break;
             case eStatistics:
                 ProcessStatistics(socket, *tdata, queue);
                 break;
@@ -724,9 +733,7 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned client_address = 0;
-    if (req.timeout) {
-        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-    }
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
 
     unsigned job_id =
         queue.Submit(req.input, 
@@ -894,7 +901,7 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
     SJS_Request& req = tdata.req;
     unsigned job_id;
     unsigned client_address;
-    sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
 
     char key_buf[1024];
     queue.GetJob(key_buf,
@@ -935,7 +942,7 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
     SJS_Request& req = tdata.req;
     unsigned job_id;
     unsigned client_address;
-    sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
 
     char key_buf[1024];
     queue.GetJob(key_buf,
@@ -1008,6 +1015,28 @@ void CNetScheduleServer::ProcessMonitor(CSocket&                sock,
     WriteMsg(sock, "OK:", started.c_str());
     sock.SetOwnership(eNoOwnership);
     queue.SetMonitorSocket(sock.GetSOCK());
+}
+
+
+void CNetScheduleServer::ProcessDump(CSocket&                sock, 
+                                     SThreadData&            tdata,
+                                     CQueueDataBase::CQueue& queue)
+{
+    WriteMsg(sock, "OK:", NETSCHEDULED_VERSION);
+    WriteMsg(sock, "OK:", "[Job status matrix]:");
+
+    SOCK sk = sock.GetSOCK();
+    sock.SetOwnership(eNoOwnership);
+    sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+    CConn_SocketStream ios(sk);  // sock is being passed and used exclusively
+
+    queue.PrintJobStatusMatrix(ios);
+
+    ios << "OK:[Job DB]:\n";
+    queue.PrintAllJobDbStat(ios);
+
+    ios << "OK:END";
 }
 
 
@@ -1166,6 +1195,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 17.MPUT JSID_01_1 "error message"
     // 18.MGET JSID_01_1
     // 19.MONI
+    // 20.DUMP
 
     const char* s = reqstr.c_str();
 
@@ -1486,6 +1516,11 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
     if (strncmp(s, "MONI", 4) == 0) {
         req->req_type = eMonitor;
+        return;
+    }
+
+    if (strncmp(s, "DUMP", 4) == 0) {
+        req->req_type = eDumpQueue;
         return;
     }
 
@@ -1889,6 +1924,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.35  2005/05/03 19:46:00  kuznets
  * Fixed bug in remote monitoring
  *

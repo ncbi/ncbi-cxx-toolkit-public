@@ -65,6 +65,10 @@ public:
     {
         CNetScheduleClient::Monitor(out);
     }
+    void DumpQueue(CNcbiOstream & out)
+    {
+        CNetScheduleClient::DumpQueue(out);
+    }
 
     void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
 
@@ -121,6 +125,12 @@ void CNetScheduleControl::Init(void)
                              "stat_queue",
                              "Print queue statistics",
                              CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("dump",
+                             "dump_queue",
+                             "Print queue dump",
+                             CArgDescriptions::eString);
+
 
     arg_desc->AddOptionalKey("monitor",
                              "monitor",
@@ -185,6 +195,14 @@ int CNetScheduleControl::Run(void)
         NcbiCout << NcbiEndl;
     }
 
+    if (args["dump"]) {  
+        string queue = args["dump"].AsString(); 
+        CNetScheduleClient_Control cl(host, port, queue);
+        cl.DumpQueue(NcbiCout);
+        NcbiCout << NcbiEndl;
+    }
+
+
     if (args["monitor"]) {
         string queue = args["monitor"].AsString(); 
         CNetScheduleClient_Control cl(host, port, queue);
@@ -219,6 +237,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.8  2005/05/02 16:37:41  kuznets
  * + -retry cmd arg
  *

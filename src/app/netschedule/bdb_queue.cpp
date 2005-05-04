@@ -659,6 +659,109 @@ unsigned CQueueDataBase::CQueue::CountRecs()
     return db.CountRecs();
 }
 
+
+#define NS_PRINT_TIME(msg, t) \
+    do \
+    { unsigned tt = t; \
+      CTime _t(tt); _t.ToLocalTime(); \
+      out << msg << (tt ? _t.AsString() : kEmptyStr) << "\n"; \
+    } while(0)
+
+
+void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB& db, CNcbiOstream & out)
+{
+    out << "\nid: "     << (unsigned) db.id << "\n";
+    CNetScheduleClient::EJobStatus status = 
+        (CNetScheduleClient::EJobStatus)(int)db.status;
+    out << "status: " << CNetScheduleClient::StatusToString(status) 
+        << "\n";
+
+    NS_PRINT_TIME("time_submit: ", db.time_submit);
+    NS_PRINT_TIME("time_run: ", db.time_run);
+    NS_PRINT_TIME("time_done: ", db.time_done);
+
+    out << "timeout: " << (unsigned)db.timeout << "\n";
+    out << "run_timeout: " << (unsigned)db.run_timeout << "\n";
+
+    unsigned subm_addr = db.subm_addr;
+    out << "subm_addr: " 
+        << (subm_addr ? CSocketAPI::gethostbyaddr(subm_addr) : kEmptyStr) << "\n";
+    out << "subm_port: " << (unsigned) db.subm_port << "\n";
+    out << "subm_timeout: " << (unsigned) db.subm_timeout << "\n";
+
+    unsigned addr = db.worker_node1;
+    out << "worker_node1: " 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+
+    addr = db.worker_node2;
+    out << "worker_node2: " 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+
+    addr = db.worker_node3;
+    out << "worker_node3: " 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+
+    addr = db.worker_node4;
+    out << "worker_node4: " 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+
+    addr = db.worker_node5;
+    out << "worker_node5: " 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+
+    out << "run_counter: " << (unsigned) db.run_counter << "\n";
+    out << "ret_code: " << (unsigned) db.ret_code << "\n";
+
+    out << "input: "        << (string) db.input        << "\n";
+    out << "output: "       << (string) db.output       << "\n";
+    out << "err_msg: "      << (string) db.err_msg      << "\n";
+    out << "progress_msg: " << (string) db.progress_msg << "\n";
+}
+
+void 
+CQueueDataBase::CQueue::PrintJobDbStat(unsigned job_id, CNcbiOstream & out)
+{
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
+    if (db.Fetch() == eBDB_Ok) {
+        x_PrintJobDbStat(db, out);
+    } else {
+        out << "Job not found id=" << job_id;
+    }
+    out << "\n";
+}
+
+void CQueueDataBase::CQueue::PrintJobStatusMatrix(CNcbiOstream & out)
+{
+    m_LQueue.status_tracker.PrintStatusMatrix(out);
+}
+
+
+void CQueueDataBase::CQueue::PrintAllJobDbStat(CNcbiOstream & out)
+{
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    db.SetTransaction(&trans);
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+
+    while (cur.Fetch() == eBDB_Ok) {
+        x_PrintJobDbStat(db, out);
+        if (!out.good()) break;
+    }
+}
+
+
 void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
 {
     SQueueDB& db = m_LQueue.db;
@@ -666,6 +769,8 @@ void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
 	db.SetTransaction(0);
     db.PrintStat(out);
 }
+
+
 
 void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
 {
@@ -900,7 +1005,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
 
     // check if we need to send a UDP notification
 
-    if ( subm_addr && subm_timeout &&
+    if ( subm_timeout && subm_addr && subm_port &&
         (time_submit + subm_timeout >= (unsigned)curr)) {
 
         char msg[1024];
@@ -1832,6 +1937,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.30  2005/05/02 14:44:40  kuznets
  * Implemented remote monitoring
  *

@@ -122,6 +122,8 @@ public:
     /// Free unused memory buffers
     void FreeUnusedMem();
 
+    void PrintStatusMatrix(CNcbiOstream& out) const;
+
 private:
 
     typedef bm::bvector<>     TBVector;
@@ -207,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.5  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *

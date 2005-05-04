@@ -80,8 +80,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        subm_port;       ///< notification port
     CBDB_FieldUint4        subm_timeout;    ///< notification timeout
 
-    CBDB_FieldUint4        worker_node1;    ///< IP address of worker node 1
-    CBDB_FieldUint4        worker_node2;    ///< reserved
+    CBDB_FieldUint4        worker_node1;    ///< IP of wnode 1 (netw BO)
+    CBDB_FieldUint4        worker_node2;    ///<       wnode 2
     CBDB_FieldUint4        worker_node3;
     CBDB_FieldUint4        worker_node4;
     CBDB_FieldUint4        worker_node5;
@@ -425,6 +425,12 @@ public:
         void PrintStat(CNcbiOstream & out);
         void PrintNodeStat(CNcbiOstream & out) const;
 
+        void PrintJobDbStat(unsigned job_id, CNcbiOstream & out);
+        /// Dump all job records
+        void PrintAllJobDbStat(CNcbiOstream & out);
+
+        void PrintJobStatusMatrix(CNcbiOstream & out);
+
         bool IsVersionControl() const
         {
             return m_LQueue.program_version_list.IsConfigured();
@@ -442,6 +448,10 @@ public:
 
         time_t x_ComputeExpirationTime(unsigned time_run, 
                                        unsigned run_timeout) const; 
+
+
+        /// db should be already positioned
+        void x_PrintJobDbStat(SQueueDB& db, CNcbiOstream & out);
 
     private:
         CQueue(const CQueue&);
@@ -491,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/04 19:09:43  kuznets
+ * Added queue dumping
+ *
  * Revision 1.23  2005/05/02 14:44:40  kuznets
  * Implemented remote monitoring
  *
