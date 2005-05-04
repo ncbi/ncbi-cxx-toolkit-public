@@ -119,19 +119,19 @@ public:
     {
         if(! m_vRanges.empty())
             return begin()->GetFrom();
-        else return -1;
+        else return TRange::GetEmptyFrom();
     }
     position_type   GetToOpen() const
     {
         if(! m_vRanges.empty())
             return rbegin()->GetToOpen();
-        else return -1;
+        else return TRange::GetEmptyToOpen();
     }
     position_type   GetTo() const
     {
         if(! m_vRanges.empty())
-            return rbegin()->GetToOpen();
-        else return -1;
+            return rbegin()->GetTo();
+        else return TRange::GetEmptyTo();
     }
     bool            Empty() const
     {
@@ -154,7 +154,7 @@ public:
             position_type From = begin()->GetFrom();
             position_type To = rbegin()->GetTo();
             return TRange(From, To);
-       } else return TRange(0, -1);
+        } else return TRange::GetEmpty();
     }
     TThisType&  IntersectWith (const TRange& r)
     {
@@ -284,6 +284,9 @@ protected:
         position_type pos_from = r.GetFrom();
         position_type pos_to_open = r.GetToOpen();                    
 
+        if (pos_from == TRange::GetWholeFrom()) {
+            pos_from++; // Prevent overflow
+        }
         iterator it_begin_m =
             lower_bound(begin_nc(), end_nc(), pos_from - 1, p);
         if(it_begin_m != end_nc() && it_begin_m->GetFrom() <= pos_to_open)  { // intersection
@@ -366,6 +369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/04 13:44:23  grichenk
+ * Fixed problems with unsigned ranges starting at zero and special values.
+ *
  * Revision 1.6  2004/10/18 19:52:11  grichenk
  * Renamed protected non-const begin() and end() to begin_nc() and end_nc().
  *
