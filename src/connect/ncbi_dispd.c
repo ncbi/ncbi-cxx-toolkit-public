@@ -37,6 +37,7 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
+#include <connect/ncbi_service_misc.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -475,7 +476,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 }
 
 
-void DISP_SetMessageHook(FDISP_MessageHook hook)
+extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 {
     if (hook) {
         if (hook != s_MessageHook)
@@ -489,6 +490,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.67  2005/05/04 16:14:22  lavr
+ * +<connect/ncbi_service_misc.h>
+ *
  * Revision 6.66  2005/05/02 16:04:09  lavr
  * Use global random seed
  *
