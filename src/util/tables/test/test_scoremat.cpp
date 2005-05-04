@@ -158,6 +158,7 @@ int CSMTestApplication::Run(void)
     } else if (sm == "pam70") {
         psm = &NCBISM_Pam70;
     } else {
+        psm = 0;
         _TROUBLE;
     }
 
@@ -188,6 +189,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/05/04 18:35:01  lavr
+ * CSMTestApplication::Run(): Always init psm
+ *
  * Revision 1.3  2004/05/17 21:09:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
