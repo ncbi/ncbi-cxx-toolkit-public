@@ -31,6 +31,7 @@
  */
 
 #include "ncbi_lbsmd.h"
+#include <connect/ncbi_service_misc.h>
 
 
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
@@ -40,9 +41,17 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
 }
 
 
-char* SERV_LBSMD_GetConfig(void)
+extern char* LBSMD_GetConfig(void)
 {
     return 0;
+}
+
+
+/*ARGSUSED*/
+extern ESwitch LBSM_KeepHeapAttached(ESwitch sw/*ignored*/)
+{
+    /* ignore any new settings, always return Off */
+    return eOff;
 }
 
 
@@ -79,6 +88,9 @@ int/*bool*/ LBSM_HINFO_BLASTParams(const void* load_ptr, unsigned int blast[8])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2005/05/04 16:16:08  lavr
+ * +<connect/ncbi_service_misc.h>, +LBSMD_GetConfig(), +LBSM_KeepHeapAttached()
+ *
  * Revision 6.6  2003/08/11 19:08:56  lavr
  * Mention "non-inhouse" in file description
  *
