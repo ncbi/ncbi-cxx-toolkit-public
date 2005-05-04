@@ -187,6 +187,24 @@ private:
 extern CDiagBuffer& GetDiagBuffer(void);
 
 
+///////////////////////////////////////////////////////
+//  CNcbiDiag::
+inline const char* CDiagCompileInfo::GetClass (void) const 
+{ 
+    if (!m_Parsed) {
+        ParseCurrFunctName();
+    }
+    return (m_ClassName.get() ? m_ClassName.get() : "");
+}
+
+inline const char* CDiagCompileInfo::GetFunction(void) const 
+{ 
+    if (!m_Parsed) {
+        ParseCurrFunctName();
+    }
+    return (m_FunctName.get() ? m_FunctName.get() : "");
+}
+
 
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
@@ -218,20 +236,24 @@ inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
 }
 
-inline const char* CNcbiDiag::GetFile(void) const {
-    return m_File;
+inline const char* CNcbiDiag::GetModule(void) const 
+{ 
+    return m_Module.get() ? m_Module.get() : m_CompileInfo.GetModule();
 }
 
-inline const char* CNcbiDiag::GetModule(void) const {
-    return m_Module;
+inline const char* CNcbiDiag::GetFile(void) const 
+{ 
+    return m_File.get() ? m_File.get() : m_CompileInfo.GetFile();
 }
 
-inline const char* CNcbiDiag::GetClass(void) const {
-    return m_Class;
+inline const char* CNcbiDiag::GetClass(void) const 
+{ 
+    return m_Class.get() ? m_Class.get() : m_CompileInfo.GetClass();
 }
 
-inline const char* CNcbiDiag::GetFunction(void) const {
-    return m_Function;
+inline const char* CNcbiDiag::GetFunction(void) const 
+{ 
+    return m_Function.get() ? m_Function.get() : m_CompileInfo.GetFunction();
 }
 
 inline size_t CNcbiDiag::GetLine(void) const {
@@ -537,6 +559,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/05/04 13:18:54  ssikorsk
+ * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
+ *
  * Revision 1.45  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()

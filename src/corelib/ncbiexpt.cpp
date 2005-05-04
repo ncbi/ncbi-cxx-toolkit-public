@@ -295,7 +295,7 @@ void CException::x_Init(const CDiagCompileInfo& info,const string& message,
     m_Line     = info.GetLine();
     m_Module   = info.GetModule();
     m_Class    = info.GetClass();
-    m_Function = info.GetFunct();
+    m_Function = info.GetFunction();
     m_Msg      = message;
     if (!m_Predecessor && prev_exception) {
         m_Predecessor = prev_exception->x_Clone();
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/05/04 13:19:18  ssikorsk
+ * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
+ *
  * Revision 1.43  2005/04/14 20:25:16  ssikorsk
  * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
  *

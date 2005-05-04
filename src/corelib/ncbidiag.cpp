@@ -77,41 +77,55 @@ extern "C" {
 static CDiagFilter s_TraceFilter;
 static CDiagFilter s_PostFilter;
 
+// Analogue to strstr.
+// Returns a pointer to the last occurrence of a search string in a string
+const char* 
+str_rev_str(const char* begin_str, const char* end_str, const char* str_search)
+{
+    if (begin_str == NULL)
+        return NULL;
+    if (end_str == NULL)
+        return NULL;
+    if (str_search == NULL)
+        return NULL;
 
+    const char* search_char = str_search + strlen(str_search);
+    const char* cur_char = end_str;
+
+    do {
+        --search_char;
+        do {
+            --cur_char;
+        } while(*cur_char != *search_char && cur_char != begin_str);
+        if (*cur_char != *search_char)
+            return NULL; 
+    } while (search_char != str_search);
+    
+    return cur_char;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 /// CDiagCompileInfo::
+
+CDiagCompileInfo::CDiagCompileInfo(void)
+    : m_File(0),
+      m_Module(0),
+      m_Line(0),
+      m_CurrFunctName(0),
+      m_Parsed(false)
+{
+}
 
 CDiagCompileInfo::CDiagCompileInfo(const char* file, 
                                    int line, 
                                    const char* curr_funct, 
                                    const char* module)
-    : m_File(file), m_Module(0), m_Line(line)
+    : m_File(file),
+      m_Module(0),
+      m_Line(line),
+      m_CurrFunctName(curr_funct),
+      m_Parsed(false)
 {
-    if (curr_funct && *curr_funct) {
-        // Parse curr_funct
-
-        string tmp_name(curr_funct);
-        string::size_type end_pos = tmp_name.find("(");
-        string::size_type start_pos = string::npos;
-        string::size_type len = 0;
-
-        // Get a function/method name
-        start_pos = tmp_name.rfind("::", end_pos);
-        start_pos = (start_pos == string::npos ? 0 : start_pos + 2);
-        len = (end_pos == string::npos ? end_pos : end_pos - start_pos);
-        m_Function = tmp_name.substr(start_pos, len);
-
-        // Get a class name
-        if (start_pos > 0) {
-            end_pos = start_pos - 2;
-            start_pos = tmp_name.rfind(" ", end_pos);
-            start_pos = (start_pos == string::npos ? 0 : start_pos + 1);
-            len = end_pos - start_pos;
-            m_Class = tmp_name.substr(start_pos, len);
-        }
-    }
-
     if (!file || !module)
         return;
 
@@ -125,7 +139,77 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
         m_Module = module;
 }
 
+void CDiagCompileInfo::ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len)
+{
+    char* new_str = new char[str_len + 1];
+    strncpy(new_str, str, str_len);
+    new_str[str_len] = '\0';
+    auto_str.reset(new_str);
+}
 
+
+void 
+CDiagCompileInfo::ParseCurrFunctName(void) const
+{
+    if (m_CurrFunctName && *m_CurrFunctName) {
+        // Parse curr_funct
+
+        const char* end_str = strchr(m_CurrFunctName, '(');
+        if(end_str) {
+            // Get a function/method name
+            const char* start_str = NULL;
+
+            // Get a finction start position.
+            const char* start_str_tmp = str_rev_str(m_CurrFunctName, end_str, "::");
+            bool has_class = start_str_tmp != NULL;
+            if (start_str_tmp != NULL) {
+                start_str = start_str_tmp + 2;
+            } else {
+                start_str_tmp = str_rev_str(m_CurrFunctName, end_str, " ");
+                if (start_str_tmp != NULL) {
+                    start_str = start_str_tmp + 1;
+                } 
+            }
+
+            const char* cur_funct_name = (start_str == NULL ? m_CurrFunctName : start_str);
+            size_t cur_funct_name_len = end_str - cur_funct_name;
+            ResetAutoStr(m_FunctName, cur_funct_name, cur_funct_name_len);
+
+           // Get a class name
+           if (has_class) {
+               end_str = start_str - 2;
+               start_str = str_rev_str(m_CurrFunctName, end_str, " ");
+               const char* cur_class_name = (start_str == NULL ? m_CurrFunctName : start_str + 1);
+               size_t cur_class_name_len = end_str - cur_class_name;
+               ResetAutoStr(m_ClassName, cur_class_name, cur_class_name_len);
+           }
+        }
+    }
+    m_Parsed = true;
+}
+
+CDiagCompileInfo& 
+CDiagCompileInfo::operator=(const CDiagCompileInfo& other)
+{
+    if (this != &other) {
+        Copy(other);
+    }
+    return *this;
+}
+
+void CDiagCompileInfo::Copy(const CDiagCompileInfo& other)
+{
+    m_File = other.m_File;
+    m_Module = other.m_Module;
+    m_Line = other.m_Line; 
+
+    m_CurrFunctName = other.m_CurrFunctName;
+    m_Parsed = other.m_Parsed;
+    m_ClassName = other.m_ClassName;
+    m_FunctName = other.m_FunctName;
+
+    other.m_Parsed = false;
+}
 
 ///////////////////////////////////////////////////////
 //  CDiagRecycler::
@@ -880,24 +964,30 @@ bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
 //  CNcbiDiag::
 
 CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), m_Line(0), m_ErrCode(0), m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags),
-      m_CheckFilters(true)
+    : m_Severity(sev), 
+      m_ErrCode(0), 
+      m_ErrSubCode(0),
+      m_Buffer(GetDiagBuffer()), 
+      m_PostFlags(post_flags),
+      m_CheckFilters(true),
+      m_Line(0)
 {
-    *m_File = '\0';
-    *m_Module = *m_Class = *m_Function = '\0';
 }
 
 
 CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
                      EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), m_Line(info.GetLine()), m_ErrCode(0), m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags),
-      m_CheckFilters(true)
+    : m_Severity(sev), 
+      m_ErrCode(0), 
+      m_ErrSubCode(0),
+      m_Buffer(GetDiagBuffer()), 
+      m_PostFlags(post_flags),
+      m_CheckFilters(true),
+      m_CompileInfo(info),
+      m_Line(info.GetLine())
 {
     SetFile(   info.GetFile()   );
     SetModule( info.GetModule() );
-    *m_Class = *m_Function = '\0';
 }
 
 
@@ -913,30 +1003,39 @@ void s_SetStrField(char* to, const char* from, size_t size)
     to[size - 1] = '\0';
 }
 
+void CNcbiDiag::ResetAutoStr(TAutoStr& auto_str, const char* str)
+{
+    size_t str_len = strlen(str);
+    char* new_str = new char[str_len + 1];
+    strncpy(new_str, str, str_len);
+    new_str[str_len] = '\0';
+    auto_str.reset(new_str);
+}
+
 const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 {
-    s_SetStrField(m_File, file, sizeof(m_File));
+    ResetAutoStr(m_File, file);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetModule(const char* module) const
 {
-    s_SetStrField(m_Module, module, sizeof(m_Module));
+    ResetAutoStr(m_Module, module);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass ) const
 {
-    s_SetStrField(m_Class, nclass, sizeof(m_Class));
+    ResetAutoStr(m_Class, nclass);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
 {
-    s_SetStrField(m_Function, function, sizeof(m_Function));
+    ResetAutoStr(m_Function, function);
     return *this;
 }
 
@@ -1400,6 +1499,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.88  2005/05/04 13:19:18  ssikorsk
+ * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
+ *
  * Revision 1.87  2005/04/14 20:25:16  ssikorsk
  * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
  *

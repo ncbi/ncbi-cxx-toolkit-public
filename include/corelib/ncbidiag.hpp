@@ -41,6 +41,7 @@
 
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <list>
 #include <map>
 #include <stdexcept>
@@ -63,6 +64,8 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_MAKE_MODULE(module) NULL
 #endif 
 
+typedef AutoPtr<char, ArrayDeleter<char> > TAutoStr;
+
 /// Incapsulate compile time information such as
 /// _FILE_ _LINE NCBI_MODULE
 /// NCBI_MODULE is used only in .cpp file
@@ -75,28 +78,43 @@ public:
     // DO NOT create CDiagCompileInfo directly
     // use macro DIAG_COMPILE_INFO instead!
     NCBI_XNCBI_EXPORT
+    CDiagCompileInfo(void);
+    NCBI_XNCBI_EXPORT
     CDiagCompileInfo(const char* file, 
                      int line, 
                      const char* curr_funct = NULL, 
                      const char* module = 0);
+    NCBI_XNCBI_EXPORT
+    // We provide a copy operator because we will take ownership of
+    // m_ClassName and m_FunctName from "other" and have to set
+    // value of other.m_Parsed to false.
+    CDiagCompileInfo& operator=(const CDiagCompileInfo& other);
 
-    const char*   GetFile  () const { return m_File     ? m_File     : ""; }
-    const char*   GetModule() const { return m_Module   ? m_Module   : ""; }
-    int           GetLine  () const { return m_Line;                       }
-    const string& GetClass () const { return m_Class;                      }
-    const string& GetFunct () const { return m_Function;                   }
+    const char* GetFile    (void) const { return m_File   ? m_File   : ""; }
+    const char* GetModule  (void) const { return m_Module ? m_Module : ""; }
+    int         GetLine    (void) const { return m_Line;                   }
+    const char* GetClass   (void) const;
+    const char* GetFunction(void) const;
 
 private:
-    const char* m_File;
-    const char* m_Module;
-    int         m_Line; 
-    string      m_Class;                 ///< Class    to report on
-    string      m_Function;              ///< Function to report on
+    void ParseCurrFunctName(void) const;
+    static void ResetAutoStr(TAutoStr& auto_str, const char* str, size_t str_len);
+    void Copy(const CDiagCompileInfo& other);
+
+private:
+    const char*      m_File;
+    const char*      m_Module;
+    int              m_Line; 
+
+    const char*      m_CurrFunctName;
+    mutable bool     m_Parsed;
+    mutable TAutoStr m_ClassName;
+    mutable TAutoStr m_FunctName;
 };
 
 
 /// Get current function name. Defined inside of either a method or a function body only.
-// Based ob boost's BOOST_CURRENT_FUNCTION
+// Based on boost's BOOST_CURRENT_FUNCTION
 
 #ifndef NDEBUG
 
@@ -553,17 +571,23 @@ public:
                              const char* expression, const char* message);
 
 private:
+    static void ResetAutoStr(TAutoStr& auto_str, const char* str);
+
+private:
     mutable EDiagSev       m_Severity;       ///< Severity level of current msg.
-    mutable char           m_File[256];      ///< File name
-    mutable size_t         m_Line;           ///< Line number
     mutable int            m_ErrCode;        ///< Error code
     mutable int            m_ErrSubCode;     ///< Error subcode
             CDiagBuffer&   m_Buffer;         ///< This thread's error msg. buffer
     mutable TDiagPostFlags m_PostFlags;      ///< Bitwise OR of "EDiagPostFlag"
-    mutable char           m_Module[128];    ///< Module name
-    mutable char           m_Class[256];     ///< Class name
-    mutable char           m_Function[256];  ///< Function name
     mutable bool           m_CheckFilters;   ///< Is it necessary to check filters
+
+    CDiagCompileInfo       m_CompileInfo;
+
+    mutable TAutoStr       m_File;           ///< File name
+    mutable size_t         m_Line;           ///< Line number
+    mutable TAutoStr       m_Module;         ///< Module name
+    mutable TAutoStr       m_Class;          ///< Class name
+    mutable TAutoStr       m_Function;       ///< Function name
 
     /// Private copy constructor to prohibit copy.
     CNcbiDiag(const CNcbiDiag&);
@@ -1158,6 +1182,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/05/04 13:18:54  ssikorsk
+ * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
+ *
  * Revision 1.81  2005/04/18 14:25:58  ssikorsk
  * Report a method/function name within an error message
  *
