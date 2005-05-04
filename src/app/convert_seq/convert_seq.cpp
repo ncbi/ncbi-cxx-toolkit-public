@@ -160,7 +160,7 @@ static const TFormatElem sc_FormatArray[] = {
     TFormatElem("gff3",      CFlatFileConfig::eFormat_GFF3),
     TFormatElem("tbl",       CFlatFileConfig::eFormat_FTable)
 };
-typedef CStaticArrayMap<const char*, TFFFormat, PNocase> TFormatMap;
+typedef CStaticArrayMap<const char*, TFFFormat, PNocase_CStr> TFormatMap;
 static const TFormatMap sc_FormatMap(sc_FormatArray, sizeof(sc_FormatArray));
 
 int CConversionApp::GetFlatFormat(const string& name)
@@ -297,6 +297,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/05/04 19:05:00  ucko
+* Take advantage of PNoase_CStr when comparing C strings.
+*
 * Revision 1.8  2004/11/01 19:33:08  grichenk
 * Removed deprecated methods
 *

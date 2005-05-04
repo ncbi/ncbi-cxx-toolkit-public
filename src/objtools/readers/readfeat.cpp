@@ -336,7 +336,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "Xref",               CSeqFeatData::eSubtype_seq                )
 };
 
-typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PNocase> TFeatMap;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PNocase_CStr> TFeatMap;
 static const TFeatMap sm_FeatKeys (feat_key_to_subtype, sizeof (feat_key_to_subtype));
 
 
@@ -419,7 +419,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "weight",               CFeature_table_reader_imp::eQual_weight               )
 };
 
-typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PNocase> TQualMap;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PNocase_CStr> TQualMap;
 static const TQualMap sm_QualKeys (qual_key_to_subtype, sizeof (qual_key_to_subtype));
 
 
@@ -434,7 +434,7 @@ static const TOrgRefKey orgref_key_to_subtype [] = {
     TOrgRefKey ( "organism",   CFeature_table_reader_imp::eOrgRef_organism  )
 };
 
-typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PNocase> TOrgRefMap;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PNocase_CStr> TOrgRefMap;
 static const TOrgRefMap sm_OrgRefKeys (orgref_key_to_subtype, sizeof (orgref_key_to_subtype));
 
 
@@ -468,7 +468,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     TGenomeKey ( "virion",                    CBioSource::eGenome_virion           )
 };
 
-typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase> TGenomeMap;
+typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
 static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype));
 
 
@@ -505,7 +505,7 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     TSubSrcKey ( "transposon",           CSubSource::eSubtype_transposon_name       )
 };
 
-typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PNocase> TSubSrcMap;
+typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PNocase_CStr> TSubSrcMap;
 static const TSubSrcMap sm_SubSrcKeys (subsrc_key_to_subtype, sizeof (subsrc_key_to_subtype));
 
 
@@ -549,7 +549,7 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
     TOrgModKey ( "variety",          COrgMod::eSubtype_variety          )
 };
 
-typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase> TOrgModMap;
+typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase_CStr> TOrgModMap;
 static const TOrgModMap sm_OrgModKeys (orgmod_key_to_subtype, sizeof (orgmod_key_to_subtype));
 
 
@@ -563,7 +563,7 @@ static const TBondKey bond_key_to_subtype [] = {
     TBondKey ( "xlink",             CSeqFeatData::eBond_xlink      )
 };
 
-typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase> TBondMap;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase_CStr> TBondMap;
 static const TBondMap sm_BondKeys (bond_key_to_subtype, sizeof (bond_key_to_subtype));
 
 
@@ -598,7 +598,7 @@ static const TSiteKey site_key_to_subtype [] = {
     TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        )
 };
 
-typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase> TSiteMap;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
 static const TSiteMap sm_SiteKeys (site_key_to_subtype, sizeof (site_key_to_subtype));
 
 
@@ -661,7 +661,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Xxx",            'X' )
 };
 
-typedef CStaticArrayMap <const char*, const int, PNocase> TTrnaMap;
+typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
 static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, sizeof (trna_key_to_subtype));
 
 
@@ -673,7 +673,7 @@ static const char * single_key_list [] = {
     "transgenic"
 };
 
-typedef CStaticArraySet <const char*, PNocase> TSingleSet;
+typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
 static const TSingleSet sc_SingleKeys (single_key_list, sizeof (single_key_list));
 
 

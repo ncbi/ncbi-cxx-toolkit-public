@@ -215,7 +215,7 @@ static const TSI sc_SatIndex[] = {
     TSI("TRACE_ASSM", TSK(TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main)),
     TSI("TRACE_CHGR", TSK(TRDR::eSat_TRACE_CHGR, TRDR::eSubSat_main))
 };
-typedef CStaticArrayMap<const char*, TSK, PNocase> TSatMap;
+typedef CStaticArrayMap<const char*, TSK, PNocase_CStr> TSatMap;
 static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
 
 

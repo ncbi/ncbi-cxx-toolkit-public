@@ -1926,7 +1926,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(usedin)
 #undef DO_IMPORT
     };
-    typedef const CStaticArrayMap<const char*, EFeatureQualifier, PNocase> TLegalImportMap;
+    typedef const CStaticArrayMap<const char*, EFeatureQualifier, PNocase_CStr> TLegalImportMap;
     static TLegalImportMap kLegalImportMap(kLegalImports, sizeof(kLegalImports));
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
@@ -3673,6 +3673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2005/05/04 19:05:00  ucko
+* Take advantage of PNoase_CStr when comparing C strings.
+*
 * Revision 1.53  2005/04/27 17:10:56  shomrat
 * Changes for RefSeq data
 *
