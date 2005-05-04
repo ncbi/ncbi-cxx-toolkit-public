@@ -35,7 +35,6 @@
  */
 
 #include "ncbi_servicep.h"
-#include <connect/ncbi_connutil.h>
 
 
 #ifdef __cplusplus
@@ -43,9 +42,10 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
-                                    const SConnNetInfo *net_info,
-                                    SSERV_Info** info, HOST_INFO* host_info);
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
+                                    const SConnNetInfo* net_info,
+                                    SSERV_Info**        info,
+                                    HOST_INFO*          host_info);
 
 
 #ifdef __cplusplus
@@ -56,6 +56,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2005/05/04 16:18:04  lavr
+ * -<connect/ncbi_connutil.h>
+ *
  * Revision 6.11  2002/10/28 20:12:56  lavr
  * Module renamed and host info API included
  *
