@@ -363,6 +363,16 @@ NCBI_XBLAST_EXPORT
 double* 
 BLAST_GetStandardAaProbabilities(void);
 
+/** Returns a copy of the input string with all its characters turned to
+ * uppercase. Useful for saving score matrix names. Caller is responsible for
+ * deallocating return value.
+ * @param string string to copy [in]
+ * @return newly allocated string in upper case or NULL if string is NULL or
+ * out of memory
+ */
+char*
+BLAST_StrToUpper(const char* string);
+
 /** Maximal unpacked subject sequence length for which full translation is 
  * performed up front. 
  */

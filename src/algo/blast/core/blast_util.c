@@ -1301,3 +1301,23 @@ BLAST_GetStandardAaProbabilities()
     sbp = BlastScoreBlkFree(sbp);
     return retval;
 }
+
+char* BLAST_StrToUpper(const char* string)
+{
+    char* retval = NULL;        /* the return value */
+    char* p = NULL;             /* auxiliary pointer */
+
+    if ( ! string ) {
+        return NULL;
+    }
+
+    p = retval = strdup(string);
+    if ( !retval ) {
+        return NULL;
+    }
+
+    while (*p) {
+        *p++ = toupper(*p);
+    }
+    return retval;
+}
