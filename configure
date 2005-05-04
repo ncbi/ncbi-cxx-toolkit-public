@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3830,7 +3830,7 @@ ncbi_compiler_ver="0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$real_CC -dumpversion 2>&1`"
    case "$compiler_ver" in
-     2.95* | 2.96* | 3.* )
+     2.95* | 2.96* | 3.* | 4.* )
        compiler="GCC"
        ncbi_compiler="GCC"
        ncbi_compiler_ver="$compiler_ver" ;;
@@ -4033,11 +4033,12 @@ compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
-    *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
-    *:Compaq | freebsd*:GCC         )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
-    *:VisualAge                     )  : ${MT_FLAG:="-qthreaded"} ;;
-    *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
+    darwin* | irix*          )  ;;
+    solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
+    solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
+    *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
+    *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
+    *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
     * )   { { echo "$as_me:$LINENO: error: \"Do not know how to build MT-safe with compiler $CXX $compiler_ver\"" >&5
 echo "$as_me: error: \"Do not know how to build MT-safe with compiler $CXX $compiler_ver\"" >&2;}
    { (exit 1); exit 1; }; } ;;
@@ -4205,8 +4206,8 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
-      CFLAGS="-Wno-long-double $CFLAGS"
-      CXXFLAGS="-Wno-long-double -fno-permissive $CXXFLAGS"
+      CFLAGS="-Wno-long-double -fpascal-strings $CFLAGS"
+      CXXFLAGS="-Wno-long-double -fno-permissive -fpascal-strings $CXXFLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
@@ -4449,7 +4450,7 @@ fi
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
-    *:GCC:3[4-9]*) : ${with_lfs=yes} ;;
+    *:GCC:3[4-9]* | *:GCC:[4-9]* ) : ${with_lfs=yes} ;;
 esac
 
 if test "$with_lfs" = "yes" ; then
@@ -4562,13 +4563,13 @@ if test -z "$CONF_f_runpath" ; then
 fi
 
 case "$compiler:$compiler_version" in
-  GCC:3* )
+  GCC:[3-9]* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
-        30*   ) major=3 ;;
-        31*   ) major=4 ;;
-        323*) major=5 ;;
-        3*    ) major=6 ;;
+        30*     ) major=3 ;;
+        31*     ) major=4 ;;
+        3[23]*) major=5 ;;
+        *       ) major=6 ;;
     esac
     found=false
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
@@ -17526,9 +17527,9 @@ if test "$with_bdb" != "no" ; then
                "${DEBUG_SFX}${bit64_sfx}" "lib${bit64_sfx}" lib; do
          for sfx in "$bit64_sfx$mt_sfx" "$bit64_sfx" "$mt_sfx" ""; do
             BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d$sfx
-            test -d ${BERKELEYDB_LIBPATH}  &&  break
+            test -d "${BERKELEYDB_LIBPATH}"  &&  break
          done
-         test -d ${BERKELEYDB_LIBPATH}  &&  break
+         test -d "${BERKELEYDB_LIBPATH}"  &&  break
       done
    fi
    : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
@@ -18125,7 +18126,7 @@ echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
             darwin*:GCC) BOOST_TAG=""     ;;
             *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
-            *:ICC)       BOOST_TAG="-icc" ;;
+            linux*:ICC)  BOOST_TAG="-il"  ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
             *:MIPSPRO)   BOOST_TAG="-mp"  ;;
             *:VISUALAGE) BOOST_TAG="-xlc" ;;
@@ -20404,13 +20405,17 @@ if test "$with_wxwin" != "no" ; then
       # May work without gtk-config (e.g., on Mac OS X)
       gtkconf=:
    fi
+   case "$host_os" in
+      darwin* ) baseflags=""                  ;;
+      *       ) baseflags=`$gtkconf --cflags` ;;
+   esac
    echo "$as_me:$LINENO: checking for wxWindows in $WXWIN_ARCH_PATH" >&5
 echo $ECHO_N "checking for wxWindows in $WXWIN_ARCH_PATH... $ECHO_C" >&6
 if test "${ncbi_cv_lib_wxwindows+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test -x "$wxconf" ; then
-          WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+          WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
           WXWIN_LIBS=`$wxconf --libs`
 
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
@@ -20476,16 +20481,23 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_LIBPATH="No_wxWindows"
    WXWIN_INCLUDE=
    WXWIN_LIBS=
+   WXWIN_STATIC_LIBS=
    WXWIN_GL_LIBS=
+   WXWIN_GL_STATIC_LIBS=
+   WXWIN_POST_LINK=:
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+      WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
       WXWIN_LIBS=`$wxconf --libs`
    fi
+   WXWIN_STATIC_LIBS=`$wxconf --libs --static`
    WXWIN_GL_LIBS=`$wxconf --gl-libs`
+   WXWIN_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
+   WXWIN_POST_LINK=`$wxconf --rezflags`
+   test -n "$WXWIN_POST_LINK"  ||  WXWIN_POST_LINK=:
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_WXWINDOWS 1
@@ -23473,6 +23485,9 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -24344,7 +24359,10 @@ s,@FLTK_STATIC_LIBS_ALL@,$FLTK_STATIC_LIBS_ALL,;t t
 s,@FLTK_CONFIG@,$FLTK_CONFIG,;t t
 s,@WXWIN_INCLUDE@,$WXWIN_INCLUDE,;t t
 s,@WXWIN_LIBS@,$WXWIN_LIBS,;t t
+s,@WXWIN_STATIC_LIBS@,$WXWIN_STATIC_LIBS,;t t
 s,@WXWIN_GL_LIBS@,$WXWIN_GL_LIBS,;t t
+s,@WXWIN_GL_STATIC_LIBS@,$WXWIN_GL_STATIC_LIBS,;t t
+s,@WXWIN_POST_LINK@,$WXWIN_POST_LINK,;t t
 s,@FASTCGI_INCLUDE@,$FASTCGI_INCLUDE,;t t
 s,@FASTCGI_LIBS@,$FASTCGI_LIBS,;t t
 s,@FASTCGI_OBJS@,$FASTCGI_OBJS,;t t

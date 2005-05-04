@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.371 2005/04/28 15:00:41 ucko Exp $
+#  $Id: configure.ac,v 1.372 2005/05/04 14:23:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -481,7 +481,7 @@ ncbi_compiler_ver="0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$real_CC -dumpversion 2>&1`"
    case "$compiler_ver" in
-     2.95* | 2.96* | 3.* )
+     2.95* | 2.96* | 3.* | 4.* )
        compiler="GCC"
        ncbi_compiler="GCC"
        ncbi_compiler_ver="$compiler_ver" ;;
@@ -644,11 +644,12 @@ changequote([, ])dnl
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
-    *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
-    *:Compaq | freebsd*:GCC         )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
-    *:VisualAge                     )  : ${MT_FLAG:="-qthreaded"} ;;
-    *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
+    darwin* | irix*          )  ;;
+    solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
+    solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
+    *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
+    *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
+    *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
     * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
@@ -814,8 +815,8 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
-      CFLAGS="-Wno-long-double $CFLAGS"
-      CXXFLAGS="-Wno-long-double -fno-permissive $CXXFLAGS"
+      CFLAGS="-Wno-long-double -fpascal-strings $CFLAGS"
+      CXXFLAGS="-Wno-long-double -fno-permissive -fpascal-strings $CXXFLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
@@ -1008,7 +1009,7 @@ fi
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
-    *:GCC:3[[4-9]]*) : ${with_lfs=yes} ;;
+    *:GCC:3[[4-9]]* | *:GCC:[[4-9]]* ) : ${with_lfs=yes} ;;
 esac
 
 if test "$with_lfs" = "yes" ; then
@@ -1121,13 +1122,13 @@ if test -z "$CONF_f_runpath" ; then
 fi
 
 case "$compiler:$compiler_version" in
-  GCC:3* )
+  GCC:[[3-9]]* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
-        30*   ) major=3 ;;
-        31*   ) major=4 ;;
-        3[23]*) major=5 ;;
-        3*    ) major=6 ;;
+        30*     ) major=3 ;;
+        31*     ) major=4 ;;
+        3[[23]]*) major=5 ;;
+        *       ) major=6 ;;
     esac
     found=false
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
@@ -2844,9 +2845,9 @@ if test "$with_bdb" != "no" ; then
                "${DEBUG_SFX}${bit64_sfx}" "lib${bit64_sfx}" lib; do
          for sfx in "$bit64_sfx$mt_sfx" "$bit64_sfx" "$mt_sfx" ""; do
             BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d$sfx
-            test -d ${BERKELEYDB_LIBPATH}  &&  break
+            test -d "${BERKELEYDB_LIBPATH}"  &&  break
          done
-         test -d ${BERKELEYDB_LIBPATH}  &&  break
+         test -d "${BERKELEYDB_LIBPATH}"  &&  break
       done
    fi
    : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
@@ -3096,7 +3097,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             darwin*:GCC) BOOST_TAG=""     ;;
             *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
-            *:ICC)       BOOST_TAG="-icc" ;;
+            linux*:ICC)  BOOST_TAG="-il"  ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
             *:MIPSPRO)   BOOST_TAG="-mp"  ;;
             *:VISUALAGE) BOOST_TAG="-xlc" ;;
@@ -3437,9 +3438,13 @@ if test "$with_wxwin" != "no" ; then
       # May work without gtk-config (e.g., on Mac OS X)
       gtkconf=:
    fi
+   case "$host_os" in
+      darwin* ) baseflags=""                  ;;
+      *       ) baseflags=`$gtkconf --cflags` ;;
+   esac
    AC_CACHE_CHECK([for wxWindows in $WXWIN_ARCH_PATH], ncbi_cv_lib_wxwindows,
       [if test -x "$wxconf" ; then
-          WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+          WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
           WXWIN_LIBS=`$wxconf --libs`
 
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
@@ -3460,16 +3465,23 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_LIBPATH="No_wxWindows"
    WXWIN_INCLUDE=
    WXWIN_LIBS=
+   WXWIN_STATIC_LIBS=
    WXWIN_GL_LIBS=
+   WXWIN_GL_STATIC_LIBS=
+   WXWIN_POST_LINK=:
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+      WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
       WXWIN_LIBS=`$wxconf --libs`
    fi
+   WXWIN_STATIC_LIBS=`$wxconf --libs --static`
    WXWIN_GL_LIBS=`$wxconf --gl-libs`
+   WXWIN_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
+   WXWIN_POST_LINK=`$wxconf --rezflags`
+   test -n "$WXWIN_POST_LINK"  ||  WXWIN_POST_LINK=:
    AC_DEFINE(HAVE_WXWINDOWS, 1, [Define to 1 if wxWindows is available.])
 fi
 
@@ -4703,7 +4715,10 @@ AC_SUBST(FLTK_STATIC_LIBS_ALL)
 AC_SUBST(FLTK_CONFIG)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
+AC_SUBST(WXWIN_STATIC_LIBS)
 AC_SUBST(WXWIN_GL_LIBS)
+AC_SUBST(WXWIN_GL_STATIC_LIBS)
+AC_SUBST(WXWIN_POST_LINK)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
