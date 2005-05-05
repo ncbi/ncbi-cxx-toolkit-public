@@ -184,7 +184,6 @@ public:
     CVariant& operator=(const bool& v);
     CVariant& operator=(const CTime& v);
     
-    bool operator<(const CVariant& v) const;
 
 
     // Get pointer to the data buffer
@@ -217,6 +216,8 @@ private:
     class CDB_Object* m_data;
 };
 
+bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);
+bool NCBI_DBAPI_EXPORT operator<(const CVariant& v1, const CVariant& v2);
 
 
 //================================================================
@@ -231,19 +232,6 @@ EDB_Type CVariant::GetType() const
     return m_data->GetType();
 }
 
-inline
-bool operator==(const CVariant& v1,
-		const CVariant& v2) 
-{
-    return !(v1 < v2) && !(v2 < v1);
-}
-
-inline
-bool operator!=(const CVariant& v1,
-		const CVariant& v2) 
-{
-    return v1 < v2 || v2 < v1;
-}
 
 inline
 void CVariant::VerifyType(bool e) const
@@ -258,14 +246,29 @@ void CVariant::VerifyType(bool e) const
     }
 }
 
-//inline
-//void CVariant::CheckNull() const
-//{
-//    if( IsNull() ) 
-//    {
-//        NCBI_THROW(CVariantException, eVariant, "Attempt to get value from NULL column");
-//    }
-//}
+inline
+bool operator!=(const CVariant& v1, const CVariant& v2) 
+{
+    return !(v1 == v2);
+}
+
+inline
+bool operator>(const CVariant& v1, const CVariant& v2) 
+{
+    return v2 < v1;
+}
+
+inline
+bool operator<=(const CVariant& v1, const CVariant& v2) 
+{
+    return v1 < v2 || v1 == v2;
+}
+
+inline
+bool operator>=(const CVariant& v1, const CVariant& v2) 
+{
+    return v2 < v1 || v1 == v2;
+}
 
 
 END_NCBI_SCOPE
@@ -274,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/05 20:09:34  kholodov
+ * Fixed: comparison operators
+ *
  * Revision 1.24  2005/05/03 19:14:15  kholodov
  * Modified: NULL CVariants return "natural empty values", no exception thrown
  * Added: CVariantException(const string&) constructor for backward compatibility.

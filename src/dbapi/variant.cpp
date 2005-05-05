@@ -715,52 +715,109 @@ CVariant& CVariant::operator=(const CVariant& v)
     return *this;
 }
 
-bool CVariant::operator< (const CVariant& v) const 
+bool operator<(const CVariant& v1, const CVariant& v2) 
 {
     bool less = false;
 
-    if( IsNull() || v.IsNull() ) {
-        less = IsNull() && !v.IsNull();
+    if( v1.IsNull() || v2.IsNull() ) {
+        less = v1.IsNull() && !v2.IsNull();
     }
     else {
-        if( GetType() != v.GetType() ) {
-            NCBI_THROW(CVariantException, eVariant, "CVariant::operator<(): cannot compare different types");
+        if( v1.GetType() != v2.GetType() ) {
+            NCBI_THROW(CVariantException, eVariant, "Cannot compare different types");
         }
 
-        switch( GetType() ) {
+        switch( v1.GetType() ) {
         case eDB_Char:
         case eDB_VarChar:
         case eDB_LongChar:
-            less = GetString() < v.GetString();
+            less = v1.GetString() < v2.GetString();
             break;
         case eDB_TinyInt:
-            less = GetByte() < v.GetByte();
+            less = v1.GetByte() < v2.GetByte();
             break;
         case eDB_SmallInt:      
-            less = GetInt2() < v.GetInt2();
+            less = v1.GetInt2() < v2.GetInt2();
             break;
         case eDB_Int:
-            less = GetInt4() < v.GetInt4();
+            less = v1.GetInt4() < v2.GetInt4();
+            break;
+        case eDB_BigInt:
+            less = v1.GetInt8() < v2.GetInt8();
             break;
         case eDB_Float:
-            less = GetFloat() < v.GetFloat();
+            less = v1.GetFloat() < v2.GetFloat();
             break;
         case eDB_Double:
-            less = GetDouble() < v.GetDouble();
+            less = v1.GetDouble() < v2.GetDouble();
             break;
         case eDB_DateTime:
         case eDB_SmallDateTime:
-            less = GetCTime() < v.GetCTime();
+            less = v1.GetCTime() < v2.GetCTime();
             break;
         default:
-            NCBI_THROW(CVariantException, eVariant,
-                 "CVariant::operator<(): type not supported");
+            NCBI_THROW(CVariantException, eVariant, "Type not supported");
+        }
+    }
+    return less;
+}
+
+bool operator==(const CVariant& v1, const CVariant& v2) 
+{
+    bool less = false;
+
+    if( v1.IsNull() || v2.IsNull() ) {
+        less = v1.IsNull() && !v2.IsNull();
+    }
+    else {
+        if( v1.GetType() != v2.GetType() ) {
+            NCBI_THROW(CVariantException, eVariant, "Cannot compare different types");
+        }
+
+        switch( v1.GetType() ) {
+        case eDB_Char:
+        case eDB_VarChar:
+        case eDB_LongChar:
+        case eDB_Binary:
+        case eDB_VarBinary:
+            less = v1.GetString() == v2.GetString();
+            break;
+        case eDB_Bit:
+            less = v1.GetBit() == v2.GetBit();
+            break;
+        case eDB_TinyInt:
+            less = v1.GetByte() == v2.GetByte();
+            break;
+        case eDB_SmallInt:      
+            less = v1.GetInt2() == v2.GetInt2();
+            break;
+        case eDB_Int:
+            less = v1.GetInt4() == v2.GetInt4();
+            break;
+        case eDB_BigInt:
+            less = v1.GetInt8() == v2.GetInt8();
+            break;
+        case eDB_Float:
+            less = v1.GetFloat() == v2.GetFloat();
+            break;
+        case eDB_Double:
+            less = v1.GetDouble() == v2.GetDouble();
+            break;
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
+            less = v1.GetCTime() == v2.GetCTime();
+            break;
+        default:
+            NCBI_THROW(CVariantException, eVariant, "Type not supported");
         }
     }
     return less;
 }
 /*
 * $Log$
+* Revision 1.36  2005/05/05 20:09:18  kholodov
+* Fixed: comparison operators
+*
 * Revision 1.35  2005/05/03 19:25:45  kholodov
 * Modified: return empty string for NULL datetime columns instead of CTime().AsString()
 *
