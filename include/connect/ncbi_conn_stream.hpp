@@ -94,7 +94,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 
 /*
  * Helper hook-up class that installs default logging/registry/locking
- * (if have not yet installed explicitly).
+ * (only if have not yet been installed explicitly by user).
  */
 
 class NCBI_XCONNECT_EXPORT CConn_IOStreamBase
@@ -106,10 +106,10 @@ protected:
 
 /*
  * Base class, derived from "std::iostream", does both input
- * and output, using the specified CONNECTOR. Input operations
+ * and output, using the specified CONNECTOR.  Input operations
  * can be tied to the output ones by setting 'do_tie' to 'true'
  * (default), which means that any input attempt first flushes
- * the output queue from the internal buffers. 'buf_size'
+ * the output queue from the internal buffers.  'buf_size'
  * designates the size of the I/O buffers, which reside in between
  * the stream and underlying connector (which in turn may do
  * further buffering, if needed).
@@ -146,7 +146,7 @@ private:
 
 /*
  * This stream exchanges data in a TCP channel, using socket interface.
- * The endpoint is specified as host/port pair. The maximal
+ * The endpoint is specified as host/port pair.  The maximal
  * number of connection attempts is given as 'max_try'.
  * More details on that: <connect/ncbi_socket_connector.h>.
  */
@@ -192,7 +192,7 @@ private:
  *
  * More elaborate specification of the server can be done via
  * SConnNetInfo structure, which otherwise will be created with the
- * use of a standard registry section to obtain default values
+ * use of a standard registry section to obtain default values from
  * (details: <connect/ncbi_connutil.h>).  No user header is added if
  * the argument is passed as default (or empty string).  To make
  * sure the user header is passed empty, delete it from net_info
@@ -201,7 +201,7 @@ private:
  * THCC_Flags and other details: <connect/ncbi_http_connector.h>.
  *
  * Provided 'timeout' is set at connection level, and if different from
- * CONN_DEFAULT_TIMEOUT, it overrides value supplied by HTTP connector
+ * CONN_DEFAULT_TIMEOUT, it overrides a value supplied by HTTP connector
  * (the latter value is kept in SConnNetInfo::timeout).
  */
 
@@ -252,8 +252,8 @@ private:
  * to obtain the information from (details: <connect/ncbi_connutil.h>).
  *
  * Provided 'timeout' is set at connection level, and if different from
- * CONN_DEFAULT_TIMEOUT, it overrides value supplied by underlying connector
- * (the latter value is kept in SConnNetInfo::timeout).
+ * CONN_DEFAULT_TIMEOUT, it overrides a value supplied by underlying
+ * connector (the latter value is kept in SConnNetInfo::timeout).
  */
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.35  2005/05/05 13:19:26  lavr
+ * Clarify some documenting comments
+ *
  * Revision 6.34  2005/03/15 21:28:22  lavr
  * +CConn_IOStream::Close()
  *
