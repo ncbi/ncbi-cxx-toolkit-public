@@ -31,21 +31,19 @@
 
 #include <ncbi_pch.hpp>
 #include <util/compress/tar.hpp>
-#include <memory>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
 #  error "Class CTar defined only for MS Windows and UNIX platforms"
 #endif
 
-#include <ncbi_pch.hpp>
-#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
+#include <memory>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
 #elif defined(NCBI_OS_UNIX)
-#  endif
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -446,7 +444,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 }
 
 
-void CTar::x_WriteEntryInfo(const string& entry_name, CTarEntryInfo& info)
+void CTar::x_WriteEntryInfo(const string&         entry_name,
+                            const CTarEntryInfo&  info)
 {
     // Prepare block info
     TBlock block;
@@ -935,7 +934,7 @@ string CTar::x_ToArchiveName(const string& path) const
 }
 
 
-void CTar::x_Append(const string& entry_name, TEntries* update_list)
+void CTar::x_Append(const string& entry_name, const TEntries* update_list)
 {
     // Compose entry name for relative names
     string x_name;
@@ -1037,7 +1036,7 @@ void CTar::x_Append(const string& entry_name, TEntries* update_list)
 }
 
 
-void CTar::x_AppendFile(const string& file_name, CTarEntryInfo& info)
+void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
 {
     // Open file
     CNcbiIfstream is;
@@ -1100,6 +1099,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/05/05 13:41:42  ivanov
+ * Added const to parameters in private methods
+ *
  * Revision 1.12  2005/05/05 12:40:11  ivanov
  * Fixed GCC compilation warning
  *

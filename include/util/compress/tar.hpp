@@ -364,7 +364,8 @@ protected:
     EStatus x_ReadEntryInfo(CTarEntryInfo& info);
     
     // Write information about entry into TAR archive
-    void x_WriteEntryInfo(const string& entry_name, CTarEntryInfo& info);
+    void x_WriteEntryInfo(const string&        entry_name,
+                          const CTarEntryInfo& info);
 
     // Add entry info to list of entries
     void x_AddEntryInfoToList(const CTarEntryInfo& info,
@@ -396,9 +397,9 @@ protected:
     string x_ToArchiveName(const string& path) const;
 
     // Append entry to archive
-    void x_Append(const string& entry_name, TEntries* update_list = 0);
+    void x_Append(const string& entry_name, const TEntries* update_list = 0);
     // Append file entry to archive. Accessory function for x_Append().
-    void x_AppendFile(const string& entry_name, CTarEntryInfo& info);
+    void x_AppendFile(const string& entry_name, const CTarEntryInfo& info);
 
 protected:
     string         m_FileName;       ///< TAR archive file name.
@@ -529,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/05 13:41:58  ivanov
+ * Added const to parameters in private methods
+ *
  * Revision 1.6  2005/05/05 12:32:33  ivanov
  * + CTar::Update()
  *
