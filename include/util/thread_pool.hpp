@@ -254,7 +254,8 @@ public:
                    int spawn_threshold = 1, 
                    unsigned int max_urgent_threads = kMax_UInt)
         : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
-          m_Threshold(spawn_threshold), m_Queue(max(queue_size, 1U)),
+          m_Threshold(spawn_threshold), 
+          m_Queue(queue_size > 0 ? queue_size : max_threads),
           m_QueuingForbidden(queue_size == 0)
         { m_ThreadCount.Set(0); m_UrgentThreadCount.Set(0); m_Delta.Set(0);}
 
@@ -735,6 +736,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/05/05 15:12:26  didenko
+* Fixed a bug with fast coming requests when the pool of threads doesn't use the queue.
+*
 * Revision 1.25  2005/05/02 16:41:29  didenko
 * Fixed creating of m_HungerSem on Windows. The maximum count is *signed* long there.
 *
