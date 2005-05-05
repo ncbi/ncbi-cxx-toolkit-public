@@ -199,10 +199,11 @@ string CHTMLHelper::StripTags(const string& str)
             break;
         }
         if (pos < s.size()  &&
-            (isalpha((int)s[pos + 1]) || s[pos + 1 == '/'] )) {
+            (isalpha((int)s[pos + 1]) || s[pos + 1] == '/' )) {
             s.erase(pos, pos_end - pos + 1);
+        } else {
+            pos++;
         }
-        pos++;
     }
     return s;
 }
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/05 12:19:50  ivanov
+ * Fixed CHTMLHelper::StripTags() to correct strip consecutive tags
+ *
  * Revision 1.20  2004/10/21 17:39:47  ivanov
  * CHTMLHelper::StripTags() : strip mapping tags <@...@> before stripping tags
  *
