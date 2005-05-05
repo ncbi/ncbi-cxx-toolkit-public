@@ -102,7 +102,7 @@ public:
     void SetPath   (const string& str);    // not spec'd by default
     void SetExpDate(const tm& exp_date);   // GMT time (infinite if all zeros)
     void SetExpTime(const CTime& exp_time);// GMT time (infinite if all zeros)
-    void SetSecure (bool secure);          // "false" by default
+    void SetSecure (bool secure);          // FALSE by default
 
     /// All "const string& GetXXX(...)" methods beneath return reference
     /// to "NcbiEmptyString" if the requested attributre is not set
@@ -111,7 +111,7 @@ public:
     const string& GetPath   (void) const;
     /// Day, dd-Mon-yyyy hh:mm:ss GMT  (return empty string if not set)
     string        GetExpDate(void) const;
-    /// If exp.date is not set then return "false" and dont assign "*exp_date"
+    /// If exp.date is not set then return FALSE and dont assign "*exp_date"
     bool GetExpDate(tm* exp_date) const;
     bool GetSecure(void)          const;
 
@@ -176,25 +176,48 @@ public:
     typedef pair<TIter,  TIter>    TRange;
     typedef pair<TCIter, TCIter>   TCRange;
 
+    /// How to handle badly formed cookies
+    enum EOnBadCookie {
+        eOnBadCookie_ThrowException,
+        eOnBadCookie_SkipAndError,
+        eOnBadCookie_Skip
+    };
+
     /// Empty set of cookies
     CCgiCookies(void);
     /// Format of the string:  "name1=value1; name2=value2; ..."
-    CCgiCookies(const string& str);
+    CCgiCookies(const string& str,
+                EOnBadCookie  on_bad_cookie = eOnBadCookie_SkipAndError);
     /// Destructor
     ~CCgiCookies(void);
 
-    /// Return "true" if this set contains no cookies
+    /// Return TRUE if this set contains no cookies
     bool Empty(void) const;
 
     /// All Add() functions:
     /// if the added cookie has the same {name, domain, path} as an already
     /// existing one then the new cookie will override the old one
-    CCgiCookie* Add(const string& name, const string& value,
-                    const string& domain = NcbiEmptyString,
-                    const string& path   = NcbiEmptyString);
-    CCgiCookie* Add(const CCgiCookie& cookie);  // add a copy of "cookie"
-    void Add(const CCgiCookies& cookies);  // update by a set of cookies
-    void Add(const string& str); // "name1=value1; name2=value2; ..."
+    CCgiCookie* Add(const string& name,
+                    const string& value,
+                    const string& domain        = kEmptyStr,
+                    const string& path          = kEmptyStr,
+                    EOnBadCookie  on_bad_cookie = eOnBadCookie_SkipAndError);
+
+    ///
+    CCgiCookie* Add(const string& name,
+                    const string& value,
+                    EOnBadCookie  on_bad_cookie);
+
+    /// Update with a copy of "cookie"
+    CCgiCookie* Add(const CCgiCookie& cookie);
+
+    /// Update by a set of cookies
+    void Add(const CCgiCookies& cookies);
+
+    /// Update with a HTTP request like string:
+    /// "name1=value1; name2=value2; ..."
+    void Add(const string& str,
+             EOnBadCookie  on_bad_cookie = eOnBadCookie_SkipAndError);
 
     /// Return NULL if cannot find this exact cookie
     CCgiCookie*       Find(const string& name,
@@ -216,7 +239,7 @@ public:
     TCRange GetAll(void) const;
 
     /// Remove "cookie" from this set;  deallocate it if "destroy" is true
-    /// Return "false" if can not find "cookie" in this set
+    /// Return FALSE if can not find "cookie" in this set
     bool Remove(CCgiCookie* cookie, bool destroy=true);
 
     /// Remove (and destroy if "destroy" is true) all cookies belonging
@@ -556,7 +579,7 @@ public:
 
     /// Get a set of entries(decoded) received from the client.
     /// Also includes "indexes" if "indexes_as_entries" in the
-    /// constructor was "true"(default).
+    /// constructor was TRUE (default).
     const TCgiEntries& GetEntries(void) const;
     TCgiEntries& GetEntries(void);
 
@@ -571,7 +594,7 @@ public:
     /// Get a set of indexes(decoded) received from the client.
     ///
     /// It will always be empty if "indexes_as_entries" in the constructor
-    /// was "true"(default).
+    /// was TRUE (default).
     const TCgiIndexes& GetIndexes(void) const;
     TCgiIndexes& GetIndexes(void);
 
@@ -742,10 +765,10 @@ inline CCgiCookies::CCgiCookies(void)
     return;
 }
 
-inline CCgiCookies::CCgiCookies(const string& str)
+inline CCgiCookies::CCgiCookies(const string& str, EOnBadCookie on_bad_cookie)
     : m_Cookies()
 {
-    Add(str);
+    Add(str, on_bad_cookie);
 }
 
 inline bool CCgiCookies::Empty(void) const
@@ -807,6 +830,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.71  2005/05/05 16:43:36  vakatov
+* Incoming cookies:  just skip the malformed cookies (with error posted) --
+* rather than failing to parse the request altogether. The good cookies would
+* still be parsed successfully.
+*
 * Revision 1.70  2005/03/21 15:30:08  ucko
 * Treat CCgiEntries as identical even if their positions are different,
 * so that doubled parameters with equal values don't cause problems.

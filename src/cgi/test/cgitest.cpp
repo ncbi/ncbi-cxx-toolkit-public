@@ -61,11 +61,26 @@ static void TestCgi_Cookies(void)
     CCgiCookies cookies("coo1=kie1BAD1;coo2=kie2_ValidPath; ");
     cookies.Add("  coo1=kie1BAD2;CooT=KieT_ExpTime  ");
 
-    string str = "eee;  Coo11=Kie11_OK; Coo2=Kie2BAD;  uuu; coo1=Kie1_OK; Coo6=kie6; iii";
+    string str =
+        "eee; BAD COOKIE;  Coo11=Kie11_OK; Coo3=Kie2 SEMI-BAD;"
+        "B COO= 7; X C =3; uuu; coo1=Kie1_OK; Coo6=kie6; iii";
     cookies.Add(str);
     cookies.Add("RemoveThisCookie", "BAD");
     cookies.Add(str);
 
+    assert(  cookies.Find("eee") );
+    assert( !cookies.Find("BAD COOKIE") );
+    assert(  cookies.Find("Coo11") );
+    assert(  cookies.Find("Coo2") );
+    assert( !cookies.Find("Coo3") );
+    assert( !cookies.Find("B COO") );
+    assert( !cookies.Find("X C") );
+    assert( !cookies.Find("X C ") );
+    assert(  cookies.Find("uuu") );
+    assert(  cookies.Find("coo1") );
+    assert(  cookies.Find("CooT") );
+    assert(  cookies.Find("Coo6") );
+    assert( !cookies.Find("Coo2", "qq.rr.oo", NcbiEmptyString) );
     assert( !cookies.Find("Coo2", "qq.rr.oo", NcbiEmptyString) );
     assert(cookies.Find("Coo2") == cookies.Find("Coo2", "", ""));
     cookies.Find("Coo2")->SetValue("Kie2_OK");
@@ -601,6 +616,11 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.21  2005/05/05 16:43:36  vakatov
+ * Incoming cookies:  just skip the malformed cookies (with error posted) --
+ * rather than failing to parse the request altogether. The good cookies would
+ * still be parsed successfully.
+ *
  * Revision 1.20  2004/05/17 20:57:14  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

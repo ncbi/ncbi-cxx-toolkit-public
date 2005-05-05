@@ -80,8 +80,7 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
                        const string& domain, const string& path)
 {
     if ( name.empty() ) {
-        NCBI_THROW2(CCgiCookieException, eValue,
-                    "Empty cookie name", 0);
+        NCBI_THROW2(CCgiCookieException, eValue, "Empty cookie name", 0);
     }
     x_CheckField(name, " ;,=");
     m_Name = name;
@@ -245,18 +244,44 @@ void CCgiCookie::SetExpTime(const CTime& exp_time)
 //
 
 CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
-                             const string& domain , const string& path)
+                             const string& domain , const string& path,
+                             EOnBadCookie  on_bad_cookie)
 {
     CCgiCookie* ck = Find(name, domain, path);
-    if ( ck ) {  // override existing CCgiCookie
-        ck->SetValue(value);
-    } else {  // create new CCgiCookie and add it
-        ck = new CCgiCookie(name, value);
-        ck->SetDomain(domain);
-        ck->SetPath(path);
-        _VERIFY( m_Cookies.insert(ck).second );
+    try {
+        if ( ck ) {  // override existing CCgiCookie
+            ck->SetValue(value);
+        }
+        else {  // create new CCgiCookie and add it
+            ck = new CCgiCookie(name, value);
+            ck->SetDomain(domain);
+            ck->SetPath(path);
+            _VERIFY( m_Cookies.insert(ck).second );
+        }
+    } catch (CCgiCookieException& ex) {
+        switch ( on_bad_cookie ) {
+        case eOnBadCookie_ThrowException:
+            throw;
+        case eOnBadCookie_SkipAndError: {
+            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            ERR_POST(cex);
+            return NULL;
+        }
+        case eOnBadCookie_Skip:
+            return NULL;
+        default:
+            _TROUBLE;
+        }
     }
     return ck;
+}
+
+
+CCgiCookie* CCgiCookies::Add(const string& name,
+                             const string& value,
+                             EOnBadCookie  on_bad_cookie)
+{
+    return Add(name, value, kEmptyStr, kEmptyStr, on_bad_cookie);
 }
 
 
@@ -282,21 +307,23 @@ void CCgiCookies::Add(const CCgiCookies& cookies)
 }
 
 
-void CCgiCookies::Add(const string& str)
+void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
-    SIZE_TYPE pos;
-    for (pos = str.find_first_not_of(" \t\n"); ; ){
+    SIZE_TYPE pos = str.find_first_not_of(" \t\n");
+    for (;;) {
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
 
         SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
         if (pos_mid == NPOS) {
-            Add(str.substr(pos_beg), kEmptyStr);
+            Add(str.substr(pos_beg), kEmptyStr,
+                on_bad_cookie);
             return; // done
         }
         if (str[pos_mid] != '=') {
-            Add(str.substr(pos_beg, pos_mid-pos_beg), kEmptyStr);
+            Add(str.substr(pos_beg, pos_mid - pos_beg), kEmptyStr,
+                on_bad_cookie);
             if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
                 return; // done
             pos = pos_mid;
@@ -309,16 +336,15 @@ void CCgiCookies::Add(const string& str)
             pos_end--;
         } else {
             pos_end = str.find_last_not_of(" \t\n", str.length());
-            if (pos_end == NPOS)
-                break; // error
+            _ASSERT(pos_end != NPOS);
             pos = NPOS; // about to finish
         }
 
-        Add(str.substr(pos_beg, pos_mid-pos_beg),
-            str.substr(pos_mid+1, pos_end-pos_mid));
+        Add(str.substr(pos_beg,     pos_mid - pos_beg),
+            str.substr(pos_mid + 1, pos_end - pos_mid),
+            on_bad_cookie);
     }
-    NCBI_THROW2(CCgiCookieException, eString,
-                "Invalid cookie string: `" + str + "'", pos);
+    // ...never reaches here...
 }
 
 
@@ -346,7 +372,7 @@ CCgiCookie* CCgiCookies::Find
     if (iter != m_Cookies.end()  &&
         !s_CookieLess(name, domain, path, (*iter)->GetName(),
                       (*iter)->GetDomain(), (*iter)->GetPath())) {
-        _ASSERT( AStrEquiv(name, (*iter)->GetName(), PNocase()) );
+        _ASSERT( AStrEquiv(name,   (*iter)->GetName(),   PNocase()) );
         _ASSERT( AStrEquiv(domain, (*iter)->GetDomain(), PNocase()) );
         _ASSERT( path.compare((*iter)->GetPath()) == 0 );
         return *iter;
@@ -1378,6 +1404,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.87  2005/05/05 16:43:36  vakatov
+* Incoming cookies:  just skip the malformed cookies (with error posted) --
+* rather than failing to parse the request altogether. The good cookies would
+* still be parsed successfully.
+*
 * Revision 1.86  2005/03/10 18:03:18  vakatov
 * Fix to correctly discriminate between the CGI and regular-style cmd-line args
 *
