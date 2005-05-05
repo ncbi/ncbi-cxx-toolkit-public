@@ -281,6 +281,9 @@ int CGridWorkerApp::Run(void)
     unsigned int max_total_jobs = 
        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
+    bool is_daemon =
+        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     const string& dbg_mode = reg.GetString("gw_debug", "mode", "");
     if (NStr::CompareNocase(dbg_mode, "gather")==0) {
@@ -304,11 +307,10 @@ int CGridWorkerApp::Run(void)
             debug_context.SetExecuteList(files);
         }
         log_file_name = debug_context.GetLogFileName();
+        is_daemon = false;
     }
 
 #if defined(NCBI_OS_UNIX)
-    bool is_daemon =
-        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
     if (is_daemon) {
         LOG_POST("Entering UNIX daemon mode...");
         bool daemon = Daemonize(0, fDaemon_DontChroot);
@@ -378,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/05 15:57:35  didenko
+ * Minor fixes
+ *
  * Revision 1.16  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *

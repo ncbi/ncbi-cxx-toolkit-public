@@ -396,7 +396,7 @@ void CGridWorkerNode::Start()
                     }
                     break;
                 }
-                LOG_POST( "Got Job : " << job_key << "  " << input);
+                //       LOG_POST( "Got Job : " << job_key << "  " << input);
                 auto_ptr<CWorkerNodeJobContext> 
                     context(new CWorkerNodeJobContext(*this, 
                                                       job_key, 
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/05 15:57:35  didenko
+ * Minor fixes
+ *
  * Revision 1.16  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *

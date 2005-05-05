@@ -127,16 +127,15 @@ void CGridThreadContext::PutProgressMessage(const string& msg)
                 os << msg;
                 m_ProgressWriter->Reset();
             }
+            else {
+                ERR_POST("Couldn't send a progress message.");
+            }
         }
         if (debug_context) {
             debug_context->DumpProgressMessage(m_JobContext->GetJobKey(),
                                                msg, 
                                                m_JobContext->m_JobNumber);
-        }
-            
-        else {
-            ERR_POST("Couldn't send a progress message.");
-        }
+        }           
     } catch (exception& ex) {
         ERR_POST("Couldn't send a progress message: " << ex.what());
     }
@@ -221,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/05/05 15:57:35  didenko
+ * Minor fixes
+ *
  * Revision 6.1  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *
