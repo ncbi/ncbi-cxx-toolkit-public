@@ -65,9 +65,9 @@ public:
     {
         CNetScheduleClient::Monitor(out);
     }
-    void DumpQueue(CNcbiOstream & out)
+    void DumpQueue(CNcbiOstream & out, const string& job_key)
     {
-        CNetScheduleClient::DumpQueue(out);
+        CNetScheduleClient::DumpQueue(out, job_key);
     }
 
     void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
@@ -126,11 +126,11 @@ void CNetScheduleControl::Init(void)
                              "Print queue statistics",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("dump",
-                             "dump_queue",
-                             "Print queue dump",
-                             CArgDescriptions::eString);
-
+    arg_desc->AddOptionalKey(
+        "dump",
+        "dump_queue",
+        "Print queue dump or job dump (queuename:job_key)",
+        CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("monitor",
                              "monitor",
@@ -196,9 +196,13 @@ int CNetScheduleControl::Run(void)
     }
 
     if (args["dump"]) {  
-        string queue = args["dump"].AsString(); 
+        string param = args["dump"].AsString(); 
+        string queue, job_key;
+        
+        NStr::SplitInTwo(param, ":", queue, job_key);
+
         CNetScheduleClient_Control cl(host, port, queue);
-        cl.DumpQueue(NcbiCout);
+        cl.DumpQueue(NcbiCout, job_key);
         NcbiCout << NcbiEndl;
     }
 
@@ -237,6 +241,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/05 16:07:15  kuznets
+ * Added individual job dumping
+ *
  * Revision 1.9  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *

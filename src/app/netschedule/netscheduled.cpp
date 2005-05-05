@@ -1023,20 +1023,41 @@ void CNetScheduleServer::ProcessDump(CSocket&                sock,
                                      CQueueDataBase::CQueue& queue)
 {
     WriteMsg(sock, "OK:", NETSCHEDULED_VERSION);
-    WriteMsg(sock, "OK:", "[Job status matrix]:");
+    SJS_Request& req = tdata.req;
 
-    SOCK sk = sock.GetSOCK();
-    sock.SetOwnership(eNoOwnership);
-    sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+    if (req.job_key_str.empty()) {
+        WriteMsg(sock, "OK:", "[Job status matrix]:");
 
-    CConn_SocketStream ios(sk);  // sock is being passed and used exclusively
+        SOCK sk = sock.GetSOCK();
+        sock.SetOwnership(eNoOwnership);
+        sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
 
-    queue.PrintJobStatusMatrix(ios);
+        CConn_SocketStream ios(sk);  // sock is being passed and used exclusively
 
-    ios << "OK:[Job DB]:\n";
-    queue.PrintAllJobDbStat(ios);
+        queue.PrintJobStatusMatrix(ios);
 
-    ios << "OK:END";
+        ios << "OK:[Job DB]:\n";
+        queue.PrintAllJobDbStat(ios);
+        ios << "OK:END";
+    } else {
+        unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+
+        CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
+        
+        string st_str = CNetScheduleClient::StatusToString(status);
+        st_str = "[Job status matrix]:" + st_str;
+        WriteMsg(sock, "OK:", st_str.c_str());
+
+        SOCK sk = sock.GetSOCK();
+        sock.SetOwnership(eNoOwnership);
+        sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+        CConn_SocketStream ios(sk);
+
+        ios << "OK:[Job DB]:\n";
+        queue.PrintJobDbStat(job_id, ios);
+        ios << "OK:END";
+    }
 }
 
 
@@ -1195,7 +1216,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 17.MPUT JSID_01_1 "error message"
     // 18.MGET JSID_01_1
     // 19.MONI
-    // 20.DUMP
+    // 20.DUMP [JSID_01_1]
 
     const char* s = reqstr.c_str();
 
@@ -1318,8 +1339,9 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         s += 4;
 
         NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-
+        if (*s != 0) {
+            NS_GETSTRING(s, req->job_key_str)
+        }
         return;
     }
 
@@ -1521,6 +1543,10 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
     if (strncmp(s, "DUMP", 4) == 0) {
         req->req_type = eDumpQueue;
+        s += 4;
+
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
         return;
     }
 
@@ -1924,6 +1950,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/05/05 16:07:15  kuznets
+ * Added individual job dumping
+ *
  * Revision 1.36  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *

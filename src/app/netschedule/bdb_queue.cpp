@@ -724,6 +724,7 @@ CQueueDataBase::CQueue::PrintJobDbStat(unsigned job_id, CNcbiOstream & out)
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(0);
+    db.id = job_id;
     if (db.Fetch() == eBDB_Ok) {
         x_PrintJobDbStat(db, out);
     } else {
@@ -1937,6 +1938,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/05/05 16:07:15  kuznets
+ * Added individual job dumping
+ *
  * Revision 1.31  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *
