@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Authors:  Denis Vakatov et al.
  *
  * File Description:
  *   NCBI C++ diagnostic API
@@ -49,6 +49,8 @@
 #  include <corelib/ncbi_os_mac.hpp>
 #endif
 
+
+
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_MUTEX(s_DiagMutex);
@@ -71,11 +73,13 @@ extern "C" {
 #endif
 
 
+
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
 
 static CDiagFilter s_TraceFilter;
 static CDiagFilter s_PostFilter;
+
 
 // Analogue to strstr.
 // Returns a pointer to the last occurrence of a search string in a string
@@ -99,10 +103,13 @@ str_rev_str(const char* begin_str, const char* end_str, const char* str_search)
         } while(*cur_char != *search_char && cur_char != begin_str);
         if (*cur_char != *search_char)
             return NULL; 
-    } while (search_char != str_search);
+    }
+    while (search_char != str_search);
     
     return cur_char;
 }
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 /// CDiagCompileInfo::
@@ -117,7 +124,7 @@ CDiagCompileInfo::CDiagCompileInfo(void)
 }
 
 CDiagCompileInfo::CDiagCompileInfo(const char* file, 
-                                   int line, 
+                                   int         line, 
                                    const char* curr_funct, 
                                    const char* module)
     : m_File(file),
@@ -133,8 +140,8 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     if (!module)
         return;
 
-    // Checking for a file extension without creating of temporary string objects.
-    char* cur_extension = strrchr(file, '.');
+    // Check for a file extension without creating of temporary string objects
+    const char* cur_extension = strrchr(file, '.');
     if (cur_extension == NULL)
         return; 
 
@@ -152,10 +159,12 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     }
 }
 
+
 CDiagCompileInfo::~CDiagCompileInfo(void)
 {
     return;
 }
+
 
 void 
 CDiagCompileInfo::ParseCurrFunctName(void) const
@@ -164,12 +173,13 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
         // Parse curr_funct
 
         const char* end_str = strchr(m_CurrFunctName, '(');
-        if(end_str) {
+        if ( end_str ) {
             // Get a function/method name
             const char* start_str = NULL;
 
             // Get a finction start position.
-            const char* start_str_tmp = str_rev_str(m_CurrFunctName, end_str, "::");
+            const char* start_str_tmp =
+                str_rev_str(m_CurrFunctName, end_str, "::");
             bool has_class = start_str_tmp != NULL;
             if (start_str_tmp != NULL) {
                 start_str = start_str_tmp + 2;
@@ -180,7 +190,8 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
                 } 
             }
 
-            const char* cur_funct_name = (start_str == NULL ? m_CurrFunctName : start_str);
+            const char* cur_funct_name =
+                (start_str == NULL ? m_CurrFunctName : start_str);
             size_t cur_funct_name_len = end_str - cur_funct_name;
             m_FunctName = string(cur_funct_name, cur_funct_name_len);
 
@@ -188,7 +199,8 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
            if (has_class) {
                end_str = start_str - 2;
                start_str = str_rev_str(m_CurrFunctName, end_str, " ");
-               const char* cur_class_name = (start_str == NULL ? m_CurrFunctName : start_str + 1);
+               const char* cur_class_name =
+                   (start_str == NULL ? m_CurrFunctName : start_str + 1);
                size_t cur_class_name_len = end_str - cur_class_name;
                m_ClassName = string(cur_class_name, cur_class_name_len);
            }
@@ -196,6 +208,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
     }
     m_Parsed = true;
 }
+
 
 
 ///////////////////////////////////////////////////////
@@ -1475,6 +1488,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.92  2005/05/05 00:11:22  vakatov
+ * Added missing 'const.
+ * Plus, some cosmetics.
+ *
  * Revision 1.91  2005/05/04 19:53:42  ssikorsk
  * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag. Optimized module name parsing and checking algorithm.
  *
