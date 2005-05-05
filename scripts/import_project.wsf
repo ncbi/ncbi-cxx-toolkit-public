@@ -227,7 +227,10 @@ function RunPtb(oShell, oTree, oTask)
     } else {
         ptb_command_line += " \"" + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln\"";
     }
-    execute(oShell, ptb_command_line);
+    if ( execute(oShell, ptb_command_line) != 0) {
+        WScript.Echo("ERROR: project_tree_builder failed");
+        WScript.Quit(1);
+    }
 }
 // Open (re-)generated solution in  MSVC IDE
 function LoadSolution(oShell, oTree, oTask)
