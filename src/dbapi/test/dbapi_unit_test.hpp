@@ -106,7 +106,7 @@ public:
     
 private:
     EServerType GetServerType(void) const;
-    void CTestArguments::SetDatabaseParameters(void);
+    void SetDatabaseParameters(void);
 
 private:
 
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/05/05 20:28:34  ucko
+ * Remove redundant CTestArguments:: when declaring SetDatabaseParameters.
+ *
  * Revision 1.12  2005/05/05 15:09:21  ssikorsk
  * Moved from CPPUNIT to Boost.Test
  *
