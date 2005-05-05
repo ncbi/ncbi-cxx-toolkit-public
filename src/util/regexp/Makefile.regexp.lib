@@ -3,4 +3,4 @@
 SRC = chartables get maketables pcre pcreposix study
 LIB = regexp
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/regexp
+CPPFLAGS = -I$(includedir)/util/regexp $(ORIG_CPPFLAGS)
