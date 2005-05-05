@@ -40,7 +40,6 @@
 
 #include <util/reader_writer.hpp>
 #include <util/stream_utils.hpp>
-#include <corelib/ncbistre.hpp>
 
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -113,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/05/05 13:19:46  lavr
+ * -<corelib/ncbistre.hpp>
+ *
  * Revision 1.7  2004/05/17 15:47:59  lavr
  * Reader/Writer ownership added
  *
