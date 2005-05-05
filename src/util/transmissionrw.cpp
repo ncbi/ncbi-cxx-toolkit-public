@@ -36,9 +36,10 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
-: m_Wrt(wrt),
-  m_OwnWrt(own_writer)
+    : m_Wrt(wrt),
+      m_OwnWrt(own_writer)
 {
     _ASSERT(wrt);
 
@@ -50,12 +51,14 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
     }
 }
 
+
 CTransmissionWriter::~CTransmissionWriter()
 {
     if (m_OwnWrt) {
         delete m_Wrt;
     }
 }
+
 
 ERW_Result CTransmissionWriter::Write(const void* buf,
                                       size_t      count,
@@ -64,7 +67,7 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
     ERW_Result res;
     size_t written;
 
-    Int4 cnt = count;
+    Int4 cnt = (Int4)count;
     res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
     if (res != eRW_Success) return res;
     if (written != sizeof(cnt)) {
@@ -75,12 +78,16 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
         res = m_Wrt->Write(ptr, count, &written);
         count -= written;
         wrt_count += written;
-        if (res != eRW_Success) return res;
+        if (res != eRW_Success) {
+	    return res;
+        }
     }
-    if (bytes_written)
+    if (bytes_written) {
         *bytes_written = wrt_count;
+    }
     return res;
 }
+
 
 ERW_Result CTransmissionWriter::Flush(void)
 {
@@ -89,15 +96,16 @@ ERW_Result CTransmissionWriter::Flush(void)
 
 
 
-
 CTransmissionReader::CTransmissionReader(IReader* rdr, EOwnership own_reader)
-: m_Rdr(rdr),
-  m_OwnRdr(own_reader),
-  m_PacketBytesToRead(0),
-  m_ByteSwap(false),
-  m_StartRead(false)
+    : m_Rdr(rdr),
+      m_OwnRdr(own_reader),
+      m_PacketBytesToRead(0),
+      m_ByteSwap(false),
+      m_StartRead(false)
 {
+    return;
 }
+
 
 CTransmissionReader::~CTransmissionReader()
 {
@@ -106,15 +114,17 @@ CTransmissionReader::~CTransmissionReader()
     }
 }
 
-ERW_Result 
-CTransmissionReader::Read(void*   buf,
-                         size_t   count,
-                         size_t*  bytes_read)
+
+ERW_Result CTransmissionReader::Read(void*    buf,
+                                     size_t   count,
+                                     size_t*  bytes_read)
 {
     ERW_Result res;
     if (!m_StartRead) {
         res = x_ReadStart();
-        if (res != eRW_Success) return res;
+        if (res != eRW_Success) {
+            return res;
+        }
     }
 
     // read packet header
@@ -122,8 +132,9 @@ CTransmissionReader::Read(void*   buf,
         Int4 cnt;
         res = x_ReadRepeated(&cnt, sizeof(cnt));
         if (res != eRW_Success) { 
-            if (bytes_read)
+            if (bytes_read) {
                 *bytes_read = 0;
+            }
             return res;
         }
         if (m_ByteSwap) {
@@ -138,8 +149,9 @@ CTransmissionReader::Read(void*   buf,
     size_t read;
     res = m_Rdr->Read(buf, to_read, &read);
     m_PacketBytesToRead -= read;
-    if (bytes_read)
+    if (bytes_read) {
         *bytes_read = read;
+    }
 /*
 if (res != eRW_Success) { 
     _ASSERT(0);
@@ -148,15 +160,14 @@ if (res != eRW_Success) {
     return res;
 }
 
-ERW_Result 
-CTransmissionReader::PendingCount(size_t* count)
+
+ERW_Result CTransmissionReader::PendingCount(size_t* count)
 {
     return m_Rdr->PendingCount(count);
 }
 
 
-ERW_Result 
-CTransmissionReader::x_ReadStart()
+ERW_Result CTransmissionReader::x_ReadStart()
 {
     _ASSERT(!m_StartRead);
 
@@ -167,8 +178,9 @@ CTransmissionReader::x_ReadStart()
     unsigned start_word_coming;
 
     res = x_ReadRepeated(&start_word_coming, sizeof(start_word_coming));
-    if (res != eRW_Success) return res;
-
+    if (res != eRW_Success) {
+        return res;
+    }
     m_ByteSwap = (start_word_coming != start_word);
 
     _ASSERT(start_word_coming == 0x01020304 || 
@@ -177,17 +189,19 @@ CTransmissionReader::x_ReadStart()
     return res;
 }
 
-ERW_Result 
-CTransmissionReader::x_ReadRepeated(void*   buf, size_t  count)
+
+ERW_Result CTransmissionReader::x_ReadRepeated(void* buf, size_t count)
 {
     ERW_Result res = eRW_Success;
     char* ptr = (char*)buf;
     size_t read;
     
-    for( ;count > 0; count -= read, ptr += read) {
+    for( ; count > 0; count -= read, ptr += read) {
         res = m_Rdr->Read(ptr, count, &read);
-        if (res != eRW_Success) return res;
-    } // for
+        if (res != eRW_Success) {
+            return res;
+       }
+    }
     return res;
 }
 
@@ -197,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/05 13:14:37  ivanov
+ * Fixed warning on 64bit Workshop. Some cosmetics.
+ *
  * Revision 1.5  2005/04/25 15:08:58  kuznets
  * Warning fixed
  *
