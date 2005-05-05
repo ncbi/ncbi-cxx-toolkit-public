@@ -224,23 +224,23 @@ public:
     bool IsLogRequested(void) const { return m_LogRequested; }
 
 private:    
-    friend struct CGridThreadContext;
+    friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
     const string& GetJobOutput() const { return m_JobOutput; }
     string& SetJobOutput() { return m_JobOutput; }
     string& SetJobProgressMsgKey() { return m_ProgressMsgKey; }
     size_t& SetJobInputBlobSize() {return m_InputBlobSize; }
-    //    string& SetJobInput() { return m_JobInput; }
 
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
     bool IsJobCommitted() const       { return m_JobCommitted; }
 
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
-    CWorkerNodeJobContext(CGridWorkerNode& worker_node,
-                          const string&    job_key,
-                          const string&    job_input,
-                          bool log_requested);
+    CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
+                          const string&      job_key,
+                          const string&      job_input,
+                          unsigned int       job_nubmer,
+                          bool               log_requested);
 
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
@@ -250,7 +250,7 @@ private:
     bool                 m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
-
+    const unsigned int   m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
 
     /// The copy constructor and the assignment operator
@@ -309,6 +309,7 @@ public: \
 }
 
 
+class CGridDebugContext;
 class CGridThreadContext;
 /// Grid Worker Node
 /// 
@@ -398,6 +399,7 @@ private:
     bool                         m_LogRequested;
 
 
+
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
     {
@@ -434,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/05 15:18:51  didenko
+ * Added debugging facility to worker nodes
+ *
  * Revision 1.17  2005/05/03 19:54:17  didenko
  * Don't start the threads pool then a worker node is running in a single threaded mode.
  *

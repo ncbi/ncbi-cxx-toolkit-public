@@ -40,6 +40,7 @@
 #include <connect/services/grid_default_factories.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/threaded_server.hpp>
+#include "grid_debug_context.hpp"
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -276,9 +277,34 @@ int CGridWorkerApp::Run(void)
        reg.GetBool("server","log",false,0,IRegistry::eReturn);
     unsigned int log_size = 
        reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
-
+    string log_file_name = GetProgramDisplayName() +"_err.log";
     unsigned int max_total_jobs = 
        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
+
+    CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
+    const string& dbg_mode = reg.GetString("gw_debug", "mode", "");
+    if (NStr::CompareNocase(dbg_mode, "gather")==0) {
+        debug_mode = CGridDebugContext::eGDC_Gather;
+    } else if (NStr::CompareNocase(dbg_mode, "execute")==0) {
+        debug_mode = CGridDebugContext::eGDC_Execute;
+    }
+    if (debug_mode != CGridDebugContext::eGDC_NoDebug) {
+        CGridDebugContext& debug_context = 
+            CGridDebugContext::Create(debug_mode,GetStorageFactory());
+        string run_name = 
+            reg.GetString("gw_debug", "run_name", GetProgramDisplayName());
+        debug_context.SetRunName(run_name);
+        if (debug_mode == CGridDebugContext::eGDC_Gather) {
+            max_total_jobs =
+                reg.GetInt("gw_debug","gather_nrequests",1,0,IRegistry::eReturn);
+        } else if (debug_mode == CGridDebugContext::eGDC_Execute) {
+            string files = 
+                reg.GetString("gw_debug", "execute_requests", "");
+            max_total_jobs = 0;
+            debug_context.SetExecuteList(files);
+        }
+        log_file_name = debug_context.GetLogFileName();
+    }
 
 #if defined(NCBI_OS_UNIX)
     bool is_daemon =
@@ -292,8 +318,7 @@ int CGridWorkerApp::Run(void)
     }
 #endif
 
-    m_ErrLog.reset(new CRotatingLogStream(GetProgramDisplayName() +"_err.log", 
-                                          log_size));
+    m_ErrLog.reset(new CRotatingLogStream(log_file_name, log_size));
     // All errors redirected to rotated log
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
@@ -353,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/05/05 15:18:51  didenko
+ * Added debugging facility to worker nodes
+ *
  * Revision 1.15  2005/04/28 17:50:14  didenko
  * Fixing the type of max_total_jobs var
  *

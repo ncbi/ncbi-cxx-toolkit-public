@@ -33,6 +33,7 @@
  */
 
 #include <connect/connect_export.h>
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiexpt.hpp>
 
@@ -153,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/05/05 15:18:51  didenko
+ * Added debugging facility to worker nodes
+ *
  * Revision 1.7  2005/04/20 19:23:47  didenko
  * Added GetBlobAsString, GreateEmptyBlob methods
  * Remave RemoveData to DeleteBlob
