@@ -489,7 +489,7 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CTarEntryInfo& info)
 
     // --- Size ---
     unsigned long size = 0;
-    if ( type == CDirEntry::eFile ) {
+    if ( type == CTarEntryInfo::eFile ) {
         size = info.m_Stat.st_size;
     }
     NUM_TO_OCTAL(size, h->size);
@@ -1100,6 +1100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/05 12:40:11  ivanov
+ * Fixed GCC compilation warning
+ *
  * Revision 1.11  2005/05/05 12:32:45  ivanov
  * + CTar::Update()
  *
