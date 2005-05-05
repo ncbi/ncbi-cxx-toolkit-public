@@ -135,10 +135,10 @@ static const size_t kAccountFieldSize = 32;
 //
 
 void CTarEntryInfo::GetMode(CDirEntry::TMode* user_mode,
-                         CDirEntry::TMode* group_mode,
-                         CDirEntry::TMode* other_mode) const
+                            CDirEntry::TMode* group_mode,
+                            CDirEntry::TMode* other_mode) const
 {
-    unsigned int mode = m_Mode;
+    unsigned int mode = (unsigned int)m_Stat.st_mode;
     // Other
     if (other_mode) {
         *other_mode = mode & 0007;
@@ -232,13 +232,25 @@ CTar::~CTar()
 }
 
 
+void CTar::Update(const string& entry_name)
+{
+    // Get list of all entries in the archive
+    SProcessData data;
+    x_ReadAndProcess(eList, &data, eIgnoreMask);
+    
+    // Update entries (recursively for dirs)
+    x_Open(eUpdate);
+    x_Append(entry_name, &data.entries);
+}
+
+
 void CTar::Extract(const string& dst_dir)
 {
     SProcessData data;
     data.dir = dst_dir;
     // Extract 
     x_ReadAndProcess(eExtract, &data);
-    // Restore attributes for delayed entries (usually for directories)
+    // Restore attributes for "delayed" entries (usually for directories)
     ITERATE(TEntries, i, data.entries) {
         x_RestoreAttrs(**i);
     }
@@ -393,7 +405,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
             info.SetType(CTarEntryInfo::eGNULongName);
             {{
                 // Read long name
-                streamsize name_size = info.m_Size;
+                streamsize name_size = (streamsize)info.GetSize();
                 ALIGN_BLOCK_SIZE(name_size);
                 streamsize n = x_ReadStream(m_Buffer, name_size);
                 if ( n != name_size ) {
@@ -401,7 +413,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
                                "Unexpected EOF in archive");
                 }
                 // Save name
-                m_LongName.assign(m_Buffer, info.m_Size); 
+                m_LongName.assign(m_Buffer, (SIZE_TYPE)info.GetSize()); 
             }}
             break;
         case 'K':
@@ -434,31 +446,15 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 }
 
 
-void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
+void CTar::x_WriteEntryInfo(const string& entry_name, CTarEntryInfo& info)
 {
     // Prepare block info
     TBlock block;
     memset(&block, 0, sizeof(block));
     SHeader* h = &block.header;
 
-    // Get status information
-
-    CDirEntry::SStat st;
-    CDirEntry entry(entry_name.c_str());
-    if ( entry.Stat(&st, eIgnoreLinks) != 0 ) {
-        NCBI_THROW(CTarException, eOpen,
-                   "Unable to get status information for '" +
-                   entry_name + "'");
-    }
-
-    // Get internal archive name for entry
-    string iname = x_ToArchiveName(entry_name);
-    if ( iname.empty() ) {
-        NCBI_THROW(CTarException, eBadName, "Empty entry name not allowed");
-    }
-    if ( type == CDirEntry::eDir ) {
-        iname += kSlash;
-    }
+    CTarEntryInfo::EType type = info.GetType();
+    string iname = info.GetName();
 
     // --- Name ---
     if ( iname.length() <= kNameFieldSize ) {
@@ -483,23 +479,23 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     }
 
     // --- Mode ---
-    NUM_TO_OCTAL(st.orig.st_mode, h->mode);
+    NUM_TO_OCTAL(info.m_Stat.st_mode, h->mode);
 
     // --- User ID ---
-    NUM_TO_OCTAL(st.orig.st_uid, h->uid);
+    NUM_TO_OCTAL(info.m_Stat.st_uid, h->uid);
 
     // --- Group ID ---
-    NUM_TO_OCTAL(st.orig.st_gid, h->gid);
+    NUM_TO_OCTAL(info.m_Stat.st_gid, h->gid);
 
     // --- Size ---
     unsigned long size = 0;
     if ( type == CDirEntry::eFile ) {
-        size = st.orig.st_size;
+        size = info.m_Stat.st_size;
     }
     NUM_TO_OCTAL(size, h->size);
 
     // --- Modification time ---
-    NUM_TO_OCTAL(st.orig.st_mtime, h->mtime);
+    NUM_TO_OCTAL(info.m_Stat.st_mtime, h->mtime);
 
     // --- Typeflag ---
     switch(type) {
@@ -528,7 +524,7 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     // --- User name ---
     // --- Group name ---
     string user, group;
-    if ( entry.GetOwner(&user, &group, eIgnoreLinks) ) {
+    if ( CDirEntry(entry_name).GetOwner(&user, &group, eIgnoreLinks) ) {
         if ( user.length() <= kAccountFieldSize ) {
             memcpy(&h->uname, user.c_str(), user.length());
         }
@@ -570,7 +566,7 @@ void CTar::x_AddEntryInfoToList(const CTarEntryInfo& info,
 }
 
 
-void CTar::x_ReadAndProcess(EAction action, SProcessData* data)
+void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
 {
     // Open file for reading
     x_Open(eRead);
@@ -635,7 +631,7 @@ void CTar::x_ReadAndProcess(EAction action, SProcessData* data)
 
         // Match file name by set of masks
         bool matched = true;
-        if ( m_Mask ) {
+        if ( use_mask == eUseMask  &&  m_Mask ) {
             matched = m_Mask->Match(info.GetName(), m_MaskUseCase);
         }
 
@@ -739,7 +735,7 @@ void CTar::x_ProcessEntry(CTarEntryInfo& info, bool do_process, EAction action,
         case CTarEntryInfo::eFile:
             {{
             // Get size of entry rounded up by kBlockSize
-            streamsize aligned_size = info.m_Size;
+            streamsize aligned_size = (streamsize)info.GetSize();
             ALIGN_BLOCK_SIZE(aligned_size);
 
             // Just skip current entry if possible
@@ -769,7 +765,7 @@ void CTar::x_ProcessEntry(CTarEntryInfo& info, bool do_process, EAction action,
             }
             // Read file content
             streamsize to_read  = aligned_size;
-            streamsize to_write = info.m_Size;
+            streamsize to_write = (streamsize)info.GetSize();
 
             while (m_Stream->good()  &&  to_read > 0) {
                 // Read archive
@@ -939,7 +935,7 @@ string CTar::x_ToArchiveName(const string& path) const
 }
 
 
-void CTar::x_Append(const string& entry_name)
+void CTar::x_Append(const string& entry_name, TEntries* update_list)
 {
     // Compose entry name for relative names
     string x_name;
@@ -949,25 +945,83 @@ void CTar::x_Append(const string& entry_name)
         x_name = GetBaseDir() + entry_name;
     }
 
-    // Get entry type
+    // Get dir entry information
     CDir entry(x_name);
+    CTarEntryInfo info;
+    CDirEntry::SStat st;
+    if ( entry.Stat(&st, eIgnoreLinks) != 0 ) {
+        NCBI_THROW(CTarException, eOpen,
+                   "Unable to get status information for '" +
+                   entry_name + "'");
+    }
+    info.m_Stat = st.orig;
+    CDirEntry::EType type = entry.GetType();
+    info.SetType((CTarEntryInfo::EType)type);
 
-    switch (entry.GetType()) {
+    // Get internal archive name for entry
+    string iname = x_ToArchiveName(x_name);
+    if ( iname.empty() ) {
+        NCBI_THROW(CTarException, eBadName, "Empty entry name not allowed");
+    }
+    if ( type == CDirEntry::eDir ) {
+        iname += kSlash;
+    }
+    info.SetName(iname);
+
+    // Check if we need to update entry in the archive
+    bool write_dir_info = true;
+    if ( update_list ) {
+        // Find entry among the archive entries
+        bool found = false;
+        CTarEntryInfo x_info;
+
+        // Start search from the end of the list, to find
+        // already updated entry first
+        REVERSE_ITERATE(CTar::TEntries, i, *update_list) {
+            x_info = **i;
+            if ( iname == x_info.GetName() ) {
+                found = true;
+                break;
+            }
+        }
+
+        // If found, that compare archive entry with dir entry
+        if ( found ) {
+            if ( type == CDirEntry::eDir ) {
+                // We can skip to update information about directory itself,
+                // but should check all its entries.
+                write_dir_info = (st.orig.st_mtime > x_info.GetModificationTime());
+            } else {
+                // Check modification time
+                if ( st.orig.st_mtime <= x_info.GetModificationTime() ) {
+                    // Don't need to update
+                    return;
+                }
+            }
+        }
+    }
+
+    // Append entry
+    switch (type) {
         case CDirEntry::eFile:
             {{
-                x_AppendFile(x_name);
+                info.SetType(CTarEntryInfo::eFile);
+                x_AppendFile(x_name, info);
             }}
             break;
         case CDirEntry::eDir:
             {{
                 // Append directory info
-                x_WriteEntryInfo(x_name, CDirEntry::eDir);
-                // Append all files from directory
+                if ( write_dir_info ) {
+                    info.SetType(CTarEntryInfo::eDir);
+                    x_WriteEntryInfo(x_name, info);
+                }
+                // Append all files from that directory
                 CDir::TEntries contents = 
                     entry.GetEntries("*", CDir::eIgnoreRecursive);
                 ITERATE(CDir::TEntries, i, contents) {
                     string name = (*i)->GetPath();
-                    x_Append(name);
+                    x_Append(name, update_list);
                 }
             }}
             break;
@@ -983,7 +1037,7 @@ void CTar::x_Append(const string& entry_name)
 }
 
 
-void CTar::x_AppendFile(const string& file_name)
+void CTar::x_AppendFile(const string& file_name, CTarEntryInfo& info)
 {
     // Open file
     CNcbiIfstream is;
@@ -994,9 +1048,9 @@ void CTar::x_AppendFile(const string& file_name)
     }
 
     // Write file header
-    x_WriteEntryInfo(file_name, CDirEntry::eFile);
+    x_WriteEntryInfo(file_name, info);
 
-    streamsize file_size = streamsize(CFile(file_name).GetLength());
+    streamsize file_size = (streamsize)info.GetSize();
     streamsize to_read = file_size;
 
     // Write file contents
@@ -1046,6 +1100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/05 12:32:45  ivanov
+ * + CTar::Update()
+ *
  * Revision 1.10  2005/04/27 13:53:02  ivanov
  * Added support for (re)storing permissions/owner/times
  *

@@ -120,47 +120,45 @@ public:
 
     // Constructor
     CTarEntryInfo(void)
-        : m_Type(eUnknown), m_Size(0) {}
+        : m_Type(eUnknown)
+    {
+        memset(&m_Stat, 0, sizeof(m_Stat));
+    }
 
     // Setters
-    void SetName(const string& name)      { m_Name      = name; }
-    void SetType(EType type)              { m_Type      = type; }
-    void SetSize(Int8 size)               { m_Size      = (streamsize)size; }
-    void SetMode(unsigned int mode)       { m_Mode      = mode; }
-    void SetLinkName(const string& name)  { m_LinkName  = name; }
-    void SetUserId(unsigned int uid)      { m_UserId    = uid;   }
-    void SetGroupId(unsigned int gid)     { m_GroupId   = gid;   }
-    void SetUserName(const string& name)  { m_UserName  = name; }
-    void SetGroupName(const string& name) { m_GroupName = name; }
-    void SetModificationTime(time_t t)    { m_MTime     = t;    }
+    void SetName(const string& name)      { m_Name          = name;        }
+    void SetType(EType type)              { m_Type          = type;        }
+    void SetSize(Int8 size)               { m_Stat.st_size  = (off_t)size; }
+    void SetMode(unsigned int mode)       { m_Stat.st_mode  = mode;        }
+    void SetUserId(unsigned int uid)      { m_Stat.st_uid   = uid;         }
+    void SetGroupId(unsigned int gid)     { m_Stat.st_gid   = gid;         }
+    void SetLinkName(const string& name)  { m_LinkName      = name;        }
+    void SetUserName(const string& name)  { m_UserName      = name;        }
+    void SetGroupName(const string& name) { m_GroupName     = name;        }
+    void SetModificationTime(time_t t)    { m_Stat.st_mtime = t;           }
 
     // Getters
-    string       GetName(void)      const { return m_Name;      }
-    EType        GetType(void)      const { return m_Type;      }
-    Int8         GetSize(void)      const { return m_Size;      }
-    unsigned int GetMode(void)      const { return m_Mode;      }
+    string       GetName(void)      const { return m_Name;         }
+    EType        GetType(void)      const { return m_Type;         }
+    Int8         GetSize(void)      const { return m_Stat.st_size; }
+    unsigned int GetMode(void)      const { return m_Stat.st_mode; }
     void         GetMode(CDirEntry::TMode* user_mode,
                          CDirEntry::TMode* group_mode = 0,
                          CDirEntry::TMode* other_mode = 0) const;
-    string       GetLinkName(void)  const { return m_LinkName;  }
-    unsigned int GetUserId(void)    const { return m_UserId;    }
-    unsigned int GetGroupId(void)   const { return m_GroupId;   }
-    string       GetUserName(void)  const { return m_UserName;  }
-    string       GetGroupName(void) const { return m_GroupName; }
-    time_t       GetModificationTime(void) const { return m_MTime; }
+    unsigned int GetUserId(void)    const { return m_Stat.st_uid;  }
+    unsigned int GetGroupId(void)   const { return m_Stat.st_gid;  }
+    string       GetLinkName(void)  const { return m_LinkName;     }
+    string       GetUserName(void)  const { return m_UserName;     }
+    string       GetGroupName(void) const { return m_GroupName;    }
+    time_t       GetModificationTime(void) const { return m_Stat.st_mtime; }
 
 private:
     string       m_Name;       ///< Name of file
     string       m_LinkName;   ///< Name of linked file if type is eLink
     EType        m_Type;       ///< Type
-    streamsize   m_Size;       ///< File size (or 0)
-    unsigned int m_Mode;       ///< File mode, 9 permission bits +
-                               ///< 3 bits for SUID, SGID, SVTX (Unix only)
-    unsigned int m_UserId;     ///< User Id (0 for MSWin)
-    unsigned int m_GroupId;    ///< Group Id (0 for MSWin)
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
-    time_t       m_MTime;      ///< Modification time
+    struct stat  m_Stat;       ///< Dir entry compatible info
 
     friend class CTar;
 };
@@ -232,6 +230,8 @@ public:
     /// Create a new empty archive
     ///
     /// If file with such name already exists it will be rewritten.
+    /// @sa
+    ///   Append, Update
     void Create(void);
 
     /// Append entries to the end of an archive that already exists.
@@ -240,19 +240,21 @@ public:
     /// contains '..'. Leading slash for absolute paths will be removed.
     /// All names will be converted to Unix format.
     /// The entry will be added to the end of archive.
+    /// @sa
+    ///   Create, Update
     void Append(const string& entry_name);
 
-/*
     /// Only append files that are newer than copy in archive.
     ///
     /// Add more recent copies of archive members to the end of an
-    /// archive, if they exist.
+    /// archive, if they exists.
     /// @sa
-    ///   Append
-    void Update();
+    ///   Create, Append
+    void Update(const string& entry_name);
 
+/*
     // Delete from the archive (not for use on magnetic tapes :-))
-    void Delete();
+    void Delete(const string& entry_name);
 
     // Add one or more pre-existing archives to the end of another archive.
     void Concatenate();
@@ -342,6 +344,10 @@ protected:
         eExtract,
         eTest
     };
+    enum EMask {
+        eUseMask,
+        eIgnoreMask
+    };
 
     /// Structure with additional info for processing entries.
     /// Each action interpret field in this structure differently.
@@ -358,14 +364,15 @@ protected:
     EStatus x_ReadEntryInfo(CTarEntryInfo& info);
     
     // Write information about entry into TAR archive
-    void x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type);
+    void x_WriteEntryInfo(const string& entry_name, CTarEntryInfo& info);
 
     // Add entry info to list of entries
     void x_AddEntryInfoToList(const CTarEntryInfo& info,
                               TEntries& entries) const;
 
     // Reader. Read archive and process some "action".
-    void x_ReadAndProcess(EAction action, SProcessData *data = 0);
+    void x_ReadAndProcess(EAction action, SProcessData *data = 0,
+                          EMask use_mask = eUseMask);
 
     // Process next entry from archive accordingly to specified action.
     // If do_process == TRUE, just skip entry in the stream.
@@ -388,9 +395,10 @@ protected:
     // Check path and convert it to archive name
     string x_ToArchiveName(const string& path) const;
 
-    // Append dir entry to archive
-    void x_Append(const string& entry_name);
-    void x_AppendFile(const string& entry_name);
+    // Append entry to archive
+    void x_Append(const string& entry_name, TEntries* update_list = 0);
+    // Append file entry to archive. Accessory function for x_Append().
+    void x_AppendFile(const string& entry_name, CTarEntryInfo& info);
 
 protected:
     string         m_FileName;       ///< TAR archive file name.
@@ -521,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/05 12:32:33  ivanov
+ * + CTar::Update()
+ *
  * Revision 1.5  2005/04/27 13:52:58  ivanov
  * Added support for (re)storing permissions/owner/times
  *
