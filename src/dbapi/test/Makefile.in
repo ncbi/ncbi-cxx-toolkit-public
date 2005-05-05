@@ -2,7 +2,7 @@
 
 APP_PROJ = dbapi_unit_test
 
-REQUIRES = CPPUNIT
+REQUIRES = Boost.Test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -31,10 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiargs.hpp>
 
-#include <cppunit/CompilerOutputter.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
+#include <boost/test/unit_test_result.hpp>
 
 #include <dbapi/dbapi.hpp>
 
@@ -45,59 +44,10 @@
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION( CDBAPIUnitTest );
-
-///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
 //          1) New/dedicated statement for each test
 //          2) Reusable statement for all tests
-
-///////////////////////////////////////////////////////////////////////////////
-enum EServerType {
-    eUnknown,   //< Server type is not known
-    eSybase,    //< Sybase server
-    eMsSql,     //< Microsoft SQL server
-    eOracle     //< ORACLE server
-};
-
-string DriverName;
-string ServerName;
-string UserName;
-string UserPassword;
-
-string GetDriverName(void)
-{
-    return DriverName;
-}
-
-string GetServerName(void)
-{
-    return ServerName;
-}
-
-string GetUserName(void)
-{
-    return UserName;
-}
-
-string GetUserPassword(void)
-{
-    return UserPassword;
-}
-
-EServerType
-GetServerType(void)
-{
-    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
-        return eSybase;
-    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
-        return eMsSql;
-    }
-
-    return eUnknown;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 CTestTransaction::CTestTransaction(
@@ -129,36 +79,35 @@ CTestTransaction::~CTestTransaction(void)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-CDBAPIUnitTest::CDBAPIUnitTest()
-: m_DM( CDriverManager::GetInstance() )
-, m_DS( NULL )
-, m_TableName( "#dbapi_unit_test" )
+class CIConnectionIFPolicy
+{
+protected:
+    static void Destroy(IConnection* obj)
+    {
+        delete obj;
+    }
+    static IConnection* Init(IDataSource* ds)
+    {
+        return ds->CreateConnection();
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
+    : m_args(args)
+    , m_DM( CDriverManager::GetInstance() )
+    , m_DS( NULL )
+    , m_TableName( "#dbapi_unit_test" )
 {
 }
 
-void
-CDBAPIUnitTest::SetDatabaseParameters(void)
+void 
+CDBAPIUnitTest::TestInit(void)
 {
-    if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
-        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-        // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "100";
-    } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
-        // ftds forks with Sybase databases using protocol v42 only ...
-        m_DatabaseParameters["version"] = "42";
-    }
-}
-
-void
-CDBAPIUnitTest::setUp()
-{
-    if ( m_DS == NULL ) {
-        SetDatabaseParameters();
-        m_DS = m_DM.CreateDs( DriverName, &m_DatabaseParameters );
-    }
+    m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
     m_Conn.reset( m_DS->CreateConnection() );
-    m_Conn->Connect( GetUserName(), GetUserPassword(), GetServerName(), "DBAPI_Sample" );
+    m_Conn->Connect( m_args.GetUserName(), m_args.GetUserPassword(), m_args.GetServerName(), "DBAPI_Sample" );
 
     auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
@@ -174,16 +123,10 @@ CDBAPIUnitTest::setUp()
 }
 
 void
-CDBAPIUnitTest::tearDown(void)
-{
-}
-
-
-void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
-    CPPUNIT_ASSERT_THROW( Test_ES_01(), CDB_Exception );
+    BOOST_CHECK_THROW( Test_ES_01(), CDB_Exception );
 }
 
 // Throw CDB_Exception ...
@@ -292,7 +235,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         curr_stmt->ExecuteUpdate(sql);
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( nRows, 1 );
+        BOOST_CHECK_EQUAL( nRows, 1 );
     }
 
     // Check a SELECT statement
@@ -311,7 +254,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         int nRows = curr_stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
     }
 
     // Check an UPDATE statement
@@ -330,7 +273,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         int nRows = curr_stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
     }
 
     // Check a SELECT statement again
@@ -349,7 +292,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         int nRows = curr_stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
     }
 
     // Check a DELETE statement
@@ -368,7 +311,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         int nRows = curr_stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
     }
 
     // Check a SELECT statement again and again ...
@@ -387,7 +330,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
         int nRows = curr_stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+        BOOST_CHECK_EQUAL( 0, nRows );
     }
 
 }
@@ -421,10 +364,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( nRows, 1 );
+        BOOST_CHECK_EQUAL( nRows, 1 );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( nRows2, 1 );
+        BOOST_CHECK_EQUAL( nRows2, 1 );
     }
 
     // Workaround for the CTLIB driver ...
@@ -456,10 +399,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+        BOOST_CHECK_EQUAL( row_count, nRows2 );
     }
 
     // Check an UPDATE statement
@@ -477,10 +420,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+        BOOST_CHECK_EQUAL( row_count, nRows2 );
     }
 
     // Check a SELECT statement again
@@ -498,10 +441,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+        BOOST_CHECK_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement
@@ -519,10 +462,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+        BOOST_CHECK_EQUAL( row_count, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( row_count, nRows2 );
+        BOOST_CHECK_EQUAL( row_count, nRows2 );
     }
 
     // Check a DELETE statement again
@@ -540,10 +483,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+        BOOST_CHECK_EQUAL( 0, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
+        BOOST_CHECK_EQUAL( 0, nRows2 );
     }
 
     // Check a SELECT statement again and again ...
@@ -561,10 +504,10 @@ CDBAPIUnitTest::CheckGetRowCount2(
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+        BOOST_CHECK_EQUAL( 0, nRows );
 
         int nRows2 = curr_stmt->GetRowCount();
-        CPPUNIT_ASSERT_EQUAL( 0, nRows2 );
+        BOOST_CHECK_EQUAL( 0, nRows2 );
     }
 
 }
@@ -587,37 +530,37 @@ CDBAPIUnitTest::Test_Variant(void)
     // Check constructors
     {
         const CVariant variant_Int8( value_Int8 );
-        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+        BOOST_CHECK( !variant_Int8.IsNull() );
 
         const CVariant variant_Int4( value_Int4 );
-        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+        BOOST_CHECK( !variant_Int4.IsNull() );
 
         const CVariant variant_Int2( value_Int2 );
-        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+        BOOST_CHECK( !variant_Int2.IsNull() );
 
         const CVariant variant_Uint1( value_Uint1 );
-        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
-
+        BOOST_CHECK( !variant_Uint1.IsNull() );
+        
         const CVariant variant_float( value_float );
-        CPPUNIT_ASSERT( !variant_float.IsNull() );
+        BOOST_CHECK( !variant_float.IsNull() );
 
         const CVariant variant_double( value_double );
-        CPPUNIT_ASSERT( !variant_double.IsNull() );
+        BOOST_CHECK( !variant_double.IsNull() );
 
         const CVariant variant_bool( value_bool );
-        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+        BOOST_CHECK( !variant_bool.IsNull() );
 
         const CVariant variant_string( value_string );
-        CPPUNIT_ASSERT( !variant_string.IsNull() );
+        BOOST_CHECK( !variant_string.IsNull() );
 
         const CVariant variant_char( value_char );
-        CPPUNIT_ASSERT( !variant_char.IsNull() );
+        BOOST_CHECK( !variant_char.IsNull() );
 
         const CVariant variant_CTimeShort( value_CTime, eShort );
-        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+        BOOST_CHECK( !variant_CTimeShort.IsNull() );
 
         const CVariant variant_CTimeLong( value_CTime, eLong );
-        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
+        BOOST_CHECK( !variant_CTimeLong.IsNull() );
 
 //        explicit CVariant(CDB_Object* obj);
 
@@ -651,201 +594,201 @@ CDBAPIUnitTest::Test_Variant(void)
         {
             CVariant value_variant( eDB_Int );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Int, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Int, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_SmallInt );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_SmallInt, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_SmallInt, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_TinyInt );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_TinyInt, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_TinyInt, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_BigInt );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_BigInt, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_BigInt, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_VarChar );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_VarChar, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_VarChar, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Char );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Char, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Char, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_VarBinary );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_VarBinary, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_VarBinary, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Binary );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Binary, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Binary, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Float );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Float, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Float, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Double );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Double, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Double, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_DateTime );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_DateTime, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_DateTime, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_SmallDateTime );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Text );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Text, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Text, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Image );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Image, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Image, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Bit );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Bit, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Bit, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_Numeric );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_Numeric, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_Numeric, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_LongChar );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_LongChar, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_LongChar, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         {
             CVariant value_variant( eDB_LongBinary );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_LongBinary, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_LongBinary, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
         if (false) {
             CVariant value_variant( eDB_UnsupportedType );
 
-            CPPUNIT_ASSERT_EQUAL( eDB_UnsupportedType, value_variant.GetType() );
-            CPPUNIT_ASSERT( value_variant.IsNull() );
+            BOOST_CHECK_EQUAL( eDB_UnsupportedType, value_variant.GetType() );
+            BOOST_CHECK( value_variant.IsNull() );
         }
     }
 
     // Check the copy-constructor CVariant(const CVariant& v)
     {
         const CVariant variant_Int8 = CVariant(value_Int8);
-        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+        BOOST_CHECK( !variant_Int8.IsNull() );
 
         const CVariant variant_Int4 = CVariant(value_Int4);
-        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+        BOOST_CHECK( !variant_Int4.IsNull() );
 
         const CVariant variant_Int2 = CVariant(value_Int2);
-        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+        BOOST_CHECK( !variant_Int2.IsNull() );
 
         const CVariant variant_Uint1 = CVariant(value_Uint1);
-        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+        BOOST_CHECK( !variant_Uint1.IsNull() );
 
         const CVariant variant_float = CVariant(value_float);
-        CPPUNIT_ASSERT( !variant_float.IsNull() );
+        BOOST_CHECK( !variant_float.IsNull() );
 
         const CVariant variant_double = CVariant(value_double);
-        CPPUNIT_ASSERT( !variant_double.IsNull() );
+        BOOST_CHECK( !variant_double.IsNull() );
 
         const CVariant variant_bool = CVariant(value_bool);
-        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+        BOOST_CHECK( !variant_bool.IsNull() );
 
         const CVariant variant_string = CVariant(value_string);
-        CPPUNIT_ASSERT( !variant_string.IsNull() );
+        BOOST_CHECK( !variant_string.IsNull() );
 
         const CVariant variant_char = CVariant(value_char);
-        CPPUNIT_ASSERT( !variant_char.IsNull() );
+        BOOST_CHECK( !variant_char.IsNull() );
 
         const CVariant variant_CTimeShort = CVariant( value_CTime, eShort );
-        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+        BOOST_CHECK( !variant_CTimeShort.IsNull() );
 
         const CVariant variant_CTimeLong = CVariant( value_CTime, eLong );
-        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
+        BOOST_CHECK( !variant_CTimeLong.IsNull() );
     }
 
     // Call Factories for different types
     {
         const CVariant variant_Int8 = CVariant::BigInt( const_cast<Int8*>(&value_Int8) );
-        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+        BOOST_CHECK( !variant_Int8.IsNull() );
 
         const CVariant variant_Int4 = CVariant::Int( const_cast<Int4*>(&value_Int4) );
-        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+        BOOST_CHECK( !variant_Int4.IsNull() );
 
         const CVariant variant_Int2 = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) );
-        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+        BOOST_CHECK( !variant_Int2.IsNull() );
 
         const CVariant variant_Uint1 = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) );
-        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+        BOOST_CHECK( !variant_Uint1.IsNull() );
 
         const CVariant variant_float = CVariant::Float( const_cast<float*>(&value_float) );
-        CPPUNIT_ASSERT( !variant_float.IsNull() );
+        BOOST_CHECK( !variant_float.IsNull() );
 
         const CVariant variant_double = CVariant::Double( const_cast<double*>(&value_double) );
-        CPPUNIT_ASSERT( !variant_double.IsNull() );
+        BOOST_CHECK( !variant_double.IsNull() );
 
         const CVariant variant_bool = CVariant::Bit( const_cast<bool*>(&value_bool) );
-        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+        BOOST_CHECK( !variant_bool.IsNull() );
 
         const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
-        CPPUNIT_ASSERT( !variant_LongChar.IsNull() );
+        BOOST_CHECK( !variant_LongChar.IsNull() );
 
         const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
-        CPPUNIT_ASSERT( !variant_VarChar.IsNull() );
+        BOOST_CHECK( !variant_VarChar.IsNull() );
 
         const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
-        CPPUNIT_ASSERT( !variant_Char.IsNull() );
+        BOOST_CHECK( !variant_Char.IsNull() );
 
         const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
-        CPPUNIT_ASSERT( !variant_LongBinary.IsNull() );
+        BOOST_CHECK( !variant_LongBinary.IsNull() );
 
         const CVariant variant_VarBinary = CVariant::VarBinary( value_binary, strlen(value_binary) );
-        CPPUNIT_ASSERT( !variant_VarBinary.IsNull() );
+        BOOST_CHECK( !variant_VarBinary.IsNull() );
 
         const CVariant variant_Binary = CVariant::Binary( strlen(value_binary), value_binary, strlen(value_binary) );
-        CPPUNIT_ASSERT( !variant_Binary.IsNull() );
+        BOOST_CHECK( !variant_Binary.IsNull() );
 
         const CVariant variant_SmallDateTime = CVariant::SmallDateTime( const_cast<CTime*>(&value_CTime) );
-        CPPUNIT_ASSERT( !variant_SmallDateTime.IsNull() );
+        BOOST_CHECK( !variant_SmallDateTime.IsNull() );
 
         const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
-        CPPUNIT_ASSERT( !variant_DateTime.IsNull() );
+        BOOST_CHECK( !variant_DateTime.IsNull() );
 
 //        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
     }
@@ -853,28 +796,28 @@ CDBAPIUnitTest::Test_Variant(void)
     // Call Get method for different types
     {
         const Uint1 value_Uint1_tmp = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) ).GetByte();
-        CPPUNIT_ASSERT_EQUAL( value_Uint1, value_Uint1_tmp );
+        BOOST_CHECK_EQUAL( value_Uint1, value_Uint1_tmp );
 
         const Int2 value_Int2_tmp = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) ).GetInt2();
-        CPPUNIT_ASSERT_EQUAL( value_Int2, value_Int2_tmp );
+        BOOST_CHECK_EQUAL( value_Int2, value_Int2_tmp );
 
         const Int4 value_Int4_tmp = CVariant::Int( const_cast<Int4*>(&value_Int4) ).GetInt4();
-        CPPUNIT_ASSERT_EQUAL( value_Int4, value_Int4_tmp );
+        BOOST_CHECK_EQUAL( value_Int4, value_Int4_tmp );
 
         const Int8 value_Int8_tmp = CVariant::BigInt( const_cast<Int8*>(&value_Int8) ).GetInt8();
-        CPPUNIT_ASSERT_EQUAL( value_Int8, value_Int8_tmp );
+        BOOST_CHECK_EQUAL( value_Int8, value_Int8_tmp );
 
         const float value_float_tmp = CVariant::Float( const_cast<float*>(&value_float) ).GetFloat();
-        CPPUNIT_ASSERT_EQUAL( value_float, value_float_tmp );
+        BOOST_CHECK_EQUAL( value_float, value_float_tmp );
 
         const double value_double_tmp = CVariant::Double( const_cast<double*>(&value_double) ).GetDouble();
-        CPPUNIT_ASSERT_EQUAL( value_double, value_double_tmp );
+        BOOST_CHECK_EQUAL( value_double, value_double_tmp );
 
         const bool value_bool_tmp = CVariant::Bit( const_cast<bool*>(&value_bool) ).GetBit();
-        CPPUNIT_ASSERT_EQUAL( value_bool, value_bool_tmp );
+        BOOST_CHECK_EQUAL( value_bool, value_bool_tmp );
 
         const CTime value_CTime_tmp = CVariant::DateTime( const_cast<CTime*>(&value_CTime) ).GetCTime();
-        CPPUNIT_ASSERT( value_CTime == value_CTime_tmp );
+        BOOST_CHECK( value_CTime == value_CTime_tmp );
 
         // GetNumeric() ????
     }
@@ -886,93 +829,93 @@ CDBAPIUnitTest::Test_Variant(void)
         value_variant.SetNull();
 
         value_variant = CVariant(0);
-        CPPUNIT_ASSERT( CVariant(0) == value_variant );
+        BOOST_CHECK( CVariant(0) == value_variant );
 
         value_variant = value_Int8;
-        CPPUNIT_ASSERT( CVariant( value_Int8 ) == value_variant );
+        BOOST_CHECK( CVariant( value_Int8 ) == value_variant );
 
         value_variant = value_Int4;
-        CPPUNIT_ASSERT( CVariant( value_Int4 ) == value_variant );
+        BOOST_CHECK( CVariant( value_Int4 ) == value_variant );
 
         value_variant = value_Int2;
-        CPPUNIT_ASSERT( CVariant( value_Int2 ) == value_variant );
+        BOOST_CHECK( CVariant( value_Int2 ) == value_variant );
 
         value_variant = value_Uint1;
-        CPPUNIT_ASSERT( CVariant( value_Uint1 ) == value_variant );
+        BOOST_CHECK( CVariant( value_Uint1 ) == value_variant );
 
         value_variant = value_float;
-        CPPUNIT_ASSERT( CVariant( value_float ) == value_variant );
+        BOOST_CHECK( CVariant( value_float ) == value_variant );
 
         value_variant = value_double;
-        CPPUNIT_ASSERT( CVariant( value_double ) == value_variant );
+        BOOST_CHECK( CVariant( value_double ) == value_variant );
 
         value_variant = value_string;
-        CPPUNIT_ASSERT( CVariant( value_string ) == value_variant );
+        BOOST_CHECK( CVariant( value_string ) == value_variant );
 
         value_variant = value_char;
-        CPPUNIT_ASSERT( CVariant( value_char ) == value_variant );
+        BOOST_CHECK( CVariant( value_char ) == value_variant );
 
         value_variant = value_bool;
-        CPPUNIT_ASSERT( CVariant( value_bool ) == value_variant );
+        BOOST_CHECK( CVariant( value_bool ) == value_variant );
 
         value_variant = value_CTime;
-        CPPUNIT_ASSERT( CVariant( value_CTime ) == value_variant );
+        BOOST_CHECK( CVariant( value_CTime ) == value_variant );
 
     }
 
     // Check assigning of values of same type ...
     {
         CVariant variant_Int8( value_Int8 );
-        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+        BOOST_CHECK( !variant_Int8.IsNull() );
         variant_Int8 = CVariant( value_Int8 );
         variant_Int8 = value_Int8;
 
         CVariant variant_Int4( value_Int4 );
-        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+        BOOST_CHECK( !variant_Int4.IsNull() );
         variant_Int4 = CVariant( value_Int4 );
         variant_Int4 = value_Int4;
 
         CVariant variant_Int2( value_Int2 );
-        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+        BOOST_CHECK( !variant_Int2.IsNull() );
         variant_Int2 = CVariant( value_Int2 );
         variant_Int2 = value_Int2;
 
         CVariant variant_Uint1( value_Uint1 );
-        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+        BOOST_CHECK( !variant_Uint1.IsNull() );
         variant_Uint1 = CVariant( value_Uint1 );
         variant_Uint1 = value_Uint1;
 
         CVariant variant_float( value_float );
-        CPPUNIT_ASSERT( !variant_float.IsNull() );
+        BOOST_CHECK( !variant_float.IsNull() );
         variant_float = CVariant( value_float );
         variant_float = value_float;
 
         CVariant variant_double( value_double );
-        CPPUNIT_ASSERT( !variant_double.IsNull() );
+        BOOST_CHECK( !variant_double.IsNull() );
         variant_double = CVariant( value_double );
         variant_double = value_double;
 
         CVariant variant_bool( value_bool );
-        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+        BOOST_CHECK( !variant_bool.IsNull() );
         variant_bool = CVariant( value_bool );
         variant_bool = value_bool;
 
         CVariant variant_string( value_string );
-        CPPUNIT_ASSERT( !variant_string.IsNull() );
+        BOOST_CHECK( !variant_string.IsNull() );
         variant_string = CVariant( value_string );
         variant_string = value_string;
 
         CVariant variant_char( value_char );
-        CPPUNIT_ASSERT( !variant_char.IsNull() );
+        BOOST_CHECK( !variant_char.IsNull() );
         variant_char = CVariant( value_char );
         variant_char = value_char;
 
         CVariant variant_CTimeShort( value_CTime, eShort );
-        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+        BOOST_CHECK( !variant_CTimeShort.IsNull() );
         variant_CTimeShort = CVariant( value_CTime, eShort );
 
         CVariant variant_CTimeLong( value_CTime, eLong );
-        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
+        BOOST_CHECK( !variant_CTimeLong.IsNull() );
         variant_CTimeLong = CVariant( value_CTime, eLong );
 
 //        explicit CVariant(CDB_Object* obj);
@@ -1346,34 +1289,34 @@ CDBAPIUnitTest::Test_Variant(void)
     {
         CVariant value_variant(0);
 
-        CPPUNIT_ASSERT( !value_variant.IsNull() );
+        BOOST_CHECK( !value_variant.IsNull() );
 
         value_variant.SetNull();
-        CPPUNIT_ASSERT( value_variant.IsNull() );
+        BOOST_CHECK( value_variant.IsNull() );
 
         value_variant.SetNull();
-        CPPUNIT_ASSERT( value_variant.IsNull() );
+        BOOST_CHECK( value_variant.IsNull() );
 
         value_variant.SetNull();
-        CPPUNIT_ASSERT( value_variant.IsNull() );
+        BOOST_CHECK( value_variant.IsNull() );
     }
 
     // Check operator==
     {
         // Check values of same type ...
         if (false) {
-            CPPUNIT_ASSERT( CVariant( true ) == CVariant( true ) );
-            CPPUNIT_ASSERT( CVariant( false ) == CVariant( false ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
-            CPPUNIT_ASSERT( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
-            CPPUNIT_ASSERT( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
-            CPPUNIT_ASSERT( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
-            CPPUNIT_ASSERT( CVariant( float(1) ) == CVariant( float(1) ) );
-            CPPUNIT_ASSERT( CVariant( double(1) ) == CVariant( double(1) ) );
-            CPPUNIT_ASSERT( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
-            CPPUNIT_ASSERT( CVariant( "abcd" ) == CVariant( "abcd" ) );
-            CPPUNIT_ASSERT( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
-            CPPUNIT_ASSERT( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
+            BOOST_CHECK( CVariant( true ) == CVariant( true ) );
+            BOOST_CHECK( CVariant( false ) == CVariant( false ) );
+            BOOST_CHECK( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
+            BOOST_CHECK( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
+            BOOST_CHECK( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
+            BOOST_CHECK( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
+            BOOST_CHECK( CVariant( float(1) ) == CVariant( float(1) ) );
+            BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
+            BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
+            BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
+            BOOST_CHECK( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
+            BOOST_CHECK( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
         }
     }
 
@@ -1381,65 +1324,65 @@ CDBAPIUnitTest::Test_Variant(void)
     {
         // Check values of same type ...
         {
-            // CPPUNIT_ASSERT( CVariant( false ) < CVariant( true ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
-            CPPUNIT_ASSERT( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
-            CPPUNIT_ASSERT( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
+            // BOOST_CHECK( CVariant( false ) < CVariant( true ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+            BOOST_CHECK( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
+            BOOST_CHECK( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
             // !!! Does not work ...
-            // CPPUNIT_ASSERT( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
-            CPPUNIT_ASSERT( CVariant( float(-1) ) < CVariant( float(1) ) );
-            CPPUNIT_ASSERT( CVariant( double(-1) ) < CVariant( double(1) ) );
-            CPPUNIT_ASSERT( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
-            CPPUNIT_ASSERT( CVariant( "abcd" ) < CVariant( "bcde" ) );
+            // BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
+            BOOST_CHECK( CVariant( float(-1) ) < CVariant( float(1) ) );
+            BOOST_CHECK( CVariant( double(-1) ) < CVariant( double(1) ) );
+            BOOST_CHECK( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
+            BOOST_CHECK( CVariant( "abcd" ) < CVariant( "bcde" ) );
             CTime new_time = value_CTime;
             new_time += 1;
-            CPPUNIT_ASSERT( CVariant( value_CTime, eShort ) < CVariant( new_time, eShort ) );
-            CPPUNIT_ASSERT( CVariant( value_CTime, eLong ) < CVariant( new_time, eLong ) );
+            BOOST_CHECK( CVariant( value_CTime, eShort ) < CVariant( new_time, eShort ) );
+            BOOST_CHECK( CVariant( value_CTime, eLong ) < CVariant( new_time, eLong ) );
         }
 
         // Check comparasion wit Uint1(0) ...
         //!!! It *fails* !!!
         if (false) {
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int2(1) ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int4(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int2(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int4(1) ) );
             // !!! Does not work ...
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int8(1) ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( float(1) ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( double(1) ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( string("bcde") ) );
-            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( "bcde" ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int8(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( float(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( double(1) ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( string("bcde") ) );
+            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( "bcde" ) );
         }
     }
 
     // Check GetType
     {
         const CVariant variant_Int8( value_Int8 );
-        CPPUNIT_ASSERT_EQUAL( eDB_BigInt, variant_Int8.GetType() );
+        BOOST_CHECK_EQUAL( eDB_BigInt, variant_Int8.GetType() );
 
         const CVariant variant_Int4( value_Int4 );
-        CPPUNIT_ASSERT_EQUAL( eDB_Int, variant_Int4.GetType() );
+        BOOST_CHECK_EQUAL( eDB_Int, variant_Int4.GetType() );
 
         const CVariant variant_Int2( value_Int2 );
-        CPPUNIT_ASSERT_EQUAL( eDB_SmallInt, variant_Int2.GetType() );
+        BOOST_CHECK_EQUAL( eDB_SmallInt, variant_Int2.GetType() );
 
         const CVariant variant_Uint1( value_Uint1 );
-        CPPUNIT_ASSERT_EQUAL( eDB_TinyInt, variant_Uint1.GetType() );
+        BOOST_CHECK_EQUAL( eDB_TinyInt, variant_Uint1.GetType() );
 
         const CVariant variant_float( value_float );
-        CPPUNIT_ASSERT_EQUAL( eDB_Float, variant_float.GetType() );
+        BOOST_CHECK_EQUAL( eDB_Float, variant_float.GetType() );
 
         const CVariant variant_double( value_double );
-        CPPUNIT_ASSERT_EQUAL( eDB_Double, variant_double.GetType() );
+        BOOST_CHECK_EQUAL( eDB_Double, variant_double.GetType() );
 
         const CVariant variant_bool( value_bool );
-        CPPUNIT_ASSERT_EQUAL( eDB_Bit, variant_bool.GetType() );
+        BOOST_CHECK_EQUAL( eDB_Bit, variant_bool.GetType() );
 
         const CVariant variant_string( value_string );
-        CPPUNIT_ASSERT_EQUAL( eDB_VarChar, variant_string.GetType() );
+        BOOST_CHECK_EQUAL( eDB_VarChar, variant_string.GetType() );
 
         const CVariant variant_char( value_char );
-        CPPUNIT_ASSERT_EQUAL( eDB_VarChar, variant_char.GetType() );
+        BOOST_CHECK_EQUAL( eDB_VarChar, variant_char.GetType() );
     }
 
     // Test BLOB ...
@@ -1526,20 +1469,45 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-CUnitTestApp::~CUnitTestApp(void)
+///////////////////////////////////////////////////////////////////////////
+CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
+    : test_suite("DBAPI Test Suite")
 {
-    return ;
+    // add member function test cases to a test suite
+    boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
+    test_case* tc = NULL;
+    test_case* tc_init = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
+
+    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
+
+    add(tc_init);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 }
 
-void
-CUnitTestApp::Init(void)
+CDBAPITestSuite::~CDBAPITestSuite(void)
 {
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CTestArguments::CTestArguments(int argc, char * argv[])
+{
+    CNcbiArguments arguments(argc, argv);
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+    arg_desc->SetUsageContext(arguments.GetProgramBasename(),
                               "dbapi_unit_test");
 
     // Describe the expected command-line arguments
@@ -1571,53 +1539,70 @@ CUnitTestApp::Init(void)
                             "Password",
                             CArgDescriptions::eString, "allowed");
 
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-}
+    auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(arguments));
+    const CArgs& args = *args_ptr;
 
-int
-CUnitTestApp::Run(void)
-{
-    const CArgs& args = GetArgs();
 
     // Get command-line arguments ...
-    DriverName      = args["d"].AsString();
-    ServerName      = args["S"].AsString();
-    UserName        = args["U"].AsString();
-    UserPassword    = args["P"].AsString();
+    m_DriverName    = args["d"].AsString();
+    m_ServerName    = args["S"].AsString();
+    m_UserName      = args["U"].AsString();
+    m_UserPassword  = args["P"].AsString();
 
-    // Get the top level suite from the registry
-    CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
+    SetDatabaseParameters();
+}
 
-    // Adds the test to the list of test to run
-    CPPUNIT_NS::TextUi::TestRunner runner;
-    runner.addTest( suite );
+CTestArguments::EServerType
+CTestArguments::GetServerType(void) const
+{
+    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+        return eSybase;
+    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+        return eMsSql;
+    }
 
-    // Change the default outputter to a compiler error format outputter
-    runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),   std::cerr ) );
-    // Run the test.
-    bool wasSucessful = runner.run();
-
-    // Return error code 1 if the one of test failed.
-    return wasSucessful ? 0 : 1;
+    return eUnknown;
 }
 
 void
-CUnitTestApp::Exit(void)
+CTestArguments::SetDatabaseParameters(void)
 {
-    return ;
+    if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
+        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+        // BcpIn to it using protocol version other than "100".
+        m_DatabaseParameters["version"] = "100";
+    } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
+        // ftds forks with Sybase databases using protocol v42 only ...
+        m_DatabaseParameters["version"] = "42";
+    }
 }
+
 
 END_NCBI_SCOPE
 
-int main(int argc, const char* argv[])
+
+///////////////////////////////////////////////////////////////////////////
+test_suite*
+init_unit_test_suite( int argc, char * argv[] )
 {
-    return ncbi::CUnitTestApp().AppMain(argc, argv);
+    // Configure UTF ...
+    boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
+    boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
+
+    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE( "DBAPI Unit Test." ));
+
+    test->add(new ncbi::CDBAPITestSuite(ncbi::CTestArguments(argc, argv)));
+
+    return test.release();
 }
+
 
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/05/05 15:09:21  ssikorsk
+ * Moved from CPPUNIT to Boost.Test
+ *
  * Revision 1.16  2005/04/13 13:27:09  ssikorsk
  * Workaround for the ctlib driver in Test_StatementParameters
  *

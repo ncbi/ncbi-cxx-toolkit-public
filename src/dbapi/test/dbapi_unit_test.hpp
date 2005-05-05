@@ -37,7 +37,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
-#include <cppunit/extensions/HelperMacros.h>
+#include <boost/test/unit_test.hpp>
+
+using boost::unit_test_framework::test_suite;
+
 
 BEGIN_NCBI_SCOPE
 
@@ -60,23 +63,69 @@ private:
     ETransBehavior  m_TransBehavior;
 };
 
-class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
+///////////////////////////////////////////////////////////////////////////
+class CTestArguments
 {
-    CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
-    CPPUNIT_TEST( Test_Variant );
-    CPPUNIT_TEST( TestGetRowCount );
-    CPPUNIT_TEST( Test_StatementParameters );
-    CPPUNIT_TEST( Test_Exception_Safety );
-    CPPUNIT_TEST_SUITE_END();
+public:
+    CTestArguments(int argc, char * argv[]);
 
 public:
-    CDBAPIUnitTest();
+    typedef map<string, string> TDatabaseParameters;
+
+    enum EServerType {
+        eUnknown,   //< Server type is not known
+        eSybase,    //< Sybase server
+        eMsSql,     //< Microsoft SQL server
+        eOracle     //< ORACLE server
+    };
+
+    string GetDriverName(void) const
+    {
+        return m_DriverName;
+    }
+    
+    string GetServerName(void) const
+    {
+        return m_ServerName;
+    }
+    
+    string GetUserName(void) const
+    {
+        return m_UserName;
+    }
+    
+    string GetUserPassword(void) const
+    {
+        return m_UserPassword;
+    }
+
+    const TDatabaseParameters& GetDBParameters(void) const
+    {
+        return m_DatabaseParameters;
+    }
+    
+private:
+    EServerType GetServerType(void) const;
+    void CTestArguments::SetDatabaseParameters(void);
+
+private:
+
+    string m_DriverName;
+    string m_ServerName;
+    string m_UserName;
+    string m_UserPassword;
+    TDatabaseParameters m_DatabaseParameters;
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+class CDBAPIUnitTest
+{
+public:
+    CDBAPIUnitTest(const CTestArguments& args);
 
 public:
-    void setUp();
-    void tearDown();
-
-public:
+    void TestInit(void);
 
 public:
     // Test IStatement interface.
@@ -123,29 +172,22 @@ public:
     void Transactional_Behavior(void);
 
 private:
-    void SetDatabaseParameters(void);
+    void SetDatabaseParameters(const CTestArguments& args);
 
 private:
-    typedef map<string, string> TDatabaseParameters;
-
+    const CTestArguments m_args;
     CDriverManager& m_DM;
     IDataSource* m_DS;
     auto_ptr<IConnection> m_Conn;
-    TDatabaseParameters  m_DatabaseParameters;
 
-private:
     const string m_TableName;
 };
 
-class CUnitTestApp : public CNcbiApplication
+///////////////////////////////////////////////////////////////////////////
+struct CDBAPITestSuite : public test_suite
 {
-public:
-    virtual ~CUnitTestApp(void);
-
-private:
-    virtual void Init(void);
-    virtual int  Run(void);
-    virtual void Exit(void);
+    CDBAPITestSuite(const CTestArguments& args);
+    ~CDBAPITestSuite(void);
 };
 
 END_NCBI_SCOPE
@@ -155,6 +197,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/05/05 15:09:21  ssikorsk
+ * Moved from CPPUNIT to Boost.Test
+ *
  * Revision 1.11  2005/04/12 18:12:10  ssikorsk
  * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
  *

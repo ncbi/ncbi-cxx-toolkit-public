@@ -3,10 +3,10 @@
 APP = dbapi_unit_test
 SRC = dbapi_unit_test
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(CPPUNIT_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB  = dbapi dbapi_driver xncbi
-LIBS = $(CPPUNIT_LIBS) $(ORIG_LIBS)
+LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = DLL
 CHECK_COPY = dbapi_unit_test.sh
