@@ -424,7 +424,8 @@ protected:
 
     void PrintStatistics(CNcbiOstream & out);
 
-    void DumpQueue(CNcbiOstream & out);
+    void DumpQueue(CNcbiOstream& out, 
+                   const string& job_key = kEmptyStr);
 
     void Monitor(CNcbiOstream & out);
 
@@ -712,6 +713,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/05 16:06:17  kuznets
+ * DumpQueue() added job_key as an optional parameter
+ *
  * Revision 1.28  2005/05/04 19:07:35  kuznets
  * +DumpQueue()
  *

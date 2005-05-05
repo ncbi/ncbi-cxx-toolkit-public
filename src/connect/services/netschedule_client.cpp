@@ -962,7 +962,8 @@ string CNetScheduleClient::ServerVersion()
     return m_Tmp;
 }
 
-void CNetScheduleClient::DumpQueue(CNcbiOstream & out)
+void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
+                                   const string& job_key)
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -972,6 +973,7 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream & out)
     CSockGuard sg(*m_Sock);
 
     MakeCommandPacket(&m_Tmp, "DUMP ");
+    m_Tmp += job_key;
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
     WaitForServer();
@@ -1184,6 +1186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/05/05 16:06:33  kuznets
+ * DumpQueue() added job_key as an optional parameter
+ *
  * Revision 1.27  2005/05/04 19:08:01  kuznets
  * +DumpQueue()
  *
