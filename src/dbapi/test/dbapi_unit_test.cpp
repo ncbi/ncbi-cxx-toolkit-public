@@ -1475,8 +1475,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 {
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
-    test_case* tc = NULL;
-    test_case* tc_init = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
+    boost::unit_test::test_case* tc = NULL;
+    boost::unit_test::test_case* tc_init = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
@@ -1600,6 +1600,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/05/05 20:29:02  ucko
+ * Explicitly scope test_case under boost::unit_test::.
+ *
  * Revision 1.17  2005/05/05 15:09:21  ssikorsk
  * Moved from CPPUNIT to Boost.Test
  *
