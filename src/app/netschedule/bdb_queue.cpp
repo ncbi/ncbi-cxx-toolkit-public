@@ -1383,6 +1383,7 @@ fetch_db:
             db.time_run = 0;
             db.run_counter = --run_counter;
             db.status = (int) CNetScheduleClient::eFailed;
+            db.err_msg = "Job expired and cannot be scheduled.";
             m_LQueue.status_tracker.ChangeStatus(*job_id, 
                                          CNetScheduleClient::eFailed);
 
@@ -1418,6 +1419,7 @@ fetch_db:
                                             CNetScheduleClient::eFailed);
                 ERR_POST(Error << "Too many run attempts. job=" << *job_id);
                 db.status = (int) CNetScheduleClient::eFailed;
+                db.err_msg = "Too many run attempts.";
                 db.time_run = 0;
                 db.run_counter = --run_counter;
 
@@ -1938,6 +1940,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/05 16:52:41  kuznets
+ * Added error messages when job expires
+ *
  * Revision 1.32  2005/05/05 16:07:15  kuznets
  * Added individual job dumping
  *
