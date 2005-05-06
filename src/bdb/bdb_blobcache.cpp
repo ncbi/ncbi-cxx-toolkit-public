@@ -1878,7 +1878,8 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  /* key */,
         
         if (curr - timeout > db_time_stamp) {
 /*
-            LOG_POST("local cache item expired:" 
+            string key = m_CacheAttrDB->key;
+            LOG_POST("local cache item expired:" << key << " "
                      << db_time_stamp << " curr=" << curr 
                      << " diff=" << curr - db_time_stamp
                      << " ttl=" << ttl);
@@ -2346,6 +2347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2005/05/06 15:31:11  kuznets
+ * Minor tweak for future debugging
+ *
  * Revision 1.113  2005/04/25 15:34:46  kuznets
  * Fixed bug in setting blob prolongation limit
  *
