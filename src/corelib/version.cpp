@@ -265,6 +265,28 @@ void ParseVersionString(const string&  vstr,
 
     const char* vstr_str = vstr.c_str();
 
+    // 2.3.4 ( program)
+
+    pos = lo_vstr.find("(");
+    if (pos != string::npos) {
+        string::size_type pos2 = lo_vstr.find(")", pos);
+        if (pos2 == string::npos) { // not found
+            NCBI_THROW2(CStringException, 
+                        eFormat, "Version string format error", 0);
+        }
+        for (++pos; pos < pos2; ++pos) {
+            program_name->push_back(vstr.at(pos));
+        }
+        NStr::TruncateSpacesInPlace(*program_name);
+
+        s_ConvertVersionInfo(ver, vstr.c_str());
+        return;
+
+    }
+
+
+    // all other normal formats
+
     const char* version_pattern = "version";
 
     pos = lo_vstr.find(version_pattern);
@@ -285,7 +307,7 @@ void ParseVersionString(const string&  vstr,
                         if (ch == vstr_str) {
                             // check if it's version
                             const char* ch2 = ch + 1;
-                            for (; *ch2; ++ch2) {
+                            for (;*ch2; ++ch2) {
                                 if (!isdigit(*ch2)) {
                                     break;
                                 }
@@ -354,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/05/06 12:42:10  kuznets
+ * ParseVersionString added support of 1.2.3 (program) format
+ *
  * Revision 1.15  2005/04/26 14:42:18  ivanov
  * Fixed error introduced in previous commit
  *
