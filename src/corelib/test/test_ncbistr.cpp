@@ -1046,6 +1046,11 @@ int CTestApplication::Run(void)
     assert(pname == "My_Program21p32c");
     assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 3);
 
+    ParseVersionString("2.3.4 ( program)", &pname, &ver);
+    assert(pname == "program");
+    assert(ver.GetMajor() == 2 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 4);
+
+
     ParseVersionString("version 50.1.0", &pname, &ver);
     assert(pname.empty());
     assert(ver.GetMajor() == 50 && ver.GetMinor() == 1 && ver.GetPatchLevel() == 0);
@@ -1099,6 +1104,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.40  2005/05/06 12:42:35  kuznets
+ * New test case
+ *
  * Revision 6.39  2005/04/29 14:42:05  ivanov
  * Added test for NStr::TokenizePattern()
  *
