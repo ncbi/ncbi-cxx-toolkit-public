@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.372 2005/05/04 14:23:45 ucko Exp $
+#  $Id: configure.ac,v 1.373 2005/05/06 16:26:22 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3971,13 +3971,62 @@ else
 fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
-vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}"
+vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
 test -d "$vpath"  &&  LIBXML_PATH=$vpath
-NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
- AC_LANG_PROGRAM([#include <libxml/parser.h>],
-    [xmlDocPtr doc = xmlParseFile("foo.xml");]))
-if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml2-static.a"; then
-   LIBXML_STATIC_LIBS="-L${LIBXML_PATH}/lib -lxml2-static"
+if test "$with_libxml" != "no"; then
+   case "$with_libxml" in
+      yes | "" ) ;;
+      *        ) LIBXML_PATH=$with_libxml ;;
+   esac
+   if test -d "$LIBXML_PATH"; then
+      in_path=" in $LIBXML_PATH"
+      if test -n "$LIBXML_INCLUDE"; then
+         :
+      elif test -d "$LIBXML_PATH/include/libxml2/libxml"; then
+         LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2"
+      elif test -d "$LIBXML_PATH/include/libxml"; then
+         LIBXML_INCLUDE="-I$LIBXML_PATH/include";
+      fi
+      if test -d "$LIBXML_PATH/lib${bit64_sfx}"; then
+         LIBXML_LIBPATH_="$LIBXML_PATH/lib${bit64_sfx}"
+      elif test -d "$LIBXML_PATH/lib"; then
+         LIBXML_LIBPATH_="$LIBXML_PATH/lib"
+      fi
+      : ${LIBXML_LIBPATH="-L$LIBXML_LIBPATH_ ${CONF_f_runpath}$LIBXML_LIBPATH_"}
+      LIBXML_LIBS="$LIBXML_LIBPATH -lxml2"
+   else
+      # LIBXML_INCLUDE=""
+      LIBXML_LIBS="-lxml2"
+      in_path=
+   fi
+   AC_CACHE_CHECK([for libxml2$in_path], ncbi_cv_lib_libxml,
+      CPPFLAGS="$LIBXML_INCLUDE $orig_CPPFLAGS"
+      LIBS="$LIBXML_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+             [#include <libxml/parser.h>],
+             [xmlDocPtr doc = xmlParseFile("foo.xml");])],
+      [ncbi_cv_lib_libxml=yes], [ncbi_cv_lib_libxml=no])])
+   if test "$ncbi_cv_lib_libxml" = "no"; then
+      with_libxml="no"
+   fi
+fi
+if test "$with_libxml" = "no"; then
+   LIBXML_PATH="No_LIBXML"
+   LIBXML_INCLUDE=
+   LIBXML_LIBS=
+   WithoutPackages="$WithoutPackages LIBXML"
+else
+   WithPackages="$WithPackages LIBXML"
+   LIBXML_INCLUDE="$LIBXML_INCLUDE"
+   AC_DEFINE([HAVE_LIB]patsubst(LIBXML, [^LIB], []), 1,
+             [Define to 1 if libxml2 is available.])
+fi
+AC_SUBST(LIBXML_INCLUDE)
+AC_SUBST(LIBXML_LIBS)
+
+if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
+   LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static"
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
 fi
