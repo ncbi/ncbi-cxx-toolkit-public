@@ -1381,6 +1381,7 @@ fetch_db:
         if (timeout && (time_submit + timeout < (unsigned)curr)) {
             *job_id = 0; 
             db.time_run = 0;
+            db.time_done = curr;
             db.run_counter = --run_counter;
             db.status = (int) CNetScheduleClient::eFailed;
             db.err_msg = "Job expired and cannot be scheduled.";
@@ -1420,7 +1421,7 @@ fetch_db:
                 ERR_POST(Error << "Too many run attempts. job=" << *job_id);
                 db.status = (int) CNetScheduleClient::eFailed;
                 db.err_msg = "Too many run attempts.";
-                db.time_run = 0;
+                db.time_done = curr;
                 db.run_counter = --run_counter;
 
                 if (m_LQueue.monitor.IsMonitorActive()) {
@@ -1554,7 +1555,7 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
                            CBDB_Transaction::eNoAssociation);
 
     time_t curr = time(0);
-    unsigned time_done;
+    unsigned time_done, time_submit;
     int job_ttl;
 
     {{
@@ -1585,12 +1586,17 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
         job_ttl = queue_ttl;
     }
 
+
+    time_submit = db.time_submit;
     time_done = db.time_done;
-    if (time_done == 0) {  // job not done yet
-        return false;
-    }
-    if (time_done + job_ttl > (unsigned)curr) {
-        return false;
+    if (time_done == 0) { 
+        if (time_submit + (job_ttl * 10) > (unsigned)curr) {
+            return false;
+        }
+    } else {
+        if (time_done + job_ttl > (unsigned)curr) {
+            return false;
+        }
     }
     cur.Delete(CBDB_File::eIgnoreError);
 
@@ -1940,6 +1946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/05/06 13:07:32  kuznets
+ * Fixed bug in cleaning database
+ *
  * Revision 1.33  2005/05/05 16:52:41  kuznets
  * Added error messages when job expires
  *

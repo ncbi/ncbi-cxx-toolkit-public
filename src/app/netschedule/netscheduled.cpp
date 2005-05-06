@@ -69,7 +69,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.4.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.4.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1950,6 +1950,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/05/06 13:07:32  kuznets
+ * Fixed bug in cleaning database
+ *
  * Revision 1.37  2005/05/05 16:07:15  kuznets
  * Added individual job dumping
  *
