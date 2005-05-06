@@ -216,7 +216,8 @@ bool CGridThreadContext::IsJobCanceled()
                                       &output);
             if (status == CNetScheduleClient::eJobNotFound || 
                 status == CNetScheduleClient::eCanceled || 
-                status == CNetScheduleClient::eFailed)
+                status == CNetScheduleClient::eFailed ||
+                status == CNetScheduleClient::eDone)
                 return true;
         }
     }
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/05/06 14:43:14  didenko
+ * Minor fix
+ *
  * Revision 6.3  2005/05/06 13:08:06  didenko
  * Added check for a job cancelation in the GetShoutdownLevel method
  *
