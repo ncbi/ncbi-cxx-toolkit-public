@@ -374,8 +374,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     }
 
     /* Fills in block for gapped blast. */
-    if (program_number == eBlastTypePhiBlastn ||
-        program_number == eBlastTypePhiBlastp) {
+    if (Blast_ProgramIsPhiBlast(program_number)) {
        status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
        if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
@@ -513,8 +512,7 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
 
    /* Do nothing for PHI BLAST, because search space is calculated by 
       completely different formulas there. */
-   if (program_number == eBlastTypePhiBlastn || 
-       program_number == eBlastTypePhiBlastp)
+   if (Blast_ProgramIsPhiBlast(program_number))
        return 0;
 
    /* use overriding value from effective lengths options or the real value
@@ -725,7 +723,7 @@ Blast_SetPHIPatternInfo(EBlastProgramType program,
 {
     const Boolean kIsNa = (program == eBlastTypePhiBlastn);
 
-    ASSERT(program == eBlastTypePhiBlastn || program  == eBlastTypePhiBlastp);
+    ASSERT(Blast_ProgramIsPhiBlast(program));
     ASSERT(query_info && pattern_blk);
 
     query_info->pattern_info = SPHIQueryInfoNew();

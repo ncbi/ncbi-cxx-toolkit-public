@@ -170,8 +170,7 @@ s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
 
    /* For RPS BLAST saving procedure is different, because HSPs from different
       subjects are bundled in one HSP list */
-   if (stream_data->program == eBlastTypeRpsBlast || 
-       stream_data->program == eBlastTypeRpsTblastn) {
+   if (Blast_ProgramIsRpsBlast(stream_data->program)) {
       Blast_HSPResultsSaveRPSHSPList(stream_data->program, 
          stream_data->results, *hsp_list, stream_data->hit_options);
    } else {

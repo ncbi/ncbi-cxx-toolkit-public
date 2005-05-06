@@ -203,7 +203,7 @@ s_BlastHSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
    BlastSeg tmp;
 
    /* If this is not an RPS BLAST search, do not do anything. */
-   if (program != eBlastTypeRpsBlast && program != eBlastTypeRpsTblastn)
+   if ( !Blast_ProgramIsRpsBlast(program))
       return;
 
    hsp = hsplist->hsp_array;
@@ -269,9 +269,8 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
        * computations. 
        */
       double scale_factor = 
-         (program_number == eBlastTypeRpsBlast || 
-          program_number == eBlastTypeRpsTblastn) ? 
-         score_params->scale_factor : 1.0;
+         (Blast_ProgramIsRpsBlast(program_number) ?
+         score_params->scale_factor : 1.0);
       Blast_HSPListGetEvalues(query_info, hsp_list, kGapped, sbp, 0,
                               scale_factor);
    }
@@ -360,8 +359,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       subject_length = subject_blk->length;
    }
 
-   if (program_number == eBlastTypeRpsBlast || 
-       program_number == eBlastTypeRpsTblastn) {
+   if (Blast_ProgramIsRpsBlast(program_number)) {
       /* Create a local BlastQueryInfo structure for this subject sequence
 	 that has been switched with the query. */
       query_info = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
@@ -611,8 +609,7 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
    Int4 q_start, s_start;
    SPHIQueryInfo* pattern_info = NULL;
    
-   if (program_number != eBlastTypePhiBlastn &&
-       program_number != eBlastTypePhiBlastp)
+   if ( !Blast_ProgramIsPhiBlast(program_number))
        return -1;
    
    ASSERT(hsp_list && query_blk && subject_blk && gap_align && sbp &&
@@ -1013,8 +1010,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
    results = Blast_HSPResultsNew(query_info->num_queries);
 
-   if (program_number == eBlastTypeRpsBlast ||
-       program_number == eBlastTypeRpsTblastn) {
+   if (Blast_ProgramIsRpsBlast(program_number)) {
        status = 
            s_RPSComputeTraceback(program_number, hsp_stream, seq_src, query, 
                                  query_info, gap_align, score_params, ext_params,
@@ -1035,8 +1031,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       Boolean perform_traceback = 
          (score_params->options->gapped_calculation && 
           (ext_params->options->ePrelimGapExt != eGreedyWithTracebackExt));
-      const Boolean kPhiBlast = (program_number == eBlastTypePhiBlastn ||
-                                 program_number == eBlastTypePhiBlastp);
+      const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
 
       memset((void*) &seq_arg, 0, sizeof(seq_arg));
 

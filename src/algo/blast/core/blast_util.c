@@ -657,8 +657,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
               prog_number == eBlastTypeRpsBlast ||
               prog_number == eBlastTypePsiBlast ||
               prog_number == eBlastTypeTblastn  ||
-              prog_number == eBlastTypePhiBlastn||
-              prog_number == eBlastTypePhiBlastp) {
+              Blast_ProgramIsPhiBlast(prog_number)) {
       /* Query and subject are protein, no frame. */
       frame = 0;
    } else if (prog_number == eBlastTypeBlastx  ||
@@ -1321,3 +1320,4 @@ char* BLAST_StrToUpper(const char* string)
     }
     return retval;
 }
+

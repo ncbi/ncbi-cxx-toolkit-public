@@ -59,6 +59,14 @@ typedef enum {
     eBlastTypeUndefined
 } EBlastProgramType;
 
+/** Returns true if program is PHI-BLAST (i.e.: involves a pattern) */
+#define Blast_ProgramIsPhiBlast(p) \
+(p == eBlastTypePhiBlastn || p == eBlastTypePhiBlastp)
+
+/** Returns true if program is RPS-BLAST (i.e.: involves a PSSM as subject) */
+#define Blast_ProgramIsRpsBlast(p) \
+(p == eBlastTypeRpsBlast || p == eBlastTypeRpsTblastn)
+
 extern const int kDustLevel;  /**< Level parameter used by dust. */
 extern const int kDustWindow; /**< Window parameter used by dust. */
 extern const int kDustLinker; /**< Parameter used by dust to link together close low-complexity segments. */

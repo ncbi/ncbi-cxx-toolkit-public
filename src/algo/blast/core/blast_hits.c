@@ -1778,7 +1778,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
 
    /* Do nothing for PHI BLAST, because HSPs corresponding to different pattern
       occurrences may have common end points, but should all be kept. */
-   if (program == eBlastTypePhiBlastp || program == eBlastTypePhiBlastn)
+   if (Blast_ProgramIsPhiBlast(program))
        return hsp_list->hspcnt;
 
    hsp_array = hsp_list->hsp_array;

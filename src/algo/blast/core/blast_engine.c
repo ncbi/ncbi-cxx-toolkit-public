@@ -298,8 +298,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    }
 
    /* Substitute query info by concatenated database info for RPS BLAST search */
-   if (program_number == eBlastTypeRpsBlast || 
-       program_number == eBlastTypeRpsTblastn) {
+   if (Blast_ProgramIsRpsBlast(program_number)) {
       BlastRPSLookupTable* lut = (BlastRPSLookupTable*) lookup->lut;
       query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
       query_info->num_queries = lut->num_profiles;
@@ -423,10 +422,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       status = BLAST_LinkHsps(program_number, hsp_list, query_info,
                   subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
-   } else if (program_number != eBlastTypePhiBlastn &&
-              program_number != eBlastTypePhiBlastp &&
-              program_number != eBlastTypeRpsBlast &&
-          program_number != eBlastTypeRpsTblastn) {
+   } else if (!Blast_ProgramIsPhiBlast(program_number) &&
+              !Blast_ProgramIsRpsBlast(program_number)) {
        /* Calculate e-values for all HSPs. Skip this step
           for PHI and RPS BLAST, since calculating the E values 
           requires precomputation that has not been done yet */
@@ -614,8 +611,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    BLAST_SequenceBlk* one_query = NULL;
    Int4 index;
 
-   if (program_number != eBlastTypeRpsBlast &&
-       program_number != eBlastTypeRpsTblastn)
+   if ( !Blast_ProgramIsRpsBlast(program_number))
       return -1;
 
    /* modify scoring and gap alignment structures for
@@ -740,8 +736,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    /* For RPS BLAST, there is no loop over subject sequences, so the preliminary
       search engine is done in a separate function. */
-   if (program_number == eBlastTypeRpsBlast || 
-       program_number == eBlastTypeRpsTblastn) {
+   if (Blast_ProgramIsRpsBlast(program_number)) {
       status =         
          s_RPSPreliminarySearchEngine(program_number, query, query_info, 
             seq_src, score_params, lookup_wrap, aux_struct, word_params, 
@@ -957,8 +952,7 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    /* Prohibit any subsequent writing to the HSP stream. */
    BlastHSPStreamClose(hsp_stream);
 
-   if (program_number == eBlastTypePhiBlastn || 
-       program_number == eBlastTypePhiBlastp) {
+   if (Blast_ProgramIsPhiBlast(program_number)) {
        PHIPatternSpaceCalc(query_info, diagnostics);
        pattern_blk = ((SPHIPatternSearchBlk*) lookup_wrap->lut);
    } 

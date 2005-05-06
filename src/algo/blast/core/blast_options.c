@@ -331,8 +331,8 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    /* For some blastn variants (i.e., megablast), and for PHI BLAST there is no
     * ungapped extension. */
    if (program_number != eBlastTypeBlastn  &&
-       program_number != eBlastTypePhiBlastn  &&
-       program_number != eBlastTypePhiBlastp && options->x_dropoff <= 0.0)
+       (!Blast_ProgramIsPhiBlast(program_number)) &&
+       options->x_dropoff <= 0.0)
    {
       Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode,
                             "x_dropoff must be greater than zero");
@@ -811,8 +811,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (use_pssm)
       options->use_pssm = use_pssm;
-   if (program_number == eBlastTypeRpsBlast ||
-       program_number == eBlastTypeRpsTblastn)
+   if (Blast_ProgramIsRpsBlast(program_number))
       options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
       options->word_size = word_size;
@@ -855,8 +854,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 {
    Int4 code=2;
    Int4 subcode=1;
-   const Boolean kPhiBlast = (program_number == eBlastTypePhiBlastn || 
-                              program_number == eBlastTypePhiBlastp);
+   const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
 
 	if (options == NULL)
 		return 1;
@@ -872,9 +870,8 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         return 0;
 
 	if (program_number != eBlastTypeBlastn && 
-            program_number != eBlastTypeRpsBlast &&
-            program_number != eBlastTypeRpsTblastn &&
-            options->threshold <= 0)
+        (!Blast_ProgramIsRpsBlast(program_number)) &&
+        options->threshold <= 0)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Non-zero threshold required");
@@ -883,13 +880,12 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 
 	if (options->word_size <= 0)
 	{
-                if (program_number != eBlastTypeRpsBlast &&
-                    program_number != eBlastTypeRpsTblastn) {
-        		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 
-                                           code, subcode, 
-                                         "Word-size must be greater than zero");
-		        return (Int2) code;
-                }
+        if ( !Blast_ProgramIsRpsBlast(program_number)) {
+            Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 
+                                       code, subcode, 
+                                     "Word-size must be greater than zero");
+            return (Int2) code;
+        }
 	} else if (program_number == eBlastTypeBlastn && options->word_size < 4)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
@@ -1194,6 +1190,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.165  2005/05/06 14:27:26  camacho
+ * + Blast_ProgramIs{Phi,Rps}Blast
+ *
  * Revision 1.164  2005/05/02 19:38:47  camacho
  * Introduced constant for IMPALA-style PSSM scaling
  *
