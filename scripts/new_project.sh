@@ -7,6 +7,7 @@ def_builddir="$NCBI/c++/Debug/build"
 
 script=`basename $0`
 timestamp=`date`
+ws='[ 	]' # The brackets contain a space and a tab.
 
 
 #################################
@@ -152,6 +153,9 @@ CreateMakefile_App()
   proj_name="$2"
   proj_subdir="$3"
   proj_subtype="$4"
+  app_name="$5"
+
+  base=$src/app/sample/${proj_subdir}/Makefile.${proj_subtype}_sample.app
 
   cat > "$makefile_name" <<EOF
 #
@@ -175,8 +179,8 @@ LOCAL_CPPFLAGS = -I.
 
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
-APP = $proj_name
-SRC = $proj_name
+APP = $app_name
+SRC = `sed -ne "s/$old_proj_name/$proj_name/; s/^$ws*SRC$ws*=$ws*//p" $base`
 # OBJ =
 
 # PRE_LIBS = \$(NCBI_C_LIBPATH) .....
@@ -190,8 +194,7 @@ EOF
       "### END COPIED SETTINGS"  ) break        ;;
       *)                           test $copying = true && echo "$line" ;;
     esac
-  done < $src/app/sample/${proj_subdir}/Makefile.${proj_subtype}_sample.app \
-      >> "$makefile_name"
+  done < $base >> "$makefile_name"
 
   cat >> "$makefile_name" <<EOF
 
@@ -312,12 +315,13 @@ if test -f $makefile_name ; then
   esac
 fi
 
+old_proj_name=${proj_subtype}_sample
 
 case "$proj_type" in
   lib )
     CreateMakefile_Lib $makefile_name $proj_name $proj_subtype ;;
   app )
-    CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype ;;
+    CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype $proj_name ;;
   * )
     Usage "Invalid project type:  \"$proj_type\"" ;;
 esac
@@ -333,8 +337,6 @@ fi
 
 old_class_name=CSample`Capitalize ${proj_subtype}`Application
 new_class_name=C`Capitalize ${proj_name}`Application
-
-old_proj_name=${proj_subtype}_sample
 
 old_dir=${src}/app/sample/${proj_subdir}
 if test -d "${proj_name}"; then
@@ -369,14 +371,17 @@ CopySources()
     case $input in
         */Makefile.*_sample.app)
             this_proj=`basename $input | sed -e 's/Makefile\.\(.*\)_sample\.app$/\1/'`
+            this_proj_name=`echo ${this_proj}_sample | sed -e "s/${old_proj_name}/${proj_name}/g"` 
             output=`echo $output | sed -e 's/\.app$/_app/'`
-            CreateMakefile_App $output $proj_name $proj_subdir$1 $this_proj
+            CreateMakefile_App $output $proj_name $proj_subdir$1 $this_proj \
+                $this_proj_name
             ;;
         *)
             sed -e "s/${old_proj_name}/${proj_name}/g" \
                 -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
             ;;
     esac
+    test -x $input  &&  chmod +x $output
     
     echo "Created a model source file \"$output\"."
   done
