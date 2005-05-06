@@ -2761,6 +2761,87 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
     return ordered_org_name;
 }
 
+static void s_AddDeflineFromOrganismLine 
+(char             *defline, 
+ int              line_num,
+ int              defline_offset,
+ SAlignRawFilePtr afrp)
+{
+    TLineInfoPtr lip;
+    int          org_num, defline_num, new_len;
+    char         *empty_defline, *new_defline;
+    
+    if (afrp == NULL || defline == NULL) {
+        return;
+    }
+    
+    /* make sure that we are adding the definition line to the correct position
+     * in the list - should match last organism name */
+    lip = afrp->organisms;
+    org_num = 0;
+    while (lip != NULL)
+    {
+        org_num++;
+        lip = lip->next;
+    }
+    
+    lip = afrp->deflines;
+    defline_num = 0;
+    while (lip != NULL  &&  defline_num < org_num) {
+        lip = lip->next;
+        defline_num ++;
+    }
+    
+    if (defline_num == org_num) {
+        /* if previous defline is empty, replace with new defline */
+        if (strlen (lip->data) == 0)
+        {
+            free (lip->data);
+            lip->data = defline;
+        }
+        else
+        {
+            /* append defline to the end of the existing entry */
+            new_len = strlen (lip->data) + strlen (defline) + 2;
+            new_defline = (char *) malloc (new_len * sizeof (char));
+            if (new_defline != NULL)
+            {
+                strcpy (new_defline, lip->data);
+                strcat (new_defline, " ");
+                strcat (new_defline, defline);
+                free (lip->data);
+                lip->data = new_defline;
+                free (defline);
+                defline = NULL;
+            }
+        }
+        /* use new line numbers */
+        lip->line_num = line_num;
+        lip->line_offset = defline_offset;
+        lip->delete_me = eFalse;        
+    }
+    else
+    {
+        /* add empty deflines to get to the correct position */
+        while (defline_num < org_num - 1)
+        {
+            empty_defline = (char *) malloc (sizeof (char));
+            if (empty_defline != NULL)
+            {
+                *empty_defline = 0;
+                afrp->deflines = s_AddLineInfo (afrp->deflines, 
+                                                empty_defline, 0,
+                                                0);
+                afrp->num_deflines ++;
+            }
+            defline_num++;
+        }
+        /* now add new defline in correct position */
+        afrp->deflines = s_AddLineInfo (afrp->deflines, defline, 
+                                        line_num, defline_offset);
+        afrp->num_deflines ++;
+    }
+}
 
 /* This function is used to read any organism names that may appear in
  * string, including any modifiers that may appear after the organism name.
@@ -2802,9 +2883,7 @@ static void s_ReadOrgNamesFromText
                 defline_offset = clp->end - string + 1;
             }
         }
-        afrp->deflines = s_AddLineInfo (afrp->deflines, defline, line_num,
-                                      defline_offset);
-        afrp->num_deflines ++;
+        s_AddDeflineFromOrganismLine (defline, line_num, defline_offset, afrp);
                                       
         comment_end = clp->end;
         s_CommentLocFree (clp);
@@ -5774,6 +5853,11 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/06 14:24:01  bollin
+ * when adding a definition line that follows an organism comment, make sure
+ * that the new definition line has the same list position as the organism
+ * name
+ *
  * Revision 1.18  2005/05/04 18:54:42  bollin
  * removed Linux warnings
  *
