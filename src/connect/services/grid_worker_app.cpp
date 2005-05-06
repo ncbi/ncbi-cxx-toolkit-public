@@ -285,7 +285,7 @@ int CGridWorkerApp::Run(void)
         reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
-    const string& dbg_mode = reg.GetString("gw_debug", "mode", "");
+    string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
     if (NStr::CompareNocase(dbg_mode, "gather")==0) {
         debug_mode = CGridDebugContext::eGDC_Gather;
     } else if (NStr::CompareNocase(dbg_mode, "execute")==0) {
@@ -302,7 +302,7 @@ int CGridWorkerApp::Run(void)
                 reg.GetInt("gw_debug","gather_nrequests",1,0,IRegistry::eReturn);
         } else if (debug_mode == CGridDebugContext::eGDC_Execute) {
             string files = 
-                reg.GetString("gw_debug", "execute_requests", "");
+                reg.GetString("gw_debug", "execute_requests", kEmptyStr);
             max_total_jobs = 0;
             debug_context.SetExecuteList(files);
         }
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/06 14:58:41  didenko
+ * Fixed Uninitialized varialble bug
+ *
  * Revision 1.17  2005/05/05 15:57:35  didenko
  * Minor fixes
  *
