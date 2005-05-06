@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.373 2005/05/06 16:26:22 ucko Exp $
+#  $Id: configure.ac,v 1.374 2005/05/06 18:44:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3983,7 +3983,7 @@ if test "$with_libxml" != "no"; then
       if test -n "$LIBXML_INCLUDE"; then
          :
       elif test -d "$LIBXML_PATH/include/libxml2/libxml"; then
-         LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2"
+         LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2 -I$LIBXML_PATH/include"
       elif test -d "$LIBXML_PATH/include/libxml"; then
          LIBXML_INCLUDE="-I$LIBXML_PATH/include";
       fi

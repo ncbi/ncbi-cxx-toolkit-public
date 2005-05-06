@@ -21714,7 +21714,7 @@ if test "$with_libxml" != "no"; then
       if test -n "$LIBXML_INCLUDE"; then
          :
       elif test -d "$LIBXML_PATH/include/libxml2/libxml"; then
-         LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2"
+         LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2 -I$LIBXML_PATH/include"
       elif test -d "$LIBXML_PATH/include/libxml"; then
          LIBXML_INCLUDE="-I$LIBXML_PATH/include";
       fi
