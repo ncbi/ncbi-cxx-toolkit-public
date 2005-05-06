@@ -632,12 +632,12 @@ public:
                                 != CVersionInfo::eNonCompatible) {
 
             CConfig conf(params);
-            const string& client_name = 
+            string client_name = 
                 conf.GetString(m_DriverName, 
                                "client_name", CConfig::eErr_Throw, "noname");
-            const string& service = 
+            string service = 
                 conf.GetString(m_DriverName, 
-                               "service", CConfig::eErr_NoThrow, "");
+                               "service", CConfig::eErr_NoThrow, kEmptyStr);
             if (!service.empty()) {
                 unsigned int rebalance_time = conf.GetInt(m_DriverName, 
                                                 "rebalance_time",
@@ -653,9 +653,9 @@ public:
                                              rebalance_requests,
                                              rebalance_bytes );
             } else { // non lb client
-                const string& host = 
+                string host = 
                     conf.GetString(m_DriverName, 
-                                  "host", CConfig::eErr_Throw, "");
+                                  "host", CConfig::eErr_Throw, kEmptyStr);
                 unsigned int port = conf.GetInt(m_DriverName,
                                                "port",
                                                CConfig::eErr_Throw, 9001);
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/05/06 15:13:55  didenko
+ * Fixed possible uninitialized variable bugs
+ *
  * Revision 1.40  2005/04/19 17:42:07  kuznets
  * Fixed net protocol bug
  *

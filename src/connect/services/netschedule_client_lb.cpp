@@ -541,13 +541,13 @@ public:
                                 != CVersionInfo::eNonCompatible) {
 
             CConfig conf(params);
-            const string& client_name = 
+            string client_name = 
                 conf.GetString(m_DriverName, 
                                "client_name", CConfig::eErr_Throw, "noname");
-            const string& queue_name = 
+            string queue_name = 
                 conf.GetString(m_DriverName, 
                                "queue_name", CConfig::eErr_Throw, "noname");
-            const string& service = 
+            string service = 
                 conf.GetString(m_DriverName, 
                                "service", CConfig::eErr_NoThrow, "");
             if (!service.empty()) {
@@ -570,9 +570,9 @@ public:
                     lb_drv->SetMaxRetry(max_retry);
                 }
 
-                const string& services_list = conf.GetString(m_DriverName,
-                                                "sevices_lis",
-                                                 CConfig::eErr_NoThrow, "");
+                string services_list = conf.GetString(m_DriverName,
+                                                "sevices_list",
+                                                 CConfig::eErr_NoThrow, kEmptyStr);
                 vector<string> services;
                 NStr::Tokenize(services_list, ",;", services);
                 for(vector<string>::const_iterator it = services.begin();
@@ -586,9 +586,9 @@ public:
                     }
                 }
             } else { // non lb client
-                const string& host = 
+                string host = 
                     conf.GetString(m_DriverName, 
-                                  "host", CConfig::eErr_Throw, "");
+                                  "host", CConfig::eErr_Throw, kEmptyStr);
                 unsigned int port = conf.GetInt(m_DriverName,
                                                "port",
                                                CConfig::eErr_Throw, 9100);
@@ -627,6 +627,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/06 15:13:55  didenko
+ * Fixed possible uninitialized variable bugs
+ *
  * Revision 1.9  2005/04/20 15:42:29  kuznets
  * Added progress message to SubmitJob()
  *
