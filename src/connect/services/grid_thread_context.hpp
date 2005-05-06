@@ -62,6 +62,7 @@ public:
     void PutResult(int ret_code);
     void ReturnJob();
     void PutFailure(const string& msg);
+    bool IsJobCanceled();
    
     IWorkerNodeJob* CreateJob();
 private:
@@ -81,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/05/06 13:08:06  didenko
+ * Added check for a job cancelation in the GetShoutdownLevel method
+ *
  * Revision 6.1  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *

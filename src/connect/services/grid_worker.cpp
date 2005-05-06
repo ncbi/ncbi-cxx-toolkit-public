@@ -119,6 +119,9 @@ void CWorkerNodeJobContext::SetJobRunTimeout(unsigned time_to_run)
 CNetScheduleClient::EShutdownLevel 
 CWorkerNodeJobContext::GetShutdownLevel(void) const
 {
+    _ASSERT(m_ThreadContext);
+    if (m_ThreadContext->IsJobCanceled())
+        return CNetScheduleClient::eShutdownImmidiate;
     return m_WorkerNode.GetShutdownLevel();
 }
 
@@ -455,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/06 13:08:06  didenko
+ * Added check for a job cancelation in the GetShoutdownLevel method
+ *
  * Revision 1.17  2005/05/05 15:57:35  didenko
  * Minor fixes
  *

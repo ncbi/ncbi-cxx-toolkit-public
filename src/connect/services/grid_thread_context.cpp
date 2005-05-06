@@ -200,6 +200,28 @@ void CGridThreadContext::PutFailure(const string& msg)
         }
     }
 }
+bool CGridThreadContext::IsJobCanceled()
+{
+    _ASSERT(m_JobContext);
+    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (!debug_context || 
+        debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
+
+        if (m_Reporter.get()) {
+            int ret_code;
+            string output;
+            CNetScheduleClient::EJobStatus status = 
+                m_Reporter->GetStatus(m_JobContext->GetJobKey(), 
+                                      &ret_code, 
+                                      &output);
+            if (status == CNetScheduleClient::eJobNotFound || 
+                status == CNetScheduleClient::eCanceled || 
+                status == CNetScheduleClient::eFailed)
+                return true;
+        }
+    }
+    return false;
+}
 
 /// @internal
 bool CGridThreadContext::IsJobCommitted() const
@@ -220,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/05/06 13:08:06  didenko
+ * Added check for a job cancelation in the GetShoutdownLevel method
+ *
  * Revision 6.2  2005/05/05 15:57:35  didenko
  * Minor fixes
  *
