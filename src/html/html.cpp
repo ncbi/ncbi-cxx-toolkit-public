@@ -267,14 +267,14 @@ void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
 
 void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
                                 EHTML_EH_Attribute    event,
-                                bool                  cancel_default_event)
+                                TPopupMenuFlags       flags)
 {
     if ( !menu ) {
         return;
     }
     const string kStopEvent = " return false;";
-    string show;
-    string hide;
+    bool cancel_default_event = ((flags & fPM_EnableDefaultEvent) == 0);
+    string show, hide;
 
     switch (menu->GetType()) {
     case CHTMLPopupMenu::eSmith: 
@@ -2428,6 +2428,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2005/05/09 18:58:11  ivanov
+ * CHTMLNode::AttachPopupMenu() -- changed type of 3-rd parameter
+ * from 'bool'to TPopupMenuFlags.
+ *
  * Revision 1.116  2005/05/09 11:28:39  ivanov
  * CHTMLNode::AttachPopupMenu: Added parameter for canceling default
  * event processing (default is true).

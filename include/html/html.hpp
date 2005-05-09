@@ -227,6 +227,13 @@ public:
     // Set tag event handler.
     void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
 
+    /// Popup menu flags.
+    enum EPopupMenuFlags {
+        fPM_EnableDefaultEvent = (1 << 0),
+        fPM_Default            = 0
+    };
+    typedef int TPopupMenuFlags;   ///< Binary OR of "EPopupMenuFlags"
+
     // Attach the specified popup menu to HTML node.
     // Popup menu will be shown when the "event" occurs.
     // NOTES:
@@ -235,7 +242,7 @@ public:
     //   3) For eKurdinSide menu type the event parameters are not used.
     void AttachPopupMenu(const CHTMLPopupMenu*  menu,
                          EHTML_EH_Attribute     event = eHTML_EH_MouseOver,
-                         bool                   cancel_default_event = true);
+                         TPopupMenuFlags        flags = fPM_Default);
 };
 
 
@@ -1611,6 +1618,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2005/05/09 18:58:01  ivanov
+ * CHTMLNode::AttachPopupMenu() -- changed type of 3-rd parameter
+ * from 'bool'to TPopupMenuFlags.
+ *
  * Revision 1.85  2005/05/09 11:28:47  ivanov
  * CHTMLNode::AttachPopupMenu: Added parameter for canceling default
  * event processing (default is true).
