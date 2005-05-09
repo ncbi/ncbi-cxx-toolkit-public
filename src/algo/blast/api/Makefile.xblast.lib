@@ -4,7 +4,7 @@ include $(srcdir)/../core/Makefile.blast.lib
 
 ASN_DEP = seq xnetblast scoremat blastdb
 
-SRC_CXX = blast_aux \
+SRC_CXX = remote_search uniform_test blast_aux \
 blast_options_cxx \
 blast_setup_cxx \
 blast_seqalign \

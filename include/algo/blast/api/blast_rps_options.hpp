@@ -104,6 +104,12 @@ public:
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
 
 protected:
+    /// Set the program and service name for remote blast.
+    virtual void SetRemoteProgramAndService_Blast3()
+    {
+        m_Opts->SetRemoteProgramAndService_Blast3("blastp", "rpsblast");
+    }
+    
     /// Overrides LookupTableDefaults for RPS-BLAST options
     virtual void SetLookupTableDefaults();
     /// Overrides QueryOptionDefaults for RPS-BLAST options
@@ -138,6 +144,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.11  2005/03/31 13:43:49  camacho
  * BLAST options API clean-up
  *

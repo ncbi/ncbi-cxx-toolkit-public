@@ -62,18 +62,17 @@ CBlastOptionsHandle::CBlastOptionsHandle(EAPILocality locality)
 void
 CBlastOptionsHandle::SetDefaults()
 {
-    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
-        return;
+    if (m_Opts->GetLocality() != CBlastOptions::eRemote) {
+        SetLookupTableDefaults();
+        SetQueryOptionDefaults();
+        SetInitialWordOptionsDefaults();
+        SetGappedExtensionDefaults();
+        SetScoringOptionsDefaults();
+        SetHitSavingOptionsDefaults();
+        SetEffectiveLengthsOptionsDefaults();
+        SetSubjectSequenceOptionsDefaults();
     }
-    
-    SetLookupTableDefaults();
-    SetQueryOptionDefaults();
-    SetInitialWordOptionsDefaults();
-    SetGappedExtensionDefaults();
-    SetScoringOptionsDefaults();
-    SetHitSavingOptionsDefaults();
-    SetEffectiveLengthsOptionsDefaults();
-    SetSubjectSequenceOptionsDefaults();
+    SetRemoteProgramAndService_Blast3();
 }
 
 bool
@@ -156,6 +155,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.9  2005/03/31 13:45:35  camacho
  * BLAST options API clean-up
  *

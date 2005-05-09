@@ -607,16 +607,24 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
     }
 }
 
-void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
-                          const char          * program,
-                          const char          * service)
+void CRemoteBlast::x_Init(CBlastOptionsHandle * opts)
 {
-    if (! (opts_handle && program && service)) {
+    string p;
+    string s;
+    opts->GetOptions().GetRemoteProgramAndService_Blast3(p, s);
+    x_Init(opts, p, s);
+}
+
+void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
+                          const string        & program,
+                          const string        & service)
+{
+    if ((! opts_handle) || program.empty() || service.empty()) {
         if (! opts_handle) {
             NCBI_THROW(CBlastException, eBadParameter,
                        "NULL argument specified: options handle");
         }
-        if (! program) {
+        if (program.empty()) {
             NCBI_THROW(CBlastException, eBadParameter,
                        "NULL argument specified: program");
         }
@@ -891,6 +899,11 @@ CRemoteBlast::CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
     x_Init(algo_opts, "blastp", "psi");
 }
 
+CRemoteBlast::CRemoteBlast(CBlastOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts);
+}
+
 CRemoteBlast::~CRemoteBlast()
 {
 }
@@ -1106,6 +1119,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/05/09 20:08:48  bealer
+* - Add program and service strings to CBlastOptions for remote blast.
+* - New CBlastOptionsHandle constructor for CRemoteBlast.
+* - Prohibit copy construction/assignment for CRemoteBlast.
+* - Code in each BlastOptionsHandle derived class to set program+service.
+*
 * Revision 1.22  2005/04/11 15:21:48  bealer
 * - Add GetSeqAlignSets() functionality to CRemoteBlast.
 *

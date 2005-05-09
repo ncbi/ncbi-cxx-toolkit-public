@@ -92,8 +92,14 @@ public:
     void SetQueryGeneticCode(int gc) {
         m_Opts->SetQueryGeneticCode(gc);
     }
-
+    
 protected:
+    /// Set the program and service name for remote blast.
+    virtual void SetRemoteProgramAndService_Blast3()
+    {
+        m_Opts->SetRemoteProgramAndService_Blast3("tblastx", "plain");
+    }
+    
     /// Overrides LookupTableDefaults for tblastx options
     void SetLookupTableDefaults();
     /// Overrides QueryOptionDefaults for tblastx options
@@ -124,6 +130,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.8  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *

@@ -94,6 +94,9 @@ public:
     /// Create a PSI-Blast search (only protein is supported).
     CRemoteBlast(CPSIBlastOptionsHandle * algo_opts);
     
+    /// Create a search using any kind of options handle.
+    CRemoteBlast(CBlastOptionsHandle * any_opts);
+    
     /// Destruct the search object.
     ~CRemoteBlast();
     
@@ -339,8 +342,11 @@ private:
     
     /// Called by new search constructors: initialize a new search.
     void x_Init(CBlastOptionsHandle * algo_opts,
-                const char          * program,
-                const char          * service);
+                const string        & program,
+                const string        & service);
+    
+    /// Called by new search constructors: initialize a new search.
+    void x_Init(CBlastOptionsHandle * algo_opts);
     
     /// Called by RID constructor: set up monitoring of existing search.
     void x_Init(const string & RID);
@@ -413,7 +419,14 @@ private:
                        string                  & errors,    // out
                        string                  & warnings); // out
 
-
+    
+    /// Prohibit copy construction.
+    CRemoteBlast(const CRemoteBlast &);
+    
+    /// Prohibit assignment.
+    CRemoteBlast & operator=(const CRemoteBlast &);
+    
+    
     // Data
     
     /// Options for new search.
@@ -457,6 +470,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.18  2005/05/09 19:58:45  camacho
  * Add notice to deprecated method
  *

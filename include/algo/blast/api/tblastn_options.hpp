@@ -90,6 +90,12 @@ public:
     }
 
 protected:
+    /// Set the program and service name for remote blast.
+    virtual void SetRemoteProgramAndService_Blast3()
+    {
+        m_Opts->SetRemoteProgramAndService_Blast3("tblastn", "plain");
+    }
+    
     /// Sets LookupTableDefaults for tblastn options
     void SetLookupTableDefaults();
     /// Sets ScoringOptionsDefaults for tblastn options
@@ -116,6 +122,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.9  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *

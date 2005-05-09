@@ -62,6 +62,7 @@ CBlastNucleotideOptionsHandle::SetDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
+    m_Opts->SetRemoteProgramAndService_Blast3("blastn", "plain");
     m_FactorySetting = eBlastn;
     
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
@@ -82,6 +83,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {
+    m_Opts->SetRemoteProgramAndService_Blast3("blastn", "megablast");
     m_FactorySetting = eMegablast;
     
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
@@ -235,6 +237,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.21  2005/03/02 16:45:36  camacho
  * Remove use_real_db_size
  *

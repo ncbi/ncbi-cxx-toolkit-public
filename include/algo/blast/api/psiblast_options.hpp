@@ -72,6 +72,11 @@ public:
     void SetPseudoCount(int p) { m_Opts->SetPseudoCount(p); }
     
 protected:
+    /// Set the program and service name for remote blast.
+    virtual void SetRemoteProgramAndService_Blast3()
+    {
+        m_Opts->SetRemoteProgramAndService_Blast3("blastp", "psi");
+    }
     
     /// Overrides LookupTableDefaults for PSI-BLAST
     void SetLookupTableDefaults();
@@ -96,6 +101,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/09 20:08:48  bealer
+ * - Add program and service strings to CBlastOptions for remote blast.
+ * - New CBlastOptionsHandle constructor for CRemoteBlast.
+ * - Prohibit copy construction/assignment for CRemoteBlast.
+ * - Code in each BlastOptionsHandle derived class to set program+service.
+ *
  * Revision 1.5  2005/03/10 13:17:27  madden
  * Changed type from short to int for [GS]etPseudoCount
  *

@@ -320,13 +320,27 @@ public:
     
     void DoneDefaults() const;
     
-    // the "new paradigm"
-    /// @todo Kevin, please explain the "new paradigm"
+    /// This returns a list of parameters for remote searches.
     typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
     TBlast4Opts * GetBlast4AlgoOpts();
     
     bool operator==(const CBlastOptions& rhs) const;
     bool operator!=(const CBlastOptions& rhs) const;
+    
+    /// Set the program and service name for remote blast.
+    void SetRemoteProgramAndService_Blast3(const string & p, const string & s)
+    {
+        m_ProgramName = p;
+        m_ServiceName = s;
+    }
+    
+    /// Get the program and service name for remote blast.
+    virtual void GetRemoteProgramAndService_Blast3(string & p, string & s) const
+    {
+        _ASSERT(m_Remote);
+        p = m_ProgramName;
+        s = m_ServiceName;
+    }
     
 private:
     /// Prohibit copy c-tor 
@@ -338,6 +352,12 @@ private:
     
     CBlastOptionsLocal  * m_Local;
     CBlastOptionsRemote * m_Remote;
+    
+    /// Program Name for Blast3
+    string m_ProgramName;
+    
+    /// Service Name for Blast3
+    string m_ServiceName;
     
     void x_Throwx(const string& msg) const;
     /// @internal Returns QuerySetUpOptions for eLocal objects, NULL for
@@ -561,6 +581,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.98  2005/05/09 20:08:48  bealer
+* - Add program and service strings to CBlastOptions for remote blast.
+* - New CBlastOptionsHandle constructor for CRemoteBlast.
+* - Prohibit copy construction/assignment for CRemoteBlast.
+* - Code in each BlastOptionsHandle derived class to set program+service.
+*
 * Revision 1.97  2005/04/28 19:37:49  camacho
 * Added design docs and cookbook
 *
