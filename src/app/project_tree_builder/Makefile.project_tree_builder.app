@@ -25,7 +25,8 @@ SRC = file_contents \
       proj_projects \
       msvc_dlls_info \
       msvc_prj_files_collector \
-      configurable_file
+      configurable_file \
+      ptb_gui
 
 DATATOOL_SRC = msvc71_project
 
