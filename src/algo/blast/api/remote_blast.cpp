@@ -61,19 +61,6 @@ BEGIN_SCOPE(blast)
 // Static functions
 
 
-/// Dump an ASN.1 (datatool type) object to an ostream as text ASN.1.
-/// @param os Output stream.
-/// @param t ASN.1 object.
-template <class T>
-void
-s_Output(CNcbiOstream & os, CRef<T> t)
-{
-    auto_ptr<CObjectOStream> x(CObjectOStream::Open(eSerial_AsnText, os));
-    *x << *t;
-    os.flush();
-}
-
-
 /// Error value type used by Blast4 ASN.1 objects.
 typedef list< CRef<CBlast4_error> > TErrorList;
 
@@ -183,7 +170,7 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
     request->SetBody(*body);
     
     if (eDebug == m_Verbose) {
-        s_Output(NcbiCout, request);
+        NcbiCout << MSerial_AsnText << *request << endl;
     }
     
     // submit to server, get reply; optionally echo it
@@ -199,7 +186,7 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
     }
     
     if (eDebug == m_Verbose) {
-        s_Output(NcbiCout, reply);
+        NcbiCout << MSerial_AsnText << *reply << endl;
     }
     
     return reply;
@@ -1119,6 +1106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/05/09 21:23:16  camacho
+* Minor change in formatting ASN.1 objects to a stream
+*
 * Revision 1.23  2005/05/09 20:08:48  bealer
 * - Add program and service strings to CBlastOptions for remote blast.
 * - New CBlastOptionsHandle constructor for CRemoteBlast.
