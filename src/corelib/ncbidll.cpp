@@ -59,25 +59,41 @@ struct SDllHandle {
 #endif
 };
 
+// Check flag bits
+#define F_ISSET(mask) ((m_Flags & (mask)) == (mask))
+// Clean up an all non-default bits in group if all bits are set
+#define F_CLEAN_REDUNDANT(group) \
+    if (F_ISSET(group)) m_Flags &= ~unsigned((group) & ~unsigned(fDefault))
+
+
+CDll::CDll(const string& name, TFlags flags)
+{
+    x_Init(kEmptyStr, name, flags);
+}
+
+CDll::CDll(const string& path, const string& name, TFlags flags)
+{
+    x_Init(path, name, flags);
+}
 
 CDll::CDll(const string& name, ELoad when_to_load, EAutoUnload auto_unload,
            EBasename treate_as)
 {
-    x_Init(kEmptyStr, name, when_to_load, auto_unload, treate_as);
+    x_Init(kEmptyStr, name, TFlags(when_to_load | auto_unload | treate_as));
 }
 
 
 CDll::CDll(const string& path, const string& name, ELoad when_to_load,
            EAutoUnload auto_unload, EBasename treate_as)
 {
-    x_Init(path, name, when_to_load, auto_unload, treate_as);
+    x_Init(path, name, TFlags(when_to_load | auto_unload | treate_as));
 }
 
 
 CDll::~CDll() 
 {
     // Unload DLL automaticaly
-    if ( m_AutoUnload ) {
+    if ( F_ISSET(fAutoUnload) ) {
         try {
             Unload();
         } catch(CException& e) {
@@ -88,20 +104,26 @@ CDll::~CDll()
 }
 
 
-void CDll::x_Init(const string& path, const string& name, ELoad when_to_load, 
-           EAutoUnload  auto_unload, EBasename treate_as)
+void CDll::x_Init(const string& path, const string& name, TFlags flags)
 {
+    // Save flags
+    m_Flags = flags;
+
+    // Reset redundant flags
+    F_CLEAN_REDUNDANT(fLoadNow    | fLoadLater);
+    F_CLEAN_REDUNDANT(fAutoUnload | fNoAutoUnload);
+    F_CLEAN_REDUNDANT(fBaseName   | fExactName);
+    F_CLEAN_REDUNDANT(fGlobal     | fLocal);
+
     // Init members
     m_Handle = 0;
-    m_AutoUnload = auto_unload == eAutoUnload;
-
     string x_name = name;
 #if defined(NCBI_OS_MSWIN)
     NStr::ToLower(x_name);
 #endif
     // Process DLL name
-    if (treate_as == eBasename  &&  
-        name.find_first_of(":/\\") == NPOS &&
+    if (F_ISSET(fBaseName)  &&  
+        name.find_first_of(":/\\") == NPOS  &&
         !CDirEntry::MatchesMask(name.c_str(),
                                 NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_SUFFIX "*")
         ) {
@@ -110,7 +132,7 @@ void CDll::x_Init(const string& path, const string& name, ELoad when_to_load,
     }
     m_Name = CDirEntry::ConcatPath(path, x_name);  
     // Load DLL now if indicated
-    if (when_to_load == eLoadNow) {
+    if (F_ISSET(fLoadNow)) {
         Load();
     }
 }
@@ -128,7 +150,8 @@ void CDll::Load(void)
     HMODULE handle = LoadLibrary(m_Name.c_str());
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
-    void* handle = dlopen(m_Name.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    int flags = RTLD_LAZY | (F_ISSET(fLocal) ? RTLD_LOCAL : RTLD_GLOBAL);
+    void* handle = dlopen(m_Name.c_str(), flags);
 #  else
     void* handle = 0;
 #  endif
@@ -233,14 +256,14 @@ void CDll::x_ThrowException(const string& what)
 
 CDllResolver::CDllResolver(const string& entry_point_name, 
                            CDll::EAutoUnload unload)
-    : m_AutoUnloadDll( unload )
+    : m_AutoUnloadDll(unload)
 {    
     m_EntryPoinNames.push_back(entry_point_name);
 }
 
 CDllResolver::CDllResolver(const vector<string>& entry_point_names, 
                            CDll::EAutoUnload unload)
-    : m_AutoUnloadDll( unload )
+    : m_AutoUnloadDll(unload)
 {
     m_EntryPoinNames = entry_point_names;
 }
@@ -254,7 +277,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
                                 const string& driver_name)
 {
     try {
-        CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eNoAutoUnload);
+        CDll* dll = new CDll(file_name, CDll::fLoadNow | CDll::fNoAutoUnload);
         CDll::TEntryPoint p;
 
         SResolvedEntry entry_point(dll);
@@ -394,6 +417,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/09 14:46:05  ivanov
+ * Added TFlags type and 2 new constructors.
+ * Added RTLD_LOCAL/RTLD_GLOBAL support (Unix only).
+ *
  * Revision 1.28  2005/03/23 14:43:19  vasilche
  * Added trace output about DLL loading.
  *
