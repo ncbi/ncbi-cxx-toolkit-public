@@ -101,29 +101,66 @@ struct SDllHandle;
 class CDll
 {
 public:
+    /// General flags.
+    ///
+    /// Default flag in each group have priority above non-default,
+    /// if they are used together.
+    enum EFlags {
+        /// When to load DLL
+        fLoadNow      = (1<<1),  ///< Load DLL immediately in the constructor
+        fLoadLater    = (1<<2),  ///< Load DLL later, using method Load()
+        /// Whether to unload DLL in the destructor
+        fAutoUnload   = (1<<3),  ///< Unload DLL in the destructor
+        fNoAutoUnload = (1<<4),  ///< Unload DLL later, using method Unload()
+        /// Whether to transform the DLL basename
+        fBaseName     = (1<<5),  ///< Treat the name as DLL basename
+        fExactName    = (1<<6),  ///< Use the name "as is"
+        /// Specify how to load symbols from DLL.
+        /// UNIX specific (see 'man dlopen'), ignored on all other platforms.
+        fGlobal       = (1<<7),  ///< Load as RTLD_GLOBAL
+        fLocal        = (1<<8),  ///< Load as RTLD_LOCAL
+        /// Default flags
+        fDefault      = fLoadNow | fNoAutoUnload | fBaseName | fGlobal
+    };
+    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
+
+    //
+    // Enums, retained for backward compatibility
+    //
+
     /// When to load DLL.
     enum ELoad {
-        eLoadNow,      ///< Load DLL immediately in the constructor
-        eLoadLater     ///< Load DLL later, using method Load()
+        eLoadNow      = fLoadNow,
+        eLoadLater    = fLoadLater
     };
 
     /// Whether to unload DLL in the destructor.
     enum EAutoUnload {
-        eAutoUnload,   ///< Do unload DLL in the destructor
-        eNoAutoUnload  ///< Do not unload DLL in the destructor
+        eAutoUnload   = fAutoUnload,
+        eNoAutoUnload = fNoAutoUnload
     };
 
     /// Whether to transform the DLL basename.
     ///
     /// Transformation is done according to the following:
-    ///
     ///   <name>  --->  NCBI_PLUGIN_PREFIX + <name> + NCBI_PLUGIN_SUFFIX
     enum EBasename {
-        eBasename,  ///< Treat as basename (if it looks like one)
-        eExactName  ///< Use the name "as is" (no prefix/suffix adding)
+        eBasename     = fBaseName,
+        eExactName    = fExactName
     };
 
     /// Constructor.
+    ///
+    /// @param name
+    ///   Can be either DLL basename or an absolute file path.
+    /// @param flags
+    ///   Define how to load/unload DLL and interprete passed name.
+    /// @sa
+    ///   Basename discussion in CDll header, EFlags
+    NCBI_XNCBI_EXPORT
+    CDll(const string& name, TFlags flags);
+
+    /// Constructor (for backward compatibility).
     ///
     /// @param name
     ///   Can be either DLL basename or an absolute file path.
@@ -135,7 +172,7 @@ public:
     ///   Choice to transform the DLL base name.
     /// @sa
     ///   Basename discussion in CDll header,
-    ///   Eload, EAutoUnload, EBasename definition.
+    ///   ELoad, EAutoUnload, EBasename definition.
     NCBI_XNCBI_EXPORT
     CDll(const string& name,
          ELoad         when_to_load = eLoadNow,
@@ -143,6 +180,25 @@ public:
          EBasename     treate_as    = eBasename);
 
     /// Constructor.
+    ///
+    /// The absolute file path to the DLL will be formed using the "path"
+    /// and "name" parameters in the following way:
+    /// - UNIX:   <path>/PFX<name>SFX ; <path>/<name> if "name" is not basename
+    /// - MS-Win: <path>\PFX<name>SFX ; <path>\<name> if "name" is not basename
+    /// where PFX is NCBI_PLUGIN_PREFIX and SFX is NCBI_PLUGIN_SUFFIX.
+    ///
+    /// @param path
+    ///   Path to DLL.
+    /// @param name
+    ///   Name of DLL.
+    /// @param flags
+    ///   Define how to load/unload DLL and interprete passed name.
+    /// @sa
+    ///   Basename discussion in CDll header, EFlags
+    NCBI_XNCBI_EXPORT
+    CDll(const string& path, const string& name, TFlags flags);
+
+    /// Constructor (for backward compatibility).
     ///
     /// The absolute file path to the DLL will be formed using the "path"
     /// and "name" parameters in the following way:
@@ -162,7 +218,7 @@ public:
     ///   Choice to transform the DLL base name.
     /// @sa
     ///   Basename discussion in CDll header,
-    ///   Eload, EAutoUnload, EBasename definition.
+    ///   ELoad, EAutoUnload, EBasename definition.
     NCBI_XNCBI_EXPORT
     CDll(const string& path, const string& name,
          ELoad         when_to_load = eLoadNow,
@@ -268,11 +324,8 @@ private:
     /// @param treat_as
     ///   Choice to transform the DLL base name.
     /// @sa
-    ///   Eload, EAutoUnload, EBasename definition.
-    void  x_Init(const string& path, const string& name, 
-                 ELoad       when_to_load, 
-                 EAutoUnload auto_unload, 
-                 EBasename   treate_as);
+    ///   EFlags 
+    void  x_Init(const string& path, const string& name, TFlags flags);
 
 protected:
     /// Private copy constructor to prohibit copy.
@@ -282,9 +335,9 @@ protected:
     CDll& operator= (const CDll&);
 
 private:
-    string      m_Name;       ///< DLL name
-    SDllHandle* m_Handle;     ///< DLL handle
-    bool        m_AutoUnload; ///< Whether to unload DLL in the destructor
+    string      m_Name;     ///< DLL name
+    SDllHandle* m_Handle;   ///< DLL handle
+    TFlags      m_Flags;    ///< Flags
 };
 
 
@@ -480,9 +533,9 @@ private:
     CDllResolver& operator=(const CDllResolver&);
 
 protected:
-    vector<string>    m_EntryPoinNames;   ///< Candidate entry points
-    TEntries          m_ResolvedEntries;
-    CDll::EAutoUnload m_AutoUnloadDll;
+    vector<string>     m_EntryPoinNames;   ///< Candidate entry points
+    TEntries           m_ResolvedEntries;
+    CDll::EAutoUnload  m_AutoUnloadDll;
 };
 
 /* @} */
@@ -495,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/09 14:46:08  ivanov
+ * Added TFlags type and 2 new constructors.
+ *
  * Revision 1.28  2005/03/28 20:41:43  jcherry
  * Added export specifiers
  *
