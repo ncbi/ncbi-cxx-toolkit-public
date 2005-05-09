@@ -234,7 +234,8 @@ public:
     //      eHTML_EH_MouseOut, because it is used to hide the menu.
     //   3) For eKurdinSide menu type the event parameters are not used.
     void AttachPopupMenu(const CHTMLPopupMenu*  menu,
-                         EHTML_EH_Attribute     event = eHTML_EH_MouseOver);
+                         EHTML_EH_Attribute     event = eHTML_EH_MouseOver,
+                         bool                   cancel_default_event = true);
 };
 
 
@@ -1610,6 +1611,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2005/05/09 11:28:47  ivanov
+ * CHTMLNode::AttachPopupMenu: Added parameter for canceling default
+ * event processing (default is true).
+ *
  * Revision 1.84  2005/04/11 19:16:12  ivanov
  * CHTML_input:: made name parameter in the constructor optional.
  * Added CHTML_input_button class for <input type=button>.

@@ -266,21 +266,36 @@ void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
 
 
 void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
-                                EHTML_EH_Attribute    event)
+                                EHTML_EH_Attribute    event,
+                                bool                  cancel_default_event)
 {
     if ( !menu ) {
         return;
     }
     const string kStopEvent = " return false;";
+    string show;
+    string hide;
 
     switch (menu->GetType()) {
     case CHTMLPopupMenu::eSmith: 
-        SetEventHandler(event, menu->ShowMenu() + kStopEvent);
+        show = menu->ShowMenu();
+        if ( cancel_default_event ) {
+            show += kStopEvent;
+        }
+        SetEventHandler(event, show);
         return;
     case CHTMLPopupMenu::eKurdin: 
-    case CHTMLPopupMenu::eKurdinConf: 
-        SetEventHandler(event, menu->ShowMenu() + kStopEvent);
-        SetEventHandler(eHTML_EH_MouseOut, menu->HideMenu());
+    case CHTMLPopupMenu::eKurdinConf:
+        {
+            show = menu->ShowMenu();
+            hide = menu->HideMenu();
+            if ( cancel_default_event ) {
+                show += kStopEvent;
+                hide += kStopEvent;
+            }
+            SetEventHandler(event, show);
+            SetEventHandler(eHTML_EH_MouseOut, hide);
+        }
         return;
     case CHTMLPopupMenu::eKurdinSide:
         AppendHTMLText(menu->ShowMenu());
@@ -2413,6 +2428,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2005/05/09 11:28:39  ivanov
+ * CHTMLNode::AttachPopupMenu: Added parameter for canceling default
+ * event processing (default is true).
+ *
  * Revision 1.115  2005/04/25 19:29:16  ivanov
  * Fixed compilation warnings on 64-bit Workshop compiler
  *
