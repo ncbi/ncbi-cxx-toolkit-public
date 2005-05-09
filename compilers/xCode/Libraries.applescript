@@ -187,7 +187,7 @@ property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
-property gui__config : {name:"gui__config", path:"gui:config", inc:{"settings.cpp", "settings_set.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp"}}
+property gui__config : {name:"gui__config", path:"gui:config"}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/05/09 15:40:07  lebedev
+ * gui_config updated
+ *
  * Revision 1.52  2005/04/13 10:53:48  lebedev
  * Empty gui_dlg_basic and xalnutil removed
  *
