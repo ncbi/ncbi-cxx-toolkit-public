@@ -98,7 +98,7 @@ public:
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     virtual void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
-    enum {
+    enum ENeedUpdateAux {
         /// number of bits for fields
         kNeedUpdate_bits              = 8
     };
@@ -198,6 +198,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/05/09 18:41:14  ucko
+ * Name the enum containing kNeedUpdate_bits (as ENeedUpdateAux) to
+ * avoid build errors with GCC 4.x, which otherwise protests that it
+ * can't instantiate an unrelated template definition of operator<<.
+ *
  * Revision 1.6  2004/10/18 13:57:43  vasilche
  * Added support for split history assembly.
  *
