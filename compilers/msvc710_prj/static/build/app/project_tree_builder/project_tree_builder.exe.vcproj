@@ -11,7 +11,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -26,7 +26,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -41,7 +41,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -56,7 +56,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="NDEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -71,7 +71,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="NDEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -86,7 +86,7 @@
       <Tool Name="VCCustomBuildTool"></Tool>
       <Tool Name="VCMIDLTool"></Tool>
       <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
+      <Tool Name="VCPreBuildEventTool" CommandLine="@echo EXPENDABLE project&#xa;"></Tool>
       <Tool Name="VCPreLinkEventTool"></Tool>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="NDEBUG;" Culture="" AdditionalIncludeDirectories="..\..\..\..\..\..\include\" AdditionalOptions=""></Tool>
       <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
@@ -558,6 +558,26 @@
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
       </File>
+      <File RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.cpp">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+      </File>
       <File RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\resolver.cpp">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
@@ -628,10 +648,13 @@
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Tool_.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\VisualStudioProject.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\VisualStudioProject_.hpp"></File>
+      <Filter Name="Private" Filter="h;hpp;hxx;hm;inc;xsd">
+        <File RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.h"></File>
+      </Filter>
     </Filter>
     <Filter Name="Inline Files" Filter="inl"></Filter>
     <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx">
-      <File RelativePath="..\..\..\..\ncbi.rc"></File>
+      <File RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.rc"></File>
     </Filter>
     <Filter Name="Datatool Files" Filter="">
       <File RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project.dtd">
