@@ -127,6 +127,7 @@ public:
     /// an internal query) in SetQueries, or by using this option to set the
     /// matrix and using a Bioseq_set with SetQueries().  The former method is
     /// newer and this option may be removed in the future.
+    /// @deprecated
     
     void SetMatrixTable(CRef<objects::CPssmWithParameters> matrix);
     
@@ -456,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/09 19:58:45  camacho
+ * Add notice to deprecated method
+ *
  * Revision 1.17  2005/04/11 15:21:48  bealer
  * - Add GetSeqAlignSets() functionality to CRemoteBlast.
  *
