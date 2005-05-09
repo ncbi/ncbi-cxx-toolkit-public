@@ -1,0 +1,62 @@
+#include "ptb_gui.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+ncbilogo ICON "ncbilogo.ico"
+
+IDD_PTB_GUI_DIALOG DIALOGEX 0, 0, 377, 246
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "Project Tree Builder"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "Please verify and confirm the configuration settings:",
+                    IDC_STATIC_TITLE,5,5,365,15,SS_CENTERIMAGE
+    CONTROL         "Use dynamic libraries (DLLs)",IDC_CHECK_DLL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,5,30,365,10
+    LTEXT           "Subtree to build, or LST file",IDC_STATIC_SUBTREE,5,50,
+                    120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_SUBTREE,130,50,240,12,ES_AUTOHSCROLL
+    LTEXT           "Allowed project tags",IDC_STATIC_PROJTAG,5,70,120,10,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_PROJTAG,130,70,240,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATIC_FRAME,"Static",SS_BLACKFRAME,5,90,365,1,
+                    WS_EX_STATICEDGE
+    LTEXT           "Root directory of the build tree",IDC_STATIC_ROOT,5,100,
+                    120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_ROOT,130,100,240,12,ES_AUTOHSCROLL
+    LTEXT           "MSVC solution to generate",IDC_STATIC_SLN,5,120,120,10,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_SLN,130,120,240,12,ES_AUTOHSCROLL
+    CONTROL         "Exclude 'Build PTB' step from CONFIGURE project",
+                    IDC_CHECK_NOPTB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    140,365,10
+    CONTROL         "Use external libraries instead of missing in-tree ones",
+                    IDC_CHECK_EXT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    160,365,10
+    CONTROL         "Do not scan the whole source tree for missing project dependencies",
+                    IDC_CHECK_NWT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    180,365,10
+    LTEXT           "Where to look for external libraries",
+                    IDC_STATIC_EXTROOT,5,200,120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_EXTROOT,130,200,240,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,105,225,100,14
+    PUSHBUTTON      "Cancel",IDCANCEL,221,225,50,14
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
