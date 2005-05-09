@@ -979,6 +979,7 @@ extern bool IsDiagStream(const CNcbiOstream* os);
 class NCBI_XNCBI_EXPORT CDiagFactory
 {
 public:
+    virtual ~CDiagFactory() { }
     /// Factory method interface.
     virtual CDiagHandler* New(const string& s) = 0;
 };
@@ -1184,6 +1185,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.86  2005/05/09 18:45:08  ucko
+ * Ensure that widely-included classes with virtual methods have virtual dtors.
+ *
  * Revision 1.85  2005/05/04 19:54:13  ssikorsk
  * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag.
  *

@@ -33,39 +33,6 @@
 * File Description:  CActiveObject and IEventListener, object notification
 *                    interface
 *
-*
-* $Log$
-* Revision 1.9  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.8  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.7  2004/02/27 14:37:32  kholodov
-* Modified: set collection replaced by list for listeners
-*
-* Revision 1.6  2002/12/16 18:56:50  kholodov
-* Fixed: memory leak in CStatement object
-*
-* Revision 1.5  2002/09/18 18:47:30  kholodov
-* Modified: CActiveObject inherits directly from IEventListener
-* Added: Additional trace output
-*
-* Revision 1.4  2002/09/09 20:48:56  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.3  2002/05/16 22:04:36  kholodov
-* Added: CDbapiClosedEvent()
-*
-* Revision 1.2  2002/02/05 17:16:23  kholodov
-* Put into right scope, invalidobjex retired
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 */
 
 #include <corelib/ncbistd.hpp>
@@ -145,6 +112,7 @@ public:
 class IEventListener
 {
 public:
+    virtual ~IEventListener() {}
     virtual void Action(const CDbapiEvent& e) = 0;
 
 protected:
@@ -185,4 +153,42 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // _GENERAL_EXCEPTION_HPP_
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.10  2005/05/09 18:45:07  ucko
+ * Ensure that widely-included classes with virtual methods have virtual dtors.
+ *
+ * Revision 1.9  2004/07/20 17:49:17  kholodov
+ * Added: IReader/IWriter support for BLOB I/O
+ *
+ * Revision 1.8  2004/04/08 15:56:58  kholodov
+ * Multiple bug fixes and optimizations
+ *
+ * Revision 1.7  2004/02/27 14:37:32  kholodov
+ * Modified: set collection replaced by list for listeners
+ *
+ * Revision 1.6  2002/12/16 18:56:50  kholodov
+ * Fixed: memory leak in CStatement object
+ *
+ * Revision 1.5  2002/09/18 18:47:30  kholodov
+ * Modified: CActiveObject inherits directly from IEventListener
+ * Added: Additional trace output
+ *
+ * Revision 1.4  2002/09/09 20:48:56  kholodov
+ * Added: Additional trace output about object life cycle
+ * Added: CStatement::Failed() method to check command status
+ *
+ * Revision 1.3  2002/05/16 22:04:36  kholodov
+ * Added: CDbapiClosedEvent()
+ *
+ * Revision 1.2  2002/02/05 17:16:23  kholodov
+ * Put into right scope, invalidobjex retired
+ *
+ * Revision 1.1  2002/01/30 14:51:22  kholodov
+ * User DBAPI implementation, first commit
+ *
+ * ===========================================================================
+ */
+
+#endif // _ACTIVE_OBJ_HPP_

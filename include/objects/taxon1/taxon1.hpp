@@ -417,6 +417,8 @@ private:
 // This interface class represents a Taxonomy Tree node
 class ITaxon1Node {
 public:
+    virtual ~ITaxon1Node() { }
+
     //-------------------------------------------------
     // Returns: taxonomy id of the node
     virtual int              GetTaxId() const = 0;
@@ -550,6 +552,7 @@ public:
     // may differ but LevelBegin() always precedes LevelEnd().
     class I4Each {
     public:
+        virtual ~I4Each() { }
         virtual EAction
         LevelBegin(const ITaxon1Node* /*pParent*/)
         { return eOk; }
@@ -649,6 +652,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.19  2005/05/09 18:45:08  ucko
+// Ensure that widely-included classes with virtual methods have virtual dtors.
+//
 // Revision 1.18  2004/06/30 20:24:37  jcherry
 // Removed qualifiers for the sake of MSVC6.
 //

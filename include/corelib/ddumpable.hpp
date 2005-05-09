@@ -50,6 +50,8 @@ public:
         ePointer
     };
 public:
+    virtual ~CDebugDumpFormatter() { }
+
     virtual bool StartBundle(unsigned int level, const string& bundle) = 0;
     virtual void EndBundle(  unsigned int level, const string& bundle) = 0;
 
@@ -349,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/09 18:45:08  ucko
+ * Ensure that widely-included classes with virtual methods have virtual dtors.
+ *
  * Revision 1.9  2003/12/09 21:13:27  ucko
  * Re-tweak logging of 64-bit numbers, as the previous revision broke
  * when __int64 and long long were synonymous.  (Now uses Int8/Uint8

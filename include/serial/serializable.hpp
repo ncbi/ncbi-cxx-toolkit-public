@@ -47,6 +47,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT CSerializable
 {
 public:
+    virtual ~CSerializable() { }
+
     enum EOutputType {
         eAsFasta, 
         eAsAsnText, 
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/05/09 18:45:08  ucko
+* Ensure that widely-included classes with virtual methods have virtual dtors.
+*
 * Revision 1.9  2004/01/20 15:11:19  dicuccio
 * Oops, forgot one export specifier.  Fixed code formatting.
 *

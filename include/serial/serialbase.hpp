@@ -209,6 +209,8 @@ class NCBI_XSERIAL_EXPORT CSerialUserOp
 {
     friend class CClassTypeInfo;
     friend class CChoiceTypeInfo;
+public:
+    virtual ~CSerialUserOp() { }
 protected:
     // will be called after copying the datatool-generated members
     virtual void UserOp_Assign(const CSerialUserOp& source) = 0;
@@ -520,6 +522,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/05/09 18:45:08  ucko
+* Ensure that widely-included classes with virtual methods have virtual dtors.
+*
 * Revision 1.38  2005/04/26 14:17:51  vasilche
 * Implemented CUnionBuffer for inlined objects in choices.
 *

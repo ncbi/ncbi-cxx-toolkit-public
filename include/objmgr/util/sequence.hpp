@@ -425,6 +425,7 @@ public:
     typedef int TFlags; ///< binary OR of EFlags
 
     CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
+    virtual ~CFastaOstream() { }
 
     /// Unspecified locations designate complete sequences
     void Write        (const CSeq_entry_Handle& handle,
@@ -606,6 +607,8 @@ public:
     class IClient
     {
     public:
+        virtual ~IClient() { }
+
         typedef CSeqSearch::TPatternInfo    TPatternInfo;
 
         virtual bool OnPatternFound(const TPatternInfo& pat_info, TSeqPos pos) = 0;
@@ -690,6 +693,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.62  2005/05/09 18:45:08  ucko
+* Ensure that widely-included classes with virtual methods have virtual dtors.
+*
 * Revision 1.61  2005/04/11 14:47:54  dicuccio
 * Optimized feature overlap functions GetBestCdsForMrna(), GetBestMrnaForCds(),
 * GetBestGenForMrna(), GetBestMrnaForGene(), GetBestGeneForCds(): rearranged
