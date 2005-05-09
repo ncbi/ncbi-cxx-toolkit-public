@@ -59,8 +59,9 @@
 /// Define value of isnan (Is Not A Number).
 ///
 /// <math.h> changed a lot between 10.1 and 10.2; the presence of
-/// MATH_ERRNO indicates 10.2, which needs this hack.
-#   define isnan __isnan
+/// MATH_ERRNO indicates 10.2, which needs this hack, thanks to
+/// <cmath>'s obnoxious removal of <math.h>'s isnan macro.
+#   define isnan __isnand
 #endif
 
 
@@ -77,6 +78,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/09 14:17:32  ucko
+ * Update Darwin hack -- __isnan seems to be unavailable in the latest
+ * 10.3 version of libSystem, and __isnand is more appropriate anyway.
+ *
  * Revision 1.8  2004/05/04 18:07:39  ucko
  * Use configure's test for ieeefp.h rather than harcoding an incomplete
  * list of platforms.
