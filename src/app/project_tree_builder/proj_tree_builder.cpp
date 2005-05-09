@@ -1353,11 +1353,15 @@ void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name,
                                             SMakeFiles*   makefiles,
                                             EMakeFileType type)
 {
-    LOG_POST(Info << "MakeIn : " << file_name << "   " << MakeFileTypeAsString(type));
+    string s = "MakeIn : " + file_name + "   ";
+    LOG_POST(Info << s << MakeFileTypeAsString(type));
 
     CSimpleMakeFileContents fc(file_name, type);
-    if ( !fc.m_Contents.empty() )
+    if ( !fc.m_Contents.empty() ) {
 	    makefiles->m_In[file_name] = fc;
+	} else {
+        LOG_POST(Info << s << "rejected (is empty)");
+	}
 }
 
 
@@ -1365,12 +1369,20 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    LOG_POST(Info << "MakeLib: " << file_name <<
-             "   " << MakeFileTypeAsString(type));
+    string s = "MakeLib : " + file_name + "   ";
+    LOG_POST(Info << s << MakeFileTypeAsString(type));
 
     CSimpleMakeFileContents fc(file_name, type);
-    if ( !fc.m_Contents.empty() )
-	    makefiles->m_Lib[file_name] = fc;
+    if ( !fc.m_Contents.empty()  ) {
+        string unmet;
+        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
+	        makefiles->m_Lib[file_name] = fc;
+	    } else {
+            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+	    }
+	} else {
+        LOG_POST(Info << s << "rejected (is empty)");
+	}
 }
 
 
@@ -1378,12 +1390,20 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    LOG_POST(Info << "MakeApp: " << file_name <<
-             "   " << MakeFileTypeAsString(type));
+    string s = "MakeApp : " + file_name + "   ";
+    LOG_POST(Info << s << MakeFileTypeAsString(type));
 
     CSimpleMakeFileContents fc(file_name, type);
-    if ( !fc.m_Contents.empty() )
-	    makefiles->m_App[file_name] = fc;
+    if ( !fc.m_Contents.empty() ) {
+        string unmet;
+        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
+	        makefiles->m_App[file_name] = fc;
+	    } else {
+            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+	    }
+	} else {
+        LOG_POST(Info << s << "rejected (is empty)");
+	}
 }
 
 
@@ -1391,12 +1411,20 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    LOG_POST(Info << "UserPrj: " << file_name <<
-             "   " << MakeFileTypeAsString(type));
+    string s = "UserPrj : " + file_name + "   ";
+    LOG_POST(Info << s << MakeFileTypeAsString(type));
 
     CSimpleMakeFileContents fc(file_name, type);
-    if ( !fc.m_Contents.empty() )
-	    makefiles->m_User[file_name] = fc;
+    if ( !fc.m_Contents.empty() ) {
+        string unmet;
+        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
+    	    makefiles->m_User[file_name] = fc;
+	    } else {
+            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+	    }
+	} else {
+        LOG_POST(Info << s << "rejected (is empty)");
+	}
 }
 
 
@@ -1518,6 +1546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/09 17:03:38  gouriano
+ * Added filtering by project tag
+ *
  * Revision 1.24  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
