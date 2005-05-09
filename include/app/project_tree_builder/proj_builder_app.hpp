@@ -74,10 +74,7 @@ private:
 
     /// Parse program arguments.
     void ParseArguments(void);
-
-    /// Solution to build.
-    string m_Solution;
-
+    void VerifyArguments(void);
 
     //TFiles m_FilesMakeIn;
     //TFiles m_FilesMakeLib;
@@ -99,13 +96,24 @@ private:
     auto_ptr<CProjectItemsTree> m_WholeTree;
 
     auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
-    bool m_BuildPtb;
 
     const CProjectItemsTree*    m_CurrentBuildTree;
+    
+    set<string>  m_AllowedTags;
+    set<string>  m_DisallowedTags;
+
 public:
+
+    string m_Root;
+    string m_Subtree;
+    string m_Solution;
+    bool   m_Dll;
+    bool m_BuildPtb;
     bool m_AddMissingLibs;
     bool m_ScanWholeTree;
     string m_BuildRoot;
+    string m_ProjTags;
+    bool m_ConfirmCfg;
 
 public:
 
@@ -142,10 +150,13 @@ public:
     string GetDatatoolCommandLine (void) const;
 
     string GetProjectTreeRoot(void) const;
+    bool   IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
+                               string& unmet) const;
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs);
+    bool    ConfirmConfiguration(void);
 };
 
 
@@ -203,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/09 17:00:11  gouriano
+ * Added new configuration parameters
+ *
  * Revision 1.21  2005/04/07 16:58:36  gouriano
  * Make it possible to find and reference missing libraries
  * without creating project dependencies
