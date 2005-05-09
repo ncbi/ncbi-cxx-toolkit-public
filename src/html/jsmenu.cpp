@@ -397,7 +397,7 @@ string CHTMLPopupMenu::HideMenu(void) const
     switch (m_Type) {
     case eKurdin:
     case eKurdinConf:
-        return "PopUpMenu2_Hide(); return false;";
+        return "PopUpMenu2_Hide();";
     default:
         ;
     }
@@ -610,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/09 11:28:15  ivanov
+ * HideMenu(): moved adding "return false;" to CHTMLNode::AttachPopupMenu()
+ *
  * Revision 1.32  2004/11/30 15:06:04  dicuccio
  * Added #include for ncbithr.hpp
  *
