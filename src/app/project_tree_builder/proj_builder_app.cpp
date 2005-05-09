@@ -42,7 +42,6 @@
 #include <app/project_tree_builder/proj_projects.hpp>
 #include <corelib/ncbitime.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 #ifdef COMBINED_EXCLUDE
@@ -223,9 +222,11 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
+    m_Dll = false;
     m_AddMissingLibs = false;
     m_ScanWholeTree  = true;
     m_CurrentBuildTree = 0;
+    m_ConfirmCfg = false;
 }
 
 
@@ -265,8 +266,14 @@ void CProjBulderApp::Init(void)
     arg_desc->AddFlag      ("nws", 
                             "Do not scan the whole source tree for missing projects.");
     arg_desc->AddOptionalKey("extroot", "external_build_root",
-                             "Subtree in which to look for external libraries",
+                             "Subtree in which to look for external libraries.",
                              CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("projtag", "project_tag",
+                             "Include projects that have this tags only.",
+                             CArgDescriptions::eString);
+    arg_desc->AddFlag      ("cfg", 
+                            "Show GUI to confirm configuration parameters (MS Windows only).");
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -311,7 +318,6 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
     }
 }
 
-
 int CProjBulderApp::Run(void)
 {
 	// Set error posting and tracing on maximum.
@@ -324,6 +330,12 @@ int CProjBulderApp::Run(void)
 
     // Get and check arguments
     ParseArguments();
+    if (m_ConfirmCfg && !ConfirmConfiguration())
+    {
+        LOG_POST(Info << "Cancelled by request.");
+        return 1;
+    }
+    VerifyArguments();
 
     // Configure 
     CMsvcConfigure configure;
@@ -424,7 +436,7 @@ int CProjBulderApp::Run(void)
                                                false,
                                                utility_projects_dir,
                                                GetProjectTreeInfo().m_Root,
-                                               GetArgs()["subtree"].AsString(),
+                                               m_Subtree,
                                                m_Solution,
                                                m_BuildPtb);
         configure_generator.SaveProject();
@@ -518,7 +530,7 @@ int CProjBulderApp::Run(void)
                                true,
                                utility_projects_dir,
                                GetProjectTreeInfo().m_Root,
-                               GetArgs()["subtree"].AsString(),
+                               m_Subtree,
                                m_Solution,
                                m_BuildPtb);
         configure_generator.SaveProject();
@@ -636,6 +648,14 @@ void CProjBulderApp::ParseArguments(void)
 {
     CArgs args = GetArgs();
 
+    m_Subtree = args["subtree"].AsString();
+
+    m_Root = args["root"].AsString();
+    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
+    m_Root = CDirEntry::NormalizePath(m_Root);
+    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
+
+    m_Dll     = (bool)args["dll"];
     /// Root dir of building tree,
     /// src child dir of Root,
     /// Subtree to buil (default is m_RootSrc)
@@ -650,6 +670,39 @@ void CProjBulderApp::ParseArguments(void)
     m_ScanWholeTree  = !((bool)args["nws"]);
     if ( const CArgValue& t = args["extroot"] ) {
         m_BuildRoot = t.AsString();
+    }
+    if ( const CArgValue& t = args["projtag"] ) {
+        m_ProjTags = t.AsString();
+    }
+    if (m_ProjTags.empty()) {
+        m_ProjTags = "*";
+    }
+    m_ConfirmCfg =   (bool)args["cfg"];
+}
+
+void CProjBulderApp::VerifyArguments(void)
+{
+    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
+
+    list<string> values;
+    NStr::Split(m_ProjTags, LIST_SEPARATOR, values);
+    ITERATE(list<string>, n, values) {
+        string value(*n);
+        if (!value.empty()) {
+            if (value.find('!') != NPOS) {
+                value = NStr::Replace(value, "!", kEmptyStr);
+                if (!value.empty()) {
+                    m_DisallowedTags.insert(value);
+                }
+            } else {
+                if (value.find('*') == NPOS) {
+                    m_AllowedTags.insert(value);
+                }
+            }
+        }
+    }
+    if (m_AllowedTags.empty()) {
+        m_AllowedTags.insert("*");
     }
 }
 
@@ -764,15 +817,9 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         
     m_ProjectTreeInfo.reset(new SProjectTreeInfo);
     
-    CArgs args = GetArgs();
-    
     // Root, etc.
-    string root = args["root"].AsString();
-    root = CDirEntry::AddTrailingPathSeparator(root);
-    root = CDirEntry::NormalizePath(root);
-    root = CDirEntry::AddTrailingPathSeparator(root);
-    m_ProjectTreeInfo->m_Root = root;
-    LOG_POST(Info << "Project tree root: " << root);
+    m_ProjectTreeInfo->m_Root = m_Root;
+    LOG_POST(Info << "Project tree root: " << m_Root);
 
     /// <include> branch of tree
     string include = GetConfig().GetString("ProjectTree", "include", "");
@@ -792,9 +839,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Src);
 
     // Subtree to build - projects filter
-    string subtree = args["subtree"].AsString();
-    subtree = 
-        CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
+    string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
     string ext;
     CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
     if (NStr::CompareNocase(ext, ".lst") == 0) {
@@ -866,9 +911,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 const CBuildType& CProjBulderApp::GetBuildType(void)
 {
     if ( !m_BuildType.get() ) {
-        CArgs args = GetArgs();
-        bool dll_build = args["dll"];
-        m_BuildType.reset(new CBuildType(dll_build));
+        m_BuildType.reset(new CBuildType(m_Dll));
     }    
     return *m_BuildType;
 }
@@ -952,6 +995,36 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
     return CDirEntry::AddTrailingPathSeparator(path);
 }
 
+bool CProjBulderApp::IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
+                                         string& unmet) const
+{
+    CSimpleMakeFileContents::TContents::const_iterator k;
+    k = mk.m_Contents.find("PROJ_TAG");
+    if (k == mk.m_Contents.end()) {
+        return m_AllowedTags.find("*") != m_AllowedTags.end();
+    } else {
+        const list<string>& values = k->second;
+        list<string>::const_iterator i;
+        if (!m_DisallowedTags.empty()) {
+            for (i = values.begin(); i != values.end(); ++i) {
+                if (m_DisallowedTags.find(*i) != m_DisallowedTags.end()) {
+                    unmet = *i;
+                    return false;
+                }
+            }
+        }
+        if (m_AllowedTags.find("*") != m_AllowedTags.end()) {
+            return true;
+        }
+        for (i = values.begin(); i != values.end(); ++i) {
+            if (m_AllowedTags.find(*i) != m_AllowedTags.end()) {
+                return true;
+            }
+        }
+    }
+    unmet = NStr::Join(k->second,",");
+    return false;
+}
 
 CProjBulderApp& GetApp(void)
 {
@@ -974,6 +1047,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/05/09 17:04:09  gouriano
+ * Added filtering by project tag and GUI
+ *
  * Revision 1.56  2005/04/29 14:12:02  gouriano
  * Use runtime library type instead of string
  *

@@ -212,6 +212,12 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if (!GetApp().m_BuildRoot.empty()) {
         ofs << " -extroot \"" << GetApp().m_BuildRoot << "\"";
     }
+    if (GetApp().m_ConfirmCfg) {
+        ofs << " -cfg";
+    }
+    if (GetApp().m_ProjTags != "*") {
+        ofs << " -projtag \"" << GetApp().m_ProjTags << "\"";
+    }
 
     ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
         << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" "
@@ -242,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/09 17:04:09  gouriano
+ * Added filtering by project tag and GUI
+ *
  * Revision 1.22  2005/04/14 14:35:58  gouriano
  * Handle paths with spaces
  *
