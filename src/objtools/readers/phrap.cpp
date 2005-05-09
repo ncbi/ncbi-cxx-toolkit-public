@@ -726,8 +726,8 @@ public:
     CRef<CPhrap_Read>& SetRead(const CPhrap_Read& read);
 
 private:
+    void x_CreateAlign(CBioseq_set& bioseq_set) const;
     void x_CreateGraph(CBioseq& bioseq) const;
-    void x_CreateAlign(CBioseq& bioseq) const;
     void x_CreateFeat(CBioseq& bioseq) const;
     void x_CreateDesc(CBioseq& bioseq) const;
 
@@ -735,9 +735,9 @@ private:
     void x_AddReadLocFeats(CRef<CSeq_annot>& annot) const;
     void x_AddTagFeats(CRef<CSeq_annot>& annot) const;
 
-    void x_CreateAlignPairs(CBioseq& bioseq) const;
-    void x_CreateAlignAll(CBioseq& bioseq) const;
-    void x_CreateAlignOptimized(CBioseq& bioseq) const;
+    void x_CreateAlignPairs(CBioseq_set& bioseq_set) const;
+    void x_CreateAlignAll(CBioseq_set& bioseq_set) const;
+    void x_CreateAlignOptimized(CBioseq_set& bioseq_set) const;
 
     struct SAlignInfo {
         typedef CRange<TSeqPos> TRange;
@@ -1091,26 +1091,26 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
 }
 
 
-void CPhrap_Contig::x_CreateAlign(CBioseq& bioseq) const
+void CPhrap_Contig::x_CreateAlign(CBioseq_set& bioseq_set) const
 {
     if ( m_Reads.empty() ) {
         return;
     }
     switch ( GetFlags() & fPhrap_Align ) {
     case fPhrap_AlignAll:
-        x_CreateAlignAll(bioseq);
+        x_CreateAlignAll(bioseq_set);
         break;
     case fPhrap_AlignPairs:
-        x_CreateAlignPairs(bioseq);
+        x_CreateAlignPairs(bioseq_set);
         break;
     case fPhrap_AlignOptimized:
-        x_CreateAlignOptimized(bioseq);
+        x_CreateAlignOptimized(bioseq_set);
         break;
     }
 }
 
 
-void CPhrap_Contig::x_CreateAlignAll(CBioseq& bioseq) const
+void CPhrap_Contig::x_CreateAlignAll(CBioseq_set& bioseq_set) const
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
 
@@ -1142,11 +1142,11 @@ void CPhrap_Contig::x_CreateAlignAll(CBioseq& bioseq) const
         return;
     }
     annot->SetData().SetAlign().push_back(align);
-    bioseq.SetAnnot().push_back(annot);
+    bioseq_set.SetAnnot().push_back(annot);
 }
 
 
-void CPhrap_Contig::x_CreateAlignPairs(CBioseq& bioseq) const
+void CPhrap_Contig::x_CreateAlignPairs(CBioseq_set& bioseq_set) const
 {
     // One-to one version
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -1176,13 +1176,13 @@ void CPhrap_Contig::x_CreateAlignPairs(CBioseq& bioseq) const
         }
         annot->SetData().SetAlign().push_back(align);
     }
-    bioseq.SetAnnot().push_back(annot);
+    bioseq_set.SetAnnot().push_back(annot);
 }
 
 
 const TSeqPos kMaxSegLength = 100000;
 
-void CPhrap_Contig::x_CreateAlignOptimized(CBioseq& bioseq) const
+void CPhrap_Contig::x_CreateAlignOptimized(CBioseq_set& bioseq_set) const
 {
     // Optimized (diagonal) set of alignments
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -1216,7 +1216,7 @@ void CPhrap_Contig::x_CreateAlignOptimized(CBioseq& bioseq) const
         }
         annot->SetData().SetAlign().push_back(align);
     }
-    bioseq.SetAnnot().push_back(annot);
+    bioseq_set.SetAnnot().push_back(annot);
 }
 
 
@@ -1400,7 +1400,6 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
 
     x_CreateDesc(*bioseq);
     x_CreateGraph(*bioseq);
-    x_CreateAlign(*bioseq);
     x_CreateFeat(*bioseq);
 
     CRef<CSeq_entry> set_entry(new CSeq_entry);
@@ -1408,6 +1407,7 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
     bioseq_set.SetLevel(level);
     bioseq_set.SetClass(CBioseq_set::eClass_conset);                           // ???
     bioseq_set.SetSeq_set().push_back(cont_entry);
+    x_CreateAlign(bioseq_set);
     ITERATE(TReads, it, m_Reads) {
         CRef<CSeq_entry> rd_entry = it->second->CreateRead();
         bioseq_set.SetSeq_set().push_back(rd_entry);
@@ -1792,6 +1792,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/09 20:30:33  grichenk
+* Moved alignment to bioseq-set level
+*
 * Revision 1.1  2005/05/02 13:10:18  grichenk
 * Initial revision
 *
