@@ -175,9 +175,19 @@ USING_SCOPE(objects);
 
 void DataLoaders_Register_BlastDb(void)
 {
-    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_BlastDb);
+    // Typedef to silence compiler warning.  A better solution to this
+    // problem is probably possible.
+    
+    typedef void(*TArgFuncType)(list<CPluginManager< CDataLoader,
+                                CInterfaceVersion<CDataLoader> >
+                                ::SDriverInfo> &,
+                                CPluginManager<CDataLoader,
+                                CInterfaceVersion<CDataLoader> >
+                                ::EEntryPointRequest);
+    
+    RegisterEntryPoint<CDataLoader>((TArgFuncType)
+                                    NCBI_EntryPoint_DataLoader_BlastDb);
 }
-
 
 const string kDataLoader_BlastDb_DriverName("blastdb");
 
@@ -256,6 +266,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.22  2005/05/10 15:36:06  bealer
+ * - Silence warning.
+ *
  * Revision 1.21  2005/04/18 16:11:29  bealer
  * - Remove use of deprecated SeqDB methods.
  *
