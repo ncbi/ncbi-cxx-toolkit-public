@@ -859,7 +859,11 @@ void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy,
     if (max_timeout) {
         m_MaxTimeout = max_timeout > timeout ? max_timeout : timeout;
     } else {
-        m_MaxTimeout = 0;
+        if (m_MaxTTL_prolong) {
+            m_MaxTimeout = timeout * m_MaxTTL_prolong;
+        } else {
+            m_MaxTimeout = 0;
+        }
     }
 }
 
@@ -992,6 +996,17 @@ void CBDB_Cache::Store(const string&  key,
 	m_CacheAttrDB->subkey = subkey;
     m_CacheAttrDB->time_stamp = (unsigned)curr; //time_stamp.GetTimeT();
     m_CacheAttrDB->overflow = overflow;
+    
+    if (m_MaxTimeout) {
+        if (time_to_live > m_MaxTimeout) {
+            time_to_live = m_MaxTimeout;
+        }
+    } else { // m_MaxTimeout == 0
+        if (m_MaxTTL_prolong != 0 && m_Timeout != 0) {
+            time_to_live = min(m_Timeout * m_MaxTTL_prolong, time_to_live);
+        }
+    }
+
     m_CacheAttrDB->ttl = time_to_live;
     m_CacheAttrDB->max_time = curr + (GetTimeout() * GetTTL_Prolongation());
 
@@ -1325,6 +1340,16 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
+
+    if (m_MaxTimeout) {
+        if (time_to_live > m_MaxTimeout) {
+            time_to_live = m_MaxTimeout;
+        }
+    } else { // m_MaxTimeout == 0
+        if (m_MaxTTL_prolong != 0 && m_Timeout != 0) {
+            time_to_live = min(m_Timeout * m_MaxTTL_prolong, time_to_live);
+        }
+    }
 
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     return 
@@ -1742,7 +1767,7 @@ void CBDB_Cache::Purge(const string&    key,
 
         if (ttl) {  // individual timeout
             if (m_MaxTimeout && ttl > m_MaxTimeout) {
-                to = timeout;
+                to = max((unsigned)timeout, (unsigned)m_MaxTimeout);
             } else {
                 to = ttl;
             }
@@ -1870,7 +1895,9 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  /* key */,
 
         if (ttl) {  // individual timeout
             if (m_MaxTimeout && ttl > m_MaxTimeout) {
-                ttl = timeout;
+                timeout = 
+                    (int) max((unsigned)timeout, (unsigned)m_MaxTimeout);
+                ttl = timeout; // used in diagnostics only
             } else {
                 timeout = ttl;
             }
@@ -2241,6 +2268,11 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     drv->SetWriteSync(w_sync ? 
                         CBDB_Cache::eWriteSync : CBDB_Cache::eWriteNoSync);
 
+    unsigned ttl_prolong = 
+        GetParamInt(params, kCFParam_ttl_prolong, false, 0);
+    drv->SetTTL_Prolongation(ttl_prolong);
+
+
     ConfigureICache(drv.get(), params);
 
     bool use_trans = 
@@ -2249,10 +2281,6 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     unsigned batch_size = 
         GetParamInt(params, kCFParam_purge_batch_size, false, 70);
     drv->SetPurgeBatchSize(batch_size);
-
-    unsigned ttl_prolong = 
-        GetParamInt(params, kCFParam_ttl_prolong, false, 0);
-    drv->SetTTL_Prolongation(ttl_prolong);
 
     unsigned batch_sleep = 
         GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
@@ -2347,6 +2375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2005/05/10 15:58:54  kuznets
+ * Individual timeouts now can be controlled using ttl_prolong
+ *
  * Revision 1.114  2005/05/06 15:31:11  kuznets
  * Minor tweak for future debugging
  *
