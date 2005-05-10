@@ -152,7 +152,7 @@ typedef struct PSIDiagnosticsResponse {
  * failure 
  */
 PSIDiagnosticsRequest* 
-PSIDiagnosticsRequestNew();
+PSIDiagnosticsRequestNew(void);
 
 /** Deallocates the PSIDiagnosticsRequest structure passed in
  * @param diags_request structure to deallocate [in]

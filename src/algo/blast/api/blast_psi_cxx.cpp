@@ -211,7 +211,7 @@ CPssmEngine::x_GuardProteinQuery(const unsigned char* query,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query with sentinels");
     }
 
-    retval[0] = retval[query_length+1] = GetSentinelByte(BLASTP_ENCODING);
+    retval[0] = retval[query_length+1] = GetSentinelByte(eBlastEncodingProtein);
     memcpy((void*) &retval[1], (void*) query, query_length);
     return retval;
 }
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2005/05/10 16:08:39  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.35  2005/05/03 20:33:11  camacho
  * Minor
  *

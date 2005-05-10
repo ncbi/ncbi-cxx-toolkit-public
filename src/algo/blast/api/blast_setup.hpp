@@ -121,16 +121,16 @@ enum ESentinelType {
 /** Retrieves a sequence using the object manager.
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved.
- *        Supported encodings include: NCBI2NA_ENCODING, NCBI4NA_ENCODING,
- *        BLASTNA_ENCODING, and BLASTP_ENCODING. [in]
+ *        Supported encodings include: eBlastEncodingNcbi2na, eBlastEncodingNcbi4na,
+ *        eBlastEncodingNucleotide, and eBlastEncodingProtein. [in]
  * @param scope Scope from which the sequences are retrieved [in]
  * @param strand strand to retrieve (applies to nucleotide only).
- *        N.B.: When requesting the NCBI2NA_ENCODING, only the plus strand
+ *        N.B.: When requesting the eBlastEncodingNcbi2na, only the plus strand
  *        is retrieved, because BLAST only requires one strand on the subject
  *        sequences (as in BLAST databases). [in]
  * @param sentinel Use eSentinels to guard nucleotide sequence with sentinel 
  *        bytes (ignored for protein sequences, which always have sentinels) 
- *        When using NCBI2NA_ENCODING, this argument should be set to
+ *        When using eBlastEncodingNcbi2na, this argument should be set to
  *        eNoSentinels as a sentinel byte cannot be represented in this 
  *        encoding. [in]
  * @param warnings Used to emit warnings when fetching sequence (e.g.:
@@ -166,8 +166,8 @@ CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
                          THROWS((CBlastException));
 
 /** Convenience function to centralize the knowledge of which sentinel bytes we
- * use for supported encodings. Note that only BLASTP_ENCODING,
- * BLASTNA_ENCODING, and NCBI4NA_ENCODING support sentinel bytes, any other
+ * use for supported encodings. Note that only eBlastEncodingProtein,
+ * eBlastEncodingNucleotide, and eBlastEncodingNcbi4na support sentinel bytes, any other
  * values for encoding will cause an exception to be thrown.
  * @param encoding Encoding for which a sentinel byte is needed [in]
  * @return sentinel byte
@@ -234,6 +234,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2005/05/10 16:08:39  camacho
+* Changed *_ENCODING #defines to EBlastEncoding enumeration
+*
 * Revision 1.35  2005/04/06 21:06:18  dondosha
 * Use EBlastProgramType instead of EProgram in non-user-exposed functions
 *

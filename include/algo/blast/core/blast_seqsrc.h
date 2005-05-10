@@ -46,6 +46,7 @@
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
+#include <algo/blast/core/blast_encoding.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -172,8 +173,9 @@ BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src);
 typedef struct BlastSeqSrcGetSeqArg {
     /** Oid in BLAST database, index in an array of sequences, etc [in] */
     Int4 oid;
-    /** Encoding of sequence, ie: BLASTP_ENCODING, NCBI4NA_ENCODING, etc [in] */
-    Uint1 encoding;
+    /** Encoding of sequence, i.e.: eBlastEncodingProtein,
+     * eBlastEncodingNucleotide, etc [in] */
+    EBlastEncoding encoding;
     /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr, else
      * its contents are freed and the structure is reused [out]*/
     BLAST_SequenceBlk* seq;

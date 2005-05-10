@@ -442,6 +442,7 @@ _PSIUpdateLambdaK(const int** pssm,
  * @todo Ideally all scaling code should be refactored so that it is
  * consolidated, eliminating the need for blast_posit.[hc]. Please note that
  * blast_kappa.c's scalePosMatrix also does something very similar.
+ * @todo remove std_probs as it's not used
  */
 int
 _IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
@@ -579,6 +580,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/05/10 16:07:51  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.27  2005/03/23 14:04:24  camacho
  * doxygen fix
  *

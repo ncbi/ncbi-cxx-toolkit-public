@@ -506,7 +506,7 @@ SetupSubjects(const TSeqLocVector& subjects,
             try {
                 // Get the compressed sequence
                 SBlastSequence compressed_seq = 
-                    GetSequence(*itr->seqloc, NCBI2NA_ENCODING, itr->scope,
+                    GetSequence(*itr->seqloc, eBlastEncodingNcbi2na, itr->scope,
                                  eNa_strand_plus, eNoSentinels);
                 BlastSeqBlkSetCompressedSequence(subj, 
                                                  compressed_seq.data.release());
@@ -549,12 +549,12 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
 
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
-    case BLASTP_ENCODING:
+    case eBlastEncodingProtein:
     {
         vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
         vector<TSeqPos> invalid_residues;        // Invalid residue positions
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
-        buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
+        buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
         if (buflen == 0) {
             break;
         }
@@ -592,10 +592,10 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
         break;
     }
 
-    case NCBI4NA_ENCODING:
-    case BLASTNA_ENCODING: // Used for nucleotide blastn queries
+    case eBlastEncodingNcbi4na:
+    case eBlastEncodingNucleotide: // Used for nucleotide blastn queries
         sv.SetCoding(CSeq_data::e_Ncbi4na);
-        buflen = CalculateSeqBufferLength(sv.size(), NCBI4NA_ENCODING,
+        buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingNcbi4na,
                                           strand, sentinel);
         if (buflen == 0) {
             break;
@@ -605,7 +605,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
         if (sentinel == eSentinels)
             *buf_var++ = GetSentinelByte(encoding);
 
-        if (encoding == BLASTNA_ENCODING) {
+        if (encoding == eBlastEncodingNucleotide) {
             for (i = 0; i < sv.size(); i++) {
                 *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
             }
@@ -623,7 +623,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
                             CBioseq_Handle::eCoding_Ncbi, 
                             eNa_strand_minus);
             sv.SetCoding(CSeq_data::e_Ncbi4na);
-            if (encoding == BLASTNA_ENCODING) {
+            if (encoding == eBlastEncodingNucleotide) {
                 for (i = 0; i < sv.size(); i++) {
                     *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
                 }
@@ -644,7 +644,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
      * (sv.size()%COMPRESSION_RATIO != 0) goes in the last 2 bits of the 
      * last byte.
      */
-    case NCBI2NA_ENCODING:
+    case eBlastEncodingNcbi2na:
         ASSERT(sentinel == eNoSentinels);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
@@ -960,6 +960,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/05/10 16:08:39  camacho
+* Changed *_ENCODING #defines to EBlastEncoding enumeration
+*
 * Revision 1.42  2005/04/11 19:26:32  madden
 * Remove extra EBlastProgramType variable
 *

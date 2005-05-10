@@ -57,20 +57,20 @@ GetQueryEncoding(EBlastProgramType program)
 
     switch (program) {
     case eBlastTypeBlastn: 
-        retval = BLASTNA_ENCODING; 
+        retval = eBlastEncodingNucleotide; 
         break;
 
     case eBlastTypeBlastp: 
     case eBlastTypeTblastn:
     case eBlastTypeRpsBlast: 
     case eBlastTypePsiBlast:
-        retval = BLASTP_ENCODING; 
+        retval = eBlastEncodingProtein; 
         break;
 
     case eBlastTypeBlastx:
     case eBlastTypeTblastx:
     case eBlastTypeRpsTblastn:
-        retval = NCBI4NA_ENCODING;
+        retval = eBlastEncodingNcbi4na;
         break;
 
     default:
@@ -87,18 +87,18 @@ GetSubjectEncoding(EBlastProgramType program)
 
     switch (program) {
     case eBlastTypeBlastn: 
-        retval = BLASTNA_ENCODING; 
+        retval = eBlastEncodingNucleotide; 
         break;
 
     case eBlastTypeBlastp: 
     case eBlastTypeBlastx:
     case eBlastTypePsiBlast:
-        retval = BLASTP_ENCODING; 
+        retval = eBlastEncodingProtein; 
         break;
 
     case eBlastTypeTblastn:
     case eBlastTypeTblastx:
-        retval = NCBI4NA_ENCODING;
+        retval = eBlastEncodingNcbi4na;
         break;
 
     default:
@@ -122,13 +122,13 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
     switch (encoding) {
     // Strand and sentinels are irrelevant in this encoding.
     // Strand is always plus and sentinels cannot be represented
-    case NCBI2NA_ENCODING:
+    case eBlastEncodingNcbi2na:
         ASSERT(sentinel == eNoSentinels);
         ASSERT(strand == eNa_strand_plus);
         retval = sequence_length / COMPRESSION_RATIO + 1;
         break;
 
-    case NCBI4NA_ENCODING:
+    case eBlastEncodingNcbi4na:
         if (sentinel == eSentinels) {
             if (strand == eNa_strand_both) {
                 retval = sequence_length * 2;
@@ -145,7 +145,7 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
         }
         break;
 
-    case BLASTP_ENCODING:
+    case eBlastEncodingProtein:
         ASSERT(sentinel == eSentinels);
         ASSERT(strand == eNa_strand_unknown);
         retval = sequence_length + 2;
@@ -161,11 +161,11 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
 Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException))
 {
     switch (encoding) {
-    case BLASTP_ENCODING:
+    case eBlastEncodingProtein:
         return NULLB;
 
-    case NCBI4NA_ENCODING:
-    case BLASTNA_ENCODING:
+    case eBlastEncodingNcbi4na:
+    case eBlastEncodingNucleotide:
         return 0xF;
 
     default:
@@ -414,6 +414,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/05/10 16:08:39  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.81  2005/04/06 21:06:18  dondosha
  * Use EBlastProgramType instead of EProgram in non-user-exposed functions
  *

@@ -256,9 +256,9 @@ s_MultiSeqGetSequence(void* multiseq_handle, void* args)
        we need the uncompressed buffer, stored in the 'sequence_start' 
        pointer. That buffer has an extra sentinel byte for blastn, but
        no sentinel byte for translated programs. */
-    if (seq_args->encoding == BLASTNA_ENCODING) {
+    if (seq_args->encoding == eBlastEncodingNucleotide) {
         seq_args->seq->sequence = seq_args->seq->sequence_start + 1;
-    } else if (seq_args->encoding == NCBI4NA_ENCODING) {
+    } else if (seq_args->encoding == eBlastEncodingNcbi4na) {
         seq_args->seq->sequence = seq_args->seq->sequence_start;
     }
 
@@ -447,6 +447,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2005/05/10 16:08:39  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.32  2005/05/03 21:04:50  dondosha
  * Small doxygen fix
  *

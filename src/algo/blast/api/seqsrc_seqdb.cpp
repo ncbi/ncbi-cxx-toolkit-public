@@ -126,10 +126,10 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
 
     oid = seqdb_args->oid;
     Uint1 encoding = seqdb_args->encoding;
-    has_sentinel_byte = (encoding == BLASTNA_ENCODING);
+    has_sentinel_byte = (encoding == eBlastEncodingNucleotide);
 
     buffer_allocated = 
-       (encoding == BLASTNA_ENCODING || encoding == NCBI4NA_ENCODING);
+       (encoding == eBlastEncodingNucleotide || encoding == eBlastEncodingNcbi4na);
 
     /* free buffers if necessary */
     if (seqdb_args->seq)
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2005/05/10 16:08:39  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.35  2005/04/21 14:58:40  dondosha
  * Removed unused void* argument in SeqDbBlastSeqSrcInit
  *

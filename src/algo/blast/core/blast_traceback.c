@@ -56,6 +56,7 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_kappa.h>
@@ -670,14 +671,14 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
    return 0;
 }
 
-Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number) 
+EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number) 
 {
-   Uint1 encoding;
+   EBlastEncoding retval = eBlastEncodingError;
 
    switch (program_number) {
    case eBlastTypeBlastn:
    case eBlastTypePhiBlastn:
-      encoding = BLASTNA_ENCODING;
+      retval = eBlastEncodingNucleotide;
       break;
    case eBlastTypeBlastp:
    case eBlastTypeRpsBlast:
@@ -685,17 +686,17 @@ Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number)
    case eBlastTypeRpsTblastn:
    case eBlastTypePsiBlast:
    case eBlastTypePhiBlastp:
-      encoding = BLASTP_ENCODING;
+      retval = eBlastEncodingProtein;
       break;
    case eBlastTypeTblastn:
    case eBlastTypeTblastx:
-      encoding = NCBI4NA_ENCODING;
+      retval = eBlastEncodingNcbi4na;
       break;
    default:
-      encoding = ERROR_ENCODING;
+      retval = eBlastEncodingError;
       break;
    }
-   return encoding;
+   return retval;
 }
 
 /** Delete extra subject sequences hits, if after-traceback hit list size is
@@ -849,7 +850,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastScoreBlk* sbp;
    Int4 **rpsblast_pssms = NULL;
    Int4 db_seq_start;
-   Uint1 encoding;
+   EBlastEncoding encoding;
    BlastSeqSrcGetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
@@ -1027,7 +1028,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                   psi_options, results); 
    } else {
       BlastSeqSrcGetSeqArg seq_arg;
-      Uint1 encoding = Blast_TracebackGetEncoding(program_number);
+      EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = 
          (score_params->options->gapped_calculation && 
           (ext_params->options->ePrelimGapExt != eGreedyWithTracebackExt));

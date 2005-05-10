@@ -349,7 +349,7 @@ PSIMatrixFree(PSIMatrix* matrix)
 }
 
 PSIDiagnosticsRequest* 
-PSIDiagnosticsRequestNew()
+PSIDiagnosticsRequestNew(void)
 {
     return calloc(1, sizeof(PSIDiagnosticsRequest));
 }

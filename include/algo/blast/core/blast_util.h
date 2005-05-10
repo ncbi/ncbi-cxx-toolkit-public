@@ -35,20 +35,11 @@
 #define __BLAST_UTIL__
 
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_encoding.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** Different types of sequence encodings for sequence retrieval from the 
- * BLAST database 
- */
-#define BLASTP_ENCODING 0  /**< NCBIstdaa */
-#define BLASTNA_ENCODING 1 /**< Special encoding for preliminary stage of 
-                              BLAST: permutation of NCBI8na */
-#define NCBI4NA_ENCODING 2 /**< NCBI8na */
-#define NCBI2NA_ENCODING 3 /**< NCBI2na */
-#define ERROR_ENCODING 255 /**< Error value for encoding */
 
 #ifndef IS_residue
 /** Does character encode a residue? */
@@ -127,7 +118,8 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
 
 /** Stores the compressed nucleotide sequence in the sequence block structure
  * for the subject sequence when BLASTing 2 sequences. This sequence should be
- * encoded in NCBI2NA_ENCODING and NOT have sentinel bytes.
+ * encoded in eBlastEncodingNcbi2na and NOT have sentinel bytes (as this 
+ * encoding doesn't allow them).
  * @param seq_blk The sequence block structure to modify [in/out]
  * @param sequence Actual sequence buffer. [in]
  */
@@ -250,7 +242,7 @@ Int2 Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr,
 
 
 NCBI_XBLAST_EXPORT
-Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
+Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, EBlastEncoding encoding, 
                    Uint1** packed_seq);
 
 /** Initialize the mixed-frame sequence for out-of-frame gapped extension.
@@ -279,7 +271,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  * @param mixed_seq_ptr Pointer to buffer for the mixed frame sequence [out]
  */
 NCBI_XBLAST_EXPORT
-Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
+Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, EBlastEncoding encoding,
         Int4 nucl_length, const Uint1* genetic_code, 
         Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr);

@@ -2014,7 +2014,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
       BlastSeqSrcGetSeqArg seq_arg;
       seq_arg.oid = subject_blk->oid;
       seq_arg.encoding =
-         (kTranslateSubject ? NCBI4NA_ENCODING : BLASTNA_ENCODING);
+         (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);
       seq_arg.seq = subject_blk;
       /* Return the packed sequence to the database */
       BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);

@@ -46,6 +46,20 @@
 extern "C" {
 #endif
 
+/** Different types of sequence encodings for sequence retrieval from the 
+ * BLAST database 
+ */
+typedef enum { 
+    eBlastEncodingProtein       = 0, /**< NCBIstdaa */
+    eBlastEncodingNucleotide    = 1, /**< Special encoding for preliminary 
+                                       stage of BLAST: permutation of NCBI4na.
+                                       A.k.a.: BLASTNA encoding
+                                      */
+    eBlastEncodingNcbi4na       = 2, /**< NCBI4na */
+    eBlastEncodingNcbi2na       = 3, /**< NCBI2na */
+    eBlastEncodingError         = 255 /**< Error value for encoding */
+} EBlastEncoding;
+
 /* Nucleotide encodings */
 
 /** Translates between ncbi4na and blastna. The first four elements
@@ -83,6 +97,9 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/10 16:07:35  camacho
+ * Changed *_ENCODING #defines to EBlastEncoding enumeration
+ *
  * Revision 1.5  2004/11/24 16:00:39  dondosha
  * Added and/or fixed doxygen comments
  *

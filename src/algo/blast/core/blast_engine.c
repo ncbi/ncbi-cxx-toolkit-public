@@ -258,7 +258,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       first_context = 0;
       last_context = 5;
       if (score_options->is_ooframe) {
-         BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
+         BLAST_GetAllTranslations(orig_sequence, eBlastEncodingNcbi2na,
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, &subject->oof_sequence);
          subject->oof_sequence_allocated = TRUE;
@@ -270,7 +270,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
           frame_offsets_a = frame_offsets =
               ContextOffsetsToOffsetArray(query_info_in);
       } else {
-         BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
+         BLAST_GetAllTranslations(orig_sequence, eBlastEncodingNcbi2na,
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
          frame_offsets_a = frame_offsets;
@@ -755,7 +755,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    /* Encoding is set so there are no sentinel bytes, and protein/nucleotide
       sequences are retieved in ncbistdaa/ncbi2na encodings respectively. */
-   seq_arg.encoding = BLASTP_ENCODING; 
+   seq_arg.encoding = eBlastEncodingProtein; 
 
    db_length = BlastSeqSrcGetTotLen(seq_src);
 

@@ -232,9 +232,6 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 	return 0;
 }
 
-/** Value of the 'X' aminoacid residue in NCBIstdaa encoding. */
-#define X_STDAA 21
-
 /** Translate 3 nucleotides into an amino acid
  * MUST have 'X' as unknown amino acid
  * @param codon 3 values in ncbi4na code
@@ -244,6 +241,7 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 static Uint1 
 s_CodonToAA (Uint1* codon, const Uint1* codes)
 {
+   const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
    register Uint1 aa = 0, taa;
    register int i, j, k, index0, index1, index2;
    static Uint1 mapping[4] = { 8,     /* T in ncbi4na */
@@ -265,20 +263,20 @@ s_CodonToAA (Uint1* codon, const Uint1* codes)
                         aa = taa;
                      else {
                         if (taa != aa) {
-                           aa = X_STDAA;
+                           aa = kXResidue;
                            break;
                         }
                      }
                   }
-                  if (aa == X_STDAA)
+                  if (aa == kXResidue)
                      break;
                }
             }
-            if (aa == X_STDAA)
+            if (aa == kXResidue)
                break;
          }
       }
-      if (aa == X_STDAA)
+      if (aa == kXResidue)
          break;
    }
    return aa;
@@ -735,7 +733,7 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
 /** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
  * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
  */
-Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
+Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, EBlastEncoding encoding, 
                           Uint1** packed_seq)
 {
    Int4 new_length = length/COMPRESSION_RATIO + 1;
@@ -745,7 +743,7 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
 
    for (index=0, new_index=0; new_index < new_length-1; 
         ++new_index, index += COMPRESSION_RATIO) {
-      if (encoding == BLASTNA_ENCODING)
+      if (encoding == eBlastEncodingNucleotide)
          new_buffer[new_index] = 
             ((buffer[index]&NCBI2NA_MASK)<<6) | 
             ((buffer[index+1]&NCBI2NA_MASK)<<4) |
@@ -771,7 +769,7 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
       case 2: shift = 2; break;
       default: abort();     /* should never happen */
       }
-      if (encoding == BLASTNA_ENCODING)
+      if (encoding == eBlastEncodingNucleotide)
          new_buffer[new_index] |= ((buffer[index]&NCBI2NA_MASK)<<shift);
       else
          new_buffer[new_index] |=
@@ -888,7 +886,7 @@ s_BlastGetTranslationTable(const Uint1* genetic_code, Boolean reverse_complement
 }
 
 
-Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
+Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, EBlastEncoding encoding,
         Int4 nucl_length, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr)
@@ -901,14 +899,14 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    Int4* frame_offsets;
    Int2 frame;
    
-   if (encoding != NCBI2NA_ENCODING && encoding != NCBI4NA_ENCODING)
+   if (encoding != eBlastEncodingNcbi2na && encoding != eBlastEncodingNcbi4na)
       return -1;
 
    if ((translation_buffer = 
         (Uint1*) malloc(2*(nucl_length+1)+1)) == NULL)
       return -1;
 
-   if (encoding == NCBI4NA_ENCODING) {
+   if (encoding == eBlastEncodingNcbi4na) {
       /* First produce the reverse strand of the nucleotide sequence */
       GetReverseNuclSequence(nucl_seq, nucl_length, 
                              &nucl_seq_rev);
@@ -923,7 +921,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    
    for (context = 0; context < NUM_FRAMES; ++context) {
       frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
-      if (encoding == NCBI2NA_ENCODING) {
+      if (encoding == eBlastEncodingNcbi2na) {
          if (frame > 0) {
             length = 
                BLAST_TranslateCompressedSequence(translation_table,
@@ -945,7 +943,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
       frame_offsets[context+1] = offset;
    }
 
-   if (encoding == NCBI4NA_ENCODING) {
+   if (encoding == eBlastEncodingNcbi4na) {
       sfree(nucl_seq_rev);
    } else { 
       free(translation_table);
@@ -1257,12 +1255,12 @@ Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk,
    if (!partial_translation) {
       if (is_ooframe) {
          BLAST_GetAllTranslations(subject_blk->sequence_start, 
-            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            eBlastEncodingNcbi4na, subject_blk->length, gen_code_string, 
             NULL, NULL, &subject_blk->oof_sequence);
          subject_blk->oof_sequence_allocated = TRUE;
       } else {
          BLAST_GetAllTranslations(subject_blk->sequence_start, 
-            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            eBlastEncodingNcbi4na, subject_blk->length, gen_code_string, 
             translation_buffer_ptr, frame_offsets_ptr, NULL);
       }
    }

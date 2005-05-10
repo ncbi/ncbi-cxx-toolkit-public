@@ -76,7 +76,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
  * given a program number.
  */
 NCBI_XBLAST_EXPORT
-Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
+EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number);
 
 /** Modifies the HSP data after the final gapped alignment.
  * Input includes only data that likely needs modification. This function
