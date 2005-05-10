@@ -99,6 +99,7 @@ private:
 
     const CProjectItemsTree*    m_CurrentBuildTree;
     
+    set<string>  m_ProjectTags;
     set<string>  m_AllowedTags;
     set<string>  m_DisallowedTags;
 
@@ -152,6 +153,7 @@ public:
     string GetProjectTreeRoot(void) const;
     bool   IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
                                string& unmet) const;
+    void   LoadProjectTags(const string& filename);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
@@ -183,7 +185,8 @@ public:
         eProjectType,
         eBuildConfiguration,
         eMetaMakefile,
-        eConfigureDefinesPath
+        eConfigureDefinesPath,
+        eUnknownProjectTag
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -201,6 +204,8 @@ public:
             return "Bad or missed metamakefile";
         case eConfigureDefinesPath:
             return "Path to configure defines file is empty";
+        case eUnknownProjectTag:
+            return "Unregistered project tag";
         default:
             return CException::GetErrCodeString();
         }
@@ -214,6 +219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/10 17:30:27  gouriano
+ * Added verification of project tags
+ *
  * Revision 1.22  2005/05/09 17:00:11  gouriano
  * Added new configuration parameters
  *

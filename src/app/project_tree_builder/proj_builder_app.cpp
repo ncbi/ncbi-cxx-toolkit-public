@@ -439,7 +439,8 @@ int CProjBulderApp::Run(void)
                                                m_Subtree,
                                                m_Solution,
                                                m_BuildPtb);
-        configure_generator.SaveProject();
+        configure_generator.SaveProject(false);
+        configure_generator.SaveProject(true);
 
         // INDEX dummy project
         CVisualStudioProject index_xmlprj;
@@ -469,7 +470,8 @@ int CProjBulderApp::Run(void)
             sln_gen.AddProject(p->second);
         }
         sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddUtilityProject (configure_generator.GetPath());
+        sln_gen.AddUtilityProject (configure_generator.GetPath(false));
+        sln_gen.AddUtilityProject (configure_generator.GetPath(true));
         sln_gen.AddUtilityProject (index_prj_path);
         sln_gen.AddBuildAllProject(build_all_prj_path);
         sln_gen.SaveSolution(m_Solution);
@@ -533,7 +535,8 @@ int CProjBulderApp::Run(void)
                                m_Subtree,
                                m_Solution,
                                m_BuildPtb);
-        configure_generator.SaveProject();
+        configure_generator.SaveProject(false);
+        configure_generator.SaveProject(true);
 
         // INDEX dummy project
         CVisualStudioProject index_xmlprj;
@@ -563,7 +566,8 @@ int CProjBulderApp::Run(void)
             sln_gen.AddProject(p->second);
         }
         sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddUtilityProject (configure_generator.GetPath());
+        sln_gen.AddUtilityProject (configure_generator.GetPath(false));
+        sln_gen.AddUtilityProject (configure_generator.GetPath(true));
         sln_gen.AddUtilityProject (index_prj_path);
         sln_gen.AddBuildAllProject(build_all_prj_path);
         sln_gen.SaveSolution(m_Solution);
@@ -821,6 +825,13 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     m_ProjectTreeInfo->m_Root = m_Root;
     LOG_POST(Info << "Project tree root: " << m_Root);
 
+    // all possible project tags
+    string  tagsfile = GetConfig().GetString("ProjectTree", "ProjectTags", "");
+    if (!tagsfile.empty()) {
+        LoadProjectTags(
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
+    }
+    
     /// <include> branch of tree
     string include = GetConfig().GetString("ProjectTree", "include", "");
     m_ProjectTreeInfo->m_Include = 
@@ -857,8 +868,6 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                                         subtree));
     }
 
-
-
     /// <compilers> branch of tree
     string compilers = 
         GetConfig().GetString("ProjectTree", "compilers", "");
@@ -868,7 +877,6 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     m_ProjectTreeInfo->m_Compilers = 
         CDirEntry::AddTrailingPathSeparator
                    (m_ProjectTreeInfo->m_Compilers);
-
 
     /// ImplicitExcludedBranches - all subdirs will be excluded by default
     string implicit_exclude_str 
@@ -902,7 +910,6 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     /// Makefile in tree node
     m_ProjectTreeInfo->m_TreeNode = 
         GetConfig().GetString("ProjectTree", "TreeNode", "");
-
 
     return *m_ProjectTreeInfo;
 }
@@ -1001,10 +1008,19 @@ bool CProjBulderApp::IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
     CSimpleMakeFileContents::TContents::const_iterator k;
     k = mk.m_Contents.find("PROJ_TAG");
     if (k == mk.m_Contents.end()) {
+        // makefile has no tag -- verify that *any tag* is allowed
         return m_AllowedTags.find("*") != m_AllowedTags.end();
     } else {
         const list<string>& values = k->second;
         list<string>::const_iterator i;
+        // verify that all project tags are registered
+        for (i = values.begin(); i != values.end(); ++i) {
+            if (m_ProjectTags.find(*i) == m_ProjectTags.end()) {
+                NCBI_THROW(CProjBulderAppException, eUnknownProjectTag, *i);
+                return false;
+            }
+        }
+        // for each tag see if it is not prohibited explicitly
         if (!m_DisallowedTags.empty()) {
             for (i = values.begin(); i != values.end(); ++i) {
                 if (m_DisallowedTags.find(*i) != m_DisallowedTags.end()) {
@@ -1024,6 +1040,20 @@ bool CProjBulderApp::IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
     }
     unmet = NStr::Join(k->second,",");
     return false;
+}
+
+void CProjBulderApp::LoadProjectTags(const string& filename)
+{
+    CNcbiIfstream ifs(filename.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if ( ifs.is_open() ) {
+        string line;
+        while ( NcbiGetlineEOL(ifs, line) ) {
+            NStr::TruncateSpacesInPlace(line);
+            if (!line.empty()) {
+                m_ProjectTags.insert(line);
+            }
+        }
+    }
 }
 
 CProjBulderApp& GetApp(void)
@@ -1047,6 +1077,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/05/10 17:31:34  gouriano
+ * Added verification of project tags
+ *
  * Revision 1.57  2005/05/09 17:04:09  gouriano
  * Added filtering by project tag and GUI
  *
