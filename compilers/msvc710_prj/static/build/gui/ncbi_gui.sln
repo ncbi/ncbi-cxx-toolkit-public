@@ -3,6 +3,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProje
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-DIALOG-", "UtilityProjects\_CONFIGURE_DIALOG_.vcproj", "{FDC9447A-C7F1-492D-B84F-D54A1E610F16}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -25,6 +29,18 @@ Global
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA7E}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA7E}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA7E}.ReleaseMT.Build.0 = ReleaseMT|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.Debug.ActiveCfg = Debug|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.Debug.Build.0 = Debug|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.DebugDLL.Build.0 = DebugDLL|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.DebugMT.ActiveCfg = DebugMT|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.DebugMT.Build.0 = DebugMT|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.Release.ActiveCfg = Release|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.Release.Build.0 = Release|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{FDC9447A-C7F1-492D-B84F-D54A1E610F16}.ReleaseMT.Build.0 = ReleaseMT|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

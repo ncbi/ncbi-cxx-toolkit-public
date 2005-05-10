@@ -3,6 +3,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProje
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-DIALOG-", "UtilityProjects\_CONFIGURE_DIALOG_.vcproj", "{67EC51FA-3A0D-46B8-8F89-49EE209C8CB8}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		DebugDLL = DebugDLL
@@ -13,6 +17,10 @@ Global
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAC9}.DebugDLL.Build.0 = DebugDLL|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAC9}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAC9}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{67EC51FA-3A0D-46B8-8F89-49EE209C8CB8}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{67EC51FA-3A0D-46B8-8F89-49EE209C8CB8}.DebugDLL.Build.0 = DebugDLL|Win32
+		{67EC51FA-3A0D-46B8-8F89-49EE209C8CB8}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{67EC51FA-3A0D-46B8-8F89-49EE209C8CB8}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
