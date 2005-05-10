@@ -215,6 +215,9 @@ function RunPtb(oShell, oTree, oTask)
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
+	if ( GetVerbose() ) {
+		ptb_command_line += " -cfg";
+	}
 	ptb_command_line += " -nobuildptb";
 	ptb_command_line += " -ext -nws -extroot \"";
     ptb_command_line += oTask.ToolkitPath;
