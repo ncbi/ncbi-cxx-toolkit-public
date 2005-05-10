@@ -66,7 +66,6 @@ public:
 
     virtual void Reset() = 0;
 
-
 };
 
 
@@ -154,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/10 14:11:22  didenko
+ * Added blob caching
+ *
  * Revision 1.8  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *

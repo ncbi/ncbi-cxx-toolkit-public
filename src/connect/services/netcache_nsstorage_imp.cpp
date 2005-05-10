@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbifile.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <util/rwstream.hpp>
 
@@ -38,8 +39,12 @@
 BEGIN_NCBI_SCOPE
 
 
-CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client)
-: m_NCClient(nc_client)
+CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
+                                       bool cache_input,
+                                       bool cache_output)
+    : m_NCClient(nc_client), 
+      m_InputCached(cache_input), m_OutputCached(cache_output),
+      m_CreatedBlobId(NULL)
 {
 }
 
@@ -50,7 +55,8 @@ CNetCacheNSStorage::~CNetCacheNSStorage()
 
 void CNetCacheNSStorage::x_Check()
 {
-    if (m_IStream.get() || m_OStream.get())
+    if ( (m_IStream.get() && !m_InputCached) || 
+         (m_OStream.get() || m_OutputCached && m_CreatedBlobId) )
         NCBI_THROW(CNetCacheNSStorageException,
                    eBusy, "Communication channel is already in use.");
 }
@@ -78,7 +84,6 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
             SleepMilliSec(1000 + try_count*2000);
         }
     }
-
     if (!reader.get()) {
         NCBI_THROW(CNetCacheNSStorageException,
                    eBlobNotFound, "Requested blob is not found.");
@@ -98,8 +103,20 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     }
 
     if (blob_size) *blob_size = b_size;
-    m_IStream.reset(new CRStream(reader.release(), 0,0, 
-                                 CRWStreambuf::fOwnReader));
+    if (m_InputCached) {
+        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(".",".nc_cache_input."));
+        char buf[1024];
+        size_t bytes_read = 0;
+        while( reader->Read(buf, sizeof(buf), &bytes_read) == eRW_Success ) {
+            fstr->write(buf, bytes_read);
+        }
+        fstr->flush();
+        fstr->seekg(0);
+        m_IStream.reset(fstr.release());
+    } else {    
+        m_IStream.reset(new CRStream(reader.release(), 0,0, 
+                                     CRWStreambuf::fOwnReader));
+    }
     return *m_IStream;
 }
 
@@ -128,27 +145,32 @@ string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
 CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
 {
     x_Check();
-    auto_ptr<IWriter> writer;
-    int try_count = 0;
-    while(1) {
-        try {
-            writer.reset(m_NCClient->PutData(&key));
-            break;
-        }
-        catch (CNetServiceException& ex) {
-            LOG_POST(Error << "Communication Error : " 
-                            << ex.what());
-            if (++try_count >= 2)
-                throw;
+    if (!m_OutputCached) {
+        auto_ptr<IWriter> writer;
+        int try_count = 0;
+        while(1) {
+            try {
+                writer.reset(m_NCClient->PutData(&key));
+                break;
+            }
+            catch (CNetServiceException& ex) {
+                LOG_POST(Error << "Communication Error : " 
+                         << ex.what());
+                if (++try_count >= 2)
+                    throw;
             SleepMilliSec(1000 + try_count*2000);
+            }
         }
+        if (!writer.get()) {
+            NCBI_THROW(CNetScheduleStorageException,
+                       eWriter, "Writer couldn't be created.");
+        }
+        m_OStream.reset( new CWStream(writer.release(), 0,0, 
+                                      CRWStreambuf::fOwnWriter));
+    } else {
+        m_CreatedBlobId = &key;
+        m_OStream.reset(CFile::CreateTmpFileEx(".", ".nc_cache_output."));        
     }
-    if (!writer.get()) {
-        NCBI_THROW(CNetScheduleStorageException,
-                   eWriter, "Writer couldn't be created.");
-    }
-    m_OStream.reset( new CWStream(writer.release(), 0,0, 
-                                  CRWStreambuf::fOwnWriter));
     return *m_OStream;
 }
 
@@ -170,6 +192,44 @@ void CNetCacheNSStorage::DeleteBlob(const string& data_id)
 void CNetCacheNSStorage::Reset()
 {
     m_IStream.reset();
+    if (m_OutputCached && m_OStream.get()) {
+        auto_ptr<IWriter> writer;
+        int try_count = 0;
+        while(1) {
+            try {
+                writer.reset(m_NCClient->PutData(m_CreatedBlobId));
+                break;
+            }
+            catch (CNetServiceException& ex) {
+                LOG_POST(Error << "Communication Error : " 
+                         << ex.what());
+                if (++try_count >= 2)
+                    throw;
+            SleepMilliSec(1000 + try_count*2000);
+            }
+        }
+        if (!writer.get()) {
+            NCBI_THROW(CNetScheduleStorageException,
+                       eWriter, "Writer couldn't be created.");
+        }
+        fstream* fstr = dynamic_cast<fstream*>(m_OStream.get());
+        if (fstr) {
+            fstr->flush();
+            fstr->seekg(0);
+            char buf[1024];
+            while( !fstr->eof() ) {
+                fstr->read(buf, sizeof(buf));
+                if( writer->Write(buf, fstr->gcount()) != eRW_Success)
+                    NCBI_THROW(CNetScheduleStorageException,
+                               eWriter, "Couldn't write to Writer.");
+            }
+        } else {
+            NCBI_THROW(CNetScheduleStorageException,
+                       eWriter, "Wrong cast.");
+        }
+        m_CreatedBlobId = NULL;
+        
+    }
     m_OStream.reset();
 }
 
@@ -178,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/10 14:11:22  didenko
+ * Added blob caching
+ *
  * Revision 1.6  2005/04/20 19:23:47  didenko
  * Added GetBlobAsString, GreateEmptyBlob methods
  * Remave RemoveData to DeleteBlob

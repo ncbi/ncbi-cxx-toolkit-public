@@ -237,13 +237,24 @@ void CGridWorkerApp::Init(void)
     SetDiagPostFlag(eDPF_DateTime);
 
     CNcbiApplication::Init();
+
+    const IRegistry& reg = GetConfig();
+    bool cache_input =
+        reg.GetBool("netcache_client", "cache_input", false, 
+                    0, CNcbiRegistry::eReturn);
+    bool cache_output =
+        reg.GetBool("netcache_client", "cache_output", false, 
+                    0, CNcbiRegistry::eReturn);
+
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(
-            new CNetScheduleStorageFactory_NetCache(GetConfig()) 
+            new CNetScheduleStorageFactory_NetCache(reg, 
+                                                    cache_input,
+                                                    cache_output)
                               );
     if (!m_ClientFactory.get()) 
         m_ClientFactory.reset(
-            new CNetScheduleClientFactory(GetConfig())
+            new CNetScheduleClientFactory(reg)
                               );
     GetJobFactory().Init(GetInitContext());
 }
@@ -262,24 +273,24 @@ int CGridWorkerApp::Run(void)
     const IRegistry& reg = GetConfig();
 
     unsigned int udp_port =
-       reg.GetInt("server", "udp_port", 9111,0,IRegistry::eReturn);
+        reg.GetInt("server", "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
     unsigned int max_threads = 
-       reg.GetInt("server","max_threads",4,0,IRegistry::eReturn);
+        reg.GetInt("server","max_threads",4,0,IRegistry::eReturn);
     unsigned int init_threads = 
-       reg.GetInt("server","init_threads",2,0,IRegistry::eReturn);
+        reg.GetInt("server","init_threads",2,0,IRegistry::eReturn);
     unsigned int ns_timeout = 
-       reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
+        reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
     unsigned int threads_pool_timeout = 
-       reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
+        reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
     unsigned int control_port = 
-       reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
+        reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
     bool server_log = 
-       reg.GetBool("server","log",false,0,IRegistry::eReturn);
+        reg.GetBool("server","log",false,0,IRegistry::eReturn);
     unsigned int log_size = 
-       reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
+        reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
     string log_file_name = GetProgramDisplayName() +"_err.log";
     unsigned int max_total_jobs = 
-       reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
+        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
     bool is_daemon =
         reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
@@ -330,6 +341,8 @@ int CGridWorkerApp::Run(void)
                                             GetStorageFactory(), 
                                             GetClientFactory())
                        );
+    if (udp_port == 0)
+        udp_port = control_port;
     m_WorkerNode->SetListeningPort(udp_port);
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
@@ -348,9 +361,9 @@ int CGridWorkerApp::Run(void)
         LOG_POST(Info 
                  << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
                  << "\" is started.\n"
-                 << "Waiting for jobs on UDP port " << udp_port << "\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
-                 << "Maximum job threads is " << max_threads << "\n");
+                 << "Maximum job threads: " << max_threads << "\n"
+                 << "Queue name: " << m_WorkerNode->GetQueueName() );
 
         CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
         try {
@@ -380,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/10 14:14:33  didenko
+ * Added blob caching
+ *
  * Revision 1.18  2005/05/06 14:58:41  didenko
  * Fixed Uninitialized varialble bug
  *

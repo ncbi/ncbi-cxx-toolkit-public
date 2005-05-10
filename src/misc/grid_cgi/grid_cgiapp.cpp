@@ -205,7 +205,7 @@ void CGridCgiApplication::InitGridClient()
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CNetScheduleStorageFactory_NetCache cf(GetConfig());
+        CNetScheduleStorageFactory_NetCache cf(GetConfig(),false, false);
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -388,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/10 14:14:33  didenko
+ * Added blob caching
+ *
  * Revision 1.17  2005/05/02 14:48:05  didenko
  * Fixed bug this url cutting
  *

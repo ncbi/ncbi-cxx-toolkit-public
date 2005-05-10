@@ -57,7 +57,7 @@ void CGridClientApp::Init(void)
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CNetScheduleStorageFactory_NetCache cf(GetConfig());
+        CNetScheduleStorageFactory_NetCache cf(GetConfig(),false, false);
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/10 14:14:33  didenko
+ * Added blob caching
+ *
  * Revision 1.3  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

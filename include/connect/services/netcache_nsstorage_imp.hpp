@@ -30,6 +30,7 @@
  *
  */
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbistre.hpp>
 #include <connect/services/netschedule_storage.hpp>
 #include <connect/services/netcache_client.hpp>
 
@@ -46,10 +47,12 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
 {
 public:
-    CNetCacheNSStorage(CNetCacheClient* nc_client);
+    CNetCacheNSStorage(CNetCacheClient* nc_client, 
+                       bool cache_input = false,
+                       bool cache_output = false);
     virtual ~CNetCacheNSStorage(); 
 
-    virtual string        GetBlobAsString( const string& data_id);
+    virtual string        GetBlobAsString(const string& data_id);
 
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0);
@@ -68,6 +71,10 @@ private:
     auto_ptr<IReader> x_GetReader(const string& key,
                                   size_t& blob_size);
     void x_Check();
+
+    bool     m_InputCached;
+    bool     m_OutputCached;
+    string*  m_CreatedBlobId;
 };
 
 class CNetCacheNSStorageException : public CNetScheduleStorageException
@@ -98,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/10 14:11:22  didenko
+ * Added blob caching
+ *
  * Revision 1.8  2005/04/20 19:23:47  didenko
  * Added GetBlobAsString, GreateEmptyBlob methods
  * Remave RemoveData to DeleteBlob

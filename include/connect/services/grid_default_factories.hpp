@@ -77,7 +77,9 @@ public:
 class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
 {
 public:
-    CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
+    CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
+                                        bool             cache_input,
+                                        bool             cache_output);
     virtual ~CNetScheduleStorageFactory_NetCache() {}
 
     virtual INetScheduleStorage* CreateInstance(void);
@@ -86,12 +88,17 @@ private:
     typedef CPluginManager<CNetCacheClient> TPMNetCache;
     TPMNetCache               m_PM_NetCache;
     const IRegistry&          m_Registry;
+    bool                      m_CacheInput;
+    bool                      m_CacheOutput;
 };
 
 inline
 CNetScheduleStorageFactory_NetCache::
-        CNetScheduleStorageFactory_NetCache(const IRegistry& reg)
-: m_Registry(reg)
+        CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
+                                            bool             cache_input,
+                                            bool             cache_output)
+            : m_Registry(reg), m_CacheInput(cache_input), 
+              m_CacheOutput(cache_output)
 {
     m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
 }
@@ -122,7 +129,9 @@ CNetScheduleStorageFactory_NetCache::CreateInstance(void)
                    "Couldn't create NetCache client."
                    "Check registry.");
 
-    return new CNetCacheNSStorage(nc_client.release());
+    return new CNetCacheNSStorage(nc_client.release(),
+                                  m_CacheInput, 
+                                  m_CacheOutput);
 }
 
 
@@ -187,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/10 14:11:22  didenko
+ * Added blob caching
+ *
  * Revision 1.3  2005/03/30 21:26:01  didenko
  * Added missing header files
  *

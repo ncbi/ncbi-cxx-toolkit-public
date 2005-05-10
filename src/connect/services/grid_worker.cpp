@@ -178,6 +178,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
     try {
         auto_ptr<IWorkerNodeJob> job( thr_context.CreateJob());
         int ret_code = job->Do(thr_context.GetJobContext());
+        thr_context.CloseStreams();
         int try_count = 0;
         while(1) {
             try {
@@ -458,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/10 14:14:33  didenko
+ * Added blob caching
+ *
  * Revision 1.18  2005/05/06 13:08:06  didenko
  * Added check for a job cancelation in the GetShoutdownLevel method
  *
