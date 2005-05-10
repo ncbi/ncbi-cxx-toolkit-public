@@ -119,7 +119,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
         m_ServListCurr = 0;
         ITERATE(TServiceList, it, m_ServList) {
             const SServiceAddress& sa = *it;
-            EIO_Status st = Connect(sa.host,sa.port);
+            EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
                 break;
             }
@@ -130,9 +130,19 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
             return; // we are connected
         } 
 
+        string warn = "Failed to discover the service ";
+        warn += m_LB_ServiceName;
+        warn += ". Trying fallback(reserve) server.";
+        ERR_POST(Warning << warn);
+
+        CreateSocket("netschedule", 9051);
+        if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+            return; // we are connected
+        } 
+
         NCBI_THROW(CNetServiceException,
-                eCommunicationError,
-                "Cannot connect to netschedule service " + m_LB_ServiceName);
+                   eCommunicationError,
+                   "Cannot connect to netschedule service " + m_LB_ServiceName);
     }
 
 
@@ -147,7 +157,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
         string sa_host = CSocketAPI::gethostbyaddr(sa.host);
         if (sa.port != m_Port || 
             sa_host != m_Host) {
-            EIO_Status st = Connect(sa.host,sa.port);
+            EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
                 if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
                     return; // we are connected
@@ -627,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/10 14:13:52  kuznets
+ * Added fallback server if LB connection is not available
+ *
  * Revision 1.10  2005/05/06 15:13:55  didenko
  * Fixed possible uninitialized variable bugs
  *
