@@ -38,6 +38,9 @@
 
 BEGIN_NCBI_SCOPE
 
+const string CNetCacheNSStorage::sm_InputBlobCachePrefix = ".nc_cache_input.";
+const string CNetCacheNSStorage::sm_OutputBlobCachePrefix = ".nc_cache_output.";
+
 
 CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
                                        bool cache_input,
@@ -104,7 +107,7 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
 
     if (blob_size) *blob_size = b_size;
     if (m_InputCached) {
-        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(".",".nc_cache_input."));
+        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(".",sm_InputBlobCachePrefix));
         char buf[1024];
         size_t bytes_read = 0;
         while( reader->Read(buf, sizeof(buf), &bytes_read) == eRW_Success ) {
@@ -169,7 +172,7 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
                                       CRWStreambuf::fOwnWriter));
     } else {
         m_CreatedBlobId = &key;
-        m_OStream.reset(CFile::CreateTmpFileEx(".", ".nc_cache_output."));        
+        m_OStream.reset(CFile::CreateTmpFileEx(".",sm_OutputBlobCachePrefix));        
     }
     return *m_OStream;
 }
@@ -238,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/05/10 15:15:14  didenko
+ * Added clean up procedure
+ *
  * Revision 1.7  2005/05/10 14:11:22  didenko
  * Added blob caching
  *

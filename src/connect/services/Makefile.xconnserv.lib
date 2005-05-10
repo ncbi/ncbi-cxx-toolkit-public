@@ -4,7 +4,8 @@ SRC     = netschedule_client netschedule_client_lb \
           netcache_client netcache_client_lb \
           netservice_client \
           grid_worker netcache_nsstorage_imp grid_worker_app \
-          grid_client grid_client_app grid_thread_context grid_debug_context
+          grid_client grid_client_app grid_thread_context grid_debug_context \
+          grid_default_factories
 
 LIB     = xconnserv
 LIBS    = $(NETWORK_LIBS)

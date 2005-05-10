@@ -63,6 +63,9 @@ public:
     
     virtual void Reset();
 
+public:
+    static const string sm_InputBlobCachePrefix;
+    static const string sm_OutputBlobCachePrefix;
 private:
     auto_ptr<CNetCacheClient> m_NCClient;
     auto_ptr<CNcbiIstream>    m_IStream;
@@ -105,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/10 15:15:14  didenko
+ * Added clean up procedure
+ *
  * Revision 1.9  2005/05/10 14:11:22  didenko
  * Added blob caching
  *

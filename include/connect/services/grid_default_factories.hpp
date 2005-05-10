@@ -41,7 +41,46 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
+{
+public:
+    CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
+                                        bool             cache_input,
+                                        bool             cache_output);
+    virtual ~CNetScheduleStorageFactory_NetCache() {}
+
+    virtual INetScheduleStorage* CreateInstance(void);
+
+private:
+    typedef CPluginManager<CNetCacheClient> TPMNetCache;
+    TPMNetCache               m_PM_NetCache;
+    const IRegistry&          m_Registry;
+    bool                      m_CacheInput;
+    bool                      m_CacheOutput;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class CNetScheduleClientFactory : public INetScheduleClientFactory
+{
+public:
+    CNetScheduleClientFactory(const IRegistry& reg);
+    virtual ~CNetScheduleClientFactory() {}
+
+    virtual CNetScheduleClient* CreateInstance(void);
+
+private:
+    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
+    TPMNetSchedule   m_PM_NetSchedule;
+    const IRegistry& m_Registry;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -69,133 +108,14 @@ public:
     NCBI_EXCEPTION_DEFAULT(CGridFactoriesException, CException);
 };
 
-/////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
-{
-public:
-    CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                        bool             cache_input,
-                                        bool             cache_output);
-    virtual ~CNetScheduleStorageFactory_NetCache() {}
-
-    virtual INetScheduleStorage* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetCacheClient> TPMNetCache;
-    TPMNetCache               m_PM_NetCache;
-    const IRegistry&          m_Registry;
-    bool                      m_CacheInput;
-    bool                      m_CacheOutput;
-};
-
-inline
-CNetScheduleStorageFactory_NetCache::
-        CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                            bool             cache_input,
-                                            bool             cache_output)
-            : m_Registry(reg), m_CacheInput(cache_input), 
-              m_CacheOutput(cache_output)
-{
-    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-}
-
-inline 
-INetScheduleStorage* 
-CNetScheduleStorageFactory_NetCache::CreateInstance(void)
-{
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netcache_tree = 
-            param_tree->FindSubNode(kNetCacheDriverName);
-
-    auto_ptr<CNetCacheClient> nc_client;
-    if (netcache_tree) {
-        nc_client.reset( 
-            m_PM_NetCache.CreateInstance(
-                    kNetCacheDriverName,
-                    CVersionInfo(TPMNetCache::TInterfaceVersion::eMajor,
-                                 TPMNetCache::TInterfaceVersion::eMinor,
-                                 TPMNetCache::TInterfaceVersion::ePatchLevel), 
-                                 netcache_tree)
-                       );
-    }
-    if (!nc_client.get())
-        NCBI_THROW(CGridFactoriesException,
-                   eNCClientIsNotCreated, 
-                   "Couldn't create NetCache client."
-                   "Check registry.");
-
-    return new CNetCacheNSStorage(nc_client.release(),
-                                  m_CacheInput, 
-                                  m_CacheOutput);
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class CNetScheduleClientFactory : public INetScheduleClientFactory
-{
-public:
-    CNetScheduleClientFactory(const IRegistry& reg);
-    virtual ~CNetScheduleClientFactory() {}
-
-    virtual CNetScheduleClient* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
-    TPMNetSchedule   m_PM_NetSchedule;
-    const IRegistry& m_Registry;
-};
-
-inline 
-CNetScheduleClientFactory::CNetScheduleClientFactory(const IRegistry& reg)
-: m_Registry(reg)
-{
-    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
-}
-
-inline 
-CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
-{
-    auto_ptr<CNetScheduleClient> ret;
-
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netschedule_tree = 
-            param_tree->FindSubNode(kNetScheduleDriverName);
-
-    if (netschedule_tree) {
-        ret.reset( 
-            m_PM_NetSchedule.CreateInstance(
-                    kNetScheduleDriverName,
-                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
-                                 TPMNetSchedule::TInterfaceVersion::eMinor,
-                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
-                                 netschedule_tree)
-                                 );
-        ret->ActivateRequestRateControl(false);
-    }
-    if (!ret.get())
-        NCBI_THROW(CGridFactoriesException,
-                   eNSClientIsNotCreated, 
-                   "Couldn't create NetSchedule client."
-                   "Check registry.");
-
-    return ret.release();
-}
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/05/10 15:15:14  didenko
+ * Added clean up procedure
+ *
  * Revision 1.4  2005/05/10 14:11:22  didenko
  * Added blob caching
  *
