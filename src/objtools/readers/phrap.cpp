@@ -964,7 +964,7 @@ bool CPhrap_Contig::x_AddAlignRanges(TSeqPos           global_start,
                                      TAlignMap&        aln_map,
                                      TAlignStarts&     aln_starts) const
 {
-    if (global_start >= seq.GetUnpaddedLength() + offset) {
+    if (global_start >= seq.GetPaddedLength() + offset) {
         return false;
     }
     bool ret = false;
@@ -1792,6 +1792,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/05/10 18:13:18  grichenk
+* Fixed range check
+*
 * Revision 1.2  2005/05/09 20:30:33  grichenk
 * Moved alignment to bioseq-set level
 *
