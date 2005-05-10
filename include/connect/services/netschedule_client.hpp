@@ -580,7 +580,7 @@ protected:
 
     bool NeedRebalance(time_t curr) const;
 
-protected:
+public:
 
     struct SServiceAddress
     {
@@ -596,6 +596,7 @@ protected:
 
     typedef vector<SServiceAddress>  TServiceList;
 
+protected:
     /// Connect to LB, retrieve list of servers
     void ObtainServerList(const string& service_name);
 
@@ -727,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/05/10 19:59:43  kuznets
+ * Some typedefs declared public
+ *
  * Revision 1.30  2005/05/10 17:41:05  kuznets
  * Added option to discover low priority services
  *
