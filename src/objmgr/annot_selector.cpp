@@ -564,8 +564,10 @@ bool SAnnotSelector::IncludedFeatType(TFeatType type) const
         }
         return false;
     }
-    return GetFeatType() == CSeqFeatData::e_not_set
-        || GetFeatType() == type;
+    // Make sure features are selected
+    return GetAnnotType() == CSeq_annot::C_Data::e_Ftable
+        &&  (GetFeatType() == CSeqFeatData::e_not_set
+        || GetFeatType() == type);
 }
 
 
@@ -575,8 +577,13 @@ bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
         return m_AnnotTypesBitset
             .test(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
-    return GetFeatSubtype() == subtype
-        ||  GetFeatSubtype() == CSeqFeatData::eSubtype_any;
+    // Make sure features are selected
+    return GetAnnotType() == CSeq_annot::C_Data::e_Ftable
+        &&  (GetFeatType() == CSeqFeatData::e_not_set
+        ||  subtype == CSeqFeatData::eSubtype_any
+        ||  GetFeatSubtype() == subtype
+        ||  (GetFeatSubtype() == CSeqFeatData::eSubtype_any
+        &&  GetFeatType() == CSeqFeatData::GetTypeFromSubtype(subtype)));
 }
 
 
@@ -606,6 +613,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/05/10 17:03:31  grichenk
+* Fixed filtering by feature type/subtype
+*
 * Revision 1.26  2005/04/13 15:11:22  grichenk
 * Fixed type/subtype filtering
 *
