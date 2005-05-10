@@ -608,11 +608,8 @@ string AlignmentCollection::GetSequenceForRow(int row) const
 		myCd = m_seqStore;
 	else
 		myCd = m_rowSources.findEntry(row).cd;
-	//CCdCore* myCd = m_rowSources.findEntry(row).cd;
-    //vector< CRef< CSeq_entry > > VectorOfSeqEntries;
-    //myCd->GetVectorOfSeqEntries(VectorOfSeqEntries);
-	//int seqIndex = myCd->GetSeqIndexFaster(VectorOfSeqEntries, seqID);
 	int seqIndex = myCd->GetSeqIndex(seqID);
+
 	return myCd->GetSequenceStringByIndex(seqIndex);
 }
 

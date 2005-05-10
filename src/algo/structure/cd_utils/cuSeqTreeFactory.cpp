@@ -75,7 +75,7 @@ SeqTree* TreeFactory::makeTree(AlignmentCollection* alignData, const TreeOptions
         distMat->ComputeMatrix(dummyMeter);
 		if (blockExtender)
 			delete blockExtender;
-		TreeAlgorithm*   treeAlg = treeFactory.GetAlgorithm(treeOptions.cluteringMethod);
+		TreeAlgorithm*   treeAlg = treeFactory.GetAlgorithm(treeOptions.clusteringMethod);
 
 		if (treeAlg) 
 		{
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/05/10 20:11:31  cliu
+ * make and save trees
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

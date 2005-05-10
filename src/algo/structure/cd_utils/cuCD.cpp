@@ -606,6 +606,7 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
 	int colRow = ma.GetRowSourceTable().convertFromCDRow(cd, 0);
 	seqTree->getDiversityRankToRow(colRow, rankList);
+	delete seqTree;
 }
 
 END_SCOPE(cd_utils)
@@ -615,6 +616,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/05/10 20:11:31  cliu
+ * make and save trees
+ *
  * Revision 1.4  2005/04/21 18:34:36  lanczyck
  * revert to GetOrgRef: it was fixed to allow tax_id = 1
  *

@@ -39,7 +39,8 @@ SRC = \
 	cuSeqTreeStream \
 	cuSequenceTable \
 	cuTaxClient \
-	cuTaxTree
+	cuTaxTree \
+	cuSeqTreeAsnizer
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 			$(NCBI_C_INCLUDE)

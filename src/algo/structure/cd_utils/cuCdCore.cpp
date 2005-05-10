@@ -871,6 +871,11 @@ bool CCdCore::GetSeqIDForIndex(int SeqIndex, CRef< CSeq_id >& SeqID) const {
               }
               IDCount++;
             }
+			if (NumIDs > 0)
+			{
+				SeqID = *((*i)->GetSeq().GetId().begin());
+				return (SeqID.NotEmpty());
+			}
           }
           return(false);
         }
@@ -2320,6 +2325,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/10 20:11:31  cliu
+ * make and save trees
+ *
  * Revision 1.2  2005/04/19 22:05:04  ucko
  * +<stdio.h> due to use of sprintf()
  *
