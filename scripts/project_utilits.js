@@ -146,6 +146,7 @@ function FillTreeStructure(oShell, oTree)
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in",                             oTree.SrcRootBranch);
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in.msvc",                        oTree.SrcRootBranch);
+    GetFileFromTree(oShell, oTree, oTask, "/src/project_tags.txt",                           oTree.SrcRootBranch);
 
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/Makefile.FLTK.app.msvc",   oTree.CompilersBranch);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/ncbi.rc",                  oTree.CompilersBranch);
