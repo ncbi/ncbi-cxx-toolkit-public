@@ -1,4 +1,4 @@
-APP_PROJ = netscheduled netschedule_control
+APP_PROJ = netscheduled netschedule_control netschedule_admin
 SUB_PROJ = test cgi_tunnel2grid
 
 srcdir = @srcdir@
