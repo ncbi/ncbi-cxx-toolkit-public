@@ -71,7 +71,8 @@ const char kStrandBoth[] = "both";
 void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
-  
+
+  SetVersion(CVersionInfo(1, 11, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
   string program_name ("Splign v.1.11");
@@ -704,6 +705,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/05/10 18:02:01  kapustin
+ * Advance version number
+ *
  * Revision 1.39  2005/04/28 19:26:56  kapustin
  * Note in parameter description that input hit files must be sorted.
  *
