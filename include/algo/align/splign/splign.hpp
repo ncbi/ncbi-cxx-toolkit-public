@@ -221,6 +221,7 @@ protected:
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
     void   x_SetPattern(THits* hits);
+    void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
 };
 
 
@@ -230,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2005/05/10 18:02:24  kapustin
+ * + x_ProcessTermSegm()
+ *
  * Revision 1.20  2005/03/28 17:38:05  jcherry
  * Added export specifiers for nested structs
  *
@@ -243,10 +247,13 @@ END_NCBI_SCOPE
  * typedef public std types
  *
  * Revision 1.16  2004/11/29 21:09:12  kapustin
- * Move out-of-class struct definitions back within CSplign for more compatibility
+ * Move out-of-class struct definitions back within CSplign for more 
+ * compatibility
  *
  * Revision 1.15  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be 
+ * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two 
+ * additional parameters to specify starting coordinates.
  *
  * Revision 1.14  2004/06/29 20:48:18  kapustin
  * Use CRef to access CObject-derived members

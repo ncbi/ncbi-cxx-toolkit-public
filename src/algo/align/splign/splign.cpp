@@ -276,6 +276,17 @@ void CSplign::x_SetPattern(THits* hits)
             const size_t max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
             if(max_seg_size) {
 
+                // make the core shorter
+                {{
+                    const size_t cut = (1 + R1 - L1) / 5;
+                    const size_t l1 = L1 + cut, l2 = L2 + cut;
+                    const size_t r1 = R1 - cut, r2 = R2 - cut;
+                    if(l1 < r1 && l2 < r2) {
+                        L1 = l1; L2 = l2; 
+                        R1 = r1; R2 = r2;
+                    }
+                }}
+
                 const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
                 const size_t hlq4 = hitlen_q/4;
                 const size_t sh = hlq4;
@@ -671,6 +682,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     return rv;
 }
 
+static const char s_kGap [] = "<GAP>";
 
 // at this level and below, plus strand is assumed
 // for both sequences
@@ -678,7 +690,6 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
     typedef deque<SSegment> TSegments;
     TSegments segments;
-    static const char kGap [] = "<GAP>";
 
 //#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
@@ -773,7 +784,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
                 g.m_idty = 0;
                 g.m_len = g.m_box[1] - g.m_box[0] + 1;
-                g.m_annot = kGap;
+                g.m_annot = s_kGap;
                 g.m_details.resize(0);
                 g.m_score = 0; // no score for <Gap>s
                 segments.push_back(g);
@@ -828,7 +839,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_box[3] = segments[0].m_box[2] - 1;
         g.m_idty = 0;
         g.m_len = segments[0].m_box[0];
-        g.m_annot = kGap;
+        g.m_annot = s_kGap;
         g.m_details.resize(0);
         g.m_score = 0;
         ++seg_dim;
@@ -865,7 +876,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_box[3] = SeqLen2 - 1;
         g.m_idty = 0;
         g.m_len = g.m_box[1] - g.m_box[0] + 1;
-        g.m_annot = kGap;
+        g.m_annot = s_kGap;
         g.m_details.resize(0);
         g.m_score = 0;
         segments.push_back(g);
@@ -879,7 +890,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = kGap;
+            s.m_annot = s_kGap;
             s.m_details.resize(0);
             s.m_score = 0;
         }
@@ -901,21 +912,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         if(exon_count == 2) {
-            size_t exon_size = 1 + term_segs[0]->m_box[1] -
-                term_segs[0]->m_box[0];
-            if(exon_size < kMinTermExonSize) {
-                if(term_segs[0]->m_idty < kMinTermExonIdty) {
-
-                    // turn this to a gap
-                    SSegment& s = *(term_segs[0]);
-                    s.m_exon = false;
-                    s.m_idty = 0;
-                    s.m_len = exon_size;
-                    s.m_annot = kGap;
-                    s.m_details.resize(0);
-                    s.m_score = 0;
-                }
-            }
+            x_ProcessTermSegm(term_segs, 0);
         }
     }}
 
@@ -923,7 +920,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // find the two rightmost exons
         size_t exon_count = 0;
         SSegment* term_segs[] = {0, 0};
-        for(int i = seg_dim-1; i >= 0; --i) {
+        for(int i = seg_dim - 1; i >= 0; --i) {
             SSegment& s = segments[i];
             if(s.m_exon) {
                 term_segs[exon_count] = &s;
@@ -932,22 +929,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
             }
         }
-        if(exon_count == 2) {
-            size_t exon_size = 1 + term_segs[0]->m_box[1]
-                - term_segs[0]->m_box[0];
-            if(exon_size < kMinTermExonSize) {
-                if(term_segs[0]->m_idty < kMinTermExonIdty) {
 
-                    // turn this to a gap
-                    SSegment& s = *(term_segs[0]);
-                    s.m_exon = false;
-                    s.m_idty = 0;
-                    s.m_len = exon_size;
-                    s.m_annot = kGap;
-                    s.m_details.resize(0);
-                    s.m_score = 0;
-                }
-            }
+        if(exon_count == 2) {
+            x_ProcessTermSegm(term_segs, 1);
         }
     }}
 
@@ -968,7 +952,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = kGap;
+            s.m_annot = s_kGap;
             s.m_details.resize(0);
             s.m_score = 0;
 	  }
@@ -1302,6 +1286,52 @@ double CSplign::SAlignedCompartment::GetIdentity() const
     return double(matches) / trans.size();
 }
 
+
+void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
+{            
+    const size_t exon_size = 1 + term_segs[0]->m_box[1] -
+        term_segs[0]->m_box[0];
+
+    if(exon_size < kMinTermExonSize) {
+
+        bool turn2gap = false;
+        if(term_segs[0]->m_idty < kMinTermExonIdty) {
+            turn2gap = true;
+        }
+        else {
+            
+            // verify that the intron is not too long
+
+            const size_t b = side == 0? term_segs[1]->m_box[2]:
+                term_segs[0]->m_box[2];
+
+            const size_t a = side == 0? term_segs[0]->m_box[3]:
+                term_segs[1]->m_box[3];
+
+            const size_t intron_len = b - a;
+            const size_t max_intron_len = exon_size * kSubjPerQuery;
+            if(intron_len > max_intron_len) {
+                turn2gap = true;
+            }
+        }
+        
+        if(turn2gap) {
+
+            // turn the segment into a gap
+            SSegment& s = *(term_segs[0]);
+            s.m_exon = false;
+            s.m_idty = 0;
+            s.m_len = exon_size;
+            s.m_annot = s_kGap;
+            s.m_details.resize(0);
+            s.m_score = 0;
+        }
+    }
+}
+
+
+////////////////////////////////////
+
 namespace splign_local {
 
     template<typename T>
@@ -1474,6 +1504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/10 18:02:36  kapustin
+ * + x_ProcessTermSegm()
+ *
  * Revision 1.26  2005/01/26 21:33:12  kapustin
  * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
  *
