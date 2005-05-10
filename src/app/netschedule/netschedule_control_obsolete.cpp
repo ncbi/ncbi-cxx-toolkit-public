@@ -40,45 +40,9 @@
 #include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#include "client_admin.hpp"
 
 USING_NCBI_SCOPE;
-
-/// Proxy class to open ShutdownServer
-///
-/// @internal
-class CNetScheduleClient_Control : public CNetScheduleClient 
-{
-public:
-    CNetScheduleClient_Control(const string&  host,
-                               unsigned short port,
-                               const string&  queue = "noname")
-      : CNetScheduleClient(host, port, "netschedule_control", queue)
-    {}
-
-    void ShutdownServer() { CNetScheduleClient::ShutdownServer(); }
-    void DropQueue() { CNetScheduleClient::DropQueue(); }
-    void PrintStatistics(CNcbiOstream & out) 
-    {
-        CNetScheduleClient::PrintStatistics(out);
-    }
-    void Monitor(CNcbiOstream & out) 
-    {
-        CNetScheduleClient::Monitor(out);
-    }
-    void DumpQueue(CNcbiOstream & out, const string& job_key)
-    {
-        CNetScheduleClient::DumpQueue(out, job_key);
-    }
-
-    void Logging(bool on_off) { CNetScheduleClient::Logging(on_off); }
-
-    virtual void CheckConnect(const string& key)
-    {
-        CNetScheduleClient::CheckConnect(key);
-    }
-
-};
-///////////////////////////////////////////////////////////////////////
 
 
 /// NetSchedule control application
@@ -241,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/10 19:25:35  kuznets
+ * Cosmetics
+ *
  * Revision 1.10  2005/05/05 16:07:15  kuznets
  * Added individual job dumping
  *
