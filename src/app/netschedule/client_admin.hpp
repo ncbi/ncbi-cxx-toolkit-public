@@ -56,7 +56,11 @@ public:
     using CNetScheduleClient::Monitor;
     using CNetScheduleClient::DumpQueue;
     using CNetScheduleClient::Logging;
-    using CNetScheduleClient::CheckConnect;
+    // using CNetScheduleClient::CheckConnect;
+    virtual void CheckConnect(const string& key)
+    {
+        CNetScheduleClient::CheckConnect(key);
+    }
 };
 
 
@@ -65,6 +69,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/10 22:42:35  ucko
+ * Explicitly wrap CheckConnect, as some versions of WorkShop apparently
+ * won't otherwise actually change its visibility.
+ *
  * Revision 1.1  2005/05/10 19:23:34  kuznets
  * Initial revision
  *
