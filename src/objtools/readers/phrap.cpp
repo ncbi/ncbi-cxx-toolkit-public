@@ -1755,7 +1755,7 @@ void CPhrapReader::x_ReadRead(CPhrap_Contig& contig)
 
 void CPhrapReader::x_CreateDesc(CBioseq_set& bioseq_set) const
 {
-    if ( (m_Flags & fPhrap_Descr == 0)  ||  m_AssmTags.empty() ) {
+    if ( ( (m_Flags & fPhrap_Descr) == 0)  ||  m_AssmTags.empty() ) {
         return;
     }
     CRef<CSeq_descr> descr(new CSeq_descr);
@@ -1792,6 +1792,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/10 19:08:23  dicuccio
+* Fixed warning concerning precedence of operators
+*
 * Revision 1.3  2005/05/10 18:13:18  grichenk
 * Fixed range check
 *
