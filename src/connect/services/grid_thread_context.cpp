@@ -63,18 +63,6 @@ void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
 void CGridThreadContext::Reset()
 {
     _ASSERT(m_JobContext);
-    m_Reader->Reset();
-    m_Writer->Reset();
-    m_ProgressWriter->Reset();
-    m_RateControl.Reset(1);
-
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (debug_context) {
-        debug_context->DumpOutput(m_JobContext->GetJobKey(),
-                                  m_JobContext->GetJobOutput(), 
-                                  m_JobContext->m_JobNumber);
-    }
-    
     m_JobContext->SetThreadContext(NULL);
     m_JobContext = NULL;
  
@@ -237,12 +225,30 @@ IWorkerNodeJob* CGridThreadContext::CreateJob()
     return m_JobContext->GetWorkerNode().CreateJob();
 }
 
+void CGridThreadContext::CloseStreams()
+{
+    _ASSERT(m_JobContext);
+    m_Reader->Reset();
+    m_Writer->Reset();
+    m_ProgressWriter->Reset();
+    m_RateControl.Reset(1);
+
+    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (debug_context) {
+        debug_context->DumpOutput(m_JobContext->GetJobKey(),
+                                  m_JobContext->GetJobOutput(), 
+                                  m_JobContext->m_JobNumber);
+    }
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2005/05/10 14:13:10  didenko
+ * Added CloseStreams method
+ *
  * Revision 6.4  2005/05/06 14:43:14  didenko
  * Minor fix
  *

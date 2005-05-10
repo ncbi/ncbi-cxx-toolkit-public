@@ -50,6 +50,7 @@ public:
     CWorkerNodeJobContext& GetJobContext();
 
     void SetJobContext(CWorkerNodeJobContext& job_context);
+    void CloseStreams();
     void Reset();
 
     CNcbiIstream& GetIStream();
@@ -82,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/05/10 14:13:10  didenko
+ * Added CloseStreams method
+ *
  * Revision 6.2  2005/05/06 13:08:06  didenko
  * Added check for a job cancelation in the GetShoutdownLevel method
  *
