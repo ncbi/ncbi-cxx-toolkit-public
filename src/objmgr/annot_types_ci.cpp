@@ -142,7 +142,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const SAnnotSelector* params)
     : m_DataCollector(new CAnnot_Collector(annot.GetScope()))
 {
-    SAnnotSelector sel(*params);
+    SAnnotSelector sel = params ? *params : SAnnotSelector();
     sel.ForceAnnotType(type)
         .SetResolveNone() // nothing to resolve
         .SetLimitSeqAnnot(annot);
@@ -156,7 +156,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const SAnnotSelector* params)
     : m_DataCollector(new CAnnot_Collector(entry.GetScope()))
 {
-    SAnnotSelector sel(*params);
+    SAnnotSelector sel = params ? *params : SAnnotSelector();
     sel.ForceAnnotType(type)
         .SetResolveNone() // nothing to resolve
         .SetSortOrder(SAnnotSelector::eSortOrder_None)
@@ -184,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.127  2005/05/10 17:03:55  grichenk
+* Check for null params
+*
 * Revision 1.126  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.
