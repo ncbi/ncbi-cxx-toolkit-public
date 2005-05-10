@@ -26,14 +26,14 @@ FONT 8, "MS Sans Serif"
 BEGIN
     CTEXT           "Please verify and confirm the configuration settings:",
                     IDC_STATIC_TITLE,5,5,365,15,SS_CENTERIMAGE
-    CONTROL         "Use dynamic libraries (DLLs)",IDC_CHECK_DLL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,5,30,365,10
-    LTEXT           "Subtree to build, or LST file",IDC_STATIC_SUBTREE,5,50,
+    LTEXT           "Subtree to build, or LST file",IDC_STATIC_SUBTREE,5,30,
                     120,10,SS_CENTERIMAGE
-    EDITTEXT        IDC_EDIT_SUBTREE,130,50,240,12,ES_AUTOHSCROLL
-    LTEXT           "Allowed project tags",IDC_STATIC_PROJTAG,5,70,120,10,
+    EDITTEXT        IDC_EDIT_SUBTREE,130,30,240,12,ES_AUTOHSCROLL
+    LTEXT           "Allowed project tags",IDC_STATIC_PROJTAG,5,50,120,10,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_EDIT_PROJTAG,130,70,240,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PROJTAG,130,50,240,12,ES_AUTOHSCROLL
+    CONTROL         "Use dynamic libraries (DLLs)",IDC_CHECK_DLL,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,5,70,365,10
     CONTROL         "",IDC_STATIC_FRAME,"Static",SS_BLACKFRAME,5,90,365,1,
                     WS_EX_STATICEDGE
     LTEXT           "Root directory of the build tree",IDC_STATIC_ROOT,5,100,
