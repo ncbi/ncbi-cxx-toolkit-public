@@ -56,6 +56,8 @@ public:
     {
         const IRegistry& reg = context.GetConfig();
         m_Param = reg.GetString("sample", "parameter", "no parameter" );
+        m_Iters = reg.GetInt("sample", "iterations", 1000,0,IRegistry::eReturn );
+        m_SleepSec = reg.GetInt("sample", "sleep_sec", 2,0,IRegistry::eReturn );;
     }
 
     virtual ~CSampleJob() {} 
@@ -69,6 +71,8 @@ public:
         //    (You can use ASN.1 de-serialization here)
         //
         CNcbiIstream& is = context.GetIStream();
+        CNcbiOstream& os = context.GetOStream();
+        
         string output_type;
         is >> output_type; // could be "doubles" or "html"
         LOG_POST( "Output type: " << output_type);
@@ -102,15 +106,14 @@ public:
         // immediate shutdown has been requested and gracefully return 
         // without calling context.CommitJob()
         //
-        int iters = 3000;
-        for (int i = 0; i < iters; ++i) {
+        for (int i = 0; i < m_Iters; ++i) {
             if (context.GetShutdownLevel() 
                 == CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
             context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +
-                                       " from " + NStr::IntToString(iters));
-            SleepMicroSec(200);            
+                                       " from " + NStr::IntToString(m_Iters));
+            SleepSec(m_SleepSec);            
         }
         sort(dvec.begin(), dvec.end());
 
@@ -118,7 +121,7 @@ public:
         // 3. Return the result to the client 
         //    (You can use ASN.1 serialization here)
         //
-        CNcbiOstream& os = context.GetOStream();
+        //        CNcbiOstream& os = context.GetOStream();
         if (output_type == "html") 
             os << "<html><head><title>"
                   "Sample Grid Worker Result Page"
@@ -148,6 +151,8 @@ public:
     }
 private:
     string m_Param;
+    int m_Iters;
+    int m_SleepSec;
 };
 
 
@@ -162,6 +167,9 @@ NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/10 14:15:19  didenko
+ * Minor changes
+ *
  * Revision 1.14  2005/04/28 18:46:55  didenko
  * Added Request rate control to PutProgressMessage method
  *
