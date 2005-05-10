@@ -65,6 +65,7 @@ public:
         eDbtagType_AceView_WormGenes,
         eDbtagType_BDGP_EST,
         eDbtagType_BDGP_INS,
+        eDbtagType_BoLD,
         eDbtagType_CDD,
         eDbtagType_CK,
         eDbtagType_COG,
@@ -79,7 +80,9 @@ public:
         eDbtagType_GOA,
         eDbtagType_GeneDB,
         eDbtagType_GeneID,
+        eDbtagType_Genew,
         eDbtagType_H_InvDB,
+        eDbtagType_HSSP,
         eDbtagType_IFO,
         eDbtagType_IMGT_GENEDB,
         eDbtagType_IMGT_HLA,
@@ -197,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/10 14:38:56  shomrat
+ * Added BoLD, Genew and HSSP to DB list
+ *
  * Revision 1.14  2005/03/31 19:00:42  shomrat
  * Added CCDS and ECOCYC as approved RefSeq databases
  *

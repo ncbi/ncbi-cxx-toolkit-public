@@ -61,6 +61,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes),
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
+    TDbxrefPair("BoLD", CDbtag::eDbtagType_BoLD),
     TDbxrefPair("CDD", CDbtag::eDbtagType_CDD),
     TDbxrefPair("CK", CDbtag::eDbtagType_CK),
     TDbxrefPair("COG", CDbtag::eDbtagType_COG),
@@ -75,7 +76,9 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("GOA", CDbtag::eDbtagType_GOA),
     TDbxrefPair("GeneDB", CDbtag::eDbtagType_GeneDB),
     TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
+    TDbxrefPair("Genew", CDbtag::eDbtagType_Genew),
     TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
+    TDbxrefPair("HSSP", CDbtag::eDbtagType_HSSP),
     TDbxrefPair("IFO", CDbtag::eDbtagType_IFO),
     TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
@@ -417,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2005/05/10 14:39:27  shomrat
+ * Added BoLD, Genew and HSSP to DB list
+ *
  * Revision 6.23  2005/05/04 19:03:32  ucko
  * Take advantage of PCase_CStr when comparing C strings.
  *
