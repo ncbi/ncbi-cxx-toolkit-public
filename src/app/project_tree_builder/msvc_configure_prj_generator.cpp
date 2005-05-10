@@ -45,6 +45,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                    const string&            solution_to_build,
                                    bool  build_ptb)
 :m_Name          ("-CONFIGURE-"),
+ m_NameGui       ("-CONFIGURE-DIALOG-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
  m_DllBuild      (dll_build),
@@ -54,6 +55,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
  m_SolutionToBuild(solution_to_build),
  m_ProjectItemExt("._"),
  m_SrcFileName   ("configure"),
+ m_SrcFileNameGui("configure_dialog"),
  m_FilesSubdir   ("UtilityProjectsFiles"),
  m_BuildPtb(build_ptb)
 {
@@ -131,10 +133,13 @@ CMsvcConfigureProjectGenerator::~CMsvcConfigureProjectGenerator(void)
 }
 
 
-void CMsvcConfigureProjectGenerator::SaveProject()
+void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
 {
+    string name(with_gui ? m_NameGui : m_Name);
+    string srcfile(with_gui ? m_SrcFileNameGui : m_SrcFileName);
+
     CVisualStudioProject xmlprj;
-    CreateUtilityProject(m_Name, m_Configs, &xmlprj);
+    CreateUtilityProject(name, m_Configs, &xmlprj);
 
 
     {{
@@ -143,13 +148,12 @@ void CMsvcConfigureProjectGenerator::SaveProject()
         filter->SetAttlist().SetFilter("");
 
         //Include collected source files
-        CreateProjectFileItem();
+        CreateProjectFileItem(with_gui);
         CRef< CFFile > file(new CFFile());
-        file->SetAttlist().SetRelativePath(m_SrcFileName + m_ProjectItemExt);
+        file->SetAttlist().SetRelativePath(srcfile + m_ProjectItemExt);
         SCustomBuildInfo build_info;
         string source_file_path_abs = 
-            CDirEntry::ConcatPath(m_ProjectDir, 
-                                  m_SrcFileName + m_ProjectItemExt);
+            CDirEntry::ConcatPath(m_ProjectDir, srcfile + m_ProjectItemExt);
         source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
         build_info.m_SourceFile  = source_file_path_abs;
         build_info.m_Description = "Configure solution : $(SolutionName)";
@@ -166,21 +170,24 @@ void CMsvcConfigureProjectGenerator::SaveProject()
 
 
 
-    SaveIfNewer(GetPath(), xmlprj);
+    SaveIfNewer(GetPath(with_gui), xmlprj);
 }
 
-
-string CMsvcConfigureProjectGenerator::GetPath() const
+string CMsvcConfigureProjectGenerator::GetPath(bool with_gui) const
 {
     string project_path = CDirEntry::ConcatPath(m_ProjectDir, "_CONFIGURE_");
+    if (with_gui) {
+        project_path += "DIALOG_";
+    }
     project_path += MSVC_PROJECT_FILE_EXT;
     return project_path;
 }
 
 
-void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
+void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
 {
-    string file_path = CDirEntry::ConcatPath(m_ProjectDir, m_SrcFileName);
+    string file_path = CDirEntry::ConcatPath(m_ProjectDir,
+        with_gui ? m_SrcFileNameGui : m_SrcFileName);
     file_path += m_ProjectItemExt;
 
     // Create dir if no such dir...
@@ -212,7 +219,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if (!GetApp().m_BuildRoot.empty()) {
         ofs << " -extroot \"" << GetApp().m_BuildRoot << "\"";
     }
-    if (GetApp().m_ConfirmCfg) {
+    if (with_gui /*|| GetApp().m_ConfirmCfg*/) {
         ofs << " -cfg";
     }
     if (GetApp().m_ProjTags != "*") {
@@ -248,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/10 17:31:10  gouriano
+ * Added configure_dialog project
+ *
  * Revision 1.23  2005/05/09 17:04:09  gouriano
  * Added filtering by project tag and GUI
  *

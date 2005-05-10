@@ -66,13 +66,13 @@ public:
     ~CMsvcConfigureProjectGenerator(void);
 
 
-    void SaveProject();
-
-    string GetPath() const;
+    void SaveProject(bool with_gui);
+    string GetPath(bool with_gui) const;
 
 private:
  
   	const string m_Name;
+  	const string m_NameGui;
 
     const string      m_OutputDir;
     list<SConfigInfo> m_Configs;
@@ -88,11 +88,12 @@ private:
     string       m_CustomBuildCommand;
 
     const string m_SrcFileName;
+    const string m_SrcFileNameGui;
 
     const string m_FilesSubdir;
     bool m_BuildPtb;
 
-    void CreateProjectFileItem(void) const;    
+    void CreateProjectFileItem(bool with_gui) const;    
 
     /// Prohibited to:
     CMsvcConfigureProjectGenerator(void);
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/10 17:29:09  gouriano
+ * Added configure_dialog project
+ *
  * Revision 1.5  2005/03/23 19:32:32  gouriano
  * Make it possible to exclude PTB build when configuring
  *
