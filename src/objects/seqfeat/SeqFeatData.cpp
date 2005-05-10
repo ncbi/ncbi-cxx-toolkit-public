@@ -301,57 +301,53 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
 }
 
 
-CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype (ESubtype subtype)
+CSeqFeatData::TSubtypesTable CSeqFeatData::sm_SubtypesTable;
+static bool s_SubtypesTableInitialized = false;
+
+
+void CSeqFeatData::x_InitSubtypesTable(void)
 {
-    switch (subtype) {
-        case eSubtype_gene:
-            return e_Gene;
-        case eSubtype_org:
-            return e_Org;
-        case eSubtype_cdregion:
-            return e_Cdregion;
-        case eSubtype_pub:
-            return e_Pub;
-        case eSubtype_seq:
-            return e_Seq;
-        case eSubtype_region:
-            return e_Region;
-        case eSubtype_comment:
-            return e_Comment;
-        case eSubtype_bond:
-            return e_Bond;
-        case eSubtype_site:
-            return e_Site;
-        case eSubtype_rsite:
-            return e_Rsite;
-        case eSubtype_user:
-            return e_User;
-        case eSubtype_txinit:
-            return e_Txinit;
-        case eSubtype_num:
-            return e_Num;
-        case eSubtype_psec_str:
-            return e_Psec_str;
-        case eSubtype_non_std_residue:
-            return e_Non_std_residue;
-        case eSubtype_het:
-            return e_Het;
-        case eSubtype_biosrc:
-            return e_Biosrc;
-        default:
-            if (subtype >= eSubtype_prot  &&
-                subtype <= eSubtype_transit_peptide_aa) {
-                return e_Prot;
-            }
-            if (subtype >= eSubtype_preRNA  &&  subtype <= eSubtype_otherRNA) {
-                return e_Rna;
-            }
-            if (subtype >= eSubtype_imp  &&  subtype <= eSubtype_site_ref) {
-                return e_Imp;
-            }
-            break;
+    if ( s_SubtypesTableInitialized ) {
+        return;
     }
-    return e_not_set;
+    sm_SubtypesTable.resize(eSubtype_any, e_not_set);
+
+    sm_SubtypesTable[eSubtype_gene] = e_Gene;
+    sm_SubtypesTable[eSubtype_org] = e_Org;
+    sm_SubtypesTable[eSubtype_cdregion] = e_Cdregion;
+    sm_SubtypesTable[eSubtype_pub] = e_Pub;
+    sm_SubtypesTable[eSubtype_seq] = e_Seq;
+    sm_SubtypesTable[eSubtype_region] = e_Region;
+    sm_SubtypesTable[eSubtype_comment] = e_Comment;
+    sm_SubtypesTable[eSubtype_bond] = e_Bond;
+    sm_SubtypesTable[eSubtype_site] = e_Site;
+    sm_SubtypesTable[eSubtype_rsite] = e_Rsite;
+    sm_SubtypesTable[eSubtype_user] = e_User;
+    sm_SubtypesTable[eSubtype_txinit] = e_Txinit;
+    sm_SubtypesTable[eSubtype_num] = e_Num;
+    sm_SubtypesTable[eSubtype_psec_str] = e_Psec_str;
+    sm_SubtypesTable[eSubtype_non_std_residue] = e_Non_std_residue;
+    sm_SubtypesTable[eSubtype_het] = e_Het;
+    sm_SubtypesTable[eSubtype_biosrc] = e_Biosrc;
+    for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
+        sm_SubtypesTable[ESubtype(sub)] = e_Prot;
+    }
+    for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
+        sm_SubtypesTable[ESubtype(sub)] = e_Rna;
+    }
+    for (int sub = eSubtype_imp; sub <= eSubtype_site_ref; ++sub) {
+        sm_SubtypesTable[ESubtype(sub)] = e_Imp;
+    }
+    s_SubtypesTableInitialized = true;
+}
+
+
+CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
+{
+    if ( !s_SubtypesTableInitialized ) {
+        x_InitSubtypesTable();
+    }
+    return sm_SubtypesTable[subtype];
 }
 
 
@@ -1987,6 +1983,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.22  2005/05/10 17:02:30  grichenk
+* Optimized GetTypeFromSubtype().
+*
 * Revision 6.21  2005/04/27 17:17:16  shomrat
 * Added EC_number and product as legal quals for preprotein, and number as legal for region
 *

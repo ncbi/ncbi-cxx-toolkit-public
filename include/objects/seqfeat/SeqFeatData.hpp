@@ -286,12 +286,16 @@ private:
     CSeqFeatData& operator=(const CSeqFeatData& value);
 
     typedef map<ESubtype, TQualifiers> TFeatQuals;
+    typedef vector<E_Choice> TSubtypesTable;
+
     static void x_InitQuals(void);
     static void x_InitLegalQuals(void);
     static void x_InitMandatoryQuals(void);
+    static void x_InitSubtypesTable(void);
 
     static TFeatQuals sm_LegalQuals;
     static TFeatQuals sm_MandatoryQuals;
+    static TSubtypesTable sm_SubtypesTable;
 };
 
 
@@ -349,6 +353,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/05/10 17:02:30  grichenk
+* Optimized GetTypeFromSubtype().
+*
 * Revision 1.7  2004/08/19 14:56:02  shomrat
 * Added qualifiers old_locus_tag and compare
 *
