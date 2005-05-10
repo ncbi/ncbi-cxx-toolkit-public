@@ -301,7 +301,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     EBlastProgramType prog = options.GetProgramType();
 
     // Determine sequence encoding
-    Uint1 encoding = GetQueryEncoding(prog);
+    EBlastEncoding encoding = GetQueryEncoding(prog);
     
     int buflen = QueryInfo_GetSeqBufLen(qinfo);
     TAutoUint1Ptr buf((Uint1*) calloc(buflen+1, sizeof(Uint1)));
@@ -474,7 +474,7 @@ SetupSubjects(const TSeqLocVector& subjects,
         sentinels = eNoSentinels;
     }
 
-    Uint1 encoding = GetSubjectEncoding(prog);
+    EBlastEncoding encoding = GetSubjectEncoding(prog);
        
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
@@ -532,7 +532,7 @@ SetupSubjects(const TSeqLocVector& subjects,
 static bool s_IsValidResidue(Uint1 res) { return res < 26; }
 
 SBlastSequence
-GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
+GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding, 
             objects::CScope* scope,
             objects::ENa_strand strand, 
             ESentinelType sentinel,
@@ -554,7 +554,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
         vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
         vector<TSeqPos> invalid_residues;        // Invalid residue positions
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
-        buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
+        buflen = CalculateSeqBufferLength(sv.size(), encoding);
         if (buflen == 0) {
             break;
         }
@@ -595,7 +595,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
     case eBlastEncodingNcbi4na:
     case eBlastEncodingNucleotide: // Used for nucleotide blastn queries
         sv.SetCoding(CSeq_data::e_Ncbi4na);
-        buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingNcbi4na,
+        buflen = CalculateSeqBufferLength(sv.size(), encoding,
                                           strand, sentinel);
         if (buflen == 0) {
             break;
@@ -647,7 +647,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
     case eBlastEncodingNcbi2na:
         ASSERT(sentinel == eNoSentinels);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
-        buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
+        buflen = CalculateSeqBufferLength(sv.size(), encoding,
                                           eNa_strand_plus, eNoSentinels);
         if (buflen == 0) {
             break;
@@ -960,6 +960,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/05/10 21:23:59  camacho
+* Fix to prior commit
+*
 * Revision 1.43  2005/05/10 16:08:39  camacho
 * Changed *_ENCODING #defines to EBlastEncoding enumeration
 *

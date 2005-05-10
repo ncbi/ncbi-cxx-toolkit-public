@@ -125,7 +125,7 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
         return BLAST_SEQSRC_ERROR;
 
     oid = seqdb_args->oid;
-    Uint1 encoding = seqdb_args->encoding;
+    EBlastEncoding encoding = seqdb_args->encoding;
     has_sentinel_byte = (encoding == eBlastEncodingNucleotide);
 
     buffer_allocated = 
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2005/05/10 21:24:00  camacho
+ * Fix to prior commit
+ *
  * Revision 1.36  2005/05/10 16:08:39  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *

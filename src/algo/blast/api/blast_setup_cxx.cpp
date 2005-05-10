@@ -50,10 +50,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-Uint1
+EBlastEncoding
 GetQueryEncoding(EBlastProgramType program)
 {
-    Uint1 retval = 0;
+    EBlastEncoding retval = eBlastEncodingError;
 
     switch (program) {
     case eBlastTypeBlastn: 
@@ -80,10 +80,10 @@ GetQueryEncoding(EBlastProgramType program)
     return retval;
 }
 
-Uint1
+EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program)
 {
-    Uint1 retval = 0;
+    EBlastEncoding retval = eBlastEncodingError;
 
     switch (program) {
     case eBlastTypeBlastn: 
@@ -108,7 +108,8 @@ GetSubjectEncoding(EBlastProgramType program)
     return retval;
 }
 
-TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
+TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, 
+                                 EBlastEncoding encoding,
                                  objects::ENa_strand strand, 
                                  ESentinelType sentinel)
                                  THROWS((CBlastException))
@@ -129,6 +130,7 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
         break;
 
     case eBlastEncodingNcbi4na:
+    case eBlastEncodingNucleotide: // Used for nucleotide blastn queries
         if (sentinel == eSentinels) {
             if (strand == eNa_strand_both) {
                 retval = sequence_length * 2;
@@ -158,7 +160,7 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
     return retval;
 }
 
-Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException))
+Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException))
 {
     switch (encoding) {
     case eBlastEncodingProtein:
@@ -414,6 +416,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/05/10 21:23:59  camacho
+ * Fix to prior commit
+ *
  * Revision 1.82  2005/05/10 16:08:39  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *

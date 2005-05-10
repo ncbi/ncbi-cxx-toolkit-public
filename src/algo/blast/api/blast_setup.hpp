@@ -121,8 +121,9 @@ enum ESentinelType {
 /** Retrieves a sequence using the object manager.
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved.
- *        Supported encodings include: eBlastEncodingNcbi2na, eBlastEncodingNcbi4na,
- *        eBlastEncodingNucleotide, and eBlastEncodingProtein. [in]
+ *        Supported encodings include: eBlastEncodingNcbi2na, 
+ *        eBlastEncodingNcbi4na, eBlastEncodingNucleotide, and 
+ *        eBlastEncodingProtein. [in]
  * @param scope Scope from which the sequences are retrieved [in]
  * @param strand strand to retrieve (applies to nucleotide only).
  *        N.B.: When requesting the eBlastEncodingNcbi2na, only the plus strand
@@ -140,7 +141,7 @@ enum ESentinelType {
  * @return pair containing the buffer and its length. 
  */
 SBlastSequence
-GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
+GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding, 
             objects::CScope* scope,
             objects::ENa_strand strand = objects::eNa_strand_plus, 
             ESentinelType sentinel = eSentinels,
@@ -159,7 +160,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
  *        If the sequence_length is 0, the return value will be 0 too
  */
 TSeqPos
-CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
+CalculateSeqBufferLength(TSeqPos sequence_length, EBlastEncoding encoding,
                          objects::ENa_strand strand =
                          objects::eNa_strand_unknown,
                          ESentinelType sentinel = eSentinels)
@@ -167,12 +168,12 @@ CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
 
 /** Convenience function to centralize the knowledge of which sentinel bytes we
  * use for supported encodings. Note that only eBlastEncodingProtein,
- * eBlastEncodingNucleotide, and eBlastEncodingNcbi4na support sentinel bytes, any other
- * values for encoding will cause an exception to be thrown.
+ * eBlastEncodingNucleotide, and eBlastEncodingNcbi4na support sentinel bytes, 
+ * any other values for encoding will cause an exception to be thrown.
  * @param encoding Encoding for which a sentinel byte is needed [in]
  * @return sentinel byte
  */
-Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
+Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException));
 
 #if 0
 // not used right now
@@ -215,14 +216,14 @@ GetNumberOfFrames(EBlastProgramType p);
 /// Returns the encoding for the sequence data used in BLAST for the query
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
-Uint1
+EBlastEncoding
 GetQueryEncoding(EBlastProgramType program);
 
 /// Returns the encoding for the sequence data used in BLAST2Sequences for 
 /// the subject
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
-Uint1
+EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program);
 
 END_SCOPE(blast)
@@ -234,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2005/05/10 21:23:59  camacho
+* Fix to prior commit
+*
 * Revision 1.36  2005/05/10 16:08:39  camacho
 * Changed *_ENCODING #defines to EBlastEncoding enumeration
 *
