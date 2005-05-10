@@ -72,7 +72,8 @@ CNetScheduleClient_LB::CNetScheduleClient_LB(const string& client_name,
   m_StickToHost(false),
   m_LB_ServiceDiscovery(true),
   m_ConnFailPenalty(5 * 60),
-  m_MaxRetry(3)
+  m_MaxRetry(3),
+  m_DiscoverLowPriorityServers(false)
 {
     if (lb_service_name.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -114,7 +115,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
 
         m_LastRebalanceTime = curr;
         m_Requests = 0;
-        x_GetServerList(m_LB_ServiceName);
+        ObtainServerList(m_LB_ServiceName);
 
         m_ServListCurr = 0;
         ITERATE(TServiceList, it, m_ServList) {
@@ -171,7 +172,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
     TParent::CheckConnect(key);
 }
 
-void CNetScheduleClient_LB::x_GetServerList(const string& service_name)
+void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
 {
     _ASSERT(!service_name.empty());
 
@@ -203,7 +204,17 @@ void CNetScheduleClient_LB::x_GetServerList(const string& service_name)
 
     m_ServList.resize(0);
 
-    SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
+
+    SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
+    TSERV_Type stype = fSERV_Any;
+    if (m_DiscoverLowPriorityServers) {
+        stype |= fSERV_Promiscuous;
+    }
+    SERV_ITER srv_it = SERV_Open(service_name.c_str(), stype, 0, net_info);
+    ConnNetInfo_Destroy(net_info);
+
+
+
     string err_msg = "Cannot connect to netschedule service (";
     if (srv_it == 0) {
 err_service_not_found:
@@ -281,7 +292,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
-        x_GetServerList(m_LB_ServiceName);
+        ObtainServerList(m_LB_ServiceName);
         m_Requests = 0;
         m_LastRebalanceTime = curr;
     }
@@ -393,7 +404,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
-        x_GetServerList(m_LB_ServiceName);
+        ObtainServerList(m_LB_ServiceName);
         m_Requests = 0;
         m_LastRebalanceTime = curr;
     }
@@ -637,6 +648,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/10 17:41:27  kuznets
+ * Added option to discover low priority services
+ *
  * Revision 1.11  2005/05/10 14:13:52  kuznets
  * Added fallback server if LB connection is not available
  *

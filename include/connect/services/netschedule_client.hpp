@@ -550,6 +550,14 @@ public:
     /// Get max number of retries when queue returns (recoverable) error
     unsigned GetMaxRetry() const { return m_MaxRetry; }
 
+    /// Look for low priority servers.
+    /// This mode is strictly for use in worker nodes
+    /// Do not submit jobs using this option.
+    ///
+    void DiscoverLowPriorityServers(bool on_off) 
+        { m_DiscoverLowPriorityServers = on_off; }
+
+
 
     virtual
     string SubmitJob(const string& input, 
@@ -588,10 +596,15 @@ protected:
 
     typedef vector<SServiceAddress>  TServiceList;
 
+    /// Connect to LB, retrieve list of servers
+    void ObtainServerList(const string& service_name);
+
+    /// Get list of servers
+    ///
+    /// @sa ObtainServerList
+    const TServiceList& GetServiceList() const { return m_ServList; }
+
 private:
-
-    void x_GetServerList(const string& service_name);
-
     bool x_TryGetJob(SServiceAddress& sa,
                      string* job_key, 
                      string* input, 
@@ -620,6 +633,7 @@ private:
 
     unsigned      m_ConnFailPenalty; ///< Conn fail penalty in seconds
     unsigned      m_MaxRetry;        ///< N. re-attempts to submit(get) job
+    bool          m_DiscoverLowPriorityServers;
 };
 
 
@@ -713,6 +727,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/05/10 17:41:05  kuznets
+ * Added option to discover low priority services
+ *
  * Revision 1.29  2005/05/05 16:06:17  kuznets
  * DumpQueue() added job_key as an optional parameter
  *
