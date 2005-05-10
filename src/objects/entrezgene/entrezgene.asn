@@ -1,4 +1,4 @@
---$Revision: 1.28 $ 
+--$Revision: 1.29 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -110,6 +110,9 @@ Gene-commentary ::= SEQUENCE {
         reference (17), -- currently not used             
         generif (18), -- to include generif in the main blob             
         phenotype(19), -- to display phenotype information
+        complex (20), -- used (but not limited) to identify resulting 
+                      -- interaction complexes
+        compound (21), -- pubchem entities
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
