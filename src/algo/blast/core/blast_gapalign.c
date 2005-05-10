@@ -762,7 +762,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
             a_index--;
             b_index--;
         }
-        GapPrelimEditBlockAdd(edit_block, script, 1);
+        GapPrelimEditBlockAdd(edit_block, (EGapAlignOpType)script, 1);
     }
 
     sfree(edit_start_offset);
@@ -1086,7 +1086,7 @@ enum {
                                          (gap 1 nucleotide in sequence B) */
     SCRIPT_NEXT_PLUS_TWO_FRAMES  = 5, /**< Shift to next base plus 2 frames
                                          (gap 2 nucleotides in sequence B) */
-    SCRIPT_OOF_OPEN_GAP          = 0x08, /**< Opening a gap */
+    SCRIPT_OOF_OPEN_GAP          = 0x08 /**< Opening a gap */
 };
 
 /** Low level function to perform gapped extension with out-of-frame
@@ -1712,7 +1712,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
             a_index--;
         }
 
-        GapPrelimEditBlockAdd(edit_block, script, 1);
+        GapPrelimEditBlockAdd(edit_block, (EGapAlignOpType)script, 1);
     }
 
     sfree(edit_start_offset);
@@ -3548,7 +3548,7 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
         last_op = e_script->op_type;
 
         if (last_op == eGapAlignIns)
-            last_op = 3;
+            last_op = eGapAlignSub;
         i = last_op * e_script->num;
 
         if (num_nuc + i >= nucl_align_length) {
@@ -3604,7 +3604,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
     Boolean found_start, found_end;
     Int4 score_right, score_left, private_q_length, private_s_length;
     Int4 q_length, s_length;
-    Int4 prev;
     Boolean is_ooframe = score_params->options->is_ooframe;
     Int2 status = 0;
     Boolean switch_seq = FALSE;
@@ -3636,7 +3635,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
        }
     }
 
-    score_left = 0; prev = 3;
+    score_left = 0;
     found_start = TRUE;
         
     if(is_ooframe) {
