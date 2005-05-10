@@ -47,13 +47,13 @@ BEGIN_SCOPE(cd_utils)
 
 struct TreeOptions
 {
-	TreeOptions() : cluteringMethod(GLOBAL_DEFAULT_ALGORITHM),
+	TreeOptions() : clusteringMethod(GLOBAL_DEFAULT_ALGORITHM),
 		distMethod(GLOBAL_DEFAULT_DIST_METHOD),
 		matrix(GLOBAL_DEFAULT_SCORE_MATRIX),
 		nTermExt(DistanceMatrix::NO_EXTENSION),
 		cTermExt(DistanceMatrix::NO_EXTENSION){}
 
-	ETreeMethod cluteringMethod;
+	ETreeMethod clusteringMethod;
 	EDistMethod distMethod;
 	EScoreMatrixType matrix; 
 	int nTermExt;
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/05/10 20:12:28  cliu
+ * fix a typo
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
