@@ -22,6 +22,9 @@ the BLOB and you do not want it to stuck in the database forever
 If timeout is 3600 and ttl_prolong is 2, maximum possible timeout for
 the BLOB becomes 3600 * 2 = 7200 seconds.
 
+Individual timeouts can also be regulated with this parameter 
+(see max_timeout)
+
 Optional.
 =========================================================================
 
@@ -29,6 +32,7 @@ Optional.
 max_timeout   : Maximum possible timeout in seconds. 
 
 Individual timeouts cannot be more than this value.
+If value is not set maximum is calculated as timeout *  ttl_prolong
 
 Optional.
 =========================================================================
