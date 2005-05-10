@@ -39,12 +39,13 @@
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_default_factories.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
-#include <connect/threaded_server.hpp>
 #include "grid_debug_context.hpp"
+#include "grid_control_thread.hpp"
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
+
 /// @internal
 extern "C" 
 void GridWorker_SignalHandler( int )
@@ -107,101 +108,6 @@ void CGridWorkerNodeThread::OnExit(void)
     LOG_POST("Worker Node Thread exited.");
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CGridWorkerNodeThread
-/// @internal
-class CWorkerNodeThreadedServer : public CThreadedServer
-{
-public:
-    CWorkerNodeThreadedServer(unsigned int port, 
-                              CGridWorkerNode& worker_node);
-
-    virtual ~CWorkerNodeThreadedServer();
-
-    virtual void Process(SOCK sock);
-
-    virtual bool ShutdownRequested(void) 
-    {
-        return m_WorkerNode.GetShutdownLevel() 
-                       != CNetScheduleClient::eNoShutdown;
-    }
-
-private:
-    CGridWorkerNode& m_WorkerNode;
-    STimeout         m_ThrdSrvAcceptTimeout;
-
-};
-
-CWorkerNodeThreadedServer::CWorkerNodeThreadedServer(
-                                    unsigned int port, 
-                                    CGridWorkerNode& worker_node)
-: CThreadedServer(port), m_WorkerNode(worker_node)
-{
-    m_InitThreads = 1;
-    m_MaxThreads = 3;
-    m_ThrdSrvAcceptTimeout.sec = 0;
-    m_ThrdSrvAcceptTimeout.usec = 500;
-    m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
-}
-
-CWorkerNodeThreadedServer::~CWorkerNodeThreadedServer()
-{
-    LOG_POST(Info << "Control server stopped.");
-}
-
-#define JS_CHECK_IO_STATUS(x) \
-        switch (x)  { \
-        case eIO_Success: \
-            break; \
-        default: \
-            return; \
-        } 
-
-const string SHUTDOWN_CMD = "SHUTDOWN";
-const string VERSION_CMD = "VERSION";
-void CWorkerNodeThreadedServer::Process(SOCK sock)
-{
-    EIO_Status io_st;
-    CSocket socket;
-    try {
-        socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-        socket.DisableOSSendDelay();
-        
-        string auth;
-        io_st = socket.ReadLine(auth);
-        JS_CHECK_IO_STATUS(io_st);
-        
-        string queue;
-        io_st = socket.ReadLine(queue);
-        JS_CHECK_IO_STATUS(io_st);
-
-        string request;
-        io_st = socket.ReadLine(request);
-        JS_CHECK_IO_STATUS(io_st);
-        
-        if( strncmp( request.c_str(), SHUTDOWN_CMD.c_str(), 
-                     SHUTDOWN_CMD.length() ) == 0 ) {
-            m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
-            string ans = "OK:";
-            socket.Write(ans.c_str(), ans.length() + 1 );
-            LOG_POST(Info << "Shutdown request has been received.");
-            return;
-        }
-        if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
-                     VERSION_CMD.length() ) == 0 ) {
-            string ans = "OK:" + m_WorkerNode.GetJobVersion();
-            socket.Write(ans.c_str(), ans.length() + 1 );
-            return;
-        } 
-    }
-    catch (exception& ex)
-    {
-        LOG_POST(Error << "Exception in the control server : " << ex.what() );
-        string err = "ERR:" + NStr::PrintableString(ex.what());
-        socket.Write(err.c_str(), err.length() + 1 );     
-    }
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -365,7 +271,7 @@ int CGridWorkerApp::Run(void)
                  << "Maximum job threads: " << max_threads << "\n"
                  << "Queue name: " << m_WorkerNode->GetQueueName() );
 
-        CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
+        CWorkerNodeControlThread control_server(control_port, *m_WorkerNode);
         try {
             control_server.Run();
         }
@@ -393,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/10 15:42:53  didenko
+ * Moved grid worker control thread to its own file
+ *
  * Revision 1.19  2005/05/10 14:14:33  didenko
  * Added blob caching
  *
