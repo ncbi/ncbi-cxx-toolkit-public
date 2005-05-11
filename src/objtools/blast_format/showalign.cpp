@@ -424,6 +424,30 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
     return gi;
 }
 
+///return number of the cds letters before the start position
+///@param line: the input cds line
+///@param start: the alignment start
+///@param strand: the alignment strand
+///@return: the number of cds letters
+///
+static TSeqPos s_GetCdsPosition(string& line, TSeqPos start, ENa_strand strand){
+    TSeqPos num = 0;
+    if(strand == eNa_strand_plus){
+        num ++;
+        for(TSeqPos i = 0; i < start; i ++){
+            if(isalpha(line[i])){
+                num ++;
+            }
+        }
+    } else{
+        for(TSeqPos i = start; i < line.size(); i ++){
+            if(isalpha(line[i])){
+                num ++;
+            }
+        }
+    }
+    return num;
+}
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
                                   int row) const
@@ -555,8 +579,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         m_AV->GetWholeAlnSeqString(row, sequence[row], &insertAlnStart[row],
                                    &insertStart[row], &insertLength[row],
                                    (int)m_LineLen, &seqStarts[row], &seqStops[row]);
-        //make feature. Only for pairwise, non-query-anchored and untranslated
-        if(!(m_AlignOption & eMasterAnchored) && 
+        //make feature. Only for pairwise and untranslated for subject seq
+        if(!(m_AlignOption & eMasterAnchored) && row > 0 &&
            !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3){
             if(m_AlignOption & eShowCdsFeature){
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope, 
@@ -765,8 +789,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                      +maxStartLen + k_StartSequenceMargin
                                      -(*iter)->feature->feature_id.size());
                         x_OutputSeq((*iter)->feature_string, no_id, j,
-                                    (int)actualLineLen, 0, row, false,  alnLocList,
-                                    out);
+                                    (int)actualLineLen, 0, row, false,  alnLocList, out);
                         out<<endl;
                     }
                 }
@@ -827,7 +850,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         m_FeatObj = CObjectManager::GetInstance();
         CGBDataLoader::RegisterInObjectManager(*m_FeatObj);
         m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
-        m_featScope->AddDefaults();	     
+        string name = CGBDataLoader::GetLoaderNameFromArgs();
+        m_featScope->AddDataLoader(name);
     }
     //for whether to add get sequence feature
     m_CanRetrieveSeq = x_GetDbType(actual_aln_list) == eDbTypeNotSet ? false : true;
@@ -1380,9 +1404,9 @@ int CDisplaySeqalign::x_GetNumGaps()
 
 
 void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
-                                      CScope& scope, 
-                                      CSeqFeatData::E_Choice choice,
-                                      int row, string& sequence) const 
+                                        CScope& scope, 
+                                        CSeqFeatData::E_Choice choice,
+                                        int row, string& sequence) const 
 {
     //Only fetch features for seq that has a gi
     CRef<CSeq_id> id 
@@ -1390,146 +1414,170 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                            CSeq_id::e_Gi);
     if(!(id.Empty())){
         const CBioseq_Handle& handle = scope.GetBioseqHandle(*id);
-        CRef<CSeq_loc> loc_ref = handle.GetRangeSeq_loc(m_AV->GetSeqStart(row),
-                                                        m_AV->GetSeqStop(row));
-        //cds feature
-        for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
-            const CSeq_loc& loc = feat->GetLocation();
-            string featLable = NcbiEmptyString;
-            string featId;
-            string alternativeFeatStr = NcbiEmptyString;
-            
-            feature::GetLabel(feat->GetOriginalFeature(), &featLable, 
-                              feature::eBoth, &scope);
-            featId = featLable.substr(0, k_FeatureIdLen); //default
-            
-            int alnStop = m_AV->GetAlnStop();      
-            if(loc.IsInt()){
-                SAlnFeatureInfo* featInfo = new SAlnFeatureInfo;
-                int featSeqFrom = loc.GetInt().GetFrom();
-                int featSeqTo = loc.GetInt().GetTo();
-                int actualFeatSeqStart = 0, actualFeatSeqStop = 0;
+        if(handle){
+            TSeqPos seq_start = m_AV->GetSeqPosFromAlnPos(row, 0);
+            TSeqPos seq_stop = m_AV->GetSeqPosFromAlnPos(row, m_AV->GetAlnStop());
+            CRef<CSeq_loc> loc_ref =
+                handle.
+                GetRangeSeq_loc(min(seq_start, seq_stop),
+                                max(seq_start, seq_stop),
+                                eNa_strand_plus);
+            for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
+                const CSeq_loc& loc = feat->GetLocation();
+                string featLable = NcbiEmptyString;
+                string featId;
+                char feat_char = ' ';
+                string alternativeFeatStr = NcbiEmptyString;            
+                TSeqPos feat_aln_from = 0;
+                TSeqPos feat_aln_to = 0;
+                TSeqPos actual_feat_seq_start = 0, actual_feat_seq_stop = 0;
+                feature::GetLabel(feat->GetOriginalFeature(), &featLable, 
+                                  feature::eBoth, &scope);
+                featId = featLable.substr(0, k_FeatureIdLen); //default
+                TSeqPos aln_stop = m_AV->GetAlnStop();  
+                SAlnFeatureInfo* featInfo = NULL;
+                CRange<TSeqPos> feat_seq_range = loc.GetTotalRange();
                 if(m_AV->IsPositiveStrand(row)){
-                    if(featSeqFrom < (int)m_AV->GetSeqStart(row)){
-                        actualFeatSeqStart = m_AV->GetSeqStart(row);
-                    } else {
-                        actualFeatSeqStart = featSeqFrom;
-                    }
+                    actual_feat_seq_start = 
+                        max(feat_seq_range.GetFrom(), seq_start);
+                    actual_feat_seq_stop = 
+                        min(feat_seq_range.GetTo(), seq_stop);
                     
-                    if(featSeqTo > (int)m_AV->GetSeqStop(row)){
-                        actualFeatSeqStop = m_AV->GetSeqStop(row);
-                    } else {
-                        actualFeatSeqStop = featSeqTo;
-                    }
                 } else {
-                    if(featSeqFrom < (int)m_AV->GetSeqStart(row)){
-                        actualFeatSeqStart = featSeqFrom;
-                    } else {
-                        actualFeatSeqStart = m_AV->GetSeqStart(row); 
+                    actual_feat_seq_start = 
+                        min(feat_seq_range.GetTo(), seq_start);
+                    actual_feat_seq_stop =
+                        max(feat_seq_range.GetFrom(), seq_stop);
+                }
+                feat_aln_from = 
+                    m_AV->GetAlnPosFromSeqPos(row, actual_feat_seq_start);
+                feat_aln_to = 
+                    m_AV->GetAlnPosFromSeqPos(row, actual_feat_seq_stop);
+                if(choice == CSeqFeatData::e_Gene){
+                    featInfo = new SAlnFeatureInfo;                 
+                    feat_char = '^';
+                    
+                } else if(choice == CSeqFeatData::e_Cdregion &&
+                          feat->IsSetProduct() &&
+                          feat->GetProduct().IsWhole()){
+                    
+                    //show actual aa  if there is a cds product
+                    string line(aln_stop+1, ' ');   
+                    char intron_char = '~';
+                    string raw_cdr_product = NcbiEmptyString;    
+                    const CSeq_id& productId = 
+                        feat->GetProduct().GetWhole();
+                    const CBioseq_Handle& productHandle 
+                        = scope.GetBioseqHandle(productId );
+                    featId = "CDS:" + 
+                        GetTitle(productHandle).substr(0, k_FeatureIdLen);
+                    productHandle.
+                        GetSeqVector(CBioseq_Handle::eCoding_Iupac).
+                        GetSeqData(0, productHandle.
+                                   GetBioseqLength(), raw_cdr_product);
+                    featInfo = new SAlnFeatureInfo;
+                    
+                    //pre-fill all cds region with intron char
+                    for (TSeqPos i = feat_aln_from; i <= feat_aln_to; i ++){
+                        line[i] = intron_char;
                     }
                     
-                    if(featSeqTo > (int)m_AV->GetSeqStop(row)){
-                        actualFeatSeqStop = featSeqTo;
-                    } else {
-                        actualFeatSeqStop = m_AV->GetSeqStop(row);
+                    //get total coding length
+                    TSeqPos total_coding_len = 0;
+                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                        total_coding_len += loc_it.GetRange().GetLength();
+                    }    
+                    //fill concatenated exon (excluding intron)
+                    //with product
+                    //this is to align product with the nucleotide seq
+                    string concat_exon(total_coding_len, ' ');
+                    char gap_char = m_AV->GetGapChar(row);   
+                    TSeqPos frame = 1;
+                    const CCdregion& cdr = feat->GetData().GetCdregion();
+                    if(cdr.IsSetFrame()){
+                        frame = cdr.GetFrame();
                     }
-                }
-                
-                int alnFrom = m_AV->GetAlnPosFromSeqPos(row, 
-                                                        actualFeatSeqStart);
-                int alnTo = m_AV->GetAlnPosFromSeqPos(row, actualFeatSeqStop);
-                char featChar = ' ';
-                if(choice == CSeqFeatData::e_Gene){
-                    featChar = '^';
-                } else if (choice == CSeqFeatData::e_Cdregion){
-                    featChar = '~';
-                }
-                
-                //need to construct the protein seq aligned to nucleotide seq 
-                if (choice == CSeqFeatData::e_Cdregion){
-                    string rawCdrProduct = NcbiEmptyString;
-                    if(feat->IsSetProduct()){
-                        const CSeq_loc& productLoc = feat->GetProduct(); 
-                        //only show first k_FeatureIdLen letters
-                        if(productLoc.IsWhole()){
-                            const CSeq_id& productId = productLoc.GetWhole();
-                            const CBioseq_Handle& productHandle 
-                                = scope.GetBioseqHandle(productId );
-                            featId = "CDS:" + 
-                                GetTitle(productHandle).substr(0, k_FeatureIdLen);
-                        }
-                    }
-                    //show protein product only if the row is plus strand
-                    if(m_AV->IsPositiveStrand(row)){
-                        string line(alnStop+1, ' ');  
-                        CCdregion_translate::
-                            TranslateCdregion (rawCdrProduct, handle, loc,
-                                               feat->GetData().GetCdregion(), 
-                                               true, false);
-                        
-                        bool firstBase = true;
-                        char gapChar = m_AV->GetGapChar(row);
-                        int marginAdjuster = 0;
-                        int featStartSeqPos = 0;
-                        int firstFeatStringPos = 0;
-                        int numBase = 0;
-                        
-                        //put actual amino acid to the cdr product line 
-                        //in aln coord
-                        for (int i = alnFrom; i < alnTo; i++){
-                            if(sequence[i] != gapChar){
-                                numBase ++;
-                                if(firstBase){
-                                    firstBase = false;
-                                    featStartSeqPos 
-                                        = m_AV->GetSeqPosFromAlnPos(row, i);
-                                    const CCdregion& cdr 
-                                        = feat->GetData().GetCdregion();
-                                    int frame = 1;
-                                    if(cdr.IsSetFrame()){
-                                        frame = cdr.GetFrame();
-                                    }
-                                    int numBaseFromFeatStart =
-                                        (featStartSeqPos - 
-                                         (featSeqFrom + (frame -1) )); 
-                                    //Number of bases between feature start 
-                                    //and current base. adjust using frame
-                                    if(numBaseFromFeatStart % 3 == 0){ 
-                                        //this base is the 1st base
-                                        marginAdjuster = 0; 
-                                        //aa aligned to 2nd base of a condon
-                                        firstFeatStringPos 
-                                            = numBaseFromFeatStart / 3;  
-                                    } else if (numBaseFromFeatStart % 3 == 1) {
-                                        marginAdjuster = 1;
-                                        firstFeatStringPos =
-                                            numBaseFromFeatStart / 3;
-                                    } else {
-                                        marginAdjuster = -1;
-                                        firstFeatStringPos =
-                                            (numBaseFromFeatStart / 3) + 1;
-                                    }
-                                }
-                                if((numBase + marginAdjuster) % 3 == 2){
-                                    int stringPos = firstFeatStringPos 
-                                        + (numBase + marginAdjuster) / 3;
-                                    if(stringPos < (int)rawCdrProduct.size()){
-                                        //should not need this check
-                                        line[i] = rawCdrProduct[stringPos];
-                                    }
+                    TSeqPos num_base = 0, num_coding_base = 0;
+                    TSeqPos coding_start_base = frame - 1;
+                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                        for(TSeqPos i = 0; i < loc_it.GetRange().GetLength(); i ++){
+                            if(num_base >= coding_start_base){
+                                num_coding_base ++;
+                                if(num_coding_base % 3 == 2){
+                                    //a.a to the 2nd base
+                                    if(num_coding_base / 3 < raw_cdr_product.size()){
+                                    concat_exon[num_base] 
+                                        = raw_cdr_product[num_coding_base / 3];
+                                    }                           
                                 }
                             }
-                        }
-                        alternativeFeatStr = line;
+                            num_base ++;
+                        }    
                     }
-                } 
+                    
+                    TSeqPos prev_feat_seq_stop = 0;
+                    TSeqPos intron_size = 0;
+                    bool is_first = true;
+                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                        if(!is_first){
+                            intron_size += loc_it.GetRange().GetFrom() 
+                                - prev_feat_seq_stop - 1;
+                        }
+                        is_first = false;
+                        CRange<TSeqPos> actual_feat_seq_range =
+                            loc_ref->GetTotalRange().
+                            IntersectionWith(loc_it.GetRange());          
+                        if(!actual_feat_seq_range.Empty()){
+                            TSeqPos feat_aln_start;
+                            TSeqPos feat_aln_stop;
+                            if(m_AV->IsPositiveStrand(row)){
+                                feat_aln_start = 
+                                    m_AV->
+                                    GetAlnPosFromSeqPos
+                                    (row, actual_feat_seq_range.GetFrom());
+                                feat_aln_stop
+                                    = m_AV->GetAlnPosFromSeqPos
+                                    (row, actual_feat_seq_range.GetTo());
+                            } else {
+                                feat_aln_start = 
+                                    m_AV->
+                                    GetAlnPosFromSeqPos
+                                    (row, actual_feat_seq_range.GetTo());
+                                feat_aln_stop
+                                    = m_AV->GetAlnPosFromSeqPos
+                                    (row, actual_feat_seq_range.GetFrom());
+                            }
+                            for (TSeqPos i = feat_aln_start;
+                                 i <= feat_aln_stop;  i ++){
+                                //put actual amino acid in aln coord
+                                if(sequence[i] != gap_char){
+                                    TSeqPos product_adj_seq_pos
+                                    = m_AV->GetSeqPosFromAlnPos(row, i) - 
+                                        intron_size - feat_seq_range.GetFrom();
+                                    if(product_adj_seq_pos < 
+                                       concat_exon.size()){
+                                        line[i] = 
+                                        concat_exon[product_adj_seq_pos];
+                                    }
+                                } else { //adding gap
+                                    line[i] = ' '; 
+                                }                         
+                            }                      
+                        }
+                        
+                        prev_feat_seq_stop = loc_it.GetRange().GetTo();    
+                    }                 
+                    alternativeFeatStr = line;
+                }
                 
-                x_SetFeatureInfo(featInfo, loc, alnFrom, alnTo, alnStop, 
-                                 featChar, featId, alternativeFeatStr);     
-                feature.push_back(featInfo);
-                
+                if(featInfo){
+                    x_SetFeatureInfo(featInfo, *loc_ref,
+                                     feat_aln_from, feat_aln_to, aln_stop, 
+                                     feat_char, featId, alternativeFeatStr);  
+                    feature.push_back(featInfo);
+                }
             }
-        }
+        }   
     }
 }
 
@@ -2298,6 +2346,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.72  2005/05/11 15:05:09  jianye
+*gbloader change and some getfeature changes
+*
 *Revision 1.71  2005/05/02 17:34:33  dondosha
 *Moved static function s_CreateDensegFromDendiag in showalign.cpp to a static method CreateDensegFromDendiag in CBlastFormatUtil class
 *
