@@ -179,6 +179,16 @@ fi
 host=`hostname`
 port=`cat $ini_file | grep control_port= | sed -e 's/control_port=//'`
 
+if [ -f ${new_version_dir}/stop_me ]; then
+   touch ${new_version_dir}/donotrun_me
+   StopNode
+   SendMailMsg "$node_name on $host:$port has been stopped" "$node_name on $host:$port has been stopped"   
+   rm -f ${new_version_dir}/stop_me  
+   exit 0
+fi
+if [ -f ${new_version_dir}/donotrun_me ]; then
+   exit 0
+fi
 if [ -f ${new_version_dir}/upgrade_me ]; then
    ls -latrRF > ${node_name}.ls
    SendMailMsg "New Version of $node_name on $host:$port"  "${node_name}.ls"
