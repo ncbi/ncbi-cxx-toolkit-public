@@ -218,7 +218,7 @@ void CCgiTunnel2Grid::x_Init(const string& project)
                            IRegistry::eReturn);
 
     m_DateFormat = 
-        GetConfig().GetString("tunnel2grid", "date_format", "M B Y, h:m:s" );
+        GetConfig().GetString("tunnel2grid", "date_format", "D B Y, h:m:s" );
 
     m_ElapsedTimeFormat = 
         GetConfig().GetString("tunnel2grid", "elapsed_time_format", "S" );
@@ -477,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/11 18:54:23  didenko
+ * Fixed date output format
+ *
  * Revision 1.18  2005/05/02 14:48:05  didenko
  * Fixed bug this url cutting
  *
