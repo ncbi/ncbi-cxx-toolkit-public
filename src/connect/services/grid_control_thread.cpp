@@ -100,7 +100,12 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         else if( strncmp( request.c_str(), STAT_CMD.c_str(), 
                      STAT_CMD.length() ) == 0 ) {
             string ans = "OK:";
-            ans += m_WorkerNode.GetJobVersion() + "\n";
+            ans += m_WorkerNode.GetJobVersion();
+            if (m_WorkerNode.GetShutdownLevel() != 
+                CNetScheduleClient::eNoShutdown) {
+                ans += " IS IN A SHUTTING DOWN MODE!!!";
+            }
+            ans += "\n";
             ans += "Maximum job threads: " + 
                 NStr::UIntToString(m_WorkerNode.GetMaxThreads()) + "\n";
             ans += "Queue name: " + m_WorkerNode.GetQueueName() + "\n";
@@ -142,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/05/11 20:22:43  didenko
+ * Added a shutdown message to a statistic
+ *
  * Revision 6.2  2005/05/11 18:57:39  didenko
  * Added worker node statictics
  *
