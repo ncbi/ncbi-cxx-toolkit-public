@@ -200,9 +200,10 @@ void CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
                                            CNcbiOstream& out) 
 {
 
-    if(html){
+    if(html)
         out << kBlastRefUrl << endl;
-    }
+    else
+        out << "Reference: ";
     
     WrapOutputLine(kBlastRef, line_len, out);
     out << endl;
@@ -221,27 +222,37 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
 
 void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>& 
                                      dbinfo_list,
-                                     size_t line_length,  CNcbiOstream& out) 
+                                     size_t line_length,  CNcbiOstream& out,
+                                     bool top) 
 {
 
     CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
-    if (dbinfo->subset == false){
+
+    if (top) {
         out << "Database: ";
         WrapOutputLine(dbinfo->definition, line_length, out);
         out << endl;
-        out << "  Posted date:  ";
-	out << dbinfo->date << endl;
+        CBlastFormatUtil::AddSpace(out, 11);
+        out << dbinfo->number_seqs << " sequences; " <<
+            dbinfo->total_length << " total letters" << endl << endl;
+    } else if (dbinfo->subset == false){
+        out << "  Database: ";
+        WrapOutputLine(dbinfo->definition, line_length, out);
+        out << endl;
+
+        out << "    Posted date:  ";
+        out << dbinfo->date << endl;
 	       
-        out << "Number of letters in database: "; 
+        out << "  Number of letters in database: "; 
         out << dbinfo->total_length << endl;
-        out << "Number of sequences in database:  ";
+        out << "  Number of sequences in database:  ";
         out << dbinfo->number_seqs << endl;
         
     } else {
-        out << "Subset of the database(s) listed below" << endl;
-        out << "   Number of letters searched: "; 
+        out << "  Subset of the database(s) listed below" << endl;
+        out << "  Number of letters searched: "; 
         out << dbinfo->total_length << endl;
-        out << "   Number of sequences searched:  ";
+        out << "  Number of sequences searched:  ";
         out << dbinfo->number_seqs << endl;
     }
 
@@ -529,6 +540,8 @@ void
 CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
                                                  const CSeq_align_set& source)
 {
+    _ASSERT(source.IsSet());
+
     for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin();
         iter != source.Get().end(); iter++) {
         if((*iter)->IsSetSegs()){
