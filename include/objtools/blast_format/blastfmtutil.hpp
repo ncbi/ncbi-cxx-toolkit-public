@@ -153,9 +153,9 @@ public:
     ///@param dbinfo_list: database info list
     ///@param line_length: length of each line desired
     ///@param out: stream to ouput
-    ///
+    ///@param top Is this top or bottom part of the BLAST report?
     static void PrintDbReport(list<SDbInfo>& dbinfo_list, size_t line_length, 
-                              CNcbiOstream& out);
+                              CNcbiOstream& out, bool top=false);
     
     ///Print out kappa, lamda blast parameters
     ///@param lambda
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.13  2005/05/11 16:22:47  dondosha
+Added boolean argument to PrintDbReport, so it can be used for both top and bottom versions of database report
+
 Revision 1.12  2005/05/02 17:32:30  dondosha
 Added static method CreateDensegFromDendiag, previously static function in showalign.cpp
 
