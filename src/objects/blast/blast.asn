@@ -62,7 +62,8 @@ Blast4-request-body ::= CHOICE {
     get-programs            NULL,
     get-search-results      Blast4-get-search-results-request,
     get-sequences           Blast4-get-sequences-request,
-    queue-search            Blast4-queue-search-request
+    queue-search            Blast4-queue-search-request,
+    get-queries             Blast4-get-queries-request
 }
 
 Blast4-finish-params-request ::= SEQUENCE {
@@ -110,6 +111,12 @@ Blast4-queue-search-request ::= SEQUENCE {
     program-options         Blast4-parameters OPTIONAL
 }
 
+-- Fetch the query from a previously submitted search
+
+Blast4-get-queries-request ::= SEQUENCE {
+    request-id              VisibleString
+}
+
 --  --------------------------------------------------------------------
 --
 --  Replies
@@ -130,7 +137,8 @@ Blast4-reply-body ::= CHOICE {
     get-programs            Blast4-get-programs-reply,
     get-search-results      Blast4-get-search-results-reply,
     get-sequences           Blast4-get-sequences-reply,
-    queue-search            Blast4-queue-search-reply
+    queue-search            Blast4-queue-search-reply,
+    get-queries             Blast4-get-queries-reply
 }
 
 Blast4-finish-params-reply ::= Blast4-parameters
@@ -158,6 +166,10 @@ Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
 
 Blast4-queue-search-reply ::= SEQUENCE {
     request-id              VisibleString OPTIONAL
+}
+
+Blast4-get-queries-reply ::= SEQUENCE {
+    queries                 Blast4-queries
 }
 
 --  --------------------------------------------------------------------
