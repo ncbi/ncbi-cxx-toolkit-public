@@ -161,14 +161,17 @@ CBlastTabularInfo::SetCounts(int num_ident, int length, int gaps, int gap_opens)
     m_NumGapOpens = gap_opens;
 }
 
-END_NCBI_SCOPE
-
 /* @} */
+
+END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/11 16:21:51  dondosha
+* Small doxygen fix
+*
 * Revision 1.3  2005/05/02 17:32:58  dondosha
 * Changed return value of SetFields to int, to allow error return
 *
