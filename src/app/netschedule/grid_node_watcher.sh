@@ -16,7 +16,11 @@ start_dir=`pwd`
 SendMailMsg() {
     if [ "x$mail_to" != "x" ]; then
         echo "Sending an email notification to $mail_to..."
-        echo $2 | mail -s "$1" $mail_to    
+        if [ -f $2 ]; then
+            cat $2 |  mail -s "$1" $mail_to    
+        else
+            echo $2 | mail -s "$1" $mail_to    
+        fi
     fi
 }
 
@@ -175,17 +179,18 @@ fi
 host=`hostname`
 port=`cat $ini_file | grep control_port= | sed -e 's/control_port=//'`
 
-if [ -f ${new_version_dir}/rdist_me ]; then
-   SendMailMsg "New Version of $node_name on $host:$port" "New version of $node_name is found for $host:$port"   
+if [ -f ${new_version_dir}/upgrade_me ]; then
+   ls -latrRF > ${node_name}.ls
+   SendMailMsg "New Version of $node_name on $host:$port"  "${node_name}.ls"
    StopNode
    echo "Upgrading the $node_name node..." 
    for file in ${new_version_dir}/* ; do
       fname=`basename $file`
-      if [ $fname != "rdist_me" ]; then
+      if [ $fname != "upgrade_me" ]; then
          CopyFile $fname
       fi
    done
-   rm -f ${new_version_dir}/rdist_me
+   rm -f ${new_version_dir}/upgrade_me
    SendMailMsg "$node_name on $host:$port has been upgraded" "New version of $node_name on $host:$port has been installed"   
 fi
 
