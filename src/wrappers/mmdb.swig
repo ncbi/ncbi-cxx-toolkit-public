@@ -1,0 +1,338 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Josh Cherry
+ *
+ * File Description:  SWIG interface file for mmdb
+ *
+ */
+
+%%
+
+objects/cdd/Algorithm_type.hpp
+objects/cdd/Algorithm_type_.hpp
+objects/cdd/Align_annot.hpp
+objects/cdd/Align_annot_.hpp
+objects/cdd/Align_annot_set.hpp
+objects/cdd/Align_annot_set_.hpp
+objects/cdd/Cdd.hpp
+objects/cdd/Cdd_.hpp
+objects/cdd/Cdd_Project.hpp
+objects/cdd/Cdd_Project_.hpp
+objects/cdd/Cdd_Script.hpp
+objects/cdd/Cdd_Script_.hpp
+objects/cdd/Cdd_Viewer.hpp
+objects/cdd/Cdd_Viewer_.hpp
+objects/cdd/Cdd_Viewer_Rect.hpp
+objects/cdd/Cdd_Viewer_Rect_.hpp
+objects/cdd/Cdd_book_ref.hpp
+objects/cdd/Cdd_book_ref_.hpp
+objects/cdd/Cdd_descr.hpp
+objects/cdd/Cdd_descr_.hpp
+objects/cdd/Cdd_descr_set.hpp
+objects/cdd/Cdd_descr_set_.hpp
+objects/cdd/Cdd_id.hpp
+objects/cdd/Cdd_id_.hpp
+objects/cdd/Cdd_id_set.hpp
+objects/cdd/Cdd_id_set_.hpp
+objects/cdd/Cdd_org_ref.hpp
+objects/cdd/Cdd_org_ref_.hpp
+objects/cdd/Cdd_org_ref_set.hpp
+objects/cdd/Cdd_org_ref_set_.hpp
+objects/cdd/Cdd_pref_node_descr.hpp
+objects/cdd/Cdd_pref_node_descr_.hpp
+objects/cdd/Cdd_pref_node_descr_set.hpp
+objects/cdd/Cdd_pref_node_descr_set_.hpp
+objects/cdd/Cdd_pref_nodes.hpp
+objects/cdd/Cdd_pref_nodes_.hpp
+objects/cdd/Cdd_repeat.hpp
+objects/cdd/Cdd_repeat_.hpp
+objects/cdd/Cdd_set.hpp
+objects/cdd/Cdd_set_.hpp
+objects/cdd/Cdd_tree.hpp
+objects/cdd/Cdd_tree_.hpp
+objects/cdd/Cdd_tree_set.hpp
+objects/cdd/Cdd_tree_set_.hpp
+objects/cdd/Domain_parent.hpp
+objects/cdd/Domain_parent_.hpp
+objects/cdd/Feature_evidence.hpp
+objects/cdd/Feature_evidence_.hpp
+objects/cdd/Global_id.hpp
+objects/cdd/Global_id_.hpp
+objects/cdd/Matrix.hpp
+objects/cdd/Matrix_.hpp
+objects/cdd/Node_annotation.hpp
+objects/cdd/Node_annotation_.hpp
+objects/cdd/Reject_id.hpp
+objects/cdd/Reject_id_.hpp
+objects/cdd/SeqTree_node.hpp
+objects/cdd/SeqTree_node_.hpp
+objects/cdd/Sequence_tree.hpp
+objects/cdd/Sequence_tree_.hpp
+objects/cdd/Triangle.hpp
+objects/cdd/Triangle_.hpp
+objects/cdd/Update_align.hpp
+objects/cdd/Update_align_.hpp
+objects/cdd/Update_comment.hpp
+objects/cdd/Update_comment_.hpp
+objects/cn3d/Cn3d_GL_matrix.hpp
+objects/cn3d/Cn3d_GL_matrix_.hpp
+objects/cn3d/Cn3d_backbone_label_style.hpp
+objects/cn3d/Cn3d_backbone_label_style_.hpp
+objects/cn3d/Cn3d_backbone_style.hpp
+objects/cn3d/Cn3d_backbone_style_.hpp
+objects/cn3d/Cn3d_backbone_type.hpp
+objects/cn3d/Cn3d_backbone_type_.hpp
+objects/cn3d/Cn3d_color.hpp
+objects/cn3d/Cn3d_color_.hpp
+objects/cn3d/Cn3d_color_scheme.hpp
+objects/cn3d/Cn3d_color_scheme_.hpp
+objects/cn3d/Cn3d_drawing_style.hpp
+objects/cn3d/Cn3d_drawing_style_.hpp
+objects/cn3d/Cn3d_general_style.hpp
+objects/cn3d/Cn3d_general_style_.hpp
+objects/cn3d/Cn3d_molecule_location.hpp
+objects/cn3d/Cn3d_molecule_location_.hpp
+objects/cn3d/Cn3d_object_location.hpp
+objects/cn3d/Cn3d_object_location_.hpp
+objects/cn3d/Cn3d_residue_range.hpp
+objects/cn3d/Cn3d_residue_range_.hpp
+objects/cn3d/Cn3d_style_dictionary.hpp
+objects/cn3d/Cn3d_style_dictionary_.hpp
+objects/cn3d/Cn3d_style_settings.hpp
+objects/cn3d/Cn3d_style_settings_.hpp
+objects/cn3d/Cn3d_style_settings_set.hpp
+objects/cn3d/Cn3d_style_settings_set_.hpp
+objects/cn3d/Cn3d_style_table_id.hpp
+objects/cn3d/Cn3d_style_table_id_.hpp
+objects/cn3d/Cn3d_style_table_item.hpp
+objects/cn3d/Cn3d_style_table_item_.hpp
+objects/cn3d/Cn3d_user_annotation.hpp
+objects/cn3d/Cn3d_user_annotation_.hpp
+objects/cn3d/Cn3d_user_annotations.hpp
+objects/cn3d/Cn3d_user_annotations_.hpp
+objects/cn3d/Cn3d_vector.hpp
+objects/cn3d/Cn3d_vector_.hpp
+objects/cn3d/Cn3d_view_settings.hpp
+objects/cn3d/Cn3d_view_settings_.hpp
+objects/mmdb1/Atom.hpp
+objects/mmdb1/Atom_.hpp
+objects/mmdb1/Atom_id.hpp
+objects/mmdb1/Atom_id_.hpp
+objects/mmdb1/Atom_pntr.hpp
+objects/mmdb1/Atom_pntr_.hpp
+objects/mmdb1/Atom_pntr_set.hpp
+objects/mmdb1/Atom_pntr_set_.hpp
+objects/mmdb1/Biomol_descr.hpp
+objects/mmdb1/Biomol_descr_.hpp
+objects/mmdb1/Biost_resid_graph_set_pntr.hpp
+objects/mmdb1/Biost_resid_graph_set_pntr_.hpp
+objects/mmdb1/Biostruc.hpp
+objects/mmdb1/Biostruc_.hpp
+objects/mmdb1/Biostruc_annot_set.hpp
+objects/mmdb1/Biostruc_annot_set_.hpp
+objects/mmdb1/Biostruc_descr.hpp
+objects/mmdb1/Biostruc_descr_.hpp
+objects/mmdb1/Biostruc_graph.hpp
+objects/mmdb1/Biostruc_graph_.hpp
+objects/mmdb1/Biostruc_graph_pntr.hpp
+objects/mmdb1/Biostruc_graph_pntr_.hpp
+objects/mmdb1/Biostruc_history.hpp
+objects/mmdb1/Biostruc_history_.hpp
+objects/mmdb1/Biostruc_id.hpp
+objects/mmdb1/Biostruc_id_.hpp
+objects/mmdb1/Biostruc_replace.hpp
+objects/mmdb1/Biostruc_replace_.hpp
+objects/mmdb1/Biostruc_residue_graph_set.hpp
+objects/mmdb1/Biostruc_residue_graph_set_.hpp
+objects/mmdb1/Biostruc_set.hpp
+objects/mmdb1/Biostruc_set_.hpp
+objects/mmdb1/Biostruc_source.hpp
+objects/mmdb1/Biostruc_source_.hpp
+objects/mmdb1/Chiral_center.hpp
+objects/mmdb1/Chiral_center_.hpp
+objects/mmdb1/Inter_residue_bond.hpp
+objects/mmdb1/Inter_residue_bond_.hpp
+objects/mmdb1/Intra_residue_bond.hpp
+objects/mmdb1/Intra_residue_bond_.hpp
+objects/mmdb1/Mmdb_id.hpp
+objects/mmdb1/Mmdb_id_.hpp
+objects/mmdb1/Molecule_graph.hpp
+objects/mmdb1/Molecule_graph_.hpp
+objects/mmdb1/Molecule_id.hpp
+objects/mmdb1/Molecule_id_.hpp
+objects/mmdb1/Residue.hpp
+objects/mmdb1/Residue_.hpp
+objects/mmdb1/Residue_graph.hpp
+objects/mmdb1/Residue_graph_.hpp
+objects/mmdb1/Residue_graph_id.hpp
+objects/mmdb1/Residue_graph_id_.hpp
+objects/mmdb1/Residue_graph_pntr.hpp
+objects/mmdb1/Residue_graph_pntr_.hpp
+objects/mmdb1/Residue_id.hpp
+objects/mmdb1/Residue_id_.hpp
+objects/mmdb2/Alternate_conformation_id.hpp
+objects/mmdb2/Alternate_conformation_id_.hpp
+objects/mmdb2/Alternate_conformation_ids.hpp
+objects/mmdb2/Alternate_conformation_ids_.hpp
+objects/mmdb2/Anisotro_temperatu_factors.hpp
+objects/mmdb2/Anisotro_temperatu_factors_.hpp
+objects/mmdb2/Atomic_coordinates.hpp
+objects/mmdb2/Atomic_coordinates_.hpp
+objects/mmdb2/Atomic_occupancies.hpp
+objects/mmdb2/Atomic_occupancies_.hpp
+objects/mmdb2/Atomic_temperature_factors.hpp
+objects/mmdb2/Atomic_temperature_factors_.hpp
+objects/mmdb2/Biostruc_model.hpp
+objects/mmdb2/Biostruc_model_.hpp
+objects/mmdb2/Conformation_ensemble.hpp
+objects/mmdb2/Conformation_ensemble_.hpp
+objects/mmdb2/Coordinates.hpp
+objects/mmdb2/Coordinates_.hpp
+objects/mmdb2/Density_coordinates.hpp
+objects/mmdb2/Density_coordinates_.hpp
+objects/mmdb2/Isotropi_temperatu_factors.hpp
+objects/mmdb2/Isotropi_temperatu_factors_.hpp
+objects/mmdb2/Model_coordinate_set.hpp
+objects/mmdb2/Model_coordinate_set_.hpp
+objects/mmdb2/Model_coordinate_set_id.hpp
+objects/mmdb2/Model_coordinate_set_id_.hpp
+objects/mmdb2/Model_descr.hpp
+objects/mmdb2/Model_descr_.hpp
+objects/mmdb2/Model_id.hpp
+objects/mmdb2/Model_id_.hpp
+objects/mmdb2/Model_space.hpp
+objects/mmdb2/Model_space_.hpp
+objects/mmdb2/Model_space_points.hpp
+objects/mmdb2/Model_space_points_.hpp
+objects/mmdb2/Model_type.hpp
+objects/mmdb2/Model_type_.hpp
+objects/mmdb2/Reference_frame.hpp
+objects/mmdb2/Reference_frame_.hpp
+objects/mmdb2/Surface_coordinates.hpp
+objects/mmdb2/Surface_coordinates_.hpp
+objects/mmdb2/T_mesh.hpp
+objects/mmdb2/T_mesh_.hpp
+objects/mmdb2/Triangles.hpp
+objects/mmdb2/Triangles_.hpp
+objects/mmdb3/Align_stats.hpp
+objects/mmdb3/Align_stats_.hpp
+objects/mmdb3/Atom_pntrs.hpp
+objects/mmdb3/Atom_pntrs_.hpp
+objects/mmdb3/Biostruc_feature.hpp
+objects/mmdb3/Biostruc_feature_.hpp
+objects/mmdb3/Biostruc_feature_id.hpp
+objects/mmdb3/Biostruc_feature_id_.hpp
+objects/mmdb3/Biostruc_feature_set.hpp
+objects/mmdb3/Biostruc_feature_set_.hpp
+objects/mmdb3/Biostruc_feature_set_descr.hpp
+objects/mmdb3/Biostruc_feature_set_descr_.hpp
+objects/mmdb3/Biostruc_feature_set_id.hpp
+objects/mmdb3/Biostruc_feature_set_id_.hpp
+objects/mmdb3/Biostruc_script.hpp
+objects/mmdb3/Biostruc_script_.hpp
+objects/mmdb3/Biostruc_script_step.hpp
+objects/mmdb3/Biostruc_script_step_.hpp
+objects/mmdb3/Brick.hpp
+objects/mmdb3/Brick_.hpp
+objects/mmdb3/Camera.hpp
+objects/mmdb3/Camera_.hpp
+objects/mmdb3/Chem_graph_alignment.hpp
+objects/mmdb3/Chem_graph_alignment_.hpp
+objects/mmdb3/Chem_graph_pntrs.hpp
+objects/mmdb3/Chem_graph_pntrs_.hpp
+objects/mmdb3/Color_prop.hpp
+objects/mmdb3/Color_prop_.hpp
+objects/mmdb3/Cone.hpp
+objects/mmdb3/Cone_.hpp
+objects/mmdb3/Cylinder.hpp
+objects/mmdb3/Cylinder_.hpp
+objects/mmdb3/GL_matrix.hpp
+objects/mmdb3/GL_matrix_.hpp
+objects/mmdb3/Model_space_point.hpp
+objects/mmdb3/Model_space_point_.hpp
+objects/mmdb3/Molecule_pntrs.hpp
+objects/mmdb3/Molecule_pntrs_.hpp
+objects/mmdb3/Move.hpp
+objects/mmdb3/Move_.hpp
+objects/mmdb3/Other_feature.hpp
+objects/mmdb3/Other_feature_.hpp
+objects/mmdb3/RealValue.hpp
+objects/mmdb3/RealValue_.hpp
+objects/mmdb3/Region_boundary.hpp
+objects/mmdb3/Region_boundary_.hpp
+objects/mmdb3/Region_coordinates.hpp
+objects/mmdb3/Region_coordinates_.hpp
+objects/mmdb3/Region_pntrs.hpp
+objects/mmdb3/Region_pntrs_.hpp
+objects/mmdb3/Region_similarity.hpp
+objects/mmdb3/Region_similarity_.hpp
+objects/mmdb3/Render_prop.hpp
+objects/mmdb3/Render_prop_.hpp
+objects/mmdb3/Residue_explicit_pntrs.hpp
+objects/mmdb3/Residue_explicit_pntrs_.hpp
+objects/mmdb3/Residue_interval_pntr.hpp
+objects/mmdb3/Residue_interval_pntr_.hpp
+objects/mmdb3/Residue_pntrs.hpp
+objects/mmdb3/Residue_pntrs_.hpp
+objects/mmdb3/Rot_matrix.hpp
+objects/mmdb3/Rot_matrix_.hpp
+objects/mmdb3/Sphere.hpp
+objects/mmdb3/Sphere_.hpp
+objects/mmdb3/Step_id.hpp
+objects/mmdb3/Step_id_.hpp
+objects/mmdb3/Trans_matrix.hpp
+objects/mmdb3/Trans_matrix_.hpp
+objects/mmdb3/Transform.hpp
+objects/mmdb3/Transform_.hpp
+objects/ncbimime/Biostruc_align.hpp
+objects/ncbimime/Biostruc_align_.hpp
+objects/ncbimime/Biostruc_align_seq.hpp
+objects/ncbimime/Biostruc_align_seq_.hpp
+objects/ncbimime/Biostruc_seq.hpp
+objects/ncbimime/Biostruc_seq_.hpp
+objects/ncbimime/Biostruc_seqs.hpp
+objects/ncbimime/Biostruc_seqs_.hpp
+objects/ncbimime/Biostruc_seqs_aligns_cdd.hpp
+objects/ncbimime/Biostruc_seqs_aligns_cdd_.hpp
+objects/ncbimime/Bundle_seqs_aligns.hpp
+objects/ncbimime/Bundle_seqs_aligns_.hpp
+objects/ncbimime/Entrez_general.hpp
+objects/ncbimime/Entrez_general_.hpp
+objects/ncbimime/Entrez_style.hpp
+objects/ncbimime/Entrez_style_.hpp
+objects/ncbimime/Ncbi_mime_asn1.hpp
+objects/ncbimime/Ncbi_mime_asn1_.hpp
+
+%%
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2005/05/11 21:27:35  jcherry
+ * Initial version
+ *
+ * ===========================================================================
+ */
