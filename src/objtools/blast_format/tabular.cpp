@@ -73,21 +73,6 @@ void CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
         m_QueryId.erase(m_QueryId.size() - 1);
 }
 
-static string 
-s_GetTitleFirstToken(const CBioseq_Handle& bh)
-{
-    string id_token = NcbiEmptyString;
-    string title = sequence::GetTitle(bh).c_str();
-
-    if (title != NcbiEmptyString) {
-        string::size_type pos = title.find(" ");
-        if (pos == string::npos)
-            pos = title.size();
-        id_token = title.substr(0, pos);
-    }
-    return id_token;
-}
-
 void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
 {
     m_QueryId = NcbiEmptyString;
@@ -97,7 +82,10 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
         // of the title instead of the local id. If no title, use the local
         // id, but without the "lcl|" prefix.
         if (itr->GetSeqId()->IsLocal()) {
-            if ((id_token = s_GetTitleFirstToken(bh)) == NcbiEmptyString) {
+            vector<string> title_tokens;
+            id_token = 
+                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+            if (id_token == NcbiEmptyString) {
                 const CObject_id& obj_id = itr->GetSeqId()->GetLocal();
                 if (obj_id.IsStr())
                     id_token = obj_id.GetStr();
@@ -131,10 +119,14 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
         // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
         // created in a BLAST database when it is formatted without indexing.
         // For such ids, use first token of the title, if it's available.
-        if (!itr->GetSeqId()->IsGeneral() || 
-            itr->GetSeqId()->AsFastaString().find("gnl|BL_ORD_ID") == 
-            string::npos ||
-            ((id_token = s_GetTitleFirstToken(bh)) == NcbiEmptyString))
+        if (itr->GetSeqId()->IsGeneral() &&
+            itr->GetSeqId()->AsFastaString().find("gnl|BL_ORD_ID") != 
+            string::npos) {
+            vector<string> title_tokens;
+            id_token = 
+                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+        }
+        if (id_token == NcbiEmptyString) 
             id_token = itr->AsString();
         m_SubjectId += id_token + "|";
     }
@@ -209,9 +201,14 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
     alnVec.GetWholeAlnSeqString(0, m_QuerySeq);
     alnVec.GetWholeAlnSeqString(1, m_SubjectSeq);
 
-    _ASSERT(m_QuerySeq.size() == m_SubjectSeq.size());
     num_ident = 0;
-    for (unsigned int i = 0; i < m_QuerySeq.size(); ++i) {
+    // The query and subject sequence strings must be the same size in a correct
+    // alignment, but if alignment extends beyond the end of sequence because of
+    // a bug, one of the sequence strings may be truncated, hence it is 
+    // necessary to take a minimum here.
+    /// @todo FIXME: Should an exception be thrown instead? 
+    for (unsigned int i = 0; i < min(m_QuerySeq.size(), m_SubjectSeq.size()); 
+         ++i) {
         if (m_QuerySeq[i] == m_SubjectSeq[i])
             ++num_ident;
     }
@@ -319,6 +316,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/05/11 16:12:13  dondosha
+* Avoid coredump if alignment segments have different lengths due to a bad input Seq-align
+*
 * Revision 1.4  2005/05/02 17:36:23  dondosha
 * 1. Return error from SetFields if Bioseq handle cannot be found for query or subject;
 * 2. Added extra logic for local query ids and BL_ORD_ID database ids.
