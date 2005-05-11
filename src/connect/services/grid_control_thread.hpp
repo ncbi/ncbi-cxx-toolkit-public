@@ -34,10 +34,10 @@
  */
 
 #include <connect/threaded_server.hpp>
-#include <connect/services/grid_worker.hpp>
 
 BEGIN_NCBI_SCOPE
 
+class CGridWorkerNode;
 /////////////////////////////////////////////////////////////////////////////
 // 
 /// @internal
@@ -53,14 +53,15 @@ public:
 
     virtual bool ShutdownRequested(void) 
     {
-        return m_WorkerNode.GetShutdownLevel() 
-                       != CNetScheduleClient::eNoShutdown;
+        return m_ShutdownRequested;
     }
+
+    void RequestShutdown() { m_ShutdownRequested = true; }
 
 private:
     CGridWorkerNode& m_WorkerNode;
     STimeout         m_ThrdSrvAcceptTimeout;
-
+    volatile bool    m_ShutdownRequested;
 };
 
 END_NCBI_SCOPE
@@ -68,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 6.1  2005/05/10 15:42:53  didenko
  * Moved grid worker control thread to its own file
  *

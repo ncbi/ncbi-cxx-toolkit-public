@@ -71,7 +71,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CGridWorkerNodeThread : public CThread
 {
 public:
-    CGridWorkerNodeThread(CGridWorkerNode& worker_node);
+    CGridWorkerNodeThread(CGridWorkerNode& worker_node,
+                          CWorkerNodeControlThread& control_thread);
     ~CGridWorkerNodeThread();
 
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
@@ -86,10 +87,12 @@ protected:
 private:
 
     CGridWorkerNode& m_WorkerNode;
+    CWorkerNodeControlThread& m_ControlThread;
 };
 
-CGridWorkerNodeThread::CGridWorkerNodeThread(CGridWorkerNode& worker_node)
-    : m_WorkerNode(worker_node)
+CGridWorkerNodeThread::CGridWorkerNodeThread(CGridWorkerNode& worker_node,
+                                             CWorkerNodeControlThread& control_thread)
+    : m_WorkerNode(worker_node), m_ControlThread(control_thread)
 {
 }
 CGridWorkerNodeThread::~CGridWorkerNodeThread()
@@ -105,6 +108,7 @@ void* CGridWorkerNodeThread::Main(void)
 void CGridWorkerNodeThread::OnExit(void)
 {
     CThread::OnExit();
+    m_ControlThread.RequestShutdown();
     LOG_POST("Worker Node Thread exited.");
 }
 
@@ -143,8 +147,11 @@ void CGridWorkerApp::Init(void)
     SetDiagPostFlag(eDPF_DateTime);
 
     CNcbiApplication::Init();
+    
 
-    const IRegistry& reg = GetConfig();
+    IRWRegistry& reg = GetConfig();
+    reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
+
     bool cache_input =
         reg.GetBool("netcache_client", "cache_input", false, 
                     0, CNcbiRegistry::eReturn);
@@ -258,20 +265,23 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->ActivateServerLog(server_log);
 
     {{
+    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode) ;
     CRef<CGridWorkerNodeThread> worker_thread(
-                                new CGridWorkerNodeThread(*m_WorkerNode));
+                                new CGridWorkerNodeThread(*m_WorkerNode,
+                                                          control_server));
     worker_thread->Run();
     // give sometime the thread to run
     SleepMilliSec(500);
     if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
-        LOG_POST(Info 
+        CTime now(CTime::eCurrent);
+        LOG_POST(Info << "\n=================== NEW RUN : " << now.AsString() 
+                 << " ===================\n"
                  << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
                  << "\" is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
                  << "Maximum job threads: " << max_threads << "\n"
                  << "Queue name: " << m_WorkerNode->GetQueueName() );
 
-        CWorkerNodeControlThread control_server(control_port, *m_WorkerNode);
         try {
             control_server.Run();
         }
@@ -282,8 +292,9 @@ int CGridWorkerApp::Run(void)
     }
     worker_thread->Join();
     }}
-
     m_WorkerNode.reset(0);    
+    // give sometime the thread to shutdown
+    SleepMilliSec(500);
     return 0;
 }
 
@@ -299,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 1.20  2005/05/10 15:42:53  didenko
  * Moved grid worker control thread to its own file
  *

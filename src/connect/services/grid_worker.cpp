@@ -64,6 +64,10 @@ const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CWorkerNodeJobContext     -- 
+
+CWorkerNodeJobContext* CWorkerNodeJobContext::m_Root = NULL;
+CMutex                 CWorkerNodeJobContext::m_ListMutex;
+
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
                                              const string&    job_input,
@@ -71,12 +75,47 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              bool             log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
       m_JobCommitted(false), m_LogRequested(log_requested), 
-      m_JobNumber(job_number), m_ThreadContext(NULL)
+      m_JobNumber(job_number), m_ThreadContext(NULL),
+      m_Next(NULL), m_Prev(NULL), m_StartTime(CTime::eCurrent)
 {
+    CMutexGuard guard(m_ListMutex);
+    if (!m_Root)
+        m_Root = this;
+    else {
+        m_Next = m_Root;
+        m_Root->m_Prev = this;
+        m_Root = this;
+    }    
 }
 
 CWorkerNodeJobContext::~CWorkerNodeJobContext()
 {
+    CMutexGuard guard(m_ListMutex);
+    if (m_Root == this) {        
+        m_Root = m_Root->m_Next;       
+        if (m_Root) 
+            m_Root->m_Prev = NULL;
+    }
+    else {
+        m_Prev->m_Next = m_Next;
+        if (m_Next)
+            m_Next->m_Prev = m_Prev;
+    }
+}
+
+void CWorkerNodeJobContext::CollectStatictics(vector<SJobStat>& stat)
+{
+    CMutexGuard guard(m_ListMutex);
+    CWorkerNodeJobContext* curr = m_Root;
+    stat.clear();
+    while (curr) {
+        SJobStat jstat;
+        jstat.job_key = curr->GetJobKey();
+        jstat.job_input = curr->GetJobInput();
+        jstat.start_time = curr->m_StartTime;
+        stat.push_back(jstat);
+        curr = curr->m_Next;
+    }
 }
 
 const string& CWorkerNodeJobContext::GetQueueName() const
@@ -190,8 +229,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
                 break;
             }
             catch (CNetServiceException& ex) {
-                LOG_POST(Error << "Communication Error : " 
-                         << ex.what());
+                ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
                 SleepMilliSec(1000 + try_count*2000);
@@ -205,8 +243,8 @@ static void s_RunJob(CGridThreadContext& thr_context)
             thr_context.PutFailure(ex.what());
         }
         catch(exception& ex1) {
-            ERR_POST("Failed to report an exception : " 
-                     << ex1.what());
+            ERR_POST("Failed to report an exception : " << ex1.what() 
+                     << "\nOrigional exception : " << ex1.what());
         }
     }
     catch(...) {
@@ -215,7 +253,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
             thr_context.PutFailure("Unkown Error in Job execution");
         }
         catch(exception& ex) {
-            ERR_POST("Failed to report an exception : " 
+            ERR_POST("Failed to report an unkown exception : " 
                      << ex.what());
         }
     }
@@ -241,9 +279,12 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
-      m_MaxProcessedJob(0), m_ProcessedJob(0),
+      m_MaxProcessedJob(0), m_JobsStarted(0),
       m_LogRequested(false)
 {
+    m_JobsSucceed.Set(0);
+    m_JobsFailed.Set(0);
+    m_JobsReturned.Set(0);
 }
 
 
@@ -314,12 +355,12 @@ void CGridWorkerNode::StartSingleThreaded()
             CWorkerNodeJobContext job_context(*this, 
                                               job_key, 
                                               input, 
-                                              m_ProcessedJob,
+                                              m_JobsStarted++,
                                               m_LogRequested);
             CGridThreadContext thr_context(job_context);
             s_RunJob(thr_context);
-            
-            if (m_MaxProcessedJob > 0 && ++m_ProcessedJob > m_MaxProcessedJob - 1) {
+
+            if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
                 RequestShutdown(CNetScheduleClient::eNormalShutdown);
             }
         }
@@ -405,7 +446,7 @@ void CGridWorkerNode::Start()
                     context(new CWorkerNodeJobContext(*this, 
                                                       job_key, 
                                                       input, 
-                                                      m_ProcessedJob,
+                                                      m_JobsStarted++,
                                                       m_LogRequested));
                 CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
                 try {
@@ -420,7 +461,7 @@ void CGridWorkerNode::Start()
                         m_NSReadClient->ReturnJob(job_key);
                     }
                 }
-                if (m_MaxProcessedJob > 0 && ++m_ProcessedJob > m_MaxProcessedJob - 1) {
+                if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
                     RequestShutdown(CNetScheduleClient::eNormalShutdown);
                 }
             }
@@ -435,6 +476,12 @@ void CGridWorkerNode::Start()
     m_ThreadsPool.reset(0);
     m_NSReadClient.reset(0);
     LOG_POST(Info << "Worker Node Threads Pool stopped.");
+}
+
+unsigned int CGridWorkerNode::GetJobsRunningNumber() const
+{
+    return m_JobsStarted - m_JobsSucceed.Get() - 
+                           m_JobsFailed.Get() - m_JobsReturned.Get();
 }
 
 
@@ -459,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 1.19  2005/05/10 14:14:33  didenko
  * Added blob caching
  *

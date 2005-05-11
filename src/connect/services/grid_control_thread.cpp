@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <connect/services/grid_worker.hpp>
 #include "grid_control_thread.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -37,7 +38,8 @@ BEGIN_NCBI_SCOPE
 CWorkerNodeControlThread::CWorkerNodeControlThread(
                                                 unsigned int port, 
                                                 CGridWorkerNode& worker_node)
-: CThreadedServer(port), m_WorkerNode(worker_node)
+    : CThreadedServer(port), m_WorkerNode(worker_node), 
+      m_ShutdownRequested(false)
 {
     m_InitThreads = 1;
     m_MaxThreads = 3;
@@ -61,6 +63,8 @@ CWorkerNodeControlThread::~CWorkerNodeControlThread()
 
 const string SHUTDOWN_CMD = "SHUTDOWN";
 const string VERSION_CMD = "VERSION";
+const string STAT_CMD = "STAT";
+
 void CWorkerNodeControlThread::Process(SOCK sock)
 {
     EIO_Status io_st;
@@ -87,14 +91,43 @@ void CWorkerNodeControlThread::Process(SOCK sock)
             string ans = "OK:";
             socket.Write(ans.c_str(), ans.length() + 1 );
             LOG_POST(Info << "Shutdown request has been received.");
-            return;
         }
-        if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
+        else if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
                      VERSION_CMD.length() ) == 0 ) {
             string ans = "OK:" + m_WorkerNode.GetJobVersion();
             socket.Write(ans.c_str(), ans.length() + 1 );
-            return;
         } 
+        else if( strncmp( request.c_str(), STAT_CMD.c_str(), 
+                     STAT_CMD.length() ) == 0 ) {
+            string ans = "OK:";
+            ans += m_WorkerNode.GetJobVersion() + "\n";
+            ans += "Maximum job threads: " + 
+                NStr::UIntToString(m_WorkerNode.GetMaxThreads()) + "\n";
+            ans += "Queue name: " + m_WorkerNode.GetQueueName() + "\n";
+            ans += "Jobs Succeed: " + 
+                NStr::UIntToString(m_WorkerNode.GetJobsSucceedNumber()) + "\n";
+            ans += "Jobs Failed: " + 
+                NStr::UIntToString(m_WorkerNode.GetJobsFailedNumber()) + "\n";
+            ans += "Jobs Returned: " + 
+                NStr::UIntToString(m_WorkerNode.GetJobsReturnedNumber()) + "\n";
+            ans += "Jobs Running: " + 
+                NStr::UIntToString(m_WorkerNode.GetJobsRunningNumber()) + "\n";
+            vector<CWorkerNodeJobContext::SJobStat> jobs;
+            CWorkerNodeJobContext::CollectStatictics(jobs);
+            CTime now(CTime::eCurrent);
+            ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
+                CTimeSpan ts = now - it->start_time.GetLocalTime();
+                string line = it->job_key + " " + it->job_input;
+                line += " -- running for " + ts.AsString("S") + " seconds.\n";
+                ans += line;
+            }
+
+            socket.Write(ans.c_str(), ans.length() + 1 );
+        }
+        else {
+            string ans = "ERR: Unknown command -- " + request;
+            socket.Write(ans.c_str(), ans.length() + 1 );
+        }
     }
     catch (exception& ex)
     {
@@ -109,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 6.1  2005/05/10 15:42:53  didenko
  * Moved grid worker control thread to its own file
  *

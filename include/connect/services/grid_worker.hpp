@@ -83,6 +83,7 @@ public:
 };
 
 class CWorkerNodeJobContext;
+class CWorkerNodeControlThread;
 
 /// Worker Node Job interface.
 /// 
@@ -242,6 +243,14 @@ private:
                           unsigned int       job_nubmer,
                           bool               log_requested);
 
+    friend class CWorkerNodeControlThread;
+    struct SJobStat {
+        string job_key;
+        string job_input;
+        CTime  start_time;
+    };
+    static void CollectStatictics(vector<SJobStat>& stat);
+
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
     string               m_JobInput;
@@ -252,6 +261,12 @@ private:
     bool                 m_LogRequested;
     const unsigned int   m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
+
+    static CWorkerNodeJobContext* m_Root;
+    CWorkerNodeJobContext*        m_Next;
+    CWorkerNodeJobContext*        m_Prev;
+    static CMutex                 m_ListMutex;
+    CTime                         m_StartTime;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -309,7 +324,6 @@ public: \
 }
 
 
-class CGridDebugContext;
 class CGridThreadContext;
 /// Grid Worker Node
 /// 
@@ -331,11 +345,13 @@ public:
     /// Set a UDP port to listen to input jobs
     ///
     void SetListeningPort(unsigned int udp_port) { m_UdpPort = udp_port; }
+    unsigned int GetListeningPort() const { return m_UdpPort; }
 
     /// Set the maximum threads running simultaneously
     ///
     void SetMaxThreads(unsigned int max_threads) 
                       { m_MaxThreads = max_threads; }
+    unsigned int GetMaxThreads() const { return m_MaxThreads; }
 
     void SetInitThreads(unsigned int init_threads) 
                       { m_InitThreads = init_threads; }
@@ -343,11 +359,25 @@ public:
     void SetNSTimeout(unsigned int timeout) { m_NSTimeout = timeout; }
     void SetThreadsPoolTimeout(unsigned int timeout)
                       { m_ThreadsPoolTimeout = timeout; }
+
     void SetMaxTotalJobs(unsigned int number) 
                       { m_MaxProcessedJob = number; }
+    unsigned int GetMaxTotalJobs() const { return m_MaxProcessedJob; }
+
     void ActivateServerLog(bool on_off) 
                       { m_LogRequested = on_off; }
 
+    unsigned int GetJobsSucceedNumber() const 
+                      { return (unsigned int)m_JobsSucceed.Get(); }
+
+    unsigned int GetJobsFailedNumber() const 
+                      { return (unsigned int)m_JobsFailed.Get(); }
+
+    unsigned int GetJobsReturnedNumber() const 
+                      { return (unsigned int)m_JobsReturned.Get(); }
+
+    unsigned int GetJobsRunningNumber() const;
+    unsigned int GetJobsStarted() const { return m_JobsStarted; }
     /// Start jobs execution.
     ///
     void Start();
@@ -377,7 +407,7 @@ public:
         CMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.GetJobVersion();
     }
-
+   
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
     INetScheduleStorageFactory&  m_NSStorageFactory;
@@ -395,7 +425,10 @@ private:
     CMutex                       m_StorageFactoryMutex;
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
     unsigned int                 m_MaxProcessedJob;
-    unsigned int                 m_ProcessedJob;
+    volatile unsigned int        m_JobsStarted;
+    CAtomicCounter               m_JobsSucceed;
+    CAtomicCounter               m_JobsFailed;
+    CAtomicCounter               m_JobsReturned;
     bool                         m_LogRequested;
 
 
@@ -436,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 1.18  2005/05/05 15:18:51  didenko
  * Added debugging facility to worker nodes
  *

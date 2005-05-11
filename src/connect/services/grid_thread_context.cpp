@@ -161,6 +161,7 @@ void CGridThreadContext::PutResult(int ret_code)
                                   m_JobContext->GetJobOutput());
         }
     }
+    m_JobContext->GetWorkerNode().m_JobsSucceed.Add(1);
 }
 /// @internal
 void CGridThreadContext::ReturnJob()
@@ -174,6 +175,7 @@ void CGridThreadContext::ReturnJob()
             m_Reporter->ReturnJob(m_JobContext->GetJobKey());
         }
     }
+    m_JobContext->GetWorkerNode().m_JobsReturned.Add(1);
 }
 /// @internal
 void CGridThreadContext::PutFailure(const string& msg)
@@ -187,6 +189,7 @@ void CGridThreadContext::PutFailure(const string& msg)
             m_Reporter->PutFailure(m_JobContext->GetJobKey(),msg);
         }
     }
+    m_JobContext->GetWorkerNode().m_JobsFailed.Add(1);
 }
 bool CGridThreadContext::IsJobCanceled()
 {
@@ -246,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2005/05/11 18:57:39  didenko
+ * Added worker node statictics
+ *
  * Revision 6.5  2005/05/10 14:13:10  didenko
  * Added CloseStreams method
  *
