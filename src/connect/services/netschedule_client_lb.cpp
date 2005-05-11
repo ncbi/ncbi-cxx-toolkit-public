@@ -591,6 +591,12 @@ public:
                     lb_drv->SetMaxRetry(max_retry);
                 }
 
+                bool discover_lp_servers =
+                    conf.GetBool(m_DriverName, "discover_low_priority_servers", 
+                                CConfig::eErr_NoThrow, false);
+
+                lb_drv->DiscoverLowPriorityServers(discover_lp_servers);
+
                 string services_list = conf.GetString(m_DriverName,
                                                 "sevices_list",
                                                  CConfig::eErr_NoThrow, kEmptyStr);
@@ -648,6 +654,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/05/11 18:56:06  didenko
+ * Added calling DescoverLowPriortyServers method when a worker node is created
+ *
  * Revision 1.12  2005/05/10 17:41:27  kuznets
  * Added option to discover low priority services
  *

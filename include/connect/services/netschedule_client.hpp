@@ -706,6 +706,7 @@ const unsigned int kNetScheduleMaxDataSize = 512;
 /// @internal
 const unsigned int kNetScheduleMaxErrSize = 1024;
 
+/// @internal
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleDriverName;
 
 
@@ -728,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/05/11 18:56:06  didenko
+ * Added calling DescoverLowPriortyServers method when a worker node is created
+ *
  * Revision 1.31  2005/05/10 19:59:43  kuznets
  * Some typedefs declared public
  *
