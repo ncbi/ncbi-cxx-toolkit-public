@@ -45,7 +45,8 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
+class NCBI_XCONNECT_EXPORT CNetScheduleStorageFactory_NetCache 
+    : public INetScheduleStorageFactory
 {
 public:
     CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
@@ -67,7 +68,8 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class CNetScheduleClientFactory : public INetScheduleClientFactory
+class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory 
+    : public INetScheduleClientFactory
 {
 public:
     CNetScheduleClientFactory(const IRegistry& reg);
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/05/11 13:29:14  didenko
+ * Fixed a linker error on Windows in DLL configuration
+ *
  * Revision 1.5  2005/05/10 15:15:14  didenko
  * Added clean up procedure
  *
