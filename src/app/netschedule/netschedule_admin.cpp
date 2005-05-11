@@ -90,6 +90,9 @@ void CNetScheduleAdmin::Init(void)
 
     arg_desc->AddFlag("v", "Server version");
 
+    arg_desc->AddFlag("l", "List servers discovered by LB");
+
+
     arg_desc->AddOptionalKey("q",
                              "queue",
                              "Queue name",
@@ -138,6 +141,16 @@ int CNetScheduleAdmin::Run(void)
 
         CNetScheduleClient_LB_Admin::TServiceList::const_iterator it =
             lst.begin();
+
+        if (args["l"]) { // service listing
+            ITERATE(CNetScheduleClient_LB_Admin::TServiceList, it, lst) {
+                string conn_host = CSocketAPI::gethostbyaddr(it->host);
+                vector<string> arr;
+                NStr::Tokenize(conn_host, ".", arr);
+                NcbiCout << arr[0] << ":" << it->port << NcbiEndl;
+            }
+            return 0;
+        }
 
         ITERATE(CNetScheduleClient_LB_Admin::TServiceList, it, lst) {
             
@@ -211,6 +224,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/11 13:15:52  kuznets
+ * Added -l (listing) command
+ *
  * Revision 1.2  2005/05/11 13:01:52  kuznets
  * Implemented variety of logging commands
  *
