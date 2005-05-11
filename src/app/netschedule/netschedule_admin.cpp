@@ -125,11 +125,21 @@ int CNetScheduleAdmin::Run(void)
 
     const string& host_service  = args["host_service"].AsString();
 
+    string queue = "noname";
+    if (args["q"]) {  
+        queue = args["q"].AsString(); 
+    }
+
+
     unsigned short port = 0;
     string host, port_str;
     bool b = NStr::SplitInTwo(host_service, ":", host, port_str);
     if (b) {
         port = atoi(port_str.c_str());
+
+        CNetScheduleClient_Control nc_control(host, port, queue);
+        Run(nc_control);
+
     } else {  // LB name
         CNetScheduleClient_LB_Admin cli_lb("netschedule_admin", 
                                            host_service, "noname");
@@ -155,11 +165,6 @@ int CNetScheduleAdmin::Run(void)
         ITERATE(CNetScheduleClient_LB_Admin::TServiceList, it, lst) {
             
             string conn_host = CSocketAPI::gethostbyaddr(it->host);
-
-            string queue = "noname";
-            if (args["q"]) {  
-                queue = args["q"].AsString(); 
-            }
 
             NcbiCout << "Connecting to: " << conn_host 
                      << ":" << it->port << " Queue=" << queue << NcbiEndl;
@@ -224,6 +229,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/11 15:09:29  kuznets
+ * Fixed bug in host:port connection
+ *
  * Revision 1.3  2005/05/11 13:15:52  kuznets
  * Added -l (listing) command
  *
