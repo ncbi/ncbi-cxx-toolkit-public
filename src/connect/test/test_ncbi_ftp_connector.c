@@ -52,15 +52,15 @@ int main(int argc, char* argv[])
     static const char k_chdir[] = "CWD /toolbox/ncbi_tools\n";
     static const char k_file[] = "RETR CURRENT/ncbi.tar.gz";
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
-    int/*bool*/ aborting = 0;
-    STimeout    timeout;
+    int/*bool*/ aborting = 0, first;
+    ESwitch     log = eDefault;
+    char        buf[1024];
     CONNECTOR   connector;
     FILE*       data_file;
-    CONN        conn;
-    ESwitch     log = eDefault;
-    size_t      n;
-    char        buf[1024];
+    STimeout    timeout;
     EIO_Status  status;
+    CONN        conn;
+    size_t      n;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
     srand(g_NCBI_ConnectRandomSeed);
@@ -131,11 +131,33 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Cannot write NLST command");
 
     CORE_LOG(eLOG_Note, "NLST command output:");
+    first = 1/*true*/;
     do {
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
-        if (n != 0)
+        if (n != 0) {
             printf("%.*s", (int) n, buf);
+            first = 0/*false*/;
+        }
     } while (status == eIO_Success);
+    if (first) {
+        printf("<EOF>\n");
+    }
+
+    if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Cannot write NLST command");
+
+    CORE_LOG(eLOG_Note, "NLST command output:");
+    first = 1/*true*/;
+    do {
+        status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
+        if (n != 0) {
+            printf("%.*s", (int) n, buf);
+            first = 0/*false*/;
+        }
+    } while (status == eIO_Success);
+    if (first) {
+        printf("<EOF>\n");
+    }
 
     if (CONN_Write(conn, k_chdir, sizeof(k_chdir) - 1, &n, eIO_WritePlain)
         != eIO_Success) {
@@ -178,6 +200,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/05/11 20:00:25  lavr
+ * Empty NLST result list bug fixed
+ *
  * Revision 1.4  2005/05/02 16:13:05  lavr
  * Use global random seed; show NLST use example; add more logging
  *

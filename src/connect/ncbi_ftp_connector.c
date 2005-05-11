@@ -342,6 +342,17 @@ static EIO_Status s_FTPRetrieve(SFTPConnector*  xxx,
         return status;
     if (code == 150)
         return eIO_Success;
+    if (code == 450  &&  (strncasecmp(cmd, "NLST", 4) == 0  ||
+                          strncasecmp(cmd, "LIST", 4) == 0)) {
+        /* server usually drops data connection on 450: no files ...*/
+        if (xxx->data) {
+            /* ... so do we :-/ */
+            SOCK_Abort(xxx->data);
+            xxx->data = 0;
+        }
+        /* with no data connection open, user gets eIO_Closed on read */
+        return eIO_Success;
+    }
     s_FTPAbort(xxx);
     return eIO_Unknown;
 }
@@ -383,7 +394,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             if (!(c = strchr(s, ' ')))
                 c = s + strlen(s);
             size = (size_t)(c - s);
-            if      (strncasecmp(s, "CWD",  size) == 0) {
+            if        (strncasecmp(s, "CWD",  size) == 0) {
                 status = s_FTPChdir(xxx, s);
             } else if (strncasecmp(s, "LIST", size) == 0  ||
                        strncasecmp(s, "NLST", size) == 0  ||
@@ -693,6 +704,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/05/11 20:00:25  lavr
+ * Empty NLST result list bug fixed
+ *
  * Revision 1.7  2005/04/20 18:15:59  lavr
  * +<assert.h>
  *
