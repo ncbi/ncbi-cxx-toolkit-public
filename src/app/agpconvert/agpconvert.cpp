@@ -163,6 +163,9 @@ int CAgpconvertApplication::Run(void)
         string line;
         while (!istr.eof()) {
             NcbiGetlineEOL(istr, line);
+            if (line.empty()) {
+                continue;
+            }
             list<string> split_line;
             NStr::Split(line, " \t", split_line);
             if (split_line.size() != 2) {
@@ -344,6 +347,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/11 17:45:53  jcherry
+ * Fixed problem with reading of chromsomes file
+ *
  * Revision 1.1  2005/05/02 18:37:34  jcherry
  * Initial version
  *
