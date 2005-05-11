@@ -1,7 +1,7 @@
 /* $Id$
  * By Vlad Lebedev, NCBI (lebedev@ncbi.nlm.nih.gov)
  *
- * Mac OS X - xCode Build (GCC 3.3)
+ * Mac OS X - xCode Build
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
  *        is manually maintained in order to keep it in-sync with the
@@ -254,16 +254,15 @@
 #define NCBI_COMPILER_GCC 1
 
 /* Compiler version as three-digit integer */
-#define NCBI_COMPILER_VERSION 330
+#define NCBI_COMPILER_VERSION (__GNUC__ * 100 + \
+                               __GNUC_MINOR__ * 10 + \
+                               __GNUC_PATCHLEVEL__)
 
 /* This is the NCBI C++ Toolkit. */
 #define NCBI_CXX_TOOLKIT 1
 
-/* Define to 1 if `string::compare()' is non-standard. */
-#define NCBI_OBSOLETE_STR_COMPARE 1
-
 /* Operating system name */
-#define NCBI_OS "UNIX"
+#define NCBI_OS "Mac OS X"
 
 /* Define to 1 on Mac OS X. */
 #define NCBI_OS_DARWIN 1
