@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.21 2005/04/21 21:54:03 lewisg Exp $
+-- $Id: omssa.asn,v 1.22 2005/05/12 16:20:41 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -309,12 +309,16 @@ MSSearchSettings ::= SEQUENCE {
         tophitnum INTEGER, -- number of m/z to consider in first pass
         minhit INTEGER DEFAULT 2, -- minimum number of m/z values for a valid hit
         minspectra INTEGER DEFAULT 4, -- minimum number of m/z for a valid spectra
-        scale INTEGER DEFAULT 1000,  -- scale for m/z float to integer
+        scale INTEGER DEFAULT 100,  -- scale for m/z float to integer
         maxmods INTEGER DEFAULT 64,  -- maximum number of mass ladders per
                                      -- database peptide
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
 	chargehandling MSChargeHandle OPTIONAL,  -- how to deal with charges
-	usermods MSModSpecSet OPTIONAL  -- user defined modifications
+	usermods MSModSpecSet OPTIONAL,  -- user defined modifications
+	pseudocount INTEGER DEFAULT 1, -- min number of counts per precursor bin
+	searchb1 INTEGER DEFAULT 0,    -- should b1 product be in search (1 = no)
+	searchctermproduct INTEGER DEFAULT 0, -- should c terminus ion be searched (1=no)
+	maxproductions INTEGER DEFAULT 0      -- max number of ions in each series (0=all)
 }
 
 
