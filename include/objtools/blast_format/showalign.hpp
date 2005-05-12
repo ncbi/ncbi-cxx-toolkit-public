@@ -329,6 +329,7 @@ private:
     struct SAlnFeatureInfo {
         FeatureInfo *feature;
         string feature_string;
+        list<TSeqPos> feature_start;
         CRange < TSignedSeqPos > aln_range;
     };
     
@@ -557,6 +558,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.29  2005/05/12 14:46:25  jianye
+*add start field
+*
 *Revision 1.28  2005/04/12 16:41:52  jianye
 *Added subject seq retrieval for trace db
 *
