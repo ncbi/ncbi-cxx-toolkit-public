@@ -433,6 +433,9 @@ protected:
     ///
     void Logging(bool on_off);
 
+    ///
+    void ReloadServerConfig();
+
 protected:
     virtual 
     void CheckConnect(const string& key);
@@ -729,6 +732,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/12 18:36:27  kuznets
+ * +ReloadServerConfig()
+ *
  * Revision 1.32  2005/05/11 18:56:06  didenko
  * Added calling DescoverLowPriortyServers method when a worker node is created
  *

@@ -935,6 +935,25 @@ void CNetScheduleClient::ShutdownServer()
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 }
 
+void CNetScheduleClient::ReloadServerConfig()
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "RECO ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+}
+
 string CNetScheduleClient::ServerVersion()
 {
     if (m_RequestRateControl) {
@@ -1186,6 +1205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/05/12 18:36:57  kuznets
+ * +ReloadServerConfig()
+ *
  * Revision 1.29  2005/05/12 15:11:31  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
