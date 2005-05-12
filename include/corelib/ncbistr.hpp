@@ -436,8 +436,8 @@ public:
     static void UInt8ToString(string& out_str, Uint8 value,
                               TIntToStringFlags fmt = 0);
 
-//private:
-    /// Obsolete methods; will be removed soon.
+private:
+    /// Obsolete methods; will be removed soon!
     /// Use one of *Int*ToString() with the flag parameter.
     static string IntToString (long value, bool sign);
     static void   IntToString (string& out_str, long value, bool sign);
@@ -2690,6 +2690,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/05/12 14:33:49  ivanov
+ * Made obsolete "sign" methods Int[8]ToString() private -- use versions
+ * with the flag parameter.
+ *
  * Revision 1.81  2005/05/12 11:13:01  ivanov
  * Added NStr::*Int*ToString() version with flags parameter
  *
@@ -2755,7 +2759,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.62  2004/09/21 18:44:55  kuznets
