@@ -342,7 +342,7 @@
 #define WORDS_BIGENDIAN 1
 
  
-//#define HAVE_LIBJPEG 0
+#define HAVE_LIBJPEG 1
 #define HAVE_LIBTIFF 1
 #define HAVE_LIBPNG  1
 #define HAVE_LIBGIF  1
