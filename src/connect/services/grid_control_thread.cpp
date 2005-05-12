@@ -95,7 +95,7 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         }
         else if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
                      VERSION_CMD.length() ) == 0 ) {
-            string ans = "OK:" + m_WorkerNode.GetJobVersion();
+            string ans = "OK:" + m_WorkerNode.GetJobVersion() + WN_BUILD_DATE;
             socket.Write(ans.c_str(), ans.length() + 1 );
         } 
         else if( strncmp( request.c_str(), STAT_CMD.c_str(), 
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2005/05/12 18:59:39  didenko
+ * Added a node build date to the version command
+ *
  * Revision 6.4  2005/05/12 14:52:05  didenko
  * Added a worker node build time and start time to the statistic
  *
