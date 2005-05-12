@@ -332,15 +332,26 @@ public:
     ///   Pointer value corresponding to its string representation.
     static const void* StringToPtr(const string& str);
 
+
+    /// Integer to string conversion flags.
+    enum EIntToStringFlags {
+        fSign   = (1 << 0),  ///< Prefix the output value with a sign (+ or –)
+        fCommas = (1 << 1)   ///< Use commas as thousands separator
+    };
+    typedef int TIntToStringFlags;  ///< Binary OR of "EIntToStringFlags"
+
     /// Convert Int to String.
     ///
     /// @param value
     ///   Integer value (long) to be converted.
-    /// @param sign
-    ///   Whether converted value should be preceded by the sign (+-) character.  
+    /// @param fmt
+    ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string IntToString(long value, bool sign = false);
+    static string IntToString(long value, TIntToStringFlags fmt);
+    static string IntToString(long value) {
+        return IntToString(value, TIntToStringFlags(0));
+    };
 
     /// Convert Int to String.
     ///
@@ -348,18 +359,23 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (long) to be converted.
-    /// @param sign
-    ///   Whether converted value should be preceded by the sign (+-) character.  
-    static void IntToString(string& out_str, long value, bool sign = false);
+    /// @param fmt
+    ///   How to convert value to string.
+    static void IntToString(string& out_str, long value, TIntToStringFlags fmt);
+    static void IntToString(string& out_str, long value) {
+        return IntToString(out_str, value, TIntToStringFlags(0));
+    };
 
 
     /// Convert UInt to string.
     ///
     /// @param value
     ///   Integer value (unsigned long) to be converted.
+    /// @param fmt
+    ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string UIntToString(unsigned long value);
+    static string UIntToString(unsigned long value, TIntToStringFlags fmt =0);
 
     /// Convert UInt to string.
     ///
@@ -367,17 +383,23 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (unsigned long) to be converted.
-    static void UIntToString(string& out_str, unsigned long value);
+    /// @param fmt
+    ///   How to convert value to string.
+    static void UIntToString(string& out_str, unsigned long value,
+                             TIntToStringFlags fmt = 0);
 
     /// Convert Int8 to string.
     ///
     /// @param value
     ///   Integer value (Int8) to be converted.
-    /// @param sign
-    ///   Whether converted value should be preceded by the sign (+-) character.  
+    /// @param fmt
+    ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string Int8ToString(Int8 value, bool sign = false);
+    static string Int8ToString(Int8 value, TIntToStringFlags fmt);
+    static string Int8ToString(Int8 value) {
+        return Int8ToString(value, TIntToStringFlags(0));
+    };
 
 
     /// Convert Int8 to string.
@@ -386,17 +408,22 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (Int8) to be converted.
-    /// @param sign
-    ///   Whether converted value should be preceded by the sign (+-) character.  
-    static void Int8ToString(string& out_str, Int8 value, bool sign = false);
+    /// @param fmt
+    ///   How to convert value to string.
+    static void Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt);
+    static void Int8ToString(string& out_str, Int8 value) {
+        return Int8ToString(out_str, value, TIntToStringFlags(0));
+    };
 
     /// Convert UInt8 to string.
     ///
     /// @param value
     ///   Integer value (UInt8) to be converted.
+    /// @param fmt
+    ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string UInt8ToString(Uint8 value);
+    static string UInt8ToString(Uint8 value, TIntToStringFlags fmt = 0);
 
     /// Convert UInt8 to string.
     ///
@@ -404,8 +431,20 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (UInt8) to be converted.
-    static void UInt8ToString(string& out_str, Uint8 value);
+    /// @param fmt
+    ///   How to convert value to string.
+    static void UInt8ToString(string& out_str, Uint8 value,
+                              TIntToStringFlags fmt = 0);
 
+//private:
+    /// Obsolete methods; will be removed soon.
+    /// Use one of *Int*ToString() with the flag parameter.
+    static string IntToString (long value, bool sign);
+    static void   IntToString (string& out_str, long value, bool sign);
+    static string Int8ToString(Int8 value, bool sign);
+    static void   Int8ToString(string& out_str, Int8 value, bool sign);
+
+public:
     /// Convert double to string.
     ///
     /// @param value
@@ -2651,6 +2690,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/05/12 11:13:01  ivanov
+ * Added NStr::*Int*ToString() version with flags parameter
+ *
  * Revision 1.80  2005/05/04 15:56:01  ucko
  * Genericize PCase et al. to allow for C-string-based variants, mainly
  * useful in conjunction with CStaticArray{Map,Set}.
