@@ -39,7 +39,7 @@ global AllApplications -- All GUI applications to build
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : " bz2 z"
 --property IMG_LIBS : " jpeg png tiff gif"
-property IMG_LIBS : " png tiff gif"
+property IMG_LIBS : " jpeg png tiff gif"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/05/12 12:44:17  lebedev
+ * libjpeg added
+ *
  * Revision 1.53  2005/05/09 15:40:07  lebedev
  * gui_config updated
  *

@@ -21,6 +21,7 @@ fi
 
 LIBS="
  giflib-4.1.3*http://cogent.dl.sourceforge.net/sourceforge/libungif
+ jpegsrc.v6b*http://www.ijg.org/files
  libpng-1.2.8-config*cogent.dl.sourceforge.net/sourceforge/libpng
  tiff-3.7.1*ftp://ftp.remotesensing.org/libtiff/old
  sqlite-2.8.16*http://www.sqlite.org
@@ -80,20 +81,36 @@ for lib in $LIBS; do
 	if [ $name = "giflib-4.1.3" ]; then
 		conf="--prefix="$DEST" --with-x=no"
 	fi
+    
+    if [ $name = "jpegsrc.v6b" ]; then
+        name="jpeg-6b"
+    fi
 
 	
 	echo Configuring in $name
 	if [ $name = "db-4.3.27.NC" ]; then
 		cd $name/build_unix
 		../dist/configure $conf
-	else
+    else
 		cd $name
 		./configure $conf
 	fi
 	
 	echo Make and Install in $name
 	make
-	make install
+    
+    # libjpeg makefiles are a little bit broken on Mac OS X. 
+    # a simple make install does not work. Copy everything manually.
+    if [ $name = "jpeg-6b" ]; then
+      cp jconfig.h $DEST/include
+      cp jmorecfg.h $DEST/include
+      cp jpeglib.h $DEST/include
+      cp libjpeg.a $DEST/lib
+      ranlib $DEST/lib/libjpeg.a 
+    else
+	  make install
+    fi
+    
 	if [ "$?" != "0" ]; then  
 		echo Error installing $filename. Check the log output.
 		exit -1 
