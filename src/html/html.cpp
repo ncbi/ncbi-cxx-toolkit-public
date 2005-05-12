@@ -2255,7 +2255,7 @@ CHTML_font* CHTML_font::SetTypeFace(const string& typeface)
 CHTML_font* CHTML_font::SetRelativeSize(int size)
 {
     if ( size != 0 )
-        SetAttribute("size", NStr::IntToString(size, true));
+        SetAttribute("size", NStr::IntToString(size, NStr::fSign));
     return this;
 }
 
@@ -2428,6 +2428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.118  2005/05/12 11:35:42  ivanov
+ * Use flag version of NStr::IntToString()
+ *
  * Revision 1.117  2005/05/09 18:58:11  ivanov
  * CHTMLNode::AttachPopupMenu() -- changed type of 3-rd parameter
  * from 'bool'to TPopupMenuFlags.
