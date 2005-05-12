@@ -340,14 +340,16 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
             CDirEntry::ConcatPath(m_MakeFileBaseDir, source_file);
         build_info.m_SourceFile = 
             CDirEntry::NormalizePath(source_file_path_abs);
-        build_info.m_CommandLine = 
-            m_MakeFile.GetString(source_file, "CommandLine", "");
+        build_info.m_CommandLine =
+            GetApp().GetSite().ProcessMacros(
+                m_MakeFile.GetString(source_file, "CommandLine", ""));
         build_info.m_Description = 
             m_MakeFile.GetString(source_file, "Description", "");
         build_info.m_Outputs = 
             m_MakeFile.GetString(source_file, "Outputs", "");
         build_info.m_AdditionalDependencies = 
-            m_MakeFile.GetString(source_file, "AdditionalDependencies", "");
+            GetApp().GetSite().ProcessMacros(
+                m_MakeFile.GetString(source_file, "AdditionalDependencies", ""));
 
         if ( !build_info.IsEmpty() )
             info->push_back(build_info);
@@ -610,6 +612,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/12 18:05:56  gouriano
+ * Process macros in custom build info
+ *
  * Revision 1.18  2004/12/20 15:30:24  gouriano
  * Typo fixed
  *
