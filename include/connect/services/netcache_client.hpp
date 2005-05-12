@@ -279,7 +279,7 @@ public:
         ENoBackup     = (0 << 0), ///< Do not use backup servers
         ENameNotFound = (1 << 0), ///< backup if LB does not find service name
         ENoConnection = (1 << 1), ///< backup if no TCP connection
-        EFullBackup   = (ENameNotFound | ENoConnection),
+        EFullBackup   = (ENameNotFound | ENoConnection)
     };
 
     typedef int TServiceBackupMode;
@@ -437,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/12 18:34:52  vakatov
+ * Minor warning heeded
+ *
  * Revision 1.32  2005/04/19 14:17:13  kuznets
  * Alternative put version
  *

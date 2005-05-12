@@ -144,7 +144,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
 {
 public:
     enum EErrCode {
-        eJobFactoryIsNotSet,
+        eJobFactoryIsNotSet
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/12 18:35:46  vakatov
+ * Minor warning heeded
+ *
  * Revision 1.8  2005/04/27 15:16:29  didenko
  * Added rotating log
  * Added optional deamonize

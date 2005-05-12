@@ -411,7 +411,7 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
         eExpectCloseBracket,
         eInsideId,
         eInsidePath,
-        eSpace,
+        eSpace
     };
     EState state = eStart;
 
@@ -823,6 +823,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2005/05/12 18:35:13  vakatov
+ * Minor warning heeded
+ *
  * Revision 1.12  2005/05/12 15:06:26  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
