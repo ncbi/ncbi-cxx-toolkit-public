@@ -51,20 +51,20 @@ const string kDBAPI_BlobCacheDriverName("dbapi");
 /// @internal
 ///
 
-class CDBAPI_BlobCacheCF : 
+class CDBAPI_BlobCacheCF :
     public CSimpleClassFactoryImpl<ICache, CDBAPI_Cache>
 {
 public:
     typedef CSimpleClassFactoryImpl<ICache, CDBAPI_Cache> TParent;
 
 public:
-    CDBAPI_BlobCacheCF() 
+    CDBAPI_BlobCacheCF()
       : CSimpleClassFactoryImpl<ICache, CDBAPI_Cache>(
                                         kDBAPI_BlobCacheDriverName, -1)
     {}
 
     /// Create instance of TDriver
-    virtual 
+    virtual
     ICache* CreateInstance(
                    const string&    driver  = kEmptyStr,
                    CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
@@ -105,7 +105,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
 {
     auto_ptr<CDBAPI_Cache> drv;
     if (driver.empty() || driver == m_DriverName) {
-        if (version.Match(NCBI_INTERFACE_VERSION(ICache)) 
+        if (version.Match(NCBI_INTERFACE_VERSION(ICache))
                             != CVersionInfo::eNonCompatible) {
             drv.reset(new CDBAPI_Cache());
         }
@@ -118,9 +118,9 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
 
     const string& tree_id = params->GetId();
     if (NStr::CompareNocase(tree_id, kDBAPI_BlobCacheDriverName) != 0) {
-        LOG_POST(Warning 
-          << "ICache class factory: Top level Id does not match driver name." 
-          << " Id = " << tree_id << " driver=" << kDBAPI_BlobCacheDriverName 
+        LOG_POST(Warning
+          << "ICache class factory: Top level Id does not match driver name."
+          << " Id = " << tree_id << " driver=" << kDBAPI_BlobCacheDriverName
           << " parameters ignored." );
 
         return drv.release();
@@ -141,21 +141,21 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
         IConnection* conn = (IConnection*)ptr;
         drv->Open(conn, temp_dir, temp_prefix);
     } else {
-        const string& drv_str = 
+        const string& drv_str =
             GetParam(params, kCFParam_driver, true, kEmptyStr);
-        const string& server = 
+        const string& server =
             GetParam(params, kCFParam_server, true, kEmptyStr);
-        const string& database = 
+        const string& database =
             GetParam(params, kCFParam_database, true, kEmptyStr);
 
-        const string& login = 
+        const string& login =
             GetParam(params, kCFParam_login, false, kCFParam_login_default);
-        const string& password = 
-            GetParam(params, 
+        const string& password =
+            GetParam(params,
                      kCFParam_password, false, kCFParam_password_default);
 
-        drv->Open(drv_str, server, database, 
-                  login, password, 
+        drv->Open(drv_str, server, database,
+                  login, password,
                   temp_dir, temp_prefix);
 
     }
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.6  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *

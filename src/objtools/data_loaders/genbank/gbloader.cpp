@@ -77,12 +77,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //=======================================================================
-//   GBLoader sub classes 
+//   GBLoader sub classes
 //
 
 //=======================================================================
-// GBLoader Public interface 
-// 
+// GBLoader Public interface
+//
 
 #if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
@@ -104,7 +104,7 @@ public:
         {
             return *m_Loader;
         }
-    
+
     //virtual TConn GetConn(void);
     //virtual void ReleaseConn(void);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const string& id);
@@ -500,7 +500,7 @@ CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
         GenBankWriters_Register_Cache();
     }
 #endif
-    
+
     return manager;
 }
 
@@ -534,6 +534,9 @@ CWriter* CGBDataLoader::x_CreateWriter(const string& names,
         // writer is required at this slot
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "no writer available from "+names);
+    }
+    if ( ret->HasCache() ) {
+        ret->InitializeCache(*m_Dispatcher, params);
     }
     return ret;
 }
@@ -571,7 +574,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
             m_Dispatcher->LoadSeq_idBlob_ids(result, sih);
         }
     }
-        
+
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( info.GetContentsMask() & fBlobHasCore ) {
@@ -688,7 +691,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
 
 //=======================================================================
 // GBLoader private interface
-// 
+//
 void CGBDataLoader::GC(void)
 {
 }
@@ -811,7 +814,7 @@ CGBDataLoader::GetBlobById(const TBlobId& id)
 
     CGBReaderRequestResult result(this, CSeq_id_Handle());
     CLoadLockBlob blob(result, blob_id);
-    if ( !blob.IsLoaded() ) 
+    if ( !blob.IsLoaded() )
         m_Dispatcher->LoadBlob(result, blob_id);
 
     return blob;
@@ -890,16 +893,16 @@ CDataLoader::TTSE_LockSet
 CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 {
     TTSE_LockSet locks;
-    
+
     if ( mask == 0 ) {
         return locks;
     }
-    
+
     if ( (mask & ~fBlobHasOrphanAnnot) == 0 ) {
         // no orphan annotations in GenBank
         return locks;
     }
-    
+
     GC();
 
     CGBReaderRequestResult result(this, sih);
@@ -916,12 +919,12 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
         }
     }
     _ASSERT(blobs.IsLoaded());
-    
+
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
         NCBI_THROW2(CBlobStateException, eBlobStateError,
                     "blob state error", blobs->GetState());
     }
-    
+
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( info.GetContentsMask() & mask ) {

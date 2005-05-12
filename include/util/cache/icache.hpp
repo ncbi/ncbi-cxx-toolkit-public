@@ -33,9 +33,9 @@
  */
 
 /// @file icache.hpp
-/// Cache interface specs. 
+/// Cache interface specs.
 ///
-/// File describes interfaces used to create local cache of 
+/// File describes interfaces used to create local cache of
 /// binary large objects (BLOBS).
 
 
@@ -51,17 +51,17 @@ BEGIN_NCBI_SCOPE
 /// BLOB cache read/write/maintanance interface.
 ///
 /// ICache describes caching service. Any large binary object
-/// can be stored in cache and later retrived. Such cache is a 
+/// can be stored in cache and later retrived. Such cache is a
 /// temporary storage and some objects can be purged from cache based
-/// on an immediate request, version or access time 
+/// on an immediate request, version or access time
 /// based replacement (or another implementation specific depreciation rule).
 ///
-/// Cache elements are accesed by key-subkey pair. 
-/// 
+/// Cache elements are accesed by key-subkey pair.
+///
 class ICache
 {
 public:
-    
+
     /// ICache keeps timestamps of every cache entry.
     /// This enum defines the policy how it is managed.
     /// Different policies can be combined by OR (|)
@@ -78,13 +78,13 @@ public:
 
         /// Timestamp is updated every on every access (read or write)
         fTimeStampOnRead            = (1 << 1),
-        
+
         /// Timestamp full key-subkey pair. By default only key is taken
         /// into account
         fTrackSubKey                = (1 << 2),
 
         /// Expire objects older than a certain time frame
-        /// Example: If object is not accessed within a week it is 
+        /// Example: If object is not accessed within a week it is
         ///          droped from the cache.
         fExpireLeastFrequentlyUsed  = (1 << 3),
 
@@ -106,10 +106,10 @@ public:
     /// @param timeout
     ///   Default expiration timeout for the stored BLOBs.
     /// @param max_timeout
-    ///   Maximum value for individually set BLOB timeouts. 
+    ///   Maximum value for individually set BLOB timeouts.
     ///   If "max_timeout" < "timeout", then it 'll be set to "timeout".
     ///
-    virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout = 0) = 0;
 
@@ -154,15 +154,15 @@ public:
 
     /// Add or replace BLOB
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
-    /// @param key 
+    /// @param key
     ///    BLOB identification sub-key
-    /// @param version 
+    /// @param version
     ///    BLOB version
-    /// @param data 
+    /// @param data
     ///    pointer on data buffer
-    /// @param size 
+    /// @param size
     ///    data buffer size in bytes (chars)
     /// @param time_to_live
     ///    Individual timeout. Cannot exceed max timeout.
@@ -175,13 +175,13 @@ public:
 
     /// Check if BLOB exists, return BLOB size.
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
-    /// @return 
+    /// @return
     ///    BLOB size or 0 if it doesn't exist or expired
     virtual size_t GetSize(const string&  key,
                            int            version,
@@ -189,37 +189,37 @@ public:
 
     /// Fetch the BLOB
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
-    /// @param 
+    /// @param
     ///    buf pointer on destination buffer
-    /// @param 
+    /// @param
     ///    size buffer size in bytes (chars)
-    /// @return 
+    /// @return
     ///    FALSE if BLOB doesn't exist or expired
     ///
-    /// @note Throws an exception if provided memory buffer is insufficient 
+    /// @note Throws an exception if provided memory buffer is insufficient
     /// to read the BLOB
-    virtual bool Read(const string& key, 
-                      int           version, 
+    virtual bool Read(const string& key,
+                      int           version,
                       const string& subkey,
-                      void*         buf, 
+                      void*         buf,
                       size_t        buf_size) = 0;
 
     /// Return sequential stream interface to read BLOB data.
-    /// 
-    /// @param key 
+    ///
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
     /// @return Interface pointer or NULL if BLOB does not exist
-    virtual IReader* GetReadStream(const string&  key, 
+    virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey) = 0;
 
@@ -237,21 +237,21 @@ public:
     /// Method fills blob_descr parameter.
     /// If provided buffer has sufficient capacity for BLOB storage, BLOB
     /// is saved into the buffer, otherwise IReader is created.
-    /// 
-    /// @note 
+    ///
+    /// @note
     ///  Method supposed to provide fast access to relatively small BLOBs
-    virtual void GetBlobAccess(const string&     key, 
+    virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
                                BlobAccessDescr*  blob_descr) = 0;
 
     /// Return sequential stream interface to write BLOB data.
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
     /// @param time_to_live
     ///    Individual timeout
@@ -268,11 +268,11 @@ public:
 
     /// Remove specific cache entry
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
     virtual void Remove(const string&    key,
                         int              version,
@@ -284,13 +284,13 @@ public:
     /// aging scheme for cache managed objects. In this case it needs to
     /// track time of every request to BLOB data.
     ///
-    /// @param key 
+    /// @param key
     ///    BLOB identification key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param version 
+    /// @param version
     ///    BLOB version
-    /// @return 
+    /// @return
     ///    last access time
     /// @sa TimeStampUpdatePolicy
     virtual time_t GetAccessTime(const string&  key,
@@ -305,22 +305,22 @@ public:
     ///
     /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
-    /// @param keep_last_version 
+    /// @param keep_last_version
     ///    type of cleaning action
     virtual void Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll) = 0;
 
     /// Delete BLOBs with access time older than specified
-    /// 
+    ///
     /// Function finds all BLOB versions with the specified key
     /// and removes the old instances.
     /// @param key
     ///    BLOB key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param access_timeout 
+    /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
-    /// @param keep_last_version 
+    /// @param keep_last_version
     ///    type of cleaning action
     virtual void Purge(const string&    key,
                        const string&    subkey,
@@ -329,6 +329,11 @@ public:
 
 
     virtual ~ICache() {}
+
+    /// Key values to search for a cache with given params.
+    /// Used to share cache between readers and writers.
+    typedef TPluginManagerParamTree TCacheParams;
+    virtual bool SameCacheParams(const TCacheParams* params) const = 0;
 };
 
 
@@ -342,7 +347,7 @@ public:
     {
         CPluginManager_DllResolver* resolver =
             new CPluginManager_DllResolver
-            (CInterfaceVersion<ICache>::GetName(), 
+            (CInterfaceVersion<ICache>::GetName(),
              kEmptyStr,
              CVersionInfo::kAny,
              CDll::eAutoUnload);
@@ -359,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.15  2005/03/07 14:43:15  ssikorsk
  * Do not unload PluginManager drivers by default
  *

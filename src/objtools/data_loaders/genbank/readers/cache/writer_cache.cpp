@@ -33,6 +33,7 @@
 #include <objtools/data_loaders/genbank/readers/cache/reader_cache_params.h>
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
 
 #include <util/cache/icache.hpp>
 #include <util/rwstream.hpp>
@@ -48,11 +49,51 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CCacheWriter::CCacheWriter(ICache* blob_cache,
-                           ICache* id_cache,
-                           TOwnership own)
-    : CCacheHolder(blob_cache, id_cache, own)
+CCacheWriter::CCacheWriter(void)
+    : CCacheHolder(0, 0, fOwnNone)
 {
+}
+
+
+void CCacheWriter::InitializeCache(const CReadDispatcher& dispatcher,
+                                   const TPluginManagerParamTree* params)
+{
+    const TPluginManagerParamTree* writer_params = params ?
+        params->FindNode(NCBI_GBLOADER_WRITER_CACHE_DRIVER_NAME) : 0;
+    ICache* id_cache = 0;
+    ICache* blob_cache = 0;
+    auto_ptr<TParams> id_params
+        (GetCacheParams(writer_params, eCacheWriter, eIdCache));
+    auto_ptr<TParams> blob_params
+        (GetCacheParams(writer_params, eCacheWriter, eBlobCache));
+    ITERATE(CReadDispatcher::TReaders, rd, dispatcher.m_Readers) {
+        if ( !rd->second->HasCache() ) {
+            continue;
+        }
+        const CCacheReader& reader =
+            dynamic_cast<const CCacheReader&>(*rd->second);
+        ICache* cache = reader.GetIdCache(id_params.get());
+        if ( cache ) {
+            _ASSERT(!id_cache);
+            id_cache = cache;
+        }
+        cache = reader.GetBlobCache(blob_params.get());
+        if ( cache ) {
+            _ASSERT(!blob_cache);
+            blob_cache = cache;
+        }
+    }
+    TOwnership own = fOwnNone;
+    if ( !id_cache ) {
+        id_cache = CreateCache(params, eCacheWriter, eIdCache);
+        own |= fOwnIdCache;
+    }
+    if ( !blob_cache ) {
+        blob_cache = CreateCache(params, eCacheWriter, eBlobCache);
+        own |= fOwnBlobCache;
+    }
+    SetIdCache(id_cache, own);
+    SetBlobCache(blob_cache, own);
 }
 
 
@@ -233,7 +274,7 @@ public:
         {
             return m_Stream.get() != 0;
         }
-    
+
     CNcbiOstream& operator*(void)
         {
             _ASSERT(m_Stream.get());
@@ -263,7 +304,7 @@ public:
         {
             m_Cache->Remove(m_Key, m_Version, m_Subkey);
         }
-    
+
 private:
     ICache*             m_Cache;
     string              m_Key;
@@ -277,7 +318,7 @@ private:
 CRef<CWriter::CBlobStream>
 CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
                              const TBlobId& blob_id,
-                             TChunkId chunk_id, 
+                             TChunkId chunk_id,
                              const CProcessor& processor)
 {
     if( !m_BlobCache ) {
@@ -325,30 +366,18 @@ public:
     ~CCacheWriterCF() {}
 
 
-    CWriter* 
+    CWriter*
     CreateInstance(const string& driver  = kEmptyStr,
                    CVersionInfo version = NCBI_INTERFACE_VERSION(CWriter),
                    const TPluginManagerParamTree* params = 0) const
     {
-        if ( !driver.empty()  &&  driver != m_DriverName ) 
+        if ( !driver.empty()  &&  driver != m_DriverName )
             return 0;
-        
+
         if ( !version.Match(NCBI_INTERFACE_VERSION(CWriter)) ) {
             return 0;
         }
-        auto_ptr<ICache> id_cache
-            (SCacheInfo::CreateCache(params,
-                                     SCacheInfo::eCacheWriter,
-                                     SCacheInfo::eIdCache));
-        auto_ptr<ICache> blob_cache
-            (SCacheInfo::CreateCache(params,
-                                     SCacheInfo::eCacheWriter,
-                                     SCacheInfo::eBlobCache));
-        if ( blob_cache.get()  ||  id_cache.get() ) {
-            return new CCacheWriter(blob_cache.release(), id_cache.release(),
-                                    CCacheWriter::fOwnAll);
-        }
-        return 0;
+        return new CCacheWriter();
     }
 };
 

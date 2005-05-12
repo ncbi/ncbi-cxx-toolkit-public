@@ -71,7 +71,7 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     // Seq-id/gi -> blob_id (4*N ints)
     static const char* GetBlob_idsSubkey(void);
     // Seq-id -> gi (1 int)
-    static const char* GetGiSubkey(void);      
+    static const char* GetGiSubkey(void);
     // Seq-id -> list of Seq-id, binary ASN.1
     static const char* GetSeq_idsSubkey(void);
     // blob_id -> blob version (1 int)
@@ -116,15 +116,15 @@ public:
                  ICache* id_cache = 0,
                  TOwnership own = fOwnNone);
     ~CCacheHolder(void);
-    
+
     void SetBlobCache(ICache* blob_cache, TOwnership = fOwnNone);
     void SetIdCache(ICache* id_cache, TOwnership = fOwnNone);
-    
+
 protected:
     ICache* m_BlobCache;
     ICache* m_IdCache;
     TOwnership m_Own;
-    
+
 private:
     // to prevent copying
     CCacheHolder(const CCacheHolder&);
@@ -140,7 +140,7 @@ public:
     CCacheReader(ICache* blob_cache = 0,
                  ICache* id_cache = 0,
                  TOwnership own = fOwnNone);
-    
+
     //////////////////////////////////////////////////////////////////
     // Overloaded loading methods:
     bool LoadStringSeq_ids(CReaderRequestResult& result,
@@ -165,6 +165,11 @@ public:
     bool MayBeSkippedOnErrors(void) const;
     int GetMaximumConnectionsLimit(void) const;
 
+    virtual bool HasCache(void) const { return true; }
+
+    ICache* GetIdCache(TParams* params) const;
+    ICache* GetBlobCache(TParams* params) const;
+
 protected:
     void x_AddConnectionSlot(TConn conn);
     void x_RemoveConnectionSlot(TConn conn);
@@ -175,6 +180,13 @@ protected:
                        const string& subkey,
                        TIdCacheData& data);
 };
+
+
+SCacheInfo::TParams*
+GetCacheParams(const SCacheInfo::TParams* src_params,
+                SCacheInfo::EReaderOrWriter reader_or_writer,
+                SCacheInfo::EIdOrBlob id_or_blob);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

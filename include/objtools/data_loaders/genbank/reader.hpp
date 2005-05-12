@@ -57,7 +57,7 @@ public:
     typedef int TBlobSplitVersion;
     typedef int TChunkId;
     typedef int TContentsMask;
-    
+
     /// All LoadXxx() methods should return false if
     /// there is no requested data in the reader.
     /// This will notify dispatcher that there is no sense to retry.
@@ -140,7 +140,7 @@ public:
     public:
         CConn(CReader* reader);
         ~CConn(void);
-        
+
         void Release(void);
 
         operator TConn(void) const;
@@ -155,7 +155,7 @@ public:
     };
 
     // returns the time in seconds when already retrived data
-    // could become obsolete by fresher version 
+    // could become obsolete by fresher version
     // -1 - never
     virtual int GetConst(const string& const_name) const;
 
@@ -166,6 +166,8 @@ public:
     friend class CReadDispatcher;
 
     static int ReadInt(CNcbiIstream& stream);
+
+    virtual bool HasCache(void) const { return false; }
 
 protected:
     CReadDispatcher* m_Dispatcher;
@@ -220,7 +222,7 @@ CReader::CConn::~CConn(void)
         m_Reader->x_AbortConnection(m_Conn);
     }
 }
-        
+
 
 inline
 void CReader::CConn::Release(void)

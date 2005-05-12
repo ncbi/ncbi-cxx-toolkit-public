@@ -87,11 +87,11 @@ class CDBAPI_CursorGuard
 {
 public:
     CDBAPI_CursorGuard(ICursor* cur) : m_Cur(cur) {}
-    ~CDBAPI_CursorGuard() 
-    { 
+    ~CDBAPI_CursorGuard()
+    {
         try {
             if (m_Cur)
-                m_Cur->Close(); 
+                m_Cur->Close();
         } catch(...) {
         }
     }
@@ -102,12 +102,12 @@ public:
         m_Cur = cur;
     }
 
-    void Close() 
-    { 
+    void Close()
+    {
         if (m_Cur) {
             ICursor* cur = m_Cur;
             m_Cur = 0;
-            cur->Close(); 
+            cur->Close();
         }
     }
 
@@ -124,10 +124,10 @@ private:
 class CDBAPI_TransGuard
 {
 public:
-    CDBAPI_TransGuard(IStatement* stmt) 
-     : m_Stmt(stmt) 
+    CDBAPI_TransGuard(IStatement* stmt)
+     : m_Stmt(stmt)
     {
-        m_Stmt->ExecuteUpdate("BEGIN TRANSACTION");        
+        m_Stmt->ExecuteUpdate("BEGIN TRANSACTION");
     }
     CDBAPI_TransGuard(const CDBAPI_TransGuard& tg)
     {
@@ -147,15 +147,15 @@ public:
     {
         if (m_Stmt) {
             try {
-                m_Stmt->ExecuteUpdate("ROLLBACK TRANSACTION");            
-            } 
+                m_Stmt->ExecuteUpdate("ROLLBACK TRANSACTION");
+            }
             catch (...) {} // ignore all troubles
         }
     }
 
     void Forget() const { m_Stmt = 0; }
 
-    void Commit() 
+    void Commit()
     {
         if (m_Stmt) {
             m_Stmt->ExecuteUpdate("COMMIT TRANSACTION");
@@ -189,7 +189,7 @@ public:
       m_ReadPos(0),
       m_MemBufferSize(buf_size)
     {
-        string sel_blob_sql = 
+        string sel_blob_sql =
             "SELECT datalength(\"data\"), data FROM dbo.cache_data WHERE ";
         s_MakeKeyCondition(key, version, subkey, &sel_blob_sql);
 
@@ -202,8 +202,8 @@ public:
             if (!v.IsNull()) {
                 m_BlobSize = v.GetInt4();
             } else {
-                NCBI_THROW(CDBAPI_ICacheException, 
-                           eCannotReadBLOB, 
+                NCBI_THROW(CDBAPI_ICacheException,
+                           eCannotReadBLOB,
                            "BLOB data is NULL");
             }
             if (m_BlobSize) {
@@ -218,8 +218,8 @@ public:
                         size_t br = rs->Read(buf, sizeof(buf));
                         m_TmpFile->write(buf, br);
                         if (m_TmpFile->bad()) {
-                            NCBI_THROW(CDBAPI_ICacheException, 
-                                    eTempFileIOError, 
+                            NCBI_THROW(CDBAPI_ICacheException,
+                                    eTempFileIOError,
                                     "Temp file write error");
                         }
                         i += br;
@@ -230,7 +230,7 @@ public:
                 m_ReadPos = 0;
             }
         } // while
-    
+
     }
 
 
@@ -245,7 +245,7 @@ public:
         m_TempPrefix = temp_prefix;
     }
 
-    virtual ERW_Result Read(void*   buf, 
+    virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read)
     {
@@ -345,7 +345,7 @@ public:
         m_TempPrefix = temp_prefix;
     }
 
-    virtual ERW_Result Write(const void* buf, 
+    virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0)
     {
@@ -353,7 +353,7 @@ public:
             return eRW_Error;
 
         if (m_Flushed) {
-            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed, 
+            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed,
                 "Cannot call IWriter::Write after Flush");
         }
 
@@ -430,12 +430,12 @@ private:
     {
         ERW_Result ret;
         if (m_Buffer) {
-            ostream& out = cur.GetBlobOStream(1, m_BytesInBuffer); 
+            ostream& out = cur.GetBlobOStream(1, m_BytesInBuffer);
             ret = x_SaveBlob(out);
         }
         if (&*m_TmpFile) {
             CT_OFF_TYPE total_bytes = m_TmpFile->tellg() - CT_POS_TYPE(0);
-            ostream& out = cur.GetBlobOStream(1, total_bytes); 
+            ostream& out = cur.GetBlobOStream(1, total_bytes);
             ret = x_SaveBlob(out);
         }
         return ret;
@@ -444,30 +444,30 @@ private:
     ERW_Result x_Flush(void)
     {
         if (m_Flushed) {
-            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed, 
+            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed,
                 "Cannot call IWriter::Write after Flush");
         }
         if (!m_GoodStateFlag)
             return eRW_Error;
-    
+
         m_Flushed = true;
 
         CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
-    
+
         IStatement* stmt = m_Conn->GetStatement();
         CDBAPI_TransGuard tg(stmt);
 
         //
         // Create an update cursor here, build an output stream on it
         //
-        string upd_blob_sql = 
+        string upd_blob_sql =
             "SELECT data FROM dbo.cache_data WHERE ";
         s_MakeKeyCondition(m_Key, m_Version, m_SubKey, &upd_blob_sql);
         upd_blob_sql += " FOR UPDATE";
 
         ICursor* cur(m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql));
         CDBAPI_CursorGuard cg(cur);
-        IResultSet *rs = cur->Open(); 
+        IResultSet *rs = cur->Open();
 
         while (rs->Next()) {
             ERW_Result ret = x_SaveBlob(*cur);
@@ -475,7 +475,7 @@ private:
             cg.Close();
             CDBAPI_Cache::UpdateAccessTime(
                             *stmt,
-                            m_Key, 
+                            m_Key,
                             m_Version,
                             m_SubKey,
                             m_Cache->GetTimeStampPolicy());
@@ -488,7 +488,7 @@ private:
         cg.Close();
 
         {  // BLOB does not exist, INSERT required
-            string ins_blob_sql = 
+            string ins_blob_sql =
                 "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
                 "VALUES( ";
             s_MakeValueList(m_Key, m_Version, m_SubKey, &ins_blob_sql);
@@ -499,14 +499,14 @@ private:
             stmt->ExecuteUpdate(ins_blob_sql);
 
             cg.Reset(cur = m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql));
-            rs = cur->Open(); 
+            rs = cur->Open();
             while (rs->Next()) {
                 ERW_Result ret = x_SaveBlob(*cur);
 
                 cg.Close();
                 CDBAPI_Cache::UpdateAccessTime(
                                 *stmt,
-                                m_Key, 
+                                m_Key,
                                 m_Version,
                                 m_SubKey,
                                 m_Cache->GetTimeStampPolicy());
@@ -582,7 +582,7 @@ void CDBAPI_Cache::Open(IConnection* conn,
 
         if (!tmp_dir.Exists()) {
             if (!tmp_dir.Create()) {
-                NCBI_THROW(CDBAPI_ICacheException, eInvalidDirectory, 
+                NCBI_THROW(CDBAPI_ICacheException, eInvalidDirectory,
                         "Cannot create directory:" + m_TempDir);
             }
         }
@@ -598,11 +598,11 @@ void CDBAPI_Cache::Open(const string& driver,
                         const string& temp_dir,
                         const string& temp_prefix)
 {
-    CDriverManager &db_drv_man = CDriverManager::GetInstance(); 
+    CDriverManager &db_drv_man = CDriverManager::GetInstance();
     IDataSource* ds = db_drv_man.CreateDs(driver);
     auto_ptr<IConnection> conn(ds->CreateConnection());  // TODO: Add ownership flag
     if (conn.get() == 0) {
-        NCBI_THROW(CDBAPI_ICacheException, eConnectionError, 
+        NCBI_THROW(CDBAPI_ICacheException, eConnectionError,
                 "Cannot create connection");
     }
     conn->Connect(login, password, server, database);
@@ -614,7 +614,7 @@ void CDBAPI_Cache::Open(const string& driver,
 }
 
 
-void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
+void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy,
                                       unsigned int    timeout,
                                       unsigned int    max_timeout)
 {
@@ -668,14 +668,14 @@ void CDBAPI_Cache::Store(const string&  key,
     bool any_rec = x_UpdateBlob(*stmt, key, version, subkey, data, size);
 
     if (!any_rec) { // BLOB not found. insert.
-        string ins_blob_sql = 
+        string ins_blob_sql =
             "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
             "VALUES( ";
         s_MakeValueList(key, version, subkey, &ins_blob_sql);
         // it should be NULL here but it gives an error with FTDS :(
         // if porting to normal RDBMS it may need attention
         ins_blob_sql += ", ' ')";
-        
+
 
         stmt->ExecuteUpdate(ins_blob_sql);
         x_UpdateBlob(*stmt, key, version, subkey, data, size);
@@ -697,7 +697,7 @@ size_t CDBAPI_Cache::GetSize(const string&  key,
     int timestamp;
     IStatement* stmt = m_Conn->GetStatement();
 
-    bool attr_exists = 
+    bool attr_exists =
         x_RetrieveTimeStamp(*stmt, key, version, subkey, timestamp);
 
     if (!attr_exists) {
@@ -715,7 +715,7 @@ size_t CDBAPI_Cache::GetSize(const string&  key,
 
     ICursor* cur=m_Conn->GetCursor("sel_cur", sel_blob_sql);
     CDBAPI_CursorGuard cg(cur);
-    IResultSet *rs = cur->Open(); 
+    IResultSet *rs = cur->Open();
 
     size_t blob_size = 0;
     while (rs->Next()) {
@@ -723,7 +723,7 @@ size_t CDBAPI_Cache::GetSize(const string&  key,
         if (v.IsNull()) {
             blob_size = 0;
         } else {
-            blob_size = v.GetInt4(); 
+            blob_size = v.GetInt4();
         }
     }
     return blob_size;
@@ -737,10 +737,10 @@ bool CDBAPI_Cache::HasBlobs(const string&  key,
 }
 
 
-bool CDBAPI_Cache::Read(const string& key, 
-                        int           version, 
+bool CDBAPI_Cache::Read(const string& key,
+                        int           version,
                         const string& subkey,
-                        void*         buf, 
+                        void*         buf,
                         size_t        buf_size)
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
@@ -748,7 +748,7 @@ bool CDBAPI_Cache::Read(const string& key,
     int timestamp;
     IStatement* stmt=m_Conn->GetStatement();
 
-    bool attr_exists = 
+    bool attr_exists =
         x_RetrieveTimeStamp(*stmt, key, version, subkey, timestamp);
 
     if (!attr_exists) {
@@ -761,13 +761,13 @@ bool CDBAPI_Cache::Read(const string& key,
         }
     }
     // get blob information
-    string sel_blob_sql = 
+    string sel_blob_sql =
         "SELECT datalength(\"data\"), data FROM dbo.cache_data WHERE ";
     s_MakeKeyCondition(key, version, subkey, &sel_blob_sql);
 
     ICursor* cur = m_Conn->GetCursor("sel_cur", sel_blob_sql);
     CDBAPI_CursorGuard cg(cur);
-    IResultSet *rs = cur->Open(); 
+    IResultSet *rs = cur->Open();
 
     while (rs->Next()) {
         const CVariant& v = rs->GetVariant(1);
@@ -777,13 +777,13 @@ bool CDBAPI_Cache::Read(const string& key,
         }
         if (blob_size) {
             blob_size = min(blob_size, buf_size);
-            istream& in = rs->GetBlobIStream(); 
+            istream& in = rs->GetBlobIStream();
             in.read((char*)buf, blob_size);
 
             if ( m_TimeStampFlag & fTimeStampOnRead ) {
                 CDBAPI_TransGuard tg(stmt);
-                x_UpdateAccessTime(*stmt, 
-                                   key, version, subkey, 
+                x_UpdateAccessTime(*stmt,
+                                   key, version, subkey,
                                    m_TimeStampFlag);
                 tg.Commit();
             }
@@ -794,7 +794,7 @@ bool CDBAPI_Cache::Read(const string& key,
     return false;
 }
 
-IReader* CDBAPI_Cache::GetReadStream(const string&  key, 
+IReader* CDBAPI_Cache::GetReadStream(const string&  key,
                                      int            version,
                                      const string&  subkey)
 {
@@ -803,7 +803,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
     int timestamp;
     IStatement* stmt = m_Conn->GetStatement();
 
-    bool attr_exists = 
+    bool attr_exists =
         x_RetrieveTimeStamp(*stmt, key, version, subkey, timestamp);
 
     if (!attr_exists) {
@@ -818,8 +818,8 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 
     auto_ptr<CDBAPI_CacheIReader> rdr;
     try {
-        rdr.reset(new CDBAPI_CacheIReader(m_Conn, 
-                                          key, version, subkey, 
+        rdr.reset(new CDBAPI_CacheIReader(m_Conn,
+                                          key, version, subkey,
                                           GetMemBufferSize()));
     } catch (CDBAPI_ICacheException&) {
         return 0;
@@ -834,7 +834,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
     return rdr.release();
 }
 
-void CDBAPI_Cache::GetBlobAccess(const string&     /* key */, 
+void CDBAPI_Cache::GetBlobAccess(const string&     /* key */,
                                  int               /* version */,
                                  const string&     /* subkey */,
                                  BlobAccessDescr*  blob_descr)
@@ -854,7 +854,7 @@ IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
-    auto_ptr<CBDB_CacheIWriter> wrt( 
+    auto_ptr<CBDB_CacheIWriter> wrt(
         new CBDB_CacheIWriter(this, key, version, subkey, GetMemBufferSize()));
     wrt->SetTemps(m_TempDir, m_TempPrefix);
 
@@ -865,7 +865,7 @@ void CDBAPI_Cache::Remove(const string& key)
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
-    string del_blob_sql = 
+    string del_blob_sql =
         "DELETE FROM dbo.cache_data WHERE cache_key = '";
     del_blob_sql += key;
     del_blob_sql += "'";
@@ -875,7 +875,7 @@ void CDBAPI_Cache::Remove(const string& key)
 
     stmt->ExecuteUpdate(del_blob_sql);
 
-    del_blob_sql = 
+    del_blob_sql =
         "DELETE FROM dbo.cache_attr WHERE cache_key = '";
     del_blob_sql += key;
     del_blob_sql += "'";
@@ -891,7 +891,7 @@ void CDBAPI_Cache::Remove(const string&    key,
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
-    string del_blob_sql = 
+    string del_blob_sql =
         "DELETE FROM dbo.cache_data WHERE ";
     s_MakeKeyCondition(key, version, subkey, &del_blob_sql);
     IStatement* stmt = m_Conn->GetStatement();
@@ -899,7 +899,7 @@ void CDBAPI_Cache::Remove(const string&    key,
 
     stmt->ExecuteUpdate(del_blob_sql);
 
-    del_blob_sql = 
+    del_blob_sql =
         "DELETE FROM dbo.cache_attr WHERE ";
     s_MakeKeyCondition(key, version, subkey, &del_blob_sql);
 
@@ -917,7 +917,7 @@ time_t CDBAPI_Cache::GetAccessTime(const string&  key,
 
     IStatement* stmt = m_Conn->GetStatement();
     int timestamp;
-    bool rec_exsits = 
+    bool rec_exsits =
         x_RetrieveTimeStamp(*stmt, key, version, subkey, timestamp);
 
     if (rec_exsits)
@@ -955,8 +955,8 @@ void CDBAPI_Cache::Purge(time_t           access_timeout,
 
     // Now we have all wrong attributes deleted (and commited)
     // we iterate all dangling BLOBs and drop them one by one
-    // in separate transactions 
-    // The rationel is to give RDBMS a chance to clean the 
+    // in separate transactions
+    // The rationel is to give RDBMS a chance to clean the
     // transaction log after each BLOB.
 
     x_CleanOrphantBlobs(*stmt);
@@ -975,7 +975,7 @@ void CDBAPI_Cache::Purge(const string&    key,
 
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
-    if (key.empty() || 
+    if (key.empty() ||
         (keep_last_version == eDropAll && access_timeout == 0)) {
         x_TruncateDB();
         return;
@@ -1033,7 +1033,7 @@ struct SDBAPI_CacheDescr
 
 void CDBAPI_Cache::x_CleanOrphantBlobs(IStatement& stmt)
 {
-    string sel_sql = 
+    string sel_sql =
         "SELECT cd.cache_key, cd.version, cd.subkey "
         "FROM cache_data cd "
         "LEFT OUTER JOIN cache_attr ca "
@@ -1054,7 +1054,7 @@ void CDBAPI_Cache::x_CleanOrphantBlobs(IStatement& stmt)
     {{
     ICursor* cur = m_Conn->GetCursor("sel_cur", sel_sql);
     CDBAPI_CursorGuard cg(cur);
-    IResultSet *rs = cur->Open(); 
+    IResultSet *rs = cur->Open();
 
     string key, subkey;
 
@@ -1134,7 +1134,7 @@ bool CDBAPI_Cache::x_RetrieveTimeStamp(IStatement&   /* stmt */,
     s_MakeKeyCondition(key, version, subk, &sel_blob_sql);
     ICursor* cur = m_Conn->GetCursor("attr_cur", sel_blob_sql);
     CDBAPI_CursorGuard cg(cur);
-    IResultSet *rs = cur->Open(); 
+    IResultSet *rs = cur->Open();
 
     while (rs->Next()) {
         const CVariant& v = rs->GetVariant(1);
@@ -1155,7 +1155,7 @@ bool CDBAPI_Cache::x_UpdateBlob(IStatement&    stmt,
 {
     bool any_rec = false;
 
-    // Request to create an empty BLOB 
+    // Request to create an empty BLOB
     if (size == 0 || data == 0) {
         string upd_sql =
             "UPDATE dbo.cache_data SET data = NULL WHERE ";
@@ -1163,7 +1163,7 @@ bool CDBAPI_Cache::x_UpdateBlob(IStatement&    stmt,
         stmt.ExecuteUpdate(upd_sql);
         int rows = stmt.GetRowCount();
         if (rows <= 0) {
-            string ins_blob_sql = 
+            string ins_blob_sql =
                 "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
                 "VALUES( ";
             s_MakeValueList(key, version, subkey, &ins_blob_sql);
@@ -1180,15 +1180,15 @@ bool CDBAPI_Cache::x_UpdateBlob(IStatement&    stmt,
     string upd_blob_sql = "SELECT \"data\" FROM dbo.cache_data WHERE ";
     s_MakeKeyCondition(key, version, subkey, &upd_blob_sql);
     upd_blob_sql += " FOR UPDATE";
-    
+
     ICursor* cur(m_Conn->GetCursor("upd_cur", upd_blob_sql));
     CDBAPI_CursorGuard cg(cur);
-    IResultSet *rs = cur->Open(); 
+    IResultSet *rs = cur->Open();
 
     while (rs->Next()) {
-        ostream& out = cur->GetBlobOStream(1, size); 
-        out.write((const char*)data, size); 
-        out.flush(); 
+        ostream& out = cur->GetBlobOStream(1, size);
+        out.write((const char*)data, size);
+        out.flush();
         any_rec = true;
         break;
     }
@@ -1227,9 +1227,15 @@ void CDBAPI_Cache::x_UpdateAccessTime(IStatement&    stmt,
         ins_attr_sql += str_stamp;
         ins_attr_sql += ")";
         stmt.ExecuteUpdate(ins_attr_sql);
-    } 
+    }
 }
 
+
+bool CDBAPI_Cache::SameCacheParams(const TCacheParams* params) const
+{
+    // Never share dbapi cache
+    return false;
+}
 
 
 END_NCBI_SCOPE
@@ -1238,6 +1244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.16  2005/02/22 13:02:35  kuznets
  * +HasBlobs()
  *

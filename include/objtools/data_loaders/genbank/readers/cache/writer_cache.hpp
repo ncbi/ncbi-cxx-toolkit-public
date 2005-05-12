@@ -46,9 +46,7 @@ class NCBI_XREADER_CACHE_EXPORT CCacheWriter : public CWriter,
                                                public SCacheInfo
 {
 public:
-    CCacheWriter(ICache* blob_cache = 0, 
-                 ICache* id_cache = 0,
-                 TOwnership own = fOwnNone);
+    CCacheWriter(void);
 
     virtual void SaveStringSeq_ids(CReaderRequestResult& result,
                                    const string& seq_id);
@@ -72,6 +70,10 @@ public:
     virtual bool CanWrite(EType type) const;
 
     void WriteSeq_ids(const string& key, const CLoadLockSeq_ids& ids);
+
+    virtual bool HasCache(void) const { return true; }
+    virtual void InitializeCache(const CReadDispatcher& dispatcher,
+                                 const TPluginManagerParamTree* params);
 };
 
 

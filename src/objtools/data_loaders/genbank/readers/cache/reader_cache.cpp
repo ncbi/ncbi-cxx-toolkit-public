@@ -299,7 +299,7 @@ bool CCacheReader::ReadSeq_ids(const string& key,
     if ( !reader.get() ) {
         return false;
     }
-    
+
     CLoadInfoSeq_ids::TSeq_ids seq_ids;
     {{
         CRStream r_stream(reader.get());
@@ -374,13 +374,13 @@ bool CCacheReader::LoadBlob(CReaderRequestResult& result,
 
 
 bool CCacheReader::LoadChunk(CReaderRequestResult& result,
-                             const TBlobId& blob_id, 
+                             const TBlobId& blob_id,
                              TChunkId chunk_id)
 {
     if ( !m_BlobCache ) {
         return false;
     }
- 
+
     CLoadLockBlob blob(result, blob_id);
     if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
         return true;
@@ -423,10 +423,10 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     return true;
 }
 
+
 struct SPluginParams
 {
-    //typedef NCBI_NS_NCBI::CTreePairNode<string, string> TParams;
-    typedef ncbi::CTreePairNode<std::string, std::string> TParams;
+    typedef SCacheInfo::TParams TParams;
 
     struct SDefaultValue {
         const char* name;
@@ -477,7 +477,7 @@ struct SPluginParams
         }
         return node;
     }
-    
+
 
     static
     TParams* SetSubSection(TParams* params, const string& name)
@@ -514,9 +514,9 @@ struct SPluginParams
 
 
 static
-bool IsDisabledCache(const SPluginParams::TParams* params)
+bool IsDisabledCache(const SCacheInfo::TParams* params)
 {
-    const SPluginParams::TParams* driver =
+    const SCacheInfo::TParams* driver =
         SPluginParams::FindSubNode(params,
             NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
     if ( driver ) {
@@ -527,10 +527,10 @@ bool IsDisabledCache(const SPluginParams::TParams* params)
     }
     return false;
 }
-    
+
 
 static
-SPluginParams::TParams* GetDriverParams(SPluginParams::TParams* params)
+SCacheInfo::TParams* GetDriverParams(SCacheInfo::TParams* params)
 {
     const string& driver_name =
         SPluginParams::SetDefaultValue(params,
@@ -541,11 +541,11 @@ SPluginParams::TParams* GetDriverParams(SPluginParams::TParams* params)
 
 
 static
-SPluginParams::TParams*
-GetCacheParamsCopy(const SPluginParams::TParams* src_params,
+SCacheInfo::TParams*
+GetCacheParamsCopy(const SCacheInfo::TParams* src_params,
                    const char* section_name)
 {
-    const SPluginParams::TParams* src_section =
+    const SCacheInfo::TParams* src_section =
         SPluginParams::FindSubNode(src_params, section_name);
     if ( IsDisabledCache(src_section) ) {
         // no cache
@@ -553,11 +553,11 @@ GetCacheParamsCopy(const SPluginParams::TParams* src_params,
     }
     if ( src_section ) {
         // make a copy of params
-        return new SPluginParams::TParams(*src_section);
+        return new SCacheInfo::TParams(*src_section);
     }
     else {
         // new param tree, if section is absent
-        return new SPluginParams::TParams();
+        return new SCacheInfo::TParams();
     }
 }
 
@@ -594,8 +594,8 @@ static const SPluginParams::SDefaultValue s_DefaultWriterParams[] = {
     { 0, 0 }
 };
 
-SPluginParams::TParams*
-GetCacheParams(const SPluginParams::TParams* src_params,
+SCacheInfo::TParams*
+GetCacheParams(const SCacheInfo::TParams* src_params,
                 SCacheInfo::EReaderOrWriter reader_or_writer,
                 SCacheInfo::EIdOrBlob id_or_blob)
 {
@@ -606,14 +606,14 @@ GetCacheParams(const SPluginParams::TParams* src_params,
     else {
         section_name = NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION;
     }
-    auto_ptr<SPluginParams::TParams> section
+    auto_ptr<SCacheInfo::TParams> section
         (GetCacheParamsCopy(src_params, section_name));
     if ( !section.get() ) {
         // disabled
         return 0;
     }
     // fill driver section with default values
-    SPluginParams::TParams* driver_params = GetDriverParams(section.get());
+    SCacheInfo::TParams* driver_params = GetDriverParams(section.get());
     SPluginParams::SetDefaultValues(driver_params, s_DefaultParams);
     if ( id_or_blob == SCacheInfo::eIdCache ) {
         SPluginParams::SetDefaultValues(driver_params, s_DefaultIdParams);
@@ -646,6 +646,27 @@ ICache* SCacheInfo::CreateCache(const TParams* params,
     return manager->CreateInstanceFromKey
         (cache_params.get(), NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
 }
+
+
+ICache* CCacheReader::GetIdCache(TParams* params) const
+{
+    if (!params  ||  !m_IdCache) {
+        return 0;
+    }
+    SCacheInfo::TParams* driver_params = GetDriverParams(params);
+    return m_IdCache->SameCacheParams(driver_params) ? m_IdCache : 0;
+}
+
+
+ICache* CCacheReader::GetBlobCache(TParams* params) const
+{
+    if (!params  ||  !m_BlobCache) {
+        return 0;
+    }
+    SCacheInfo::TParams* driver_params = GetDriverParams(params);
+    return m_BlobCache->SameCacheParams(driver_params) ? m_BlobCache : 0;
+}
+
 
 END_SCOPE(objects)
 

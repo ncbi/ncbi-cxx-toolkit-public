@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 /// Register NCBI_EntryPoint_DBAPI_BlobCache
 void DBAPI_Register_Cache(void);
 
-/// DBAPI ICache exception 
+/// DBAPI ICache exception
 
 class CDBAPI_ICacheException : public CException
 {
@@ -103,14 +103,14 @@ public:
 
     /// Open cache. Does not take IConnection ownership.
     /// Connection should be already logged into the destination server
-    /// 
+    ///
     /// Implementation uses temporary files to keep local BLOBs.
     /// If you temp directory is not specified system default is used
     ///
     /// @param conn
     ///    Established database connection
     /// @param temp_dir
-    ///    Directory name to keep temp files 
+    ///    Directory name to keep temp files
     ///    (auto created if does not exist)
     /// @param temp_prefix
     ///    Temp file prefix
@@ -129,17 +129,17 @@ public:
 
 
     IConnection* GetConnection() { return m_Conn; }
-    
+
     /// @return Size of the intermidiate BLOB memory buffer
     unsigned GetMemBufferSize() const { return m_MemBufferSize; }
-    
+
     /// Set size of the intermidiate BLOB memory buffer
     void SetMemBufferSize(unsigned int buf_size);
-    
 
-    // ICache interface 
 
-    virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
+    // ICache interface
+
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout = 0);
     virtual bool IsOpen() const { return m_Conn != 0; }
@@ -157,18 +157,18 @@ public:
                            int            version,
                            const string&  subkey);
 
-    virtual bool Read(const string& key, 
-                      int           version, 
+    virtual bool Read(const string& key,
+                      int           version,
                       const string& subkey,
-                      void*         buf, 
+                      void*         buf,
                       size_t        buf_size);
     virtual bool HasBlobs(const string&  key,
                           const string&  subkey);
 
-    virtual IReader* GetReadStream(const string&  key, 
+    virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey);
-    virtual void GetBlobAccess(const string&     key, 
+    virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
                                BlobAccessDescr*  blob_descr);
@@ -177,7 +177,7 @@ public:
     /// Specifics of this IWriter implementation is that IWriter::Flush here
     /// cannot be called twice, because it finalises transaction
     /// Also you cannot call Write after Flush...
-    /// All this is because MSSQL (and Sybase) wants to know exact 
+    /// All this is because MSSQL (and Sybase) wants to know exact
     /// BLOB size before writing it to the database
     /// Effectively IWriter::Flush in this case works as "Close"...
     ///
@@ -203,6 +203,9 @@ public:
                        const string&    subkey,
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
+
+    virtual bool SameCacheParams(const TCacheParams* params) const;
+
 private:
 
     /// Update BLOB storage, return TRUE if it was updated,
@@ -269,7 +272,7 @@ private:
 
 extern NCBI_DBAPI_CACHE_EXPORT const string kDBAPI_BlobCacheDriverName;
 
-extern "C" 
+extern "C"
 {
 
 NCBI_DBAPI_CACHE_EXPORT
@@ -291,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.14  2005/02/22 15:25:37  kuznets
  * +HasBlob()
  *

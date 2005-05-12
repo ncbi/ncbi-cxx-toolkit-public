@@ -72,14 +72,14 @@ class CLoadInfoBlob;
 #    define GBLOG_POST(x) LOG_POST(setw(3) << CThread::GetSelf() << ":: " << x)
 #  else
 #    define GBLOG_POST(x) LOG_POST("0:: " << x)
-#  endif 
+#  endif
 #else
 #  ifdef DEBUG_SYNC
 #    undef DEBUG_SYNC
 #  endif
 #  define GBLOG_POST(x)
 #endif
-  
+
 /////////////////////////////////////////////////////////////////////////////////
 //
 // GBDataLoader
@@ -94,9 +94,9 @@ class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 public:
     // typedefs from CReader
     typedef unsigned                  TConn;
-        
+
     virtual ~CGBDataLoader(void);
-    
+
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
@@ -153,12 +153,12 @@ public:
 
     bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
     string BlobIdToString(const TBlobId& id) const;
-    
+
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& handle,
                                       const TTSE_LockSet& tse_set);
-    
+
     virtual void GC(void);
-    
+
     CBlob_id GetBlobId(const CTSE_Info& tse_info) const;
 
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
@@ -228,13 +228,13 @@ private:
     TLoadMapSeq_ids         m_LoadMapSeq_ids;
     TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
-    
+
     CTimer                  m_Timer;
 
     //
     // private code
     //
-    
+
     void x_CreateDriver(CReader* reader);
     void x_CreateDriver(const string& reader_name);
     void x_CreateDriver(const TParamTree* params);

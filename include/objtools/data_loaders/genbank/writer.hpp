@@ -32,6 +32,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <vector>
 #include <list>
 
@@ -46,6 +47,8 @@ class CBlob_id;
 class CSeq_id_Handle;
 class CReaderRequestResult;
 class CProcessor;
+class CReadDispatcher;
+
 
 class NCBI_XREADER_EXPORT CWriter : public CObject
 {
@@ -105,6 +108,10 @@ public:
                            const TOctetStringSequence& data);
     static void WriteProcessorTag(CNcbiOstream& stream,
                                   const CProcessor& processor);
+
+    virtual bool HasCache(void) const { return false; }
+    virtual void InitializeCache(const CReadDispatcher& dispatcher,
+                                 const TPluginManagerParamTree* params);
 };
 
 

@@ -28,7 +28,7 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: BerkeleyDB based local BLOB cache. 
+ * File Description: BerkeleyDB based local BLOB cache.
  *
  */
 
@@ -111,7 +111,7 @@ public:
     /// Large BLOBs work faster with large pages
     enum EPageSize
     {
-        eSmall, 
+        eSmall,
         eLarge
     };
 
@@ -131,22 +131,22 @@ public:
     EWriteSyncMode GetWriteSync() const { return m_WSync; }
 
     /// Locking modes to protect cache instance
-    enum ELockMode 
+    enum ELockMode
     {
         eNoLock,     ///< Do not lock-protect cache instance
-        ePidLock     ///< Create PID lock on cache (exception if failed) 
+        ePidLock     ///< Create PID lock on cache (exception if failed)
     };
 
-    /// Schedule a background Purge thread 
+    /// Schedule a background Purge thread
     /// (cleans the cache from the obsolete entries)
     /// SetPurgeBatchSize and SetBatchSleep should be used to regulate the thread
     /// priority
-    ///  
+    ///
     /// @param purge_delay
     ///    Sleep delay in seconds between consequtive Purge Runs
     /// @note Actual thread is started by Open()
     /// (works only in MT builds)
-    /// 
+    ///
     /// @sa SetPurgeBatchSize, SetBatchSleep
     void RunPurgeThread(unsigned purge_delay =  30);
 
@@ -167,13 +167,13 @@ public:
     ///
     /// @param cache_path  Path to cache
     /// @param cache_name  Cache instance name
-    /// @param lm          Locking mode, protection against using the 
+    /// @param lm          Locking mode, protection against using the
     ///                    cache from multiple applications
     /// @param cache_size  Berkeley DB memory cache settings
     ///
     /// @sa OpenReadOnly
     ///
-    void Open(const char*  cache_path, 
+    void Open(const char*  cache_path,
               const char*  cache_name,
               ELockMode    lm = eNoLock,
               unsigned int cache_ram_size = 0,
@@ -183,22 +183,22 @@ public:
     ///
     /// @param cache_path  Path to cache
     /// @param cache_name  Cache instance name
-    /// @param err_file    
-    ///    Name of the error file 
-    ///    When NULL errors are dumped to stderr 
-    void Verify(const char*  cache_path, 
+    /// @param err_file
+    ///    Name of the error file
+    ///    When NULL errors are dumped to stderr
+    void Verify(const char*  cache_path,
                 const char*  cache_name,
                 const char*  err_file = 0,
                 bool         force_remove = false);
 
     /// Open local cache in read-only mode.
-    /// This is truely passive mode of operations. 
-    /// All modification calls are ignored, no statistics is going to 
+    /// This is truely passive mode of operations.
+    /// All modification calls are ignored, no statistics is going to
     /// be collected, no timestamps. PID locking is also not available.
     ///
     /// @sa Open
     ///
-    void OpenReadOnly(const char*  cache_path, 
+    void OpenReadOnly(const char*  cache_path,
                       const char*  cache_name,
                       unsigned int cache_ram_size = 0);
 
@@ -210,9 +210,9 @@ public:
     /// Set update attribute limit (0 by default)
     ///
     /// When cache is configured to update BLOB time stamps on read
-    /// it can cause delays because it needs to initiate a transaction 
+    /// it can cause delays because it needs to initiate a transaction
     /// every time you read. This method configures a delayed update.
-    /// Cache keeps all updates until it reaches the limit and saves it 
+    /// Cache keeps all updates until it reaches the limit and saves it
     /// all in one transaction.
     ///
     void SetReadUpdateLimit(unsigned /* limit */)
@@ -228,13 +228,13 @@ public:
     }
 
     /// Number of records in scanned at once by Purge
-    /// Cache is exclusively locks an internal mutex while 
+    /// Cache is exclusively locks an internal mutex while
     /// scanning the batch and all other threads is getting locked.
     void SetPurgeBatchSize(unsigned batch_size);
 
     unsigned GetPurgeBatchSize() const;
 
-    /// Set sleep in milliseconds between Purge batches 
+    /// Set sleep in milliseconds between Purge batches
     /// (for low priority Purge processes)
     void SetBatchSleep(unsigned sleep);
 
@@ -246,30 +246,30 @@ public:
     void StopPurge();
 
     /// When factor is non zero every factor-even Purge will
-    /// remove old log files. 
+    /// remove old log files.
     /// (For factor == 1 every Purge will try to remove logs)
     void CleanLogOnPurge(unsigned int factor) { m_CleanLogOnPurge = factor; }
 
-    /// Checkpoint the database at least as often as every bytes of 
-    /// log file are written. 
+    /// Checkpoint the database at least as often as every bytes of
+    /// log file are written.
     void SetCheckpoint(unsigned int bytes) { m_CheckPointInterval = bytes; }
 
     void SetOverflowLimit(unsigned limit);
     unsigned GetOverflowLimit() const { return m_OverflowLimit; }
 
-    /// Maximum limit for read updates 
+    /// Maximum limit for read updates
     /// (blob expires eventually even if it is accessed)
     /// 0 - unlimited prolongation (default)
-    void SetTTL_Prolongation(unsigned ttl_prolong); 
+    void SetTTL_Prolongation(unsigned ttl_prolong);
 
     /// Get max limit for read update
     unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
 
 
 
-    // ICache interface 
+    // ICache interface
 
-    virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int     max_timeout = 0);
     virtual bool IsOpen() const { return m_CacheDB != 0; }
@@ -289,16 +289,16 @@ public:
                            int            version,
                            const string&  subkey);
 
-    virtual bool Read(const string& key, 
-                      int           version, 
+    virtual bool Read(const string& key,
+                      int           version,
                       const string& subkey,
-                      void*         buf, 
+                      void*         buf,
                       size_t        buf_size);
 
-    virtual IReader* GetReadStream(const string&  key, 
+    virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey);
-    virtual void GetBlobAccess(const string&     key, 
+    virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
                                BlobAccessDescr*  blob_descr);
@@ -331,6 +331,8 @@ public:
     void DropBlob(const string&  key,
                   int            version,
                   const string&  subkey);
+
+    virtual bool SameCacheParams(const TCacheParams* params) const;
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
@@ -366,7 +368,7 @@ private:
                                      unsigned       timeout);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
-	/// 2. If required retrive empty subkey attribute record 
+	/// 2. If required retrive empty subkey attribute record
 	///    (for timestamp check)
 	///
 	/// @return TRUE if the attribute record found
@@ -390,7 +392,7 @@ private:
     void x_PerformCheckPointNoLock(unsigned bytes_written);
 
     IReader* x_CreateOverflowReader(int overflow,
-                                    const string&  key, 
+                                    const string&  key,
                                     int            version,
                                     const string&  subkey,
                                     size_t&        file_length);
@@ -406,10 +408,10 @@ private:
     /// @internal
     class CCacheTransaction : public CBDB_Transaction
     {
-    public: 
+    public:
         CCacheTransaction(CBDB_Cache& cache)
-            : CBDB_Transaction(*(cache.m_Env), 
-              cache.GetWriteSync() == eWriteSync ? 
+            : CBDB_Transaction(*(cache.m_Env),
+              cache.GetWriteSync() == eWriteSync ?
                     CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
         {
             cache.m_CacheDB->SetTransaction(this);
@@ -428,11 +430,11 @@ public:
         int    version;
         string subkey;
 
-        CacheKey(const string& x_key, int x_version, const string& x_subkey);         
+        CacheKey(const string& x_key, int x_version, const string& x_subkey);
         bool operator < (const CacheKey& cache_key) const;
     };
-    
-private:    
+
+private:
     friend class CCacheTransaction;
     friend class CBDB_CacheIWriter;
 
@@ -469,7 +471,7 @@ private:
     /// Purge thread
     CRef<CCacheCleanerThread>  m_PurgeThread;
     /// Flag that Purge is already running
-    bool                       m_PurgeNowRunning; 
+    bool                       m_PurgeNowRunning;
     /// Run a background purge thread
     bool                       m_RunPurgeThread;
     /// Delay in seconds between Purge runs
@@ -484,7 +486,7 @@ private:
 
 
 /// Utility for simple cache configuration.
-/// 
+///
 /// @param bdb_cache
 ///   Cache instance to configure
 /// @param path
@@ -508,7 +510,7 @@ void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
 
 extern NCBI_BDB_CACHE_EXPORT const char* kBDBCacheDriverName;
 
-extern "C" 
+extern "C"
 {
 
 NCBI_BDB_CACHE_EXPORT
@@ -534,7 +536,7 @@ void NCBI_EntryPoint_xcache_bdb(
 class NCBI_BDB_CACHE_EXPORT CBDB_CacheHolder : public CObject
 {
 public:
-    CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache); 
+    CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache);
     ~CBDB_CacheHolder();
 
     ICache* GetBlobCache() { return m_BlobCache; }
@@ -558,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.53  2005/04/12 17:55:49  kuznets
  * Added BLOB TTL read prolongation limit(to let BLOBs expire)
  *

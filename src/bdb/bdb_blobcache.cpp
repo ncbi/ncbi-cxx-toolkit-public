@@ -61,7 +61,7 @@ DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 		
 static void s_MakeOverflowFileName(string& buf,
-                                   const string& path, 
+                                   const string& path,
                                    const string& key,
                                    int           version,
                                    const string& subkey)
@@ -101,7 +101,7 @@ class CBDB_CacheIReader : public IReader
 {
 public:
 
-    CBDB_CacheIReader(CBDB_BLobStream*           blob_stream, 
+    CBDB_CacheIReader(CBDB_BLobStream*           blob_stream,
                       CBDB_Cache::EWriteSyncMode wsync)
     : m_BlobStream(blob_stream),
       m_OverflowFile(0),
@@ -117,7 +117,7 @@ public:
       m_WSync(wsync)
     {}
 
-    CBDB_CacheIReader(unsigned char*             buf, 
+    CBDB_CacheIReader(unsigned char*             buf,
                       size_t                     buf_size,
                       CBDB_Cache::EWriteSyncMode wsync)
     : m_BlobStream(0),
@@ -137,7 +137,7 @@ public:
     }
 
 
-    virtual ERW_Result Read(void*   buf, 
+    virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read)
     {
@@ -168,7 +168,7 @@ public:
             }
             return eRW_Success;
         }
-        
+
         // Reading from the BDB stream
 
         size_t br;
@@ -182,8 +182,8 @@ public:
 
         if (bytes_read)
             *bytes_read = br;
-        
-        if (br == 0) 
+
+        if (br == 0)
             return eRW_Eof;
         return eRW_Success;
     }
@@ -259,7 +259,7 @@ public:
 
     virtual ~CBDB_CacheIWriter()
     {
-		if (!m_AttrUpdFlag || m_Buffer != 0) { 
+		if (!m_AttrUpdFlag || m_Buffer != 0) {
 			// Dumping the buffer
 			CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -319,7 +319,7 @@ public:
                 OpenOverflowFile();
                 if (m_OverflowFile) {
                     if (m_BytesInBuffer) {
-                        m_OverflowFile->write((char*)m_Buffer, 
+                        m_OverflowFile->write((char*)m_Buffer,
                                               m_BytesInBuffer);
                     }
                     delete[] m_Buffer;
@@ -364,7 +364,7 @@ public:
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             delete[] m_Buffer;
             m_Buffer = 0;
-            flushed_bytes = m_BytesInBuffer; 
+            flushed_bytes = m_BytesInBuffer;
             m_BytesInBuffer = 0;
         }
         if (m_WSync == CBDB_Cache::eWriteSync) {
@@ -393,9 +393,9 @@ private:
         s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version, m_SubKey);
         _TRACE("LC: Making overflow file " << path);
         m_OverflowFile =
-            new CNcbiOfstream(path.c_str(), 
-                              IOS_BASE::out | 
-                              IOS_BASE::trunc | 
+            new CNcbiOfstream(path.c_str(),
+                              IOS_BASE::out |
+                              IOS_BASE::trunc |
                               IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
@@ -413,15 +413,15 @@ private:
 
         // CTime time_stamp(CTime::eCurrent);
         time_t curr = time(0);
-        m_AttrDB.time_stamp = (unsigned) curr; 
+        m_AttrDB.time_stamp = (unsigned) curr;
 
         if (m_OverflowFile) {
             m_AttrDB.overflow = 1;
-            delete m_OverflowFile; 
+            delete m_OverflowFile;
             m_OverflowFile = 0;
         }
         m_AttrDB.ttl = m_TTL;
-        m_AttrDB.max_time = 
+        m_AttrDB.max_time =
             curr + (m_Cache.GetTimeout() * m_Cache.GetTTL_Prolongation());
 
         m_AttrDB.UpdateInsert();
@@ -435,8 +435,8 @@ private:
             m_AttrDB.ttl = m_TTL;
 
 			//CTime time_stamp(CTime::eCurrent);
-			m_AttrDB.time_stamp = (unsigned) curr; 
-            m_AttrDB.max_time = 
+			m_AttrDB.time_stamp = (unsigned) curr;
+            m_AttrDB.max_time =
                 curr + (m_Cache.GetTimeout() * m_Cache.GetTTL_Prolongation());
 	        m_AttrDB.UpdateInsert();
 		}
@@ -501,7 +501,7 @@ CBDB_Cache::CBDB_Cache()
   m_OverflowLimit(512 * 1024),
   m_MaxTTL_prolong(0)
 {
-    m_TimeStampFlag = fTimeStampOnRead | 
+    m_TimeStampFlag = fTimeStampOnRead |
                       fExpireLeastFrequentlyUsed |
                       fPurgeOnStartup;
 }
@@ -514,8 +514,8 @@ CBDB_Cache::~CBDB_Cache()
     {}
 }
 
-void CBDB_Cache::SetTTL_Prolongation(unsigned ttl_prolong) 
-{ 
+void CBDB_Cache::SetTTL_Prolongation(unsigned ttl_prolong)
+{
     m_MaxTTL_prolong = ttl_prolong;
 }
 
@@ -543,14 +543,14 @@ void CBDB_Cache::SetOverflowLimit(unsigned limit)
     m_OverflowLimit = limit;
 }
 
-void CBDB_Cache::Open(const char* cache_path, 
+void CBDB_Cache::Open(const char* cache_path,
                       const char* cache_name,
-                      ELockMode lm, 
+                      ELockMode lm,
                       unsigned int cache_ram_size,
                       ETRansact    use_trans)
 {
     {{
-    
+
     Close();
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
@@ -611,16 +611,16 @@ void CBDB_Cache::Open(const char* cache_path,
         try {
             m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
             if (!m_Env->IsTransactional()) {
-                LOG_POST(Info << 
-                         "LC: '" << cache_name << 
+                LOG_POST(Info <<
+                         "LC: '" << cache_name <<
                          "' Warning: Joined non-transactional environment ");
             }
-        } 
-        catch (CBDB_ErrnoException& err_ex) 
+        }
+        catch (CBDB_ErrnoException& err_ex)
         {
             if (err_ex.BDB_GetErrno() == DB_RUNRECOVERY) {
-                LOG_POST(Warning << 
-                         "LC: '" << cache_name << 
+                LOG_POST(Warning <<
+                         "LC: '" << cache_name <<
                          "'Warning: DB_ENV returned DB_RUNRECOVERY code."
                          " Running the recovery procedure.");
             }
@@ -629,7 +629,7 @@ void CBDB_Cache::Open(const char* cache_path,
             switch (use_trans)
             {
             case eUseTrans:
-                m_Env->OpenWithTrans(cache_path, 
+                m_Env->OpenWithTrans(cache_path,
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
                 break;
             case eNoTrans:
@@ -647,7 +647,7 @@ void CBDB_Cache::Open(const char* cache_path,
             switch (use_trans)
             {
             case eUseTrans:
-                m_Env->OpenWithTrans(cache_path, 
+                m_Env->OpenWithTrans(cache_path,
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
                 break;
             case eNoTrans:
@@ -688,14 +688,14 @@ void CBDB_Cache::Open(const char* cache_path,
         _ASSERT(0);
     } // switch
 
-    string cache_db_name = 
+    string cache_db_name =
        string("lcs_") + string(cache_name) + string(".db");
-    string attr_db_name = 
+    string attr_db_name =
        string("lcs_") + string(cache_name) + string("_attr3") + string(".db");
 
     m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadWriteCreate);
     m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadWriteCreate);
-    
+
     }}
 
     if (m_RunPurgeThread) {
@@ -705,7 +705,7 @@ void CBDB_Cache::Open(const char* cache_path,
            new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
        m_PurgeThread->Run();
 # else
-        LOG_POST(Warning << 
+        LOG_POST(Warning <<
                  "Cannot run background thread in non-MT configuration.");
 # endif
     }
@@ -714,7 +714,7 @@ void CBDB_Cache::Open(const char* cache_path,
         unsigned batch_sleep = m_BatchSleep;
         unsigned batch_size = m_PurgeBatchSize;
 
-        // setup parameters which favor fast Purge execution 
+        // setup parameters which favor fast Purge execution
         // (Open purge needs to be fast because all waiting for it)
 
         if (m_PurgeBatchSize < 2500) {
@@ -729,13 +729,13 @@ void CBDB_Cache::Open(const char* cache_path,
         m_BatchSleep = batch_sleep;
         m_PurgeBatchSize = batch_size;
     }
-    
+
     m_Env->TransactionCheckpoint();
 
     m_ReadOnly = false;
 
-    LOG_POST(Info << 
-             "LC: '" << cache_name << 
+    LOG_POST(Info <<
+             "LC: '" << cache_name <<
              "' Cache mount at: " << cache_path);
 
 }
@@ -759,14 +759,14 @@ void CBDB_Cache::StopPurgeThread()
 # endif
 }
 
-void CBDB_Cache::OpenReadOnly(const char*  cache_path, 
+void CBDB_Cache::OpenReadOnly(const char*  cache_path,
                               const char*  cache_name,
                               unsigned int cache_ram_size)
 {
     {{
-    
+
     Close();
-    
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
@@ -779,22 +779,22 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
     if (cache_ram_size)
         m_CacheDB->SetCacheSize(cache_ram_size);
 
-    string cache_db_name = 
+    string cache_db_name =
        m_Path + string("lcs_") + string(cache_name) + string(".db");
-    string attr_db_name = 
+    string attr_db_name =
        m_Path + string("lcs_") + string(cache_name) + string("_attr3")
 	          + string(".db");
 
 
     m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadOnly);
     m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadOnly);
-    
+
     }}
 
     m_ReadOnly = true;
 
-    LOG_POST(Info << 
-             "LC: '" << cache_name << 
+    LOG_POST(Info <<
+             "LC: '" << cache_name <<
              "' Cache mount read-only at: " << cache_path);
 }
 
@@ -813,17 +813,17 @@ void CBDB_Cache::Close()
             CleanLog();
 
             if (m_Env->CheckRemove()) {
-                LOG_POST(Info    << 
+                LOG_POST(Info    <<
                          "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
             } else {
-                LOG_POST(Warning << "LC: '" << m_Name 
+                LOG_POST(Warning << "LC: '" << m_Name
                                  << "' environment still in use.");
 
             }
         }
-    } 
+    }
     catch (exception& ex) {
-        LOG_POST(Warning << "LC: '" << m_Name 
+        LOG_POST(Warning << "LC: '" << m_Name
                          << "' Exception in Close() " << ex.what()
                          << " (ignored.)");
     }
@@ -848,7 +848,7 @@ void CBDB_Cache::x_Close()
     delete m_Env;         m_Env = 0;
 }
 
-void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
+void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout)
 {
@@ -973,9 +973,9 @@ void CBDB_Cache::Store(const string&  key,
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
         _TRACE("LC: Making overflow file " << path);
-        CNcbiOfstream oveflow_file(path.c_str(), 
-                                   IOS_BASE::out | 
-                                   IOS_BASE::trunc | 
+        CNcbiOfstream oveflow_file(path.c_str(),
+                                   IOS_BASE::out |
+                                   IOS_BASE::trunc |
                                    IOS_BASE::binary);
         if (!oveflow_file.is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
@@ -996,7 +996,7 @@ void CBDB_Cache::Store(const string&  key,
 	m_CacheAttrDB->subkey = subkey;
     m_CacheAttrDB->time_stamp = (unsigned)curr; //time_stamp.GetTimeT();
     m_CacheAttrDB->overflow = overflow;
-    
+
     if (m_MaxTimeout) {
         if (time_to_live > m_MaxTimeout) {
             time_to_live = m_MaxTimeout;
@@ -1038,7 +1038,7 @@ size_t CBDB_Cache::GetSize(const string&  key,
 
 	int overflow;
     unsigned int ttl;
-	bool rec_exists = 
+	bool rec_exists =
         x_RetrieveBlobAttributes(key, version, subkey, &overflow, &ttl);
 	if (!rec_exists) {
 		return 0;
@@ -1078,7 +1078,7 @@ size_t CBDB_Cache::GetSize(const string&  key,
 bool CBDB_Cache::HasBlobs(const string&  key,
                           const string&  subkey)
 {
-    time_t curr = time(0); 
+    time_t curr = time(0);
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
@@ -1104,10 +1104,10 @@ bool CBDB_Cache::HasBlobs(const string&  key,
 }
 
 
-bool CBDB_Cache::Read(const string& key, 
-                      int           version, 
+bool CBDB_Cache::Read(const string& key,
+                      int           version,
                       const string& subkey,
-                      void*         buf, 
+                      void*         buf,
                       size_t        buf_size)
 {
 	EBDB_ErrCode ret;
@@ -1116,7 +1116,7 @@ bool CBDB_Cache::Read(const string& key,
 
 	int overflow;
     unsigned int ttl;
-	bool rec_exists = 
+	bool rec_exists =
         x_RetrieveBlobAttributes(key, version, subkey, &overflow, &ttl);
 	if (!rec_exists) {
 		return false;
@@ -1168,7 +1168,7 @@ bool CBDB_Cache::Read(const string& key,
 }
 
 IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
-                                            const string&  key, 
+                                            const string&  key,
                                             int            version,
                                             const string&  subkey,
                                             size_t&        file_length)
@@ -1176,7 +1176,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
     if (overflow) {
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-        auto_ptr<CNcbiIfstream> 
+        auto_ptr<CNcbiIfstream>
             overflow_file(new CNcbiIfstream(path.c_str(),
                                             IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
@@ -1186,7 +1186,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
             x_UpdateReadAccessTime(key, version, subkey);
         }
         CFile entry(path);
-        file_length = (size_t) entry.GetLength();        
+        file_length = (size_t) entry.GetLength();
 
         return new CBDB_CacheIReader(overflow_file.release(), m_WSync);
     }
@@ -1194,7 +1194,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
 }
 
 
-IReader* CBDB_Cache::GetReadStream(const string&  key, 
+IReader* CBDB_Cache::GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey)
 {
@@ -1204,7 +1204,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
 	int overflow;
     unsigned int ttl;
-	bool rec_exists = 
+	bool rec_exists =
         x_RetrieveBlobAttributes(key, version, subkey, &overflow, &ttl);
 	if (!rec_exists) {
 		return 0;
@@ -1228,7 +1228,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
-    
+
     ret = m_CacheDB->Fetch();
     if (ret != eBDB_Ok) {
         return 0;
@@ -1248,7 +1248,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     return new CBDB_CacheIReader(buf, bsize, m_WSync);
 }
 
-void CBDB_Cache::GetBlobAccess(const string&     key, 
+void CBDB_Cache::GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
                                BlobAccessDescr*  blob_descr)
@@ -1263,7 +1263,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
 	int overflow;
     unsigned int ttl;
-	bool rec_exists = 
+	bool rec_exists =
         x_RetrieveBlobAttributes(key, version, subkey, &overflow, &ttl);
 	if (!rec_exists) {
 		return;
@@ -1275,9 +1275,9 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
         }
     }
     // Check if it's an overflow BLOB (external file)
-    blob_descr->reader = 
-        x_CreateOverflowReader(overflow, 
-                               key, version, subkey, 
+    blob_descr->reader =
+        x_CreateOverflowReader(overflow,
+                               key, version, subkey,
                                blob_descr->blob_size);
     if (blob_descr->reader) {
         return;
@@ -1288,7 +1288,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
-    
+
     ret = m_CacheDB->Fetch();
     if (ret != eBDB_Ok) {
         blob_descr->blob_size = 0;
@@ -1298,7 +1298,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     // read the BLOB into a custom in-memory buffer
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
-    blob_descr->reader = 
+    blob_descr->reader =
         new CBDB_CacheIReader(bstream, m_WSync);
     return;
 
@@ -1313,7 +1313,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     if ( m_TimeStampFlag & fTimeStampOnRead ) {
         x_UpdateReadAccessTime(key, version, subkey);
     }
-    blob_descr->reader = 
+    blob_descr->reader =
         new CBDB_CacheIReader(buf, blob_descr->blob_size, m_WSync);
 
 }
@@ -1352,13 +1352,13 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
     }
 
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
-    return 
+    return
         new CBDB_CacheIWriter(*this,
-                              m_Path.c_str(), 
-                              key, 
+                              m_Path.c_str(),
+                              key,
                               version,
                               subkey,
-                              bstream, 
+                              bstream,
                               *m_CacheDB,
                               *m_CacheAttrDB,
                               m_TimeStampFlag & fTrackSubKey,
@@ -1402,16 +1402,16 @@ void CBDB_Cache::Remove(const string& key)
     // Now delete all objects
 
     ITERATE(vector<SCacheDescr>, it, cache_elements) {
-        x_DropBlob(it->key.c_str(), 
-                   it->version, 
-                   it->subkey.c_str(), 
+        x_DropBlob(it->key.c_str(),
+                   it->version,
+                   it->subkey.c_str(),
                    it->overflow);
     }
 
 	trans.Commit();
     }}
 
-    // Second pass scan if for some resons some cache elements are 
+    // Second pass scan if for some resons some cache elements are
     // still in the database
 
     cache_elements.resize(0);
@@ -1433,9 +1433,9 @@ void CBDB_Cache::Remove(const string& key)
     }}
 
     ITERATE(vector<SCacheDescr>, it, cache_elements) {
-        x_DropBlob(it->key.c_str(), 
-                   it->version, 
-                   it->subkey.c_str(), 
+        x_DropBlob(it->key.c_str(),
+                   it->version,
+                   it->subkey.c_str(),
                    it->overflow);
     }
 
@@ -1476,9 +1476,9 @@ void CBDB_Cache::Remove(const string&    key,
     m_CacheAttrDB->SetTransaction(&trans);
 
     ITERATE(vector<SCacheDescr>, it, cache_elements) {
-        x_DropBlob(it->key.c_str(), 
-                   it->version, 
-                   it->subkey.c_str(), 
+        x_DropBlob(it->key.c_str(),
+                   it->version,
+                   it->subkey.c_str(),
                    it->overflow);
     }
 
@@ -1502,7 +1502,7 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
     if (ret != eBDB_Ok) {
         return 0;
     }
-    
+
     return (int) m_CacheAttrDB->time_stamp;
 }
 
@@ -1546,21 +1546,21 @@ void CBDB_Cache::StopPurge()
 class CPurgeFlagGuard
 {
 public:
-    CPurgeFlagGuard() 
-        : m_Flag(0) 
+    CPurgeFlagGuard()
+        : m_Flag(0)
     {}
 
-    ~CPurgeFlagGuard() 
-    { 
+    ~CPurgeFlagGuard()
+    {
         if (m_Flag) {
-            *m_Flag = false; 
+            *m_Flag = false;
         }
     }
 
-    void SetFlag(bool* flag) 
-    { 
-        m_Flag = flag; 
-        *m_Flag = true; 
+    void SetFlag(bool* flag)
+    {
+        m_Flag = flag;
+        *m_Flag = true;
     }
 private:
     bool*  m_Flag;
@@ -1605,8 +1605,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             CBDB_FileCursor cur(*m_CacheAttrDB);
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
-        
-            time_t curr = time(0); 
+
+            time_t curr = time(0);
 
             for (unsigned i = 0; i < batch_size; ++i) {
                 if (cur.Fetch() != eBDB_Ok) {
@@ -1626,9 +1626,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 }
                 if (i == 0) { // first record in the batch
                     first_key = last_key;
-                } else 
+                } else
                 if (i == (batch_size - 1)) { // last record
-                    // if batch stops in the same key we increase 
+                    // if batch stops in the same key we increase
                     // the batch size to avoid the infinite loop
                     // when new batch starts with the very same key
                     // and never comes to the end
@@ -1663,10 +1663,10 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
 
     } // for flag
-    
+
 
     // Delete BLOBs
-    
+
 
     for (unsigned i = 0; i < cache_entries.size(); ) {
         unsigned batch_size = GetPurgeBatchSize();
@@ -1678,15 +1678,15 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         m_CacheDB->SetTransaction(&trans);
         m_CacheAttrDB->SetTransaction(&trans);
 
-        for (unsigned j = 0; 
-             (j < batch_size) && (i < cache_entries.size()); 
+        for (unsigned j = 0;
+             (j < batch_size) && (i < cache_entries.size());
              ++i,++j) {
                  const SCacheDescr& it = cache_entries[i];
-                 x_DropBlob(it.key.c_str(), 
-                            it.version, 
-                            it.subkey.c_str(), 
+                 x_DropBlob(it.key.c_str(),
+                            it.version,
+                            it.subkey.c_str(),
                             it.overflow);
-                
+
         } // for j
         trans.Commit();
         delay = m_BatchSleep;
@@ -1773,10 +1773,10 @@ void CBDB_Cache::Purge(const string&    key,
             }
         }
 
-        if (subkey.empty()) {            
+        if (subkey.empty()) {
         }
 
-        // check if timeout control has been requested and stored element 
+        // check if timeout control has been requested and stored element
         // should not be removed
         if (access_timeout && (!(curr - to > db_time_stamp))) {
             continue;
@@ -1796,17 +1796,17 @@ void CBDB_Cache::Purge(const string&    key,
     m_CacheAttrDB->SetTransaction(&trans);
 
     ITERATE(vector<SCacheDescr>, it, cache_entries) {
-        x_DropBlob(it->key.c_str(), 
-                   it->version, 
-                   it->subkey.c_str(), 
+        x_DropBlob(it->key.c_str(),
+                   it->version,
+                   it->subkey.c_str(),
                    it->overflow);
     }
-    
+
     trans.Commit();
 
 }
 
-void CBDB_Cache::Verify(const char*  cache_path, 
+void CBDB_Cache::Verify(const char*  cache_path,
                         const char*  cache_name,
                         const char*  err_file,
                         bool         force_remove)
@@ -1821,18 +1821,18 @@ void CBDB_Cache::Verify(const char*  cache_path,
     m_Env->OpenErrFile(err_file ? err_file : "stderr");
     try {
         m_Env->Open(cache_path, DB_INIT_MPOOL | DB_USE_ENVIRON);
-    } 
+    }
     catch (CBDB_Exception& /*ex*/)
     {
-        m_Env->Open(cache_path, 
+        m_Env->Open(cache_path,
                     DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON);
     }
 
     LOG_POST("Cache location: " + string(cache_path));
 
-    string cache_db_name = 
+    string cache_db_name =
        string("lcs_") + string(cache_name) + string(".db");
-    string attr_db_name = 
+    string attr_db_name =
        string("lcs_") + string(cache_name) + string("_attr") + string(".db");
 
     m_CacheDB = new SCacheDB();
@@ -1872,7 +1872,7 @@ void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
     // if purge is running (in the background) it works as a checkpoint-er
     // so we don't need to call TransactionCheckpoint
 
-    if ((m_RunPurgeThread == false) && 
+    if ((m_RunPurgeThread == false) &&
          (m_BytesWritten > m_CheckPointInterval)) {
 
         m_Env->TransactionCheckpoint();
@@ -1895,19 +1895,19 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  /* key */,
 
         if (ttl) {  // individual timeout
             if (m_MaxTimeout && ttl > m_MaxTimeout) {
-                timeout = 
+                timeout =
                     (int) max((unsigned)timeout, (unsigned)m_MaxTimeout);
                 ttl = timeout; // used in diagnostics only
             } else {
                 timeout = ttl;
             }
         }
-        
+
         if (curr - timeout > db_time_stamp) {
 /*
             string key = m_CacheAttrDB->key;
             LOG_POST("local cache item expired:" << key << " "
-                     << db_time_stamp << " curr=" << curr 
+                     << db_time_stamp << " curr=" << curr
                      << " diff=" << curr - db_time_stamp
                      << " ttl=" << ttl);
 */
@@ -1962,9 +1962,9 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
         return;
     }
     time_t curr = time(0);
-    x_UpdateAccessTime_NonTrans(key, 
-                                version, 
-                                subkey, 
+    x_UpdateAccessTime_NonTrans(key,
+                                version,
+                                subkey,
                                 (unsigned)curr);
 }
 
@@ -1976,11 +1976,11 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
     int track_sk = (m_TimeStampFlag & fTrackSubKey);
     bool updated = false;
     {{
-        CBDB_FileCursor cur(*m_CacheAttrDB, 
+        CBDB_FileCursor cur(*m_CacheAttrDB,
                              CBDB_FileCursor::eReadModifyUpdate);
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << key 
+        cur.From << key
                  << version;
 
         // if we are not tracking subkeys we blindly update ALL subkeys
@@ -2004,7 +2004,7 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
             }
 
         } // while
-        
+
     }}
 
     if (updated)
@@ -2121,14 +2121,14 @@ void CBDB_Cache::x_DropBlob(const char*    key,
 
 
 
-CBDB_Cache::CacheKey::CacheKey(const string& x_key, 
-                               int           x_version, 
-                               const string& x_subkey) 
+CBDB_Cache::CacheKey::CacheKey(const string& x_key,
+                               int           x_version,
+                               const string& x_subkey)
 : key(x_key), version(x_version), subkey(x_subkey)
 {}
 
 
-bool 
+bool
 CBDB_Cache::CacheKey::operator < (const CBDB_Cache::CacheKey& cache_key) const
 {
     int cmp = NStr::Compare(key, cache_key.key);
@@ -2166,7 +2166,7 @@ public:
     {
     }
 
-    virtual 
+    virtual
     ICache* CreateInstance(
                    const string&    driver  = kEmptyStr,
                    CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
@@ -2201,6 +2201,30 @@ static const string kCFParam_ttl_prolong        = "ttl_prolong";
 
 
 
+bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
+{
+    if ( !params ) {
+        return false;
+    }
+    const TCacheParams* driver = params->FindNode("driver");
+    if (!driver  ||  driver->GetValue() != kBDBCacheDriverName) {
+        return false;
+    }
+    const TCacheParams* driver_params = params->FindNode(kBDBCacheDriverName);
+    if ( !driver_params ) {
+        return false;
+    }
+    const TCacheParams* path = params->FindNode(kCFParam_path);
+    string str_path = path ?
+        CDirEntry::AddTrailingPathSeparator(path->GetValue()) : kEmptyStr;
+    if (!path  || str_path != m_Path) {
+        return false;
+    }
+    const TCacheParams* name = params->FindNode(kCFParam_name);
+    return name  &&  name->GetValue() == m_Name;
+}
+
+
 ICache* CBDB_CacheReaderCF::CreateInstance(
            const string&                  driver,
            CVersionInfo                   version,
@@ -2208,7 +2232,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 {
     auto_ptr<CBDB_Cache> drv;
     if (driver.empty() || driver == m_DriverName) {
-        if (version.Match(NCBI_INTERFACE_VERSION(ICache)) 
+        if (version.Match(NCBI_INTERFACE_VERSION(ICache))
                             != CVersionInfo::eNonCompatible) {
             drv.reset(new CBDB_Cache());
         }
@@ -2221,26 +2245,26 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
     // cache configuration
 
-    const string& path = 
+    const string& path =
         GetParam(params, kCFParam_path, true, kEmptyStr);
-    const string& name = 
+    const string& name =
         GetParam(params, kCFParam_name, false, "lcache");
-    const string& locking = 
+    const string& locking =
         GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
-    const string& page_size = 
+    const string& page_size =
         GetParam(params, kCFParam_page_size, false, kEmptyStr);
 
     CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
     if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
         lock = CBDB_Cache::ePidLock;
     }
-    unsigned overflow_limit = 
+    unsigned overflow_limit =
         GetParamDataSize(params, kCFParam_overflow_limit, false, 0);
     if (overflow_limit) {
         drv->SetOverflowLimit(overflow_limit);
     }
 
-    unsigned mem_size = 
+    unsigned mem_size =
         GetParamDataSize(params, kCFParam_mem_size, false, 0);
 
     if (!page_size.empty()) {
@@ -2249,13 +2273,13 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         } // any other variant makes deafult (large) page size
     }
 
-    unsigned checkpoint_bytes = 
-        GetParamDataSize(params, kCFParam_checkpoint_bytes, 
+    unsigned checkpoint_bytes =
+        GetParamDataSize(params, kCFParam_checkpoint_bytes,
                          false, 24 * 1024 * 1024);
     drv->SetCheckpoint(checkpoint_bytes);
 
-    unsigned log_file_max = 
-        GetParamDataSize(params, kCFParam_log_file_max, 
+    unsigned log_file_max =
+        GetParamDataSize(params, kCFParam_log_file_max,
                          false, 200 * 1024 * 1024);
     drv->SetLogFileMax(log_file_max);
 
@@ -2265,34 +2289,34 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
     bool w_sync =
         GetParamBool(params, kCFParam_write_sync, false, false);
-    drv->SetWriteSync(w_sync ? 
+    drv->SetWriteSync(w_sync ?
                         CBDB_Cache::eWriteSync : CBDB_Cache::eWriteNoSync);
 
-    unsigned ttl_prolong = 
+    unsigned ttl_prolong =
         GetParamInt(params, kCFParam_ttl_prolong, false, 0);
     drv->SetTTL_Prolongation(ttl_prolong);
 
 
     ConfigureICache(drv.get(), params);
 
-    bool use_trans = 
+    bool use_trans =
         GetParamBool(params, kCFParam_use_transactions, false, true);
 
-    unsigned batch_size = 
+    unsigned batch_size =
         GetParamInt(params, kCFParam_purge_batch_size, false, 70);
     drv->SetPurgeBatchSize(batch_size);
 
-    unsigned batch_sleep = 
+    unsigned batch_sleep =
         GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
     drv->SetBatchSleep(batch_sleep);
 
-    unsigned purge_clean_factor = 
+    unsigned purge_clean_factor =
         GetParamInt(params, kCFParam_purge_clean_log, false, 0);
     drv->CleanLogOnPurge(purge_clean_factor);
 
-    bool purge_thread = 
+    bool purge_thread =
         GetParamBool(params, kCFParam_purge_thread, false, false);
-    unsigned purge_thread_delay = 
+    unsigned purge_thread_delay =
         GetParamInt(params, kCFParam_purge_thread_delay, false, 30);
 
     if (purge_thread) {
@@ -2302,8 +2326,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
-        drv->Open(path.c_str(), name.c_str(), 
-                  lock, mem_size, 
+        drv->Open(path.c_str(), name.c_str(),
+                  lock, mem_size,
                   use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans);
     }
     return drv.release();
@@ -2327,7 +2351,7 @@ void NCBI_EntryPoint_xcache_bdb(
 }
 
 
-CBDB_CacheHolder::CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache) 
+CBDB_CacheHolder::CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache)
 : m_BlobCache(blob_cache),
   m_IdCache(id_cache)
 {}
@@ -2360,14 +2384,13 @@ void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
     bdb_cache.SetTimeStampPolicy(tflags, timeout);
     bdb_cache.SetVersionRetention(ICache::eKeepAll);
 
-    bdb_cache.Open(path.c_str(), 
-                   name.c_str(), 
-                   CBDB_Cache::eNoLock, 
+    bdb_cache.Open(path.c_str(),
+                   name.c_str(),
+                   CBDB_Cache::eNoLock,
                    10 * 1024 * 1024,
                    CBDB_Cache::eUseTrans);
 
 }
-
 
 
 END_NCBI_SCOPE
@@ -2375,6 +2398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2005/05/12 15:49:49  grichenk
+ * Share bdb cache between reader and writer
+ *
  * Revision 1.115  2005/05/10 15:58:54  kuznets
  * Individual timeouts now can be controlled using ttl_prolong
  *
