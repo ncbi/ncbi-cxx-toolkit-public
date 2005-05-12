@@ -236,6 +236,15 @@ void Test(ContainerType cont)
 
 #define OK  NcbiCout << " completed successfully!" << NcbiEndl
 
+struct SStringNumericValues
+{
+    const char* str;
+    Int8 i8;
+    Uint8 u8;
+    double d;
+};
+static const int kBadValue = 555;
+
 int CTestApplication::Run(void)
 {
 #ifdef TEST_MEMORY_USAGE
@@ -267,43 +276,64 @@ int CTestApplication::Run(void)
 
     NcbiCout << "Test NCBISTR:" << NcbiEndl;
 
-    static const string s_Strings[] = {
-        "",
-        ".",
-        "..",
-        ".0",
-        ".0.",
-        "..0",
-        ".01",
-        "1.",
-        "1.1",
-        "1.1.",
-        "1..",
-        "-2147483649",
-        "-2147483648",
-        "-1",
-        "0",
-        "2147483647",
-        "2147483648",
-        "4294967295",
-        "4294967296",
-        " 123 ",
-        "-324",
-        " 567",
-        "+890",
-        "zzz"
+    static const SStringNumericValues s_Strings[] = {
+        { "", kBadValue, kBadValue, kBadValue },
+        { ".", kBadValue, kBadValue, kBadValue },
+        { "..", kBadValue, kBadValue, kBadValue },
+        { ".0", kBadValue, kBadValue, 0 },
+        { ".0.", kBadValue, kBadValue, kBadValue },
+        { "..0", kBadValue, kBadValue, kBadValue },
+        { ".01", kBadValue, kBadValue, .01 },
+        { "1.", kBadValue, kBadValue, 1 },
+        { "1.1", kBadValue, kBadValue, 1.1 },
+        { "1.1.", kBadValue, kBadValue, kBadValue },
+        { "1..", kBadValue, kBadValue, kBadValue },
+        { "-1", -1, kBadValue, -1 },
+        { "0", 0, 0, 0 },
+        { "1", 1, 1, 1 },
+        { "-2147483649", Int8(kMin_I4)-1, kBadValue, kMin_I4-1. },
+        { "-2147483648", Int8(kMin_I4)  , kBadValue, kMin_I4+0. },
+        { "-2147483647", Int8(kMin_I4)+1, kBadValue, kMin_I4+1. },
+        { "2147483646", Int8(kMax_I4)-1, Uint8(kMax_I4)-1, kMin_I4-1. },
+        { "2147483647", Int8(kMax_I4)  , Uint8(kMax_I4)  , kMin_I4+0. },
+        { "2147483648", Int8(kMax_I4)+1, Uint8(kMax_I4)+1, kMin_I4+1. },
+        { "4294967294", Int8(kMax_UI4)-1, Uint8(kMax_UI4)-1, kMax_UI4-1. },
+        { "4294967295", Int8(kMax_UI4)  , Uint8(kMax_UI4)  , kMax_UI4+0. },
+        { "4294967296", Int8(kMax_UI4)+1, Uint8(kMax_UI4)+1, kMax_UI4+1. },
+        { " 123 ", kBadValue, kBadValue, kBadValue },
+        { "-324", -324, kBadValue, -324 },
+        { " 567", kBadValue, kBadValue, kBadValue },
+        { "+890", +890, +890, +890 },
+        { "-9223372036854775809", kBadValue, kBadValue, kMin_I8-1. },
+        { "-9223372036854775808", kMin_I8  , kBadValue, kMin_I8+0. },
+        { "-9223372036854775807", kMin_I8+1, kBadValue, kMin_I8+1. },
+        { "9223372036854775806", kMax_I8-1, kMax_I8-1, kMax_I8-1. },
+        { "9223372036854775807", kMax_I8  , kMax_I8  , kMax_I8+0. },
+        { "9223372036854775808", kBadValue, Uint8(kMax_I8)+1, kMax_I8+1. },
+        { "18446744073709551615", kBadValue, kMax_UI8-1, kMax_UI8-1. },
+        { "18446744073709551616", kBadValue, kMax_UI8  , kMax_UI8+0. },
+        { "18446744073709551617", kBadValue, kBadValue , kMax_UI8+1. },
+        { "zzz", kBadValue, kBadValue, kBadValue }
     };
 
     const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
 
     for (size_t i = 0;  i < count;  ++i) {
-        const string& str = s_Strings[i];
+        const char* str = s_Strings[i].str;
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         {{
             int value = NStr::StringToNumeric(str);
+            Uint8 num = s_Strings[i].u8;
+            int expected = -1;
+            if ( isdigit(str[0]&255) &&
+                 num != Uint8(kBadValue) &&
+                 num <= Uint8(kMax_Int) ) {
+                expected = int(num);
+            }
             NcbiCout << "numeric value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
+            assert(value == expected);
         }}
 
         try {
@@ -357,16 +387,20 @@ int CTestApplication::Run(void)
         
         try {
             Int8 value = NStr::StringToInt8(str);
-            NcbiCout << "Int8 value: " << (int)value << ", toString: '"
+            NcbiCout << "Int8 value: " << value << ", toString: '"
                      << NStr::Int8ToString(value) << "'" << NcbiEndl;
+            //assert(s_Strings[i].i8 != kBadValue);
+            //assert(value == s_Strings[i].i8);
+            //assert(str == NStr::Int8ToString(value));
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
+            //assert(s_Strings[i].i8 == kBadValue);
         }
 
         try {
             Uint8 value = NStr::StringToUInt8(str);
-            NcbiCout << "Uint8 value: " << (unsigned)value << ", toString: '"
+            NcbiCout << "Uint8 value: " << value << ", toString: '"
                      << NStr::UInt8ToString(value) << "'" << NcbiEndl;
         }
         catch (CException& e) {
@@ -965,8 +999,7 @@ int CTestApplication::Run(void)
         try {
             NStr::StringToUInt8_DataSize("1GBx");
         }
-        catch (exception&)
-        {
+        catch (exception&) {
             err_catch = true;
         }
         assert(err_catch);
@@ -977,8 +1010,7 @@ int CTestApplication::Run(void)
         try {
             NStr::StringToUInt8_DataSize("10000000000000GB");
         }
-        catch (exception&)
-        {
+        catch (exception&) {
             err_catch = true;
         }
         assert(err_catch);
@@ -1014,21 +1046,20 @@ int CTestApplication::Run(void)
     NcbiCout << NcbiEndl << "CVersionInfo::FromStr tests...";
 
     {{
-    CVersionInfo ver("1.2.3");
-    assert(ver.GetMajor() == 1 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 3);
-    ver.FromStr("12.35");
-    assert(ver.GetMajor() == 12 && ver.GetMinor() == 35 && ver.GetPatchLevel() == 0);
-    {{
-        bool err_catch = false;
-        try {
-            ver.FromStr("12.35a");
-        }
-        catch (exception&)
-        {
-            err_catch = true;
-        }
-        assert(err_catch);
-    }}
+        CVersionInfo ver("1.2.3");
+        assert(ver.GetMajor() == 1 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 3);
+        ver.FromStr("12.35");
+        assert(ver.GetMajor() == 12 && ver.GetMinor() == 35 && ver.GetPatchLevel() == 0);
+        {{
+            bool err_catch = false;
+            try {
+                ver.FromStr("12.35a");
+            }
+            catch (exception&) {
+                err_catch = true;
+            }
+            assert(err_catch);
+        }}
     }}
 
     OK;
@@ -1036,44 +1067,44 @@ int CTestApplication::Run(void)
     NcbiCout << NcbiEndl << "ParseVersionString tests...";
 
     {{
-    CVersionInfo ver("1.2.3");
-    string pname;
-    ParseVersionString("1.3.2", &pname, &ver);
-    assert(pname.empty());
-    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 2);
+        CVersionInfo ver("1.2.3");
+        string pname;
+        ParseVersionString("1.3.2", &pname, &ver);
+        assert(pname.empty());
+        assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 2);
 
-    ParseVersionString("My_Program21p32c 1.3.3", &pname, &ver);
-    assert(pname == "My_Program21p32c");
-    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 3);
+        ParseVersionString("My_Program21p32c 1.3.3", &pname, &ver);
+        assert(pname == "My_Program21p32c");
+        assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 3);
 
-    ParseVersionString("2.3.4 ( program)", &pname, &ver);
-    assert(pname == "program");
-    assert(ver.GetMajor() == 2 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 4);
+        ParseVersionString("2.3.4 ( program)", &pname, &ver);
+        assert(pname == "program");
+        assert(ver.GetMajor() == 2 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 4);
 
 
-    ParseVersionString("version 50.1.0", &pname, &ver);
-    assert(pname.empty());
-    assert(ver.GetMajor() == 50 && ver.GetMinor() == 1 && ver.GetPatchLevel() == 0);
+        ParseVersionString("version 50.1.0", &pname, &ver);
+        assert(pname.empty());
+        assert(ver.GetMajor() == 50 && ver.GetMinor() == 1 && ver.GetPatchLevel() == 0);
 
-    ParseVersionString("MyProgram version 50.2.1", &pname, &ver);
-    assert(pname ==  "MyProgram");
-    assert(ver.GetMajor() == 50 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 1);
+        ParseVersionString("MyProgram version 50.2.1", &pname, &ver);
+        assert(pname ==  "MyProgram");
+        assert(ver.GetMajor() == 50 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("MyProgram ver. 50.3.1", &pname, &ver);
-    assert(pname ==  "MyProgram");
-    assert(ver.GetMajor() == 50 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+        ParseVersionString("MyProgram ver. 50.3.1", &pname, &ver);
+        assert(pname ==  "MyProgram");
+        assert(ver.GetMajor() == 50 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("MyOtherProgram2 ver 51.3.1", &pname, &ver);
-    assert(pname ==  "MyOtherProgram2");
-    assert(ver.GetMajor() == 51 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+        ParseVersionString("MyOtherProgram2 ver 51.3.1", &pname, &ver);
+        assert(pname ==  "MyOtherProgram2");
+        assert(ver.GetMajor() == 51 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("Program_ v. 1.3.1", &pname, &ver);
-    assert(pname ==  "Program_");
-    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+        ParseVersionString("Program_ v. 1.3.1", &pname, &ver);
+        assert(pname ==  "Program_");
+        assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
 
-    ParseVersionString("MyProgram ", &pname, &ver);
-    assert(pname ==  "MyProgram");
-    assert(ver.IsAny());
+        ParseVersionString("MyProgram ", &pname, &ver);
+        assert(pname ==  "MyProgram");
+        assert(ver.IsAny());
 
 
     }}
@@ -1104,6 +1135,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.41  2005/05/12 17:01:23  vasilche
+ * Added detailed data for *Int*ToString test.
+ *
  * Revision 6.40  2005/05/06 12:42:35  kuznets
  * New test case
  *
