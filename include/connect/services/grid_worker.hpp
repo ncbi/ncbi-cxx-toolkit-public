@@ -352,6 +352,9 @@ public:
     ///
     void SetMaxThreads(unsigned int max_threads) 
                       { m_MaxThreads = max_threads; }
+
+    /// Get the maximum threads running simultaneously
+    //
     unsigned int GetMaxThreads() const { return m_MaxThreads; }
 
     void SetInitThreads(unsigned int init_threads) 
@@ -378,7 +381,7 @@ public:
                       { return (unsigned int)m_JobsReturned.Get(); }
 
     unsigned int GetJobsRunningNumber() const;
-    unsigned int GetJobsStarted() const { return m_JobsStarted; }
+    unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
     /// Start jobs execution.
     ///
     void Start();
@@ -457,8 +460,9 @@ private:
         return ns_client.release();
     }
 
-    // start a single threaded version
-    void StartSingleThreaded();
+    bool x_GetNextJob(string& job_key, string& input);
+    void x_ReturnJob(const string& job_key);
+    bool x_CreateNSReadClient();
 
     CGridWorkerNode(const CGridWorkerNode&);
     CGridWorkerNode& operator=(const CGridWorkerNode&);
@@ -476,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/12 18:14:33  didenko
+ * Cosmetics
+ *
  * Revision 1.21  2005/05/12 16:18:49  ucko
  * Use portable DECLARE_CLASS_STATIC_MUTEX macro.
  *

@@ -292,104 +292,27 @@ CGridWorkerNode::~CGridWorkerNode()
 {
 }
 
-void CGridWorkerNode::StartSingleThreaded()
-{
-    try {
-        _ASSERT(m_MaxThreads == 1);
-        m_NSReadClient.reset(CreateClient());
-    }
-    catch (exception& ex) {
-        LOG_POST(Error << ex.what());
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-        return;
-    }
-    catch (...) {
-        LOG_POST(Error << "Unknown error");
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-        return;
-    }
-
-
-    string    job_key;
-    string    input;
-    bool      job_exists = false;
-    while (1) {
-        if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
-            break;
-
-        CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-        if (debug_context && 
-            debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
-            job_exists = debug_context->GetNextJob(job_key, input);
-            if (!job_exists) {
-                RequestShutdown(CNetScheduleClient::eNormalShutdown);
-                continue;
-            }         
-        } else {
-            int try_count = 0;
-            try {
-                job_exists = 
-                    m_NSReadClient->WaitJob(&job_key, &input, 
-                                            m_NSTimeout, m_UdpPort);
-            }
-            catch (CNetServiceException& ex) {
-                ERR_POST("Communication Error : " 
-                         << ex.what());
-                if (++try_count >= 2) {
-                    LOG_POST(Error << ex.what());
-                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-                    continue;
-                }
-                SleepMilliSec(1000 + try_count*2000);
-            }
-        }
-        if (job_exists) {
-            if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
-                if (!debug_context || 
-                    debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-                    m_NSReadClient->ReturnJob(job_key);
-                }
-                break;
-            }
-            LOG_POST( "Got Job : " << job_key << "  " << input);
-            CWorkerNodeJobContext job_context(*this, 
-                                              job_key, 
-                                              input, 
-                                              m_JobsStarted++,
-                                              m_LogRequested);
-            CGridThreadContext thr_context(job_context);
-            s_RunJob(thr_context);
-
-            if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
-                RequestShutdown(CNetScheduleClient::eNormalShutdown);
-            }
-        }
-    }
-    LOG_POST(Info << "Worker Node has been stopped.");
-    m_NSReadClient.reset(0);
-}
-
 void CGridWorkerNode::Start()
 {
-    if (m_MaxThreads == 1) {
-        StartSingleThreaded();
+    _ASSERT(m_MaxThreads > 0);
+    if (!x_CreateNSReadClient())
         return;
-    }
-    try {
-        _ASSERT(m_MaxThreads > 0);
-        m_NSReadClient.reset(CreateClient());
+
+    if (m_MaxThreads > 1 ) {
         m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, 0/*m_MaxThreads-1*/));
-        m_ThreadsPool->Spawn(m_InitThreads);
-    }
-    catch (exception& ex) {
-        LOG_POST(Error << ex.what());
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-        return;
-    }
-    catch (...) {
-        LOG_POST(Error << "Unknown error");
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-        return;
+        try {
+            m_ThreadsPool->Spawn(m_InitThreads);
+        }
+        catch (exception& ex) {
+            LOG_POST(Error << ex.what());
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            return;
+        }
+        catch (...) {
+            LOG_POST(Error << "Unkown error");
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            return;
+        }
     }
 
     string    job_key;
@@ -400,83 +323,60 @@ void CGridWorkerNode::Start()
         if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
             break;
         try {
-            try {
-                m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
-            }
-            catch (CBlockingQueueException&) {
-                continue;
+            
+            if (m_MaxThreads > 1) {
+                try {
+                    m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
+                } catch (CBlockingQueueException&) {
+                    continue;
+                }
             }
 
-            CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-            if (debug_context && 
-                debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
-                job_exists = debug_context->GetNextJob(job_key, input);
-                if (!job_exists) {
-                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
-                    continue;
-                }         
-            } else {
-                int try_count = 0;
-                while(1) {
-                    try {
-                        job_exists = 
-                            m_NSReadClient->WaitJob(&job_key, &input, 
-                                                    m_NSTimeout, m_UdpPort);
-                        break;
-                    }
-                    catch (CNetServiceException& ex) {
-                        LOG_POST(Error << "Communication Error : " 
-                                 << ex.what());
-                        if (++try_count >= 2)
-                            throw;
-                        SleepMilliSec(1000 + try_count*2000);
-                    }
-                }
-            }
+            job_exists = x_GetNextJob(job_key, input);
+
             if (job_exists) {
                 if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
-                    if (!debug_context || 
-                        debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-                        m_NSReadClient->ReturnJob(job_key);
-                    }
+                    x_ReturnJob(job_key);
                     break;
                 }
-                //       LOG_POST( "Got Job : " << job_key << "  " << input);
                 auto_ptr<CWorkerNodeJobContext> 
-                    context(new CWorkerNodeJobContext(*this, 
-                                                      job_key, 
-                                                      input, 
-                                                      m_JobsStarted,
-                                                      m_LogRequested));
-                ++const_cast<unsigned int &>(m_JobsStarted);
-                CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
-                try {
-                    m_ThreadsPool->AcceptRequest(job_req);
-                }
-                catch (CBlockingQueueException& ex) {
-                    // that must not happen after CBlockingQueue is fixed
-                    ERR_POST(ex.what());
-                    _ASSERT(0);
-                    if (!debug_context || 
-                        debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-                        m_NSReadClient->ReturnJob(job_key);
+                    job_context(new CWorkerNodeJobContext(*this, 
+                                                          job_key, 
+                                                          input, 
+                                                          m_JobsStarted++,
+                                                          m_LogRequested));
+                if (m_MaxThreads > 1 ) {
+                    CRef<CStdRequest> job_req(
+                                    new CWorkerNodeRequest(job_context));
+                    try {
+                        m_ThreadsPool->AcceptRequest(job_req);
+                    } catch (CBlockingQueueException& ex) {
+                        // that must not happen after CBlockingQueue is fixed
+                        ERR_POST(ex.what());
+                        _ASSERT(0);
+                        x_ReturnJob(job_key);
                     }
+                }
+                else {
+                    CGridThreadContext thr_context(*job_context);
+                    s_RunJob(thr_context);
                 }
                 if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
                     RequestShutdown(CNetScheduleClient::eNormalShutdown);
                 }
             }
-        } 
-        catch (exception& ex) {
+        } catch (exception& ex) {
             ERR_POST(ex.what());
             RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         }
     }
     LOG_POST(Info << "Shutting down...");
-    m_ThreadsPool->KillAllThreads(true);
-    m_ThreadsPool.reset(0);
+    if (m_MaxThreads > 1 ) {
+        m_ThreadsPool->KillAllThreads(true);
+        m_ThreadsPool.reset(0);
+    }
     m_NSReadClient.reset(0);
-    LOG_POST(Info << "Worker Node Threads Pool stopped.");
+    LOG_POST(Info << "Worker Node has been stopped.");
 }
 
 unsigned int CGridWorkerNode::GetJobsRunningNumber() const
@@ -501,12 +401,78 @@ const string& CGridWorkerNode::GetClientName() const
 }
 
 
+bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
+{
+    bool job_exists = false;
+    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (debug_context && 
+        debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
+        job_exists = debug_context->GetNextJob(job_key, input);
+        if (!job_exists) {
+            RequestShutdown(CNetScheduleClient::eNormalShutdown);
+        }         
+    } else {
+        if(m_NSReadClient.get()) {
+            int try_count = 0;
+            try {
+                job_exists = 
+                    m_NSReadClient->WaitJob(&job_key, &input, 
+                                            m_NSTimeout, m_UdpPort);
+            }
+            catch (CNetServiceException& ex) {
+                ERR_POST("Communication Error : " 
+                         << ex.what());
+                if (++try_count >= 2) {
+                    LOG_POST(Error << ex.what());
+                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                }
+                SleepMilliSec(1000 + try_count*2000);
+            }
+        }
+    }
+    return job_exists;
+}
+
+void CGridWorkerNode::x_ReturnJob(const string& job_key)
+{
+    if(m_NSReadClient.get()) {
+        CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+        if (!debug_context || 
+            debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
+            m_NSReadClient->ReturnJob(job_key);
+        }
+    }
+}
+
+bool CGridWorkerNode::x_CreateNSReadClient()
+{
+    if (m_NSReadClient.get())
+        return true;
+
+    try {
+        m_NSReadClient.reset(CreateClient());
+    }
+    catch (exception& ex) {
+        ERR_POST(ex.what());
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return false;
+    }
+    catch (...) {
+        LOG_POST(Error << "Unkown error");
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return false;
+    }
+    return true;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/12 18:14:33  didenko
+ * Cosmetics
+ *
  * Revision 1.22  2005/05/12 16:20:42  ucko
  * Use portable DEFINE_CLASS_STATIC_MUTEX macro.
  * Tweak CGridWorkerNode::Start to build with SGI's compiler, which is
