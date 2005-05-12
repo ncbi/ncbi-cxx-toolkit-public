@@ -1694,7 +1694,7 @@ static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
         if (lip->data != NULL) {
             cp_from = lip->data;
             while (*cp_from != 0) {
-                if (! isspace ((int )*cp_from)) {
+                if (! isspace ((char)*cp_from)) {
                     *cp_to = *cp_from;
                     cp_to ++;
                 }
@@ -1729,9 +1729,9 @@ static void s_LineInfoReaderAdvancePastSpace (TLineInfoReaderPtr lirp)
     if (lirp->curr_line_pos == NULL) {
         return;
     }
-    while ( isspace ((int ) *lirp->curr_line_pos)
+    while ( isspace ((char) *lirp->curr_line_pos)
            ||  *lirp->curr_line_pos == 0) {
-        while ( isspace ((int )*lirp->curr_line_pos)) {
+        while ( isspace ((char)*lirp->curr_line_pos)) {
             lirp->curr_line_pos ++;
         }
         if (*lirp->curr_line_pos == 0) {
@@ -2109,12 +2109,12 @@ s_GetFASTAExpectedNumbers
         return;
     }
     cp = str;
-    while (! isdigit ((int )*cp)  &&  *cp != 0) {
+    while (! isdigit ((char)*cp)  &&  *cp != 0) {
         cp++;
     }
 
     cpend = cp;
-    while (isdigit ((int )*cpend)  &&  *cpend != 0) {
+    while (isdigit ((char)*cpend)  &&  *cpend != 0) {
         cpend++;
     }
     if (cp == cpend) {
@@ -2126,12 +2126,12 @@ s_GetFASTAExpectedNumbers
     *cpend = replace;
 
     cp = cpend;
-    while (! isdigit ((int )*cp)  &&  *cp != 0) {
+    while (! isdigit ((char)*cp)  &&  *cp != 0) {
         cp++;
     }
 
     cpend = cp;
-    while (isdigit ((int )*cpend)  &&  *cpend != 0) {
+    while (isdigit ((char)*cpend)  &&  *cpend != 0) {
         cpend++;
     }
     if (cp == cpend) {
@@ -2167,33 +2167,33 @@ static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
     }
     cp = str;
     while (*cp != 0) {
-        if (! isdigit ((int )*cp)  &&  ! isspace ((int )*cp)) {
+        if (! isdigit ((char)*cp)  &&  ! isspace ((char)*cp)) {
             return eFalse;
         }
         if (! found_first_number) {
-            if (! isdigit ((int )*cp)) {
+            if (! isdigit ((char)*cp)) {
                 return eFalse;
             }
             found_first_number = eTrue;
         } else if (! found_dividing_space) {
-            if ( isspace ((int ) *cp)) {
+            if ( isspace ((char) *cp)) {
                 found_dividing_space = eTrue;
-            } else if ( ! isdigit ((int )*cp)) {
+            } else if ( ! isdigit ((char)*cp)) {
                 return eFalse;
             }
         } else if (! found_second_number) {
-            if ( isdigit ((int )*cp)) {
+            if ( isdigit ((char)*cp)) {
                 found_second_number = eTrue;
-            } else if (! isspace ((int ) *cp)) {
+            } else if (! isspace ((char) *cp)) {
                 return eFalse;
             }
         } else if (! found_second_number_end) {
-            if ( isspace ((int ) *cp)) {
+            if ( isspace ((char) *cp)) {
                 found_second_number_end = eTrue;
-            } else if (! isdigit ((int )*cp)) {
+            } else if (! isdigit ((char)*cp)) {
                 return eFalse;
             }
-        } else if (! isspace ((int ) *cp)) {
+        } else if (! isspace ((char) *cp)) {
             return eFalse;
         }
         cp++;
@@ -2231,22 +2231,22 @@ s_GetOneNexusSizeComment
         return eFalse;
     }
     cpstart += strlen (valname);
-    while (*cpstart != 0  &&  isspace ((int )*cpstart)) {
+    while (*cpstart != 0  &&  isspace ((char)*cpstart)) {
         cpstart++;
     }
     if (*cpstart != '=') {
         return eFalse;
     }
     cpstart ++;
-    while (*cpstart != 0  &&  isspace ((int )*cpstart)) {
+    while (*cpstart != 0  &&  isspace ((char)*cpstart)) {
         cpstart++;
     }
 
-    if (! isdigit ((int )*cpstart)) {
+    if (! isdigit ((char)*cpstart)) {
         return eFalse;
     }
     cpend = cpstart + 1;
-    while ( *cpend != 0  &&  isdigit ((int )*cpend)) {
+    while ( *cpend != 0  &&  isdigit ((char)*cpend)) {
         cpend ++;
     }
     maxlen = cpend - cpstart;
@@ -2316,14 +2316,14 @@ static char GetNexusTypechar (char * str, char * val_name)
         return 0;
     }
     cp += strlen (val_name);
-    while ( isspace ((int )*cp)) {
+    while ( isspace ((char)*cp)) {
         cp ++;
     }
     if (*cp != '=') {
         return 0;
     }
     cp++;
-    while ( isspace ((int )*cp) || *cp == '\'') {
+    while ( isspace ((char)*cp) || *cp == '\'') {
         cp ++;
     }
     return *cp;
@@ -2619,7 +2619,7 @@ static EBool s_IsOrganismComment (TCommentLocPtr clp)
         return eFalse;
     }
     cp_end --;
-    while (cp_end > cp  &&  isspace ((int )*cp_end)) {
+    while (cp_end > cp  &&  isspace ((char)*cp_end)) {
       cp_end --;
     }
     cp_end ++;
@@ -4069,7 +4069,7 @@ s_CreateAnchorPatternForMarkedIDs
         } else if (this_pattern != NULL) {
             /* This section gets rid of base pair number comments */
             cp = lip->data;
-            while ( isspace ((int )*cp)  ||  isdigit ((int )*cp)) {
+            while ( isspace ((char)*cp)  ||  isdigit ((char)*cp)) {
                 cp++;
             }
             s_AddLengthRepeat (this_pattern, strlen (cp));
@@ -5024,7 +5024,7 @@ static EBool s_ContainsDigits (char *data)
 
     if (data == NULL) return eFalse;
     for (cp = data; *cp != 0; cp++) {
-        if (isdigit (*cp)) {
+        if (isdigit ((char)(*cp))) {
             return eTrue;
         }
     }
@@ -5853,6 +5853,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/12 17:33:54  bollin
+ * changed cast for arguments for ctype.h classification macros
+ *
  * Revision 1.19  2005/05/06 14:24:01  bollin
  * when adding a definition line that follows an organism comment, make sure
  * that the new definition line has the same list position as the organism
