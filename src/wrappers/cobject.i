@@ -63,13 +63,6 @@
             return dynamic_cast<qual_name*>(obj);
         }
     }
-    // Temporary, for backwards compatibility (CRefs)
-    %extend qual_name {
-    public:
-        qual_name* __deref__(void) {
-            return self;
-        }
-    }
 %enddef
 #endif
 
@@ -108,13 +101,6 @@
             return dynamic_cast<qual_name*>(obj);
         }
     }
-    // Temporary, for backwards compatibility (CRefs)
-    %extend qual_name {
-    public:
-        qual_name* __deref__(void) {
-            return self;
-        }
-    }
 %enddef
 #endif
 
@@ -136,6 +122,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/12 15:26:01  jcherry
+ * Removed __deref__ extension method (was there for backwards compatibiliy
+ * with code that expected a CRef proxy)
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
