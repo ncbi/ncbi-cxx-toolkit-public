@@ -355,6 +355,12 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 ASSERT(strand == eNa_strand_both ||
                        strand == eNa_strand_plus ||
                        strand == eNa_strand_minus);
+
+                // The only programs for which we translate the query
+                ASSERT(prog == eBlastTypeBlastx ||
+                       prog == eBlastTypeTblastx ||
+                       prog == eBlastTypeRpsTblastn);
+
                 // Get both strands of the original nucleotide sequence with
                 // sentinels
                 sequence = GetSequence(*itr->seqloc, encoding, itr->scope, 
@@ -376,17 +382,10 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                     }
                     
                     int offset = qinfo->contexts[ctx_index + i].query_offset;
-
-                    // The BlastContextInfo structure has a "frame" field, but
-                    // that field is set from the program type, and the value
-                    // we want here is the value for blastx, not the actual
-                    // program type (why?).  Perhaps there ought to be two
-                    // frame values...  Further investigation and discussion
-                    // indicates that BLAST_ContextToFrame should do this
-                    // internally (this change will be made soon).
-
-                    //short frame = qinfo->contexts[ctx_index + i].frame;
-                    short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
+                    short frame = BLAST_ContextToFrame(prog, i);
+                    // Note: either value could have been used in the function
+                    // below
+                    ASSERT(frame == qinfo->contexts[ctx_index + i].frame);
 
                     BLAST_GetTranslation(sequence.data.get() + 1,
                                          seqbuf_rev,
@@ -960,6 +959,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/05/12 19:13:50  camacho
+* Remove unaccurate comment, slight clean up of SetupQueries
+*
 * Revision 1.44  2005/05/10 21:23:59  camacho
 * Fix to prior commit
 *
