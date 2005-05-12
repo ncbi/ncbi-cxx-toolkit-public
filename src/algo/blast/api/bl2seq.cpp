@@ -335,13 +335,6 @@ CBl2Seq::x_Results2SeqAlign()
     // are on reverse strands or do not start from the beginning of sequences.
     Blast_RemapToSubjectLoc(retval, m_tSubjects);
 
-    // Clean up structures
-    mi_clsInitWordParams.Reset(NULL);
-    mi_clsHitSavingParams.Reset(NULL);
-    mi_clsExtnWord.Reset(NULL);
-    mi_clsExtnParams.Reset(NULL);
-    mi_clsGapAlign.Reset(NULL);
-
     return retval;
 }
 
@@ -367,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.71  2005/05/12 15:35:35  camacho
+ * Remove dead fields
+ *
  * Revision 1.70  2005/04/06 21:06:18  dondosha
  * Use EBlastProgramType instead of EProgram in non-user-exposed functions
  *

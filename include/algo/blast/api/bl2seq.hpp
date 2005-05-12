@@ -179,12 +179,6 @@ private:
     CLookupTableWrap                    mi_pLookupTable;       ///< internal: one for all queries
     BlastSeqLoc*                        mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
 
-    CBlastInitialWordParameters         mi_clsInitWordParams;  ///< internal: raw scores computed from options
-    CBlastHitSavingParameters           mi_clsHitSavingParams; ///< internal: raw scores computed from options
-    CBlast_ExtendWord                   mi_clsExtnWord;        ///< internal: word extension information
-    CBlastExtensionParameters           mi_clsExtnParams;      ///< internal: raw scores computed from options
-    CBlastGapAlignStruct                mi_clsGapAlign;        ///< internal: gapped alignment information
-    CBlastDatabaseOptions               mi_clsDbOptions;       ///< internal: genetic code information
     /// Stores any warnings emitted during query setup
     CBlast_Message                      mi_clsBlastMessage;
 
@@ -294,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/05/12 15:35:35  camacho
+* Remove dead fields
+*
 * Revision 1.40  2005/03/31 13:43:49  camacho
 * BLAST options API clean-up
 *
