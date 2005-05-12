@@ -627,7 +627,35 @@ NStr::StringToUInt8_DataSize(const string&  str,
 }
 
 
-string NStr::IntToString(long value, bool sign /* = false */ )
+string NStr::IntToString(long value, TIntToStringFlags fmt)
+{
+    if (fmt & fCommas) {
+        return Int8ToString(value, fmt);
+    } else {
+        char buffer[64];
+        string format = "ld";
+        format += (fmt & fSign) ? "%+" : "%";
+        ::sprintf(buffer, format.c_str(), value);
+        return buffer;
+    }
+}
+
+
+void NStr::IntToString(string& out_str, long value, TIntToStringFlags fmt)
+{
+    if (fmt & fCommas) {
+        Int8ToString(out_str, value, fmt);
+    } else {
+        char buffer[64];
+        string format = "ld";
+        format += (fmt & fSign) ? "%+" : "%";
+        ::sprintf(buffer, format.c_str(), value);
+        out_str = buffer;
+    }
+}
+
+// OBSOLETED
+string NStr::IntToString(long value, bool sign)
 {
     char buffer[64];
     ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
@@ -635,6 +663,7 @@ string NStr::IntToString(long value, bool sign /* = false */ )
 }
 
 
+// OBSOLETED
 void NStr::IntToString(string& out_str, long value, bool sign)
 {
     char buffer[64];
@@ -643,30 +672,84 @@ void NStr::IntToString(string& out_str, long value, bool sign)
 }
 
 
-string NStr::UIntToString(unsigned long value)
+string NStr::UIntToString(unsigned long value, TIntToStringFlags fmt)
 {
-    char buffer[64];
-    ::sprintf(buffer, "%lu", value);
-    return buffer;
+    if (fmt & fCommas) {
+        return UInt8ToString(value, fmt);
+    } else {
+        char buffer[64];
+        ::sprintf(buffer, "%lu", value);
+        return buffer;
+    }
 }
 
 
-void NStr::UIntToString(string& out_str, unsigned long value)
+void NStr::UIntToString(string& out_str, unsigned long value, TIntToStringFlags fmt)
 {
-    char buffer[64];
-    ::sprintf(buffer, "%lu", value);
-    out_str = buffer;
+    if (fmt & fCommas) {
+        UInt8ToString(out_str, value, fmt);
+    } else {
+        char buffer[64];
+        ::sprintf(buffer, "%lu", value);
+        out_str = buffer;
+    }
 }
 
 
-string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
+string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
+{
+    string ret;
+    NStr::Int8ToString(ret, value, fmt);
+    return ret;
+}
+
+
+void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
+{
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    char  buffer[kBufSize];
+    char* pos = buffer + kBufSize;
+    int   cnt = 0;
+
+    if (value == 0) {
+        *--pos = '0';
+    }
+    else {
+        bool is_negative = value < 0;
+        if ( is_negative )
+            value = -value;
+
+        do {
+            if (fmt & fCommas) {
+                if (cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                cnt++;
+            }
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
+
+        if ( is_negative )
+            *--pos = '-';
+        else if (fmt & fSign)
+            *--pos = '+';
+    }
+    out_str.resize(0);
+    out_str.append(pos, buffer + kBufSize - pos);
+}
+
+
+// OBSOLETED
+string NStr::Int8ToString(Int8 value, bool sign)
 {
     string ret;
     NStr::Int8ToString(ret, value, sign);
     return ret;
 }
 
-
+// OBSOLETED
 void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
@@ -697,30 +780,42 @@ void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 }
 
 
-void NStr::UInt8ToString(string& out_str, Uint8 value)
+string NStr::UInt8ToString(Uint8 value, TIntToStringFlags fmt)
 {
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
-    char buffer[kBufSize];
+    string ret;
+    NStr::UInt8ToString(ret, value, fmt);
+    return ret;
+}
+
+
+void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
+{
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
+    int   cnt = 0;
+
     if ( value == 0 ) {
         *--pos = '0';
     }
     else {
         do {
+            if (fmt & fCommas) {
+                if (cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                cnt++;
+            }
             *--pos = char('0' + (value % 10));
             value /= 10;
         } while ( value );
     }
+    if (fmt & fSign) {
+        *--pos = '+';
+    }
     out_str.resize(0);
     out_str.append(pos, buffer + kBufSize - pos);
-}
-
-
-string NStr::UInt8ToString(Uint8 value)
-{
-    string ret;
-    NStr::UInt8ToString(ret, value);
-    return ret;
 }
 
 
@@ -1797,6 +1892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.140  2005/05/12 11:14:04  ivanov
+ * Added NStr::*Int*ToString() version with flags parameter.
+ *
  * Revision 1.139  2005/04/29 14:46:43  ivanov
  * Restoring changes in the NStr::Tokenize()
  *
