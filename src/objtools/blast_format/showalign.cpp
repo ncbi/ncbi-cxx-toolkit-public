@@ -111,6 +111,7 @@ const string color[]={"#000000", "#808080", "#FF0000"};
 static const char k_PSymbol[CDisplaySeqalign::ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
+static const char k_IntronChar = '~';
 static const int k_IdStartMargin = 2;
 static const int k_SeqStopMargin = 2;
 static const int k_StartSequenceMargin = 2;
@@ -424,30 +425,58 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
     return gi;
 }
 
-///return number of the cds letters before the start position
+///fill the cds start positions (1 based)
 ///@param line: the input cds line
-///@param start: the alignment start
+///@param concat_exon: exon only string
+///@param length_per_line: alignment length per line
+///@param feat_aln_start_totalexon: feature aln pos in concat_exon
 ///@param strand: the alignment strand
-///@return: the number of cds letters
+///@param start: start list to be filled
 ///
-static TSeqPos s_GetCdsPosition(string& line, TSeqPos start, ENa_strand strand){
-    TSeqPos num = 0;
-    if(strand == eNa_strand_plus){
-        num ++;
-        for(TSeqPos i = 0; i < start; i ++){
-            if(isalpha(line[i])){
-                num ++;
-            }
-        }
-    } else{
-        for(TSeqPos i = start; i < line.size(); i ++){
-            if(isalpha(line[i])){
-                num ++;
-            }
+static void s_FillCdsStartPosition(string& line, string& concat_exon,
+                                      TSeqPos length_per_line,
+                                      TSeqPos feat_aln_start_totalexon,
+                                      ENa_strand strand, list<TSeqPos>& start){
+    TSeqPos actual_line_len = 0;
+    TSeqPos aln_len = line.size();
+    TSeqPos previous_num_letter = 0;
+    
+    for (TSeqPos i = 0; i <= feat_aln_start_totalexon; i ++){
+        if(isalpha(concat_exon[i])){
+            previous_num_letter ++;
         }
     }
-    return num;
+    TSeqPos prev_num = 0;
+    for(TSeqPos i = 0; i < aln_len; i += actual_line_len){
+        if(aln_len - i< length_per_line) {
+            actual_line_len = aln_len - i;
+        } else {
+            actual_line_len = length_per_line;
+        }
+        
+        TSeqPos cur_num = 0;
+        bool has_intron = false;
+        for(TSeqPos j = i; j < actual_line_len + i; j ++){
+            if(isalpha(line[j])){
+                cur_num ++;
+            } else if(line[j] == k_IntronChar){
+                has_intron = true;
+            }
+        }
+            
+        if(cur_num > 0){
+            if(strand == eNa_strand_plus){
+                start.push_back(previous_num_letter + prev_num);  
+            } else {
+                start.push_back(previous_num_letter - prev_num);   
+            }
+        } else if (has_intron) {
+            start.push_back(0);  //sentinal for now show
+        }
+        prev_num += cur_num;
+    }
 }
+
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
                                   int row) const
@@ -784,10 +813,31 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                             out << checkboxBuf;
                         }
                         out<<(*iter)->feature->feature_id;
-                        CBlastFormatUtil::
-                            AddSpace(out, maxIdLen + k_IdStartMargin
-                                     +maxStartLen + k_StartSequenceMargin
-                                     -(*iter)->feature->feature_id.size());
+                        if((*iter)->feature_start.empty()){
+                            CBlastFormatUtil::
+                                AddSpace(out, maxIdLen + k_IdStartMargin
+                                         +maxStartLen + k_StartSequenceMargin
+                                         -(*iter)->feature->feature_id.size());
+                        } else {
+                            int feat_start = (*iter)->feature_start.front();
+                            if(feat_start > 0){
+                                CBlastFormatUtil::
+                                    AddSpace(out, maxIdLen + k_IdStartMargin
+                                             -(*iter)->feature->feature_id.size());
+                                out << feat_start;
+                                CBlastFormatUtil::
+                                    AddSpace(out, maxStartLen -
+                                             NStr::IntToString(feat_start).size() +
+                                             k_StartSequenceMargin);
+                            } else { //no show start
+                                CBlastFormatUtil::
+                                    AddSpace(out, maxIdLen + k_IdStartMargin
+                                             +maxStartLen + k_StartSequenceMargin
+                                             -(*iter)->feature->feature_id.size());
+                            }
+                            
+                            (*iter)->feature_start.pop_front();
+                        }
                         x_OutputSeq((*iter)->feature_string, no_id, j,
                                     (int)actualLineLen, 0, row, false,  alnLocList, out);
                         out<<endl;
@@ -1463,7 +1513,6 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     
                     //show actual aa  if there is a cds product
                     string line(aln_stop+1, ' ');   
-                    char intron_char = '~';
                     string raw_cdr_product = NcbiEmptyString;    
                     const CSeq_id& productId = 
                         feat->GetProduct().GetWhole();
@@ -1479,7 +1528,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     
                     //pre-fill all cds region with intron char
                     for (TSeqPos i = feat_aln_from; i <= feat_aln_to; i ++){
-                        line[i] = intron_char;
+                        line[i] = k_IntronChar;
                     }
                     
                     //get total coding length
@@ -1514,16 +1563,17 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                             num_base ++;
                         }    
                     }
-                    
+                    TSeqPos feat_aln_start_totalexon = 0;
+                    TSeqPos prev_feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_seq_stop = 0;
                     TSeqPos intron_size = 0;
                     bool is_first = true;
+                    bool  is_first_exon_start = true;
                     for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
                         if(!is_first){
                             intron_size += loc_it.GetRange().GetFrom() 
                                 - prev_feat_seq_stop - 1;
                         }
-                        is_first = false;
                         CRange<TSeqPos> actual_feat_seq_range =
                             loc_ref->GetTotalRange().
                             IntersectionWith(loc_it.GetRange());          
@@ -1558,6 +1608,23 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                        concat_exon.size()){
                                         line[i] = 
                                         concat_exon[product_adj_seq_pos];
+                                       
+                                        if(m_AV->IsPositiveStrand(row)){
+                                            if(is_first_exon_start &&
+                                               isalpha(line[i])){
+                                                feat_aln_start_totalexon = 
+                                                    product_adj_seq_pos;
+                                                is_first_exon_start = false;
+                                            }
+                                           
+                                        } else {
+                                            feat_aln_start_totalexon = 
+                                                max(prev_feat_aln_start_totalexon,
+                                                    product_adj_seq_pos); 
+                                            
+                                            prev_feat_aln_start_totalexon =
+                                                feat_aln_start_totalexon;
+                                        }
                                     }
                                 } else { //adding gap
                                     line[i] = ' '; 
@@ -1565,9 +1632,15 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                             }                      
                         }
                         
-                        prev_feat_seq_stop = loc_it.GetRange().GetTo();    
+                        prev_feat_seq_stop = loc_it.GetRange().GetTo();  
+                        is_first = false;
                     }                 
                     alternativeFeatStr = line;
+                    s_FillCdsStartPosition(line, concat_exon, m_LineLen,
+                                           feat_aln_start_totalexon,
+                                           m_AV->IsPositiveStrand(row) ?
+                                           eNa_strand_plus : eNa_strand_minus,
+                                           featInfo->feature_start); 
                 }
                 
                 if(featInfo){
@@ -2346,6 +2419,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.73  2005/05/12 14:47:47  jianye
+*modify computing feature start pos
+*
 *Revision 1.72  2005/05/11 15:05:09  jianye
 *gbloader change and some getfeature changes
 *
