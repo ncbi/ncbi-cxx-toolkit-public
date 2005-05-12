@@ -186,13 +186,6 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Get custom build files and adjust pathes 
     GetMsvcProjectMakefile().GetCustomBuildInfo(&m_CustomBuildInfo);
-    NON_CONST_ITERATE(list<SCustomBuildInfo>, p, m_CustomBuildInfo) {
-       SCustomBuildInfo& build_info = *p;
-       string file_path_abs = 
-           CDirEntry::ConcatPath(m_SourcesBaseDir, build_info.m_SourceFile);
-       build_info.m_SourceFile = 
-           CDirEntry::CreateRelativePath(m_ProjectDir, file_path_abs);           
-    }
 
     // Collect include dirs, specified in project Makefiles
     m_ProjectIncludeDirs = project.m_IncludeDirs;
@@ -1067,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/05/12 18:08:20  gouriano
+ * Do not convert file path in custom build info
+ *
  * Revision 1.52  2005/04/29 14:13:44  gouriano
  * Prohibit single-threaded configurations if a project requires MT
  *
