@@ -500,7 +500,7 @@ void CPagerViewJavaLess::CreateSubNodes()
 
         string page_no = "1";
         if( m_Pager.m_DisplayPage * 20 < (item_count + 20)) {
-            page_no = NStr::IntToString(m_Pager.m_DisplayPage+1,false);
+            page_no = NStr::IntToString(m_Pager.m_DisplayPage+1);
         }
         
         this->InsertNextCell((
@@ -516,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/05/12 11:09:39  ivanov
+ * Dropped default parameter in the NStr::IntToString()
+ *
  * Revision 1.44  2004/10/21 22:22:24  yasmax
  * Added javaless pager view for queryd
  *
