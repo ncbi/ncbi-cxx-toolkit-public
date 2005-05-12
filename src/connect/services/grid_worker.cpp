@@ -66,7 +66,7 @@ const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 //     CWorkerNodeJobContext     -- 
 
 CWorkerNodeJobContext* CWorkerNodeJobContext::m_Root = NULL;
-CMutex                 CWorkerNodeJobContext::m_ListMutex;
+DEFINE_CLASS_STATIC_MUTEX(CWorkerNodeJobContext::m_ListMutex);
 
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
@@ -243,17 +243,17 @@ static void s_RunJob(CGridThreadContext& thr_context)
             thr_context.PutFailure(ex.what());
         }
         catch(exception& ex1) {
-            ERR_POST("Failed to report an exception : " << ex1.what() 
-                     << "\nOrigional exception : " << ex1.what());
+            ERR_POST("Failed to report an exception;"
+                     "\nOriginal exception : " << ex1.what());
         }
     }
     catch(...) {
-        ERR_POST( "Unkown Error in Job execution" );
+        ERR_POST( "Unknown Error in Job execution" );
         try {
-            thr_context.PutFailure("Unkown Error in Job execution");
+            thr_context.PutFailure("Unknown Error in Job execution");
         }
         catch(exception& ex) {
-            ERR_POST("Failed to report an unkown exception : " 
+            ERR_POST("Failed to report an unknown exception : " 
                      << ex.what());
         }
     }
@@ -304,7 +304,7 @@ void CGridWorkerNode::StartSingleThreaded()
         return;
     }
     catch (...) {
-        LOG_POST(Error << "Unkown error");
+        LOG_POST(Error << "Unknown error");
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return;
     }
@@ -387,7 +387,7 @@ void CGridWorkerNode::Start()
         return;
     }
     catch (...) {
-        LOG_POST(Error << "Unkown error");
+        LOG_POST(Error << "Unknown error");
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return;
     }
@@ -446,8 +446,9 @@ void CGridWorkerNode::Start()
                     context(new CWorkerNodeJobContext(*this, 
                                                       job_key, 
                                                       input, 
-                                                      m_JobsStarted++,
+                                                      m_JobsStarted,
                                                       m_LogRequested));
+                ++const_cast<unsigned int &>(m_JobsStarted);
                 CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
                 try {
                     m_ThreadsPool->AcceptRequest(job_req);
@@ -506,6 +507,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/12 16:20:42  ucko
+ * Use portable DEFINE_CLASS_STATIC_MUTEX macro.
+ * Tweak CGridWorkerNode::Start to build with SGI's compiler, which is
+ * fussy about use of volatile members.
+ * Fix some typos (misspellings in API left alone for now, though).
+ *
  * Revision 1.21  2005/05/12 14:52:05  didenko
  * Added a worker node build time and start time to the statistic
  *
