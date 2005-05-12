@@ -157,14 +157,20 @@ public:
     EDB_Severity getMaxSeverity() {
         return m_max_severity;
     }
+    bool GetSucceed(void) const
+    {
+        return m_Succeed;
+    }
 
 private:
-    EDB_Severity m_max_severity;
+    EDB_Severity    m_max_severity;
+    bool            m_Succeed;
 };
 
 CTestErrHandler::CTestErrHandler()
+: m_max_severity(eDB_Info)
+, m_Succeed(false)
 {
-    m_max_severity = eDB_Info;
 }
 
 CTestErrHandler::~CTestErrHandler()
@@ -174,11 +180,10 @@ CTestErrHandler::~CTestErrHandler()
 
 bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 {
-    ERR_POST (Info << "CDB_Info: " << ex->Severity() );
+    m_Succeed = true;
 
     if (ex && ex->Severity() > m_max_severity)
     {
-        ERR_POST (Error << "CDB_Exception: " << ex->SeverityString() );
         m_max_severity= ex->Severity();
     }
 
@@ -191,19 +196,195 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
-    I_DriverContext* drv_context = m_DS->GetDriverContext();
-    CDB_UserHandler* err_handler = new CTestErrHandler();
-
     // Set up an user-defined error handler ..
-    drv_context->PushCntxMsgHandler (err_handler);
-    // drv_context->PushDefConnMsgHandler (err_handler);
 
-    try {
-        Test_ES_01();
+    // Push message handler into a context ...
+    I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+    // Check PushCntxMsgHandler ...
+    // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
+    // to any particular connection) error messages.
+    {
+        CTestErrHandler* drv_err_handler = new CTestErrHandler();
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+        local_conn->Connect( 
+            m_args.GetUserName(), 
+            m_args.GetUserPassword(), 
+            m_args.GetServerName(), 
+            m_args.GetDatabaseName() 
+            );
+
+        drv_context->PushCntxMsgHandler( drv_err_handler );
+
+        // Current connection should not be affected ...
+        {
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+            }
+        }
+
+        // New connection should not be affected ...
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            conn->Connect( 
+                m_args.GetUserName(), 
+                m_args.GetUserPassword(), 
+                m_args.GetServerName(), 
+                m_args.GetDatabaseName() 
+                );
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        {
+            CTestErrHandler* err_handler = new CTestErrHandler();
+
+            local_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( err_handler->GetSucceed() == true );
+            }
+        }
+
+        // New connection should not be affected
+        // after pushing a message handler into another connection
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            conn->Connect( 
+                m_args.GetUserName(), 
+                m_args.GetUserPassword(), 
+                m_args.GetServerName(), 
+                m_args.GetDatabaseName() 
+                );
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+            }
+        }
     }
-    catch( const CDB_Exception& ) {
-        // Ignore it
-        int a = 1;
+
+
+    // Check PushDefConnMsgHandler ...
+    // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
+    // handlers which are inherited by all newly created connections.
+    {
+        CTestErrHandler* drv_err_handler = new CTestErrHandler();
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+        local_conn->Connect( 
+            m_args.GetUserName(), 
+            m_args.GetUserPassword(), 
+            m_args.GetServerName(), 
+            m_args.GetDatabaseName() 
+            );
+
+        drv_context->PushDefConnMsgHandler( drv_err_handler );
+
+        // Current connection should not be affected ...
+        {
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        // This is supposed to be okay.
+        {
+            CTestErrHandler* err_handler = new CTestErrHandler();
+
+            local_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( err_handler->GetSucceed() == true );
+            }
+        }
+
+
+        ////////////////////////////////////////////////////////////////////////
+        // Create a new connection.
+        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+        new_conn->Connect( 
+            m_args.GetUserName(), 
+            m_args.GetUserPassword(), 
+            m_args.GetServerName(), 
+            m_args.GetDatabaseName() 
+            );
+
+        // New connection should be affected ...
+        {
+            try {
+                Test_ES_01(*new_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == true );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        // This is supposed to be okay.
+        {
+            CTestErrHandler* err_handler = new CTestErrHandler();
+
+            new_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+
+            try {
+                Test_ES_01(*new_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( err_handler->GetSucceed() == true );
+            }
+        }
+
+        // New connection should be affected
+        // after pushing a message handler into another connection
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            conn->Connect( 
+                m_args.GetUserName(), 
+                m_args.GetUserPassword(), 
+                m_args.GetServerName(), 
+                m_args.GetDatabaseName() 
+                );
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() == true );
+            }
+        }
     }
 }
 
@@ -247,14 +428,14 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
     // Try to catch a base class ...
-    BOOST_CHECK_THROW( Test_ES_01(), CDB_Exception );
+    BOOST_CHECK_THROW( Test_ES_01(*m_Conn), CDB_Exception );
 }
 
 // Throw CDB_Exception ...
 void 
-CDBAPIUnitTest::Test_ES_01(void)
+CDBAPIUnitTest::Test_ES_01(IConnection& conn)
 {
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
 
     auto_stmt->Execute( "select name from wrong table" );
     while( auto_stmt->HasMoreResults() ) { 
@@ -1729,6 +1910,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/05/12 18:42:57  ssikorsk
+ * Improved the "Test_UserErrorHandler" test-case
+ *
  * Revision 1.19  2005/05/12 15:33:34  ssikorsk
  * initial version of Test_UserErrorHandler
  *

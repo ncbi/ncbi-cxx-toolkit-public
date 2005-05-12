@@ -157,7 +157,7 @@ public:
 
 public:
     void Test_Exception_Safety(void);
-    void Test_ES_01(void);
+    void Test_ES_01(IConnection& conn);
 
 public:
     // Not implemented yet ...
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/05/12 18:42:57  ssikorsk
+ * Improved the "Test_UserErrorHandler" test-case
+ *
  * Revision 1.14  2005/05/12 15:33:34  ssikorsk
  * initial version of Test_UserErrorHandler
  *
