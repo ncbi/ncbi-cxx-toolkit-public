@@ -74,6 +74,7 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddFlag("s", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
+    arg_desc->AddFlag("reconf", "Reload server configuration");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -170,6 +171,11 @@ int CNetScheduleControl::Run(void)
         NcbiCout << NcbiEndl;
     }
 
+    if (args["reconf"]) {
+        CNetScheduleClient_Control cl(host, port);
+        cl.ReloadServerConfig();
+    }
+
 
     if (args["monitor"]) {
         string queue = args["monitor"].AsString(); 
@@ -205,6 +211,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.11  2005/05/10 19:25:35  kuznets
  * Cosmetics
  *

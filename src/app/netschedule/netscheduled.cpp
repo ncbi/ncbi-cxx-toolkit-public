@@ -98,7 +98,8 @@ typedef enum {
     eQuitSession,
     eError,
     eMonitor,
-    eDumpQueue
+    eDumpQueue,
+    eReloadConfig
 } EJS_RequestType;
 
 /// Request context
@@ -275,6 +276,11 @@ public:
     void ProcessMonitor(CSocket&                sock,
                         SThreadData&            tdata,
                         CQueueDataBase::CQueue& queue);
+
+    void ProcessReloadConfig(CSocket&                sock,
+                             SThreadData&            tdata,
+                             CQueueDataBase::CQueue& queue);
+
 
     void ProcessDump(CSocket&                sock,
                      SThreadData&            tdata,
@@ -589,6 +595,9 @@ end_version_control:
                 break;
             case eStatistics:
                 ProcessStatistics(socket, *tdata, queue);
+                break;
+            case eReloadConfig:
+                ProcessReloadConfig(socket, *tdata, queue);
                 break;
             case eError:
                 WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
@@ -1063,6 +1072,21 @@ void CNetScheduleServer::ProcessDump(CSocket&                sock,
     }
 }
 
+void CNetScheduleServer::ProcessReloadConfig(CSocket&                sock, 
+                                             SThreadData&            tdata,
+                                             CQueueDataBase::CQueue& queue)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+
+    bool reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
+    if (reloaded) {
+        unsigned tmp;
+        m_QueueDB->ReadConfig(app->GetConfig(), &tmp);
+    }
+    WriteMsg(sock, "OK:", "");
+}
+
+
 
 void CNetScheduleServer::ProcessStatistics(CSocket&                sock, 
                                            SThreadData&            tdata,
@@ -1220,6 +1244,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 18.MGET JSID_01_1
     // 19.MONI
     // 20.DUMP [JSID_01_1]
+    // 21.RECO
 
     const char* s = reqstr.c_str();
 
@@ -1544,6 +1569,11 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         return;
     }
 
+    if (strncmp(s, "RECO", 4) == 0) {
+        req->req_type = eReloadConfig;
+        return;
+    }
+
     if (strncmp(s, "DUMP", 4) == 0) {
         req->req_type = eDumpQueue;
         s += 4;
@@ -1832,51 +1862,9 @@ int CNetScheduleDApp::Run(void)
 
 
         // Scan and mount queues
-
-        list<string> sections;
-        reg.EnumerateSections(&sections);
-
         unsigned min_run_timeout = 3600;
 
-        string tmp;
-        ITERATE(list<string>, it, sections) {
-            const string& sname = *it;
-            NStr::SplitInTwo(sname, "_", tmp, qname);
-            if (NStr::CompareNocase(tmp, "queue") != 0) {
-                continue;
-            }
-            int timeout = 
-                reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
-            int notif_timeout =
-                reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
-            int run_timeout =
-                reg.GetInt(sname, "run_timeout", 
-                                            timeout, 0, IRegistry::eReturn);
-
-            int run_timeout_precision =
-                reg.GetInt(sname, "run_timeout_precision", 
-                                            run_timeout, 0, IRegistry::eReturn);
-            min_run_timeout = 
-                std::min(min_run_timeout, (unsigned)run_timeout_precision);
-
-            string program_name = reg.GetString(sname, "program", kEmptyStr);
-
-            LOG_POST(Info 
-                << "Mounting queue:           " << qname                 << "\n"
-                << "   Timeout:               " << timeout               << "\n"
-                << "   Notification timeout:  " << notif_timeout         << "\n"
-                << "   Run timeout:           " << run_timeout           << "\n"
-                << "   Run timeout precision: " << run_timeout_precision << "\n"
-                << "   Programs:              " << program_name          << "\n"
-            );
-
-            qdb->MountQueue(qname, timeout, 
-                            notif_timeout, 
-                            run_timeout, 
-                            run_timeout_precision,
-                            program_name);
-            
-        }
+        qdb->ReadConfig(reg, &min_run_timeout);
 
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds. ");
@@ -1953,6 +1941,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.39  2005/05/12 13:11:16  kuznets
  * Added netschedule_admin to the list of admin tools
  *

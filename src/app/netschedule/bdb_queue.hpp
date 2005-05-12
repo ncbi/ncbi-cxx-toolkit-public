@@ -266,7 +266,8 @@ private:
     CQueueCollection(const CQueueCollection&);
     CQueueCollection& operator=(const CQueueCollection&);
 private:
-    TQueueMap      m_QMap;
+    TQueueMap              m_QMap;
+    mutable CRWLock        m_Lock;
 };
 
 
@@ -283,6 +284,9 @@ public:
     ~CQueueDataBase();
 
     void Open(const string& path, unsigned cache_ram_size);
+
+    void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
+
     void MountQueue(const string& queue_name,
                     int           timeout,
                     int           notif_timeout,
@@ -501,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.24  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *

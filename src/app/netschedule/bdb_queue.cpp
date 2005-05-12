@@ -34,6 +34,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/version.hpp>
+#include <corelib/ncbireg.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
@@ -130,6 +131,7 @@ CQueueCollection::~CQueueCollection()
 
 void CQueueCollection::Close()
 {
+    CWriteLockGuard guard(m_Lock);
     NON_CONST_ITERATE(TQueueMap, it, m_QMap) {
         SLockedQueue* q = it->second;
         delete q;
@@ -140,6 +142,7 @@ void CQueueCollection::Close()
 
 SLockedQueue& CQueueCollection::GetLockedQueue(const string& name)
 {
+    CReadLockGuard guard(m_Lock);
     TQueueMap::iterator it = m_QMap.find(name);
     if (it == m_QMap.end()) {
         string msg = "Job queue not found: ";
@@ -152,12 +155,14 @@ SLockedQueue& CQueueCollection::GetLockedQueue(const string& name)
 
 bool CQueueCollection::QueueExists(const string& name) const
 {
+    CReadLockGuard guard(m_Lock);
     TQueueMap::const_iterator it = m_QMap.find(name);
     return (it != m_QMap.end());
 }
 
 void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
 {
+    CWriteLockGuard guard(m_Lock);
     m_QMap[name] = queue;
 }
 
@@ -259,6 +264,68 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
     }
 }
 
+void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
+{
+    string qname;
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+
+
+    string tmp;
+    ITERATE(list<string>, it, sections) {
+        const string& sname = *it;
+        NStr::SplitInTwo(sname, "_", tmp, qname);
+        if (NStr::CompareNocase(tmp, "queue") != 0) {
+            continue;
+        }
+
+        int timeout = 
+            reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
+        int notif_timeout =
+            reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
+        int run_timeout =
+            reg.GetInt(sname, "run_timeout", 
+                                        timeout, 0, IRegistry::eReturn);
+
+        int run_timeout_precision =
+            reg.GetInt(sname, "run_timeout_precision", 
+                                        run_timeout, 0, IRegistry::eReturn);
+        *min_run_timeout = 
+            std::min(*min_run_timeout, (unsigned)run_timeout_precision);
+
+        string program_name = reg.GetString(sname, "program", kEmptyStr);
+
+
+
+        bool qexists = m_QueueCollection.QueueExists(qname);
+
+        if (!qexists) {
+            LOG_POST(Info 
+                << "Mounting queue:           " << qname                 << "\n"
+                << "   Timeout:               " << timeout               << "\n"
+                << "   Notification timeout:  " << notif_timeout         << "\n"
+                << "   Run timeout:           " << run_timeout           << "\n"
+                << "   Run timeout precision: " << run_timeout_precision << "\n"
+                << "   Programs:              " << program_name          << "\n"
+            );
+            MountQueue(qname, timeout, 
+                        notif_timeout, 
+                        run_timeout, 
+                        run_timeout_precision,
+                        program_name);
+        } else { // update non-critical queue parameters
+            SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+            queue.program_version_list.Clear();
+            if (!program_name.empty()) {
+                queue.program_version_list.AddClientInfo(program_name);
+            }
+        }
+
+    } // ITERATE
+
+}
+
+
 void CQueueDataBase::MountQueue(const string& queue_name, 
                                 int           timeout,
                                 int           notif_timeout,
@@ -331,23 +398,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
 
     // program version control
     if (!program_name.empty()) {
-        list<string> programs;
-        NStr::Split(program_name, ";,", programs);
-        CQueueClientInfo program_info;
-        ITERATE(list<string>, it, programs) {
-            const string& vstr = *it;
-            try {
-                ParseVersionString(vstr, 
-                    &program_info.client_name, &program_info.version_info);
-                NStr::TruncateSpacesInPlace(program_info.client_name);
-                queue.program_version_list.AddClientInfo(program_info);
-            } 
-            catch (CStringException&) {
-                LOG_POST(Error << "Program string '" << vstr << "'" 
-                               << " cannot be parsed and ignored.");
-            }
-
-        }
+        queue.program_version_list.AddClientInfo(program_name);
     }
 
     LOG_POST(Info << "Queue records = " << recs);
@@ -1946,6 +1997,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.34  2005/05/06 13:07:32  kuznets
  * Fixed bug in cleaning database
  *

@@ -66,14 +66,42 @@ class CQueueClientInfoList
 {
 public:
     CQueueClientInfoList() {}
+
     void AddClientInfo(const CQueueClientInfo& cinfo)
     {
-        m_RegisteredClients.push_back(cinfo);
+        CWriteLockGuard guard(m_Lock);
+        x_AddClientInfo_NoLock(cinfo);
+    }
+
+    void AddClientInfo(const string& program_name)
+    {
+        CWriteLockGuard guard(m_Lock);
+
+        list<string> programs;
+        NStr::Split(program_name, ";,", programs);
+        CQueueClientInfo program_info;
+        ITERATE(list<string>, it, programs) {
+            const string& vstr = *it;
+            try {
+                ParseVersionString(vstr, 
+                    &program_info.client_name, &program_info.version_info);
+                NStr::TruncateSpacesInPlace(program_info.client_name);
+                x_AddClientInfo_NoLock(program_info);
+            }
+            catch (CStringException&) {
+                LOG_POST(Error << "Program string '" << vstr << "'" 
+                               << " cannot be parsed and ignored.");
+            }
+
+        }
+
     }
 
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const
     {
         _ASSERT(IsConfigured());
+
+        CReadLockGuard guard(m_Lock);
 
         ITERATE(vector<CQueueClientInfo>, it, m_RegisteredClients) {
             if (NStr::CompareNocase(cinfo.client_name, it->client_name)==0) {
@@ -89,12 +117,25 @@ public:
 
     bool IsConfigured() const
     {
+        CReadLockGuard guard(m_Lock);
         return !m_RegisteredClients.empty();
     }
 
+    void Clear()
+    {
+        CWriteLockGuard guard(m_Lock);
+        m_RegisteredClients.resize(0);
+    }
+
+private:
+    void x_AddClientInfo_NoLock(const CQueueClientInfo& cinfo)
+    {
+        m_RegisteredClients.push_back(cinfo);
+    }
 
 private:
     vector<CQueueClientInfo>   m_RegisteredClients;
+    mutable CRWLock            m_Lock;
 };
 
 
@@ -103,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.1  2005/04/05 20:51:34  kuznets
  * Initial revision
  *

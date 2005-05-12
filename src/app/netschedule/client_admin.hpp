@@ -56,6 +56,7 @@ public:
     using CNetScheduleClient::Monitor;
     using CNetScheduleClient::DumpQueue;
     using CNetScheduleClient::Logging;
+    using CNetScheduleClient::ReloadServerConfig;
     // using CNetScheduleClient::CheckConnect;
     virtual void CheckConnect(const string& key)
     {
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/12 18:37:33  kuznets
+ * Implemented config reload
+ *
  * Revision 1.2  2005/05/10 22:42:35  ucko
  * Explicitly wrap CheckConnect, as some versions of WorkShop apparently
  * won't otherwise actually change its visibility.
