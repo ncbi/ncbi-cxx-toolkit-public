@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistre.hpp>
 #include <connect/services/grid_worker.hpp>
 #include "grid_control_thread.hpp"
 
@@ -99,35 +100,42 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         } 
         else if( strncmp( request.c_str(), STAT_CMD.c_str(), 
                      STAT_CMD.length() ) == 0 ) {
-            string ans = "OK:";
-            ans += m_WorkerNode.GetJobVersion();
+            CNcbiOstrstream os;
+            os << "OK:";
+            os << m_WorkerNode.GetJobVersion() << WN_BUILD_DATE << endl;
+            os << "Started: " << m_WorkerNode.GetStartTime().AsString() << endl;
             if (m_WorkerNode.GetShutdownLevel() != 
                 CNetScheduleClient::eNoShutdown) {
-                ans += " IS IN A SHUTTING DOWN MODE!!!";
+                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
             }
-            ans += "\n";
-            ans += "Maximum job threads: " + 
-                NStr::UIntToString(m_WorkerNode.GetMaxThreads()) + "\n";
-            ans += "Queue name: " + m_WorkerNode.GetQueueName() + "\n";
-            ans += "Jobs Succeed: " + 
-                NStr::UIntToString(m_WorkerNode.GetJobsSucceedNumber()) + "\n";
-            ans += "Jobs Failed: " + 
-                NStr::UIntToString(m_WorkerNode.GetJobsFailedNumber()) + "\n";
-            ans += "Jobs Returned: " + 
-                NStr::UIntToString(m_WorkerNode.GetJobsReturnedNumber()) + "\n";
-            ans += "Jobs Running: " + 
-                NStr::UIntToString(m_WorkerNode.GetJobsRunningNumber()) + "\n";
+            os << "Maximum job threads: " 
+               << NStr::UIntToString(m_WorkerNode.GetMaxThreads()) << endl
+               << "Queue name: " << m_WorkerNode.GetQueueName() << endl
+               << "Jobs Succeed: " 
+               << NStr::UIntToString(m_WorkerNode.GetJobsSucceedNumber()) << endl
+               << "Jobs Failed: " 
+               << NStr::UIntToString(m_WorkerNode.GetJobsFailedNumber()) << endl
+               << "Jobs Returned: " 
+               << NStr::UIntToString(m_WorkerNode.GetJobsReturnedNumber()) << endl
+               << "Jobs Running: " 
+               << NStr::UIntToString(m_WorkerNode.GetJobsRunningNumber()) << endl;
             vector<CWorkerNodeJobContext::SJobStat> jobs;
             CWorkerNodeJobContext::CollectStatictics(jobs);
             CTime now(CTime::eCurrent);
             ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
                 CTimeSpan ts = now - it->start_time.GetLocalTime();
-                string line = it->job_key + " " + it->job_input;
-                line += " -- running for " + ts.AsString("S") + " seconds.\n";
-                ans += line;
+                os << it->job_key << " " << it->job_input
+                   << " -- running for " << ts.AsString("S") << " seconds." << endl;
             }
+            os << ends;
+            try {
+                socket.Write(os.str(), os.pcount());
+            }  catch (...) {
+                os.freeze(false);
+                throw;
+            }
+            os.freeze(false);
 
-            socket.Write(ans.c_str(), ans.length() + 1 );
         }
         else {
             string ans = "ERR: Unknown command -- " + request;
@@ -147,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/05/12 14:52:05  didenko
+ * Added a worker node build time and start time to the statistic
+ *
  * Revision 6.3  2005/05/11 20:22:43  didenko
  * Added a shutdown message to a statistic
  *

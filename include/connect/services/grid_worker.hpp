@@ -40,6 +40,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/netschedule_client.hpp>
@@ -266,7 +267,7 @@ private:
     CWorkerNodeJobContext*        m_Next;
     CWorkerNodeJobContext*        m_Prev;
     static CMutex                 m_ListMutex;
-    CTime                         m_StartTime;
+    const CTime                         m_StartTime;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -407,6 +408,8 @@ public:
         CMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.GetJobVersion();
     }
+
+    const CTime& GetStartTime() const { return m_StartTime; }
    
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
@@ -430,6 +433,7 @@ private:
     CAtomicCounter               m_JobsFailed;
     CAtomicCounter               m_JobsReturned;
     bool                         m_LogRequested;
+    const CTime                  m_StartTime;
 
 
 
@@ -466,9 +470,15 @@ private:
 
 END_NCBI_SCOPE
 
+#define WN_BUILD_DATE " build " __DATE__ " " __TIME__
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/12 14:52:05  didenko
+ * Added a worker node build time and start time to the statistic
+ *
  * Revision 1.19  2005/05/11 18:57:39  didenko
  * Added worker node statictics
  *

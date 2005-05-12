@@ -280,7 +280,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
       m_MaxProcessedJob(0), m_JobsStarted(0),
-      m_LogRequested(false)
+      m_LogRequested(false), m_StartTime(CTime::eCurrent)
 {
     m_JobsSucceed.Set(0);
     m_JobsFailed.Set(0);
@@ -506,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/12 14:52:05  didenko
+ * Added a worker node build time and start time to the statistic
+ *
  * Revision 1.20  2005/05/11 18:57:39  didenko
  * Added worker node statictics
  *

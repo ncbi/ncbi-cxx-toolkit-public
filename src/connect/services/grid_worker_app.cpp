@@ -33,6 +33,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
@@ -182,7 +183,7 @@ const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const
 
 int CGridWorkerApp::Run(void)
 {
-    LOG_POST("Grid Worker Node \"" << GetJobFactory().GetJobVersion() << "\""); 
+    LOG_POST( GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
     const IRegistry& reg = GetConfig();
 
     unsigned int udp_port =
@@ -273,11 +274,10 @@ int CGridWorkerApp::Run(void)
     // give sometime the thread to run
     SleepMilliSec(500);
     if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
-        CTime now(CTime::eCurrent);
-        LOG_POST(Info << "\n=================== NEW RUN : " << now.AsString() 
+        LOG_POST(Info << "\n=================== NEW RUN : " 
+                 << m_WorkerNode->GetStartTime().AsString()
                  << " ===================\n"
-                 << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
-                 << "\" is started.\n"
+                 << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
                  << "Maximum job threads: " << max_threads << "\n"
                  << "Queue name: " << m_WorkerNode->GetQueueName() );
@@ -310,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/12 14:52:05  didenko
+ * Added a worker node build time and start time to the statistic
+ *
  * Revision 1.21  2005/05/11 18:57:39  didenko
  * Added worker node statictics
  *
