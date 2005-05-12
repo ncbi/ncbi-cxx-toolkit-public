@@ -363,7 +363,7 @@ public:
     ///   How to convert value to string.
     static void IntToString(string& out_str, long value, TIntToStringFlags fmt);
     static void IntToString(string& out_str, long value) {
-        return IntToString(out_str, value, TIntToStringFlags(0));
+        IntToString(out_str, value, TIntToStringFlags(0));
     };
 
 
@@ -412,7 +412,7 @@ public:
     ///   How to convert value to string.
     static void Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt);
     static void Int8ToString(string& out_str, Int8 value) {
-        return Int8ToString(out_str, value, TIntToStringFlags(0));
+        Int8ToString(out_str, value, TIntToStringFlags(0));
     };
 
     /// Convert UInt8 to string.
@@ -2690,6 +2690,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/05/12 19:59:06  vasilche
+ * Fixed void return.
+ *
  * Revision 1.82  2005/05/12 14:33:49  ivanov
  * Made obsolete "sign" methods Int[8]ToString() private -- use versions
  * with the flag parameter.
