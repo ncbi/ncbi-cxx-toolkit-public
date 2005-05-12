@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 CSafeStaticPtr<CMetaRegistry> s_Instance;
 
 
-bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags flags)
+bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
 {
     CFile file(actual_name);
     if ( !file.Exists() ) {
@@ -54,7 +54,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags flags)
     Int8  new_length = file.GetLength();
     CTime new_timestamp;
     file.GetTime(&new_timestamp);
-    if ( ((flags & fAlwaysReload) != fAlwaysReload)
+    if ( ((reload_flags & fAlwaysReload) != fAlwaysReload)
          &&  new_length == length  &&  new_timestamp == timestamp ) {
         _TRACE("Registry file " << actual_name
                << " appears not to have changed since last loaded");
@@ -67,16 +67,27 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags flags)
     }
     if (registry) {
         CRegistryWriteGuard REG_GUARD(*registry);
-        if ( !(flags & fKeepContents) ) {
+        if ( !(reload_flags & fKeepContents) ) {
             TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
                                                          IRWRegistry::eRead);
-            bool was_modified = registry->Modified(rflags);
-            registry->Clear(rflags);
-            if ( !was_modified ) {
-                registry->SetModifiedFlag(false, rflags);
+            if (registry->Empty(rflags)) {
+                registry->Read(ifs, reg_flags);
+            } else {
+                // Go through a temporary so errors (exceptions) won't
+                // cause *registry to be incomplete.
+                CMemoryRegistry tmp_reg;
+                CNcbiStrstream  str;
+                tmp_reg.Read(ifs, reg_flags);
+                tmp_reg.Write(str, reg_flags);
+                str.seekg(0);
+                bool was_modified = registry->Modified(rflags);
+                registry->Clear(rflags);
+                registry->Read(str, reg_flags);
+                if ( !was_modified ) {
+                    registry->SetModifiedFlag(false, rflags);
+                }
             }
         }
-        registry->Read(ifs, reg_flags);
     } else {
         registry.Reset(new CNcbiRegistry(ifs, reg_flags));
     }
@@ -111,7 +122,7 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
     }
     const SEntry& entry = Instance().x_Load(name, style, flags, reg_flags,
                                             reg, name, style, scratch_entry);
-    if (reg  &&  entry.registry  &&  reg != entry.registry) {
+    if (reg  &&  entry.registry  &&  reg != entry.registry.GetPointer()) {
         _ASSERT( !(flags & fPrivate) );
         // Copy the relevant data in
         if (&entry != &scratch_entry) {
@@ -355,6 +366,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/05/12 16:41:54  ucko
+ * When reloading a populated registry, go through a temporary so that
+ * exceptions due to bad data won't make it incomplete.
+ * Tweak to build on WorkShop, and address the warning it reported too.
+ *
  * Revision 1.17  2005/05/12 15:15:32  ucko
  * Fix some (meta)registry buglets and add support for reloading.
  *
