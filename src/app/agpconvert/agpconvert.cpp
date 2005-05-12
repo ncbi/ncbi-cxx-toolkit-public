@@ -26,7 +26,7 @@
  * Authors:  Josh Cherry
  *
  * File Description:
- *   Read an AGP file, build Seq-entry's, and do some validation
+ *   Read an AGP file, build Seq-entry's or Seq-submit's, and do some validation
  *
  */
 
@@ -57,6 +57,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiexec.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -92,7 +93,7 @@ void CAgpconvertApplication::Init(void)
     // Describe the expected command-line arguments
 
     arg_desc->AddKey("template", "template_file",
-                     "A template Seq-entry in ASN.1 text",
+                     "A template Seq-entry or Seq-submit in ASN.1 text",
                      CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fuzz100", "For gaps of length 100, "
                       "put an Int-fuzz = unk in the literal");
@@ -137,8 +138,23 @@ int CAgpconvertApplication::Run(void)
     // Get arguments
     CArgs args = GetArgs();
 
-    CSeq_entry templ;
-    args["template"].AsInputFile() >> MSerial_AsnText >> templ;
+    CSeq_entry ent_templ;
+    CRef<CSeq_submit> submit_templ;  // may not be used
+    try {
+        // a Seq-entry?
+        args["template"].AsInputFile() >> MSerial_AsnText >> ent_templ;
+    } catch (...) {
+        // a Seq-submit?
+        submit_templ.Reset(new CSeq_submit);
+        CNcbiIfstream istr(args["template"].AsString().c_str());
+        istr >> MSerial_AsnText >> *submit_templ;
+        if (!submit_templ->GetData().IsEntrys()
+            || submit_templ->GetData().GetEntrys().size() != 1) {
+            throw runtime_error("Seq-submit template must contain "
+                                "exactly one Seq-entry");
+        }
+        ent_templ.Assign(*submit_templ->GetData().GetEntrys().front());
+    }
 
     // if validating against a file containing
     // sequence components, load it and make
@@ -215,7 +231,7 @@ int CAgpconvertApplication::Run(void)
                 }
             }
             CSeq_entry new_entry;
-            new_entry.Assign(templ);
+            new_entry.Assign(ent_templ);
             new_entry.SetSeq().SetInst().Assign(seq.GetInst());
             new_entry.SetSeq().ResetId();
             ITERATE (list<CRef<CSeq_id> >, an_id, ids) {
@@ -308,13 +324,28 @@ int CAgpconvertApplication::Run(void)
             new_entry.SetSeq().SetDescr().Set().push_back(create_date);
 
             // write the entry in asn text
-            string outfname = id_str + ".ent";
-            CNcbiOfstream ostr(outfname.c_str());
-            ostr << MSerial_AsnText << new_entry;
-            ostr.close();  // testval reads this file
+            string outfname;
+            string testval_type_flag;
+            if (!submit_templ) {
+                // template a Seq-entry, so write a Seq-entry
+                outfname = id_str + ".ent";
+                testval_type_flag = "-e";
+                CNcbiOfstream ostr(outfname.c_str());
+                ostr << MSerial_AsnText << new_entry;
+            } else {
+                // template a Seq-submit, so write a Seq-submit
+                outfname = id_str + ".sqn";
+                testval_type_flag = "-s";
+                CSeq_submit new_submit;
+                new_submit.Assign(*submit_templ);
+                new_submit.SetData().SetEntrys().front().Reset(&new_entry);
+                CNcbiOfstream ostr(outfname.c_str());
+                ostr << MSerial_AsnText << new_submit;
+            }
 
             // verify using testval
-            string cmd = "testval -e -q 2 -i \"" + outfname + "\"";
+            string cmd = "testval " + testval_type_flag
+                + " -q 2 -i \"" + outfname + "\"";
             cout << cmd << endl;
             CExec::System(cmd.c_str());
         }
@@ -347,6 +378,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/12 13:33:46  jcherry
+ * Allow use of a Seq-submit as a template (and produce Seq-submit's)
+ *
  * Revision 1.2  2005/05/11 17:45:53  jcherry
  * Fixed problem with reading of chromsomes file
  *
