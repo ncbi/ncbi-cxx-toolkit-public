@@ -633,13 +633,13 @@ string NStr::IntToString(long value, TIntToStringFlags fmt)
         return Int8ToString(value, fmt);
     } else {
         char buffer[64];
-        string format;
+        const char* format;
         if (fmt & fSign) {
             format = "%+ld";
         } else {
             format = "%ld";
         }
-        ::sprintf(buffer, format.c_str(), value);
+        ::sprintf(buffer, format, value);
         return buffer;
     }
 }
@@ -651,13 +651,13 @@ void NStr::IntToString(string& out_str, long value, TIntToStringFlags fmt)
         Int8ToString(out_str, value, fmt);
     } else {
         char buffer[64];
-        string format;
+        const char* format;
         if (fmt & fSign) {
             format = "%+ld";
         } else {
             format = "%ld";
         }
-        ::sprintf(buffer, format.c_str(), value);
+        ::sprintf(buffer, format, value);
         out_str = buffer;
     }
 }
@@ -1900,6 +1900,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.142  2005/05/12 13:55:00  ucko
+ * Optimize out temporary C++ string objects introduced in a recent
+ * change to IntToString.
+ *
  * Revision 1.141  2005/05/12 12:06:52  ivanov
  * Fixed previous commit
  *
