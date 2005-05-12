@@ -627,80 +627,99 @@ NStr::StringToUInt8_DataSize(const string&  str,
 }
 
 
-string NStr::IntToString(long value, TIntToStringFlags fmt)
+string NStr::IntToString(long svalue, TIntToStringFlags fmt)
 {
-    if (fmt & fCommas) {
-        return Int8ToString(value, fmt);
-    } else {
-        char buffer[64];
-        const char* format;
-        if (fmt & fSign) {
-            format = "%+ld";
-        } else {
-            format = "%ld";
-        }
-        ::sprintf(buffer, format, value);
-        return buffer;
-    }
+    string ret;
+    IntToString(ret, svalue, fmt);
+    return ret;
 }
 
 
-void NStr::IntToString(string& out_str, long value, TIntToStringFlags fmt)
+void NStr::IntToString(string& out_str, long svalue, TIntToStringFlags fmt)
 {
-    if (fmt & fCommas) {
-        Int8ToString(out_str, value, fmt);
-    } else {
-        char buffer[64];
-        const char* format;
-        if (fmt & fSign) {
-            format = "%+ld";
-        } else {
-            format = "%ld";
-        }
-        ::sprintf(buffer, format, value);
-        out_str = buffer;
+    unsigned long value =
+        static_cast<unsigned long>(svalue<0?-svalue:svalue);
+    
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    char  buffer[kBufSize];
+    char* pos = buffer + kBufSize;
+
+    if ( fmt & NStr::fCommas ) {
+        int   cnt = -1;
+        do {
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
     }
+    else {
+        do {
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
+    }
+    
+    if ( svalue < 0 )
+        *--pos = '-';
+    else if (fmt & NStr::fSign)
+        *--pos = '+';
+
+    out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 // OBSOLETED
 string NStr::IntToString(long value, bool sign)
 {
-    char buffer[64];
-    ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
-    return buffer;
+    return IntToString(value, fSign);
 }
 
 
 // OBSOLETED
 void NStr::IntToString(string& out_str, long value, bool sign)
 {
-    char buffer[64];
-    ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
-    out_str = buffer;
+    IntToString(out_str, value, fSign);
 }
 
 
 string NStr::UIntToString(unsigned long value, TIntToStringFlags fmt)
 {
-    if (fmt & fCommas) {
-        return UInt8ToString(value, fmt);
-    } else {
-        char buffer[64];
-        ::sprintf(buffer, "%lu", value);
-        return buffer;
-    }
+    string ret;
+    UIntToString(ret, value, fmt);
+    return ret;
 }
 
 
 void NStr::UIntToString(string& out_str, unsigned long value, TIntToStringFlags fmt)
 {
-    if (fmt & fCommas) {
-        UInt8ToString(out_str, value, fmt);
-    } else {
-        char buffer[64];
-        ::sprintf(buffer, "%lu", value);
-        out_str = buffer;
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    char  buffer[kBufSize];
+    char* pos = buffer + kBufSize;
+
+    if ( fmt & NStr::fCommas ) {
+        int   cnt = -1;
+        do {
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
     }
+    else {
+        do {
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
+    }
+    
+    if (fmt & NStr::fSign)
+        *--pos = '+';
+
+    out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 
@@ -712,79 +731,60 @@ string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
 }
 
 
-void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
+void NStr::Int8ToString(string& out_str, Int8 svalue, TIntToStringFlags fmt)
 {
+    Int8 value = Uint8(svalue<0?-svalue:svalue);
+
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
-    int   cnt = 0;
 
-    if (value == 0) {
-        *--pos = '0';
-    }
-    else {
-        bool is_negative = value < 0;
-        if ( is_negative )
-            value = -value;
-
+    static const Uint4 kChunk = 1000000000;
+    if ( fmt & fCommas ) {
+        int cnt = -1;
         do {
-            if (fmt & fCommas) {
-                if (cnt == 3) {
+            Uint4 chunk = value % kChunk;
+            value /= kChunk;
+            do {
+                if (++cnt == 3) {
                     *--pos = ',';
                     cnt = 0;
                 }
-                cnt++;
-            }
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+                *--pos = char('0' + (chunk % 10));
+                chunk /= 10;
+            } while ( chunk );
         } while ( value );
-
-        if ( is_negative )
-            *--pos = '-';
-        else if (fmt & fSign)
-            *--pos = '+';
     }
-    out_str.resize(0);
-    out_str.append(pos, buffer + kBufSize - pos);
+    else {
+        do {
+            Uint4 chunk = value % kChunk;
+            value /= kChunk;
+            do {
+                *--pos = char('0' + (chunk % 10));
+                chunk /= 10;
+            } while ( chunk );
+        } while ( value );
+    }
+    
+    if ( svalue < 0 )
+        *--pos = '-';
+    else if (fmt & fSign)
+        *--pos = '+';
+
+    out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 
 // OBSOLETED
 string NStr::Int8ToString(Int8 value, bool sign)
 {
-    string ret;
-    NStr::Int8ToString(ret, value, sign);
-    return ret;
+    return Int8ToString(value, fSign);
 }
 
 // OBSOLETED
 void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 {
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
-    char buffer[kBufSize];
-    char* pos = buffer + kBufSize;
-
-    if (value == 0) {
-        *--pos = '0';
-    }
-    else {
-        bool is_negative = value < 0;
-        if ( is_negative )
-            value = -value;
-
-        do {
-            *--pos = char('0' + (value % 10));
-            value /= 10;
-        } while ( value );
-
-        if ( is_negative )
-            *--pos = '-';
-        else if ( sign )
-            *--pos = '+';
-    }
-
-    out_str.resize(0);
-    out_str.append(pos, buffer + kBufSize - pos);
+    Int8ToString(out_str, value, fSign);
 }
 
 
@@ -801,29 +801,38 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
-    int   cnt = 0;
 
-    if ( value == 0 ) {
-        *--pos = '0';
-    }
-    else {
+    static const Uint4 kChunk = 1000000000;
+    if ( fmt & fCommas ) {
+        int cnt = -1;
         do {
-            if (fmt & fCommas) {
-                if (cnt == 3) {
+            Uint4 chunk = value % kChunk;
+            value /= kChunk;
+            do {
+                if (++cnt == 3) {
                     *--pos = ',';
                     cnt = 0;
                 }
-                cnt++;
-            }
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+                *--pos = char('0' + (chunk % 10));
+                chunk /= 10;
+            } while ( chunk );
         } while ( value );
     }
-    if (fmt & fSign) {
-        *--pos = '+';
+    else {
+        do {
+            Uint4 chunk = value % kChunk;
+            value /= kChunk;
+            do {
+                *--pos = char('0' + (chunk % 10));
+                chunk /= 10;
+            } while ( chunk );
+        } while ( value );
     }
-    out_str.resize(0);
-    out_str.append(pos, buffer + kBufSize - pos);
+    
+    if (fmt & fSign)
+        *--pos = '+';
+
+    out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 
@@ -1901,6 +1910,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.144  2005/05/12 17:00:20  vasilche
+ * Use handmade code for *Int*ToString() conversions.
+ * Fixed Int8ToString(kMin_I8) conversion.
+ * UInt*ToString(*, TIntToStringFlags fmt) add '+' if fSign is set.
+ *
  * Revision 1.143  2005/05/12 15:07:13  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
