@@ -69,7 +69,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.4.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.4.2  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -482,7 +482,10 @@ void CNetScheduleServer::Process(SOCK sock)
             if ((req.req_type != eStatusJob) && 
                     queue.IsVersionControl()) {
 
-                if (tdata->auth == "netschedule_control") {
+                // bypass for admin tools
+                if (tdata->auth == "netschedule_control" ||
+                    tdata->auth == "netschedule_admin") 
+                {
                     goto end_version_control;
                 }
                 
@@ -1950,6 +1953,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/05/12 13:11:16  kuznets
+ * Added netschedule_admin to the list of admin tools
+ *
  * Revision 1.38  2005/05/06 13:07:32  kuznets
  * Fixed bug in cleaning database
  *
