@@ -266,8 +266,8 @@ private:
     static CWorkerNodeJobContext* m_Root;
     CWorkerNodeJobContext*        m_Next;
     CWorkerNodeJobContext*        m_Prev;
-    static CMutex                 m_ListMutex;
-    const CTime                         m_StartTime;
+    DECLARE_CLASS_STATIC_MUTEX(m_ListMutex);
+    const CTime                   m_StartTime;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -476,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/12 16:18:49  ucko
+ * Use portable DECLARE_CLASS_STATIC_MUTEX macro.
+ *
  * Revision 1.20  2005/05/12 14:52:05  didenko
  * Added a worker node build time and start time to the statistic
  *
