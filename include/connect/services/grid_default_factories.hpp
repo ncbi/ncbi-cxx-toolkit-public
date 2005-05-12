@@ -50,8 +50,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleStorageFactory_NetCache
 {
 public:
     CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                        bool             cache_input,
-                                        bool             cache_output);
+                                        bool             cache_input = false,
+                                        bool             cache_output = false);
     virtual ~CNetScheduleStorageFactory_NetCache() {}
 
     virtual INetScheduleStorage* CreateInstance(void);
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/12 14:01:04  didenko
+ * Made input/output caching turned off by default
+ *
  * Revision 1.6  2005/05/11 13:29:14  didenko
  * Fixed a linker error on Windows in DLL configuration
  *
