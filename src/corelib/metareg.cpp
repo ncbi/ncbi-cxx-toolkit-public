@@ -67,25 +67,23 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
     }
     if (registry) {
         CRegistryWriteGuard REG_GUARD(*registry);
-        if ( !(reload_flags & fKeepContents) ) {
-            TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
-                                                         IRWRegistry::eRead);
-            if (registry->Empty(rflags)) {
-                registry->Read(ifs, reg_flags);
-            } else {
-                // Go through a temporary so errors (exceptions) won't
-                // cause *registry to be incomplete.
-                CMemoryRegistry tmp_reg;
-                CNcbiStrstream  str;
-                tmp_reg.Read(ifs, reg_flags);
-                tmp_reg.Write(str, reg_flags);
-                str.seekg(0);
-                bool was_modified = registry->Modified(rflags);
-                registry->Clear(rflags);
-                registry->Read(str, reg_flags);
-                if ( !was_modified ) {
-                    registry->SetModifiedFlag(false, rflags);
-                }
+        TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
+                                                     IRWRegistry::eRead);
+        if ((reload_flags & fKeepContents)  ||  registry->Empty(rflags)) {
+            registry->Read(ifs, reg_flags);
+        } else {
+            // Go through a temporary so errors (exceptions) won't
+            // cause *registry to be incomplete.
+            CMemoryRegistry tmp_reg;
+            CNcbiStrstream  str;
+            tmp_reg.Read(ifs, reg_flags);
+            tmp_reg.Write(str, reg_flags);
+            str.seekg(0);
+            bool was_modified = registry->Modified(rflags);
+            registry->Clear(rflags);
+            registry->Read(str, reg_flags);
+            if ( !was_modified ) {
+                registry->SetModifiedFlag(false, rflags);
             }
         }
     } else {
@@ -366,6 +364,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/05/12 17:50:45  ucko
+ * Fix a logic error in the previous revision that broke initial loads.
+ *
  * Revision 1.18  2005/05/12 16:41:54  ucko
  * When reloading a populated registry, go through a temporary so that
  * exceptions due to bad data won't make it incomplete.
