@@ -633,8 +633,12 @@ string NStr::IntToString(long value, TIntToStringFlags fmt)
         return Int8ToString(value, fmt);
     } else {
         char buffer[64];
-        string format = "ld";
-        format += (fmt & fSign) ? "%+" : "%";
+        string format;
+        if (fmt & fSign) {
+            format = "%+ld";
+        } else {
+            format = "%ld";
+        }
         ::sprintf(buffer, format.c_str(), value);
         return buffer;
     }
@@ -647,8 +651,12 @@ void NStr::IntToString(string& out_str, long value, TIntToStringFlags fmt)
         Int8ToString(out_str, value, fmt);
     } else {
         char buffer[64];
-        string format = "ld";
-        format += (fmt & fSign) ? "%+" : "%";
+        string format;
+        if (fmt & fSign) {
+            format = "%+ld";
+        } else {
+            format = "%ld";
+        }
         ::sprintf(buffer, format.c_str(), value);
         out_str = buffer;
     }
@@ -1892,6 +1900,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.141  2005/05/12 12:06:52  ivanov
+ * Fixed previous commit
+ *
  * Revision 1.140  2005/05/12 11:14:04  ivanov
  * Added NStr::*Int*ToString() version with flags parameter.
  *
