@@ -102,8 +102,8 @@ void CMsvcSite::GetComponents(const string& entry,
 string CMsvcSite::ProcessMacros(string raw_data) const
 {
     string data(raw_data), raw_macro, macro, definition;
-    string::size_type start, end;
-    while ((start = data.find("$(")) != string::npos) {
+    string::size_type start, end, done = 0;
+    while ((start = data.find("$(", done)) != string::npos) {
         end = data.find(")", start);
         if (end == string::npos) {
             LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + raw_data);
@@ -113,7 +113,12 @@ string CMsvcSite::ProcessMacros(string raw_data) const
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
             definition = m_Registry.GetString("Configure", macro, "");
-            data = NStr::Replace(data, raw_macro, definition);
+            if (definition.empty()) {
+                // preserve unresolved macros
+                done = end;
+            } else {
+                data = NStr::Replace(data, raw_macro, definition);
+            }
         }
     }
     return data;
@@ -472,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/05/12 18:06:34  gouriano
+ * Preserve unresolved macros
+ *
  * Revision 1.27  2005/02/15 19:04:29  gouriano
  * Added list of standard features
  *
