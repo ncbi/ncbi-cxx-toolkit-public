@@ -37,6 +37,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,7 +51,10 @@ public:
 
     /// General flags
     enum EFlags {
-        fPrivate = 0x1 ///< Do not cache, or support automatic saving.
+        fPrivate         = 0x1, ///< Do not cache, or support automatic saving.
+        fReloadIfChanged = 0x2, ///< Reload if time or size has changed.
+        fAlwaysReload    = 0x6, ///< Reload unconditionally.
+        fKeepContents    = 0x8  ///< Keep existing contents when reloading.
     };
     typedef int TFlags; ///< Binary OR of "EFlags"
 
@@ -69,12 +73,24 @@ public:
 
     typedef IRegistry::TFlags TRegFlags;
 
-    /// m_ActualName is always an absolute path (or empty)
     struct SEntry {
-        string            actual_name;
+        string            actual_name; ///< Either an absolute path or empty.
         TFlags            flags;
         TRegFlags         reg_flags;
         CRef<IRWRegistry> registry;
+        CTime             timestamp; ///< For cache validation
+        Int8              length;    ///< For cache validation
+
+        /// Reload the configuration file.  By default, does nothing if
+        /// the file has the same size and date as before.
+        ///
+        /// Note that this may lose other data stored in the registry!
+        ///
+        /// @param reload_flags
+        ///   Controls how aggressively to reload.
+        /// @return
+        ///   TRUE if a reload actually occurred.
+        bool Reload(TFlags reload_flags = fReloadIfChanged);
     };
 
     static CMetaRegistry& Instance(void);
@@ -105,6 +121,24 @@ public:
                        TRegFlags      reg_flags = 0,
                        IRWRegistry*   reg       = 0);
 
+    /// Reload the configuration file "path".
+    ///
+    /// @param path
+    ///   A path (ideally absolute) to the configuration file to read.
+    /// @param reg
+    ///   The registry to repopulate.
+    /// @param flags
+    ///   Any relevant options from EFlags above.
+    /// @param reg_flags
+    ///   Flags to use when parsing the registry; ignored if the registry
+    ///   was already cached.
+    /// @return
+    ///   TRUE if a reload actually occurred.
+    static bool Reload(const string& path,
+                       IRWRegistry&  reg,
+                       TFlags        flags = 0,
+                       TRegFlags     reg_flags = 0);
+
     /// Search path for unqualified names.
     typedef vector<string> TSearchPath;
     static const TSearchPath& GetSearchPath(void);
@@ -133,9 +167,13 @@ private:
     ~CMetaRegistry();
 
     /// name0 and style0 are the originally requested name and style
-    SEntry x_Load(const string& name,  ENameStyle style,
-                  TFlags flags, TRegFlags reg_flags, IRWRegistry* reg,
-                  const string& name0, ENameStyle style0);
+    const SEntry& x_Load(const string& name,  ENameStyle style,
+                         TFlags flags, TRegFlags reg_flags, IRWRegistry* reg,
+                         const string& name0, ENameStyle style0,
+                         SEntry& scratch_entry);
+
+    bool x_Reload(const string& path, IRWRegistry&  reg, TFlags flags,
+                  TRegFlags reg_flags);
 
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
     TSearchPath&       x_SetSearchPath(void)
@@ -152,7 +190,7 @@ private:
             : requested_name(n), style(s), flags(f), reg_flags(rf) { }
         bool operator <(const SKey& k) const;
     };
-    typedef map<SKey, unsigned int> TIndex;
+    typedef map<SKey, size_t> TIndex;
 
     vector<SEntry> m_Contents;
     TSearchPath    m_SearchPath;
@@ -160,7 +198,8 @@ private:
 
     CMutex         m_Mutex;
 
-    friend class CSafeStaticPtr<CMetaRegistry>;
+    friend class  CSafeStaticPtr<CMetaRegistry>;
+    friend struct SEntry;
 };
 
 
@@ -171,15 +210,13 @@ private:
 
 
 inline
-CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
-                                          CMetaRegistry::ENameStyle style,
-                                          CMetaRegistry::TFlags flags,
-                                          IRegistry::TFlags reg_flags,
-                                          IRWRegistry* reg)
+bool CMetaRegistry::Reload(const string& path,
+                           IRWRegistry&  reg,
+                           TFlags        flags,
+                           TRegFlags     reg_flags)
 {
-    return Instance().x_Load(name, style, flags, reg_flags, reg, name, style);
+    return Instance().x_Reload(path, reg, flags, reg_flags);
 }
-
 
 inline
 const CMetaRegistry::TSearchPath& CMetaRegistry::GetSearchPath(void)
@@ -210,6 +247,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/05/12 15:15:32  ucko
+* Fix some (meta)registry buglets and add support for reloading.
+*
 * Revision 1.12  2005/04/11 17:18:17  ucko
 * Doxygen fix: associate the long comment describing the default search
 * path with GetDefaultSearchPath, not TSearchPath.

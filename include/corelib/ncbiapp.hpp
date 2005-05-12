@@ -43,7 +43,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbireg.hpp>
+#include <corelib/metareg.hpp>
 #include <corelib/version.hpp>
 #include <memory>
 
@@ -237,6 +237,26 @@ public:
     /// Get the application's cached configuration parameters.
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
+
+    /// Get the full path to the configuration file (if any) we ended
+    /// up using.
+    const string& GetConfigPath(void) const;
+
+    /// Reload the configuration file.  By default, does nothing if
+    /// the file has the same size and date as before.
+    ///
+    /// Note that this may lose other data stored in the registry!
+    ///
+    /// @param flags
+    ///   Controls how aggressively to reload.
+    /// @param reg_flags
+    ///   Flags to use when parsing the registry; ignored if the registry
+    ///   was already cached (as it should normally have been).
+    /// @return
+    ///   TRUE if a reload actually occurred.
+    bool ReloadConfig(CMetaRegistry::TFlags flags
+                      = CMetaRegistry::fReloadIfChanged,
+                      IRegistry::TFlags reg_flags = 0);
 
     /// Flush the in-memory diagnostic stream (for "eDS_ToMemory" case only).
     ///
@@ -469,6 +489,7 @@ private:
     string                     m_ExePath;    ///< Program executable path
     string                     m_RealExePath; ///< Symlink-free executable path
     string                     m_LogFileName; ///< Log file name
+    string                     m_ConfigPath;  ///< Path to .ini file used
 };
 
 
@@ -506,6 +527,18 @@ inline CNcbiRegistry& CNcbiApplication::GetConfig(void)
     return *m_Config;
 }
 
+inline const string& CNcbiApplication::GetConfigPath(void) const
+{
+    return m_ConfigPath;
+}
+
+inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags,
+                                    IRegistry::TFlags reg_flags)
+{
+    return CMetaRegistry::Reload(GetConfigPath(), GetConfig(), flags,
+                                 reg_flags);
+}
+
 inline const string& CNcbiApplication::GetProgramDisplayName(void) const
 {
     return m_ProgramDisplayName;
@@ -536,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/05/12 15:15:32  ucko
+ * Fix some (meta)registry buglets and add support for reloading.
+ *
  * Revision 1.52  2005/05/04 14:20:05  kapustin
  * Make GetVersion() const
  *

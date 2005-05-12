@@ -32,11 +32,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/metareg.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config_value.hpp>
 
@@ -655,6 +652,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
             reg.Read(str);
         }
     }
+    m_ConfigPath = entry.actual_name;
     return true;
 }
 
@@ -1260,6 +1258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2005/05/12 15:15:32  ucko
+ * Fix some (meta)registry buglets and add support for reloading.
+ *
  * Revision 1.106  2005/05/04 14:20:22  kapustin
  * Make GetVersion() const
  *

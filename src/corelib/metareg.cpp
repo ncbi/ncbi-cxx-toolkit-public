@@ -43,6 +43,50 @@ BEGIN_NCBI_SCOPE
 CSafeStaticPtr<CMetaRegistry> s_Instance;
 
 
+bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags flags)
+{
+    CFile file(actual_name);
+    if ( !file.Exists() ) {
+        _TRACE("No such registry file " << actual_name);
+        return false;
+    }
+    CMutexGuard GUARD(s_Instance->m_Mutex);
+    Int8  new_length = file.GetLength();
+    CTime new_timestamp;
+    file.GetTime(&new_timestamp);
+    if ( ((flags & fAlwaysReload) != fAlwaysReload)
+         &&  new_length == length  &&  new_timestamp == timestamp ) {
+        _TRACE("Registry file " << actual_name
+               << " appears not to have changed since last loaded");
+        return false;
+    }
+    CNcbiIfstream ifs(actual_name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if ( !ifs.good() ) {
+        _TRACE("Unable to (re)open registry file " << actual_name);
+        return false;
+    }
+    if (registry) {
+        CRegistryWriteGuard REG_GUARD(*registry);
+        if ( !(flags & fKeepContents) ) {
+            TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
+                                                         IRWRegistry::eRead);
+            bool was_modified = registry->Modified(rflags);
+            registry->Clear(rflags);
+            if ( !was_modified ) {
+                registry->SetModifiedFlag(false, rflags);
+            }
+        }
+        registry->Read(ifs, reg_flags);
+    } else {
+        registry.Reset(new CNcbiRegistry(ifs, reg_flags));
+    }
+
+    timestamp = new_timestamp;
+    length    = new_length;
+    return true;
+}
+
+
 CMetaRegistry& CMetaRegistry::Instance(void)
 {
     return *s_Instance;
@@ -55,11 +99,51 @@ CMetaRegistry::~CMetaRegistry()
 }
 
 
-CMetaRegistry::SEntry
+CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
+                                          CMetaRegistry::ENameStyle style,
+                                          CMetaRegistry::TFlags flags,
+                                          IRegistry::TFlags reg_flags,
+                                          IRWRegistry* reg)
+{
+    SEntry scratch_entry;
+    if ( reg  &&  !reg->Empty() ) { // shouldn't share
+        flags |= fPrivate;
+    }
+    const SEntry& entry = Instance().x_Load(name, style, flags, reg_flags,
+                                            reg, name, style, scratch_entry);
+    if (reg  &&  entry.registry  &&  reg != entry.registry) {
+        _ASSERT( !(flags & fPrivate) );
+        // Copy the relevant data in
+        if (&entry != &scratch_entry) {
+            scratch_entry = entry;
+        }
+        TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
+                                                     IRWRegistry::eRead);
+        CNcbiStrstream str;
+        entry.registry->Write(str, rflags);
+        str.seekg(0);
+        CRegistryWriteGuard REG_GUARD(*reg);
+        if ( !(flags & fKeepContents) ) {
+            bool was_modified = reg->Modified(rflags);
+            reg->Clear(rflags);
+            if ( !was_modified ) {
+                reg->SetModifiedFlag(false, rflags);
+            }
+        }
+        reg->Read(str, reg_flags);
+        scratch_entry.registry.Reset(reg);
+        return scratch_entry;
+    }
+    return entry;
+}
+
+
+const CMetaRegistry::SEntry&
 CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                       CMetaRegistry::TFlags flags,
                       IRegistry::TFlags reg_flags, IRWRegistry* reg,
-                      const string& name0, CMetaRegistry::ENameStyle style0)
+                      const string& name0, CMetaRegistry::ENameStyle style0,
+                      CMetaRegistry::SEntry& scratch_entry)
 {
     _TRACE("CMetaRegistry::Load: looking for " << name);
 
@@ -74,15 +158,18 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         if (iit != m_Index.end()) {
             _TRACE("found in cache");
             _ASSERT(iit->second < m_Contents.size());
-            return m_Contents[iit->second];
+            SEntry& result = m_Contents[iit->second];
+            result.Reload(flags);
+            return result;
         }
 
-        ITERATE (vector<SEntry>, it, m_Contents) {
+        NON_CONST_ITERATE (vector<SEntry>, it, m_Contents) {
             if (it->flags != flags  ||  it->reg_flags != reg_flags)
                 continue;
 
             if (style == eName_AsIs  &&  it->actual_name == name) {
                 _TRACE("found in cache");
+                it->Reload(flags);
                 return *it;
             }
         }
@@ -92,8 +179,9 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     CDirEntry::SplitPath(name, &dir, 0, 0);
     if ( dir.empty() ) {
         ITERATE (TSearchPath, it, m_SearchPath) {
-            SEntry result = x_Load(CDirEntry::MakePath(*it, name), style,
-                                   flags, reg_flags, reg, name0, style0);
+            const SEntry& result = x_Load(CDirEntry::MakePath(*it, name),
+                                          style, flags, reg_flags, reg,
+                                          name0, style0, scratch_entry);
             if ( result.registry ) {
                 return result;
             }
@@ -101,45 +189,35 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     } else {
         switch (style) {
         case eName_AsIs: {
-            CNcbiIfstream in(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
-            if ( !in.good() ) {
-                _TRACE("CMetaRegistry::Load() -- cannot open registry file: "
-                       << name);
-                break;
-            }
-
-            _TRACE("CMetaRegistry::Load() -- reading registry file: " << name);
-            SEntry result;
-            result.flags     = flags;
-            result.reg_flags = reg_flags;
-            if ( reg ) {
-                if ( !reg->Empty() ) { // shouldn't share
-                    result.flags |= fPrivate;
-                }
-                result.registry = reg;
-                reg->Read(in, reg_flags);
-            } else {
-                result.registry.Reset(new CNcbiRegistry(in, reg_flags));
-            }
-
+            string abs_name;
             if ( CDirEntry::IsAbsolutePath(name) ) {
-                result.actual_name = name;
+                abs_name = name;
             } else {
-                result.actual_name = CDirEntry::ConcatPath(CDir::GetCwd(),
-                                                           name);
+                abs_name = CDirEntry::ConcatPath(CDir::GetCwd(), name);
             }
-            if ( !(flags & fPrivate) ) {
-                m_Contents.push_back(result);
+            scratch_entry.actual_name = CDirEntry::NormalizePath(abs_name);
+            scratch_entry.flags       = flags;
+            scratch_entry.reg_flags   = reg_flags;
+            scratch_entry.registry.Reset(reg);
+            if ( !scratch_entry.Reload(flags | fAlwaysReload
+                                       | fKeepContents) ) {
+                scratch_entry.registry.Reset();
+                return scratch_entry;
+            } else if (flags & fPrivate) {
+                return scratch_entry;
+            } else {
+                m_Contents.push_back(scratch_entry);
                 m_Index[SKey(name0, style0, flags, reg_flags)]
-                    = (unsigned int)m_Contents.size() - 1;
+                    = m_Contents.size() - 1;
+                return m_Contents.back();
             }
-            return result;
         }
         case eName_Ini: {
             string name2(name);
             for (;;) {
-                SEntry result = x_Load(name2 + ".ini", eName_AsIs, flags,
-                                       reg_flags, reg, name0, style0);
+                const SEntry& result = x_Load(name2 + ".ini", eName_AsIs,
+                                              flags, reg_flags, reg, name0,
+                                              style0, scratch_entry);
                 if (result.registry) {
                     return result;
                 }
@@ -157,17 +235,37 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             string base, ext;
             CDirEntry::SplitPath(name, 0, &base, &ext);
             return x_Load(CDirEntry::MakePath(dir, '.' + base, ext) + "rc",
-                          eName_AsIs, flags, reg_flags, reg, name0, style0);
+                          eName_AsIs, flags, reg_flags, reg, name0, style0,
+                          scratch_entry);
         }
         }  // switch (style)
     }
 
     // not found
-    SEntry result;
-    result.flags     = flags;
-    result.reg_flags = reg_flags;
-    result.registry.Reset();
-    return result;
+    scratch_entry.flags     = flags;
+    scratch_entry.reg_flags = reg_flags;
+    scratch_entry.registry.Reset();
+    return scratch_entry;
+}
+
+
+bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
+                             TFlags flags, TRegFlags reg_flags)
+{
+    SEntry* entryp = 0;
+    NON_CONST_ITERATE (vector<SEntry>, it, m_Contents) {
+        if (it->registry == &reg  ||  it->actual_name == path) {
+            entryp = &*it;
+            break;
+        }
+    }
+    if (entryp) {
+        return entryp->Reload(flags);
+    } else {
+        SEntry entry = Load(path, eName_AsIs, flags, reg_flags, &reg);
+        _ASSERT(entry.registry.IsNull()  ||  entry.registry == &reg);
+        return entry.registry;
+    }
 }
 
 
@@ -257,6 +355,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/05/12 15:15:32  ucko
+ * Fix some (meta)registry buglets and add support for reloading.
+ *
  * Revision 1.16  2005/04/25 20:21:55  ivanov
  * Get rid of Workshop compilation warnings
  *

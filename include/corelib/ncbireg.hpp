@@ -90,6 +90,7 @@ public:
         fNotJustCore    = 0x800, ///< Include auxiliary subregistries
         fIgnoreErrors   = 0x10,  ///< Continue Read()ing after parse errors
         fInternalSpaces = 0x20,  ///< Allow internal whitespace in names
+        fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
@@ -301,6 +302,17 @@ private:
 class NCBI_XNCBI_EXPORT IRWRegistry : public IRegistry
 {
 public:
+    /// Categories of modifying operations
+    enum EOperation {
+        eClear,
+        eRead,
+        eSet
+    };
+
+    /// Indicate which portions of the registry the given operation
+    /// would affect.
+    static TFlags AssessImpact(TFlags flags, EOperation op);
+
     /// Reset the registry content.
     void Clear(TFlags flags = fAllLayers);
 
@@ -781,6 +793,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/05/12 15:15:32  ucko
+ * Fix some (meta)registry buglets and add support for reloading.
+ *
  * Revision 1.38  2005/03/21 19:46:24  ucko
  * Add support for two new flags: fIgnoreErrors, fInternalSpaces.
  *

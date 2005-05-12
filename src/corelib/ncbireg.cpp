@@ -461,7 +461,9 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 {
     if (flags & ~allowed)
         _TRACE(func << "(): extra flags passed: "
-               << setiosflags(IOS_BASE::hex) << flags);
+               << resetiosflags(IOS_BASE::basefield)
+               << setiosflags(IOS_BASE::hex | IOS_BASE::showbase)
+               << flags);
     flags &= allowed;
 }
 
@@ -469,6 +471,22 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 //////////////////////////////////////////////////////////////////////
 //
 // IRWRegistry
+
+IRegistry::TFlags IRWRegistry::AssessImpact(TFlags flags, EOperation op)
+{
+    // mask out irrelevant flags
+    flags &= fLayerFlags | fTPFlags;
+    switch (op) {
+    case eClear:
+        return flags;
+    case eRead:
+    case eSet:
+        return ((flags & fTransient) ? fTransient : fPersistent) | fJustCore;
+    default:
+        _TROUBLE;
+        return flags;
+    }
+}
 
 void IRWRegistry::Clear(TFlags flags)
 {
@@ -496,8 +514,9 @@ void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 {
     // Whether to consider this read to be (unconditionally) non-modifying
-    EFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
-    bool   non_modifying = Empty(layer)  &&  !Modified(layer);
+    TFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
+    TFlags impact        = layer | fJustCore;
+    bool   non_modifying = Empty(impact)  &&  !Modified(impact);
     bool   ignore_errors = (flags & fIgnoreErrors) > 0;
 
     // Adjust flags for Set()
@@ -641,7 +660,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     }
 
     if ( non_modifying ) {
-        SetModifiedFlag(false, layer);
+        SetModifiedFlag(false, impact);
     }
 }
 
@@ -1465,6 +1484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/05/12 15:15:32  ucko
+ * Fix some (meta)registry buglets and add support for reloading.
+ *
  * Revision 1.53  2005/05/12 15:06:36  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
