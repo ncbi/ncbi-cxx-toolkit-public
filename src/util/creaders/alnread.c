@@ -1694,7 +1694,7 @@ static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
         if (lip->data != NULL) {
             cp_from = lip->data;
             while (*cp_from != 0) {
-                if (! isspace ((char)*cp_from)) {
+                if (! isspace ((unsigned char)*cp_from)) {
                     *cp_to = *cp_from;
                     cp_to ++;
                 }
@@ -1729,9 +1729,9 @@ static void s_LineInfoReaderAdvancePastSpace (TLineInfoReaderPtr lirp)
     if (lirp->curr_line_pos == NULL) {
         return;
     }
-    while ( isspace ((char) *lirp->curr_line_pos)
+    while ( isspace ((unsigned char) *lirp->curr_line_pos)
            ||  *lirp->curr_line_pos == 0) {
-        while ( isspace ((char)*lirp->curr_line_pos)) {
+        while ( isspace ((unsigned char)*lirp->curr_line_pos)) {
             lirp->curr_line_pos ++;
         }
         if (*lirp->curr_line_pos == 0) {
@@ -2109,12 +2109,12 @@ s_GetFASTAExpectedNumbers
         return;
     }
     cp = str;
-    while (! isdigit ((char)*cp)  &&  *cp != 0) {
+    while (! isdigit ((unsigned char)*cp)  &&  *cp != 0) {
         cp++;
     }
 
     cpend = cp;
-    while (isdigit ((char)*cpend)  &&  *cpend != 0) {
+    while (isdigit ((unsigned char)*cpend)  &&  *cpend != 0) {
         cpend++;
     }
     if (cp == cpend) {
@@ -2126,12 +2126,12 @@ s_GetFASTAExpectedNumbers
     *cpend = replace;
 
     cp = cpend;
-    while (! isdigit ((char)*cp)  &&  *cp != 0) {
+    while (! isdigit ((unsigned char)*cp)  &&  *cp != 0) {
         cp++;
     }
 
     cpend = cp;
-    while (isdigit ((char)*cpend)  &&  *cpend != 0) {
+    while (isdigit ((unsigned char)*cpend)  &&  *cpend != 0) {
         cpend++;
     }
     if (cp == cpend) {
@@ -2167,33 +2167,33 @@ static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
     }
     cp = str;
     while (*cp != 0) {
-        if (! isdigit ((char)*cp)  &&  ! isspace ((char)*cp)) {
+        if (! isdigit ((unsigned char)*cp)  &&  ! isspace ((unsigned char)*cp)) {
             return eFalse;
         }
         if (! found_first_number) {
-            if (! isdigit ((char)*cp)) {
+            if (! isdigit ((unsigned char)*cp)) {
                 return eFalse;
             }
             found_first_number = eTrue;
         } else if (! found_dividing_space) {
-            if ( isspace ((char) *cp)) {
+            if ( isspace ((unsigned char) *cp)) {
                 found_dividing_space = eTrue;
-            } else if ( ! isdigit ((char)*cp)) {
+            } else if ( ! isdigit ((unsigned char)*cp)) {
                 return eFalse;
             }
         } else if (! found_second_number) {
-            if ( isdigit ((char)*cp)) {
+            if ( isdigit ((unsigned char)*cp)) {
                 found_second_number = eTrue;
-            } else if (! isspace ((char) *cp)) {
+            } else if (! isspace ((unsigned char) *cp)) {
                 return eFalse;
             }
         } else if (! found_second_number_end) {
-            if ( isspace ((char) *cp)) {
+            if ( isspace ((unsigned char) *cp)) {
                 found_second_number_end = eTrue;
-            } else if (! isdigit ((char)*cp)) {
+            } else if (! isdigit ((unsigned char)*cp)) {
                 return eFalse;
             }
-        } else if (! isspace ((char) *cp)) {
+        } else if (! isspace ((unsigned char) *cp)) {
             return eFalse;
         }
         cp++;
@@ -2231,22 +2231,22 @@ s_GetOneNexusSizeComment
         return eFalse;
     }
     cpstart += strlen (valname);
-    while (*cpstart != 0  &&  isspace ((char)*cpstart)) {
+    while (*cpstart != 0  &&  isspace ((unsigned char)*cpstart)) {
         cpstart++;
     }
     if (*cpstart != '=') {
         return eFalse;
     }
     cpstart ++;
-    while (*cpstart != 0  &&  isspace ((char)*cpstart)) {
+    while (*cpstart != 0  &&  isspace ((unsigned char)*cpstart)) {
         cpstart++;
     }
 
-    if (! isdigit ((char)*cpstart)) {
+    if (! isdigit ((unsigned char)*cpstart)) {
         return eFalse;
     }
     cpend = cpstart + 1;
-    while ( *cpend != 0  &&  isdigit ((char)*cpend)) {
+    while ( *cpend != 0  &&  isdigit ((unsigned char)*cpend)) {
         cpend ++;
     }
     maxlen = cpend - cpstart;
@@ -2316,14 +2316,14 @@ static char GetNexusTypechar (char * str, char * val_name)
         return 0;
     }
     cp += strlen (val_name);
-    while ( isspace ((char)*cp)) {
+    while ( isspace ((unsigned char)*cp)) {
         cp ++;
     }
     if (*cp != '=') {
         return 0;
     }
     cp++;
-    while ( isspace ((char)*cp) || *cp == '\'') {
+    while ( isspace ((unsigned char)*cp) || *cp == '\'') {
         cp ++;
     }
     return *cp;
@@ -2619,7 +2619,7 @@ static EBool s_IsOrganismComment (TCommentLocPtr clp)
         return eFalse;
     }
     cp_end --;
-    while (cp_end > cp  &&  isspace ((char)*cp_end)) {
+    while (cp_end > cp  &&  isspace ((unsigned char)*cp_end)) {
       cp_end --;
     }
     cp_end ++;
@@ -4069,7 +4069,7 @@ s_CreateAnchorPatternForMarkedIDs
         } else if (this_pattern != NULL) {
             /* This section gets rid of base pair number comments */
             cp = lip->data;
-            while ( isspace ((char)*cp)  ||  isdigit ((char)*cp)) {
+            while ( isspace ((unsigned char)*cp)  ||  isdigit ((unsigned char)*cp)) {
                 cp++;
             }
             s_AddLengthRepeat (this_pattern, strlen (cp));
@@ -5024,7 +5024,7 @@ static EBool s_ContainsDigits (char *data)
 
     if (data == NULL) return eFalse;
     for (cp = data; *cp != 0; cp++) {
-        if (isdigit ((char)(*cp))) {
+        if (isdigit ((unsigned char)(*cp))) {
             return eTrue;
         }
     }
@@ -5853,8 +5853,8 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.20  2005/05/12 17:33:54  bollin
- * changed cast for arguments for ctype.h classification macros
+ * Revision 1.21  2005/05/12 17:41:01  bollin
+ * changed cast for ctype classification macros
  *
  * Revision 1.19  2005/05/06 14:24:01  bollin
  * when adding a definition line that follows an organism comment, make sure
