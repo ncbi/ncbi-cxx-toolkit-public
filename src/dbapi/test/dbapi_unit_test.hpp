@@ -103,6 +103,12 @@ public:
     {
         return m_DatabaseParameters;
     }
+
+    string GetDatabaseName(void) const
+    {
+        return m_DatabaseName;
+    }
+    
     
 private:
     EServerType GetServerType(void) const;
@@ -114,6 +120,7 @@ private:
     string m_ServerName;
     string m_UserName;
     string m_UserPassword;
+    string m_DatabaseName;
     TDatabaseParameters m_DatabaseParameters;
 };
 
@@ -146,6 +153,7 @@ public:
         IStatement* stmt = NULL);
 
     void Test_StatementParameters(void);
+    void Test_UserErrorHandler(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -172,9 +180,6 @@ public:
     void Transactional_Behavior(void);
 
 private:
-    void SetDatabaseParameters(const CTestArguments& args);
-
-private:
     const CTestArguments m_args;
     CDriverManager& m_DM;
     IDataSource* m_DS;
@@ -197,6 +202,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/05/12 15:33:34  ssikorsk
+ * initial version of Test_UserErrorHandler
+ *
  * Revision 1.13  2005/05/05 20:28:34  ucko
  * Remove redundant CTestArguments:: when declaring SetDatabaseParameters.
  *

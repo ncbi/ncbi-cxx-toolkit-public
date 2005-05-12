@@ -107,7 +107,12 @@ CDBAPIUnitTest::TestInit(void)
     m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
     m_Conn.reset( m_DS->CreateConnection() );
-    m_Conn->Connect( m_args.GetUserName(), m_args.GetUserPassword(), m_args.GetServerName(), "DBAPI_Sample" );
+    m_Conn->Connect( 
+        m_args.GetUserName(), 
+        m_args.GetUserPassword(), 
+        m_args.GetServerName(), 
+        m_args.GetDatabaseName() 
+        );
 
     auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
@@ -122,10 +127,126 @@ CDBAPIUnitTest::TestInit(void)
     stmt->ExecuteUpdate(sql);
 }
 
+class CTestErrHandler : public CDB_UserHandler
+{
+public:
+    // c-tor
+    CTestErrHandler();
+    // d-tor
+    virtual ~CTestErrHandler();
+
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+
+    // Get current global "last-resort" error handler.
+    // If not set, then the default will be "CDB_UserHandler_Default".
+    // This handler is guaranteed to be valid up to the program termination,
+    // and it will call the user-defined handler last set by SetDefault().
+    // NOTE:  never pass it to SetDefault, like:  "SetDefault(&GetDefault())"!
+    static CDB_UserHandler& GetDefault(void);
+
+    // Alternate the default global "last-resort" error handler.
+    // Passing NULL will mean to ignore all errors that reach it.
+    // Return previously set (or default-default if not set yet) handler.
+    // The returned handler should be delete'd by the caller; the last set
+    // handler will be delete'd automagically on the program termination.
+    static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
+
+public:
+    EDB_Severity getMaxSeverity() {
+        return m_max_severity;
+    }
+
+private:
+    EDB_Severity m_max_severity;
+};
+
+CTestErrHandler::CTestErrHandler()
+{
+    m_max_severity = eDB_Info;
+}
+
+CTestErrHandler::~CTestErrHandler()
+{
+   ;
+}
+
+bool CTestErrHandler::HandleIt(CDB_Exception* ex)
+{
+    ERR_POST (Info << "CDB_Info: " << ex->Severity() );
+
+    if (ex && ex->Severity() > m_max_severity)
+    {
+        ERR_POST (Error << "CDB_Exception: " << ex->SeverityString() );
+        m_max_severity= ex->Severity();
+    }
+
+    // return false to find the next handler in the stack
+    // there always has one default stack
+
+    return false;
+}
+
+void
+CDBAPIUnitTest::Test_UserErrorHandler(void)
+{
+    I_DriverContext* drv_context = m_DS->GetDriverContext();
+    CDB_UserHandler* err_handler = new CTestErrHandler();
+
+    // Set up an user-defined error handler ..
+    drv_context->PushCntxMsgHandler (err_handler);
+    // drv_context->PushDefConnMsgHandler (err_handler);
+
+    try {
+        Test_ES_01();
+    }
+    catch( const CDB_Exception& ) {
+        // Ignore it
+        int a = 1;
+    }
+}
+
+void
+CDBAPIUnitTest::Test_Procedure(void)
+{
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+    auto_stmt->Execute( "exec ol_ends_upd_very_slow" );
+    while( auto_stmt->HasMoreResults() ) { 
+        if( auto_stmt->HasRows() ) { 
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            
+            switch ( rs->GetResultType() ) {
+            case eDB_RowResult:
+                while( rs->Next() ) { 
+                    // int col1 = rs->GetVariant(1).GetInt4(); 
+                } 
+                break;
+            case eDB_ParamResult:
+                while( rs->Next() ) { 
+                    // int col1 = rs->GetVariant(1).GetInt4(); 
+                } 
+                break;
+            case eDB_StatusResult:
+                while( rs->Next() ) { 
+                    int status = rs->GetVariant(1).GetInt4(); 
+                    status = status;
+                } 
+                break;
+            case eDB_ComputeResult:
+            case eDB_CursorResult:
+                break;
+            }
+        } 
+    }
+}
+
 void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
+    // Try to catch a base class ...
     BOOST_CHECK_THROW( Test_ES_01(), CDB_Exception );
 }
 
@@ -1304,32 +1425,30 @@ CDBAPIUnitTest::Test_Variant(void)
     // Check operator==
     {
         // Check values of same type ...
-        if (false) {
-            BOOST_CHECK( CVariant( true ) == CVariant( true ) );
-            BOOST_CHECK( CVariant( false ) == CVariant( false ) );
-            BOOST_CHECK( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
-            BOOST_CHECK( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
-            BOOST_CHECK( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
-            BOOST_CHECK( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
-            BOOST_CHECK( CVariant( float(1) ) == CVariant( float(1) ) );
-            BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
-            BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
-            BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
-            BOOST_CHECK( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
-            BOOST_CHECK( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
-        }
+        BOOST_CHECK( CVariant( true ) == CVariant( true ) );
+        BOOST_CHECK( CVariant( false ) == CVariant( false ) );
+        BOOST_CHECK( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
+        BOOST_CHECK( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
+        BOOST_CHECK( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
+        BOOST_CHECK( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
+        BOOST_CHECK( CVariant( float(1) ) == CVariant( float(1) ) );
+        BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
+        BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
+        BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
+        BOOST_CHECK( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
+        BOOST_CHECK( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
     }
 
     // Check operator<
     {
         // Check values of same type ...
         {
+            //  Type not supported
             // BOOST_CHECK( CVariant( false ) < CVariant( true ) );
             BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
             BOOST_CHECK( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
             BOOST_CHECK( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
-            // !!! Does not work ...
-            // BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
+            BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
             BOOST_CHECK( CVariant( float(-1) ) < CVariant( float(1) ) );
             BOOST_CHECK( CVariant( double(-1) ) < CVariant( double(1) ) );
             BOOST_CHECK( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
@@ -1405,11 +1524,6 @@ CDBAPIUnitTest::Test_Bind(void)
 
 void
 CDBAPIUnitTest::Test_Execute(void)
-{
-}
-
-void
-CDBAPIUnitTest::Test_Procedure(void)
 {
 }
 
@@ -1490,9 +1604,19 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
+    boost::unit_test::test_case* except_safety_tc = 
+        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
+    except_safety_tc->depends_on(tc_init);
+    add(except_safety_tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler, DBAPIInstance);
     tc->depends_on(tc_init);
+    tc->depends_on(except_safety_tc);
     add(tc);
+
+//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     add(tc);
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -1538,6 +1662,10 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
                             CArgDescriptions::eString, "allowed");
+    arg_desc->AddDefaultKey("D", "database",
+                            "Name of the database to connect",
+                            CArgDescriptions::eString,
+                            "DBAPI_Sample");
 
     auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(arguments));
     const CArgs& args = *args_ptr;
@@ -1548,6 +1676,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     m_ServerName    = args["S"].AsString();
     m_UserName      = args["U"].AsString();
     m_UserPassword  = args["P"].AsString();
+    m_DatabaseName  = args["D"].AsString();
 
     SetDatabaseParameters();
 }
@@ -1586,8 +1715,8 @@ test_suite*
 init_unit_test_suite( int argc, char * argv[] )
 {
     // Configure UTF ...
-    boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
-    boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
+    // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
+    // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
 
     std::auto_ptr<test_suite> test(BOOST_TEST_SUITE( "DBAPI Unit Test." ));
 
@@ -1600,6 +1729,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/05/12 15:33:34  ssikorsk
+ * initial version of Test_UserErrorHandler
+ *
  * Revision 1.18  2005/05/05 20:29:02  ucko
  * Explicitly scope test_case under boost::unit_test::.
  *
