@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/05/12 15:08:21  lavr
+* Use explicit (unsigned char) conversion in <ctype.h>'s macros
+*
 * Revision 1.47  2005/04/26 14:11:04  vasilche
 * Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
 *
@@ -964,7 +967,8 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
     while ( pos > m_Buffer && linePos > 0 ) {
         --pos;
         --linePos;
-        if ( linePos <= lineLength && (isspace(*pos) || *pos == '\'') ) {
+        if ( linePos <= lineLength && (isspace((unsigned char) (*pos)) ||
+                                       *pos == '\'') ) {
             goodPlace = true;
             break;
         }

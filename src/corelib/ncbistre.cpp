@@ -235,7 +235,7 @@ string Printable(char c)
     case '\v':  s = "\\v";   break;
     default:
         {
-            if ( isprint(c) ) {
+            if ( isprint((unsigned char) c) ) {
                 s = c;
             } else {
                 s = "\\x";
@@ -260,7 +260,7 @@ void WritePrintable(CNcbiOstream& out, char c)
     case '\v':  out.write("\\v",  2);  break;
     default:
         {
-            if ( isprint(c) ) {
+            if ( isprint((unsigned char) c) ) {
                 out.put(c);
             } else {
                 out.write("\\x", 2);
@@ -351,7 +351,8 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
         end = (int)end < is.width() ? end : is.width(); 
 
     SIZE_TYPE i = 0;
-    for (ch = is.rdbuf()->sbumpc();  ch != EOF  &&  !isspace(ch);
+    for (ch = is.rdbuf()->sbumpc();
+         ch != EOF  &&  !isspace((unsigned char) ch);
          ch = is.rdbuf()->sbumpc()) {
         str.append(1, (char)ch);
         i++;
@@ -373,6 +374,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/12 15:07:22  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.32  2004/06/07 14:40:13  ucko
  * s_NcbiGetline: always drop the string's old contents, even if the
  * stream has run out.

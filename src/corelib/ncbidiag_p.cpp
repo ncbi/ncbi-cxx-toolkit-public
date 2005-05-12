@@ -446,12 +446,12 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 m_Str = symbol;
                 break;
             default :
-                if ( isspace(symbol) )
+                if ( isspace((unsigned char) symbol) )
                 {
                     state = eSpace;
                     break;
                 }
-                if ( !isalpha(symbol)  &&  symbol != '_' )
+                if ( !isalpha((unsigned char) symbol)  &&  symbol != '_' )
                     throw CDiagSyntaxParser::TErrorInfo("wrong symbol", 
                                                         m_Pos);
                 m_Str = symbol;
@@ -459,21 +459,21 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             }
             break;
         case eSpace :
-            if ( !isspace(symbol) ) {
+            if ( !isspace((unsigned char) symbol) ) {
                 in.putback( symbol );
                 --m_Pos;
                 return eDone;
             }
             break;
         case eExpectColon :
-            if( isspace(symbol) )
+            if( isspace((unsigned char) symbol) )
                 break;
             if( symbol == ':' )
                 return eDoubleColon;
             throw CDiagSyntaxParser::TErrorInfo
                 ( "wrong symbol, expected :", m_Pos );
         case eExpectClosePar :
-            if( isspace( symbol ) )
+            if( isspace((unsigned char) symbol) )
                 break;
             if( symbol == ')' )
                 return ePars;
@@ -483,12 +483,13 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             if (symbol == ']') {
                 return eBrackets;
             }
-            if( isspace( symbol ) )
+            if( isspace((unsigned char) symbol) )
                 break;
             m_Str += symbol;
             break;
         case eInsideId :
-            if(isalpha(symbol)  ||  isdigit(symbol)  ||  symbol == '_') {
+            if(isalpha((unsigned char) symbol)  ||
+               isdigit((unsigned char) symbol)  ||  symbol == '_') {
                 m_Str += symbol;
                 break;
             }
@@ -496,7 +497,7 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             m_Pos--;
             return eId;
         case eInsidePath :
-            if( isspace(symbol) )
+            if( isspace((unsigned char) symbol) )
                 return ePath;
             m_Str += symbol;
             break;
@@ -822,6 +823,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2005/05/12 15:06:26  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.11  2005/04/26 19:37:49  ssikorsk
  * Code cleanup
  *

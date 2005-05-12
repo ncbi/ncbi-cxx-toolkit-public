@@ -802,7 +802,7 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 {
     for (string::const_iterator it = m_Synopsis.begin();
          it != m_Synopsis.end();  ++it) {
-        if (*it != '_'  &&  !isalnum(*it)) {
+        if (*it != '_'  &&  !isalnum((unsigned char)(*it))) {
             NCBI_THROW(CArgException,eSynopsis,
                 "Argument synopsis must be alphanumeric: "+ m_Synopsis);
         }
@@ -1862,13 +1862,13 @@ bool CArgDescriptions::VerifyName(const string& name, bool extended)
     string::const_iterator it = name.begin();
     if (extended  &&  *it == '#') {
         for (++it;  it != name.end();  ++it) {
-            if ( !isdigit(*it) ) {
+            if ( !isdigit((unsigned char)(*it)) ) {
                 return false;
             }
         }
     } else {
         for ( ;  it != name.end();  ++it) {
-            if (!isalnum(*it)  &&  *it != '_')
+            if (!isalnum((unsigned char)(*it))  &&  *it != '_')
                 return false;
         }
     }
@@ -2425,6 +2425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/05/12 15:06:06  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.58  2005/03/10 17:59:55  vakatov
  * Improved and extended diagnostics.
  * Prohibit positional arguments in the CGI application

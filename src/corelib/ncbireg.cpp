@@ -52,7 +52,7 @@ typedef CRegistryWriteGuard TWriteGuard;
 // Valid symbols for a section/entry name
 inline bool s_IsNameSectionSymbol(char ch, IRegistry::TFlags flags)
 {
-    return (isalnum(ch)
+    return (isalnum((unsigned char) ch)
             ||  ch == '_'  ||  ch == '-' ||  ch == '.'  ||  ch == '/'
             ||  ((flags & IRegistry::fInternalSpaces)  &&  ch == ' '));
 }
@@ -513,7 +513,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
             SIZE_TYPE len = str.length();
             SIZE_TYPE beg = 0;
 
-            while (beg < len  &&  isspace(str[beg])) {
+            while (beg < len  &&  isspace((unsigned char) str[beg])) {
                 ++beg;
             }
             if (beg == len) {
@@ -1465,6 +1465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/05/12 15:06:36  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.52  2005/04/28 14:03:47  ivanov
  * Replace internal REV_ITERATE with REVERSE_ITERATE macro from ncbimisc.hpp
  *

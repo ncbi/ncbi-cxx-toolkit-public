@@ -267,11 +267,11 @@ void CTime::x_Init(const string& str, const string& fmt)
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
         // Skip space symbols in format string
-        if ( isspace(*fff) ) {
+        if ( isspace((unsigned char)(*fff)) ) {
             continue;
         }
         // Skip space symbols in time string
-        while ( isspace(*sss) )
+        while ( isspace((unsigned char)(*sss)) )
             sss++;
 
         // Non-format symbols
@@ -338,7 +338,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
             }
-            while ( isspace(*sss) ) {
+            while ( isspace((unsigned char)(*sss)) ) {
                 sss++;
             }
             int sign = (*sss == '+') ? 1 : ((*sss == '-') ? -1 : 0);
@@ -353,8 +353,9 @@ void CTime::x_Init(const string& str, const string& fmt)
             char value_str[3];
             char* s = value_str;
             for (size_t len = 2;
-                 len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
-                 *s++ = *sss++;
+                 len  &&  *sss  &&  isdigit((unsigned char)(*sss));
+                 len--) {
+                *s++ = *sss++;
             }
             *s = '\0';
             try {
@@ -367,8 +368,8 @@ void CTime::x_Init(const string& str, const string& fmt)
                 if ( *sss != '\0' ) {
                     s = value_str;
                     for (size_t len = 2;
-                        len != 0  &&  *sss != '\0'  &&  isdigit(*sss);
-                        len--) {
+                         len  &&  *sss  &&  isdigit((unsigned char)(*sss));
+                         len--) {
                         *s++ = *sss++;
                     }
                     *s = '\0';
@@ -406,7 +407,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             case 'l': len = 3; break;
             case 'r': len = 6; break;
         }
-        for ( ; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+        for ( ; len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
             *s++ = *sss++;
         }
         *s = '\0';
@@ -469,7 +470,7 @@ void CTime::x_Init(const string& str, const string& fmt)
         NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid day of week");
     }
 
-    while ( isspace(*sss) )
+    while ( isspace((unsigned char)(*sss)) )
         sss++;
     if (*fff != '\0'  ||  *sss != '\0') {
         NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
@@ -1563,7 +1564,7 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
         char value_str[21];
         char* s = value_str;
         for (size_t len = 20;
-             len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+             len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
             *s++ = *sss++;
         }
         *s = '\0';
@@ -2086,6 +2087,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/05/12 15:07:33  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.62  2005/04/25 20:21:55  ivanov
  * Get rid of Workshop compilation warnings
  *

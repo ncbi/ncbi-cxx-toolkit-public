@@ -67,7 +67,7 @@ const string& CNcbiEmptyString::FirstGet(void) {
 bool NStr::IsBlank(const string& str)
 {
     ITERATE (string, it, str) {
-        if (!isspace(*it)) {
+        if (!isspace((unsigned char)(*it))) {
             return false;
         }
     }
@@ -299,7 +299,7 @@ string& NStr::ToUpper(string& str)
 
 int NStr::StringToNumeric(const string& str)
 {
-    if (str.empty()  ||  !isdigit(*str.begin())) {
+    if (str.empty()  ||  !isdigit((unsigned char)(*str.begin()))) {
         return -1;
     }
     errno = 0;
@@ -436,15 +436,15 @@ NStr::StringToDouble(const string&  str,
 // Check that symbol 'ch' is good symbol for number with radix 'base'.
 bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
 {
-    if (!isalnum(ch)) {
+    if (!isalnum((unsigned char) ch)) {
         return false;
     }
     // Corresponding numeric value of *endptr
     int delta;
-    if (isdigit(ch)) {
+    if (isdigit((unsigned char) ch)) {
         delta = ch - '0';
     } else {
-        ch = tolower(ch);
+        ch = tolower((unsigned char) ch);
         delta = ch - 'a' + 10;
     }
     if (value) {
@@ -988,10 +988,10 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 {
     string    pat(pattern, 0, 1);
     SIZE_TYPE l = pattern.size();
-    if (isupper(pat[0])) {
-        pat += (char)tolower(pat[0]);
-    } else if (islower(pat[0])) {
-        pat += (char)toupper(pat[0]);
+    if (isupper((unsigned char) pat[0])) {
+        pat += (char) tolower((unsigned char) pat[0]);
+    } else if (islower((unsigned char) pat[0])) {
+        pat += (char) toupper((unsigned char) pat[0]);
     }
     if (where == eFirst) {
         SIZE_TYPE pos = str.find_first_of(pat, start);
@@ -1023,7 +1023,7 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     SIZE_TYPE beg = 0;
     if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
         _ASSERT(beg < length);
-        while ( isspace(str[beg]) ) {
+        while ( isspace((unsigned char) str[beg]) ) {
             if ( ++beg == length ) {
                 return kEmptyStr;
             }
@@ -1034,8 +1034,8 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
         _ASSERT(end > beg);
         do {
             --end;
-        } while ( isspace(str[end]) );
-        _ASSERT(end >= beg && !isspace(str[end]));
+        } while ( isspace((unsigned char) str[end]) );
+        _ASSERT(end >= beg && !isspace((unsigned char) str[end]));
         ++end;
     }
     _ASSERT(beg < end);
@@ -1059,7 +1059,7 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
         // It's better to use str.data()[] to check string characters
         // to avoid implicit modification of the string by non-const operator[].
         _ASSERT(beg < length);
-        while ( isspace(str.data()[beg]) ) {
+        while ( isspace((unsigned char) str.data()[beg]) ) {
             if ( ++beg == length ) {
                 str.erase();
                 return;
@@ -1074,8 +1074,8 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
         _ASSERT(end > beg);
         do {
             --end;
-        } while ( isspace(str.data()[end]) );
-        _ASSERT(end >= beg && !isspace(str.data()[end]));
+        } while ( isspace((unsigned char) str.data()[end]) );
+        _ASSERT(end >= beg && !isspace((unsigned char) str.data()[end]));
         ++end;
     }
     _ASSERT(beg < end);
@@ -1300,14 +1300,14 @@ string NStr::PrintableString(const string&      str,
 {
     static const char s_Hex[] = "0123456789ABCDEF";
     ITERATE ( string, it, str ) {
-        if ( !isprint(*it) || *it == '"' || *it == '\\' ) {
+        if ( !isprint((unsigned char)(*it)) || *it == '"' || *it == '\\' ) {
             // bad character - convert via CNcbiOstrstream
             CNcbiOstrstream out;
             // write first good characters in one chunk
             out.write(str.data(), it-str.begin());
             // convert all other characters one by one
             do {
-                if ( isprint(*it) ) {
+                if ( isprint((unsigned char)(*it)) ) {
                     // escape '"' and '\\' anyway
                     if ( *it == '"' || *it == '\\' )
                         out.put('\\');
@@ -1375,7 +1375,7 @@ string NStr::ParseEscapes(const string& str)
         {
             pos = pos2 + 1;
             while (pos2 <= pos  &&  pos2 + 1 < str.size()
-                   &&  isxdigit(str[pos2 + 1])) {
+                   &&  isxdigit((unsigned char) str[pos2 + 1])) {
                 ++pos2;
             }
             if (pos2 >= pos) {
@@ -1545,7 +1545,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = eNewline;
                 break;
             } else if (isspace(c)) {
-                if ( !do_flat  &&  pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                if ( !do_flat  &&  pos2 > 0  &&
+                     isspace((unsigned char) str[pos2 - 1])) {
                     continue; // take the first space of a group
                 }
                 score = eSpace;
@@ -1559,7 +1560,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             } else if (c == ','  &&  score_pos < len - 1  &&  column < width) {
                 score = eComma;
                 ++score_pos;
-            } else if (do_flat ? c == '-' : ispunct(c)) {
+            } else if (do_flat ? c == '-' : ispunct((unsigned char) c)) {
                 // For flat files, only whitespace, hyphens and commas
                 // are special.
                 if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
@@ -1900,6 +1901,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.143  2005/05/12 15:07:13  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.142  2005/05/12 13:55:00  ucko
  * Optimize out temporary C++ string objects introduced in a recent
  * change to IntToString.

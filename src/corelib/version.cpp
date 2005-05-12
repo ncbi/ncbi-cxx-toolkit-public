@@ -63,19 +63,19 @@ static
 void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
 {
     int major, minor, patch = 0;
-    if (!isdigit(*str)) {
+    if (!isdigit((unsigned char)(*str))) {
         NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
     }
     major = atoi(str);
     if (major < 0) {
         NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
     }
-    for (; *str && isdigit(*str); ++str) {}
+    for (; *str && isdigit((unsigned char)(*str)); ++str) {}
     if (*str != '.') {
         NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
     }
     ++str;
-    if (!isdigit(*str)) {
+    if (!isdigit((unsigned char)(*str))) {
         NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
     }
 
@@ -83,7 +83,7 @@ void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
     if (minor < 0) {
         NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
     }
-    for (; *str && isdigit(*str); ++str) {}
+    for (; *str && isdigit((unsigned char)(*str)); ++str) {}
 
     if (*str != 0) {
         if (*str != '.') {
@@ -303,12 +303,12 @@ void ParseVersionString(const string&  vstr,
                 // find the first space-digit and assume it's version
                 const char* ch = vstr_str;
                 for (; *ch; ++ch) {
-                    if (isdigit(*ch)) {
+                    if (isdigit((unsigned char)(*ch))) {
                         if (ch == vstr_str) {
                             // check if it's version
                             const char* ch2 = ch + 1;
                             for (;*ch2; ++ch2) {
-                                if (!isdigit(*ch2)) {
+                                if (!isdigit((unsigned char)(*ch2))) {
                                     break;
                                 }
                             } // for
@@ -319,7 +319,7 @@ void ParseVersionString(const string&  vstr,
                                 continue;
                             }
                         } else {
-                            if (isspace(*(ch-1))) {
+                            if (isspace((unsigned char) ch[-1])) {
                                 pos = ch - vstr_str;
                                 break;
                             }
@@ -336,7 +336,7 @@ void ParseVersionString(const string&  vstr,
         int pname_end = (int)(pos - 1);
         for (; pname_end >= 0; --pname_end) {
             char ch = vstr[pname_end];
-            if (!isspace(ch)) 
+            if (!isspace((unsigned char) ch)) 
                 break;
         } // for
         if (pname_end <= 0) {
@@ -349,7 +349,7 @@ void ParseVersionString(const string&  vstr,
             char ch = vstr[pos];
             if (ch == '.') 
                 continue;
-            if (!isspace(ch)) 
+            if (!isspace((unsigned char) ch)) 
                 break;            
         } // for
 
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/12 15:07:41  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.16  2005/05/06 12:42:10  kuznets
  * ParseVersionString added support of 1.2.3 (program) format
  *

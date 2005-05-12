@@ -213,7 +213,7 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
         // roll it back to last non-space character...
         while (ptr > line) {
             --ptr;
-            if (!isspace(*ptr)) break;
+            if (!isspace((unsigned char)(*ptr))) break;
         }
         if (*ptr == '{') {  // "{" symbol says it's most likely ASN text
             return eTextASN;
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/12 15:08:21  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.17  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -59,7 +59,7 @@ unsigned CNetSchedule_GetJobId(const string&  key_str)
     unsigned job_id;
     const char* ch = key_str.c_str();
 
-    if (isdigit(*ch)) {
+    if (isdigit((unsigned char)(*ch))) {
         job_id = (unsigned) atoi(ch);
         if (job_id) {
             return job_id;
@@ -493,20 +493,20 @@ CNetScheduleClient::GetStatus(const string& job_key,
     status = (EJobStatus) st;
 
     if ((status == eDone || status == eFailed)) {
-        for ( ;*str && isdigit(*str); ++str) {
+        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
         }
 
-        for ( ; *str && isspace(*str); ++str) {
+        for ( ; *str && isspace((unsigned char)(*str)); ++str) {
         }
 
         *ret_code = atoi(str);
 
-        for ( ;*str && isdigit(*str); ++str) {
+        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
         }
 
         output->erase();
 
-        for ( ; *str && isspace(*str); ++str) {
+        for ( ; *str && isspace((unsigned char)(*str)); ++str) {
         }
 
         if (*str && *str == '"') {
@@ -521,7 +521,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
             if (!*str)
                 return status;
 
-            for (++str; *str && isspace(*str); ++str) {
+            for (++str; *str && isspace((unsigned char)(*str)); ++str) {
             }
             
             if (!*str)
@@ -544,7 +544,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
             if (!*str)
                 return status;
 
-            for (++str; *str && isspace(*str); ++str) {
+            for (++str; *str && isspace((unsigned char)(*str)); ++str) {
             }
             
             if (!*str)
@@ -765,14 +765,14 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     job_key->erase();
 
     const char* str = response.c_str();
-    while (*str && isspace(*str))
+    while (*str && isspace((unsigned char)(*str)))
         ++str;
 
-    for(;*str && !isspace(*str); ++str) {
+    for(;*str && !isspace((unsigned char)(*str)); ++str) {
         job_key->push_back(*str);
     }
 
-    while (*str && isspace(*str))
+    while (*str && isspace((unsigned char)(*str)))
         ++str;
 
     if (*str == '"')
@@ -1186,6 +1186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/12 15:11:31  lavr
+ * Use explicit (unsigned char) conversion in <ctype.h>'s macros
+ *
  * Revision 1.28  2005/05/05 16:06:33  kuznets
  * DumpQueue() added job_key as an optional parameter
  *
