@@ -201,12 +201,18 @@ typedef long long intptr_t;
 #undef INT8_TYPE
 
 
+#endif  /* CORELIB___NCBITYPE__H */
+
+
 /* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/13 18:23:30  ivanov
+ * Do not use C++ comments in the .h files
+ *
  * Revision 1.18  2005/05/13 16:55:16  ivanov
  * Removed redundand macro NCBI_CONST_DOUBLE. Replaced C++ comments.
  *
@@ -273,5 +279,3 @@ typedef long long intptr_t;
  *
  * ==========================================================================
  */
-
-#endif /* NCBITYPE__H */

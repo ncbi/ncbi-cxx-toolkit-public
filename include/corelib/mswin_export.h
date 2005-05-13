@@ -28,13 +28,19 @@
  *
  * Author:  Mike DiCuccio
  *
+ *
  */
 
-/// @file mswin_export.h
-///   Defines to provide correct exporting from DLLs in Windows.
-///   These are necessary to compile DLLs with Visual C++ - exports must be
-///   explicitly labeled as such.
-
+/**
+ * @file mswin_export.h
+ *
+ * Defines to provide correct exporting from DLLs in Windows.
+ *
+ * Defines to provide correct exporting from DLLs in Windows.
+ * These are necessary to compile DLLs with Visual C++ - exports must be
+ * explicitly labeled as such.
+ *
+ */
 
 /** @addtogroup WinDLL
  *
@@ -49,20 +55,17 @@
 #endif
 
 
-/*
- * Dumping ground for Windows-specific stuff
+/* Dumping ground for Windows-specific stuff
  */
 #pragma warning (disable : 4786 4251 4275)
 
 
-/*
- * -------------------------------------------------
+/* -------------------------------------------------
  * DLL clusters
  */
 
 
-/*
- * Definitions for NCBI_CORE.DLL
+/* Definitions for NCBI_CORE.DLL
  */
 #ifdef NCBI_CORE_EXPORTS
 #  define NCBI_XNCBI_EXPORTS
@@ -72,8 +75,7 @@
 #endif
 
 
-/*
- * Definitions for NCBI_PUB.DLL
+/* Definitions for NCBI_PUB.DLL
  */
 #ifdef NCBI_PUB_EXPORTS
 #  define NCBI_BIBLIO_EXPORTS
@@ -83,8 +85,8 @@
 #  define NCBI_PUBMED_EXPORTS
 #endif
 
-/*
- * Definitions for NCBI_SEQ.DLL
+
+/* Definitions for NCBI_SEQ.DLL
  */
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLAST_EXPORTS
@@ -103,8 +105,7 @@
 #endif
 
 
-/*
- * Definitions for NCBI_SEQEXT.DLL
+/* Definitions for NCBI_SEQEXT.DLL
  */
 #ifdef NCBI_SEQEXT_EXPORTS
 #  define NCBI_ID1_EXPORTS
@@ -122,8 +123,7 @@
 #endif
 
 
-/*
- * Definitions for NCBI_MISC.DLL
+/* Definitions for NCBI_MISC.DLL
  */
 #ifdef NCBI_MISC_EXPORTS
 #  define NCBI_ACCESS_EXPORTS
@@ -144,8 +144,7 @@
 #endif
 
 
-/*
- * Definitions for NCBI_MMDB.DLL
+/* Definitions for NCBI_MMDB.DLL
  */
 #ifdef NCBI_MMDB_EXPORTS
 #  define NCBI_CDD_EXPORTS
@@ -156,8 +155,8 @@
 #  define NCBI_NCBIMIME_EXPORTS
 #endif
 
-/*
- * Definitions for NCBI_ALGO.DLL
+
+/* Definitions for NCBI_ALGO.DLL
  */
 #ifdef NCBI_XALGO_EXPORTS
 #  define NCBI_XALGOALIGN_EXPORTS
@@ -168,8 +167,8 @@
 #  define NCBI_XALGOWINMASK_EXPORTS
 #endif
 
-/*
- * Definitions for NCBI_WEB.DLL
+
+/* Definitions for NCBI_WEB.DLL
  */
 #ifdef NCBI_WEB_EXPORTS
 #  define NCBI_XHTML_EXPORTS
@@ -177,22 +176,22 @@
 #  define NCBI_XCGI_REDIRECT_EXPORTS
 #endif
 
-/*
- * Definitions for NCBI_ALGO_MS.DLL
+
+/* Definitions for NCBI_ALGO_MS.DLL
  */
 #ifdef NCBI_ALGOMS_EXPORTS
 #  define NCBI_OMSSA_EXPORTS
 #  define NCBI_XOMSSA_EXPORTS
 #endif
 
+
 /* ------------------------------------------------- */
-/*
- * Individual Library Definitions
+
+/* Individual Library Definitions
  * Please keep alphabetized!
  */
 
-/*
- * Export specifier for library access
+/* Export specifier for library access
  */
 #ifdef NCBI_ACCESS_EXPORTS
 #  define NCBI_ACCESS_EXPORT __declspec(dllexport)
@@ -200,8 +199,7 @@
 #  define NCBI_ACCESS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library bdb
+/* Export specifier for library bdb
  */
 #ifdef NCBI_BDB_EXPORTS
 #  define NCBI_BDB_EXPORT __declspec(dllexport)
@@ -209,8 +207,7 @@
 #  define NCBI_BDB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library bdb
+/* Export specifier for library bdb
  */
 #ifdef NCBI_BDB_CACHE_EXPORTS
 #  define NCBI_BDB_CACHE_EXPORT __declspec(dllexport)
@@ -218,8 +215,7 @@
 #  define NCBI_BDB_CACHE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library biblo
+/* Export specifier for library biblo
  */
 #ifdef NCBI_BIBLIO_EXPORTS
 #  define NCBI_BIBLIO_EXPORT __declspec(dllexport)
@@ -227,8 +223,7 @@
 #  define NCBI_BIBLIO_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library biotree
+/* Export specifier for library biotree
  */
 #ifdef NCBI_BIOTREE_EXPORTS
 #  define NCBI_BIOTREE_EXPORT __declspec(dllexport)
@@ -236,8 +231,7 @@
 #  define NCBI_BIOTREE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library blastdb
+/* Export specifier for library blastdb
  */
 #ifdef NCBI_BLASTDB_EXPORTS
 #  define NCBI_BLASTDB_EXPORT __declspec(dllexport)
@@ -245,8 +239,7 @@
 #  define NCBI_BLASTDB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library blast
+/* Export specifier for library blast
  */
 #ifdef NCBI_BLAST_EXPORTS
 #  define NCBI_BLAST_EXPORT __declspec(dllexport)
@@ -254,8 +247,7 @@
 #  define NCBI_BLAST_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library cdd
+/* Export specifier for library cdd
  */
 #ifdef NCBI_CDD_EXPORTS
 #  define NCBI_CDD_EXPORT __declspec(dllexport)
@@ -263,8 +255,7 @@
 #  define NCBI_CDD_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library cn3d
+/* Export specifier for library cn3d
  */
 #ifdef NCBI_CN3D_EXPORTS
 #  define NCBI_CN3D_EXPORT __declspec(dllexport)
@@ -272,8 +263,7 @@
 #  define NCBI_CN3D_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver
+/* Export specifier for library dbapi_driver
  */
 #ifdef NCBI_DBAPIDRIVER_EXPORTS
 #  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllexport)
@@ -281,8 +271,7 @@
 #  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_ctlib
+/* Export specifier for library dbapi_driver_ctlib
  */
 #ifdef NCBI_DBAPIDRIVER_CTLIB_EXPORTS
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT __declspec(dllexport)
@@ -290,8 +279,7 @@
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_dblib
+/* Export specifier for library dbapi_driver_dblib
  */
 #ifdef NCBI_DBAPIDRIVER_DBLIB_EXPORTS
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT __declspec(dllexport)
@@ -299,8 +287,7 @@
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_msdblib
+/* Export specifier for library dbapi_driver_msdblib
  */
 #ifdef NCBI_DBAPIDRIVER_MSDBLIB_EXPORTS
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT __declspec(dllexport)
@@ -308,8 +295,7 @@
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_mysql
+/* Export specifier for library dbapi_driver_mysql
  */
 #ifdef NCBI_DBAPIDRIVER_MYSQL_EXPORTS
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT __declspec(dllexport)
@@ -317,8 +303,7 @@
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_odbc
+/* Export specifier for library dbapi_driver_odbc
  */
 #ifdef NCBI_DBAPIDRIVER_ODBC_EXPORTS
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT __declspec(dllexport)
@@ -326,8 +311,7 @@
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_driver_ftds
+/* Export specifier for library dbapi_driver_ftds
  */
 #ifdef NCBI_DBAPIDRIVER_FTDS_EXPORTS
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT __declspec(dllexport)
@@ -335,8 +319,7 @@
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi
+/* Export specifier for library dbapi
  */
 #ifdef NCBI_DBAPI_EXPORTS
 #  define NCBI_DBAPI_EXPORT __declspec(dllexport)
@@ -344,8 +327,7 @@
 #  define NCBI_DBAPI_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi
+/* Export specifier for library dbapi
  */
 #ifdef NCBI_DBAPI_CACHE_EXPORTS
 #  define NCBI_DBAPI_CACHE_EXPORT __declspec(dllexport)
@@ -353,8 +335,7 @@
 #  define NCBI_DBAPI_CACHE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library dbapi_util_blobstore
+/* Export specifier for library dbapi_util_blobstore
  */
 #ifdef NCBI_DBAPIUTIL_BLOBSTORE_EXPORTS
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT __declspec(dllexport)
@@ -362,8 +343,7 @@
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library docsum
+/* Export specifier for library docsum
  */
 #ifdef NCBI_DOCSUM_EXPORTS
 #  define NCBI_DOCSUM_EXPORT __declspec(dllexport)
@@ -371,8 +351,7 @@
 #  define NCBI_DOCSUM_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library entrez2
+/* Export specifier for library entrez2
  */
 #ifdef NCBI_ENTREZ2_EXPORTS
 #  define NCBI_ENTREZ2_EXPORT __declspec(dllexport)
@@ -380,8 +359,7 @@
 #  define NCBI_ENTREZ2_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library entrezgene
+/* Export specifier for library entrezgene
  */
 #ifdef NCBI_ENTREZGENE_EXPORTS
 #  define NCBI_ENTREZGENE_EXPORT __declspec(dllexport)
@@ -389,8 +367,7 @@
 #  define NCBI_ENTREZGENE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library featdef
+/* Export specifier for library featdef
  */
 #ifdef NCBI_FEATDEF_EXPORTS
 #  define NCBI_FEATDEF_EXPORT __declspec(dllexport)
@@ -398,8 +375,7 @@
 #  define NCBI_FEATDEF_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library flat
+/* Export specifier for library flat
  */
 #ifdef NCBI_FLAT_EXPORTS
 #  define NCBI_FLAT_EXPORT __declspec(dllexport)
@@ -407,8 +383,7 @@
 #  define NCBI_FLAT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library format
+/* Export specifier for library format
  */
 #ifdef NCBI_FORMAT_EXPORTS
 #  define NCBI_FORMAT_EXPORT __declspec(dllexport)
@@ -416,8 +391,7 @@
 #  define NCBI_FORMAT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library gbseq
+/* Export specifier for library gbseq
  */
 #ifdef NCBI_GBSEQ_EXPORTS
 #  define NCBI_GBSEQ_EXPORT __declspec(dllexport)
@@ -425,8 +399,7 @@
 #  define NCBI_GBSEQ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library general
+/* Export specifier for library general
  */
 #ifdef NCBI_GENERAL_EXPORTS
 #  define NCBI_GENERAL_EXPORT __declspec(dllexport)
@@ -434,8 +407,7 @@
 #  define NCBI_GENERAL_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library id1
+/* Export specifier for library id1
  */
 #ifdef NCBI_ID1_EXPORTS
 #  define NCBI_ID1_EXPORT __declspec(dllexport)
@@ -443,8 +415,7 @@
 #  define NCBI_ID1_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library id2
+/* Export specifier for library id2
  */
 #ifdef NCBI_ID2_EXPORTS
 #  define NCBI_ID2_EXPORT __declspec(dllexport)
@@ -452,8 +423,7 @@
 #  define NCBI_ID2_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library id2_split
+/* Export specifier for library id2_split
  */
 #ifdef NCBI_ID2_SPLIT_EXPORTS
 #  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllexport)
@@ -461,8 +431,7 @@
 #  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library insdseq
+/* Export specifier for library insdseq
  */
 #ifdef NCBI_INSDSEQ_EXPORTS
 #  define NCBI_INSDSEQ_EXPORT __declspec(dllexport)
@@ -470,8 +439,7 @@
 #  define NCBI_INSDSEQ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library lds
+/* Export specifier for library lds
  */
 #ifdef NCBI_LDS_EXPORTS
 #  define NCBI_LDS_EXPORT __declspec(dllexport)
@@ -479,8 +447,7 @@
 #  define NCBI_LDS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library medlars
+/* Export specifier for library medlars
  */
 #ifdef NCBI_MEDLARS_EXPORTS
 #  define NCBI_MEDLARS_EXPORT __declspec(dllexport)
@@ -488,8 +455,7 @@
 #  define NCBI_MEDLARS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library medline
+/* Export specifier for library medline
  */
 #ifdef NCBI_MEDLINE_EXPORTS
 #  define NCBI_MEDLINE_EXPORT __declspec(dllexport)
@@ -497,8 +463,7 @@
 #  define NCBI_MEDLINE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library mim
+/* Export specifier for library mim
  */
 #ifdef NCBI_MIM_EXPORTS
 #  define NCBI_MIM_EXPORT __declspec(dllexport)
@@ -506,8 +471,7 @@
 #  define NCBI_MIM_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library mla
+/* Export specifier for library mla
  */
 #ifdef NCBI_MLA_EXPORTS
 #  define NCBI_MLA_EXPORT __declspec(dllexport)
@@ -515,8 +479,7 @@
 #  define NCBI_MLA_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library mmdb1
+/* Export specifier for library mmdb1
  */
 #ifdef NCBI_MMDB1_EXPORTS
 #  define NCBI_MMDB1_EXPORT __declspec(dllexport)
@@ -524,8 +487,7 @@
 #  define NCBI_MMDB1_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library mmdb2
+/* Export specifier for library mmdb2
  */
 #ifdef NCBI_MMDB2_EXPORTS
 #  define NCBI_MMDB2_EXPORT __declspec(dllexport)
@@ -533,8 +495,7 @@
 #  define NCBI_MMDB2_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library mmdb3
+/* Export specifier for library mmdb3
  */
 #ifdef NCBI_MMDB3_EXPORTS
 #  define NCBI_MMDB3_EXPORT __declspec(dllexport)
@@ -542,8 +503,7 @@
 #  define NCBI_MMDB3_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_mime
+/* Export specifier for library ncbi_mime
  */
 #ifdef NCBI_NCBIMIME_EXPORTS
 #  define NCBI_NCBIMIME_EXPORT __declspec(dllexport)
@@ -551,8 +511,7 @@
 #  define NCBI_NCBIMIME_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library objprt
+/* Export specifier for library objprt
  */
 #ifdef NCBI_OBJPRT_EXPORTS
 #  define NCBI_OBJPRT_EXPORT __declspec(dllexport)
@@ -560,8 +519,7 @@
 #  define NCBI_OBJPRT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library omssa
+/* Export specifier for library omssa
  */
 #ifdef NCBI_OMSSA_EXPORTS
 #  define NCBI_OMSSA_EXPORT __declspec(dllexport)
@@ -569,8 +527,7 @@
 #  define NCBI_OMSSA_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library pcassay
+/* Export specifier for library pcassay
  */
 #ifdef NCBI_PCASSAY_EXPORTS
 #  define NCBI_PCASSAY_EXPORT __declspec(dllexport)
@@ -578,8 +535,7 @@
 #  define NCBI_PCASSAY_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library pcsubstance
+/* Export specifier for library pcsubstance
  */
 #ifdef NCBI_PCSUBSTANCE_EXPORTS
 #  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllexport)
@@ -587,8 +543,7 @@
 #  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library proj
+/* Export specifier for library proj
  */
 #ifdef NCBI_PROJ_EXPORTS
 #  define NCBI_PROJ_EXPORT __declspec(dllexport)
@@ -596,8 +551,7 @@
 #  define NCBI_PROJ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library pubmed
+/* Export specifier for library pubmed
  */
 #ifdef NCBI_PUBMED_EXPORTS
 #  define NCBI_PUBMED_EXPORT __declspec(dllexport)
@@ -605,8 +559,7 @@
 #  define NCBI_PUBMED_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library pub
+/* Export specifier for library pub
  */
 #ifdef NCBI_PUB_EXPORTS
 #  define NCBI_PUB_EXPORT __declspec(dllexport)
@@ -614,8 +567,7 @@
 #  define NCBI_PUB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library remap
+/* Export specifier for library remap
  */
 #ifdef NCBI_REMAP_EXPORTS
 #  define NCBI_REMAP_EXPORT __declspec(dllexport)
@@ -623,8 +575,7 @@
 #  define NCBI_REMAP_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library scoremat
+/* Export specifier for library scoremat
  */
 #ifdef NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SCOREMAT_EXPORT __declspec(dllexport)
@@ -632,8 +583,7 @@
 #  define NCBI_SCOREMAT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqalign
+/* Export specifier for library seqalign
  */
 #ifdef NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQALIGN_EXPORT __declspec(dllexport)
@@ -641,8 +591,7 @@
 #  define NCBI_SEQALIGN_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqblock
+/* Export specifier for library seqblock
  */
 #ifdef NCBI_SEQBLOCK_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORT __declspec(dllexport)
@@ -650,8 +599,7 @@
 #  define NCBI_SEQBLOCK_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqcode
+/* Export specifier for library seqcode
  */
 #ifdef NCBI_SEQCODE_EXPORTS
 #  define NCBI_SEQCODE_EXPORT __declspec(dllexport)
@@ -659,8 +607,7 @@
 #  define NCBI_SEQCODE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqfeat
+/* Export specifier for library seqfeat
  */
 #ifdef NCBI_SEQFEAT_EXPORTS
 #  define NCBI_SEQFEAT_EXPORT __declspec(dllexport)
@@ -668,8 +615,7 @@
 #  define NCBI_SEQFEAT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqloc
+/* Export specifier for library seqloc
  */
 #ifdef NCBI_SEQLOC_EXPORTS
 #  define NCBI_SEQLOC_EXPORT __declspec(dllexport)
@@ -686,8 +632,7 @@
 #  define NCBI_SEQRES_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqset
+/* Export specifier for library seqset
  */
 #ifdef NCBI_SEQSET_EXPORTS
 #  define NCBI_SEQSET_EXPORT __declspec(dllexport)
@@ -695,8 +640,7 @@
 #  define NCBI_SEQSET_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seqtest
+/* Export specifier for library seqtest
  */
 #ifdef NCBI_SEQTEST_EXPORTS
 #  define NCBI_SEQTEST_EXPORT __declspec(dllexport)
@@ -704,8 +648,7 @@
 #  define NCBI_SEQTEST_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library seq
+/* Export specifier for library seq
  */
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_SEQ_EXPORT __declspec(dllexport)
@@ -713,8 +656,7 @@
 #  define NCBI_SEQ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library submit
+/* Export specifier for library submit
  */
 #ifdef NCBI_SUBMIT_EXPORTS
 #  define NCBI_SUBMIT_EXPORT __declspec(dllexport)
@@ -722,8 +664,7 @@
 #  define NCBI_SUBMIT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library taxon1
+/* Export specifier for library taxon1
  */
 #ifdef NCBI_TAXON1_EXPORTS
 #  define NCBI_TAXON1_EXPORT __declspec(dllexport)
@@ -731,8 +672,7 @@
 #  define NCBI_TAXON1_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library tinyseq
+/* Export specifier for library tinyseq
  */
 #ifdef NCBI_TINYSEQ_EXPORTS
 #  define NCBI_TINYSEQ_EXPORT __declspec(dllexport)
@@ -740,8 +680,7 @@
 #  define NCBI_TINYSEQ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library validator
+/* Export specifier for library validator
  */
 #ifdef NCBI_VALIDATOR_EXPORTS
 #  define NCBI_VALIDATOR_EXPORT __declspec(dllexport)
@@ -749,8 +688,7 @@
 #  define NCBI_VALIDATOR_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgoalign
+/* Export specifier for library xalgoalign
  */
 #ifdef NCBI_XALGOALIGN_EXPORTS
 #  define NCBI_XALGOALIGN_EXPORT __declspec(dllexport)
@@ -758,8 +696,7 @@
 #  define NCBI_XALGOALIGN_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgognomon
+/* Export specifier for library xalgognomon
  */
 #ifdef NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XALGOGNOMON_EXPORT __declspec(dllexport)
@@ -767,8 +704,7 @@
 #  define NCBI_XALGOGNOMON_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgophytree
+/* Export specifier for library xalgophytree
  */
 #ifdef NCBI_XALGOPHYTREE_EXPORTS
 #  define NCBI_XALGOPHYTREE_EXPORT __declspec(dllexport)
@@ -776,8 +712,7 @@
 #  define NCBI_XALGOPHYTREE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgoseq
+/* Export specifier for library xalgoseq
  */
 #ifdef NCBI_XALGOSEQ_EXPORTS
 #  define NCBI_XALGOSEQ_EXPORT __declspec(dllexport)
@@ -785,8 +720,7 @@
 #  define NCBI_XALGOSEQ_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgoseqqa
+/* Export specifier for library xalgoseqqa
  */
 #ifdef NCBI_XALGOSEQQA_EXPORTS
 #  define NCBI_XALGOSEQQA_EXPORT __declspec(dllexport)
@@ -794,8 +728,7 @@
 #  define NCBI_XALGOSEQQA_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalgoseqqa
+/* Export specifier for library xalgoseqqa
  */
 #ifdef NCBI_XALGOWINMASK_EXPORTS
 #  define NCBI_XALGOWINMASK_EXPORT __declspec(dllexport)
@@ -803,8 +736,7 @@
 #  define NCBI_XALGOWINMASK_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xalnmgr
+/* Export specifier for library xalnmgr
  */
 #ifdef NCBI_XALNMGR_EXPORTS
 #  define NCBI_XALNMGR_EXPORT __declspec(dllexport)
@@ -812,8 +744,7 @@
 #  define NCBI_XALNMGR_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xcgi
+/* Export specifier for library xcgi
  */
 #ifdef NCBI_XCGI_EXPORTS
 #  define NCBI_XCGI_EXPORT __declspec(dllexport)
@@ -821,8 +752,7 @@
 #  define NCBI_XCGI_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xcgi_redirect
+/* Export specifier for library xcgi_redirect
  */
 #ifdef NCBI_XCGI_REDIRECT_EXPORTS
 #  define NCBI_XCGI_REDIRECT_EXPORT __declspec(dllexport)
@@ -831,8 +761,7 @@
 #endif
 
 #if 0
-/*
- * Export specifier for library xgbplugin
+/* Export specifier for library xgbplugin
  */
 #ifdef NCBI_XGBPLUGIN_EXPORTS
 #  define NCBI_XGBPLUGIN_EXPORT __declspec(dllexport)
@@ -840,8 +769,8 @@
 #  define NCBI_XGBPLUGIN_EXPORT __declspec(dllimport)
 #endif
 #endif
-/*
- * Export specifier for library xhtml
+
+/* Export specifier for library xhtml
  */
 #ifdef NCBI_XHTML_EXPORTS
 #  define NCBI_XHTML_EXPORT __declspec(dllexport)
@@ -849,8 +778,7 @@
 #  define NCBI_XHTML_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ximage
+/* Export specifier for library ximage
  */
 #ifdef NCBI_XIMAGE_EXPORTS
 #  define NCBI_XIMAGE_EXPORT __declspec(dllexport)
@@ -858,8 +786,7 @@
 #  define NCBI_XIMAGE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_blastdb
+/* Export specifier for library ncbi_xloader_blastdb
  */
 #ifdef NCBI_XLOADER_BLASTDB_EXPORTS
 #  define NCBI_XLOADER_BLASTDB_EXPORT __declspec(dllexport)
@@ -867,8 +794,7 @@
 #  define NCBI_XLOADER_BLASTDB_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_cdd
+/* Export specifier for library ncbi_xloader_cdd
  */
 #ifdef NCBI_XLOADER_CDD_EXPORTS
 #  define NCBI_XLOADER_CDD_EXPORT __declspec(dllexport)
@@ -876,8 +802,7 @@
 #  define NCBI_XLOADER_CDD_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_genbank
+/* Export specifier for library ncbi_xloader_genbank
  */
 #ifdef NCBI_XLOADER_GENBANK_EXPORTS
 #  define NCBI_XLOADER_GENBANK_EXPORT __declspec(dllexport)
@@ -885,8 +810,7 @@
 #  define NCBI_XLOADER_GENBANK_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_lds
+/* Export specifier for library ncbi_xloader_lds
  */
 #ifdef NCBI_XLOADER_LDS_EXPORTS
 #  define NCBI_XLOADER_LDS_EXPORT __declspec(dllexport)
@@ -894,8 +818,7 @@
 #  define NCBI_XLOADER_LDS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_table
+/* Export specifier for library ncbi_xloader_table
  */
 #ifdef NCBI_XLOADER_TABLE_EXPORTS
 #  define NCBI_XLOADER_TABLE_EXPORT __declspec(dllexport)
@@ -903,8 +826,7 @@
 #  define NCBI_XLOADER_TABLE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library ncbi_xloader_trace
+/* Export specifier for library ncbi_xloader_trace
  */
 #ifdef NCBI_XLOADER_TRACE_EXPORTS
 #  define NCBI_XLOADER_TRACE_EXPORT __declspec(dllexport)
@@ -912,8 +834,7 @@
 #  define NCBI_XLOADER_TRACE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xncbi
+/* Export specifier for library xncbi
  */
 #ifdef NCBI_XNCBI_EXPORTS
 #  define NCBI_XNCBI_EXPORT __declspec(dllexport)
@@ -921,8 +842,7 @@
 #  define NCBI_XNCBI_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjedit
+/* Export specifier for library xobjedit
  */
 #ifdef NCBI_XOBJEDIT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORT __declspec(dllexport)
@@ -930,8 +850,7 @@
 #  define NCBI_XOBJEDIT_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjmanip
+/* Export specifier for library xobjmanip
  */
 #ifdef NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORT __declspec(dllexport)
@@ -939,8 +858,7 @@
 #  define NCBI_XOBJMANIP_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjmgr
+/* Export specifier for library xobjmgr
  */
 #ifdef NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORT __declspec(dllexport)
@@ -948,8 +866,7 @@
 #  define NCBI_XOBJMGR_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjread
+/* Export specifier for library xobjread
  */
 #ifdef NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJREAD_EXPORT __declspec(dllexport)
@@ -957,8 +874,7 @@
 #  define NCBI_XOBJREAD_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjsimple
+/* Export specifier for library xobjsimple
  */
 #ifdef NCBI_XOBJSIMPLE_EXPORTS
 #  define NCBI_XOBJSIMPLE_EXPORT __declspec(dllexport)
@@ -966,8 +882,7 @@
 #  define NCBI_XOBJSIMPLE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjutil
+/* Export specifier for library xobjutil
  */
 #ifdef NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORT __declspec(dllexport)
@@ -975,8 +890,7 @@
 #  define NCBI_XOBJUTIL_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xobjwrite
+/* Export specifier for library xobjwrite
  */
 #ifdef NCBI_XOBJWRITE_EXPORTS
 #  define NCBI_XOBJWRITE_EXPORT __declspec(dllexport)
@@ -984,8 +898,7 @@
 #  define NCBI_XOBJWRITE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xomssa
+/* Export specifier for library xomssa
  */
 #ifdef NCBI_XOMSSA_EXPORTS
 #  define NCBI_XOMSSA_EXPORT __declspec(dllexport)
@@ -993,8 +906,7 @@
 #  define NCBI_XOMSSA_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xreader
+/* Export specifier for library xreader
  */
 #ifdef NCBI_XREADER_EXPORTS
 #  define NCBI_XREADER_EXPORT __declspec(dllexport)
@@ -1002,8 +914,7 @@
 #  define NCBI_XREADER_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xreader_id1
+/* Export specifier for library xreader_id1
  */
 #ifdef NCBI_XREADER_ID1_EXPORTS
 #  define NCBI_XREADER_ID1_EXPORT __declspec(dllexport)
@@ -1011,8 +922,7 @@
 #  define NCBI_XREADER_ID1_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xreader_id2
+/* Export specifier for library xreader_id2
  */
 #ifdef NCBI_XREADER_ID2_EXPORTS
 #  define NCBI_XREADER_ID2_EXPORT __declspec(dllexport)
@@ -1020,8 +930,7 @@
 #  define NCBI_XREADER_ID2_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xreader_id2
+/* Export specifier for library xreader_id2
  */
 #ifdef NCBI_XREADER_CACHE_EXPORTS
 #  define NCBI_XREADER_CACHE_EXPORT __declspec(dllexport)
@@ -1029,8 +938,7 @@
 #  define NCBI_XREADER_CACHE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xreader_pubseqos
+/* Export specifier for library xreader_pubseqos
  */
 #ifdef NCBI_XREADER_PUBSEQOS_EXPORTS
 #  define NCBI_XREADER_PUBSEQOS_EXPORT __declspec(dllexport)
@@ -1038,8 +946,7 @@
 #  define NCBI_XREADER_PUBSEQOS_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xregexp
+/* Export specifier for library xregexp
  */
 #ifdef NCBI_XREGEXP_EXPORTS
 #  define NCBI_XREGEXP_EXPORT __declspec(dllexport)
@@ -1047,8 +954,7 @@
 #  define NCBI_XREGEXP_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xserial
+/* Export specifier for library xserial
  */
 #ifdef NCBI_XSERIAL_EXPORTS
 #  define NCBI_XSERIAL_EXPORT __declspec(dllexport)
@@ -1056,8 +962,7 @@
 #  define NCBI_XSERIAL_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xsqlite
+/* Export specifier for library xsqlite
  */
 #ifdef NCBI_XSQLITE_EXPORTS
 #  define NCBI_XSQLITE_EXPORT __declspec(dllexport)
@@ -1065,8 +970,7 @@
 #  define NCBI_XSQLITE_EXPORT __declspec(dllimport)
 #endif
 
-/*
- * Export specifier for library xutil
+/* Export specifier for library xutil
  */
 #ifdef NCBI_XUTIL_EXPORTS
 #  define NCBI_XUTIL_EXPORT __declspec(dllexport)
@@ -1075,13 +979,11 @@
 #endif
 
 
+#else  /* !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD) */
 
-#else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
-/*
- * NULL operations for other cases
+/* NULL operations for other cases
  */
-
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_CACHE_EXPORT
 #  define NCBI_BDB_EXPORT
@@ -1201,11 +1103,12 @@
 /* @} */
 
 
-
-
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.96  2005/05/13 18:23:30  ivanov
+ * Do not use C++ comments in the .h files
+ *
  * Revision 1.95  2005/03/25 19:30:46  dicuccio
  * Added export specifiers for objects/proj, objects/pcassay, objects/pcsubstance
  *

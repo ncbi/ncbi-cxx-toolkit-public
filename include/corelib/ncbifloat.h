@@ -1,5 +1,5 @@
-#ifndef NCBIFLOAT__H
-#define NCBIFLOAT__H
+#ifndef CORELIB___NCBIFLOAT__H
+#define CORELIB___NCBIFLOAT__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,9 +31,12 @@
  *      
  */
 
-/// @file ncbifloat.h
-/// Floating-point support routines.
-
+/**
+ * @file ncbifloat.h
+ *
+ * Floating-point support routines.
+ *
+ */
 
 /** @addtogroup Exception
  *
@@ -49,28 +52,36 @@
 #   include <ieeefp.h>
 #endif
 
-
 #if defined(NCBI_OS_MSWIN)
-/// Define value of isnan (Is Not A Number).
-///
-/// Checks double-precision value for not a number (NaN).
+/**
+ * Define value of isnan (Is Not A Number).
+ *
+ * Checks double-precision value for not a number (NaN).
+ */
 #   define isnan _isnan
 #elif defined(NCBI_OS_DARWIN)  &&  defined(MATH_ERRNO)  &&  !defined(isnan)
-/// Define value of isnan (Is Not A Number).
-///
-/// <math.h> changed a lot between 10.1 and 10.2; the presence of
-/// MATH_ERRNO indicates 10.2, which needs this hack, thanks to
-/// <cmath>'s obnoxious removal of <math.h>'s isnan macro.
+/**
+ * Define value of isnan (Is Not A Number).
+ *
+ * <math.h> changed a lot between 10.1 and 10.2; the presence of
+ * MATH_ERRNO indicates 10.2, which needs this hack, thanks to
+ * <cmath>'s obnoxious removal of <math.h>'s isnan macro.
+ */
 #   define isnan __isnand
 #endif
 
-
 #if defined(NCBI_OS_MSWIN)
-/// Define value of finite (Is Finite).
-///
-/// Checks whether given double-precision floating point value is finite
+/**
+ * Define value of finite (Is Finite).
+ *
+ * Checks whether given double-precision floating point value is finite
+ */
 #   define finite _finite
 #endif
+
+
+#endif  /* CORELIB___NCBIFLOAT__H */
+
 
 /* @} */
 
@@ -78,6 +89,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/13 18:23:30  ivanov
+ * Do not use C++ comments in the .h files
+ *
  * Revision 1.9  2005/05/09 14:17:32  ucko
  * Update Darwin hack -- __isnan seems to be unavailable in the latest
  * 10.3 version of libSystem, and __isnand is more appropriate anyway.
@@ -111,5 +125,3 @@
  *
  * ==========================================================================
  */
-
-#endif /* NCBIFLOAT__H */

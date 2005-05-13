@@ -1,5 +1,5 @@
-#ifndef NCBI_LIMITS__H
-#define NCBI_LIMITS__H
+#ifndef CORELIB___NCBI_LIMITS__H
+#define CORELIB___NCBI_LIMITS__H
 
 /*  $Id$
  * ===========================================================================
@@ -28,7 +28,13 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
+ *
+ */
+
+/**
+ * @file ncbitype.h
+ *
+ * Defines Limits for the types used in NCBI C/C++ toolkit.
  *
  *   Limits for the NCBI C/C++ fixed-size types:
  *      Char, Uchar
@@ -79,7 +85,6 @@
 #  define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFi64
 #  define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFui64
 #endif
-
 
 
 /*  Limits:  C++ and C interfaces
@@ -213,12 +218,18 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 #endif  /* __cplusplus */
 
 
+#endif /* CORELIB___NCBI_LIMITS__H */
+
+
 /* @} */
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2005/05/13 18:23:30  ivanov
+ * Do not use C++ comments in the .h files
+ *
  * Revision 1.4  2003/04/01 14:18:44  siyan
  * Added doxygen support
  *
@@ -235,5 +246,3 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
  *
  * ==========================================================================
  */
-
-#endif /* NCBI_LIMITS__H */
