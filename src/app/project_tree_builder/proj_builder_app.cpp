@@ -222,6 +222,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
+    m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
     m_ScanWholeTree  = true;
@@ -949,10 +950,12 @@ const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
         m_WholeTree.reset(new CProjectItemsTree);
         if (m_ScanWholeTree) {
             LOG_POST(Info << "*** Analyzing the whole tree makefiles ***");
+            m_ScanningWholeTree = true;
             CProjectDummyFilter pass_all_filter;
             CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
                                                 GetProjectTreeInfo().m_Src, 
                                                 m_WholeTree.get());
+            m_ScanningWholeTree = false;
         } else {
             LOG_POST(Info << "*** Skipping scanning the whole tree makefiles ***");
         }
@@ -1005,6 +1008,9 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
 bool CProjBulderApp::IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
                                          string& unmet) const
 {
+    if (m_ScanningWholeTree) {
+        return true;
+    }
     CSimpleMakeFileContents::TContents::const_iterator k;
     k = mk.m_Contents.find("PROJ_TAG");
     if (k == mk.m_Contents.end()) {
@@ -1077,6 +1083,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/05/13 13:14:43  gouriano
+ * Do not filter by tags when scanning the whole tree
+ *
  * Revision 1.58  2005/05/10 17:31:34  gouriano
  * Added verification of project tags
  *

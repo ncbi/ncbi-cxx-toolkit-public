@@ -102,6 +102,7 @@ private:
     set<string>  m_ProjectTags;
     set<string>  m_AllowedTags;
     set<string>  m_DisallowedTags;
+    bool m_ScanningWholeTree;
 
 public:
 
@@ -219,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/13 13:15:09  gouriano
+ * Do not filter by tags when scanning the whole tree
+ *
  * Revision 1.23  2005/05/10 17:30:27  gouriano
  * Added verification of project tags
  *
