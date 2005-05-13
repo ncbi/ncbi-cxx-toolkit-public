@@ -39,6 +39,7 @@
 #include "msms.hpp"
 #include "msladder.hpp"
 #include "mspeak.hpp"
+#include "mshist.hpp"
 
 #include <readdb.h>
 
@@ -92,14 +93,27 @@ public:
     int InitBlast(const char *blastdb, bool InitDb);
 
     // loads spectra into peaks
-    void Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet);
+    void Spectrum2Peak(CMSPeakSet& PeakSet);
 
     //! set up modifications from both user input and mod file data
     /*!
     \param MyRequest the user search params and spectra
     \param Modset list of modifications
     */
-    void SetupMods(CMSRequest& MyRequest, CRef <CMSModSpecSet>& Modset);
+    void SetupMods(CRef <CMSModSpecSet> Modset);
+
+    /**
+     *  count the number of unique sites modified
+     * 
+     * @param NumModSites the number of unique mod sites
+     * @param NumMod the number of mods
+     * @param Site the position of the mods
+     * @param IsFixed is the mod fixed?
+     */
+    void CountModSites(int &NumModSites,
+                       int NumMod,
+                       const char *Site[],
+                       int IsFixed[]);
 
     //! Performs the ms/ms search
     /*!
@@ -107,11 +121,14 @@ public:
     \param MyResponse the results of the search
     \param Modset list of modifications
     */
-    int Search(CMSRequest& MyRequest, CMSResponse& MyResponse, CRef <CMSModSpecSet>& Modset);
+    int Search(CRef<CMSRequest> MyRequestIn,
+               CRef<CMSResponse> MyResponseIn,
+               CRef <CMSModSpecSet> Modset);
 
-    // set up the ions to use
-    void SetIons(CMSRequest& MyRequest, int& ForwardIon, int& BackwardIon);
-    // create the ladders from sequence
+    //! set up the ions to use
+    void SetIons(int& ForwardIon, int& BackwardIon);
+
+    //! create the ladders from sequence
     int CreateLadders(unsigned char *Sequence, int iSearch, int position,
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
@@ -122,8 +139,8 @@ public:
 		      const char **Site,
 		      int *DeltaMass,
 		      int NumMod,
-              int ForwardIon,  // a,b,c series
-              int BackwardIon  // x,y,z series
+              int ForwardIon,  //!< a,b,c series
+              int BackwardIon  //!< x,y,z series
               );
 
     // compare ladders to experiment
@@ -136,11 +153,24 @@ public:
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
 		       const TMassPeak *MassPeak);
 
-    void InitModIndex(int *ModIndex, int& iMod, int NumMod, int *IsFixed);
+    void InitModIndex(int *ModIndex, 
+                      int& iMod, 
+                      int NumMod, 
+                      int *IsFixed, 
+                      int NumModSites, 
+                      const char *Site[]);
+
     unsigned MakeBoolMask(int *ModIndex, int iMod);
     void MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod);
-    bool CalcModIndex(int *ModIndex, int& iMod, int& NumMod, int NumFixed,
-                      int *IsFixed);
+
+    bool CalcModIndex(int *ModIndex, 
+                      int& iMod, 
+                      int& NumMod, 
+                      int NumFixed,
+                      int *IsFixed, 
+                      int NumModSites, 
+                      const char *Site[]);
+
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
     ReadDBFILEPtr Getrdfp(void) { return rdfp; }
     int Getnumseq(void) { return numseq; }
@@ -168,14 +198,14 @@ public:
 	void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
 
     // take hitlist for a peak and insert it into the response
-    void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
-                   CMSRequest& MyRequest
-		   );
-    // calculate the evalues of the top hits and sort
-    void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
-		   bool NewScore,
-		   int Tophitnum // the number of top hits where at least one has to match
-		   );
+    void SetResult(CMSPeakSet& PeakSet);
+
+    //! calculate the evalues of the top hits and sort
+    void CalcNSort(TScoreList& ScoreList,  //<! the list of top hits to the spectrum
+                   double Threshold,       //!< the noise threshold to apply to the peaks
+                   CMSPeak* Peaks,         //!< the spectrum to be scored
+                   bool NewScore           //!< use the new scoring
+                   );
 
     // update sites and masses for new peptide
     void UpdateWithNewPep(int Missed,
@@ -187,20 +217,23 @@ public:
 			  int Masses[],
 			  int EndMasses[],
             int ModEnum[][MAXMOD],
-            int IsFixed[][MAXMOD]);
+            int IsFixed[][MAXMOD],
+                          int NumModSites[]);
 
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
-			       const char *PepStart[],
-			       TMassMask MassAndMask[][MAXMOD2],
-			       int Masses[],
-			       int EndMasses[],
-			       int NumMod[],
-			       int DeltaMass[][MAXMOD],
-			       unsigned NumMassAndMask[],
-			       int MaxModPerPep, // max number of mods per peptide
-                   int IsFixed[][MAXMOD]
-			       );
+            			       const char *PepStart[],
+            			       TMassMask MassAndMask[][MAXMOD2],
+            			       int Masses[],
+            			       int EndMasses[],
+            			       int NumMod[],
+            			       int DeltaMass[][MAXMOD],
+            			       unsigned NumMassAndMask[],
+            			       int MaxModPerPep, // max number of mods per peptide
+                               int IsFixed[][MAXMOD],
+                               int NumModSites[],
+                               const char *Site[][MAXMOD]
+                               );
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -210,14 +243,20 @@ private:
     CMSMod VariableMods;  // categorized variable mods
     CMSMod FixedMods;  // categorized fixed mods
     int numseq; // number of sequences in blastdb
+    CRef<CMSRequest> MyRequest;
+    CRef<CMSResponse> MyResponse;
 };
 
 ///////////////////  CSearch inline methods
 
 // ModIndex contains the positions of the modified sites (aka set bits).
 // InitModIndex points ModIndex to all of the lower sites.
-inline void CSearch::InitModIndex(int *ModIndex, int& iMod, int NumMod,
-int *IsFixed)
+inline void CSearch::InitModIndex(int *ModIndex, 
+                                  int& iMod, 
+                                  int NumMod,
+                                  int *IsFixed, 
+                                  int NumModSites, 
+                                  const char *Site[])
 {
     // pack all the mods to the first possible sites
     int j(0), i, NumFixed;
@@ -228,9 +267,12 @@ int *IsFixed)
         }
     }
     NumFixed = j;
+    const char *OldSite(0);
     for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
-        if(IsFixed[i] != 1) {
+//        for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
+        if(IsFixed[i] != 1 && Site[i] != OldSite) {
             ModIndex[j] = i;
+            OldSite = Site[i];
             j++;
         }
     }
@@ -271,22 +313,44 @@ inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
 
 // CalcModIndex moves the set bits through all possible sites.  
 // site position is given by ModIndex
-inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod,
-int NumFixed, int *IsFixed)
+inline bool CSearch::CalcModIndex(int *ModIndex, 
+                                  int& iMod, int& NumMod,
+                                  int NumFixed, 
+                                  int *IsFixed, 
+                                  int NumModSites, 
+                                  const char *Site[])
 {
     int j, oldindex, highest;
-    // iterate over indices
-    highest = NumMod; // NumMod - (iMod - (j - NumFixed)) - 1
+    const char *TopIndexSite;
+
+    // set the highest possible index
+    highest = NumMod - 1; // NumMod - (iMod - (j - NumFixed)) - 1
+    // set to an impossible site
+    TopIndexSite = 0;
+    // iterate over indices, starting at the top
+    // going down to the first index for a fixed mod
     for(j = iMod + NumFixed; j >= NumFixed; j--) {
+        // if the index is one less than the highest possible
     	if(ModIndex[j] < highest) {
+            // keep a record of the index value
             oldindex = ModIndex[j];
     	    do {
+                // increment the index value
                 ModIndex[j]++;
+                // while is a fixed mod (?) and the index is one less than highest possible
             } while (IsFixed[ModIndex[j]] == 1 && ModIndex[j] < highest);
-    	    if(IsFixed[ModIndex[j]] != 1 && ModIndex[j] <= highest) return true;
+            // if the new position is not fixed and the index isn't out of bounds and
+            // the site is not the same as the top site (or impossible site), return true
+    	    if(IsFixed[ModIndex[j]] != 1 &&
+               ModIndex[j] <= highest &&
+               Site[ModIndex[j]] != TopIndexSite) return true;
+            // otherwise, restore the old index value
             ModIndex[j] = oldindex;
     	}
+        // now make the highest possible the highest index value
         highest = ModIndex[j] - 1;
+        TopIndexSite = Site[ModIndex[j]];
+        // loop back and examine the next lowest index
     }
     return false;
 }
@@ -302,6 +366,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.24  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.23  2005/04/22 15:31:21  lewisg
   fix tax filter on output
 

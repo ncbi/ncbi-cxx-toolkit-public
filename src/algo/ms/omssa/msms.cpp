@@ -160,6 +160,9 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
     CalcMass(**PepStart, Masses, PrecursorIntCalcMass);
 
+    // check for mods that are type AA only
+    CheckAAMods(eMSModType_modaa, VariableMods, NumMod, **PepStart, MaxNumMod, Site,
+            DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
     // check c term peptide mods
     CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
              DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
@@ -596,6 +599,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.20  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.19  2005/04/21 21:54:03  lewisg
   fix Jeri's mem bug, split off mod file, add aspn and gluc
 

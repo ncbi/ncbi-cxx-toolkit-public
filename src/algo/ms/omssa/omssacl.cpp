@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 12));
+    SetVersion(CVersionInfo(1, 0, 0));
 }
 
 
@@ -167,6 +167,8 @@ void COMSSA::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("oc", "csvfile", "filename for csv formatted search summary",
+                CArgDescriptions::eString, "");
     argDesc->AddFlag("w", "include spectra and search params in search results");
     argDesc->AddDefaultKey("to", "pretol", "product ion mass tolerance in Da",
 			   CArgDescriptions::eDouble, "0.8");
@@ -266,6 +268,22 @@ void COMSSA::Init()
                   "fraction of peaks below precursor used to determine if spectrum is charge 1",
                   CArgDescriptions::eDouble, 
                   "0.95");
+    argDesc->AddDefaultKey("pc", "pseudocount", 
+                  "minimum number of precursors that match a spectrum",
+                  CArgDescriptions::eInteger, 
+                  "1");
+    argDesc->AddDefaultKey("sb1", "searchb1", 
+                   "should b1 product be in search (1 = no)",
+                   CArgDescriptions::eInteger, 
+                   "1");
+    argDesc->AddDefaultKey("sct", "searchcterm", 
+                   "should c terminus ions be searched (1=no)",
+                   CArgDescriptions::eInteger, 
+                   "0");
+    argDesc->AddDefaultKey("sp", "productnum", 
+                    "max number of ions in each series being searched (0=all)",
+                    CArgDescriptions::eInteger, 
+                    "0");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -406,7 +424,7 @@ int COMSSA::Run()
          FileRetVal = Spectrumset->LoadFile(eMGF, PeakFile);
      }
 	else {
-	    ERR_POST(Fatal << "omssatest: input file not given.");
+	    ERR_POST(Fatal << "omssacl: input file not given.");
 	    return 1;
 	}
 
@@ -419,47 +437,50 @@ int COMSSA::Run()
         return 1;
     }
 
-
-	CMSResponse Response;
-	CMSRequest Request;
-	Request.SetSettings().SetPrecursorsearchtype(args["tem"].AsInteger());
-	Request.SetSettings().SetProductsearchtype(args["tom"].AsInteger());
-	Request.SetSettings().SetPeptol(args["te"].AsDouble());
-	Request.SetSettings().SetMsmstol(args["to"].AsDouble());
-    Request.SetSettings().SetZdep(args["tez"].AsInteger());
-	InsertList(args["i"].AsString(), Request.SetSettings().SetIonstosearch(), "unknown ion");
-	Request.SetSettings().SetCutlo(args["cl"].AsDouble());
-	Request.SetSettings().SetCuthi(args["ch"].AsDouble());
-	Request.SetSettings().SetCutinc(args["ci"].AsDouble());
-	Request.SetSettings().SetSinglewin(args["w1"].AsInteger());
-	Request.SetSettings().SetDoublewin(args["w2"].AsInteger());
-	Request.SetSettings().SetSinglenum(args["h1"].AsInteger());
-	Request.SetSettings().SetDoublenum(args["h2"].AsInteger());
-	Request.SetSettings().SetEnzyme(args["e"].AsInteger());
-	Request.SetSettings().SetMissedcleave(args["v"].AsInteger());
-	Request.SetSpectra(*Spectrumset);
-	InsertList(args["mv"].AsString(), Request.SetSettings().SetVariable(), "unknown variable mod");
-	InsertList(args["mf"].AsString(), Request.SetSettings().SetFixed(), "unknown fixed mod");
-	Request.SetSettings().SetDb(args["d"].AsString());
-	Request.SetSettings().SetHitlistlen(args["hl"].AsInteger());
-	Request.SetSettings().SetTophitnum(args["ht"].AsInteger());
-	Request.SetSettings().SetMinhit(args["hm"].AsInteger());
-	Request.SetSettings().SetMinspectra(args["hs"].AsInteger());
-	Request.SetSettings().SetCutoff(args["he"].AsDouble());
-	Request.SetSettings().SetMaxmods(args["mm"].AsInteger());
+    CRef<CMSRequest> Request(new CMSRequest);
+    CRef<CMSResponse> Response(new CMSResponse);
+	Request->SetSettings().SetPrecursorsearchtype(args["tem"].AsInteger());
+	Request->SetSettings().SetProductsearchtype(args["tom"].AsInteger());
+	Request->SetSettings().SetPeptol(args["te"].AsDouble());
+	Request->SetSettings().SetMsmstol(args["to"].AsDouble());
+    Request->SetSettings().SetZdep(args["tez"].AsInteger());
+	InsertList(args["i"].AsString(), Request->SetSettings().SetIonstosearch(), "unknown ion");
+	Request->SetSettings().SetCutlo(args["cl"].AsDouble());
+	Request->SetSettings().SetCuthi(args["ch"].AsDouble());
+	Request->SetSettings().SetCutinc(args["ci"].AsDouble());
+	Request->SetSettings().SetSinglewin(args["w1"].AsInteger());
+	Request->SetSettings().SetDoublewin(args["w2"].AsInteger());
+	Request->SetSettings().SetSinglenum(args["h1"].AsInteger());
+	Request->SetSettings().SetDoublenum(args["h2"].AsInteger());
+	Request->SetSettings().SetEnzyme(args["e"].AsInteger());
+	Request->SetSettings().SetMissedcleave(args["v"].AsInteger());
+	Request->SetSpectra(*Spectrumset);
+	InsertList(args["mv"].AsString(), Request->SetSettings().SetVariable(), "unknown variable mod");
+	InsertList(args["mf"].AsString(), Request->SetSettings().SetFixed(), "unknown fixed mod");
+	Request->SetSettings().SetDb(args["d"].AsString());
+	Request->SetSettings().SetHitlistlen(args["hl"].AsInteger());
+	Request->SetSettings().SetTophitnum(args["ht"].AsInteger());
+	Request->SetSettings().SetMinhit(args["hm"].AsInteger());
+	Request->SetSettings().SetMinspectra(args["hs"].AsInteger());
+	Request->SetSettings().SetCutoff(args["he"].AsDouble());
+	Request->SetSettings().SetMaxmods(args["mm"].AsInteger());
+    Request->SetSettings().SetPseudocount(args["pc"].AsInteger());
+    Request->SetSettings().SetSearchb1(args["sb1"].AsInteger());
+    Request->SetSettings().SetSearchctermproduct(args["sct"].AsInteger());
+    Request->SetSettings().SetMaxproductions(args["sp"].AsInteger());
 
 	if(args["x"].AsString() != "0") {
-	    InsertList(args["x"].AsString(), Request.SetSettings().SetTaxids(), "unknown tax id");
+	    InsertList(args["x"].AsString(), Request->SetSettings().SetTaxids(), "unknown tax id");
 	}
 
-	Request.SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
-	Request.SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
-	Request.SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
-    Request.SetSettings().SetChargehandling().SetPlusone(args["z1"].AsDouble());
+	Request->SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
+	Request->SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
+	Request->SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
+    Request->SetSettings().SetChargehandling().SetPlusone(args["z1"].AsDouble());
 
 	// validate the input
         list <string> ValidError;
-	if(Request.GetSettings().Validate(ValidError) != 0) {
+	if(Request->GetSettings().Validate(ValidError) != 0) {
 	    list <string>::iterator iErr;
 	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
 		ERR_POST(Warning << *iErr);
@@ -475,8 +496,8 @@ int COMSSA::Run()
 #if _DEBUG
 	// read out hits
 	CMSResponse::THitsets::const_iterator iHits;
-	iHits = Response.GetHitsets().begin();
-	for(; iHits != Response.GetHitsets().end(); iHits++) {
+	iHits = Response->GetHitsets().begin();
+	for(; iHits != Response->GetHitsets().end(); iHits++) {
 	    CRef< CMSHitSet > HitSet =  *iHits;
 	    ERR_POST(Info << "Hitset: " << HitSet->GetNumber());
 	    if( HitSet-> CanGetError() && HitSet->GetError() ==
@@ -506,7 +527,7 @@ int COMSSA::Run()
 
 	// Check to see if there is a hitset
 
-	if(!Response.CanGetHitsets()) {
+	if(!Response->CanGetHitsets()) {
 	  ERR_POST(Fatal << "No results found");
 	}
 
@@ -533,20 +554,22 @@ int COMSSA::Run()
         if(args["w"]) {
             // make complex object
             CMSSearch MySearch;
-            CRef<CMSRequest> requestref(&Request);
-            MySearch.SetRequest().push_back(requestref);
-            CRef<CMSResponse> responseref(&Response);
-            MySearch.SetResponse().push_back(responseref);
+            MySearch.SetRequest().push_back(Request);
+            MySearch.SetResponse().push_back(Response);
             // write out
             txt_out->Write(ObjectInfo(MySearch));
-            requestref.Release();
-            responseref.Release();
-            MySearch.SetRequest().begin()->Release();
-            MySearch.SetResponse().begin()->Release();
         }
         else {
-            txt_out->Write(ObjectInfo(Response));
+            txt_out->Write(ObjectInfo(*Response));
         }
+    }
+
+    // print csv if requested
+    if(args["oc"].AsString() != "") {
+        CNcbiOfstream oscsv;
+        oscsv.open(args["oc"].AsString().c_str());
+        Response->PrintCSV(oscsv, Modset);
+        oscsv.close();
     }
 
 
@@ -561,6 +584,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.34  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.33  2005/04/21 21:54:03  lewisg
   fix Jeri's mem bug, split off mod file, add aspn and gluc
 

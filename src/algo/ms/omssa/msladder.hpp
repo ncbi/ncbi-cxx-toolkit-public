@@ -75,14 +75,42 @@ public:
     int size(void);
     void clear(void);
 
-    // make a ladder
-    bool CreateLadder(int IonType, int Charge, char *Sequence, int SeqIndex,
-		      int start, int stop, int mass,
-		      CMassArray& MassArray, CAA &AA,
-		      unsigned ModMask,
-		      const char **Site,
-		      int *DeltaMass,
-		      int NumMod);
+    /**
+     *  make a ladder
+     * 
+     * @param IonType the ion series to create
+     * @param Charge the charge of the series
+     * @param Sequence the protein sequence
+     * @param SeqIndex the position in the blast library
+     * @param start start position in the sequence
+     * @param stop the stop position in the sequence
+     * @param MassArray AA masses
+     * @param AA used for mass calculation
+     * @param ModMask bit mask of modifications to use
+     * @param Site positions of the modifications
+     * @param DeltaMass the masses of the modifications
+     * @param NumMod the total number of mods
+     * @param Searchctermproduct should the cterminal ions be created
+     * @param Searchb1 should the first forward ion be created
+     * 
+     * @return false if fails
+     */
+    bool CreateLadder(int IonType,
+                      int Charge,
+                      char *Sequence,
+                      int SeqIndex,
+                      int start,
+                      int stop,
+                      int mass,
+                      CMassArray& MassArray, 
+                      CAA &AA,
+                      unsigned ModMask,
+                      const char **Site,
+                      int *DeltaMass,
+                      int NumMod,
+                      int Searchctermproduct,
+                      int Searchb1
+                      );
 
     ///
     /// calculate the mass difference
@@ -233,6 +261,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.13  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.12  2005/03/14 22:29:54  lewisg
   add mod file input
 

@@ -291,8 +291,6 @@ inline
 void CCleave::EndMass( int *EndMasses
 		       )
 {
-    //  int i;
-    //  for(i = 0; i < NumEndMasses; i++)   
     *EndMasses = TermMass;
 }
 
@@ -524,6 +522,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.21  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.20  2005/04/21 21:54:03  lewisg
   fix Jeri's mem bug, split off mod file, add aspn and gluc
 

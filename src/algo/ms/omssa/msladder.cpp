@@ -98,18 +98,42 @@ CLadder::~CLadder()
 }
 
 
-
-// creates ladder
-// note that mass input is only used later on in another routine
-// to calculate score.
-bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
-			   int SeqIndex,
-			   int start, int stop, int mass,
-			   CMassArray& MassArray, CAA &AA,
-			   unsigned ModMask,
-			   const char **Site,
-			   int *DeltaMass,
-			   int NumMod)
+/**
+ *  make a ladder
+ * 
+ * @param IonType the ion series to create
+ * @param Charge the charge of the series
+ * @param Sequence the protein sequence
+ * @param SeqIndex the position in the blast library
+ * @param start start position in the sequence
+ * @param stop the stop position in the sequence
+ * @param MassArray AA masses
+ * @param AA used for mass calculation
+ * @param ModMask bit mask of modifications to use
+ * @param Site positions of the modifications
+ * @param DeltaMass the masses of the modifications
+ * @param NumMod the total number of mods
+ * @param Searchctermproduct should the cterminal ions be created
+ * @param Searchb1 should the first forward ion be created
+ * 
+ * @return false if fails
+ */
+bool CLadder::CreateLadder(int IonType,
+                           int ChargeIn,
+                           char *Sequence,
+                           int SeqIndex,
+                           int start,
+                           int stop,
+                           int mass,
+                           CMassArray& MassArray,
+                           CAA &AA,
+                           unsigned ModMask,
+                           const char **Site,
+                           int *DeltaMass,
+                           int NumMod, 
+                           int Searchctermproduct,
+                           int Searchb1
+                           )
 {
     Charge = ChargeIn;
     int i, ion = static_cast <int> ((kTermMass[IonType] + Charge - 1) / 
@@ -128,26 +152,48 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
     int ModIndex;  // index into number of possible mod sites
     int Direction;
     int Offset;
+    int iSkip;  // number to skip at beginning of sequence
+
+    LadderIndex = stop - start;
+    if(Searchctermproduct == 1) LadderIndex--;
+
+    // make the ladder fit in memory for long peptides/proteins
+    if(LadderIndex > LadderSize) LadderIndex = LadderSize;
 
     if(kIonDirection[IonType] == 1) {
         ModIndex = 0;
         Direction = 1;
         Offset = start;
+        iSkip = 0;
+        if(Searchb1 == 1) {
+            if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
+                          Offset, Direction, NumMod, ModIndex,
+                          Site, ModMask, DeltaMass, 0)) return false;
+            ion += delta/Charge;
+            iSkip = 1;
+            LadderIndex--;
+        }
     }
     else {
         ModIndex = NumMod - 1;
         Direction = -1;
         Offset = stop;
+        iSkip = 0;
+         if(Searchctermproduct == 1) {
+             if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
+                     Offset, Direction, NumMod, ModIndex,
+                     Site, ModMask, DeltaMass, 0)) return false;
+               ion += delta/Charge;
+               iSkip = 1;
+         }
     }
 
-    LadderIndex = stop - start;
-    // make the ladder fit in memory for long peptides/proteins
-    if(LadderIndex > LadderSize) LadderIndex = LadderSize;
+
     for(i = 0; i < LadderIndex; i++) {
         GetHit()[i] = 0;
         if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
-              Offset, Direction, NumMod, ModIndex,
-              Site, ModMask, DeltaMass, i)) return false;
+                      Offset, Direction, NumMod, ModIndex,
+                      Site, ModMask, DeltaMass, i+iSkip)) return false;
         ion += delta/Charge;
         (*this)[i] = ion;
     }

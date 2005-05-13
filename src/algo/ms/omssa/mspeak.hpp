@@ -168,7 +168,7 @@ typedef AutoPtr <CMSModInfo, ArrayDeleter<CMSModInfo> > TModInfo;
 typedef AutoPtr <CMSHitInfo, ArrayDeleter<CMSHitInfo> > THitInfo;
 
 // class to contain preliminary hits.  memory footprint must be kept small.
-class CMSHit {
+class NCBI_XOMSSA_EXPORT CMSHit {
 public:
     // tor's
     CMSHit(void);
@@ -203,7 +203,23 @@ public:
 // return number of hits above threshold scaled by m/z positions
     int GetHits(double Threshold, int MaxI, int High);
 
-    // make a record of the ions hit
+    /**     
+     * Make a record of the hits to the mass ladders
+     * 
+     * @param BLadder plus one forward ladder
+     * @param YLadder plus one backward ladder
+     * @param B2Ladder plus two forward ladder
+     * @param Y2Ladder plus two backward ladder
+     * @param Peaks the experimental spectrum
+     * @param ModMask the bit array of modifications
+     * @param Site modification positions
+     * @param ModEnum
+     * @param NumMod  number of modifications
+     * @param PepStart starting position of peptide
+     * @param IsFixed array of indices to fixed mods
+     * @param Searchctermproduct search the c terminal ions
+     * @param Searchb1 search the first forward ion?
+     */
     void RecordMatches(CLadder& BLadder,
 					   CLadder& YLadder, 
 					   CLadder& B2Ladder,
@@ -214,7 +230,9 @@ public:
 					   int *ModEnum,
 					   int NumMod,
 					   const char *PepStart,
-                       int *IsFixed
+                       int *IsFixed,
+                       int Searchctermproduct,
+                       int Searchb1
 						);
 
 
@@ -247,9 +265,20 @@ public:
 
 protected:
 
-    // helper function for RecordMatches
-    void RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
-			   int Which);
+    /**
+     *  helper function for RecordHits that scans thru a single ladder
+     * 
+     * @param Ladder the ladder to record
+     * @param iHitInfo the index of the hit
+     * @param Peaks the spectrum that is hit
+     * @param Which which noise reduced spectrum to examine
+     * @param Offset the numbering offset for the ladder
+     */
+    void RecordMatchesScan(CLadder& Ladder,
+                           int& iHitInfo,
+                           CMSPeak *Peaks,
+                           int Which,
+                           int Offset);
 
 private:
     int Start, Stop;
@@ -513,8 +542,13 @@ public:
 	
     void Sort(int Which = MSORIGINAL);
 	
-    // Read a spectrum set into a CMSPeak
-    int Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale);
+    //! Read a spectrum set into a CMSPeak
+    int Read(CMSSpectrum& Spectrum, //!< the spectrum itself
+			 double MSMSTolerance, //!< product mass tolerance, unscaled
+			 double PrecursorTol,   //!< precursor mass tolerance, unscaled
+			 int Scale              //!< mass scale to use
+			 );
+
     // Write out a CMSPeak in dta format (useful for debugging)
     void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
 
@@ -653,9 +687,17 @@ public:
     const CMSSpectrum::TIds& GetName(void) const;
     int& SetNumber(void);
     const int GetNumber(void) const;
-    // set the mass tolerance.  input in Daltons.
+
+    //! set the product mass tolerance in Daltons.
     void SetTolerance(double tolin);
-    int GetTol(void);
+	//! get the product mass tolerance in Daltons.
+    int GetTol(void) const;
+
+	//! set the precursor mass tolerance in Daltons.
+	void SetPrecursorTol(double tolin);
+	//! get the precursor mass tolerance in Daltons.
+	int GetPrecursorTol(void) const;
+
     char *SetUsed(int Which);
 
     // clear used arrays for one cull type
@@ -679,7 +721,12 @@ private:
     int Precursormz;
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
-    int tol;        // error tolerance of peptide
+	
+    //! product error tolerance of peptide
+    int tol;
+	//! precursor error tolerance
+	int PrecursorTol;
+
     double PlusOne;  // value used to determine if spectra is +1
     EChargeState ComputedCharge;  // algorithmically calculated 
 	int ConsiderMult;  // at what precursor charge should multiply charged products be considered?
@@ -753,7 +800,8 @@ inline int CMSPeak::GetPrecursormz(void)
     return Precursormz;
 }
 
-inline int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
+inline 
+int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
 {
     return Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE;
 }
@@ -795,15 +843,28 @@ inline const int CMSPeak::GetNumber(void) const
     return Number; 
 }
 
-// set the mass tolerance.  input in Daltons.
-inline void CMSPeak::SetTolerance(double tolin)
+inline 
+void CMSPeak::SetTolerance(double tolin)
 {
     tol = static_cast <int> (tolin*MSSCALE);
 }
 
-inline int CMSPeak::GetTol(void) 
+inline 
+int CMSPeak::GetTol(void) const
 { 
     return tol; 
+}
+
+inline 
+void CMSPeak::SetPrecursorTol(double tolin)
+{
+    PrecursorTol = static_cast <int> (tolin*MSSCALE);
+}
+
+inline 
+int CMSPeak::GetPrecursorTol(void) const
+{ 
+    return PrecursorTol; 
 }
 
 inline char *CMSPeak::SetUsed(int Which)
@@ -844,7 +905,7 @@ inline int CMSPeak::GetWhich(int Charge)
 
 typedef deque <CMSPeak *> TPeakSet;
 
-class _MassPeak: public CObject {
+class NCBI_XOMSSA_EXPORT _MassPeak: public CObject {
 public:
     int Mass, Peptol;
     int Charge;
@@ -915,6 +976,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.27  2005/05/13 17:57:17  lewisg
+  one mod per site and bug fixes
+
   Revision 1.26  2005/04/21 21:54:03  lewisg
   fix Jeri's mem bug, split off mod file, add aspn and gluc
 

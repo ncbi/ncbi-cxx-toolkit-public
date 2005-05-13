@@ -53,9 +53,20 @@ USING_SCOPE(omssa);
 //
 
 
-// helper function for RecordHits that scans thru a single ladder
-void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
-			       int Which)
+/**
+ *  helper function for RecordHits that scans thru a single ladder
+ * 
+ * @param Ladder the ladder to record
+ * @param iHitInfo the index of the hit
+ * @param Peaks the spectrum that is hit
+ * @param Which which noise reduced spectrum to examine
+ * @param Offset the numbering offset for the ladder
+ */
+void CMSHit::RecordMatchesScan(CLadder& Ladder,
+                               int& iHitInfo,
+                               CMSPeak *Peaks,
+                               int Which,
+                               int Offset)
 {
     try {
 	TIntensity Intensity(new unsigned [Ladder.size()]);
@@ -68,7 +79,7 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
 	    if(Ladder.GetHit()[i] > 0) {
     		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
     		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
-    		SetHitInfo(iHitInfo).SetNumber() = (short) i;
+    		SetHitInfo(iHitInfo).SetNumber() = (short) i + Offset;
     		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
     		//  for poisson test
     		SetHitInfo(iHitInfo).SetMz() = Ladder[i];
@@ -121,7 +132,23 @@ void CMSHit::RecordModInfo(unsigned ModMask,
 }
 
 
-// make a record of the ions hit
+/**
+ * Make a record of the hits to the mass ladders
+ * 
+ * @param BLadder plus one forward ladder
+ * @param YLadder plus one backward ladder
+ * @param B2Ladder plus two forward ladder
+ * @param Y2Ladder plus two backward ladder
+ * @param Peaks the experimental spectrum
+ * @param ModMask the bit array of modifications
+ * @param Site modification positions
+ * @param ModEnum
+ * @param NumMod  number of modifications
+ * @param PepStart starting position of peptide
+ * @param IsFixed array of indices to fixed mods
+ * @param Searchctermproduct search the c terminal ions
+ * @param Searchb1 search the first forward ion?
+ */
 void CMSHit::RecordMatches(CLadder& BLadder, 
 						   CLadder& YLadder,
 						   CLadder& B2Ladder,
@@ -132,7 +159,9 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 						   int *ModEnum,
 						   int NumMod,
 						   const char *PepStart,
-                           int *IsFixed
+                           int *IsFixed,
+                           int Searchctermproduct,
+                           int Searchb1
 						   )
 {
     // create hitlist.  note that this is deleted in the copy operator
@@ -149,14 +178,14 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 
     // scan thru each ladder
     if(Charge >= Peaks->GetConsiderMult()) {
-		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
-		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
-		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which);
-		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
+		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
+		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which, Searchb1);
+		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which, Searchctermproduct);
     }
     else {
-		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
-		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
+		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
     }
 
 	// need to make function to save the info in ModInfo
@@ -422,10 +451,14 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 
 
 // read in an asn.1 spectrum and initialize peak values
-int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
+int CMSPeak::Read(CMSSpectrum& Spectrum,
+				   double MSMSTolerance,
+				   double PrecursorTol,
+				   int Scale)
 {
     try {
 	SetTolerance(MSMSTolerance);
+	SetPrecursorTol(PrecursorTol);
     Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)MSSCALE);  
 	Num[MSORIGINAL] = 0;   
     
