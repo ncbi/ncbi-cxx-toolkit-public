@@ -38,6 +38,11 @@
 #include <corelib/ncbistl.hpp>
 #include <algo/blast/core/blast_psi.h>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
@@ -91,10 +96,15 @@ public:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/05/13 21:24:10  camacho
+ * Minor doxygen fix
+ *
  * Revision 1.9  2005/03/08 20:59:37  camacho
  * IPssmInputData::GetDiagnosticsRequest() returns NULL by default
  *
