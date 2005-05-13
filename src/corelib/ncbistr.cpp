@@ -691,14 +691,14 @@ void NStr::IntToString(string& out_str, long svalue, TIntToStringFlags fmt)
 // OBSOLETED
 string NStr::IntToString(long value, bool sign)
 {
-    return IntToString(value, fSign);
+    return IntToString(value, sign? fSign: 0);
 }
 
 
 // OBSOLETED
 void NStr::IntToString(string& out_str, long value, bool sign)
 {
-    IntToString(out_str, value, fSign);
+    IntToString(out_str, value, sign? fSign: 0);
 }
 
 
@@ -749,8 +749,8 @@ string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
 }
 
 
-//#define PRINT_INT8_CHUNK 1000000000
-//#define PRINT_INT8_CHUNK_SIZE 9
+#define PRINT_INT8_CHUNK 1000000000
+#define PRINT_INT8_CHUNK_SIZE 9
 
 
 static char* PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
@@ -843,13 +843,13 @@ void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
 // OBSOLETED
 string NStr::Int8ToString(Int8 value, bool sign)
 {
-    return Int8ToString(value, fSign);
+    return Int8ToString(value, sign? fSign: 0);
 }
 
 // OBSOLETED
 void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 {
-    Int8ToString(out_str, value, fSign);
+    Int8ToString(out_str, value, sign? fSign: 0);
 }
 
 
@@ -1949,6 +1949,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.148  2005/05/13 16:12:39  vasilche
+ * Enabled int chunk printing.
+ * Correctly pass bool sign in flags.
+ *
  * Revision 1.147  2005/05/13 13:59:39  vasilche
  * Fixed conversion of int to string using int chunks.
  * Allow configurable int chunks in conversion.
