@@ -273,7 +273,7 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
     } else {
         SEntry entry = Load(path, eName_AsIs, flags, reg_flags, &reg);
         _ASSERT(entry.registry.IsNull()  ||  entry.registry == &reg);
-        return entry.registry;
+        return !entry.registry.IsNull();
     }
 }
 
@@ -364,6 +364,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/05/13 11:09:06  ivanov
+ * Fixed performance warning on MSVC
+ *
  * Revision 1.19  2005/05/12 17:50:45  ucko
  * Fix a logic error in the previous revision that broke initial loads.
  *
