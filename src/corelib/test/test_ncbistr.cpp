@@ -240,58 +240,43 @@ static const int kBadValue = 555;
 struct SStringNumericValues
 {
     const char* str;
-    Int8 i8;
-    Uint8 u8;
+    Int8   i8;
+    Uint8  u8;
     double d;
 
-    bool IsGoodI8(void) const
-        {
-            return i8 != kBadValue;
-        }
-    bool IsGoodU8(void) const
-        {
-            return u8 != Uint8(kBadValue);
-        }
-    bool Same(const string& s) const
-        {
-            if ( str[0] == '+' && isdigit(str[1]&255) )
-                return s == str+1;
-            else
-                return s == str;
-        }
+    bool IsGoodI8(void) const {
+        return i8 != kBadValue;
+    }
+    bool IsGoodU8(void) const {
+        return u8 != Uint8(kBadValue);
+    }
+    bool Same(const string& s) const {
+        if ( str[0] == '+' && isdigit(str[1]&255) )
+            return s == str + 1;
+        else
+            return s == str;
+    }
 };
 
 
-#if   (SIZEOF_LONG == 8)
-#  define NCBI_I8(v)  v##L    //NCBI_NAME2(v,L)
-#  define NCBI_U8(v)  v##UL   //NCBI_NAME2(v,UL)
-#elif (SIZEOF_LONG_LONG == 8)
-#  define NCBI_I8(v)  v##LL   //NCBI_NAME2(v,LL)
-#  define NCBI_U8(v)  v##ULL  //NCBI_NAME2(v,ULL)
-#elif defined(NCBI_USE_INT64)
-#  define NCBI_I8(v)  v##i64  //NCBI_NAME2(v,i64)
-#  define NCBI_U8(v)  v##ui64 //NCBI_NAME2(v,ui64)
-#endif
-#define NCBI_D(v) v##.
+#define STR(v)  { #v, NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. }
+#define STRD(v) { #v, kBadValue, kBadValue, v##. }
+#define STRI(v) { #v, NCBI_CONST_INT8(v), kBadValue, v##. }
+#define STRU(v) { #v, kBadValue, NCBI_CONST_UINT8(v), v##. }
 
-#define STR(v) { #v, NCBI_I8(v), NCBI_U8(v), NCBI_D(v) }
-#define STRD(v) { #v, kBadValue, kBadValue, NCBI_D(v) }
-#define STRI(v) { #v, NCBI_I8(v), kBadValue, NCBI_D(v) }
-#define STRU(v) { #v, kBadValue, NCBI_U8(v), NCBI_D(v) }
-
-static const SStringNumericValues s_Strings[] = {
-    { "", kBadValue, kBadValue, kBadValue },
-    { ".", kBadValue, kBadValue, kBadValue },
-    { "..", kBadValue, kBadValue, kBadValue },
-    { ".0", kBadValue, kBadValue, 0 },
-    { ".0.", kBadValue, kBadValue, kBadValue },
-    { "..0", kBadValue, kBadValue, kBadValue },
-    { ".01", kBadValue, kBadValue, .01 },
-    { "1.", kBadValue, kBadValue, 1 },
-    { "1.1", kBadValue, kBadValue, 1.1 },
+static const SStringNumericValues s_Str2NumTests[] = {
+    { "",     kBadValue, kBadValue, kBadValue },
+    { ".",    kBadValue, kBadValue, kBadValue },
+    { "..",   kBadValue, kBadValue, kBadValue },
+    { ".0",   kBadValue, kBadValue, 0 },
+    { ".0.",  kBadValue, kBadValue, kBadValue },
+    { "..0",  kBadValue, kBadValue, kBadValue },
+    { ".01",  kBadValue, kBadValue, .01 },
+    { "1.",   kBadValue, kBadValue, 1 },
+    { "1.1",  kBadValue, kBadValue, 1.1 },
     { "1.1.", kBadValue, kBadValue, kBadValue },
-    { "1..", kBadValue, kBadValue, kBadValue },
-    { "-1", -1, kBadValue, -1 },
+    { "1..",  kBadValue, kBadValue, kBadValue },
+    { "-1",   -1,        kBadValue, -1 },
     { "0", 0, 0, 0 },
     { "1", 1, 1, 1 },
     STRI(-2147483649),
@@ -304,12 +289,12 @@ static const SStringNumericValues s_Strings[] = {
     STR(4294967295),
     STR(4294967296),
     { " 123 ", kBadValue, kBadValue, kBadValue },
-    { " 123", kBadValue, kBadValue, kBadValue },
-    { "123 ", kBadValue, kBadValue, kBadValue },
-    { "-324", -324, kBadValue, -324 },
+    { " 123",  kBadValue, kBadValue, kBadValue },
+    { "123 ",  kBadValue, kBadValue, kBadValue },
+    { "-324",  -324,      kBadValue, -324 },
     { "--324", kBadValue, kBadValue, kBadValue },
-    { " 567", kBadValue, kBadValue, kBadValue },
-    { "+890", +890, +890, +890 },
+    { " 567",  kBadValue, kBadValue, kBadValue },
+    { "+890",  +890,      +890,      +890 },
     { "++890", kBadValue, kBadValue, kBadValue },
     STR(1),
     STR(10),
@@ -347,25 +332,10 @@ int CTestApplication::Run(void)
 #ifdef TEST_MEMORY_USAGE
     Test(eRef);
 #endif
-
-    //        CExceptionReporterStream reporter(cerr);
-    //        CExceptionReporter::SetDefault(&reporter);
-    //        CExceptionReporter::EnableDefault(false);
-    //        CExceptionReporter::EnableDefault(true);
-    //        CExceptionReporter::SetDefault(0);
     
     SetupDiag(eDS_ToStdout);
-    /*
-    CExceptionReporter::EnableDefault(true);
-    cerr << endl;
-    NCBI_REPORT_EXCEPTION(
-    "****** default reporter (stream) ******",e);
+    CExceptionReporter::EnableDefault(false);
 
-    CExceptionReporter::SetDefault(0);
-    cerr << endl;
-    NCBI_REPORT_EXCEPTION(
-    "****** default reporter (diag) ******",e);
-    */
 
     //------------------------------------------------------------------------
     // NStr::StringTo*()
@@ -373,18 +343,19 @@ int CTestApplication::Run(void)
 
     NcbiCout << "Test NCBISTR:" << NcbiEndl;
 
-    const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
+    const size_t count = sizeof(s_Str2NumTests) / sizeof(s_Str2NumTests[0]);
 
     for (size_t i = 0;  i < count;  ++i) {
-        const char* str = s_Strings[i].str;
+        const SStringNumericValues* test = &s_Str2NumTests[i];
+        const char* str = test->str;
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         {{
             int value = NStr::StringToNumeric(str);
-            Uint8 num = s_Strings[i].u8;
+            Uint8 num = test->u8;
             int expected = -1;
             if ( isdigit(str[0]&255) &&
-                 s_Strings[i].IsGoodU8() &&
+                 test->IsGoodU8() &&
                  num <= Uint8(kMax_Int) ) {
                 expected = int(num);
             }
@@ -421,7 +392,6 @@ int CTestApplication::Run(void)
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
-
         try {
             unsigned long value = NStr::StringToULong(str);
             NcbiCout << "unsigned long value: " << value << ", toString: '"
@@ -446,34 +416,33 @@ int CTestApplication::Run(void)
             Int8 value = NStr::StringToInt8(str);
             NcbiCout << "Int8 value: " << value << ", toString: '"
                      << NStr::Int8ToString(value) << "'" << NcbiEndl;
-            assert(s_Strings[i].IsGoodI8());
-            assert(value == s_Strings[i].i8);
-            assert(s_Strings[i].Same(NStr::Int8ToString(value)));
+            assert(test->IsGoodI8());
+            assert(value == test->i8);
+            assert(test->Same(NStr::Int8ToString(value)));
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
-            if ( s_Strings[i].IsGoodI8() ) {
-                ERR_POST("!!!!! Cannot convert \"" << str << "\" to Int8");
+            if ( test->IsGoodI8() ) {
+                ERR_POST("Cannot convert \"" << str << "\" to Int8");
             }
-            //assert(!s_Strings[i].IsGoodI8());
+            assert(!test->IsGoodI8());
         }
 
         try {
             Uint8 value = NStr::StringToUInt8(str);
             NcbiCout << "Uint8 value: " << value << ", toString: '"
                      << NStr::UInt8ToString(value) << "'" << NcbiEndl;
-            assert(s_Strings[i].IsGoodU8());
-            assert(value == s_Strings[i].u8);
-            assert(s_Strings[i].Same(NStr::UInt8ToString(value)));
+            assert(test->IsGoodU8());
+            assert(value == test->u8);
+            assert(test->Same(NStr::UInt8ToString(value)));
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
-            if ( s_Strings[i].IsGoodU8() ) {
-                ERR_POST("!!!!! Cannot convert \"" << str << "\" to Uint8");
+            if ( test->IsGoodU8() ) {
+                ERR_POST("Cannot convert \"" << str << "\" to Uint8");
             }
-            //assert(!s_Strings[i].IsGoodU8());
+            assert(!test->IsGoodU8());
         }
-        
     }
 
     // Writing separate tests for StringToUInt8 because we
@@ -1172,8 +1141,6 @@ int CTestApplication::Run(void)
         ParseVersionString("MyProgram ", &pname, &ver);
         assert(pname ==  "MyProgram");
         assert(ver.IsAny());
-
-
     }}
 
     OK;
@@ -1202,6 +1169,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.43  2005/05/13 16:27:31  ivanov
+ * Enabled commented asserts -- StringTo[U]Int8 was fixed.
+ * Minor cosmetics.
+ *
  * Revision 6.42  2005/05/13 14:00:12  vasilche
  * Added more checks of int to string conversion.
  *
