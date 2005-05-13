@@ -26,7 +26,7 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Auxiliary API, mostly CONN-, URL-, and MIME-related
+ *   Auxiliary API, mostly CONN-, URL-/BASE64-, and MIME-related
  *   (see in "ncbi_connutil.h" for more details).
  *
  */
@@ -91,9 +91,10 @@ static const char* s_GetValue(const char* service, const char* param,
 }
 
 
-/***********************************************************************
- *  EXTERNAL
- ***********************************************************************/
+
+/****************************************************************************
+ * ConnNetInfo API
+ */
 
 
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
@@ -759,6 +760,12 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 }
 
 
+
+/****************************************************************************
+ * URL_Connect
+ */
+
+
 extern SOCK URL_Connect
 (const char*     host,
  unsigned short  port,
@@ -905,8 +912,12 @@ extern SOCK URL_Connect
 }
 
 
-/* Code for the "*_StripToPattern()" functions
+
+/****************************************************************************
+ * StripToPattern()
  */
+
+
 typedef EIO_Status (*FDoIO)
      (void*     stream,
       void*     buf,
@@ -1103,6 +1114,13 @@ extern EIO_Status BUF_StripToPattern
 }
 
 
+
+
+/****************************************************************************
+ * URL- and BASE64- Encoding/Decoding
+ */
+
+
 /* Return integer (0..15) corresponding to the "ch" as a hex digit
  * Return -1 on error
  */
@@ -1116,6 +1134,7 @@ static int s_HexChar(char ch)
         return 10 + (ch - 'A');
     return -1;
 }
+
 
 /* The URL-encoding table
  */
@@ -1153,6 +1172,7 @@ static const char s_Encode[256][4] = {
     "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
     "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
 };
+
 #define VALID_URL_SYMBOL(ch)  (s_Encode[(unsigned char)ch][0] != '%')
 
 
@@ -1259,7 +1279,6 @@ extern void URL_Encode
 }
 
 
-
 extern void BASE64_Encode
 (const void* src_buf,
  size_t      src_size,
@@ -1279,9 +1298,9 @@ extern void BASE64_Encode
     unsigned char* src = (unsigned char*) src_buf;
     unsigned char* dst = (unsigned char*) dst_buf;
     size_t len = 0, i = 0, j = 0;
+    unsigned char temp = 0, c;
     unsigned char shift = 2;
-    unsigned char temp = 0;
-    if (!max_src) {
+    if (!max_src  ||  !src_size) {
         *src_read    = 0;
         *dst_written = 0;
         if (dst_size > 0) {
@@ -1292,33 +1311,37 @@ extern void BASE64_Encode
     if (src_size > max_src) {
         src_size = max_src;
     }
+    c = src[0];
     for (;;) {
-        unsigned char c = i < src_size ? src[i] : 0;
         unsigned char bits = (c >> shift) & 0x3F;
-        assert((size_t)(temp | bits) < sizeof(syms) - 1);
-        dst[j++] = syms[temp | bits];
-        if (max_len  &&  ++len >= max_len) {
+        if (max_len  &&  len >= max_len) {
             dst[j++] = '\n';
             len = 0;
         }
+        assert((size_t)(temp | bits) < sizeof(syms) - 1);
+        dst[j++] = syms[temp | bits];
+        len++;
         if (i >= src_size) {
             break;
         }
         shift += 2;
         shift &= 7;
+        temp = (c << (8 - shift)) & 0x3F;
         if (shift) {
+            c = ++i < src_size ? src[i] : 0;
+        } else if (i + 1 == src_size) {
             i++;
         }
-        temp = (c << (8 - shift)) & 0x3F;
     }
     assert(j <= dst_size);
     *src_read = i;
     for (i = 0; i < (3 - src_size % 3) % 3; i++) {
-        dst[j++] = '=';
-        if (max_len  &&  ++len >= max_len) {
+        if (max_len  &&  len >= max_len) {
             dst[j++] = '\n';
             len = 0;
         }
+        dst[j++] = '=';
+        len++;
     }
     assert(j <= dst_size);
     *dst_written = j;
@@ -1420,6 +1443,7 @@ extern int/*bool*/ BASE64_Decode
 /****************************************************************************
  * NCBI-specific MIME content type and sub-types
  */
+
 
 static const char* s_MIME_Type[eMIME_T_Unknown+1] = {
     "x-ncbi-data",
@@ -1592,6 +1616,7 @@ extern int/*bool*/ MIME_ParseContentType
  * Reading and writing [host][:port] addresses
  */
 
+
 extern const char* StringToHostPort(const char*     str,
                                     unsigned int*   host,
                                     unsigned short* port)
@@ -1664,6 +1689,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.74  2005/05/13 21:12:23  lavr
+ * BASE64_Encode(): fix a critical encoding bug (stray ending char)
+ *
  * Revision 6.73  2005/05/02 16:03:24  lavr
  * Better assert() in BASE64_Encode()
  *
