@@ -31,34 +31,36 @@
  *
  */
 
-/// @file ncbitype.h
-///
-/// Defines NCBI C/C++ fixed-size types:
-/// -  Char, Uchar
-/// -  Int1, Uint1
-/// -  Int2, Uint2
-/// -  Int4, Uint4
-/// -  Int8, Uint8
-/// -  Ncbi_BigScalar
-/// -  Macros for constant values definition.
-
-
-#include <ncbiconf.h>
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-
+/**
+ * @file ncbitype.h
+ *
+ * Defines NCBI C/C++ fixed-size types.
+ *
+ *   -  Char, Uchar
+ *   -  Int1, Uint1
+ *   -  Int2, Uint2
+ *   -  Int4, Uint4
+ *   -  Int8, Uint8
+ *   -  Ncbi_BigScalar
+ *   -  Macros for constant values definition.
+ *
+ */
 
 /** @addtogroup Portability
  *
  * @{
  */
 
+#include <ncbiconf.h>
 
-/*
- * threads configuration
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+
+
+/* Threads configuration
  */
+
 #undef NCBI_NO_THREADS
 #undef NCBI_THREADS
 #undef NCBI_POSIX_THREADS
@@ -95,15 +97,15 @@
 #endif
 
 
-typedef          char  Char;    ///< Alias for char
-typedef signed   char  Schar;   ///< Alias for signed char
-typedef unsigned char  Uchar;   ///< Alias for unsigned char
-typedef signed   char  Int1;    ///< Alias for signed char
-typedef unsigned char  Uint1;   ///< Alias for unsigned char
-typedef signed   short Int2;    ///< Alias for signed short
-typedef unsigned short Uint2;   ///< Alias for unsigned short
-typedef signed   int   Int4;    ///< Alias for signed int
-typedef unsigned int   Uint4;   ///< Alias for unsigned int
+typedef          char  Char;    /**< Alias for char */
+typedef signed   char  Schar;   /**< Alias for signed char */
+typedef unsigned char  Uchar;   /**< Alias for unsigned char */
+typedef signed   char  Int1;    /**< Alias for signed char */
+typedef unsigned char  Uint1;   /**< Alias for unsigned char */
+typedef signed   short Int2;    /**< Alias for signed short */
+typedef unsigned short Uint2;   /**< Alias for unsigned short */
+typedef signed   int   Int4;    /**< Alias for signed int */
+typedef unsigned int   Uint4;   /**< Alias for unsigned int */
 
 
 /* Int8, Uint8
@@ -120,10 +122,10 @@ typedef unsigned int   Uint4;   ///< Alias for unsigned int
 #  error "This platform does not support 8-byte integer"
 #endif
 
-/// Signed 8 byte sized integer.
+/** Signed 8 byte sized integer */
 typedef signed   INT8_TYPE Int8;    
 
-/// Unsigned 8 byte sized integer.
+/** Unsigned 8 byte sized integer */
 typedef unsigned INT8_TYPE Uint8;
 
 
@@ -151,10 +153,12 @@ typedef unsigned INT8_TYPE Uint8;
 #  define BIG_SIZE SIZEOF_VOIDP
 #endif
 
-/// Define large scalar type.
-///
-/// This is platform dependent. It could be an Int8, long double, double
-/// or void*.
+/**
+ * Define large scalar type.
+ *
+ * This is platform dependent. It could be an Int8, long double, double
+ * or void*.
+ */
 typedef BIG_TYPE Ncbi_BigScalar;
 
 
@@ -171,21 +175,22 @@ typedef long long intptr_t;
 #endif
 
 
-/// Macros for constant values definition
+/* Macros for constant values definition 
+ */
+
 #if (SIZEOF_LONG == 8)
-#  define NCBI_CONST_INT8(v)   v##L     //NCBI_NAME2(v,L)
-#  define NCBI_CONST_UINT8(v)  v##UL    //NCBI_NAME2(v,UL)
+#  define NCBI_CONST_INT8(v)   v##L
+#  define NCBI_CONST_UINT8(v)  v##UL
 #elif (SIZEOF_LONG_LONG == 8)
-#  define NCBI_CONST_INT8(v)   v##LL    //NCBI_NAME2(v,LL)
-#  define NCBI_CONST_UINT8(v)  v##ULL   //NCBI_NAME2(v,ULL)
+#  define NCBI_CONST_INT8(v)   v##LL
+#  define NCBI_CONST_UINT8(v)  v##ULL
 #elif defined(NCBI_USE_INT64)
-#  define NCBI_CONST_INT8(v)   v##i64   //NCBI_NAME2(v,i64)
-#  define NCBI_CONST_UINT8(v)  v##ui64  //NCBI_NAME2(v,ui64)
+#  define NCBI_CONST_INT8(v)   v##i64
+#  define NCBI_CONST_UINT8(v)  v##ui64
 #else
 #  define NCBI_CONST_INT8(v)   v
 #  define NCBI_CONST_UINT8(v)  v
 #endif
-#define NCBI_CONST_DOUBLE(v)   v##.
 
 
 /* Undef auxiliaries
@@ -202,6 +207,9 @@ typedef long long intptr_t;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/13 16:55:16  ivanov
+ * Removed redundand macro NCBI_CONST_DOUBLE. Replaced C++ comments.
+ *
  * Revision 1.17  2005/05/13 15:36:12  ivanov
  * Fixed typo in previous commit
  *
