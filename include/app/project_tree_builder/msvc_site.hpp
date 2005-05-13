@@ -96,7 +96,7 @@ public:
     /// Is section present in site registry?
     bool IsDescribed(const string& section) const;
 
-    string ProcessMacros(string data) const;
+    string ProcessMacros(string data, bool preserve_unresolved=true) const;
     // Get library (LIBS) description
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/13 15:37:12  gouriano
+ * Made preserving unresolved macros optional
+ *
  * Revision 1.22  2005/02/15 19:03:51  gouriano
  * Added list of standard features
  *

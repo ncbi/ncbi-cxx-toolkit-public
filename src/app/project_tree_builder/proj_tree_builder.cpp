@@ -447,7 +447,7 @@ void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends,
         if (id[0] == '#') {
             break;
         }
-        string lib = GetApp().GetSite().ProcessMacros(id);
+        string lib = GetApp().GetSite().ProcessMacros(id,false);
         if (!lib.empty()) {
             depends_libs.push_back(lib);
         } else {
@@ -1546,6 +1546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/13 15:37:56  gouriano
+ * Made preserving unresolved macros optional
+ *
  * Revision 1.25  2005/05/09 17:03:38  gouriano
  * Added filtering by project tag
  *

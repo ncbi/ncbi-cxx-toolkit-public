@@ -99,7 +99,7 @@ void CMsvcSite::GetComponents(const string& entry,
     NStr::Split(comp_str, " ,\t", *components);
 }
 
-string CMsvcSite::ProcessMacros(string raw_data) const
+string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
 {
     string data(raw_data), raw_macro, macro, definition;
     string::size_type start, end, done = 0;
@@ -113,7 +113,7 @@ string CMsvcSite::ProcessMacros(string raw_data) const
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
             definition = m_Registry.GetString("Configure", macro, "");
-            if (definition.empty()) {
+            if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros
                 done = end;
             } else {
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/13 15:37:56  gouriano
+ * Made preserving unresolved macros optional
+ *
  * Revision 1.28  2005/05/12 18:06:34  gouriano
  * Preserve unresolved macros
  *
