@@ -465,10 +465,15 @@ Int8 NStr::StringToInt8(const string&  str,
 {
     const char* endptr = str.c_str();
 
+    Int8 n = 0;
+    Int8 limdiv = kMax_I8 / base;
+    Int8 limoff = kMax_I8 % base;
+
     bool sign = false;
     switch (*endptr) {
     case '-':
         sign = true;
+        limoff++;
         /*FALLTHRU*/
     case '+':
         endptr++;
@@ -476,10 +481,6 @@ Int8 NStr::StringToInt8(const string&  str,
     default:
         break;
     }
-
-    Int8 n = 0;
-    Int8 limdiv = kMax_I8 / base;
-    Int8 limoff = kMax_I8 % base;
 
     while(*endptr) {
         int ch = *endptr;
@@ -489,7 +490,6 @@ Int8 NStr::StringToInt8(const string&  str,
         if (!s_IsGoodCharForRadix(ch, base, &delta)) {
             break;
         }
-        n *= base;
 
         // Overflow checking
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
@@ -500,6 +500,7 @@ Int8 NStr::StringToInt8(const string&  str,
             }
             return 0;
         }
+        n *= base;
         n += delta;
         endptr++;
     }
@@ -537,7 +538,6 @@ Uint8 NStr::StringToUInt8(const string&  str,
         if (!s_IsGoodCharForRadix(ch, base, &delta)) {
             break;
         }
-        n *= base;
 
         // Overflow checking
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
@@ -548,6 +548,7 @@ Uint8 NStr::StringToUInt8(const string&  str,
             }
             return 0;
         }
+        n *= base;
         n += delta;
         endptr++;
     }
@@ -749,11 +750,14 @@ string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
 }
 
 
+// On some platforms division of Int8 is very slow,
+// so will try to optimize it working with chunks.
+
 #define PRINT_INT8_CHUNK 1000000000
 #define PRINT_INT8_CHUNK_SIZE 9
 
-
-static char* PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
+/// @internal
+static char* s_PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
 {
     if ( fmt & NStr::fCommas ) {
         int cnt = -1;
@@ -829,7 +833,8 @@ void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
-    char* pos = PrintUint8(buffer + kBufSize, value<0?-value:value, fmt);
+    char* pos = s_PrintUint8(buffer + kBufSize,
+                             value < 0 ? -value : value, fmt);
 
     if ( value < 0 )
         *--pos = '-';
@@ -866,7 +871,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
-    char* pos = PrintUint8(buffer + kBufSize, value, fmt);
+    char* pos = s_PrintUint8(buffer + kBufSize, value, fmt);
 
     if (fmt & fSign)
         *--pos = '+';
@@ -1949,6 +1954,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.149  2005/05/13 16:24:26  ivanov
+ * NStr::StringTo[U]Int8 -- fixed limits checks
+ *
  * Revision 1.148  2005/05/13 16:12:39  vasilche
  * Enabled int chunk printing.
  * Correctly pass bool sign in flags.
