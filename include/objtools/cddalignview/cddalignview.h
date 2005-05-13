@@ -1,38 +1,41 @@
-/*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Paul Thiessen
-*
-* File Description:
-*      C interface header for cddalignview as function call
-*
-* ===========================================================================
-*/
-
 #ifndef CDDALIGNVIEW__H
 #define CDDALIGNVIEW__H
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Paul Thiessen
+ *
+ *
+ */
+
+/**
+ * @file cddalignview.h
+ *
+ * C interface header for cddalignview as function call
+ */
 
 #ifdef __cplusplus
 #include <corelib/ncbistd.hpp>
@@ -112,7 +115,9 @@ extern int CAV_DisplayMultiple(
 #ifdef __cplusplus
 }
 
-// a C++ version of the function, that places output on the given streams.
+/**
+ * A C++ version of the function, that places output on the given streams.
+ */
 extern int CAV_DisplayMultiple(
     const void *asnDataBlock,
     int asnSize,
@@ -122,11 +127,11 @@ extern int CAV_DisplayMultiple(
     const char *title,
     int nFeatures,
     const AlignmentFeature *features,
-    ncbi::CNcbiOstream *outputStream,       // regular program output (alignments); cout if NULL
-    ncbi::CNcbiOstream *diagnosticStream    // diagnostic messages/errors; cerr if NULL
+    ncbi::CNcbiOstream *outputStream,       /**< Regular program output (alignments); cout if NULL */
+    ncbi::CNcbiOstream *diagnosticStream    /**< Diagnostic messages/errors; cerr if NULL */
 );
 
-// and one that takes a mime object rather than an in-memory asn blob
+/* and one that takes a mime object rather than an in-memory asn blob */
 extern int CAV_DisplayMultiple(
     const ncbi::objects::CNcbi_mime_asn1& mime,
     unsigned int options,
@@ -135,8 +140,8 @@ extern int CAV_DisplayMultiple(
     const char *title,
     int nFeatures,
     const AlignmentFeature *features,
-    ncbi::CNcbiOstream *outputStream,       // regular program output (alignments); cout if NULL
-    ncbi::CNcbiOstream *diagnosticStream    // diagnostic messages/errors; cerr if NULL
+    ncbi::CNcbiOstream *outputStream,       /**< Regular program output (alignments); cout if NULL */
+    ncbi::CNcbiOstream *diagnosticStream    /**< Diagnostic messages/errors; cerr if NULL */
 );
 
 #endif
@@ -144,57 +149,61 @@ extern int CAV_DisplayMultiple(
 #endif /* CDDALIGNVIEW__H */
 
 /*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2005/05/13 14:17:19  thiessen
-* require asn memory buffer size
-*
-* Revision 1.3  2005/03/02 18:04:59  thiessen
-* add variant taking mime C++ object
-*
-* Revision 1.2  2004/07/26 19:15:21  thiessen
-* add option to not color HTML paragraphs
-*
-* Revision 1.1  2003/03/19 19:05:31  thiessen
-* move again
-*
-* Revision 1.1  2003/03/19 05:33:43  thiessen
-* move to src/app/cddalignview
-*
-* Revision 1.12  2003/03/18 22:35:06  thiessen
-* add C++ version of function that takes streams for output
-*
-* Revision 1.11  2003/02/03 17:52:04  thiessen
-* move CVS Log to end of file
-*
-* Revision 1.10  2003/01/21 18:01:07  thiessen
-* add condensed alignment display
-*
-* Revision 1.9  2003/01/21 12:33:17  thiessen
-* move includes into src dir
-*
-* Revision 1.8  2002/11/08 19:38:16  thiessen
-* add option for lowercase unaligned in FASTA
-*
-* Revision 1.7  2002/02/12 13:06:47  thiessen
-* annot description optional
-*
-* Revision 1.6  2002/02/08 19:53:59  thiessen
-* add annotation to text/HTML displays
-*
-* Revision 1.5  2001/05/17 14:48:52  lavr
-* Typos corrected
-*
-* Revision 1.4  2001/03/02 01:19:29  thiessen
-* add FASTA output
-*
-* Revision 1.3  2001/02/15 19:23:07  thiessen
-* add identity coloring
-*
-* Revision 1.2  2001/02/14 16:05:46  thiessen
-* add block and conservation coloring to HTML display
-*
-* Revision 1.1  2001/01/29 18:13:41  thiessen
-* split into C-callable library + main
-*
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2005/05/13 18:42:05  ivanov
+ * Do not use C++ comments in the .h files
+ *
+ * Revision 1.4  2005/05/13 14:17:19  thiessen
+ * require asn memory buffer size
+ *
+ * Revision 1.3  2005/03/02 18:04:59  thiessen
+ * add variant taking mime C++ object
+ *
+ * Revision 1.2  2004/07/26 19:15:21  thiessen
+ * add option to not color HTML paragraphs
+ *
+ * Revision 1.1  2003/03/19 19:05:31  thiessen
+ * move again
+ *
+ * Revision 1.1  2003/03/19 05:33:43  thiessen
+ * move to src/app/cddalignview
+ *
+ * Revision 1.12  2003/03/18 22:35:06  thiessen
+ * add C++ version of function that takes streams for output
+ *
+ * Revision 1.11  2003/02/03 17:52:04  thiessen
+ * move CVS Log to end of file
+ *
+ * Revision 1.10  2003/01/21 18:01:07  thiessen
+ * add condensed alignment display
+ *
+ * Revision 1.9  2003/01/21 12:33:17  thiessen
+ * move includes into src dir
+ *
+ * Revision 1.8  2002/11/08 19:38:16  thiessen
+ * add option for lowercase unaligned in FASTA
+ *
+ * Revision 1.7  2002/02/12 13:06:47  thiessen
+ * annot description optional
+ *
+ * Revision 1.6  2002/02/08 19:53:59  thiessen
+ * add annotation to text/HTML displays
+ *
+ * Revision 1.5  2001/05/17 14:48:52  lavr
+ * Typos corrected
+ *
+ * Revision 1.4  2001/03/02 01:19:29  thiessen
+ * add FASTA output
+ *
+ * Revision 1.3  2001/02/15 19:23:07  thiessen
+ * add identity coloring
+ *
+ * Revision 1.2  2001/02/14 16:05:46  thiessen
+ * add block and conservation coloring to HTML display
+ *
+ * Revision 1.1  2001/01/29 18:13:41  thiessen
+ * split into C-callable library + main
+ *
+ * ==========================================================================
+ */
