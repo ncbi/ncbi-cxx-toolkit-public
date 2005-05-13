@@ -749,42 +749,89 @@ string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
 }
 
 
-void NStr::Int8ToString(string& out_str, Int8 svalue, TIntToStringFlags fmt)
+//#define PRINT_INT8_CHUNK 1000000000
+//#define PRINT_INT8_CHUNK_SIZE 9
+
+
+static char* PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
 {
-    Int8 value = Uint8(svalue<0?-svalue:svalue);
-
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
-    char  buffer[kBufSize];
-    char* pos = buffer + kBufSize;
-
-    static const Uint4 kChunk = 1000000000;
-    if ( fmt & fCommas ) {
+    if ( fmt & NStr::fCommas ) {
         int cnt = -1;
-        do {
-            Uint4 chunk = Uint4(value % kChunk);
-            value /= kChunk;
-            do {
-                if (++cnt == 3) {
-                    *--pos = ',';
-                    cnt = 0;
+#ifdef PRINT_INT8_CHUNK
+        for ( ;; ) {
+            Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
+            value /= PRINT_INT8_CHUNK;
+            if ( value ) {
+                for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
+                    if (++cnt == 3) {
+                        *--pos = ',';
+                        cnt = 0;
+                    }
+                    *--pos = char('0' + (chunk % 10));
+                    chunk /= 10;
                 }
-                *--pos = char('0' + (chunk % 10));
-                chunk /= 10;
-            } while ( chunk );
+            }
+            else {
+                do {
+                    if (++cnt == 3) {
+                        *--pos = ',';
+                        cnt = 0;
+                    }
+                    *--pos = char('0' + (chunk % 10));
+                    chunk /= 10;
+                } while ( chunk );
+                break;
+            }
+        }
+#else
+        do {
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            *--pos = char('0' + (value % 10));
+            value /= 10;
         } while ( value );
+#endif
     }
     else {
+#ifdef PRINT_INT8_CHUNK
+        for ( ;; ) {
+            Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
+            value /= PRINT_INT8_CHUNK;
+            if ( value ) {
+                for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
+                    *--pos = char('0' + (chunk % 10));
+                    chunk /= 10;
+                }
+            }
+            else {
+                do {
+                    *--pos = char('0' + (chunk % 10));
+                    chunk /= 10;
+                } while ( chunk );
+                break;
+            }
+        }
+#else
         do {
-            Uint4 chunk = Uint4(value % kChunk);
-            value /= kChunk;
-            do {
-                *--pos = char('0' + (chunk % 10));
-                chunk /= 10;
-            } while ( chunk );
+            *--pos = char('0' + (value % 10));
+            value /= 10;
         } while ( value );
+#endif
     }
-    
-    if ( svalue < 0 )
+    return pos;
+}
+
+
+void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
+{
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    char  buffer[kBufSize];
+
+    char* pos = PrintUint8(buffer + kBufSize, value<0?-value:value, fmt);
+
+    if ( value < 0 )
         *--pos = '-';
     else if (fmt & fSign)
         *--pos = '+';
@@ -818,35 +865,9 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
-    char* pos = buffer + kBufSize;
 
-    static const Uint4 kChunk = 1000000000;
-    if ( fmt & fCommas ) {
-        int cnt = -1;
-        do {
-            Uint4 chunk = Uint4(value % kChunk);
-            value /= kChunk;
-            do {
-                if (++cnt == 3) {
-                    *--pos = ',';
-                    cnt = 0;
-                }
-                *--pos = char('0' + (chunk % 10));
-                chunk /= 10;
-            } while ( chunk );
-        } while ( value );
-    }
-    else {
-        do {
-            Uint4 chunk = Uint4(value % kChunk);
-            value /= kChunk;
-            do {
-                *--pos = char('0' + (chunk % 10));
-                chunk /= 10;
-            } while ( chunk );
-        } while ( value );
-    }
-    
+    char* pos = PrintUint8(buffer + kBufSize, value, fmt);
+
     if (fmt & fSign)
         *--pos = '+';
 
@@ -1928,6 +1949,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.147  2005/05/13 13:59:39  vasilche
+ * Fixed conversion of int to string using int chunks.
+ * Allow configurable int chunks in conversion.
+ *
  * Revision 1.146  2005/05/13 12:54:22  ivanov
  * NStr::StringToDouble() -- allow only one dot in the converted string.
  * NStr::StringTo[U]Int8() -- added check on empty string.
