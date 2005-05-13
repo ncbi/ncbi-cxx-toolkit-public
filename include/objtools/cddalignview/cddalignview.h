@@ -71,6 +71,7 @@ typedef struct {
  * The main function call:
  *  - 'asnDataBlock' is a pointer to in-memory asn data (can be binary or text).
  *    This memory block will *not* be overwritten or freed by this function.
+ *  - 'asnSize' is the size of asnDataBlock
  *  - 'options' specifies the desired output, e.g. "CAV_HTML | CAV_LEFTTAILS"
  *    to get HTML output with left (N-terminal) sequence tails shown
  *  - 'paragraphWidth' is the size of the "paragraph" chunks of the alignment
@@ -88,6 +89,7 @@ typedef struct {
  */
 extern int CAV_DisplayMultiple(
     const void *asnDataBlock,
+    int asnSize,
     unsigned int options,
     unsigned int paragraphWidth,
     double conservationThreshhold,
@@ -113,6 +115,7 @@ extern int CAV_DisplayMultiple(
 // a C++ version of the function, that places output on the given streams.
 extern int CAV_DisplayMultiple(
     const void *asnDataBlock,
+    int asnSize,
     unsigned int options,
     unsigned int paragraphWidth,
     double conservationThreshhold,
@@ -143,6 +146,9 @@ extern int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/05/13 14:17:19  thiessen
+* require asn memory buffer size
+*
 * Revision 1.3  2005/03/02 18:04:59  thiessen
 * add variant taking mime C++ object
 *

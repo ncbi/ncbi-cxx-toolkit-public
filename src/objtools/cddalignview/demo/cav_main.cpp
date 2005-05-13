@@ -156,6 +156,7 @@ int CAVApp::Run(void)
     return
         CAV_DisplayMultiple(
             static_cast<const void*>(asnString.data()),
+            asnString.size(),
             options,
             args["width"].AsInteger(),
             args["cons"].AsDouble(),
@@ -182,6 +183,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/05/13 14:17:41  thiessen
+* require asn memory buffer size
+*
 * Revision 1.4  2004/07/26 19:15:33  thiessen
 * add option to not color HTML paragraphs
 *

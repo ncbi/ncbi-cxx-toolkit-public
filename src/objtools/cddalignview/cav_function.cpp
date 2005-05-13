@@ -378,6 +378,7 @@ int CAV_DisplayMultiple(
 
 int CAV_DisplayMultiple(
     const void *asnDataBlock,
+    int asnSize,
     unsigned int options,
     unsigned int paragraphWidth,
     double conservationThreshhold,
@@ -392,7 +393,7 @@ int CAV_DisplayMultiple(
         ERR_POST(Critical << "NULL asnDataBlock parameter");
         return CAV_ERROR_BAD_ASN;
     }
-    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), kMax_Int);
+    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), asnSize);
 
     // load asn data block
     const SeqEntryList *seqs;
@@ -413,6 +414,7 @@ int CAV_DisplayMultiple(
 
 int CAV_DisplayMultiple(
     const void *asnDataBlock,
+    int asnSize,
     unsigned int options,
     unsigned int paragraphWidth,
     double conservationThreshhold,
@@ -420,7 +422,7 @@ int CAV_DisplayMultiple(
     int nFeatures,
     const AlignmentFeature *features)
 {
-    return CAV_DisplayMultiple(asnDataBlock, options, paragraphWidth,
+    return CAV_DisplayMultiple(asnDataBlock, asnSize, options, paragraphWidth,
         conservationThreshhold, title, nFeatures, features, NULL, NULL);
 }
 
@@ -472,6 +474,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/05/13 14:17:41  thiessen
+* require asn memory buffer size
+*
 * Revision 1.6  2005/03/02 18:04:50  thiessen
 * add variant taking mime C++ object
 *
