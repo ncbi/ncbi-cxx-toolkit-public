@@ -53,5 +53,7 @@
 #define NCBI_GBLOADER_WRITER_CACHE_PARAM_BLOB_SECTION "blob_cache"
 /* Name of ICache driver to be used in cache */
 #define NCBI_GBLOADER_WRITER_CACHE_PARAM_DRIVER "driver"
+/* Cache sharing between reader and writer (separate for id and blob) */
+#define NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE "share_cache"
 
 #endif

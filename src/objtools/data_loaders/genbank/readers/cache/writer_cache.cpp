@@ -66,21 +66,37 @@ void CCacheWriter::InitializeCache(const CReadDispatcher& dispatcher,
         (GetCacheParams(writer_params, eCacheWriter, eIdCache));
     auto_ptr<TParams> blob_params
         (GetCacheParams(writer_params, eCacheWriter, eBlobCache));
-    ITERATE(CReadDispatcher::TReaders, rd, dispatcher.m_Readers) {
-        if ( !rd->second->HasCache() ) {
-            continue;
-        }
-        const CCacheReader& reader =
-            dynamic_cast<const CCacheReader&>(*rd->second);
-        ICache* cache = reader.GetIdCache(id_params.get());
-        if ( cache ) {
-            _ASSERT(!id_cache);
-            id_cache = cache;
-        }
-        cache = reader.GetBlobCache(blob_params.get());
-        if ( cache ) {
-            _ASSERT(!blob_cache);
-            blob_cache = cache;
+    _ASSERT(id_params.get());
+    _ASSERT(blob_params.get());
+    const TParams* share_id_param =
+        id_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
+    bool share_id = !share_id_param  ||
+        NStr::StringToBool(share_id_param->GetValue());
+    const TParams* share_blob_param =
+        blob_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
+    bool share_blob = !share_blob_param  ||
+        NStr::StringToBool(share_blob_param->GetValue());
+    if (share_id  ||  share_blob) {
+        ITERATE(CReadDispatcher::TReaders, rd, dispatcher.m_Readers) {
+            if ( !rd->second->HasCache() ) {
+                continue;
+            }
+            const CCacheReader& reader =
+                dynamic_cast<const CCacheReader&>(*rd->second);
+            if ( share_id ) {
+                ICache* cache = reader.GetIdCache(id_params.get());
+                if ( cache ) {
+                    _ASSERT(!id_cache);
+                    id_cache = cache;
+                }
+            }
+            if ( share_blob ) {
+                ICache* cache = reader.GetBlobCache(blob_params.get());
+                if ( cache ) {
+                    _ASSERT(!blob_cache);
+                    blob_cache = cache;
+                }
+            }
         }
     }
     TOwnership own = fOwnNone;
