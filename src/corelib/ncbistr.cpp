@@ -424,9 +424,13 @@ NStr::StringToDouble(const string&  str,
         }
         return 0.0;
     }
-    if (*(endptr - 1) != '.'  &&  *endptr == '.')
-        endptr++;
-
+    if (*(endptr - 1) != '.'  &&  *endptr == '.') {
+        // Only single dot at the end of line is allowed
+        SIZE_TYPE pos = str.find('.');
+        if ( endptr == str.c_str() + pos ) {
+            endptr++;
+        }
+    }
     CHECK_ENDPTR("double");
     return value;
 }
@@ -499,8 +503,15 @@ Int8 NStr::StringToInt8(const string&  str,
         n += delta;
         endptr++;
     }
-
-    CHECK_ENDPTR("UInt8");
+    if ( endptr == str.c_str() ) { 
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to Int8",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
+    }
+    CHECK_ENDPTR("Int8");
     return sign ? -n : n;
 }
 
@@ -532,7 +543,7 @@ Uint8 NStr::StringToUInt8(const string&  str,
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
             if ( on_error == eConvErr_Throw ) {
                 NCBI_THROW2(CStringException, eConvert,
-                            "String cannot be converted to UInt8 - overflow",
+                            "String cannot be converted to Uint8 - overflow",
                             s_DiffPtr(endptr, str.c_str()));
             }
             return 0;
@@ -540,8 +551,15 @@ Uint8 NStr::StringToUInt8(const string&  str,
         n += delta;
         endptr++;
     }
-
-    CHECK_ENDPTR("UInt8");
+    if ( endptr == str.c_str() ) { 
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to Uint8",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
+    }
+    CHECK_ENDPTR("Uint8");
     return n;
 }
 
@@ -1910,6 +1928,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.146  2005/05/13 12:54:22  ivanov
+ * NStr::StringToDouble() -- allow only one dot in the converted string.
+ * NStr::StringTo[U]Int8() -- added check on empty string.
+ *
  * Revision 1.145  2005/05/13 11:27:21  ivanov
  * Fixed MSVC compilation warnings
  *
