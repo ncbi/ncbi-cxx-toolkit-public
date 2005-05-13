@@ -173,11 +173,11 @@ typedef long long intptr_t;
 
 /// Macros for constant values definition
 #if (SIZEOF_LONG == 8)
-#  define NCBI_CONST_I8(v)     v##L     //NCBI_NAME2(v,L)
-#  define NCBI_CONST_U8(v)     v##UL    //NCBI_NAME2(v,UL)
+#  define NCBI_CONST_INT8(v)   v##L     //NCBI_NAME2(v,L)
+#  define NCBI_CONST_UINT8(v)  v##UL    //NCBI_NAME2(v,UL)
 #elif (SIZEOF_LONG_LONG == 8)
-#  define NCBI_CONST_I8(v)     v##LL    //NCBI_NAME2(v,LL)
-#  define NCBI_CONST_U8(v)     v##ULL   //NCBI_NAME2(v,ULL)
+#  define NCBI_CONST_INT8(v)   v##LL    //NCBI_NAME2(v,LL)
+#  define NCBI_CONST_UINT8(v)  v##ULL   //NCBI_NAME2(v,ULL)
 #elif defined(NCBI_USE_INT64)
 #  define NCBI_CONST_INT8(v)   v##i64   //NCBI_NAME2(v,i64)
 #  define NCBI_CONST_UINT8(v)  v##ui64  //NCBI_NAME2(v,ui64)
@@ -202,6 +202,9 @@ typedef long long intptr_t;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/13 15:36:12  ivanov
+ * Fixed typo in previous commit
+ *
  * Revision 1.16  2005/05/13 15:28:17  ivanov
  * Added NCBI_CONST_* macros for constant values definition
  *
