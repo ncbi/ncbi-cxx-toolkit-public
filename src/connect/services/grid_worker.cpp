@@ -309,7 +309,7 @@ void CGridWorkerNode::Start()
             return;
         }
         catch (...) {
-            LOG_POST(Error << "Unkown error");
+            LOG_POST(Error << "Unknown error");
             RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
             return;
         }
@@ -343,8 +343,9 @@ void CGridWorkerNode::Start()
                     job_context(new CWorkerNodeJobContext(*this, 
                                                           job_key, 
                                                           input, 
-                                                          m_JobsStarted++,
+                                                          m_JobsStarted,
                                                           m_LogRequested));
+                ++const_cast<unsigned int&>(m_JobsStarted);
                 if (m_MaxThreads > 1 ) {
                     CRef<CStdRequest> job_req(
                                     new CWorkerNodeRequest(job_context));
@@ -458,7 +459,7 @@ bool CGridWorkerNode::x_CreateNSReadClient()
         return false;
     }
     catch (...) {
-        LOG_POST(Error << "Unkown error");
+        LOG_POST(Error << "Unknown error");
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return false;
     }
@@ -470,6 +471,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/13 00:26:18  ucko
+ * Re-fix for SGI MIPSpro.
+ * Correct more misspellings of "unknown" that seem to have materialized.
+ *
  * Revision 1.23  2005/05/12 18:14:33  didenko
  * Cosmetics
  *
