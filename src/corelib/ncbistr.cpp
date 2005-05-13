@@ -743,7 +743,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue, TIntToStringFlags fmt)
     if ( fmt & fCommas ) {
         int cnt = -1;
         do {
-            Uint4 chunk = value % kChunk;
+            Uint4 chunk = Uint4(value % kChunk);
             value /= kChunk;
             do {
                 if (++cnt == 3) {
@@ -757,7 +757,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue, TIntToStringFlags fmt)
     }
     else {
         do {
-            Uint4 chunk = value % kChunk;
+            Uint4 chunk = Uint4(value % kChunk);
             value /= kChunk;
             do {
                 *--pos = char('0' + (chunk % 10));
@@ -806,7 +806,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
     if ( fmt & fCommas ) {
         int cnt = -1;
         do {
-            Uint4 chunk = value % kChunk;
+            Uint4 chunk = Uint4(value % kChunk);
             value /= kChunk;
             do {
                 if (++cnt == 3) {
@@ -820,7 +820,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
     }
     else {
         do {
-            Uint4 chunk = value % kChunk;
+            Uint4 chunk = Uint4(value % kChunk);
             value /= kChunk;
             do {
                 *--pos = char('0' + (chunk % 10));
@@ -1910,6 +1910,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.145  2005/05/13 11:27:21  ivanov
+ * Fixed MSVC compilation warnings
+ *
  * Revision 1.144  2005/05/12 17:00:20  vasilche
  * Use handmade code for *Int*ToString() conversions.
  * Fixed Int8ToString(kMin_I8) conversion.
