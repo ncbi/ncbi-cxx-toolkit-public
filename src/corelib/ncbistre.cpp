@@ -213,11 +213,13 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 }
 
 
-#ifdef NCBI_OS_MSWIN
+#ifdef NCBI_COMPILER_MSVC
+#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val)
 {
     return (out << NStr::Int8ToString(val));
 }
+#  endif
 #endif
 
 
@@ -374,6 +376,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/05/13 11:39:51  ivanov
+ * Define CNcbiOstream& operator<< __int64 for MSVC 6 only
+ *
  * Revision 1.33  2005/05/12 15:07:22  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *

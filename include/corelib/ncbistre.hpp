@@ -512,9 +512,11 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
 NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
-#ifdef NCBI_OS_MSWIN
+#ifdef NCBI_COMPILER_MSVC
+#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
+#  endif
 #endif
 
 
@@ -535,6 +537,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/05/13 11:39:32  ivanov
+ * Define CNcbiOstream& operator<< __int64 for MSVC 6 only
+ *
  * Revision 1.41  2004/08/17 14:34:51  dicuccio
  * Export Printable()
  *
