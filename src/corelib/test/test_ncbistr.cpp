@@ -236,14 +236,111 @@ void Test(ContainerType cont)
 
 #define OK  NcbiCout << " completed successfully!" << NcbiEndl
 
+static const int kBadValue = 555;
 struct SStringNumericValues
 {
     const char* str;
     Int8 i8;
     Uint8 u8;
     double d;
+
+    bool IsGoodI8(void) const
+        {
+            return i8 != kBadValue;
+        }
+    bool IsGoodU8(void) const
+        {
+            return u8 != Uint8(kBadValue);
+        }
+    bool Same(const string& s) const
+        {
+            if ( str[0] == '+' && isdigit(str[1]&255) )
+                return s == str+1;
+            else
+                return s == str;
+        }
 };
-static const int kBadValue = 555;
+
+
+#if   (SIZEOF_LONG == 8)
+#  define NCBI_I8(v)  v##L    //NCBI_NAME2(v,L)
+#  define NCBI_U8(v)  v##UL   //NCBI_NAME2(v,UL)
+#elif (SIZEOF_LONG_LONG == 8)
+#  define NCBI_I8(v)  v##LL   //NCBI_NAME2(v,LL)
+#  define NCBI_U8(v)  v##ULL  //NCBI_NAME2(v,ULL)
+#elif defined(NCBI_USE_INT64)
+#  define NCBI_I8(v)  v##i64  //NCBI_NAME2(v,i64)
+#  define NCBI_U8(v)  v##ui64 //NCBI_NAME2(v,ui64)
+#endif
+#define NCBI_D(v) v##.
+
+#define STR(v) { #v, NCBI_I8(v), NCBI_U8(v), NCBI_D(v) }
+#define STRD(v) { #v, kBadValue, kBadValue, NCBI_D(v) }
+#define STRI(v) { #v, NCBI_I8(v), kBadValue, NCBI_D(v) }
+#define STRU(v) { #v, kBadValue, NCBI_U8(v), NCBI_D(v) }
+
+static const SStringNumericValues s_Strings[] = {
+    { "", kBadValue, kBadValue, kBadValue },
+    { ".", kBadValue, kBadValue, kBadValue },
+    { "..", kBadValue, kBadValue, kBadValue },
+    { ".0", kBadValue, kBadValue, 0 },
+    { ".0.", kBadValue, kBadValue, kBadValue },
+    { "..0", kBadValue, kBadValue, kBadValue },
+    { ".01", kBadValue, kBadValue, .01 },
+    { "1.", kBadValue, kBadValue, 1 },
+    { "1.1", kBadValue, kBadValue, 1.1 },
+    { "1.1.", kBadValue, kBadValue, kBadValue },
+    { "1..", kBadValue, kBadValue, kBadValue },
+    { "-1", -1, kBadValue, -1 },
+    { "0", 0, 0, 0 },
+    { "1", 1, 1, 1 },
+    STRI(-2147483649),
+    STRI(-2147483648),
+    STRI(-2147483647),
+    STR(2147483646),
+    STR(2147483647),
+    STR(2147483648),
+    STR(4294967294),
+    STR(4294967295),
+    STR(4294967296),
+    { " 123 ", kBadValue, kBadValue, kBadValue },
+    { " 123", kBadValue, kBadValue, kBadValue },
+    { "123 ", kBadValue, kBadValue, kBadValue },
+    { "-324", -324, kBadValue, -324 },
+    { "--324", kBadValue, kBadValue, kBadValue },
+    { " 567", kBadValue, kBadValue, kBadValue },
+    { "+890", +890, +890, +890 },
+    { "++890", kBadValue, kBadValue, kBadValue },
+    STR(1),
+    STR(10),
+    STR(100),
+    STR(1000),
+    STR(10000),
+    STR(100000),
+    STR(1000000),
+    STR(10000000),
+    STR(100000000),
+    STR(1000000000),
+    STR(10000000000),
+    STR(100000000000),
+    STR(1000000000000),
+    STR(10000000000000),
+    STR(100000000000000),
+    STR(1000000000000000),
+    STR(10000000000000000),
+    STR(100000000000000000),
+    STR(1000000000000000000),
+    STRD(-9223372036854775809),
+    STRI(-9223372036854775808),
+    STRI(-9223372036854775807),
+    STR(9223372036854775806),
+    STR(9223372036854775807),
+    STRU(9223372036854775808),
+    STRU(18446744073709551614),
+    STRU(18446744073709551615),
+    STRD(18446744073709551616),
+    { "zzz", kBadValue, kBadValue, kBadValue }
+};
 
 int CTestApplication::Run(void)
 {
@@ -276,46 +373,6 @@ int CTestApplication::Run(void)
 
     NcbiCout << "Test NCBISTR:" << NcbiEndl;
 
-    static const SStringNumericValues s_Strings[] = {
-        { "", kBadValue, kBadValue, kBadValue },
-        { ".", kBadValue, kBadValue, kBadValue },
-        { "..", kBadValue, kBadValue, kBadValue },
-        { ".0", kBadValue, kBadValue, 0 },
-        { ".0.", kBadValue, kBadValue, kBadValue },
-        { "..0", kBadValue, kBadValue, kBadValue },
-        { ".01", kBadValue, kBadValue, .01 },
-        { "1.", kBadValue, kBadValue, 1 },
-        { "1.1", kBadValue, kBadValue, 1.1 },
-        { "1.1.", kBadValue, kBadValue, kBadValue },
-        { "1..", kBadValue, kBadValue, kBadValue },
-        { "-1", -1, kBadValue, -1 },
-        { "0", 0, 0, 0 },
-        { "1", 1, 1, 1 },
-        { "-2147483649", Int8(kMin_I4)-1, kBadValue, kMin_I4-1. },
-        { "-2147483648", Int8(kMin_I4)  , kBadValue, kMin_I4+0. },
-        { "-2147483647", Int8(kMin_I4)+1, kBadValue, kMin_I4+1. },
-        { "2147483646", Int8(kMax_I4)-1, Uint8(kMax_I4)-1, kMin_I4-1. },
-        { "2147483647", Int8(kMax_I4)  , Uint8(kMax_I4)  , kMin_I4+0. },
-        { "2147483648", Int8(kMax_I4)+1, Uint8(kMax_I4)+1, kMin_I4+1. },
-        { "4294967294", Int8(kMax_UI4)-1, Uint8(kMax_UI4)-1, kMax_UI4-1. },
-        { "4294967295", Int8(kMax_UI4)  , Uint8(kMax_UI4)  , kMax_UI4+0. },
-        { "4294967296", Int8(kMax_UI4)+1, Uint8(kMax_UI4)+1, kMax_UI4+1. },
-        { " 123 ", kBadValue, kBadValue, kBadValue },
-        { "-324", -324, kBadValue, -324 },
-        { " 567", kBadValue, kBadValue, kBadValue },
-        { "+890", +890, +890, +890 },
-        { "-9223372036854775809", kBadValue, kBadValue, kMin_I8-1. },
-        { "-9223372036854775808", kMin_I8  , kBadValue, kMin_I8+0. },
-        { "-9223372036854775807", kMin_I8+1, kBadValue, kMin_I8+1. },
-        { "9223372036854775806", kMax_I8-1, kMax_I8-1, kMax_I8-1. },
-        { "9223372036854775807", kMax_I8  , kMax_I8  , kMax_I8+0. },
-        { "9223372036854775808", kBadValue, Uint8(kMax_I8)+1, kMax_I8+1. },
-        { "18446744073709551615", kBadValue, kMax_UI8-1, kMax_UI8-1. },
-        { "18446744073709551616", kBadValue, kMax_UI8  , kMax_UI8+0. },
-        { "18446744073709551617", kBadValue, kBadValue , kMax_UI8+1. },
-        { "zzz", kBadValue, kBadValue, kBadValue }
-    };
-
     const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
 
     for (size_t i = 0;  i < count;  ++i) {
@@ -327,7 +384,7 @@ int CTestApplication::Run(void)
             Uint8 num = s_Strings[i].u8;
             int expected = -1;
             if ( isdigit(str[0]&255) &&
-                 num != Uint8(kBadValue) &&
+                 s_Strings[i].IsGoodU8() &&
                  num <= Uint8(kMax_Int) ) {
                 expected = int(num);
             }
@@ -389,22 +446,32 @@ int CTestApplication::Run(void)
             Int8 value = NStr::StringToInt8(str);
             NcbiCout << "Int8 value: " << value << ", toString: '"
                      << NStr::Int8ToString(value) << "'" << NcbiEndl;
-            //assert(s_Strings[i].i8 != kBadValue);
-            //assert(value == s_Strings[i].i8);
-            //assert(str == NStr::Int8ToString(value));
+            assert(s_Strings[i].IsGoodI8());
+            assert(value == s_Strings[i].i8);
+            assert(s_Strings[i].Same(NStr::Int8ToString(value)));
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
-            //assert(s_Strings[i].i8 == kBadValue);
+            if ( s_Strings[i].IsGoodI8() ) {
+                ERR_POST("!!!!! Cannot convert \"" << str << "\" to Int8");
+            }
+            //assert(!s_Strings[i].IsGoodI8());
         }
 
         try {
             Uint8 value = NStr::StringToUInt8(str);
             NcbiCout << "Uint8 value: " << value << ", toString: '"
                      << NStr::UInt8ToString(value) << "'" << NcbiEndl;
+            assert(s_Strings[i].IsGoodU8());
+            assert(value == s_Strings[i].u8);
+            assert(s_Strings[i].Same(NStr::UInt8ToString(value)));
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
+            if ( s_Strings[i].IsGoodU8() ) {
+                ERR_POST("!!!!! Cannot convert \"" << str << "\" to Uint8");
+            }
+            //assert(!s_Strings[i].IsGoodU8());
         }
         
     }
@@ -1135,6 +1202,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.42  2005/05/13 14:00:12  vasilche
+ * Added more checks of int to string conversion.
+ *
  * Revision 6.41  2005/05/12 17:01:23  vasilche
  * Added detailed data for *Int*ToString test.
  *
