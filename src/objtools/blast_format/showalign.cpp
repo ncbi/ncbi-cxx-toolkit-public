@@ -1300,9 +1300,11 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                 
                     if(m_AlignOption&eShowGi && gi > 0){
                         out<<"gi|"<<gi<<"|";
-                    }       
-                
-                    wid2->WriteAsFasta(out);
+                    }     
+                    if(!(wid2->AsFastaString().find("gnl|BL_ORD_ID") 
+                         != string::npos)){
+                        wid2->WriteAsFasta(out);
+                    }
                     if(m_AlignOption&eHtml){
                         if(urlLink != NcbiEmptyString){
                             out<<"</a>";
@@ -2419,6 +2421,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.74  2005/05/13 14:21:37  jianye
+*No showing internal blastdb id
+*
 *Revision 1.73  2005/05/12 14:47:47  jianye
 *modify computing feature start pos
 *

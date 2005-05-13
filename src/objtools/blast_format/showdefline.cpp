@@ -694,8 +694,11 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             }
         }
         if(!(*iter)->id.Empty()){
-            out << (*iter)->id->AsFastaString();
-            line_length += (*iter)->id->AsFastaString().size();
+            if(!((*iter)->id->AsFastaString().find("gnl|BL_ORD_ID") 
+                 != string::npos)){
+                out << (*iter)->id->AsFastaString();
+                line_length += (*iter)->id->AsFastaString().size();
+            }
         }
         if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
             out << "</a>";
@@ -809,6 +812,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.12  2005/05/13 14:21:37  jianye
+*No showing internal blastdb id
+*
 *Revision 1.11  2005/04/12 16:40:51  jianye
 *Added gnl id to url
 *
