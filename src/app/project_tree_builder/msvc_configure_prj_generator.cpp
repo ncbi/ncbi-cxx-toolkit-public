@@ -242,8 +242,11 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
         << "echo ******************************************************************************" << endl
         << "echo -CONFIGURE- has failed" << endl
         << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
-        << "echo ******************************************************************************" << endl
-        << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "echo ******************************************************************************" << endl;
+    if (!with_gui) {
+        ofs << "if not .%DIAG_SILENT_ABORT%==. ";
+    }
+    ofs << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "exit 1" << endl;
 }
 
@@ -255,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/13 16:58:00  gouriano
+ * Do not always open conf log in case of errors
+ *
  * Revision 1.24  2005/05/10 17:31:10  gouriano
  * Added configure_dialog project
  *
