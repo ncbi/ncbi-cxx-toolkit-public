@@ -47,18 +47,15 @@ BEGIN_NCBI_SCOPE
 
 const IRegistry& IWorkerNodeInitContext::GetConfig() const
 {
-    NCBI_THROW(CCoreException,
-               eInvalidArg, "Not Implemented.");
+    NCBI_THROW(CCoreException, eInvalidArg, "Not Implemented.");
 }
 const CArgs& IWorkerNodeInitContext::GetArgs() const
 {
-    NCBI_THROW(CCoreException,
-               eInvalidArg, "Not Implemented.");
+    NCBI_THROW(CCoreException, eInvalidArg, "Not Implemented.");
 }
 const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 {
-    NCBI_THROW(CCoreException,
-               eInvalidArg, "Not Implemented.");
+    NCBI_THROW(CCoreException, eInvalidArg, "Not Implemented.");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,11 +221,11 @@ static void s_RunJob(CGridThreadContext& thr_context)
                 if (thr_context.IsJobCommitted()) {
                     thr_context.PutResult(ret_code);
                 }
-                else
+                else {
                     thr_context.ReturnJob();
+                }
                 break;
-            }
-            catch (CNetServiceException& ex) {
+            } catch (CNetServiceException& ex) {
                 ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
@@ -237,24 +234,19 @@ static void s_RunJob(CGridThreadContext& thr_context)
         }
     }
     catch (exception& ex) {
-        ERR_POST("Error in Job execution : " 
-                 << ex.what());
+        ERR_POST("Error in Job execution : "  << ex.what());
         try {
             thr_context.PutFailure(ex.what());
-        }
-        catch(exception& ex1) {
-            ERR_POST("Failed to report an exception;"
-                     "\nOriginal exception : " << ex1.what());
+        } catch(exception& ex1) {
+            ERR_POST("Failed to report an exception: " << ex1.what());
         }
     }
     catch(...) {
         ERR_POST( "Unknown Error in Job execution" );
         try {
             thr_context.PutFailure("Unknown Error in Job execution");
-        }
-        catch(exception& ex) {
-            ERR_POST("Failed to report an unknown exception : " 
-                     << ex.what());
+        } catch(exception& ex) {
+            ERR_POST("Failed to report an unknown exception : " << ex.what());
         }
     }
     thr_context.Reset();
@@ -304,12 +296,12 @@ void CGridWorkerNode::Start()
             m_ThreadsPool->Spawn(m_InitThreads);
         }
         catch (exception& ex) {
-            LOG_POST(Error << ex.what());
+            ERR_POST(ex.what());
             RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
             return;
         }
         catch (...) {
-            LOG_POST(Error << "Unknown error");
+            ERR_POST("Unknown error");
             RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
             return;
         }
@@ -352,8 +344,8 @@ void CGridWorkerNode::Start()
                     try {
                         m_ThreadsPool->AcceptRequest(job_req);
                     } catch (CBlockingQueueException& ex) {
-                        // that must not happen after CBlockingQueue is fixed
                         ERR_POST(ex.what());
+                        // that must not happen after CBlockingQueue is fixed
                         _ASSERT(0);
                         x_ReturnJob(job_key);
                     }
@@ -416,15 +408,12 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
         if(m_NSReadClient.get()) {
             int try_count = 0;
             try {
-                job_exists = 
-                    m_NSReadClient->WaitJob(&job_key, &input, 
-                                            m_NSTimeout, m_UdpPort);
+                job_exists = m_NSReadClient->WaitJob(&job_key, &input,
+                                                     m_NSTimeout, m_UdpPort);
             }
             catch (CNetServiceException& ex) {
-                ERR_POST("Communication Error : " 
-                         << ex.what());
+                ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2) {
-                    LOG_POST(Error << ex.what());
                     RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
                 }
                 SleepMilliSec(1000 + try_count*2000);
@@ -452,14 +441,12 @@ bool CGridWorkerNode::x_CreateNSReadClient()
 
     try {
         m_NSReadClient.reset(CreateClient());
-    }
-    catch (exception& ex) {
+    } catch (exception& ex) {
         ERR_POST(ex.what());
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return false;
-    }
-    catch (...) {
-        LOG_POST(Error << "Unknown error");
+    } catch (...) {
+        ERR_POST("Unknown error");
         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return false;
     }
@@ -471,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/13 13:41:42  didenko
+ * Changed LOG_POST(Error << ... ) to ERR_POST(...)
+ *
  * Revision 1.24  2005/05/13 00:26:18  ucko
  * Re-fix for SGI MIPSpro.
  * Correct more misspellings of "unknown" that seem to have materialized.
