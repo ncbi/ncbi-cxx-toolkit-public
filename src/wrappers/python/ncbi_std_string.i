@@ -32,6 +32,8 @@
 
 %include ncbi_std_helpers.i
 
+CATCH_OUT_OF_RANGE(std::string::__getitem__)
+
 %{
 #include <string>
 %}
@@ -111,8 +113,14 @@ namespace std {
         void erase(void);
 
         %extend {
-            char __getitem__(int i) const {
-                return self->at(i);
+            char __getitem__(int i) {
+                int size = self->size();
+                AdjustIndex(i, size);
+                if (i < 0 || i >= size) {
+                    throw std::out_of_range("index out of range");
+                } else {
+                    return (*self)[i];
+                }
             }
 
             std::string __getslice__(int i, int j) const {
@@ -173,6 +181,10 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/13 14:59:34  jcherry
+ * __getitem__: raise IndexError on out-of-range to support iteration;
+ * support Python-style negative indices
+ *
  * Revision 1.1  2005/05/11 21:30:44  jcherry
  * Initial version
  *
