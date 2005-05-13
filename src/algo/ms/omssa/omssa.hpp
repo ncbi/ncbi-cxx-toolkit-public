@@ -39,7 +39,6 @@
 #include "msms.hpp"
 #include "msladder.hpp"
 #include "mspeak.hpp"
-#include "mshist.hpp"
 
 #include <readdb.h>
 
@@ -366,6 +365,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.25  2005/05/13 17:58:52  lewisg
+  *** empty log message ***
+
   Revision 1.24  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 

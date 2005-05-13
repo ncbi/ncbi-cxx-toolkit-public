@@ -49,7 +49,6 @@
 #include "SpectrumSet.hpp"
 #include "omssa.hpp"
 
-#include "nrutil.h"
 #include <ncbimath.h>
 
 USING_NCBI_SCOPE;
@@ -1387,6 +1386,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.44  2005/05/13 17:59:41  lewisg
+*** empty log message ***
+
 Revision 1.43  2005/05/13 17:57:17  lewisg
 one mod per site and bug fixes
 
