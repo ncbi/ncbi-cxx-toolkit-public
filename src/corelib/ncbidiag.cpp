@@ -745,6 +745,11 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
     CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
     if ( CDiagBuffer::sm_PostSeverityChange != eDiagSC_Disable) {
+        if (post_sev == eDiag_Trace) {
+            // special case
+            SetDiagTrace(eDT_Enable);
+            post_sev = eDiag_Info;
+        }
         CDiagBuffer::sm_PostSeverity = post_sev;
     }
     return sev;
@@ -1488,6 +1493,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.93  2005/05/14 20:57:20  vakatov
+ * SetDiagPostLevel() -- Special case:  eDiag_Trace to print all messages
+ * and turn on the tracing
+ *
  * Revision 1.92  2005/05/05 00:11:22  vakatov
  * Added missing 'const.
  * Plus, some cosmetics.

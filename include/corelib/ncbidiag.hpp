@@ -234,6 +234,7 @@ enum EDiagSev {
     eDiag_Error,    ///< Error message
     eDiag_Critical, ///< Critical error message
     eDiag_Fatal,    ///< Fatal error -- guarantees exit(or abort)
+    //
     eDiag_Trace,    ///< Trace message
     // Limits
     eDiagSevMin = eDiag_Info,  ///< Verbosity level for min. severity
@@ -687,18 +688,21 @@ public:
 /// string value from CDiagBuffer::sm_SeverityName[].
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
 
-/// Set severity of post messages. 
+/// Set the threshold severity for posting the messages. 
 ///
 /// This function has effect only if:
 ///   - Environment variable $DIAG_POST_LEVEL is not set, and
 ///   - Registry value of DIAG_POST_LEVEL, section DEBUG is not set 
 ///
-/// Do not post messages where severity is less than "min_sev"
 /// Another way to do filtering is to call SetDiagFilter
+///
+/// @param  post_sev
+///   Post only messages with severity greater or equal to "post_sev".
+///
+///   Special case:  eDiag_Trace -- print all messages and turn on the tracing.
 /// @return
 ///   Return previous post-level.
-///
-/// @sa SetDiagFilter
+/// @sa SetDiagFilter(), SetDiagTrace()
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
@@ -714,7 +718,7 @@ extern void SetDiagFixedPostLevel(EDiagSev post_sev);
 
 /// Set the "die" (abort) level for the program.
 ///
-/// Abort the application if severity is >= "max_sev".
+/// Abort the application if severity is >= "die_sev".
 /// Throw an exception if die_sev is not in the range
 /// [eDiagSevMin..eDiag_Fatal].
 /// @return
@@ -1185,6 +1189,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.87  2005/05/14 20:57:20  vakatov
+ * SetDiagPostLevel() -- Special case:  eDiag_Trace to print all messages
+ * and turn on the tracing
+ *
  * Revision 1.86  2005/05/09 18:45:08  ucko
  * Ensure that widely-included classes with virtual methods have virtual dtors.
  *
