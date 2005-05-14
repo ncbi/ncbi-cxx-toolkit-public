@@ -535,9 +535,9 @@ long CZipCompressionFile::Read(void* buf, size_t len)
 
 long CZipCompressionFile::Write(const void* buf, size_t len)
 {
-    // Redefine standart behaviour for case of writing zero bytes
+    // Redefine standard behaviour for case of writing zero bytes
     if (len == 0) {
-        return true;
+        return 0;
     }
     LIMIT_SIZE_PARAM_U(len);
 
@@ -943,6 +943,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/14 20:00:13  vakatov
+ * CZipCompressionFile::Write() -- a thinko bug fixed
+ *
  * Revision 1.19  2005/04/25 19:01:41  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
