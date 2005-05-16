@@ -253,7 +253,6 @@ CBl2Seq::SetupSearch()
     // Set the hitlist size to the total number of subject sequences, to 
     // make sure that no hits are discarded.
     m_OptsHandle->SetHitlistSize((int) m_tSubjects.size());
-    m_OptsHandle->SetPrelimHitlistSize((int) m_tSubjects.size());
 }
 
 void 
@@ -262,23 +261,31 @@ CBl2Seq::ScanDB()
     mi_pResults = NULL;
     mi_pDiagnostics = Blast_DiagnosticsInit();
 
+    const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
+    SBlastHitsParameters* blasthit_params=NULL;
+    SBlastHitsParametersNew(kOptions.GetProgramType(),
+                         kOptions.GetHitSaveOpts(),
+                         kOptions.GetExtnOpts(),
+                         kOptions.GetScoringOpts(), 
+                         mi_pSeqSrc,
+                         &blasthit_params);
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
     BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(m_OptsHandle->GetOptions().GetProgramType(),
-            m_OptsHandle->GetOptions().GetHitSaveOpts(),
+        Blast_HSPListCollectorInit(kOptions.GetProgramType(),
+            blasthit_params,
             mi_clsQueryInfo->num_queries, FALSE);
                   
-    Blast_RunFullSearch(m_OptsHandle->GetOptions().GetProgramType(),
+    Blast_RunFullSearch(kOptions.GetProgramType(),
                        mi_clsQueries, mi_clsQueryInfo, 
                        mi_pSeqSrc, mi_pScoreBlock, 
-                       m_OptsHandle->GetOptions().GetScoringOpts(),
+                       kOptions.GetScoringOpts(),
                        mi_pLookupTable,
-                       m_OptsHandle->GetOptions().GetInitWordOpts(),
-                       m_OptsHandle->GetOptions().GetExtnOpts(),
-                       m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                       m_OptsHandle->GetOptions().GetEffLenOpts(),
-                       NULL, m_OptsHandle->GetOptions().GetDbOpts(),
+                       kOptions.GetInitWordOpts(),
+                       kOptions.GetExtnOpts(),
+                       kOptions.GetHitSaveOpts(),
+                       kOptions.GetEffLenOpts(),
+                       NULL, kOptions.GetDbOpts(),
                        hsp_stream, NULL, mi_pDiagnostics, &mi_pResults);
     hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
@@ -360,6 +367,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2005/05/16 12:25:20  madden
+ * Use SBlastHitsParameters in Blast_HSPListCollectorInit
+ *
  * Revision 1.71  2005/05/12 15:35:35  camacho
  * Remove dead fields
  *

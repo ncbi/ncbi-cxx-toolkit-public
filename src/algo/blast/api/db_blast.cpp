@@ -305,11 +305,6 @@ void CDbBlast::x_InitRPSFields()
         m_OptsHandle->SetOptions().SetMatrixName(m_ipRpsInfo->aux_info.orig_score_matrix);
         m_OptsHandle->SetOptions().SetGapOpeningCost(m_ipRpsInfo->aux_info.gap_open_penalty);
         m_OptsHandle->SetOptions().SetGapExtensionCost(m_ipRpsInfo->aux_info.gap_extend_penalty);
-        /* Because of the database concatenation in the preliminary phase of 
-           the search, sizes of hit lists should be equal to the total number 
-           of sequences in the database. */
-        m_OptsHandle->SetOptions().SetPrelimHitlistSize(
-            m_ipRpsInfo->profile_header->num_profiles);
     } else {
         m_ipRpsInfo = NULL;
         m_ipRpsMmap = NULL;
@@ -399,9 +394,17 @@ CDbBlast::x_InitHSPStream()
 
         const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
 
+        SBlastHitsParameters* blasthit_params=NULL;
+        SBlastHitsParametersNew(kOptions.GetProgramType(),
+                         kOptions.GetHitSaveOpts(),
+                         kOptions.GetExtnOpts(),
+                         kOptions.GetScoringOpts(), 
+                         m_pSeqSrc,
+                         &blasthit_params);
+
         m_pHspStream = 
             Blast_HSPListCollectorInitMT(kOptions.GetProgramType(), 
-                                         kOptions.GetHitSaveOpts(), 
+                                         blasthit_params,
                                          num_results, TRUE, lock);
     }
 }
@@ -562,15 +565,24 @@ CDbBlast::GetResults()
 {
     // If results are not ready, extract them from the HSP stream
     if (!m_ipResults) {
-        BlastHSPStream* hsp_stream = GetHSPStream();
-        BlastHSPList* hsp_list = NULL;
-        Int4 hitlist_size = GetOptionsHandle().GetHitlistSize();
+        const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
+        SBlastHitsParameters* blasthit_params=NULL;
+        SBlastHitsParametersNew(kOptions.GetProgramType(),
+                         kOptions.GetHitSaveOpts(),
+                         kOptions.GetExtnOpts(),
+                         kOptions.GetScoringOpts(), 
+                         m_pSeqSrc,
+                         &blasthit_params);
 
         m_ipResults = Blast_HSPResultsNew((int) GetQueries().size());
+
+        BlastHSPList* hsp_list = NULL;
+        BlastHSPStream* hsp_stream = GetHSPStream();
         while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
                != kBlastHSPStream_Eof) {
-            Blast_HSPResultsInsertHSPList(m_ipResults, hsp_list, hitlist_size);
+            Blast_HSPResultsInsertHSPList(m_ipResults, hsp_list, blasthit_params->prelim_hitlist_size);
         }
+        blasthit_params = SBlastHitsParametersFree(blasthit_params);
     }
     return m_ipResults;
 }
@@ -689,6 +701,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.65  2005/05/16 12:25:20  madden
+ * Use SBlastHitsParameters in Blast_HSPListCollectorInit
+ *
  * Revision 1.64  2005/04/27 19:58:52  dondosha
  * PHI BLAST changes
  *
