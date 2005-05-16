@@ -143,13 +143,15 @@ public:
                   const string& message,
                   EDiagSev severity,
                   int db_err_code)
-        : CException(info, prev_exception, CException::eInvalid, message)
-        , m_Severity(severity)
+        : CException(info, 
+                     prev_exception, 
+                     CException::eInvalid, 
+                     message, 
+                     severity )
         , m_DBErrCode(db_err_code)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
 protected:
-    EDiagSev    m_Severity;
     int         m_DBErrCode;
 
 protected:
@@ -458,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/16 10:57:46  ssikorsk
+ * Using severity level from the CException class
+ *
  * Revision 1.20  2005/04/14 18:53:14  ssikorsk
  * Made CDB_Exception constructor public because MSVC 7.1 does not want
  * to catch parent exceptions other way.

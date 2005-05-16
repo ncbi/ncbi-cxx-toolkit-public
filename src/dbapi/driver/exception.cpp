@@ -45,7 +45,7 @@ CDB_Exception::Severity(void) const
 {
     EDB_Severity result = eDB_Unknown;
 
-    switch (m_Severity) {
+    switch ( GetSeverity() ) {
     case eDiag_Info:
         result = eDB_Info;
         break;
@@ -72,7 +72,7 @@ CDB_Exception::Severity(void) const
 const char*         
 CDB_Exception::SeverityString(void) const
 {
-    return CNcbiDiag::SeverityName( m_Severity );
+    return CNcbiDiag::SeverityName( GetSeverity() );
 }
 
 const char* CDB_Exception::SeverityString(EDB_Severity sev)
@@ -134,7 +134,6 @@ CDB_Exception::x_Assign(const CException& src)
     const CDB_Exception& other = dynamic_cast<const CDB_Exception&>(src);
 
     CException::x_Assign(src);
-    m_Severity = other.m_Severity;
     m_DBErrCode = other.m_DBErrCode;
 }
 
@@ -502,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/16 10:58:22  ssikorsk
+ * Using severity level from the CException class
+ *
  * Revision 1.16  2005/04/11 19:23:59  ssikorsk
  * Added method Clone to the CDB_Exception class
  *
