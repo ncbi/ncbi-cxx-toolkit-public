@@ -70,7 +70,7 @@ SRC =	aaa_dummy_pch \
 
 LIB =	xstruct_dp xblast \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
-	pub medline biblio general taxon1 \
+	pub medline biblio general taxon1 blastdb xnetblast \
 	xser xutil xctools xconnect xncbi
 
 CPPFLAGS = \
