@@ -97,7 +97,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                           Int4** matrix, Blast_ExtendWord* ewp, 
                           BlastInitHitList* init_hitlist);
 
-/** Traditional Mega BLAST initial word extension
+/** Discontiguous Mega BLAST initial word extension
  * @param offset_pairs Array of query/subject offset pairs to extend from [in]
  * @param num_hits Size of the offset_pairs array [in]
  * @param query The query sequence [in]
@@ -111,12 +111,12 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
  * @return Has this hit been extended? 
  */
 Boolean
-MB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
-                     Int4 num_hits, BLAST_SequenceBlk* query, 
-                     BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
-                     const BlastInitialWordParameters* word_params, 
-                     Int4** matrix, Blast_ExtendWord* ewp, 
-                     BlastInitHitList* init_hitlist);
+DiscMB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
+                         Int4 num_hits, BLAST_SequenceBlk* query, 
+                         BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+                         const BlastInitialWordParameters* word_params, 
+                         Int4** matrix, Blast_ExtendWord* ewp, 
+                         BlastInitHitList* init_hitlist);
 
 
 /** Allocates memory for the BLAST_DiagTable*. This function also 
