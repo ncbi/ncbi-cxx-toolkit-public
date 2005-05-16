@@ -511,34 +511,12 @@ void CDbBlast::SetupSearch()
 
         /* For PHI BLAST, save information about pattern occurrences in
            query in the BlastQueryInfo structure. */
-        if (x_eProgram == eBlastTypePhiBlastn || 
-            x_eProgram == eBlastTypePhiBlastp) {
+        if (Blast_ProgramIsPhiBlast(x_eProgram)) {
             SPHIPatternSearchBlk* pattern_blk =
                 (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
             Blast_SetPHIPatternInfo(x_eProgram, pattern_blk, m_iclsQueries, 
                                     m_ipLookupSegments, m_iclsQueryInfo);
         }
-
-        // Fill the effective search space values in the BlastQueryInfo
-        // structure, so it doesn't have to be done separately by each thread.
-        Int8 total_length = BlastSeqSrcGetTotLen(m_pSeqSrc);
-        Int4 num_seqs = BlastSeqSrcGetNumSeqs(m_pSeqSrc);
-        BlastEffectiveLengthsParameters* eff_len_params = NULL;
-
-        /* Initialize the effective length parameters with real values of
-           database length and number of sequences */
-        BlastEffectiveLengthsParametersNew(kOptions.GetEffLenOpts(),
-                                           total_length, num_seqs, 
-                                           &eff_len_params);
-        status = 
-            BLAST_CalcEffLengths(x_eProgram, kOptions.GetScoringOpts(), 
-                                 eff_len_params, m_ipScoreBlock, 
-                                 m_iclsQueryInfo);
-        BlastEffectiveLengthsParametersFree(eff_len_params);
-        if (status) {
-            NCBI_THROW(CBlastException, eInternal, 
-                       "BLAST_CalcEffLengths failed");
-        }        
 
         m_ibQuerySetUpDone = true;
     }
@@ -650,7 +628,7 @@ void CDbBlast::x_RunTracebackSearch()
     SPHIPatternSearchBlk* pattern_blk = NULL;
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code.
-    if (program == eBlastTypePhiBlastn || program == eBlastTypePhiBlastp) {
+    if (Blast_ProgramIsPhiBlast(program)) {
         PHIPatternSpaceCalc(m_iclsQueryInfo, m_ipDiagnostics);
         pattern_blk = (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
     }
@@ -701,6 +679,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.66  2005/05/16 17:46:28  dondosha
+ * Use Blast_ProgramIsPhiBlast macro; calculation of effective lengths in SetupSearch() is not needed - it is done later in BLAST_GapAlignSetUp function in the core engine
+ *
  * Revision 1.65  2005/05/16 12:25:20  madden
  * Use SBlastHitsParameters in Blast_HSPListCollectorInit
  *
