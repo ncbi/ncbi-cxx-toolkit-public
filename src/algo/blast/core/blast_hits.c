@@ -43,6 +43,54 @@ static char const rcsid[] =
 #include "blast_hits_priv.h"
 #include "blast_itree.h"
 
+NCBI_XBLAST_EXPORT
+Int2 SBlastHitsParametersNew(EBlastProgramType program,
+                             const BlastHitSavingOptions* hit_options,
+                             const BlastExtensionOptions* ext_options,
+                             const BlastScoringOptions* scoring_options,
+                             const BlastSeqSrc* seq_src,
+                             SBlastHitsParameters* *retval)
+{
+       ASSERT(retval);
+       *retval = NULL;
+
+       if (hit_options == NULL ||
+           ext_options == NULL || 
+           scoring_options == NULL)
+           return 1;
+
+       if (Blast_ProgramIsRpsBlast(program) == TRUE && seq_src == NULL)
+           return 1;
+
+       *retval = (SBlastHitsParameters*) malloc(sizeof(SBlastHitsParameters));
+       if (*retval == NULL)
+           return 2;
+
+       if (Blast_ProgramIsRpsBlast(program) == TRUE)
+            (*retval)->prelim_hitlist_size = BlastSeqSrcGetNumSeqs(seq_src);
+       else if (ext_options->compositionBasedStats)
+            (*retval)->prelim_hitlist_size = 2*hit_options->hitlist_size;
+       else if (scoring_options->gapped_calculation)
+            (*retval)->prelim_hitlist_size = MIN(2*hit_options->hitlist_size, hit_options->hitlist_size+50);
+       else
+            (*retval)->prelim_hitlist_size = hit_options->hitlist_size;
+
+       (*retval)->options = hit_options;
+
+       return 0;
+}
+
+NCBI_XBLAST_EXPORT
+SBlastHitsParameters* SBlastHitsParametersFree(SBlastHitsParameters* param)
+{
+       if (param)
+       {
+               param->options = NULL;
+               sfree(param);
+       }
+       return NULL;
+}
+
 /********************************************************************************
           Functions manipulating BlastHSP's
 ********************************************************************************/
@@ -2793,7 +2841,7 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
 
 
 Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsplist_in, const BlastHitSavingOptions* hit_options)
+        BlastHSPList* hsplist_in, const SBlastHitsParameters* blasthit_params)
 {
    Int4 index, oid;
    BlastHitList* hit_list;
@@ -2811,7 +2859,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
    hit_list = results->hitlist_array[hsplist_in->query_index];
    if (!hit_list) {
        results->hitlist_array[hsplist_in->query_index] = 
-           hit_list = Blast_HitListNew(hit_options->prelim_hitlist_size);
+           hit_list = Blast_HitListNew(blasthit_params->prelim_hitlist_size);
    }
 
    /* Initialize the HSPList array, if necessary. */
@@ -2831,7 +2879,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
       hsp_list = hit_list->hsplist_array[oid];
       if (!hsp_list) {
          hsp_list = hit_list->hsplist_array[oid] = 
-            Blast_HSPListNew(hit_options->hsp_num_max);
+            Blast_HSPListNew(blasthit_params->options->hsp_num_max);
          hsp_list->oid = oid;
       }
       status = Blast_HSPListSaveHSP(hsp_list, hsp);
@@ -2851,13 +2899,13 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
          sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
    /* Leave only the number of HSPList's allowed by the hitlist size 
       option. */
-   for (index = hit_options->prelim_hitlist_size; 
+   for (index = blasthit_params->prelim_hitlist_size; 
         index < hit_list->hsplist_count; ++index) {
       hit_list->hsplist_array[index] = 
          Blast_HSPListFree(hit_list->hsplist_array[index]);
    }
    hit_list->hsplist_count = 
-      MIN(hit_list->hsplist_count, hit_options->prelim_hitlist_size);
+      MIN(hit_list->hsplist_count, blasthit_params->prelim_hitlist_size);
 
    /* All HSPs from the input HSP list have been moved to the results 
       structure, so make sure there is no attempt to free them now. */
@@ -2869,7 +2917,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
 }
 
 Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options)
+        BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params)
 {
    Int2 status = 0;
    BlastHSP* hsp;
@@ -2877,7 +2925,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
    if (!hsp_list)
       return 0;
 
-   if (!results || !hit_options)
+   if (!results || !blasthit_params)
       return -1;
 
    /* The HSP list should already be sorted by score coming into this function.
@@ -2902,7 +2950,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
 
          if (!tmp_hsp_list) {
             hsp_list_array[query_index] = tmp_hsp_list = 
-               Blast_HSPListNew(hit_options->hsp_num_max);
+               Blast_HSPListNew(blasthit_params->options->hsp_num_max);
             tmp_hsp_list->oid = hsp_list->oid;
          }
 
@@ -2939,7 +2987,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
          if (hsp_list_array[index]) {
             if (!results->hitlist_array[index]) {
                results->hitlist_array[index] = 
-                  Blast_HitListNew(hit_options->prelim_hitlist_size);
+                  Blast_HitListNew(blasthit_params->prelim_hitlist_size);
             }
             Blast_HitListUpdate(results->hitlist_array[index], 
                                 hsp_list_array[index]);
@@ -2955,7 +3003,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
          structure */
       if (!results->hitlist_array[0]) {
          results->hitlist_array[0] = 
-            Blast_HitListNew(hit_options->prelim_hitlist_size);
+            Blast_HitListNew(blasthit_params->prelim_hitlist_size);
       }
       Blast_HitListUpdate(results->hitlist_array[0], hsp_list);
    } else {
