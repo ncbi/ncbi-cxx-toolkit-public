@@ -69,7 +69,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.4.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.4.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -99,7 +99,8 @@ typedef enum {
     eError,
     eMonitor,
     eDumpQueue,
-    eReloadConfig
+    eReloadConfig,
+    eQList
 } EJS_RequestType;
 
 /// Request context
@@ -598,6 +599,16 @@ end_version_control:
                 break;
             case eReloadConfig:
                 ProcessReloadConfig(socket, *tdata, queue);
+                break;
+            case eQList:
+                {
+                string qnames;
+                ITERATE(CQueueCollection::TQueueMap, it, 
+                        m_QueueDB->GetQueueCollection().GetMap()) {
+                    qnames += it->first; qnames += ";";
+                }
+                WriteMsg(socket, "OK:", qnames.c_str());
+                }
                 break;
             case eError:
                 WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
@@ -1245,6 +1256,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 19.MONI
     // 20.DUMP [JSID_01_1]
     // 21.RECO
+    // 22.QLST
 
     const char* s = reqstr.c_str();
 
@@ -1580,6 +1592,11 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
         NS_SKIPSPACE(s)
         NS_GETSTRING(s, req->job_key_str)
+        return;
+    }
+
+    if (strncmp(s, "QLST", 4) == 0) {
+        req->req_type = eQList;
         return;
     }
 
@@ -1941,6 +1958,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/05/16 16:21:26  kuznets
+ * Added available queues listing
+ *
  * Revision 1.40  2005/05/12 18:37:33  kuznets
  * Implemented config reload
  *

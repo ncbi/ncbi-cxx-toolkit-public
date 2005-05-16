@@ -466,6 +466,10 @@ public:
         SLockedQueue&   m_LQueue;  
     };
 
+    const CQueueCollection& GetQueueCollection() const 
+    { 
+        return m_QueueCollection; 
+    }
 
 
 protected:
@@ -505,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/16 16:21:26  kuznets
+ * Added available queues listing
+ *
  * Revision 1.25  2005/05/12 18:37:33  kuznets
  * Implemented config reload
  *

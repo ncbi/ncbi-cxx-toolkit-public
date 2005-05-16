@@ -75,6 +75,7 @@ void CNetScheduleControl::Init(void)
     arg_desc->AddFlag("s", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
     arg_desc->AddFlag("reconf", "Reload server configuration");
+    arg_desc->AddFlag("qlist", "List available queues");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -171,6 +172,12 @@ int CNetScheduleControl::Run(void)
         NcbiCout << NcbiEndl;
     }
 
+    if (args["qlist"]) {
+        CNetScheduleClient_Control cl(host, port, "noname");
+        string ql = nc_client.GetQueueList();
+        NcbiCout << "Queues: " << ql << NcbiEndl;
+    }
+
     if (args["reconf"]) {
         CNetScheduleClient_Control cl(host, port);
         cl.ReloadServerConfig();
@@ -211,6 +218,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/05/16 16:21:26  kuznets
+ * Added available queues listing
+ *
  * Revision 1.12  2005/05/12 18:37:33  kuznets
  * Implemented config reload
  *

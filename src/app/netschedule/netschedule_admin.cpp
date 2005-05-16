@@ -115,6 +115,8 @@ void CNetScheduleAdmin::Init(void)
 
     arg_desc->AddFlag("dump", "Queue dump");
 
+    arg_desc->AddFlag("qlist", "List available queues");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -199,6 +201,12 @@ void CNetScheduleAdmin::Run(CNetScheduleClient_Control& nc_client)
         nc_client.PrintStatistics(NcbiCout);
     }
 
+    if (args["qlist"]) {
+        string ql = nc_client.GetQueueList();
+        NcbiCout << "Queues: " << ql << NcbiEndl;
+    }
+
+
     if (args["dump"]) {
 
         string job_key;
@@ -229,6 +237,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/05/16 16:21:26  kuznets
+ * Added available queues listing
+ *
  * Revision 1.4  2005/05/11 15:09:29  kuznets
  * Fixed bug in host:port connection
  *
