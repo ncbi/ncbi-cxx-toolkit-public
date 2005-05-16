@@ -240,6 +240,7 @@ RESOLVER_LIBS = @RESOLVER_LIBS@
 
 # --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
 LOCAL_LBSM = @local_lbsm@
+NCBI_CRYPT = @ncbi_crypt@
 
 # NCBI C++ API for BerkeleyDB
 BDB_LIB       = @BDB_LIB@
