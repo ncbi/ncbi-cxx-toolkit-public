@@ -35,6 +35,55 @@
 
 %varargs(10, char *arg = NULL) ncbi::CExec::SpawnLP;
 
+// CSerialObject::Assign and CSerialObject::Equals yield fatal errors
+// if the types don't match; generate custom wrappers that guard
+// against this and throw an exception instead
+
+// IsSameTypeInfo copied from serialobject.cpp
+%{
+static bool IsSameTypeInfo( const CSerialObject& obj1,
+                            const CSerialObject& obj2 )
+{
+    TTypeInfo type1 = obj1.GetThisTypeInfo();
+    while (type1->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* t = dynamic_cast<const CPointerTypeInfo*>(type1);
+        type1 = t->GetPointedType();
+    }
+    TTypeInfo type2 = obj2.GetThisTypeInfo();
+    while (type2->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* t = dynamic_cast<const CPointerTypeInfo*>(type2);
+        type2 = t->GetPointedType();
+    }
+    return (type1 == type2);
+}
+%}
+
+%extend ncbi::CSerialObject {
+    void Assign(const ncbi::CSerialObject& source,
+                ncbi::ESerialRecursionMode how=ncbi::eRecursive) {
+        if (typeid(source) != typeid(*self)
+            && !IsSameTypeInfo(source, *self) ) {
+            string s = "Can't assign " + source.GetThisTypeInfo()->GetName()
+                       + " to " + self->GetThisTypeInfo()->GetName();
+            throw runtime_error(s);
+        }
+        self->Assign(source, how);
+    }
+    bool Equals(const ncbi::CSerialObject& source,
+                ncbi::ESerialRecursionMode how=ncbi::eRecursive) const {
+        if (typeid(source) != typeid(*self)
+            && !IsSameTypeInfo(source, *self) ) {
+            string s = "Can't compare " + self->GetThisTypeInfo()->GetName()
+                       + " to " + source.GetThisTypeInfo()->GetName();
+            throw runtime_error(s);
+        }
+        return self->Equals(source, how);
+    }
+}
+%ignore ncbi::CSerialObject::Assign;
+%ignore ncbi::CSerialObject::Equals;
+
+
 %%
 
 corelib/ddumpable.hpp
@@ -243,6 +292,10 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/16 18:11:28  jcherry
+ * Guard against passing an object of a different type to
+ * CSerialObject::Assign and CSerialObject::Equals
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
