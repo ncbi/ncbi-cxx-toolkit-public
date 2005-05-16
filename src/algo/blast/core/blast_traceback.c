@@ -1106,9 +1106,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
    /* Eliminate extra hits from results, if preliminary hit list size is larger
       than the final hit list size */
-   if (hit_params->options->hitlist_size < 
-       hit_params->options->prelim_hitlist_size)
-      s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
+    s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
 
    *results_out = results;
 
