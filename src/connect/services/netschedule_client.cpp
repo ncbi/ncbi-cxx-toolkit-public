@@ -210,6 +210,10 @@ string CNetScheduleClient::StatusToString(EJobStatus status)
     return kEmptyStr;
 }
 
+string CNetScheduleClient::GetConnectionInfo() const
+{
+    return m_Host + ':' + NStr::UIntToString(m_Port);
+}
 
 void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 {
@@ -1205,6 +1209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/05/16 14:00:29  didenko
+ * Added CetConnectionInfo() virtual method
+ *
  * Revision 1.30  2005/05/12 18:36:57  kuznets
  * +ReloadServerConfig()
  *

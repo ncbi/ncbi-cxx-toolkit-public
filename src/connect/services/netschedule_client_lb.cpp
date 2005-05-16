@@ -512,6 +512,10 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
     return job_received;
 }
 
+string CNetScheduleClient_LB::GetConnectionInfo() const
+{
+    return m_LB_ServiceName;
+}
 
 
 
@@ -654,6 +658,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/05/16 14:00:29  didenko
+ * Added CetConnectionInfo() virtual method
+ *
  * Revision 1.13  2005/05/11 18:56:06  didenko
  * Added calling DescoverLowPriortyServers method when a worker node is created
  *

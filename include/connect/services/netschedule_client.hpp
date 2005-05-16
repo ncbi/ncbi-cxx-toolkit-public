@@ -412,6 +412,10 @@ public:
         eShutdownImmidiate ///< Urgent shutdown was requested
     };
 
+    /// Return Connection Information string
+    ///
+    virtual string GetConnectionInfo() const; 
+
 protected:
 
     /// Shutdown the server daemon.
@@ -577,6 +581,11 @@ public:
                  unsigned       wait_time,
                  unsigned short udp_port);
 
+    /// Return Connection Information string
+    ///
+    virtual string GetConnectionInfo() const; 
+
+
 protected:
     virtual 
     void CheckConnect(const string& key);
@@ -732,6 +741,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/05/16 14:00:29  didenko
+ * Added CetConnectionInfo() virtual method
+ *
  * Revision 1.33  2005/05/12 18:36:27  kuznets
  * +ReloadServerConfig()
  *
