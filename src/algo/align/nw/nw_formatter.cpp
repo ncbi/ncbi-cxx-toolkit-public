@@ -330,7 +330,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
         
         ss << '>' << strid_query << endl;
         const vector<char>* pv = &v1;
-        for(size_t i = 0; i < aln_size; ++i) {
+        for(size_t i = 0; i < aln_size; ) {
             for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
                 ss << (*pv)[i];
             }
@@ -339,7 +339,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
 
         ss << '>' << strid_subj << endl;
         pv = &v2;
-        for(size_t i = 0; i < aln_size; ++i) {
+        for(size_t i = 0; i < aln_size; ) {
             for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
                 ss << (*pv)[i];
             }
@@ -531,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/16 20:18:08  jcherry
+ * Fixed loss of characters and line ends in fasta format
+ *
  * Revision 1.17  2005/04/04 16:32:33  kapustin
  * Specify which score to include when formatting as seq-align
  *
