@@ -316,7 +316,7 @@ static const SStringNumericValues s_Str2NumTests[] = {
     STR(100000000000000000),
     STR(1000000000000000000),
     STRD(-9223372036854775809),
-    STRI(-9223372036854775808),
+    { "-9223372036854775808", NCBI_CONST_INT8(-9223372036854775807)-1, kBadValue, -9223372036854775808. },
     STRI(-9223372036854775807),
     STR(9223372036854775806),
     STR(9223372036854775807),
@@ -1169,6 +1169,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.44  2005/05/16 15:55:42  ivanov
+ * Fixed compilation warning
+ *
  * Revision 6.43  2005/05/13 16:27:31  ivanov
  * Enabled commented asserts -- StringTo[U]Int8 was fixed.
  * Minor cosmetics.
