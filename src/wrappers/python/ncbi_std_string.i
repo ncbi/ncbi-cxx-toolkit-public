@@ -77,7 +77,7 @@ namespace std {
             temp = std::string(PyString_AsString($input),
                                PyString_Size($input));
             $1 = &temp;
-        } else if (SWIG_ConvertPtr($input,(void **) &s,
+        } else if (SWIG_ConvertPtr($input, (void **) &s,
                                    $1_descriptor,0) != -1) {
             $1 = s;
         } else {
@@ -173,7 +173,7 @@ namespace std {
                 return lhs + *self;
             }
         }
-        const string& operator+=(const string& rhs);
+        string& operator+=(const string& rhs);
     };
 }
 
@@ -181,6 +181,10 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/16 15:23:10  jcherry
+ * Make return type of operator+= non-const; this is correct, and necessary
+ * for proper behavior of += in Python
+ *
  * Revision 1.2  2005/05/13 14:59:34  jcherry
  * __getitem__: raise IndexError on out-of-range to support iteration;
  * support Python-style negative indices
