@@ -99,6 +99,7 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
     , m_DS( NULL )
     , m_TableName( "#dbapi_unit_test" )
 {
+    SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
 }
 
 void 
@@ -160,6 +161,10 @@ public:
     bool GetSucceed(void) const
     {
         return m_Succeed;
+    }
+    void Init(void)
+    {
+        m_Succeed = false;
     }
 
 private:
@@ -223,7 +228,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
             }
         }
 
@@ -238,12 +243,15 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 m_args.GetDatabaseName() 
                 );
 
+            // Reinit the errot handler because it can be affected during connection.
+            drv_err_handler->Init();
+
             try {
                 Test_ES_01(*conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
             }
         }
 
@@ -258,7 +266,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() == true );
+                BOOST_CHECK( err_handler->GetSucceed() );
             }
         }
 
@@ -274,12 +282,15 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 m_args.GetDatabaseName() 
                 );
 
+            // Reinit the errot handler because it can be affected during connection.
+            drv_err_handler->Init();
+
             try {
                 Test_ES_01(*conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
             }
         }
     }
@@ -307,7 +318,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == false );
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
             }
         }
 
@@ -323,7 +334,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() == true );
+                BOOST_CHECK( err_handler->GetSucceed() );
             }
         }
 
@@ -345,7 +356,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == true );
+                BOOST_CHECK( drv_err_handler->GetSucceed() );
             }
         }
 
@@ -361,7 +372,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() == true );
+                BOOST_CHECK( err_handler->GetSucceed() );
             }
         }
 
@@ -382,7 +393,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() == true );
+                BOOST_CHECK( drv_err_handler->GetSucceed() );
             }
         }
     }
@@ -1910,6 +1921,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2005/05/16 14:49:09  ssikorsk
+ * Reinit an errot handler because it can be affected during connection.
+ *
  * Revision 1.20  2005/05/12 18:42:57  ssikorsk
  * Improved the "Test_UserErrorHandler" test-case
  *
