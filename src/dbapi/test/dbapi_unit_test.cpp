@@ -221,6 +221,27 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
         drv_context->PushCntxMsgHandler( drv_err_handler );
 
+        // Connection process should be affected ...
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+
+            try {
+                conn->Connect( 
+                    "unknown", 
+                    "invalid", 
+                    m_args.GetServerName(), 
+                    m_args.GetDatabaseName() 
+                    );
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() );
+            }
+
+            drv_err_handler->Init();
+        }
+
         // Current connection should not be affected ...
         {
             try {
@@ -1921,6 +1942,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/05/16 15:06:20  ssikorsk
+ * Add PushCntxMsgHandler + invalid connection check.
+ *
  * Revision 1.21  2005/05/16 14:49:09  ssikorsk
  * Reinit an errot handler because it can be affected during connection.
  *
