@@ -1045,12 +1045,10 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
       
-        BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
         Boolean reverse = BlastIsReverseStrand(kIsNucl, context);
-        Int4 query_length = 0;
 
         /* For each query, check if forward strand is present */
-        if ((query_length = query_info->contexts[context].query_length) <= 0)
+        if (query_info->contexts[context].query_length <= 0)
         {
             if (kIsNucl && (context & 1) == 0)  /* Needed only for blastn, or does this not apply FIXME */
                no_forward_strand = TRUE;  /* No plus strand, we cannot simply infer locations by going from plus to minus */
@@ -1061,6 +1059,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
 
         if (!reverse || no_forward_strand)
         {
+            BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
             Int4 filter_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
             if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context, blast_message)))
             {
