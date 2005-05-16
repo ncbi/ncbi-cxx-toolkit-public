@@ -65,6 +65,7 @@ CWorkerNodeControlThread::~CWorkerNodeControlThread()
 const string SHUTDOWN_CMD = "SHUTDOWN";
 const string VERSION_CMD = "VERSION";
 const string STAT_CMD = "STAT";
+const string GETLOAD_CMD = "GETLOAD";
 
 void CWorkerNodeControlThread::Process(SOCK sock)
 {
@@ -137,8 +138,31 @@ void CWorkerNodeControlThread::Process(SOCK sock)
             os.freeze(false);
 
         }
+        else if ( strncmp( request.c_str(), GETLOAD_CMD.c_str(), 
+                           GETLOAD_CMD.length() ) == 0 ) {
+            string ans = "ERR:";
+            if (auth != m_WorkerNode.GetJobVersion()) {
+                ans = "ERR:Wrong Program. Required: " 
+                    + m_WorkerNode.GetJobVersion();
+            } else {
+                string qname, connection_info;
+                NStr::SplitInTwo(queue, ";", qname, connection_info);
+                if (qname != m_WorkerNode.GetQueueName())
+                    ans = "ERR:Wrong Queue. Required: " 
+                        + m_WorkerNode.GetQueueName();
+                else if (connection_info != m_WorkerNode.GetConnectionInfo())
+                    ans = "ERR:Wrong Connection Info. Required: " 
+                        + m_WorkerNode.GetConnectionInfo();
+                else {
+                    int load = m_WorkerNode.GetMaxThreads() - 
+                        m_WorkerNode.GetJobsRunningNumber();
+                    ans = "OK:" + NStr::IntToString(load);
+                }
+            }
+            socket.Write(ans.c_str(), ans.length() + 1 );
+        }
         else {
-            string ans = "ERR: Unknown command -- " + request;
+            string ans = "ERR:Unknown command -- " + request;
             socket.Write(ans.c_str(), ans.length() + 1 );
         }
     }
@@ -155,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2005/05/16 14:02:45  didenko
+ * Added GETLOAD command recognition
+ *
  * Revision 6.5  2005/05/12 18:59:39  didenko
  * Added a node build date to the version command
  *
