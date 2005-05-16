@@ -188,11 +188,6 @@ public:
     /// Sets HitlistSize
     /// @param s HitlistSize [in]
     void SetHitlistSize(int s) { m_Opts->SetHitlistSize(s); }
-    /// Returns PrelimHitlistSize
-    int GetPrelimHitlistSize() const { return m_Opts->GetPrelimHitlistSize(); }
-    /// Sets PrelimHitlistSize
-    /// @param s PrelimHitlistSize [in]
-    void SetPrelimHitlistSize(int s) { m_Opts->SetPrelimHitlistSize(s); }
 
     /// Returns MaxNumHspPerSequence
     int GetMaxNumHspPerSequence() const { 
@@ -284,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/05/16 12:25:54  madden
+ * Remove references to [GS]etPrelimHitlistSize
+ *
  * Revision 1.21  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.

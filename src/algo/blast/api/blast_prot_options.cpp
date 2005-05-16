@@ -109,7 +109,6 @@ void
 CBlastProteinOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
-    SetPrelimHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
@@ -146,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/16 12:24:37  madden
+ * Remove references to [GS]etPrelimHitlistSize
+ *
  * Revision 1.18  2005/03/02 16:45:36  camacho
  * Remove use_real_db_size
  *

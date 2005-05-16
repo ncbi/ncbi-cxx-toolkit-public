@@ -102,7 +102,6 @@ void
 CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
-    SetPrelimHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
     m_Opts->SetSumStatisticsMode(false);
@@ -140,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/05/16 12:24:37  madden
+ * Remove references to [GS]etPrelimHitlistSize
+ *
  * Revision 1.12  2005/03/02 16:45:36  camacho
  * Remove use_real_db_size
  *

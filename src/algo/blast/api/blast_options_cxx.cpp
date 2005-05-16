@@ -92,7 +92,6 @@ enum EBlastOptIdx {
     eBlastOpt_GapTrigger,
     eBlastOpt_GapExtnAlgorithm,
     eBlastOpt_HitlistSize,
-    eBlastOpt_PrelimHitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
     eBlastOpt_CullingLimit,
     eBlastOpt_RequiredStart,
@@ -241,9 +240,6 @@ public:
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
-
-    int GetPrelimHitlistSize() const;
-    void SetPrelimHitlistSize(int s);
 
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
@@ -731,10 +727,6 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         
     case eBlastOpt_HitlistSize:
         x_SetParam("HitlistSize", v);
-        return;
-        
-    case eBlastOpt_PrelimHitlistSize:
-        x_SetParam("PrelimHitlistSize", v);
         return;
         
     case eBlastOpt_CutoffScore:
@@ -1483,18 +1475,6 @@ inline void
 CBlastOptionsLocal::SetHitlistSize(int s)
 {
     m_HitSaveOpts->hitlist_size = s;
-}
-
-inline int
-CBlastOptionsLocal::GetPrelimHitlistSize() const
-{
-    return m_HitSaveOpts->prelim_hitlist_size;
-}
-
-inline void
-CBlastOptionsLocal::SetPrelimHitlistSize(int s)
-{
-    m_HitSaveOpts->prelim_hitlist_size = s;
 }
 
 inline int
@@ -2724,25 +2704,6 @@ CBlastOptions::SetHitlistSize(int s)
 }
 
 int 
-CBlastOptions::GetPrelimHitlistSize() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetPrelimHitlistSize() not available.");
-    }
-    return m_Local->GetPrelimHitlistSize();
-}
-void 
-CBlastOptions::SetPrelimHitlistSize(int s)
-{
-    if (m_Local) {
-        m_Local->SetPrelimHitlistSize(s);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_PrelimHitlistSize, s);
-    }
-}
-
-int 
 CBlastOptions::GetMaxNumHspPerSequence() const
 {
     if (! m_Local) {
@@ -3367,6 +3328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/05/16 12:24:37  madden
+* Remove references to [GS]etPrelimHitlistSize
+*
 * Revision 1.63  2005/04/27 19:58:15  dondosha
 * BlastScoreBlk::effective_search_sp field no longer exists
 *
