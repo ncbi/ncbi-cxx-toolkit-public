@@ -497,14 +497,7 @@ public:
         CSeqDBLockHold locked(m_Atlas);
         
         m_Atlas.Lock(locked);
-        m_Atlas.RetRegion((const char *) m_HdrRegion);
-        m_Atlas.RetRegion((const char *) m_SeqRegion);
-        
-        _ASSERT((m_AmbRegion == 0) == (m_ProtNucl == 'p'));
-        
-        if (m_AmbRegion) {
-            m_Atlas.RetRegion((const char *) m_AmbRegion);
-        }
+        UnLease();
     }
     
     /// Get the location of a sequence's ambiguity data
@@ -624,11 +617,11 @@ public:
     }
     
     /// Release any memory leases temporarily held here.
-    ///
-    /// This is a placeholder - the current design does not use a
-    /// memory lease for this particular file.
     void UnLease()
     {
+        x_ClrHdr();
+        x_ClrSeq();
+        x_ClrAmb();
     }
     
 private:
@@ -655,23 +648,92 @@ private:
     // 1. Do not constitute true object state.
     // 2. Are modified only under lock (CSeqDBRawFile::m_Atlas.m_Lock).
     
-    /// Pointer to the array of header file offsets.
-    Uint4 * m_HdrRegion;
+    /// Return header data (assumes locked).
+    void x_ClrHdr() const
+    {
+        if (! m_HdrLease.Empty()) {
+            m_HdrLease.Clear();
+        }
+    }
     
-    /// Pointer to the array of sequence file offsets.
-    Uint4 * m_SeqRegion;
+    /// Return sequence data (assumes locked).
+    void x_ClrSeq() const
+    {
+        if (! m_SeqLease.Empty()) {
+            m_SeqLease.Clear();
+        }
+    }
     
-    /// Pointer to the array of offsets of the ambiguity data (for
-    /// nucleotide volumes only).
-    Uint4 * m_AmbRegion;
+    /// Return ambiguity data (assumes locked).
+    void x_ClrAmb() const
+    {
+        if (! m_AmbLease.Empty()) {
+            m_AmbLease.Clear();
+        }
+    }
+    
+    /// Get header data (assumes locked).
+    Uint4 * x_GetHdr() const
+    {
+        if (m_HdrLease.Empty()) {
+            m_Atlas.GetRegion(m_HdrLease, m_FileName, m_OffHdr, m_EndHdr);
+        }
+        return (Uint4*) m_HdrLease.GetPtr(m_OffHdr);
+    }
+    
+    /// Get sequence data (assumes locked).
+    Uint4 * x_GetSeq() const
+    {
+        if (m_SeqLease.Empty()) {
+            m_Atlas.GetRegion(m_SeqLease, m_FileName, m_OffSeq, m_EndSeq);
+        }
+        return (Uint4*) m_SeqLease.GetPtr(m_OffSeq);
+    }
+    
+    /// Get ambiguity data (assumes locked).
+    Uint4 * x_GetAmb() const
+    {
+        _ASSERT(x_GetSeqType() == 'n');
+        if (m_AmbLease.Empty()) {
+            m_Atlas.GetRegion(m_AmbLease, m_FileName, m_OffAmb, m_EndAmb);
+        }
+        return (Uint4*) m_AmbLease.GetPtr(m_OffAmb);
+    }
+    
+    /// A memory lease used by the header section of this file.
+    mutable CSeqDBMemLease m_HdrLease;
+    
+    /// A memory lease used by the sequence section of this file.
+    mutable CSeqDBMemLease m_SeqLease;
+    
+    /// A memory lease used by the ambiguity section of this file.
+    mutable CSeqDBMemLease m_AmbLease;
+    
+    /// offset of the start of the header section.
+    TIndx m_OffHdr;
+    
+    /// Offset of the end of the header section.
+    TIndx m_EndHdr;
+    
+    /// Offset of the start of the sequence section.
+    TIndx m_OffSeq;
+    
+    /// Offset of the end of the sequence section.
+    TIndx m_EndSeq;
+    
+    /// Offset of the start of the ambiguity section.
+    TIndx m_OffAmb;
+    
+    /// Offset of the end of the ambiguity section.
+    TIndx m_EndAmb;
 };
 
 bool
 CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
     if ('n' == x_GetSeqType()) {
-        start = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
-        end   = SeqDB_GetStdOrd(& m_SeqRegion[oid+1]);
+        start = SeqDB_GetStdOrd(& x_GetAmb()[oid]);
+        end   = SeqDB_GetStdOrd(& x_GetSeq()[oid+1]);
         
         return (start <= end);
     }
@@ -682,26 +744,26 @@ CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    start = SeqDB_GetStdOrd(& m_HdrRegion[oid]);
-    end   = SeqDB_GetStdOrd(& m_HdrRegion[oid+1]);
+    start = SeqDB_GetStdOrd(& x_GetHdr()[oid]);
+    end   = SeqDB_GetStdOrd(& x_GetHdr()[oid+1]);
 }
 
 void
 CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
+    start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
     
     if ('p' == x_GetSeqType()) {
-        end = SeqDB_GetStdOrd(& m_SeqRegion[oid+1]);
+        end = SeqDB_GetStdOrd(& x_GetSeq()[oid+1]);
     } else {
-        end = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
+        end = SeqDB_GetStdOrd(& x_GetAmb()[oid]);
     }
 }
 
 void
 CSeqDBIdxFile::GetSeqStart(int oid, TIndx & start) const
 {
-    start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
+    start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
 }
 
 

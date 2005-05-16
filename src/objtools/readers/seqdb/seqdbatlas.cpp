@@ -61,6 +61,25 @@ BEGIN_NCBI_SCOPE
 // leave the old ones alone (possibly marking the old regions as high
 // penalty).  Depending on refcnt, penalty, and region sizes.
 
+// Throw function
+
+void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg)
+{
+    switch(code) {
+    case CSeqDBException::eArgErr:
+        NCBI_THROW(CSeqDBException, eArgErr, msg);
+        break;
+        
+    case CSeqDBException::eFileErr:
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+        break;
+        
+    default:
+        NCBI_THROW(CSeqDBException, eMemErr, msg);
+        break;
+    }
+}
+
 /// Check the size of a number relative to the scope of a numeric type.
 
 template<class TIn, class TOut>
@@ -70,9 +89,8 @@ TOut SeqDB_CheckLength(TIn value)
     
     if (sizeof(TOut) < sizeof(TIn)) {
         if (TIn(result) != value) {
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "Offset type does not span file length.");
+            SeqDB_ThrowException(CSeqDBException::eFileErr,
+                                 "Offset type does not span file length.");
         }
     }
     
@@ -135,7 +153,7 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
 {
     Verify();
     if (! GetFileSize(fname, length, locked)) {
-        NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
+        SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
     }
     
     // If allocating more than 256MB in a file, do a full sweep first.
@@ -170,7 +188,7 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
                           CSeqDBLockHold & locked)
 {
     if (! GetFileSize(fname, length, locked)) {
-        NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
+        SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
     }
     
     // If allocating more than 256MB in a file, do a full sweep first.
@@ -255,6 +273,8 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
     if (Uint8(m_CurAlloc) <= reduce_to) {
         return;
     }
+
+    reduce_to = 0;
     
     if (m_FlushCB) {
         (*m_FlushCB)();
@@ -671,18 +691,22 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         newmap->GetBoundaries(start, begin, end);
         
         if (retval == 0) {
-            NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
+            SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
         }
-    
+        
         m_AddressLookup[nregion->Data()] = nregion;
-    
+        
         m_CurAlloc += (end-begin);
-    
-        m_Regions.push_back(newmap.release());
+        
+        CRegionMap * nmp = newmap.release();
+        
+        _ASSERT(nmp);
+        
+        m_Regions.push_back(nmp);
     }
     catch(std::bad_alloc) {
-        NCBI_THROW(CSeqDBException, eMemErr,
-                   "CSeqDBAtlas::x_GetRegion: allocation failed.");
+        SeqDB_ThrowException(CSeqDBException::eMemErr,
+                             "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
     Verify();
     
@@ -1007,7 +1031,7 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
                 NStr::UInt8ToString(atlas->GetCurrentAllocationTotal()) +
                 " bytes allocated, caught exception:" + expt;
             
-            NCBI_THROW(CSeqDBException, eFileErr, expt);
+            SeqDB_ThrowException(CSeqDBException::eFileErr, expt);
         }
 
         if (m_Data) {

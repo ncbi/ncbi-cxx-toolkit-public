@@ -278,6 +278,9 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
 ///   The delimiter to use when joining elements
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 
+/// Thow a SeqDB exception; this is seperated into a function
+/// primarily to allow a breakpoint to be set.
+void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 
 END_NCBI_SCOPE
 

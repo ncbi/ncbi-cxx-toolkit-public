@@ -159,9 +159,15 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
       m_NumOIDs       (0),
       m_VolLen        (0),
       m_MaxLen        (0),
-      m_HdrRegion     (0),
-      m_SeqRegion     (0),
-      m_AmbRegion     (0)
+      m_HdrLease      (atlas),
+      m_SeqLease      (atlas),
+      m_AmbLease      (atlas),
+      m_OffHdr        (0),
+      m_EndHdr        (0),
+      m_OffSeq        (0),
+      m_EndSeq        (0),
+      m_OffAmb        (0),
+      m_EndAmb        (0)
 {
     // Input validation
     
@@ -230,16 +236,15 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                    "Error: requested sequence type does not match DB.");
     }
     
-    m_HdrRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off1, off2, locked);
-    m_SeqRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off2, off3, locked);
+    m_OffHdr = off1; m_EndHdr = off2;
+    m_OffSeq = off2; m_EndSeq = off3;
     
     if (db_seqtype == 'n') {
-        m_AmbRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off3, offend, locked);
+        m_OffAmb = off3; m_EndAmb = offend;
     } else {
-        m_AmbRegion = 0;
+        m_OffAmb = m_EndAmb = 0;
     }
 }
 
 END_NCBI_SCOPE
-
 
