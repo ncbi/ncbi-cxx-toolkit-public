@@ -144,9 +144,6 @@ extern "C" {
                                      value exceeds this number are discarded */
 #define BLAST_HITLIST_SIZE 500 /**< Number of database sequences to save hits 
                                   for */
-#define BLAST_PRELIM_HITLIST_SIZE 500 /**< Number of database sequences to save 
-                                         hits for in the preliminary stage. */
-
 /** Types of the lookup table */
 #define MB_LOOKUP_TABLE 1  /**< megablast lookup table (includes both
                                 contiguous and discontiguous megablast) */
@@ -312,8 +309,6 @@ typedef struct BlastHitSavingOptions {
 
    Int4 hitlist_size;/**< Maximal number of database sequences to return
                         results for */
-   Int4 prelim_hitlist_size; /**< Maximal number of database sequences to 
-                               save hits after preliminary alignment */
    Int4 hsp_num_max; /**< Maximal number of HSPs to save for one database 
                         sequence */
    Int4 total_hsp_limit; /**< Maximal total number of HSPs to keep */
@@ -327,7 +322,6 @@ typedef struct BlastHitSavingOptions {
                             alignment */
    Int4 required_end;    /**< End of the region required to be part of the
                             alignment */
-   double original_expect_value; /**< Needed for PSI-BLAST??? */
 
    /********************************************************************/
    /* Merge all these in a structure for clarity? */
@@ -355,7 +349,7 @@ typedef struct BlastScoringOptions {
    char* matrix_path; /**< Directory path to where matrices are stored. */
    Int2 reward;      /**< Reward for a match */
    Int2 penalty;     /**< Penalty for a mismatch */
-   Boolean gapped_calculation; /**< identical to the one in hit saving opts */
+   Boolean gapped_calculation; /**< gap-free search if FALSE */
    Int4 gap_open;    /**< Extra penalty for starting a gap */
    Int4 gap_extend;  /**< Penalty for each gap residue */
    Int4 decline_align; /**< Cost for declining alignment (PSI-BLAST) */
