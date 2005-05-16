@@ -209,6 +209,9 @@ int CGridWorkerApp::Run(void)
     bool is_daemon =
         reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
 
+    string masters = 
+            reg.GetString("server", "master_nodes", "");
+
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
     if (NStr::CompareNocase(dbg_mode, "gather")==0) {
@@ -263,6 +266,7 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
+    m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->ActivateServerLog(server_log);
 
     {{
@@ -310,6 +314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/16 14:20:55  didenko
+ * Added master/slave dependances between worker nodes.
+ *
  * Revision 1.22  2005/05/12 14:52:05  didenko
  * Added a worker node build time and start time to the statistic
  *

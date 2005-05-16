@@ -33,6 +33,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <connect/services/grid_worker.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <util/thread_pool.hpp>
 
 #include "grid_thread_context.hpp"
@@ -393,6 +394,12 @@ const string& CGridWorkerNode::GetClientName() const
     return m_NSReadClient->GetClientName(); 
 }
 
+string CGridWorkerNode::GetConnectionInfo() const
+{
+    if (!m_NSReadClient.get())
+        return kEmptyStr;
+    return m_NSReadClient->GetConnectionInfo();    
+}
 
 bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
 {
@@ -408,8 +415,13 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
         if(m_NSReadClient.get()) {
             int try_count = 0;
             try {
-                job_exists = m_NSReadClient->WaitJob(&job_key, &input,
-                                                     m_NSTimeout, m_UdpPort);
+                if (x_AreMastersBusy()) {
+                    job_exists = 
+                        m_NSReadClient->WaitJob(&job_key, &input,
+                                                m_NSTimeout, m_UdpPort);
+                } else {
+                    SleepSec(m_NSTimeout);
+                }
             }
             catch (CNetServiceException& ex) {
                 ERR_POST("Communication Error : " << ex.what());
@@ -452,12 +464,77 @@ bool CGridWorkerNode::x_CreateNSReadClient()
     }
     return true;
 }
+void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
+{
+    vector<string> vhosts;
+    NStr::Tokenize(hosts, " ;,", vhosts);
+    m_Masters.clear();
+    ITERATE(vector<string>, it, vhosts) {
+        string host, sport;
+        NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, sport);
+        if (host.empty() || sport.empty())
+            continue;
+        try {
+            unsigned int port = NStr::StringToUInt(sport);
+            m_Masters.insert(SHost(NStr::ToLower(host),port));
+        } catch(...) {}
+    }
+}
+
+bool CGridWorkerNode::x_AreMastersBusy() const
+{
+    ITERATE(set<SHost>, it, m_Masters) {
+        STimeout tmo = {0, 500};
+        CSocket socket(it->host, it->port, &tmo, eOff);
+        if (socket.GetStatus(eIO_Open) != eIO_Success)
+            continue;
+        
+        CNcbiOstrstream os;
+        os << GetJobVersion() << endl;
+        if (m_NSReadClient.get()) {
+            os << m_NSReadClient->GetQueueName()  <<";" 
+               << m_NSReadClient->GetConnectionInfo();
+        }
+        os << endl;
+        os << "GETLOAD" << ends;
+        if (socket.Write(os.str(), os.pcount()) != eIO_Success) {
+            os.freeze(false);
+            continue;
+        }
+        os.freeze(false);
+        string replay;
+        if (socket.ReadLine(replay) != eIO_Success)
+            continue;
+        //        cerr << it->host << ":" << it->port << "  " << replay << endl;           
+        if (NStr::StartsWith(replay, "ERR:")) {
+            string msg;
+            NStr::Replace(replay, "ERR:", "", msg);
+            ERR_POST( "Worker Node @ " << it->host << ":" << it->port 
+                      << " returned error : " << msg);
+        } else if (NStr::StartsWith(replay, "OK:")) {
+            string msg;
+            NStr::Replace(replay, "OK:", "", msg);
+            try {
+                int load = NStr::StringToInt(msg);
+                if (load > 0) 
+                    return false;
+            } catch (...) {}
+        } else {
+            ERR_POST( "Worker Node @ " << it->host << ":" << it->port 
+                      << " returned unknown replay : " << replay);
+        }
+    }
+    return true;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/16 14:20:55  didenko
+ * Added master/slave dependances between worker nodes.
+ *
  * Revision 1.25  2005/05/13 13:41:42  didenko
  * Changed LOG_POST(Error << ... ) to ERR_POST(...)
  *

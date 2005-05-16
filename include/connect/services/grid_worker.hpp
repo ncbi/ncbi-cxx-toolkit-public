@@ -382,6 +382,8 @@ public:
 
     unsigned int GetJobsRunningNumber() const;
     unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
+
+    void SetMasterWorkerNodes(const string& hosts);
     /// Start jobs execution.
     ///
     void Start();
@@ -411,6 +413,10 @@ public:
         CMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.GetJobVersion();
     }
+
+    /// Get a Connection Info
+    ///
+    string GetConnectionInfo() const;
 
     const CTime& GetStartTime() const { return m_StartTime; }
    
@@ -460,9 +466,22 @@ private:
         return ns_client.release();
     }
 
+    struct SHost {
+        SHost(string h, unsigned int p) : host(h), port(p) {}
+        bool operator== (const SHost& h) const 
+        { return host == h.host && port == h.port; }
+        bool operator< (const SHost& h) const 
+        { return (host == h.host ? (port < h.port) : (host < h.host)); }
+        
+        string host;
+        unsigned int port;
+    };
+    set<SHost> m_Masters;
+
     bool x_GetNextJob(string& job_key, string& input);
     void x_ReturnJob(const string& job_key);
     bool x_CreateNSReadClient();
+    bool x_AreMastersBusy() const;
 
     CGridWorkerNode(const CGridWorkerNode&);
     CGridWorkerNode& operator=(const CGridWorkerNode&);
@@ -480,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/05/16 14:20:55  didenko
+ * Added master/slave dependances between worker nodes.
+ *
  * Revision 1.22  2005/05/12 18:14:33  didenko
  * Cosmetics
  *
