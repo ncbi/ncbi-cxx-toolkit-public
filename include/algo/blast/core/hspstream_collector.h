@@ -47,7 +47,8 @@ extern "C" {
 /** Default implementation of BlastHSPStream */
 typedef struct BlastHSPListCollectorData {
    EBlastProgramType program;           /**< BLAST program type */
-   const BlastHitSavingOptions* hit_options; /**< Hit saving options */
+   SBlastHitsParameters* blasthit_params; /**< specifies how many 
+                               hits to save etc. */
    BlastHSPResults* results;/**< Structure for saving HSP lists */
    Boolean results_sorted;  /**< Have the results already been sorted? 
                                Set to true after the first read call. */
@@ -62,8 +63,7 @@ typedef struct BlastHSPListCollectorData {
 /** Initialize the collector HSP stream for a multi-threaded search. The 
  * locking facility must be instantiated before this function is called. 
  * @param program Type of BlAST program [in]
- * @param hit_options Hit saving options containing limits on numbers of 
- *                    results to save[in]
+ * @param blasthit_params Specifies how many hits to save etc. [in]
  * @param num_queries Number of query sequences in this BLAST search [in]
  * @param sort_on_read Should results be sorted on the first read call? [in]
  * @param lock        Pointer to locking structure for writing by multiple
@@ -71,21 +71,20 @@ typedef struct BlastHSPListCollectorData {
  */
 BlastHSPStream* 
 Blast_HSPListCollectorInitMT(EBlastProgramType program, 
-                             const BlastHitSavingOptions* hit_options, 
+                             SBlastHitsParameters* blasthit_params, 
                              Int4 num_queries, Boolean sort_on_read, 
                              MT_LOCK lock);
 
 /** Initialize the collector HSP stream for a single-threaded search, i.e. 
  * no locking is done when reading/writing from/to the stream.
  * @param program Type of BlAST program [in]
- * @param hit_options Hit saving options containing limits on numbers of 
- *                    results to save[in]
+ * @param blasthit_params Specifies how many hits to save etc. [in]
  * @param num_queries Number of query sequences in this BLAST search [in]
  * @param sort_on_read Should results be sorted on the first read call? [in]
  */
 BlastHSPStream* 
 Blast_HSPListCollectorInit(EBlastProgramType program, 
-                           const BlastHitSavingOptions* hit_options, 
+                           SBlastHitsParameters* blasthit_params, 
                            Int4 num_queries, Boolean sort_on_read);
 
 #ifdef __cplusplus

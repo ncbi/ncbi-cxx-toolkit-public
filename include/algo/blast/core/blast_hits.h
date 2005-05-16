@@ -42,6 +42,43 @@
 extern "C" {
 #endif
 
+/** Keeps prelim_hitlist_size and HitSavingOptions
+    together, mostly for use by hspstream. */
+typedef struct SBlastHitsParameters {
+   Int4 prelim_hitlist_size; /**< number of hits saved during preliminary 
+                           part of search. */
+   const BlastHitSavingOptions* options; /**< Use hsp_num_max from here. */
+} SBlastHitsParameters; 
+
+/** Sets up small structures used by blast_hit.c and hspstream_collector.c
+ * for saving HSPs.
+ * @param program used to determin if rpsblast [in]
+ * @param hitSavingOptions field hitlist_size and hsp_num_max needed, a pointer to 
+ *      this structure will be stored on resulting structure.[in]
+ * @param extOptions field compositionBasedStats needed here. [in]
+ * @param scoringOptions gapped_calculation needed here. [in]
+ * @param seq_src used to get number of db sequence for rpsblast [in]
+ * @param retval the allocated SBlastHitsParameters*
+ * @return zero on success, 1 on NULL parameter, 2 if calloc fails.
+ */
+NCBI_XBLAST_EXPORT
+Int2 SBlastHitsParametersNew(EBlastProgramType program,
+                             const BlastHitSavingOptions* hit_options,
+                             const BlastExtensionOptions* ext_options,
+                             const BlastScoringOptions* scoring_options,
+                             const BlastSeqSrc* seq_src,
+                             SBlastHitsParameters* *retval);
+
+/** Deallocated SBlastHitsParameters.
+ * @param param object to be freed.
+ * @param NULL pointer.
+ */
+NCBI_XBLAST_EXPORT
+SBlastHitsParameters* SBlastHitsParametersFree(SBlastHitsParameters* param);
+                   
+
+
+
 /** One sequence segment within an HSP */
 typedef struct BlastSeg {
    Int2 frame;  /**< Translation frame */
@@ -601,11 +638,11 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
  * @param hsp_list The results for the current subject sequence; in case of 
  *                 multiple queries, offsets are still in the concatenated 
  *                 sequence coordinates [in]
- * @param hit_options The options related to saving hits [in]
+ * @param blasthit_params The parameters related to saving hits [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
+        BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params);
 
 /** Blast_HSPResultsSaveHSPList
  *  Save the current HSP list to appropriate places in the results structure.
@@ -617,11 +654,11 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
  * @param hsp_list The results for the current subject sequence; in case of 
  *                 multiple queries, offsets are still in the concatenated 
  *                 sequence coordinates [in]
- * @param hit_options The options related to saving hits [in]
+ * @param blasthit_params The parameters related to saving hits [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
+        BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params);
 
 /** Blast_HSPResultsSaveHSPList
  * Insert an HSP list to the appropriate place in the results structure.
