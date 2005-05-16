@@ -486,7 +486,9 @@ public:
     /// When throwing an exception initially, "prev_exception" must be 0.
     CException(const CDiagCompileInfo& info,
                const CException* prev_exception,
-               EErrCode err_code,const string& message);
+               EErrCode err_code,
+               const string& message,
+               EDiagSev severity = eDiag_Error );
 
     /// Copy constructor.
     CException(const CException& other);
@@ -541,6 +543,12 @@ public:
 
 
     // ---- Attributes ---------
+
+    /// Get exception severity.
+    EDiagSev GetSeverity(void) const { return m_Severity; }
+
+    /// Set exception severity.
+    void SetSeverity(EDiagSev severity) { m_Severity = severity; }
 
     /// Get class name as a string.
     virtual const char* GetType(void) const;
@@ -617,13 +625,14 @@ protected:
     virtual int  x_GetErrCode(void) const { return m_ErrCode; }
 
 private:
-    string  m_File;                  ///< File     to report on
-    int     m_Line;                  ///< Line number
-    int     m_ErrCode;               ///< Error code
-    string  m_Msg;                   ///< Message string
-    string  m_Module;                ///< Module   to report on
-    string  m_Class;                 ///< Class    to report on
-    string  m_Function;              ///< Function to report on
+    EDiagSev    m_Severity;          ///< Severity level for the exception
+    string      m_File;              ///< File     to report on
+    int         m_Line;              ///< Line number
+    int         m_ErrCode;           ///< Error code
+    string      m_Msg;               ///< Message string
+    string      m_Module;            ///< Module   to report on
+    string      m_Class;             ///< Class    to report on
+    string      m_Function;          ///< Function to report on
 
     mutable string m_What;           ///< What type of exception
     const CException* m_Predecessor; ///< Previous exception
@@ -1044,6 +1053,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/05/16 10:55:24  ssikorsk
+ * Added m_Severity to the CException class
+ *
  * Revision 1.58  2005/03/30 14:40:32  ssikorsk
  * Made destructor and getters explicitly public for default exception implementation
  *

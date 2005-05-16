@@ -104,29 +104,33 @@ bool CException::sm_BkgrEnabled = false;
 
 
 CException::CException(const CDiagCompileInfo& info,
-    const CException* prev_exception,
-    EErrCode err_code, const string& message)
-    :   m_ErrCode(err_code),
-        m_InReporter(false)
+                       const CException* prev_exception,
+                       EErrCode err_code, 
+                       const string& message,
+                       EDiagSev severity )
+: m_Severity(severity)
+, m_ErrCode(err_code)
+, m_Predecessor(0)
+, m_InReporter(false)
 {
-    m_Predecessor = 0;
     x_Init(info, message,prev_exception);
 }
 
 
 CException::CException(const CException& other)
+: m_Predecessor(0)
 {
-    m_Predecessor = 0;
     x_Assign(other);
 }
 
 CException::CException(void)
+: m_Severity(eDiag_Error)
+, m_Line(-1)
+, m_ErrCode(CException::eInvalid)
+, m_Predecessor(0)
+, m_InReporter(false)
 {
 // this only is called in case of multiple inheritance
-    m_ErrCode = CException::eInvalid;
-    m_Predecessor = 0;
-    m_InReporter = false;
-    m_Line = -1;
 }
 
 
@@ -225,7 +229,9 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
     err_type += "::";
     err_type += GetErrCodeString();
     SDiagMessage diagmsg(
-        eDiag_Error, text.c_str(), text.size(),
+        GetSeverity(), 
+        text.c_str(), 
+        text.size(),
         GetFile().c_str(), 
         GetLine(),
         flags, NULL, 0, 0, err_type.c_str(),
@@ -305,6 +311,7 @@ void CException::x_Init(const CDiagCompileInfo& info,const string& message,
 
 void CException::x_Assign(const CException& src)
 {
+    m_Severity = src.m_Severity;
     m_InReporter = false;
     m_File     = src.m_File;
     m_Line     = src.m_Line;
@@ -388,7 +395,7 @@ void CExceptionReporter::ReportDefault(const CDiagCompileInfo& info,
                               ex, 
                               flags);
     } else {
-        CNcbiDiag(info, eDiag_Error, flags) << title << ex;
+        CNcbiDiag(info, ex.GetSeverity(), flags) << title << ex;
     }
 }
 
@@ -413,7 +420,7 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 void CExceptionReporterStream::Report(const char* file, int line,
     const string& title, const CException& ex, TDiagPostFlags flags) const
 {
-    SDiagMessage diagmsg(eDiag_Error, 
+    SDiagMessage diagmsg(ex.GetSeverity(), 
                          title.c_str(), 
                          title.size(), 
                          file, 
@@ -465,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/05/16 10:56:06  ssikorsk
+ * Added m_Severity to the CException class
+ *
  * Revision 1.44  2005/05/04 13:19:18  ssikorsk
  * Revamped CDiagCompileInfo and CNcbiDiag to use dynamically allocated buffers instead of predefined
  *
