@@ -110,12 +110,12 @@ public:
     ///Blast database info
     struct SDbInfo {
         bool   is_protein;
-        string   name;
-        string   definition;
-        string   date;
-        long int total_length;
-        int   number_seqs;
-        bool subset;	
+        string name;
+        string definition;
+        string date;
+        Int8   total_length;
+        int    number_seqs;
+        bool   subset;	
     };
     ///Output blast errors
     ///@param error_return: list of errors to report
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.14  2005/05/16 18:00:08  dondosha
+Changed total_length type to Int8
+
 Revision 1.13  2005/05/11 16:22:47  dondosha
 Added boolean argument to PrintDbReport, so it can be used for both top and bottom versions of database report
 

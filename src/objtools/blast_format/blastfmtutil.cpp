@@ -234,7 +234,8 @@ void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>&
         out << endl;
         CBlastFormatUtil::AddSpace(out, 11);
         out << dbinfo->number_seqs << " sequences; " <<
-            dbinfo->total_length << " total letters" << endl << endl;
+            NStr::Int8ToString(dbinfo->total_length) << " total letters" << 
+            endl << endl;
     } else if (dbinfo->subset == false){
         out << "  Database: ";
         WrapOutputLine(dbinfo->definition, line_length, out);
@@ -244,14 +245,14 @@ void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>&
         out << dbinfo->date << endl;
 	       
         out << "  Number of letters in database: "; 
-        out << dbinfo->total_length << endl;
+        out << NStr::Int8ToString(dbinfo->total_length) << endl;
         out << "  Number of sequences in database:  ";
         out << dbinfo->number_seqs << endl;
         
     } else {
         out << "  Subset of the database(s) listed below" << endl;
         out << "  Number of letters searched: "; 
-        out << dbinfo->total_length << endl;
+        out << NStr::Int8ToString(dbinfo->total_length) << endl;
         out << "  Number of sequences searched:  ";
         out << dbinfo->number_seqs << endl;
     }
