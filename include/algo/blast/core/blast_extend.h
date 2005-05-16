@@ -75,15 +75,6 @@ typedef struct DiagStruct {
    Int4 diag_level; /**< To what length has this hit been extended so far? */
 } DiagStruct;
 
-/** Structure for keeping last hit information for a diagonal on a stack, 
- * when eDiagUpdate method is used for initial hit extension.
- */
-typedef struct MB_Stack {
-   Int4 diag; /**< This hit's actual diagonal */
-   Int4 level; /**< This hit's offset in the subject sequence */
-   Int4 length; /**< To what length has this hit been extended so far? */
-} MB_Stack;
-
 /** Structure for keeping last hit information for a diagonal on a stack, when 
  * eRight or eRightAndLeft methods are used for initial hit extension.
  */
@@ -125,8 +116,6 @@ typedef struct BLAST_StackTable {
                        by MegaBLAST */
    Int4* stack_index; /**< Current number of elements in each stack */
    Int4* stack_size;  /**< Available memory for each stack */
-   MB_Stack** mb_stack_array; /**< Array of stacks for most recent hits with
-                                 lengths. */
    BlastnStack** bn_stack_array; /**< Array of stacks for most recent hits 
                                     without lengths. */
 } BLAST_StackTable;
