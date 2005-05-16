@@ -1078,6 +1078,26 @@ void CNetScheduleClient::Monitor(CNcbiOstream & out)
 }
 
 
+string CNetScheduleClient::GetQueueList()
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "QLST ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    WaitForServer();
+
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+
+    return m_Tmp;
+}
+
+
 void CNetScheduleClient::DropQueue()
 {
     CheckConnect(kEmptyStr);
@@ -1209,6 +1229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/05/16 16:18:21  kuznets
+ * + GetQueueList()
+ *
  * Revision 1.31  2005/05/16 14:00:29  didenko
  * Added CetConnectionInfo() virtual method
  *

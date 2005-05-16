@@ -440,6 +440,9 @@ protected:
     ///
     void ReloadServerConfig();
 
+    /// ";" delimited list of server queues
+    string GetQueueList();
+
 protected:
     virtual 
     void CheckConnect(const string& key);
@@ -741,6 +744,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/05/16 16:18:15  kuznets
+ * + GetQueueList()
+ *
  * Revision 1.34  2005/05/16 14:00:29  didenko
  * Added CetConnectionInfo() virtual method
  *
