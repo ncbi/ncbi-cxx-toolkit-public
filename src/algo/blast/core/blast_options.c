@@ -959,7 +959,6 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
       return 1;
 
    (*options)->hitlist_size = BLAST_HITLIST_SIZE;
-   (*options)->prelim_hitlist_size = BLAST_PRELIM_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
    return 0;
@@ -975,7 +974,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       return 1;
 
    if (hitlist_size)
-      options->hitlist_size = options->prelim_hitlist_size = hitlist_size;
+      options->hitlist_size = hitlist_size;
    if (evalue)
       options->expect_value = evalue;
    if(!is_gapped)
@@ -993,7 +992,7 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
 	if (options == NULL)
 		return 1;
 
-	if (options->hitlist_size < 1 || options->prelim_hitlist_size < 1)
+	if (options->hitlist_size < 1)
 	{
 		Int4 code=1;
 		Int4 subcode=1;
@@ -1190,6 +1189,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.166  2005/05/16 12:22:07  madden
+ * Removal of prelim_hitlist_size as an option
+ *
  * Revision 1.165  2005/05/06 14:27:26  camacho
  * + Blast_ProgramIs{Phi,Rps}Blast
  *
