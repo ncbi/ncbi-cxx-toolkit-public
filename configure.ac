@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.374 2005/05/06 18:44:01 ucko Exp $
+#  $Id: configure.ac,v 1.375 2005/05/16 16:33:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -294,6 +294,8 @@ AC_ARG_WITH(xpm2,
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
    [ --without-local-lbsm    turn off support for IPC with locally running LBSMD])
+AC_ARG_WITH(ncbi-crypt,
+   [ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt])
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
@@ -326,7 +328,7 @@ sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
-local-lbsm serial objects dbapi app ctools gui algo internal"
+local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -4250,6 +4252,30 @@ else
 fi
 
 
+## `ncbi_crypt' support
+
+ncbi_crypt="ncbi_crypt"
+
+for fff in $ncbi_crypt ; do
+   if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
+      if test "$with_ncbi_crypt" = "yes" ; then
+         AC_MSG_ERROR(["--with-ncbi-crypt:  src/connect/ext/${fff}.c is missing"])
+      fi
+      with_ncbi_crypt="no"
+      break
+   fi
+done
+
+if test "$with_ncbi_crypt" = "no" ; then
+   WithoutProjects="$WithoutProjects ncbi_crypt"
+   ncbi_crypt="ncbi_crypt_stub"
+else
+   WithProjects="$WithProjects ncbi_crypt"
+   dnl AC_DEFINE(HAVE_NCBI_CRYPT, 1,
+   dnl    [Define to 1 if the real version of ncbi_crypt support is available.])
+fi
+
+
 ## `serial' projects
 
 if test "$with_serial" = "no" ; then
@@ -4670,6 +4696,7 @@ AC_SUBST(CXXFLAGS_DLL)
 
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
+AC_SUBST(ncbi_crypt)
 AC_SUBST(serial)
 AC_SUBST(bdb)
 AC_SUBST(dbapi)
