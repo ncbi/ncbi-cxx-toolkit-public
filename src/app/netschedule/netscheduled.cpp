@@ -287,8 +287,15 @@ public:
                      SThreadData&            tdata,
                      CQueueDataBase::CQueue& queue);
 
+    void ProcessShutdown(CSocket&                sock,
+                         SThreadData&            tdata,
+                         CQueueDataBase::CQueue& queue);
+
+
     void ProcessLog(CSocket&                sock,
                     SThreadData&            tdata);
+
+    void SetAdminHosts(const string& host_names);
 
 protected:
     virtual void ProcessOverflow(SOCK sock) 
@@ -349,6 +356,9 @@ private:
     CNetScheduleLogStream  m_AccessLog;
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
+
+    /// List of admin stations allowed to enter
+    bm::bvector<>              m_AdminHosts;
 
 };
 
@@ -570,14 +580,7 @@ end_version_control:
                 ProcessMPut(socket, *tdata, queue);
                 break;
             case eShutdown:
-                {
-                string msg = "Shutdown request... ";
-                msg += socket.GetPeerAddress();
-                msg += " ";
-                msg += CTime(CTime::eCurrent).AsString();
-                LOG_POST(Info << msg);
-                SetShutdownFlag();
-                }
+                ProcessShutdown(socket, *tdata, queue);
                 break;
             case eVersion:
                 WriteMsg(socket, "OK:", NETSCHEDULED_VERSION);
@@ -1188,6 +1191,33 @@ void CNetScheduleServer::ProcessLog(CSocket&                sock,
     WriteMsg(sock, "OK:", "");
 }
 
+void CNetScheduleServer::ProcessShutdown(CSocket&                sock,
+                                         SThreadData&            tdata,
+                                         CQueueDataBase::CQueue& queue)
+{
+    string admin_host = sock.GetPeerAddress();
+    size_t pos = admin_host.find_first_of(':');
+    if (pos != string::npos) {
+        admin_host = admin_host.substr(0, pos);
+    }
+    if (m_AdminHosts.count() == 0) { // no control
+        goto process_shutdown;
+    }
+    unsigned ha = CSocketAPI::gethostbyname(admin_host);
+
+    if (m_AdminHosts[ha]) {
+    process_shutdown:
+        string msg = "Shutdown request... ";
+        msg += admin_host;
+        msg += " ";
+        msg += CTime(CTime::eCurrent).AsString();
+        LOG_POST(Info << msg);
+        SetShutdownFlag();
+    } else {
+        WriteMsg(sock, "ERR:", "Shutdown access denied.");
+        LOG_POST(Warning << "Shutdown request denied: " << admin_host);
+    }
+}
 
 void CNetScheduleServer::x_WriteBuf(CSocket& sock,
                                     char*    buf,
@@ -1727,6 +1757,22 @@ void CNetScheduleServer::x_MakeLogMessage(CSocket& sock, SThreadData& tdata)
     lmsg += "\n";
 }
 
+void CNetScheduleServer::SetAdminHosts(const string& host_names)
+{
+    vector<string> hosts;
+    NStr::Tokenize(host_names, ";, ", hosts, NStr::eMergeDelims);
+    ITERATE(vector<string>, it, hosts) {
+        unsigned int ha = CSocketAPI::gethostbyname(*it);
+        if (ha != 0) {
+            m_AdminHosts.set(ha);
+            LOG_POST(Info << *it << " has been accepted as an admin host.");
+        } else {
+            ERR_POST(Info << *it << " not a valid host name.");
+        }
+    }
+    m_AdminHosts.optimize();
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1916,7 +1962,12 @@ int CNetScheduleDApp::Run(void)
                                    network_timeout,
                                    is_log));
 
-        
+        string admin_hosts =
+            reg.GetString("server", "admin_host", kEmptyStr);
+        if (!admin_hosts.empty()) {
+            thr_srv->SetAdminHosts(admin_hosts);
+        }
+
         
         LOG_POST(Info << "Running server on port " << port);
 
@@ -1958,6 +2009,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/05/17 13:52:08  kuznets
+ * Restrictions (optional) on server shutdown
+ *
  * Revision 1.41  2005/05/16 16:21:26  kuznets
  * Added available queues listing
  *
