@@ -569,7 +569,7 @@ Uint8 NStr::StringToUInt8(const string&  str,
 static Uint8 s_DataSizeConvertQual(const char*&         qual, 
                                    Uint8                value,
                                    NStr::ECheckEndPtr   /* check_endptr */,
-                                   NStr::EConvErrAction /* on_error */)
+                                   NStr::EConvErrAction on_error)
 {
     if (!qual  ||  !*qual) {
         return value;
@@ -600,8 +600,11 @@ static Uint8 s_DataSizeConvertQual(const char*&         qual,
         return 0;
     }
     if (throw_err) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted to Uint8 - overflow", 0);
+        if ( on_error == NStr::eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to Uint8 - overflow", 0);
+        }
+        return 0;
     }
     if (*qual  &&  toupper(*qual) == 'B') {
         ++qual;
@@ -623,7 +626,7 @@ NStr::StringToUInt8_DataSize(const string&  str,
     if (*endptr == '+') {
         endptr++;
     }
-    while(*endptr) {
+    while (*endptr) {
         if (!s_IsGoodCharForRadix(*endptr, base)) {
             break;
         }
@@ -1954,6 +1957,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.150  2005/05/17 15:51:48  ivanov
+ * s_DataSizeConvertQual(): throw exception only when this specified
+ * by 'on_error' parameter
+ *
  * Revision 1.149  2005/05/13 16:24:26  ivanov
  * NStr::StringTo[U]Int8 -- fixed limits checks
  *
