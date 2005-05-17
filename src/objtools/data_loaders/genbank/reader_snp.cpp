@@ -347,43 +347,45 @@ static unsigned read_size(CNcbiIstream& stream)
 }
 
 
-void CIndexedStrings::StoreTo(CNcbiOstream& stream) const
+void StoreIndexedStringsTo(CNcbiOstream& stream,
+                           const CIndexedStrings& strings)
 {
-    write_size(stream, m_Strings.size());
-    ITERATE ( TStrings, it, m_Strings ) {
-        unsigned size = it->size();
+    write_size(stream, strings.GetSize());
+    for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
+        unsigned size = strings.GetString(idx).size();
         write_size(stream, size);
-        stream.write(it->data(), size);
+        stream.write(strings.GetString(idx).data(), size);
     }
 }
 
 
-void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
-                               size_t max_index,
-                               size_t max_length)
+void LoadIndexedStringsFrom(CNcbiIstream& stream,
+                            CIndexedStrings& strings,
+                            size_t max_index,
+                            size_t max_length)
 {
-    Clear();
+    strings.Clear();
     unsigned count = read_size(stream);
     if ( !stream || (count > unsigned(max_index+1)) ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Bad format of SNP table");
     }
-    m_Strings.resize(count);
+    strings.Resize(count);
     AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
-    NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
+    for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
         unsigned size = read_size(stream);
         if ( !stream || (size > max_length) ) {
-            Clear();
+            strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
         stream.read(buf.get(), size);
         if ( !stream ) {
-            Clear();
+            strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
-        it->assign(buf.get(), buf.get()+size);
+        strings.SetString(idx).assign(buf.get(), buf.get() + size);
     }
 }
 
@@ -536,8 +538,8 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     write_unsigned(stream, snp_info.GetGi());
 
     // strings
-    snp_info.m_Comments.StoreTo(stream);
-    snp_info.m_Alleles.StoreTo(stream);
+    StoreIndexedStringsTo(stream, snp_info.m_Comments);
+    StoreIndexedStringsTo(stream, snp_info.m_Alleles);
 
     // simple SNPs
     unsigned count = snp_info.m_SNP_Set.size();
@@ -561,12 +563,14 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     snp_info.x_SetGi(read_unsigned(stream));
 
     // strings
-    snp_info.m_Comments.LoadFrom(stream,
-                                 SSNP_Info::kMax_CommentIndex,
-                                 SSNP_Info::kMax_CommentLength);
-    snp_info.m_Alleles.LoadFrom(stream,
-                                SSNP_Info::kMax_AlleleIndex,
-                                SSNP_Info::kMax_AlleleLength);
+    LoadIndexedStringsFrom(stream,
+                           snp_info.m_Comments,
+                           SSNP_Info::kMax_CommentIndex,
+                           SSNP_Info::kMax_CommentLength);
+    LoadIndexedStringsFrom(stream,
+                           snp_info.m_Alleles,
+                           SSNP_Info::kMax_AlleleIndex,
+                           SSNP_Info::kMax_AlleleLength);
 
     // simple SNPs
     unsigned count = read_size(stream);
@@ -603,6 +607,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.21  2005/05/17 17:54:06  grichenk
+ * Removed StoreTo() and LoadFrom() from members of CIndexedStrings
+ *
  * Revision 1.20  2005/03/14 17:28:47  vasilche
  * Thread safe retrieval of configuration parameters.
  *

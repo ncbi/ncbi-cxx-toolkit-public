@@ -91,8 +91,14 @@ public:
             return m_Strings[index];
         }
 
-    void StoreTo(CNcbiOstream& stream) const;
-    void LoadFrom(CNcbiIstream& stream, size_t max_index, size_t max_length);
+    void Resize(size_t new_size)
+        {
+            m_Strings.resize(new_size);
+        }
+    string& SetString(size_t index)
+        {
+            return m_Strings[index];
+        }
 
 private:
     typedef vector<string> TStrings;
@@ -293,6 +299,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/05/17 17:54:06  grichenk
+* Removed StoreTo() and LoadFrom() from members of CIndexedStrings
+*
 * Revision 1.18  2005/03/28 20:40:44  jcherry
 * Added export specifiers
 *
