@@ -298,13 +298,15 @@ public:
 
     /// Convert string to number of bytes. 
     ///
-    /// String can contain "software" qulifiers: MB(megabyte), KB (kilobyte)..
+    /// String can contain "software" qualifiers: MB(megabyte), KB (kilobyte)..
     /// Example: 100MB, 1024KB
+    /// Note the qualifiers are power-2-based, aka kibi-, mebi- etc, so that
+    /// 1KB = 1024 (not 1000), 1MB = 1024KB = 1048576, etc.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
+    ///   Numeric base of the number [before the qualifier] (default = 10).
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
@@ -2690,6 +2692,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/05/17 15:42:14  lavr
+ * Mention power-2 suffix conversion in StringToUInt8_DataSize()
+ *
  * Revision 1.83  2005/05/12 19:59:06  vasilche
  * Fixed void return.
  *
