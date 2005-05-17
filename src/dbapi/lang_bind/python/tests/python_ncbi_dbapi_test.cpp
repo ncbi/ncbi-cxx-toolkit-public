@@ -32,215 +32,171 @@
 
 #include <ncbi_pch.hpp>
 
-#include <cppunit/CompilerOutputter.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
+#include <boost/test/unit_test_result.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION( CPythonDBAPITest );
-
-///////////////////////////////////////////////////////////////////////////////
-enum EServerType {
-    eUnknown,   //< Server type is not known
-    eSybase,    //< Sybase server
-    eMsSql,     //< Microsoft SQL server
-    eOracle,    //< ORACLE server
-    eMySql,     //< MySQL server
-    eSqlite     //< SQLITE server
-};
-
-string DriverName;
-string ServerName;
-string UserName;
-string UserPassword;
-
-string GetDriverName(void)
-{
-    return DriverName;
-}
-
-string GetServerName(void)
-{
-    return ServerName;
-}
-
-string GetUserName(void)
-{
-    return UserName;
-}
-
-string GetUserPassword(void)
-{
-    return UserPassword;
-}
-
-EServerType
-GetServerType(void)
-{
-    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
-        return eSybase;
-    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
-        return eMsSql;
-    }
-
-    return eUnknown;
-}
-
-string
-GetServerTypeStr(void)
-{
-    switch ( GetServerType() ) {
-    case eSybase :
-        return "SYBASE";
-    case eMsSql :
-        return "MSSQL";
-    case eOracle :
-        return "ORACLE";
-    case eMySql :
-        return "MYSQL";
-    case eSqlite :
-        return "SQLITE";
-    default :
-        return "none";
-    }
-
-    return "none";
-}
-
-///////////////////////////////////////////////////////////////////////////////
-CPythonDBAPITest::CPythonDBAPITest()
+CPythonDBAPITest::CPythonDBAPITest(const CTestArguments& args)
+: m_args(args)
 {
 }
-
-void
-CPythonDBAPITest::setUp()
-{
-    m_Engine.ExecuteStr("import python_ncbi_dbapi\n");
-}
-
-
-void
-CPythonDBAPITest::tearDown()
-{
-}
-
 
 void
 CPythonDBAPITest::MakeTestPreparation()
 {
-    string connection_str( "connection = python_ncbi_dbapi.connect('" + GetDriverName() + "', '" + GetServerTypeStr() + "', '" + GetServerName() + "', 'DBAPI_Sample', '" + GetUserName() + "', '" + GetUserPassword() + "', True)\n");
-    string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" + GetDriverName() + "', '" + GetServerTypeStr() + "', '" + GetServerName() + "', 'DBAPI_Sample', '" + GetUserName() + "', '" + GetUserPassword() + "')\n");
+    try {
+        string connection_args( m_args.GetDriverName() + "', '" +
+                                m_args.GetServerTypeStr() + "', '" +
+                                m_args.GetServerName() + "', '" +
+                                m_args.GetDatabaseName() + "', '" +
+                                m_args.GetUserName() + "', '" +
+                                m_args.GetUserPassword() );
 
-    m_Engine.ExecuteStr( connection_str.c_str() );
-    m_Engine.ExecuteStr( conn_simple_str.c_str() );
+        string connection_str( "connection = python_ncbi_dbapi.connect('" +
+                                connection_args + 
+                                "', True)\n");
+        string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" + 
+                                connection_args + 
+                                "')\n");
 
-    m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
-    m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int)') \n");
+        m_Engine.ExecuteStr("import python_ncbi_dbapi\n");
+        m_Engine.ExecuteStr( connection_str.c_str() );
+        m_Engine.ExecuteStr( conn_simple_str.c_str() );
+
+        m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
+        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int)') \n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 void
 CPythonDBAPITest::TestBasic()
 {
-    m_Engine.ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
-    m_Engine.ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
-    m_Engine.ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
-    m_Engine.ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
+    try {
+        m_Engine.ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
+        m_Engine.ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
+        m_Engine.ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
+        m_Engine.ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
 
-    m_Engine.ExecuteStr("connection.commit()\n");
-    m_Engine.ExecuteStr("connection.rollback()\n");
+        m_Engine.ExecuteStr("connection.commit()\n");
+        m_Engine.ExecuteStr("connection.rollback()\n");
 
-    m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-    m_Engine.ExecuteStr("cursor2 = conn_simple.cursor()\n");
+        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
+        m_Engine.ExecuteStr("cursor2 = conn_simple.cursor()\n");
 
-    m_Engine.ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
-    m_Engine.ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
-    m_Engine.ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
-    m_Engine.ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
+        m_Engine.ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
+        m_Engine.ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
+        m_Engine.ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
+        m_Engine.ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
 
-    m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33') \n");
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    m_Engine.ExecuteStr("cursor.execute('select qq = 57.55 + 0.0033')\n");
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    m_Engine.ExecuteStr("cursor.execute('select qq = GETDATE()')\n");
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    m_Engine.ExecuteStr("cursor.fetchall()\n");
-    m_Engine.ExecuteStr("rowcount = cursor.rowcount \n");
-    m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    m_Engine.ExecuteStr("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
-    m_Engine.ExecuteStr("cursor.fetchmany()\n");
-    m_Engine.ExecuteStr("cursor.fetchall()\n");
-    m_Engine.ExecuteStr("cursor.nextset()\n");
-    m_Engine.ExecuteStr("cursor.setinputsizes()\n");
-    m_Engine.ExecuteStr("cursor.setoutputsize()\n");
-    // m_Engine.ExecuteStr("print cursor.callproc('test_sp')\n");
-    // m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33') \n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.execute('select qq = 57.55 + 0.0033')\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.execute('select qq = GETDATE()')\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("rowcount = cursor.rowcount \n");
+        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
+        m_Engine.ExecuteStr("cursor.fetchmany()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.nextset()\n");
+        m_Engine.ExecuteStr("cursor.setinputsizes()\n");
+        m_Engine.ExecuteStr("cursor.setoutputsize()\n");
+        // m_Engine.ExecuteStr("print cursor.callproc('test_sp')\n");
+        // m_Engine.ExecuteStr("print cursor.fetchall()\n");
 
-    m_Engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
-    m_Engine.ExecuteStr("cursor2.fetchone()\n");
+        m_Engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
+        m_Engine.ExecuteStr("cursor2.fetchone()\n");
 
-    m_Engine.ExecuteStr("cursor.close()\n");
-    m_Engine.ExecuteStr("cursor2.close()\n");
+        m_Engine.ExecuteStr("cursor.close()\n");
+        m_Engine.ExecuteStr("cursor2.close()\n");
 
-    // m_Engine.ExecuteStr("connection.close()\n");
-    // m_Engine.ExecuteStr("connection2.close()\n");
+        m_Engine.ExecuteStr("cursor_simple.close()\n");
+        m_Engine.ExecuteStr("connection.close()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 void
 CPythonDBAPITest::TestExecute()
 {
-    // Simple test
-    {
-        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-        m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
+    try {
+        // Simple test
+        {
+            m_Engine.ExecuteStr("cursor = connection.cursor()\n");
+            m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
+            m_Engine.ExecuteStr("cursor.fetchone()\n");
+        }
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
     }
 }
 
 void
 CPythonDBAPITest::TestFetch()
 {
-    // Prepare ...
-    m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-    m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
+    try {
+        // Prepare ...
+        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
+        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
 
-    // fetchone
-    m_Engine.ExecuteStr("cursor.fetchone()\n");
-    // fetchmany
-    m_Engine.ExecuteStr("cursor.fetchmany(1)\n");
-    m_Engine.ExecuteStr("cursor.fetchmany(2)\n");
-    m_Engine.ExecuteStr("cursor.fetchmany(3)\n");
-    // fetchall
-    m_Engine.ExecuteStr("cursor.fetchall()\n");
+        // fetchone
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        // fetchmany
+        m_Engine.ExecuteStr("cursor.fetchmany(1)\n");
+        m_Engine.ExecuteStr("cursor.fetchmany(2)\n");
+        m_Engine.ExecuteStr("cursor.fetchmany(3)\n");
+        // fetchall
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 void
 CPythonDBAPITest::TestParameters()
 {
-    // Prepare ...
-    m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-    m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'@type_par':'S'})\n");
+    try {
+        // Prepare ...
+        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
+        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'@type_par':'S'})\n");
 
-    // fetchall
-    m_Engine.ExecuteStr("cursor.fetchall()\n");
+        // fetchall
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 void
 CPythonDBAPITest::TestExecuteMany()
 {
-    // Excute with empty parameter list
-    {
-        m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
-        m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
-        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'value':value} for value in range(1, 11) ]) \n");
+    try {
+        // Excute with empty parameter list
+        {
+            m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+            m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
+            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'value':value} for value in range(1, 11) ]) \n");
+        }
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
     }
 }
 
@@ -248,31 +204,36 @@ CPythonDBAPITest::TestExecuteMany()
 void
 CPythonDBAPITest::TestTransaction()
 {
-    // "Simple mode" test ...
-    {
-        m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
-        m_Engine.ExecuteStr("sql_sel = 'SELECT * FROM #t' \n");
-        m_Engine.ExecuteStr("cursor = conn_simple.cursor() \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
-        m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
-        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
-        m_Engine.ExecuteStr("conn_simple.commit() \n");
-        m_Engine.ExecuteStr("conn_simple.rollback() \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
-        m_Engine.ExecuteStr("cursor.execute('ROLLBACK TRANSACTION') \n");
-        m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
-        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
-        m_Engine.ExecuteStr("cursor.execute('COMMIT TRANSACTION') \n");
-        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-        m_Engine.ExecuteStr("cursor.fetchall() \n");
+    try {
+        // "Simple mode" test ...
+        {
+            m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+            m_Engine.ExecuteStr("sql_sel = 'SELECT * FROM #t' \n");
+            m_Engine.ExecuteStr("cursor = conn_simple.cursor() \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            m_Engine.ExecuteStr("conn_simple.commit() \n");
+            m_Engine.ExecuteStr("conn_simple.rollback() \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            m_Engine.ExecuteStr("cursor.execute('ROLLBACK TRANSACTION') \n");
+            m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            m_Engine.ExecuteStr("cursor.execute('COMMIT TRANSACTION') \n");
+            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+            m_Engine.ExecuteStr("cursor.fetchall() \n");
+        }
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
     }
 }
 
@@ -280,7 +241,12 @@ CPythonDBAPITest::TestTransaction()
 void
 CPythonDBAPITest::TestFromFile()
 {
-    m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
+    try {
+        m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 
@@ -290,31 +256,68 @@ CPythonDBAPITest::CreateTestTable()
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-CUnitTestApp::~CUnitTestApp(void)
+///////////////////////////////////////////////////////////////////////////
+CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
+    : test_suite("DBAPI Test Suite")
 {
-    return ;
+    // add member function test cases to a test suite
+    boost::shared_ptr<CPythonDBAPITest> DBAPIInstance( new CPythonDBAPITest( args ) );
+    boost::unit_test::test_case* tc = NULL;
+    boost::unit_test::test_case* tc_init = 
+        BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::MakeTestPreparation, DBAPIInstance);
+
+    add(tc_init);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecute, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFetch, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestParameters, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteMany, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+//     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     add(tc);
+
 }
 
-void
-CUnitTestApp::Init(void)
+CPythonDBAPITestSuite::~CPythonDBAPITestSuite(void)
 {
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CTestArguments::CTestArguments(int argc, char * argv[])
+{
+    CNcbiArguments arguments(argc, argv);
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "python_ncbi_dbapi_test");
+    arg_desc->SetUsageContext(arguments.GetProgramBasename(),
+                              "dbapi_unit_test");
 
     // Describe the expected command-line arguments
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "odbc", "mysql", "oracle", "msdblib", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", "gateway"
 #else
 #define DEF_SERVER    "STRAUSS"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "odbc", "mysql", "oracle", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -334,54 +337,95 @@ CUnitTestApp::Init(void)
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
                             CArgDescriptions::eString, "allowed");
+    arg_desc->AddDefaultKey("D", "database",
+                            "Name of the database to connect",
+                            CArgDescriptions::eString,
+                            "DBAPI_Sample");
 
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-}
+    auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(arguments));
+    const CArgs& args = *args_ptr;
 
-int
-CUnitTestApp::Run(void)
-{
-    const CArgs& args = GetArgs();
 
     // Get command-line arguments ...
-    DriverName      = args["d"].AsString();
-    ServerName      = args["S"].AsString();
-    UserName        = args["U"].AsString();
-    UserPassword    = args["P"].AsString();
+    m_DriverName    = args["d"].AsString();
+    m_ServerName    = args["S"].AsString();
+    m_UserName      = args["U"].AsString();
+    m_UserPassword  = args["P"].AsString();
+    m_DatabaseName  = args["D"].AsString();
 
-    // Get the top level suite from the registry
-    CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
+    SetDatabaseParameters();
+}
 
-    // Adds the test to the list of test to run
-    CPPUNIT_NS::TextUi::TestRunner runner;
-    runner.addTest( suite );
+CTestArguments::EServerType
+CTestArguments::GetServerType(void) const
+{
+    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+        return eSybase;
+    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+        return eMsSql;
+    }
 
-    // Change the default outputter to a compiler error format outputter
-    runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),   std::cerr ) );
-    // Run the test.
-    bool wasSucessful = runner.run();
-
-    // Return error code 1 if the one of test failed.
-    return wasSucessful ? 0 : 1;
+    return eUnknown;
 }
 
 void
-CUnitTestApp::Exit(void)
+CTestArguments::SetDatabaseParameters(void)
 {
-    return ;
+    if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
+        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+        // BcpIn to it using protocol version other than "100".
+        m_DatabaseParameters["version"] = "100";
+    } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
+        // ftds forks with Sybase databases using protocol v42 only ...
+        m_DatabaseParameters["version"] = "42";
+    }
+}
+
+string
+CTestArguments::GetServerTypeStr(void) const
+{
+    switch ( GetServerType() ) {
+    case eSybase :
+        return "SYBASE";
+    case eMsSql :
+        return "MSSQL";
+    case eOracle :
+        return "ORACLE";
+    case eMySql :
+        return "MYSQL";
+    case eSqlite :
+        return "SQLITE";
+    default :
+        return "none";
+    }
+
+    return "none";
 }
 
 END_NCBI_SCOPE
 
-int main(int argc, const char* argv[])
+
+///////////////////////////////////////////////////////////////////////////
+test_suite*
+init_unit_test_suite( int argc, char * argv[] )
 {
-    return ncbi::CUnitTestApp().AppMain(argc, argv);
+    // Configure UTF ...
+    // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
+    // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
+
+    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE( "DBAPI Unit Test." ));
+
+    test->add(new ncbi::CPythonDBAPITestSuite(ncbi::CTestArguments(argc, argv)));
+
+    return test.release();
 }
 
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/05/17 16:42:34  ssikorsk
+* Moved on Boost.Test
+*
 * Revision 1.8  2005/03/10 17:22:33  ssikorsk
 * Fixed a compilation warning
 *

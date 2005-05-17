@@ -37,31 +37,83 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
-#include <cppunit/extensions/HelperMacros.h>
+#include <boost/test/unit_test.hpp>
 
 #include "../pythonpp/pythonpp_emb.hpp"
 
+using boost::unit_test_framework::test_suite;
+
 BEGIN_NCBI_SCOPE
 
-class CPythonDBAPITest : public CPPUNIT_NS::TestFixture
+///////////////////////////////////////////////////////////////////////////
+class CTestArguments
 {
-  CPPUNIT_TEST_SUITE( CPythonDBAPITest );
-  CPPUNIT_TEST( MakeTestPreparation );
-  CPPUNIT_TEST( TestBasic );
-  CPPUNIT_TEST( TestExecute );
-  CPPUNIT_TEST( TestFetch );
-  CPPUNIT_TEST( TestParameters );
-  CPPUNIT_TEST( TestExecuteMany );
-  CPPUNIT_TEST( TestTransaction );
-  // CPPUNIT_TEST( TestFromFile );
-  CPPUNIT_TEST_SUITE_END();
+public:
+    CTestArguments(int argc, char * argv[]);
 
 public:
-    CPythonDBAPITest();
+    typedef map<string, string> TDatabaseParameters;
 
+    enum EServerType {
+        eUnknown,   //< Server type is not known
+        eSybase,    //< Sybase server
+        eMsSql,     //< Microsoft SQL server
+        eMySql,     //< MySql server
+        eSqlite,    //< Sqlite server
+        eOracle     //< ORACLE server
+    };
+
+    string GetDriverName(void) const
+    {
+        return m_DriverName;
+    }
+    
+    string GetServerName(void) const
+    {
+        return m_ServerName;
+    }
+    
+    string GetUserName(void) const
+    {
+        return m_UserName;
+    }
+    
+    string GetUserPassword(void) const
+    {
+        return m_UserPassword;
+    }
+
+    const TDatabaseParameters& GetDBParameters(void) const
+    {
+        return m_DatabaseParameters;
+    }
+
+    string GetDatabaseName(void) const
+    {
+        return m_DatabaseName;
+    }
+    
+    string GetServerTypeStr(void) const;
+
+private:
+    EServerType GetServerType(void) const;
+    void SetDatabaseParameters(void);
+
+private:
+
+    string m_DriverName;
+    string m_ServerName;
+    string m_UserName;
+    string m_UserPassword;
+    string m_DatabaseName;
+    TDatabaseParameters m_DatabaseParameters;
+};
+
+
+class CPythonDBAPITest 
+{
 public:
-  void setUp();
-  void tearDown();
+    CPythonDBAPITest(const CTestArguments& args);
 
 public:
     // Test IStatement interface.
@@ -85,17 +137,14 @@ private:
 
 private:
     pythonpp::CEngine m_Engine;
+    const CTestArguments m_args;
 };
 
-class CUnitTestApp : public CNcbiApplication
+///////////////////////////////////////////////////////////////////////////
+struct CPythonDBAPITestSuite : public test_suite
 {
-public:
-    virtual ~CUnitTestApp(void);
-
-private:
-    virtual void Init(void);
-    virtual int  Run(void);
-    virtual void Exit(void);
+    CPythonDBAPITestSuite(const CTestArguments& args);
+    ~CPythonDBAPITestSuite(void);
 };
 
 END_NCBI_SCOPE
@@ -105,6 +154,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/05/17 16:42:34  ssikorsk
+ * Moved on Boost.Test
+ *
  * Revision 1.5  2005/03/01 15:22:58  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
