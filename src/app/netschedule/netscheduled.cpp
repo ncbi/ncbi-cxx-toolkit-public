@@ -1200,10 +1200,11 @@ void CNetScheduleServer::ProcessShutdown(CSocket&                sock,
     if (pos != string::npos) {
         admin_host = admin_host.substr(0, pos);
     }
+    unsigned ha;
     if (m_AdminHosts.count() == 0) { // no control
         goto process_shutdown;
     }
-    unsigned ha = CSocketAPI::gethostbyname(admin_host);
+    ha = CSocketAPI::gethostbyname(admin_host);
 
     if (m_AdminHosts[ha]) {
     process_shutdown:
@@ -2009,6 +2010,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/05/17 14:25:00  ucko
+ * Tweak ProcessShutdown to avoid jumping over a variable declaration.
+ *
  * Revision 1.42  2005/05/17 13:52:08  kuznets
  * Restrictions (optional) on server shutdown
  *
