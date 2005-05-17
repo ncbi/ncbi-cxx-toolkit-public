@@ -300,8 +300,8 @@ public:
     ///
     /// String can contain "software" qualifiers: MB(megabyte), KB (kilobyte)..
     /// Example: 100MB, 1024KB
-    /// Note the qualifiers are power-2-based, aka kibi-, mebi- etc, so that
-    /// 1KB = 1024 (not 1000), 1MB = 1024KB = 1048576, etc.
+    /// Note the qualifiers are power-of-2 based, aka kibi-, mebi- etc, so that
+    /// 1KB = 1024B (not 1000B), 1MB = 1024KB = 1048576B, etc.
     ///
     /// @param str
     ///   String to be converted.
@@ -2692,6 +2692,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/05/17 15:48:14  lavr
+ * Correct the power-of-2 suffix conversion in StringToUInt8_DataSize()
+ *
  * Revision 1.84  2005/05/17 15:42:14  lavr
  * Mention power-2 suffix conversion in StringToUInt8_DataSize()
  *
