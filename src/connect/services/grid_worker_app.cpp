@@ -149,6 +149,21 @@ void CGridWorkerApp::Init(void)
 
     CNcbiApplication::Init();
     
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Worker Node");
+
+    arg_desc->AddOptionalKey("control_port", 
+                             "control_port",
+                             "A TCP port number",
+                             CArgDescriptions::eInteger);
+
+
+    
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
 
     IRWRegistry& reg = GetConfig();
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
@@ -198,11 +213,18 @@ int CGridWorkerApp::Run(void)
         reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
     unsigned int control_port = 
         reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
+    const CArgs& args = GetArgs();
+    if (args["control_port"]) {
+        control_port = args["control_port"].AsInteger();
+    }
+
     bool server_log = 
         reg.GetBool("server","log",false,0,IRegistry::eReturn);
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
-    string log_file_name = GetProgramDisplayName() +"_err.log";
+    string log_file_name = GetProgramDisplayName() +"_err.log." 
+        + NStr::UIntToString(control_port);
+
     unsigned int max_total_jobs = 
         reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
@@ -314,6 +336,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/17 20:25:21  didenko
+ * Added control_port command line parameter
+ * Added control_port number to the name of the log file
+ *
  * Revision 1.23  2005/05/16 14:20:55  didenko
  * Added master/slave dependances between worker nodes.
  *
