@@ -82,11 +82,16 @@ public:
     /// The cookie name cannot be changed during its whole timelife
     const string& GetName(void) const;
 
+    enum EWriteMethod {
+        eHTTPResponse,
+        eHTTPRequest
+    };
     /// Compose and write to output stream "os":
     ///  "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
     ///   secure\n"
     /// Here, only "name=value" is mandatory, and other parts are optional
-    CNcbiOstream& Write(CNcbiOstream& os) const;
+    CNcbiOstream& Write(CNcbiOstream& os, 
+                        EWriteMethod wmethod = eHTTPResponse) const;
 
     /// Reset everything but name to default state like CCgiCookie(m_Name, "")
     void Reset(void);
@@ -255,7 +260,9 @@ public:
 
     /// Printout all cookies into the stream "os"
     /// @sa CCgiCookie::Write
-    CNcbiOstream& Write(CNcbiOstream& os) const;
+    CNcbiOstream& Write(CNcbiOstream& os,
+                        CCgiCookie::EWriteMethod wmethod 
+                               = CCgiCookie::eHTTPResponse) const;
 
 private:
     TSet m_Cookies;
@@ -358,6 +365,14 @@ public:
         : m_Data(new SData(value, filename, position, type)) { }
     CCgiEntry(const CCgiEntry& e)
         : m_Data(e.m_Data) { }
+
+    CCgiEntry& operator=(const CCgiEntry& e) 
+    {
+        x_ForceUnique();
+        *m_Data = *e.m_Data;
+        return *this;
+    }
+
 
     const string& GetValue() const
         { return m_Data->m_Value; }
@@ -830,6 +845,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.72  2005/05/17 18:16:50  didenko
+* Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
+* Added assignment oprerator to CCgiEntry class
+*
 * Revision 1.71  2005/05/05 16:43:36  vakatov
 * Incoming cookies:  just skip the malformed cookies (with error posted) --
 * rather than failing to parse the request altogether. The good cookies would

@@ -142,25 +142,32 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const
 }
 
 
-CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
+CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os, EWriteMethod wmethod) const
 {
-    os << "Set-Cookie: ";
+    if (wmethod == eHTTPResponse) {
+        os << "Set-Cookie: ";
 
-    os << m_Name.c_str() << '=';
-    if ( !m_Value.empty() )
-        os << m_Value.c_str();
+        os << m_Name.c_str() << '=';
+        if ( !m_Value.empty() )
+            os << m_Value.c_str();
 
-    if ( !m_Domain.empty() )
-        os << "; domain="  << m_Domain.c_str();
-    if ( !m_Path.empty() )
-        os << "; path="    << m_Path.c_str();
-    string x_ExpDate = GetExpDate();
-    if ( !x_ExpDate.empty() )
-        os << "; expires=" << x_ExpDate.c_str();
-    if ( m_Secure )
-        os << "; secure";
+        if ( !m_Domain.empty() )
+            os << "; domain="  << m_Domain.c_str();
+        if ( !m_Path.empty() )
+            os << "; path="    << m_Path.c_str();
+        string x_ExpDate = GetExpDate();
+        if ( !x_ExpDate.empty() )
+            os << "; expires=" << x_ExpDate.c_str();
+        if ( m_Secure )
+            os << "; secure";
 
-    os << HTTP_EOL;
+        os << HTTP_EOL;
+
+    } else {
+        os << m_Name.c_str() << '=';
+        if ( !m_Value.empty() )
+            os << m_Value.c_str();
+    }
     return os;
 }
 
@@ -348,11 +355,14 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 }
 
 
-CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os)
-    const
+CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os,
+                                 CCgiCookie::EWriteMethod wmethod) const
 {
     ITERATE (TSet, cookie, m_Cookies) {
-        os << **cookie;
+        if (wmethod == CCgiCookie::eHTTPRequest && cookie != m_Cookies.begin())
+            os << "; ";
+        (*cookie)->Write(os, wmethod);
+        //        os << **cookie;
     }
     return os;
 }
@@ -1404,6 +1414,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.88  2005/05/17 18:16:50  didenko
+* Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
+* Added assignment oprerator to CCgiEntry class
+*
 * Revision 1.87  2005/05/05 16:43:36  vakatov
 * Incoming cookies:  just skip the malformed cookies (with error posted) --
 * rather than failing to parse the request altogether. The good cookies would
