@@ -227,7 +227,21 @@ check_add_r.real: check_add.real
 	@$(SUB_BRA) check_add_r $(SUB_KET)
 
 
-PROJECTS = @PROJECTS@ # File listing relevant project directories.
+CPP       = @CPP@
+LN_S      = @LN_S@
+# File listing relevant project directories.
+PROJECTS_ = @PROJECTS@
+# Preprocessed version.
+PROJECTS  = $(builddir)/projects.pseudo.i
+
+# Some preprocessors only accept files with appropriate extensions....
+$(builddir)/projects.pseudo.c: $(PROJECTS_)
+	rm -f $@
+	$(LN_S) $< $@
+
+$(PROJECTS): $(builddir)/projects.pseudo.c
+	$(CPP) -I`dirname $(PROJECTS_)` -I$(top_srcdir)/scripts/projects \
+	    -I$(top_srcdir)/scripts/internal/projects $< | sed -e '/#/d' > $@
 
 # This file contains the actual patterns to grep for, formed by
 # prepending "build/" to each original pattern as an anchor.
