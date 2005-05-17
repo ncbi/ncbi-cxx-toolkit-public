@@ -36,8 +36,8 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <memory>
 
-
 #define LOG_IF_ERROR(status, msg) x_LogIfError(DIAG_COMPILE_INFO, status, msg)
+
 
 BEGIN_NCBI_SCOPE
 
@@ -66,33 +66,65 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
     setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);  // Empty get area
     setp(m_WriteBuf, m_WriteBuf + buf_size); // Put area (if any)
+
+    SCONN_Callback cb;
+    cb.func = x_OnClose;
+    cb.data = this;
+    CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, 0);
 }
 
 
 CConn_Streambuf::~CConn_Streambuf()
 {
-    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
-        sync();
-    }
-    if (m_Conn) {
-        EIO_Status status = CONN_Close(m_Conn);
-        if (status != eIO_Success) {
-            _TRACE("CConn_Streambuf::~CConn_Streambuf(): "
-                   "CONN_Close() failed (" << IO_StatusStr(status) << ")");
-        }
-    }
+    x_Cleanup();
     if (m_ReadBuf != &x_Buf) {
         delete[] m_ReadBuf;
     }
 }
 
 
-void CConn_Streambuf::Close(void)
+void CConn_Streambuf::x_Cleanup(bool if_close)
 {
-    if (m_Conn) {
-        CONN_Close(m_Conn);
-        m_Conn = 0;
+    if (!m_Conn)
+        return;
+
+    // Flush only if data pending
+    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
+        sync();
     }
+    setp(0, 0);
+    setg(0, 0, 0);
+    CONN c = m_Conn;
+    m_Conn = 0;
+    if (if_close) {
+        // Close only if not called from close callback
+        EIO_Status status = CONN_Close(c);
+        if (status != eIO_Success) {
+            _TRACE("CConn_Streambuf::x_Cleanup(): "
+                   "CONN_Close() failed (" << IO_StatusStr(status) << ")");
+        }
+    }
+}
+
+
+void CConn_Streambuf::x_OnClose(CONN conn, ECONN_Callback type, void* data)
+{
+    CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
+
+    _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
+    _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
+    sb->x_Cleanup(false);
+}
+
+
+EIO_Status CConn_Streambuf::x_LogIfError(const CDiagCompileInfo& diag_info,
+                                         EIO_Status status, const string& msg)
+{
+    if (status != eIO_Success) {
+        CNcbiDiag(diag_info) << "CConn_Streambuf::" << msg <<
+            " (" << IO_StatusStr(status) << ")" << Endm;
+    }
+    return status;
 }
 
 
@@ -118,7 +150,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                 memmove(m_WriteBuf, m_WriteBuf + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
-            x_PPos += (CT_OFF_TYPE)(n_written);
+            x_PPos += (CT_OFF_TYPE) n_written;
             setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
         }
 
@@ -132,6 +164,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         LOG_IF_ERROR(CONN_Write(m_Conn, &b, sizeof(b),
                                 &n_written, eIO_WritePlain),
                      "overflow(): CONN_Write(1) failed");
+        x_PPos += (CT_OFF_TYPE) n_written;
         return n_written == sizeof(b) ? c : CT_EOF;
     }
 
@@ -169,7 +202,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     }
 
     // update input buffer with data just read
-    x_GPos += (CT_OFF_TYPE)(n_read);
+    x_GPos += (CT_OFF_TYPE) n_read;
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
     return CT_TO_INT_TYPE(*m_ReadBuf);
@@ -211,7 +244,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                                         &x_read, eIO_ReadPlain);
         if (!(x_read /= sizeof(CT_CHAR_TYPE)))
             break;
-        x_GPos += (CT_OFF_TYPE)(x_read);
+        x_GPos += (CT_OFF_TYPE) x_read;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -287,23 +320,12 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
         case IOS_BASE::out:
             return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
         case IOS_BASE::in:
-            return x_GPos - (CT_OFF_TYPE)(gptr() ? m_WriteBuf - gptr() : 0);
+            return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0);
         default:
             break;
         }
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
-}
-
-
-EIO_Status CConn_Streambuf::x_LogIfError(const CDiagCompileInfo& diag_info,
-                                         EIO_Status status, const string& msg)
-{
-    if (status != eIO_Success) {
-        CNcbiDiag(diag_info) << "CConn_Streambuf::" << msg <<
-            " (" << IO_StatusStr(status) << ")" << Endm;
-    }
-    return status;
 }
 
 
@@ -313,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2005/05/17 00:19:18  lavr
+ * OnClose safety hook added; GPos bug fixed
+ *
  * Revision 6.54  2005/03/24 19:52:09  lavr
  * CConn_Streambuf()'s dtor: flush only if data pending
  *

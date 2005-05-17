@@ -57,8 +57,8 @@ public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                     streamsize buf_size, bool tie);
     virtual ~CConn_Streambuf();
-    CONN    GetCONN(void) const { return m_Conn; };
-    void    Close(void);
+    CONN    GetCONN(void) const { return m_Conn; }
+    void    Close(void)         { x_Cleanup(); }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -87,7 +87,11 @@ private:
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
 
-    EIO_Status          x_LogIfError(const CDiagCompileInfo& diag_info,
+    void                x_Cleanup(bool if_close = true);
+
+    static void         x_OnClose(CONN conn, ECONN_Callback type, void* data);
+
+    static EIO_Status   x_LogIfError(const CDiagCompileInfo& diag_info,
                                      EIO_Status status, const string& msg);
 };
 
@@ -98,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2005/05/17 00:19:18  lavr
+ * OnClose safety hook added; GPos bug fixed
+ *
  * Revision 6.36  2005/03/15 21:27:52  lavr
  * +CConn_Streambuf::Close()
  *
