@@ -423,6 +423,89 @@ def EntrezWeb(ids, db=None):
     webbrowser.open_new(EntrezUrl(ids, db))
 
 
+# Module introspection
+
+import types
+
+def count_methods(classes):
+    'Given a sequence of class names, count the methods'
+    count = 0
+    the_dict = globals()
+    for name in classes:
+        cl = the_dict[name]
+        count += len([attr for attr in cl.__dict__.values()
+                      if type(attr) == types.FunctionType
+                      or type(attr) == staticmethod])
+    return count
+
+
+def info(detailed=False):
+    'Print a bunch of information about classes and their methods'
+
+    serial_objects = []
+    cobjects = []
+    classes = []
+    asn_modules = {}
+
+    the_dict = globals()
+    for cname in the_dict:
+        if isinstance(the_dict[cname], type) \
+           and not (cname.endswith('Ptr') and cname[:-3] in the_dict):
+            the_class = the_dict[cname]
+            if issubclass(the_class, CSerialObject):
+                serial_objects.append(cname)
+                if the_class != CSerialObject:
+                    asn_module = the_class.GetTypeInfo().GetModuleName()
+                    if not asn_module in asn_modules:
+                        asn_modules[asn_module] = []
+                    asn_modules[asn_module].append(cname)
+            if issubclass(the_class, CObject):
+                cobjects.append(cname)
+            if issubclass(the_class, ncbi_object):
+                classes.append(cname)
+
+    print "%d classes          (%d methods)" \
+          % (len(classes), count_methods(classes))
+    print "%d CObject's        (%d methods)" \
+          % (len(cobjects), count_methods(cobjects))
+    print "%d CSerialObject's  (%d methods)" \
+          % (len(serial_objects), count_methods(serial_objects))
+
+    if detailed:
+        print 'by module:'
+        for asn_module in sorted(asn_modules):
+            print '%3d %-21s (%d methods)' \
+                  % (len(asn_modules[asn_module]), asn_module,
+                     count_methods(asn_modules[asn_module]))
+
+    type_counts = {}
+    for name in dir(_ncbi):
+        item = getattr(_ncbi, name)
+        the_type = type(item)
+        if not the_type in type_counts:
+            type_counts[the_type] = 0
+        type_counts[the_type] += 1
+
+    print '\n_ncbi members:'
+    total = 0
+    for key in type_counts:
+        print '%5d %s' % (type_counts[key], key)
+        total += type_counts[key]
+    print '%5d %s' % (total, 'Total')
+
+
+def classes():
+    'Return a list of class names'
+    rv = {}
+    the_dict = globals()
+    for cname in the_dict:
+        if isinstance(the_dict[cname], type) \
+           and not (cname.endswith('Ptr') and cname[:-3] in the_dict):
+            the_class = the_dict[cname]
+            rv[cname] = the_class
+    return rv
+
+
 # Search ncbi namespace for names containing a pattern
 import re
 def Search(pattern, deep=False):
@@ -805,6 +888,9 @@ webbrowser._tryorder = orig_tryorder \
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/17 21:35:30  jcherry
+ * Added module introspection
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
