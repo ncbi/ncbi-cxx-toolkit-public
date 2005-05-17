@@ -58,6 +58,13 @@ public:
     static const string& ToString  (const string& str)  { return str; }
 };
 
+template<>
+class CContElemConverter<CCgiEntry>
+{
+public:
+    static CCgiEntry  FromString(const string& str);
+    static string ToString  (const CCgiEntry&  elem);
+};
 
 template<typename TMap>
 CNcbiOstream& WriteMap(CNcbiOstream& os, const TMap& cont)
@@ -65,13 +72,22 @@ CNcbiOstream& WriteMap(CNcbiOstream& os, const TMap& cont)
     typedef CContElemConverter<typename TMap::key_type>    TKeyConverter;
     typedef CContElemConverter<typename TMap::mapped_type> TValueConverter;
 
+    CNcbiOstrstream ostr;
     ITERATE(typename TMap, it, cont) {
         if (it != cont.begin())
-            os << '&';
-        os << TKeyConverter  ::ToString(URL_EncodeString(it->first)) << '='
-           << TValueConverter::ToString(URL_EncodeString(it->second));
+            ostr << '&';
+        ostr << URL_EncodeString(TKeyConverter  ::ToString(it->first)) << '='
+             << URL_EncodeString(TValueConverter::ToString(it->second));
     }
-
+    ostr << ends;
+    try {
+        os << ostr.pcount() << ' ' << ostr.str();
+    } catch (...) {
+        ostr.freeze(false);
+        throw;
+    }
+    ostr.freeze(false);
+    
     return os;
 }
 
@@ -84,12 +100,15 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
 
     string str;
     {{
-        char buf[1024];
-        while (!is.eof()) {
-            is.read(buf, sizeof(buf));
-            str.append(buf, is.gcount());
+        size_t size;
+        is >> size;
+        if (size > 0) {
+            AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
+            is.read(buf.get(), size);
+            size_t count = is.gcount();
+            if (count > 0)
+                str.append(buf.get()+1, count-1);
         }
-        //        str.append(1,0);
     }}
 
     vector<string> pairs;
@@ -109,6 +128,12 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
     return is;
 }
 
+CNcbiOstream& WriteCgiCookies(CNcbiOstream& os, const CCgiCookies& cont);
+CNcbiIstream& ReadCgiCookies(CNcbiIstream& is, CCgiCookies& cont);
+
+CNcbiOstream& WriteEnvironment(CNcbiOstream& os, const CNcbiEnvironment& cont);
+CNcbiIstream& ReadEnvironment(CNcbiIstream& is, CNcbiEnvironment& cont);
+
 
 END_NCBI_SCOPE
 
@@ -116,6 +141,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/05/17 19:49:50  didenko
+* Added Read/Write cookies and environment
+*
 * Revision 1.1  2005/04/25 20:01:59  didenko
 * Added Cgi Entries serialization
 *
