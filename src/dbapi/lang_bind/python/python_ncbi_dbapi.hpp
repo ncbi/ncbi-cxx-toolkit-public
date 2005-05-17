@@ -199,6 +199,8 @@ public:
     const IResultSet& GetRS(void) const;
     bool HasRS(void) const;
 
+    int GetReturnStatus(void);
+
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
@@ -321,6 +323,8 @@ public:
     /// is invoked.
     /// setoutputsize(size[,column]);
     pythonpp::CObject setoutputsize(const pythonpp::CTuple& args);
+    //
+    pythonpp::CObject get_proc_return_status(const pythonpp::CTuple& args);
 
 private:
     CTransaction& GetTransaction(void)
@@ -788,6 +792,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/05/17 16:42:10  ssikorsk
+* Added CCursor::get_proc_return_status
+*
 * Revision 1.5  2005/02/17 18:39:23  ssikorsk
 * Improved the "callproc" function
 *

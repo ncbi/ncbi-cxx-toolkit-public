@@ -1128,6 +1128,12 @@ CCallableStmtHelper::HasRS(void) const
     return m_RS.get() != NULL;
 }
 
+int 
+CCallableStmtHelper::GetReturnStatus(void)
+{
+    return m_Stmt->GetReturnStatus();
+}
+
 bool
 CCallableStmtHelper::NextRS(void)
 {
@@ -1623,6 +1629,24 @@ CCursor::setoutputsize(const pythonpp::CTuple& args)
 {
     return pythonpp::CNone();
 }
+
+pythonpp::CObject 
+CCursor::get_proc_return_status(const pythonpp::CTuple& args)
+{
+    try {
+        if ( m_StmtStr.GetType() == estFunction ) {
+            return pythonpp::CInt( m_CallableStmtHelper.GetReturnStatus() );
+        } else {
+            throw CDatabaseError("Procedure return code is not defined within this context.");
+        }
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e.GetMsg());
+    }
+
+    return pythonpp::CNone();
+}
+
 
 /* Future development ... 2/4/2005 12:05PM
 //////////////////////////////////////////////////////////////////////////////
@@ -2331,7 +2355,8 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("fetchall",     &python::CCursor::fetchall,     "fetchall").
         Def("nextset",      &python::CCursor::nextset,      "nextset").
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
-        Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize");
+        Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
+        Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
     python::CCursor::Declare("python_ncbi_dbapi.Cursor");
 
     ///////////////////////////////////
@@ -2381,6 +2406,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/05/17 16:42:10  ssikorsk
+* Added CCursor::get_proc_return_status
+*
 * Revision 1.13  2005/04/04 13:03:57  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *
