@@ -35,7 +35,13 @@
 #ifndef PYTHONPP_EMB_H
 #define PYTHONPP_EMB_H
 
-#include "pythonpp_error.hpp"
+#ifdef _MSC_VER
+// disable warning C4005: macro redefinition.
+#pragma warning(disable: 4005)
+#endif
+
+#include <Python.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -79,7 +85,7 @@ public:
     {
         if ( PyRun_SimpleString( cmd ) == -1 ) {
             // throw CError ("Unable to execute a string");
-            throw 0;
+            throw string("Couldn't execute string '") + cmd + "'";
         }
     }
     static void ExecuteFile(const char* file_name)
@@ -90,7 +96,7 @@ public:
             // PyRun_AnyFileEx will close the file after execution ...
             if ( PyRun_AnyFileEx(file, file_name, 1) == -1 ) {
                 // throw CError ("Unable to execute a file");
-                throw 0;
+            throw string("Couldn't execute file '") + file_name + "'";
             }
         }
     }
@@ -105,6 +111,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/05/17 16:41:17  ssikorsk
+ * Throw a string in case of an error in the CEngine
+ *
  * Revision 1.1  2005/01/27 18:50:03  ssikorsk
  * Fixed: a bug with transactions
  * Added: python 'transaction' object
