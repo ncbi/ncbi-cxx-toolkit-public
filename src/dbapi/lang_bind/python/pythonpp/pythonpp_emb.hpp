@@ -40,8 +40,23 @@
 #pragma warning(disable: 4005)
 #endif
 
+#ifdef HAVE_GETHOSTBYNAME_R
+#undef HAVE_GETHOSTBYNAME_R
+#endif
+
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
+
 #include <Python.h>
 
+#ifdef HAVE_GETHOSTBYNAME_R
+#undef HAVE_GETHOSTBYNAME_R
+#endif
+
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -111,6 +126,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/05/17 16:55:06  ssikorsk
+ * Get rid of warnings on GCC
+ *
  * Revision 1.2  2005/05/17 16:41:17  ssikorsk
  * Throw a string in case of an error in the CEngine
  *
