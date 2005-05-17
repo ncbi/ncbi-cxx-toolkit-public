@@ -447,12 +447,19 @@ bool CThread::Run(TRunMode flags)
 
 #if defined(NCBI_WIN32_THREADS)
     // We need this parameter in WinNT - can not use NULL instead!
-    DWORD  thread_id;
+    DWORD thread_id;
+    // Suspend thread to adjust its priority
+    DWORD creation_flags = (flags & fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
     m_Handle = CreateThread(NULL, 0,
                             reinterpret_cast<FSystemWrapper>(Wrapper),
-                            this, 0, &thread_id);
+                            this, creation_flags, &thread_id);
     xncbi_Validate(m_Handle != NULL,
                    "CThread::Run() -- error creating thread");
+    if (flags & fRunNice) {
+        // Adjust priority and resume the thread
+        SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
+        ResumeThread(m_Handle);
+    }
     if ( m_IsDetached ) {
         CloseHandle(m_Handle);
         m_Handle = NULL;
@@ -661,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/05/17 17:52:56  grichenk
+ * Added flag to run threads with low priority (MS-Win only)
+ *
  * Revision 1.31  2004/08/20 17:32:23  grichenk
  * Do not use PTHREAD_SCOPE_SYSTEM on BSD
  *

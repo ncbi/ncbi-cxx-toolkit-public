@@ -204,9 +204,10 @@ public:
         fRunBound    = 0x10,    ///< Run thread in a 1:1 thread:LPW mode
                                 ///< - may not be supported and will be
                                 ///< ignored on some platforms
-        fRunUnbound  = 0x20,    //< Run thread in a N:1 thread:LPW mode
+        fRunUnbound  = 0x20,    ///< Run thread in a N:1 thread:LPW mode
                                 ///< - may not be supported and will be
                                 ///< ignored on some platforms
+        fRunNice     = 0x40,    ///< Run thread with low priority (MS-Win only)
         fRunAllowST  = 0x100    ///< Allow threads to run in single thread
                                 ///< builds
     };
@@ -389,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/17 17:52:56  grichenk
+ * Added flag to run threads with low priority (MS-Win only)
+ *
  * Revision 1.24  2004/11/30 15:05:22  dicuccio
  * Added protetected CThread::GetThreadHandle().  Doxygenated comments (// -> ///)
  *
