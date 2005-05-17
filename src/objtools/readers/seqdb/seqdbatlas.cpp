@@ -68,15 +68,12 @@ void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg)
     switch(code) {
     case CSeqDBException::eArgErr:
         NCBI_THROW(CSeqDBException, eArgErr, msg);
-        break;
         
     case CSeqDBException::eFileErr:
         NCBI_THROW(CSeqDBException, eFileErr, msg);
-        break;
         
     default:
         NCBI_THROW(CSeqDBException, eMemErr, msg);
-        break;
     }
 }
 
