@@ -937,6 +937,12 @@ void CNetScheduleClient::ShutdownServer()
 
     MakeCommandPacket(&m_Tmp, "SHUTDOWN ");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
 }
 
 void CNetScheduleClient::ReloadServerConfig()
@@ -1229,6 +1235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/05/17 13:50:50  kuznets
+ * Added error checking for shutdown request
+ *
  * Revision 1.32  2005/05/16 16:18:21  kuznets
  * + GetQueueList()
  *
