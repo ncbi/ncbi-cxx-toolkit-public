@@ -82,7 +82,6 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
     if ( name.empty() ) {
         NCBI_THROW2(CCgiCookieException, eValue, "Empty cookie name", 0);
     }
-    x_CheckField(name, " ;,=");
     m_Name = name;
 
     SetDomain(domain);
@@ -147,9 +146,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os, EWriteMethod wmethod) const
     if (wmethod == eHTTPResponse) {
         os << "Set-Cookie: ";
 
-        os << m_Name.c_str() << '=';
+        os << URL_EncodeString(m_Name).c_str() << '=';
         if ( !m_Value.empty() )
-            os << m_Value.c_str();
+            os << URL_EncodeString(m_Value).c_str();
 
         if ( !m_Domain.empty() )
             os << "; domain="  << m_Domain.c_str();
@@ -164,9 +163,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os, EWriteMethod wmethod) const
         os << HTTP_EOL;
 
     } else {
-        os << m_Name.c_str() << '=';
+        os << URL_EncodeString(m_Name).c_str() << '=';
         if ( !m_Value.empty() )
-            os << m_Value.c_str();
+            os << URL_EncodeString(m_Value).c_str();
     }
     return os;
 }
@@ -314,6 +313,32 @@ void CCgiCookies::Add(const CCgiCookies& cookies)
 }
 
 
+// Check if the cookie name or value is valid
+bool CCgiCookies::x_CheckField(const string& str,
+                               const char*   banned_symbols,
+                               EOnBadCookie  on_bad_cookie)
+{
+    try {
+        CCgiCookie::x_CheckField(str, banned_symbols);
+    } catch (CCgiCookieException& ex) {
+        switch ( on_bad_cookie ) {
+        case eOnBadCookie_ThrowException:
+            throw;
+        case eOnBadCookie_SkipAndError: {
+            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            ERR_POST(cex);
+            return false;
+        }
+        case eOnBadCookie_Skip:
+            return false;
+        default:
+            _TROUBLE;
+        }
+    }
+    return true;
+}
+
+
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
     SIZE_TYPE pos = str.find_first_not_of(" \t\n");
@@ -324,13 +349,17 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 
         SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
         if (pos_mid == NPOS) {
-            Add(str.substr(pos_beg), kEmptyStr,
-                on_bad_cookie);
+            string name = str.substr(pos_beg);
+            if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+                Add(URL_DecodeString(name), kEmptyStr, on_bad_cookie);
+            }
             return; // done
         }
         if (str[pos_mid] != '=') {
-            Add(str.substr(pos_beg, pos_mid - pos_beg), kEmptyStr,
-                on_bad_cookie);
+            string name = str.substr(pos_beg, pos_mid - pos_beg);
+            if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+                Add(URL_DecodeString(name), kEmptyStr, on_bad_cookie);
+            }
             if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
                 return; // done
             pos = pos_mid;
@@ -347,9 +376,12 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             pos = NPOS; // about to finish
         }
 
-        Add(str.substr(pos_beg,     pos_mid - pos_beg),
-            str.substr(pos_mid + 1, pos_end - pos_mid),
-            on_bad_cookie);
+        string name = str.substr(pos_beg, pos_mid - pos_beg);
+        string val = str.substr(pos_mid + 1, pos_end - pos_mid);
+        if ( x_CheckField(name, " ,;=", on_bad_cookie)  &&
+            x_CheckField(val, " ;", on_bad_cookie)) {
+            Add(URL_DecodeString(name), URL_DecodeString(val), on_bad_cookie);
+        }
     }
     // ...never reaches here...
 }
@@ -1414,6 +1446,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.89  2005/05/18 14:12:45  grichenk
+* URL-encode/decode cookie's name and value
+*
 * Revision 1.88  2005/05/17 18:16:50  didenko
 * Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
 * Added assignment oprerator to CCgiEntry class

@@ -176,6 +176,17 @@ static void TestCgi_Cookies(void)
     assert( cookies.Remove(cookies.Find("BBD", "77.99.00", "path")) );
     assert( cookies.Remove("BBD") == 2 ); 
 
+    string enc_name ="name%20%21%22%23";
+    string enc_val = "val%25%26%27";
+    cookies.Add(enc_name + "=" + enc_val);
+    assert( cookies.Find(URL_DecodeString(enc_name))->GetValue() ==
+        URL_DecodeString(enc_val));
+    enc_name ="name with bad chars;";
+    enc_val = "value with bad chars;";
+    cookies.Add(enc_name, enc_val);
+    assert( cookies.Find(URL_DecodeString(enc_name))->GetValue() ==
+        URL_DecodeString(enc_val));
+
     NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
 }
 
@@ -616,6 +627,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.22  2005/05/18 14:12:45  grichenk
+ * URL-encode/decode cookie's name and value
+ *
  * Revision 1.21  2005/05/05 16:43:36  vakatov
  * Incoming cookies:  just skip the malformed cookies (with error posted) --
  * rather than failing to parse the request altogether. The good cookies would

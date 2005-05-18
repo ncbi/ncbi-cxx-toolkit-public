@@ -143,6 +143,7 @@ private:
     static bool x_GetString(string* str, const string& val);
     // prohibit default assignment
     CCgiCookie& operator= (const CCgiCookie&);
+    friend class CCgiCookies;
 };  // CCgiCookie
 
 
@@ -265,6 +266,10 @@ public:
                                = CCgiCookie::eHTTPResponse) const;
 
 private:
+    static bool x_CheckField(const string& str,
+                             const char*   banned_symbols,
+                             EOnBadCookie  on_bad_cookie);
+
     TSet m_Cookies;
 
     /// prohibit default initialization and assignment
@@ -732,7 +737,6 @@ extern string URL_EncodeString
 // CCgiCookie::SetXXX()
 
 inline void CCgiCookie::SetValue(const string& str) {
-    x_CheckField(str, " ;");
     m_Value = str;
 }
 inline void CCgiCookie::SetDomain(const string& str) {
@@ -845,6 +849,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.73  2005/05/18 14:12:45  grichenk
+* URL-encode/decode cookie's name and value
+*
 * Revision 1.72  2005/05/17 18:16:50  didenko
 * Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
 * Added assignment oprerator to CCgiEntry class
