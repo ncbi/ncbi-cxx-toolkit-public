@@ -681,6 +681,8 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     CONNECTOR      ccc = (SConnector*) malloc(sizeof(SConnector));
     SFTPConnector* xxx = (SFTPConnector*) malloc(sizeof(*xxx));
 
+    assert(!(flag & ~eFCDC_LogAll));
+
     xxx->data    = 0;
     xxx->cntl    = 0;
     xxx->wbuf    = 0;
@@ -705,6 +707,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/05/18 20:56:45  lavr
+ * Use assert() to test flags for validity in constructor
+ *
  * Revision 1.9  2005/05/18 18:16:41  lavr
  * Add EFCDC_Flags and TFCDC_Flags to better control underlying SOCK logs
  * Fix s_VT_Write() not to use strchr() -- memchr() must be used there!
