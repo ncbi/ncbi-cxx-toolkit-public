@@ -71,7 +71,7 @@ END_NCBI_SCOPE
 int main(void)
 {
     USING_NCBI_SCOPE;
-    size_t i, j, k, l;
+    size_t i, j, k, l, size;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
     srand(g_NCBI_ConnectRandomSeed);
@@ -84,6 +84,17 @@ int main(void)
     LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
+
+    CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
+                                "/toolbox/ncbi_tools++/"
+                                "CURRENT/RELEASE_NOTES.html");
+    for (size = 0; ftp; size += ftp.gcount()) {
+        char buf[512];
+        ftp.read(buf, sizeof(buf));
+    }
+    ftp.Close();
+    LOG_POST("Test 0 of 3: " << (unsigned long) size <<
+             " bytes downloaded via FTP");
 
 #if 1
     {{
@@ -240,6 +251,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2005/05/18 15:54:15  lavr
+ * Add FTP stream test (#0)
+ *
  * Revision 6.36  2005/05/02 16:12:08  lavr
  * Use global random seed
  *
