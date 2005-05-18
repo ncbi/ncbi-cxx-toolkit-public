@@ -55,6 +55,7 @@ extern "C" {
  *                 pattern hits.
  * @param init_hitlist Structure for saving initial hits. [in]
  * @param ungapped_stats Structure for saving hit counts [in] [out]
+ * @return always zero
  */
 Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
