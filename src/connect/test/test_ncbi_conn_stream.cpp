@@ -108,8 +108,9 @@ int main(void)
     LOG_POST("Test 0 of 3: " << (unsigned long) size <<
              " bytes downloaded via FTP");
     if (!size) {
-        ERR_POST("Test failed");
-        return 1;
+        ERR_POST(Fatal << "Test 0 failed");
+    } else {
+        LOG_POST(Info << "Test 0 passed");
     }
 
 #if 1
@@ -267,6 +268,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2005/05/18 20:57:10  lavr
+ * Add reporting FTP test as passed if so
+ *
  * Revision 6.40  2005/05/18 20:47:11  lavr
  * Abort the test on an FTP download failure
  *
