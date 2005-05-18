@@ -51,6 +51,14 @@ extern "C" {
 #endif
 
 
+typedef enum {
+    eFCDC_LogControl = 1,
+    eFCDC_LogData    = 2,
+    eFCDC_LogAll     = eFCDC_LogControl | eFCDC_LogData
+} EFCDC_Flags;
+typedef unsigned int TFCDC_Flags;
+
+
 /* Create new CONNECTOR structure to handle ftp download transfer.
  * Return NULL on error.
  */
@@ -60,7 +68,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
  const char*    user,     /* username, "ftp" [==anonymous] by default       */
  const char*    pass,     /* password, "none" by default                    */
  const char*    path,     /* initial directory to chdir to on open          */
- ESwitch        log       /* whether to turn on socket debugging [optional] */
+ TFCDC_Flags    flag      /* mostly for logging socket data [optional]      */
 );
 
 
@@ -75,6 +83,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/05/18 18:17:02  lavr
+ * Add EFCDC_Flags and TFCDC_Flags to better control underlying SOCK logs
+ *
  * Revision 1.1  2004/12/06 17:48:19  lavr
  * Initial revision
  *
