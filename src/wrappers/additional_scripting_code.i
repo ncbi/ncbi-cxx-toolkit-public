@@ -464,11 +464,11 @@ def info(detailed=False):
             if issubclass(the_class, ncbi_object):
                 classes.append(cname)
 
-    print "%d classes          (%d methods)" \
+    print "%4d classes          (%d methods)" \
           % (len(classes), count_methods(classes))
-    print "%d CObject's        (%d methods)" \
+    print "%4d CObject's        (%d methods)" \
           % (len(cobjects), count_methods(cobjects))
-    print "%d CSerialObject's  (%d methods)" \
+    print "%4d CSerialObject's  (%d methods)" \
           % (len(serial_objects), count_methods(serial_objects))
 
     if detailed:
@@ -888,6 +888,9 @@ webbrowser._tryorder = orig_tryorder \
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/18 13:46:05  jcherry
+ * Minor output formatting tweak
+ *
  * Revision 1.2  2005/05/17 21:35:30  jcherry
  * Added module introspection
  *
