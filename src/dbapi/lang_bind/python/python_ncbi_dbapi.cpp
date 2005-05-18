@@ -89,6 +89,39 @@ CRowID::~CRowID(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
+void 
+CStmtStr::SetStr(const string& str, EStatementType default_type)
+{
+    static char const* space_characters = " \t\n";
+
+    m_StmType = RetrieveStatementType(str, default_type);
+    if ( GetType() == estFunction ) {
+        // Cut off the "EXECUTE" prefix if any ...
+
+        string::size_type pos;
+        string str_uc = str;
+
+        NStr::ToUpper(str_uc);
+        pos = str_uc.find_first_not_of(space_characters);
+        if (pos != string::npos) {
+            if (str_uc.compare(pos, sizeof("EXEC") - 1, "EXEC") == 0) {
+                // We have the "EXECUTE" prefix ...
+                pos = str_uc.find_first_of(space_characters, pos);
+                if (pos != string::npos) {
+                    pos = str_uc.find_first_not_of(space_characters, pos);
+                    if (pos != string::npos) {
+                        m_StmtStr = str.substr(pos);
+                        return;
+                    }
+                }
+            }
+        }
+    } 
+
+    m_StmtStr = str;
+}
+
+//////////////////////////////////////////////////////////////////////////////
 CConnParam::CConnParam(
     const string& driver_name,
     const string& db_type,
@@ -714,6 +747,9 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         } else if (stmt_uc.substr(pos, sizeof("ALTER") - 1) == "ALTER")
         {
             stmtType = estAlter;
+        } else if (stmt_uc.substr(pos, sizeof("EXEC") - 1) == "EXEC")
+        {
+            stmtType = estFunction;
         }
     }
 
@@ -723,7 +759,6 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
 //////////////////////////////////////////////////////////////////////////////
 CStmtHelper::CStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
-, m_StmtType( estNone )
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
@@ -731,18 +766,16 @@ CStmtHelper::CStmtHelper(CTransaction* trans)
     }
 }
 
-CStmtHelper::CStmtHelper(CTransaction* trans, const string& stmt, EStatementType default_type)
+CStmtHelper::CStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
 , m_StmtStr( stmt )
-, m_StmtType( estNone )
 , m_Executed(false)
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
     }
 
-    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
-    CreateStmt(currStmtType);
+    CreateStmt();
 }
 
 CStmtHelper::~CStmtHelper(void)
@@ -785,9 +818,9 @@ CStmtHelper::ReleaseStmt(void)
         // Release the statement before a connection release because it is a child object for a connection.
         m_Stmt.release();
 
-        _ASSERT( m_StmtType != estNone );
+        _ASSERT( m_StmtStr.GetType() != estNone );
 
-        if ( m_StmtType == estSelect ) {
+        if ( m_StmtStr.GetType() == estSelect ) {
             // Release SELECT Connection ...
             m_ParentTransaction->DestroySelectConnection( conn );
         } else {
@@ -799,12 +832,11 @@ CStmtHelper::ReleaseStmt(void)
 }
 
 void
-CStmtHelper::CreateStmt(EStatementType type)
+CStmtHelper::CreateStmt(void)
 {
-    m_StmtType = type;
     m_Executed = false;
 
-    if ( type == estSelect ) {
+    if ( m_StmtStr.GetType() == estSelect ) {
         // Get a SELECT connection ...
         m_Stmt.reset( m_ParentTransaction->CreateSelectConnection()->GetStatement() );
     } else {
@@ -814,26 +846,27 @@ CStmtHelper::CreateStmt(EStatementType type)
 }
 
 void
-CStmtHelper::SetStr(const string& stmt, EStatementType default_type)
+CStmtHelper::SetStr(const CStmtStr& stmt)
 {
+    EStatementType oldStmtType = m_StmtStr.GetType();
+    EStatementType currStmtType = stmt.GetType();
     m_StmtStr = stmt;
-    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
 
     if ( m_Stmt.get() ) {
         // If a new statement type needs a different connection type then release an old one.
         if (
-            (m_StmtType == estSelect && currStmtType != estSelect) ||
-            (m_StmtType != estSelect && currStmtType == estSelect)
+            (oldStmtType == estSelect && currStmtType != estSelect) ||
+            (oldStmtType != estSelect && currStmtType == estSelect)
         ) {
             DumpResult();
             ReleaseStmt();
-            CreateStmt(currStmtType);
+            CreateStmt();
         } else {
             DumpResult();
             m_Stmt->ClearParamList();
         }
     } else {
-        CreateStmt(currStmtType);
+        CreateStmt();
     }
     m_Executed = false;
 }
@@ -867,13 +900,13 @@ CStmtHelper::Execute(void)
     _ASSERT( m_Stmt.get() );
 
     try {
-        switch ( m_StmtType ) {
+        switch ( m_StmtStr.GetType() ) {
         case estSelect :
-            m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr ) );
+            m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() ) );
             break;
         default:
             m_RS.release();
-            m_Stmt->ExecuteUpdate ( m_StmtStr );
+            m_Stmt->ExecuteUpdate ( m_StmtStr.GetStr() );
         }
         m_Executed = true;
     }
@@ -947,7 +980,6 @@ CStmtHelper::NextRS(void)
 CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
 , m_NumOfArgs( 0 )
-, m_StmtType( estNone )
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
@@ -955,19 +987,17 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
     }
 }
 
-CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const string& stmt, int num_arg, EStatementType default_type)
+CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt, int num_arg)
 : m_ParentTransaction( trans )
 , m_NumOfArgs( num_arg )
 , m_StmtStr( stmt )
-, m_StmtType( estNone )
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
     }
 
-    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
-    CreateStmt(stmt, num_arg, currStmtType);
+    CreateStmt();
 }
 
 CCallableStmtHelper::~CCallableStmtHelper(void)
@@ -1011,7 +1041,7 @@ CCallableStmtHelper::ReleaseStmt(void)
         // Release the statement before a connection release because it is a child object for a connection.
         m_Stmt.release();
 
-        _ASSERT( m_StmtType != estNone );
+        _ASSERT( m_StmtStr.GetType() != estNone );
 
         // Release DML Connection ...
         m_ParentTransaction->DestroyDMLConnection( conn );
@@ -1020,30 +1050,27 @@ CCallableStmtHelper::ReleaseStmt(void)
 }
 
 void
-CCallableStmtHelper::CreateStmt(const string& proc_name, int num_arg, EStatementType type)
+CCallableStmtHelper::CreateStmt(void)
 {
-    _ASSERT( type == estFunction );
+    _ASSERT( m_StmtStr.GetType() == estFunction );
     m_Executed = false;
 
     if ( m_Stmt.get() == NULL ) {
-        m_StmtType = type;
-
         // Get a DML connection ...
-        m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(proc_name, num_arg) );
+        m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr(), m_NumOfArgs) );
     } else {
         m_Stmt->ClearParamList();
     }
 }
 
 void
-CCallableStmtHelper::SetStr(const string& stmt, int num_arg, EStatementType default_type)
+CCallableStmtHelper::SetStr(const CStmtStr& stmt, int num_arg)
 {
     m_NumOfArgs = num_arg;
     m_StmtStr = stmt;
-    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
 
     DumpResult();
-    CreateStmt(stmt, num_arg, currStmtType);
+    CreateStmt();
     m_Executed = false;
 }
 
@@ -1076,9 +1103,9 @@ CCallableStmtHelper::Execute(void)
     _ASSERT( m_Stmt.get() );
 
     try {
+        m_RS.release();                 // Insurance policy :-)
         m_Stmt->Execute();
         // Retrieve a resut if there is any ...
-        m_RS.release();                 // Insurance policy :-)
         NextRS();
         m_Executed = true;
     }
@@ -1279,7 +1306,6 @@ CCursor::CloseInternal(void)
 pythonpp::CObject
 CCursor::callproc(const pythonpp::CTuple& args)
 {
-    int num_of_arguments = 0;
     const size_t args_size = args.size();
 
     m_RowsNum = -1;                     // As required by the specification ...
@@ -1287,6 +1313,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
     if ( args_size == 0 ) {
         throw CProgrammingError("A stored procedure name is expected as a parameter");
     } else if ( args_size > 0 ) {
+        int num_of_arguments = 0;
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
@@ -1305,7 +1332,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 const pythonpp::CDict dict = obj;
 
                 num_of_arguments = dict.size();
-                m_CallableStmtHelper.SetStr(m_StmtStr.GetStr(), num_of_arguments);
+                m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
                 SetupParameters(dict, m_CallableStmtHelper);
             } else  {
                 // Curently, NCBI DBAPI supports pameter binding by name only ...
@@ -1317,7 +1344,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
             }
         } else {
-            m_CallableStmtHelper.SetStr(m_StmtStr.GetStr(), num_of_arguments);
+            m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
         }
     }
 
@@ -1370,29 +1397,62 @@ CCursor::execute(const pythonpp::CTuple& args)
             throw CProgrammingError("A SQL statement string is expected as a parameter");
         }
 
-        m_CallableStmtHelper.Close();
-        m_StmtHelper.SetStr(m_StmtStr.GetStr());
+        if ( m_StmtStr.GetType() == estFunction ) {
+            int num_of_arguments = 0;
+            m_StmtHelper.Close();
 
-        // Setup parameters ...
-        if ( args_size > 1 ) {
-            pythonpp::CObject obj(args[1]);
+            // Setup parameters ...
+            if ( args_size > 1 ) {
+                pythonpp::CObject obj( args[1] );
 
-            if ( pythonpp::CDict::HasSameType(obj) ) {
-                SetupParameters(obj, m_StmtHelper);
-            } else  {
-                // Curently, NCBI DBAPI supports pameter binding by name only ...
-//            pythonpp::CSequence sequence;
-//            if ( pythonpp::CList::HasSameType(obj) ) {
-//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-//            }
-                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                if ( pythonpp::CDict::HasSameType(obj) ) {
+                    const pythonpp::CDict dict = obj;
+
+                    num_of_arguments = dict.size();
+                    m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
+                    SetupParameters(dict, m_CallableStmtHelper);
+                } else  {
+                    // Curently, NCBI DBAPI supports pameter binding by name only ...
+    //            pythonpp::CSequence sequence;
+    //            if ( pythonpp::CList::HasSameType(obj) ) {
+    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+    //            }
+                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                }
+            } else {
+                m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
+            }
+        } else {
+            m_CallableStmtHelper.Close();
+            m_StmtHelper.SetStr(m_StmtStr);
+
+            // Setup parameters ...
+            if ( args_size > 1 ) {
+                pythonpp::CObject obj(args[1]);
+
+                if ( pythonpp::CDict::HasSameType(obj) ) {
+                    SetupParameters(obj, m_StmtHelper);
+                } else  {
+                    // Curently, NCBI DBAPI supports pameter binding by name only ...
+    //            pythonpp::CSequence sequence;
+    //            if ( pythonpp::CList::HasSameType(obj) ) {
+    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+    //            }
+                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                }
             }
         }
     }
 
-    m_StmtHelper.Execute();
-    m_RowsNum = m_StmtHelper.GetRowCount();
+    if ( m_StmtStr.GetType() == estFunction ) {
+        m_CallableStmtHelper.Execute();
+        m_RowsNum = m_StmtHelper.GetRowCount();
+    } else {
+        m_StmtHelper.Execute();
+        m_RowsNum = m_StmtHelper.GetRowCount();
+    }
 
     return pythonpp::CNone();
 }
@@ -1479,7 +1539,7 @@ CCursor::executemany(const pythonpp::CTuple& args)
 
                 //
                 m_CallableStmtHelper.Close();
-                m_StmtHelper.SetStr( m_StmtStr.GetStr() );
+                m_StmtHelper.SetStr( m_StmtStr );
                 m_RowsNum = 0;
 
                 for ( citer = params.begin(); citer != cend; ++citer ) {
@@ -2406,6 +2466,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/05/18 18:41:07  ssikorsk
+* Small refactoring
+*
 * Revision 1.14  2005/05/17 16:42:10  ssikorsk
 * Added CCursor::get_proc_return_status
 *

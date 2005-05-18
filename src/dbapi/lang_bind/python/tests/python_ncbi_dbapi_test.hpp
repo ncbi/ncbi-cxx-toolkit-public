@@ -119,21 +119,21 @@ public:
     // Test IStatement interface.
 
     // Test particular methods.
-    void MakeTestPreparation();
-    void TestBasic();
-    void TestExecute();
-    void TestFetch();
-    void TestParameters();
-    void TestExecuteMany();
+    void MakeTestPreparation(void);
+    void TestBasic(void);
+    void TestExecute(void);
+    void TestFetch(void);
+    void TestParameters(void);
+    void TestExecuteMany(void);
+    void TestStoredProcedures(void);
 
     // Test scenarios.
-    void TestTransaction();
+    void TestTransaction(void);
 
     // Run a Python script from a file
-    void TestFromFile();
+    void TestFromFile(void);
 
 private:
-    void CreateTestTable();
 
 private:
     pythonpp::CEngine m_Engine;
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/05/18 18:41:07  ssikorsk
+ * Small refactoring
+ *
  * Revision 1.6  2005/05/17 16:42:34  ssikorsk
  * Moved on Boost.Test
  *

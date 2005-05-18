@@ -45,7 +45,7 @@ CPythonDBAPITest::CPythonDBAPITest(const CTestArguments& args)
 }
 
 void
-CPythonDBAPITest::MakeTestPreparation()
+CPythonDBAPITest::MakeTestPreparation(void)
 {
     try {
         string connection_args( m_args.GetDriverName() + "', '" +
@@ -75,7 +75,7 @@ CPythonDBAPITest::MakeTestPreparation()
 }
 
 void
-CPythonDBAPITest::TestBasic()
+CPythonDBAPITest::TestBasic(void)
 {
     try {
         m_Engine.ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
@@ -112,8 +112,6 @@ CPythonDBAPITest::TestBasic()
         m_Engine.ExecuteStr("cursor.nextset()\n");
         m_Engine.ExecuteStr("cursor.setinputsizes()\n");
         m_Engine.ExecuteStr("cursor.setoutputsize()\n");
-        // m_Engine.ExecuteStr("print cursor.callproc('test_sp')\n");
-        // m_Engine.ExecuteStr("print cursor.fetchall()\n");
 
         m_Engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
         m_Engine.ExecuteStr("cursor2.fetchone()\n");
@@ -130,7 +128,7 @@ CPythonDBAPITest::TestBasic()
 }
 
 void
-CPythonDBAPITest::TestExecute()
+CPythonDBAPITest::TestExecute(void)
 {
     try {
         // Simple test
@@ -146,7 +144,7 @@ CPythonDBAPITest::TestExecute()
 }
 
 void
-CPythonDBAPITest::TestFetch()
+CPythonDBAPITest::TestFetch(void)
 {
     try {
         // Prepare ...
@@ -168,7 +166,7 @@ CPythonDBAPITest::TestFetch()
 }
 
 void
-CPythonDBAPITest::TestParameters()
+CPythonDBAPITest::TestParameters(void)
 {
     try {
         // Prepare ...
@@ -184,7 +182,7 @@ CPythonDBAPITest::TestParameters()
 }
 
 void
-CPythonDBAPITest::TestExecuteMany()
+CPythonDBAPITest::TestExecuteMany(void)
 {
     try {
         // Excute with empty parameter list
@@ -202,7 +200,7 @@ CPythonDBAPITest::TestExecuteMany()
 
 
 void
-CPythonDBAPITest::TestTransaction()
+CPythonDBAPITest::TestTransaction(void)
 {
     try {
         // "Simple mode" test ...
@@ -239,7 +237,7 @@ CPythonDBAPITest::TestTransaction()
 
 
 void
-CPythonDBAPITest::TestFromFile()
+CPythonDBAPITest::TestFromFile(void)
 {
     try {
         m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
@@ -249,10 +247,38 @@ CPythonDBAPITest::TestFromFile()
     }
 }
 
-
-void
-CPythonDBAPITest::CreateTestTable()
+void 
+CPythonDBAPITest::TestStoredProcedures(void)
 {
+    try {
+        m_Engine.ExecuteStr("cursor.callproc('sp_databases')\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+
+        // m_Engine.ExecuteStr("cursor.callproc('sp_server_info')\n");
+        // m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.callproc('sp_server_info 1')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.callproc('sp_server_info 2')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+
+        m_Engine.ExecuteStr("cursor.execute('execute sp_databases')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+
+        m_Engine.ExecuteStr("cursor.callproc('execute sp_server_info 1')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.callproc('execute sp_server_info 2')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+
+        // EXECUTE stored procedure with parameters ...
+        m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 2')\n");
+        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 
@@ -268,9 +294,9 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    // tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
+    // tc->depends_on(tc_init);
+    // add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecute, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -285,6 +311,10 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteMany, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestStoredProcedures, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
@@ -423,6 +453,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/05/18 18:41:07  ssikorsk
+* Small refactoring
+*
 * Revision 1.9  2005/05/17 16:42:34  ssikorsk
 * Moved on Boost.Test
 *

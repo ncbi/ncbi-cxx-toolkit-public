@@ -99,27 +99,15 @@ public:
     : m_StmType(estNone)
     {
     }
-    CStmtStr(const string& str)
-    : m_StmtStr(str)
-    , m_StmType(RetrieveStatementType(str))
+    CStmtStr(const string& str, EStatementType default_type = estFunction)
+    : m_StmType(estNone)
     {
+        SetStr(str, default_type);
     }
 
-    CStmtStr& operator=(const CStmtStr& other)
-    {
-        if ( this != &other ) {
-            m_StmtStr = other.m_StmtStr;
-            m_StmType = other.m_StmType;
-        }
-        return *this;
-    }
     // We will accume that SQL has type estFunction if it is
     // hard to get an actual type.
-    void SetStr(const string& str, EStatementType default_type = estFunction)
-    {
-        m_StmtStr = str;
-        m_StmType = RetrieveStatementType(str, default_type);
-    }
+    void SetStr(const string& str, EStatementType default_type = estFunction);
 
 public:
     string GetStr(void) const
@@ -147,11 +135,12 @@ class CStmtHelper
 {
 public:
     CStmtHelper(CTransaction* trans);
-    CStmtHelper(CTransaction* trans, const string& stmt, EStatementType default_type = estFunction);
+    CStmtHelper(CTransaction* trans, const CStmtStr& stmt);
     ~CStmtHelper(void);
 
 public:
-    void SetStr(const string& stmt, EStatementType default_type = estFunction);
+    // void SetStr(const string& stmt, EStatementType default_type = estFunction);
+    void SetStr(const CStmtStr& stmt);
     void SetParam(const string& name, const CVariant& value);
 
     void Execute(void);
@@ -166,14 +155,15 @@ public:
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
-    void CreateStmt(EStatementType type);
+    void CreateStmt(void);
 
 private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
     auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
     auto_ptr<IResultSet>    m_RS;
-    string                  m_StmtStr;
-    EStatementType          m_StmtType;
+    // string                  m_StmtStr;
+    // EStatementType          m_StmtType;
+    CStmtStr                m_StmtStr;
     bool                    m_Executed;
 };
 
@@ -183,11 +173,12 @@ class CCallableStmtHelper
 {
 public:
     CCallableStmtHelper(CTransaction* trans);
-    CCallableStmtHelper(CTransaction* trans, const string& stmt, int num_arg, EStatementType default_type = estFunction);
+    CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt, int num_arg);
     ~CCallableStmtHelper(void);
 
 public:
-    void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
+    // void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
+    void SetStr(const CStmtStr& stmt, int num_arg);
     void SetParam(const string& name, const CVariant& value);
 
     void Execute(void);
@@ -204,15 +195,16 @@ public:
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
-    void CreateStmt(const string& proc_name, int num_arg, EStatementType type = estFunction);
+    void CreateStmt(void);
 
 private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
     int                             m_NumOfArgs;         //< Number of arguments in a callable statement
     auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
     auto_ptr<IResultSet>            m_RS;
-    string                          m_StmtStr;
-    EStatementType                  m_StmtType;
+    // string                          m_StmtStr;
+    // EStatementType                  m_StmtType;
+    CStmtStr                        m_StmtStr;
     bool                            m_Executed;
 };
 
@@ -792,6 +784,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/05/18 18:41:07  ssikorsk
+* Small refactoring
+*
 * Revision 1.6  2005/05/17 16:42:10  ssikorsk
 * Added CCursor::get_proc_return_status
 *
