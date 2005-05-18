@@ -107,6 +107,10 @@ int main(void)
     ftp.Close();
     LOG_POST("Test 0 of 3: " << (unsigned long) size <<
              " bytes downloaded via FTP");
+    if (!size) {
+        ERR_POST("Test failed");
+        return 1;
+    }
 
 #if 1
     {{
@@ -263,6 +267,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2005/05/18 20:47:11  lavr
+ * Abort the test on an FTP download failure
+ *
  * Revision 6.39  2005/05/18 20:08:33  lavr
  * Fixes to avoid compilation failures on Ms-Windows
  *
