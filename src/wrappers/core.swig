@@ -83,6 +83,15 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 %ignore ncbi::CSerialObject::Assign;
 %ignore ncbi::CSerialObject::Equals;
 
+%import serial/serialbase.hpp
+%template(CAliasBase_string) ncbi::CAliasBase<std::string>;
+%template(CStringAliasBase_string) ncbi::CStringAliasBase<std::string>;
+%template(CAliasBase_vector_char) ncbi::CAliasBase<std::vector<char> >;
+%template(CStringAliasBase_vector_char)
+    ncbi::CStringAliasBase<std::vector<char> >;
+%template(CAliasBase_int) ncbi::CAliasBase<int>;
+%template(CStdAliasBase_int) ncbi::CStdAliasBase<int>;
+
 
 %%
 
@@ -248,14 +257,6 @@ serial/variant.hpp
 
 %%
 
-%template(CAliasBase_string) ncbi::CAliasBase<std::string>;
-%template(CStringAliasBase_string) ncbi::CStringAliasBase<std::string>;
-%template(CAliasBase_vector_char) ncbi::CAliasBase<std::vector<char> >;
-%template(CStringAliasBase_vector_char)
-    ncbi::CStringAliasBase<std::vector<char> >;
-%template(CAliasBase_int) ncbi::CAliasBase<int>;
-%template(CStdAliasBase_int) ncbi::CStdAliasBase<int>;
-
 %template(CNcbiMatrix_double) ncbi::CNcbiMatrix<double>;
 
 // dynamic casting for type info
@@ -292,6 +293,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/18 18:15:57  jcherry
+ * Made CAliasBase stuff work
+ *
  * Revision 1.2  2005/05/16 18:11:28  jcherry
  * Guard against passing an object of a different type to
  * CSerialObject::Assign and CSerialObject::Equals
