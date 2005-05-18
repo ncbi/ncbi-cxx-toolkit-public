@@ -1258,7 +1258,9 @@ public:
     ///
     /// @param str
     ///   String to check.
-    static bool IsBlank(const string& str);
+    /// @param pos
+    ///   starting position (default 0)
+    static bool IsBlank(const string& str, SIZE_TYPE pos = 0);
 
     /// Whether it is the first or last occurrence.
     enum EOccurrence {
@@ -2692,6 +2694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2005/05/18 15:23:02  shomrat
+ * Added starting position to IsBlank
+ *
  * Revision 1.85  2005/05/17 15:48:14  lavr
  * Correct the power-of-2 suffix conversion in StringToUInt8_DataSize()
  *

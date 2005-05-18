@@ -64,10 +64,11 @@ const string& CNcbiEmptyString::FirstGet(void) {
 }
 #endif
 
-bool NStr::IsBlank(const string& str)
+bool NStr::IsBlank(const string& str, SIZE_TYPE pos)
 {
-    ITERATE (string, it, str) {
-        if (!isspace((unsigned char)(*it))) {
+    SIZE_TYPE len = str.length();
+    for (SIZE_TYPE idx = pos; idx < len; ++idx) {
+        if (!isspace(str[idx])) {
             return false;
         }
     }
@@ -1957,6 +1958,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.151  2005/05/18 15:23:28  shomrat
+ * Added starting position to IsBlank
+ *
  * Revision 1.150  2005/05/17 15:51:48  ivanov
  * s_DataSizeConvertQual(): throw exception only when this specified
  * by 'on_error' parameter
