@@ -71,7 +71,9 @@ END_NCBI_SCOPE
 int main(void)
 {
     USING_NCBI_SCOPE;
+    TFCDC_Flags flag = 0;
     size_t i, j, k, l, size;
+    const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
     srand(g_NCBI_ConnectRandomSeed);
@@ -85,9 +87,18 @@ int main(void)
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
+    if (env) {
+        if (strcasecmp(env, "1") == 0  ||  strcasecmp(env, "SOME") == 0)
+            flag |= eFCDC_LogControl;
+        else if (strcasecmp(env, "DATA") == 0)
+            flag |= eFCDC_LogData;
+        else if (strcasecmp(env, "ALL") == 0)
+            flag |= eFCDC_LogAll;
+    }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
-                                "/toolbox/ncbi_tools++/"
-                                "CURRENT/RELEASE_NOTES.html");
+                                "CURRENT/RELEASE_NOTES.html",
+                                "ftp"/*default*/, "none"/*default*/,
+                                "/toolbox/ncbi_tools++", 0, flag);
     for (size = 0; ftp; size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
@@ -251,6 +262,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2005/05/18 18:17:36  lavr
+ * Add more control over FTP stream logging
+ *
  * Revision 6.37  2005/05/18 15:54:15  lavr
  * Add FTP stream test (#0)
  *
