@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 #
 # $Id$
 #
@@ -16,10 +16,10 @@ start_dir=`pwd`
 SendMailMsg() {
     if [ "x$mail_to" != "x" ]; then
         echo "Sending an email notification to $mail_to..."
-        if [ -f $2 ]; then
+        if [ -f "$2" ]; then
             cat $2 |  mail -s "$1" $mail_to    
         else
-            echo $2 | mail -s "$1" $mail_to    
+            echo "$2" | mail -s "$1" $mail_to    
         fi
     fi
 }
@@ -66,37 +66,101 @@ EOF
     exit 2
 }
 
-StartNode() {
-    echo "Starting the $node_name node..."
-    if [ -f ${node_name}.out ]; then 
-       cat ${node_name}.out >>  ${node_name}_out.old
-    fi
-    echo "[`date`] ================= " > ${node_name}.out
-    $node >  ${node_name}.out  2>&1 &
-    node_pid=$!
-    echo "Waiting for the service to start ($service_wait seconds)..."
-    sleep $service_wait
+ports_show="["
+ports_from_file=0
 
-    $ns_control -v $host $port > /dev/null  2>&1
+send_start_msg=0
+add_to_started_port_list=0
+
+StartNode() {
+    echo "Testing if $node_name is alive on $host:$1"
+    $ns_control -v $host $1 > /dev/null  2>&1
     if test $? -ne 0; then
-        SendMail "[PROBLEM] $node_name @ $host:$port failed to start"
-        echo "Failed to start service" >& 2
-        cd $start_dir
-        exit 1
+        echo "Service not responding. Starting the $node_name node..."
+
+        $node -control_port $1 >>  ${node_name}.out  2>&1 &
+        node_pid=$!
+        echo $node_pid > ${node_name}.$1.pid    
+
+        echo "Waiting for the service to start ($service_wait seconds)..."
+        sleep $service_wait
+        
+        $ns_control -v $host $1 > /dev/null  2>&1
+        if test $? -ne 0; then
+            SendMail "[PROBLEM] $node_name on $host:$1 failed to start"
+            echo "Failed to start service on $host:$1"
+            add_to_started_port_list=0
+        else
+            add_to_started_port_list=1
+            send_start_msg=1
+        fi
+    else
+        echo "Service is alive"
     fi
 }
 
+StartNodes() {
+    ports_from_file=0
+    ports_show="["
+    send_start_msg=0
+
+    test  -f ${node_name}.out &&  cat ${node_name}.out >>  ${node_name}_out.old
+    echo "[`date`] ================= " > ${node_name}.out
+
+    if [ -f $worker_nodes_ports ]; then
+        IFS='
+'
+        for line in `cat ${worker_nodes_ports}`; do
+            p="`echo $line | cut -f1 -d' '`"
+            test "x$p" = "x" && continue
+            ports_from_file=1
+            StartNode $p
+            test $add_to_started_port_list -eq 1 &&  ports_show="$ports_show $p"
+        done
+        unset IFS
+        ports_show="$ports_show ]"
+    fi
+    if test $ports_from_file -ne 1; then
+        ports_show="$port"
+        StartNode $port
+    fi
+    test $send_start_msg -eq 1 && SendMail "$node_name started on $host:$ports_show"
+}
+
+
 StopNode() {
-    echo "Stopping the $node_name node..."
-    $ns_control -s $host $port > /dev/null  2>&1
-    sleep $service_wait
+    echo "Stopping the $node_name node on $host:$1 ..."
+    $ns_control -s $host $1 > /dev/null  2>&1
+    test $? -eq 0 && sleep $service_wait
+}
+
+StopNodes() {
+    ports_from_file=0
+    ports_show="["
+    if [ -f $worker_nodes_ports ]; then
+        IFS='
+'
+        for line in `cat ${worker_nodes_ports}`; do
+            p="`echo $line | cut -f1 -d' '`"
+            test "x$p" = "x" && continue
+            ports_show="$ports_show $p"
+            StopNode $p
+            ports_from_file=1
+        done
+        unset IFS
+        ports_show="$ports_show ]"
+    fi
+    if test $ports_from_file -ne 1; then
+        ports_show="$port"
+        StopNode $port
+    fi
 }
 
 CopyFile() {
     if [ -f $1 ]; then
        cp -fp $1 ${backup_dir}/
        if test $? -ne 0; then
-          SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't copy ${BIN_PATH}/$1 to ${backup_dir}/$1"
+          SendMailMsg "Upgrade Error: $node_name on $host:$ports_show" "Couldn't copy ${BIN_PATH}/$1 to ${backup_dir}/$1"
           echo "Couldn't copy ${BIN_PATH}/$1 to ${backup_dir}/$1" >& 2
           cd $start_dir
           exit 2
@@ -104,7 +168,7 @@ CopyFile() {
     fi
     cp -fp ${new_version_dir}/$1 $1.new
     if test $? -ne 0; then
-       SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't copy ${new_version_dir}/$1 to ${BIN_PATH}/$1.new"
+       SendMailMsg "Upgrade Error: $node_name on $host:$ports_show" "Couldn't copy ${new_version_dir}/$1 to ${BIN_PATH}/$1.new"
        echo "Couldn't copy ${new_version_dir}/$1 to ${BIN_PATH}/$1.new" >& 2
        cd $start_dir
        exit 2
@@ -112,7 +176,7 @@ CopyFile() {
     if [ -f $1 ]; then
        rm -f ${BIN_PATH}/$1 
        if test $? -ne 0; then
-          SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't remove ${BIN_PATH}/$1"
+          SendMailMsg "Upgrade Error: $node_name on $host:$ports_show" "Couldn't remove ${BIN_PATH}/$1"
           echo "Couldn't remove ${BIN_PATH}/$1" >& 2
           cd $start_dir
           exit 2
@@ -120,7 +184,7 @@ CopyFile() {
     fi
     mv -f ${BIN_PATH}/$1.new ${BIN_PATH}/$1 
     if test $? -ne 0; then
-       SendMailMsg "Upgrade Error: $node_name on $host:$port" "Couldn't move ${BIN_PATH}/$1.new to ${BIN_PATH}/$1"
+       SendMailMsg "Upgrade Error: $node_name on $host:$ports_show" "Couldn't move ${BIN_PATH}/$1.new to ${BIN_PATH}/$1"
        echo "Couldn't move ${BIN_PATH}/$1.new to ${BIN_PATH}/$1" >& 2
        cd $start_dir
        exit 2
@@ -141,6 +205,7 @@ service_wait=10
 ns_control=${script_dir}/netschedule_control
 new_version_dir=${BIN_PATH}/NEW_VERSION
 backup_dir=${BIN_PATH}/BACKUP
+worker_nodes_ports=worker_nodes.ports
 
 cd ${BIN_PATH}
 
@@ -156,68 +221,43 @@ for cmd_arg in "$@" ; do
   esac
 done
 
-if [ ! -f $node ]; then
-    Usage "Cannot find $node"
-fi
+test ! -f $node &&  Usage "Cannot find $node"
+test ! -f $ns_control &&  Usage "Cannot find $ns_control"
+test ! -f $ini_file &&  Usage "Cannot find $ini_file at $BIN_PATH"
 
-if [ ! -f $ns_control ]; then
-    Usage "Cannot find $ns_control"
-fi
-
-if [ ! -f $ini_file ]; then
-    Usage "Cannot find $ini_file at $BIN_PATH"
-fi
-
-if [ ! -d $backup_dir ]; then
-   mkdir $backup_dir
-fi
-
-if [ ! -d $new_version_dir ]; then
-   mkdir $new_version_dir
-fi
+test ! -d $backup_dir &&  mkdir $backup_dir
+test ! -d $new_version_dir &&  mkdir $new_version_dir
 
 host=`hostname`
 port=`cat $ini_file | grep control_port= | sed -e 's/control_port=//'`
 
+
 if [ -f ${new_version_dir}/stop_me ]; then
    touch ${new_version_dir}/donotrun_me
-   StopNode
-   SendMailMsg "$node_name on $host:$port has been stopped" "$node_name on $host:$port has been stopped"   
+   StopNodes
+   SendMailMsg "$node_name stopped on $host:$ports_show" "$node_name stopped on $host:$ports_show"   
    rm -f ${new_version_dir}/stop_me  
-   exit 0
 fi
-if [ -f ${new_version_dir}/donotrun_me ]; then
-   exit 0
-fi
+
+test  -f ${new_version_dir}/donotrun_me && exit 0
+
 if [ -f ${new_version_dir}/upgrade_me ]; then
-   ls -latrRF > ${node_name}.ls
-   SendMailMsg "New Version of $node_name on $host:$port"  "${node_name}.ls"
-   StopNode
-   echo "Upgrading the $node_name node..." 
-   for file in ${new_version_dir}/* ; do
-      fname=`basename $file`
-      if [ $fname != "upgrade_me" ]; then
-         CopyFile $fname
-      fi
-   done
-   rm -f ${new_version_dir}/upgrade_me
-   SendMailMsg "$node_name on $host:$port has been upgraded" "New version of $node_name on $host:$port has been installed"   
+    ls -latrRF > ${node_name}.ls
+    touch ${new_version_dir}/donotrun_me
+    StopNodes 
+    SendMailMsg "New Version of $node_name on $host:$ports_show"  "${node_name}.ls"
+    echo "Upgrading the $node_name node..." 
+    for file in ${new_version_dir}/* ; do
+        fname=`basename $file`
+        test $fname != "upgrade_me" && test $fname != "donotrun_me" && CopyFile $fname
+    done
+    rm -f ${new_version_dir}/upgrade_me
+    rm -f ${new_version_dir}/donotrun_me
+
+   SendMailMsg "$node_name on $host:$ports_show has been upgraded" "New version of $node_name on $host:$ports_show has been installed"   
 fi
 
-echo "Testing if $node_name is alive on $host:$port"
+StartNodes
 
-
-$ns_control -v $host $port > /dev/null  2>&1
-if test $? -ne 0; then
-    echo "Service not responding"
-    StartNode    
-else
-    echo "Service is alive"
-    cd $start_dir
-    exit 0
-fi
-
-SendMail "$node_name started (pid=$node_pid) at $host:$port"
-echo $node_pid > ${node_name}.pid    
 cd $start_dir
 
