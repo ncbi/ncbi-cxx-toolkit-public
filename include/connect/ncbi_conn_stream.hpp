@@ -378,6 +378,7 @@ public:
      const string&   pass     = "none",
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
+     TFCDC_Flags     flag     = 0,
      streamsize      offset   = 0,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize
@@ -399,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.37  2005/05/18 18:14:29  lavr
+ * Add flag parameter to FTP download stream ctor
+ *
  * Revision 6.36  2005/05/18 15:53:38  lavr
  * Change defaults for user and pass in FTP stream ctor
  *

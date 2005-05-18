@@ -354,12 +354,13 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
                                                  const string&   pass,
                                                  const string&   path,
                                                  unsigned short  port,
+                                                 TFCDC_Flags     flag,
                                                  streamsize      offset,
                                                  const STimeout* timeout,
                                                  streamsize      buf_size)
     : CConn_IOStream(FTP_CreateDownloadConnector(host.c_str(), port,
                                                  user.c_str(), pass.c_str(),
-                                                 path.c_str(), eDefault),
+                                                 path.c_str(), flag),
                      timeout, buf_size)
 {
     if (file != kEmptyStr) {
@@ -379,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2005/05/18 18:14:56  lavr
+ * Add flag parameter to FTP download stream ctor
+ *
  * Revision 6.45  2005/03/15 21:28:22  lavr
  * +CConn_IOStream::Close()
  *
