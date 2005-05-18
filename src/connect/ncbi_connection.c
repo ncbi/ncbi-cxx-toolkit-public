@@ -405,7 +405,7 @@ static EIO_Status s_CONN_Write
 
     /* call current connector's "WRITE" method */
     status = conn->meta.write(conn->meta.c_write, buf, size, n_written,
-                              conn->w_timeout==kDefaultTimeout ?
+                              conn->w_timeout == kDefaultTimeout ?
                               conn->meta.default_timeout :conn->w_timeout);
 
     if (status != eIO_Success) {
@@ -855,6 +855,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2005/05/18 18:15:21  lavr
+ * Formatting spot
+ *
  * Revision 6.44  2004/11/15 19:33:42  lavr
  * Speed-up CONN_ReadLine()
  *
