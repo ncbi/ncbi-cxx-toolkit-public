@@ -541,6 +541,7 @@ END_SUBTYPE
 START_SUBTYPE(preRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(label);
@@ -1983,6 +1984,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.23  2005/05/18 15:30:18  shomrat
+* Added db_xref as legal for preRNA
+*
 * Revision 6.22  2005/05/10 17:02:30  grichenk
 * Optimized GetTypeFromSubtype().
 *
