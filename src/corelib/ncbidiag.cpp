@@ -270,7 +270,7 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
 
 CDiagBuffer::CDiagBuffer(void)
-    : m_Stream(new CNcbiOstrstream)
+    : m_Stream(new CNcbiOstrstream), m_InitialStreamFlags(m_Stream->flags())
 {
     m_Diag = 0;
 }
@@ -370,6 +370,9 @@ void CDiagBuffer::Flush(void)
         // stuck.  We need to replace the frozen stream with the new one.
         delete ostr;
         m_Stream = new CNcbiOstrstream;
+#else
+        // reset flags to initial value
+        m_Stream->flags(m_InitialStreamFlags);
 #endif
 
         Reset(*m_Diag);
@@ -1493,6 +1496,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.94  2005/05/18 16:00:14  ucko
+ * CDiagBuffer: note m_Stream's initial flags, and restore them on every
+ * call to Flush to prevent settings from inadvertantly leaking between
+ * messages.
+ *
  * Revision 1.93  2005/05/14 20:57:20  vakatov
  * SetDiagPostLevel() -- Special case:  eDiag_Trace to print all messages
  * and turn on the tracing

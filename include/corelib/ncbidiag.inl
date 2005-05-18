@@ -108,8 +108,9 @@ class CDiagBuffer
 private:
     friend class CDiagRestorer;
 
-    const CNcbiDiag* m_Diag;    // present user
-    CNcbiOstream*    m_Stream;  // storage for the diagnostic message
+    const CNcbiDiag*   m_Diag;    // present user
+    CNcbiOstream*      m_Stream;  // storage for the diagnostic message
+    IOS_BASE::fmtflags m_InitialStreamFlags;
 
     // user-specified string to add to each posted message
     // (can be constructed from "m_PrefixList" after push/pop operations)
@@ -587,6 +588,11 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/05/18 16:00:09  ucko
+ * CDiagBuffer: note m_Stream's initial flags, and restore them on every
+ * call to Flush to prevent settings from inadvertantly leaking between
+ * messages.
+ *
  * Revision 1.49  2005/05/04 19:54:13  ssikorsk
  * Store internal data in std::string instead of AutoPtr within CDiagCompileInfo and CNcbiDiag.
  *
