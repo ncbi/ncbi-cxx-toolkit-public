@@ -68,7 +68,7 @@ typedef struct {
     const char*    path;
     const char*    name;
     TFtpFeatures   feat;
-    ESwitch        log;
+    TFCDC_Flags    flag;
     SOCK           cntl;  /* control connection */
     SOCK           data;  /* data    connection */
     BUF            wbuf;  /* write buffer       */
@@ -318,8 +318,9 @@ static EIO_Status s_FTPPasv(SFTPConnector*  xxx)
     i = (o[4] << 8) + o[5];
     port = (unsigned short) i;
     if (SOCK_ntoa(host, buf, sizeof(buf)) == 0  &&
-        SOCK_CreateEx(buf, port, &zero, &xxx->data,
-                      0, 0, xxx->log) == eIO_Success) {
+        SOCK_CreateEx(buf, port, &zero, &xxx->data, 0, 0,
+                      xxx->flag & eFCDC_LogData ? eOn : eDefault)
+        == eIO_Success) {
         return eIO_Success;
     }
     s_FTPAbort(xxx);
@@ -477,8 +478,8 @@ static EIO_Status s_VT_Open
     EIO_Status status;
 
     assert(!xxx->data  &&  !xxx->cntl);
-    status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl,
-                           0, 0, xxx->log);
+    status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
+                           xxx->flag & eFCDC_LogControl ? eOn : eDefault);
     if (status == eIO_Success)
         status = s_FTPLogin(xxx, timeout);
     if (status == eIO_Success)
@@ -515,11 +516,11 @@ static EIO_Status s_VT_Write
     if (!xxx->cntl)
         return eIO_Closed;
 
-    if ((c = strchr((const char*) buf, '\n')) != 0) {
-        if (c[1])
+    if ((c = memchr((const char*) buf, '\n', size)) != 0) {
+        if (c < (const char*) buf + size - 1)
             return eIO_Unknown;
-        if (c != buf  &&  c[-1] == '\r')
-            c--;
+        if (c != (const char*) buf  &&  c[-1] == '\r')
+            --c;
         s = (size_t)(c - (const char*) buf);
     } else
         s = size;
@@ -675,7 +676,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
                                              const char*    user,
                                              const char*    pass,
                                              const char*    path,
-                                             ESwitch        log)
+                                             TFCDC_Flags    flag)
 {
     CONNECTOR      ccc = (SConnector*) malloc(sizeof(SConnector));
     SFTPConnector* xxx = (SFTPConnector*) malloc(sizeof(*xxx));
@@ -689,7 +690,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     xxx->pass    = strdup(pass ? pass : "none");
     xxx->path    = path  &&  *path ? strdup(path) : 0;
     xxx->name    = 0;
-    xxx->log     = log;
+    xxx->flag    = flag;
     /* initialize connector data */
     ccc->handle  = xxx;
     ccc->next    = 0;
@@ -704,6 +705,10 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/05/18 18:16:41  lavr
+ * Add EFCDC_Flags and TFCDC_Flags to better control underlying SOCK logs
+ * Fix s_VT_Write() not to use strchr() -- memchr() must be used there!
+ *
  * Revision 1.8  2005/05/11 20:00:25  lavr
  * Empty NLST result list bug fixed
  *
