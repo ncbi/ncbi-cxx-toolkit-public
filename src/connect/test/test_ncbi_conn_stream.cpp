@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <string.h>
@@ -99,7 +100,7 @@ int main(void)
                                 "CURRENT/RELEASE_NOTES.html",
                                 "ftp"/*default*/, "none"/*default*/,
                                 "/toolbox/ncbi_tools++", 0, flag);
-    for (size = 0; ftp; size += ftp.gcount()) {
+    for (size = 0; ftp.good(); size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
     }
@@ -262,6 +263,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2005/05/18 20:08:33  lavr
+ * Fixes to avoid compilation failures on Ms-Windows
+ *
  * Revision 6.38  2005/05/18 18:17:36  lavr
  * Add more control over FTP stream logging
  *
