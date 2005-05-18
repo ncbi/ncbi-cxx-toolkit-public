@@ -374,8 +374,8 @@ public:
     CConn_FTPDownloadStream
     (const string&   host,
      const string&   file     = kEmptyStr,
-     const string&   user     = kEmptyStr,
-     const string&   pass     = kEmptyStr,
+     const string&   user     = "ftp",
+     const string&   pass     = "none",
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
      streamsize      offset   = 0,
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.36  2005/05/18 15:53:38  lavr
+ * Change defaults for user and pass in FTP stream ctor
+ *
  * Revision 6.35  2005/05/05 13:19:26  lavr
  * Clarify some documenting comments
  *
