@@ -59,7 +59,7 @@ public:
 };
 
 template<>
-class CContElemConverter<CCgiEntry>
+class NCBI_XCGI_EXPORT CContElemConverter<CCgiEntry>
 {
 public:
     static CCgiEntry  FromString(const string& str);
@@ -127,12 +127,22 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
 
     return is;
 }
+NCBI_XCGI_EXPORT
+extern CNcbiOstream& 
+WriteCgiCookies(CNcbiOstream& os, const CCgiCookies& cont);
 
-CNcbiOstream& WriteCgiCookies(CNcbiOstream& os, const CCgiCookies& cont);
-CNcbiIstream& ReadCgiCookies(CNcbiIstream& is, CCgiCookies& cont);
+NCBI_XCGI_EXPORT
+extern CNcbiIstream& 
+ReadCgiCookies(CNcbiIstream& is, CCgiCookies& cont);
 
-CNcbiOstream& WriteEnvironment(CNcbiOstream& os, const CNcbiEnvironment& cont);
-CNcbiIstream& ReadEnvironment(CNcbiIstream& is, CNcbiEnvironment& cont);
+
+NCBI_XCGI_EXPORT
+extern CNcbiOstream& 
+WriteEnvironment(CNcbiOstream& os, const CNcbiEnvironment& cont);
+
+NCBI_XCGI_EXPORT
+extern CNcbiIstream& 
+ReadEnvironment(CNcbiIstream& is, CNcbiEnvironment& cont);
 
 
 END_NCBI_SCOPE
@@ -141,6 +151,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/05/18 13:27:55  didenko
+* Added NCBI_XCGI_EXPORT to the new functions
+*
 * Revision 1.2  2005/05/17 19:49:50  didenko
 * Added Read/Write cookies and environment
 *
