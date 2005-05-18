@@ -365,10 +365,10 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
 {
     if (file != kEmptyStr) {
         if (offset != 0) {
-            *this << "REST " << offset << endl;
+            write("REST ", 5) << offset << endl;
         }
         if (good()) {
-            *this << "RETR " << file << endl;
+            write("RETR ", 5) << file   << endl;
         }
     }
 }
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2005/05/18 20:39:57  lavr
+ * Fix MS-Win operator<<(char*) selection in FTP stream ctor
+ *
  * Revision 6.46  2005/05/18 18:14:56  lavr
  * Add flag parameter to FTP download stream ctor
  *
