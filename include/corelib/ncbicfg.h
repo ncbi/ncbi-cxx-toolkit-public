@@ -1,5 +1,5 @@
-#ifndef NCBICFG__H
-#define NCBICFG__H
+#ifndef CORELIB___NCBICFG__H
+#define CORELIB___NCBICFG__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,9 +31,12 @@
  *
  */
 
-/// @file ncbicfg.h
-/// Defines access to miscellaneous global configuration settings.
-
+/**
+ * @file ncbicfg.h
+ *
+ * Defines access to miscellaneous global configuration settings.
+ *
+ */
 
 #include <ncbiconf.h>
 
@@ -41,13 +44,13 @@
 extern "C" {
 #endif
 
-/// Get default run path.
+/** Get default run path. */
 const char* NCBI_GetDefaultRunpath(void);
 
-/// Get run path.
+/** Get run path. */
 const char* NCBI_GetRunpath(void);
 
-/// Set run path.
+/** Set run path. */
 void        NCBI_SetRunpath(const char* runpath);
 
 #ifdef __cplusplus
@@ -55,9 +58,15 @@ void        NCBI_SetRunpath(const char* runpath);
 #endif
 
 
+#endif  /* CORELIB___NCBICFG__HPP */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/18 14:00:44  ivanov
+ * Do not use C++ comments in the .h files
+ *
  * Revision 1.3  2003/07/11 12:47:09  siyan
  * Documentation changes.
  *
@@ -69,5 +78,3 @@ void        NCBI_SetRunpath(const char* runpath);
  *
  * ===========================================================================
  */
-
-#endif  /* NCBICFG__HPP */
