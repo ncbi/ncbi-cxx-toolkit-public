@@ -1129,10 +1129,13 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
         // It's better to use str.data()[] to check string characters
         // to avoid implicit modification of the string by non-const operator[].
         _ASSERT(end > beg);
-        do {
-            --end;
-        } while ( isspace((unsigned char) str.data()[end]) );
-        _ASSERT(end >= beg && !isspace((unsigned char) str.data()[end]));
+        while (isspace((unsigned char) str.data()[--end])) {
+            if (end == beg) {
+                str.erase();
+                return;
+            }
+        }
+        _ASSERT(end >= beg  &&  !isspace((unsigned char) str.data()[end]));
         ++end;
     }
     _ASSERT(beg < end);
@@ -1958,6 +1961,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.152  2005/05/19 19:21:02  shomrat
+ * Bug fix in TruncateSpacesInPlace
+ *
  * Revision 1.151  2005/05/18 15:23:28  shomrat
  * Added starting position to IsBlank
  *
