@@ -68,7 +68,11 @@ def DowncastSerialObject(so):
     import sys
     klass = None
     for key in sys.modules.keys():
-        d = sys.modules[key].__dict__
+        module = sys.modules[key]
+        if module == None:
+            # some are like this under Windows
+            continue
+        d = module.__dict__
         if d.has_key(cname):
             if issubclass(d[cname], CSerialObject):
                 klass = d[cname]
@@ -153,7 +157,11 @@ def ReadSerialFile(fname, serial_format, obj_type = None):
     import sys
     obj = None
     for key in sys.modules.keys():
-        d = sys.modules[key].__dict__
+        module = sys.modules[key]
+        if module == None:
+            # some are like this under Windows
+            continue
+        d = module.__dict__
         if d.has_key(cname):
             if issubclass(d[cname], CSerialObject):
                 obj = d[cname]()	
@@ -888,6 +896,9 @@ webbrowser._tryorder = orig_tryorder \
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/19 17:58:32  jcherry
+ * Fixes for Python modules set to None, which exist under Windows
+ *
  * Revision 1.3  2005/05/18 13:46:05  jcherry
  * Minor output formatting tweak
  *
