@@ -571,6 +571,9 @@ QueueAndPoll(string                program,       ///< program name
         }
     } else {
         cb4o.Reset( new CRemoteBlast(get_RID) );
+        if (verbose) {
+            cb4o->SetVerbose(CRemoteBlast::eDebug);
+        }
     }
     
     if (! err.empty()) {
@@ -586,6 +589,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/05/19 21:48:37  bealer
+ * - Set verbose mode in RID case.
+ *
  * Revision 1.15  2005/02/14 19:06:26  jianye
  * modification due to constructor change in showalign.cpp
  *
