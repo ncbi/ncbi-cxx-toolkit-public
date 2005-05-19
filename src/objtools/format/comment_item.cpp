@@ -826,10 +826,12 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
     switch ( desc.Which() ) {
     case CSeqdesc::e_Comment:
         {{
-            str = desc.GetComment();
-            TrimSpacesAndJunkFromEnds(str);
-            ConvertQuotes(str);
-            ncbi::objects::AddPeriod(str);
+            if (!NStr::IsBlank(desc.GetComment())) {
+                str = desc.GetComment();
+                TrimSpacesAndJunkFromEnds(str);
+                ConvertQuotes(str);
+                ncbi::objects::AddPeriod(str);
+            }
         }}
         break;
 
@@ -860,7 +862,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         break;
     }
 
-    if ( str.empty() ) {
+    if (str.empty()  ||  str == ".") {
         return;
     }
     x_SetCommentWithURLlinks(prefix, str, suffix);
@@ -1166,6 +1168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/05/19 19:27:33  shomrat
+* Handle empty comments
+*
 * Revision 1.21  2005/04/27 17:10:12  shomrat
 * Fixed RefSeq comments
 *
