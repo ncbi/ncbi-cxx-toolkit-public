@@ -232,6 +232,12 @@ public:
     /// find any matches.
     ///
     /// @return A seqalign vector.
+    ///
+    /// @todo Separate the results for each query into discontinuous seq-aligns
+    /// separated by the subject sequence. Also, using the upcoming feature of
+    /// retrieving the query sequences, insert empty seqaligns into vector
+    /// elements where there are no results for a given query (use
+    /// x_CreateEmptySeq_align_set from blast_seqalign.cpp)
     TSeqAlignVector GetSeqAlignSets();
     
     /// Get the results of a PHI-Align request, if PHI pattern was set.
@@ -470,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/19 15:39:05  camacho
+ * Added @todo item for GetSeqAlignSets
+ *
  * Revision 1.19  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.
