@@ -1244,7 +1244,11 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
         ResidueMap::const_iterator residues = (*d)->residues.find(molecule->identifier);
         if (residues != (*d)->residues.end() &&
             residues->second[residueID - 1] == true) {
-            style = &(userStyles.find((*d)->styleID)->second);
+            StyleMap::const_iterator userStyle = userStyles.find((*d)->styleID);
+            if (userStyle == userStyles.end())
+                ERRORMSG("User style-id " << (*d)->styleID << " not found in style dictionary!");
+            else
+                style = &(userStyle->second);
             break;
         }
     }
@@ -1645,6 +1649,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/05/19 20:38:16  thiessen
+* check that user style exists before returning reference to it
+*
 * Revision 1.85  2004/06/02 21:33:13  thiessen
 * reorganize user annotation storage so that reordering is saved
 *
