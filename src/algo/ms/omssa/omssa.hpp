@@ -246,6 +246,22 @@ public:
     void InitLadders(int NumLadders, 
                      int MaxLadderSize);
 
+protected:
+
+    /**
+     * Get the bit that indicates whether a ladder was calculated
+     * 
+     * @param i the index of the ladder
+     */
+    bool GetLadderCalc(int i) const;
+
+    /**
+     * Set the bit that indicates whether a ladder was calculated
+     * 
+     * @param i the index of the ladder
+     */
+    bool& SetLadderCalc(int i);
+
 private:
     ReadDBFILEPtr rdfp; 
     //    CMSHistSet HistSet;  // score arrays
@@ -254,9 +270,27 @@ private:
     CMSMod VariableMods;  // categorized variable mods
     CMSMod FixedMods;  // categorized fixed mods
     int numseq; // number of sequences in blastdb
+
+    /**
+     * Search request
+     */
     CRef<CMSRequest> MyRequest;
+
+    /**
+     * Search response
+     */
     CRef<CMSResponse> MyResponse;
-    vector< CRef < CLadder > > BLadder, YLadder, B2Ladder, Y2Ladder;
+
+    /**
+     * ion series mass ladders
+     */
+    vector< CRef < CLadder > > BLadder,
+        YLadder,
+        B2Ladder,
+        Y2Ladder;
+
+	//bool LadderCalc[MaxModPerPep];  // have the ladders been calculated?
+    AutoPtr <bool, ArrayDeleter<bool> > LadderCalc;
 };
 
 ///////////////////  CSearch inline methods
@@ -363,6 +397,28 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
     return false;
 }
 
+/**
+ * Get the bit that indicates whether a ladder was calculated
+ * 
+ * @param i the index of the ladder
+ */
+inline
+bool CSearch::GetLadderCalc(int i) const
+{
+    return *(LadderCalc.get() + i);
+}
+
+/**
+ * Set the bit that indicates whether a ladder was calculated
+ * 
+ * @param i the index of the ladder
+ */
+inline
+bool& CSearch::SetLadderCalc(int i)
+{
+    return *(LadderCalc.get() + i);
+}
+
 /////////////////// end of CSearch inline methods
 
 
@@ -374,6 +430,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.27  2005/05/19 21:19:28  lewisg
+  add ncbifloat.h include for msvc
+
   Revision 1.26  2005/05/19 16:59:17  lewisg
   add top-down searching, fix variable mod bugs
 

@@ -38,6 +38,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbifloat.h>
 
 #include <fstream>
 #include <string>
@@ -563,16 +564,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     int ForwardIon(1), BackwardIon(4);
     SetIons(ForwardIon, BackwardIon);
 
-    // josh
-    // limit ladder size to maxproductions for +1
-    // maxproductions * 2 for +2
-    
-	//CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2],
-	   // Y2Ladder[MAXMOD2];
     InitLadders(MaxModPerPep, MyRequest->GetSettings().GetMaxproductions());
 
-	//bool LadderCalc[MaxModPerPep];  // have the ladders been calculated?
-	bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
+    LadderCalc.reset(new bool[MaxModPerPep]);
 	CAA AA;
 		
 	int Missed = MyRequest->GetSettings().GetMissedcleave()+1;  // number of missed cleaves allowed + 1
@@ -776,7 +770,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		
 		    // init bool for "Has ladder been calculated?"
 		    for(iMod = 0; iMod < MaxModPerPep; iMod++) 
-		      LadderCalc[iMod] = false;
+		      SetLadderCalc(iMod) = false;
 		
 		    OldMass = 0;
 		    NoMassMatch = true;
@@ -822,7 +816,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 #endif
 						
 						
-			    if(!LadderCalc[iMod]) {
+			    if(!GetLadderCalc(iMod)) {
 				if(CreateLadders(Sequence, 
                                  iSearch,
                                  position,
@@ -837,7 +831,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                  ForwardIon,
                                  BackwardIon
                                  ) != 0) continue;
-                LadderCalc[iMod] = true;	
+                SetLadderCalc(iMod) = true;	
 				// continue to next sequence if ladders not successfully made
 			    }
 			    else {
@@ -1452,6 +1446,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.47  2005/05/19 21:19:28  lewisg
+add ncbifloat.h include for msvc
+
 Revision 1.46  2005/05/19 20:26:41  lewisg
 make irix happy
 
