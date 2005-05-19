@@ -298,7 +298,7 @@ void CDbBlast::x_Blast_RPSInfoFree(BlastRPSInfo **ppinfo,
 void CDbBlast::x_InitRPSFields()
 {
     EBlastProgramType program = m_OptsHandle->GetOptions().GetProgramType();
-    if (program == eBlastTypeRpsBlast || program == eBlastTypeRpsTblastn) {
+    if (Blast_ProgramIsRpsBlast(program)) {
         string dbname(BlastSeqSrcGetName(m_pSeqSrc));
         x_Blast_RPSInfoInit(&m_ipRpsInfo, &m_ipRpsMmap, 
                             &m_ipRpsPssmMmap, dbname);
@@ -431,8 +431,7 @@ void CDbBlast::SetupSearch()
     bool seqsrc_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
     bool db_is_prot = (x_eProgram == eBlastTypeBlastp || 
                        x_eProgram == eBlastTypeBlastx ||
-                       x_eProgram == eBlastTypeRpsBlast ||
-                       x_eProgram == eBlastTypeRpsTblastn);
+                       Blast_ProgramIsRpsBlast(x_eProgram));
     if (seqsrc_is_prot != db_is_prot) {
         NCBI_THROW(CBlastException, eBadParameter, 
             "Database molecule does not correspond to BLAST program type");
@@ -470,8 +469,7 @@ void CDbBlast::SetupSearch()
 
         m_ipScoreBlock = 0;
 
-        if (x_eProgram == eBlastTypeRpsBlast || 
-            x_eProgram == eBlastTypeRpsTblastn)
+        if (Blast_ProgramIsRpsBlast(x_eProgram))
             scale_factor = m_ipRpsInfo->aux_info.scale_factor;
         else
             scale_factor = 1.0;
@@ -517,6 +515,29 @@ void CDbBlast::SetupSearch()
             Blast_SetPHIPatternInfo(x_eProgram, pattern_blk, m_iclsQueries, 
                                     m_ipLookupSegments, m_iclsQueryInfo);
         }
+
+        // Fill the effective search space values in the BlastQueryInfo
+        // structure, so it doesn't have to be done separately by each thread.
+        // Also these values are difficult to pass back from CDbBlastPrelim, or 
+        // from CPrelimBlastThread back to CDbBlast.
+        Int8 total_length = BlastSeqSrcGetTotLen(m_pSeqSrc);
+        Int4 num_seqs = BlastSeqSrcGetNumSeqs(m_pSeqSrc);
+        CBlastEffectiveLengthsParameters eff_len_params;
+
+        /* Initialize the effective length parameters with real values of
+           database length and number of sequences */
+        BlastEffectiveLengthsParametersNew(kOptions.GetEffLenOpts(),
+                                           total_length, num_seqs, 
+                                           &eff_len_params);
+        status = 
+            BLAST_CalcEffLengths(x_eProgram, kOptions.GetScoringOpts(), 
+                                 eff_len_params, m_ipScoreBlock, 
+                                 m_iclsQueryInfo);
+        if (status) {
+            NCBI_THROW(CBlastException, eInternal, 
+                       "BLAST_CalcEffLengths failed");
+        }        
+
 
         m_ibQuerySetUpDone = true;
     }
@@ -679,6 +700,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.67  2005/05/19 21:34:43  dondosha
+ * Use Blast_ProgramIsRpsBlast macro; returned calculation of effective lengths - it is needed because a copy of BlastQueryInfo is used in core
+ *
  * Revision 1.66  2005/05/16 17:46:28  dondosha
  * Use Blast_ProgramIsPhiBlast macro; calculation of effective lengths in SetupSearch() is not needed - it is done later in BLAST_GapAlignSetUp function in the core engine
  *
