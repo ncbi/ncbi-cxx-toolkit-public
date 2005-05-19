@@ -830,6 +830,11 @@ string CRemoteBlast::GetWarnings(void)
     return rvalue;
 }
 
+const vector<string> & CRemoteBlast::GetWarningVector()
+{
+    return m_Warn;
+}
+
 CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
 {
     string service;
@@ -1106,6 +1111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/05/19 17:58:21  bealer
+* - Add warning vector getter.
+*
 * Revision 1.24  2005/05/09 21:23:16  camacho
 * Minor change in formatting ASN.1 objects to a stream
 *
