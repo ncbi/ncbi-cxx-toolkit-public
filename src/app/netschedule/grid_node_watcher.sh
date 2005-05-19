@@ -78,7 +78,11 @@ StartNode() {
     if test $? -ne 0; then
         echo "Service not responding. Starting the $node_name node..."
 
-        $node -control_port $1 >>  ${node_name}.out  2>&1 &
+        if [ "x$2" == "x" ]; then
+            $node -control_port $1 >>  ${node_name}.out  2>&1 &
+        else 
+            $node -control_port $1 -conffile $2 >>  ${node_name}.out  2>&1 &
+        fi
         node_pid=$!
         echo $node_pid > ${node_name}.$1.pid    
 
@@ -112,9 +116,10 @@ StartNodes() {
 '
         for line in `cat ${worker_nodes_ports}`; do
             p="`echo $line | cut -f1 -d' '`"
+            c="`echo $line | cut -f2 -d' '`"
             test "x$p" = "x" && continue
             ports_from_file=1
-            StartNode $p
+            StartNode $p $c
             test $add_to_started_port_list -eq 1 &&  ports_show="$ports_show $p"
         done
         unset IFS
