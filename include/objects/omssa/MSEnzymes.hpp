@@ -67,7 +67,8 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "Whole protein",
     "Asp-N",
     "Glu-C",
-    "Asp-N+Glu-C"
+    "Asp-N+Glu-C",
+    "Top-Down"
 };
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -79,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/05/19 16:59:17  lewisg
+* add top-down searching, fix variable mod bugs
+*
 * Revision 1.2  2005/04/21 21:54:03  lewisg
 * fix Jeri's mem bug, split off mod file, add aspn and gluc
 *

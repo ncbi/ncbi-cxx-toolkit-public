@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 0));
+    SetVersion(CVersionInfo(1, 0, 2));
 }
 
 
@@ -283,7 +283,7 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("sp", "productnum", 
                     "max number of ions in each series being searched (0=all)",
                     CArgDescriptions::eInteger, 
-                    "0");
+                    "100");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -584,6 +584,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.35  2005/05/19 16:59:17  lewisg
+  add top-down searching, fix variable mod bugs
+
   Revision 1.34  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 

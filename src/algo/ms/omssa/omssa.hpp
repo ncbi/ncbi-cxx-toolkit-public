@@ -42,6 +42,8 @@
 
 #include <readdb.h>
 
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
@@ -52,10 +54,13 @@ BEGIN_SCOPE(omssa)
 // should be no bigger than the number of bits in unsigned
 #define MAXMOD 32
 // maximum number of calculable ladders
-#define MAXMOD2 1024
+#define MAXMOD2 8192
 
 // max length of sequence accession
 const int kAccLen = 20;
+
+// arbitrary high evalue
+const double kHighEval = 1e50;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -94,11 +99,12 @@ public:
     // loads spectra into peaks
     void Spectrum2Peak(CMSPeakSet& PeakSet);
 
-    //! set up modifications from both user input and mod file data
-    /*!
-    \param MyRequest the user search params and spectra
-    \param Modset list of modifications
-    */
+    /**
+     * set up modifications from both user input and mod file data
+     * 
+     * @param MyRequest the user search params and spectra
+     * @param Modset list of modifications
+     */
     void SetupMods(CRef <CMSModSpecSet> Modset);
 
     /**
@@ -131,9 +137,7 @@ public:
     int CreateLadders(unsigned char *Sequence, int iSearch, int position,
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
-		      CLadder& BLadder,
-		      CLadder& YLadder, CLadder& B2Ladder,
-		      CLadder& Y2Ladder,
+		      int iMod,
 		      unsigned ModMask,
 		      const char **Site,
 		      int *DeltaMass,
@@ -143,14 +147,14 @@ public:
               );
 
     // compare ladders to experiment
-    int CompareLadders(CLadder& BLadder,
-		       CLadder& YLadder, CLadder& B2Ladder,
-		       CLadder& Y2Ladder, CMSPeak *Peaks,
-		       bool OrLadders,  const TMassPeak *MassPeak);
-    bool CompareLaddersTop(CLadder& BLadder,
-		       CLadder& YLadder, CLadder& B2Ladder,
-		       CLadder& Y2Ladder, CMSPeak *Peaks,
-		       const TMassPeak *MassPeak);
+    int CompareLadders(int iMod,
+                       CMSPeak *Peaks,
+                       bool OrLadders,
+                       const TMassPeak *MassPeak);
+
+    bool CompareLaddersTop(int iMod, 
+                           CMSPeak *Peaks,
+                           const TMassPeak *MassPeak);
 
     void InitModIndex(int *ModIndex, 
                       int& iMod, 
@@ -222,7 +226,7 @@ public:
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
             			       const char *PepStart[],
-            			       TMassMask MassAndMask[][MAXMOD2],
+            			       TMassMask *MassAndMask,
             			       int Masses[],
             			       int EndMasses[],
             			       int NumMod[],
@@ -231,8 +235,16 @@ public:
             			       int MaxModPerPep, // max number of mods per peptide
                                int IsFixed[][MAXMOD],
                                int NumModSites[],
-                               const char *Site[][MAXMOD]
-                               );
+                               const char *Site[][MAXMOD]);
+
+    /**
+     * initialize mass ladders
+     * 
+     * @param MaxLadderSize the number of ions per ladder
+     * @param NumLadders the number of ladders per series
+     */
+    void InitLadders(int NumLadders, 
+                     int MaxLadderSize);
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -244,6 +256,7 @@ private:
     int numseq; // number of sequences in blastdb
     CRef<CMSRequest> MyRequest;
     CRef<CMSResponse> MyResponse;
+    vector< CRef < CLadder > > BLadder, YLadder, B2Ladder, Y2Ladder;
 };
 
 ///////////////////  CSearch inline methods
@@ -319,37 +332,33 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
                                   int NumModSites, 
                                   const char *Site[])
 {
-    int j, oldindex, highest;
-    const char *TopIndexSite;
+    const char *TopSite;
+    int j, OldIndex;
 
-    // set the highest possible index
-    highest = NumMod - 1; // NumMod - (iMod - (j - NumFixed)) - 1
-    // set to an impossible site
-    TopIndexSite = 0;
-    // iterate over indices, starting at the top
-    // going down to the first index for a fixed mod
-    for(j = iMod + NumFixed; j >= NumFixed; j--) {
-        // if the index is one less than the highest possible
-    	if(ModIndex[j] < highest) {
-            // keep a record of the index value
-            oldindex = ModIndex[j];
-    	    do {
-                // increment the index value
-                ModIndex[j]++;
-                // while is a fixed mod (?) and the index is one less than highest possible
-            } while (IsFixed[ModIndex[j]] == 1 && ModIndex[j] < highest);
-            // if the new position is not fixed and the index isn't out of bounds and
-            // the site is not the same as the top site (or impossible site), return true
-    	    if(IsFixed[ModIndex[j]] != 1 &&
-               ModIndex[j] <= highest &&
-               Site[ModIndex[j]] != TopIndexSite) return true;
-            // otherwise, restore the old index value
-            ModIndex[j] = oldindex;
-    	}
-        // now make the highest possible the highest index value
-        highest = ModIndex[j] - 1;
-        TopIndexSite = Site[ModIndex[j]];
-        // loop back and examine the next lowest index
+    for (j = NumFixed; j <= iMod + NumFixed; j++) {
+        OldIndex = ModIndex[j];
+        if (j == iMod + NumFixed) TopSite = 0;
+        else TopSite = Site[ModIndex[j+1]];
+
+        do {
+            ModIndex[j]++;
+        } while (IsFixed[ModIndex[j]] ==1);
+
+        if (ModIndex[j] < NumMod && Site[ModIndex[j]] != TopSite) {
+            {
+                int i, Low(0);
+                const char *OldSite(0);
+                for (i= 0; i < j; i++) {
+                    while (IsFixed[Low] ==1 || OldSite == Site[Low])
+                        Low++;
+                    ModIndex[i] = Low;
+                    OldSite = Site[Low];
+                    Low++;
+                }
+            }
+            return true;
+        }
+        ModIndex[j] = OldIndex;
     }
     return false;
 }
@@ -365,6 +374,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.26  2005/05/19 16:59:17  lewisg
+  add top-down searching, fix variable mod bugs
+
   Revision 1.25  2005/05/13 17:58:52  lewisg
   *** empty log message ***
 

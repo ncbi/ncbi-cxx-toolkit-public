@@ -174,29 +174,50 @@ class NCBI_XOMSSA_EXPORT CCleave {
 public:
     CCleave(void);
 
-    // cleaves the sequence.  Note that output is 0 and the positions
-    // of the aa's to be cleaved.  Should be interpreted as [0, pos1],
-    // (pos1, pos2], ..., (posn, end].  This weirdness is historical --
-    // the C++ string class uses an identifier for end-of-string and has
-    // no identifier for before start of string.  
-
+    /** 
+     * cleaves the sequence.  Note that output is 0 and the positions
+     * of the aa's to be cleaved.  Should be interpreted as [0, pos1],
+     * (pos1, pos2], ..., (posn, end].  This weirdness is historical --
+     * the C++ string class uses an identifier for end-of-string and has
+     * no identifier for before start of string.  
+     * 
+     * @param SeqStart pointer to start of sequence
+     * @param SeqEnd pointer to end of sequence
+     * @param PepStart ** to the start of peptide
+     * @param Masses cumulative masses of peptides
+     * @param NumMod number of variable mods
+     * @param MaxNumMod upper bound on number of variable mods
+     * @param EndMass the end masses of the peptides
+     * @param VariableMods list of variable mods
+     * @param FixedMods list of fixed modifications
+     * @param Site ** to variable mod sites
+     * @param DeltaMass the masses of the variable mods
+     * @param IntCalcMass integer AA masses
+     * @param PrecursorIntCalcMass integer precursor masses
+     * @param ModEnum variable mod types
+     * @param IsFixed is modification fixed?
+     * @param Modset list of possible mods
+     * @param Maxproductions max number of product ions to calculate
+     */
     bool CalcAndCut(const char *SeqStart, 
-			    const char *SeqEnd,  // the end, not beyond the end
-			    const char **PepStart,  // return value
-			    int *Masses,  // Masses, indexed by miss cleav, mods
-			    int& NumMod,   // num Mods
-			    int MaxNumMod, // max num mods 
-			    int *EndMasses,
-			    CMSMod &VariableMods,
-			    CMSMod &FixedMods,
-			    const char **Site,
-			    int *DeltaMass,
-			    const int *IntCalcMass,  // array of int AA masses
-                const int *PrecursorIntCalcMass, // precursor masses
-                int *ModEnum,     // the mod type at each site
-                int *IsFixed,
-                    CRef <CMSModSpecSet> Modset
-		    );
+                    const char *SeqEnd,  // the end, not beyond the end
+                    const char **PepStart,  // return value
+                    int *Masses,  // Masses, indexed by miss cleav, mods
+                    int& NumMod,   // num Mods
+                    int MaxNumMod, // max num mods 
+                    int *EndMasses,
+                    CMSMod &VariableMods,
+                    CMSMod &FixedMods,
+                    const char **Site,
+                    int *DeltaMass,
+                    const int *IntCalcMass,  // array of int AA masses
+                    const int *PrecursorIntCalcMass, // precursor masses
+                    int *ModEnum,     // the mod type at each site
+                    int *IsFixed,
+                    CRef <CMSModSpecSet> Modset,
+                    int Maxproductions
+                    );
+
 
     ///
     ///  Check to see if we are at a cleavage point
@@ -259,6 +280,11 @@ public:
                    int *ModEnum, int *IsFixed,
                    CRef <CMSModSpecSet> Modset);
 
+    /**
+     * Is the enzyme really a top-down search?
+     */
+    bool GetTopDown(void) const;
+
 protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
@@ -269,6 +295,11 @@ protected:
     // it uses the UniqueAA alphabet
     char *CleaveAt;
     int kCleave;
+    /**
+     * TopDown
+     * does this signify a top-down search
+     */
+    bool TopDown;
 };
 
 
@@ -363,6 +394,16 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
     // check specific mods
     CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod,
             Site, DeltaMass, iPepStart, ModEnum, IsFixed, false, Modset);
+}
+
+
+/**
+ * Is the enzyme really a top-down search?
+ */
+inline
+bool CCleave::GetTopDown(void) const
+{
+    return TopDown;
 }
 
 
@@ -492,6 +533,20 @@ public:
     virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
+ 
+/**
+ * eMSEnzymes_top_down
+ * top-down search of ETD spectra
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CTopDown: public CCleave {
+public:
+    CTopDown(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
 ///
 /// factory to return back object for enzyme
 ///
@@ -522,6 +577,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.22  2005/05/19 16:59:17  lewisg
+  add top-down searching, fix variable mod bugs
+
   Revision 1.21  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 

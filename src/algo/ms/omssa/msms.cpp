@@ -90,35 +90,51 @@ int CCleave::findfirst(char* Seq, int Pos, int SeqLen)
 }
 
 
-// - cuts and calculates mass using integer arithmetic
-// - MassArray contains corrected masses for the fixed mods that
-// are not position specific
-// - FixedMods contain position specific mods.
-//   - open question on how to deal with C terminal fixed mods.  E.g. how do
-//     you know you are at the Cterm K?  Doesn't matter for mass, as ANY k will
-//     increase total mass, but does matter for ladder.
-// dealing with missed cleavages:
-// - starts with existing mass array
-// - returns true on end of sequence
-// - note that the coordinates are inclusive, i.e. [start, end]
+/** 
+ * cleaves the sequence.  Note that output is 0 and the positions
+ * of the aa's to be cleaved.  Should be interpreted as [0, pos1],
+ * (pos1, pos2], ..., (posn, end].  This weirdness is historical --
+ * the C++ string class uses an identifier for end-of-string and has
+ * no identifier for before start of string.  
+ * 
+ * @param SeqStart pointer to start of sequence
+ * @param SeqEnd pointer to end of sequence
+ * @param PepStart ** to the start of peptide
+ * @param Masses cumulative masses of peptides
+ * @param NumMod number of variable mods
+ * @param MaxNumMod upper bound on number of variable mods
+ * @param EndMass the end masses of the peptides
+ * @param VariableMods list of variable mods
+ * @param FixedMods list of fixed modifications
+ * @param Site ** to variable mod sites
+ * @param DeltaMass the masses of the variable mods
+ * @param IntCalcMass integer AA masses
+ * @param PrecursorIntCalcMass integer precursor masses
+ * @param ModEnum variable mod types
+ * @param IsFixed is modification fixed?
+ * @param Modset list of possible mods
+ * @param Maxproductions max number of product ions to calculate
+ * @return true if end of sequence
+ */
 
 bool CCleave::CalcAndCut(const char *SeqStart, 
-			  const char *SeqEnd,  // the end, not beyond the end
-			  const char **PepStart,  // return value
-			  int *Masses,
-			  int& NumMod,
-			  int MaxNumMod,
-			  int *EndMasses,
-			  CMSMod &VariableMods,
-			  CMSMod &FixedMods,
-			  const char **Site,
-			  int *DeltaMass,
-			  const int *IntCalcMass,  // array of int AA masses
-              const int *PrecursorIntCalcMass, // precursor masses
-              int *ModEnum,       // the mod type at each site
-              int *IsFixed,
-                         CRef <CMSModSpecSet> Modset
-			  )
+                         const char *SeqEnd,  // the end, not beyond the end
+                         const char **PepStart,  // return value
+                         int *Masses,
+                         int& NumMod,
+                         int MaxNumMod,
+                         int *EndMasses,
+                         CMSMod &VariableMods,
+                         CMSMod &FixedMods,
+                         const char **Site,
+                         int *DeltaMass,
+                         const int *IntCalcMass,  // array of int AA masses
+                         const int *PrecursorIntCalcMass, // precursor masses
+                         int *ModEnum,       // the mod type at each site
+                         int *IsFixed,
+                         CRef <CMSModSpecSet> Modset,
+                         int Maxproductions
+                         )
 {
     char SeqChar(**PepStart);
 
@@ -136,13 +152,20 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     // note that this loop doesn't check at the end of the sequence
     for(; *PepStart < SeqEnd; (*PepStart)++) {
     	SeqChar = **PepStart;
-    
-    	// check for mods that are type AA only
-    	CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-    		    DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
-//    	CheckAAMods(eMSModType_modaa, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-//    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
-    
+
+        // if top-down enzyme
+        // if > maxproductions * 2 from beginning and < maxproductions * 2 from end
+        // skip checking for mods
+
+        if(!GetTopDown()  ||
+           (GetTopDown() && ( *PepStart - SeqStart < Maxproductions ||
+           SeqEnd - *PepStart < Maxproductions))) {
+            // check for mods that are type AA only
+            CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
+                        DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
+            //    	CheckAAMods(eMSModType_modaa, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+            //    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
+        }
     
     	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
     
@@ -183,6 +206,7 @@ CTrypsin::CTrypsin(void)
 {
     CleaveAt = "\x0a\x10";
     kCleave = 2;
+    TopDown = false;
 }
 
 bool CTrypsin::CheckCleave(char SeqChar, const char *iPepStart)
@@ -204,6 +228,7 @@ CCNBr::CCNBr(void)
 {
     CleaveAt = "\x0c";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CCNBr::CheckCleave(char SeqChar, const char *iPepStart)
@@ -224,6 +249,7 @@ CFormicAcid::CFormicAcid(void)
 {
     CleaveAt = "\x04";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CFormicAcid::CheckCleave(char SeqChar, const char *iPepStart)
@@ -244,6 +270,7 @@ CArgC::CArgC(void)
 {
     CleaveAt = "\x010";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CArgC::CheckCleave(char SeqChar, const char *iPepStart)
@@ -265,6 +292,7 @@ CChymotrypsin::CChymotrypsin(void)
 {
     CleaveAt = "\x06\x16\x14\x0b";
     kCleave = 4;
+    TopDown = false;
 }
 
 bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
@@ -289,6 +317,7 @@ CLysC::CLysC(void)
 {
     CleaveAt = "\x0a";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CLysC::CheckCleave(char SeqChar, const char *iPepStart)
@@ -310,6 +339,7 @@ CLysCP::CLysCP(void)
 {
     CleaveAt = "\x0a";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CLysCP::CheckCleave(char SeqChar, const char *iPepStart)
@@ -330,6 +360,7 @@ CPepsinA::CPepsinA(void)
 {
     CleaveAt = "\x06\x0b";
     kCleave = 2;
+    TopDown = false;
 }
 
 bool CPepsinA::CheckCleave(char SeqChar, const char *iPepStart)
@@ -350,6 +381,7 @@ CTrypCNBr::CTrypCNBr(void)
 {
     CleaveAt = "\x0a\x10\x0c";
     kCleave = 3;
+    TopDown = false;
 }
 
 bool CTrypCNBr::CheckCleave(char SeqChar, const char *iPepStart)
@@ -373,6 +405,7 @@ CTrypChymo::CTrypChymo(void)
 {
     CleaveAt = "\x06\x16\x14\x0b\x0a\x10";
     kCleave = 6;
+    TopDown = false;
 }
 
 bool CTrypChymo::CheckCleave(char SeqChar, const char *iPepStart)
@@ -399,6 +432,7 @@ CTrypsinP::CTrypsinP(void)
 {
     CleaveAt = "\x0a\x10";
     kCleave = 2;
+    TopDown = false;
 }
 
 bool CTrypsinP::CheckCleave(char SeqChar, const char *iPepStart)
@@ -417,6 +451,7 @@ CWholeProtein::CWholeProtein(void)
 {
     CleaveAt = "\x00";
     kCleave = 0;
+    TopDown = false;
 }
 
 bool CWholeProtein::CheckCleave(char SeqChar, const char *iPepStart)
@@ -430,6 +465,7 @@ CAspN::CAspN(void)
 {
     CleaveAt = "\x04";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CAspN::CheckCleave(char SeqChar, const char *iPepStart)
@@ -447,6 +483,7 @@ CGluC::CGluC(void)
 {
     CleaveAt = "\x05";
     kCleave = 1;
+    TopDown = false;
 }
 
 bool CGluC::CheckCleave(char SeqChar, const char *iPepStart)
@@ -464,6 +501,7 @@ CGluCAspN::CGluCAspN(void)
 {
     CleaveAt = "\x05\x04";
     kCleave = 2;
+    TopDown = false;
 }
 
 bool CGluCAspN::CheckCleave(char SeqChar, const char *iPepStart)
@@ -472,6 +510,22 @@ bool CGluCAspN::CheckCleave(char SeqChar, const char *iPepStart)
     if(SeqChar == CleaveAt[0] || *(iPepStart+1) == CleaveAt[1] ) { 
         return true;
     }
+    return false;
+}
+
+/**
+ *   Top-down, whole protein search
+ */
+
+CTopDown::CTopDown(void)
+{
+    CleaveAt = "\x00";
+    kCleave = 0;
+    TopDown = true;
+}
+
+bool CTopDown::CheckCleave(char SeqChar, const char *iPepStart)
+{
     return false;
 }
 
@@ -528,6 +582,9 @@ CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
     case eMSEnzymes_aspngluc:
         return new CGluCAspN;
         break;
+    case eMSEnzymes_top_down:
+         return new CTopDown;
+         break;
     default:
         return 0;
         break;
@@ -599,6 +656,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.21  2005/05/19 16:59:17  lewisg
+  add top-down searching, fix variable mod bugs
+
   Revision 1.20  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 

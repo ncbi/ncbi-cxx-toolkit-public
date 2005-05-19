@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.22 2005/05/12 16:20:41 lewisg Exp $
+-- $Id: omssa.asn,v 1.23 2005/05/19 16:59:17 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -59,7 +59,8 @@ MSEnzymes ::= INTEGER {
 	aspn (12),
 	gluc (13),
 	aspngluc (14),
-        max(15),
+	top-down (15),
+        max(16),
 	none (255)
 	}
 

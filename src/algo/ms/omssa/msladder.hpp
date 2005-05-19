@@ -61,7 +61,7 @@ const int kMSLadderMax = 10000;
 //  Contains a theoretical m/z ladder
 //
 
-class NCBI_XOMSSA_EXPORT CLadder {
+class NCBI_XOMSSA_EXPORT CLadder : public CObject {
 public:
 
     // 'tor's
@@ -170,9 +170,11 @@ bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *
     if(!delta) return false; // unusable char (-BXZ*)
 
 
-    if(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod &&
+    while(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod &&
         Site[ModIndex] == &(Sequence[Offset + Direction*i])) {
-        if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
+        if (MaskSet(ModMask, ModIndex)) { 
+            delta += DeltaMass[ModIndex];
+        }
         ModIndex += Direction;
     }
     return true;
@@ -261,6 +263,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.14  2005/05/19 16:59:17  lewisg
+  add top-down searching, fix variable mod bugs
+
   Revision 1.13  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 
