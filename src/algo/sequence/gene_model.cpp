@@ -106,11 +106,38 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         }
 
         const CMolInfo* info = s_GetMolInfo(handle);
-        if (info->IsSetBiomol()  &&  info->GetBiomol() == CMolInfo::eBiomol_genomic) {
+        if (info  &&  info->IsSetBiomol()  &&
+            info->GetBiomol() == CMolInfo::eBiomol_genomic) {
             target_id.Reset(new CSeq_id);
             target_id->Assign(alnmgr.GetSeqId(i));
             target_row = i;
             break;
+        }
+    }
+
+    if ( !target_id ) {
+        TSeqPos max_len = 0;
+        for (int i = 0;  i < alnmgr.GetNumRows();  ++i) {
+            CBioseq_Handle handle = scope.GetBioseqHandle(alnmgr.GetSeqId(i));
+            if ( !handle ) {
+                continue;
+            }
+
+            if (handle.GetBioseqLength() < max_len) {
+                continue;
+            }
+
+            switch (handle.GetInst_Mol()) {
+            case CSeq_inst::eMol_na:
+            case CSeq_inst::eMol_dna:
+                target_id.Reset(new CSeq_id);
+                target_id->Assign(alnmgr.GetSeqId(i));
+                target_row = i;
+                break;
+
+            default:
+                break;
+            }
         }
     }
 
@@ -274,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/19 15:19:18  dicuccio
+ * Added better determination of genomic sequence
+ *
  * Revision 1.2  2005/04/26 17:28:44  dicuccio
  * Remove dead code
  *
