@@ -92,9 +92,8 @@ public:
 
     void DeserializeFile(const std::string& fname,
                          ncbi::ESerialDataFormat format) {
-        ncbi::CNcbiIfstream is(fname.data());
         std::auto_ptr<ncbi::CObjectIStream>
-            istr(ncbi::CObjectIStream::Open(format, is));
+            istr(ncbi::CObjectIStream::Open(format, fname));
         istr->Read(self, self->GetThisTypeInfo());
     };
     void FromAsnFile(const std::string& fname) {
@@ -135,6 +134,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/19 18:41:43  jcherry
+ * Make sure that binary ASN.1 files are opened in binary mode for reading
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
