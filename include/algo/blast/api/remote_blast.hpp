@@ -200,6 +200,11 @@ public:
     /// @return Empty string or newline seperated list of warnings.
     string GetWarnings(void);
     
+    /// This returns any warnings encountered as a vector of strings.
+    /// @sa CRemoteBlast::GetWarnings
+    /// @return Reference to a vector of warnings.
+    const vector<string> & GetWarningVector();
+    
     /* Getting Results */
     
     /// Gets the request id (RID) associated with the search.
@@ -476,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/05/19 17:58:43  bealer
+ * - Add vector warning gettger.
+ *
  * Revision 1.20  2005/05/19 15:39:05  camacho
  * Added @todo item for GetSeqAlignSets
  *
