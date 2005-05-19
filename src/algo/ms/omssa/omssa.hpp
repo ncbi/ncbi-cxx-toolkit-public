@@ -138,7 +138,6 @@ public:
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
 		      int iMod,
-		      unsigned ModMask,
 		      const char **Site,
 		      int *DeltaMass,
 		      int NumMod,
@@ -226,13 +225,11 @@ public:
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
             			       const char *PepStart[],
-            			       TMassMask *MassAndMask,
             			       int Masses[],
             			       int EndMasses[],
             			       int NumMod[],
             			       int DeltaMass[][MAXMOD],
             			       unsigned NumMassAndMask[],
-            			       int MaxModPerPep, // max number of mods per peptide
                                int IsFixed[][MAXMOD],
                                int NumModSites[],
                                const char *Site[][MAXMOD]);
@@ -243,8 +240,7 @@ public:
      * @param MaxLadderSize the number of ions per ladder
      * @param NumLadders the number of ladders per series
      */
-    void InitLadders(int NumLadders, 
-                     int MaxLadderSize);
+    void InitLadders(void);
 
 protected:
 
@@ -261,6 +257,16 @@ protected:
      * @param i the index of the ladder
      */
     bool& SetLadderCalc(int i);
+
+
+    /**
+     * Set the mask and mass of mod bit array
+     * 
+     * @param i the index for missed cleavages
+     * @param j the index for modification combinations 
+     */
+    TMassMask& SetMassAndMask(int i, int j);
+
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -289,8 +295,21 @@ private:
         B2Ladder,
         Y2Ladder;
 
-	//bool LadderCalc[MaxModPerPep];  // have the ladders been calculated?
+	/**
+     * bool array that indicates if the ladders been calculated
+     */
     AutoPtr <bool, ArrayDeleter<bool> > LadderCalc;
+
+	/**
+     * contains bit mask of modifications and resulting mass
+     */
+	AutoPtr <TMassMask, ArrayDeleter<TMassMask> > MassAndMask;
+
+    /**
+     * maximum number of mod combinations per peptide
+     */
+    int MaxModPerPep;
+
 };
 
 ///////////////////  CSearch inline methods
@@ -419,6 +438,21 @@ bool& CSearch::SetLadderCalc(int i)
     return *(LadderCalc.get() + i);
 }
 
+
+/**
+ * Set the mask and mass of mod bit array
+ * 
+ * @param i the index for missed cleavages
+ * @param j the index for modification combinations 
+ * @param MaxModPerPep the max number of mod combinations
+ */
+inline
+TMassMask& CSearch::SetMassAndMask(int i, int j)
+{    
+    return *(MassAndMask.get() + i*MaxModPerPep+j);
+}
+
+
 /////////////////// end of CSearch inline methods
 
 
@@ -430,6 +464,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.28  2005/05/19 22:17:16  lewisg
+  move arrays to AutoPtr
+
   Revision 1.27  2005/05/19 21:19:28  lewisg
   add ncbifloat.h include for msvc
 

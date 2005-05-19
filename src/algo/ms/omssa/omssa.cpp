@@ -103,43 +103,76 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                            int iMissed,
                            CAA& AA, 
                            int iMod,
-                           unsigned ModMask,
                            const char **Site,
                            int *DeltaMass,
                            int NumMod,
                            int ForwardIon,
                            int BackwardIon)
 {
-    if(!BLadder[iMod]->CreateLadder(ForwardIon, 1, (char *)Sequence, iSearch,
-                             position, endposition, Masses[iMissed], 
-                             MassArray, AA, ModMask, Site, DeltaMass,
-                             NumMod,
-                             MyRequest->GetSettings().GetSearchctermproduct(),
-                             MyRequest->GetSettings().GetSearchb1()
-                             )) return 1;
-    if(!YLadder[iMod]->CreateLadder(BackwardIon, 1, (char *)Sequence, iSearch,
-                             position, endposition, Masses[iMissed], 
-                             MassArray, AA, ModMask, Site, DeltaMass,
-                             NumMod,
-                             MyRequest->GetSettings().GetSearchctermproduct(),
-                             MyRequest->GetSettings().GetSearchb1()
-                             )) return 1;
-    if(!B2Ladder[iMod]->CreateLadder(ForwardIon, 2, (char *)Sequence, iSearch,
-                              position, endposition, 
-                              Masses[iMissed], 
-                              MassArray, AA, ModMask, Site, DeltaMass,
-                              NumMod,
-                              MyRequest->GetSettings().GetSearchctermproduct(),
-                              MyRequest->GetSettings().GetSearchb1()
-                              )) return 1;
-    if(!Y2Ladder[iMod]->CreateLadder(BackwardIon, 2, (char *)Sequence, iSearch,
-                              position, endposition,
-                              Masses[iMissed], 
-                              MassArray, AA, ModMask, Site, DeltaMass,
-                              NumMod,
-                              MyRequest->GetSettings().GetSearchctermproduct(),
-                              MyRequest->GetSettings().GetSearchb1()
-                              )) return 1;
+    if(!BLadder[iMod]->CreateLadder(ForwardIon,
+                                    1,
+                                    (char *)Sequence,
+                                    iSearch,
+                                    position,
+                                    endposition,
+                                    Masses[iMissed], 
+                                    MassArray,
+                                    AA,
+                                    SetMassAndMask(iMissed, iMod).Mask,
+                                    Site,
+                                    DeltaMass,
+                                    NumMod,
+                                    MyRequest->GetSettings().GetSearchctermproduct(),
+                                    MyRequest->GetSettings().GetSearchb1()
+                                    )) return 1;
+    if(!YLadder[iMod]->CreateLadder(BackwardIon,
+                                    1,
+                                    (char *)Sequence,
+                                    iSearch,
+                                    position,
+                                    endposition,
+                                    Masses[iMissed], 
+                                    MassArray,
+                                    AA, 
+                                    SetMassAndMask(iMissed, iMod).Mask,
+                                    Site, 
+                                    DeltaMass,
+                                    NumMod,
+                                    MyRequest->GetSettings().GetSearchctermproduct(),
+                                    MyRequest->GetSettings().GetSearchb1()
+                                    )) return 1;
+    if(!B2Ladder[iMod]->CreateLadder(ForwardIon,
+                                     2,
+                                     (char *)Sequence,
+                                     iSearch,
+                                     position,
+                                     endposition, 
+                                     Masses[iMissed], 
+                                     MassArray, 
+                                     AA, 
+                                     SetMassAndMask(iMissed, iMod).Mask,
+                                     Site, 
+                                     DeltaMass,
+                                     NumMod,
+                                     MyRequest->GetSettings().GetSearchctermproduct(),
+                                     MyRequest->GetSettings().GetSearchb1()
+                                     )) return 1;
+    if(!Y2Ladder[iMod]->CreateLadder(BackwardIon,
+                                     2,
+                                     (char *)Sequence,
+                                     iSearch,
+                                     position,
+                                     endposition,
+                                     Masses[iMissed], 
+                                     MassArray,
+                                     AA,
+                                     SetMassAndMask(iMissed, iMod).Mask,
+                                     Site,
+                                     DeltaMass,
+                                     NumMod,
+                                     MyRequest->GetSettings().GetSearchctermproduct(),
+                                     MyRequest->GetSettings().GetSearchb1()
+                                     )) return 1;
     
     return 0;
 }
@@ -372,13 +405,11 @@ void CSearch::CountModSites(int &NumModSites,
 // create the various combinations of mods
 void CSearch::CreateModCombinations(int Missed,
                 				    const char *PepStart[],
-                				    TMassMask *MassAndMask,
                 				    int Masses[],
                 				    int EndMasses[],
                 				    int NumMod[],
                 				    int DeltaMass[][MAXMOD],
                 				    unsigned NumMassAndMask[],
-                				    int MaxModPerPep,
                                     int IsFixed[][MAXMOD],
                                     int NumModSites[],
                                     const char *Site[][MAXMOD])
@@ -410,17 +441,17 @@ void CSearch::CreateModCombinations(int Missed,
 	iModCount = 0;
 
 	// set up non-modified mass
-	MassAndMask[iMissed*MaxModPerPep+iModCount].Mass = 
+	SetMassAndMask(iMissed, iModCount).Mass = 
 	    Masses[iMissed] + EndMasses[iMissed];
-	MassAndMask[iMissed*MaxModPerPep+iModCount].Mask = 0;
+	SetMassAndMask(iMissed, iModCount).Mask = 0;
 
     int NumVariable(NumMod[iMissed]);  // number of variable mods
     int NumFixed;
     // add in fixed mods
     for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
         if(IsFixed[iMissed][iMod]) {
-            MassAndMask[iMissed*MaxModPerPep+iModCount].Mass += DeltaMass[iMissed][iMod];
-            MassAndMask[iMissed*MaxModPerPep+iModCount].Mask |= 1 << iMod;
+            SetMassAndMask(iMissed, iModCount).Mass += DeltaMass[iMissed][iMod];
+            SetMassAndMask(iMissed, iModCount).Mask |= 1 << iMod;
             NumVariable--;
         }
     }
@@ -440,14 +471,14 @@ void CSearch::CreateModCombinations(int Missed,
 	    do {
     			
     		// calculate mass
-    		MassOfMask = MassAndMask[iMissed*MaxModPerPep+0].Mass;
+    		MassOfMask = SetMassAndMask(iMissed, 0).Mass;
     		for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
     		    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod + NumFixed]];
     		// make bool mask
     		Mask = MakeBoolMask(ModIndex, iMod + NumFixed);
     		// put mass and mask into storage
-    		MassAndMask[iMissed*MaxModPerPep+iModCount].Mass = MassOfMask;
-    		MassAndMask[iMissed*MaxModPerPep+iModCount].Mask = Mask;
+    		SetMassAndMask(iMissed, iModCount).Mass = MassOfMask;
+    		SetMassAndMask(iMissed, iModCount).Mask = Mask;
 #if 0
 printf("NumMod = %d iMod = %d, Mask = \n", NumMod[iMissed], iMod);
 int iii;
@@ -468,7 +499,7 @@ printf("\n");
 	} // iMod
 
 	// sort mask and mass by mass
-	sort(MassAndMask + iMissed*MaxModPerPep, MassAndMask + iMissed*MaxModPerPep + iModCount,
+	sort(MassAndMask.get() + iMissed*MaxModPerPep, MassAndMask.get() + iMissed*MaxModPerPep + iModCount,
 	     CMassMaskCompare());
 	// keep track of number of MassAndMask
 	NumMassAndMask[iMissed] = iModCount;
@@ -512,13 +543,13 @@ void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
  * @param MaxLadderSize the number of ions per ladder
  * @param NumLadders the number of ladders per series
  */
-void CSearch::InitLadders(int NumLadders,
-                          int MaxLadderSize)
+void CSearch::InitLadders(void)
 {
+    int MaxLadderSize = MyRequest->GetSettings().GetMaxproductions();
     int i;
     if (MaxLadderSize == 0) MaxLadderSize = kMSLadderMax;
     CRef <CLadder> newLadder;
-    for (i = 0; i < NumLadders; i++) {
+    for (i = 0; i < MaxModPerPep; i++) {
         newLadder.Reset(new CLadder(MaxLadderSize));
         BLadder.push_back(newLadder);
         newLadder.Reset(new CLadder(MaxLadderSize));
@@ -558,13 +589,13 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 #endif
 
 	// set maximum number of ladders to calculate per peptide
-	int MaxModPerPep = MyRequest->GetSettings().GetMaxmods();
+	MaxModPerPep = MyRequest->GetSettings().GetMaxmods();
 	if(MaxModPerPep > MAXMOD2) MaxModPerPep = MAXMOD2;
 
     int ForwardIon(1), BackwardIon(4);
     SetIons(ForwardIon, BackwardIon);
 
-    InitLadders(MaxModPerPep, MyRequest->GetSettings().GetMaxproductions());
+    InitLadders();
 
     LadderCalc.reset(new bool[MaxModPerPep]);
 	CAA AA;
@@ -601,7 +632,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 	// calculated masses and masks
 	// TMassMask MassAndMask[MAXMISSEDCLEAVE][MaxModPerPep];
-	TMassMask MassAndMask[MAXMISSEDCLEAVE][MAXMOD2];
+	// TMassMask MassAndMask[MAXMISSEDCLEAVE][MAXMOD2];
+    MassAndMask.reset(new TMassMask[MAXMISSEDCLEAVE*MaxModPerPep]);
+
 	// the number of masses and masks for each peptide
 	unsigned NumMassAndMask[MAXMISSEDCLEAVE];
 	
@@ -752,9 +785,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, Site,
 				 DeltaMass, Masses, EndMasses, ModEnum, IsFixed, NumModSites);
 	
-        CreateModCombinations(Missed, PepStart, &MassAndMask[0][0], Masses,
+        CreateModCombinations(Missed, PepStart, Masses,
 				      EndMasses, NumMod, DeltaMass, NumMassAndMask,
-				      MaxModPerPep, IsFixed, NumModSites, Site);
+				      IsFixed, NumModSites, Site);
 
 
 		int OldMass;  // keeps the old peptide mass for comparison
@@ -779,10 +812,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		    for(iMod = 0; iMod < NumMassAndMask[iMissed]; iMod++) {
 		    
 			// have we seen this mass before?
-			if(MassAndMask[iMissed][iMod].Mass == OldMass &&
+			if(SetMassAndMask(iMissed, iMod).Mass == OldMass &&
 			   NoMassMatch) continue;
 			NoMassMatch = true;
-			OldMass = MassAndMask[iMissed][iMod].Mass;
+			OldMass = SetMassAndMask(iMissed, iMod).Mass;
 
 			// return peaks where theoretical mass is <= precursor mass + tol
 			// and >= precursor mass - tol
@@ -824,7 +857,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                  Masses,
                                  iMissed, AA,
                                  iMod,
-                                 MassAndMask[iMissed][iMod].Mask,
                                  Site[iMissed],
                                  DeltaMass[iMissed],
                                  NumMod[iMissed],
@@ -900,7 +932,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 									  *(B2Ladder[iMod]), 
 									  *(Y2Ladder[iMod]),
 									  Peaks,
-									  MassAndMask[iMissed][iMod].Mask,
+									  SetMassAndMask(iMissed, iMod).Mask,
 									  Site[iMissed],
 									  ModEnum[iMissed],
 									  NumMod[iMissed],
@@ -1446,6 +1478,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.48  2005/05/19 22:17:16  lewisg
+move arrays to AutoPtr
+
 Revision 1.47  2005/05/19 21:19:28  lewisg
 add ncbifloat.h include for msvc
 
