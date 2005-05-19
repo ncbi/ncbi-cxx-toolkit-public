@@ -89,10 +89,22 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         
         if( strncmp( request.c_str(), SHUTDOWN_CMD.c_str(), 
                      SHUTDOWN_CMD.length() ) == 0 ) {
-            m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
-            string ans = "OK:";
+
+            string host = socket.GetPeerAddress();
+            size_t pos = host.find_first_of(':');
+            if (pos != string::npos) {
+                host = host.substr(0, pos);
+            }
+            string ans = "ERR:";
+            if (m_WorkerNode.IsHostInAdminHostsList(host)) {
+                m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
+                ans = "OK:";
+                LOG_POST(Info << "Shutdown request has been received.");
+            } else {
+                ans = "ERR:Shutdown access denied.";
+                LOG_POST(Warning << "Shutdown access denied: " << host);
+            }
             socket.Write(ans.c_str(), ans.length() + 1 );
-            LOG_POST(Info << "Shutdown request has been received.");
         }
         else if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
                      VERSION_CMD.length() ) == 0 ) {
@@ -179,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2005/05/19 15:15:24  didenko
+ * Added admin_hosts parameter to worker nodes configurations
+ *
  * Revision 6.6  2005/05/16 14:02:45  didenko
  * Added GETLOAD command recognition
  *

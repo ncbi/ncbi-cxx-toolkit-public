@@ -233,6 +233,8 @@ int CGridWorkerApp::Run(void)
 
     string masters = 
             reg.GetString("server", "master_nodes", "");
+    string admin_hosts = 
+            reg.GetString("server", "admin_hosts", "");
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
@@ -289,6 +291,7 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
     m_WorkerNode->SetMasterWorkerNodes(masters);
+    m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
 
     {{
@@ -336,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/19 15:15:24  didenko
+ * Added admin_hosts parameter to worker nodes configurations
+ *
  * Revision 1.24  2005/05/17 20:25:21  didenko
  * Added control_port command line parameter
  * Added control_port number to the name of the log file

@@ -481,6 +481,28 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
     }
 }
 
+void CGridWorkerNode::SetAdminHosts(const string& hosts)
+{
+    vector<string> vhosts;
+    NStr::Tokenize(hosts, " ;,", vhosts);
+    m_AdminHosts.clear();
+    ITERATE(vector<string>, it, vhosts) {
+        unsigned int ha = CSocketAPI::gethostbyname(*it);
+        if (ha != 0)
+            m_AdminHosts.insert(ha);
+    }
+}
+
+bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
+{
+    if (m_AdminHosts.empty())
+        return true;
+    unsigned int ha = CSocketAPI::gethostbyname(host);
+    if (m_AdminHosts.find(ha) != m_AdminHosts.end())
+        return true;
+    return false;
+}
+
 bool CGridWorkerNode::x_AreMastersBusy() const
 {
     ITERATE(set<SHost>, it, m_Masters) {
@@ -532,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/19 15:15:24  didenko
+ * Added admin_hosts parameter to worker nodes configurations
+ *
  * Revision 1.26  2005/05/16 14:20:55  didenko
  * Added master/slave dependances between worker nodes.
  *

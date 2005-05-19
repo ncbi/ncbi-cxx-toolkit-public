@@ -384,6 +384,8 @@ public:
     unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
 
     void SetMasterWorkerNodes(const string& hosts);
+    void SetAdminHosts(const string& hosts);
+    bool IsHostInAdminHostsList(const string& host) const;
     /// Start jobs execution.
     ///
     void Start();
@@ -477,6 +479,7 @@ private:
         unsigned int port;
     };
     set<SHost> m_Masters;
+    set<unsigned int> m_AdminHosts;
 
     bool x_GetNextJob(string& job_key, string& input);
     void x_ReturnJob(const string& job_key);
@@ -499,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/19 15:15:23  didenko
+ * Added admin_hosts parameter to worker nodes configurations
+ *
  * Revision 1.23  2005/05/16 14:20:55  didenko
  * Added master/slave dependances between worker nodes.
  *
