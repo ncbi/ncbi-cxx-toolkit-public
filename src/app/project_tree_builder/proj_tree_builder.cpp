@@ -1217,6 +1217,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     if ( process_projects ) {
         ProcessMakeInFile(node_path, makefiles, maketype);
         TFiles::const_iterator p = makefiles->m_In.find(node_path);
+        if (p != makefiles->m_In.end()) {
         const CSimpleMakeFileContents& makefile = p->second;
         CSimpleMakeFileContents::TContents::const_iterator k;
         int j;
@@ -1262,6 +1263,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                     libprojects["Makefile." + *i + ".lib"] = max(maketype, libtype[j]);
                 }
             }
+        }
         }
     }
 
@@ -1546,6 +1548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/19 13:55:17  gouriano
+ * Check if Makefile.in is in the tree before processing it
+ *
  * Revision 1.26  2005/05/13 15:37:56  gouriano
  * Made preserving unresolved macros optional
  *
