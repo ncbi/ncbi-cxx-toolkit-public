@@ -240,6 +240,9 @@ static void s_MergeDuplicates
 (CReferenceItem::TReferences& refs,
  CBioseqContext& ctx)
 {
+    static const CSeq_loc::TOpFlags kMergeFlags = 
+        CSeq_loc::fSort | CSeq_loc::fStrand_Ignore | CSeq_loc::fMerge_All;
+
     if ( refs.size() < 2 ) {
         return;
     }
@@ -306,11 +309,8 @@ static void s_MergeDuplicates
 
         if (remove) {
             if (merge) {
-                CRef<CSeq_loc> merged_loc = Seq_loc_Add(
-                    curr_ref.GetLoc(),
-                    (*prev)->GetLoc(),
-                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
-                    &ctx.GetScope());
+                CRef<CSeq_loc> merged_loc = Seq_loc_Add(curr_ref.GetLoc(),
+                    (*prev)->GetLoc(), kMergeFlags, &ctx.GetScope());
                 (*prev)->SetLoc(merged_loc);
             }
             curr = refs.erase(curr);
@@ -329,8 +329,10 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
     }}
 
     {{
-        // merge duplicate references
-        s_MergeDuplicates(refs, ctx);
+        // merge duplicate references (except for dump mode)
+        if (!ctx.Config().IsModeDump()) {
+            s_MergeDuplicates(refs, ctx);
+        }
     }}
 
     {{
@@ -1322,6 +1324,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/05/19 19:33:27  shomrat
+* Ignore strand when merging duplicate references; Merge if not dump mode
+*
 * Revision 1.31  2005/04/27 17:13:47  shomrat
 * Fixed reference comparison
 *
