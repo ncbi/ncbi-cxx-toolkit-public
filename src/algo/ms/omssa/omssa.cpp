@@ -571,7 +571,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	   // Y2Ladder[MAXMOD2];
     InitLadders(MaxModPerPep, MyRequest->GetSettings().GetMaxproductions());
 
-	bool LadderCalc[MaxModPerPep];  // have the ladders been calculated?
+	//bool LadderCalc[MaxModPerPep];  // have the ladders been calculated?
+	bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
 	CAA AA;
 		
 	int Missed = MyRequest->GetSettings().GetMissedcleave()+1;  // number of missed cleaves allowed + 1
@@ -605,7 +606,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 
 	// calculated masses and masks
-	TMassMask MassAndMask[MAXMISSEDCLEAVE][MaxModPerPep];
+	// TMassMask MassAndMask[MAXMISSEDCLEAVE][MaxModPerPep];
+	TMassMask MassAndMask[MAXMISSEDCLEAVE][MAXMOD2];
 	// the number of masses and masks for each peptide
 	unsigned NumMassAndMask[MAXMISSEDCLEAVE];
 	
@@ -1450,6 +1452,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.46  2005/05/19 20:26:41  lewisg
+make irix happy
+
 Revision 1.45  2005/05/19 16:59:17  lewisg
 add top-down searching, fix variable mod bugs
 
