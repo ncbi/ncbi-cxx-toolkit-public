@@ -78,10 +78,14 @@ StartNode() {
     if test $? -ne 0; then
         echo "Service not responding. Starting the $node_name node..."
 
-        if [ "x$2" == "x" ]; then
+        conf=$2
+        test "$1" == "$conf" &&  conf=''
+        if [ "x$conf" == "x" ]; then
+            echo "$node -control_port $1"
             $node -control_port $1 >>  ${node_name}.out  2>&1 &
         else 
-            $node -control_port $1 -conffile $2 >>  ${node_name}.out  2>&1 &
+            echo "$node -control_port $1 -conffile $conf "
+            $node -control_port $1 -conffile $conf >>  ${node_name}.out  2>&1 &
         fi
         node_pid=$!
         echo $node_pid > ${node_name}.$1.pid    
