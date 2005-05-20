@@ -108,6 +108,8 @@ BEGIN_NCBI_SCOPE
 // Default buffer size, used to read/write files
 const size_t kDefaultBufferSize = 32*1024;
 
+// List of files for CFileDeleteAtExit class
+static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -747,10 +749,10 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
 void CDirEntry::SetDefaultModeGlobal(EType entry_type, TMode user_mode, 
                                      TMode group_mode, TMode other_mode)
 {
-    if (entry_type >= eUnknown ) {
+    if ( entry_type >= eUnknown ) {
         return;
     }
-    if (entry_type == eDir ) {
+    if ( entry_type == eDir ) {
         if ( user_mode == fDefault ) {
             user_mode = fDefaultDirUser;
         }
@@ -927,17 +929,17 @@ bool CDirEntry::GetTime(CTime* modification,
 
     if ( modification ) {
         modification->SetTimeT(st.orig.st_mtime);
-	if ( st.mtime_nsec )
+	    if ( st.mtime_nsec )
             modification->SetNanoSecond(st.mtime_nsec);
     }
     if ( creation ) {
         creation->SetTimeT(st.orig.st_ctime);
-	if ( st.ctime_nsec )
+	    if ( st.ctime_nsec )
             creation->SetNanoSecond(st.ctime_nsec);
     }
     if ( last_access ) {
         last_access->SetTimeT(st.orig.st_atime);
-	if ( st.atime_nsec )
+    	if ( st.atime_nsec )
             last_access->SetNanoSecond(st.atime_nsec);
     }
     return true;
@@ -1214,7 +1216,8 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 {
     struct stat st;
-    int         errcode;
+    int errcode;
+
 #if defined(NCBI_OS_MSWIN)
     errcode = stat(GetPath().c_str(), &st);
 #elif defined(NCBI_OS_UNIX)
@@ -1252,7 +1255,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 #endif
     }
     // Check regular file bit last
-    if ( (st.st_mode & S_IFREG)  == S_IFREG ) {
+    if ( (st.st_mode & S_IFREG) == S_IFREG ) {
         return eFile;
     }
     return eUnknown;
@@ -1264,7 +1267,7 @@ string CDirEntry::LookupLink(void)
 #if defined(NCBI_OS_UNIX)
     char buf[PATH_MAX];
     string name;
-    int  length = readlink(GetPath().c_str(), buf, sizeof(buf));
+    int length = readlink(GetPath().c_str(), buf, sizeof(buf));
     if (length > 0) {
         name.assign(buf, length);
     }
@@ -1345,7 +1348,6 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     if ( dst.Exists() ) {
         return false;
     }
-    
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
         return false;
@@ -1604,7 +1606,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 
     try {
 
-        //--------------------------------------------------------------------
+        //
         // Get SID for new owner
         //
 
@@ -1634,7 +1636,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             throw(0);
         }
 
-        //--------------------------------------------------------------------
+        //
         // Change owner
         //
 
@@ -1810,7 +1812,6 @@ static bool s_CopyAttrs(const char* from, const char* to,
 #elif defined(NCBI_OS_MSWIN)
 
     CDirEntry efrom(from), eto(to);
-
 
     WIN32_FILE_ATTRIBUTE_DATA attr;
     if ( !::GetFileAttributesEx(from, GetFileExInfoStandard, &attr) ) {
@@ -2023,9 +2024,9 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     if ( !buf_size ) {
         buf_size = kDefaultBufferSize;
     }
-    char* buf1 = new char[buf_size];
-    char* buf2 = new char[buf_size];
-    bool equal = true;
+    char* buf1  = new char[buf_size];
+    char* buf2  = new char[buf_size];
+    bool  equal = true;
 
     while ( f1.good()  &&  f2.good() ) {
         // Fill buffers
@@ -2167,6 +2168,9 @@ fstream* CFile::CreateTmpFile(const string& filename,
         return 0;
     }
     fstream* stream = new CTmpStream(tmpname.c_str(), mode);
+    // Try to remove file and OS will automatically delete it after
+    // the last file descriptor to it is closed (works only on UNIXes)
+    CFile(tmpname).Remove();
     return stream;
 }
 
@@ -2768,6 +2772,41 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 
 //////////////////////////////////////////////////////////////////////////////
 //
+// CFileDeleteList / CFileDeleteAtExit
+//
+
+CFileDeleteList::~CFileDeleteList()
+{
+    ITERATE (TNames, name, m_Names) {
+        CDirEntry entry(*name);
+        if ( entry.IsDir()) {
+            CDir(*name).Remove(CDir::eRecursive);
+        } else {
+            entry.Remove();        
+        }
+    }
+}
+
+
+void CFileDeleteAtExit::Add(const string& entryname)
+{
+    s_DeleteAtExitFileList->Add(entryname);
+}
+
+const CFileDeleteList& CFileDeleteAtExit::GetDeleteList(void)
+{
+    return *s_DeleteAtExitFileList;
+}
+
+void CFileDeleteAtExit::SetDeleteList(CFileDeleteList& list)
+{
+    *s_DeleteAtExitFileList = list;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
 // CMemoryFile
 //
 
@@ -2813,8 +2852,16 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
     switch (protect_attr) {
         case CMemoryFile_Base::eMMP_Read:
             attrs->map_access  = FILE_MAP_READ;
-            attrs->map_protect = PAGE_READONLY;
-            attrs->file_access = GENERIC_READ;
+            //+++ Like to UNIX: do not lock a file/page in the private mode.
+            //if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
+            // Enable to write to mapped file/page somewhere else...
+            attrs->map_protect = PAGE_READWRITE;
+            attrs->file_access = GENERIC_READ | GENERIC_WRITE;
+            //} else {
+            //    attrs->map_protect = PAGE_READONLY;
+            //    attrs->file_access = GENERIC_READ;
+            //}
+            //---
             break;
         case CMemoryFile_Base::eMMP_Write:
         case CMemoryFile_Base::eMMP_ReadWrite:
@@ -2840,6 +2887,22 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
 
 #elif defined(NCBI_OS_UNIX)
 
+    switch (share_attr) {
+        case CMemoryFile_Base::eMMS_Shared:
+            attrs->map_access  = MAP_SHARED;
+            // Read + write except, eMMP_Read mode
+            attrs->file_access = O_RDWR;
+            break;
+        case CMemoryFile_Base::eMMS_Private:
+            attrs->map_access  = MAP_PRIVATE;
+            // In the private mode writing to the mapped region
+            // do not affect the original file, so we can open it
+            // in the read-only mode.
+            attrs->file_access = O_RDONLY;
+            break;
+        default:
+            _TROUBLE;
+    }
     switch (protect_attr) {
         case CMemoryFile_Base::eMMP_Read:
             attrs->map_protect = PROT_READ;
@@ -2847,30 +2910,9 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
             break;
         case CMemoryFile_Base::eMMP_Write:
             attrs->map_protect = PROT_WRITE;
-            if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
-                // Must be read + write
-                attrs->file_access = O_RDWR;
-            } else {
-                attrs->file_access = O_RDONLY;
-            }
             break;
         case CMemoryFile_Base::eMMP_ReadWrite:
             attrs->map_protect = PROT_READ | PROT_WRITE;
-            if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
-                attrs->file_access = O_RDWR;
-            } else {
-                attrs->file_access = O_RDONLY;
-            }
-            break;
-        default:
-            _TROUBLE;
-    }
-    switch (share_attr) {
-        case CMemoryFile_Base::eMMS_Shared:
-            attrs->map_access = MAP_SHARED;
-            break;
-        case CMemoryFile_Base::eMMS_Private:
-            attrs->map_access = MAP_PRIVATE;
             break;
         default:
             _TROUBLE;
@@ -3303,6 +3345,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2005/05/20 11:23:46  ivanov
+ * Added new classes CFileDeleteList and CFileDeleteAtExit.
+ * CMemoryFile[Map](): changed default share attribute from eMMS_Shared.
+ * s_TranslateAttrs(): changed read private mapping mode for MS Windows
+ * alike UNIX (do not lock file exclusively).
+ *
  * Revision 1.97  2005/04/28 14:08:26  ivanov
  * Added time_t and CTime versions of CDirEntry::IsNewer()
  *
