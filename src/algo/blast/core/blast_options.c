@@ -249,6 +249,7 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options)
 
    (*options)->genetic_code = BLAST_GENETIC_CODE;
 
+   /** @todo the code below should be deprecated */
    status = SBlastFilterOptionsNew(&((*options)->filtering_options), eEmpty);
    
    return status;
@@ -398,12 +399,19 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
     (*options)->ePrelimGapExt = eDynProgExt;
     (*options)->eTbackExt = eDynProgTbck;
 
+    /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
+     * program is blastp? */
+    if (program == eBlastTypePsiBlast) {
+        (*options)->compositionBasedStats = TRUE;
+    }
+
 	return 0;
 }
 
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   EBlastProgramType program, Int4 greedy, double x_dropoff, double x_dropoff_final)
+   EBlastProgramType program, Int4 greedy, double x_dropoff, 
+   double x_dropoff_final)
 {
    if (!options)
       return 1;
@@ -428,6 +436,10 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
          options->eTbackExt = eDynProgTbck;
          break;
       }
+   }
+
+   if (program == eBlastTypePsiBlast) {
+       options->compositionBasedStats = TRUE;
    }
 
    if (x_dropoff)
@@ -773,15 +785,14 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
            (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
        break;
    }
-   
+
    return 0;
 }
 
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program_number, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean variable_wordsize,
-   Boolean use_pssm)
+   Int4 word_size, Boolean variable_wordsize)
 {
    if (!options)
       return 1;
@@ -809,8 +820,10 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    /* otherwise, use the default */
 
-   if (use_pssm)
-      options->use_pssm = use_pssm;
+   if (program_number == eBlastTypePsiBlast) { /* FIXME: or PSI-TBLASTN */
+      options->use_pssm = TRUE;
+   }
+
    if (Blast_ProgramIsRpsBlast(program_number))
       options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
@@ -1189,6 +1202,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.167  2005/05/20 18:26:54  camacho
+ * Deduce LookupTableOptions::use_pssm from program type
+ *
  * Revision 1.166  2005/05/16 12:22:07  madden
  * Removal of prelim_hitlist_size as an option
  *
