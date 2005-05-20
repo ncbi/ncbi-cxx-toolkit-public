@@ -1021,6 +1021,11 @@ CNamedPipe::~CNamedPipe(void)
 {
     Close();
     delete m_NamedPipeHandle;
+#if defined(NCBI_OS_UNIX)
+    if ( IsServerSide()  &&  !m_PipeName.empty() ) {
+        unlink(m_PipeName.c_str());
+    }
+#endif
 }
 
 
@@ -1131,7 +1136,7 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
 }
 
 
-void CNamedPipe::x_SetPipeName(const string& pipename)
+void CNamedPipe::x_SetName(const string& pipename)
 {
     const char* separators = ":/\\";
     if ( pipename.find_first_of(separators) != NPOS ) {
@@ -1189,7 +1194,7 @@ EIO_Status CNamedPipeClient::Open(const string&    pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(&pipebufsize);
-    x_SetPipeName(pipename);
+    x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
 
     SetTimeout(eIO_Open, timeout);
@@ -1233,7 +1238,7 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(&pipebufsize);
-    x_SetPipeName(pipename);
+    x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
 
     SetTimeout(eIO_Open, timeout);
@@ -1269,6 +1274,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/05/20 16:04:47  ivanov
+ * UNIX: Try to remove named pipe's corresponding file on the server side
+ * in the CNamedPipe destructor
+ *
  * Revision 1.29  2005/04/20 20:51:29  lavr
  * Use socklen_t in address length args of bind() and connect()
  *
