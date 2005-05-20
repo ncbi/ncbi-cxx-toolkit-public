@@ -57,10 +57,10 @@ int main(int argc, char* argv[])
     char        buf[1024];
     CONNECTOR   connector;
     FILE*       data_file;
+    size_t      size, n;
     STimeout    timeout;
     EIO_Status  status;
     CONN        conn;
-    size_t      n;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
     srand(g_NCBI_ConnectRandomSeed);
@@ -142,22 +142,6 @@ int main(int argc, char* argv[])
         printf("<EOF>\n");
     }
 
-    if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain) != eIO_Success)
-        CORE_LOG(eLOG_Fatal, "Cannot write NLST command");
-
-    CORE_LOG(eLOG_Note, "NLST command output:");
-    first = 1/*true*/;
-    do {
-        status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
-        if (n != 0) {
-            printf("%.*s", (int) n, buf);
-            first = 0/*false*/;
-        }
-    } while (status == eIO_Success);
-    if (first) {
-        printf("<EOF>\n");
-    }
-
     if (CONN_Write(conn, k_chdir, sizeof(k_chdir) - 1, &n, eIO_WritePlain)
         != eIO_Success) {
         CORE_LOGF(eLOG_Fatal, ("Cannot execute %.*s",
@@ -169,25 +153,50 @@ int main(int argc, char* argv[])
         CORE_LOGF(eLOG_Fatal, ("Cannot write %s", k_file));
     }
 
+    size = 0;
     do {
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
-        if (n != 0)
+        if (n != 0) {
             fwrite(buf, n, 1, data_file);
+            size += n;
+        }
         if (argc > 1  &&  rand() % 100 == 0) {
             aborting = 1;
             break;
         }
     } while (status == eIO_Success);
-   
+
+    if (!aborting  ||  (rand() & 1) == 0) {
+        if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain)
+            != eIO_Success) {
+            CORE_LOG(eLOG_Fatal, "Cannot write gobbled NLST command");
+        }
+
+        CORE_LOG(eLOG_Note, "Gobbled NLST command output (should be empty):");
+        first = 1/*true*/;
+        do {
+            status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
+            if (n != 0) {
+                printf("%.*s", (int) n, buf);
+                first = 0/*false*/;
+            }
+        } while (status == eIO_Success);
+        if (first) {
+            printf("<EOF>\n");
+        }
+    }
+
     if (CONN_Close(conn) != eIO_Success) {
         CORE_LOGF(eLOG_Fatal, ("Error %s FTP connection",
                                aborting ? "aborting" : "closing"));
     }
 
-    /* Cleanup and Exit */
+    /* Cleanup and exit */
     fclose(data_file);
     if (aborting) {
         remove("test_ncbi_ftp_connector.out");
+    } else {
+        CORE_LOGF(eLOG_Note, ("%lu bytes downloaded", (unsigned long) size));
     }
 
     CORE_LOG(eLOG_Note, "Test completed");
@@ -199,6 +208,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/05/20 12:11:29  lavr
+ * Test ABOR with command and connection closure (both should now work)
+ *
  * Revision 1.6  2005/05/20 11:41:47  lavr
  * Separate control and data FTP connection debugging setting
  *
