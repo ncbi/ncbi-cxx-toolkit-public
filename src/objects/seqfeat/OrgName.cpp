@@ -39,6 +39,7 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 #include <objects/seqfeat/PartialOrgName.hpp>
 #include <objects/seqfeat/TaxElement.hpp>
@@ -110,6 +111,19 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 }
 
 
+void COrgName::BasicCleanup(void)
+{
+	CLEAN_STRING_MEMBER(Attrib);
+	CLEAN_STRING_MEMBER(Lineage);
+	CLEAN_STRING_MEMBER(Div);
+	
+	if (IsSetMod()) {
+		NON_CONST_ITERATE (TMod, it, SetMod()) {
+			(*it)->BasicCleanup();
+		}
+	}
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -119,6 +133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/20 13:36:54  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.3  2004/05/19 17:26:04  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

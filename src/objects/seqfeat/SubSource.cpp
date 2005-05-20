@@ -36,6 +36,8 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
+#include <objects/general/cleanup_utils.hpp>
+#include <serial/enumvalues.hpp>
 
 // generated includes
 #include <objects/seqfeat/SubSource.hpp>
@@ -113,6 +115,23 @@ void CSubSource::GetLabel(string* str) const
     }
 }
 
+
+CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str)
+{
+    string name = NStr::TruncateSpaces(str);
+    NStr::ToLower(name);
+    replace(name.begin(), name.end(), '_', '-');
+
+    return ENUM_METHOD_NAME(ESubtype)()->FindValue(str);
+}
+
+
+void CSubSource::BasicCleanup(void)
+{
+    CLEAN_STRING_MEMBER(Name);
+    CLEAN_STRING_MEMBER(Attrib);
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -122,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/20 13:36:54  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.1  2005/02/23 20:24:19  dicuccio
 * Initial revision - added GetLabel()
 *

@@ -44,6 +44,7 @@
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -103,6 +104,9 @@ public:
     int Compare(const CSeq_feat& f2) const;
     int Compare(const CSeq_feat& f2,
                 const CSeq_loc& mapped1, const CSeq_loc& mapped2) const;
+
+    /// perform basic cleanup functionality (trim spaces from strings etc.)
+    void BasicCleanup(ECleanupMode mode = eCleanup_GenBank);
 
 private:
 
@@ -167,6 +171,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2005/05/20 13:36:22  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.19  2004/10/13 13:57:02  shomrat
 * GetNamedQual return const string& instead of string
 *

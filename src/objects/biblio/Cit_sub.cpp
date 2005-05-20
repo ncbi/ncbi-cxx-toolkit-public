@@ -66,6 +66,34 @@ void CCit_sub::GetLabel(string* label, bool unique) const
 }
 
 
+void CCit_sub::BasicCleanup(bool fix_initials)
+{
+    CRef<TAuthors> authors;
+    if (IsSetAuthors()) {
+        authors.Reset(&SetAuthors());
+        authors->BasicCleanup(fix_initials);
+    }
+
+    if (IsSetImp()) {
+        TImp& imp = SetImp();
+        if (authors  &&  !authors->IsSetAffil()  &&  imp.IsSetPub()) {
+            authors->SetAffil(imp.SetPub());
+            imp.ResetPub();
+        }
+        if (!IsSetDate()  &&  imp.IsSetDate()) {
+            SetDate(imp.SetDate());
+            imp.ResetDate();
+        }
+        if (!imp.IsSetPub()) {
+            ResetImp();
+        }
+    }
+    if (authors  &&  authors->IsSetAffil()) {
+        //!!! TO DO
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -75,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/20 13:32:48  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.3  2004/10/22 14:15:39  shomrat
 * GetLabel - add unique, changed date format
 *

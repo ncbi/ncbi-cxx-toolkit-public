@@ -60,6 +60,9 @@ public:
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
 
+    // Basic data cleanup
+    void BasicCleanup(bool fix_initials);
+
 private:
     // Prohibit copy constructor and assignment operator
     CCit_let(const CCit_let& value);
@@ -95,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/05/20 13:32:18  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.2  2004/08/19 13:03:23  dicuccio
 * Added missing include for Cit_book.hpp
 *

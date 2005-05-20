@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2005/05/20 13:36:54  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.2  2004/05/19 17:26:04  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -74,6 +77,22 @@ void CProt_ref::GetLabel(string* label) const
     }
 }
 
+
+// perform basic cleanup functionality (trim spaces from strings etc.)
+void CProt_ref::BasicCleanup(void)
+{
+    CLEAN_STRING_MEMBER(Desc);
+    CLEAN_STRING_LIST(Name);
+    CLEAN_STRING_LIST(Ec);
+    CLEAN_STRING_LIST(Activity);
+
+    if (IsSetProcessed()  &&  !IsSetName()) {
+        TProcessed processed = GetProcessed();
+        if (processed == eProcessed_preprotein  ||  processed == eProcessed_mature) {
+            SetName().push_back("unnamed");
+        }
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

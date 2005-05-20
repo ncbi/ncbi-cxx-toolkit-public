@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/05/20 13:33:17  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.2  2002/12/26 12:42:22  dicuccio
  * Added Win32 export specifiers
  *
@@ -70,11 +73,15 @@ public:
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
 
+    // Basic data cleanup
+    void BasicCleanup(void);
+
 private:
     // Prohibit copy constructor and assignment operator
     CPub_equiv(const CPub_equiv& value);
     CPub_equiv& operator=(const CPub_equiv& value);
 
+	void x_FlattenPubEquiv(void);
 };
 
 /////////////////// CPub_equiv inline methods

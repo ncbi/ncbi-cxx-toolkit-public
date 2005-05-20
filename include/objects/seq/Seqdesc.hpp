@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seq/Seqdesc_.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -65,6 +66,9 @@ public:
     // Appends a label for a CSeqdesc to label. Label may be based on just the
     // type of CSeqdesc, just the content, or both.
     void GetLabel(string* const label, ELabelType label_type) const;
+
+    // Basic data cleanup
+    void BasicCleanup(ECleanupMode mode = eCleanup_GenBank);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -96,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/05/20 13:34:02  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.3  2002/12/27 21:46:59  kuznets
 * class Seqdesc received NCBI_SEQ_EXPORT declaration.
 *

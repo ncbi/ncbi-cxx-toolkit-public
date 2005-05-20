@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2005/05/20 13:36:22  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.3  2002/12/26 12:43:27  dicuccio
  * Added Win32 export specifiers
  *
@@ -79,11 +82,16 @@ public:
     // Sets tax id into Org_ref contents.
     // Returns old value of tax id or 0 if it was not found
     int SetTaxId( int tax_id );
+
+    // Basic data cleanup
+    void BasicCleanup(void);
+
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);
     COrg_ref& operator=(const COrg_ref& value);
 
+    void x_ModToOrgMod(void);
 };
 
 

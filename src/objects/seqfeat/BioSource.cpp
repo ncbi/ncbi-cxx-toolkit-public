@@ -41,6 +41,8 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <algorithm>
 
 // generated classes
 
@@ -88,6 +90,117 @@ int CBioSource::GetGenCode(void) const
 }
 
 
+void CBioSource::BasicCleanup(void)
+{
+    if (IsSetOrg()) {
+        SetOrg().BasicCleanup();
+        // convert COrg_reg.TMod string to SubSource objects
+        x_OrgModToSubtype();
+    }
+    if (IsSetSubtype()) {
+        x_SubtypeCleanup();
+    }
+}
+
+
+static CSubSource* s_StringToSubSource(const string& str)
+{
+    size_t pos = str.find('=');
+    if (pos == NPOS) {
+        pos = str.find(' ');
+    }
+    string subtype = str.substr(0, pos);
+    try {
+        CSubSource::TSubtype val = CSubSource::GetSubtypeValue(subtype);
+
+        string name;
+        if (pos != NPOS) {
+            string name = str.substr(pos + 1);
+        }
+        NStr::TruncateSpacesInPlace(name);
+
+        if (val == CSubSource::eSubtype_germline    ||
+            val == CSubSource::eSubtype_rearranged  ||
+            val == CSubSource::eSubtype_transgenic  ||
+            val == CSubSource::eSubtype_environmental_sample) {
+            if (NStr::IsBlank(name)) {
+                name = " ";
+            }
+        }
+
+        if (NStr::IsBlank(name)) {
+            return NULL;
+        }
+
+        size_t num_spaces = 0;
+        bool has_comma = false;
+        ITERATE (string, it, name) {
+            if (isspace(*it)) {
+                ++num_spaces;
+            } else if (*it == ',') {
+                has_comma = true;
+                break;
+            }
+        }
+
+        if (num_spaces > 4  ||  has_comma) {
+            return NULL;
+        }
+        return new CSubSource(val, name);
+    } catch (CSerialException&) {}
+    return NULL;
+}
+
+
+void CBioSource::x_OrgModToSubtype(void)
+{
+    _ASSERT(IsSetOrg());
+
+    if (!SetOrg().IsSetMod()) {
+        return;
+    }
+    TOrg::TMod& mod_list = SetOrg().SetMod();
+
+    TOrg::TMod::iterator it = mod_list.begin();
+    while (it != mod_list.end()) {
+        CRef<CSubSource> subsrc(s_StringToSubSource(*it));
+        if (subsrc) {
+            SetSubtype().push_back(subsrc);
+            it = mod_list.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+struct SSubsourceCompare
+{
+    bool operator()(const CRef<CSubSource>& s1, const CRef<CSubSource>& s2) {
+        return s1->IsSetSubtype()  &&  s2->IsSetSubtype()  &&
+            s1->GetSubtype() < s2->GetSubtype();
+    }
+};
+
+
+void CBioSource::x_SubtypeCleanup(void)
+{
+    _ASSERT(IsSetSubtype());
+
+    TSubtype& subtypes = SetSubtype();
+
+    TSubtype::iterator it = subtypes.begin();
+    while (it != subtypes.end()) {
+        if (!*it) {
+            it = subtypes.erase(it);
+        } else {
+            (*it)->BasicCleanup();
+            ++it;
+        }
+    }
+    subtypes.sort(SSubsourceCompare());
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -97,6 +210,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2005/05/20 13:36:54  shomrat
+* Added BasicCleanup()
+*
 * Revision 6.3  2004/05/19 17:26:04  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

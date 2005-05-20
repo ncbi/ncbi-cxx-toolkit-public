@@ -145,6 +145,22 @@ void CSeq_entry::GetLabel(string* label, ELabelType type) const
 }
 
 
+// perform basic cleanup functionality (trim spaces from strings etc.)
+void CSeq_entry::BasicCleanup(void)
+{
+    switch (Which()) {
+    case e_Seq:
+        SetSeq().BasicCleanup();
+        break;
+    case e_Set:
+        SetSet().BasicCleanup();
+        break;
+    case e_not_set:
+    default:
+        break;
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -153,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.32  2005/05/20 13:35:14  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.31  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *

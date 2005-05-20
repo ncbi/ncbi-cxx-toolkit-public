@@ -40,6 +40,7 @@
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/seqset/Bioseq_set.hpp>
@@ -48,6 +49,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 // generated classes
 
@@ -193,6 +196,44 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
 }
 
 
+static ECleanupMode s_GetCleanupMode(const CBioseq_set& bsst)
+{
+    CTypeConstIterator<CBioseq> seq(ConstBegin(bsst));
+    if (seq) {
+        ITERATE (CBioseq::TId, it, seq->GetId()) {
+            const CSeq_id& id = **it;
+            if (id.IsEmbl()  ||  id.IsTpe()) {
+                return eCleanup_EMBL;
+            } else if (id.IsDdbj()  ||  id.IsTpd()) {
+                return eCleanup_DDBJ;
+            } else if (id.IsSwissprot()) {
+                return eCleanup_SwissProt;
+            }
+        }
+    }
+    return eCleanup_GenBank;
+}
+
+
+void CBioseq_set::BasicCleanup(void)
+{
+    ECleanupMode mode = s_GetCleanupMode(*this);
+
+    if (IsSetAnnot()) {
+        NON_CONST_ITERATE (TAnnot, it, SetAnnot()) {
+            (*it)->BasicCleanup(mode);
+        }
+    }
+    if (IsSetDescr()) {
+        SetDescr().BasicCleanup(mode);
+    }
+    if (IsSetSeq_set()) {
+        NON_CONST_ITERATE (TSeq_set, it, SetSeq_set()) {
+            (*it)->BasicCleanup();
+        }
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -200,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/20 13:35:14  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.9  2004/05/19 17:26:48  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

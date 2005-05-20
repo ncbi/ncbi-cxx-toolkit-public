@@ -114,6 +114,30 @@ void CCit_gen::GetLabel(string* label, bool unique) const
 }
 
 
+void CCit_gen::BasicCleanup(bool fix_initials)
+{
+    if (IsSetAuthors()) {
+        SetAuthors().BasicCleanup(fix_initials);
+    }
+    if (IsSetCit()) {
+        TCit& cit = SetCit();
+        if (NStr::StartsWith(cit, "unpublished", NStr::eNocase)) {
+            cit[0] = 'U';
+        }
+        if (!IsSetJournal()) {
+            ResetVolume();
+            ResetPages();
+            ResetIssue();
+        }
+        NStr::TruncateSpacesInPlace(cit);
+    }
+    if (IsSetPages()) {
+        RemoveSpaces(SetPages());
+    }
+
+    //!!! TO DO: serial
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -123,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/05/20 13:32:48  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.2  2004/05/19 17:18:17  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

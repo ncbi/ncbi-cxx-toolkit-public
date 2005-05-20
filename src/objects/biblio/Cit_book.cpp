@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2005/05/20 13:32:48  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.3  2004/05/19 17:18:17  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -70,6 +73,14 @@ CCit_book::~CCit_book(void)
 void CCit_book::GetLabel(string* label) const
 {
     GetLabelContent(label, false, &GetAuthors(), &GetImp(), &GetTitle(), this, 0);
+}
+
+
+void CCit_book::BasicCleanup(bool fix_initials)
+{
+    if (IsSetAuthors()) {
+        SetAuthors().BasicCleanup(fix_initials);
+    }
 }
 
 

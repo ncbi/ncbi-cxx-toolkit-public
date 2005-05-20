@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2005/05/20 13:36:54  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.4  2004/05/19 17:26:04  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -58,6 +61,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -128,6 +132,80 @@ COrg_ref::SetTaxId( int tax_id )
     SetDb().push_back( ref );
 
     return old_id;
+}
+
+
+void COrg_ref::BasicCleanup(void)
+{
+    CLEAN_STRING_MEMBER(Taxname);
+	CLEAN_STRING_MEMBER(Common);
+	CLEAN_STRING_LIST(Mod);
+	CLEAN_STRING_LIST(Syn);
+	if (IsSetOrgname()) {
+        if (IsSetMod()) {
+            x_ModToOrgMod();
+        }
+		SetOrgname().BasicCleanup();
+	}
+
+	// !! To do: cleanup dbxref (sort, unique)
+
+}
+
+
+static COrgMod* s_StringToOrgMod(const string& str)
+{
+    try {
+        size_t pos = str.find('=');
+        if (pos == NPOS) {
+            pos = str.find(' ');
+        }
+        if (pos == NPOS) {
+            return NULL;
+        }
+
+        string subtype = str.substr(0, pos);
+        string subname = str.substr(pos + 1);
+        NStr::TruncateSpacesInPlace(subname);
+
+
+        size_t num_spaces = 0;
+        bool has_comma = false;
+        ITERATE (string, it, subname) {
+            if (isspace(*it)) {
+                ++num_spaces;
+            } else if (*it == ',') {
+                has_comma = true;
+                break;
+            }
+        }
+        if (num_spaces > 4  ||  has_comma) {
+            return NULL;
+        }
+
+        return new COrgMod(subtype, subname);
+    } catch (CSerialException&) {}
+    return NULL;
+}
+
+
+void COrg_ref::x_ModToOrgMod(void)
+{
+    _ASSERT(IsSetMod()  &&  IsSetOrgname());
+
+    TMod& mod_list = SetMod();
+    TOrgname& orgname = SetOrgname();
+
+    COrg_ref::TMod::iterator it = mod_list.begin();
+    while (it != mod_list.end()) {
+        CRef<COrgMod> orgmod(s_StringToOrgMod(*it));
+        if (orgmod) {
+            orgname.SetMod().push_back(orgmod);
+            it = mod_list.erase(it);
+        } else {
+            ++it;
+        }
+    }   
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

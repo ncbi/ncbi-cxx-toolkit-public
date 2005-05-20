@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2005/05/20 13:32:48  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.2  2004/05/19 17:18:17  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -61,6 +64,15 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CCit_proc::~CCit_proc(void)
 {
 }
+
+
+void CCit_proc::BasicCleanup(bool fix_initials)
+{
+    if (IsSetBook()) {
+        SetBook().BasicCleanup(fix_initials);
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

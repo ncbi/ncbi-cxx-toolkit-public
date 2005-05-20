@@ -66,6 +66,9 @@ public:
     // Append a label to label based on type or content of CBioseq_set
     void GetLabel(string* label, ELabelType type) const;
 
+    // Basic data cleanup
+    void BasicCleanup(void);
+
 private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);
@@ -94,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/20 13:34:53  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.17  2002/12/26 12:44:06  dicuccio
  * Added Win32 export specifiers
  *

@@ -58,6 +58,9 @@ public:
 
     bool GetFlatName(string& name_out, string* lineage = 0) const;
 
+	// Basic data cleanup
+    void BasicCleanup(void);
+
 private:
     // Prohibit copy constructor and assignment operator
     COrgName(const COrgName& value);
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/20 13:36:22  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.1  2003/03/10 16:35:27  ucko
 * +GetFlatName
 *

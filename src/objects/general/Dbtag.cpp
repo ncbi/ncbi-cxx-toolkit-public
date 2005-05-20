@@ -43,7 +43,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
-
+#include <objects/general/cleanup_utils.hpp>
 #include <util/static_map.hpp>
 
 // generated classes
@@ -413,6 +413,92 @@ string CDbtag::GetUrl(void) const
 }
 
 
+//=========================================================================//
+//                              Basic Cleanup                              //
+//=========================================================================//
+
+
+// convert str variant where the string is all digits to id variant
+static void s_TagCleanup(CDbtag::TTag& tag)
+{
+    if (!tag.IsStr()) {
+        return;
+    }
+    const CDbtag::TTag::TStr& str = tag.GetStr();
+    if (NStr::IsBlank(str)) {
+        return;
+    }
+
+    bool all_zero = true;
+    ITERATE (CDbtag::TTag::TStr, it, str) {
+        if (isdigit(*it)) {
+            if (*it != '0') {
+                all_zero = false;
+            }
+        } else if (!isspace(*it)) {
+            return;
+        }
+    }
+
+    if (str[0] != '0'  ||  all_zero) {
+        try {
+            tag.SetId(NStr::StringToUInt(str));
+        } catch (CStringException&) {
+            // just leave things as are
+        }
+    }
+}
+
+
+/** 
+ * replace old DB names with new ones:
+ *  Swiss-Prot       => UniProt/Swiss-Prot
+ *  SPTREMBL, TrEMBL => UniProt/TrEMBL
+ *  SUBTILIS         => SubtiList
+ *  LocusID          => GeneID
+ *  MaizeDB          => MaizeGDB
+ **/
+static void s_DbCleanup(string& db)
+{
+    if (NStr::EqualNocase(db, "Swiss-Prot")) {
+        db = "UniProt/Swiss-Prot";
+    } else if (NStr::EqualNocase(db, "SPTREMBL")  ||
+               NStr::EqualNocase(db, "TrEMBL")) {
+        db = "UniProt/TrEMBL";
+    } else if (NStr::EqualNocase(db, "SUBTILIS")) {
+        db = "SubtiList";
+    } else if (NStr::EqualNocase(db, "LocusID")) {
+        db = "GeneID";
+    } else if (NStr::EqualNocase(db, "MaizeDB")) {
+        db = "MaizeGDB";
+    }
+}
+
+
+void CDbtag::BasicCleanup(void)
+{
+    if (IsSetDb()) {
+        CleanString(SetDb());
+    } else {
+        SetDb();  // make sure mandatory field is set.
+    }
+
+    if (IsSetTag()) {
+        if (GetTag().IsStr()) {
+            CleanString(SetTag().SetStr());
+        }
+    } else {
+        SetTag();  // make sure mandatory field is set.
+    }
+    _ASSERT(IsSetDb()  &&  IsSetTag());  // mandatory fields
+
+    s_DbCleanup(SetDb());
+    s_TagCleanup(SetTag());
+
+    InvalidateType();
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -420,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2005/05/20 13:31:29  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.24  2005/05/10 14:39:27  shomrat
  * Added BoLD, Genew and HSSP to DB list
  *

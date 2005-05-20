@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/05/20 13:33:17  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.2  2002/12/26 12:42:22  dicuccio
  * Added Win32 export specifiers
  *
@@ -78,6 +81,8 @@ public:
                   ELabelType       type   = eContent, 
                   bool             unique = false) const;
     
+	// Basic data cleanup
+    void BasicCleanup(bool fix_initials = true);
  
 private:
     // Prohibit copy constructor and assignment operator

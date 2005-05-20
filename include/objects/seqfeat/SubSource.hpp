@@ -56,10 +56,19 @@ class NCBI_SEQFEAT_EXPORT CSubSource : public CSubSource_Base
 public:
     // constructor
     CSubSource(void);
+    CSubSource(TSubtype subtype, const TName& name);
+    CSubSource(const string& subtype, const TName& name);
+
     // destructor
     ~CSubSource(void);
 
     void GetLabel(string* str) const;
+
+    // convert subtype from string to enum.
+    static TSubtype GetSubtypeValue(const string& str);
+
+    // Basic data cleanup
+    void BasicCleanup(void);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -76,6 +85,20 @@ CSubSource::CSubSource(void)
 {
 }
 
+inline
+CSubSource::CSubSource(TSubtype subtype, const TName& name)
+{
+    SetSubtype(subtype);
+    SetName(name);
+}
+
+inline
+CSubSource::CSubSource(const string& subtype, const TName& name)
+{
+    SetSubtype(GetSubtypeValue(subtype));
+    SetName(name);
+}
+
 
 /////////////////// end of CSubSource inline methods
 
@@ -89,6 +112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/20 13:36:22  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.1  2005/02/23 20:24:19  dicuccio
 * Initial revision - added GetLabel()
 *

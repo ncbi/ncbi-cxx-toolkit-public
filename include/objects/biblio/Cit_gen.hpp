@@ -59,6 +59,8 @@ public:
     // Appends a label onto "label" based on content
     void GetLabel(string* label, bool unique = false) const;
 
+    // Basic data cleanup
+    void BasicCleanup(bool fix_initials);
 private:
     // Prohibit copy constructor and assignment operator
     CCit_gen(const CCit_gen& value);
@@ -89,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/20 13:32:18  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.1  2004/02/24 15:52:22  grichenk
 * Initial revision
 *

@@ -40,6 +40,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 // generated classes
 
@@ -162,6 +163,16 @@ void CSeq_annot::AddUserObject(CUser_object& obj)
 }
 
 
+// perform basic cleanup functionality (trim spaces from strings etc.)
+void CSeq_annot::BasicCleanup(ECleanupMode mode)
+{
+    if (IsSetData()  &&  GetData().IsFtable()) {
+        NON_CONST_ITERATE (TData::TFtable, it, SetData().SetFtable()) {
+            (*it)->BasicCleanup(mode);
+        }
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -171,6 +182,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/05/20 13:34:26  shomrat
+* Added BasicCleanup()
+*
 * Revision 1.6  2004/05/19 17:25:14  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

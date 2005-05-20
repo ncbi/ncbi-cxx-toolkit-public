@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/05/20 13:32:18  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.4  2004/02/24 15:53:41  grichenk
  * Redesigned GetLabel(), moved most functionality from pub to biblio
  *
@@ -76,6 +79,9 @@ public:
     
     // Appends a label onto "label" based on content
     void GetLabel(string* label, bool unique = false) const;
+
+    // Basic data cleanup
+    void BasicCleanup(bool fix_initials);
 
 private:
     // Prohibit copy constructor and assignment operator

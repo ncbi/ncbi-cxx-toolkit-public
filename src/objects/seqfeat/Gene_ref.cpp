@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2005/05/20 13:36:54  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.5  2004/05/19 17:26:04  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -61,6 +64,7 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -106,6 +110,31 @@ bool CGene_ref::IsSuppressed(void) const
     return true;
 }
 
+
+void CGene_ref::BasicCleanup(void)
+{
+    CLEAN_STRING_MEMBER(Locus);
+    CLEAN_STRING_MEMBER(Allele);
+    CLEAN_STRING_MEMBER(Desc);
+    CLEAN_STRING_MEMBER(Maploc);
+    CLEAN_STRING_MEMBER(Locus_tag);
+    CLEAN_STRING_LIST(Syn);
+
+    // remove synonyms equal to locus
+    if (IsSetLocus()  &&  IsSetSyn()) {
+        const TLocus& locus = GetLocus();
+        TSyn& syns = SetSyn();
+  
+        TSyn::iterator it = syns.begin();
+        while (it != syns.end()) {
+            if (locus == *it) {
+                it = syns.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

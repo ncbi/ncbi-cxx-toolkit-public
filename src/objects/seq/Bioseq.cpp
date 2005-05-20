@@ -54,6 +54,8 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 // generated classes
 
@@ -228,6 +230,38 @@ bool CBioseq::IsAa(void) const
 }
 
 
+static ECleanupMode s_GetCleanupMode(const CBioseq& seq)
+{
+    ITERATE (CBioseq::TId, it, seq.GetId()) {
+        const CSeq_id& id = **it;
+        if (id.IsEmbl()  ||  id.IsTpe()) {
+            return eCleanup_EMBL;
+        } else if (id.IsDdbj()  ||  id.IsTpd()) {
+            return eCleanup_DDBJ;
+        } else if (id.IsSwissprot()) {
+            return eCleanup_SwissProt;
+        }
+    }
+
+    return eCleanup_GenBank;
+}
+
+
+// perform basic cleanup functionality (trim spaces from strings etc.)
+void CBioseq::BasicCleanup(void)
+{
+    ECleanupMode mode = s_GetCleanupMode(*this);
+
+    if (IsSetAnnot()) {
+        NON_CONST_ITERATE (TAnnot, it, SetAnnot()) {
+            (*it)->BasicCleanup(mode);
+        }
+    }
+    if (IsSetDescr()) {
+        SetDescr().BasicCleanup(mode);
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -236,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2005/05/20 13:34:26  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.21  2004/05/19 17:25:14  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

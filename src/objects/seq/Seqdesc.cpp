@@ -47,6 +47,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -153,6 +154,66 @@ void CSeqdesc::GetLabel(string* const label, ELabelType label_type) const
     }
 }
 
+
+// perform basic cleanup functionality (trim spaces from strings etc.)
+void CSeqdesc::BasicCleanup(ECleanupMode mode)
+{
+    switch (Which()) {
+    case CSeqdesc::e_Mol_type:
+        break;
+    case CSeqdesc::e_Modif:
+        break;
+    case CSeqdesc::e_Method:
+        break;
+    case CSeqdesc::e_Name:
+        break;
+    case CSeqdesc::e_Title:
+        break;
+    case CSeqdesc::e_Org:
+        break;
+    case CSeqdesc::e_Comment:
+        break;
+    case CSeqdesc::e_Num:
+        break;
+    case CSeqdesc::e_Maploc:
+        break;
+    case CSeqdesc::e_Pir:
+        break;
+    case CSeqdesc::e_Genbank:
+        break;
+    case CSeqdesc::e_Pub:
+        SetPub().BasicCleanup();
+        break;
+    case CSeqdesc::e_Region:
+        break;
+    case CSeqdesc::e_User:
+        break;
+    case CSeqdesc::e_Sp:
+        break;
+    case CSeqdesc::e_Dbxref:
+        break;
+    case CSeqdesc::e_Embl:
+        break;
+    case CSeqdesc::e_Create_date:
+        break;
+    case CSeqdesc::e_Update_date:
+        break;
+    case CSeqdesc::e_Prf:
+        break;
+    case CSeqdesc::e_Pdb:
+        break;
+    case CSeqdesc::e_Het:
+        break;
+    case CSeqdesc::e_Source:
+        break;
+    case CSeqdesc::e_Molinfo:
+        break;
+
+    default:
+        break;
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -162,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.5  2005/05/20 13:34:26  shomrat
+* Added BasicCleanup()
+*
 * Revision 6.4  2004/05/19 17:25:14  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

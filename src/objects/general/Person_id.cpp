@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2005/05/20 13:31:29  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.2  2004/05/19 17:21:39  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -48,6 +51,7 @@
 // standard includes
 #include <ncbi_pch.hpp>
 #include <algorithm>
+#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/general/Person_id.hpp>
@@ -101,6 +105,27 @@ void CPerson_id::GetLabel(string* label, ETypeLabel type) const
         // Replace comma with a space
         replace(label->begin(), label->end(), ',', ' ');
     }         
+}
+
+
+void CPerson_id::BasicCleanup(bool fix_initials)
+{
+    switch (Which()) {
+        case e_Name:
+            SetName().BasicCleanup(fix_initials);
+            break;
+        case e_Ml:
+            TRUNCATE_CHOICE_SPACES(Ml);
+            break;
+        case e_Str:
+            TRUNCATE_CHOICE_SPACES(Str);
+            break;
+        case e_Consortium:
+            TRUNCATE_CHOICE_SPACES(Consortium);
+            break;
+        default:
+            break;
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

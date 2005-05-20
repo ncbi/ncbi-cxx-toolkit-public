@@ -168,6 +168,9 @@ public:
     //   the URL or an empty string if non is available
     string GetUrl(void) const;
 
+    /// Basic data cleanup
+    void BasicCleanup(void);
+
 private:
 
     // our enumerated (parsed) type
@@ -200,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/05/20 13:29:48  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.15  2005/05/10 14:38:56  shomrat
  * Added BoLD, Genew and HSSP to DB list
  *

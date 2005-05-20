@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2005/05/20 13:32:48  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 6.3  2004/05/19 17:18:17  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -89,6 +92,19 @@ void CCit_pat::GetLabel(string* label) const
         0, date_ptr);
 }
 
+
+void CCit_pat::BasicCleanup(bool fix_initials)
+{
+	if (IsSetAuthors()) {
+		SetAuthors().BasicCleanup(fix_initials);
+	}
+	if (IsSetApplicants()) {
+		SetApplicants().BasicCleanup(fix_initials);
+	}
+	if (IsSetAssignees()) {
+		SetAssignees().BasicCleanup(fix_initials);
+	}
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

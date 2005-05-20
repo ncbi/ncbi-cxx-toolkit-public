@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2005/05/20 13:36:22  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.3  2002/12/27 23:00:40  kans
  * added IsSuppressed
  *
@@ -75,6 +78,9 @@ public:
 
     // Checks for an emtpy Gene-ref used for suppressing /gene by overlap
     bool IsSuppressed(void) const;
+
+    // Basic data cleanup
+    void BasicCleanup(void);
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -96,6 +96,9 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    // Basic data cleanup
+    void BasicCleanup(void);
+
 protected:
     // From CSerialUserOp
     virtual void UserOp_Assign(const CSerialUserOp& source);
@@ -151,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/20 13:34:02  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.17  2003/04/24 16:14:11  vasilche
  * Fixed Parentize().
  *

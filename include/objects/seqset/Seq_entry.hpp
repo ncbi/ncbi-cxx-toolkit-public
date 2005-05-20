@@ -80,6 +80,9 @@ public:
     // Append a label to label based on type or content of CSeq_entry
     void GetLabel(string* label, ELabelType type) const;
 
+    // Basic data cleanup
+    void BasicCleanup(void);
+
 protected:
     // From CSerialUserOp
     virtual void UserOp_Assign(const CSerialUserOp& source);
@@ -121,6 +124,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/05/20 13:34:53  shomrat
+ * Added BasicCleanup()
+ *
  * Revision 1.18  2004/07/22 16:25:46  shomrat
  * + GetLabel()
  *
