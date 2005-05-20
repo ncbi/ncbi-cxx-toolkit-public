@@ -89,11 +89,13 @@ int main(void)
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
     if (env) {
-        if (strcasecmp(env, "1") == 0  ||  strcasecmp(env, "SOME") == 0)
+        if (    strcasecmp(env, "1")    == 0  ||
+                strcasecmp(env, "TRUE") == 0  ||
+                strcasecmp(env, "SOME") == 0)
             flag |= eFCDC_LogControl;
         else if (strcasecmp(env, "DATA") == 0)
             flag |= eFCDC_LogData;
-        else if (strcasecmp(env, "ALL") == 0)
+        else if (strcasecmp(env, "ALL")  == 0)
             flag |= eFCDC_LogAll;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
@@ -268,6 +270,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2005/05/20 11:41:37  lavr
+ * Separate control and data FTP connection debugging setting
+ *
  * Revision 6.41  2005/05/18 20:57:10  lavr
  * Add reporting FTP test as passed if so
  *

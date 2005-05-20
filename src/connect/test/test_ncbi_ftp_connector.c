@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     static const char k_file[] = "RETR CURRENT/ncbi.tar.gz";
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
     int/*bool*/ aborting = 0, first;
-    ESwitch     log = eDefault;
+    TFCDC_Flags flags = 0;
     char        buf[1024];
     CONNECTOR   connector;
     FILE*       data_file;
@@ -75,16 +75,15 @@ int main(int argc, char* argv[])
     timeout.sec  = 3;
     timeout.usec = 0;
 
-    if (env  &&  (strcasecmp(env, "1")    == 0  ||
-                  strcasecmp(env, "TRUE") == 0  ||
-                  strcasecmp(env, "SOME") == 0  ||
-                  strcasecmp(env, "DATA") == 0)) {
-        log = eOn;
-    }
-    if (env  &&  (strcasecmp(env, "0")     == 0  ||
-                  strcasecmp(env, "NONE")  == 0  ||
-                  strcasecmp(env, "FALSE") == 0)) {
-        log = eOff;
+    if (env) {
+        if (    strcasecmp(env, "1")    == 0  ||
+                strcasecmp(env, "TRUE") == 0  ||
+                strcasecmp(env, "SOME") == 0)
+            flags |= eFCDC_LogControl;
+        else if (strcasecmp(env, "DATA") == 0)
+            flags |= eFCDC_LogData;
+        else if (strcasecmp(env, "ALL")  == 0)
+            flags |= eFCDC_LogAll;
     }
 
     if (TEST_PORT) {
@@ -102,7 +101,7 @@ int main(int argc, char* argv[])
     /* Run the tests */
     connector = FTP_CreateDownloadConnector(TEST_HOST, TEST_PORT,
                                             TEST_USER, TEST_PASS,
-                                            TEST_PATH, log);
+                                            TEST_PATH, flags);
 
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create FTP download connection");
@@ -200,6 +199,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2005/05/20 11:41:47  lavr
+ * Separate control and data FTP connection debugging setting
+ *
  * Revision 1.5  2005/05/11 20:00:25  lavr
  * Empty NLST result list bug fixed
  *
