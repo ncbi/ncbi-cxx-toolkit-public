@@ -323,15 +323,9 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
         }
  
      } else {
-        char* p = NULL;
-
         sbp->read_in_matrix = TRUE;
         BLAST_ScoreSetAmbigRes(sbp, 'X');
-        sbp->name = strdup(scoring_options->matrix);
-        /* protein matrices are in all caps by convention */
-        for (p = sbp->name; *p != NULLB; p++) {
-            *p = toupper(*p);
-        }
+        sbp->name = BLAST_StrToUpper(scoring_options->matrix);
     }
     status = Blast_ScoreBlkMatrixFill(sbp, scoring_options->matrix_path);
     if (status) {
@@ -547,7 +541,9 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
       }
    }
    
-   kbp_ptr = (scoring_options->gapped_calculation ? sbp->kbp_gap : sbp->kbp);
+   /* N.B.: the old code used kbp_gap_std instead of the kbp_gap alias (which
+    * could be kbp_gap_psi), hence we duplicate that behavior here */
+   kbp_ptr = (scoring_options->gapped_calculation ? sbp->kbp_gap_std : sbp->kbp);
    
    for (index = query_info->first_context;
         index <= query_info->last_context;
