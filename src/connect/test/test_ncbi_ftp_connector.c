@@ -116,17 +116,27 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Test failed in waiting on READ");
     CORE_LOG(eLOG_Note, "Unrecognized command was correctly rejected");
 
+    if (CONN_Write(conn, "LIST\nSIZE", 9, &n, eIO_WritePlain) != eIO_Unknown)
+        CORE_LOG(eLOG_Fatal, "Test failed to reject multiple commands");
+    CORE_LOG(eLOG_Note, "Multiple commands were correctly rejected");
+
     if (CONN_Write(conn, "LIST", 4, &n, eIO_WritePlain) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write LIST command");
 
     CORE_LOG(eLOG_Note, "LIST command output:");
+    first = 1/*true*/;
     do {
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
-        if (n != 0)
+        if (n != 0) {
             printf("%.*s", (int) n, buf);
+            first = 0/*false*/;
+        }
     } while (status == eIO_Success);
+    if (first) {
+        printf("<EOF>\n");
+    }
 
-    if (CONN_Write(conn, "NLST", 4, &n, eIO_WritePlain) != eIO_Success)
+    if (CONN_Write(conn, "NLST\r\n", 6, &n, eIO_WritePlain) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write NLST command");
 
     CORE_LOG(eLOG_Note, "NLST command output:");
@@ -208,6 +218,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/05/20 12:56:35  lavr
+ * Added test for multiple commands and '[\r]\n'-terminated input
+ *
  * Revision 1.7  2005/05/20 12:11:29  lavr
  * Test ABOR with command and connection closure (both should now work)
  *
