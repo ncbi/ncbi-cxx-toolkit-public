@@ -189,6 +189,11 @@ public:
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
 
+    /// Return real named pipe name.
+    ///
+    /// @sa Open, Create
+    string GetName(void) const;
+
 protected:
     // Set pipe name (expand it if necessary)
     void x_SetPipeName(const string& pipename);
@@ -338,6 +343,11 @@ inline bool CNamedPipe::IsServerSide(void) const
     return !m_IsClientSide;
 }
 
+inline string CNamedPipe::GetName(void) const
+{
+    return m_PipeName;
+}
+
 
 END_NCBI_SCOPE
 
@@ -346,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/20 15:08:23  ivanov
+ * + CNamedPipe::GetName()
+ *
  * Revision 1.9  2004/12/06 17:46:18  ivanov
  * Allow using simple pipe names (without pah information).
  * The OS-specific pipe name will be automaticaly generated for it.
