@@ -259,13 +259,13 @@ int CSeqDBImpl::GetSeqLength(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
+    m_Atlas.Lock(locked);
+    
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
             return vol->GetSeqLengthProt(vol_oid);
         }
     } else {
-        m_Atlas.Lock(locked);
-        
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
             return vol->GetSeqLengthExact(vol_oid);
         }
@@ -281,6 +281,8 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
+    
+    m_Atlas.Lock(locked);
     
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -343,6 +345,8 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
+    m_Atlas.Lock(locked);
+    
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer, locked);
     }
@@ -360,6 +364,8 @@ int CSeqDBImpl::GetAmbigSeq(int             oid,
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
+    m_Atlas.Lock(locked);
+    
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type, locked);
@@ -375,6 +381,8 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
+    
+    m_Atlas.Lock(locked);
     
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -482,6 +490,8 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+
     int vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -703,6 +713,9 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids) const
 
 int CSeqDBImpl::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
     CHECK_MARKER();
     if (first_seq >= m_NumOIDs) {
         NCBI_THROW(CSeqDBException,
