@@ -3305,34 +3305,39 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         char   w[1024], c;
         size_t x_size = BUF_Size(sock->r_buf);
         char*  x_buf  = size - len < sizeof(w) - cr_seen ? w : line + len;
-        if (x_size == 0  ||  x_size > sizeof(w) - cr_seen)
+        if (!x_size  ||  x_size > sizeof(w) - cr_seen)
             x_size = sizeof(w) - cr_seen;
-        status = s_Read(sock, x_buf + cr_seen,
-                        size ? x_size : size, &x_size, 0/*read*/);
+        status = s_Read(sock, x_buf + cr_seen, x_size, &x_size, 0/*read*/);
         if ( !x_size )
             done = 1/*true*/;
         else if ( cr_seen )
             x_size++;
+        assert(status == eIO_Success);
         for (i = cr_seen; i < x_size; i++) {
-            char c = x_buf[i];
-            if (c == '\0'  ||  c == '\n') {
+            c = x_buf[i];
+            if (c == '\n') {
                 cr_seen = 0/*false*/;
                 done = 1/*true*/;
                 i++;
                 break;
             }
             if (c == '\r') {
-                if ( !cr_seen ) {
+                if (!cr_seen) {
                     cr_seen = 1/*true*/;
                     continue;
                 }
             }
-            if ( cr_seen )
+            if (cr_seen)
                 line[len++] = '\r';
             if (c != '\r')
                 cr_seen = 0/*false*/;
             if (len >= size)
                 break;
+            if (!c) {
+                done = 1/*true*/;
+                i++;
+                break;
+            }
             if (x_buf == w)
                 line[len] = c;
             if (++len >= size)
@@ -4448,6 +4453,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.175  2005/05/20 11:42:29  lavr
+ * Fix SOCK_ReadLine() not to allow '\r\0' as an EOL
+ *
  * Revision 6.174  2005/04/25 18:48:04  lavr
  * Touch up for preprocessor (#if def) usage consistency
  *
