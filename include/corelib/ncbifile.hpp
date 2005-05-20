@@ -41,6 +41,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <vector>
 
 #include <sys/types.h>
@@ -1190,6 +1191,59 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////
+///
+/// CFileDeleteList --
+///
+/// Define a list of dir entries for deletion.
+///
+/// Each Object of this class maintains a list of names of dir entries
+/// that will be deleted from the file system when the object
+/// goes out of scope.
+///
+/// Note: Directories will be removed recursively, symbolic links -- 
+/// without dir entries which they points to.
+
+class NCBI_XNCBI_EXPORT CFileDeleteList : public CObject
+{
+public:
+    /// Destructor removes all dir entries on list.
+    ~CFileDeleteList();
+
+    typedef list<string> TNames;
+
+    /// Add a dir entry for later deletion.
+    void Add(const string& entryname);
+    /// Get the underlying list.
+    const TNames& GetNames() const;
+    /// Set the underlying list.
+    void SetNames(TNames& names);
+
+private:
+    TNames  m_Names;   ///< List of dir entries for deletion
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFileDeleteAtExit --
+///
+/// This class is used to mark dir entries for deletion at application exit.
+/// @sa CFileDeleteList
+
+class NCBI_XNCBI_EXPORT CFileDeleteAtExit
+{
+public:
+    /// Add the name of a dir entry; it will be deleted on (normal) exit
+    static void Add(const string& entryname);
+
+    /// Get underlying static CFileDeleteList object
+    static const CFileDeleteList& GetDeleteList();
+    /// Set the underlying static CFileDeleteList object
+    static void SetDeleteList(CFileDeleteList& list);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  Find files algorithms
 //
@@ -1407,7 +1461,6 @@ void FindFiles(TContainer&    out,
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// fwd-decl of struct containing OS-specific mem.-file handle.
@@ -1435,7 +1488,7 @@ public:
     /// Whether to share changes or not.
     typedef enum {
         eMMS_Shared,      ///< Changes are shared
-        eMMS_Private      ///< Changes are private
+        eMMS_Private      ///< Changes are private (write do not change file)
     } EMemMapShare;
 
     /// Constructor.
@@ -1659,7 +1712,7 @@ public:
     ///   EMemMapProtect, EMemMapShare
     CMemoryFileMap(const string&  file_name,
                    EMemMapProtect protect_attr = eMMP_Read,
-                   EMemMapShare   share_attr   = eMMS_Private);
+                   EMemMapShare   share_attr   = eMMS_Shared);
 
     /// Destructor.
     ///
@@ -1819,7 +1872,7 @@ public:
     ///   EMemMapProtect, EMemMapShare
     CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
-                EMemMapShare   share_attr   = eMMS_Private,
+                EMemMapShare   share_attr   = eMMS_Shared,
                 off_t          offset       = 0,
                 size_t         lendth       = 0);
 
@@ -2089,6 +2142,27 @@ bool CSymLink::Exists(void) const
 }
 
 
+// CFileDelete*
+
+inline
+void CFileDeleteList::Add(const string& entryname)
+{
+    m_Names.push_back(entryname);
+}
+
+inline
+const CFileDeleteList::TNames& CFileDeleteList::GetNames(void) const
+{
+    return m_Names;
+}
+
+inline
+void CFileDeleteList::SetNames(CFileDeleteList::TNames& names)
+{
+    m_Names = names;
+}
+
+
 
 // CMemoryFileSegment
 
@@ -2213,6 +2287,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/05/20 11:23:05  ivanov
+ * Added new classes CFileDeleteList and CFileDeleteAtExit.
+ * CMemoryFile[Map](): changed default share attribute from eMMS_Shared.
+ *
  * Revision 1.56  2005/04/28 14:08:16  ivanov
  * Added time_t and CTime versions of CDirEntry::IsNewer()
  *
