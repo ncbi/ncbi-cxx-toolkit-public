@@ -1,2 +1,2 @@
 LIB = general
-SRC = general__ general___ uoconv
+SRC = general__ general___ uoconv cleanup_utils
