@@ -38,26 +38,60 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_encoding.h>
 #include "blast_psi_priv.h"
 
+/* needed for BLAST_GetStandardAaProbabilities(); */
+#include <algo/blast/core/blast_util.h> 
+
 /****************************************************************************/
 /* Function prototypes */
 
 /** Convenience function to deallocate data structures allocated in
  * PSICreatePssmWithDiagnostics.
+ * @param pssm PSSM and statistical information [in|out]
+ * @param msa multiple sequence alignment structure[in]
+ * @param aligned_blocks data structure [in] 
+ * @param seq_weights sequence weights data structure [in]
+ * @param internal_pssm PSSM being computed [in]
  */
 static void
 s_PSICreatePssmCleanUp(PSIMatrix** pssm,
-                      _PSIMsa* msa,
-                      _PSIAlignedBlock* aligned_block,
-                      _PSISequenceWeights* seq_weights,
-                      _PSIInternalPssmData* internal_pssm);
+                       _PSIMsa* msa,
+                       _PSIAlignedBlock* aligned_block,
+                       _PSISequenceWeights* seq_weights,
+                       _PSIInternalPssmData* internal_pssm);
 
 /** Copies pssm data from internal_pssm and sbp into pssm. None of its
- * parameters can be NULL. */
+ * parameters can be NULL. 
+ * @param internal_pssm PSSM being computed [in]
+ * @param sbp Score block structure containing the calculated lambda and K
+ * which will be saved in the pssm parameter [in]
+ * @param pssm PSSM and statistical information [in|out]
+ */
 static void
 s_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
-             const BlastScoreBlk* sbp,
-             PSIMatrix* pssm);
+              const BlastScoreBlk* sbp,
+              PSIMatrix* pssm);
 
+/** Private function which performs the last 2 stages of the PSSM creation:
+ * conversion of PSSM frequecy ratios to PSSM and scaling of the PSSM.
+ * @param internal_pssm PSSM being computed, must be already allocated [in|out]
+ * @param query query sequence in ncbistdaa encoding. [in]
+ * @param query_length length of the query sequence above [in]
+ * @param std_probs array containing the standard background residue 
+ * probabilities [in]
+ * @param sbp Score block structure where the calculated lambda and K will be
+ * returned [in|out]
+ * @param impala_scaling_factor scaling factor used in IMPALA-style scaling if
+ * its value is NOT kPSSM_NoImpalaScaling (otherwise it performs standard
+ * PSI-BLAST scaling) [in]
+ */
+static int
+_PSICreateAndScalePssmFromFrequencyRatios(_PSIInternalPssmData* internal_pssm,
+                                          const Uint1* query,
+                                          Uint4 query_length,
+                                          double* std_prob,
+                                          BlastScoreBlk* sbp,
+                                          double impala_scaling_factor);
+      
 /****************************************************************************/
 
 int
@@ -152,31 +186,17 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         return status;
     }
 
-    status = _PSIConvertFreqRatiosToPSSM(internal_pssm, msa->query, sbp, 
-                                         seq_weights->std_prob);
+    status = _PSICreateAndScalePssmFromFrequencyRatios
+        (internal_pssm, msa->query, msa->dimensions->query_length, 
+         seq_weights->std_prob, sbp, options->impala_scaling_factor);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
-
-    /* FIXME: Use a constant here? */
-    if (options->impala_scaling_factor == 1.0) {
-        status = _PSIScaleMatrix(msa->query, seq_weights->std_prob,
-                                 internal_pssm, sbp);
-    } else {
-        status = _IMPALAScaleMatrix(msa->query, seq_weights->std_prob,
-                                    internal_pssm, sbp,
-                                    options->impala_scaling_factor);
-    }
-    if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
-        return status;
-    }
-
     /*** Save the pssm outgoing parameter ***/
     s_PSISavePssm(internal_pssm, sbp, *pssm);
+
 
     /*** Save diagnostics if required ***/
     if (request && diagnostics) {
@@ -199,9 +219,105 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
             return status;
         }
     }
-    s_PSICreatePssmCleanUp(NULL, msa, aligned_block, seq_weights, internal_pssm);
+    s_PSICreatePssmCleanUp(NULL, msa, aligned_block, seq_weights, 
+                           internal_pssm);
 
     return PSI_SUCCESS;
+}
+
+/** Convenience function to deallocate data structures allocated in
+ * PSICreatePssmFromFrequencyRatios
+ * @param pssm PSSM and statistical information [in|out]
+ * @param internal_pssm PSSM being computed [in]
+ * @param std_probs array containing the standard background residue 
+ * probabilities [in]
+ */
+static void
+s_PSICreatePssmFromFrequencyRatiosCleanUp(PSIMatrix** pssm,
+                                          _PSIInternalPssmData* internal_pssm,
+                                          double* std_prob)
+{
+    if (pssm) {
+        *pssm = PSIMatrixFree(*pssm);
+    }
+    _PSIInternalPssmDataFree(internal_pssm);
+    sfree(std_prob);
+}
+
+int
+PSICreatePssmFromFrequencyRatios(const Uint1* query,
+                                 Uint4 query_length,
+                                 BlastScoreBlk* sbp,
+                                 double** freq_ratios,
+                                 double impala_scaling_factor,
+                                 PSIMatrix** pssm)
+{
+    int status = PSI_SUCCESS;
+    double* std_prob = NULL;
+    _PSIInternalPssmData* internal_pssm = NULL;
+
+    std_prob = BLAST_GetStandardAaProbabilities();
+    *pssm = PSIMatrixNew(query_length, (Uint4) sbp->alphabet_size);
+    internal_pssm = _PSIInternalPssmDataNew(query_length, sbp->alphabet_size);
+
+    if ( !std_prob || !*pssm || !internal_pssm ) {
+        s_PSICreatePssmFromFrequencyRatiosCleanUp(pssm, internal_pssm,
+                                                  std_prob);
+        return PSIERR_OUTOFMEM;
+    }
+
+    _PSICopyMatrix_double(internal_pssm->freq_ratios, freq_ratios, 
+                          internal_pssm->ncols, internal_pssm->nrows);
+
+    status = _PSICreateAndScalePssmFromFrequencyRatios(internal_pssm, 
+                                                       query, query_length, 
+                                                       std_prob, sbp, 
+                                                       impala_scaling_factor);
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmFromFrequencyRatiosCleanUp(pssm, internal_pssm,
+                                                  std_prob);
+        return status;
+    }
+    /*** Save the pssm outgoing parameter ***/
+    s_PSISavePssm(internal_pssm, sbp, *pssm);
+
+    s_PSICreatePssmFromFrequencyRatiosCleanUp(NULL, internal_pssm, std_prob);
+    return status;
+}
+
+static int
+_PSICreateAndScalePssmFromFrequencyRatios(_PSIInternalPssmData* internal_pssm,
+                                          const Uint1* query,
+                                          Uint4 query_length,
+                                          double* std_prob,
+                                          BlastScoreBlk* sbp,
+                                          double impala_scaling_factor)
+{
+    int status = PSI_SUCCESS;
+
+    ASSERT(internal_pssm);
+    ASSERT(query);
+    ASSERT(std_prob);
+    ASSERT(sbp);
+
+    status = _PSIConvertFreqRatiosToPSSM(internal_pssm, query, sbp, std_prob);
+    if (status != PSI_SUCCESS) {
+        /* clean up is done in calling code */
+        return status;
+    }
+
+    if (impala_scaling_factor == kPSSM_NoImpalaScaling) {
+        status = _PSIScaleMatrix(query, std_prob, internal_pssm, sbp);
+    } else {
+        status = _IMPALAScaleMatrix(query, std_prob, internal_pssm, sbp,
+                                    impala_scaling_factor);
+    }
+    if (status != PSI_SUCCESS) {
+        /* clean up is done in calling code */
+        return status;
+    }
+
+    return status;
 }
 
 /****************************************************************************/
