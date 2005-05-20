@@ -365,7 +365,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             throw string("Pipe is closed");
         }
         if ( !count ) {
-			m_ReadStatus = eIO_Success;
+            m_ReadStatus = eIO_Success;
             return m_ReadStatus;
         }
 
@@ -379,7 +379,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             if ( !PeekNamedPipe(m_Pipe, NULL, 0, NULL, &bytes_avail, NULL) ) {
                 // Peer has been closed the connection?
                 if (GetLastError() == ERROR_BROKEN_PIPE) {
-					m_ReadStatus = eIO_Closed;
+                    m_ReadStatus = eIO_Closed;
                     return m_ReadStatus;
                 }
                 throw string("Cannot peek data from the named pipe");
@@ -399,7 +399,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
         // Data is available to read or time out
         if ( !bytes_avail ) {
-			m_ReadStatus = eIO_Timeout;
+            m_ReadStatus = eIO_Timeout;
             return m_ReadStatus;
         }
         // We must read only "count" bytes of data regardless of the number
@@ -661,8 +661,9 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                         tm.tv_sec  = timeout->sec;
                         tm.tv_usec = timeout->usec;
                         tmp = &tm;
-                    } else
+                    } else {
                         tmp = 0;
+                    }
                     fd_set wfds;
                     fd_set efds;
                     FD_ZERO(&wfds);
@@ -1141,7 +1142,7 @@ void CNamedPipe::x_SetName(const string& pipename)
     const char* separators = ":/\\";
     if ( pipename.find_first_of(separators) != NPOS ) {
         m_PipeName = pipename;
-	return;
+        return;
     }
 #  if defined(NCBI_OS_MSWIN)
     m_PipeName = "\\\\.\\pipe\\" + pipename;
@@ -1157,8 +1158,8 @@ void CNamedPipe::x_SetName(const string& pipename)
         pipedir = "/tmp";
         if ((err = lstat(pipedir, &st)) != 0  ||
             !(S_ISDIR(st.st_mode)  &&  (st.st_mode & k_writeable))) {
-	    pipedir = ".";
-	}
+            pipedir = ".";
+        }
     }
     m_PipeName = string(pipedir) + "/" + pipename;
 #  endif
@@ -1274,6 +1275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/05/20 16:25:17  ivanov
+ * Some cosmetics
+ *
  * Revision 1.30  2005/05/20 16:04:47  ivanov
  * UNIX: Try to remove named pipe's corresponding file on the server side
  * in the CNamedPipe destructor
