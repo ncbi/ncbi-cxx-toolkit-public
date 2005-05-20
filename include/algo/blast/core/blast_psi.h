@@ -191,7 +191,7 @@ PSIDiagnosticsResponseFree(PSIDiagnosticsResponse* diags);
  * @param sbp BLAST score block structure [in|out]
  * @param pssm PSSM and statistical information (the latter is also returned 
  * in the sbp->kbp_gap_psi[0]) 
- * @return 0 on success, else failure (FIXME)
+ * @return PSI_SUCCESS on success, otherwise one of the PSIERR_* constants
  */
 int
 PSICreatePssm(const PSIMsa* msap,
@@ -210,7 +210,7 @@ PSICreatePssm(const PSIMsa* msap,
  * @param diagnostics diagnostics information response, expects a pointer to an
  * uninitialized structure which will be populated with data requested in
  * requests [in|out]
- * @return 0 on success, else failure (FIXME)
+ * @return PSI_SUCCESS on success, otherwise one of the PSIERR_* constants
  */
 int
 PSICreatePssmWithDiagnostics(const PSIMsa* msap,
@@ -219,6 +219,32 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,
                              const PSIDiagnosticsRequest* request,
                              PSIMatrix** pssm,
                              PSIDiagnosticsResponse** diagnostics);
+
+/** Top-level function to create a PSSM given a matrix of frequency ratios
+ * and perform scaling on the resulting PSSM (i.e.: performs the last two 
+ * stages of the algorithm)
+ * Note that no diagnostics can be returned as those are calculated in earlier
+ * stages of the algorithm.
+ * @param query query sequence in ncbistdaa format, no sentinels needed [in]
+ * @param query_length length of the query sequence [in]
+ * @param sbp BLAST score block structure [in|out]
+ * @param freq_ratios matrix of frequency ratios, dimensions are query_length
+ * by BLASTAA_SIZE [in]
+ * @param impala_scaling_factor scaling factor used in IMPALA-style scaling if
+ * its value is NOT kPSSM_NoImpalaScaling (otherwise it performs standard
+ * PSI-BLAST scaling) [in]
+ * @param pssm PSSM and statistical information [in|out]
+ * @return PSI_SUCCESS on success, otherwise one of the PSIERR_* constants
+ * @todo FIXME change scalePosMatrix (blast_kappa.c) to use this function
+ */
+int
+PSICreatePssmFromFrequencyRatios(const Uint1* query,
+                                 Uint4 query_length,
+                                 BlastScoreBlk* sbp,
+                                 double** freq_ratios,
+                                 double impala_scaling_factor,
+                                 PSIMatrix** pssm);
+
 #ifdef __cplusplus
 }
 #endif
