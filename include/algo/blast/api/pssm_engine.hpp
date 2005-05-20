@@ -69,21 +69,38 @@ BEGIN_SCOPE(blast)
 /// CRef<CPssmWithParameters> scoremat = pssm_engine.Run();
 /// ...
 /// @endcode
+/// @todo FIXME: move to pssm_engine.hpp
 
 class NCBI_XBLAST_EXPORT CPssmEngine
 {
 public:
     /// Constructor to configure the PSSM engine with a PSSM input data
     /// strategy object
+    /// Checks that no data returned by the IPssmInputData interface is NULL
+    /// @throws CBlastException if validation fails. Does not test the
+    /// GetData() method as this is only populated after Process() is called.
     CPssmEngine(IPssmInputData* input);
+
+    /// Constructor to perform the last 2 stages of the PSSM creation algorithm
+    /// Checks that no data returned by the IPssmInputFreqRatios interface is
+    /// NULL
+    /// @throws CBlastException if validation fails
+    CPssmEngine(IPssmInputFreqRatios* input);
+
+    /// Destructor
     ~CPssmEngine();
 
     /// Runs the PSSM engine to compute the PSSM
     CRef<objects::CPssmWithParameters> Run();
 
 private:
+    // Note: only one of the two pointers below should be non-NULL, as this
+    // determines which API from the C PSSM engine core to call
+
     /// Handle to strategy to process raw PSSM input data
     IPssmInputData*         m_PssmInput;
+    /// Pointer to input data to create PSSM from frequency ratios
+    IPssmInputFreqRatios*   m_PssmInputFreqRatios;
     /// Blast score block structure
     CBlastScoreBlk          m_ScoreBlk;
 
@@ -104,31 +121,43 @@ private:
     BlastQueryInfo*
     x_InitializeQueryInfo(unsigned int query_length);
 
-    /// Initializes the BlastScoreBlk required to run the PSSM engine.
+    /// Initializes the BlastScoreBlk data member required to run the PSSM 
+    /// engine.
     /// @todo this should be moved to the core of BLAST
     /// @param query sequence [in]
     /// @param query_length length of the sequence above [in]
     /// @param matrix_name name of the underlying scoring matrix to use [in]
     /// @throws CBlastException if does not have enough memory or if there was
     /// an error when setting up the return value
-    /// @return initialized BlastScoreBlk
-    BlastScoreBlk*
+    /// @todo add an overloaded version of this method which takes an already
+    /// constructed BlastScoreBlk*
+    void
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length,
                            const char* matrix_name);
 
-    /// Checks that no data returned by the IPssmInputData interface is NULL
-    /// @throws CBlastException if validation fails. Does not test the
-    /// GetData() method as this is only populated after Process() is called.
-    void
-    x_CheckAgainstNullData();
+    /// Private interface to retrieve query sequence from its data source
+    /// interface
+    unsigned char* x_GetQuery() const;
 
-    /// Performs validation on data provided before invoking the CORE PSSM
-    /// engine. Should be called after invoking Process() on the
-    /// IPssmInputData.
-    /// @throws CBlastException if validation fails
-    void
-    x_Validate();
+    /// Private interface to retrieve query length from its data source
+    /// interface
+    unsigned int x_GetQueryLength() const;
+
+    /// Private interface to retrieve matrix name from its data source
+    /// interface
+    const char* x_GetMatrixName() const;
+
+    /// Using IPssmInputData as a delegate to provide input data in the form of
+    /// a multiple sequence alignment, creates a PSSM using the CORE C PSSM 
+    /// engine API
+    CRef<objects::CPssmWithParameters>
+    x_CreatePssmFromMsa();
+
+    /// Using IPssmInputFreqRatios as a delegate to provide the input PSSM's
+    /// frequency ratios, creates a PSSM using the CORE C PSSM engine API
+    CRef<objects::CPssmWithParameters>
+    x_CreatePssmFromFreqRatios();
 
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
@@ -140,8 +169,8 @@ private:
     /// those in pssm argument
     static CRef<objects::CPssmWithParameters>
     x_PSIMatrix2Asn1(const PSIMatrix* pssm,
-                     const PSIBlastOptions* opts,
                      const char* matrix_name,
+                     const PSIBlastOptions* opts = NULL,
                      const PSIDiagnosticsResponse* diagnostics = NULL);
 
     /// Convert a PSSM return status into a string
@@ -171,6 +200,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/05/20 18:29:08  camacho
+ * Add use of IPssmInputFreqRatios to PSSM engine
+ *
  * Revision 1.23  2005/05/03 20:32:52  camacho
  * Minor
  *

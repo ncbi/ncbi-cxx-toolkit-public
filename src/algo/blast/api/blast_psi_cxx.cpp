@@ -64,41 +64,115 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CPssmEngine::CPssmEngine(IPssmInputData* input)
-    : m_PssmInput(input)
+static void
+s_CheckAgainstNullData(IPssmInputData* pssm_input_msa)
 {
-    x_CheckAgainstNullData();
-    m_ScoreBlk.Reset(x_InitializeScoreBlock(m_PssmInput->GetQuery(),
-                                            m_PssmInput->GetQueryLength(), 
-                                            m_PssmInput->GetMatrixName()));
-}
-
-CPssmEngine::~CPssmEngine()
-{
-}
-
-void
-CPssmEngine::x_CheckAgainstNullData()
-{
-    if ( !m_PssmInput ) {
+    if ( !pssm_input_msa ) {
         NCBI_THROW(CBlastException, eBadParameter,
            "IPssmInputData is NULL");
     }
 
-    if ( !m_PssmInput->GetOptions() ) {
+    if ( !pssm_input_msa->GetOptions() ) {
         NCBI_THROW(CBlastException, eBadParameter,
            "IPssmInputData returns NULL PSIBlastOptions");
     }
 
-    if ( !m_PssmInput->GetQuery() ) {
+    if ( !pssm_input_msa->GetQuery() ) {
         NCBI_THROW(CBlastException, eBadParameter, 
            "IPssmInputData returns NULL query sequence");
     }
 
-    if (m_PssmInput->GetQueryLength() == 0) {
+    if (pssm_input_msa->GetQueryLength() == 0) {
         NCBI_THROW(CBlastException, eBadParameter, 
            "Query length provided by IPssmInputData is 0");
     }
+}
+
+static void
+s_CheckAgainstNullData(IPssmInputFreqRatios* pssm_input_freqratios)
+{
+    if ( !pssm_input_freqratios ) {
+        NCBI_THROW(CBlastException, eBadParameter,
+           "IPssmInputFreqRatios is NULL");
+    }
+
+    if ( !pssm_input_freqratios->GetQuery() ) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "IPssmInputFreqRatiosFreqRatios returns NULL query sequence");
+    }
+
+    const unsigned int kQueryLength = pssm_input_freqratios->GetQueryLength();
+    if (kQueryLength == 0) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "Query length provided by IPssmInputFreqRatiosFreqRatios is 0");
+    }
+
+    if (pssm_input_freqratios->GetData().GetCols() != kQueryLength) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "Number of columns returned by IPssmInputFreqRatiosFreqRatios does "
+           "not match query length");
+    }
+    if (pssm_input_freqratios->GetData().GetRows() != BLASTAA_SIZE) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "Number of rows returned by IPssmInputFreqRatiosFreqRatios differs "
+           "from " + NStr::IntToString(BLASTAA_SIZE));
+    }
+}
+
+/// Performs validation on data provided before invoking the CORE PSSM
+/// engine. Should be called after invoking Process() on its argument
+/// @throws CBlastException if validation fails
+static void
+s_Validate(IPssmInputData* pssm_input_msa)
+{
+    ASSERT(pssm_input_msa);
+
+    if ( !pssm_input_msa->GetData() ) {
+        NCBI_THROW(CBlastException, eBadParameter,
+           "IPssmInputData returns NULL multiple sequence alignment");
+    }
+
+    Blast_Message* errors = NULL;
+    if (PSIBlastOptionsValidate(pssm_input_msa->GetOptions(), &errors) != 0) {
+        string msg("IPssmInputData returns invalid PSIBlastOptions: ");
+        msg += string(errors->message);
+        errors = Blast_MessageFree(errors);
+        NCBI_THROW(CBlastException, eBadParameter, msg);
+    }
+}
+
+/// Performs validation on data provided before invoking the CORE PSSM
+/// engine. Should be called after invoking Process() on its argument
+/// @throws CBlastException if validation fails
+static void
+s_Validate(IPssmInputFreqRatios* pssm_input_fr)
+{
+    ASSERT(pssm_input_fr);
+
+    ITERATE(CNcbiMatrix<double>, itr, pssm_input_fr->GetData()) {
+        if (*itr < 0.0) {
+            NCBI_THROW(CBlastException, eBadParameter, "PSSM frequency "
+                       "ratios cannot have negative values");
+        }
+    }
+}
+
+CPssmEngine::CPssmEngine(IPssmInputData* input)
+    : m_PssmInput(input), m_PssmInputFreqRatios(NULL)
+{
+    s_CheckAgainstNullData(input);
+    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName());
+}
+
+CPssmEngine::CPssmEngine(IPssmInputFreqRatios* input)
+    : m_PssmInput(NULL), m_PssmInputFreqRatios(input)
+{
+    s_CheckAgainstNullData(input);
+    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName());
+}
+
+CPssmEngine::~CPssmEngine()
+{
 }
 
 string
@@ -164,17 +238,70 @@ CPssmEngine::x_ErrorCodeToString(int error_code)
     return retval;
 }
 
-// This method is the core of this class. It delegates the extraction of
-// information from the pairwise alignments into a multiple sequence alignment
-// structure to its IPsiAlignmentProcessor strategy.
-// Creating the PSSM is then delegated to the core PSSM engine.
-// Afterwards the results are packaged in a scoremat (structure defined from
-// the ASN.1 specification).
 CRef<CPssmWithParameters>
 CPssmEngine::Run()
 {
+    return (m_PssmInput ? x_CreatePssmFromMsa() : x_CreatePssmFromFreqRatios());
+}
+
+CRef<CPssmWithParameters>
+CPssmEngine::x_CreatePssmFromFreqRatios()
+{
+    ASSERT(m_PssmInputFreqRatios);
+
+    m_PssmInputFreqRatios->Process();
+    s_Validate(m_PssmInputFreqRatios);
+
+    // Auxiliary inner class to convert from a CNcbiMatrix into a double** as
+    // required by the C API
+    struct SNcbiMatrix2DoubleMatrix {
+        SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
+            : m_Cols(m.GetCols())
+        {
+            m_Data = new double*[m_Cols];
+            for (size_t i = 0; i < m.GetCols(); i++) {
+                m_Data[i] = const_cast<double*>(&m[i*m.GetRows()]);
+            }
+        }
+        ~SNcbiMatrix2DoubleMatrix() { delete [] m_Data; }
+
+        operator double**() { return m_Data; }
+        
+    private:
+        size_t   m_Cols;
+        double** m_Data;
+    };
+
+    CPSIMatrix pssm;
+    SNcbiMatrix2DoubleMatrix freq_ratios(m_PssmInputFreqRatios->GetData());
+
+    int status = 
+        PSICreatePssmFromFrequencyRatios
+            (m_PssmInputFreqRatios->GetQuery(), 
+             m_PssmInputFreqRatios->GetQueryLength(),
+             m_ScoreBlk,
+             freq_ratios,
+             kPSSM_NoImpalaScaling,
+             &pssm);
+    if (status != PSI_SUCCESS) {
+        string msg = x_ErrorCodeToString(status);
+        NCBI_THROW(CBlastException, eInternal, msg);
+    }
+
+    // Convert core BLAST matrix structure into ASN.1 score matrix object
+    CRef<CPssmWithParameters> retval;
+    retval = x_PSIMatrix2Asn1(pssm, m_PssmInputFreqRatios->GetMatrixName());
+
+    return retval;
+}
+
+CRef<CPssmWithParameters>
+CPssmEngine::x_CreatePssmFromMsa()
+{
+    ASSERT(m_PssmInput);
+
     m_PssmInput->Process();
-    x_Validate();
+    s_Validate(m_PssmInput);
 
     CPSIMatrix pssm;
     CPSIDiagnosticsResponse diagnostics;
@@ -192,9 +319,9 @@ CPssmEngine::Run()
     }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
-    CRef<CPssmWithParameters> retval(NULL);
-    retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetOptions(), 
-                              m_PssmInput->GetMatrixName(), diagnostics);
+    CRef<CPssmWithParameters> retval;
+    retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetMatrixName(), 
+                              m_PssmInput->GetOptions(), diagnostics);
 
     return retval;
 }
@@ -238,7 +365,7 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
     return retval;
 }
 
-BlastScoreBlk*
+void
 CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length,
                                     const char* matrix_name)
@@ -305,31 +432,36 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
 
     ASSERT(retval->kbp_ideal);
 
-    return retval;
+    m_ScoreBlk.Reset(retval);
 }
 
-void
-CPssmEngine::x_Validate()
+unsigned char*
+CPssmEngine::x_GetQuery() const
 {
-    if ( !m_PssmInput->GetData() ) {
-        NCBI_THROW(CBlastException, eBadParameter,
-           "IPssmInputData returns NULL multiple sequence alignment");
-    }
+    return (m_PssmInput ? 
+            m_PssmInput->GetQuery() : m_PssmInputFreqRatios->GetQuery());
+}
 
-    Blast_Message* errors = NULL;
-    if (PSIBlastOptionsValidate(m_PssmInput->GetOptions(), &errors) != 0) {
-        string msg("IPssmInputData returns invalid PSIBlastOptions: ");
-        msg += string(errors->message);
-        errors = Blast_MessageFree(errors);
-        NCBI_THROW(CBlastException, eBadParameter, msg);
-    }
+unsigned int
+CPssmEngine::x_GetQueryLength() const
+{
+    return (m_PssmInput ?
+            m_PssmInput->GetQueryLength() :
+            m_PssmInputFreqRatios->GetQueryLength());
+}
 
+const char*
+CPssmEngine::x_GetMatrixName() const
+{
+    return (m_PssmInput ?
+            m_PssmInput->GetMatrixName() :
+            m_PssmInputFreqRatios->GetMatrixName());
 }
 
 CRef<CPssmWithParameters>
 CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
-                              const PSIBlastOptions* opts,
                               const char* matrix_name,
+                              const PSIBlastOptions* opts,
                               const PSIDiagnosticsResponse* diagnostics)
 {
     ASSERT(pssm);
@@ -337,10 +469,12 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     CRef<CPssmWithParameters> retval(new CPssmWithParameters);
 
     // Record the parameters
-    retval->SetParams().SetPseudocount(opts->pseudo_count);
     string mtx(matrix_name);
     mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
     retval->SetParams().SetRpsdbparams().SetMatrixName(mtx);
+    if (opts) {
+        retval->SetParams().SetPseudocount(opts->pseudo_count);
+    }
 
     CPssm& asn1_pssm = retval->SetPssm();
     asn1_pssm.SetIsProtein(true);
@@ -368,7 +502,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
             }
         }
     }
-    if (opts->impala_scaling_factor != kPSSM_NoImpalaScaling) {
+    if (opts && opts->impala_scaling_factor != kPSSM_NoImpalaScaling) {
         asn1_pssm.SetFinalData().
             SetScalingFactor(static_cast<int>(opts->impala_scaling_factor));
     }
@@ -459,6 +593,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2005/05/20 18:29:43  camacho
+ * Add use of IPssmInputFreqRatios to PSSM engine
+ *
  * Revision 1.36  2005/05/10 16:08:39  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *
