@@ -244,6 +244,26 @@ CPssmEngine::Run()
     return (m_PssmInput ? x_CreatePssmFromMsa() : x_CreatePssmFromFreqRatios());
 }
 
+// Auxiliary inner class to convert from a CNcbiMatrix into a double** as
+// required by the C API
+struct SNcbiMatrix2DoubleMatrix {
+    SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
+        : m_Cols(m.GetCols())
+    {
+        m_Data = new double*[m_Cols];
+        for (size_t i = 0; i < m.GetCols(); i++) {
+            m_Data[i] = const_cast<double*>(&m[i*m.GetRows()]);
+        }
+    }
+    ~SNcbiMatrix2DoubleMatrix() { delete [] m_Data; }
+
+    operator double**() { return m_Data; }
+    
+private:
+    size_t   m_Cols;
+    double** m_Data;
+};
+
 CRef<CPssmWithParameters>
 CPssmEngine::x_CreatePssmFromFreqRatios()
 {
@@ -251,26 +271,6 @@ CPssmEngine::x_CreatePssmFromFreqRatios()
 
     m_PssmInputFreqRatios->Process();
     s_Validate(m_PssmInputFreqRatios);
-
-    // Auxiliary inner class to convert from a CNcbiMatrix into a double** as
-    // required by the C API
-    struct SNcbiMatrix2DoubleMatrix {
-        SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
-            : m_Cols(m.GetCols())
-        {
-            m_Data = new double*[m_Cols];
-            for (size_t i = 0; i < m.GetCols(); i++) {
-                m_Data[i] = const_cast<double*>(&m[i*m.GetRows()]);
-            }
-        }
-        ~SNcbiMatrix2DoubleMatrix() { delete [] m_Data; }
-
-        operator double**() { return m_Data; }
-        
-    private:
-        size_t   m_Cols;
-        double** m_Data;
-    };
 
     CPSIMatrix pssm;
     SNcbiMatrix2DoubleMatrix freq_ratios(m_PssmInputFreqRatios->GetData());
@@ -593,6 +593,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2005/05/20 20:23:58  ucko
+ * Define SNcbiMatrix2DoubleMatrix *outside* x_CreatePssmFromFreqRatios
+ * to avoid breaking the MIPSpro compiler (on IRIX).
+ *
  * Revision 1.37  2005/05/20 18:29:43  camacho
  * Add use of IPssmInputFreqRatios to PSSM engine
  *
