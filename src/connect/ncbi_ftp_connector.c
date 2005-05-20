@@ -263,9 +263,9 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
                              const STimeout* timeout,
                              int/*bool*/     quit)
 {
-    EIO_Status      status = eIO_Success;
-    int             code;
-    size_t          n;
+    EIO_Status status = eIO_Success;
+    int        code;
+    size_t     n;
 
     if (!xxx->data)
         return status;
@@ -410,11 +410,17 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
     if (BUF_Read(xxx->wbuf, s, size) == size  &&
         SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout) == eIO_Success) {
         char* c;
-        s[size] = '\0';
+        if ((c = memchr(s, '\n', size)) != 0) {
+            if (c != s  &&  c[-1] == '\r')
+                c--;
+            *c = '\0';
+        } else
+            s[size] = '\0';
         if (!(c = strchr(s, ' ')))
             c = s + strlen(s);
-        size = (size_t)(c - s);
-        if        (strncasecmp(s, "CWD",  size) == 0) {
+        if (!(size = (size_t)(c - s))) {
+            status = eIO_Unknown;
+        } else if (strncasecmp(s, "CWD",  size) == 0) {
             status = s_FTPChdir(xxx, s);
         } else if (strncasecmp(s, "LIST", size) == 0  ||
                    strncasecmp(s, "NLST", size) == 0  ||
@@ -528,20 +534,16 @@ static EIO_Status s_VT_Write
     size_t s;
 
     xxx->w_status = eIO_Success;
-    if ( !size )
+    if (!size)
         return eIO_Success;
     if (!xxx->cntl)
         return eIO_Closed;
 
-    if ((c = memchr((const char*) buf, '\n', size)) != 0) {
-        if (c < (const char*) buf + size - 1)
-            return eIO_Unknown;
-        if (c != (const char*) buf  &&  c[-1] == '\r')
-            --c;
-        s = (size_t)(c - (const char*) buf);
-    } else
-        s = size;
-    status = BUF_Write(&xxx->wbuf, buf, s) ? eIO_Success : eIO_Unknown;
+    if ((c = memchr((const char*) buf, '\n', size)) != 0  &&
+        c < (const char*) buf + size - 1) {
+        return eIO_Unknown;
+    }
+    status = BUF_Write(&xxx->wbuf, buf, size) ? eIO_Success : eIO_Unknown;
     if (status == eIO_Success  &&  c) {
         xxx->w_status = s_FTPExecute(xxx, timeout);
         status = xxx->w_status;
@@ -743,6 +745,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2005/05/20 13:02:13  lavr
+ * s_VT_Write() not to cut '\r' -- instead, do this in s_FTPExecute()
+ *
  * Revision 1.11  2005/05/20 12:11:00  lavr
  * ABOR sequence reimplemented to work even with buggy FTPDs
  *
