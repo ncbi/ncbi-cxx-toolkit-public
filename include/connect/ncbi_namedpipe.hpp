@@ -192,11 +192,11 @@ public:
     /// Return real named pipe name.
     ///
     /// @sa Open, Create
-    string GetName(void) const;
+    const string& GetName(void) const;
 
 protected:
     // Set pipe name (expand it if necessary)
-    void x_SetPipeName(const string& pipename);
+    void x_SetName(const string& pipename);
 
 protected:
     string            m_PipeName;          ///< pipe name 
@@ -343,7 +343,8 @@ inline bool CNamedPipe::IsServerSide(void) const
     return !m_IsClientSide;
 }
 
-inline string CNamedPipe::GetName(void) const
+
+inline const string& CNamedPipe::GetName(void) const
 {
     return m_PipeName;
 }
@@ -356,6 +357,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/20 16:24:49  ivanov
+ * CNamedPipe::GetName() -- return const string&.
+ * Renamed CNamedPipe::x_SetPipeName() -> CNamedPipe::x_SetName().
+ *
  * Revision 1.10  2005/05/20 15:08:23  ivanov
  * + CNamedPipe::GetName()
  *
