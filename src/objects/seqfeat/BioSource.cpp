@@ -43,6 +43,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <algorithm>
+#include <set>
 
 // generated classes
 
@@ -187,18 +188,22 @@ void CBioSource::x_SubtypeCleanup(void)
 {
     _ASSERT(IsSetSubtype());
 
-    TSubtype& subtypes = SetSubtype();
+    typedef multiset<CRef<CSubSource>, SSubsourceCompare> TSorter;
 
-    TSubtype::iterator it = subtypes.begin();
-    while (it != subtypes.end()) {
-        if (!*it) {
-            it = subtypes.erase(it);
-        } else {
+    TSubtype& subtypes = SetSubtype();
+    TSorter   tmp;
+
+    NON_CONST_ITERATE (TSubtype, it, subtypes) {
+        if (*it) {
             (*it)->BasicCleanup();
-            ++it;
+            tmp.insert(*it);
         }
     }
-    subtypes.sort(SSubsourceCompare());
+
+    subtypes.clear();
+    ITERATE (TSorter, it, tmp) {
+        subtypes.push_back(*it);
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -210,6 +215,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.5  2005/05/20 20:57:57  ucko
+* Rework x_SubtypeCleanup to build against WorkShop's STL implementation,
+* which doesn't allow sorting lists via custom comparators.
+*
 * Revision 6.4  2005/05/20 13:36:54  shomrat
 * Added BasicCleanup()
 *
