@@ -37,6 +37,12 @@
 
 #include <corelib/ncbistl.hpp>
 #include <algo/blast/core/blast_psi.h>
+#include <util/math/matrix.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 /** @addtogroup AlgoBlast
  *
@@ -45,6 +51,24 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
+
+/// Base class for the IPssmInputData and IPssmInputFreqRatios interfaces,
+/// provided to avoid duplicating the methods that are common to both
+/// interfaces
+struct IPssmInput_Base 
+{
+    /// Get the query sequence used as master for the multiple sequence
+    /// alignment in ncbistdaa encoding.
+    virtual unsigned char* GetQuery() = 0;
+
+    /// Get the query's length
+    virtual unsigned int GetQueryLength() = 0;
+
+    /// Obtain the name of the underlying matrix to use when building the PSSM
+    virtual const char* GetMatrixName() {
+        return BLAST_DEFAULT_MATRIX;
+    }
+};
 
 /// Abstract base class to encapsulate the source(s) and pre-processing of 
 /// PSSM input data as well as options to the PSI-BLAST PSSM engine.
@@ -58,9 +82,10 @@ BEGIN_SCOPE(blast)
 /// Seq-aligns, Cdd models, multiple sequence alignments, etc).
 /// @note Might need to add the PSIDiagnosticsRequest structure
 /// @sa CPsiBlastInputData
-class IPssmInputData
+/// @todo FIXME: rename to IPssmInputMsa
+struct IPssmInputData : public IPssmInput_Base
 {
-public:
+    /// virtual destructor
     virtual ~IPssmInputData() {}
 
     /// Algorithm to produce multiple sequence alignment structure should be
@@ -68,29 +93,34 @@ public:
     /// object before calling GetData()
     virtual void Process() = 0;
 
-    /// Get the query sequence used as master for the multiple sequence
-    /// alignment in ncbistdaa encoding.
-    virtual unsigned char* GetQuery() = 0;
-
-    /// Get the query's length
-    virtual unsigned int GetQueryLength() = 0;
-
     /// Obtain the multiple sequence alignment structure
     virtual PSIMsa* GetData() = 0;
 
     /// Obtain the options for the PSSM engine
     virtual const PSIBlastOptions* GetOptions() = 0;
 
-    /// Obtain the name of the underlying matrix to use when building the PSSM
-    virtual const char* GetMatrixName() {
-        return BLAST_DEFAULT_MATRIX; // BLOSUM62
-    }
-
     /// Obtain the diagnostics data that is requested from the PSSM engine
     /// Its results will be populated in the PssmWithParameters ASN.1 object
     virtual const PSIDiagnosticsRequest* GetDiagnosticsRequest() {
         return NULL;    // default is not requesting any diagnostics
     }
+};
+
+/// Interface used to retrieve the PSSM frequency ratios to allow for "restart"
+/// processing in PSI-BLAST: Given a preliminary
+struct IPssmInputFreqRatios : public IPssmInput_Base
+{
+    /// virtual destructor
+    virtual ~IPssmInputFreqRatios() {}
+
+    /// Algorithm to produce the PSSM's frequecy ratios should be
+    /// implemented in this method. This will be invoked by the CPssmEngine
+    /// object before calling GetData()
+    virtual void Process() = 0;
+
+    /// Obtain a matrix of frequency ratios with this->GetQueryLength() columns
+    /// and BLASTAA_SIZE rows
+    virtual const CNcbiMatrix<double>& GetData() = 0;
 };
 
 END_SCOPE(blast)
@@ -102,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/05/20 18:28:33  camacho
+ * + IPssmInputFreqRatios and default implementation
+ *
  * Revision 1.10  2005/05/13 21:24:10  camacho
  * Minor doxygen fix
  *

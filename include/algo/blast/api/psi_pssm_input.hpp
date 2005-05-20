@@ -59,10 +59,54 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+/// Implements the interface to retrieve data for the last 2 stages of the PSSM
+/// creation. Note that none of the data is owned by this class, it simply
+/// returns pointers to the data it is passed
+class NCBI_XBLAST_EXPORT CPsiBlastInputFreqRatios : public IPssmInputFreqRatios
+{
+public:
+    CPsiBlastInputFreqRatios(const unsigned char* query,
+                             unsigned int query_length,
+                             const CNcbiMatrix<double>& freq_ratios,
+                             const char* matrix_name = NULL)
+        : m_Query(const_cast<unsigned char*>(query)), 
+          m_QueryLength(query_length),
+          m_MatrixName(matrix_name),
+          m_FreqRatios(freq_ratios)
+    {}
+
+    /// No-op as we assume the data is passed in to the constructor
+    void Process() {}
+
+    unsigned char* GetQuery() { return m_Query; }
+
+    /// Get the query's length
+    unsigned int GetQueryLength() { return m_QueryLength; }
+
+    /// Obtain the name of the underlying matrix to use when building the PSSM
+    const char* GetMatrixName() {
+        return m_MatrixName ? m_MatrixName :
+            IPssmInputFreqRatios::GetMatrixName();
+    }
+
+    /// Obtain a matrix of frequency ratios with this->GetQueryLength() columns
+    /// and BLASTAA_SIZE rows
+    const CNcbiMatrix<double>& GetData() {
+        return m_FreqRatios;
+    }
+
+private:
+    unsigned char*      m_Query;
+    unsigned int        m_QueryLength;
+    const char*         m_MatrixName;
+    CNcbiMatrix<double> m_FreqRatios;
+};
+
 /// This class is a concrete strategy for IPssmInputData, and it
 /// implements the traditional PSI-BLAST algorithm for building a multiple
 /// sequence alignment from a list of pairwise alignments using the C++ object
 /// manager.
+/// @todo FIXME rename to CPsiBlastInputMsa
 class NCBI_XBLAST_EXPORT CPsiBlastInputData : public IPssmInputData
 {
 public:
@@ -174,6 +218,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/05/20 18:28:33  camacho
+ * + IPssmInputFreqRatios and default implementation
+ *
  * Revision 1.11  2005/03/28 18:27:35  jcherry
  * Added export specifiers
  *
