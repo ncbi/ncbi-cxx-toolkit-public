@@ -245,22 +245,22 @@ CPssmEngine::Run()
 }
 
 // Auxiliary inner class to convert from a CNcbiMatrix into a double** as
-// required by the C API
-struct SNcbiMatrix2DoubleMatrix {
+// required by the C API. Used only by CPssmEngine::x_CreatePssmFromFreqRatios
+struct SNcbiMatrix2DoubleMatrix 
+{
     SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
-        : m_Cols(m.GetCols())
     {
-        m_Data = new double*[m_Cols];
+        m_Data = new double*[m.GetCols()];
         for (size_t i = 0; i < m.GetCols(); i++) {
             m_Data[i] = const_cast<double*>(&m[i*m.GetRows()]);
         }
     }
+
     ~SNcbiMatrix2DoubleMatrix() { delete [] m_Data; }
 
     operator double**() { return m_Data; }
     
 private:
-    size_t   m_Cols;
     double** m_Data;
 };
 
@@ -593,6 +593,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2005/05/20 20:30:55  camacho
+ * Remove unneeded data member
+ *
  * Revision 1.38  2005/05/20 20:23:58  ucko
  * Define SNcbiMatrix2DoubleMatrix *outside* x_CreatePssmFromFreqRatios
  * to avoid breaking the MIPSpro compiler (on IRIX).
