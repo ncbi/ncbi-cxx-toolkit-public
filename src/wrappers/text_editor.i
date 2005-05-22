@@ -98,8 +98,7 @@ inline void CTextEditor::DisplayText(const string& text, long line_num)
         os << text;
     }}
     EditFile(fname, eGuess, line_num);
-    // this is in gui
-    //CDeleteAtExit::Add(fname);
+    CFileDeleteAtExit::Add(fname);
 }
 
 inline void CTextEditor::EditText(const string& orig_text,
@@ -139,6 +138,9 @@ inline void CTextEditor::EditText(const string& orig_text,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/22 13:26:54  jcherry
+ * Restored file deletion on exit, now that the class is in corelib
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
