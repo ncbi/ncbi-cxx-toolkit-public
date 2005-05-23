@@ -48,7 +48,7 @@ static char const rcsid[] =
  * PSICreatePssmWithDiagnostics.
  * @param pssm PSSM and statistical information [in|out]
  * @param msa multiple sequence alignment structure[in]
- * @param aligned_blocks data structure [in] 
+ * @param aligned_block aligned blocks data structure [in] 
  * @param seq_weights sequence weights data structure [in]
  * @param internal_pssm PSSM being computed [in]
  */
@@ -76,7 +76,7 @@ s_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
  * @param internal_pssm PSSM being computed, must be already allocated [in|out]
  * @param query query sequence in ncbistdaa encoding. [in]
  * @param query_length length of the query sequence above [in]
- * @param std_probs array containing the standard background residue 
+ * @param std_prob array containing the standard background residue 
  * probabilities [in]
  * @param sbp Score block structure where the calculated lambda and K will be
  * returned [in|out]
@@ -229,7 +229,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
  * PSICreatePssmFromFrequencyRatios
  * @param pssm PSSM and statistical information [in|out]
  * @param internal_pssm PSSM being computed [in]
- * @param std_probs array containing the standard background residue 
+ * @param std_prob array containing the standard background residue 
  * probabilities [in]
  */
 static void

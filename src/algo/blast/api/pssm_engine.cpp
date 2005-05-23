@@ -64,6 +64,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+/// This function makes sure that none of the required data is returned as NULL
+/// or "empty"
+/// @param pssm_input_msa interface which provides the data [in]
+/// @throw CBlastException in case of validation failure
 static void
 s_CheckAgainstNullData(IPssmInputData* pssm_input_msa)
 {
@@ -88,6 +92,10 @@ s_CheckAgainstNullData(IPssmInputData* pssm_input_msa)
     }
 }
 
+/// This function makes sure that none of the required data is returned as NULL
+/// or "empty"
+/// @param pssm_input_freqratios interface which provides the data [in]
+/// @throw CBlastException in case of validation failure
 static void
 s_CheckAgainstNullData(IPssmInputFreqRatios* pssm_input_freqratios)
 {
@@ -244,8 +252,8 @@ CPssmEngine::Run()
     return (m_PssmInput ? x_CreatePssmFromMsa() : x_CreatePssmFromFreqRatios());
 }
 
-// Auxiliary inner class to convert from a CNcbiMatrix into a double** as
-// required by the C API. Used only by CPssmEngine::x_CreatePssmFromFreqRatios
+/// Auxiliary inner class to convert from a CNcbiMatrix into a double** as
+/// required by the C API. Used only by CPssmEngine::x_CreatePssmFromFreqRatios
 struct SNcbiMatrix2DoubleMatrix 
 {
     SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
@@ -593,6 +601,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2005/05/23 15:32:47  camacho
+ * doxygen fixes
+ *
  * Revision 1.39  2005/05/20 20:30:55  camacho
  * Remove unneeded data member
  *
