@@ -249,15 +249,21 @@ protected:
      * 
      * @param i the index of the ladder
      */
-    bool GetLadderCalc(int i) const;
+    Int1 GetLadderCalc(int i) const;
 
     /**
      * Set the bit that indicates whether a ladder was calculated
      * 
      * @param i the index of the ladder
      */
-    bool& SetLadderCalc(int i);
+    Int1& SetLadderCalc(int i);
 
+    /**
+     * Clear the ladder calc array up to max index
+     * 
+     * @param Max the number of indices to clear
+     */
+    void ClearLadderCalc(int Max);
 
     /**
      * Set the mask and mass of mod bit array
@@ -298,7 +304,7 @@ private:
 	/**
      * bool array that indicates if the ladders been calculated
      */
-    AutoPtr <bool, ArrayDeleter<bool> > LadderCalc;
+    AutoPtr <Int1, ArrayDeleter<Int1> > LadderCalc;
 
 	/**
      * contains bit mask of modifications and resulting mass
@@ -422,7 +428,7 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
  * @param i the index of the ladder
  */
 inline
-bool CSearch::GetLadderCalc(int i) const
+Int1 CSearch::GetLadderCalc(int i) const
 {
     return *(LadderCalc.get() + i);
 }
@@ -433,9 +439,21 @@ bool CSearch::GetLadderCalc(int i) const
  * @param i the index of the ladder
  */
 inline
-bool& CSearch::SetLadderCalc(int i)
+Int1& CSearch::SetLadderCalc(int i)
 {
     return *(LadderCalc.get() + i);
+}
+
+
+/**
+ * Clear the ladder calc array up to max index
+ * 
+ * @param Max the number of indices to clear
+ */
+inline
+void CSearch::ClearLadderCalc(int Max)
+{
+	memset(LadderCalc.get(), 0, sizeof(Int1)*Max);
 }
 
 
@@ -464,6 +482,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.29  2005/05/23 19:07:34  lewisg
+  improve perf of ladder calculation
+
   Revision 1.28  2005/05/19 22:17:16  lewisg
   move arrays to AutoPtr
 

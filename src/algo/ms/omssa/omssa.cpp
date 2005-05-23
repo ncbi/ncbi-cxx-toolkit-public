@@ -597,7 +597,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
     InitLadders();
 
-    LadderCalc.reset(new bool[MaxModPerPep]);
+    LadderCalc.reset(new Int1[MaxModPerPep]);
 	CAA AA;
 		
 	int Missed = MyRequest->GetSettings().GetMissedcleave()+1;  // number of missed cleaves allowed + 1
@@ -802,8 +802,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		    endposition = PepEnd[iMissed] - (const char *)Sequence;
 		
 		    // init bool for "Has ladder been calculated?"
-		    for(iMod = 0; iMod < MaxModPerPep; iMod++) 
-		      SetLadderCalc(iMod) = false;
+		 //   for(iMod = 0; iMod < MaxModPerPep/*NumMassAndMask[iMissed]*/ ; iMod++) 
+		  //    SetLadderCalc(iMod) = false;
+			ClearLadderCalc(NumMassAndMask[iMissed]);
 		
 		    OldMass = 0;
 		    NoMassMatch = true;
@@ -1478,6 +1479,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.49  2005/05/23 19:07:34  lewisg
+improve perf of ladder calculation
+
 Revision 1.48  2005/05/19 22:17:16  lewisg
 move arrays to AutoPtr
 
