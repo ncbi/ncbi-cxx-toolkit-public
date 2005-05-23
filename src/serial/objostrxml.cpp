@@ -1275,6 +1275,9 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
         } else {
             TopFrame().SetNotag();
         }
+        if (type == eTypeFamilyPrimitive) {
+            m_SkipIndent = id.HasNotag();
+        }
     } else {
         OpenStackTag(0);
     }
@@ -1364,6 +1367,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/05/23 15:40:14  gouriano
+* Handle containers of elements with mixed content
+*
 * Revision 1.80  2005/02/23 21:07:44  vasilche
 * Allow to skip underlying stream flush.
 *

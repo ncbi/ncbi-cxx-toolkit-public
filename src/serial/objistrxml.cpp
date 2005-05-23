@@ -1273,6 +1273,9 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
             dynamic_cast<const CClassTypeInfoBase*>(type);
         if (classType) {
             if (m_RejectedTag.empty()) {
+                if (!NextIsTag()) {
+                    return true;
+                }
                 tagName = ReadName(BeginOpeningTag());
             } else {
                 tagName = RejectedName();
@@ -1687,6 +1690,9 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         return pos;
                     }
                 }
+            }
+            if (!NextIsTag()) {
+                return kInvalidMember;
             }
             tagName = ReadName(BeginOpeningTag());
         }
@@ -2133,6 +2139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/05/23 15:40:14  gouriano
+* Handle containers of elements with mixed content
+*
 * Revision 1.72  2005/02/09 14:28:38  gouriano
 * Implemented serialization of mixed content elements
 *
