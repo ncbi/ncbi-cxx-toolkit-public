@@ -313,7 +313,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 q_start, s_start;
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastScoringOptions* score_options = score_params->options;
-   Int4 context_offset;
    Uint1* translation_buffer = NULL;
    Int4 * frame_offsets   = NULL;
    Int4 * frame_offsets_a = NULL;
@@ -385,20 +384,13 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
-      if (program_number == eBlastTypeBlastx || 
-          program_number == eBlastTypeTblastx) {
-         Int4 context = hsp->context - hsp->context % 3;
-         context_offset = query_info->contexts[context].query_offset;
+      if (program_number == eBlastTypeBlastx && kIsOutOfFrame) {
+          Int4 context = hsp->context - hsp->context % 3;
+          Int4 context_offset = query_info->contexts[hsp->context].query_offset;
          
-         if (kIsOutOfFrame) {
-            query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
-            query_length = query_info->contexts[context+2].query_offset +
-                query_info->contexts[context+2].query_length - context_offset;
-         } else {
-            query = query_blk->sequence + 
-               query_info->contexts[hsp->context].query_offset;
-            query_length = query_info->contexts[hsp->context].query_length;
-         }
+          query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
+          query_length = query_info->contexts[context+2].query_offset +
+              query_info->contexts[context+2].query_length - context_offset;
       } else {
           query = query_blk->sequence + 
               query_info->contexts[hsp->context].query_offset;
