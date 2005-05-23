@@ -71,8 +71,8 @@ public:
     static TIndexRange GetIndexRange(const SAnnotTypeSelector& sel);
     static TIndexRange GetIndexRange(const SAnnotTypeSelector& sel,
                                      const SIdAnnotObjs& objs);
-    static size_t GetTypeIndex(const CAnnotObject_Info& info);
-    static size_t GetTypeIndex(const SAnnotObject_Key& key);
+    static TIndexRange GetTypeIndex(const CAnnotObject_Info& info);
+    static TIndexRange GetTypeIndex(const SAnnotObject_Key& key);
 
 private:
     typedef vector<TIndexRange> TIndexRangeTable;
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/05/23 14:09:55  grichenk
+* Fixed indexing of feature types
+*
 * Revision 1.1  2004/02/04 18:03:21  grichenk
 * Initial revision
 *

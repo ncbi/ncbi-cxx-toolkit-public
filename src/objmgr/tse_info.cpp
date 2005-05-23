@@ -791,8 +791,11 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
         }
     }
     else {
-        size_t idx = CAnnotType_Index::GetTypeIndex(key);
-        x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
+        CAnnotType_Index::TIndexRange idx_rg =
+            CAnnotType_Index::GetTypeIndex(key);
+        for (size_t idx = idx_rg.first; idx < idx_rg.second; ++idx) {
+            x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
+        }
     }
 }
 
@@ -800,11 +803,13 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
 bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
                                    const SAnnotObject_Key& key)
 {
-    size_t index = CAnnotType_Index::GetTypeIndex(key);
-    _ASSERT(index < objs.x_GetRangeMapCount());
-    if ( x_UnmapAnnotObject(objs.x_GetRangeMap(index), key) ) {
-        if ( objs.x_CleanRangeMaps() ) {
-            return objs.m_SNPSet.empty();
+    CAnnotType_Index::TIndexRange idx_rg = CAnnotType_Index::GetTypeIndex(key);
+    for (size_t idx = idx_rg.first; idx < idx_rg.second; ++idx) {
+        _ASSERT(idx < objs.x_GetRangeMapCount());
+        if ( x_UnmapAnnotObject(objs.x_GetRangeMap(idx), key) ) {
+            if ( objs.x_CleanRangeMaps() ) {
+                return objs.m_SNPSet.empty();
+            }
         }
     }
     return false;

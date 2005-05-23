@@ -108,32 +108,24 @@ void CAnnotType_Index::x_InitIndexTables(void)
 }
 
 
-size_t CAnnotType_Index::GetTypeIndex(const CAnnotObject_Info& info)
+CAnnotType_Index::TIndexRange
+CAnnotType_Index::GetTypeIndex(const CAnnotObject_Info& info)
 {
     Initialize();
     if ( info.GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
         size_t index = GetSubtypeIndex(info.GetFeatSubtype());
         if ( index ) {
-            return index;
+            return TIndexRange(index, index+1);
         }
     }
     else if ( info.GetFeatType() != CSeqFeatData::e_not_set ) {
-        const TIndexRange r = GetFeatTypeRange(info.GetFeatType());
-        if ( r.second == r.first + 1 ) {
-            return r.first;
-        }
+        return GetFeatTypeRange(info.GetFeatType());
     }
-    else {
-        const TIndexRange r = GetAnnotTypeRange(info.GetAnnotType());
-        if ( r.second == r.first + 1 ) {
-            return r.first;
-        }
-    }
-    NCBI_THROW(CObjMgrException, eOtherError,
-               "CAnnotObject_Info is incompatible with CAnnotType_Index indexes");
+    return GetAnnotTypeRange(info.GetAnnotType());
 }
 
-size_t CAnnotType_Index::GetTypeIndex(const SAnnotObject_Key& key)
+CAnnotType_Index::TIndexRange
+CAnnotType_Index::GetTypeIndex(const SAnnotObject_Key& key)
 {
     Initialize();
     return GetTypeIndex(*key.m_AnnotObject_Info);
@@ -176,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/05/23 14:09:55  grichenk
+* Fixed indexing of feature types
+*
 * Revision 1.5  2004/09/30 18:38:12  vasilche
 * Added thread safety to CAnnot_Index::x_InitIndexTables().
 *
