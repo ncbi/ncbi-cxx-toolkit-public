@@ -154,6 +154,16 @@ int CAgpconvertApplication::Run(void)
                                 "exactly one Seq-entry");
         }
         ent_templ.Assign(*submit_templ->GetData().GetEntrys().front());
+        // incorporate any Seqdesc's that follow in the file
+        while (true) {
+            try {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                istr >> MSerial_AsnText >> *desc;
+                ent_templ.SetSeq().SetDescr().Set().push_back(desc);
+            } catch (...) {
+                break;
+            }
+        }
     }
 
     // if validating against a file containing
@@ -378,6 +388,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/23 20:22:25  jcherry
+ * When template file contains a Seq-submit, read in any Seqdesc's that
+ * follow and incorporate them into the template
+ *
  * Revision 1.3  2005/05/12 13:33:46  jcherry
  * Allow use of a Seq-submit as a template (and produce Seq-submit's)
  *
