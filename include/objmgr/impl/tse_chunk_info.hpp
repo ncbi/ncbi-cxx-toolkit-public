@@ -131,7 +131,10 @@ public:
     void x_AddAnnotPlace(TBioseq_setId id);
     void x_AddAnnotPlace(const TPlace& place);
 
+    // The bioseq-set contains some bioseq(s)
     void x_AddBioseqPlace(TBioseq_setId id);
+    // The chunk contains the whole bioseq and its annotations,
+    // the annotations can not refer other bioseqs.
     void x_AddBioseqId(const TBioseqId& id);
 
     void x_AddAnnotType(const CAnnotName& annot_name,
@@ -144,6 +147,8 @@ public:
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationSet& location);
+    // The chunk contains seq-data. The corresponding bioseq's
+    // data should be not set or set to delta with empty literal(s)
     void x_AddSeq_data(const TLocationSet& location);
 
     //////////////////////////////////////////////////////////////////
@@ -247,6 +252,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/05/23 14:10:20  grichenk
+* Added comments
+*
 * Revision 1.17  2005/04/20 15:07:41  ucko
 * Revert previous change -- fixed properly in mutex_pool.hpp.
 *
