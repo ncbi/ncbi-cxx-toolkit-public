@@ -5,7 +5,7 @@
 
 REQUIRES = objects dbapi
 
-SUB_PROJ = demo
+SUB_PROJ = demo split_demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
