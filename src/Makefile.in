@@ -54,7 +54,7 @@ libs_to_drop = $(top_srcdir)/scripts/internal/projects/libs_to_drop
 dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
-	if "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" ; then \
+	if test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" ; then \
           find build/*/ -name SunWS_cache -prune -o \
 	    \( -type f -size +64 ! -name '*.o' -print \) | xargs rm -f ; \
 	else \
