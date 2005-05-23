@@ -657,6 +657,14 @@ public:
     /// The last element in the returned array is 0.
     const char* const* GetClientTrackingEnv(void) const;
 
+    /// Serialize/Deserialize a request to/from a stream
+    void Serialize(CNcbiOstream& os) const;
+    void Deserialize(CNcbiIstream& is);
+
+    const CNcbiEnvironment& GetEnvironment() const { return *m_Env; }
+    
+
+
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;
@@ -849,6 +857,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.74  2005/05/23 15:17:49  didenko
+* Added Serialize/Deserialize methods to CCgiRequest class
+*
 * Revision 1.73  2005/05/18 14:12:45  grichenk
 * URL-encode/decode cookie's name and value
 *
