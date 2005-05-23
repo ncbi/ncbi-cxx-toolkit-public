@@ -31,8 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <connect/services/grid_debug_context.hpp>
 #include "grid_thread_context.hpp"
-#include "grid_debug_context.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -249,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2005/05/23 17:58:57  didenko
+ * Changed "grid_debug_context.hpp" to <connect/services/grid_debug_context.hpp>
+ *
  * Revision 6.6  2005/05/11 18:57:39  didenko
  * Added worker node statictics
  *
