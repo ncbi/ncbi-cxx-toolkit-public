@@ -95,11 +95,17 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
                 string PepString;
                 (*iHit)->MakePepString(PepString);
                 string ModString;
-				(*iHit)->MakeModString(ModString, ModSet);  
+                (*iHit)->MakeModString(ModString, ModSet);  
+                string Accession("");
+                if((*iPephit)->CanGetAccession())
+                    Accession = CSVString((*iPephit)->GetAccession());
+                int Gi(0);
+                if((*iPephit)->CanGetGi())
+                    Gi = (*iPephit)->GetGi();
                 os <<  HitSet->GetNumber() << "," << CSVString(id) << "," << 
                     CSVString(PepString) << "," << 
                      (*iHit)->GetEvalue() << "," << (*iHit)->GetMass()/fMZ_scale << "," << 
-                    (*iPephit)->GetGi() << "," << CSVString((*iPephit)->GetAccession()) << "," <<
+                    Gi << "," << Accession << "," <<
                     (*iPephit)->GetStart() + 1 << "," << (*iPephit)->GetStop() + 1 << "," <<
                      CSVString((*iPephit)->GetDefline()) << "," << CSVString(ModString) << endl;
             }
@@ -117,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/05/23 19:00:27  lewisg
+* don't output gi or accession if not available
+*
 * Revision 1.1  2005/05/09 18:28:54  mxu
 * add csv
 *
