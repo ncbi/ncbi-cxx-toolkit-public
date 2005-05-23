@@ -3,7 +3,7 @@
 # Meta-makefile("CACHE" project)
 #################################
 
-APP_PROJ = split_loader_demo
+# APP_PROJ = split_loader_demo
 SUB_PROJ = 
 
 srcdir = @srcdir@
