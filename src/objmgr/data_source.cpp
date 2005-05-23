@@ -1349,15 +1349,6 @@ void CTSE_LoadLock::SetLoaded(void)
 }
 
 
-CTSE_LoadLock::operator CTSE_Lock(void) const
-{
-    _ASSERT(*this);
-    _ASSERT(IsLoaded());
-    CTSE_Lock lock(*this);
-    return lock;
-}
-
-
 void CTSE_LoadLock::Reset(void)
 {
     ReleaseLoadLock();

@@ -75,7 +75,6 @@ public:
             return &*m_Info;
         }
     
-    operator CTSE_Lock(void) const;
     bool IsLoaded(void) const;
     void SetLoaded(void);
 
