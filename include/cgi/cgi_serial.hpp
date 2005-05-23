@@ -194,7 +194,7 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
         string key;
         string value;
         NStr::SplitInTwo(*it, "=", key, value);
-        cont.insert(make_pair(
+        cont.insert(TMap::value_type(
                     TKeyConverter::FromString(URL_DecodeString(key)),
                     TValueConverter::FromString(URL_DecodeString(value)))
                    );
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/05/23 17:01:51  ucko
+* Tweak ReadMap for compatibility with WorkShop's gratuitously strict STL.
+*
 * Revision 1.4  2005/05/23 15:02:02  didenko
 * Added Read/Write a container from/to a stream
 * Code restructure
