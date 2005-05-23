@@ -37,6 +37,8 @@
 #include <corelib/ncbitime.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
+#include <cgi/cgi_serial.hpp>
+
 #include <stdio.h>
 #include <time.h>
 #ifdef HAVE_UNISTD_H
@@ -1316,6 +1318,33 @@ const char* const* CCgiRequest::GetClientTrackingEnv(void) const
 }
 
 
+void CCgiRequest::Serialize(CNcbiOstream& os) const
+{
+    WriteMap(os, GetEntries());
+    WriteCgiCookies(os, GetCookies());
+    WriteEnvironment(os, *m_Env);
+    WriteContainer(os, GetIndexes());
+    CNcbiIstream* istrm = GetInputStream();
+    if (istrm) {
+        char buf[1024];
+        while(!istrm->eof()) {
+            istrm->read(buf, sizeof(buf));
+            os.write(buf, istrm->gcount());
+        }
+    }
+
+}
+void CCgiRequest::Deserialize(CNcbiIstream& is) 
+{
+    ReadMap(is, GetEntries());
+    ReadCgiCookies(is, GetCookies());
+    m_OwnEnv.reset(new CNcbiEnvironment(0));
+    ReadEnvironment(is,*m_OwnEnv);
+    ReadContainer(is, GetIndexes());
+    m_Env = m_OwnEnv.get();
+    SetInputStream(&is, false, -1);
+}
+
 extern string URL_DecodeString(const string& str)
 {
     string    x_str   = str;
@@ -1446,6 +1475,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.90  2005/05/23 15:03:09  didenko
+* Added Serialize/Deserialize methods to CCgiRequest class
+*
 * Revision 1.89  2005/05/18 14:12:45  grichenk
 * URL-encode/decode cookie's name and value
 *

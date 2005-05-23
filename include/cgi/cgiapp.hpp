@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbitime.hpp>
+#include <cgi/cgiapp_iface.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
@@ -59,10 +60,10 @@ class CCgiWatchFile;
 //  CCgiApplication::
 //
 
-class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
+class NCBI_XCGI_EXPORT CCgiApplication : public ICgiApplication
 {
     friend class CCgiStatistics;
-    typedef CNcbiApplication CParent;
+    typedef ICgiApplication CParent;
 
 public:
     CCgiApplication(void);
@@ -77,9 +78,9 @@ public:
     CCgiContext&       GetContext(void)        { return x_GetContext(); }
 
     /// Get server 'resource'. Throw exception if the resource is not set.
-    const CNcbiResource& GetResource(void) const { return x_GetResource(); }
+    virtual const CNcbiResource& GetResource(void) const { return x_GetResource(); }
     /// Get server 'resource'. Throw exception if the resource is not set.
-    CNcbiResource&       GetResource(void)       { return x_GetResource(); }
+    virtual CNcbiResource&       GetResource(void)       { return x_GetResource(); }
 
     /// Get the # of currently processed HTTP request.
     ///
@@ -331,6 +332,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/05/23 15:03:09  didenko
+* Added Serialize/Deserialize methods to CCgiRequest class
+*
 * Revision 1.44  2005/03/10 18:03:58  vakatov
 * Made SetupArgDescriptions() and GetArgs() virtual.
 * Keep and use its own CArgs instance rather than the CNcbiApplication's one
