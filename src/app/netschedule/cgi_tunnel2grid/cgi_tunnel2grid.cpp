@@ -60,7 +60,7 @@ const string kElapsedTime = "ctg_time";
 class CCgiTunnel2Grid : public  CGridCgiApplication
 {
 public:
-    CCgiTunnel2Grid() : m_CgiEntries(NULL) {}
+    CCgiTunnel2Grid() : m_CgiContext(NULL) {}
 
     virtual void Init(void);
     virtual string GetProgramVersion(void) const;
@@ -137,7 +137,8 @@ private:
 
     string  m_StrPage;
 
-    const TCgiEntries* m_CgiEntries;
+    //    const TCgiEntries* m_CgiEntries;
+    const CCgiContext* m_CgiContext;
 
 
 };
@@ -277,7 +278,7 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
     if (args[kInputParamName]) {
         m_Input = args[kInputParamName].AsString();
         if (m_Input == "CTG_CGIENTRIES")
-            m_CgiEntries = &ctx.GetCGIContext().GetRequest().GetEntries();
+            m_CgiContext = &ctx.GetCGIContext();
         return true;
     }
 
@@ -289,8 +290,8 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 {   
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
-    if (m_CgiEntries) {
-        WriteMap(os, *m_CgiEntries);
+    if (m_CgiContext) {
+        m_CgiContext->GetRequest().Serialize(os);
     }
     else
         os << m_Input;
@@ -429,7 +430,8 @@ void /*static*/ CCgiTunnel2Grid::x_RenderView(CHTMLPage& page,
 void CCgiTunnel2Grid::x_SetupArgs()
 {
     // Disregard the case of CGI arguments
-    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
+    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs); 
+    //                    | CCgiRequest::fIndexesNotEntries);
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
@@ -477,6 +479,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/05/23 15:06:09  didenko
+ * When ctg_input is set to "CGI_ENTRIES" then the whole cgi
+ * request is sending to a worker node.
+ *
  * Revision 1.19  2005/05/11 18:54:23  didenko
  * Fixed date output format
  *
