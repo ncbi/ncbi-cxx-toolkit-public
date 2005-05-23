@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("CACHE" project)
+#################################
+
+APP_PROJ = split_loader_demo
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
