@@ -224,14 +224,26 @@ void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo,
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST lookup file");
    }
+
    info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
+   if (info->lookup_header->magic_number != RPS_MAGIC_NUM) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "RPS BLAST lookup file is either corrupt or "
+                   "constructed for an incompatible architecture");
+   }
 
    CMemoryFile *pssm_mmap = new CMemoryFile(dbpath[0] + ".rps");
    if (pssm_mmap == NULL) {
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST profile file");
    }
+
    info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
+   if (info->profile_header->magic_number != RPS_MAGIC_NUM) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "RPS BLAST profile file is either corrupt or "
+                   "constructed for an incompatible architecture");
+   }
 
    CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
    if (auxfile.bad() || auxfile.fail()) {
@@ -694,6 +706,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.69  2005/05/23 17:10:39  papadopo
+ * add checks for correct endianness when reading RPS data files
+ *
  * Revision 1.68  2005/05/23 15:51:59  dondosha
  * Special case for preliminary hitlist size in RPS BLAST - hence no need for 2 extra parameters in SBlastHitsParametersNew
  *
