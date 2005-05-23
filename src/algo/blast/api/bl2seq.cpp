@@ -263,18 +263,13 @@ CBl2Seq::ScanDB()
 
     const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
     SBlastHitsParameters* blasthit_params=NULL;
-    SBlastHitsParametersNew(kOptions.GetProgramType(),
-                         kOptions.GetHitSaveOpts(),
-                         kOptions.GetExtnOpts(),
-                         kOptions.GetScoringOpts(), 
-                         mi_pSeqSrc,
-                         &blasthit_params);
+    SBlastHitsParametersNew(kOptions.GetHitSaveOpts(), kOptions.GetExtnOpts(),
+                            kOptions.GetScoringOpts(), &blasthit_params);
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
     BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(kOptions.GetProgramType(),
-            blasthit_params,
-            mi_clsQueryInfo->num_queries, FALSE);
+        Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
+                                   mi_clsQueryInfo->num_queries, FALSE);
                   
     Blast_RunFullSearch(kOptions.GetProgramType(),
                        mi_clsQueries, mi_clsQueryInfo, 
@@ -367,6 +362,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.73  2005/05/23 15:51:59  dondosha
+ * Special case for preliminary hitlist size in RPS BLAST - hence no need for 2 extra parameters in SBlastHitsParametersNew
+ *
  * Revision 1.72  2005/05/16 12:25:20  madden
  * Use SBlastHitsParameters in Blast_HSPListCollectorInit
  *

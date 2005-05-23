@@ -52,21 +52,17 @@ typedef struct SBlastHitsParameters {
 
 /** Sets up small structures used by blast_hit.c and hspstream_collector.c
  * for saving HSPs.
- * @param program used to determin if rpsblast [in]
  * @param hitSavingOptions field hitlist_size and hsp_num_max needed, a pointer to 
  *      this structure will be stored on resulting structure.[in]
  * @param extOptions field compositionBasedStats needed here. [in]
  * @param scoringOptions gapped_calculation needed here. [in]
- * @param seq_src used to get number of db sequence for rpsblast [in]
  * @param retval the allocated SBlastHitsParameters*
  * @return zero on success, 1 on NULL parameter, 2 if calloc fails.
  */
 NCBI_XBLAST_EXPORT
-Int2 SBlastHitsParametersNew(EBlastProgramType program,
-                             const BlastHitSavingOptions* hit_options,
+Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
                              const BlastExtensionOptions* ext_options,
                              const BlastScoringOptions* scoring_options,
-                             const BlastSeqSrc* seq_src,
                              SBlastHitsParameters* *retval);
 
 /** Deallocated SBlastHitsParameters.

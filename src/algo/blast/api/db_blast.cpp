@@ -395,12 +395,9 @@ CDbBlast::x_InitHSPStream()
         const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
 
         SBlastHitsParameters* blasthit_params=NULL;
-        SBlastHitsParametersNew(kOptions.GetProgramType(),
-                         kOptions.GetHitSaveOpts(),
-                         kOptions.GetExtnOpts(),
-                         kOptions.GetScoringOpts(), 
-                         m_pSeqSrc,
-                         &blasthit_params);
+        SBlastHitsParametersNew(kOptions.GetHitSaveOpts(), 
+                                kOptions.GetExtnOpts(),
+                                kOptions.GetScoringOpts(), &blasthit_params);
 
         m_pHspStream = 
             Blast_HSPListCollectorInitMT(kOptions.GetProgramType(), 
@@ -566,12 +563,9 @@ CDbBlast::GetResults()
     if (!m_ipResults) {
         const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
         SBlastHitsParameters* blasthit_params=NULL;
-        SBlastHitsParametersNew(kOptions.GetProgramType(),
-                         kOptions.GetHitSaveOpts(),
-                         kOptions.GetExtnOpts(),
-                         kOptions.GetScoringOpts(), 
-                         m_pSeqSrc,
-                         &blasthit_params);
+        SBlastHitsParametersNew(kOptions.GetHitSaveOpts(), 
+                                kOptions.GetExtnOpts(), 
+                                kOptions.GetScoringOpts(), &blasthit_params);
 
         m_ipResults = Blast_HSPResultsNew((int) GetQueries().size());
 
@@ -700,6 +694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.68  2005/05/23 15:51:59  dondosha
+ * Special case for preliminary hitlist size in RPS BLAST - hence no need for 2 extra parameters in SBlastHitsParametersNew
+ *
  * Revision 1.67  2005/05/19 21:34:43  dondosha
  * Use Blast_ProgramIsRpsBlast macro; returned calculation of effective lengths - it is needed because a copy of BlastQueryInfo is used in core
  *
