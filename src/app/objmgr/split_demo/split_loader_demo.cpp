@@ -38,20 +38,6 @@
 #include <corelib/ncbiargs.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
-// Objects includes
-//#include <objects/seq/Bioseq.hpp>
-//#include <objects/seq/Seq_annot.hpp>
-//#include <objects/seq/Seq_inst.hpp>
-//#include <objects/seq/Seq_ext.hpp>
-//#include <objects/seqloc/Seq_id.hpp>
-//#include <objects/seqloc/Seq_loc.hpp>
-//#include <objects/seqloc/Seq_interval.hpp>
-//#include <objects/seqset/Seq_entry.hpp>
-//#include <objects/seqset/Bioseq_set.hpp>
-//#include <objects/seqfeat/seqfeat__.hpp>
-//#include <objects/seqalign/Seq_align.hpp>
-//#include <objects/general/Name_std.hpp>
-
 // Object manager includes
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -59,9 +45,6 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-//#include <objmgr/bioseq_ci.hpp>
-//#include <objmgr/seq_annot_ci.hpp>
-//#include <objmgr/annot_ci.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include "split_loader.hpp"
@@ -158,7 +141,8 @@ int CDemoApp::Run(void)
     CSeqVector vect(handle);
     string data;
     vect.GetSeqData(vect.begin(), vect.end(), data);
-    NcbiCout << "Seq-data: " << NStr::PrintableString(data.substr(0, 10)) << NcbiEndl;
+    NcbiCout << "Seq-data: " << NStr::PrintableString(data.substr(0, 10))
+             << NcbiEndl;
 
     NcbiCout << "Done" << NcbiEndl;
     return 0;
@@ -185,6 +169,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/05/23 15:06:48  grichenk
+* Removed commented includes
+*
 * Revision 1.1  2005/05/23 15:04:46  grichenk
 * Initial revision
 *
