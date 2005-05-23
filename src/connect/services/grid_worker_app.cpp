@@ -40,8 +40,8 @@
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_default_factories.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
-#include "grid_debug_context.hpp"
-#include "grid_control_thread.hpp"
+#include <connect/services/grid_debug_context.hpp>
+#include <connect/services/grid_control_thread.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -339,6 +339,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/23 15:51:54  didenko
+ * Moved grid_control_thread.hpp grid_debug_context.hpp to
+ * include/connect/service
+ *
  * Revision 1.25  2005/05/19 15:15:24  didenko
  * Added admin_hosts parameter to worker nodes configurations
  *

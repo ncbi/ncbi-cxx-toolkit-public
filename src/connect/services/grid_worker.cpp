@@ -32,12 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <connect/services/grid_worker.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/services/grid_worker.hpp>
+#include <connect/services/grid_debug_context.hpp>
 #include <util/thread_pool.hpp>
 
 #include "grid_thread_context.hpp"
-#include "grid_debug_context.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -554,6 +554,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/05/23 15:51:54  didenko
+ * Moved grid_control_thread.hpp grid_debug_context.hpp to
+ * include/connect/service
+ *
  * Revision 1.27  2005/05/19 15:15:24  didenko
  * Added admin_hosts parameter to worker nodes configurations
  *
