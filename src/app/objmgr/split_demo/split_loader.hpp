@@ -115,17 +115,17 @@ private:
 
     // Types for storing split data locally
     struct SAnnotData {
-        TPlace           m_Place; // Where to attach the annot
-        CRef<CSeq_annot> m_Annot;
+        CTSE_Chunk_Info::TPlace m_Place; // Where to attach the annot
+        CRef<CSeq_annot>        m_Annot;
     };
     struct SDescrData {
-        TPlace           m_Place; // Where to attach the descr
-        CRef<CSeq_descr> m_Descr;
+        CTSE_Chunk_Info::TPlace m_Place; // Where to attach the descr
+        CRef<CSeq_descr>        m_Descr;
     };
     struct SSeqData {
-        TPlace             m_Place;  // Where to attach the data
-        TSeqPos            m_Pos;    // Literal start position
-        CRef<CSeq_literal> m_Literal;
+        CTSE_Chunk_Info::TPlace m_Place;  // Where to attach the data
+        TSeqPos                 m_Pos;    // Literal start position
+        CRef<CSeq_literal>      m_Literal;
     };
     // Set of annotations from a single chunk
     typedef vector<SAnnotData>   TAnnots;
