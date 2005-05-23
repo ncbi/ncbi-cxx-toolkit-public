@@ -3312,7 +3312,6 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             done = 1/*true*/;
         else if ( cr_seen )
             x_size++;
-        assert(status == eIO_Success);
         for (i = cr_seen; i < x_size; i++) {
             c = x_buf[i];
             if (c == '\n') {
@@ -4453,6 +4452,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.176  2005/05/23 20:35:30  lavr
+ * SOCK_ReadLine():  Remove wrong assert()
+ *
  * Revision 6.175  2005/05/20 11:42:29  lavr
  * Fix SOCK_ReadLine() not to allow '\r\0' as an EOL
  *
