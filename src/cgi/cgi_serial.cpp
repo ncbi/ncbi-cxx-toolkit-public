@@ -32,7 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <cgi/cgi_serial.hpp>
+#include <cgi/ncbicgi.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -76,33 +78,15 @@ string CContElemConverter<CCgiEntry>::ToString  (const CCgiEntry&  elem)
 
 CNcbiOstream& WriteCgiCookies(CNcbiOstream& os, const CCgiCookies& cont)
 {
-    CNcbiOstrstream ostr;
+    COStreamHelper ostr(os);
     cont.Write(ostr, CCgiCookie::eHTTPRequest);
-    ostr << ends;
-    try {
-        os << ostr.pcount() << ' ' << ostr.str();
-    } catch (...) {
-        ostr.freeze(false);
-        throw;
-    }
-    ostr.freeze(false);
+    ostr.flush();
     return os;
 }
 
 CNcbiIstream& ReadCgiCookies(CNcbiIstream& is, CCgiCookies& cont)
 {
-    string str;
-    {{
-        size_t size;
-        is >> size;
-        if (size > 0) {
-            AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
-            is.read(buf.get(), size);
-            size_t count = is.gcount();
-            if (count > 0)
-                str.append(buf.get()+1, count-1);
-        }
-    }}
+    string str = ReadStringFromStream(is);
     cont.Clear();
     cont.Add(str);
     return is;
@@ -110,35 +94,54 @@ CNcbiIstream& ReadCgiCookies(CNcbiIstream& is, CCgiCookies& cont)
 
 //////////////////////////////////////////////////////////////////////////////
 /// 
+typedef map<string,string> TVars;
 CNcbiOstream& WriteEnvironment(CNcbiOstream& os, const CNcbiEnvironment& cont)
 {
     list<string> names;
     cont.Enumerate(names);
-    map<string,string> vars;
+    TVars vars;
     ITERATE(list<string>, it, names) {
-        vars[*it] = cont.Get(*it);
+        string var = cont.Get(*it);
+        if (!var.empty())
+            vars[*it] = var;
     }
     WriteMap(os, vars);
     return os;
 }
 CNcbiIstream& ReadEnvironment(CNcbiIstream& is, CNcbiEnvironment& cont)
 {
-    typedef map<string,string> TVars;
     TVars vars;
-    cont.Reset();
     ReadMap(is, vars);
-    ITERATE(TVars, it, vars) {
-        cont.Set(it->first, it->second);
+    if (vars.empty()) {
+        cont.Reset();
+        return is;
     }
+    AutoPtr<const char*, ArrayDeleter<const char*> > env( new const char*[vars.size()+1]);
+    vector<string> strings;
+    strings.reserve(vars.size());
+    size_t index = 0;
+    ITERATE(TVars, it, vars) {
+        strings.push_back( it->first + '=' + it->second);
+        (env.get()[index]) = strings[index].c_str();
+        ++index;
+    }
+    (env.get()[index]) = NULL;
+    cont.Reset(env.get());   
     return is;
 }
 
 
 END_NCBI_SCOPE
 
+
+
 /*
  * =========================================================================== 
  * $Log$
+ * Revision 1.2  2005/05/23 15:02:02  didenko
+ * Added Read/Write a container from/to a stream
+ * Code restructure
+ *
  * Revision 1.1  2005/05/17 19:49:50  didenko
  * Added Read/Write cookies and environment
  *
