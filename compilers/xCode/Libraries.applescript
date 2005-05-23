@@ -108,7 +108,7 @@ property entrez2cli : {name:"entrez2cli", path:"objects:entrez2", inc:{"entrez2_
 property entrezgene : {name:"entrezgene", path:"objects:entrezgene", inc:{"entrezgene__.cpp", "entrezgene___.cpp"}, asn1:true}
 property featdef : {name:"featdef", path:"objects:featdef", inc:{"featdef__.cpp", "featdef___.cpp"}, asn1:true}
 property gbseq : {name:"gbseq", path:"objects:gbseq", inc:{"gbseq__.cpp", "gbseq___.cpp"}, asn1:true}
-property general : {name:"general", path:"objects:general", inc:{"general__.cpp", "general___.cpp"}, asn1:true}
+property general : {name:"general", path:"objects:general", inc:{"general__.cpp", "general___.cpp", "uoconv.cpp", "cleanup_utils.cpp"}, asn1:true}
 property id1 : {name:"id1", path:"objects:id1", inc:{"id1__.cpp", "id1___.cpp"}, asn1:true}
 property id1cli : {name:"id1cli", path:"objects:id1", inc:{"id1_client.cpp", "id1_client_.cpp"}, asn1:true}
 property id2 : {name:"id2", path:"objects:id2", inc:{"id2__.cpp", "id2___.cpp"}, asn1:true}
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/05/23 11:31:45  lebedev
+ * added uoconv and cleanup_utils in objects:general
+ *
  * Revision 1.54  2005/05/12 12:44:17  lebedev
  * libjpeg added
  *
