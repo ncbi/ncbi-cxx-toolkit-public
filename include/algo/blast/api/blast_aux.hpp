@@ -110,29 +110,39 @@ FindGeneticCode(int genetic_code);
  * function
  */
 
-#define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-/** Wrapper class for struct_name. */\
-\
-class NCBI_XBLAST_EXPORT C##struct_name : public CDebugDumpable \
-{ \
-public: \
-    C##struct_name() : m_Ptr(NULL) {} \
-    C##struct_name(struct_name* p) : m_Ptr(p) {} \
-    void Reset(struct_name* p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
-    ~C##struct_name() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
-    struct_name* Release() { \
-        struct_name* retval = m_Ptr; \
-        m_Ptr = NULL; \
-        return retval; \
-    } \
-    operator struct_name *() { return m_Ptr; } \
-    operator struct_name *() const { return m_Ptr; } \
-    struct_name* operator->() { return m_Ptr; } \
-    struct_name* operator->() const { return m_Ptr; } \
-    struct_name** operator&() { return &m_Ptr; } \
-    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const; \
-private: \
-    struct_name* m_Ptr; \
+#define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func)                  \
+/** Wrapper class for struct_name. */                                       \
+                                                                            \
+class NCBI_XBLAST_EXPORT C##struct_name : public CDebugDumpable             \
+{                                                                           \
+public:                                                                     \
+    C##struct_name() : m_Ptr(NULL) {}                                       \
+    C##struct_name(struct_name* p) : m_Ptr(p) {}                            \
+    void Reset(struct_name* p = NULL) {                                     \
+        if (m_Ptr) {                                                        \
+            free_func(m_Ptr);                                               \
+        }                                                                   \
+        m_Ptr = p;                                                          \
+    }                                                                       \
+    ~C##struct_name() {                                                     \
+        if (m_Ptr) {                                                        \
+            free_func(m_Ptr);                                               \
+            m_Ptr = NULL;                                                   \
+        }                                                                   \
+    }                                                                       \
+    struct_name* Release() {                                                \
+        struct_name* retval = m_Ptr;                                        \
+        m_Ptr = NULL;                                                       \
+        return retval;                                                      \
+    }                                                                       \
+    operator struct_name *() { return m_Ptr; }                              \
+    operator struct_name *() const { return m_Ptr; }                        \
+    struct_name* operator->() { return m_Ptr; }                             \
+    struct_name* operator->() const { return m_Ptr; }                       \
+    struct_name** operator&() { return &m_Ptr; }                            \
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;        \
+private:                                                                    \
+    struct_name* m_Ptr;                                                     \
 }
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -193,6 +203,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2005/05/24 19:08:05  camacho
+* Make auto class wrapper's Reset method take a default NULL argument
+*
 * Revision 1.56  2005/04/18 14:00:18  camacho
 * + RAII class for BlastSeqSrcIterator
 *
