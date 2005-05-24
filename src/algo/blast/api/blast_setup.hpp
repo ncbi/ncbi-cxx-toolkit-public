@@ -118,6 +118,17 @@ struct SBlastSequence {
     SBlastSequence()
         : data(NULL), length(0) {}
 
+    /** Allocates a sequence buffer of the specified length
+     * @param buf_len number of bytes to allocate [in]
+     */
+    SBlastSequence(TSeqPos buf_len)
+        : data((Uint1*)calloc(buf_len, sizeof(Uint1))), length(buf_len)
+    {
+        if ( !data ) {
+            throw std::bad_alloc();
+        }
+    }
+
     /** Parametrized constructor 
      * @param d buffer containing sequence data [in]
      * @param l length of buffer above [in]
@@ -249,6 +260,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/05/24 21:10:43  camacho
+* Add SBlastSequence constructor
+*
 * Revision 1.38  2005/05/24 20:02:42  camacho
 * Changed signature of SetupQueries and SetupQueryInfo
 *
