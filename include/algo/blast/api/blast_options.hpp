@@ -115,6 +115,8 @@ public:
     /// @param w WordThreshold [in]
     void SetWordThreshold(int w);
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
     int GetLookupTableType() const;
     void SetLookupTableType(int type);
 
@@ -323,6 +325,8 @@ public:
     
     bool operator==(const CBlastOptions& rhs) const;
     bool operator!=(const CBlastOptions& rhs) const;
+
+#endif /* SKIP_DOXYGEN_PROCESSING */
     
     /// Set the program and service name for remote blast.
     void SetRemoteProgramAndService_Blast3(const string & p, const string & s)
@@ -578,6 +582,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.100  2005/05/24 12:56:57  camacho
+* Doxygen fixes
+*
 * Revision 1.99  2005/05/16 12:25:54  madden
 * Remove references to [GS]etPrelimHitlistSize
 *

@@ -47,7 +47,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 /** Finds repeats locations for a given set of sequences. The locations are
@@ -60,7 +59,8 @@ BEGIN_SCOPE(blast)
  */
 NCBI_XBLAST_EXPORT
 void
-Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, const CBlastOptionsHandle* opts_handle);
+Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, 
+                          const CBlastOptionsHandle* opts_handle);
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/05/24 12:56:57  camacho
+* Doxygen fixes
+*
 * Revision 1.6  2005/03/31 20:43:14  madden
 * Blast_FindRepeatFilterLoc now takes CBlastOptionsHandle rather than char*
 *
