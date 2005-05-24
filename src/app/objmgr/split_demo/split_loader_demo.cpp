@@ -69,8 +69,6 @@ public:
 
 void CDemoApp::Init(void)
 {
-    CONNECT_Init(&GetConfig());
-
     // Prepare command line descriptions
     //
 
@@ -169,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/05/24 14:57:43  grichenk
+* Removed connection initialization
+*
 * Revision 1.2  2005/05/23 15:06:48  grichenk
 * Removed commented includes
 *
