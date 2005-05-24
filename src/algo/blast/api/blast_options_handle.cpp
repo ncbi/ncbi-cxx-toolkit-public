@@ -43,6 +43,7 @@
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
+#include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 
 
@@ -155,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/24 14:08:11  madden
+ * Add include for blast_advprot_options.hpp
+ *
  * Revision 1.10  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.
