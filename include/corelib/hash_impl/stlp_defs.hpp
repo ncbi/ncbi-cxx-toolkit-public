@@ -75,6 +75,7 @@ USE_NO_ALLOC_TRAITS
 #include <iterator>
 #include <algorithm>
 #include <functional>
+#include <vector>
 
 NCBI_USING_NAMESPACE_STD;
 
@@ -458,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/24 14:49:24  ucko
+ * Don't forget <vector>!
+ *
  * Revision 1.8  2005/04/18 13:43:46  rsmith
  * Codewarrior + _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
  *
