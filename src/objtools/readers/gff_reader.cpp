@@ -434,6 +434,15 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
         x_Warn("Bad strand " + v[6] + " (should be [+-.])", x_GetLineNumber());
     }
 
+    if (v[7] == "0"  ||  v[7] == "1"  ||  v[7] == "2") {
+        record->frame = v[7][0] - '0';
+    } else if (v[7] == ".") {
+        record->frame = -1;
+    } else {
+        x_Warn("Bad frame " + v[7] + " (should be [012.])", x_GetLineNumber());
+        record->frame = -1;
+    }
+
     {{
         SRecord::SSubLoc subloc;
         subloc.accession = accession;
@@ -1116,6 +1125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/05/24 14:55:59  dicuccio
+* Restore setting of frame in x_ParseFeatureInterval()
+*
 * Revision 1.15  2005/03/17 18:28:44  dicuccio
 * Treat product-ids as local if they are not understood
 *
