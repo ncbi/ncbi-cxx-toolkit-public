@@ -134,6 +134,7 @@ util/compress/bzip2.hpp
 util/compress/compress.hpp
 util/compress/reader_zlib.hpp
 util/compress/stream.hpp
+util/compress/tar.hpp
 util/compress/zlib.hpp
 util/sequtil/sequtil.hpp
 util/sequtil/sequtil_convert.hpp
@@ -293,6 +294,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/24 18:34:04  jcherry
+ * Added util/compress/tar.hpp
+ *
  * Revision 1.3  2005/05/18 18:15:57  jcherry
  * Made CAliasBase stuff work
  *
