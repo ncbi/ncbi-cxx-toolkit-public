@@ -422,7 +422,7 @@ _PSIScaleMatrix(const Uint1* query,
 /** Updates the Karlin-Altschul parameters based on the query sequence and 
  * PSSM's score frequencies. Port of blastool.c's updateLambdaK
  * @param pssm PSSM [in]
- @ @param query query sequence in ncbistdaa encoding [in]
+ * @param query query sequence in ncbistdaa encoding [in]
  * @param query_length length of the query sequence above [in]
  * @param std_probs array containing the standard background residue 
  * probabilities [in]
@@ -580,6 +580,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/05/24 12:49:24  camacho
+ * doxygen fix
+ *
  * Revision 1.28  2005/05/10 16:07:51  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *
