@@ -114,7 +114,7 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
             if(seg.m_exon) {
                 
                 oss << seg.m_annot << '\t';
-                oss << RLE(seg.m_details);
+                oss << CNWAligner::s_RunLengthEncode(seg.m_details);
 #ifdef GENOME_PIPELINE
                 oss << '\t' << seg.m_score;
 #endif
@@ -279,6 +279,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/05/24 19:36:27  kapustin
+ * RLE() -> CNWAligner::s_RunLengthEncode()
+ *
  * Revision 1.15  2005/01/07 20:56:41  kapustin
  * Specify percent identity score when in ASN mode
  *
