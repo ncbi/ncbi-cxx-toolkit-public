@@ -2342,9 +2342,9 @@ CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
 
 static struct PyMethodDef python_ncbi_dbapi_methods[] = {
     {"connect", (PyCFunction) python::Connect, METH_VARARGS,
-        "connect(driver_name, server_name, database_name, userid, password) "
+        "connect(driver_name, db_type, server_name, database_name, userid, password) "
         "-- connect to the "
-        "driver_name; server_name; database_name; userid; password;"
+        "driver_name; db_type; server_name; database_name; userid; password;"
     },
     {"Date", (PyCFunction) python::Date, METH_VARARGS, "Date"},
     {"Time", (PyCFunction) python::Time, METH_VARARGS, "Time"},
@@ -2466,6 +2466,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/05/24 15:45:35  jcherry
+* Added missing parameter to Python documentation for connect function
+*
 * Revision 1.15  2005/05/18 18:41:07  ssikorsk
 * Small refactoring
 *
