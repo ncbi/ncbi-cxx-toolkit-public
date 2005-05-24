@@ -149,9 +149,9 @@ CBl2Seq::x_ResetQueryDs()
 {
     mi_bQuerySetUpDone = false;
     // should be changed if derived classes are created
-    mi_clsQueries.Reset(NULL);
-    mi_clsQueryInfo.Reset(NULL);
-    mi_clsBlastMessage.Reset(NULL);
+    mi_clsQueries.Reset();
+    mi_clsQueryInfo.Reset();
+    mi_clsBlastMessage.Reset();
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
@@ -197,9 +197,13 @@ CBl2Seq::SetupSearch()
 {
     if ( !mi_bQuerySetUpDone ) {
         x_ResetQueryDs();
-        SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), &mi_clsQueryInfo);
-        SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), mi_clsQueryInfo, 
-                     &mi_clsQueries, &mi_clsBlastMessage);
+        const CBlastOptions& kOptions = m_OptsHandle->GetOptions();
+        EBlastProgramType prog = kOptions.GetProgramType();
+        ENa_strand strand_opt = kOptions.GetStrandOption();
+        TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
+        SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
+        SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
+                     prog, strand_opt, gc.get(), &mi_clsBlastMessage);
 
         // FIXME
         BlastMaskInformation maskInfo;
@@ -362,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2005/05/24 20:02:42  camacho
+ * Changed signature of SetupQueries and SetupQueryInfo
+ *
  * Revision 1.73  2005/05/23 15:51:59  dondosha
  * Special case for preliminary hitlist size in RPS BLAST - hence no need for 2 extra parameters in SBlastHitsParametersNew
  *

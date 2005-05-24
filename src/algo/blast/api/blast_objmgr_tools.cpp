@@ -109,7 +109,9 @@ QueryInfo_SetContext(BlastQueryInfo*   qinfo,
 }
 
 void
-SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
+SetupQueryInfo(const TSeqLocVector& queries, 
+               EBlastProgramType prog,
+               ENa_strand strand_opt,
                BlastQueryInfo** qinfo)
 {
     ASSERT(qinfo);
@@ -120,7 +122,6 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
     }
 
-    EBlastProgramType prog = options.GetProgramType();
     unsigned int nframes = GetNumberOfFrames(prog);
     query_info->num_queries = static_cast<int>(queries.size());
     query_info->first_context = 0;
@@ -140,9 +141,6 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
          (prog == eBlastTypeRpsTblastn));
 
     // Adjust first context depending on the first query strand
-    // Unless the strand option is set to single strand, the actual
-    // CSeq_locs dictate which strand to examine during the search.
-    ENa_strand strand_opt = options.GetStrandOption();
     ENa_strand strand;
 
     if (is_na || translate) {
@@ -290,17 +288,18 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 }
 
 void
-SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
-             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
+SetupQueries(const TSeqLocVector& queries, 
+             const CBlastQueryInfo& qinfo, 
+             BLAST_SequenceBlk** seqblk,
+             EBlastProgramType prog,
+             ENa_strand strand_opt,
+             const Uint1* genetic_code,
              Blast_Message** blast_msg)
 {
     ASSERT(seqblk);
     ASSERT(blast_msg);
     ASSERT(queries.size() != 0);
 
-    EBlastProgramType prog = options.GetProgramType();
-
-    // Determine sequence encoding
     EBlastEncoding encoding = GetQueryEncoding(prog);
     
     int buflen = QueryInfo_GetSeqBufLen(qinfo);
@@ -320,9 +319,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     CBlastMaskLoc mask(BlastMaskLocNew(qinfo->num_queries));
 
-    // Unless the strand option is set to single strand, the actual
-    // CSeq_locs dictacte which strand to examine during the search
-    ENa_strand strand_opt = options.GetStrandOption();
     int index = 0;
     string error_string;
 
@@ -366,8 +362,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 sequence = GetSequence(*itr->seqloc, encoding, itr->scope, 
                                        strand, eSentinels);
 
-                TAutoUint1ArrayPtr gc = 
-                    FindGeneticCode(options.GetQueryGeneticCode());
                 int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
                 Uint1* seqbuf_rev = NULL;  // negative strand
                 if (strand == eNa_strand_both)
@@ -392,7 +386,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                                          na_length,
                                          frame,
                                          & buf.get()[offset],
-                                         gc.get());
+                                         genetic_code);
                 }
 
             } else if (is_na) {
@@ -959,6 +953,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2005/05/24 20:02:42  camacho
+* Changed signature of SetupQueries and SetupQueryInfo
+*
 * Revision 1.45  2005/05/12 19:13:50  camacho
 * Remove unaccurate comment, slight clean up of SetupQueries
 *

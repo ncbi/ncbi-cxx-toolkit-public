@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -60,24 +61,37 @@ class CBlastOptions;
  * blast::SetupQueries.
  * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
- * @param options BLAST search options [in]
+ * @param strand_opt Unless the strand option is set to single strand, the 
+ * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+ * during the search [in]
  * @param qinfo Allocated query info structure [out]
  */
 void
-SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
+SetupQueryInfo(const TSeqLocVector& queries, 
+               EBlastProgramType prog,
+               objects::ENa_strand strand_opt,
                BlastQueryInfo** qinfo); // out
 
 /// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
 /// @param queries vector of blast::SSeqLoc structures [in]
-/// @param options BLAST options object [in]
 /// @param qinfo BlastQueryInfo structure to obtain context information [in]
 /// @param seqblk Structure to save sequence data, allocated in this 
 /// function [out]
 /// @param blast_msg Structure to save warnings/errors, allocated in this
 /// function [out]
+/// @param prog program type from the CORE's point of view [in]
+/// @param strand_opt Unless the strand option is set to single strand, the 
+/// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+/// during the search [in]
+/// @param genetic_code genetic code string as returned by
+/// blast::FindGeneticCode()
+
 void
-SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
+SetupQueries(const TSeqLocVector& queries,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
+             EBlastProgramType prog, 
+             objects::ENa_strand strand_opt,
+             const Uint1* genetic_code,
              Blast_Message** blast_msg);
 
 /** Sets up internal subject data structure for the BLAST search.
@@ -235,6 +249,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/05/24 20:02:42  camacho
+* Changed signature of SetupQueries and SetupQueryInfo
+*
 * Revision 1.37  2005/05/10 21:23:59  camacho
 * Fix to prior commit
 *

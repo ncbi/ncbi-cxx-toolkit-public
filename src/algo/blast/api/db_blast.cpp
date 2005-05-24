@@ -464,13 +464,17 @@ void CDbBlast::SetupSearch()
 
     if ( !m_ibQuerySetUpDone ) {
         double scale_factor;
+        Blast_Message* blast_message = NULL;
 
         x_ResetQueryDs();
 
-        SetupQueryInfo(m_tQueries, kOptions, &m_iclsQueryInfo);
-        Blast_Message* blast_message = NULL;
-        SetupQueries(m_tQueries, kOptions, m_iclsQueryInfo, &m_iclsQueries, 
-                     &blast_message);
+        EBlastProgramType prog = kOptions.GetProgramType();
+        ENa_strand strand_opt = kOptions.GetStrandOption();
+        TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
+        SetupQueryInfo(m_tQueries, prog, strand_opt, &m_iclsQueryInfo);
+        SetupQueries(m_tQueries, m_iclsQueryInfo, &m_iclsQueries, 
+                     prog, strand_opt, gc.get(), &blast_message);
+
         if (blast_message) {
             m_ivErrors.push_back(blast_message);
             blast_message = NULL;
@@ -706,6 +710,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.70  2005/05/24 20:02:42  camacho
+ * Changed signature of SetupQueries and SetupQueryInfo
+ *
  * Revision 1.69  2005/05/23 17:10:39  papadopo
  * add checks for correct endianness when reading RPS data files
  *
