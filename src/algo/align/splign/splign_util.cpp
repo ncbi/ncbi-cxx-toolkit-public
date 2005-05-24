@@ -263,45 +263,15 @@ void GetHitsMinMax(const vector<CHit>& vh,
 }
 
 
-// apply run-length encoding
-string RLE(const string& in)
-{
-  string out;
-  const size_t dim = in.size();
-  if(dim == 0) {
-    return kEmptyStr;
-  }
-  const char* p = in.c_str();
-  char c0 = p[0];
-  out.append(1, c0);
-  size_t count = 1;
-  for(size_t k = 1; k < dim; ++k) {
-    char c = p[k];
-    if(c != c0) {
-      c0 = c;
-      if(count > 1) {
-        out += NStr::IntToString(count);
-      }
-      count = 1;
-      out.append(1, c0);
-    }
-    else {
-      ++count;
-    }
-  }
-  if(count > 1) {
-    out += NStr::IntToString(count);
-  }
-  return out;
-}
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/05/24 19:36:08  kapustin
+ * -RLE()
+ *
  * Revision 1.12  2005/01/26 21:33:12  kapustin
  * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
  *

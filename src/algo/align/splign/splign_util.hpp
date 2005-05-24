@@ -133,7 +133,6 @@ void   CleaveOffByTail(vector<CHit>* hits, size_t polya_start);
 void   GetHitsMinMax(const vector<CHit>& hits,
 		     size_t* qmin, size_t* qmax,
 		     size_t* smin, size_t* smax);
-string RLE(const string& in);
 
 void   XFilter(vector<CHit>* hits);
 
@@ -156,6 +155,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/05/24 19:36:08  kapustin
+ * -RLE()
+ *
  * Revision 1.7  2005/01/26 21:33:12  kapustin
  * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
  *
