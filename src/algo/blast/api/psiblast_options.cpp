@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
-    : CBlastProteinOptionsHandle(locality)
+    : CBlastAdvancedProteinOptionsHandle(locality)
 {
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/05/24 14:07:44  madden
+ * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
+ *
  * Revision 1.4  2004/12/20 20:12:01  camacho
  * + option to set use of pssm in lookup table
  *

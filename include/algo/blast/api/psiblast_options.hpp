@@ -34,7 +34,7 @@
 /// Declares the CPSIBlastOptionsHandle class.
 
 
-#include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/blast_advprot_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
 
-class NCBI_XBLAST_EXPORT CPSIBlastOptionsHandle : public CBlastProteinOptionsHandle
+class NCBI_XBLAST_EXPORT CPSIBlastOptionsHandle : public CBlastAdvancedProteinOptionsHandle
 {
 public:
     
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/05/24 14:04:47  madden
+ * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
+ *
  * Revision 1.6  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.
