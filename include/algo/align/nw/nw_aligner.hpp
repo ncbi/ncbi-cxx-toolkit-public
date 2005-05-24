@@ -188,6 +188,10 @@ public:
 
     void    EnableMultipleThreads(bool enable = true);
 
+    // simple RLE helpers
+    static string s_RunLengthEncode(const string& in);
+    static string s_RunLengthDecode(const string& in);
+
 protected:
 
     // Bonuses and penalties
@@ -301,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/05/24 19:35:19  kapustin
+ * +CNWAligner::s_RunLength{En|De}Code()
+ *
  * Revision 1.41  2005/04/04 16:32:23  kapustin
  * Distinguish matches from mismatches in raw transcripts
  *

@@ -733,7 +733,65 @@ string CNWAligner::GetTranscriptString(void) const
     if(i < s.size()) {
         s.resize(i + 1);
     }
+
     return s;
+}
+
+
+string CNWAligner::s_RunLengthEncode(const string& in)
+{
+    string out;
+    const size_t dim = in.size();
+    if(dim == 0) {
+        return kEmptyStr;
+    }
+    const char* p = in.c_str();
+    char c0 = p[0];
+    out.append(1, c0);
+    size_t count = 1;
+    for(size_t k = 1; k < dim; ++k) {
+        char c = p[k];
+        if(c != c0) {
+            c0 = c;
+            if(count > 1) {
+                out += NStr::IntToString(count);
+            }
+            count = 1;
+            out.append(1, c0);
+        }
+        else {
+            ++count;
+        }
+    }
+    if(count > 1) {
+        out += NStr::IntToString(count);
+    }
+    return out;
+}
+
+
+string CNWAligner::s_RunLengthDecode(const string& in)
+{
+    string out;
+    char c = 0;
+    Uint4 N = 0;
+    ITERATE(string, ii, in) {
+
+        if('0' <= *ii && *ii <= '9') {
+            N += 10*N + *ii - '0';
+        }
+        else {
+            if(N > 0) {
+                out.append(N - 1, c);
+                N = 0;
+            }
+            out.push_back(c = *ii);
+        }
+    }
+    if(N > 0) {
+        out.append(N - 1, c);
+    }
+    return out;
 }
 
 
@@ -1235,6 +1293,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/05/24 19:35:36  kapustin
+ * +CNWAligner::s_RunLength{En|De}Code()
+ *
  * Revision 1.64  2005/04/04 16:34:13  kapustin
  * Specify precise type of diags in raw alignment transcripts where feasible
  *
