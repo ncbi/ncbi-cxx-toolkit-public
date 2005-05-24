@@ -2871,6 +2871,9 @@ Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program,
    /* Check that the query index is in the correct range. */
    ASSERT(hsplist_in->query_index < results->num_queries);
 
+   /* Check that program is indeed RPS Blast */
+   ASSERT(Blast_ProgramIsRpsBlast(program));
+
    /* If hit list for this query has not yet been allocated, do it here. */
    hit_list = results->hitlist_array[hsplist_in->query_index];
    if (!hit_list) {
@@ -2905,11 +2908,10 @@ Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program,
        hsp_list = Blast_HSPListNew(hspcnt);
        /* Set the oid field for this HSPList. */
        hsp_list->oid = oid;
-       hsp_list->hspcnt = hspcnt;
        hsp_list->query_index = hsplist_in->query_index;
-       /* Copy all BlastHSP pointers corresponding to this subject. */
-       memcpy(hsp_list->hsp_array, &hsplist_in->hsp_array[index], 
-              hspcnt*sizeof(BlastHSP*));
+       /* Save all HSPs corresponding to this subject. */
+       for ( ; index < next_index; ++index)
+           Blast_HSPListSaveHSP(hsp_list, hsplist_in->hsp_array[index]);
        /* Check that HSPs are correctly sorted by score, as they should be. */
        ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
        /* Insert this HSPList into this query's hit list. */
