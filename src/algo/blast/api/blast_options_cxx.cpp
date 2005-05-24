@@ -119,7 +119,8 @@ enum EBlastOptIdx {
     eBlastOpt_InclusionThreshold,
     eBlastOpt_PseudoCount,
     eBlastOpt_GapTracebackAlgorithm,
-    eBlastOpt_CompositionBasedStatsMode
+    eBlastOpt_CompositionBasedStatsMode,
+    eBlastOpt_SmithWatermanMode
 };
 
 
@@ -236,6 +237,9 @@ public:
 
     bool GetCompositionBasedStatsMode() const;
     void SetCompositionBasedStatsMode(bool m = true);
+
+    bool GetSmithWatermanMode() const;
+    void SetSmithWatermanMode(bool m = true);
 
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
@@ -1464,6 +1468,24 @@ CBlastOptionsLocal::SetCompositionBasedStatsMode(bool m)
     m_ExtnOpts->compositionBasedStats = m;
 }
 
+inline bool
+CBlastOptionsLocal::GetSmithWatermanMode() const
+{
+    if (m_ExtnOpts->eTbackExt == eSmithWatermanTbck)
+        return true;
+    else
+        return false;
+}
+
+inline void
+CBlastOptionsLocal::SetSmithWatermanMode(bool m)
+{
+    if (m == true)
+       m_ExtnOpts->eTbackExt = eSmithWatermanTbck;
+    else
+       m_ExtnOpts->eTbackExt = eDynProgTbck;
+}
+
 /******************* Hit saving options *************************/
 inline int
 CBlastOptionsLocal::GetHitlistSize() const
@@ -2683,6 +2705,27 @@ CBlastOptions::SetCompositionBasedStatsMode(bool m)
         m_Remote->SetValue(eBlastOpt_CompositionBasedStatsMode, m);
     }
 }
+
+bool 
+CBlastOptions::GetSmithWatermanMode() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetSmithWatermanMode() not available.");
+    }
+    return m_Local->GetSmithWatermanMode();
+}
+
+void 
+CBlastOptions::SetSmithWatermanMode(bool m)
+{
+    if (m_Local) {
+        m_Local->SetSmithWatermanMode(m);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_SmithWatermanMode, m);
+    }
+}
+
 /******************* Hit saving options *************************/
 int 
 CBlastOptions::GetHitlistSize() const
@@ -3328,6 +3371,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/05/24 14:08:40  madden
+* Add [GS]etSmithWatermanMode
+*
 * Revision 1.64  2005/05/16 12:24:37  madden
 * Remove references to [GS]etPrelimHitlistSize
 *

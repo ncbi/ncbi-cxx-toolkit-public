@@ -214,6 +214,9 @@ public:
     bool GetCompositionBasedStatsMode() const;
     void SetCompositionBasedStatsMode(bool m = true);
 
+    bool GetSmithWatermanMode() const;
+    void SetSmithWatermanMode(bool m = true);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -582,6 +585,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.101  2005/05/24 14:04:03  madden
+* Add [GS]etSmithWatermanMode
+*
 * Revision 1.100  2005/05/24 12:56:57  camacho
 * Doxygen fixes
 *
