@@ -191,6 +191,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrcIterator, BlastSeqSrcIteratorFree);
 DECLARE_AUTO_CLASS_WRAPPER(Blast_Message, Blast_MessageFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastMaskLoc, BlastMaskLocFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastSeqLoc, BlastSeqLocFree);
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/05/25 17:37:30  camacho
+* + RAII wrapper for BlastSeqLoc
+*
 * Revision 1.57  2005/05/24 19:08:05  camacho
 * Make auto class wrapper's Reset method take a default NULL argument
 *
