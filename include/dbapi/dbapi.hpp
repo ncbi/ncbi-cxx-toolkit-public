@@ -258,7 +258,7 @@ public:
     ///
     /// @return
     ///   Pointer to result metadata.
-    virtual const IResultSetMetaData* GetMetaData() = 0;
+    virtual const IResultSetMetaData* GetMetaData(EOwnership ownership = eNoOwnership) = 0;
 };
 
 
@@ -770,6 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/05/25 21:10:26  kholodov
+ * Added: select ownership for IResultSetMetaData object
+ *
  * Revision 1.39  2005/04/12 18:09:39  ssikorsk
  * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
  *
