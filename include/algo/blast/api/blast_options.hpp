@@ -89,7 +89,13 @@ public:
         eBoth
     };
     
+    /// Constructor which allows specification of local or remote version of
+    /// the options (might change in the future)
+    /// @param locality specification of whether this type will be used with a
+    /// remote or local BLAST search database class
     CBlastOptions(EAPILocality locality = eLocal);
+
+    /// Destructor
     ~CBlastOptions();
 
     /// Return the locality used when the object was created
@@ -363,9 +369,11 @@ private:
     /// Service Name for Blast3
     string m_ServiceName;
     
+    /// Auxiliary to throw CBlastExceptions
+    /// @param msg message to pass in the exception [in]
     void x_Throwx(const string& msg) const;
-    /// @internal Returns QuerySetUpOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns QuerySetUpOptions for eLocal objects, NULL for eRemote
+    /// @internal
     QuerySetUpOptions * GetQueryOpts() const;
     /// @internal Returns LookupTableOptions for eLocal objects, NULL for
     /// eRemote
@@ -585,6 +593,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.102  2005/05/25 13:09:02  camacho
+* doxygen fixes
+*
 * Revision 1.101  2005/05/24 14:04:03  madden
 * Add [GS]etSmithWatermanMode
 *
