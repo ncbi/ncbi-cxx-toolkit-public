@@ -29,7 +29,82 @@
 *                    interface
 *
 * ---------------------------------------------------------------------------
+*/
+
+#include <ncbi_pch.hpp>
+#include "active_obj.hpp"
+#include <corelib/ncbistre.hpp>
+#include <typeinfo>
+
+BEGIN_NCBI_SCOPE
+
+CActiveObject::CActiveObject() 
+{
+    SetIdent("ActiveObject");
+}
+
+CActiveObject::~CActiveObject() 
+{
+}
+
+void CActiveObject::AddListener(CActiveObject* obj)
+{
+    CMutexGuard guard(m_listMutex);
+
+    m_listenerList.push_back(obj);
+    _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
+         << " inserted into "
+         << GetIdent() << " " << (void*)this << " listener list");
+}
+
+void CActiveObject::RemoveListener(CActiveObject* obj)
+{
+    CMutexGuard guard(m_listMutex);
+
+    m_listenerList.remove(obj);
+    _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
+           << " removed from "
+           << GetIdent() << " " << (void*)this << " listener list");
+  
+}
+
+void CActiveObject::Notify(const CDbapiEvent& e)
+{
+    CMutexGuard guard(m_listMutex);
+
+    TLList::iterator i = m_listenerList.begin();
+    for( ; i != m_listenerList.end(); ++i ) {
+        _TRACE("Object " << GetIdent() << " " << (void*)this
+             << " notifies " << (*i)->GetIdent() << " " << (void*)(*i));
+        (*i)->Action(e);
+    }
+}
+
+void CActiveObject::Action(const CDbapiEvent&)
+{
+
+}
+
+CActiveObject::TLList& CActiveObject::GetListenerList()
+{
+    return m_listenerList;
+}
+  
+string CActiveObject::GetIdent() const
+{
+    return m_ident;
+}
+
+void CActiveObject::SetIdent(const string& name)
+{
+  m_ident = name;
+}
+
+/*
 * $Log$
+* Revision 1.9  2005/05/25 21:09:44  kholodov
+* Added: mutex for guarding access to the listener list
+*
 * Revision 1.8  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -56,74 +131,5 @@
 * Revision 1.1  2002/01/30 14:51:20  kholodov
 * User DBAPI implementation, first commit
 *
-*
-*
-* ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include "active_obj.hpp"
-#include <corelib/ncbistre.hpp>
-#include <typeinfo>
-//#include "invalidobjex.hpp"
-
-BEGIN_NCBI_SCOPE
-
-CActiveObject::CActiveObject() 
-{
-    SetIdent("ActiveObject");
-}
-
-CActiveObject::~CActiveObject() 
-{
-}
-
-void CActiveObject::AddListener(CActiveObject* obj)
-{
-  m_listenerList.push_back(obj);
-  _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
-         << " inserted into "
-         << GetIdent() << " " << (void*)this << " listener list");
-}
-
-void CActiveObject::RemoveListener(CActiveObject* obj)
-{
-    m_listenerList.remove(obj);
-    _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
-           << " removed from "
-           << GetIdent() << " " << (void*)this << " listener list");
-  
-}
-
-void CActiveObject::Notify(const CDbapiEvent& e)
-{
-  TLList::iterator i = m_listenerList.begin();
-  for( ; i != m_listenerList.end(); ++i ) {
-      _TRACE("Object " << GetIdent() << " " << (void*)this
-             << " notifies " << (*i)->GetIdent() << " " << (void*)(*i));
-    (*i)->Action(e);
-  }
-}
-
-void CActiveObject::Action(const CDbapiEvent&)
-{
-
-}
-
-CActiveObject::TLList& CActiveObject::GetListenerList()
-{
-    return m_listenerList;
-}
-  
-string CActiveObject::GetIdent() const
-{
-    return m_ident;
-}
-
-void CActiveObject::SetIdent(const string& name)
-{
-  m_ident = name;
-}
-
 END_NCBI_SCOPE
-//======================================================

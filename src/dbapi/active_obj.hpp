@@ -36,7 +36,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-//#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -147,7 +147,7 @@ private:
 
     TLList m_listenerList;
     string m_ident;  // Object identificator
-
+    CMutex m_listMutex;
 };
 
 
@@ -156,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/05/25 21:09:44  kholodov
+ * Added: mutex for guarding access to the listener list
+ *
  * Revision 1.10  2005/05/09 18:45:07  ucko
  * Ensure that widely-included classes with virtual methods have virtual dtors.
  *
