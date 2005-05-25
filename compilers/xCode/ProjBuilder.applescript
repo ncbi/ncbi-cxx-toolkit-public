@@ -574,6 +574,11 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		set theScript to theScript & "fi" & ret
 		
+		-- Create Resources directory
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources" & ret
+		set theScript to theScript & "fi" & ret
+		
 		-- Create share directory
 		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench ; then" & ret
 		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share" & ret
@@ -589,6 +594,12 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		-- copy png images
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
+		
+		-- copy Info.plist file
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/Info.plist " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents" & ret
+		
+		-- copy Icon file
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench.icns " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources/Genome\\ Workbench.icns" & ret
 		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
@@ -606,6 +617,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/25 13:57:10  lebedev
+ * NCBI icon for Genome Workbench added
+ *
  * Revision 1.26  2005/03/25 15:22:33  lebedev
  * ApplicationServices framework dependency removed
  *
