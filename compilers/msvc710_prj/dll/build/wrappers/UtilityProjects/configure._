@@ -1,4 +1,4 @@
-"%PTB_PATH%\project_tree_builder.exe" -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_PATH%\..\..\..\project_tree_builder.ini" "%TREE_ROOT%" scripts\projects\ncbi_wrap.lst "%SLN_PATH%"
+%PTB_PATH%\project_tree_builder.exe -dll -logfile %SLN_PATH%_configuration_log.txt -conffile %PTB_PATH%\..\..\..\project_tree_builder.ini %TREE_ROOT% scripts\projects\ncbi_wrap.lst %SLN_PATH%
 @echo off
 if errorlevel 1 goto report_error
 
@@ -13,5 +13,5 @@ echo ***************************************************************************
 echo -CONFIGURE- has failed
 echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
-if not .%DIAG_SILENT_ABORT%==. start "" "%SLN_PATH%_configuration_log.txt"
+start "" "%SLN_PATH%_configuration_log.txt"
 exit 1

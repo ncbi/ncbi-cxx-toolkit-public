@@ -1,46 +1,18 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProjects\_CONFIGURE_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-DIALOG-", "UtilityProjects\_CONFIGURE_DIALOG_.vcproj", "{EB043EAF-58D4-4179-AC32-538D9059BB8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProjects\_CONFIGURE_.vcproj", "{467825A4-1505-460A-A977-31211AF70A34}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
 		DebugDLL = DebugDLL
-		DebugMT = DebugMT
-		Release = Release
 		ReleaseDLL = ReleaseDLL
-		ReleaseMT = ReleaseMT
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.Debug.ActiveCfg = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.Debug.Build.0 = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.DebugDLL.ActiveCfg = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.DebugDLL.Build.0 = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.DebugMT.ActiveCfg = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.DebugMT.Build.0 = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.Release.ActiveCfg = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.Release.Build.0 = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA108}.ReleaseMT.Build.0 = ReleaseMT|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.Debug.ActiveCfg = Debug|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.Debug.Build.0 = Debug|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.DebugDLL.ActiveCfg = DebugDLL|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.DebugDLL.Build.0 = DebugDLL|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.DebugMT.ActiveCfg = DebugMT|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.DebugMT.Build.0 = DebugMT|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.Release.ActiveCfg = Release|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.Release.Build.0 = Release|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
-		{EB043EAF-58D4-4179-AC32-538D9059BB8B}.ReleaseMT.Build.0 = ReleaseMT|Win32
+		{467825A4-1505-460A-A977-31211AF70A34}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{467825A4-1505-460A-A977-31211AF70A34}.DebugDLL.Build.0 = DebugDLL|Win32
+		{467825A4-1505-460A-A977-31211AF70A34}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{467825A4-1505-460A-A977-31211AF70A34}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
