@@ -52,6 +52,7 @@ struct SLibInfo
     list<string> m_Libs;
     list<string> m_StdLibs;
     list<string> m_Macro;
+    list<string> m_Files;
 
     bool IsEmpty(void) const
     {
@@ -60,7 +61,8 @@ struct SLibInfo
                m_LibPath.empty()    && 
                m_Libs.empty()       &&
                m_StdLibs.empty()    &&
-               m_Macro.empty();
+               m_Macro.empty()      &&
+               m_Files.empty();
     }
     void Clear(void)
     {
@@ -70,6 +72,7 @@ struct SLibInfo
         m_Libs.clear();
         m_StdLibs.clear();
         m_Macro.clear();
+        m_Files.clear();
     }
 };
 
@@ -187,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/05/25 12:32:52  gouriano
+ * Added FILES option into conditional macro
+ *
  * Revision 1.23  2005/05/13 15:37:12  gouriano
  * Made preserving unresolved macros optional
  *

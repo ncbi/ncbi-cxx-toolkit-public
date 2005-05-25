@@ -1449,6 +1449,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         //Lib
         set<string> keys;
         keys.insert("LIBS");
+        keys.insert("SRC");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
     }}
 }
@@ -1548,6 +1549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/05/25 12:32:32  gouriano
+ * Added FILES option into conditional macro
+ *
  * Revision 1.27  2005/05/19 13:55:17  gouriano
  * Check if Makefile.in is in the tree before processing it
  *

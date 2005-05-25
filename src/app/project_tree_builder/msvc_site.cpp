@@ -145,6 +145,9 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     string macro_str = GetOpt(m_Registry, lib, "MACRO", config);
     NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
+
+    string files_str    = ProcessMacros(GetOpt(m_Registry, lib, "FILES", config));
+    NStr::Split(files_str, LIST_SEPARATOR, libinfo->m_Files);
 }
 
 
@@ -427,6 +430,20 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             }
         }
     }
+    if ( !lib_info.m_Files.empty()) {
+        ITERATE(list<string>, p, lib_info.m_Files) {
+            string file = *p;
+            if (!CDirEntry::IsAbsolutePath(file)) {
+                file = CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Root, file);
+            }
+            if (!CDirEntry(file).Exists()) {
+                if (!silent) {
+                    LOG_POST(Warning << "No FILES: " + file);
+                }
+                return false;
+            }
+        }
+    }
 
     return true;
 }
@@ -468,6 +485,9 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         if (res) {
             string value =  m_Registry.GetString(macro, "Value", "");
             m_Macros.AddDefinition(macro,value);
+        } else {
+            string value =  m_Registry.GetString(macro, "DefValue", "");
+            m_Macros.AddDefinition(macro,value);
         }
     }
 }
@@ -477,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/05/25 12:32:32  gouriano
+ * Added FILES option into conditional macro
+ *
  * Revision 1.29  2005/05/13 15:37:56  gouriano
  * Made preserving unresolved macros optional
  *
