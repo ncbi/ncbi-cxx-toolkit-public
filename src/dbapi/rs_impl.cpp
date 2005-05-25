@@ -122,11 +122,14 @@ const CVariant& CResultSet::GetVariant(const string& name)
 }
 
 
-const IResultSetMetaData* CResultSet::GetMetaData()
+const IResultSetMetaData* CResultSet::GetMetaData(EOwnership ownership)
 {
     CResultSetMetaData *md = new CResultSetMetaData(m_rs);
-    md->AddListener(this);
-    AddListener(md);
+    if( ownership == eNoOwnership )
+    {
+        md->AddListener(this);
+        AddListener(md);
+    }
     return md;
 }
 
@@ -418,6 +421,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.40  2005/05/25 21:02:54  kholodov
+* Added: select ownership for IResultSetMetaData object
+*
 * Revision 1.39  2005/04/04 13:03:56  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *

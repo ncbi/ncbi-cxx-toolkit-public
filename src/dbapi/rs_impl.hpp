@@ -73,7 +73,7 @@ public:
     virtual unsigned int GetTotalColumns();
 
     virtual void Close();
-    virtual const IResultSetMetaData* GetMetaData();
+    virtual const IResultSetMetaData* GetMetaData(EOwnership ownership);
 
     virtual istream& GetBlobIStream(size_t buf_size);
 
@@ -142,6 +142,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.19  2005/05/25 21:02:54  kholodov
+* Added: select ownership for IResultSetMetaData object
+*
 * Revision 1.18  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *
