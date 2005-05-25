@@ -155,7 +155,7 @@ void static WrapOutputLine(string str, size_t line_len,
 
 }
     
-void CBlastFormatUtil::BlastPrintError(list<CBlastFormatUtil::SBlastError>& 
+void CBlastFormatUtil::BlastPrintError(list<SBlastError>& 
                                        error_return, 
                                        bool error_post, CNcbiOstream& out)
 {
@@ -163,7 +163,7 @@ void CBlastFormatUtil::BlastPrintError(list<CBlastFormatUtil::SBlastError>&
     string errsevmsg[] = { "UNKNOWN","INFO","WARNING","ERROR",
                             "FATAL"};
     
-    NON_CONST_ITERATE(list<CBlastFormatUtil::SBlastError>, iter, error_return) {
+    NON_CONST_ITERATE(list<SBlastError>, iter, error_return) {
         
         if(iter->level > 5){
             iter->level = eDiag_Info;
@@ -220,7 +220,7 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
     }
 }
 
-void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>& 
+void CBlastFormatUtil::PrintDbReport(list<SDbInfo>& 
                                      dbinfo_list,
                                      size_t line_length,  CNcbiOstream& out,
                                      bool top) 
