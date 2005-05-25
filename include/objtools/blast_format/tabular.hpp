@@ -40,7 +40,6 @@
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 /** @addtogroup BlastFormat
  *
@@ -57,13 +56,13 @@ public:
     /// Destructor
     ~CBlastTabularInfo();
     /// Set query id from a CSeq_id
-    void SetQueryId(list<CRef<CSeq_id> >& id);
+    void SetQueryId(list<CRef<objects::CSeq_id> >& id);
     /// Set query id from a Bioseq handle
-    void SetQueryId(const CBioseq_Handle& bh);
+    void SetQueryId(const objects::CBioseq_Handle& bh);
     /// Set subject id from a CSeq_id
-    void SetSubjectId(list<CRef<CSeq_id> >& id);
+    void SetSubjectId(list<CRef<objects::CSeq_id> >& id);
     /// Set subject id from a Bioseq handle
-    void SetSubjectId(const CBioseq_Handle& bh);
+    void SetSubjectId(const objects::CBioseq_Handle& bh);
     /// Set the HSP scores
     void SetScores(int score, double bit_score, double evalue);
     /// Set the HSP endpoints
@@ -76,7 +75,8 @@ public:
     /// @param sal Seq-align to get data from [in]
     /// @param scope Scope for Bioseq retrieval [in]
     /// @return 0 on success, 1 if query or subject Bioseq is not found.
-    virtual int SetFields(const CSeq_align& sal, CScope& scope);
+    virtual int SetFields(const objects::CSeq_align& sal, 
+                          objects::CScope& scope);
 
     /// Tabular formatting options enumeration. Any non-default values request to
     /// add extra fields to the output on every line.
@@ -96,7 +96,8 @@ public:
     /// Print one line of tabular output
     virtual void Print(ETabularOption opt = eDefault);
     /// Print the tabular output header
-    virtual void PrintHeader(const string& program, const CBioseq& bioseq, 
+    virtual void PrintHeader(const string& program, 
+                             const objects::CBioseq& bioseq, 
                              const string& dbname, int iteration, 
                              ETabularOption opt = eDefault); 
 
@@ -169,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/05/25 13:00:40  camacho
+* Do not pull objects namespace
+*
 * Revision 1.4  2005/05/11 16:21:51  dondosha
 * Small doxygen fix
 *
