@@ -136,12 +136,18 @@ private:
 ///////////////////////////////////////////////////////
 ///
 /// Read a string from a stream. The string is following 
+/// by its size
 /// 
 inline string ReadStringFromStream(CNcbiIstream& is)
 {
     string str;
+    if (!is.good() || is.eof())
+        return str;
+
     size_t size;
     is >> size;
+    if (!is.good() || is.eof())
+        return str;
     if (size > 0) {
         AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
         is.read(buf.get(), size);
@@ -282,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2005/05/25 14:03:53  didenko
+* Added stream checking
+*
 * Revision 1.6  2005/05/23 17:39:39  ucko
 * Fix for previous commit: remember to specify "typename"
 *
