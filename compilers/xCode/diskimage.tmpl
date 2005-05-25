@@ -9,8 +9,11 @@ fi
 pwd
 mkdir tmp
 cp -r bin/Genome\ Workbench.app  tmp
-cd tmp/Genome\ Workbench.app/Contents/MacOS
 
+echo Adding custom Icon
+cp tmp/Genome\ Workbench.app/Contents/MacOS/share/gbench/VolumeIcon.icns tmp/.VolumeIcon.icns
+
+cd tmp/Genome\ Workbench.app/Contents/MacOS
 
 echo Copy 3-rd party dylibs
 cp `otool -L Genome\ Workbench | awk '/(netopt)|(sw)/ {print $1}' ` .
@@ -36,6 +39,8 @@ done
 cd ../../../../
 echo Creating disk image
 hdiutil create -srcfolder tmp  -volname GBENCH gbench.dmg
+
+
 
 rm -r tmp
 exit 0
