@@ -434,14 +434,14 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 ///@param start: start list to be filled
 ///
 static void s_FillCdsStartPosition(string& line, string& concat_exon,
-                                      TSeqPos length_per_line,
+                                      size_t length_per_line,
                                       TSeqPos feat_aln_start_totalexon,
                                       ENa_strand strand, list<TSeqPos>& start){
-    TSeqPos actual_line_len = 0;
-    TSeqPos aln_len = line.size();
+    size_t actual_line_len = 0;
+    size_t aln_len = line.size();
     TSeqPos previous_num_letter = 0;
     
-    for (TSeqPos i = 0; i <= feat_aln_start_totalexon; i ++){
+    for (size_t i = 0; i <= feat_aln_start_totalexon; i ++){
         if(isalpha(concat_exon[i])){
             previous_num_letter ++;
         }
@@ -456,7 +456,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
         
         TSeqPos cur_num = 0;
         bool has_intron = false;
-        for(TSeqPos j = i; j < actual_line_len + i; j ++){
+        for(size_t j = i; j < actual_line_len + i; j ++){
             if(isalpha(line[j])){
                 cur_num ++;
             } else if(line[j] == k_IntronChar){
@@ -647,7 +647,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         gap = x_GetNumGaps();
         s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
                                m_AV->StrandSign(0), m_AV->StrandSign(1),
-                               frame[0], frame[1], (bool)(m_AlignType & eProt));
+                               frame[0], frame[1], 
+                               static_cast<bool>(m_AlignType & eProt));
     }
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
@@ -2421,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.75  2005/05/25 11:29:16  camacho
+*Remove compiler warnings on solaris
+*
 *Revision 1.74  2005/05/13 14:21:37  jianye
 *No showing internal blastdb id
 *
