@@ -33,7 +33,6 @@
  */
 
 #include <corelib/ncbimisc.hpp>
-#include <cgi/cgiapp_iface.hpp>
 #include <cgi/cgictx.hpp>
 
 #include <connect/services/grid_worker.hpp>
@@ -108,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/25 14:20:57  didenko
+ * - #inlcude <cgi/cgiapp_iface.hpp>
+ *
  * Revision 1.1  2005/05/25 14:13:40  didenko
  * Added new Application class from easy transfer existing cgis to worker nodes
  *
