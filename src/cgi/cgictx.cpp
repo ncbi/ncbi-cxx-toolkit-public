@@ -113,6 +113,16 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     return;
 }
 
+CCgiContext::CCgiContext(CCgiApplication&        app,
+                         CNcbiIstream*           is,
+                         CNcbiOstream*           os)
+    : m_App(app),
+      m_Request(new CCgiRequest()),
+      m_Response(os, -1)
+{
+    m_Request->Deserialize(*is);
+    return;
+}
 
 CCgiContext::~CCgiContext(void)
 {
@@ -289,6 +299,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.42  2005/05/25 14:07:18  didenko
+* Added new constructor from CCgiContext
+*
 * Revision 1.41  2005/04/18 21:59:10  yasmax
 * Do not add port number for wwwqa.ncbi and webqa.ncbi
 *

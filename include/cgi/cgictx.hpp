@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <cgi/cgiapp.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <connect/ncbi_types.h>
@@ -141,6 +142,12 @@ public:
                 size_t                  errbuf_size = 256, /* see CCgiRequest */
                 CCgiRequest::TFlags     flags = 0
                 );
+
+    CCgiContext(CCgiApplication&        app,
+                CNcbiIstream*           inp /* see ::CCgiRequest(istr) */,
+                CNcbiOstream*           out /* see ::CCgiResponse(out) */
+                );
+
     virtual ~CCgiContext(void);
 
     const CCgiApplication& GetApp(void) const;
@@ -344,6 +351,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2005/05/25 14:07:18  didenko
+* Added new constructor from CCgiContext
+*
 * Revision 1.30  2004/06/21 16:20:08  vakatov
 * GetSelfURL() -- allow to skip port #;  do it for NCBI frontents by default
 *
