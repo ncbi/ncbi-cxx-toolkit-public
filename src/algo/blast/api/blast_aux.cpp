@@ -402,6 +402,19 @@ CBlastMaskLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     }
 }
 
+void 
+CBlastSeqLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastSeqLoc");
+    if (!m_Ptr)
+        return;
+   
+    for (BlastSeqLoc* tmp = m_Ptr; tmp; tmp = tmp->next) {
+        ddc.Log("left", tmp->ssr->left);
+        ddc.Log("right", tmp->ssr->right);
+    }
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 BlastSeqLoc*
@@ -526,6 +539,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.73  2005/05/25 18:58:39  camacho
+ * + CBlastSeqLoc::DebugDump
+ *
  * Revision 1.72  2005/04/27 19:57:58  dondosha
  * BlastScoreBlk::effective_search_sp field no longer exists
  *
