@@ -3,7 +3,7 @@
 # Build library "XGRIDCGI"
 #################################
 
-SRC = grid_cgiapp
+SRC = grid_cgiapp grid_worker_cgiapp cgi2grid
 LIB = xgridcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
