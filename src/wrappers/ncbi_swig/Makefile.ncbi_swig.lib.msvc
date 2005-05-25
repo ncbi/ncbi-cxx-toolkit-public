@@ -1,0 +1,26 @@
+[CustomBuild]
+SourceFiles = ncbi_swig_python.py
+
+[ncbi_swig_python.py]
+CommandLine = \
+		@set NCBI_CPP=..\\.. \
+		@set PYTHON_INCLUDE= $(PYTHON_PATH)\\include \
+		@set NCBI_LIB=..\\..\\compilers\msvc710_prj\dll\lib\debugdll \
+		@set NCBI_INCLUDE=..\\..\\include \
+		@set NCBI_INC=..\\..\\include \
+		@set SWIG=$(SWIG_PATH)\\swig.exe -old_repr -D_MSC_VER \
+		@set SWIG_LIB=$(SWIG_PATH)\\Lib \
+		@set SRC_DIR=..\\..\\..\\..\\..\\..\\src\\wrappers \
+		cd %SRC_DIR% \
+\	
+		@echo Extracting templates... \
+		@$(PYTHON_PATH)\\python.exe extract_some_templates.py ncbi.swig \
+\	
+		@echo Creating Objects... \
+		@$(PYTHON_PATH)\\python.exe make_cobjects.py ncbi.py \
+\	
+		@echo Generating source code... \
+		@$(PYTHON_PATH)\\python.exe ncbi_swig_python.py ncbi.swig  \
+
+Outputs =  ncbi_swig_python.out
+ 
