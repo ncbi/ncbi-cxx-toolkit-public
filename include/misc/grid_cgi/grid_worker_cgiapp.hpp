@@ -35,13 +35,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <cgi/cgictx.hpp>
 
-#include <connect/services/grid_worker.hpp>
-#include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
-
-#include <util/logrotate.hpp>
-
-#include <map>
+#include <connect/services/grid_worker_app_impl.hpp>
 
 /// @file grid_worker_cgiapp.hpp
 /// NetSchedule Framework specs. 
@@ -74,28 +68,12 @@ public:
 
 protected:
 
-    IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
-    INetScheduleStorageFactory& GetStorageFactory() 
-                                           { return *m_StorageFactory; }
-    INetScheduleClientFactory&  GetClientFactory()
-                                           { return *m_ClientFactory; }
-
     virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
 private:
-    auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
-    auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
-    auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
-
-    auto_ptr<CGridWorkerNode>                m_WorkerNode;
-    mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
-
-    auto_ptr<CRotatingLogStream> m_ErrLog;
-
+    auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
     friend class CCgiWorkerNodeJob;
     int RunJob(CNcbiIstream& is, CNcbiOstream& os);
-    CCgiContext* CreateCgiContext(CNcbiIstream& is, CNcbiOstream& os);
-
 
 };
 
@@ -107,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/25 18:52:37  didenko
+ * Moved grid worker node application functionality to the separate class
+ *
  * Revision 1.2  2005/05/25 14:20:57  didenko
  * - #inlcude <cgi/cgiapp_iface.hpp>
  *

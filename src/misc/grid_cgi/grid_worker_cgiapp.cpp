@@ -30,17 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
-#include <connect/services/grid_default_factories.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <connect/services/grid_default_factories.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
-#include <connect/services/grid_debug_context.hpp>
-#include <connect/services/grid_control_thread.hpp>
 
 #include <misc/grid_cgi/grid_worker_cgiapp.hpp>
 
@@ -108,52 +97,17 @@ private:
     CGridWorkerCgiApp& m_App;
 };
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CGridWorkerNodeThread
-/// @internal
-class CGridWorkerNodeThread : public CThread
-{
-public:
-    CGridWorkerNodeThread(CGridWorkerNode& worker_node,
-                          CWorkerNodeControlThread& control_thread)
-        : m_WorkerNode(worker_node), m_ControlThread(control_thread) {}
-
-    ~CGridWorkerNodeThread() {}
-
-    void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
-    { 
-        m_WorkerNode.RequestShutdown(level);
-    }
-
-protected:
-
-    virtual void* Main(void)
-    {
-        m_WorkerNode.Start();
-        return NULL;
-    }
-    virtual void OnExit(void)
-    {
-        CThread::OnExit();
-        m_ControlThread.RequestShutdown();
-        LOG_POST("Worker Node Thread exited.");
-    }
-
-private:
-
-    CGridWorkerNode& m_WorkerNode;
-    CWorkerNodeControlThread& m_ControlThread;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 //
 CGridWorkerCgiApp::CGridWorkerCgiApp( 
                    INetScheduleStorageFactory* storage_factory,
                    INetScheduleClientFactory* client_factory)
-: m_StorageFactory(storage_factory), m_ClientFactory(client_factory)
 {
-    m_JobFactory.reset(new CCgiWorkerNodeJobFactory(*this));
+    m_AppImpl.reset(new  CGridWorkerApp_Impl(*this,
+                                             new CCgiWorkerNodeJobFactory(*this),
+                                             storage_factory,
+                                             client_factory));
 
 #if defined(NCBI_OS_UNIX)
     // attempt to get server gracefully shutdown on signal
@@ -171,27 +125,8 @@ void CGridWorkerCgiApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Worker Node");
     SetupArgDescriptions(arg_desc.release());
-       
-    IRWRegistry& reg = GetConfig();
-    reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
-    bool cache_input =
-        reg.GetBool("netcache_client", "cache_input", false, 
-                    0, CNcbiRegistry::eReturn);
-    bool cache_output =
-        reg.GetBool("netcache_client", "cache_output", false, 
-                    0, CNcbiRegistry::eReturn);
-
-    if (!m_StorageFactory.get()) 
-        m_StorageFactory.reset(
-            new CNetScheduleStorageFactory_NetCache(reg, 
-                                                    cache_input,
-                                                    cache_output)
-                              );
-    if (!m_ClientFactory.get()) 
-        m_ClientFactory.reset(
-            new CNetScheduleClientFactory(reg)
-                              );
+    m_AppImpl->Init();
 }
 
 void CGridWorkerCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
@@ -206,139 +141,14 @@ void CGridWorkerCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 int CGridWorkerCgiApp::Run(void)
 {
-    LOG_POST( GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
-    const IRegistry& reg = GetConfig();
-
-    unsigned int udp_port =
-        reg.GetInt("server", "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
-    unsigned int ns_timeout = 
-        reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
-    unsigned int threads_pool_timeout = 
-        reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
-    unsigned int control_port = 
-        reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
-    const CArgs& args = GetArgs();
-    if (args["control_port"]) {
-        control_port = args["control_port"].AsInteger();
-    }
-
-    bool server_log = 
-        reg.GetBool("server","log",false,0,IRegistry::eReturn);
-    unsigned int log_size = 
-        reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
-    string log_file_name = GetProgramDisplayName() +"_err.log." 
-        + NStr::UIntToString(control_port);
-
-    unsigned int max_total_jobs = 
-        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
-
-    bool is_daemon =
-        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
-
-    string masters = 
-            reg.GetString("server", "master_nodes", "");
-    string admin_hosts = 
-            reg.GetString("server", "admin_hosts", "");
-
-    CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
-    string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
-    if (NStr::CompareNocase(dbg_mode, "gather")==0) {
-        debug_mode = CGridDebugContext::eGDC_Gather;
-    } else if (NStr::CompareNocase(dbg_mode, "execute")==0) {
-        debug_mode = CGridDebugContext::eGDC_Execute;
-    }
-    if (debug_mode != CGridDebugContext::eGDC_NoDebug) {
-        CGridDebugContext& debug_context = 
-            CGridDebugContext::Create(debug_mode,GetStorageFactory());
-        string run_name = 
-            reg.GetString("gw_debug", "run_name", GetProgramDisplayName());
-        debug_context.SetRunName(run_name);
-        if (debug_mode == CGridDebugContext::eGDC_Gather) {
-            max_total_jobs =
-                reg.GetInt("gw_debug","gather_nrequests",1,0,IRegistry::eReturn);
-        } else if (debug_mode == CGridDebugContext::eGDC_Execute) {
-            string files = 
-                reg.GetString("gw_debug", "execute_requests", kEmptyStr);
-            max_total_jobs = 0;
-            debug_context.SetExecuteList(files);
-        }
-        log_file_name = debug_context.GetLogFileName();
-        is_daemon = false;
-    }
-
-#if defined(NCBI_OS_UNIX)
-    if (is_daemon) {
-        LOG_POST("Entering UNIX daemon mode...");
-        bool daemon = Daemonize(0, fDaemon_DontChroot);
-        if (!daemon) {
-            return 0;
-        }
-    }
-#endif
-
-    m_ErrLog.reset(new CRotatingLogStream(log_file_name, log_size));
-    // All errors redirected to rotated log
-    // from this moment on the server is silent...
-    SetDiagStream(m_ErrLog.get());
-
-
-    m_WorkerNode.reset( new CGridWorkerNode(GetJobFactory(), 
-                                            GetStorageFactory(), 
-                                            GetClientFactory())
-                       );
-    if (udp_port == 0)
-        udp_port = control_port;
-    m_WorkerNode->SetListeningPort(udp_port);
-    m_WorkerNode->SetMaxThreads(1);
-    m_WorkerNode->SetInitThreads(1);
-    m_WorkerNode->SetNSTimeout(ns_timeout);
-    m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
-    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
-    m_WorkerNode->SetMasterWorkerNodes(masters);
-    m_WorkerNode->SetAdminHosts(admin_hosts);
-    m_WorkerNode->ActivateServerLog(server_log);
-
-    {{
-    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode) ;
-    CRef<CGridWorkerNodeThread> worker_thread(
-                                new CGridWorkerNodeThread(*m_WorkerNode,
-                                                          control_server));
-    worker_thread->Run();
-    // give sometime the thread to run
-    SleepMilliSec(500);
-    if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
-        LOG_POST("\n=================== NEW RUN : " 
-                 << m_WorkerNode->GetStartTime().AsString()
-                 << " ===================\n"
-                 << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
-                 << "Waiting for control commands on TCP port " << control_port << "\n"
-                 << "Queue name: " << m_WorkerNode->GetQueueName() );
-
-        try {
-            control_server.Run();
-        }
-        catch (exception& ex) {
-            ERR_POST( "Couldn't run a Threaded server: " << ex.what()  << "\n");
-            RequestShutdown();
-        }
-    }
-    worker_thread->Join();
-    }}
-    m_WorkerNode.reset(0);    
-    // give sometime the thread to shutdown
-    SleepMilliSec(500);
-    return 0;
-}
-
-CCgiContext* CGridWorkerCgiApp::CreateCgiContext(CNcbiIstream& is, CNcbiOstream& os)
-{
-    return  new CCgiContext(*this, &is, &os);   
+    m_AppImpl->ForceSingleThread();
+    return m_AppImpl->Run();
 }
 
 void CGridWorkerCgiApp::RequestShutdown()
 {
-    if (m_WorkerNode.get())
-        m_WorkerNode->RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+    if (m_AppImpl.get())
+        m_AppImpl->RequestShutdown();
 }
 
 string CGridWorkerCgiApp::GetJobVersion() const
@@ -348,7 +158,7 @@ string CGridWorkerCgiApp::GetJobVersion() const
 
 int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os)
 {
-    auto_ptr<CCgiContext> cgi_context( CreateCgiContext(is ,os) );
+    auto_ptr<CCgiContext> cgi_context( new CCgiContext(*this, &is, &os) );
     
     CDiagRestorer diag_restorer;
 
@@ -376,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/25 18:52:38  didenko
+ * Moved grid worker node application functionality to the separate class
+ *
  * Revision 1.1  2005/05/25 14:13:40  didenko
  * Added new Application class from easy transfer existing cgis to worker nodes
  *

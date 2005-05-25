@@ -42,8 +42,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <connect/connect_export.h>
-#include <connect/services/grid_worker.hpp>
-#include <util/logrotate.hpp>
+#include <connect/services/grid_worker_app_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -106,27 +105,17 @@ public:
     /// from inside your overriding method.
     virtual int Run(void);
 
+    virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
+
     void RequestShutdown();
 
 protected:
 
     virtual const IWorkerNodeInitContext&  GetInitContext() const;
 
-    IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
-    INetScheduleStorageFactory& GetStorageFactory() 
-                                           { return *m_StorageFactory; }
-    INetScheduleClientFactory&  GetClientFactory()
-                                           { return *m_ClientFactory; }
-
 private:
-    auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
-    auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
-    auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
-
-    auto_ptr<CGridWorkerNode>                m_WorkerNode;
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
-
-    auto_ptr<CRotatingLogStream> m_ErrLog;
+    auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
 };
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version) \
@@ -138,28 +127,6 @@ int main(int argc, const char* argv[]) \
     return app.AppMain(argc, argv); \
 }
 
-
-
-class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
-{
-public:
-    enum EErrCode {
-        eJobFactoryIsNotSet
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eJobFactoryIsNotSet: return "eJobFactoryIsNotSetError";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGridWorkerAppException, CException);
-};
-
-
 /* @} */
 
 
@@ -168,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/25 18:52:37  didenko
+ * Moved grid worker node application functionality to the separate class
+ *
  * Revision 1.9  2005/05/12 18:35:46  vakatov
  * Minor warning heeded
  *
