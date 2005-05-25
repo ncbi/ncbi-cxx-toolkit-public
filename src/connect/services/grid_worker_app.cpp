@@ -69,12 +69,14 @@ BEGIN_NCBI_SCOPE
 //
 //     CGridWorkerNodeThread
 /// @internal
-class NCBI_XCONNECT_EXPORT CGridWorkerNodeThread : public CThread
+class CGridWorkerNodeThread : public CThread
 {
 public:
     CGridWorkerNodeThread(CGridWorkerNode& worker_node,
-                          CWorkerNodeControlThread& control_thread);
-    ~CGridWorkerNodeThread();
+                          CWorkerNodeControlThread& control_thread) 
+        : m_WorkerNode(worker_node), m_ControlThread(control_thread) {}
+
+    ~CGridWorkerNodeThread() {}
 
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
     { 
@@ -82,38 +84,23 @@ public:
     }
 protected:
 
-    virtual void* Main(void);
-    virtual void OnExit(void);
+    virtual void* Main(void)
+    {
+        m_WorkerNode.Start();
+        return NULL;
+    }
+    virtual void OnExit(void)
+    {
+        CThread::OnExit();
+        m_ControlThread.RequestShutdown();
+        LOG_POST("Worker Node Thread exited.");
+    }
 
 private:
 
     CGridWorkerNode& m_WorkerNode;
     CWorkerNodeControlThread& m_ControlThread;
 };
-
-CGridWorkerNodeThread::CGridWorkerNodeThread(CGridWorkerNode& worker_node,
-                                             CWorkerNodeControlThread& control_thread)
-    : m_WorkerNode(worker_node), m_ControlThread(control_thread)
-{
-}
-CGridWorkerNodeThread::~CGridWorkerNodeThread()
-{
-}
-
-void* CGridWorkerNodeThread::Main(void)
-{
-    m_WorkerNode.Start();
-    return NULL;
-}
-
-void CGridWorkerNodeThread::OnExit(void)
-{
-    CThread::OnExit();
-    m_ControlThread.RequestShutdown();
-    LOG_POST("Worker Node Thread exited.");
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -339,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/05/25 14:14:33  didenko
+ * Cosmetics
+ *
  * Revision 1.26  2005/05/23 15:51:54  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp to
  * include/connect/service
