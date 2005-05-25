@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.375 2005/05/16 16:33:42 ucko Exp $
+#  $Id: configure.ac,v 1.376 2005/05/25 18:09:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3829,19 +3829,16 @@ fi
 
 ## ORBacus CORBA
 if test "${with_orbacus:-yes}" = yes; then
-    : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
+   if test -d $NCBI/corba/${compiler_vpfx}ReleaseMT; then
+      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}ReleaseMT}
+   else
+      : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
+   fi
 elif test "$with_orbacus" != no; then
     ORBACUS_PATH=$with_orbacus
 fi
 if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
-   LIBOB="-lOB"
-   if test "$with_mt" = "yes" ; then
-      LIBOB="$LIBOB -lJTC"
-      LIBIMR="-lIMR"
-   else
-      LIBIMR=
-   fi
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
       : ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
@@ -3849,6 +3846,21 @@ if test "$with_orbacus" != no; then
      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
      : ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
    fi
+   case "$host_os:$with_mt" in
+       linux*:no) LIBJTC="-lJTC -pthread" ;;
+       *)         LIBJTC="-lJTC"          ;;
+   esac
+   
+   case "$with_mt:$ORBACUS_LIBPATH" in
+      yes:* | *:-L*MT/lib* )
+         LIBOB="-lOB $LIBJTC"
+         LIBIMR="-lIMR"
+	 ;;
+      * )
+         LIBOB="-lOB"
+         LIBIMR=
+	 ;;
+   esac
    AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
        LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
