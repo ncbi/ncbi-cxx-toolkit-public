@@ -399,6 +399,8 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
     _BlastSeqSrcImpl_SetDeleteFnPtr(retval, &s_MultiSeqSrcFree);
+    /// @todo FIXME Must there be a copy function in this implementation?
+    ///       If so, should CMultiSeqInfo* be changed to a CRef
     _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
     _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_MultiSeqGetMaxLength);
@@ -413,9 +415,6 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 
     return retval;
 }
-
-/// @todo FIXME Must there be a copy function in this implementation?
-///       If so, should CMultiSeqInfo* be changed to a CRef
 
 } // extern "C"
 
@@ -447,6 +446,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2005/05/25 12:47:56  camacho
+ * doxygen fix
+ *
  * Revision 1.33  2005/05/10 16:08:39  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *

@@ -27,7 +27,7 @@
  *
  */
 
-/// @file blast_advprot_options.hp.cpp
+/// @file blast_advprot_options.cpp
 /// Implements the CBlastAdvancedProteinOptionsHandle class.
 
 #include <ncbi_pch.hpp>
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/25 12:44:49  camacho
+ * doxygen fix
+ *
  * Revision 1.1  2005/05/24 14:05:58  madden
  * Advanced (e.g., composition-based) protein options
  *
