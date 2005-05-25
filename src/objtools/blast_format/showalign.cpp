@@ -447,7 +447,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
         }
     }
     TSeqPos prev_num = 0;
-    for(TSeqPos i = 0; i < aln_len; i += actual_line_len){
+    for(size_t i = 0; i < aln_len; i += actual_line_len){
         if(aln_len - i< length_per_line) {
             actual_line_len = aln_len - i;
         } else {
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.76  2005/05/25 16:53:40  jianye
+*fix warning under sun solaris
+*
 *Revision 1.75  2005/05/25 11:29:16  camacho
 *Remove compiler warnings on solaris
 *
