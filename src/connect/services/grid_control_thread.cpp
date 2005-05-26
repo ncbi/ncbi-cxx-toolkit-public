@@ -51,7 +51,7 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
 {
-    LOG_POST(Info << "Control server stopped.");
+    LOG_POST("Control server stopped.");
 }
 
 #define JS_CHECK_IO_STATUS(x) \
@@ -87,100 +87,90 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         io_st = socket.ReadLine(request);
         JS_CHECK_IO_STATUS(io_st);
         
-        if( strncmp( request.c_str(), SHUTDOWN_CMD.c_str(), 
-                     SHUTDOWN_CMD.length() ) == 0 ) {
-
+        CNcbiOstrstream os;
+        if (NStr::StartsWith(request, SHUTDOWN_CMD)) {
             string host = socket.GetPeerAddress();
             size_t pos = host.find_first_of(':');
             if (pos != string::npos) {
                 host = host.substr(0, pos);
             }
-            string ans = "ERR:";
             if (m_WorkerNode.IsHostInAdminHostsList(host)) {
                 m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
-                ans = "OK:";
-                LOG_POST(Info << "Shutdown request has been received.");
+                os << "OK:";
+                LOG_POST("Shutdown request has been received from host: " << host);
             } else {
-                ans = "ERR:Shutdown access denied.";
+                os << "ERR:Shutdown access denied.";
                 LOG_POST(Warning << "Shutdown access denied: " << host);
             }
-            socket.Write(ans.c_str(), ans.length() + 1 );
-        }
-        else if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
-                     VERSION_CMD.length() ) == 0 ) {
-            string ans = "OK:" + m_WorkerNode.GetJobVersion() + WN_BUILD_DATE;
-            socket.Write(ans.c_str(), ans.length() + 1 );
-        } 
-        else if( strncmp( request.c_str(), STAT_CMD.c_str(), 
-                     STAT_CMD.length() ) == 0 ) {
-            CNcbiOstrstream os;
+        } else if (NStr::StartsWith(request, VERSION_CMD)) {
+            os << "OK:" << m_WorkerNode.GetJobVersion() << WN_BUILD_DATE;
+        } else if (NStr::StartsWith(request, STAT_CMD)) {
             os << "OK:";
             os << m_WorkerNode.GetJobVersion() << WN_BUILD_DATE << endl;
-            os << "Started: " << m_WorkerNode.GetStartTime().AsString() << endl;
-            if (m_WorkerNode.GetShutdownLevel() != 
+            os << "Started: "
+               << m_WorkerNode.GetStartTime().AsString() << endl;
+            if (m_WorkerNode.GetShutdownLevel() !=
                 CNetScheduleClient::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
             }
-            os << "Maximum job threads: " 
-               << NStr::UIntToString(m_WorkerNode.GetMaxThreads()) << endl
-               << "Queue name: " << m_WorkerNode.GetQueueName() << endl
-               << "Jobs Succeed: " 
-               << NStr::UIntToString(m_WorkerNode.GetJobsSucceedNumber()) << endl
+            os << "Queue name: " << m_WorkerNode.GetQueueName() << endl;
+            if (m_WorkerNode.GetMaxThreads() > 1)
+                os << "Maximum job threads: " 
+                   << m_WorkerNode.GetMaxThreads() << endl;
+
+            os << "Jobs Succeed: " 
+               << m_WorkerNode.GetJobsSucceedNumber() << endl
                << "Jobs Failed: " 
-               << NStr::UIntToString(m_WorkerNode.GetJobsFailedNumber()) << endl
+               << m_WorkerNode.GetJobsFailedNumber() << endl
                << "Jobs Returned: " 
-               << NStr::UIntToString(m_WorkerNode.GetJobsReturnedNumber()) << endl
+               << m_WorkerNode.GetJobsReturnedNumber() << endl
                << "Jobs Running: " 
-               << NStr::UIntToString(m_WorkerNode.GetJobsRunningNumber()) << endl;
+               << m_WorkerNode.GetJobsRunningNumber() << endl;
+
             vector<CWorkerNodeJobContext::SJobStat> jobs;
             CWorkerNodeJobContext::CollectStatictics(jobs);
             CTime now(CTime::eCurrent);
             ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
                 CTimeSpan ts = now - it->start_time.GetLocalTime();
                 os << it->job_key << " " << it->job_input
-                   << " -- running for " << ts.AsString("S") << " seconds." << endl;
+                   << " -- running for " << ts.AsString("S") 
+                   << " seconds." << endl;
             }
-            os << ends;
-            try {
-                socket.Write(os.str(), os.pcount());
-            }  catch (...) {
-                os.freeze(false);
-                throw;
-            }
-            os.freeze(false);
-
-        }
-        else if ( strncmp( request.c_str(), GETLOAD_CMD.c_str(), 
-                           GETLOAD_CMD.length() ) == 0 ) {
-            string ans = "ERR:";
+        } else if (NStr::StartsWith(request.c_str(), GETLOAD_CMD)) {
             if (auth != m_WorkerNode.GetJobVersion()) {
-                ans = "ERR:Wrong Program. Required: " 
-                    + m_WorkerNode.GetJobVersion();
+                os <<"ERR:Wrong Program. Required: " 
+                   << m_WorkerNode.GetJobVersion();
             } else {
                 string qname, connection_info;
                 NStr::SplitInTwo(queue, ";", qname, connection_info);
                 if (qname != m_WorkerNode.GetQueueName())
-                    ans = "ERR:Wrong Queue. Required: " 
-                        + m_WorkerNode.GetQueueName();
+                    os << "ERR:Wrong Queue. Required: " 
+                       << m_WorkerNode.GetQueueName();
                 else if (connection_info != m_WorkerNode.GetConnectionInfo())
-                    ans = "ERR:Wrong Connection Info. Required: " 
-                        + m_WorkerNode.GetConnectionInfo();
+                    os << "ERR:Wrong Connection Info. Required: " 
+                       << m_WorkerNode.GetConnectionInfo();
                 else {
                     int load = m_WorkerNode.GetMaxThreads() - 
                         m_WorkerNode.GetJobsRunningNumber();
-                    ans = "OK:" + NStr::IntToString(load);
+                    os << "OK:" << load;
                 }
             }
-            socket.Write(ans.c_str(), ans.length() + 1 );
+        } else {
+            os << "ERR:Unknown command -- " << request;
         }
-        else {
-            string ans = "ERR:Unknown command -- " + request;
-            socket.Write(ans.c_str(), ans.length() + 1 );
+        os << ends;
+        try {
+            socket.Write(os.str(), os.pcount());
+        }  catch (...) {
+            os.freeze(false);
+            throw;
         }
+        os.freeze(false);
+
     }
     catch (exception& ex)
     {
-        LOG_POST(Error << "Exception in the control server : " << ex.what() );
+        ERR_POST("Exception in the control server : " << ex.what());
         string err = "ERR:" + NStr::PrintableString(ex.what());
         socket.Write(err.c_str(), err.length() + 1 );     
     }
@@ -191,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2005/05/26 15:22:42  didenko
+ * Cosmetics
+ *
  * Revision 6.8  2005/05/23 15:51:54  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp to
  * include/connect/service

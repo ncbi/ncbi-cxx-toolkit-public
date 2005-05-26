@@ -254,7 +254,7 @@ int CGridWorkerApp_Impl::Run()
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
                  << "Queue name: " << m_WorkerNode->GetQueueName() );
-        if (!m_SingleThreadForced)
+        if (max_threads > 1)
             LOG_POST( "Maximum job threads: " << max_threads);
 
 
@@ -286,6 +286,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/05/26 15:22:42  didenko
+ * Cosmetics
+ *
  * Revision 6.1  2005/05/25 18:52:37  didenko
  * Moved grid worker node application functionality to the separate class
  *
