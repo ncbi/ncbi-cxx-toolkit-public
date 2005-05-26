@@ -177,10 +177,6 @@ CDirEntry* CDirEntry::CreateObject(EType type, const string& path)
             ptr = new CDirEntry(path);
             break;
     }
-    if ( !ptr ) {
-        NCBI_THROW(CCoreException, eNullPtr,
-            "CDirEntry::CreateObject(): Cannot allocate memory for object");
-    }
     return ptr;
 }
 
@@ -238,10 +234,12 @@ string CDirEntry::m_BackupSuffix = ".bak";
 
 CDirEntry& CDirEntry::operator= (const CDirEntry& other)
 {
-    m_Path = other.m_Path;
-    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
-    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
-    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+    if (this != &other) {
+        m_Path                = other.m_Path;
+        m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
+        m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
+        m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+    }
     return *this;
 }
 
@@ -696,7 +694,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
     }
     return NStr::Join(head, string(1, DIR_SEPARATOR));
 
-#else // Not Unix or  Windows
+#else // Not Unix or Windows
     // NOT implemented!
     return path;
 #endif
@@ -1297,8 +1295,8 @@ void CDirEntry::DereferenceLink(void)
 
 bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
 {
-    CFile src(*this);
-    CFile dst(newname);
+    CDirEntry src(*this);
+    CDirEntry dst(newname);
 
     // Dereference links
     if ( F_ISSET(flags, fRF_FollowLinks) ) {
@@ -1307,14 +1305,13 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     }
     // The source entry must exists
     EType src_type = src.GetType();
-    if ( src_type == eUnknown)  {
+    if ( src_type == eUnknown )  {
         return false;
     }
-    EType dst_type   = dst.GetType();
-    bool  dst_exists = (dst_type != eUnknown);
+    EType dst_type = dst.GetType();
     
     // If destination exists...
-    if ( dst_exists ) {
+    if ( dst_type != eUnknown ) {
         // Can rename entries with different types?
         if ( F_ISSET(flags, fRF_EqualTypes)  &&  (src_type != dst_type) ) {
             return false;
@@ -1360,15 +1357,13 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
 bool CDirEntry::Remove(EDirRemoveMode mode) const
 {
     if ( IsDir(eIgnoreLinks) ) {
-        if (mode == eOnlyEmpty) {
+        if ( mode == eOnlyEmpty ) {
             return rmdir(GetPath().c_str()) == 0;
-        } else {
-            CDir dir(GetPath());
-            return dir.Remove(eRecursive);
         }
-    } else {
-        return remove(GetPath().c_str()) == 0;
+        CDir dir(GetPath());
+        return dir.Remove(eRecursive);
     }
+    return remove(GetPath().c_str()) == 0;
 }
 
 
@@ -1678,7 +1673,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 
 #elif defined(NCBI_OS_UNIX)
 
-    if ( owner.empty() &&  group.empty() ) {
+    if ( owner.empty()  &&  group.empty() ) {
         return false;
     }
 
@@ -1699,15 +1694,27 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     
     if ( !owner.empty() ) {
         struct passwd *pw = getpwnam(owner.c_str());
-        if ( !pw )
-            return false;
-        uid = pw->pw_uid;
+        if ( !pw ) {
+            uid = (uid_t) NStr::StringToUInt(owner.c_str(), 0,
+                                             NStr::eCheck_Need,
+                                             NStr::eConvErr_NoThrow);
+            if (errno)
+                return false;
+        } else {
+            uid = pw->pw_uid;
+        }
     }
     if ( !group.empty() ) {
         struct group *gr = getgrnam(group.c_str());
-        if ( !gr )
-	    return false;
-        gid = gr->gr_gid;
+        if ( !gr ) {
+            gid = (gid_t) NStr::StringToUInt(group.c_str(), 0,
+                                             NStr::eCheck_Need,
+                                             NStr::eConvErr_NoThrow);
+            if (errno)
+                return false;
+        } else {
+            gid = gr->gr_gid;
+        }
     }
     
     if ( follow == eFollowLinks ) {
@@ -1887,7 +1894,7 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
     if (mode == eTmpFileCreate) {
         ERR_POST(Warning << "CFile::GetTmpNameEx: "
                  "The temporary file cannot be auto-created on this " \
-                 "platform, returns its name only");
+                 "platform, so return its name only");
     }
     char* filename = tempnam(0,0);
     if ( !filename ) {
@@ -1902,18 +1909,20 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
 
 #if !defined(NCBI_OS_MSWIN)
 
-// Auxiliary function to copy file
+// Auxiliary function to copy a file
 bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
     CNcbiIfstream is(src, IOS_BASE::binary | IOS_BASE::in);
     CNcbiOfstream os(dst, IOS_BASE::binary | IOS_BASE::out | IOS_BASE::trunc);
 
     if ( !buf_size ) {
-        buf_size = kDefaultBufferSize;
+        os << is.rdbuf();
+        return !os.good() ? true : false;
     }
+
     char* buf = new char[buf_size];
     bool failed = false;
-
+ 
     streamsize nread;
     do {
         nread = is.rdbuf()->sgetn(buf, buf_size);
@@ -1926,11 +1935,11 @@ bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         }
     } while ( nread );
 
-    // Clean memory
-    delete buf;
-    // Return copy result
+    delete[] buf;
+
     return !failed;
 }
+
 #endif
 
 
@@ -1983,7 +1992,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) )
         return false;
 #else
-    if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size)){
+    if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size) ){
         return false;
     }
 #endif
@@ -2043,8 +2052,8 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
         }
     }
     // Clean memory
-    delete buf1;
-    delete buf2;
+    delete[] buf1;
+    delete[] buf2;
 
     // Both files should be in the EOF state
     return equal  &&  f1.eof()  &&  f2.eof();
@@ -2582,7 +2591,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
                 }
             }
             // Remove unneeded flags.
-            // All dir entries can be overwritten.
+            // All dir entries can now be overwritten.
             flags &= ~(fCF_TopDirOnly | fCF_Update | fCF_Backup);
         }
     } else {
@@ -2629,14 +2638,14 @@ bool CDir::Remove(EDirRemoveMode mode) const
     if ( mode == eOnlyEmpty ) {
         return CParent::Remove(eOnlyEmpty);
     }
-    // Read all entries in derectory
+    // Read all entries in directory
     TEntries contents = GetEntries();
 
-    // Remove
+    // Remove each entry
     ITERATE(TEntries, entry, contents) {
         string name = (*entry)->GetName();
         if ( name == "."  ||  name == ".."  ||  
-             name == string(1,GetPathSeparator()) ) {
+             name == string(1, GetPathSeparator()) ) {
             continue;
         }
         // Get entry item with full pathname
@@ -2646,15 +2655,16 @@ bool CDir::Remove(EDirRemoveMode mode) const
             if ( !item.Remove(eRecursive) ) {
                 return false;
             }
-        } else {
-            if ( item.IsDir(eIgnoreLinks) ) {
-                continue;
-            }
-            if ( !item.Remove() ) {
+        } else if ( item.IsDir(eIgnoreLinks) ) {
+            // Empty subdirectory is essentially a file
+            if ( !item.Remove(eOnlyEmpty) ) {
                 return false;
             }
+        } else if ( !item.Remove() ) {
+            return false;
         }
     }
+
     // Remove main directory
     return CParent::Remove(eOnlyEmpty);
 }
@@ -3345,6 +3355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2005/05/26 20:23:07  lavr
+ * Scattered bug and performance fixes
+ *
  * Revision 1.98  2005/05/20 11:23:46  ivanov
  * Added new classes CFileDeleteList and CFileDeleteAtExit.
  * CMemoryFile[Map](): changed default share attribute from eMMS_Shared.
