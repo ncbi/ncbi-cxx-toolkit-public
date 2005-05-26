@@ -46,10 +46,7 @@ BEGIN_NCBI_SCOPE
 inline
 std::string::size_type s_DiffPtr(const char* end, const char* start)
 {
-    if (end) {
-        return end - start;
-    }
-    return 0;
+    return end ? (size_t)(end - start) : (size_t) 0;
 }
 
 const char *const kEmptyCStr = "";
@@ -301,25 +298,33 @@ string& NStr::ToUpper(string& str)
 int NStr::StringToNumeric(const string& str)
 {
     if (str.empty()  ||  !isdigit((unsigned char)(*str.begin()))) {
+        errno = EINVAL;
         return -1;
     }
-    errno = 0;
     char* endptr = 0;
-    unsigned long value = strtoul(str.c_str(), &endptr, 10);
-    if (errno  ||  !endptr  ||  value > (unsigned long) kMax_Int  ||
-        *endptr != '\0'  ||  endptr == str.c_str()) {
+    const char* begptr = str.c_str();
+    errno = 0;
+    unsigned long value = strtoul(begptr, &endptr, 10);
+    if (errno  ||  !endptr  ||  endptr == begptr  ||
+        value > (unsigned long) kMax_Int  ||  *endptr) {
+        if ( !errno ) {
+            errno = !endptr || endptr == begptr || *endptr ? EINVAL : ERANGE;
+        }
         return -1;
     }
     return (int) value;
 }
 
-# define CHECK_ENDPTR(conv)                                           \
-    if (check_endptr == eCheck_Need  &&  *endptr != '\0') {           \
-        if ( on_error == eConvErr_NoThrow )                           \
-            return 0;                                                 \
-        NCBI_THROW2(CStringException, eBadArgs,                       \
-            "String cannot be converted to " conv " - trailing junk", \
-            s_DiffPtr(endptr, str.c_str()));                          \
+
+# define CHECK_ENDPTR(conv)                                             \
+    if (check_endptr == eCheck_Need  &&  *endptr) {                     \
+        if ( on_error == eConvErr_Throw ) {                             \
+            NCBI_THROW2(CStringException, eBadArgs,                     \
+                        "String cannot be converted to " conv           \
+                        " - trailing junk", s_DiffPtr(endptr, begptr)); \
+        }                                                               \
+        errno = EINVAL;                                                 \
+        return 0;                                                       \
     }
 
 int NStr::StringToInt(const string&  str,
@@ -327,15 +332,19 @@ int NStr::StringToInt(const string&  str,
                       ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                       EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    errno = 0;
     char* endptr = 0;
-    long value = strtol(str.c_str(), &endptr, base);
-    if (errno || !endptr || endptr == str.c_str() ||
+    const char* begptr = str.c_str();
+    errno = 0;
+    long value = strtol(begptr, &endptr, base);
+    if (errno || !endptr || endptr ==  begptr ||
         value < kMin_Int || value > kMax_Int) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to int",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
+        }
+        if ( !errno ) {
+            errno = !endptr  ||  endptr == begptr  ?  EINVAL  :  ERANGE;
         }
         return 0;
     }
@@ -350,14 +359,18 @@ NStr::StringToUInt(const string&  str,
                    ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                    EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    errno = 0;
     char* endptr = 0;
-    unsigned long value = strtoul(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||  value > kMax_UInt) {
+    const char* begptr = str.c_str();
+    errno = 0;
+    unsigned long value = strtoul(begptr, &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == begptr  ||  value > kMax_UInt) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted unsigned int",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
+        }
+        if ( !errno ) {
+            errno = !endptr  ||  endptr == begptr  ?  EINVAL  :  ERANGE;
         }
         return 0;
     }
@@ -371,14 +384,18 @@ long NStr::StringToLong(const string&  str,
                         ECheckEndPtr   check_endptr   /* = eCheck_Need */,
                         EConvErrAction on_error       /* = eConvErr_Throw */)
 {
-    errno = 0;
     char* endptr = 0;
-    long value = strtol(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
+    const char* begptr = str.c_str();
+    errno = 0;
+    long value = strtol(begptr, &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == begptr) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to long",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
+        }
+        if ( !errno ) {
+            errno = EINVAL;
         }
         return 0;
     }
@@ -393,14 +410,18 @@ long NStr::StringToULong(const string&  str,
                          ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                          EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    errno = 0;
     char* endptr = 0;
-    unsigned long value = strtoul(str.c_str(), &endptr, base);
+    const char* begptr = str.c_str();
+    errno = 0;
+    unsigned long value = strtoul(begptr, &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to unsigned long",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
+        }
+        if ( !errno ) {
+            errno = EINVAL;
         }
         return 0;
     }
@@ -414,21 +435,24 @@ NStr::StringToDouble(const string&  str,
                      ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                      EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    errno = 0;
     char* endptr = 0;
-    double value = strtod(str.c_str(), &endptr);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
+    const char* begptr = str.c_str();
+    errno = 0;
+    double value = strtod(begptr, &endptr);
+    if (errno  ||  !endptr  ||  endptr == begptr) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to double",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
+        }
+        if ( !errno ) {
+            errno = EINVAL;
         }
         return 0.0;
     }
     if (*(endptr - 1) != '.'  &&  *endptr == '.') {
-        // Only single dot at the end of line is allowed
-        SIZE_TYPE pos = str.find('.');
-        if ( endptr == str.c_str() + pos ) {
+        // Only a single dot at the end of line is allowed
+        if ( endptr == strchr(begptr, '.') ) {
             endptr++;
         }
     }
@@ -464,12 +488,14 @@ Int8 NStr::StringToInt8(const string&  str,
                         ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                         EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    const char* endptr = str.c_str();
+    const char* begptr = str.c_str();
+    const char* endptr = begptr;
 
     Int8 n = 0;
     Int8 limdiv = kMax_I8 / base;
     Int8 limoff = kMax_I8 % base;
 
+    errno = 0;
     bool sign = false;
     switch (*endptr) {
     case '-':
@@ -483,7 +509,7 @@ Int8 NStr::StringToInt8(const string&  str,
         break;
     }
 
-    while(*endptr) {
+    while (*endptr) {
         int ch = *endptr;
         int delta;          // corresponding numeric value of 'ch'
 
@@ -497,20 +523,22 @@ Int8 NStr::StringToInt8(const string&  str,
             if ( on_error == eConvErr_Throw ) {
                 NCBI_THROW2(CStringException, eConvert,
                             "String cannot be converted to Int8 - overflow",
-                            s_DiffPtr(endptr, str.c_str()));
+                            s_DiffPtr(endptr, begptr));
             }
+            errno = ERANGE;
             return 0;
         }
         n *= base;
         n += delta;
         endptr++;
     }
-    if ( endptr == str.c_str() ) { 
+    if ( endptr == begptr ) { 
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to Int8",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
         }
+        errno = EINVAL;
         return 0;
     }
     CHECK_ENDPTR("Int8");
@@ -523,7 +551,8 @@ Uint8 NStr::StringToUInt8(const string&  str,
                           ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                           EConvErrAction on_error      /* = eConvErr_Throw */)
 {
-    const char* endptr = str.c_str();
+    const char* begptr = str.c_str();
+    const char* endptr = begptr;
     if (*endptr == '+') {
         endptr++;
     }
@@ -531,6 +560,7 @@ Uint8 NStr::StringToUInt8(const string&  str,
     Uint8 limdiv = kMax_UI8 / base;
     int   limoff = int(kMax_UI8 % base);
 
+    errno = 0;
     while(*endptr) {
         int ch = *endptr;
         int delta;          // corresponding numeric value of 'ch'
@@ -545,20 +575,22 @@ Uint8 NStr::StringToUInt8(const string&  str,
             if ( on_error == eConvErr_Throw ) {
                 NCBI_THROW2(CStringException, eConvert,
                             "String cannot be converted to Uint8 - overflow",
-                            s_DiffPtr(endptr, str.c_str()));
+                            s_DiffPtr(endptr, begptr));
             }
+            errno = ERANGE;
             return 0;
         }
         n *= base;
         n += delta;
         endptr++;
     }
-    if ( endptr == str.c_str() ) { 
+    if ( endptr == begptr ) { 
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted to Uint8",
-                        s_DiffPtr(endptr, str.c_str()));
+                        s_DiffPtr(endptr, begptr));
         }
+        errno = EINVAL;
         return 0;
     }
     CHECK_ENDPTR("Uint8");
@@ -597,14 +629,21 @@ static Uint8 s_DataSizeConvertQual(const char*&         qual,
         }
         v *= 1024 * 1024 * 1024;
     } else {
-        // error -- the "qual" point to the last unprocessed symbol
-        return 0;
-    }
-    if (throw_err) {
+        // error -- the "qual" points to the last unprocessed symbol
         if ( on_error == NStr::eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to Uint8 - overflow", 0);
+                        "String cannot be converted to DataSize - bad suffix",
+                        0);
         }
+        errno = EINVAL;
+        return 0;
+    }
+    if ( throw_err ) {
+        if ( on_error == NStr::eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to DataSize - overflow",0);
+        }
+        errno = ERANGE;
         return 0;
     }
     if (*qual  &&  toupper(*qual) == 'B') {
@@ -620,10 +659,9 @@ NStr::StringToUInt8_DataSize(const string&  str,
                              ECheckEndPtr   check_endptr /* = eCheck_Need */,
                              EConvErrAction on_error     /* =eConvErr_Throw*/)
 {
-    Uint8 value = StringToUInt8(str, base, eCheck_Skip, NStr::eConvErr_NoThrow);
-
     // Find end ptr
-    const char* endptr = str.c_str();
+    const char* begptr = str.c_str();
+    const char* endptr = begptr;
     if (*endptr == '+') {
         endptr++;
     }
@@ -633,19 +671,16 @@ NStr::StringToUInt8_DataSize(const string&  str,
         }
         endptr++;
     }
-    if (!endptr  ||  endptr == str.c_str()) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to Uint8",
-                        s_DiffPtr(endptr, str.c_str()));
-        }
+    Uint8 value = StringToUInt8(string(begptr, (size_t)(endptr - begptr)),
+                                base, eCheck_Need/*assert ok*/, on_error);
+    if (errno) {
         return 0;
     }
     // Some trailer (KB, MB, ...) ?
-    if (*endptr != '\0') { 
+    if ( *endptr ) {
         value = s_DataSizeConvertQual(endptr, value, check_endptr, on_error);
     }
-    CHECK_ENDPTR("Uint8");
+    CHECK_ENDPTR("DataSize");
     return value;
 }
 
@@ -1961,6 +1996,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.153  2005/05/26 20:24:25  lavr
+ * Accurately assert errno in StringToXXX() when not throwing on error
+ *
  * Revision 1.152  2005/05/19 19:21:02  shomrat
  * Bug fix in TruncateSpacesInPlace
  *
