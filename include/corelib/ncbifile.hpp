@@ -26,17 +26,16 @@
  *
  * ===========================================================================
  *
- * Author: Vladimir Ivanov, Denis Vakatov
+ * Authors: Vladimir Ivanov, Denis Vakatov
  *
  *
  */
 
 /// @file ncbifile.hpp
-/// Define files and directories accessory functions.
 ///
 /// Defines classes CDirEntry, CFile, CDir, CSymLink, CMemoryFile,
 /// CFileException to allow various file and directory operations.
-
+///
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
@@ -99,17 +98,17 @@ public:
 ///
 /// Base class to work with files and directories.
 ///
-/// Models a directory entry structure for the file system. Assumes that
-/// the path argument has the following form, where any or all components may
-/// be missing:
+/// Models a directory entry in the file system.  Assumes that
+/// the path argument has the following form, where any or
+/// all components may be missing:
 ///
-/// <dir><title><ext>
+/// <dir><base><ext>
 ///
-/// - dir   - file path             ("/usr/local/bin/"  or  "c:\windows\")
-/// - title - file name without ext ("autoexec")
-/// - ext   - file extension        (".bat" - whatever goes after a last dot)
+/// - dir  - file path             ("/usr/local/bin/"  or  "c:\\windows\\")
+/// - base - file name without ext ("autoexec")
+/// - ext  - file extension        (".bat" - whatever goes after a last dot)
 ///
-/// Supported filename formats:  MS DOS/Windows, UNIX and MAC.
+/// Supported filename formats:  MS DOS/Windows, UNIX, and MAC.
 
 class NCBI_XNCBI_EXPORT CDirEntry
 {
@@ -126,14 +125,14 @@ public:
     /// Destructor.
     virtual ~CDirEntry(void);
 
+    /// Get entry path.
+    const string& GetPath(void) const;
+
     /// Reset path string.
     void Reset(const string& path);
 
     /// Assignment operator.
     CDirEntry& operator= (const CDirEntry& other);
-
-    /// Get entry path.
-    string GetPath(void) const;
 
 
     //
@@ -147,8 +146,11 @@ public:
     /// @param dir
     ///   The directory component that is returned. This will always have
     ///   a terminating path separator (example: "/usr/local/").
+    /// @param base
+    ///   File name with both directory (if any) and extension (if any)
+    ///   parts stripped.
     /// @param ext
-    ///   The extension component. This will always start with a dot
+    ///   The extension component (if any), always has a leading dot
     ///   (example: ".bat").
     static void SplitPath(const string& path,
                           string* dir = 0, string* base = 0, string* ext = 0);
@@ -156,7 +158,7 @@ public:
     /// Get the directory component for this directory entry.
     string GetDir (void) const;
 
-    /// Get the base entry name with extension.
+    /// Get the base entry name with extension (if any).
     string GetName(void) const;
 
     /// Get the base entry name without extension.
@@ -165,7 +167,7 @@ public:
     /// Get extension name.
     string GetExt (void) const;
 
-    /// Make a path from the basic components.
+    /// Assemble a path from basic components.
     ///
     /// @param dir
     ///   The directory component to make the path string. This will always
@@ -173,34 +175,34 @@ public:
     /// @param base
     ///   The base name of the file component that is used to make up the path.
     /// @param ext
-    ///   The extension component. This will always start with a dot
-    ///   (example: ".bat").
+    ///   The extension component. This will always be added with a leading dot
+    ///   (input of either "bat" or ".bat" gets added to the path as ".bat").
     /// @return
     ///   Path built from the components.
     static string MakePath(const string& dir  = kEmptyStr,
                            const string& base = kEmptyStr,
                            const string& ext  = kEmptyStr);
 
-    /// Get path separator symbol specific for current platform.
+    /// Get path separator symbol specific for the current platform.
     static char GetPathSeparator(void);
 
-    /// Check character "c" as path separator symbol specific for
-    /// current platform.
+    /// Check whether a character "c" is a path separator symbol
+    /// specific for the current platform.
     static bool IsPathSeparator(const char c);
 
     /// Add trailing path separator, if needed.
     static string AddTrailingPathSeparator(const string& path);
 
-    /// Delete trailing path separator, if needed.
+    /// Delete trailing path separator, if any.
     static string DeleteTrailingPathSeparator(const string& path);
 
-    /// Convert relative "path" on any OS to current OS dependent relative
-    /// path. 
+    /// Convert relative "path" on any OS to the current
+    /// OS-dependent relative path. 
     static string ConvertToOSPath(const string& path);
 
-    /// Check if the "path" is absolute for the current OS.
+    /// Check if a "path" is absolute for the current OS.
     ///
-    /// Note that the "path" must be for current OS. 
+    /// Note that the "path" must be for the current OS. 
     static bool IsAbsolutePath(const string& path);
 
     /// Check if the "path" is absolute for any OS.
@@ -208,46 +210,48 @@ public:
     /// Note that the "path" can be for any OS (MSWIN, UNIX, MAC).
     static bool IsAbsolutePathEx(const string& path);
 
-    /// Create relative path from 2 absolute pathes.
+    /// Create a relative path between two points in the file
+    /// system specified by their absolute paths.
     ///
     /// @param path_from 
-    ///   Absolute path that defines the start of the relative path.
+    ///   Absolute path that defines start of the relative path.
     /// @param path_to
-    ///   Absolute path that defines the endpoint of the relative path.
+    ///   Absolute path that defines endpoint of the relative path.
     /// @return
-    ///   Return the relative path (empty string if the paths are the same).
+    ///   Relative path (empty string if the paths are the same).
     ///   Throw CFileException on error (e.g. if any of the paths is not
-    ///   absolute, or if it is impossible to create relative path, such
+    ///   absolute, or if it is impossible to create a relative path, such
     ///   as in case of different disks on MS-Windows).
     static string CreateRelativePath(const string& path_from, 
                                      const string& path_to);
 
-    /// Concatenate the two parts of the path for the current OS.
+    /// Concatenate two parts of the path for the current OS.
     ///
-    /// Note that the arguments must be for the current OS.
+    /// Note that the arguments must be OS-specific.
     /// @param first
-    ///   The first part of the path which can be either absolute or relative.
+    ///   First part of the path which can be either absolute or relative.
     /// @param second
-    ///   The second part of the path must always be relative.
+    ///   Fecond part of the path must always be relative.
     /// @return
     ///   The concatenated path.
     static string ConcatPath(const string& first, const string& second);
 
-    /// Concatenate the two parts of the path for any OS.
+    /// Concatenate two parts of the path for any OS.
     ///
-    /// Note that the arguments must be for any OS (MSWIN, UNIX, MAC).
+    /// Note that the arguments are not OS-specific.
     /// @param first
-    ///   The first part of the path which can be either absolute or relative.
+    ///   First part of the path which can be either absolute or relative.
     /// @param second
-    ///   The second part of the path must always be relative.
+    ///   Second part of the path must always be relative.
     /// @return
     ///   The concatenated path.
     static string ConcatPathEx(const string& first, const string& second);
 
-    /// Normalize path.
+    /// Normalize a path.
     ///
-    /// Remove from the "path" all redundancy, convert it to the more
-    /// simple form, if possible. Note that the "path" must be for current OS.
+    /// Remove from an input "path" all redundancy, and if possible,
+    /// convert it to more simple form for the current OS.
+    /// Note that "path" must be OS-specific.
     /// @param follow_links
     ///   Whether to follow symlinks (shortcuts, aliases)
     static string NormalizePath(const string& path,
@@ -255,41 +259,41 @@ public:
 
 
     //
-    // Checks & manipulations
+    // Checks & manipulations.
     //
 
-
-    /// Match "name" against the filename "mask".
+    /// Match a "name" against a simple filename "mask".
     static bool MatchesMask(const char* name, const char* mask,
                             NStr::ECase use_case = NStr::eCase);
 
-    /// Match "name" against the set of "masks"
+    /// Match a "name" against a set of "masks"
     static bool MatchesMask(const char* name, const CMask& mask,
                             NStr::ECase use_case = NStr::eCase);
 
-
-    /// Check entry existence.
+    /// Check the entry existence.
     virtual bool Exists(void) const;
 
     /// Copy flags.
-    /// Note that update modification time for directory depends from OS.
-    /// Usualy it updates when new file has been added/removed.
-    /// Also, changing files inside directory doesn't change directory
-    /// modification time.
+    /// Note that update modification time for directory depends on the OS.
+    /// Normally it gets updated when a new directory entry is added/removed.
+    /// On the other hand, changing contents of files of that directory
+    /// doesn't usually affect the directory modification time.
     enum ECopyFlags {
-        /// Next flags say what to do if the destination entry already exists.
-        /// Destination entry can be changed/replaced/overwritten.
+        /// The following three flags define what to do when the
+        /// destination entry already exists:
+        /// - Overwrite the destination
         fCF_Overwrite       = (1<< 1), 
-        /// Update older entries only (compare modification times).
+        /// - Update older entries only (compare modification times).
         fCF_Update          = (1<< 2) | fCF_Overwrite,
-        /// Backup destination if it exists.
+        /// - Backup destination if it exists.
         fCF_Backup          = (1<< 3) | fCF_Overwrite,
-        /// All previous flags can be applied to top directory only,
-        /// to process directory wholly, as single entry (for dir only).
+        /// All above flags can be applied to the top directory only
+        /// (not for every file therein), to process the directory
+        /// as a single entity for overwriting, updaing or backing up.
         fCF_TopDirOnly      = (1<< 6),
         /// If destination entry exists, it must have the same type as source.
         fCF_EqualTypes      = (1<< 7),
-        /// Copy entries which sym.links points, instead of sym.links itself.
+        /// Copy entries following their sym.links, not the links themselves.
         fCF_FollowLinks     = (1<< 8),
         fCF_Verify          = (1<< 9),  ///< Verify data after copying
         fCF_PreserveOwner   = (1<<10),  ///< Preserve owner/group
@@ -305,40 +309,37 @@ public:
     };
     typedef unsigned int TCopyFlags;    ///< Binary OR of "ECopyFlags"
 
-    /// Copy entry to specified "new_path".
+    /// Copy the entry to a location specified by "new_path".
     ///
-    /// The Copy() method must be implement for each entry type separately.
-    /// The entry type and the type of the destination entry (if it exists)
-    /// must be the same. You cannot copy entries with different types one
-    /// to another.
+    /// The Copy() method must be implemented for each entry type separately.
     /// @param new_path
-    ///   New path/name for entry.
+    ///   New path/name of an entry.
     /// @param flags
-    ///   Flags specified how to copy entry.
+    ///   Flags specifying how to copy the entry.
     /// @param buf_size
-    ///   Size of buffer to read file.
+    ///   Buffer size to use while copying the file contents.
     ///   Zero value means using default buffer size.
     /// @return
-    ///   TRUE if operation was completed successful; FALSE, otherwise.
-    ///   Overloaded method from derived classes should be called.
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
+    ///   Must be overloaded in derived classes that support copy operation.
     ///   By default, CDirEntry::Copy() returns FALSE.
     /// @sa
     ///   CFile::Copy, CDir::Copy, CLink::Copy, CopyToDir
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
                       size_t buf_size = 0);
 
-    /// Copy entry to specified directory.
+    /// Copy the entry to a specified directory.
     ///
-    /// Traget entry name will be "dir/entry".
+    /// The target entry name will be "dir/entry".
     /// @param dir
-    ///    Directory name to copy to.
+    ///   Directory name to copy into.
     /// @param flags
-    ///   Flags specified how to copy entry.
+    ///   Flags specifying how to copy the entry.
     /// @param buf_size
-    ///   Size of buffer to read file.
+    ///   Buffer size to use while copying the file contents.
     ///   Zero value means using default buffer size.
     /// @return
-    ///   TRUE if operation was completed successful; FALSE, otherwise.
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
     /// @sa
     ///   Copy
     bool CopyToDir(const string& dir, TCopyFlags flags = fCF_Default,
@@ -354,7 +355,7 @@ public:
         fRF_Backup      = (1<<3) | fCF_Overwrite,
         /// If destination entry exists, it must have the same type as source.
         fRF_EqualTypes  = (1<<4),
-        /// Rename entries which sym.links points, instead of sym.links itself.
+        /// Rename entries following sym.links, not the links themselves.
         fRF_FollowLinks = (1<<5),
         /// Default flags
         fRF_Default     = 0
@@ -364,14 +365,14 @@ public:
     /// Rename entry.
     ///
     /// @param new_path
-    ///    New path/name for entry
+    ///   New path/name of an entry.
     /// @param flags
-    ///   Flags specified how to rename entry.
+    ///   Flags specifying how to rename the entry.
     /// @return
-    ///   TRUE if operation was completed successful; FALSE, otherwise.
-    ///   Be aware, that if flag fRF_Update is set, function return TRUE and
-    ///   just remove current entry in the case if destination entry exists
-    ///   and have modification time newer than current entry.
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
+    ///   NOTE that if flag fRF_Update is set, the function returns TRUE and
+    ///   just removes the current entry in case when destination entry
+    ///   exists and has its modification time newer than the current entry.
     /// @sa
     ///   ERenameFlags, Copy
     bool Rename(const string& new_path, TRenameFlags flags = fRF_Default);
@@ -380,7 +381,7 @@ public:
     ///
     /// @sa
     ///   SetBackupSuffix, Backup, Rename, Copy
-    static string GetBackupSuffix(void);
+    static const string& GetBackupSuffix(void);
 
     /// Set backup suffix.
     ///
@@ -395,26 +396,28 @@ public:
         eBackup_Default = eBackup_Copy  ///< Default mode
     };
 
-    /// Backup entry.
+    /// Backup an entry.
     ///
-    /// Create a copy of current entry to the same name and extension
+    /// Create a copy of the current entry with the same name and an extension
     /// specified by SetBackupSuffix(). By default this extension is ".bak".
-    /// Backup can be created in 'copy' or 'rename' modes.
-    /// If entry with the name for backup already exists, that it will be
-    /// deleted (if possible).
+    /// Backups can be automatically created in 'copy' or 'rename' operations.
+    /// If an entry with the name of the backup already exists, then it will
+    /// be deleted (if possible).  The current entry name components are
+    /// changed to reflect the backed up copy.
     /// @param suffix
-    ///   Extension added to renaming entry. If empty, GetBackupSuffix()
-    ///   will be used.
+    ///   Extension to add to backup entry. If empty, GetBackupSuffix()
+    ///   is be used.
     /// @param mode
-    ///    Backup mode. Specify what to do, copy entry or just rename it.
+    ///   Backup mode. Specifies what to do, copy the entry or just rename it.
     /// @param copyflags
-    ///    Flags to copy entry. Used only if mode is eBackup_Copy,
+    ///   Flags to copy the entry. Used only if mode is eBackup_Copy,
     /// @param copybufsize
-    ///    Size of buffers used to copy files.
-    ///    Used only if 'mode' is eBackup_Copy,
+    ///   Buffer size to use while copying the file contents.
+    ///   Used only if 'mode' is eBackup_Copy,
     /// @return
-    ///   TRUE is backup successfully created; FALSE otherwise.
+    ///   TRUE if backup created successfully; FALSE otherwise.
     /// @sa
+    ///   EBackupMode
     bool Backup(const string& suffix      = kEmptyStr, 
                 EBackupMode   mode        = eBackup_Default,
                 TCopyFlags    copyflags   = fCF_Default,
@@ -423,19 +426,19 @@ public:
     /// Directory remove mode.
     enum EDirRemoveMode {
         eOnlyEmpty,     ///< Remove only empty directory
-        eNonRecursive,  ///< Remove all files in directory, but not remove
-                        ///< subdirectories and files in it
+        eNonRecursive,  ///< Remove all files in the directory, but do not
+                        ///< remove subdirectories and files in them
         eRecursive      ///< Remove all files and subdirectories
     };
 
-    /// Remove directory entry.
+    /// Remove a directory entry.
     ///
-    /// Remove directory using the specified "mode".
+    /// Removes directory using the specified "mode".
     /// @sa
     ///   EDirRemoveMode
     virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
     
-    /// Which directory entry type.
+    /// Directory entry type.
     enum EType {
         eFile = 0,     ///< Regular file
         eDir,          ///< Directory
@@ -449,23 +452,24 @@ public:
         eUnknown       ///< Unknown type
     };
 
-    /// Construct dir entry object of specified type.
+    /// Construct a directory entry object of a specified type.
     ///
-    /// The object of specified type will be constucted in memory only,
-    /// file sytem will not changed.
+    /// An object of specified type will be constucted in memory only,
+    /// file sytem will not be modified.
     /// @param type
-    ///   Define a type of object to create.
+    ///   Define a type of the object to create.
     /// @return
-    ///   Pointer to new created entry. If class for specified type
-    ///   is not defined, common CDirEntry will be used. Do not forget
-    ///   to frees returned pointer to deallocate object memory.
+    ///   A pointer to newly created entry. If a class for specified type
+    ///   is not defined, generic CDirEntry will be returned. Do not forget
+    ///   to delete the returned pointer when it is no longer used.
     /// @sa
     ///   CFile, CDir, CSymLink
     static CDirEntry* CreateObject(EType type, const string& path = kEmptyStr);
 
-    /// Alternative stat structure. Used instead standard struct stat, which can
-    /// have useful, but non-posix fields. And these field usualy named
-    /// differently on all systems.
+    /// Alternate stat structure for use instead of the standard struct stat.
+    /// The alternate stat can have useful, but non-posix fields, which
+    /// are usually highly platform-dependent, and named differently
+    /// in the underlying data structures on different systems.
     struct SStat {
         struct stat orig;  ///< Original stat structure
         // Nanoseconds for dir entry times (if available)
@@ -478,207 +482,212 @@ public:
     ///
     /// By default have the same behaviour as UNIX's lstat().
     /// @param buffer
-    ///   Pointer to structure that stores results
+    ///   Pointer to structure that stores results.
     /// @param follow_links
-    ///   Whether to follow symlinks (shortcuts, aliases)
+    ///   Whether to follow symlinks (shortcuts, aliases).
     /// @return
     ///   Return 0 if the file-status information is obtained.
     ///   A return value of -1 indicates an error, in which case errno is set.
     int Stat(struct SStat *buffer,
              EFollowLinks follow_links = eIgnoreLinks) const;
 
-    /// Get type of directory entry.
+    /// Get a type of a directory entry.
     ///
     /// @return
     ///   Return one of the values in EType. If the directory entry does
-    ///   not exist return "eUnknown".
+    ///   not exist, return "eUnknown".
     /// @sa
     ///   IsFile, IsDir, IsLink
     EType GetType(EFollowLinks follow = eIgnoreLinks) const;
 
-    /// Check if directory entry a file.
+    /// Check whether a directory entry is a file.
     /// @sa
     ///   GetType
     bool IsFile(EFollowLinks follow = eFollowLinks) const;
 
-    /// Check if directory entry a directory.
+    /// Check whether a directory entry is a directory.
     /// @sa
     ///   GetType
     bool IsDir(EFollowLinks follow = eFollowLinks) const;
 
-    /// Check if directory entry a symbolic link.
+    /// Check whether a directory entry is a symbolic link (alias).
     /// @sa
     ///   GetType
     bool IsLink(void) const;
 
-    /// Get entry name that link is pointed to.
+    /// Get an entry name that a link points to.
     ///
     /// @return
-    ///   Name of the entry that link is pointed to. Return empty string
-    ///   if entry is not a link, or cannot be dereferenced.
-    ///   The dereferenced name also can be a symbolic link.
+    ///   The real entry name that the link points to. Return an empty
+    ///   string if the entry is not a link, or cannot be dereferenced.
+    ///   The dereferenced name can be another symbolic link.
     /// @sa 
     ///   GetType, IsLink, DereferenceLink
     string LookupLink(void);
 
-    /// Dereference link.
+    /// Dereference a link.
     ///
-    /// If current entry is a symbolic link, than dereference it recursively.
-    /// Replace entry path string with dereferenced path.
+    /// If the current entry is a symbolic link, then dereference it
+    /// recursively until it is no further a link (but a file, directory,
+    /// etc, or does not exist). Replace the entry path string with
+    /// the dereferenced path.
     /// @sa 
     ///   GetType, IsLink, LookupLink, GetPath
     void DereferenceLink(void);
 
-    /// Get time stamp of directory entry.
+    /// Get time stamp(s) of a directory entry.
     ///
     /// The creation time under MS windows is an actual creation time of the
     /// entry. Under UNIX "creation" time is the time of last entry status
-    /// change. If the OS or the file system does not support some time type
-    /// (modification/creation/last access), that returned CTime is "empty". 
-    /// Returned time always is in CTime's time zone format (eLocal/eGMT). 
-    /// Aware, that GetTime function may not return the same time information
-    /// set using SetTime, this depends from OS and used file system.
+    /// change. If either OS or file system does not support some time type
+    /// (modification/creation/last access), then the corresponding CTime
+    /// gets returned "empty".
+    /// Returned times are always in CTime's time zone format (eLocal/eGMT). 
+    /// NOTE that what GetTime returns may not be equal to the the time(s)
+    /// previously set by SetTime, as the behavior depends on the OS and
+    /// the file system used.
     /// @return
-    ///   TRUE if time was acquired or FALSE otherwise.
+    ///   TRUE if time(s) obtained successfully, FALSE otherwise.
     /// @sa
     ///   GetTimeT, SetTime, Stat
     bool GetTime(CTime* modification,
                  CTime* creation    = 0, 
                  CTime* last_access = 0) const;
 
-    /// Get time stamp of directory entry (time_t version).
+    /// Get time stamp(s) of a directory entry (time_t version).
     ///
-    /// Use GetTime() if you need precision more than 1 second.
-    /// Returned time always is in GMT format. 
+    /// Use GetTime() if you need precision of more than 1 second.
+    /// Returned time(s) are always in GMT format. 
     /// @return
-    ///   TRUE if time was acquired or FALSE otherwise.
+    ///   TRUE if time(s) obtained successfully, FALSE otherwise.
     /// @sa
     ///   GetTime, SetTimeT
     bool GetTimeT(time_t* modification,
                   time_t* creation    = 0, 
                   time_t* last_access = 0) const;
 
-    /// Set time stamp on directory entry.
+    /// Set time stamp(s) of a directory entry.
     ///
-    /// The process must be the owner of the file or have write permissions
-    /// in order to change the time. If value of some parameter is zero that
-    /// this entry time will not be changed.
-    /// Aware, that GetTime function may not return the same time information
-    /// set using SetTime, this depends from OS and used file system. 
-    /// Also, on UNIX it is impossible to change creation time of the entry
-    /// (we ignore this parameter on this platform).
+    /// The process must own the file or have write permissions in order
+    /// to change the time(s). Any parameter with a value of zero will
+    /// not cause the corresponding time stamp change.
+    /// NOTE that what GetTime can later return may not be equal to the
+    /// the time(s) set by SetTime, as the behavior depends on the OS and
+    /// the file system used.
+    /// Also, on UNIX it is impossible to change creation time of an entry
+    /// (we silently ignore the "creation" time stamp on that platform).
     /// @param modification
-    ///   New file modification time.
+    ///   Entry modification time to set.
     /// @param creation
-    ///   New creation time. On some platforms it cannot be changed,
-    ///   so this parameter will be ignored.
+    ///   Entry creation time to set. On some platforms it cannot be changed,
+    ///   so this parameter will be quietly ignored.
     /// @param last_access
-    ///   New last file access time. It cannot be less than the file
-    ///   creation time. In last case it will be set equal to creation time.
+    ///   Entry last access time to set. It cannot be less than the entry
+    ///   creation time, otherwise it will be set equal to the creation time.
     /// @return
-    ///   TRUE if time was changed or FALSE otherwise.
+    ///   TRUE if the time(s) changed successfully, FALSE otherwise.
     /// @sa
     ///   SetTimeT, GetTime
     bool SetTime(CTime* modification = 0,
                  CTime* creation     = 0,
                  CTime* last_access  = 0) const;
 
-    /// Set time stamp on directory entry (time_t version).
+    /// Set time stamp(s) of a directory entry (time_t version).
     ///
-    /// Use SetTime() if you need precision more than 1 second.
+    /// Use SetTime() if you need precision of more than 1 second.
     /// @param modification
-    ///   New file modification time.
+    ///   Entry modification time to set.
     /// @param creation
-    ///   New creation time. On some platforms it cannot be changed,
-    ///   so this parameter will be ignored.
+    ///   Entry creation time to set. On some platforms it cannot be changed,
+    ///   so this parameter will be quietly ignored.
     /// @param last_access
-    ///   New last file access time. It cannot be less than the file
-    ///   creation time. In last case it will be set equal to creation time.
+    ///   Entry last access time to set. It cannot be less than the entry
+    ///   creation time, otherwise it will be set equal to the creation time.
     /// @return
-    ///   TRUE if time was changed or FALSE otherwise.
+    ///   TRUE if the time(s) changed successfully, FALSE otherwise.
     /// @sa
     ///   SetTime, GetTimeT
     bool SetTimeT(time_t* modification = 0,
                   time_t* creation     = 0,
                   time_t* last_access  = 0) const;
 
-    /// Check if current entry is newer than some other.
+    /// Check if the current entry is newer than some other.
     ///
     /// @param entry_name
-    ///   Entry name which used to compare modification times.
+    ///   An entry name, of which to compare the modification times.
     /// @return
-    ///   Return TRUE is modification time of current entry is newer than
-    ///   modification time of the specified entry, or that entry doesn't
-    ///   exists. Return FALSE otherwise.
+    ///   TRUE if the modification time of the current entry is newer than
+    ///   the modification time of the specified entry, or if that entry
+    ///   doesn't exist. Return FALSE otherwise.
     /// @sa
     ///   GetTime
     bool IsNewer(const string& entry_name) const;
 
-    /// Check if current entry is newer than specified date/time.
+    /// Check if the current entry is newer than a specified date/time.
     ///
     /// @param tm
-    ///   Time used to compare with entry modification time.
+    ///   Time to compare with the current entry modification time.
     /// @return
-    ///   Return TRUE is modification time of current entry is newer than
-    ///   specified time. Return FALSE otherwise.
+    ///   TRUE is the modification time of the current entry is newer than
+    ///   the specified time. Return FALSE otherwise.
     /// @sa
     ///   GetTime
     bool IsNewer(time_t tm) const;
 
-    /// Check if current entry is newer than specified date/time.
+    /// Check if the current entry is newer than a specified date/time.
     ///
     /// @param tm
-    ///   Time used to compare with entry modification time.
+    ///   Time to compare with the current entry modification time.
     /// @return
-    ///   Return TRUE is modification time of current entry is newer than
-    ///   specified time. Return FALSE otherwise.
+    ///   TRUE is the modification time of the current entry is newer than
+    ///   the specified time. Return FALSE otherwise.
     /// @sa
     ///   GetTime
     bool IsNewer(const CTime& tm) const;
 
-    /// Get owner
+    /// Get an entry owner.
     ///
     /// WINDOWS:
     ///   Retrieve the name of the account and the name of the first
-    ///   group which account belong. The received group name can be an
-    ///   empty string, if we don't have permissions to get it.
-    ///   Win32 really does not use groups, but it exists for the sake
+    ///   group, which the account belongs to. The obtained group name may
+    ///   be an empty string, if we don't have permissions to get it.
+    ///   Win32 really does not use groups, but they exist for the sake
     ///   of POSIX compatibility.
     ///   Windows 2000/XP: In addition to looking up for local accounts,
     ///   local domain accounts, and explicitly trusted domain accounts,
-    ///   it also can look for any account in any domain around. 
+    ///   it also can look for any account in any known domain around.
     /// UNIX:
-    ///   Retrieve entry owner:group pair.
+    ///   Retrieve an entry owner:group pair.
     /// @param owner
-    ///   Pointer to string for owner name.
+    ///   Pointer to a string to receive an owner name.
     /// @param group
-    ///   Pointer to string for group name. 
+    ///   Pointer to a string to receive a group name. 
     /// @return
-    ///   TRUE is success; FALSE otherwise.
+    ///   TRUE if successful, FALSE otherwise.
     /// @sa
     ///   SetOwner
     bool GetOwner(string* owner, string* group = 0,
                   EFollowLinks follow = eFollowLinks) const;
 
-    /// Set owner
+    /// Set an entry owner.
     ///
-    /// You should have administrative rights to change owner.
+    /// You should have administrative rights to change an owner.
     /// WINDOWS:
     ///   Only administrative privileges (Backup, Restore and Take Ownership)
-    ///   grant a rights to change ownership. Without one of the privileges,
+    ///   grant rights to change ownership. Without one of the privileges, an
     ///   administrator cannot take ownership of any file or give ownership
-    ///   back to the original owner. Also, we cannot change users group here,
+    ///   back to the original owner. Also, we cannot change user group here,
     ///   so it will be ignored.
     /// UNIX:
-    ///   The owner of a file may change the group of the file to any group
-    ///   of which that owner is a member. The super-user may change
-    ///   the group arbitrarily.
+    ///   The owner of an entry can change the group to any group of which
+    ///   that owner is a member of. The super-user may assign the group
+    ///   arbitrarily.
     /// @param owner
-    ///   New owner name.
+    ///   New owner name to set.
     /// @param group
-    ///   New group name.
+    ///   New group name to set.
     /// @return
-    ///   TRUE is success; FALSE otherwise.
+    ///   TRUE if successful, FALSE otherwise.
     /// @sa
     ///   GetOwner
     bool SetOwner(const string& owner, const string& group = kEmptyStr,
@@ -688,48 +697,48 @@ public:
     // Access permissions.
     //
 
-    /// Directory entry's access permissions.
+    /// Directory entry access permissions.
     enum EMode {
         fExecute = 1,       ///< Execute permission
         fWrite   = 2,       ///< Write permission
         fRead    = 4,       ///< Read permission
-        // initial defaults for dirs
+        // initial defaults for directories
         fDefaultDirUser  = fRead | fExecute | fWrite,
-                            ///< Default user permission for dir.
+                            ///< Default user permission for a dir.
         fDefaultDirGroup = fRead | fExecute,
-                            ///< Default group permission for dir.
+                            ///< Default group permission for a dir.
         fDefaultDirOther = fRead | fExecute,
-                            ///< Default other permission for dir.
+                            ///< Default other permission for a dir.
         // initial defaults for non-dir entries (files, etc.)
         fDefaultUser     = fRead | fWrite,
-                            ///< Default user permission for file
+                            ///< Default user permission for a file
         fDefaultGroup    = fRead,
-                            ///< Default group permission for file
+                            ///< Default group permission for a file
         fDefaultOther    = fRead,
-                            ///< Default other permission for file
+                            ///< Default other permission for a file
         fDefault = 8        ///< Special flag:  ignore all other flags,
                             ///< use current default mode
     };
     typedef unsigned int TMode;  ///< Binary OR of "EMode"
 
-    /// Get the directory entry's permission settings.
+    /// Get permission mode(s) of a directory entry.
     ///
-    /// On WINDOWS, there is only the "user_mode" permission setting, and
-    /// "group_mode" and "other_mode" settings will be ignored.
+    /// On WINDOWS, there is only the "user_mode" permission setting,
+    /// and "group_mode" and "other_mode" settings will be ignored.
     /// @return
-    ///   TRUE if successful return of permission settings; FALSE, otherwise.
+    ///   TRUE upon successful retrieval of permission mode(s),
+    ///   FALSE otherwise.
     /// @sa
     ///   SetMode
     bool GetMode(TMode* user_mode,
                  TMode* group_mode = 0,
                  TMode* other_mode = 0) const;
 
-    /// Set permission mode for the directory entry.
+    /// Set permission mode(s) of a directory entry.
     ///
     /// Permissions are set as specified by the passed values for user_mode,
-    /// group_mode and other_mode. The default value for group_mode and
-    /// other mode is "fDefault". Setting to "fDefault" will set the mode to
-    /// its default permission settings.
+    /// group_mode and other_mode. Passing "fDefault" will cause the
+    /// corresponding mode to be taken and set from its default setting.
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
@@ -738,35 +747,35 @@ public:
                  TMode group_mode = fDefault,
                  TMode other_mode = fDefault) const;
 
-    /// Set default mode globally for all CDirEntry objects.
+    /// Set default permission modes globally for all CDirEntry objects.
     ///
     /// The default mode is set globally for all CDirEntry objects except for
-    /// those having their own mode set with SetDefaultMode().
+    /// those having their own mode set with individual SetDefaultMode().
     ///
-    /// When "fDefault" is passed as value of the mode parameters, the default
-    /// mode will be set to the default values defined in EType:
+    /// When "fDefault" is passed as a value of the mode parameters,
+    /// the default mode takes places for the value as defined in EType:
     ///
-    /// If user_mode is "fDefault", then default for user mode is set to
-    /// - "fDefaultDirUser" if this is a directory or to
+    /// If user_mode is "fDefault", then the default is to take
+    /// - "fDefaultDirUser" if this is a directory, or
     /// - "fDefaultUser" if this is a file.
     /// 
-    /// If group_mode is "fDefault", then default for group mode is set to
-    /// - "fDefaultDirGroup" if this is a directory or to
+    /// If group_mode is "fDefault", then the default is to take
+    /// - "fDefaultDirGroup" if this is a directory, or
     /// - "fDefaultGroup" if this is a file.
     ///
-    /// If other_mode is "fDefault", then default for other mode is set to
-    /// - "fDefaultDirOther" if this is a directory or to
+    /// If other_mode is "fDefault", then the default is to take
+    /// - "fDefaultDirOther" if this is a directory, or
     /// - "fDefaultOther" if this is a file.
     static void SetDefaultModeGlobal(EType entry_type,
                                      TMode user_mode,  // e.g. fDefault
                                      TMode group_mode = fDefault,
                                      TMode other_mode = fDefault);
 
-    /// Set mode for this one object only.
+    /// Set default mode(s) for this directory entry only.
     ///
-    /// When "fDefault" is passed as value of the mode parameters, the mode
-    /// will be set to the current global mode as specified
-    /// by SetDefaultModeGlobal().
+    /// When "fDefault" is passed as a value of the parameters,
+    /// the corresponding mode will be taken and set from the global mode
+    /// as specified by SetDefaultModeGlobal().
     virtual void SetDefaultMode(EType entry_type,
                                 TMode user_mode,  // e.g. fDefault
                                 TMode group_mode = fDefault,
@@ -775,7 +784,7 @@ public:
 protected:
     /// Get the default global mode.
     ///
-    /// Used by derived classes like CDir and CFile.
+    /// For use in derived classes like CDir and CFile.
     static void GetDefaultModeGlobal(EType  entry_type,
                                      TMode* user_mode,
                                      TMode* group_mode,
@@ -783,29 +792,29 @@ protected:
 
     /// Get the default mode.
     ///
-    /// Used by derived classes like CDir and CFile.
+    /// For use by derived classes like CDir and CFile.
     void GetDefaultMode(TMode* user_mode,
                         TMode* group_mode,
                         TMode* other_mode) const;
 
 private:
-    string m_Path;    ///< Full directory entry path
+    string        m_Path;    ///< Full path of this directory entry
 
     /// Which default mode: user, group, or other.
     ///
-    /// Used as index into array that contains default mode values;
-    /// so there is no "fDefault" as an enumeration value for EWho, here!
+    /// Used as an index into an array that contains default mode values;
+    /// so there is no "fDefault" as an enumeration value for EWho here!
     enum EWho {
-        eUser = 0,    ///< User mode
-        eGroup,       ///< Group mode
-        eOther        ///< Other mode
+        eUser = 0,           ///< User mode
+        eGroup,              ///< Group mode
+        eOther               ///< Other mode
     };
 
-    /// Holds default mode global values.
-    static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
-
-    /// Holds default mode values.
+    /// Holds default mode values
     TMode         m_DefaultMode[3/*EWho*/];
+
+    /// Holds default mode global values, per entry type
+    static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
 
     /// Backup suffix
     static string m_BackupSuffix;
@@ -819,7 +828,7 @@ private:
 ///
 /// Define class to work with files.
 ///
-/// Models the files in a file system. Basic functionality is derived from
+/// Models a file in a file system. Basic functionality is derived from
 /// CDirEntry and extended for files.
 
 class NCBI_XNCBI_EXPORT CFile : public CDirEntry
@@ -849,7 +858,7 @@ public:
     /// - -1, if there was an error obtaining file size.
     Int8 GetLength(void) const;
 
-    /// Copy file.
+    /// Copy a file.
     ///
     /// @param new_path
     ///    Target entry path/name.
@@ -865,7 +874,7 @@ public:
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
                       size_t buf_size = 0);
 
-    /// Compare file's content.
+    /// Compare files by content.
     ///
     /// @param file
     ///   File name to compare.
@@ -1009,7 +1018,7 @@ public:
 ///
 /// Define class to work with directories.
 ///
-/// NOTE: Next functions are unsafe in multithreaded applications:
+/// NOTE: The following functions are unsafe in multithreaded applications:
 ///       - static bool Exists() (for Mac only);
 ///       - bool Exists() (for Mac only).
 
@@ -1175,7 +1184,7 @@ public:
     /// Copy link.
     ///
     /// @param new_path
-    ///    Targed entry path/name.
+    ///   Target entry path/name.
     /// @param flags
     ///   Flags specified how to copy entry.
     /// @param buf_size
@@ -1954,7 +1963,7 @@ CDirEntry::CDirEntry(void)
 }
 
 inline
-string CDirEntry::GetPath(void) const
+const string& CDirEntry::GetPath(void) const
 {
     return m_Path;
 }
@@ -2047,7 +2056,7 @@ bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
 }
 
 inline
-string CDirEntry::GetBackupSuffix(void)
+const string& CDirEntry::GetBackupSuffix(void)
 {
     return m_BackupSuffix;
 }
@@ -2287,6 +2296,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/05/26 20:14:13  lavr
+ * Brush inline documenting comments;
+ * GetPath() and GetBackupSuffix() to return const string&
+ *
  * Revision 1.57  2005/05/20 11:23:05  ivanov
  * Added new classes CFileDeleteList and CFileDeleteAtExit.
  * CMemoryFile[Map](): changed default share attribute from eMMS_Shared.
