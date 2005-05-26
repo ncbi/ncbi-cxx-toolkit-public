@@ -105,6 +105,22 @@ void
 Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv, 
                         const TSeqLocVector& subjectv);
 
+/// Converts PHI BLAST results into a Seq-align form. Results are 
+/// split into separate Seq-align-sets corresponding to different
+/// pattern occurrences in query, which are then wrapped into 
+/// discontinuous Seq-aligns and then put into a top level Seq-align-set.
+/// @param results All PHI BLAST results, with different query pattern
+///                occurrences mixed together. [in]
+/// @param prog Type of BLAST program (phiblastp or phiblastn) [in]
+/// @param query Query Seq-loc, wrapped in a TSeqLocVector [in]
+/// @param seqinfo_src Source of subject sequence information [in]
+/// @param pattern_info Information about query pattern occurrences [in]
+TSeqAlignVector 
+PHIBlast_Results2CSeqAlign(const BlastHSPResults* results, 
+                           EBlastProgramType prog, TSeqLocVector &query,
+                           const IBlastSeqInfoSrc* seqinfo_src,
+                           const SPHIQueryInfo* pattern_info);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -114,6 +130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/05/26 14:36:24  dondosha
+* Added declaration of PHIBlast_Results2CSeqAlign
+*
 * Revision 1.25  2005/04/06 21:06:18  dondosha
 * Use EBlastProgramType instead of EProgram in non-user-exposed functions
 *
