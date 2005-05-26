@@ -61,8 +61,10 @@ enum EProgram {
     eRPSBlast,          ///< protein-pssm (reverse-position-specific BLAST)
     eRPSTblastn,        ///< nucleotide-pssm (RPS blast with translated query)
     eMegablast,         ///< Nucl-Nucl (traditional megablast)
-    eDiscMegablast,	    ///< Nucl-Nucl using discontiguous megablast
+    eDiscMegablast,     ///< Nucl-Nucl using discontiguous megablast
     ePSIBlast,          ///< PSI Blast
+    ePHIBlastp,         ///< Protein PHI BLAST
+    ePHIBlastn,         ///< Nucleotide PHI BLAST
     eBlastProgramMax    ///< Undefined program
 };
 
@@ -106,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/05/26 14:31:29  dondosha
+* Added PHI BLAST programs to EProgram enumeration
+*
 * Revision 1.18  2005/03/29 19:50:39  camacho
 * doxygen comments
 *
