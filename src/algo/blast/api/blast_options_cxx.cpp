@@ -1818,7 +1818,7 @@ CBlastOptionsLocal::GetProgramType() const
     switch (m_Program) {
     case eBlastn: case eMegablast: case eDiscMegablast:
         return eBlastTypeBlastn;
-    case eBlastp: 
+    case eBlastp:
         return eBlastTypeBlastp;
     case eBlastx:
         return eBlastTypeBlastx;
@@ -1832,6 +1832,10 @@ CBlastOptionsLocal::GetProgramType() const
         return eBlastTypeRpsTblastn;
     case ePSIBlast:
         return eBlastTypePsiBlast;
+    case ePHIBlastp:
+        return eBlastTypePhiBlastp;
+    case ePHIBlastn:
+        return eBlastTypePhiBlastn;
     default:
         return eBlastTypeUndefined;
     }
@@ -3371,6 +3375,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/05/26 14:34:09  dondosha
+* Added PHI BLAST cases to GetProgramType method
+*
 * Revision 1.65  2005/05/24 14:08:40  madden
 * Add [GS]etSmithWatermanMode
 *
