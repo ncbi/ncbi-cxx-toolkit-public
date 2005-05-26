@@ -69,6 +69,9 @@ private:
     void x_TestGetData(CSeqVector_CI& vit,
                        TSeqPos start,
                        TSeqPos stop);
+    void x_TestGetBufferPtr(CSeqVector_CI& vit,
+                            TSeqPos start,
+                            TSeqPos stop);
     void x_TestVector(TSeqPos start,
                       TSeqPos stop);
     bool x_CheckBuf(const string& buf, size_t pos, size_t len) const;
@@ -202,6 +205,31 @@ void CTestApp::x_TestGetData(CSeqVector_CI& vit,
         throw runtime_error("Test failed");
     }
     // cout << "OK" << endl;
+}
+
+
+void CTestApp::x_TestGetBufferPtr(CSeqVector_CI& vit,
+                                  TSeqPos start,
+                                  TSeqPos stop)
+{
+    if (start == kInvalidSeqPos) {
+        start = vit.GetPos();
+    }
+
+    if (start > stop)
+        swap(start, stop);
+
+    while (start < stop) {
+        vit.SetPos(start);
+        const char* buf_ptr = vit.GetBufferPtr();
+        size_t buf_len = vit.GetBufferSize();
+        string buf(buf_ptr, buf_len);
+        if ( !x_CheckBuf(buf, start, buf_len) ) {
+            cout << endl << "ERROR: Test failed -- invalid data" << endl;
+            throw runtime_error("Test failed");
+        }
+        start += buf_len;
+    }
 }
 
 
@@ -340,6 +368,7 @@ int CTestApp::Run(void)
     for (unsigned i = max<int>(1, m_Vect.size() / 2 - 2000);
          i <= m_Vect.size() / 2; ++i) {
         x_TestGetData(vit, i, m_Vect.size() - i);
+        x_TestGetBufferPtr(vit, i, m_Vect.size() - i);
     }
     cout << "OK" << endl;
 
@@ -409,10 +438,13 @@ int CTestApp::Run(void)
     vit = CSeqVector_CI(m_Vect, (pos1 + pos2) / 2);
     // Back to the first segment start
     x_TestGetData(vit, kInvalidSeqPos, pos1);
+    x_TestGetBufferPtr(vit, kInvalidSeqPos, pos1);
     // Forward to the first segment end
     x_TestGetData(vit, kInvalidSeqPos, pos2);
+    x_TestGetBufferPtr(vit, kInvalidSeqPos, pos2);
     // Back to the first segment start again
     x_TestGetData(vit, kInvalidSeqPos, pos1);
+    x_TestGetBufferPtr(vit, kInvalidSeqPos, pos1);
     cout << "OK" << endl;
 
     // Try to run multi-segment tests
@@ -422,10 +454,13 @@ int CTestApp::Run(void)
         vit = CSeqVector_CI(m_Vect, (pos2 + pos3) / 2);
         // Back to the first segment start
         x_TestGetData(vit, kInvalidSeqPos, pos1);
+        x_TestGetBufferPtr(vit, kInvalidSeqPos, pos1);
         // Forward to the second or third segment end
         x_TestGetData(vit, kInvalidSeqPos, pos4 ? pos4 : pos3);
+        x_TestGetBufferPtr(vit, kInvalidSeqPos, pos4 ? pos4 : pos3);
         // Back to the first segment start again
         x_TestGetData(vit, kInvalidSeqPos, pos1);
+        x_TestGetBufferPtr(vit, kInvalidSeqPos, pos1);
         cout << "OK" << endl;
     }
 
@@ -467,7 +502,7 @@ int CTestApp::Run(void)
     for (int i = 0; i < cycles; ++i) {
         TSeqPos start = random.GetRand(0, m_Vect.size());
         TSeqPos stop = random.GetRand(0, m_Vect.size());
-        switch (i % 3) {
+        switch (i % 4) {
         case 0:
             x_TestIterate(vit, start, stop);
             break;
@@ -476,6 +511,9 @@ int CTestApp::Run(void)
             break;
         case 2:
             x_TestVector(start, stop);
+            break;
+        case 3:
+            x_TestGetBufferPtr(vit, start, stop);
             break;
         }
     }
@@ -504,6 +542,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/05/26 18:19:16  grichenk
+* Added GetBufferPtr() and GetBufferSize()
+*
 * Revision 1.9  2005/03/28 19:37:12  vasilche
 * Test post-increment operator.
 *

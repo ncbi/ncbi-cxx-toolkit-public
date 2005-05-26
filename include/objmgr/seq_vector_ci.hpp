@@ -101,6 +101,9 @@ public:
     /// starting with current iterator position
     void GetSeqData(string& buffer, TSeqPos count);
 
+    size_t GetBufferSize(void) const;
+    const char* GetBufferPtr(size_t offset = 0) const;
+
     CSeqVector_CI& operator++(void);
     CSeqVector_CI& operator--(void);
 
@@ -454,6 +457,23 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 
 
 inline
+size_t CSeqVector_CI::GetBufferSize(void) const
+{
+    return bool(*this) ? m_CacheEnd - m_Cache : 0;
+}
+
+
+inline
+const char* CSeqVector_CI::GetBufferPtr(size_t offset) const
+{
+    if (m_Cache + offset >= m_CacheEnd) {
+        x_ThrowOutOfRange();
+    }
+    return m_Cache + offset;
+}
+
+
+inline
 CSeqVector_CI& CSeqVector_CI::operator+=(TSeqPos value)
 {
     SetPos(GetPos() + value);
@@ -537,6 +557,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/05/26 18:19:16  grichenk
+* Added GetBufferPtr() and GetBufferSize()
+*
 * Revision 1.30  2005/04/26 18:48:00  vasilche
 * Use case conversion to get gap symbol.
 * Removed obsolete structur SSeqData.
