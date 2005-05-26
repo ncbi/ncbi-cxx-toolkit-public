@@ -843,6 +843,55 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     return seq_aligns;
 }
 
+TSeqAlignVector 
+PHIBlast_Results2CSeqAlign(const BlastHSPResults* results, 
+                           EBlastProgramType prog, TSeqLocVector &query,
+                           const IBlastSeqInfoSrc* seqinfo_src,
+                           const SPHIQueryInfo* pattern_info)
+{
+    TSeqAlignVector retval;
+    CRef<CSeq_align_set> wrap_list(new CSeq_align_set());
+
+    /* Split results into an array of BlastHSPResults structures corresponding
+       to different pattern occurrences. */
+    BlastHSPResults* *phi_results = 
+        PHIBlast_HSPResultsSplit(results, pattern_info);
+
+    if (phi_results) {
+        for (int pattern_index = 0; pattern_index < pattern_info->num_patterns;
+             ++pattern_index) {
+            CBlastHSPResults one_phi_results(phi_results[pattern_index]);
+
+            if (one_phi_results) {
+                // PHI BLAST does not work with multiple queries, so we only 
+                // need to look at the first hit list.
+                BlastHitList* hit_list = one_phi_results->hitlist_array[0];
+
+                // PHI BLAST is always gapped, and never out-of-frame, hence
+                // true and false values for the respective booleans in the next
+                // call.
+                CRef<CSeq_align_set> seq_aligns(
+                    BLAST_HitList2CSeqAlign(hit_list, prog, query[0], 
+                                            seqinfo_src, true, false));
+                
+                // Wrap this Seq-align-set in a discontinuous Seq-align and 
+                // attach it to the final Seq-align-set.
+                CRef<CSeq_align> wrap_align(new CSeq_align());
+                wrap_align->SetType(CSeq_align::eType_partial);
+                wrap_align->SetDim(2); // Always a pairwise alignment
+                wrap_align->SetSegs().SetDisc(*seq_aligns);
+                wrap_list->Set().push_back(wrap_align);
+            }
+        }
+        sfree(phi_results);
+    }
+    
+    // Put the final Seq-align-set into the vector
+    retval.push_back(wrap_list);
+
+    return retval;
+}
+
 TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results,
         EBlastProgramType prog,
@@ -854,7 +903,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
 
     TSeqAlignVector retval;
     CConstRef<CSeq_id> query_id;
-
+    
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {
        BlastHitList* hit_list = results->hitlist_array[index];
@@ -953,6 +1002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/05/26 14:33:03  dondosha
+* Added PHIBlast_Results2CSeqAlign function for conversion of PHI BLAST results to a discontinuous Seq-align
+*
 * Revision 1.46  2005/05/24 20:02:42  camacho
 * Changed signature of SetupQueries and SetupQueryInfo
 *
