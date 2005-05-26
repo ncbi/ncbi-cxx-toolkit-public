@@ -56,7 +56,8 @@ GetQueryEncoding(EBlastProgramType program)
     EBlastEncoding retval = eBlastEncodingError;
 
     switch (program) {
-    case eBlastTypeBlastn: 
+    case eBlastTypeBlastn:
+    case eBlastTypePhiBlastn: 
         retval = eBlastEncodingNucleotide; 
         break;
 
@@ -64,6 +65,7 @@ GetQueryEncoding(EBlastProgramType program)
     case eBlastTypeTblastn:
     case eBlastTypeRpsBlast: 
     case eBlastTypePsiBlast:
+    case eBlastTypePhiBlastp:
         retval = eBlastEncodingProtein; 
         break;
 
@@ -382,12 +384,14 @@ GetNumberOfFrames(EBlastProgramType p)
 
     switch (p) {
     case eBlastTypeBlastn:
+    case eBlastTypePhiBlastn:
         retval = NUM_STRANDS;
         break;
     case eBlastTypeBlastp:
     case eBlastTypeRpsBlast:
     case eBlastTypeTblastn: 
     case eBlastTypePsiBlast:
+    case eBlastTypePhiBlastp:
         retval = 1;
         break;
     case eBlastTypeBlastx:
@@ -416,6 +420,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/05/26 14:36:47  dondosha
+ * Added PHI BLAST cases in switch statements
+ *
  * Revision 1.83  2005/05/10 21:23:59  camacho
  * Fix to prior commit
  *
