@@ -18,6 +18,8 @@ blastx_options \
 tblastx_options \
 tblastn_options \
 rpstblastn_options \
+phiblast_nucl_options \
+phiblast_prot_options \
 blast_psi_cxx \
 remote_blast \
 seqinfosrc_seqvec \
