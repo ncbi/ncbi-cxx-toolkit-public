@@ -310,6 +310,10 @@ objects/blast/Blast4_get_paramsets_reply.hpp
 objects/blast/Blast4_get_paramsets_reply_.hpp
 objects/blast/Blast4_get_programs_reply.hpp
 objects/blast/Blast4_get_programs_reply_.hpp
+objects/blast/Blast4_get_queries_request.hpp
+objects/blast/Blast4_get_queries_request_.hpp
+objects/blast/Blast4_get_queries_reply.hpp
+objects/blast/Blast4_get_queries_reply_.hpp
 objects/blast/Blast4_get_sequenc_request.hpp
 objects/blast/Blast4_get_sequenc_request_.hpp
 objects/blast/Blast4_get_sequences_reply.hpp
@@ -590,6 +594,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/26 15:22:00  jcherry
+ * Added objects/blast/Blast4_get_queries_*.hpp
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
