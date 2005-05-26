@@ -440,7 +440,8 @@ void CDbBlast::SetupSearch()
     bool seqsrc_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
     bool db_is_prot = (x_eProgram == eBlastTypeBlastp || 
                        x_eProgram == eBlastTypeBlastx ||
-                       Blast_ProgramIsRpsBlast(x_eProgram));
+                       Blast_ProgramIsRpsBlast(x_eProgram) ||
+                       x_eProgram == eBlastTypePhiBlastp);
     if (seqsrc_is_prot != db_is_prot) {
         NCBI_THROW(CBlastException, eBadParameter, 
             "Database molecule does not correspond to BLAST program type");
@@ -689,14 +690,25 @@ CDbBlast::x_Results2SeqAlign()
     bool outOfFrameMode = GetOptionsHandle().GetOptions().GetOutOfFrameMode();
     string db_name(BlastSeqSrcGetName(m_pSeqSrc));
     bool db_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
+    const EBlastProgramType kProgram = 
+        GetOptionsHandle().GetOptions().GetProgramType();
 
     // Create a source for retrieving sequence ids and lengths
     CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
 
-    retval = BLAST_Results2CSeqAlign(m_ipResults, 
-                 GetOptionsHandle().GetOptions().GetProgramType(),
+    // For PHI BLAST, results need to be split by query pattern occurrence,
+    // which is done in a separate function. Results for different 
+    // pattern occurrences are put in separate discontinuous Seq_aligns, and 
+    // linked in a Seq_align_set. 
+    if (Blast_ProgramIsPhiBlast(kProgram)) {
+        retval = PHIBlast_Results2CSeqAlign(m_ipResults, kProgram,
+                                            m_tQueries, &seqinfo_src, 
+                                            GetQueryInfo()->pattern_info);
+    } else {
+        retval = BLAST_Results2CSeqAlign(m_ipResults, kProgram,
                  m_tQueries, &seqinfo_src, 
                  gappedMode, outOfFrameMode);
+    }
 
     return retval;
 }
@@ -710,6 +722,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.71  2005/05/26 14:39:48  dondosha
+ * For PHI BLAST conversion to Seq-align, call a new function PHIBlast_Results2CSeqAlign
+ *
  * Revision 1.70  2005/05/24 20:02:42  camacho
  * Changed signature of SetupQueries and SetupQueryInfo
  *
