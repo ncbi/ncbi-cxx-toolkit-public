@@ -289,7 +289,7 @@ property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncb
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html}, dep:"gui_utils ncbi_image ncbi_core", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
-property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
+property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets gui_config", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq", req:true} --gui_core
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/05/26 12:45:09  lebedev
+ * gui_core += ncbi_web
+ *
  * Revision 1.55  2005/05/23 11:31:45  lebedev
  * added uoconv and cleanup_utils in objects:general
  *
