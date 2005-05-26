@@ -875,12 +875,10 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                          CRef<CSeqDBTaxInfo>   tax_info,
                          CSeqDBLockHold      & locked) const
 {
-    const bool provide_old_taxonomy_info = false;
     const bool provide_new_taxonomy_info = true;
     const bool use_taxinfo_cache         = false;
     const int  max_taxcache_size         = 200;
     
-    const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
     const char * TAX_ORGREF_DB_NAME = "taxon";
     
     list< CRef<CSeqdesc> > taxonomy;
@@ -901,21 +899,6 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
     typedef TBDLL::const_iterator         TBDLLConstIter;
     
     const TBDLL & dl = bdls->Get();
-    
-    CRef<CBioSource>   source;
-    CRef<CUser_object> uobj;
-    CRef<CObject_id>   uo_oi;
-    
-    if (provide_new_taxonomy_info) {
-        source.Reset(new CBioSource);
-    }
-    
-    if (provide_old_taxonomy_info) {
-        uobj  .Reset(new CUser_object);
-        uo_oi .Reset(new CObject_id);
-        uo_oi->SetStr(TAX_DATA_OBJ_LABEL);
-        uobj->SetType(*uo_oi);
-    }
     
     bool found = false;
     
@@ -940,7 +923,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
         
         bool worked = true;
         
-        if (provide_old_taxonomy_info || ((! have_org_desc) && provide_new_taxonomy_info)) {
+        if ((! have_org_desc) && provide_new_taxonomy_info) {
             worked = tax_info->GetTaxNames(taxid, tnames, locked);
         }
         
@@ -949,26 +932,6 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
         }
         
         found = true;
-        
-        if (provide_old_taxonomy_info) {
-            CRef<CUser_field> uf(new CUser_field);
-            
-            CRef<CObject_id> uf_oi(new CObject_id);
-            uf_oi->SetId(taxid);
-            uf->SetLabel(*uf_oi);
-            
-            vector<string> & strs = uf->SetData().SetStrs();
-            
-            uf->SetNum(4);
-            strs.resize(4);
-            
-            strs[0] = tnames.GetSciName();
-            strs[1] = tnames.GetCommonName();
-            strs[2] = tnames.GetBlastName();
-            strs[3] = tnames.GetSKing();
-            
-            uobj->SetData().push_back(uf);
-        }
         
         if (provide_new_taxonomy_info) {
             if (have_org_desc) {
@@ -983,6 +946,8 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                 org->SetCommon(tnames.GetCommonName());
                 org->SetDb().push_back(org_tag);
                 
+                CRef<CBioSource>   source;
+                source.Reset(new CBioSource);
                 source->SetOrg(*org);
                 
                 CRef<CSeqdesc> desc(new CSeqdesc);
@@ -1007,11 +972,12 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
         }
     }
     
-    if (found && provide_old_taxonomy_info) {
-        CRef<CSeqdesc> desc(new CSeqdesc);
-        desc->SetUser(*uobj);
-        taxonomy.push_back(desc);
-    }
+//     int counter(0);
+//    
+//     ITERATE(list< CRef<CSeqdesc> >, iter, taxonomy) {
+//         cout << "DATA: " << counter << " " << (*iter)->GetSource().GetOrg().GetTaxname() << endl;
+//         counter++;
+//     }
     
     return taxonomy;
 }
@@ -1035,7 +1001,7 @@ CSeqDBVol::x_GetAsnDefline(int              oid,
     
     if (! hdr_data.empty()) {
         CRef<CUser_object> uobj(new CUser_object);
-    
+        
         CRef<CObject_id> uo_oi(new CObject_id);
         uo_oi->SetStr(ASN1_DEFLINE_LABEL);
         uobj->SetType(*uo_oi);
