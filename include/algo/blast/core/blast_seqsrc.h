@@ -101,13 +101,14 @@ typedef struct BlastSeqSrcNewInfo BlastSeqSrcNewInfo;
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
 
-/** Copy function: needed to guarantee thread safety.
- * @todo Is this function really needed? Shouldn't this description be a bit
- * more elaborate?
+/** Copy function: needed to guarantee thread safety. Copies the contents of an
+ * input BlastSeqSrc, then calls a copier function, provided by the 
+ * implementation, to achieve multi-thread safety.
+ * @todo Is this function really needed? 
  * @param seq_src BlastSeqSrc to copy [in]
- * @return an MT-safe copy of the structure passed in, NULL in case of memory
- * allocation failure, or if no copy function was provided by the
- * implementation, a bitwise copy of the input parameter.
+ * @return An MT-safe copy of the structure passed in, NULL in case of memory
+ *         allocation failure, or, if no copy function was provided by the
+ *         implementation, a bitwise copy of the input.
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);

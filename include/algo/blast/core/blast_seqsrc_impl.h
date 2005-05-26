@@ -80,10 +80,10 @@ typedef BlastSeqSrc* (*BlastSeqSrcDestructor)
     (BlastSeqSrc* seqrc /**< BlastSeqSrc structure to free */
      );
 
-/** Function pointer typedef to modify whatever is necessary in a copy of a 
- * BlastSeqSrc structure to achieve multi-thread safety.
- * Argument is the already copied BlastSeqSrc structure; FIXME
- * returns the modified structure. 
+/** Function pointer typedef to modify the contents of a BlastSeqSrc
+ * structure, copied by BlastSeqSrcCopy, to achieve multi-thread safety.
+ * Argument is a pointer to the BlastSeqSrc structure to be modified.
+ * Returns the same structure, with modified contents. 
  */
 typedef BlastSeqSrc* (*BlastSeqSrcCopier) (BlastSeqSrc*);
 
