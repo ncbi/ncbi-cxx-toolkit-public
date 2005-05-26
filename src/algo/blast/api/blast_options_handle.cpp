@@ -45,7 +45,8 @@
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
-
+#include <algo/blast/api/phiblast_nucl_options.hpp>
+#include <algo/blast/api/phiblast_prot_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -137,7 +138,15 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CB
     case ePSIBlast:
         retval = new CPSIBlastOptionsHandle(locality);
         break;
-        
+
+    case ePHIBlastp:
+        retval = new CPHIBlastProtOptionsHandle(locality);
+        break;        
+
+    case ePHIBlastn:
+        retval = new CPHIBlastNuclOptionsHandle(locality);
+        break;
+
     default:
         NCBI_THROW(CBlastException, eBadParameter,
         "CBlastOptionFactory cannot construct options handle: invalid program");
@@ -156,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/05/26 14:36:00  dondosha
+ * Added cases for PHI BLAST options handles
+ *
  * Revision 1.11  2005/05/24 14:08:11  madden
  * Add include for blast_advprot_options.hpp
  *
