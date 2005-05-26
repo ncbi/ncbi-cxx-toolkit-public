@@ -668,6 +668,20 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size);
 
+/** Splits the BlastHSPResults structure for a PHI BLAST search into an array of
+ * BlastHSPResults structures, corresponding to different pattern occurrences in
+ * query. All HSPs are copied, so it is safe to free the returned 
+ * BlastHSPResults structures independently of the input results structure.
+ * @param results All results from a PHI BLAST search, with HSPs for 
+ *                different query pattern occurrences mixed together. [in]
+ * @param pattern_info Information about pattern occurrences in query. [in]
+ * @return Array of pointers to BlastHSPResults structures, corresponding to 
+ *         different pattern occurrences.
+ */
+BlastHSPResults** 
+PHIBlast_HSPResultsSplit(const BlastHSPResults* results, 
+                         const SPHIQueryInfo* pattern_info);
+
 #ifdef __cplusplus
 }
 #endif

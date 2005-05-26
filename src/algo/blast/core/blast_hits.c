@@ -149,6 +149,48 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    return 0;
 }
 
+/** Copies all contents of a BlastHSP structure. Used in PHI BLAST for splitting
+ * results corresponding to different pattern occurrences in query.
+ * @param hsp Original HSP [in]
+ * @return New HSP, copied from the original.
+ */
+static BlastHSP* 
+s_BlastHSPCopy(const BlastHSP* hsp)
+{
+    BlastHSP* new_hsp = NULL;
+    /* Do not pass the edit script, because we don't want to tranfer 
+       ownership. */
+    Blast_HSPInit(hsp->query.offset, hsp->query.end, hsp->subject.offset, 
+                  hsp->subject.end, hsp->query.gapped_start, 
+                  hsp->subject.gapped_start, hsp->context, 
+                  hsp->query.frame, hsp->subject.frame, hsp->score, 
+                  NULL, &new_hsp);
+    new_hsp->evalue = hsp->evalue;
+    new_hsp->num = hsp->num;
+    new_hsp->num_ident = hsp->num_ident;
+    new_hsp->bit_score = hsp->bit_score;
+    if (hsp->gap_info) {
+        GapEditScript* edit_script = hsp->gap_info;
+        GapEditScript* new_edit_script;
+        new_hsp->gap_info = new_edit_script =
+            (GapEditScript*) BlastMemDup(edit_script, sizeof(GapEditScript));
+        /* Copy the linked list of edit scripts. */
+        for (edit_script = edit_script->next; edit_script; 
+             edit_script = edit_script->next) {
+            new_edit_script->next =
+                (GapEditScript*) BlastMemDup(edit_script, sizeof(GapEditScript));
+            new_edit_script = new_edit_script->next;
+        }
+    }
+
+    if (hsp->pat_info) {
+        /* Copy this HSP's pattern data. */
+        new_hsp->pat_info = 
+            (SPHIHspInfo*) BlastMemDup(hsp->pat_info, sizeof(SPHIHspInfo));
+    }
+    return new_hsp;
+}
+
 /** Calculate e-value for an HSP found by PHI BLAST.
  * @param hsp An HSP found by PHI BLAST [in]
  * @param sbp Scoring block with statistical parameters [in]
@@ -3039,4 +3081,64 @@ Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results,
    Blast_HitListUpdate(results->hitlist_array[hsp_list->query_index], 
                        hsp_list);
    return 0;
+}
+
+BlastHSPResults** 
+PHIBlast_HSPResultsSplit(const BlastHSPResults* results, 
+                         const SPHIQueryInfo* pattern_info)
+{
+    BlastHSPResults* *phi_results = NULL;
+    int pattern_index, hit_index, hsp_index;
+    int num_patterns;
+    BlastHitList* hit_list = NULL;
+    int hitlist_size;
+    BlastHSPList** hsplist_array; /* Temporary per-pattern HSP lists. */  
+
+    if (!results || !results->hitlist_array[0] || !pattern_info)
+        return NULL;
+
+    num_patterns = pattern_info->num_patterns;
+    hit_list = results->hitlist_array[0];
+    hitlist_size = hit_list->hsplist_max;
+    
+    phi_results = 
+        (BlastHSPResults**) calloc(num_patterns, sizeof(BlastHSPResults*));
+    hsplist_array = (BlastHSPList**) calloc(num_patterns, sizeof(BlastHSPList*));
+
+    for (hit_index = 0; hit_index < hit_list->hsplist_count; ++hit_index) {
+        BlastHSPList* hsp_list = hit_list->hsplist_array[hit_index];
+        /* Copy HSPs corresponding to different pattern occurrences into
+           separate HSP lists. */
+        for (hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
+            BlastHSP* hsp = s_BlastHSPCopy(hsp_list->hsp_array[hsp_index]);
+            pattern_index = hsp->pat_info->index;
+            if (!hsplist_array[pattern_index])
+                hsplist_array[pattern_index] = Blast_HSPListNew(0);
+            hsplist_array[pattern_index]->oid = hsp_list->oid;
+            Blast_HSPListSaveHSP(hsplist_array[pattern_index], hsp);
+        }
+        
+        /* Save HSP lists corresponding to different pattern occurrences 
+           in separate results structures. */
+        for (pattern_index = 0; pattern_index < num_patterns; 
+             ++pattern_index) {
+            if (hsplist_array[pattern_index]) {
+                if (!phi_results[pattern_index])
+                    phi_results[pattern_index] = Blast_HSPResultsNew(1);
+                Blast_HSPResultsInsertHSPList(phi_results[pattern_index],
+                                              hsplist_array[pattern_index],
+                                              hitlist_size);
+                hsplist_array[pattern_index] = NULL;
+            }
+        }
+    }
+    
+    sfree(hsplist_array);
+
+    /* Sort HSPLists in each of the results structures by e-value. */
+    for (pattern_index = 0; pattern_index < num_patterns; ++pattern_index) {
+        Blast_HSPResultsSortByEvalue(phi_results[pattern_index]);
+    }
+
+    return phi_results;
 }
