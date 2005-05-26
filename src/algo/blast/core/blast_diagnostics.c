@@ -128,6 +128,7 @@ Blast_DiagnosticsUpdate(BlastDiagnostics* global, BlastDiagnostics* local)
       global->cutoffs->x_drop_gap = local->cutoffs->x_drop_gap;
       global->cutoffs->x_drop_gap_final = local->cutoffs->x_drop_gap_final;
       global->cutoffs->ungapped_cutoff = local->cutoffs->ungapped_cutoff;
+      global->cutoffs->cutoff_score = local->cutoffs->cutoff_score;
    }
 
    if (global->mt_lock) 
