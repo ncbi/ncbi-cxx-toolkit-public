@@ -144,9 +144,9 @@ static mode_t s_TarToMode(unsigned long value)
                    (value & TOWRITE ? S_IWOTH  : 0) |
 #endif
 #ifdef S_IXOTH
-                   (value & TOEXEC  ? S_IXOTH  : 0)
+                   (value & TOEXEC  ? S_IXOTH  : 0) |
 #endif
-                   );
+                   0);
     return mode;
 }
 
@@ -868,7 +868,7 @@ void CTar::x_WriteEntryInfo(const string&         name,
     }
 
     // Size (not '\0'-terminated)
-    if (!s_NumToOctal(type == CTarEntryInfo::eFile ? info.GetSize() : 0,
+    if (!s_NumToOctal((unsigned long)(type == CTarEntryInfo::eFile ? info.GetSize() : 0),
                       h->size, sizeof(h->size))) {
         NCBI_THROW(CTarException, eMemory, "Unable to store file size");
     }
@@ -1109,7 +1109,7 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool process,
         _ASSERT(data);
         size = x_ExtractEntry(info, *data);
     } else {
-        size = info.GetSize();
+        size = (streamsize) info.GetSize();
     }
 
     if (size) {
@@ -1132,7 +1132,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
     bool extract = true;
 
     CTarEntryInfo::EType type = info.GetType();
-    streamsize           size = info.GetSize();
+    streamsize           size = (streamsize) info.GetSize();
 
     // Destination for extraction
     auto_ptr<CDirEntry>
@@ -1522,7 +1522,7 @@ void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
 
     _ASSERT(m_Stream->good());
     // Write zeros to get the written size be multiple of kBlockSize
-    streamsize zero_size = ALIGN_SIZE(info.GetSize()) - info.GetSize();
+    streamsize zero_size = (streamsize)(ALIGN_SIZE(info.GetSize()) - info.GetSize());
     memset(m_Buffer, 0, zero_size);
     x_WriteArchive(m_Buffer, zero_size);
 }
@@ -1534,6 +1534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/27 14:14:27  lavr
+ * Fix MS-Windows compilation problems and heed warnings
+ *
  * Revision 1.14  2005/05/27 13:55:45  lavr
  * Major revamp/redesign/fix/improvement/extension of this API
  *
