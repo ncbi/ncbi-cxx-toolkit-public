@@ -2716,7 +2716,9 @@ bool CDir::Remove(EDirRemoveMode mode) const
             }
         } else if ( item.IsDir(eIgnoreLinks) ) {
             // Empty subdirectory is essentially a file
-            item.Remove(eOnlyEmpty);
+            if ( mode != eTopDirOnly ) {
+                item.Remove(eOnlyEmpty);
+            }
             continue;
         } else if ( !item.Remove() ) {
             return false;
@@ -3413,6 +3415,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2005/05/27 13:39:48  lavr
+ * In previous revision:
+ * CDirEntry::Stat() changed to return bool (not int)
+ * CDirEntry::GetOwner() returns numeric owner/group on ID->name mapping
+ * failures; so CDirEntry::GetOwner() changed to accept numeric strings
+ * Mode mask conversions made portable (bit-value independent)
+ *
+ * In this revision:
+ * EDirRemoveMode::eTopDirOnly added and acted upon
+ *
  * Revision 1.100  2005/05/27 13:22:03  lavr
  * Fix s_CopyFile() [UNIX version]
  * Fix CDir::Remove(eNonRecursive) for empty child dirs
