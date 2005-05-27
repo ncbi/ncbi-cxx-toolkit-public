@@ -216,6 +216,9 @@ public:
     /// Return TRUE if this set contains no cookies
     bool Empty(void) const;
 
+    EUrlEncode GetUrlEncodeFlag(void) const;
+    void SetUrlEncodeFlag(EUrlEncode encode_flag);
+
     /// All Add() functions:
     /// if the added cookie has the same {name, domain, path} as an already
     /// existing one then the new cookie will override the old one
@@ -568,8 +571,11 @@ public:
         /// do not automatically parse the request's content body (from "istr")
         fDoNotParseContent   = (1 << 3),
         /// use case insensitive CGI arguments
-        fCaseInsensitiveArgs = (1 << 4)
-
+        fCaseInsensitiveArgs = (1 << 4),
+        /// Do not use URL-encoding/decoding for cookies
+        fCookies_Unencoded   = (1 << 5),
+        /// Use hex code for encoding spaces rather than '+'
+        fCookies_SpaceAsHex  = (1 << 6)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
@@ -820,6 +826,18 @@ inline CCgiCookies::CCgiCookies(const string& str,
     Add(str, on_bad_cookie);
 }
 
+inline
+EUrlEncode CCgiCookies::GetUrlEncodeFlag() const
+{
+    return m_EncodeFlag;
+}
+
+inline
+void CCgiCookies::SetUrlEncodeFlag(EUrlEncode encode_flag)
+{
+    m_EncodeFlag = encode_flag;
+}
+
 inline bool CCgiCookies::Empty(void) const
 {
     return m_Cookies.empty();
@@ -879,6 +897,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.76  2005/05/27 19:57:36  grichenk
+* Added URL encoding flags to CCgiRequest
+*
 * Revision 1.75  2005/05/27 16:36:16  grichenk
 * Added flags to control URL encode/decode in cookies.
 *

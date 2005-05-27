@@ -696,8 +696,8 @@ static SIZE_TYPE s_URL_Decode(string& str, bool percent_only = false)
         case '+': {
             if ( !percent_only ) {
                 str[p] = ' ';
-                pos++;
             }
+            pos++;
             break;
         }
         default:
@@ -1029,6 +1029,12 @@ void CCgiRequest::x_Init
     }
 
     // Parse HTTP cookies
+    if ((flags & fCookies_Unencoded) != 0) {
+        m_Cookies.SetUrlEncodeFlag(eUrlEncode_None);
+    }
+    else if ((flags & fCookies_SpaceAsHex) != 0) {
+        m_Cookies.SetUrlEncodeFlag(eUrlEncode_PercentOnly);
+    }
     try {
         m_Cookies.Add(GetProperty(eCgi_HttpCookie));
     } catch (CCgiCookieException& e) {
@@ -1540,6 +1546,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.93  2005/05/27 19:57:36  grichenk
+* Added URL encoding flags to CCgiRequest
+*
 * Revision 1.92  2005/05/27 16:36:16  grichenk
 * Added flags to control URL encode/decode in cookies.
 *
