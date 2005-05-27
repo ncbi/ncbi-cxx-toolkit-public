@@ -128,7 +128,7 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode usr_mode,
 #if   defined(S_IWUSR)
                              (usr_mode & CDirEntry::fWrite   ? S_IWUSR    : 0)|
 #elif defined(S_IWRITE)
-                             (usr_mode & CDirEntry::fWrite   ? S_IWRITE ? : 0)|
+                             (usr_mode & CDirEntry::fWrite   ? S_IWRITE   : 0)|
 #endif
 #if   defined(S_IXUSR)
                              (usr_mode & CDirEntry::fExecute ? S_IXUSR    : 0)|
@@ -3415,6 +3415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2005/05/27 13:51:20  lavr
+ * Fix accidental typo (an extra char) introduced in MS-Win-specific code
+ *
  * Revision 1.101  2005/05/27 13:39:48  lavr
  * In previous revision:
  * CDirEntry::Stat() changed to return bool (not int)
