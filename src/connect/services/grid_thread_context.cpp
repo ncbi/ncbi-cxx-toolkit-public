@@ -172,7 +172,23 @@ void CGridThreadContext::ReturnJob()
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
         if (m_Reporter.get()) {
-            m_Reporter->ReturnJob(m_JobContext->GetJobKey());
+            int ret_code;
+            string output;
+            CNetScheduleClient::EJobStatus status = 
+                m_Reporter->GetStatus(m_JobContext->GetJobKey(), 
+                                      &ret_code, 
+                                      &output);
+            if (status == CNetScheduleClient::eJobNotFound || 
+                status == CNetScheduleClient::eFailed ||
+                status == CNetScheduleClient::eDone)  {
+                m_JobContext->GetWorkerNode().m_JobsLost.Add(1);
+            } else if (status == CNetScheduleClient::eCanceled) {
+                m_JobContext->GetWorkerNode().m_JobsCanceled.Add(1);
+            } else {
+                m_Reporter->ReturnJob(m_JobContext->GetJobKey());
+                m_JobContext->GetWorkerNode().m_JobsReturned.Add(1);
+            }
+            return;
         }
     }
     m_JobContext->GetWorkerNode().m_JobsReturned.Add(1);
@@ -249,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2005/05/27 14:46:06  didenko
+ * Fixed a worker node statistics
+ *
  * Revision 6.7  2005/05/23 17:58:57  didenko
  * Changed "grid_debug_context.hpp" to <connect/services/grid_debug_context.hpp>
  *

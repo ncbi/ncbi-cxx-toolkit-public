@@ -278,6 +278,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
     m_JobsSucceed.Set(0);
     m_JobsFailed.Set(0);
     m_JobsReturned.Set(0);
+    m_JobsCanceled.Set(0);
+    m_JobsLost.Set(0);
 }
 
 
@@ -376,7 +378,8 @@ void CGridWorkerNode::Start()
 unsigned int CGridWorkerNode::GetJobsRunningNumber() const
 {
     return m_JobsStarted - m_JobsSucceed.Get() - 
-                           m_JobsFailed.Get() - m_JobsReturned.Get();
+        m_JobsFailed.Get() - m_JobsReturned.Get() -
+        m_JobsCanceled.Get() - m_JobsLost.Get();
 }
 
 
@@ -554,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/05/27 14:46:06  didenko
+ * Fixed a worker node statistics
+ *
  * Revision 1.28  2005/05/23 15:51:54  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp to
  * include/connect/service

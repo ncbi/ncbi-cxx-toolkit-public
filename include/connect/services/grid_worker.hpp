@@ -379,6 +379,12 @@ public:
     unsigned int GetJobsReturnedNumber() const 
                       { return (unsigned int)m_JobsReturned.Get(); }
 
+    unsigned int GetJobsCanceledNumber() const 
+                      { return (unsigned int)m_JobsCanceled.Get(); }
+
+    unsigned int GetJobsLostNumber() const 
+                      { return (unsigned int)m_JobsLost.Get(); }
+
     unsigned int GetJobsRunningNumber() const;
     unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
 
@@ -442,6 +448,8 @@ private:
     CAtomicCounter               m_JobsSucceed;
     CAtomicCounter               m_JobsFailed;
     CAtomicCounter               m_JobsReturned;
+    CAtomicCounter               m_JobsCanceled;
+    CAtomicCounter               m_JobsLost;
     bool                         m_LogRequested;
     const CTime                  m_StartTime;
 
@@ -501,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/05/27 14:46:06  didenko
+ * Fixed a worker node statistics
+ *
  * Revision 1.25  2005/05/27 12:51:59  didenko
  * Made GetStatistics a public static function
  *

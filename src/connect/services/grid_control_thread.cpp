@@ -110,6 +110,8 @@ public:
         os << "Jobs Succeed: " << node.GetJobsSucceedNumber() << endl
            << "Jobs Failed: "  << node.GetJobsFailedNumber() << endl
            << "Jobs Returned: "<< node.GetJobsReturnedNumber() << endl
+           << "Jobs Canceled: "<< node.GetJobsCanceledNumber() << endl
+           << "Jobs Lost: "    << node.GetJobsLostNumber() << endl
            << "Jobs Running: " << node.GetJobsRunningNumber() << endl;
 
         vector<CWorkerNodeJobContext::SJobStat> jobs;
@@ -274,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2005/05/27 14:46:06  didenko
+ * Fixed a worker node statistics
+ *
  * Revision 6.10  2005/05/27 12:55:11  didenko
  * Added IRequestProcessor interface and Processor classes implementing this interface
  *
