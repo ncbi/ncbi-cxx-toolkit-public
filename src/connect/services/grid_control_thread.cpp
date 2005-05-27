@@ -36,6 +36,153 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+// 
+///@internal
+
+class CGetVersionProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+{
+public:
+    virtual ~CGetVersionProcessor() {}
+
+    virtual void Process(const string& request,
+                         CNcbiOstream& os,
+                         CGridWorkerNode& node)
+    {
+        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE;
+    }
+};
+
+class CShutdownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+{
+public:
+    virtual ~CShutdownProcessor() {}
+
+    virtual bool Authenticate(const string& host,
+                              const string& auth, 
+                              const string& queue,
+                              CNcbiOstream& os,
+                              const CGridWorkerNode& node) 
+    {
+        m_Host = host;
+        size_t pos = m_Host.find_first_of(':');
+        if (pos != string::npos) {
+            m_Host = m_Host.substr(0, pos);
+        }
+        if (node.IsHostInAdminHostsList(m_Host)) {
+            return true;
+        }
+        os << "ERR:Shutdown access denied.";
+        LOG_POST(Warning << "Shutdown access denied: " << m_Host);
+        return false;
+    }
+
+    virtual void Process(const string& request,
+                         CNcbiOstream& os,
+                         CGridWorkerNode& node)
+    {
+        node.RequestShutdown(CNetScheduleClient::eNormalShutdown);
+        os << "OK:";
+        LOG_POST("Shutdown request has been received from host: " << m_Host);
+    }
+private:
+    string m_Host;
+};
+
+class CGetStatisticsnProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+{
+public:
+    virtual ~CGetStatisticsnProcessor() {}
+
+    virtual void Process(const string& request,
+                         CNcbiOstream& os,
+                         CGridWorkerNode& node)
+    {
+        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl
+           << "Started: " << node.GetStartTime().AsString() << endl;
+        if (node.GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
+        }
+        os << "Queue name: " << node.GetQueueName() << endl;
+        if (node.GetMaxThreads() > 1)
+            os << "Maximum job threads: " << node.GetMaxThreads() << endl;
+
+        os << "Jobs Succeed: " << node.GetJobsSucceedNumber() << endl
+           << "Jobs Failed: "  << node.GetJobsFailedNumber() << endl
+           << "Jobs Returned: "<< node.GetJobsReturnedNumber() << endl
+           << "Jobs Running: " << node.GetJobsRunningNumber() << endl;
+
+        vector<CWorkerNodeJobContext::SJobStat> jobs;
+        CWorkerNodeJobContext::CollectStatictics(jobs);
+        CTime now(CTime::eCurrent);
+        ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
+            CTimeSpan ts = now - it->start_time.GetLocalTime();
+            os << it->job_key << " " << it->job_input
+               << " -- running for " << ts.AsString("S") 
+               << " seconds." << endl;
+        }
+    }
+};
+
+class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+{
+public:
+    virtual ~CGetLoadProcessor() {}
+
+    virtual bool Authenticate(const string& host,
+                              const string& auth, 
+                              const string& queue,
+                              CNcbiOstream& os,
+                              const CGridWorkerNode& node) 
+    {
+        if (auth != node.GetJobVersion()) {
+            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion();
+            return false;
+        } 
+        string qname, connection_info;
+        NStr::SplitInTwo(queue, ";", qname, connection_info);
+        if (qname != node.GetQueueName()) {
+            os << "ERR:Wrong Queue. Required: " << node.GetQueueName();
+            return false;
+        } 
+        if (connection_info != node.GetConnectionInfo()) {
+            os << "ERR:Wrong Connection Info. Required: "                     
+               << node.GetConnectionInfo();
+            return false;
+        }
+        return true;
+    }
+
+    virtual void Process(const string& request,
+                         CNcbiOstream& os,
+                         CGridWorkerNode& node)
+    {
+        int load = node.GetMaxThreads() - node.GetJobsRunningNumber();
+        os << "OK:" << load;
+    }
+};
+
+class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+{
+public:
+    virtual ~CUnknownProcessor() {}
+
+    virtual void Process(const string& request,
+                         CNcbiOstream& os,
+                         CGridWorkerNode& node)
+    {
+        os << "ERR:Unknown command -- " << request;
+    }
+};
+
+const string SHUTDOWN_CMD = "SHUTDOWN";
+const string VERSION_CMD = "VERSION";
+const string STAT_CMD = "STAT";
+const string GETLOAD_CMD = "GETLOAD";
+
+/////////////////////////////////////////////////////////////////////////////
+// 
+///@internal
 CWorkerNodeControlThread::CWorkerNodeControlThread(
                                                 unsigned int port, 
                                                 CGridWorkerNode& worker_node)
@@ -47,6 +194,11 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(
     m_ThrdSrvAcceptTimeout.sec = 0;
     m_ThrdSrvAcceptTimeout.usec = 500;
     m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
+
+    m_Processors[VERSION_CMD] = new CGetVersionProcessor;
+    m_Processors[SHUTDOWN_CMD] = new CShutdownProcessor;
+    m_Processors[STAT_CMD] = new CGetStatisticsnProcessor;
+    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor;
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
@@ -61,11 +213,6 @@ CWorkerNodeControlThread::~CWorkerNodeControlThread()
         default: \
             return; \
         } 
-
-const string SHUTDOWN_CMD = "SHUTDOWN";
-const string VERSION_CMD = "VERSION";
-const string STAT_CMD = "STAT";
-const string GETLOAD_CMD = "GETLOAD";
 
 void CWorkerNodeControlThread::Process(SOCK sock)
 {
@@ -86,78 +233,24 @@ void CWorkerNodeControlThread::Process(SOCK sock)
         string request;
         io_st = socket.ReadLine(request);
         JS_CHECK_IO_STATUS(io_st);
+
+        string host = socket.GetPeerAddress();
         
-        CNcbiOstrstream os;
-        if (NStr::StartsWith(request, SHUTDOWN_CMD)) {
-            string host = socket.GetPeerAddress();
-            size_t pos = host.find_first_of(':');
-            if (pos != string::npos) {
-                host = host.substr(0, pos);
+        CNcbiOstrstream os;        
+        TProcessorCont::iterator it;
+        for (it = m_Processors.begin(); it != m_Processors.end(); ++it) {
+            if (NStr::StartsWith(request, it->first)) {
+                IRequestProcessor& processor = *(it->second);
+                if (processor.Authenticate(host, auth, queue, os, m_WorkerNode))
+                    processor.Process(request, os, m_WorkerNode);
+                break;
             }
-            if (m_WorkerNode.IsHostInAdminHostsList(host)) {
-                m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
-                os << "OK:";
-                LOG_POST("Shutdown request has been received from host: " << host);
-            } else {
-                os << "ERR:Shutdown access denied.";
-                LOG_POST(Warning << "Shutdown access denied: " << host);
-            }
-        } else if (NStr::StartsWith(request, VERSION_CMD)) {
-            os << "OK:" << m_WorkerNode.GetJobVersion() << WN_BUILD_DATE;
-        } else if (NStr::StartsWith(request, STAT_CMD)) {
-            os << "OK:";
-            os << m_WorkerNode.GetJobVersion() << WN_BUILD_DATE << endl;
-            os << "Started: "
-               << m_WorkerNode.GetStartTime().AsString() << endl;
-            if (m_WorkerNode.GetShutdownLevel() !=
-                CNetScheduleClient::eNoShutdown) {
-                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
-            }
-            os << "Queue name: " << m_WorkerNode.GetQueueName() << endl;
-            if (m_WorkerNode.GetMaxThreads() > 1)
-                os << "Maximum job threads: " 
-                   << m_WorkerNode.GetMaxThreads() << endl;
-
-            os << "Jobs Succeed: " 
-               << m_WorkerNode.GetJobsSucceedNumber() << endl
-               << "Jobs Failed: " 
-               << m_WorkerNode.GetJobsFailedNumber() << endl
-               << "Jobs Returned: " 
-               << m_WorkerNode.GetJobsReturnedNumber() << endl
-               << "Jobs Running: " 
-               << m_WorkerNode.GetJobsRunningNumber() << endl;
-
-            vector<CWorkerNodeJobContext::SJobStat> jobs;
-            CWorkerNodeJobContext::CollectStatictics(jobs);
-            CTime now(CTime::eCurrent);
-            ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
-                CTimeSpan ts = now - it->start_time.GetLocalTime();
-                os << it->job_key << " " << it->job_input
-                   << " -- running for " << ts.AsString("S") 
-                   << " seconds." << endl;
-            }
-        } else if (NStr::StartsWith(request.c_str(), GETLOAD_CMD)) {
-            if (auth != m_WorkerNode.GetJobVersion()) {
-                os <<"ERR:Wrong Program. Required: " 
-                   << m_WorkerNode.GetJobVersion();
-            } else {
-                string qname, connection_info;
-                NStr::SplitInTwo(queue, ";", qname, connection_info);
-                if (qname != m_WorkerNode.GetQueueName())
-                    os << "ERR:Wrong Queue. Required: " 
-                       << m_WorkerNode.GetQueueName();
-                else if (connection_info != m_WorkerNode.GetConnectionInfo())
-                    os << "ERR:Wrong Connection Info. Required: " 
-                       << m_WorkerNode.GetConnectionInfo();
-                else {
-                    int load = m_WorkerNode.GetMaxThreads() - 
-                        m_WorkerNode.GetJobsRunningNumber();
-                    os << "OK:" << load;
-                }
-            }
-        } else {
-            os << "ERR:Unknown command -- " << request;
         }
+        if (it == m_Processors.end()) {
+            CUnknownProcessor processor;
+            processor.Process(request, os, m_WorkerNode);
+        }
+            
         os << ends;
         try {
             socket.Write(os.str(), os.pcount());
@@ -181,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2005/05/27 12:55:11  didenko
+ * Added IRequestProcessor interface and Processor classes implementing this interface
+ *
  * Revision 6.9  2005/05/26 15:22:42  didenko
  * Cosmetics
  *

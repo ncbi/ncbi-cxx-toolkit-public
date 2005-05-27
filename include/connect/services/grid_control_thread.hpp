@@ -33,7 +33,10 @@
  *    NetSchedule Worker Node implementation
  */
 
+#include <corelib/ncbimisc.hpp>
 #include <connect/threaded_server.hpp>
+
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +47,23 @@ class CGridWorkerNode;
 class NCBI_XCONNECT_EXPORT CWorkerNodeControlThread : public CThreadedServer
 {
 public:
+
+    class IRequestProcessor 
+    {
+    public:
+        virtual ~IRequestProcessor() {}
+
+        virtual bool Authenticate(const string& host,
+                                  const string& auth, 
+                                  const string& queue,
+                                  CNcbiOstream& replay,
+                                  const CGridWorkerNode& node) { return true; }
+
+        virtual void Process(const string& request,
+                             CNcbiOstream& replay,
+                             CGridWorkerNode& node) = 0;
+    };
+
     CWorkerNodeControlThread(unsigned int port, 
                              CGridWorkerNode& worker_node);
 
@@ -62,6 +82,9 @@ private:
     CGridWorkerNode& m_WorkerNode;
     STimeout         m_ThrdSrvAcceptTimeout;
     volatile bool    m_ShutdownRequested;
+
+    typedef map<string, AutoPtr<IRequestProcessor> > TProcessorCont;
+    TProcessorCont m_Processors;
 };
 
 END_NCBI_SCOPE
@@ -69,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/27 12:55:11  didenko
+ * Added IRequestProcessor interface and Processor classes implementing this interface
+ *
  * Revision 1.1  2005/05/23 15:51:13  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp from
  * srv/connect/service
