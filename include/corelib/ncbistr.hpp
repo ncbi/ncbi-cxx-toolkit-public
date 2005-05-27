@@ -337,7 +337,7 @@ public:
 
     /// Integer to string conversion flags.
     enum EIntToStringFlags {
-        fSign   = (1 << 0),  ///< Prefix the output value with a sign (+ or –)
+        fSign   = (1 << 0),  ///< Prefix the output value with a sign (+ or -)
         fCommas = (1 << 1)   ///< Use commas as thousands separator
     };
     typedef int TIntToStringFlags;  ///< Binary OR of "EIntToStringFlags"
@@ -2694,6 +2694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2005/05/27 13:54:30  lavr
+ * Unprintable character from eSign's comment removed
+ *
  * Revision 1.86  2005/05/18 15:23:02  shomrat
  * Added starting position to IsBlank
  *
