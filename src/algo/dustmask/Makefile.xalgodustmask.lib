@@ -1,0 +1,11 @@
+# $Id$
+
+ASN_DEP = seq
+
+LIB = xalgodustmask
+
+SRC = symdust
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
