@@ -68,9 +68,9 @@ int CTest::Run(void)
 
     //CNcbiIfstream is("e:\\tar\\cmd.tar",
     //    IOS_BASE::in | IOS_BASE::binary);
-    CNcbiIfstream is("e:\\tar\\0021-9193-19940101_176.12-205570-1100884818.17906.tar",
+    CNcbiFstream fs("e:\\tar\\0021-9193-19940101_176.12-205570-1100884818.17906.tar",
         IOS_BASE::in | IOS_BASE::binary);
-    CTar tar(is);
+    CTar tar(fs);
 
     //CTar tar("/home/ivanov/tar/0021-9193-19940101_176.12-205570-1100884818.17906.tar");
     
@@ -97,6 +97,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/27 14:47:53  ucko
+ * Adjust for CTar's current API, which takes fstream rather than ifstream.
+ *
  * Revision 1.2  2005/01/31 15:54:14  ivanov
  * Fixed path to tar.hpp
  *
