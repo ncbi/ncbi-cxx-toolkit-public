@@ -214,7 +214,7 @@ public:
 
     /// Constructors
     CTar(const string& file_name);
-    CTar(CNcbiIostream& stream);
+    CTar(CNcbiIos& stream);
 
     /// Destructor
     virtual ~CTar();
@@ -398,7 +398,7 @@ protected:
     string         m_FileName;       ///< Tar archive file name.
     CNcbiFstream*  m_FileStream;     ///< File stream of the archive.
     EOpenMode      m_OpenMode;       ///< What was it open for.
-    CNcbiIostream* m_Stream;         ///< Archive stream (used for all I/O).
+    CNcbiIos*      m_Stream;         ///< Archive stream (used for all I/O).
     streamsize     m_StreamPos;      ///< Position within the archive
     size_t         m_BufferSize;     ///< Buffer size for IO operations.
     char*          m_Buffer;         ///< I/O buffer.
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/05/27 21:12:54  lavr
+ * Revert to use of std::ios as a main I/O stream (instead of std::iostream)
+ *
  * Revision 1.8  2005/05/27 13:55:44  lavr
  * Major revamp/redesign/fix/improvement/extension of this API
  *

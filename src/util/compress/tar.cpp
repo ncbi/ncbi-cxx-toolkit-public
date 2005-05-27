@@ -84,6 +84,7 @@ static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
     return retval;
 }
 
+
 /* special bits */
 #define TSUID     04000  /* set UID on execution    */
 #define TSGID     02000  /* set GID on execution    */
@@ -153,6 +154,7 @@ static mode_t s_TarToMode(unsigned long value)
 
 static unsigned long s_ModeToTar(mode_t mode)
 {
+    /* Foresee that the mode can be extracted on a different platform */
     unsigned long value = (
 #ifdef S_ISUID
                            (mode & S_ISUID  ? TSUID   : 0) |
@@ -178,8 +180,11 @@ static unsigned long s_ModeToTar(mode_t mode)
 #elif defined(S_IEXEC)
                            (mode & S_IEXEC  ? TUEXEC  : 0) |
 #endif
-#ifdef S_IRGRP
+#if   defined(S_IRGRP)
                            (mode & S_IRGRP  ? TGREAD  : 0) |
+#elif defined(S_IREAD)
+                           /* emulate read permission if file is readable */
+                           (mode & S_IREAD  ? TGREAD  : 0) |
 #endif
 #ifdef S_IWGRP
                            (mode & S_IWGRP  ? TGWRITE : 0) |
@@ -187,8 +192,11 @@ static unsigned long s_ModeToTar(mode_t mode)
 #ifdef S_IXGRP
                            (mode & S_IXGRP  ? TGEXEC  : 0) |
 #endif
-#ifdef S_IROTH
+#if   defined(S_IROTH)
                            (mode & S_IROTH  ? TOREAD  : 0) |
+#elif defined(S_IREAD)
+                           /* emulate read permission if file is readable */
+                           (mode & S_IREAD  ? TOREAD  : 0) |
 #endif
 #ifdef S_IWOTH
                            (mode & S_IWOTH  ? TOWRITE : 0) |
@@ -240,7 +248,7 @@ struct SHeader {        // byte offset
     char gname[32];     // 297
     char devmajor[8];   // 329
     char devminor[8];   // 337
-    char prefix[155];   // 345
+    char prefix[155];   // 345 (not valid with old GNU format)
 };                      // 500
 
 
@@ -420,9 +428,9 @@ static string s_UserGroupAsString(const CTarEntryInfo& info)
 
 ostream& operator << (ostream& os, const CTarEntryInfo& info)
 {
-    os << s_ModeAsString(info) << ' '
-       << setw(17) << s_UserGroupAsString(info) << ' '
-       << setw(10) << NStr::UInt8ToString(info.GetSize()) << ' '
+    os << s_ModeAsString(info)                                      << ' '
+       << setw(17) << s_UserGroupAsString(info)                     << ' '
+       << setw(10) << NStr::UInt8ToString(info.GetSize())           << ' '
        << CTime(info.GetModificationTime()).AsString("Y-M-D h:m:s") << ' '
        << info.GetName();
     if (info.GetType() == CTarEntryInfo::eLink) {
@@ -456,7 +464,7 @@ CTar::CTar(const string& file_name)
 }
 
 
-CTar::CTar(CNcbiIostream& stream)
+CTar::CTar(CNcbiIos& stream)
     : m_FileName(kEmptyStr),
       m_FileStream(0),
       m_OpenMode(eUndefined),
@@ -506,8 +514,7 @@ CTar::TEntries CTar::List(void)
 
 void CTar::x_Close(void)
 {
-    if (m_Stream  &&  m_Stream->good()  &&
-        m_OpenMode == eUpdate  &&  m_IsModified) {
+    if (m_Stream  &&  m_OpenMode == eUpdate  &&  m_IsModified) {
         size_t pad = m_BufferSize - (size_t)(m_StreamPos % m_BufferSize);
         if (pad  &&  pad != m_BufferSize) {
             // Assure proper (default) blocking factor
@@ -518,8 +525,9 @@ void CTar::x_Close(void)
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
     } else if (m_Stream  &&  m_IsModified) {
-        m_Stream->flush();
+        m_Stream->rdbuf()->PUBSYNC();
     }
+    m_OpenMode = eUndefined;
     m_IsModified = false;
     m_StreamPos = 0;
     m_Stream = 0;
@@ -533,7 +541,12 @@ void CTar::x_Open(EOpenMode mode)
     // before each archive operation by user's code outside of this class.
     if ( !m_FileStream ) {
         x_Close();
-        m_OpenMode = mode;
+        if (!m_Stream->good()  ||  !m_Stream->rdbuf()) {
+            NCBI_THROW(CTarException, eOpen,
+                       "Unable to open archive on a bad IO stream");
+        } else {
+            m_OpenMode = mode;
+        }
         return;
     }
 
@@ -545,7 +558,7 @@ void CTar::x_Open(EOpenMode mode)
             m_StreamPos = 0;
         }
         // Do nothing for eUpdate mode because the file put position
-        // is always at the end of file.
+        // is already at the end of file.
     } else {
         // Make sure that the file is properly closed first.
         x_Close();
@@ -576,12 +589,12 @@ void CTar::x_Open(EOpenMode mode)
         }
         m_OpenMode = mode;
     }
-    m_Stream = m_FileStream;
-
     // Check result
-    if ( !m_Stream->good() ) {
+    if ( !m_FileStream->good() ) {
         NCBI_THROW(CTarException, eOpen,
-                   "Unable to open archive '" + m_FileName + "'");
+                   "Unable to open archive '" + m_FileName + '\'');
+    } else {
+        m_Stream = m_FileStream;
     }
 }
 
@@ -614,21 +627,24 @@ void CTar::Extract(const string& dst_dir)
 }
 
 
+// Read always post-aligns to the block boundary
 size_t CTar::x_ReadArchive(char* buffer, size_t n)
 {
-    m_Stream->read(buffer, n);
-    streamsize nread = m_Stream->gcount();
-    if (m_Stream->good()) {
-        size_t gap = ALIGN_SIZE(n) - n;
+    _ASSERT(n != 0);
+    size_t nread = (size_t) m_Stream->rdbuf()->sgetn(buffer, n);
+    if (nread) {
+        m_StreamPos += nread;
+        size_t gap = ALIGN_SIZE(n) - nread;
         if (gap) {
-            m_Stream->ignore(gap);
-            m_StreamPos += m_Stream->gcount();
+            static char trash[kBlockSize];
+            m_StreamPos += m_Stream->rdbuf()->sgetn(trash, gap);
         }
     }
     return nread;
 }
 
 
+// Initial write pre-aligns to the block boundary first
 void CTar::x_WriteArchive(const char* buffer, size_t n)
 {
     if (n) {
@@ -636,15 +652,15 @@ void CTar::x_WriteArchive(const char* buffer, size_t n)
             static const char kPad[kBlockSize] = { 0 };
             size_t size = kBlockSize - (size_t)(m_StreamPos % kBlockSize);
             if (size  &&  size != kBlockSize) {
-                if (!m_Stream->write(kPad, size)) {
-                    NCBI_THROW(CTarException, eWrite, "Cannot pad archive");
+                if ((size_t) m_Stream->rdbuf()->sputn(kPad, size) != size) {
+                    NCBI_THROW(CTarException, eWrite, "Unable to pad archive");
                 }
                 m_StreamPos += size;
             }
             m_IsModified = true;
         }
-        if (!m_Stream->write(buffer, n)) {
-            NCBI_THROW(CTarException, eWrite, "Cannot write to archive");
+        if ((size_t) m_Stream->rdbuf()->sputn(buffer, n) != n) {
+            NCBI_THROW(CTarException, eWrite, "Archive write error");
         }
         m_StreamPos += n;
     }
@@ -700,7 +716,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     if (memcmp(h->magic, "ustar", 6) == 0) {
         ustar = true;
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
-        // NB: here, magic extends into the version field that follows.
+        // NB: here, the magic extends into the adjacent version field.
         ustar = oldgnu = true;
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) != 0) {
         NCBI_THROW(CTarException, eUnsupportedEntryType,
@@ -750,7 +766,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     }
     info.m_Stat.st_size = value;
 
-    // Modification time.
+    // Modification time
     if (!s_OctalToNum(value, h->mtime, sizeof(h->mtime))) {
         NCBI_THROW(CTarException, eUnsupportedEntryType,
                    "Bad modification time format");
@@ -868,7 +884,8 @@ void CTar::x_WriteEntryInfo(const string&         name,
     }
 
     // Size (not '\0'-terminated)
-    if (!s_NumToOctal((unsigned long)(type == CTarEntryInfo::eFile ? info.GetSize() : 0),
+    if (!s_NumToOctal((unsigned long)
+                      (type == CTarEntryInfo::eFile ? info.GetSize() : 0),
                       h->size, sizeof(h->size))) {
         NCBI_THROW(CTarException, eMemory, "Unable to store file size");
     }
@@ -1116,13 +1133,21 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool process,
         // Skip it
         streamsize real_size = (streamsize) ALIGN_SIZE(size);
         if (m_FileStream) {
-            m_FileStream->seekg(real_size, IOS_BASE::cur);
+            if (!m_FileStream->seekg(real_size, IOS_BASE::cur)) {
+                NCBI_THROW(CTarException, eRead, "Archive read error");
+            }
         } else {
-            m_Stream->ignore(real_size);
+            while (real_size) {
+                size_t size = real_size > (streamsize) m_BufferSize
+                    ? m_BufferSize : (size_t) real_size;
+                size = (size_t) m_Stream->rdbuf()->sgetn(m_Buffer, size);
+                if (!size) {
+                    NCBI_THROW(CTarException, eRead, "Archive read error");
+                }
+                real_size -= size;
+            }
         }
-        if (m_Stream->good()) {
-            m_StreamPos += real_size;
-        }
+        m_StreamPos += real_size;
     }
 }
 
@@ -1197,7 +1222,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
                            "Unable to create file '" + dst->GetPath() + '\'');
             }
 
-            while (m_Stream->good()  &&  size) {
+            while (size) {
                 // Read file from TAR (note: aligned read inside)
                 streamsize nread =
                     x_ReadArchive(m_Buffer,
@@ -1246,8 +1271,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
         {{
             CSymLink symlink(dst->GetPath());
             if (!symlink.Create(info.GetLinkName())) {
-                ERR_POST(Error << "Cannot create symlink at '" + dst->GetPath()
-                         + "' to point to '" + info.GetLinkName() + '\'');
+                ERR_POST(Error << "Cannot create symlink '" + dst->GetPath()
+                         + "' -> '" + info.GetLinkName() + '\'');
             }
             _ASSERT(info.GetSize() == 0);
         }}
@@ -1260,8 +1285,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
         break;
 
     default:
-        ERR_POST(Warning << "Skipping unsupported entry type " +
-                 NStr::IntToString(int(type)) + " for '" +
+        ERR_POST(Warning << "Skipping unsupported type " +
+                 NStr::IntToString(int(type)) + " entry '" +
                  info.GetName() + '\'');
         break;
     }
@@ -1291,12 +1316,12 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         }
     }
 
-    // Owner
+    // Owner.
     // This must precede changing permissions because on some
     // systems chown() clears the set[ug]id bits for non-superusers
     // thus resulting in incorrect permissions.
     if (m_Flags & fPreserveOwner) {
-        // 2-tier trial:  first using the names, then using IDs.
+        // 2-tier trial:  first using the names, then using numeric IDs.
         // Note that it is often impossible to restore the original owner
         // without super-user rights so no error checking is done here.
         if (!dst->SetOwner(info.GetUserName(),
@@ -1365,15 +1390,17 @@ string CTar::x_ToArchiveName(const string& path) const
     }
 
     // Remove leading and trailing slashes
-    while (pos < retval.length()  &&  retval[pos] == '/')
+    while (pos < retval.length()  &&  retval[pos] == '/') {
         ++pos;
+    }
     if (pos) {
         retval.erase(0, pos);
     }
     if (retval.length()) {
         pos = retval.length() - 1;
-        while (pos >= 0  &&  retval[pos] == '/')
+        while (pos >= 0  &&  retval[pos] == '/') {
             --pos;
+        }
         retval.erase(pos + 1);
     }
 
@@ -1520,9 +1547,9 @@ void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
         file_size -= nread;
     }
 
-    _ASSERT(m_Stream->good());
     // Write zeros to get the written size be multiple of kBlockSize
-    streamsize zero_size = (streamsize)(ALIGN_SIZE(info.GetSize()) - info.GetSize());
+    streamsize zero_size = ((streamsize)
+                            (ALIGN_SIZE(info.GetSize()) - info.GetSize()));
     memset(m_Buffer, 0, zero_size);
     x_WriteArchive(m_Buffer, zero_size);
 }
@@ -1534,6 +1561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/05/27 21:12:55  lavr
+ * Revert to use of std::ios as a main I/O stream (instead of std::iostream)
+ *
  * Revision 1.15  2005/05/27 14:14:27  lavr
  * Fix MS-Windows compilation problems and heed warnings
  *
@@ -1553,7 +1583,7 @@ END_NCBI_SCOPE
  * Added support for (re)storing permissions/owner/times
  *
  * Revision 1.9  2005/02/03 14:01:21  rsmith
- * must initialize  m_StreamPos since streampos may not have a default cnstr.
+ * must initialize m_StreamPos since streampos may not have a default cnstr.
  *
  * Revision 1.8  2005/01/31 20:53:09  ucko
  * Use string::erase() rather than string::clear(), which GCC 2.95
