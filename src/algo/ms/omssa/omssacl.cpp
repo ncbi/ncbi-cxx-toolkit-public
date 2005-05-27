@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 2));
+    SetVersion(CVersionInfo(1, 0, 3));
 }
 
 
@@ -268,6 +268,10 @@ void COMSSA::Init()
                   "fraction of peaks below precursor used to determine if spectrum is charge 1",
                   CArgDescriptions::eDouble, 
                   "0.95");
+    argDesc->AddDefaultKey("zc", "calcplusone", 
+                  "should charge plus one be determined algorithmically? (1=yes)",
+                  CArgDescriptions::eInteger, 
+                  NStr::IntToString(eMSCalcPlusOne_calc));
     argDesc->AddDefaultKey("pc", "pseudocount", 
                   "minimum number of precursors that match a spectrum",
                   CArgDescriptions::eInteger, 
@@ -473,6 +477,7 @@ int COMSSA::Run()
 	    InsertList(args["x"].AsString(), Request->SetSettings().SetTaxids(), "unknown tax id");
 	}
 
+	Request->SetSettings().SetChargehandling().SetCalcplusone(args["zc"].AsInteger());
 	Request->SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
 	Request->SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
 	Request->SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
@@ -584,6 +589,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.36  2005/05/27 20:23:38  lewisg
+  top-down charge handling
+
   Revision 1.35  2005/05/19 16:59:17  lewisg
   add top-down searching, fix variable mod bugs
 

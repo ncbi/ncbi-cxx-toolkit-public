@@ -545,6 +545,11 @@ void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
  */
 void CSearch::InitLadders(void)
 {
+    BLadder.clear();
+    YLadder.clear();
+    B2Ladder.clear();
+    Y2Ladder.clear();
+
     int MaxLadderSize = MyRequest->GetSettings().GetMaxproductions();
     int i;
     if (MaxLadderSize == 0) MaxLadderSize = kMSLadderMax;
@@ -1102,7 +1107,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
 	MyResponse->SetHitsets().push_back(HitSet);
 		
 	if(Peaks->GetError() == eMSHitError_notenuffpeaks) {
-	    ERR_POST(Info << "empty set");
+	    _TRACE("empty set");
 	    HitSet->SetError(eMSHitError_notenuffpeaks);
 	    continue;
 	}
@@ -1479,6 +1484,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.50  2005/05/27 20:23:38  lewisg
+top-down charge handling
+
 Revision 1.49  2005/05/23 19:07:34  lewisg
 improve perf of ladder calculation
 

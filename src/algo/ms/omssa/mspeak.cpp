@@ -535,37 +535,45 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
 	MaxCharge = min(ChargeHandle.GetMaxcharge(), MSMAXCHARGE);
     PlusOne = ChargeHandle.GetPlusone();
 
-    if(MinCharge <= 1 && IsPlus1(PercentBelow())) {
-		ComputedCharge = eCharge1;
-		Charges[0] = 1;
-		NumCharges = 1;
-    }
-    else {
+    if (ChargeHandle.GetCalcplusone() == eMSCalcPlusOne_calc) {
+        if (MinCharge <= 1 && IsPlus1(PercentBelow())) {
+            ComputedCharge = eCharge1;
+            Charges[0] = 1;
+            NumCharges = 1;
+        } else {
 
 #if 0
-    // ratio search.  doesn't work that well.
-	NumCharges = 1;
-	if(RangeRatio(0.5, 1.0, 1.5) > 1.25 ) {
-	    Charges[0] = 2;
-	    ComputedCharge = eCharge2;
-	}
-	else if(RangeRatio(1.0, 1.5, 2.0) > 1.25) {
-	    Charges[0] = 3;
-	    ComputedCharge = eCharge3;
-	}
-	else {  // assume +4
-	    Charges[0] = 4;
-	    ComputedCharge = eCharge4;
-	}
+            // ratio search.  doesn't work that well.
+            NumCharges = 1;
+            if (RangeRatio(0.5, 1.0, 1.5) > 1.25 ) {
+                Charges[0] = 2;
+                ComputedCharge = eCharge2;
+            } else if (RangeRatio(1.0, 1.5, 2.0) > 1.25) {
+                Charges[0] = 3;
+                ComputedCharge = eCharge3;
+            } else {  // assume +4
+                Charges[0] = 4;
+                ComputedCharge = eCharge4;
+            }
 #endif
 
-		ComputedCharge = eChargeNot1; 
-		int i;
-		NumCharges = MaxCharge - MinCharge + 1;
-		for(i = 0; i < NumCharges; i++) {
-			Charges[i] = i + MinCharge;
-		}
-	}
+            ComputedCharge = eChargeNot1; 
+            int i;
+            NumCharges = MaxCharge - MinCharge + 1;
+            for (i = 0; i < NumCharges; i++) {
+                Charges[i] = i + MinCharge;
+            }
+        }
+    }
+    // don't compute charges
+    else {
+        ComputedCharge = eChargeUnknown;
+        int i;
+        NumCharges = MaxCharge - MinCharge + 1;
+        for (i = 0; i < NumCharges; i++) {
+            Charges[i] = i + MinCharge;
+        }
+    }
 }
 
 // initializes arrays used to track hits
