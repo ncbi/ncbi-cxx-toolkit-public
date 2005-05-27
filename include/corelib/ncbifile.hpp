@@ -360,7 +360,7 @@ public:
         /// Default flags
         fRF_Default     = 0
     };
-    typedef int TRenameFlags;   ///< Binary OR of "ERenameFlags"
+    typedef unsigned int TRenameFlags;   ///< Binary OR of "ERenameFlags"
 
     /// Rename entry.
     ///
@@ -427,8 +427,11 @@ public:
     enum EDirRemoveMode {
         eOnlyEmpty,     ///< Remove only empty directory
         eNonRecursive,  ///< Remove all files in the directory, but do not
-                        ///< remove subdirectories and files in them
-        eRecursive      ///< Remove all files and subdirectories
+                        ///< remove non-empty subdirectories and files in them
+                        ///< (it removes empty child directories though)
+        eRecursive,     ///< Remove all files and subdirectories
+        eTopDirOnly     ///< Same as eNonRecursive but preserves
+                        ///< empty child directories
     };
 
     /// Remove a directory entry.
@@ -486,10 +489,10 @@ public:
     /// @param follow_links
     ///   Whether to follow symlinks (shortcuts, aliases).
     /// @return
-    ///   Return 0 if the file-status information is obtained.
-    ///   A return value of -1 indicates an error, in which case errno is set.
-    int Stat(struct SStat *buffer,
-             EFollowLinks follow_links = eIgnoreLinks) const;
+    ///   Return TRUE if the file-status information is obtained,
+    ///   FALSE otherwise (errno may be set).
+    bool Stat(struct SStat *buffer,
+              EFollowLinks follow_links = eIgnoreLinks) const;
 
     /// Get a type of a directory entry.
     ///
@@ -2296,6 +2299,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/05/27 13:36:19  lavr
+ * CDirEntry::Stat() to return bool (not int)
+ * EDirRemoveMode::eTopDirOnly added
+ *
  * Revision 1.58  2005/05/26 20:14:13  lavr
  * Brush inline documenting comments;
  * GetPath() and GetBackupSuffix() to return const string&
