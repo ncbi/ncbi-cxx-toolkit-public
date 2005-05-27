@@ -143,14 +143,16 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const
 }
 
 
-CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os, EWriteMethod wmethod) const
+CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
+                                EWriteMethod wmethod,
+                                EUrlEncode   flag) const
 {
     if (wmethod == eHTTPResponse) {
         os << "Set-Cookie: ";
 
-        os << URL_EncodeString(m_Name).c_str() << '=';
+        os << URL_EncodeString(m_Name, flag).c_str() << '=';
         if ( !m_Value.empty() )
-            os << URL_EncodeString(m_Value).c_str();
+            os << URL_EncodeString(m_Value, flag).c_str();
 
         if ( !m_Domain.empty() )
             os << "; domain="  << m_Domain.c_str();
@@ -165,9 +167,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os, EWriteMethod wmethod) const
         os << HTTP_EOL;
 
     } else {
-        os << URL_EncodeString(m_Name).c_str() << '=';
+        os << URL_EncodeString(m_Name, flag).c_str() << '=';
         if ( !m_Value.empty() )
-            os << URL_EncodeString(m_Value).c_str();
+            os << URL_EncodeString(m_Value, flag).c_str();
     }
     return os;
 }
@@ -353,14 +355,16 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         if (pos_mid == NPOS) {
             string name = str.substr(pos_beg);
             if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
-                Add(URL_DecodeString(name), kEmptyStr, on_bad_cookie);
+                Add(URL_DecodeString(name, m_EncodeFlag),
+                    kEmptyStr, on_bad_cookie);
             }
             return; // done
         }
         if (str[pos_mid] != '=') {
             string name = str.substr(pos_beg, pos_mid - pos_beg);
             if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
-                Add(URL_DecodeString(name), kEmptyStr, on_bad_cookie);
+                Add(URL_DecodeString(name, m_EncodeFlag),
+                    kEmptyStr, on_bad_cookie);
             }
             if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
                 return; // done
@@ -382,7 +386,9 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         string val = str.substr(pos_mid + 1, pos_end - pos_mid);
         if ( x_CheckField(name, " ,;=", on_bad_cookie)  &&
             x_CheckField(val, " ;", on_bad_cookie)) {
-            Add(URL_DecodeString(name), URL_DecodeString(val), on_bad_cookie);
+            Add(URL_DecodeString(name, m_EncodeFlag),
+                URL_DecodeString(val, m_EncodeFlag),
+                on_bad_cookie);
         }
     }
     // ...never reaches here...
@@ -395,7 +401,7 @@ CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os,
     ITERATE (TSet, cookie, m_Cookies) {
         if (wmethod == CCgiCookie::eHTTPRequest && cookie != m_Cookies.begin())
             os << "; ";
-        (*cookie)->Write(os, wmethod);
+        (*cookie)->Write(os, wmethod, m_EncodeFlag);
         //        os << **cookie;
     }
     return os;
@@ -665,7 +671,7 @@ static int s_HexChar(char ch) THROWS_NONE
 
 // URL-decode string "str" into itself
 // Return 0 on success;  otherwise, return 1-based error position
-static SIZE_TYPE s_URL_Decode(string& str)
+static SIZE_TYPE s_URL_Decode(string& str, bool percent_only = false)
 {
     SIZE_TYPE len = str.length();
     if ( !len )
@@ -688,8 +694,10 @@ static SIZE_TYPE s_URL_Decode(string& str)
             break;
         }
         case '+': {
-            str[p] = ' ';
-            pos++;
+            if ( !percent_only ) {
+                str[p] = ' ';
+                pos++;
+            }
             break;
         }
         default:
@@ -1348,10 +1356,15 @@ void CCgiRequest::Deserialize(CNcbiIstream& is)
         SetInputStream(NULL, false, -1);
 }
 
-extern string URL_DecodeString(const string& str)
+extern string URL_DecodeString(const string& str,
+                               EUrlEncode    encode_flag)
 {
+    if (encode_flag == eUrlEncode_None) {
+        return str;
+    }
     string    x_str   = str;
-    SIZE_TYPE err_pos = s_URL_Decode(x_str);
+    SIZE_TYPE err_pos =
+        s_URL_Decode(x_str, encode_flag == eUrlEncode_PercentOnly);
     if (err_pos != 0) {
         NCBI_THROW2(CCgiParseException, eFormat,
                     "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
@@ -1361,7 +1374,8 @@ extern string URL_DecodeString(const string& str)
 }
 
 
-extern string URL_EncodeString(const string& str, EUrlEncode encode_mark_chars)
+extern string URL_EncodeString(const string& str,
+                               EUrlEncode encode_flag)
 {
     static const char s_Encode[256][4] = {
         "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
@@ -1433,15 +1447,63 @@ extern string URL_EncodeString(const string& str, EUrlEncode encode_mark_chars)
         "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
     };
 
+    static const char s_EncodePercentOnly[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    if (encode_flag == eUrlEncode_None) {
+        return str;
+    }
+
     string url_str;
 
     SIZE_TYPE len = str.length();
     if ( !len )
         return url_str;
 
-    const char (*encode_table)[4] =
-        encode_mark_chars == eUrlEncode_SkipMarkChars
-        ? s_Encode : s_EncodeMarkChars;
+    const char (*encode_table)[4];
+    switch (encode_flag) {
+    case eUrlEncode_SkipMarkChars:
+        encode_table = s_Encode;
+        break;
+    case eUrlEncode_ProcessMarkChars:
+        encode_table = s_EncodeMarkChars;
+        break;
+    case eUrlEncode_PercentOnly:
+        encode_table = s_EncodePercentOnly;
+        break;
+    }
 
     SIZE_TYPE pos;
     SIZE_TYPE url_len = len;
@@ -1478,6 +1540,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.92  2005/05/27 16:36:16  grichenk
+* Added flags to control URL encode/decode in cookies.
+*
 * Revision 1.91  2005/05/27 12:48:31  didenko
 * Deserialize method will set an input stream if that stream is at the end
 * or not in the good state.

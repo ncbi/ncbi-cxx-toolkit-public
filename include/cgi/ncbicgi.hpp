@@ -64,6 +64,18 @@ class CTime;
 /// The CGI send-cookie class
 ///
 
+
+/// URL encode flags
+enum EUrlEncode {
+    eUrlEncode_None,             ///< Do not encode/decode string
+    eUrlEncode_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.
+    eUrlEncode_ProcessMarkChars, ///< Convert all non-alphanum chars,
+                                 ///< spaces are converted to '+'
+    eUrlEncode_PercentOnly       ///< Convert all non-alphanum chars including
+                                 ///< space and '%' to %## format
+};
+
+
 class NCBI_XCGI_EXPORT CCgiCookie
 {
 public:
@@ -91,7 +103,8 @@ public:
     ///   secure\n"
     /// Here, only "name=value" is mandatory, and other parts are optional
     CNcbiOstream& Write(CNcbiOstream& os, 
-                        EWriteMethod wmethod = eHTTPResponse) const;
+                        EWriteMethod wmethod = eHTTPResponse,
+                        EUrlEncode   flag = eUrlEncode_SkipMarkChars) const;
 
     /// Reset everything but name to default state like CCgiCookie(m_Name, "")
     void Reset(void);
@@ -191,9 +204,12 @@ public:
 
     /// Empty set of cookies
     CCgiCookies(void);
+    /// Use the specified method of string encoding
+    CCgiCookies(EUrlEncode encode_flag);
     /// Format of the string:  "name1=value1; name2=value2; ..."
     CCgiCookies(const string& str,
-                EOnBadCookie  on_bad_cookie = eOnBadCookie_SkipAndError);
+                EOnBadCookie  on_bad_cookie = eOnBadCookie_SkipAndError,
+                EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
     /// Destructor
     ~CCgiCookies(void);
 
@@ -270,7 +286,8 @@ private:
                              const char*   banned_symbols,
                              EOnBadCookie  on_bad_cookie);
 
-    TSet m_Cookies;
+    EUrlEncode m_EncodeFlag;
+    TSet       m_Cookies;
 
     /// prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&);
@@ -704,26 +721,20 @@ private:
 };  // CCgiRequest
 
 
-
-/// URL encode flags
-enum EUrlEncode {
-    eUrlEncode_SkipMarkChars,
-    eUrlEncode_ProcessMarkChars
-};
-
 /// Decode the URL-encoded string "str";  return the result of decoding
 /// If "str" format is invalid then throw CParseException
 NCBI_XCGI_EXPORT
-extern string URL_DecodeString(const string& str);
+extern string
+URL_DecodeString(const string& str,
+                 EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
 
 
 /// URL-encode a string "str" to the "x-www-form-urlencoded" form;
 /// return the result of encoding. If 
 NCBI_XCGI_EXPORT
-extern string URL_EncodeString
-    (const      string& str,
-     EUrlEncode encode_mark_chars = eUrlEncode_SkipMarkChars
-     );
+extern string
+URL_EncodeString(const      string& str,
+                 EUrlEncode encode_flag = eUrlEncode_SkipMarkChars);
 
 
 /* @} */
@@ -787,13 +798,24 @@ inline bool CCgiCookie::GetSecure(void) const {
 //
 
 inline CCgiCookies::CCgiCookies(void)
-    : m_Cookies()
+    : m_EncodeFlag(eUrlEncode_SkipMarkChars),
+      m_Cookies()
 {
     return;
 }
 
-inline CCgiCookies::CCgiCookies(const string& str, EOnBadCookie on_bad_cookie)
-    : m_Cookies()
+inline CCgiCookies::CCgiCookies(EUrlEncode encode_flag)
+    : m_EncodeFlag(encode_flag),
+      m_Cookies()
+{
+    return;
+}
+
+inline CCgiCookies::CCgiCookies(const string& str,
+                                EOnBadCookie on_bad_cookie,
+                                EUrlEncode   encode_flag)
+    : m_EncodeFlag(encode_flag),
+      m_Cookies()
 {
     Add(str, on_bad_cookie);
 }
@@ -857,6 +879,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.75  2005/05/27 16:36:16  grichenk
+* Added flags to control URL encode/decode in cookies.
+*
 * Revision 1.74  2005/05/23 15:17:49  didenko
 * Added Serialize/Deserialize methods to CCgiRequest class
 *
