@@ -64,12 +64,8 @@
 #    include <ncbi_mslextras.h>
 #  endif
 
-#  if !defined(HAVE_LCHOWN)
-#    define lchown chown
-#  endif
-
 #else
-#  error "File API defined only for MS Windows and UNIX platforms"
+#  error "File API defined for MS Windows and UNIX platforms only"
 
 #endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX */
 
@@ -117,16 +113,47 @@ static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 // Static functions
 //
 
-// Construct real entry mode from parts. Parameters can not have "fDefault" 
-// value.
-static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode, 
-                                        CDirEntry::TMode group_mode, 
-                                        CDirEntry::TMode other_mode)
+// Construct real entry mode from parts.
+// Parameters must not have "fDefault" value.
+static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode usr_mode, 
+                                        CDirEntry::TMode grp_mode, 
+                                        CDirEntry::TMode oth_mode)
 {
-    CDirEntry::TMode mode = 0;
-    mode |= (user_mode  << 6);
-    mode |= (group_mode << 3);
-    mode |= other_mode;
+    CDirEntry::TMode mode = (
+#if   defined(S_IRUSR)
+                             (usr_mode & CDirEntry::fRead    ? S_IRUSR    : 0)|
+#elif defined(S_IREAD)
+                             (usr_mode & CDirEntry::fRead    ? S_IREAD    : 0)|
+#endif
+#if   defined(S_IWUSR)
+                             (usr_mode & CDirEntry::fWrite   ? S_IWUSR    : 0)|
+#elif defined(S_IWRITE)
+                             (usr_mode & CDirEntry::fWrite   ? S_IWRITE ? : 0)|
+#endif
+#if   defined(S_IXUSR)
+                             (usr_mode & CDirEntry::fExecute ? S_IXUSR    : 0)|
+#elif defined(S_IEXEC)
+                             (usr_mode & CDirEntry::fExecute ? S_IEXEC    : 0)|
+#endif
+#ifdef S_IRGRP
+                             (grp_mode & CDirEntry::fRead    ? S_IRGRP    : 0)|
+#endif
+#ifdef S_IWGRP
+                             (grp_mode & CDirEntry::fWrite   ? S_IWGRP    : 0)|
+#endif
+#ifdef S_IXGRP
+                             (grp_mode & CDirEntry::fExecute ? S_IXGRP    : 0)|
+#endif
+#ifdef S_IROTH
+                             (oth_mode & CDirEntry::fRead    ? S_IROTH    : 0)|
+#endif
+#ifdef S_IWOTH
+                             (oth_mode & CDirEntry::fWrite   ? S_IWOTH    : 0)|
+#endif
+#ifdef S_IXOTH
+                             (oth_mode & CDirEntry::fExecute ? S_IXOTH    : 0)|
+#endif
+                             0);
     return mode;
 }
 
@@ -701,26 +728,59 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 }
 
 
-bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
+bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode, TMode* oth_mode)
     const
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
     }
-    // Other
-    if (other_mode) {
-        *other_mode = st.st_mode & 0007;
+    if (usr_mode) {
+        *usr_mode = (
+#if   defined(S_IRUSR)
+                     (st.st_mode & S_IRUSR  ? fRead    : 0) |
+#elif defined(S_IREAD)
+                     (st.st_mode & S_IREAD  ? fRead    : 0) |
+#endif
+#if   defined(S_IWUSR)
+                     (st.st_mode & S_IWUSR  ? fWrite   : 0) |
+#elif defined(S_IWRITE)
+                     (st.st_mode & S_IWRITE ? fWrite   : 0) |
+#endif
+#if   defined(S_IXUSR)
+                     (st.st_mode & S_IXUSR  ? fExecute : 0) |
+#elif defined(S_IEXEC)
+                     (st.st_mode & S_IEXEC  ? fExecute : 0) |
+#endif
+                     0);
     }
-    st.st_mode >>= 3;
     // Group
-    if (group_mode) {
-        *group_mode = st.st_mode & 0007;
+    if (grp_mode) {
+        *grp_mode = (
+#ifdef S_IRGRP
+                     (st.st_mode & S_IRGRP  ? fRead    : 0) |
+#endif
+#ifdef S_IWGRP
+                     (st.st_mode & S_IWGRP  ? fWrite   : 0) |
+#endif
+#ifdef S_IXGRP
+                     (st.st_mode & S_IXGRP  ? fExecute : 0) |
+#endif
+                     0);
     }
-    st.st_mode >>= 3;
-    // User
-    if (user_mode) {
-        *user_mode = st.st_mode & 0007;
+    // Others
+    if (oth_mode) {
+        *oth_mode = (
+#ifdef S_IROTH
+                     (st.st_mode & S_IROTH  ? fRead    : 0) |
+#endif
+#ifdef S_IWOTH
+                     (st.st_mode & S_IWOTH  ? fWrite   : 0) |
+#endif
+#ifdef S_IXOTH
+                     (st.st_mode & S_IXOTH  ? fExecute : 0) |
+#endif
+                     0);
     }
     return true;
 }
@@ -921,7 +981,7 @@ bool CDirEntry::GetTime(CTime* modification,
 #elif defined(NCBI_OS_UNIX)
 
     struct SStat st;
-    if ( Stat(&st) != 0 ) {
+    if ( !Stat(&st) ) {
         return false;
     }
 
@@ -1113,13 +1173,13 @@ bool CDirEntry::SetTimeT(time_t* modification,
 }
 
 
-int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
+bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 {
     if ( !buffer ) {
         errno = EFAULT;
-        return -1;
+        return false;
     }
-    
+
     int errcode;
 #if defined(NCBI_OS_MSWIN)
     errcode = stat(GetPath().c_str(), &buffer->orig);
@@ -1131,7 +1191,7 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     }
 #endif
     if (errcode != 0) {
-        return errcode;
+        return false;
     }
    
     // Assign additional fields
@@ -1139,11 +1199,7 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     buffer->ctime_nsec = 0;
     buffer->atime_nsec = 0;
     
-#if defined(NCBI_OS_MSWIN)
-    return 0;
-
-#elif defined(NCBI_OS_UNIX)
-
+#ifdef NCBI_OS_UNIX
     // UNIX:
     // Some systems have additional fields in the stat structure to store
     // nanoseconds. If you know one more platform which have nanoseconds
@@ -1205,9 +1261,9 @@ int CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 #    endif
 #  endif
     
-    return 0;
-    
-#endif  // NCBI_OS_*
+#endif  // NCBI_OS_UNIX
+
+    return true;
 }
 
 
@@ -1336,7 +1392,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         // Overwrite destination entry
         if ( F_ISSET(flags, fRF_Overwrite) ) {
             dst.Remove();
-        } 
+        }
     }
 
     // On some platform rename() fails if destination entry exists, 
@@ -1554,15 +1610,19 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     
     if ( owner ) {
         struct passwd *pw = getpwuid(st.st_uid);
-        if ( !pw )
-	    return false;
-        *owner = pw->pw_name;
+        if (pw) {
+            (*owner).assign(pw->pw_name);
+        } else {
+            NStr::UIntToString(*owner, st.st_uid);
+        }
     }
     if ( group ) {
         struct group *gr = getgrgid(st.st_gid);
-        if ( !gr )
-	    return false;
-        *group = gr->gr_name;
+        if ( gr ) {
+            (*group).assign(gr->gr_name);
+        } else {
+            NStr::UIntToString(*group, st.st_gid);
+        }
     }
     return true;
 #endif
@@ -1750,7 +1810,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 #if defined(NCBI_OS_UNIX)
 
     CDirEntry::SStat st;
-    if ( CDirEntry(from).Stat(&st) != 0 ) {
+    if ( !CDirEntry(from).Stat(&st) ) {
         return false;
     }
 
@@ -1795,9 +1855,9 @@ static bool s_CopyAttrs(const char* from, const char* to,
             // We cannot change permissions for sym.links.
             return true;
         } else {
-            // Changing the ownership probably can fails, unless we're super-user.
-            // The uid/gid bits can be cleared by OS. If chown() fails,
-            // lose uid/gid bits.
+            // Changing the ownership will probably fail, unless we're root.
+            // The setuid/gid bits can be cleared by OS.  If chown() fails,
+            // strip the setuid/gid bits.
             if ( chown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if ( errno != EPERM ) {
                     return false;
@@ -1917,25 +1977,24 @@ bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 
     if ( !buf_size ) {
         os << is.rdbuf();
-        return !os.good() ? true : false;
+        return os.good() ? true : false;
     }
 
-    char* buf = new char[buf_size];
+    auto_ptr<char> buf_ptr(new char[buf_size]);
+    char* buf = buf_ptr.get();
     bool failed = false;
  
     streamsize nread;
     do {
-        nread = is.rdbuf()->sgetn(buf, buf_size);
+        is.read(buf, buf_size);
+        nread = is.gcount();
         if ( nread ) {
-            streamsize nwrite = os.rdbuf()->sputn(buf, nread);
-            if ( nwrite != nread ) {
+            if (!os.write(buf, nread)) {
                 failed = true;
                 break;
             }
         }
-    } while ( nread );
-
-    delete[] buf;
+    } while (is  &&  nread);
 
     return !failed;
 }
@@ -2657,9 +2716,8 @@ bool CDir::Remove(EDirRemoveMode mode) const
             }
         } else if ( item.IsDir(eIgnoreLinks) ) {
             // Empty subdirectory is essentially a file
-            if ( !item.Remove(eOnlyEmpty) ) {
-                return false;
-            }
+            item.Remove(eOnlyEmpty);
+            continue;
         } else if ( !item.Remove() ) {
             return false;
         }
@@ -3355,6 +3413,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2005/05/27 13:22:03  lavr
+ * Fix s_CopyFile() [UNIX version]
+ * Fix CDir::Remove(eNonRecursive) for empty child dirs
+ *
  * Revision 1.99  2005/05/26 20:23:07  lavr
  * Scattered bug and performance fixes
  *
