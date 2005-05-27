@@ -1342,7 +1342,10 @@ void CCgiRequest::Deserialize(CNcbiIstream& is)
     ReadEnvironment(is,*m_OwnEnv);
     ReadContainer(is, GetIndexes());
     m_Env = m_OwnEnv.get();
-    SetInputStream(&is, false, -1);
+    if (!is.eof() && is.good()) 
+        SetInputStream(&is, false, -1);
+    else
+        SetInputStream(NULL, false, -1);
 }
 
 extern string URL_DecodeString(const string& str)
@@ -1475,6 +1478,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.91  2005/05/27 12:48:31  didenko
+* Deserialize method will set an input stream if that stream is at the end
+* or not in the good state.
+*
 * Revision 1.90  2005/05/23 15:03:09  didenko
 * Added Serialize/Deserialize methods to CCgiRequest class
 *
