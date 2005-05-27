@@ -96,39 +96,39 @@ public:
 class COStreamHelper
 {
 public:
-    COStreamHelper(CNcbiOstream& os) : m_Ostream(os), m_flushed(true) {}
+    COStreamHelper(CNcbiOstream& os) : m_Ostream(os), m_str(NULL) {}
     ~COStreamHelper() {  try { flush(); } catch (...) {}   }
 
-    operator CNcbiOstream&() { m_flushed = false; return m_str; }
+    operator CNcbiOstream&() { return x_GetStrm(); }
 
     template<typename T>
     COStreamHelper& operator<<(const T& t)
     {
-        m_flushed = false;
-        m_str << t;
+        x_GetStrm() << t;
         return *this;
     }
 
     void flush() 
     {
-        if (m_flushed)
-            return;
-        m_flushed = true;
+        if (!m_str)  return;
         try {
-            m_str << ends;
-            m_Ostream << m_str.pcount() << ' ' << m_str.str();
-        } catch (...) {
-            m_str.freeze(false);
-            throw;
-        }
-        m_str.freeze(false);
-        m_str.flush();
+            (*m_str) << ends;
+            m_Ostream << m_str->pcount() << ' ' << m_str->str();
+        } catch (...) { x_Clear(); throw;  }
+        x_Clear();
     }
 
 private:
-    CNcbiOstrstream m_str;
+    CNcbiOstream& x_GetStrm() {
+        if (!m_str) m_str = new CNcbiOstrstream;
+        return *m_str;
+    }
+    void x_Clear() {
+        if (m_str) m_str->freeze(false);
+        delete m_str; m_str = NULL;
+    }
     CNcbiOstream& m_Ostream;
-    bool m_flushed;
+    CNcbiOstrstream* m_str;
     
 }; 
 
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2005/05/27 13:51:47  didenko
+* Fix COstreamHelper
+*
 * Revision 1.7  2005/05/25 14:03:53  didenko
 * Added stream checking
 *
