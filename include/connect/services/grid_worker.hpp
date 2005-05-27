@@ -119,7 +119,6 @@ public:
     virtual int Do(CWorkerNodeJobContext& context) = 0;
 };
 
-class CGridThreadContext;
 class CGridWorkerNode;
 
 /// Worker Node job context
@@ -225,6 +224,14 @@ public:
     ///
     bool IsLogRequested(void) const { return m_LogRequested; }
 
+    /// Collect a statictics on all processed jobs at the time
+    struct SJobStat {
+        string job_key;
+        string job_input;
+        CTime  start_time;
+    };
+    static void CollectStatictics(vector<SJobStat>& stat);
+
 private:    
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
@@ -243,14 +250,6 @@ private:
                           const string&      job_input,
                           unsigned int       job_nubmer,
                           bool               log_requested);
-
-    friend class CWorkerNodeControlThread;
-    struct SJobStat {
-        string job_key;
-        string job_input;
-        CTime  start_time;
-    };
-    static void CollectStatictics(vector<SJobStat>& stat);
 
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
@@ -502,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/05/27 12:51:59  didenko
+ * Made GetStatistics a public static function
+ *
  * Revision 1.24  2005/05/19 15:15:23  didenko
  * Added admin_hosts parameter to worker nodes configurations
  *
