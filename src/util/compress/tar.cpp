@@ -24,8 +24,17 @@
  * ===========================================================================
  *
  * Authors:  Vladimir Ivanov
+ *           Anton Lavrentiev
  *
- * File Description:  TAR archive API ("ustar" POSIX variant, incomplete)
+ * File Description:
+ *   Tar archive API.
+ *
+ *   Supports subset of POSIX.1-1988 (ustar) format.
+ *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
+ *   New archives are created using POSIX (genuine ustar) format, using
+ *   GNU extensions for long names/links only when unavoidably.
+ *   Can handle no exotics like sparse files, devices, etc,
+ *   but just regular files, directories, and symbolic links.
  *
  */
 
@@ -33,7 +42,7 @@
 #include <util/compress/tar.hpp>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
-#  error "Class CTar is defined for MS-Windows and UNIX platforms only"
+#  error "Class CTar can be defined on MS-Windows and UNIX platforms only!"
 #endif
 
 #include <corelib/ncbi_limits.h>
@@ -41,16 +50,19 @@
 #include <ctype.h>
 #include <memory>
 
-#ifdef NCBI_OS_MSWIN
+#if   defined(NCBI_OS_MSWIN)
 #  include <io.h>
-typedef int mode_t;
+typedef unsigned int mode_t;
+#else /*NCBI_OS_UNIX*/
+   // getpagesize() & sysconf()
+#  include <unistd.h>
 #endif
 
 
 BEGIN_NCBI_SCOPE
 
 
-// Convert number to an octal string padded to the left
+// Convert a number to an octal string padded to the left
 // with [leading] zeros ('0') and having _no_ trailing '\0'.
 static bool s_NumToOctal(unsigned long value, char* ptr, size_t size)
 {
@@ -63,7 +75,7 @@ static bool s_NumToOctal(unsigned long value, char* ptr, size_t size)
 
 
 // Convert an octal number (possibly preceded by spaces) to numeric form.
-// Stop either at the end of the field end or at first '\0' (if any).
+// Stop either at the end of the field or at first '\0' (if any).
 static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
 {
     _ASSERT(ptr  &&  size > 0);
@@ -85,11 +97,11 @@ static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
 }
 
 
-/* special bits */
+// Special mode bits
 #define TSUID     04000  /* set UID on execution    */
 #define TSGID     02000  /* set GID on execution    */
 #define TSVTX     01000  /* reserved (sticky bit)   */
-/* file permissions */
+// File permissions
 #define TUREAD    00400  /* read by owner           */
 #define TUWRITE   00200  /* write by owner          */
 #define TUEXEC    00100  /* execute/search by owner */
@@ -102,7 +114,7 @@ static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
 #define MODEMASK  07777  /* all of the above        */
 
 
-static mode_t s_TarToMode(unsigned long value)
+static mode_t s_TarToMode(unsigned int value)
 {
     mode_t mode = (
 #ifdef S_ISUID
@@ -152,10 +164,10 @@ static mode_t s_TarToMode(unsigned long value)
 }
 
 
-static unsigned long s_ModeToTar(mode_t mode)
+static unsigned int s_ModeToTar(mode_t mode)
 {
     /* Foresee that the mode can be extracted on a different platform */
-    unsigned long value = (
+    unsigned int value = (
 #ifdef S_ISUID
                            (mode & S_ISUID  ? TSUID   : 0) |
 #endif
@@ -183,7 +195,7 @@ static unsigned long s_ModeToTar(mode_t mode)
 #if   defined(S_IRGRP)
                            (mode & S_IRGRP  ? TGREAD  : 0) |
 #elif defined(S_IREAD)
-                           /* emulate read permission if file is readable */
+                           /* emulate read permission when file is readable */
                            (mode & S_IREAD  ? TGREAD  : 0) |
 #endif
 #ifdef S_IWGRP
@@ -195,7 +207,7 @@ static unsigned long s_ModeToTar(mode_t mode)
 #if   defined(S_IROTH)
                            (mode & S_IROTH  ? TOREAD  : 0) |
 #elif defined(S_IREAD)
-                           /* emulate read permission if file is readable */
+                           /* emulate read permission when file is readable */
                            (mode & S_IREAD  ? TOREAD  : 0) |
 #endif
 #ifdef S_IWOTH
@@ -226,9 +238,6 @@ static const size_t kBlockSize = 512;
 
 /// Round up to the nearest multiple of kBlockSize
 #define ALIGN_SIZE(size) ((((size) + kBlockSize-1) / kBlockSize) * kBlockSize)
-
-/// Default buffer size (must be multiple of kBlockSize)
-static const size_t kDefaultBufferSize = 20*kBlockSize;
 
 
 /// POSIX tar file header
@@ -273,7 +282,7 @@ static void s_TarChecksum(TBlock* block)
     // Checksum (Special: 6 digits, '\0', then a space [already in place])
     if (!s_NumToOctal((unsigned short) checksum,
                       h->checksum, sizeof(h->checksum) - 2)) {
-        NCBI_THROW(CTarException, eMemory, "Unable to store checksum");
+        NCBI_THROW(CTarException, eMemory, "Cannot store checksum");
     }
     h->checksum[6] = '\0';
 }
@@ -293,11 +302,19 @@ struct SProcessData {
 // CTarEntryInfo
 //
 
+
+unsigned int CTarEntryInfo::GetMode(void) const
+{
+    // Raw tar mode gets returned here (as kept in the info)
+    return (unsigned int) m_Stat.st_mode;
+}
+
+
 void CTarEntryInfo::GetMode(CDirEntry::TMode* usr_mode,
                             CDirEntry::TMode* grp_mode,
                             CDirEntry::TMode* oth_mode) const
 {
-    unsigned int mode = (unsigned int) m_Stat.st_mode;
+    mode_t mode = s_TarToMode(m_Stat.st_mode);
     // User
     if (usr_mode) {
         *usr_mode = (
@@ -353,7 +370,8 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode* usr_mode,
 
 static string s_ModeAsString(const CTarEntryInfo& info)
 {
-    mode_t mode = info.GetMode();
+    // Take raw tar mode
+    unsigned int mode = info.GetMode();
 
     string usr("---");
     string grp("---");
@@ -446,45 +464,47 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 // CTar
 //
 
-CTar::CTar(const string& file_name)
+CTar::CTar(const string& file_name, size_t blocking_factor)
     : m_FileName(file_name),
       m_FileStream(new CNcbiFstream),
       m_OpenMode(eUndefined),
       m_Stream(0),
-      m_StreamPos(0),
-      m_BufferSize(kDefaultBufferSize),
-      m_Buffer(new char[kDefaultBufferSize]),
+      m_BufferSize(blocking_factor * kBlockSize),
+      m_BufferPos(0),
+      m_BufPtr(0),
+      m_Buffer(0),
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
       m_MaskUseCase(NStr::eCase),
       m_IsModified(false)
 {
-    return;
+    x_Init();
 }
 
 
-CTar::CTar(CNcbiIos& stream)
+CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
     : m_FileName(kEmptyStr),
       m_FileStream(0),
       m_OpenMode(eUndefined),
       m_Stream(&stream),
-      m_StreamPos(0),
-      m_BufferSize(kDefaultBufferSize),
-      m_Buffer(new char[kDefaultBufferSize]),
+      m_BufferSize(blocking_factor * kBlockSize),
+      m_BufferPos(0),
+      m_BufPtr(0),
+      m_Buffer(0),
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
       m_MaskUseCase(NStr::eCase),
       m_IsModified(false)
 {
-    return;
+    x_Init();
 }
 
 
 CTar::~CTar()
 {
-    // Close streams
+    // Close stream(s)
     x_Close();
     if ( m_FileStream ) {
         delete m_FileStream;
@@ -495,12 +515,33 @@ CTar::~CTar()
     UnsetMask();
 
     // Delete buffer
-    if ( m_Buffer ) {
-        delete[] m_Buffer;
-        m_Buffer = 0;
+    if ( m_BufPtr ) {
+        delete[] m_BufPtr;
+        m_BufPtr = 0;
     }
+    m_Buffer = 0;
+}
 
-    return;
+
+void CTar::x_Init(void)
+{
+    size_t pagemask = (size_t)(
+#if   defined(HAVE_GETPAGESIZE)
+                               getpagesize()
+#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PAGESIZE)
+                               sysconf(_SC_PAGESIZE)
+#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PAGE_SIZE)
+                               sysconf(_SC_PAGE_SIZE)
+#else
+                               4096
+#endif /*HAVE_GETPAGESIZE*/
+                               - 1);
+    // Assume that the page size is a power of 2
+    _ASSERT(((pagemask + 1) & pagemask) == 0);
+    m_BufPtr = new char[m_BufferSize + pagemask];
+    // m_Buffer is page-aligned
+    m_Buffer = m_BufPtr +
+        ((((size_t) m_BufPtr + pagemask) & ~pagemask) - (size_t) m_BufPtr);
 }
 
 
@@ -514,36 +555,42 @@ CTar::TEntries CTar::List(void)
 
 void CTar::x_Close(void)
 {
-    if (m_Stream  &&  m_OpenMode == eUpdate  &&  m_IsModified) {
-        size_t pad = m_BufferSize - (size_t)(m_StreamPos % m_BufferSize);
-        if (pad  &&  pad != m_BufferSize) {
-            // Assure proper (default) blocking factor
-            memset(m_Buffer, 0, pad);
-            x_WriteArchive(m_Buffer, pad);
-        }
-    }
+    x_Flush();
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
-    } else if (m_Stream  &&  m_IsModified) {
-        m_Stream->rdbuf()->PUBSYNC();
+        m_Stream = 0;
     }
     m_OpenMode = eUndefined;
+    m_BufferPos = 0;
+}
+
+
+void CTar::x_Flush(void)
+{
+    if (!m_Stream || m_OpenMode != eUpdate || !m_IsModified || !m_BufferPos) {
+        return;
+    }
+    size_t pad = m_BufferSize - m_BufferPos;
+    // Assure proper blocking factor and pad the archive as necessary
+    memset(m_Buffer + m_BufferPos, 0, pad);
+    x_WriteArchive(pad);
+    if (m_Stream->rdbuf()->PUBSYNC() != 0) {
+        NCBI_THROW(CTarException, eWrite, "Archive flush error");
+    }
     m_IsModified = false;
-    m_StreamPos = 0;
-    m_Stream = 0;
 }
 
 
 void CTar::x_Open(EOpenMode mode)
 {
-    // We can open only a named file here, and if an external stream
-    // is being used as an archive, it must be explicitly repositioned
-    // before each archive operation by user's code outside of this class.
+    // We can only open a named file here, and if an external stream
+    // is being used as an archive, it must be explicitly repositioned by
+    // user's code (outside of this class) before each archive operation.
     if ( !m_FileStream ) {
         x_Close();
-        if (!m_Stream->good()  ||  !m_Stream->rdbuf()) {
+        if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
             NCBI_THROW(CTarException, eOpen,
-                       "Unable to open archive on a bad IO stream");
+                       "Cannot open archive from bad IO stream");
         } else {
             m_OpenMode = mode;
         }
@@ -552,15 +599,16 @@ void CTar::x_Open(EOpenMode mode)
 
     if (m_OpenMode == mode  ||  (m_OpenMode == eUpdate  &&
                                  mode == eRead          &&
-                                 !m_IsModified)) {
+                                 /*FIXME*/!m_IsModified)) {
         if (mode == eRead) {
+            x_Flush();
             m_FileStream->seekg(0, IOS_BASE::beg);
-            m_StreamPos = 0;
+            m_BufferPos = 0;
         }
         // Do nothing for eUpdate mode because the file put position
         // is already at the end of file.
     } else {
-        // Make sure that the file is properly closed first.
+        // Make sure that the file is properly closed first
         x_Close();
 
         // Open file using specified mode
@@ -580,7 +628,8 @@ void CTar::x_Open(EOpenMode mode)
                                IOS_BASE::in     |  IOS_BASE::out  |
                                IOS_BASE::binary);
             if (m_FileStream->seekp(0, IOS_BASE::end)) {
-                m_StreamPos = m_FileStream->tellp();
+                m_BufferPos = (size_t)(m_FileStream->tellp() % m_BufferSize);
+                memset(m_Buffer, 0, m_BufferPos);
             }
             break;
         default:
@@ -592,7 +641,7 @@ void CTar::x_Open(EOpenMode mode)
     // Check result
     if ( !m_FileStream->good() ) {
         NCBI_THROW(CTarException, eOpen,
-                   "Unable to open archive '" + m_FileName + '\'');
+                   "Cannot open archive '" + m_FileName + '\'');
     } else {
         m_Stream = m_FileStream;
     }
@@ -627,68 +676,99 @@ void CTar::Extract(const string& dst_dir)
 }
 
 
-// Read always post-aligns to the block boundary
-size_t CTar::x_ReadArchive(char* buffer, size_t n)
+// Return a pointer to buffer, which is always block-aligned,
+// and reflect the number of bytes available via the parameter.
+char* CTar::x_ReadArchive(size_t& n)
 {
     _ASSERT(n != 0);
-    size_t nread = (size_t) m_Stream->rdbuf()->sgetn(buffer, n);
-    if (nread) {
-        m_StreamPos += nread;
-        size_t gap = ALIGN_SIZE(n) - nread;
-        if (gap) {
-            static char trash[kBlockSize];
-            m_StreamPos += m_Stream->rdbuf()->sgetn(trash, gap);
+    _ASSERT(m_BufferPos % kBlockSize == 0);
+    size_t nread;
+    if (!m_BufferPos) {
+        nread = (size_t) m_Stream->rdbuf()->sgetn(m_Buffer, m_BufferSize);
+        if (!nread) {
+            return 0/*EOF*/;
         }
+        size_t gap = m_BufferSize - nread;
+        memset(m_Buffer + nread, 0, gap);
+    } else {
+        nread = m_BufferSize - m_BufferPos;
     }
-    return nread;
+    if (n > nread) {
+        n = nread;
+    }
+    size_t xpos = m_BufferPos;
+    m_BufferPos += ALIGN_SIZE(n);
+    m_BufferPos %= m_BufferSize;
+    return m_Buffer + xpos;
 }
 
 
-// Initial write pre-aligns to the block boundary first
-void CTar::x_WriteArchive(const char* buffer, size_t n)
+// All partial internal block writes are _not_ block-aligned.
+void CTar::x_WriteArchive(size_t nwrite, const char* src)
 {
-    if (n) {
-        if (!m_IsModified) {
-            static const char kPad[kBlockSize] = { 0 };
-            size_t size = kBlockSize - (size_t)(m_StreamPos % kBlockSize);
-            if (size  &&  size != kBlockSize) {
-                if ((size_t) m_Stream->rdbuf()->sputn(kPad, size) != size) {
-                    NCBI_THROW(CTarException, eWrite, "Unable to pad archive");
-                }
-                m_StreamPos += size;
-            }
-            m_IsModified = true;
-        }
-        if ((size_t) m_Stream->rdbuf()->sputn(buffer, n) != n) {
-            NCBI_THROW(CTarException, eWrite, "Archive write error");
-        }
-        m_StreamPos += n;
+    if (!nwrite) {
+        return;
     }
+    do {
+        size_t avail = m_BufferSize - m_BufferPos;
+        _ASSERT(avail != 0);
+        if (avail > nwrite) {
+            avail = nwrite;
+        }
+        size_t advance = avail;
+        if (src) {
+            memcpy(m_Buffer + m_BufferPos, src, avail);
+            size_t pad = ALIGN_SIZE(avail) - avail;
+            memset(m_Buffer + m_BufferPos + avail, 0, pad);
+            advance += pad;
+        }
+        m_BufferPos += advance;
+        if (m_BufferPos == m_BufferSize) {
+            if ((size_t) m_Stream->rdbuf()->sputn(m_Buffer, m_BufferSize)
+                != m_BufferSize) {
+                NCBI_THROW(CTarException, eWrite, "Archive write error");
+            }
+            m_BufferPos = 0;
+        }
+        nwrite -= avail;
+    } while (nwrite);
+    m_IsModified = true;
 }
 
 
 CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 {
     // Read block
-    TBlock block;
-    _ASSERT(sizeof(block.buffer) == kBlockSize);
-    size_t nread = x_ReadArchive(block.buffer, sizeof(block.buffer));
-    if (!nread) {
+    TBlock* block;
+    size_t nread = kBlockSize;
+    _ASSERT(sizeof(block->buffer) == nread);
+    if (!(block = (TBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
-    if (nread != sizeof(block.buffer)) {
+    if (nread != kBlockSize) {
         NCBI_THROW(CTarException, eRead, "Unexpected EOF in archive");
     }
-    SHeader* h = &block.header;
+    SHeader* h = &block->header;
+
+    bool ustar = false, oldgnu = false;
+    // Check header format
+    if (memcmp(h->magic, "ustar", 6) == 0) {
+        ustar = true;
+    } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
+        // NB: Here, the magic protruded into the adjacent version field
+        oldgnu = true;
+    } else if (memcmp(h->magic, "\0\0\0\0\0", 6) != 0) {
+        NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                   "Unknown archive format");
+    }
 
     // Get checksum from header
     unsigned long value;
     if (!s_OctalToNum(value, h->checksum, sizeof(h->checksum))) {
-        // We must allow all zero bytes here in case of pad/zero blocks.
-        for (size_t i = 0; i < sizeof(block.buffer); i++) {
-            if (block.buffer[i]) {
-                NCBI_THROW(CTarException, eUnsupportedEntryType,
-                           "Bad checksum format");
+        // We must allow all zero bytes here in case of pad/zero blocks
+        for (size_t i = 0; i < sizeof(block->buffer); i++) {
+            if (block->buffer[i]) {
+                NCBI_THROW(CTarException,eUnsupportedTarFormat,"Bad checksum");
             }
         }
         return eZeroBlock;
@@ -698,9 +778,9 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
     unsigned int usum = 0;
-    char* p = block.buffer;
+    char* p = block->buffer;
     memset(h->checksum, ' ', sizeof(h->checksum));
-    for (size_t i = 0; i < sizeof(block.buffer); i++)  {
+    for (size_t i = 0; i < sizeof(block->buffer); i++)  {
         ssum += *p;
         usum += (unsigned char) *p;
         p++;
@@ -709,18 +789,6 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Compare checksum(s)
     if (checksum != ssum   &&  (unsigned int) checksum != usum) {
         NCBI_THROW(CTarException, eChecksum, "Header checksum failed");
-    }
-
-    bool ustar = false, oldgnu = false;
-    // Check file format
-    if (memcmp(h->magic, "ustar", 6) == 0) {
-        ustar = true;
-    } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
-        // NB: here, the magic extends into the adjacent version field.
-        ustar = oldgnu = true;
-    } else if (memcmp(h->magic, "\0\0\0\0\0", 6) != 0) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Unknown archive format");
     }
 
     // Set info members now
@@ -740,36 +808,32 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 
     // Mode
     if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Bad mode format");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file mode");
     }
-    info.m_Stat.st_mode = s_TarToMode(value & MODEMASK);
+    info.m_Stat.st_mode = value & MODEMASK; // Quietly strip unknown bits
 
     // User Id
     if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Bad user ID format");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad user ID");
     }
     info.m_Stat.st_uid = value;
 
     // Group Id
     if (!s_OctalToNum(value, h->gid, sizeof(h->gid))) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Bad group ID format");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad group ID");
     }
     info.m_Stat.st_gid = value;
 
     // Size
     if (!s_OctalToNum(value, h->size, sizeof(h->size))) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Bad size format");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file size");
     }
     info.m_Stat.st_size = value;
 
     // Modification time
     if (!s_OctalToNum(value, h->mtime, sizeof(h->mtime))) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Bad modification time format");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                   "Bad modification time");
     }
     info.m_Stat.st_mtime = value;
 
@@ -777,7 +841,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     switch (h->typeflag) {
     case '\0':
     case '0':
-        if (ustar) {
+        if (ustar  ||  oldgnu) {
             info.m_Type = CTarEntryInfo::eFile;
         } else {
             size_t name_size = s_Length(h->name, sizeof(h->name));
@@ -796,7 +860,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         info.m_Stat.st_size = 0;
         break;
     case '5':
-        if (ustar) {
+        if (ustar  ||  oldgnu) {
             info.m_Type = CTarEntryInfo::eDir;
             info.m_Stat.st_size = 0;
             break;
@@ -804,27 +868,26 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         /*FALLTHRU*/
     case 'K':
     case 'L':
-        if (ustar) {
+        if (oldgnu) {
             info.m_Type = h->typeflag == 'K'
                 ? CTarEntryInfo::eGNULongLink
                 : CTarEntryInfo::eGNULongName;
-            // Read the long name
-            size_t name_size = (streamsize) info.GetSize();
-            auto_ptr<char> xbuf;
-            char* buf;
-            if (name_size > m_BufferSize) {
-                xbuf.reset(new char[name_size]);
-                buf = xbuf.get();
-            } else
-                buf = m_Buffer;
-            size_t n = x_ReadArchive(buf, name_size);
-            if ( n != name_size ) {
-                NCBI_THROW(CTarException, eRead,
-                           "Unexpected EOF while reading long name");
+            // Read the long name in
+            info.m_Name.clear();
+            size_t size = (streamsize) info.GetSize();
+            while (size) {
+                size_t nread = size;
+                char* xbuf = x_ReadArchive(nread);
+                if (!xbuf) {
+                    NCBI_THROW(CTarException, eRead,
+                               "Unexpected EOF while reading long name");
+                }
+                info.m_Name.append(xbuf, nread);
+                size -= nread;
             }
-            info.m_Name.assign(buf, name_size);
             info.m_Stat.st_size = 0;
-            break;
+            // NB: Input buffers may be trashed, so return right here
+            return eSuccess;
         }
         /*FALLTHRU*/
     default:
@@ -832,7 +895,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         break;
     }
 
-    if (ustar) {
+    if (ustar  ||  oldgnu) {
         // User name
         info.m_UserName.assign(h->uname, s_Length(h->uname, sizeof(h->uname)));
 
@@ -844,13 +907,12 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 }
 
 
-void CTar::x_WriteEntryInfo(const string&         name,
-                            const CTarEntryInfo&  info)
+void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
 {
     // Prepare block info
     TBlock block;
     _ASSERT(sizeof(block.buffer) == kBlockSize);
-    memset(&block, 0, sizeof(block));
+    memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
     CTarEntryInfo::EType type = info.GetType();
@@ -858,41 +920,40 @@ void CTar::x_WriteEntryInfo(const string&         name,
     // Name(s) ('\0'-terminated if fit, otherwise not)
     if (!x_PackName(h, info, false)) {
         NCBI_THROW(CTarException, eNameTooLong,
-                   "Entry name '" + info.GetName() + "' is too long for"
+                   "Name '" + info.GetName() + "' too long in"
                    " entry '" + name + '\'');
     }
     if (type == CTarEntryInfo::eLink  &&  !x_PackName(h, info, true)) {
         NCBI_THROW(CTarException, eNameTooLong,
-                   "Link name '" + info.GetLinkName() + "' is too long for"
+                   "Link '" + info.GetLinkName() + "' too long in"
                    " entry '" + name + '\'');
     }
 
-    // Mode ('\0'-terminated, recognized flags only)
-    if (!s_NumToOctal(s_ModeToTar(info.m_Stat.st_mode) & MODEMASK,
-                      h->mode, sizeof(h->mode) - 1)) {
-        NCBI_THROW(CTarException, eMemory, "Unable to store file mode");
+    // Mode ('\0'-terminated)
+    if (!s_NumToOctal(info.m_Stat.st_mode, h->mode, sizeof(h->mode) - 1)) {
+        NCBI_THROW(CTarException, eMemory, "Cannot store file mode");
     }
 
     // User ID ('\0'-terminated)
     if (!s_NumToOctal(info.m_Stat.st_uid, h->uid, sizeof(h->uid) - 1)) {
-        NCBI_THROW(CTarException, eMemory, "Unable to store user ID");
+        NCBI_THROW(CTarException, eMemory, "Cannot store user ID");
     }
 
     // Group ID ('\0'-terminated)
     if (!s_NumToOctal(info.m_Stat.st_gid, h->gid, sizeof(h->gid) - 1)) {
-        NCBI_THROW(CTarException, eMemory, "Unable to store group ID");
+        NCBI_THROW(CTarException, eMemory, "Cannot store group ID");
     }
 
     // Size (not '\0'-terminated)
     if (!s_NumToOctal((unsigned long)
                       (type == CTarEntryInfo::eFile ? info.GetSize() : 0),
                       h->size, sizeof(h->size))) {
-        NCBI_THROW(CTarException, eMemory, "Unable to store file size");
+        NCBI_THROW(CTarException, eMemory, "Cannot store file size");
     }
 
     // Modification time (not '\0'-terminated)
     if (!s_NumToOctal(info.GetModificationTime(), h->mtime, sizeof(h->mtime))){
-        NCBI_THROW(CTarException, eMemory,"Unable to store modification time");
+        NCBI_THROW(CTarException, eMemory, "Cannot store modification time");
     }
 
     // Type (GNU extension for SymLink)
@@ -909,7 +970,7 @@ void CTar::x_WriteEntryInfo(const string&         name,
     default:
         NCBI_THROW(CTarException, eUnsupportedEntryType,
                    "Don't know how to store entry type " +
-                   NStr::IntToString(int(type)) + " in the archive");
+                   NStr::IntToString(int(type)) + " in archive");
         break;
     }
 
@@ -932,7 +993,7 @@ void CTar::x_WriteEntryInfo(const string&         name,
     s_TarChecksum(&block);
 
     // Write header
-    x_WriteArchive(block.buffer, sizeof(block.buffer));
+    x_WriteArchive(sizeof(block.buffer), block.buffer);
 }
 
 
@@ -949,68 +1010,59 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
         return true;
     }
 
-    if (len > m_BufferSize) {
-        // No way to fit it!
-        return false;
-    }
-
     if (!link  &&  len <= sizeof(h->prefix) + 1 + sizeof(h->name)) {
-        // Try to split long name into a prefix and a short name
+        // Try to split the long name into a prefix and a short name (POSIX)
         size_t i = len;
         if (i > sizeof(h->prefix)) {
             i = sizeof(h->prefix);
         }
-        while (i > 0  &&  !CDirEntry::IsPathSeparator(name[--i]));
-        if (i  &&  len - i <= sizeof(h->name)) {
-            memcpy(&h->name,   name.c_str() + i + 1, len - i - 1);
+        while (i > 0  &&  !CDirEntry::IsPathSeparator(name[--i])) {
+            if (len - i > sizeof(h->name))
+                break;
+        }
+        if (i  &&  len - i - 1  &&  len - i <= sizeof(h->name)) {
             memcpy(&h->prefix, name.c_str(),         i);
+            memcpy(&h->name,   name.c_str() + i + 1, len - i - 1);
             return true;
         }
     }
 
-    // Prepare extended block with long name in it (GNU style)
-    TBlock* block = (TBlock*) m_Buffer;
-    _ASSERT(sizeof(*block) <= m_BufferSize);
+    // Still, store the initial part in the original header
+    memcpy(storage, name.c_str(), size);
+
+    // Prepare extended block header with the long name info (GNU style)
+    _ASSERT(m_BufferPos % kBlockSize == 0  &&  m_BufferPos < m_BufferSize);
+    TBlock* block = (TBlock*)(m_Buffer + m_BufferPos);
     _ASSERT(sizeof(block->buffer) == kBlockSize);
-    memset(block, 0, sizeof(*block));
+    memset(block->buffer, 0, sizeof(block->buffer));
     h = &block->header;
 
     // See above for comments about header filling
     strcpy(h->name, "././@LongLink");
-    s_NumToOctal(0,            h->mode,  sizeof(h->mode)  - 1);
-    s_NumToOctal(0,            h->uid,   sizeof(h->uid)   - 1);
-    s_NumToOctal(0,            h->gid,   sizeof(h->gid)   - 1);
-    if (!s_NumToOctal(len,     h->size,  sizeof(h->size))) {
-        return 0;
+    s_NumToOctal(0,        h->mode,  sizeof(h->mode) - 1);
+    s_NumToOctal(0,        h->uid,   sizeof(h->uid)  - 1);
+    s_NumToOctal(0,        h->gid,   sizeof(h->gid)  - 1);
+    if (!s_NumToOctal(len, h->size,  sizeof(h->size))) {
+        return false;
     }
-    if (!s_NumToOctal(time(0), h->mtime, sizeof(h->mtime))) {
-        return 0;
-    }
+    s_NumToOctal(0,        h->mtime, sizeof(h->mtime));
     h->typeflag = link ? 'K' : 'L';
 
-    s_NumToOctal(0,            h->uname, sizeof(h->uname) - 1);
-    s_NumToOctal(0,            h->gname, sizeof(h->gname) - 1);
-
-    strcpy(h->magic,   "ustar");
-    memcpy(h->version, "00", 2);
+    // NB: Old GNU magic protrudes into adjacent verion field
+    memcpy(h->magic, "ustar  ", 8); // 2 spaces and '\0'-terminated
 
     s_TarChecksum(block);
 
-    // Write extended header
-    x_WriteArchive(block->buffer, sizeof(block->buffer));
+    // Write the header
+    x_WriteArchive(sizeof(block->buffer));
 
-    // Still, store the initial part in the original header...
-    memcpy(storage,  name.c_str(), size);
-    // ...and store it full in the extended block.
-    memcpy(m_Buffer, name.c_str(), len);
+    // Store the full name in the extended block
+    auto_ptr<char> buf_ptr(new char[len]);
+    storage = buf_ptr.get();
+    memcpy(storage, name.c_str(), len);
 
-    size = ALIGN_SIZE(len);
-    _ASSERT(size <= m_BufferSize);
-    // Pad with zero bytes up to nearest multiple of kBlockSize
-    memset(m_Buffer + len, 0, size - len);
-
-    // Write long name
-    x_WriteArchive(m_Buffer, size);
+    // Write the extended block (will be aligned as necessary)
+    x_WriteArchive(len, storage);
 
     return true;
 }
@@ -1018,7 +1070,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 
 void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
 {
-    // Open file for reading (won't affect eUpdate if any)
+    // Open file for reading (won't affect unmodified eUpdate)
     x_Open(eRead);
 
     string nextLongName, nextLongLink;
@@ -1032,6 +1084,7 @@ void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
         case eEOF:
             return;
         case eZeroBlock:
+            // FIXME
             // Skip zero blocks
             if (m_Flags & fIgnoreZeroBlocks) {
                 continue;
@@ -1057,11 +1110,11 @@ void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
         //
         switch (info.GetType()) {
         case CTarEntryInfo::eGNULongName:
-            // Latch next long name here then just skip.
+            // Latch next long name here then just skip
             nextLongName = info.GetName();
             continue;
         case CTarEntryInfo::eGNULongLink:
-            // Latch next long link here then just skip.
+            // Latch next long link here then just skip
             nextLongLink = info.GetName();
             continue;
         default:
@@ -1129,25 +1182,12 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool process,
         size = (streamsize) info.GetSize();
     }
 
-    if (size) {
-        // Skip it
-        streamsize real_size = (streamsize) ALIGN_SIZE(size);
-        if (m_FileStream) {
-            if (!m_FileStream->seekg(real_size, IOS_BASE::cur)) {
-                NCBI_THROW(CTarException, eRead, "Archive read error");
-            }
-        } else {
-            while (real_size) {
-                size_t size = real_size > (streamsize) m_BufferSize
-                    ? m_BufferSize : (size_t) real_size;
-                size = (size_t) m_Stream->rdbuf()->sgetn(m_Buffer, size);
-                if (!size) {
-                    NCBI_THROW(CTarException, eRead, "Archive read error");
-                }
-                real_size -= size;
-            }
+    while (size) {
+        size_t nskip = size;
+        if (!x_ReadArchive(nskip)) {
+            NCBI_THROW(CTarException, eRead, "Archive read error");
         }
-        m_StreamPos += real_size;
+        size -= nskip;
     }
 }
 
@@ -1187,7 +1227,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
                 if (!CDirEntry(*dst).Backup(kEmptyStr,
                                             CDirEntry::eBackup_Rename)) {
                     NCBI_THROW(CTarException, eBackup,
-                               "Unable to backup existing entry '" +
+                               "Cannot backup existing destination '" +
                                dst->GetPath() + '\'');
                 } else if (m_Flags & fOverwrite) {
                     dst->Remove();
@@ -1211,33 +1251,29 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
             CDir dir(dst->GetDir());
             if (!dir.CreatePath()) {
                 NCBI_THROW(CTarException, eCreate,
-                           "Unable to create directory '" +
-                           dir.GetPath() + '\'');
+                           "Cannot create directory '" + dir.GetPath() + '\'');
             }
             // Create file
             ofstream file(dst->GetPath().c_str(),
                           IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
             if ( !file ) {
                 NCBI_THROW(CTarException, eCreate,
-                           "Unable to create file '" + dst->GetPath() + '\'');
+                           "Cannot create file '" + dst->GetPath() + '\'');
             }
 
             while (size) {
-                // Read file from TAR (note: aligned read inside)
-                streamsize nread =
-                    x_ReadArchive(m_Buffer,
-                                  size > (streamsize) m_BufferSize
-                                  ? (streamsize) m_BufferSize : size);
-                if (!nread) {
-                    NCBI_THROW(CTarException, eRead, "Cannot read file '"
+                // Read from the archive
+                size_t nread = size;
+                char* xbuf = x_ReadArchive(nread);
+                if (!xbuf) {
+                    NCBI_THROW(CTarException, eRead, "Cannot extract '"
                                + info.GetName() + "' from archive");
                 }
                 // Write file to disk
-                if (!file.write(m_Buffer, nread)) {
+                if (!file.write(xbuf, nread)) {
                     NCBI_THROW(CTarException, eWrite,
-                               "Cannot write file '" + dst->GetPath() + '\'');
+                               "Error writing file '" + dst->GetPath() + '\'');
                 }
-
                 size -= nread;
             }
 
@@ -1264,7 +1300,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
             waiting->m_Name = dst->GetPath();
             data.entries.push_back(waiting);
         }
-        _ASSERT(info.GetSize() == 0);
+        _ASSERT(size == 0);
         break;
 
     case CTarEntryInfo::eLink:
@@ -1274,7 +1310,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
                 ERR_POST(Error << "Cannot create symlink '" + dst->GetPath()
                          + "' -> '" + info.GetLinkName() + '\'');
             }
-            _ASSERT(info.GetSize() == 0);
+            _ASSERT(size == 0);
         }}
         break;
 
@@ -1285,9 +1321,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
         break;
 
     default:
-        ERR_POST(Warning << "Skipping unsupported type " +
-                 NStr::IntToString(int(type)) + " entry '" +
-                 info.GetName() + '\'');
+        ERR_POST(Warning << "Skipping unsupported entry '" +
+                 info.GetName() + "' of type " + NStr::IntToString(int(type)));
         break;
     }
 
@@ -1342,7 +1377,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         // is not portable and is not implemented on majority of platforms.
         if ( info.GetType() != CTarEntryInfo::eLink ) {
             // Use raw mode here to restore most of bits
-            mode_t mode = info.GetMode();
+            mode_t mode = s_TarToMode(info.m_Stat.st_mode);
             if (chmod(dst->GetPath().c_str(), mode) != 0) {
                 // May fail due to setuid/setgid bits -- strip'em and try again
                 mode &= ~(S_ISUID | S_ISGID);
@@ -1425,8 +1460,7 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     CDirEntry::SStat st;
     if (!entry.Stat(&st, follow_links)) {
         NCBI_THROW(CTarException, eOpen,
-                   "Unable to get status information for '" +
-                   entry_name + "'");
+                   "Cannot get status information on '" + entry_name + "'");
     }
     CDirEntry::EType type = entry.GetType();
 
@@ -1447,6 +1481,8 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     }
     entry.GetOwner(&info.m_UserName, &info.m_GroupName);
     info.m_Stat = st.orig;
+    // Fixup for mode bits
+    info.m_Stat.st_mode = (mode_t)(s_ModeToTar(st.orig.st_mode) & MODEMASK);
 
     // Check if we need to update this entry in the archive
     bool update_directory = true;
@@ -1455,7 +1491,7 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
         const CTarEntryInfo* x_info;
 
         // Start searching from the end of the list, to find
-        // an already updated entry (if any) first
+        // the most recently updated entry (if any) first
         REVERSE_ITERATE(CTar::TEntries, i, *update_list) {
             x_info = (*i).get();
             if (info.GetName() == x_info->GetName()  &&
@@ -1506,7 +1542,7 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
         break;
 
     default:
-        ERR_POST(Warning << "Skipping unsupported entry '" + name + '\'');
+        ERR_POST(Warning << "Skipping unsupported source '" + name + '\'');
         break;
     }
 }
@@ -1522,36 +1558,35 @@ void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
         ifs.open(file_name.c_str(), IOS_BASE::binary | IOS_BASE::in);
         if ( !ifs ) {
             NCBI_THROW(CTarException, eOpen,
-                       "Unable to open file '" + file_name + "'");
+                       "Cannot open file '" + file_name + "'");
         }
     }
 
     // Write file header
     x_WriteEntryInfo(file_name, info);
+    streamsize size = (streamsize) info.GetSize();
 
-    streamsize file_size = (streamsize) info.GetSize();
-
-    // Write file contents
-    while (file_size) {
+    while (size) {
+        // Write file contents
+        size_t avail = m_BufferSize - m_BufferPos;
+        if (avail > (size_t) size) {
+            avail = (size_t) size;
+        }
         // Read file
-        if (!ifs.read(m_Buffer, file_size > (streamsize) m_BufferSize
-                      ? (streamsize) m_BufferSize : file_size)) {
+        if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
             NCBI_THROW(CTarException, eRead,
                        "Error reading file '" + file_name + "'");
         }
-        streamsize nread = ifs.gcount();
-
+        avail = (size_t) ifs.gcount();
         // Write buffer to the archive
-        x_WriteArchive(m_Buffer, nread);
-
-        file_size -= nread;
+        x_WriteArchive(avail);
+        size -= avail;
     }
 
-    // Write zeros to get the written size be multiple of kBlockSize
-    streamsize zero_size = ((streamsize)
-                            (ALIGN_SIZE(info.GetSize()) - info.GetSize()));
-    memset(m_Buffer, 0, zero_size);
-    x_WriteArchive(m_Buffer, zero_size);
+    // Write zeros to get the written size a multiple of kBlockSize
+    size_t zero = ALIGN_SIZE(m_BufferPos) - m_BufferPos;
+    memset(m_Buffer + m_BufferPos, 0, zero);
+    x_WriteArchive(zero);
 }
 
 
@@ -1561,6 +1596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/30 15:28:22  lavr
+ * Comments reviewed, proper blocking factor fully implemented, other patches
+ *
  * Revision 1.16  2005/05/27 21:12:55  lavr
  * Revert to use of std::ios as a main I/O stream (instead of std::iostream)
  *
