@@ -873,7 +873,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
                 ? CTarEntryInfo::eGNULongLink
                 : CTarEntryInfo::eGNULongName;
             // Read the long name in
-            info.m_Name.clear();
+            info.m_Name.erase();
             size_t size = (streamsize) info.GetSize();
             while (size) {
                 size_t nread = size;
@@ -1596,6 +1596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/30 21:04:59  ucko
+ * Use erase() rather than clear() on strings for compatibility with GCC 2.95.
+ *
  * Revision 1.17  2005/05/30 15:28:22  lavr
  * Comments reviewed, proper blocking factor fully implemented, other patches
  *
