@@ -101,8 +101,12 @@ public:
     /// starting with current iterator position
     void GetSeqData(string& buffer, TSeqPos count);
 
+    /// Get number of chars from current position to the current buffer end
     size_t GetBufferSize(void) const;
+    /// Get pointer to current char in the buffer
     const char* GetBufferPtr(void) const;
+    /// Get pointer to current position+size.
+    /// Throw exception if current pos + size is not in the buffer.
     const char* GetBufferEnd(size_t size) const;
 
     CSeqVector_CI& operator++(void);
@@ -566,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/05/31 18:19:46  grichenk
+* Added comments
+*
 * Revision 1.32  2005/05/31 18:05:17  grichenk
 * Changed GetBufferPtr, added GetBufferEnd.
 *
