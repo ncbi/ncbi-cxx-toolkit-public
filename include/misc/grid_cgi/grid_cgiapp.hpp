@@ -62,7 +62,7 @@ class CGridCgiApplication;
 ///  Grid Cgi Context
 ///  Context in which a request is processed
 ///
-class CGridCgiContext
+class NCBI_XGRIDCGI_EXPORT CGridCgiContext
 {
 public: 
     CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
@@ -116,8 +116,9 @@ private:
 
     friend class CGridCgiApplication;
     void SetJobKey(const string& job_key);
-    void SetJobProgressMessage(const string& msg) 
+    void SetJobProgressMessage(const string& msg)
     { m_ProgressMsg = msg; }
+
 
     CHTMLPage&                    m_Page;
     CCgiContext&                  m_CgiContext;
@@ -131,6 +132,7 @@ private:
     CGridCgiContext& operator=(const CGridCgiContext&);
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  Grid Cgi Application
@@ -140,7 +142,7 @@ private:
 ///  error processing, etc.  All request procesing is done on the back end.
 ///  CGI application is responsible for UI rendering.
 ///
-class CGridCgiApplication : public CCgiApplication
+class NCBI_XGRIDCGI_EXPORT CGridCgiApplication : public CCgiApplication
 {
 public:
 
@@ -273,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/05/31 15:21:32  didenko
+ * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
+ *
  * Revision 1.14  2005/04/22 13:39:33  didenko
  * Added elapsed time message
  *

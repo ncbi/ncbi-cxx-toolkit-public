@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 
 class CCgiWorkerNodeJob;
 
-class CGridWorkerCgiApp : public CCgiApplication
+class NCBI_XGRIDCGI_EXPORT CGridWorkerCgiApp : public CCgiApplication
 {
 public:
     CGridWorkerCgiApp( 
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/05/31 15:21:32  didenko
+ * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
+ *
  * Revision 1.3  2005/05/25 18:52:37  didenko
  * Moved grid worker node application functionality to the separate class
  *

@@ -42,6 +42,8 @@ BEGIN_NCBI_SCOPE
 class CCgiApplication;
 class CCgiRequest;
 
+
+NCBI_XGRIDCGI_EXPORT
 CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        CNcbiOstream&       os,
                                        const CCgiRequest&  cgi_request,
@@ -57,6 +59,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/05/31 15:21:32  didenko
+ * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
+ *
  * Revision 1.1  2005/05/25 14:09:39  didenko
  * Added helper function for redirecting cgi's to cgi_tunnel2grid.cgi
  *
