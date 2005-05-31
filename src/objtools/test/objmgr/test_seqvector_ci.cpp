@@ -219,16 +219,23 @@ void CTestApp::x_TestGetBufferPtr(CSeqVector_CI& vit,
     if (start > stop)
         swap(start, stop);
 
-    while (start < stop) {
-        vit.SetPos(start);
-        const char* buf_ptr = vit.GetBufferPtr();
-        size_t buf_len = vit.GetBufferSize();
-        string buf(buf_ptr, buf_len);
-        if ( !x_CheckBuf(buf, start, buf_len) ) {
-            cout << endl << "ERROR: Test failed -- invalid data" << endl;
+    string buf;
+    buf.resize(stop - start, ' ');
+    size_t str_pos = 0;
+    vit.SetPos(start);
+    while (str_pos < stop - start) {
+        size_t block_size = min(vit.GetBufferSize(), stop - start - str_pos);
+        if (vit.GetBufferPtr() + block_size != vit.GetBufferEnd(block_size)) {
+            cout << endl << "ERROR: Test failed -- invalid buffer ptr" << endl;
             throw runtime_error("Test failed");
         }
-        start += buf_len;
+        buf.replace(str_pos, block_size, vit.GetBufferPtr(), block_size);
+        vit += block_size;
+        str_pos += block_size;
+    }
+    if ( !x_CheckBuf(buf, start, stop - start) ) {
+        cout << endl << "ERROR: Test failed -- invalid data" << endl;
+        throw runtime_error("Test failed");
     }
 }
 
@@ -542,6 +549,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/05/31 18:05:17  grichenk
+* Changed GetBufferPtr, added GetBufferEnd.
+*
 * Revision 1.10  2005/05/26 18:19:16  grichenk
 * Added GetBufferPtr() and GetBufferSize()
 *

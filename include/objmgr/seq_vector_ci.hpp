@@ -102,7 +102,8 @@ public:
     void GetSeqData(string& buffer, TSeqPos count);
 
     size_t GetBufferSize(void) const;
-    const char* GetBufferPtr(size_t offset = 0) const;
+    const char* GetBufferPtr(void) const;
+    const char* GetBufferEnd(size_t size) const;
 
     CSeqVector_CI& operator++(void);
     CSeqVector_CI& operator--(void);
@@ -459,17 +460,25 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 inline
 size_t CSeqVector_CI::GetBufferSize(void) const
 {
-    return bool(*this) ? m_CacheEnd - m_Cache : 0;
+    return m_CacheEnd - m_Cache;
 }
 
 
 inline
-const char* CSeqVector_CI::GetBufferPtr(size_t offset) const
+const char* CSeqVector_CI::GetBufferPtr(void) const
 {
-    if (m_Cache + offset >= m_CacheEnd) {
+    return m_Cache;
+}
+
+
+inline
+const char* CSeqVector_CI::GetBufferEnd(size_t size) const
+{
+    const char* ptr = m_Cache + size;
+    if (ptr < m_Cache || ptr > m_CacheEnd) {
         x_ThrowOutOfRange();
     }
-    return m_Cache + offset;
+    return ptr;
 }
 
 
@@ -557,6 +566,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/05/31 18:05:17  grichenk
+* Changed GetBufferPtr, added GetBufferEnd.
+*
 * Revision 1.31  2005/05/26 18:19:16  grichenk
 * Added GetBufferPtr() and GetBufferSize()
 *
