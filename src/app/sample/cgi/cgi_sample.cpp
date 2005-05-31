@@ -47,8 +47,6 @@
 #include <html/page.hpp>
 
 
-#include <cgi/cgi2grid.hpp>
-
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
 
@@ -118,23 +116,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     bool is_message = false;
     string message    = request.GetEntry("Message", &is_message);
     if ( is_message ) {
-        if (message == "tunnel2grid.cgi") {
-            // This is a special case. Just to demonstrate how
-            // cgi_tunnel2grid.cgi can be invoked from another CGI
-            response.WriteHeader();
-            CGI2GRID_ComposeHtmlPage( response.out(), request, 
-                                      "sample", ctx.GetSelfURL(),
-                                      "html 3 22 3 11");
-            
-            /* Or all CGI entires can be sent to the worker node.
-            const TCgiEntries& cgi_entries = request.GetEntries();
-            CGI2GRID_ComposeHtmlPage( response.out(), request, 
-                                      "sample", ctx.GetSelfURL(),
-                                      cgi_entries);
-            */
-            SetDiagNode(NULL);
-            return 0;
-        }
         message = "'" + message + "'";
     } else {
         message = "<NONE>";
@@ -255,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/05/31 13:45:02  didenko
+ * Removed obsolete cgi2grid.[hc]pp files
+ *
  * Revision 1.16  2005/04/28 17:40:53  didenko
  * Added CGI2GRID_ComposeHtmlPage(...) fuctions
  *
