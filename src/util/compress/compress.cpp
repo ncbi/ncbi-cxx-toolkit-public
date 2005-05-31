@@ -70,25 +70,19 @@ bool CCompression::x_CompressFile(const string&     src_file,
     if ( !buf_size ) {
         return false;
     }
-    char* buffer;
     CNcbiIfstream is(src_file.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !is.good() ) {
         return false;
     }
-    buffer = new char[buf_size];
-    if ( !buffer ) {
-        return false;
-    }
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
     while ( is ) {
-        is.read(buffer, buf_size);
+        is.read(buf.get(), buf_size);
         size_t nread = is.gcount();
-        size_t nwritten = dst_file.Write(buffer, nread); 
+        size_t nwritten = dst_file.Write(buf.get(), nread); 
         if ( nwritten != nread ) {
-            delete buffer;
             return false;
         }
     }
-    delete buffer;
     return true;
 }
 
@@ -100,24 +94,18 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
     if ( !buf_size ) {
         return false;
     }
-    char* buffer;
     CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
         return false;
     }
-    buffer = new char[buf_size];
-    if ( !buffer ) {
-        return false;
-    }
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
     size_t nread;
-    while ( (nread = src_file.Read(buffer, buf_size)) > 0 ) {
-        os.write(buffer, nread);
+    while ( (nread = src_file.Read(buf.get(), buf_size)) > 0 ) {
+        os.write(buf.get(), nread);
         if ( !os.good() ) {
-            delete buffer;
             return false;
         }
     }
-    delete buffer;
     return true;
 }
 
@@ -165,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/05/31 17:51:15  ivanov
+ * Use AutoPtr's for internal buffers
+ *
  * Revision 1.9  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *
