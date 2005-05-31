@@ -80,7 +80,7 @@ CNcbiOstream& WriteCgiCookies(CNcbiOstream& os, const CCgiCookies& cont)
 {
     COStreamHelper ostr(os);
     cont.Write(ostr, CCgiCookie::eHTTPRequest);
-    ostr.flush();
+    ostr.flush(true);
     return os;
 }
 
@@ -138,6 +138,10 @@ END_NCBI_SCOPE
 /*
  * =========================================================================== 
  * $Log$
+ * Revision 1.3  2005/05/31 13:35:50  didenko
+ * Added an optional parameter to flush method for COstreamHelper class which controls
+ * if we need to write an empty data to a stream
+ *
  * Revision 1.2  2005/05/23 15:02:02  didenko
  * Added Read/Write a container from/to a stream
  * Code restructure

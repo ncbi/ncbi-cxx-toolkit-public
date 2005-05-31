@@ -108,11 +108,11 @@ public:
         return *this;
     }
 
-    void flush() 
+    void flush(bool write_empty_data = false) 
     {
-        if (!m_str)  return;
+        if (!m_str && !write_empty_data )  return;
         try {
-            (*m_str) << ends;
+            x_GetStrm() << ends;
             m_Ostream << m_str->pcount() << ' ' << m_str->str();
         } catch (...) { x_Clear(); throw;  }
         x_Clear();
@@ -175,7 +175,7 @@ CNcbiOstream& WriteMap(CNcbiOstream& os, const TMap& cont)
         ostr << URL_EncodeString(TKeyConverter  ::ToString(it->first)) << '='
              << URL_EncodeString(TValueConverter::ToString(it->second));
     }
-    ostr.flush();
+    ostr.flush(true);
     return os;
 }
 
@@ -223,7 +223,7 @@ CNcbiOstream& WriteContainer(CNcbiOstream& os, const TCont& cont)
             ostr << '&';
         ostr << URL_EncodeString(TValueConverter::ToString(*it));
     }
-    ostr.flush();
+    ostr.flush(true);
     return os;
 }
 
@@ -288,6 +288,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2005/05/31 13:35:50  didenko
+* Added an optional parameter to flush method for COstreamHelper class which controls
+* if we need to write an empty data to a stream
+*
 * Revision 1.8  2005/05/27 13:51:47  didenko
 * Fix COstreamHelper
 *
