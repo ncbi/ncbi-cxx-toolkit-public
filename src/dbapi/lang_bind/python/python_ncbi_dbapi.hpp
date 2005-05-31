@@ -99,7 +99,7 @@ public:
     : m_StmType(estNone)
     {
     }
-    CStmtStr(const string& str, EStatementType default_type = estFunction)
+    CStmtStr(const string& str, EStatementType default_type = estSelect)
     : m_StmType(estNone)
     {
         SetStr(str, default_type);
@@ -107,7 +107,7 @@ public:
 
     // We will accume that SQL has type estFunction if it is
     // hard to get an actual type.
-    void SetStr(const string& str, EStatementType default_type = estFunction);
+    void SetStr(const string& str, EStatementType default_type = estSelect);
 
 public:
     string GetStr(void) const
@@ -152,6 +152,8 @@ public:
     const IResultSet& GetRS(void) const;
     bool HasRS(void) const;
 
+    int GetReturnStatus(void);
+
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
@@ -161,10 +163,10 @@ private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
     auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
     auto_ptr<IResultSet>    m_RS;
-    // string                  m_StmtStr;
-    // EStatementType          m_StmtType;
     CStmtStr                m_StmtStr;
     bool                    m_Executed;
+    int                     m_ResultStatus;
+    bool                    m_ResultStatusAvailable;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -202,10 +204,10 @@ private:
     int                             m_NumOfArgs;         //< Number of arguments in a callable statement
     auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
     auto_ptr<IResultSet>            m_RS;
-    // string                          m_StmtStr;
-    // EStatementType                  m_StmtType;
     CStmtStr                        m_StmtStr;
     bool                            m_Executed;
+    int                             m_ResultStatus;
+    bool                            m_ResultStatusAvailable;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -326,6 +328,7 @@ private:
 
 private:
     void CloseInternal(void);
+    bool NextSetInternal(void);
 
 private:
     CVariant GetCVariant(const pythonpp::CObject& obj) const;
@@ -355,6 +358,8 @@ private:
     CStmtStr                m_StmtStr;
     CStmtHelper             m_StmtHelper;
     CCallableStmtHelper     m_CallableStmtHelper;
+    bool                    m_AllDataFetched;
+    bool                    m_AllSetsFetched;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -784,6 +789,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/05/31 14:56:27  ssikorsk
+* Added get_proc_return_status to the cursor class in the Python DBAPI
+*
 * Revision 1.7  2005/05/18 18:41:07  ssikorsk
 * Small refactoring
 *

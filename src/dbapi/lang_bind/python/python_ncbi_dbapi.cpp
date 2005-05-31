@@ -95,6 +95,7 @@ CStmtStr::SetStr(const string& str, EStatementType default_type)
     static char const* space_characters = " \t\n";
 
     m_StmType = RetrieveStatementType(str, default_type);
+    /* Do not delete this code ...
     if ( GetType() == estFunction ) {
         // Cut off the "EXECUTE" prefix if any ...
 
@@ -117,6 +118,7 @@ CStmtStr::SetStr(const string& str, EStatementType default_type)
             }
         }
     } 
+    */
 
     m_StmtStr = str;
 }
@@ -747,9 +749,9 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         } else if (stmt_uc.substr(pos, sizeof("ALTER") - 1) == "ALTER")
         {
             stmtType = estAlter;
-        } else if (stmt_uc.substr(pos, sizeof("EXEC") - 1) == "EXEC")
-        {
-            stmtType = estFunction;
+        // } else if (stmt_uc.substr(pos, sizeof("EXEC") - 1) == "EXEC")
+        // {
+        //    stmtType = estFunction;
         }
     }
 
@@ -760,6 +762,8 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
 CStmtHelper::CStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
 , m_Executed( false )
+, m_ResultStatus( 0 )
+, m_ResultStatusAvailable( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -770,6 +774,8 @@ CStmtHelper::CStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
 , m_StmtStr( stmt )
 , m_Executed(false)
+, m_ResultStatus( 0 )
+, m_ResultStatusAvailable( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -794,6 +800,8 @@ CStmtHelper::Close(void)
     DumpResult();
     ReleaseStmt();
     m_Executed = false;
+    m_ResultStatus = 0;
+    m_ResultStatusAvailable = false;
 }
 
 void
@@ -828,6 +836,8 @@ CStmtHelper::ReleaseStmt(void)
             m_ParentTransaction->DestroyDMLConnection( conn );
         }
         m_Executed = false;
+        m_ResultStatus = 0;
+        m_ResultStatusAvailable = false;
     }
 }
 
@@ -835,6 +845,8 @@ void
 CStmtHelper::CreateStmt(void)
 {
     m_Executed = false;
+    m_ResultStatus = 0;
+    m_ResultStatusAvailable = false;
 
     if ( m_StmtStr.GetType() == estSelect ) {
         // Get a SELECT connection ...
@@ -868,7 +880,10 @@ CStmtHelper::SetStr(const CStmtStr& stmt)
     } else {
         CreateStmt();
     }
+
     m_Executed = false;
+    m_ResultStatus = 0;
+    m_ResultStatusAvailable = false;
 }
 
 void
@@ -956,6 +971,15 @@ CStmtHelper::HasRS(void) const
     return m_RS.get() != NULL;
 }
 
+int 
+CStmtHelper::GetReturnStatus(void)
+{
+    if ( !m_ResultStatusAvailable ) {
+        throw CDatabaseError("Procedure return code is not defined within this context.");
+    }
+    return m_ResultStatus;
+}
+
 bool
 CStmtHelper::NextRS(void)
 {
@@ -965,6 +989,11 @@ CStmtHelper::NextRS(void)
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
                 m_RS.reset( m_Stmt->GetResultSet() );
+                if ( m_RS->GetResultType() == eDB_StatusResult ) {
+                    m_ResultStatus = m_RS->GetVariant(1).GetInt4();
+                    m_ResultStatusAvailable = true;
+                    return false;
+                }
                 return true;
             }
         }
@@ -981,6 +1010,8 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
 , m_NumOfArgs( 0 )
 , m_Executed( false )
+, m_ResultStatus( 0 )
+, m_ResultStatusAvailable( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -992,6 +1023,8 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& st
 , m_NumOfArgs( num_arg )
 , m_StmtStr( stmt )
 , m_Executed( false )
+, m_ResultStatus( 0 )
+, m_ResultStatusAvailable( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -1017,6 +1050,8 @@ CCallableStmtHelper::Close(void)
     DumpResult();
     ReleaseStmt();
     m_Executed = false;
+    m_ResultStatus = 0;
+    m_ResultStatusAvailable = false;
 }
 
 void
@@ -1046,6 +1081,8 @@ CCallableStmtHelper::ReleaseStmt(void)
         // Release DML Connection ...
         m_ParentTransaction->DestroyDMLConnection( conn );
         m_Executed = false;
+        m_ResultStatus = 0;
+        m_ResultStatusAvailable = false;
     }
 }
 
@@ -1053,14 +1090,9 @@ void
 CCallableStmtHelper::CreateStmt(void)
 {
     _ASSERT( m_StmtStr.GetType() == estFunction );
-    m_Executed = false;
 
-    if ( m_Stmt.get() == NULL ) {
-        // Get a DML connection ...
-        m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr(), m_NumOfArgs) );
-    } else {
-        m_Stmt->ClearParamList();
-    }
+    ReleaseStmt();
+    m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr(), m_NumOfArgs) );
 }
 
 void
@@ -1071,7 +1103,10 @@ CCallableStmtHelper::SetStr(const CStmtStr& stmt, int num_arg)
 
     DumpResult();
     CreateStmt();
+
     m_Executed = false;
+    m_ResultStatus = 0;
+    m_ResultStatusAvailable = false;
 }
 
 void
@@ -1103,6 +1138,9 @@ CCallableStmtHelper::Execute(void)
     _ASSERT( m_Stmt.get() );
 
     try {
+        m_ResultStatus = 0;
+        m_ResultStatusAvailable = false;
+
         m_RS.release();                 // Insurance policy :-)
         m_Stmt->Execute();
         // Retrieve a resut if there is any ...
@@ -1158,6 +1196,9 @@ CCallableStmtHelper::HasRS(void) const
 int 
 CCallableStmtHelper::GetReturnStatus(void)
 {
+    if ( !m_ResultStatusAvailable ) {
+        throw CDatabaseError("Procedure return code is not defined within this context.");
+    }
     return m_Stmt->GetReturnStatus();
 }
 
@@ -1178,6 +1219,7 @@ CCallableStmtHelper::NextRS(void)
         throw CDatabaseError(e.GetMsg());
     }
 
+    m_ResultStatusAvailable = true;
     return false;
 }
 
@@ -1271,6 +1313,8 @@ CCursor::CCursor(CTransaction* trans)
 , m_ArraySize( 1 )
 , m_StmtHelper( trans )
 , m_CallableStmtHelper( trans )
+, m_AllDataFetched( false )
+, m_AllSetsFetched( false )
 {
     if ( trans == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -1301,6 +1345,8 @@ CCursor::CloseInternal(void)
     m_StmtHelper.Close();
     m_CallableStmtHelper.Close();
     m_RowsNum = -1;                     // As required by the specification ...
+    m_AllDataFetched = false;
+    m_AllSetsFetched = false;
 }
 
 pythonpp::CObject
@@ -1309,6 +1355,8 @@ CCursor::callproc(const pythonpp::CTuple& args)
     const size_t args_size = args.size();
 
     m_RowsNum = -1;                     // As required by the specification ...
+    m_AllDataFetched = false;
+    m_AllSetsFetched = false;
 
     if ( args_size == 0 ) {
         throw CProgrammingError("A stored procedure name is expected as a parameter");
@@ -1385,6 +1433,9 @@ CCursor::execute(const pythonpp::CTuple& args)
 {
     const size_t args_size = args.size();
 
+    m_AllDataFetched = false;
+    m_AllSetsFetched = false;
+
     // Process function's arguments ...
     if ( args_size == 0 ) {
         throw CProgrammingError("A SQL statement string is expected as a parameter");
@@ -1392,67 +1443,34 @@ CCursor::execute(const pythonpp::CTuple& args)
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
-            m_StmtStr.SetStr(pythonpp::CString(args[0]));
+            m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
         } else {
             throw CProgrammingError("A SQL statement string is expected as a parameter");
         }
 
-        if ( m_StmtStr.GetType() == estFunction ) {
-            int num_of_arguments = 0;
-            m_StmtHelper.Close();
+        m_CallableStmtHelper.Close();
+        m_StmtHelper.SetStr(m_StmtStr);
 
-            // Setup parameters ...
-            if ( args_size > 1 ) {
-                pythonpp::CObject obj( args[1] );
+        // Setup parameters ...
+        if ( args_size > 1 ) {
+            pythonpp::CObject obj(args[1]);
 
-                if ( pythonpp::CDict::HasSameType(obj) ) {
-                    const pythonpp::CDict dict = obj;
-
-                    num_of_arguments = dict.size();
-                    m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
-                    SetupParameters(dict, m_CallableStmtHelper);
-                } else  {
-                    // Curently, NCBI DBAPI supports pameter binding by name only ...
-    //            pythonpp::CSequence sequence;
-    //            if ( pythonpp::CList::HasSameType(obj) ) {
-    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-    //            }
-                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-                }
-            } else {
-                m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
-            }
-        } else {
-            m_CallableStmtHelper.Close();
-            m_StmtHelper.SetStr(m_StmtStr);
-
-            // Setup parameters ...
-            if ( args_size > 1 ) {
-                pythonpp::CObject obj(args[1]);
-
-                if ( pythonpp::CDict::HasSameType(obj) ) {
-                    SetupParameters(obj, m_StmtHelper);
-                } else  {
-                    // Curently, NCBI DBAPI supports pameter binding by name only ...
-    //            pythonpp::CSequence sequence;
-    //            if ( pythonpp::CList::HasSameType(obj) ) {
-    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-    //            }
-                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-                }
+            if ( pythonpp::CDict::HasSameType(obj) ) {
+                SetupParameters(obj, m_StmtHelper);
+            } else  {
+                // Curently, NCBI DBAPI supports pameter binding by name only ...
+//            pythonpp::CSequence sequence;
+//            if ( pythonpp::CList::HasSameType(obj) ) {
+//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+//            }
+                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
             }
         }
     }
 
-    if ( m_StmtStr.GetType() == estFunction ) {
-        m_CallableStmtHelper.Execute();
-        m_RowsNum = m_StmtHelper.GetRowCount();
-    } else {
-        m_StmtHelper.Execute();
-        m_RowsNum = m_StmtHelper.GetRowCount();
-    }
+    m_StmtHelper.Execute();
+    m_RowsNum = m_StmtHelper.GetRowCount();
 
     return pythonpp::CNone();
 }
@@ -1516,6 +1534,9 @@ CCursor::executemany(const pythonpp::CTuple& args)
 {
     const size_t args_size = args.size();
 
+    m_AllDataFetched = false;
+    m_AllSetsFetched = false;
+
     // Process function's arguments ...
     if ( args_size == 0 ) {
         throw CProgrammingError("A SQL statement string is expected as a parameter");
@@ -1523,7 +1544,7 @@ CCursor::executemany(const pythonpp::CTuple& args)
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
-            m_StmtStr.SetStr(pythonpp::CString(args[0]));
+            m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
         } else {
             throw CProgrammingError("A SQL statement string is expected as a parameter");
         }
@@ -1562,6 +1583,9 @@ pythonpp::CObject
 CCursor::fetchone(const pythonpp::CTuple& args)
 {
     try {
+        if ( m_AllDataFetched ) {
+            return pythonpp::CNone();
+        }
         if ( m_StmtStr.GetType() == estFunction ) {
             IResultSet& rs = m_CallableStmtHelper.GetRS();
 
@@ -1582,6 +1606,7 @@ CCursor::fetchone(const pythonpp::CTuple& args)
         throw CDatabaseError(e.GetMsg());
     }
 
+    m_AllDataFetched = true;
     return pythonpp::CNone();
 }
 
@@ -1600,19 +1625,34 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
 
     pythonpp::CList py_list;
     try {
+        if ( m_AllDataFetched ) {
+            return py_list;
+        }
         if ( m_StmtStr.GetType() == estFunction ) {
             IResultSet& rs = m_CallableStmtHelper.GetRS();
 
-            for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
+            size_t i = 0;
+            for ( ; i < array_size && rs.Next(); ++i ) {
                 py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            // We fetched less than expected ...
+            if ( i < array_size ) {
+                m_AllDataFetched = true;
             }
 
             m_RowsNum = m_CallableStmtHelper.GetRowCount();
         } else {
             IResultSet& rs = m_StmtHelper.GetRS();
 
-            for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
+            size_t i = 0;
+            for ( ; i < array_size && rs.Next(); ++i ) {
                 py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            // We fetched less than expected ...
+            if ( i < array_size ) {
+                m_AllDataFetched = true;
             }
 
             m_RowsNum = m_StmtHelper.GetRowCount();
@@ -1631,6 +1671,9 @@ CCursor::fetchall(const pythonpp::CTuple& args)
     pythonpp::CList py_list;
 
     try {
+        if ( m_AllDataFetched ) {
+            return py_list;
+        }
         if ( m_StmtStr.GetType() == estFunction ) {
             IResultSet& rs = m_CallableStmtHelper.GetRS();
 
@@ -1652,27 +1695,49 @@ CCursor::fetchall(const pythonpp::CTuple& args)
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.GetMsg());
     }
+    catch(...) {
+        throw CDatabaseError("Unknown error in CCursor::fetchall");
+    }
 
+    m_AllDataFetched = true;
     return py_list;
 }
 
-pythonpp::CObject
-CCursor::nextset(const pythonpp::CTuple& args)
+bool 
+CCursor::NextSetInternal(void)
 {
     try {
         m_RowsNum = 0;
-        if ( m_StmtStr.GetType() == estFunction ) {
-            if ( m_CallableStmtHelper.NextRS() ) {
-                return pythonpp::CBool(true);
-            }
-        } else {
-            if ( m_StmtHelper.NextRS() ) {
-                return pythonpp::CBool(true);
+
+        if ( !m_AllSetsFetched ) {
+            if ( m_StmtStr.GetType() == estFunction ) {
+                if ( m_CallableStmtHelper.NextRS() ) {
+                    m_AllDataFetched = false;
+                    return true;
+                }
+            } else {
+                if ( m_StmtHelper.NextRS() ) {
+                    m_AllDataFetched = false;
+                    return true;
+                }
             }
         }
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.GetMsg());
+    }
+
+    m_AllDataFetched = true;
+    m_AllSetsFetched = true;
+
+    return false;
+}
+
+pythonpp::CObject
+CCursor::nextset(const pythonpp::CTuple& args)
+{
+    if ( NextSetInternal() ) {
+        return pythonpp::CBool(true);
     }
 
     return pythonpp::CNone();
@@ -1694,10 +1759,20 @@ pythonpp::CObject
 CCursor::get_proc_return_status(const pythonpp::CTuple& args)
 {
     try {
+        if ( !m_AllDataFetched ) {
+            throw CDatabaseError("Call get_proc_return_status after you retrieve all data.");
+        }
+
+        NextSetInternal();
+
+        if ( !m_AllSetsFetched ) {
+            throw CDatabaseError("Call get_proc_return_status after you retrieve all data.");
+        }
+
         if ( m_StmtStr.GetType() == estFunction ) {
             return pythonpp::CInt( m_CallableStmtHelper.GetReturnStatus() );
         } else {
-            throw CDatabaseError("Procedure return code is not defined within this context.");
+            return pythonpp::CInt( m_StmtHelper.GetReturnStatus() );
         }
     }
     catch(const CDB_Exception& e) {
@@ -2466,6 +2541,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/05/31 14:56:27  ssikorsk
+* Added get_proc_return_status to the cursor class in the Python DBAPI
+*
 * Revision 1.16  2005/05/24 15:45:35  jcherry
 * Added missing parameter to Python documentation for connect function
 *

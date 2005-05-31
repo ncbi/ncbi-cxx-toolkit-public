@@ -251,30 +251,51 @@ void
 CPythonDBAPITest::TestStoredProcedures(void)
 {
     try {
+        // CALL stored procedure ...
         m_Engine.ExecuteStr("cursor.callproc('sp_databases')\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        BOOST_CHECK_THROW( 
+            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            string 
+            );
+        BOOST_CHECK_THROW( 
+            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            string 
+            );
 
-        // m_Engine.ExecuteStr("cursor.callproc('sp_server_info')\n");
-        // m_Engine.ExecuteStr("print cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.callproc('sp_server_info 1')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.callproc('sp_server_info 2')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.fetchmany(5)\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+
+        m_Engine.ExecuteStr("cursor.callproc('sp_server_info')\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
         m_Engine.ExecuteStr("cursor.execute('execute sp_databases')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
-
-        m_Engine.ExecuteStr("cursor.callproc('execute sp_server_info 1')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.callproc('execute sp_server_info 2')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
         // EXECUTE stored procedure with parameters ...
         m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        BOOST_CHECK_THROW( 
+            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            string 
+            );
+        BOOST_CHECK_THROW( 
+            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            string 
+            );
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
         m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 2')\n");
-        m_Engine.ExecuteStr("print cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("cursor.fetchmany(5)\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -294,9 +315,9 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    // tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
-    // tc->depends_on(tc_init);
-    // add(tc);
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecute, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -453,6 +474,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/05/31 14:56:27  ssikorsk
+* Added get_proc_return_status to the cursor class in the Python DBAPI
+*
 * Revision 1.10  2005/05/18 18:41:07  ssikorsk
 * Small refactoring
 *
