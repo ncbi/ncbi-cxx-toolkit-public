@@ -770,6 +770,14 @@
 #endif
 #endif
 
+/* Export specifier for library xgridcgi
+ */
+#ifdef NCBI_XGRIDCGI_EXPORTS
+#  define NCBI_XGRIDCGI_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XGRIDCGI_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xhtml
  */
 #ifdef NCBI_XHTML_EXPORTS
@@ -1058,6 +1066,7 @@
 #  define NCBI_XBLASTFORMAT_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
+#  define NCBI_XGRIDCGI_EXPORT
 #  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
@@ -1106,6 +1115,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.97  2005/05/31 15:16:02  didenko
+ * Added NCBI_XGRIDCGI_EXPORT
+ *
  * Revision 1.96  2005/05/13 18:23:30  ivanov
  * Do not use C++ comments in the .h files
  *
