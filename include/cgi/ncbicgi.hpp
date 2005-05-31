@@ -682,7 +682,7 @@ public:
 
     /// Serialize/Deserialize a request to/from a stream
     void Serialize(CNcbiOstream& os) const;
-    void Deserialize(CNcbiIstream& is);
+    void Deserialize(CNcbiIstream& is, TFlags flags = 0);
 
     const CNcbiEnvironment& GetEnvironment() const { return *m_Env; }
     
@@ -709,6 +709,8 @@ private:
     /// 0 in this variable means no buffer diagnostics
     size_t        m_ErrBufSize;
 
+    /// 
+    bool m_QueryStringParsed;
     /// the real constructor code
     void x_Init(const CNcbiArguments*   args,
                 const CNcbiEnvironment* env,
@@ -718,6 +720,10 @@ private:
 
     /// retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name) const;
+    /// Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
+    void x_ProcessQueryString(TFlags flags, const CNcbiArguments*  args);
+    /// Parse input stream if needed
+    void x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd);
 
     /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);
@@ -897,6 +903,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.77  2005/05/31 13:43:19  didenko
+* Created private methods for Query String and Input Stream processing
+*
 * Revision 1.76  2005/05/27 19:57:36  grichenk
 * Added URL encoding flags to CCgiRequest
 *

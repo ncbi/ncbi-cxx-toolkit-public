@@ -974,6 +974,7 @@ CCgiRequest::CCgiRequest
       m_Entries(PNocase_Conditional((flags & fCaseInsensitiveArgs) ? 
                                     NStr::eNocase : NStr::eCase)),
       m_ErrBufSize(errbuf_size),
+      m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL)
 {
     x_Init(args, env, istr, flags, ifd);
@@ -993,6 +994,7 @@ CCgiRequest::CCgiRequest
            (flags & fCaseInsensitiveArgs) ? 
                     NStr::eNocase : NStr::eCase)),
       m_ErrBufSize(errbuf_size),
+      m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL)
 {
     CNcbiArguments args(argc, argv);
@@ -1043,7 +1045,46 @@ void CCgiRequest::x_Init
     }
 
     // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
-    if ( !(flags & fIgnoreQueryString) ) {
+    x_ProcessQueryString(flags, args);
+
+    x_ProcessInputStream(flags, istr, ifd);
+
+    // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
+    // put them with empty string key for better access
+    if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
+        // there is already empty name key
+        ERR_POST("empty key name:  we will not check for IMAGE names");
+        return;
+    }
+    string image_name;
+    ITERATE (TCgiEntries, i, m_Entries) {
+        const string& entry = i->first;
+
+        // check for our case ("*.x")
+        if ( !NStr::EndsWith(entry, ".x") )
+            continue;
+
+        // get base name of IMAGE, check for the presence of ".y" part
+        string name = entry.substr(0, entry.size() - 2);
+        if (m_Entries.find(name + ".y") == m_Entries.end())
+            continue;
+
+        // it is a correct IMAGE name
+        if ( !image_name.empty() ) {
+            ERR_POST("duplicated IMAGE name: \"" << image_name <<
+                     "\" and \"" << name << "\"");
+            return;
+        }
+        image_name = name;
+    }
+    s_AddEntry(m_Entries, kEmptyStr, image_name, 0);
+}
+
+void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
+{
+    // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
+    if ( !(flags & fIgnoreQueryString) && !m_QueryStringParsed) {
+        m_QueryStringParsed = true;
         const string* query_string = NULL;
 
         if ( GetProperty(eCgi_RequestMethod).empty() ) {
@@ -1061,7 +1102,10 @@ void CCgiRequest::x_Init
                          (flags & fIndexesNotEntries) == 0);
         }
     }
+}
 
+void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd)
+{
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
 
@@ -1147,38 +1191,7 @@ void CCgiRequest::x_Init
         m_Input   = 0;
         m_InputFD = -1;
     }
-
-    // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
-    // put them with empty string key for better access
-    if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
-        // there is already empty name key
-        ERR_POST("empty key name:  we will not check for IMAGE names");
-        return;
-    }
-    string image_name;
-    ITERATE (TCgiEntries, i, m_Entries) {
-        const string& entry = i->first;
-
-        // check for our case ("*.x")
-        if ( !NStr::EndsWith(entry, ".x") )
-            continue;
-
-        // get base name of IMAGE, check for the presence of ".y" part
-        string name = entry.substr(0, entry.size() - 2);
-        if (m_Entries.find(name + ".y") == m_Entries.end())
-            continue;
-
-        // it is a correct IMAGE name
-        if ( !image_name.empty() ) {
-            ERR_POST("duplicated IMAGE name: \"" << image_name <<
-                     "\" and \"" << name << "\"");
-            return;
-        }
-        image_name = name;
-    }
-    s_AddEntry(m_Entries, kEmptyStr, image_name, 0);
 }
-
 
 const string& CCgiRequest::x_GetPropertyByName(const string& name) const
 {
@@ -1338,6 +1351,7 @@ void CCgiRequest::Serialize(CNcbiOstream& os) const
     WriteCgiCookies(os, GetCookies());
     WriteEnvironment(os, *m_Env);
     WriteContainer(os, GetIndexes());
+    os << (int)m_QueryStringParsed;
     CNcbiIstream* istrm = GetInputStream();
     if (istrm) {
         char buf[1024];
@@ -1348,18 +1362,23 @@ void CCgiRequest::Serialize(CNcbiOstream& os) const
     }
 
 }
-void CCgiRequest::Deserialize(CNcbiIstream& is) 
+void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags) 
 {
     ReadMap(is, GetEntries());
     ReadCgiCookies(is, GetCookies());
     m_OwnEnv.reset(new CNcbiEnvironment(0));
     ReadEnvironment(is,*m_OwnEnv);
     ReadContainer(is, GetIndexes());
+    if (!is.eof() && is.good()) {
+        char c;
+        is.get(c);
+        m_QueryStringParsed = c == '1' ? true : false;
+        (void)is.peek();
+    }
     m_Env = m_OwnEnv.get();
-    if (!is.eof() && is.good()) 
-        SetInputStream(&is, false, -1);
-    else
-        SetInputStream(NULL, false, -1);
+    x_ProcessQueryString(flags, NULL);
+    if (!is.eof() && is.good())
+        x_ProcessInputStream(flags, &is, -1);
 }
 
 extern string URL_DecodeString(const string& str,
@@ -1546,6 +1565,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.94  2005/05/31 13:43:21  didenko
+* Created private methods for Query String and Input Stream processing
+*
 * Revision 1.93  2005/05/27 19:57:36  grichenk
 * Added URL encoding flags to CCgiRequest
 *
