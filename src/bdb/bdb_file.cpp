@@ -253,11 +253,11 @@ unsigned int CBDB_RawFile::Truncate()
 
 void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
 {
+    m_CacheSize = cache_size;
     if (m_DB) {
         int ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
         BDB_CHECK(ret, 0);
     }
-    m_CacheSize = cache_size;
 }
 
 
@@ -1109,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/05/31 15:30:33  kuznets
+ * Fixed a bug in SetCacheSize()
+ *
  * Revision 1.51  2005/03/22 16:11:53  kuznets
  * +PrintStat() method to print btree statistics
  *
