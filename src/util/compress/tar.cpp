@@ -50,12 +50,11 @@
 #include <ctype.h>
 #include <memory>
 
-#if   defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
 #  include <io.h>
 typedef unsigned int mode_t;
-#else /*NCBI_OS_UNIX*/
-   // getpagesize() & sysconf()
-#  include <unistd.h>
+typedef short        uid_t;
+typedef short        gid_t;
 #endif
 
 
@@ -525,17 +524,10 @@ CTar::~CTar()
 
 void CTar::x_Init(void)
 {
-    size_t pagemask = (size_t)(
-#if   defined(HAVE_GETPAGESIZE)
-                               getpagesize()
-#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PAGESIZE)
-                               sysconf(_SC_PAGESIZE)
-#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PAGE_SIZE)
-                               sysconf(_SC_PAGE_SIZE)
-#else
-                               4096
-#endif /*HAVE_GETPAGESIZE*/
-                               - 1);
+    size_t pagemask = (size_t)GetVirtualMemoryPageSize();
+    if (!pagemask) {
+        pagemask = 4095; // 4096-1;
+    }
     // Assume that the page size is a power of 2
     _ASSERT(((pagemask + 1) & pagemask) == 0);
     m_BufPtr = new char[m_BufferSize + pagemask];
@@ -810,19 +802,20 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file mode");
     }
-    info.m_Stat.st_mode = value & MODEMASK; // Quietly strip unknown bits
+    // Quietly strip unknown bits
+    info.m_Stat.st_mode = mode_t(value & MODEMASK);
 
     // User Id
     if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad user ID");
     }
-    info.m_Stat.st_uid = value;
+    info.m_Stat.st_uid = (uid_t)value;
 
     // Group Id
     if (!s_OctalToNum(value, h->gid, sizeof(h->gid))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad group ID");
     }
-    info.m_Stat.st_gid = value;
+    info.m_Stat.st_gid = (gid_t)value;
 
     // Size
     if (!s_OctalToNum(value, h->size, sizeof(h->size))) {
@@ -1596,6 +1589,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/31 14:09:40  ivanov
+ * CTar::x_Init(): use GetVirtualMemoryPageSize().
+ * Ger rid of compilation warnings on MSVC.
+ *
  * Revision 1.18  2005/05/30 21:04:59  ucko
  * Use erase() rather than clear() on strings for compatibility with GCC 2.95.
  *
