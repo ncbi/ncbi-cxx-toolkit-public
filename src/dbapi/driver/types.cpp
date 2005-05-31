@@ -86,6 +86,35 @@ CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
 }
 
 
+const char* CDB_Object::GetTypeName(EDB_Type db_type) 
+{
+    switch ( db_type ) {
+    case eDB_Int             : return "DB_Int";
+    case eDB_SmallInt        : return "DB_SmallInt";
+    case eDB_TinyInt         : return "DB_TinyInt";
+    case eDB_BigInt          : return "DB_BigInt";
+    case eDB_VarChar         : return "DB_VarChar";
+    case eDB_Char            : return "DB_Char";
+    case eDB_VarBinary       : return "DB_VarBinary";
+    case eDB_Binary          : return "DB_Binary";
+    case eDB_Float           : return "DB_Float";
+    case eDB_Double          : return "DB_Double";
+    case eDB_DateTime        : return "DB_DateTime";
+    case eDB_SmallDateTime   : return "DB_SmallDateTime";
+    case eDB_Text            : return "DB_Text";
+    case eDB_Image           : return "DB_Image";
+    case eDB_Bit             : return "DB_Bit";
+    case eDB_Numeric         : return "DB_Numeric";
+    case eDB_LongBinary      : return "DB_LongBinary";
+    case eDB_LongChar        : return "DB_LongChar";
+    case eDB_UnsupportedType : return "DB_UnsupportedType";
+    }
+
+    DATABASE_DRIVER_ERROR( "unknown type", 2 );
+
+    return NULL;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Int::
 //
@@ -902,6 +931,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/05/31 21:02:37  ssikorsk
+ * Added GetTypeName method to the CDB_Object class
+ *
  * Revision 1.18  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

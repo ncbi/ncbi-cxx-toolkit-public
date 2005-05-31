@@ -99,6 +99,9 @@ public:
     // NOTE:  "size" matters only for eDB_Char, eDB_Binary, eDB_LongChar, eDB_LongBinary.
     static CDB_Object* Create(EDB_Type type, size_t size = 1);
 
+    // Get human-readable type name for db_type    
+    static const char* GetTypeName(EDB_Type db_type);
+
 protected:
     bool m_Null;
 };
@@ -1042,6 +1045,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/05/31 21:01:52  ssikorsk
+ * Added GetTypeName method to the CDB_Object class
+ *
  * Revision 1.17  2003/05/13 16:54:40  sapojnik
  * CDB_Object::Create() - support for LongChar, LongBinary
  *
