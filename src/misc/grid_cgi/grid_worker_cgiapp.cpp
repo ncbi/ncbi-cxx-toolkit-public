@@ -158,7 +158,8 @@ string CGridWorkerCgiApp::GetJobVersion() const
 
 int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os)
 {
-    auto_ptr<CCgiContext> cgi_context( new CCgiContext(*this, &is, &os) );
+    auto_ptr<CCgiContext> cgi_context( 
+                         new CCgiContext(*this, &is, &os, m_RequestFlags) );
     
     CDiagRestorer diag_restorer;
 
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/05/31 13:46:55  didenko
+ * Added passing m_RequestFlags to the CCgiContext constructor
+ *
  * Revision 1.2  2005/05/25 18:52:38  didenko
  * Moved grid worker node application functionality to the separate class
  *
