@@ -115,12 +115,13 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 
 CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiIstream*           is,
-                         CNcbiOstream*           os)
+                         CNcbiOstream*           os,
+                         CCgiRequest::TFlags     flags)
     : m_App(app),
       m_Request(new CCgiRequest()),
       m_Response(os, -1)
 {
-    m_Request->Deserialize(*is);
+    m_Request->Deserialize(*is,flags);
     return;
 }
 
@@ -299,6 +300,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2005/05/31 13:40:11  didenko
+* Added an optional parameter CCgiRequest::TFlags to the constructor of CCgiContext
+*
 * Revision 1.42  2005/05/25 14:07:18  didenko
 * Added new constructor from CCgiContext
 *

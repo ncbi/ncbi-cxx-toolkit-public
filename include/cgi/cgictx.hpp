@@ -145,7 +145,8 @@ public:
 
     CCgiContext(CCgiApplication&        app,
                 CNcbiIstream*           inp /* see ::CCgiRequest(istr) */,
-                CNcbiOstream*           out /* see ::CCgiResponse(out) */
+                CNcbiOstream*           out /* see ::CCgiResponse(out) */,
+                CCgiRequest::TFlags     flags = 0
                 );
 
     virtual ~CCgiContext(void);
@@ -351,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2005/05/31 13:40:10  didenko
+* Added an optional parameter CCgiRequest::TFlags to the constructor of CCgiContext
+*
 * Revision 1.31  2005/05/25 14:07:18  didenko
 * Added new constructor from CCgiContext
 *
