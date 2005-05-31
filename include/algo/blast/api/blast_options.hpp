@@ -375,29 +375,22 @@ private:
     /// Returns QuerySetUpOptions for eLocal objects, NULL for eRemote
     /// @internal
     QuerySetUpOptions * GetQueryOpts() const;
-    /// @internal Returns LookupTableOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns LookupTableOptions for eLocal objects, NULL for eRemote
     LookupTableOptions * GetLutOpts() const;
-    /// @internal Returns BlastInitialWordOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns BlastInitialWordOptions for eLocal objects, NULL for eRemote
     BlastInitialWordOptions * GetInitWordOpts() const;
-    /// @internal Returns BlastExtensionOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns BlastExtensionOptions for eLocal objects, NULL for eRemote
     BlastExtensionOptions * GetExtnOpts() const;
-    /// @internal Returns BlastHitSavingOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns BlastHitSavingOptions for eLocal objects, NULL for eRemote
     BlastHitSavingOptions * GetHitSaveOpts() const;
-    /// @internal Returns PSIBlastOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns PSIBlastOptions for eLocal objects, NULL for eRemote
     PSIBlastOptions * GetPSIBlastOpts() const;
-    /// @internal Returns BlastDatabaseOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns BlastDatabaseOptions for eLocal objects, NULL for eRemote
     BlastDatabaseOptions * GetDbOpts() const;
-    /// @internal Returns BlastScoringOptions for eLocal objects, NULL for
-    /// eRemote
+    /// Returns BlastScoringOptions for eLocal objects, NULL for eRemote
     BlastScoringOptions * GetScoringOpts() const;
-    /// @internal Returns BlastEffectiveLengthsOptions for eLocal objects, 
-    /// NULL for eRemote
+    /// Returns BlastEffectiveLengthsOptions for eLocal objects, NULL for 
+    /// eRemote
     BlastEffectiveLengthsOptions * GetEffLenOpts() const;
 
     friend class CBl2Seq;
@@ -593,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.103  2005/05/31 13:42:57  camacho
+* doxygen fixes
+*
 * Revision 1.102  2005/05/25 13:09:02  camacho
 * doxygen fixes
 *
