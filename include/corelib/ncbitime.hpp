@@ -46,9 +46,6 @@
 ///
 ///   - Do not use DataBase conversion functions with dates
 ///     less than January 1, 1900.
-///
-///   - Mac OS 9 does not correctly support daylight savings flag.
-///     CTime implementation does not support Daylight on this platform.
 
 
 #include <corelib/ncbistd.hpp>
@@ -140,8 +137,8 @@ typedef struct {
 /// Defines a standard Date/Time class.
 ///
 /// Can be used to span time (to represent elapsed time). Can operate with
-/// local and UTC time. The time is kept in class in the format in which it
-/// was originally given. 
+/// local and GMT (aka UTC) time. The time is kept in class in the format
+/// in which it was originally given. 
 ///
 /// Throw exception of type CTimeException on errors.
 ///
@@ -240,10 +237,11 @@ public:
 
     /// Explicit conversion constructor for time_t representation of time.
     ///
-    /// Construct time object from UTC time_t value (assuming it is eGMT).
+    /// Construct time object from GMT time_t value.
+    /// The constructed object will be in the eGMT format.
     ///
     /// @param t
-    ///   Time in the UTC time_t format.
+    ///   Time in the GMT time_t format.
     /// @param tzp
     ///   What time zone precision to use.
     explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecisionDefault);
@@ -1997,6 +1995,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/05/31 13:18:56  ivanov
+ * Minor comments fix
+ *
  * Revision 1.46  2005/03/01 19:40:34  ivanov
  * + CTimeSpan::IsEmpty()
  *
