@@ -276,9 +276,9 @@ private:
 
 
 CCgiApplication::CCgiApplication(void) 
- : m_HostIP(0), 
+ : m_RequestFlags(0),
+   m_HostIP(0), 
    m_Iteration(0),
-   m_RequestFlags(0),
    m_ArgContextSync(false)
 {
     SetStdioFlags(fBinaryCin | fBinaryCout);
@@ -807,6 +807,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.62  2005/05/31 13:37:59  didenko
+* Made m_RequestFlags a protected member
+*
 * Revision 1.61  2005/03/24 01:23:44  vakatov
 * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
 * CNcbiRegistry::Get*()

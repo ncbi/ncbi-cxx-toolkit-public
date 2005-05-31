@@ -216,7 +216,13 @@ protected:
     /// the CCgiApplication.
     void SetCafService(CCookieAffinity* caf);
 
+protected:
+
+    /// Bit flags for CCgiRequest
+    int                       m_RequestFlags;
+
 private:
+
     // If FastCGI-capable, and run as a Fast-CGI, then iterate through
     // the FastCGI loop (doing initialization and running ProcessRequest()
     // for each HTTP request);  then return TRUE.
@@ -259,8 +265,6 @@ private:
     // Environment var. value to put to the diag.prefix;  [CGI].DiagPrefixEnv
     string                    m_DiagPrefixEnv;
 
-    /// Bit flags for CCgiRequest
-    int                       m_RequestFlags;
     /// Flag, indicates arguments are in sync with CGI context
     /// (becomes TRUE on first call of GetArgs())
     mutable bool              m_ArgContextSync;
@@ -331,6 +335,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/05/31 13:37:59  didenko
+* Made m_RequestFlags a protected member
+*
 * Revision 1.46  2005/05/23 15:20:47  didenko
 * Undo wrong commit
 *
