@@ -44,6 +44,25 @@
 #include <corelib/ncbifile.hpp>
 
 
+/* Permission bits as defined in tar */
+
+// Special mode bits
+#define TSUID     04000  /* set UID on execution    */
+#define TSGID     02000  /* set GID on execution    */
+#define TSVTX     01000  /* reserved (sticky bit)   */
+// File permissions
+#define TUREAD    00400  /* read by owner           */
+#define TUWRITE   00200  /* write by owner          */
+#define TUEXEC    00100  /* execute/search by owner */
+#define TGREAD    00040  /* read by group           */
+#define TGWRITE   00020  /* write by group          */
+#define TGEXEC    00010  /* execute/search by group */
+#define TOREAD    00004  /* read by other           */
+#define TOWRITE   00002  /* write by other          */
+#define TOEXEC    00001  /* execute/search by other */
+#define TMODEMASK 07777  /* all of the above        */
+
+
 /** @addtogroup Compression
  *
  * @{
@@ -139,10 +158,11 @@ public:
     const string& GetName(void)             const { return m_Name;          }
     EType         GetType(void)             const { return m_Type;          }
     Int8          GetSize(void)             const { return m_Stat.st_size;  }
-    unsigned int  GetMode(void)             const;
-    void          GetMode(CDirEntry::TMode* user_mode,
-                          CDirEntry::TMode* group_mode = 0,
-                          CDirEntry::TMode* other_mode = 0) const;
+    unsigned int  GetMode(void)             const; // Raw mode as stored in tar
+    void          GetMode(CDirEntry::TMode*            user_mode,
+                          CDirEntry::TMode*            group_mode   = 0,
+                          CDirEntry::TMode*            other_mode   = 0
+                          /*,CDirEntry::TSpecialModeBits* special_bits = 0*/) const;
     int           GetUserId(void)           const { return m_Stat.st_uid;   }
     int           GetGroupId(void)          const { return m_Stat.st_gid;   }
     const string& GetLinkName(void)         const { return m_LinkName;      }
@@ -206,16 +226,16 @@ public:
         /// Create extracted files with the same ownership
         fPreserveOwner     = (1<<7),
         /// Create extracted files with the same permissions
-        fPreservePerm      = (1<<8),
+        fPreserveMode      = (1<<8),
         /// Preserve date/times for extracted files
         fPreserveTime      = (1<<9),
         /// Preserve all attributes
-        fPreserveAll       = fPreserveOwner | fPreservePerm | fPreserveTime,
+        fPreserveAll       = fPreserveOwner | fPreserveMode | fPreserveTime,
 
         /// Default flags
         fDefault           = fOverwrite | fPreserveAll
     };
-    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
+    typedef unsigned int TFlags;  ///< Bitwise OR of EFlags
 
 
     /// Constructors
@@ -523,6 +543,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/06/01 19:58:57  lavr
+ * Fix previous "fix" of getting page size
+ * Move tar permission bits to the header; some cosmetics
+ *
  * Revision 1.10  2005/05/30 15:27:37  lavr
  * Comments reviewed, proper blocking factor fully implemented, other patches
  *

@@ -50,7 +50,7 @@
 #include <ctype.h>
 #include <memory>
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 #  include <io.h>
 typedef unsigned int mode_t;
 typedef short        uid_t;
@@ -94,23 +94,6 @@ static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
     }
     return retval;
 }
-
-
-// Special mode bits
-#define TSUID     04000  /* set UID on execution    */
-#define TSGID     02000  /* set GID on execution    */
-#define TSVTX     01000  /* reserved (sticky bit)   */
-// File permissions
-#define TUREAD    00400  /* read by owner           */
-#define TUWRITE   00200  /* write by owner          */
-#define TUEXEC    00100  /* execute/search by owner */
-#define TGREAD    00040  /* read by group           */
-#define TGWRITE   00020  /* write by group          */
-#define TGEXEC    00010  /* execute/search by group */
-#define TOREAD    00004  /* read by other           */
-#define TOWRITE   00002  /* write by other          */
-#define TOEXEC    00001  /* execute/search by other */
-#define MODEMASK  07777  /* all of the above        */
 
 
 static mode_t s_TarToMode(unsigned int value)
@@ -262,8 +245,8 @@ struct SHeader {        // byte offset
 
 /// Block as a header.
 union TBlock {
-    char     buffer[kBlockSize];
-    SHeader  header;
+    char    buffer[kBlockSize];
+    SHeader header;
 };
 
 
@@ -278,8 +261,8 @@ static void s_TarChecksum(TBlock* block)
     for (size_t i = 0; i < sizeof(block->buffer); i++) {
         checksum += *p++;
     }
-    // Checksum (Special: 6 digits, '\0', then a space [already in place])
-    if (!s_NumToOctal((unsigned short) checksum,
+    // Checksum (Special: 6 digits, then '\0', then a space [already in place])
+    if (!s_NumToOctal((unsigned short) checksum/*cut it!*/,
                       h->checksum, sizeof(h->checksum) - 2)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store checksum");
     }
@@ -309,28 +292,29 @@ unsigned int CTarEntryInfo::GetMode(void) const
 }
 
 
-void CTarEntryInfo::GetMode(CDirEntry::TMode* usr_mode,
-                            CDirEntry::TMode* grp_mode,
-                            CDirEntry::TMode* oth_mode) const
+void CTarEntryInfo::GetMode(CDirEntry::TMode*            usr_mode,
+                            CDirEntry::TMode*            grp_mode,
+                            CDirEntry::TMode*            oth_mode
+                            /*,CDirEntry::TSpecialModeBits* special_bits*/) const
 {
     mode_t mode = s_TarToMode(m_Stat.st_mode);
     // User
     if (usr_mode) {
         *usr_mode = (
 #if   defined(S_IRUSR)
-                     (mode & S_IRUSR  ? CDirEntry::fRead    : 0) |
+                     (mode & S_IRUSR     ? CDirEntry::fRead    : 0) |
 #elif defined(S_IREAD)
-                     (mode & S_IREAD  ? CDirEntry::fRead    : 0) |
+                     (mode & S_IREAD     ? CDirEntry::fRead    : 0) |
 #endif
 #if   defined(S_IWUSR)
-                     (mode & S_IWUSR  ? CDirEntry::fWrite   : 0) |
+                     (mode & S_IWUSR     ? CDirEntry::fWrite   : 0) |
 #elif defined(S_IWRITE)
-                     (mode & S_IWRITE ? CDirEntry::fWrite   : 0) |
+                     (mode & S_IWRITE    ? CDirEntry::fWrite   : 0) |
 #endif
 #if   defined(S_IXUSR)
-                     (mode & S_IXUSR  ? CDirEntry::fExecute : 0) |
+                     (mode & S_IXUSR     ? CDirEntry::fExecute : 0) |
 #elif defined(S_IEXEC)
-                     (mode & S_IEXEC  ? CDirEntry::fExecute : 0) |
+                     (mode & S_IEXEC     ? CDirEntry::fExecute : 0) |
 #endif
                      0);
     }
@@ -338,13 +322,13 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode* usr_mode,
     if (grp_mode) {
         *grp_mode = (
 #ifdef S_IRGRP
-                     (mode & S_IRGRP  ? CDirEntry::fRead    : 0) |
+                     (mode & S_IRGRP     ? CDirEntry::fRead    : 0) |
 #endif
 #ifdef S_IWGRP
-                     (mode & S_IWGRP  ? CDirEntry::fWrite   : 0) |
+                     (mode & S_IWGRP     ? CDirEntry::fWrite   : 0) |
 #endif
 #ifdef S_IXGRP
-                     (mode & S_IXGRP  ? CDirEntry::fExecute : 0) |
+                     (mode & S_IXGRP     ? CDirEntry::fExecute : 0) |
 #endif
                      0);
     }
@@ -352,16 +336,32 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode* usr_mode,
     if (oth_mode) {
         *oth_mode = (
 #ifdef S_IROTH
-                     (mode & S_IROTH  ? CDirEntry::fRead    : 0) |
+                     (mode & S_IROTH     ? CDirEntry::fRead    : 0) |
 #endif
 #ifdef S_IWOTH
-                     (mode & S_IWOTH  ? CDirEntry::fWrite   : 0) |
+                     (mode & S_IWOTH     ? CDirEntry::fWrite   : 0) |
 #endif
 #ifdef S_IXOTH
-                     (mode & S_IXOTH  ? CDirEntry::fExecute : 0) |
+                     (mode & S_IXOTH     ? CDirEntry::fExecute : 0) |
 #endif
                      0);
     }
+#if 0
+    // Special bits
+    if (special_bits) {
+        *special_bits = (
+#ifdef S_ISUID
+                         (mode & S_ISUID ? CDirEntry::fSetUID  : 0) |
+#endif
+#ifdef S_ISGID
+                         (mode & S_ISGID ? CDirEntry::fSetGID  : 0) |
+#endif
+#ifdef S_ISVTX
+                         (mode & S_ISVTX ? CDirEntry::fSticky  : 0) |
+#endif
+                         0);
+    }
+#endif
 
     return;
 }
@@ -445,10 +445,11 @@ static string s_UserGroupAsString(const CTarEntryInfo& info)
 
 ostream& operator << (ostream& os, const CTarEntryInfo& info)
 {
-    os << s_ModeAsString(info)                                      << ' '
-       << setw(17) << s_UserGroupAsString(info)                     << ' '
-       << setw(10) << NStr::UInt8ToString(info.GetSize())           << ' '
-       << CTime(info.GetModificationTime()).AsString("Y-M-D h:m:s") << ' '
+    CTime mtime(info.GetModificationTime());
+    os << s_ModeAsString(info)                            << ' '
+       << setw(17) << s_UserGroupAsString(info)           << ' '
+       << setw(10) << NStr::UInt8ToString(info.GetSize()) << ' '
+       << mtime.ToLocalTime().AsString("Y-M-D h:m:s")     << ' '
        << info.GetName();
     if (info.GetType() == CTarEntryInfo::eLink) {
         os << " -> " << info.GetLinkName();
@@ -524,12 +525,13 @@ CTar::~CTar()
 
 void CTar::x_Init(void)
 {
-    size_t pagemask = (size_t)GetVirtualMemoryPageSize();
-    if (!pagemask) {
-        pagemask = 4095; // 4096-1;
+    size_t pagesize = (size_t) GetVirtualMemoryPageSize();
+    if (!pagesize) {
+        pagesize = 4096; // reasonable default
     }
+    size_t pagemask = pagesize - 1;
     // Assume that the page size is a power of 2
-    _ASSERT(((pagemask + 1) & pagemask) == 0);
+    _ASSERT((pagesize & pagemask) == 0);
     m_BufPtr = new char[m_BufferSize + pagemask];
     // m_Buffer is page-aligned
     m_Buffer = m_BufPtr +
@@ -803,19 +805,19 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file mode");
     }
     // Quietly strip unknown bits
-    info.m_Stat.st_mode = mode_t(value & MODEMASK);
+    info.m_Stat.st_mode = (mode_t)(value & TMODEMASK);
 
     // User Id
     if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad user ID");
     }
-    info.m_Stat.st_uid = (uid_t)value;
+    info.m_Stat.st_uid = (uid_t) value;
 
     // Group Id
     if (!s_OctalToNum(value, h->gid, sizeof(h->gid))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad group ID");
     }
-    info.m_Stat.st_gid = (gid_t)value;
+    info.m_Stat.st_gid = (gid_t) value;
 
     // Size
     if (!s_OctalToNum(value, h->size, sizeof(h->size))) {
@@ -1050,7 +1052,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     x_WriteArchive(sizeof(block->buffer));
 
     // Store the full name in the extended block
-    auto_ptr<char> buf_ptr(new char[len]);
+    AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[len]);
     storage = buf_ptr.get();
     memcpy(storage, name.c_str(), len);
 
@@ -1218,7 +1220,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
             // Backup destination entry
             try {
                 if (!CDirEntry(*dst).Backup(kEmptyStr,
-                                            CDirEntry::eBackup_Rename)) {
+                                            CDirEntry::fBF_Safe |
+                                            CDirEntry::fBF_Rename)) {
                     NCBI_THROW(CTarException, eBackup,
                                "Cannot backup existing destination '" +
                                dst->GetPath() + '\'');
@@ -1361,9 +1364,9 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         }
     }
 
-    // Permissions.
+    // Mode.
     // Set them last.
-    if (m_Flags & fPreservePerm) {
+    if (m_Flags & fPreserveMode) {
         bool failed = false;
 #ifdef NCBI_OS_UNIX
         // We cannot change permissions for sym.links because lchmod()
@@ -1379,12 +1382,13 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         }
 #else
         CDirEntry::TMode user, group, other;
-        info.GetMode(&user, &group, &other);
-        failed = !dst->SetMode(user, group, other);
+        CDirEntry::TSpecialModeBits special_bits;
+        info.GetMode(&user, &group, &other, &special_bits);
+        failed = !dst->SetMode(user, group, other, special_bits);
 #endif /*NCBI_OS_UNIX*/
         if (failed) {
             NCBI_THROW(CTarException, eRestoreAttrs,
-                       "Cannot restore permissions for '" +
+                       "Cannot restore file mode for '" +
                        dst->GetPath() + '\'');
         }
     }
@@ -1475,7 +1479,7 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     entry.GetOwner(&info.m_UserName, &info.m_GroupName);
     info.m_Stat = st.orig;
     // Fixup for mode bits
-    info.m_Stat.st_mode = (mode_t)(s_ModeToTar(st.orig.st_mode) & MODEMASK);
+    info.m_Stat.st_mode = (mode_t)(s_ModeToTar(st.orig.st_mode) & TMODEMASK);
 
     // Check if we need to update this entry in the archive
     bool update_directory = true;
@@ -1589,6 +1593,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/06/01 19:58:58  lavr
+ * Fix previous "fix" of getting page size
+ * Move tar permission bits to the header; some cosmetics
+ *
  * Revision 1.19  2005/05/31 14:09:40  ivanov
  * CTar::x_Init(): use GetVirtualMemoryPageSize().
  * Ger rid of compilation warnings on MSVC.
