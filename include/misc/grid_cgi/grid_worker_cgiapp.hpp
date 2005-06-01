@@ -70,10 +70,13 @@ protected:
 
     virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
+    void         PutProgressMessage(const string& msg);
+
 private:
+    CWorkerNodeJobContext* m_WorkerNodeContext;
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
     friend class CCgiWorkerNodeJob;
-    int RunJob(CNcbiIstream& is, CNcbiOstream& os);
+    int RunJob(CNcbiIstream& is, CNcbiOstream& os, CWorkerNodeJobContext& );
 
 };
 
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/01 20:29:37  didenko
+ * Added progress reporting
+ *
  * Revision 1.4  2005/05/31 15:21:32  didenko
  * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
  *

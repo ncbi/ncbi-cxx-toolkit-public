@@ -70,7 +70,7 @@ public:
         CNcbiIstream& is = context.GetIStream();
         CNcbiOstream& os = context.GetOStream();
 
-        int ret = m_App.RunJob(is, os);
+        int ret = m_App.RunJob(is, os, context);
 
         context.CommitJob();
         return ret;;
@@ -103,6 +103,7 @@ private:
 CGridWorkerCgiApp::CGridWorkerCgiApp( 
                    INetScheduleStorageFactory* storage_factory,
                    INetScheduleClientFactory* client_factory)
+    : m_WorkerNodeContext(NULL)
 {
     m_AppImpl.reset(new  CGridWorkerApp_Impl(*this,
                                              new CCgiWorkerNodeJobFactory(*this),
@@ -156,11 +157,13 @@ string CGridWorkerCgiApp::GetJobVersion() const
     return GetProgramDisplayName() + " 1.0.0"; 
 }
 
-int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os)
+int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
+                              CWorkerNodeJobContext& wn_context)
 {
     auto_ptr<CCgiContext> cgi_context( 
                          new CCgiContext(*this, &is, &os, m_RequestFlags) );
     
+    m_WorkerNodeContext = &wn_context;
     CDiagRestorer diag_restorer;
 
     int ret;
@@ -175,7 +178,14 @@ int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os)
     }
     OnEvent(eEndRequest, 120);
     OnEvent(eExit, ret);
+    m_WorkerNodeContext = NULL;
     return ret;
+}
+
+void  CGridWorkerCgiApp::PutProgressMessage(const string& msg)
+{
+    if (m_WorkerNodeContext)
+        m_WorkerNodeContext->PutProgressMessage(msg);
 }
 
 
@@ -187,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/01 20:29:37  didenko
+ * Added progress reporting
+ *
  * Revision 1.3  2005/05/31 13:46:55  didenko
  * Added passing m_RequestFlags to the CCgiContext constructor
  *
