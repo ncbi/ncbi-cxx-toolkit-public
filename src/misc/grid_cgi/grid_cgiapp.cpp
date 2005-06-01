@@ -130,7 +130,7 @@ void CGridCgiApplication::InitGridClient()
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     bool automatic_cleanup = 
-        GetConfig().GetBool("grid_cgi", "automatic_cleaup", true, IRegistry::eReturn);
+        GetConfig().GetBool("grid_cgi", "automatic_cleanup", true, IRegistry::eReturn);
     bool use_progress = 
         GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
 
@@ -179,6 +179,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     grid_ctx.PersistEntry("job_key");
     string job_key = grid_ctx.GetEntryValue("job_key");
     try {
+        try {
         OnBeginProcessRequest(grid_ctx);
         if (!job_key.empty()) {
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
@@ -267,11 +268,14 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 ShowParamsPage(grid_ctx);
             }
         }
-
+        } // try
+        catch (CNetServiceException& ex) {
+            OnJobFailed(ex.what(), grid_ctx);
+        }
         CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
         page->AddTagMap("SELF_URL", self_url);
         OnEndProcessRequest(grid_ctx);
-    }
+    } //try
     catch (exception& e) {
         ERR_POST("Failed to populate " << GetPageTitle() 
                                        << " HTML page: " << e.what());
@@ -322,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/06/01 20:28:37  didenko
+ * Fixed a bug with exceptions reporting
+ *
  * Revision 1.19  2005/06/01 15:17:15  didenko
  * Now a query string is parsed in the CGridCgiContext constructor
  * Got rid of unsed code

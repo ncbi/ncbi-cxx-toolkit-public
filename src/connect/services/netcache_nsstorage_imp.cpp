@@ -80,6 +80,9 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
             break;
         }
         catch (CNetServiceException& ex) {
+            if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                throw;
+
             LOG_POST(Error << "Communication Error : " 
                             << ex.what());
             if (++try_count >= 2)
@@ -204,11 +207,13 @@ void CNetCacheNSStorage::Reset()
                 break;
             }
             catch (CNetServiceException& ex) {
+                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                    throw;
                 LOG_POST(Error << "Communication Error : " 
                          << ex.what());
                 if (++try_count >= 2)
                     throw;
-            SleepMilliSec(1000 + try_count*2000);
+                SleepMilliSec(1000 + try_count*2000);
             }
         }
         if (!writer.get()) {
@@ -241,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/06/01 20:28:37  didenko
+ * Fixed a bug with exceptions reporting
+ *
  * Revision 1.8  2005/05/10 15:15:14  didenko
  * Added clean up procedure
  *
