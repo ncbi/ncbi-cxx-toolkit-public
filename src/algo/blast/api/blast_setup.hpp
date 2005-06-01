@@ -61,6 +61,7 @@ class CBlastOptions;
  * blast::SetupQueries.
  * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
+ * @param prog program type from the CORE's point of view [in]
  * @param strand_opt Unless the strand option is set to single strand, the 
  * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
  * during the search [in]
@@ -260,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/06/01 15:51:59  camacho
+* doxygen fix
+*
 * Revision 1.39  2005/05/24 21:10:43  camacho
 * Add SBlastSequence constructor
 *
