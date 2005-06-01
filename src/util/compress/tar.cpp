@@ -1220,8 +1220,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
             // Backup destination entry
             try {
                 if (!CDirEntry(*dst).Backup(kEmptyStr,
-                                            CDirEntry::fBF_Safe |
-                                            CDirEntry::fBF_Rename)) {
+                                            CDirEntry::eBackup_Rename)) {
                     NCBI_THROW(CTarException, eBackup,
                                "Cannot backup existing destination '" +
                                dst->GetPath() + '\'');
@@ -1593,6 +1592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/06/01 20:04:31  lavr
+ * Use older eBackup_Rename enum (not newer one which is not yet in CVS)
+ *
  * Revision 1.20  2005/06/01 19:58:58  lavr
  * Fix previous "fix" of getting page size
  * Move tar permission bits to the header; some cosmetics
