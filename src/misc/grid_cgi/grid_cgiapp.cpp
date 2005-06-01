@@ -40,30 +40,16 @@
 
 BEGIN_NCBI_SCOPE
 
-//#define TUNNEL2DRID_USE_COOKIE 1
-
-
 CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
     : m_Page(page), m_CgiContext(ctx)
 {
+    const CCgiRequest& req = ctx.GetRequest();
+    string query_string = req.GetProperty(eCgi_QueryString);
+    CCgiRequest::ParseEntries(query_string, m_ParsedQueryString);
 }
 
 CGridCgiContext::~CGridCgiContext()
 {
-    /*
-    try {
-        TPersistedEntries::const_iterator it;
-        for (it = m_PersistedEntries.begin(); 
-             it != m_PersistedEntries.end(); ++it) {
-            const string& name = it->first;
-            const string& value = it->second;
-            if (!name.empty() && !value.empty()) {
-                SetCookie(name, value);
-            }
-        }
-    }
-    catch (...) {} // just to be sure we will not throw from the destructor
-    */
 }
 
 string CGridCgiContext::GetSelfURL() const
@@ -90,90 +76,39 @@ string CGridCgiContext::GetSelfURL() const
 
 void CGridCgiContext::SetJobKey(const string& job_key)
 {
-    m_PersistedEntries["job_key"] = job_key;
-#ifdef TUNNEL2DRID_USE_COOKIE
-    SetCookie("job_key", job_key);
-#endif
+    PersistEntry("job_key", job_key);
 
 }
 const string& CGridCgiContext::GetJobKey(void) const
 {
-    TPersistedEntries::const_iterator it = m_PersistedEntries.find("job_key");
+    return GetEntryValue("job_key");
+}
+
+const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
+{
+    TPersistedEntries::const_iterator it = m_PersistedEntries.find(entry_name);
     if (it != m_PersistedEntries.end())
         return it->second;
     return kEmptyStr;
 }
 
-const string& CGridCgiContext::GetCookieValue(const string& cookie_name) const
-{
-#ifdef TUNNEL2DRID_USE_COOKIE
-    const CCgiCookie* c = 
-        m_CgiContext.GetRequest().GetCookies().Find(cookie_name, "", "" );
-    if (c)
-        return c->GetValue();
-#endif
-    return kEmptyStr;   
-}
-
-void CGridCgiContext::SetCookie(const string& name, const string& value)
-{
-#ifdef TUNNEL2DRID_USE_COOKIE
-    m_CgiContext.GetResponse().Cookies().Add(name, value);
-#endif
-}
-
-void CGridCgiContext::ExpierCookie(const string& cookie_name)
-{
-#ifdef TUNNEL2DRID_USE_COOKIE
-    CCgiCookie c(cookie_name, "empty");
-    CTime exp(CTime::eCurrent, CTime::eGmt);
-    exp.AddHour(-1);
-    c.SetExpTime(exp);
-    m_CgiContext.GetResponse().Cookies().Add(c);
-#endif
-}
-
-const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
-{
-    const CCgiRequest& request = m_CgiContext.GetRequest();
-    const TCgiEntries& entries = request.GetEntries();
-    TCgiEntries::const_iterator eit = entries.find(entry_name);
-    if (eit != entries.end())
-        return eit->second;
-#ifdef TUNNEL2DRID_USE_COOKIE
-    return GetCookieValue(entry_name);
-#else
-    return kEmptyStr;
-#endif
-}
-
 void CGridCgiContext::PersistEntry(const string& entry_name)
 {
-    const string& value = GetEntryValue(entry_name);
+    string value = kEmptyStr;
+    TCgiEntries::const_iterator eit = m_ParsedQueryString.find(entry_name);
+    if (eit != m_ParsedQueryString.end())
+       value = eit->second;
+
     PersistEntry(entry_name, value);
 }
 void CGridCgiContext::PersistEntry(const string& entry_name, 
                                    const string& value)
 {   
-    if (!value.empty()) {
-        m_PersistedEntries[entry_name] = value;
-#ifdef TUNNEL2DRID_USE_COOKIE
-        SetCookie(entry_name, value);
-#endif
-    }
+    m_PersistedEntries[entry_name] = value;
 }
 
 void CGridCgiContext::Clear()
 {
-#ifdef TUNNEL2DRID_USE_COOKIE
-    TPersistedEntries::const_iterator it;
-    for (it = m_PersistedEntries.begin(); 
-         it != m_PersistedEntries.end(); ++it) {
-        const string& name = it->first;
-        if (!name.empty())
-            ExpierCookie(name);
-        }
-#endif
     m_PersistedEntries.clear();
 }
 
@@ -241,11 +176,11 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         return 2;
     }
     CGridCgiContext grid_ctx(*page, ctx);
+    grid_ctx.PersistEntry("job_key");
     string job_key = grid_ctx.GetEntryValue("job_key");
     try {
         OnBeginProcessRequest(grid_ctx);
         if (!job_key.empty()) {
-            grid_ctx.PersistEntry("job_key");
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
             CNetScheduleClient::EJobStatus status;
             status = job_status.GetStatus();
@@ -310,7 +245,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 // Submit a job
                 try {
                     string job_key = job_submiter.Submit();
-                    grid_ctx.SetCookie("job_key", job_key);
                     grid_ctx.SetJobKey(job_key);
                     OnJobSubmitted(grid_ctx);
                     
@@ -388,6 +322,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/06/01 15:17:15  didenko
+ * Now a query string is parsed in the CGridCgiContext constructor
+ * Got rid of unsed code
+ *
  * Revision 1.18  2005/05/10 14:14:33  didenko
  * Added blob caching
  *

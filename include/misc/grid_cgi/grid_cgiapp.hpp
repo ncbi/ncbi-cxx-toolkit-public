@@ -85,8 +85,7 @@ public:
     { return m_ProgressMsg; }
 
     /// Get a value from a cgi request. if there is no an entry with a
-    /// given name tries to find a cookie. If none is found returns 
-    /// an empty string.
+    /// given name it returns an empty string.
     const string& GetEntryValue(const string& entry_name) const;
 
     /// Save this entry as a cookie add it to serf url
@@ -97,16 +96,6 @@ public:
     CCgiContext& GetCGIContext() { return m_CgiContext; }
 
 private:
-    /// Get a cookie value from a cgi request.
-    /// if there is no a cookie with a given name 
-    /// returns an empty string.
-    const string& GetCookieValue(const string& cookie_name) const;
-
-    /// Set a cookie to a cgi responese
-    void SetCookie(const string& name, const string& value);
-
-    /// 
-    void ExpierCookie(const string& name);
 
     /// Remove all persisted entries from cookie and self url.
     void Clear();
@@ -122,6 +111,7 @@ private:
 
     CHTMLPage&                    m_Page;
     CCgiContext&                  m_CgiContext;
+    TCgiEntries                   m_ParsedQueryString;
     TPersistedEntries             m_PersistedEntries;
     string                        m_ProgressMsg;
     
@@ -275,6 +265,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/06/01 15:17:15  didenko
+ * Now a query string is parsed in the CGridCgiContext constructor
+ * Got rid of unsed code
+ *
  * Revision 1.15  2005/05/31 15:21:32  didenko
  * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
  *
