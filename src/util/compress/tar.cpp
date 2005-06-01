@@ -1381,9 +1381,9 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         }
 #else
         CDirEntry::TMode user, group, other;
-        CDirEntry::TSpecialModeBits special_bits;
-        info.GetMode(&user, &group, &other, &special_bits);
-        failed = !dst->SetMode(user, group, other, special_bits);
+        /* CDirEntry::TSpecialModeBits special_bits; */
+        info.GetMode(&user, &group, &other/*, &special_bits*/);
+        failed = !dst->SetMode(user, group, other/*, special_bits*/);
 #endif /*NCBI_OS_UNIX*/
         if (failed) {
             NCBI_THROW(CTarException, eRestoreAttrs,
@@ -1592,6 +1592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/01 20:15:27  lavr
+ * Do not use special bits yet on Windows in CDirEntry:: SetMode()
+ *
  * Revision 1.21  2005/06/01 20:04:31  lavr
  * Use older eBackup_Rename enum (not newer one which is not yet in CVS)
  *
