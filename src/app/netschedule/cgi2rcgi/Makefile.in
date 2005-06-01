@@ -1,0 +1,4 @@
+APP_PROJ = cgi2rcgi
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
