@@ -45,6 +45,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -68,6 +69,9 @@ class CSymDustMasker
         typedef std::pair< size_type, size_type > TMaskedInterval;
         typedef std::vector< TMaskedInterval > TMaskList;
 
+        // This is public to work aroung the bug in SUN C++ compiler.
+        typedef std::list< lcr > lcr_list_type;
+
         CSymDustMasker( Uint4 level = DEFAULT_LEVEL, 
                         size_type window 
                             = static_cast< size_type >( DEFAULT_WINDOW ),
@@ -75,6 +79,11 @@ class CSymDustMasker
                             = static_cast< size_type >( DEFAULT_LINKER ) );
 
         std::auto_ptr< TMaskList > operator()( const sequence_type & seq );
+
+        void GetMaskedLocs( 
+            objects::CSeq_id & seq_id,
+            const sequence_type & seq,
+            std::vector< CConstRef< objects::CSeq_loc > > & locs );
 
     private:
 
@@ -89,9 +98,18 @@ class CSymDustMasker
             {}
         };
 
+        struct MaskInt2SeqLoc
+        {
+            MaskInt2SeqLoc( objects::CSeq_id & seq_id ) : seq_id_( seq_id ) {}
+
+            objects::CSeq_loc * operator()( const TMaskedInterval & i ) const
+            { return new objects::CSeq_loc( seq_id_, i->first, i->second ); }
+
+            objects::CSeq_id & seq_id_;
+        };
+
         typedef Uint1 triplet_type;
         typedef typename sequence_type::const_iterator seq_citer_type;
-        typedef std::list< lcr > lcr_list_type;
         typedef std::vector< Uint4 > thres_table_type;
 
         static const triplet_type TRIPLET_MASK = 0x3F;
@@ -297,6 +315,21 @@ CSymDustMasker< seq_t, convert_t >::operator()( const sequence_type & seq )
     }
 
     return res;
+}
+
+//------------------------------------------------------------------------------
+template< typename seq_t, typename convert_t >
+void CSymDustMasker< seq_t, convert_t >::GetMaskedLocs( 
+    objects::CSeq_id & seq_id,
+    const sequence_type & seq, 
+    std::vector< CConstRef< objects::CSeq_loc > > & locs )
+{
+    typedef std::vector< CConstRef< objects::CSeq_loc > > locs_type;
+    locs.clear();
+    std::auto_ptr< TMaskList > res = (*this)( seq );
+    std::transform( res.begin(), res.end(), 
+                    std::back_inserter< locs_type >,
+                    MaskInt2SeqLoc( seq_id ) );
 }
 
 //------------------------------------------------------------------------------
