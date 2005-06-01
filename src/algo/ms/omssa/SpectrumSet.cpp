@@ -311,7 +311,9 @@ bool CSpectrumSet::Peaks2Spectrum(const TInputPeaks& InputPeaks, CRef <CMSSpectr
     }
 
     // set scale
-    double Scale = 1000000000.0/MaxI;
+    double Scale;
+    if(MaxI > 0.0) Scale = 1000000000.0/MaxI;
+    else Scale = 1.0;
     // normalize it to a power of 10
     Scale = pow(10.0, floor(log10(Scale)));
     MySpectrum->SetIscale(Scale);
@@ -522,6 +524,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2005/06/01 16:33:18  lewisg
+ * deal with spectrum with 0 intensity
+ *
  * Revision 1.20  2005/04/05 21:02:52  lewisg
  * increase number of mods, fix gi problem, fix empty scan bug
  *
