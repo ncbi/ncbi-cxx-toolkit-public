@@ -210,8 +210,11 @@ protected:
 
 private:
 
-    void VerifyType(bool e) const;
+//    void VerifyType(bool e) const;
     void CheckNull() const;
+
+    void x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const;
+    void x_Inapplicable_Method(const char* method) const;
 
     class CDB_Object* m_data;
 };
@@ -233,18 +236,39 @@ EDB_Type CVariant::GetType() const
 }
 
 
+//inline
+//void CVariant::VerifyType(bool e) const
+//{
+//    if( !e ) {
+//#ifdef _DEBUG
+//        _TRACE("CVariant::VerifyType(): Invalid type");
+//        _ASSERT(0); 
+//#else
+//        NCBI_THROW(CVariantException, eVariant, "Invalid type");
+//#endif
+//    }
+//}
+
+
 inline
-void CVariant::VerifyType(bool e) const
+void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const 
 {
-    if( !e ) {
-#ifdef _DEBUG
-        _TRACE("CVariant::VerifyType(): Invalid type");
-        _ASSERT(0); 
-#else
-        NCBI_THROW(CVariantException, eVariant, "Invalid type");
-#endif
+    if( db_type != GetType() )
+    {
+        NCBI_THROW(CVariantException, eVariant, 
+             "Cannot assign type '" + string(cxx_type) + "' to type '" 
+             + string(CDB_Object::GetTypeName(GetType())) + "'");
     }
 }
+
+inline
+void CVariant::x_Inapplicable_Method(const char* method) const 
+{
+    NCBI_THROW(CVariantException, eVariant, 
+        "CVariant::" + string(method) + " is not applicable to type '" 
+        + string(CDB_Object::GetTypeName(GetType())) + "'");
+}
+
 
 inline
 bool operator!=(const CVariant& v1, const CVariant& v2) 
@@ -277,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/06/01 16:29:00  kholodov
+ * Added: more detailed diagnostics
+ *
  * Revision 1.25  2005/05/05 20:09:34  kholodov
  * Fixed: comparison operators
  *

@@ -293,28 +293,22 @@ void CVariant::SetData(CDB_Object* o) {
 
 string CVariant::GetString(void) const 
 {
+    string s("");
+
     if( IsNull() )
     {
         switch( GetType() ) {
-        case eDB_Char:
-        case eDB_VarChar:
-        case eDB_LongChar:
-        case eDB_Binary:
-        case eDB_LongBinary:
-        case eDB_VarBinary:
-        case eDB_Bit:
-        case eDB_DateTime:
-        case eDB_SmallDateTime:
-            return "";
         case eDB_TinyInt:
         case eDB_SmallInt:      
         case eDB_Int:
         case eDB_BigInt:
         case eDB_Numeric:
-            return "0";
+            s = "0";
+            break;
         case eDB_Float:
         case eDB_Double:
-            return "0.0";
+            s = "0.0";
+            break;
         default:
             break;
         }
@@ -323,50 +317,66 @@ string CVariant::GetString(void) const
     {
         switch( GetType() ) {
         case eDB_Char:
-            return ((CDB_Char*)GetData())->Value();
+            s = ((CDB_Char*)GetData())->Value();
+            break;
         case eDB_VarChar:
-            return ((CDB_VarChar*)GetData())->Value();
+            s = ((CDB_VarChar*)GetData())->Value();
+            break;
         case eDB_LongChar:
-            return ((CDB_LongChar*)GetData())->Value();
+            s = ((CDB_LongChar*)GetData())->Value();
+            break;
         case eDB_Binary:
             {
                 CDB_Binary *b = (CDB_Binary*)GetData();
-                return string((char*)b->Value(), b->Size());
+                s = string((char*)b->Value(), b->Size());
+                break;
             }
         case eDB_LongBinary:
             {
                 CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
-                return string((char*)vb->Value(), vb->Size());
+                s = string((char*)vb->Value(), vb->Size());
+                break;
             }
-        case eDB_VarBinary:
+    case eDB_VarBinary:
             {
                 CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
-                return string((char*)vb->Value(), vb->Size());
+                s = string((char*)vb->Value(), vb->Size());
+                break;
             }
         case eDB_TinyInt:
-            return NStr::IntToString((long)GetByte()); 
+            s = NStr::IntToString((long)GetByte()); 
+            break;
         case eDB_SmallInt:      
-            return NStr::IntToString(GetInt2()); 
+            s = NStr::IntToString(GetInt2()); 
+            break;
         case eDB_Int:
-            return NStr::IntToString(GetInt4()); 
+            s = NStr::IntToString(GetInt4()); 
+            break;
         case eDB_BigInt:
-            return NStr::Int8ToString(GetInt8()); 
+            s = NStr::Int8ToString(GetInt8()); 
+            break;
         case eDB_Float:
-            return NStr::DoubleToString(GetFloat()); 
+            s = NStr::DoubleToString(GetFloat()); 
+            break;
         case eDB_Double:
-            return NStr::DoubleToString(GetDouble()); 
+            s = NStr::DoubleToString(GetDouble()); 
+            break;
         case eDB_Bit:
-            return NStr::BoolToString(GetBit()); 
+            s = NStr::BoolToString(GetBit()); 
+            break;
         case eDB_Numeric:
-            return ((CDB_Numeric*)GetData())->Value(); 
+            s = ((CDB_Numeric*)GetData())->Value(); 
+            break;
         case eDB_DateTime:
         case eDB_SmallDateTime:
-            return GetCTime().AsString();
+            s = GetCTime().AsString();
+            break;
         default:
+            x_Verify_AssignType(eDB_UnsupportedType, "string");
             break;
         }
-    }  
-    NCBI_THROW(CVariantException, eVariant, "Type not supported");
+    }
+    return s;
 }
 
 
@@ -384,7 +394,7 @@ Int8 CVariant::GetInt8() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "Int8");
         }
     }
     return 0;
@@ -403,7 +413,7 @@ Int4 CVariant::GetInt4() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "Int4");
         }
     }
     return 0;
@@ -419,7 +429,7 @@ Int2 CVariant::GetInt2() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "Int2");
         }
     }
     return 0;
@@ -433,7 +443,7 @@ Uint1 CVariant::GetByte() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "Uint1");
         }
     }
     return 0;
@@ -451,7 +461,7 @@ float CVariant::GetFloat() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "float");
         }
     }
     return 0.;
@@ -473,7 +483,7 @@ double CVariant::GetDouble() const
         case eDB_TinyInt:
             return ((CDB_TinyInt*)GetData())->Value();
         default:
-            VerifyType(false);
+            x_Verify_AssignType(eDB_UnsupportedType, "double");
         }
     }
     return 0.;
@@ -483,7 +493,7 @@ bool CVariant::GetBit() const
 {
     if( !IsNull() )
     {
-        VerifyType( GetType() == eDB_Bit );
+        x_Verify_AssignType(eDB_Bit, "bool");
         return ((CDB_Bit*)GetData())->Value() != 0;
     }
     return false;
@@ -493,7 +503,7 @@ string CVariant::GetNumeric() const
 {
     if( !IsNull() )
     {
-        VerifyType( GetType() == eDB_Numeric );
+        x_Verify_AssignType(eDB_Numeric, "string");
         return ((CDB_Numeric*)GetData())->Value();
     }
     return "";
@@ -510,7 +520,7 @@ const CTime& CVariant::GetCTime() const
         ptr = const_cast<CTime*>(&((CDB_SmallDateTime*)GetData())->Value());
         break;
     default:
-        VerifyType(false);
+        x_Verify_AssignType(eDB_UnsupportedType, "CTime");
     }
     if( IsNull() )
         ptr->Clear();
@@ -545,7 +555,7 @@ size_t CVariant::Read(void* buf, size_t len) const
         case eDB_Text:
             return ((CDB_Stream*)GetData())->Read(buf, len);
         default:
-            VerifyType(false);
+            x_Inapplicable_Method("Read()");
         }
     }
     return 0;
@@ -559,24 +569,20 @@ size_t CVariant::Append(const void* buf, size_t len)
         return ((CDB_Stream*)GetData())->Append(buf, len);
 
     default:
-        VerifyType(false);
+        x_Inapplicable_Method("Append()");
     }
     return 0;
 }
 
 size_t CVariant::GetBlobSize() const
 {
-    if( !IsNull() )
-    {
-        switch(GetType()) {
-        case eDB_Image:
-        case eDB_Text:
-            return ((CDB_Stream*)GetData())->Size();
-        default:
-            VerifyType(false);
-        }
+    switch(GetType()) {
+    case eDB_Image:
+    case eDB_Text:
+        return ((CDB_Stream*)GetData())->Size();
+    default:
+        x_Inapplicable_Method("GetBlobSize()");
     }
-    return 0;
 }
 
 void CVariant::Truncate(size_t len)
@@ -589,7 +595,7 @@ void CVariant::Truncate(size_t len)
         ((CDB_Text*)GetData())->Truncate(len);
         break;
     default:
-        VerifyType(false);
+        x_Inapplicable_Method("Truncate()");
     }
     return;
 }
@@ -602,49 +608,49 @@ bool CVariant::MoveTo(size_t pos) const
     case eDB_Text:
         return ((CDB_Text*)GetData())->MoveTo(pos);
     default:
-        VerifyType(false);
+        x_Inapplicable_Method("MoveTo()");
     }
     return false;
 }
 
 CVariant& CVariant::operator=(const Int8& v)
 {
-    VerifyType(GetType() == eDB_BigInt);
+    x_Verify_AssignType(eDB_BigInt, "Int8");
     *((CDB_BigInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int4& v)
 {
-    VerifyType(GetType() == eDB_Int);
+    x_Verify_AssignType(eDB_Int, "Int4");
     *((CDB_Int*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int2& v)
 {
-    VerifyType(GetType() == eDB_SmallInt);
+    x_Verify_AssignType(eDB_SmallInt, "Int2");
     *((CDB_SmallInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Uint1& v)
 {
-    VerifyType(GetType() == eDB_TinyInt);
+    x_Verify_AssignType(eDB_TinyInt, "Uint1");
     *((CDB_TinyInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const float& v)
 {
-    VerifyType(GetType() == eDB_Float);
+    x_Verify_AssignType(eDB_Float, "float");
     *((CDB_Float*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const double& v)
 {
-    VerifyType(GetType() == eDB_Double);
+    x_Verify_AssignType(eDB_Double, "double");
     *((CDB_Double*)GetData()) = v;
     return *this;
 }
@@ -662,7 +668,7 @@ CVariant& CVariant::operator=(const string& v)
         *((CDB_Char*)GetData()) = v;
         break;
     default:
-        VerifyType(false);
+        x_Verify_AssignType(eDB_UnsupportedType, "string");
     }
 
     return *this;
@@ -681,7 +687,7 @@ CVariant& CVariant::operator=(const char* v)
         *((CDB_Char*)GetData()) = v;
         break;
     default:
-        VerifyType(false);
+        x_Verify_AssignType(eDB_UnsupportedType, "const char *");
     }
 
     return *this;
@@ -689,7 +695,7 @@ CVariant& CVariant::operator=(const char* v)
 
 CVariant& CVariant::operator=(const bool& v)
 {
-    VerifyType(GetType() == eDB_Bit);
+    x_Verify_AssignType(eDB_Bit, "bool");
     *((CDB_Bit*)GetData()) = v;
     return *this;
 }
@@ -704,7 +710,7 @@ CVariant& CVariant::operator=(const CTime& v)
         *((CDB_SmallDateTime*)GetData()) = v;
         break;
     default:
-        VerifyType(false);
+        x_Verify_AssignType(eDB_UnsupportedType, "CTime");
     }
     return *this;
 }
@@ -815,6 +821,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.37  2005/06/01 16:28:42  kholodov
+* Added: more detailed diagnostics
+*
 * Revision 1.36  2005/05/05 20:09:18  kholodov
 * Fixed: comparison operators
 *
