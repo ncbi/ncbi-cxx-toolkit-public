@@ -728,28 +728,28 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
     if (pos != string::npos)
     {
         // "CREATE" should be before DML ...
-        if (stmt_uc.substr(pos, sizeof("CREATE") - 1) == "CREATE")
+        if (stmt_uc.compare(pos, sizeof("CREATE") - 1, "CREATE") == 0)
         {
             stmtType = estCreate;
-        } else if (stmt_uc.substr(pos, sizeof("SELECT") - 1) == "SELECT")
+        } else if (stmt_uc.compare(pos, sizeof("SELECT") - 1, "SELECT") == 0)
         {
             stmtType = estSelect;
-        } else if (stmt_uc.substr(pos, sizeof("UPDATE") - 1) == "UPDATE")
+        } else if (stmt_uc.compare(pos, sizeof("UPDATE") - 1, "UPDATE") == 0)
         {
             stmtType = estUpdate;
-        } else if (stmt_uc.substr(pos, sizeof("DELETE") - 1) == "DELETE")
+        } else if (stmt_uc.compare(pos, sizeof("DELETE") - 1, "DELETE") == 0)
         {
             stmtType = estDelete;
-        } else if (stmt_uc.substr(pos, sizeof("INSERT") - 1) == "INSERT")
+        } else if (stmt_uc.compare(pos, sizeof("INSERT") - 1, "INSERT") == 0)
         {
             stmtType = estInsert;
-        } else if (stmt_uc.substr(pos, sizeof("DROP") - 1) == "DROP")
+        } else if (stmt_uc.compare(pos, sizeof("DROP") - 1, "DROP") == 0)
         {
             stmtType = estDrop;
-        } else if (stmt_uc.substr(pos, sizeof("ALTER") - 1) == "ALTER")
+        } else if (stmt_uc.compare(pos, sizeof("ALTER") - 1, "ALTER") == 0)
         {
             stmtType = estAlter;
-        // } else if (stmt_uc.substr(pos, sizeof("EXEC") - 1) == "EXEC")
+        // } else if (stmt_uc.compare(pos, sizeof("EXEC") - 1, "EXEC") == 0)
         // {
         //    stmtType = estFunction;
         }
@@ -2541,6 +2541,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/06/01 18:38:18  ssikorsk
+* Code optimization
+*
 * Revision 1.17  2005/05/31 14:56:27  ssikorsk
 * Added get_proc_return_status to the cursor class in the Python DBAPI
 *
