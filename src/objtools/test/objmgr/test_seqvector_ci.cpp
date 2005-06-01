@@ -51,6 +51,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
+#include <string.h>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
@@ -229,7 +230,9 @@ void CTestApp::x_TestGetBufferPtr(CSeqVector_CI& vit,
             cout << endl << "ERROR: Test failed -- invalid buffer ptr" << endl;
             throw runtime_error("Test failed");
         }
-        buf.replace(str_pos, block_size, vit.GetBufferPtr(), block_size);
+        _ASSERT(str_pos+block_size <= buf.size());
+        memcpy(&buf[str_pos], vit.GetBufferPtr(), block_size);
+        //buf.replace(str_pos, block_size, vit.GetBufferPtr(), block_size);
         vit += block_size;
         str_pos += block_size;
     }
@@ -549,6 +552,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/06/01 20:47:53  grichenk
+* Avoid using basic_string::replace()
+*
 * Revision 1.11  2005/05/31 18:05:17  grichenk
 * Changed GetBufferPtr, added GetBufferEnd.
 *
