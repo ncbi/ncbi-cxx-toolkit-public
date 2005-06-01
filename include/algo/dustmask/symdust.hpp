@@ -49,7 +49,12 @@
 
 BEGIN_NCBI_SCOPE
 
-template< typename seq_t >
+struct CSymDustMasker_base
+{ 
+    struct CTrivialConverter { Uint1 operator()( Uint1 r ) const{ return r; } }; 
+};
+
+template< typename seq_t, typename convert_t >
 class CSymDustMasker
 {
     public:
@@ -64,10 +69,10 @@ class CSymDustMasker
         typedef std::vector< TMaskedInterval > TMaskList;
 
         CSymDustMasker( Uint4 level = DEFAULT_LEVEL, 
-                     size_type window 
-                        = static_cast< size_type >( DEFAULT_WINDOW ),
-                     size_type linker 
-                        = static_cast< size_type >( DEFAULT_LINKER ) );
+                        size_type window 
+                            = static_cast< size_type >( DEFAULT_WINDOW ),
+                        size_type linker 
+                            = static_cast< size_type >( DEFAULT_LINKER ) );
 
         std::auto_ptr< TMaskList > operator()( const sequence_type & seq );
 
@@ -127,11 +132,13 @@ class CSymDustMasker
 
         lcr_list_type lcr_list_;
         thres_table_type thresholds_;
+
+        convert_t converter_;
 };
 
 //------------------------------------------------------------------------------
-template< typename seq_t >
-CSymDustMasker< seq_t >::triplets::triplets( 
+template< typename seq_t, typename convert_t >
+CSymDustMasker< seq_t, convert_t >::triplets::triplets( 
     const sequence_type & seq, size_type window, 
     lcr_list_type & lcr_list, thres_table_type & thresholds )
     : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), 
@@ -142,8 +149,8 @@ CSymDustMasker< seq_t >::triplets::triplets(
 }
 
 //------------------------------------------------------------------------------
-template< typename seq_t >
-inline bool CSymDustMasker< seq_t >::triplets::add( 
+template< typename seq_t, typename convert_t >
+inline bool CSymDustMasker< seq_t, convert_t >::triplets::add( 
     typename sequence_type::value_type n )
 {
     typedef std::vector< Uint1 > counts_type;
@@ -213,8 +220,8 @@ inline bool CSymDustMasker< seq_t >::triplets::add(
 }
     
 //------------------------------------------------------------------------------
-template< typename seq_t >
-inline CSymDustMasker< seq_t >::CSymDustMasker( 
+template< typename seq_t, typename convert_t >
+inline CSymDustMasker< seq_t, convert_t >::CSymDustMasker( 
     Uint4 level, size_type window, size_type linker )
     : level_( (level >= 2 && level <= 64) ? level : DEFAULT_LEVEL ), 
       window_( (window >= 8 && window <= 64) ? window : DEFAULT_WINDOW ), 
@@ -228,9 +235,9 @@ inline CSymDustMasker< seq_t >::CSymDustMasker(
 }
 
 //------------------------------------------------------------------------------
-template< typename seq_t >
-std::auto_ptr< typename CSymDustMasker< seq_t >::TMaskList >
-CSymDustMasker< seq_t >::operator()( const sequence_type & seq )
+template< typename seq_t, typename convert_t >
+std::auto_ptr< typename CSymDustMasker< seq_t, convert_t >::TMaskList >
+CSymDustMasker< seq_t, convert_t >::operator()( const sequence_type & seq )
 {
     std::auto_ptr< TMaskList > res( new TMaskList );
 
@@ -265,7 +272,7 @@ CSymDustMasker< seq_t >::operator()( const sequence_type & seq )
                 lcr_list_.pop_back();
             }
 
-            tris.add( *it );
+            tris.add( converter_( *it ) );
             ++it;
         }
 
@@ -293,7 +300,9 @@ CSymDustMasker< seq_t >::operator()( const sequence_type & seq )
 }
 
 //------------------------------------------------------------------------------
-typedef CSymDustMasker< objects::CSeqVector > TSymDustMasker;
+typedef CSymDustMasker< 
+    objects::CSeqVector, CSymDustMasker_base::CTrivialConverter > 
+    TSymDustMasker;
 
 END_NCBI_SCOPE
 

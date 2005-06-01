@@ -31,6 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <memory>
+
 #include <corelib/ncbidbg.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -46,12 +49,54 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/reader_id1.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/readers/fasta.hpp>
 
+#include <algo/dustmask/symdust.hpp>
 #include "dust_mask_app.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+struct CIupac2Ncbi2na_converter
+{
+    Uint1 operator()( Uint1 r ) const
+    {
+        switch( r )
+        {
+            case 67: return 1;
+            case 71: return 2;
+            case 84: return 3;
+            default: return 0;
+        }
+    }
+};
+
+//-------------------------------------------------------------------------
+static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
+{
+    if( input_stream == 0 )
+        return CRef< CSeq_entry >( 0 );
+
+    while( !input_stream->eof() )
+    {
+        CRef< CSeq_entry > aSeqEntry
+            = ReadFasta( *input_stream,
+                           fReadFasta_AssumeNuc
+                         | fReadFasta_ForceType
+                         | fReadFasta_OneSeq
+                         | fReadFasta_AllSeqIds,
+                         0, 0 );
+
+        if(    aSeqEntry != 0
+            && aSeqEntry->IsSeq()
+            && aSeqEntry->GetSeq().IsNa() )
+            return aSeqEntry;
+    }
+
+    return CRef< CSeq_entry >( 0 );
+}
 
 //-------------------------------------------------------------------------
 const char * const CDustMaskApplication::USAGE_LINE 
@@ -60,11 +105,112 @@ const char * const CDustMaskApplication::USAGE_LINE
 //-------------------------------------------------------------------------
 void CDustMaskApplication::Init(void)
 {
+    auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
+    arg_desc->SetUsageContext( GetArguments().GetProgramBasename(),
+                               USAGE_LINE );
+    arg_desc->AddDefaultKey( "input", "input_file_name",
+                             "input file name",
+                             CArgDescriptions::eString, "" );
+    arg_desc->AddDefaultKey( "output", "output_file_name",
+                             "output file name",
+                             CArgDescriptions::eString, "" );
+    arg_desc->AddDefaultKey( "window", "window_size",
+                             "DUST window length",
+                             CArgDescriptions::eInteger, "64" );
+    arg_desc->AddDefaultKey( "level", "level",
+                             "DUST level (score threshold for subwindows)",
+                             CArgDescriptions::eInteger, "20" );
+    arg_desc->AddDefaultKey( "linker", "linker",
+                             "DUST linker (how close masked intervals "
+                             "should be to get merged together).",
+                             CArgDescriptions::eInteger, "1" );
+    SetupArgDescriptions( arg_desc.release() );
 }
 
 //-------------------------------------------------------------------------
 int CDustMaskApplication::Run (void)
 {
+    // Set up the input and output streams.
+    auto_ptr< CNcbiIstream > input_stream_ptr;
+    auto_ptr< CNcbiOstream > output_stream_ptr;
+    CNcbiIstream * input_stream = NULL;
+    CNcbiOstream * output_stream = NULL;
+    
+    if( GetArgs()["input"].AsString().empty() )
+        input_stream = &cin;
+    else
+    {
+        input_stream_ptr.reset(
+            new CNcbiIfstream( GetArgs()["input"].AsString().c_str() ) );
+        input_stream = input_stream_ptr.get();
+    }
+
+    if( GetArgs()["output"].AsString().empty() )
+        output_stream = &cout;
+    else
+    {
+        output_stream_ptr.reset(
+            new CNcbiOfstream( GetArgs()["output"].AsString().c_str() ) );
+        output_stream = output_stream_ptr.get();
+    }
+
+    // Set up the object manager.
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CGBDataLoader::RegisterInObjectManager(
+        *om, new CId1Reader, CObjectManager::eDefault);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    // Set up the duster object.
+    typedef CSymDustMasker< objects::CSeqVector, CIupac2Ncbi2na_converter >
+        duster_type;
+    Uint4 level = GetArgs()["level"].AsInteger();
+    duster_type::size_type window = GetArgs()["window"].AsInteger();
+    duster_type::size_type linker = GetArgs()["linker"].AsInteger();
+    duster_type duster( level, window, linker );
+
+    // Now process each input sequence in a loop.
+    CRef< CSeq_entry > aSeqEntry( 0 );
+
+    while( (aSeqEntry = GetNextSequence( input_stream )).NotEmpty() )
+    {
+        CSeq_entry_Handle seh;
+
+        try 
+        { seh = scope->GetSeq_entryHandle(*aSeqEntry); }
+        catch (CException&) 
+        { seh = scope->AddTopLevelSeqEntry(*aSeqEntry); }
+
+        CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
+
+        for ( ;  bs_iter;  ++bs_iter) 
+        {
+            CBioseq_Handle bsh = *bs_iter;
+
+            if (bsh.GetBioseqLength() == 0) 
+                continue;
+
+            CSeqVector data 
+                = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
+            auto_ptr< duster_type::TMaskList > res = duster( data );
+
+            if( output_stream != 0 )
+            {
+                *output_stream << ">"
+                               << CSeq_id::GetStringDescr( 
+                                    *bsh.GetCompleteBioseq(),
+                                    CSeq_id::eFormat_FastA )
+                               << " " << sequence::GetTitle( bsh ) << "\n";
+                typedef duster_type::TMaskList::const_iterator it_type;
+
+                for( it_type it = res->begin(); it != res->end(); ++it )
+                    *output_stream << it->first  << " - " 
+                                   << it->second << "\n";
+            }
+        }
+    }
+
+    *output_stream << flush;
     return 0;
 }
 
@@ -74,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/06/01 19:13:54  morgulis
+ * Verified to work identically to out of tree version.
+ *
  * Revision 1.1  2005/05/31 14:41:32  morgulis
  * Initial checkin of the dustmasker project.
  *

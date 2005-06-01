@@ -3,7 +3,7 @@
 ASN_DEP = seq
 
 APP = dustmasker
-SRC = main dust_mask_app 
+SRC = main dust_mask_app
 
 LIB = xalgodustmask \
       xblast xnetblastcli xnetblast scoremat seqdb blastdb tables \
