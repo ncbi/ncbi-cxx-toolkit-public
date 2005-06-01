@@ -153,6 +153,9 @@ public:
         
         // return overall identity (including gaps)
         double GetIdentity(void) const;
+
+        // get aligned min/max on query and subject
+        void GetBox(Uint4* box) const;
         
         // save to / read from NetCache buffer
         typedef vector<char> TNetCacheBuffer;
@@ -231,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/06/01 18:57:23  kapustin
+ * +SAlignedCompartment::GetBox()
+ *
  * Revision 1.21  2005/05/10 18:02:24  kapustin
  * + x_ProcessTermSegm()
  *

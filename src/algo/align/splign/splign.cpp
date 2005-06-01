@@ -1287,6 +1287,31 @@ double CSplign::SAlignedCompartment::GetIdentity() const
 }
 
 
+
+void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
+{
+    box[0] = box[2] = kMax_UInt;
+    box[1] = box[3] = 0;
+    ITERATE(TSegments, ii, m_segments) {
+        const SSegment& s = *ii;
+        if(s.m_exon) {
+            if(s.m_box[0] < box[0]) {
+                box[0] = s.m_box[0];
+            }
+            if(s.m_box[2] < box[2]) {
+                box[2] = s.m_box[2];
+            }
+            if(s.m_box[1] > box[1]) {
+                box[1] = s.m_box[1];
+            }
+            if(s.m_box[3] > box[3]) {
+                box[3] = s.m_box[3];
+            }
+        }
+    }
+}
+
+
 void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 {            
     const size_t exon_size = 1 + term_segs[0]->m_box[1] -
@@ -1504,6 +1529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/06/01 18:57:29  kapustin
+ * +SAlignedCompartment::GetBox()
+ *
  * Revision 1.27  2005/05/10 18:02:36  kapustin
  * + x_ProcessTermSegm()
  *
