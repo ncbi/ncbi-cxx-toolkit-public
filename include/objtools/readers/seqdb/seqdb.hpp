@@ -239,6 +239,25 @@ public:
     /// Get the ASN.1 header for the sequence.
     CRef<CBlast_def_line_set> GetHdr(int oid) const;
     
+    /// Get taxid for an OID.
+    ///
+    /// This finds the TAXIDS associated with a given OID and computes
+    /// a mapping from GI to taxid.  This mapping is added to the
+    /// map<int,int> provided by the user.  If the "persist" flag is
+    /// set to true, the new associations will simply be added to the
+    /// map.  If it is false (the default), the map will be cleared
+    /// first.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param gi_to_taxid
+    ///   A returned mapping from GI to taxid.
+    /// @param persist
+    ///   If false, the map will be cleared before adding new entries.
+    void GetTaxIDs(int             oid,
+                   map<int, int> & gi_to_taxid,
+                   bool            persist = false) const;
+    
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
