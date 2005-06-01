@@ -166,6 +166,10 @@ string CCgiTunnel2Grid::GetPageTemplate() const
 
 void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
 {
+    ctx.PersistEntry(kProjectParamName);
+    ctx.PersistEntry(kElapsedTime);   
+    ctx.PersistEntry(kErrorUrlParamName);
+
     vector<string>::const_iterator it;
     string project = ctx.GetEntryValue(kProjectParamName);
     for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it) {
@@ -173,9 +177,6 @@ void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
         ctx.GetHTMLPage().LoadTemplateLibFile(lib);
     }
 
-    ctx.PersistEntry(kProjectParamName);
-    ctx.PersistEntry(kElapsedTime);   
-    ctx.PersistEntry(kErrorUrlParamName);
 }
 
 void CCgiTunnel2Grid::Init()
@@ -240,6 +241,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
     string page_templ = GetProgramDisplayName() + "_err.html";
     CHTMLPage page("Initialization Error", page_templ );
     CGridCgiContext grid_ctx(page,ctx);
+    grid_ctx.PersistEntry(kProjectParamName);
     string project = grid_ctx.GetEntryValue(kProjectParamName);
     if (project.empty()) {
         string mesg = "Parameter " + kProjectParamName + " is missing.";
@@ -350,6 +352,7 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
 void CCgiTunnel2Grid::OnJobFailed(const string& msg, 
                                   CGridCgiContext& ctx)
 {
+    ctx.PersistEntry(kElapsedTime,"");   
     // Render a error page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_FAILED@>");
 
@@ -362,7 +365,8 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
 
 void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 {
-    // Render a job cancelation page
+    ctx.PersistEntry(kElapsedTime,"");   
+   // Render a job cancelation page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
     string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
@@ -372,6 +376,7 @@ void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 {
+    ctx.PersistEntry(kElapsedTime,"");   
     // Render a page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_QUEUE_IS_BUSY@>");
 
@@ -479,6 +484,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/06/01 15:18:54  didenko
+ * Cosmetics
+ *
  * Revision 1.20  2005/05/23 15:06:09  didenko
  * When ctg_input is set to "CGI_ENTRIES" then the whole cgi
  * request is sending to a worker node.
