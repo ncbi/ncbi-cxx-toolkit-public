@@ -94,9 +94,9 @@ public:
     }
     
     string GetServerTypeStr(void) const;
+    EServerType GetServerType(void) const;
 
 private:
-    EServerType GetServerType(void) const;
     void SetDatabaseParameters(void);
 
 private:
@@ -125,7 +125,8 @@ public:
     void TestFetch(void);
     void TestParameters(void);
     void TestExecuteMany(void);
-    void TestStoredProcedures(void);
+    void Test_callproc(void);
+    void TestExecuteStoredProc(void);
 
     // Test scenarios.
     void TestTransaction(void);
@@ -154,6 +155,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/06/01 18:41:12  ssikorsk
+ * Do not check the "get_proc_return_status" method after "execute"
+ * stored procedute with the ODBC driver.
+ *
  * Revision 1.7  2005/05/18 18:41:07  ssikorsk
  * Small refactoring
  *

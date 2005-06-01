@@ -248,7 +248,7 @@ CPythonDBAPITest::TestFromFile(void)
 }
 
 void 
-CPythonDBAPITest::TestStoredProcedures(void)
+CPythonDBAPITest::Test_callproc(void)
 {
     try {
         // CALL stored procedure ...
@@ -271,7 +271,18 @@ CPythonDBAPITest::TestStoredProcedures(void)
         m_Engine.ExecuteStr("cursor.callproc('sp_server_info')\n");
         m_Engine.ExecuteStr("cursor.fetchall()\n");
         m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
 
+
+void 
+CPythonDBAPITest::TestExecuteStoredProc(void)
+{
+    try {
+        // EXECUTE stored procedure without parameters ...
         m_Engine.ExecuteStr("cursor.execute('execute sp_databases')\n");
         m_Engine.ExecuteStr("cursor.fetchall()\n");
         m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
@@ -334,10 +345,19 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteMany, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-
-    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestStoredProcedures, DBAPIInstance);
+    
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_callproc, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
+
+    string server_name = args.GetDriverName();
+    NStr::ToUpper( server_name );
+    // Do not run this test case for the ODBC driver.
+    if ( server_name.compare("ODBC") != 0 ) {
+        tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteStoredProc, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
@@ -474,6 +494,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/06/01 18:41:12  ssikorsk
+* Do not check the "get_proc_return_status" method after "execute"
+* stored procedute with the ODBC driver.
+*
 * Revision 1.11  2005/05/31 14:56:27  ssikorsk
 * Added get_proc_return_status to the cursor class in the Python DBAPI
 *
