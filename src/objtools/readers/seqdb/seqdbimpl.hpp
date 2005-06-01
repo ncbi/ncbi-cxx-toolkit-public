@@ -184,6 +184,25 @@ public:
     ///   The type of sequences stored here, either kSeqTypeProt or kSeqTypeNucl.
     char GetSeqType() const;
     
+    /// Get taxid for an OID.
+    ///
+    /// This finds the TAXIDS associated with a given OID and computes
+    /// a mapping from GI to taxid.  This mapping is added to the
+    /// map<int,int> provided by the user.  If the "persist" flag is
+    /// set to true, the new associations will simply be added to the
+    /// map.  If it is false (the default), the map will be cleared
+    /// first.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param gi_to_taxid
+    ///   A returned mapping from GI to taxid.
+    /// @param persist
+    ///   If false, the map will be cleared before adding new entries.
+    void GetTaxIDs(int             oid,
+                   map<int, int> & gi_to_taxid,
+                   bool            persist) const;
+    
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
@@ -512,6 +531,19 @@ private:
     /// @param locked
     ///   The lock hold object for this thread.
     bool x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked) const;
+    
+    /// Get the sequence header data.
+    ///
+    /// This builds and returns the header data corresponding to the
+    /// indicated sequence as a Blast-def-line-set.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   The length of the sequence in bases.
+    CRef<CBlast_def_line_set> x_GetHdr(int oid, CSeqDBLockHold & locked) const;
     
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.

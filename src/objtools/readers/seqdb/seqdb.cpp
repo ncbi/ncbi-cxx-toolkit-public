@@ -184,6 +184,13 @@ CSeqDB::GetBioseq(int oid) const
     return m_Impl->GetBioseq(oid, 0);
 }
 
+void CSeqDB::GetTaxIDs(int             oid,
+                       map<int, int> & gi_to_taxid,
+                       bool            persist) const
+{
+    m_Impl->GetTaxIDs(oid, gi_to_taxid, persist);
+}
+
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, int target_gi) const
 {

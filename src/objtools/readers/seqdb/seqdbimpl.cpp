@@ -299,6 +299,41 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
                "OID not in valid range.");
 }
 
+void CSeqDBImpl::GetTaxIDs(int             oid,
+                           map<int, int> & gi_to_taxid,
+                           bool            persist) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (! persist) {
+        gi_to_taxid.clear();
+    }
+    
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetHdr(oid, locked);
+    
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->CanGetSeqid()) {
+                continue;
+            }
+            
+            if (! (*defline)->IsSetTaxid()) {
+                continue;
+            }
+            
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
+                if (! (**seqid).IsGi()) {
+                    continue;
+                }
+                
+                gi_to_taxid[(**seqid).GetGi()] = (*defline)->GetTaxid();
+            }
+        }
+    }
+}
+
 CRef<CBioseq>
 CSeqDBImpl::GetBioseq(int oid, int target_gi) const
 {
@@ -490,8 +525,16 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
+    
+    return x_GetHdr(oid, locked);
+}
 
+CRef<CBlast_def_line_set>
+CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
+{
+    CHECK_MARKER();
+    m_Atlas.Lock(locked);
+    
     int vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
