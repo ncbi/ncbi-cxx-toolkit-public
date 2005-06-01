@@ -294,6 +294,9 @@ void CAppNWA::x_RunOnPair() const
     aligner->SetWg  (args["Wg"]. AsInteger());
     aligner->SetWs  (args["Ws"]. AsInteger());
 
+    aligner->SetScoreMatrix(psm); // re-set score matrix to handle 
+                                  // possible ambiguity chars
+
     if( bMrna2Dna ) {
         SPLALIGNER *aligner_mrna2dna = 
             static_cast<SPLALIGNER*> (aligner.get());
@@ -441,6 +444,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/01 21:26:15  kapustin
+ * Re-set scoring matrix to account for ambiguity chars
+ *
  * Revision 1.2  2005/02/23 16:59:38  kapustin
  * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
  *
