@@ -67,7 +67,8 @@ CPythonDBAPITest::MakeTestPreparation(void)
         m_Engine.ExecuteStr( conn_simple_str.c_str() );
 
         m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
-        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int)') \n");
+        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
+        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t2 ( int_val int null, text_val text null)') \n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -169,12 +170,25 @@ void
 CPythonDBAPITest::TestParameters(void)
 {
     try {
-        // Prepare ...
-        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'@type_par':'S'})\n");
+        // Very first test ...
+        {
+            // Prepare ...
+            m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
+            m_Engine.ExecuteStr("cursor.execute('SELECT name, type FROM sysobjects WHERE type = @type_par', {'@type_par':'S'})\n");
 
-        // fetchall
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
+            // fetchall
+            m_Engine.ExecuteStr("cursor.fetchall()\n");
+        }
+
+        // Test for long strings ...
+        {
+            m_Engine.ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+            m_Engine.ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+            // m_Engine.ExecuteStr("print seq_align \n");
+            m_Engine.ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv' : seq_align})\n");
+            m_Engine.ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+            // m_Engine.ExecuteStr("print cursor.fetchone()\n");
+        }
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -345,7 +359,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteMany, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-    
+        
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_callproc, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -358,7 +372,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
+    
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
 //     add(tc);
@@ -494,6 +508,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/06/02 18:42:00  ssikorsk
+* Added new test for passing long strings as a parameter
+*
 * Revision 1.12  2005/06/01 18:41:12  ssikorsk
 * Do not check the "get_proc_return_status" method after "execute"
 * stored procedute with the ODBC driver.
