@@ -78,8 +78,11 @@ class CSymDustMasker
         typedef std::pair< size_type, size_type > TMaskedInterval;
         typedef std::vector< TMaskedInterval > TMaskList;
 
-    private:
+        static const Uint4 DEFAULT_LEVEL  = 20;
+        static const Uint4 DEFAULT_WINDOW = 64;
+        static const Uint4 DEFAULT_LINKER = 1;
 
+        // These (up to constructor) are public to work around the bug in SUN C++ compiler.
         struct lcr
         {
             TMaskedInterval bounds_;
@@ -91,14 +94,11 @@ class CSymDustMasker
             {}
         };
 
-    public:
-
-        static const Uint4 DEFAULT_LEVEL  = 20;
-        static const Uint4 DEFAULT_WINDOW = 64;
-        static const Uint4 DEFAULT_LINKER = 1;
-
-        // This is public to work aroung the bug in SUN C++ compiler.
         typedef std::list< lcr > lcr_list_type;
+        typedef std::vector< Uint4 > thres_table_type;
+        typedef Uint1 triplet_type;
+
+        static const triplet_type TRIPLET_MASK = 0x3F;
 
         CSymDustMasker( Uint4 level = DEFAULT_LEVEL, 
                         size_type window 
@@ -115,11 +115,7 @@ class CSymDustMasker
 
     private:
 
-        typedef Uint1 triplet_type;
         typedef sequence_type::const_iterator seq_citer_type;
-        typedef std::vector< Uint4 > thres_table_type;
-
-        static const triplet_type TRIPLET_MASK = 0x3F;
 
         class triplets
         {
