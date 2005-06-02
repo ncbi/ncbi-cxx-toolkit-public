@@ -65,7 +65,6 @@ enum EBlastOptIdx {
     eBlastOpt_MBTemplateLength,
     eBlastOpt_MBTemplateType,
     eBlastOpt_MBMaxPositions,
-    eBlastOpt_UsePssm,
     eBlastOpt_FilterString,
     eBlastOpt_MaskAtHash,
     eBlastOpt_DustFiltering,
@@ -165,9 +164,6 @@ public:
 
     bool GetFullByteScan() const;
     void SetFullByteScan(bool val = true);
-
-    bool GetUsePssm() const;
-    void SetUsePssm(bool m = true);
 
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
@@ -1063,18 +1059,6 @@ CBlastOptionsLocal::SetFullByteScan(bool val)
     m_LutOpts->full_byte_scan = val;
 }
 
-inline bool
-CBlastOptionsLocal::GetUsePssm() const
-{
-    return m_LutOpts->use_pssm ? true : false;
-}
-
-inline void
-CBlastOptionsLocal::SetUsePssm(bool use_pssm)
-{
-    m_LutOpts->use_pssm = use_pssm;
-}
-
 /******************* Query setup options ************************/
 inline const char*
 CBlastOptionsLocal::GetFilterString() const
@@ -1949,7 +1933,6 @@ x_LookupTableOptions_cmp(const LookupTableOptions* a,
     if (a->mb_template_length != b->mb_template_length) return false;
     if (a->mb_template_type != b->mb_template_type) return false;
     if (a->max_num_patterns != b->max_num_patterns) return false;
-    if (a->use_pssm != b->use_pssm) return false;
     if (x_safe_strcmp(a->phi_pattern, b->phi_pattern) != 0) return false;
     if (a->variable_wordsize != b->variable_wordsize) return false;
     return true;
@@ -2246,25 +2229,6 @@ CBlastOptions::SetFullByteScan(bool val)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_FullByteScan, val);
-    }
-}
-
-bool 
-CBlastOptions::GetUsePssm() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetUsePssm() not available.");
-    }
-    return m_Local->GetUsePssm();
-}
-void 
-CBlastOptions::SetUsePssm(bool m)
-{
-    if (m_Local) {
-        m_Local->SetUsePssm(m);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_UsePssm, m);
     }
 }
 
@@ -3375,6 +3339,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/06/02 16:19:01  camacho
+* Remove LookupTableOptions::use_pssm
+*
 * Revision 1.66  2005/05/26 14:34:09  dondosha
 * Added PHI BLAST cases to GetProgramType method
 *

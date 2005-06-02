@@ -814,15 +814,9 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (threshold == -1)
       options->threshold = 0;
 
-   /* if the supplied threshold is > 0, use it */
+   /* if the supplied threshold is > 0, use it otherwise, use the default */
    if (threshold > 0)
       options->threshold = threshold;
-
-   /* otherwise, use the default */
-
-   if (program_number == eBlastTypePsiBlast) { /* FIXME: or PSI-TBLASTN */
-      options->use_pssm = TRUE;
-   }
 
    if (Blast_ProgramIsRpsBlast(program_number))
       options->lut_type = RPS_LOOKUP_TABLE;
@@ -1202,6 +1196,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.168  2005/06/02 16:18:40  camacho
+ * Remove LookupTableOptions::use_pssm
+ *
  * Revision 1.167  2005/05/20 18:26:54  camacho
  * Deduce LookupTableOptions::use_pssm from program type
  *

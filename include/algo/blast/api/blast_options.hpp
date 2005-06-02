@@ -145,9 +145,6 @@ public:
     bool GetFullByteScan() const;
     void SetFullByteScan(bool val = true);
 
-    bool GetUsePssm() const;
-    void SetUsePssm(bool m);
-
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
@@ -586,6 +583,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.104  2005/06/02 16:18:17  camacho
+* Remove LookupTableOptions::use_pssm
+*
 * Revision 1.103  2005/05/31 13:42:57  camacho
 * doxygen fixes
 *

@@ -78,9 +78,6 @@ protected:
         m_Opts->SetRemoteProgramAndService_Blast3("blastp", "psi");
     }
     
-    /// Overrides LookupTableDefaults for PSI-BLAST
-    void SetLookupTableDefaults();
-
     /// Sets PSIBlastDefaults
     void SetPSIBlastDefaults();
     
@@ -101,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/06/02 16:18:17  camacho
+ * Remove LookupTableOptions::use_pssm
+ *
  * Revision 1.7  2005/05/24 14:04:47  madden
  * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
  *

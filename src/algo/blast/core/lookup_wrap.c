@@ -62,13 +62,16 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
    case AA_LOOKUP_TABLE:
        {
        Int4** matrix = NULL;
-       if (lookup_options->use_pssm) {
+       Boolean has_pssm = FALSE;
+       if (sbp->psi_matrix && sbp->psi_matrix->pssm) {
            matrix = sbp->psi_matrix->pssm->data;
+           has_pssm = TRUE;
        } else {
            matrix = sbp->matrix->data;
        }
        BlastAaLookupNew(lookup_options, (BlastLookupTable* *)
                         &lookup_wrap->lut);
+       ((BlastLookupTable*)lookup_wrap->lut)->use_pssm = has_pssm;
        BlastAaLookupIndexQuery( (BlastLookupTable*) lookup_wrap->lut, matrix, 
                                  query, lookup_segments);
        _BlastAaLookupFinalize((BlastLookupTable*) lookup_wrap->lut);

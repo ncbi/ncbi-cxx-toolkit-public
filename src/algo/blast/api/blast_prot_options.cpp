@@ -59,7 +59,6 @@ CBlastProteinOptionsHandle::SetLookupTableDefaults()
     m_Opts->SetLookupTableType(AA_LOOKUP_TABLE);
     SetWordSize(BLAST_WORDSIZE_PROT);
     SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
-    m_Opts->SetUsePssm(false);
 }
 
 void
@@ -145,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/06/02 16:19:01  camacho
+ * Remove LookupTableOptions::use_pssm
+ *
  * Revision 1.19  2005/05/16 12:24:37  madden
  * Remove references to [GS]etPrelimHitlistSize
  *

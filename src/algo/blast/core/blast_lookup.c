@@ -239,7 +239,6 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
      (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
   ASSERT(lookup->thin_backbone != NULL);
 
-  lookup->use_pssm = opt->use_pssm;
   lookup->overflow=NULL;
   return 0;
 }
@@ -584,8 +583,6 @@ Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       BlastSeqLoc* locations)
 {
 
-    /** @todo: why not pass query unconditionally here? PSSMs should be handled
-     * in a different code path for clarity */
 return _BlastAaLookupIndexQuery(lookup,
                                matrix, 
                                (lookup->use_pssm == TRUE) ? NULL : query, 

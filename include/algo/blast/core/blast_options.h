@@ -183,7 +183,6 @@ typedef struct LookupTableOptions {
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
-   Boolean use_pssm; /**< Use a PSSM rather than a (protein) query to construct lookup table */
    Boolean variable_wordsize; /**< Should the partial bytes be examined for 
                              determining whether exact match is long enough? */
 } LookupTableOptions;

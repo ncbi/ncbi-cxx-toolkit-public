@@ -54,11 +54,6 @@ CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
     m_Opts->SetProgram(ePSIBlast);
 }
 
-void CPSIBlastOptionsHandle::SetLookupTableDefaults(void)
-{
-    m_Opts->SetUsePssm(true);
-}
-
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
 {
     m_Opts->SetInclusionThreshold( PSI_INCLUSION_ETHRESH );
@@ -75,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/02 16:19:01  camacho
+ * Remove LookupTableOptions::use_pssm
+ *
  * Revision 1.5  2005/05/24 14:07:44  madden
  * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
  *
