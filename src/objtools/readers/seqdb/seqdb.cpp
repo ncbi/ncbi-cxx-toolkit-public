@@ -216,9 +216,9 @@ int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
 }
 
 int CSeqDB::GetAmbigSeqAlloc(int             oid,
-                               char         ** buffer,
-                               int             nucl_code,
-                               ESeqDBAllocType strategy) const
+                             char         ** buffer,
+                             int             nucl_code,
+                             ESeqDBAllocType strategy) const
 {
     if ((strategy != eMalloc) && (strategy != eNew)) {
         NCBI_THROW(CSeqDBException,
@@ -370,6 +370,34 @@ CSeqDBIter::CSeqDBIter(const CSeqDB * db, int oid)
     if (m_DB->CheckOrFindOID(m_OID)) {
         x_GetSeq();
     }
+}
+
+CSeqDBIter::CSeqDBIter(const CSeqDBIter & other)
+    : m_DB    (other.m_DB),
+      m_OID   (other.m_OID),
+      m_Data  (0),
+      m_Length((int) -1)
+{
+    if (m_DB->CheckOrFindOID(m_OID)) {
+        x_GetSeq();
+    }
+}
+
+/// Copy one iterator to another.
+CSeqDBIter & CSeqDBIter::operator =(const CSeqDBIter & other)
+{
+    x_RetSeq();
+    
+    m_DB = other.m_DB;
+    m_OID = other.m_OID;
+    m_Data = 0;
+    m_Length = -1;
+    
+    if (m_DB->CheckOrFindOID(m_OID)) {
+        x_GetSeq();
+    }
+    
+    return *this;
 }
 
 CSeqDBIter & CSeqDBIter::operator++()
