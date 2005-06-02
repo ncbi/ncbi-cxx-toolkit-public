@@ -127,6 +127,10 @@ void CGridWorkerCgiApp::Init(void)
                               "Worker Node");
     SetupArgDescriptions(arg_desc.release());
 
+    IRWRegistry& reg = GetConfig();
+    reg.Set("grid_cgi", "automatic_cleanup", "false");
+    reg.Set("netcache_client", "cache_output", "true");
+
     m_AppImpl->Init();
 }
 
@@ -197,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/02 14:19:21  didenko
+ * Fixed "BLOB not found" error
+ *
  * Revision 1.4  2005/06/01 20:29:37  didenko
  * Added progress reporting
  *
