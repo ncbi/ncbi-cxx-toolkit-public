@@ -531,7 +531,6 @@ static EIO_Status s_VT_Write
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     EIO_Status status;
     const char* c;
-    size_t s;
 
     xxx->w_status = eIO_Success;
     if (!size)
@@ -745,6 +744,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2005/06/02 17:52:31  lavr
+ * s_VT_Write(): Unused variable "s" removed
+ *
  * Revision 1.12  2005/05/20 13:02:13  lavr
  * s_VT_Write() not to cut '\r' -- instead, do this in s_FTPExecute()
  *
