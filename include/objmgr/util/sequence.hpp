@@ -63,6 +63,7 @@ class CSeq_feat;
 class CSeq_entry;
 class CSeq_entry_handle;
 class CGenetic_code;
+class CMolInfo;
 
 BEGIN_SCOPE(sequence)
 
@@ -397,6 +398,12 @@ const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
 NCBI_XOBJUTIL_EXPORT
 int GetTaxId(const CBioseq_Handle& handle);
 
+/// Retrieve the MolInfo object for a given bioseq handle.  If the supplied
+/// sequence does not have a MolInfo associated with it, this will return NULL
+NCBI_XOBJUTIL_EXPORT
+const CMolInfo* GetMolInfo(const CBioseq_Handle& handle);
+
+
 /// Retrieve the Bioseq Handle from a location.
 /// location refers to a single bioseq:
 ///   return the bioseq
@@ -693,6 +700,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.63  2005/06/02 15:13:15  dicuccio
+* Added GetMolInfo() - returns a pointer to the MolInfo object for a bioseq handle
+*
 * Revision 1.62  2005/05/09 18:45:08  ucko
 * Ensure that widely-included classes with virtual methods have virtual dtors.
 *

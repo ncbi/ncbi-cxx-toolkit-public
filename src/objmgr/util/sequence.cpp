@@ -121,6 +121,17 @@ int GetTaxId(const CBioseq_Handle& handle)
     }
 }
 
+const CMolInfo* GetMolInfo(const CBioseq_Handle& handle)
+{
+    CSeqdesc_CI desc_iter(handle, CSeqdesc::e_Molinfo);
+    for ( ;  desc_iter;  ++desc_iter) {
+        return &desc_iter->GetMolinfo();
+    }
+
+    return NULL;
+}
+
+
 
 CBioseq_Handle GetBioseqFromSeqLoc
 (const CSeq_loc& loc,
@@ -2687,6 +2698,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.129  2005/06/02 15:13:15  dicuccio
+* Added GetMolInfo() - returns a pointer to the MolInfo object for a bioseq handle
+*
 * Revision 1.128  2005/04/28 17:54:33  dicuccio
 * Updated to GetBestOverlappingFeature():
 * - Modified x_GetBestOverlappingFeature() to return a list of possible features
