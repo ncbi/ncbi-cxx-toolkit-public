@@ -1295,17 +1295,36 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
     ITERATE(TSegments, ii, m_segments) {
         const SSegment& s = *ii;
         if(s.m_exon) {
-            if(s.m_box[0] < box[0]) {
-                box[0] = s.m_box[0];
+            
+            Uint4 a, b;
+            if(s.m_box[0] <= s.m_box[1]) {
+                a = s.m_box[0];
+                b = s.m_box[1];
             }
-            if(s.m_box[2] < box[2]) {
-                box[2] = s.m_box[2];
+            else {
+                b = s.m_box[0];
+                a = s.m_box[1];
             }
-            if(s.m_box[1] > box[1]) {
-                box[1] = s.m_box[1];
+            if(a < box[0]) {
+                box[0] = a;
             }
-            if(s.m_box[3] > box[3]) {
-                box[3] = s.m_box[3];
+            if(b > box[1]) {
+                box[1] = b;
+            }
+
+            if(s.m_box[2] <= s.m_box[3]) {
+                a = s.m_box[2];
+                b = s.m_box[3];
+            }
+            else {
+                b = s.m_box[2];
+                a = s.m_box[3];
+            }
+            if(a < box[2]) {
+                box[2] = a;
+            }
+            if(b > box[3]) {
+                box[3] = b;
             }
         }
     }
@@ -1529,6 +1548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/06/02 13:30:17  kapustin
+ * Adjust GetBox() for different orientations
+ *
  * Revision 1.28  2005/06/01 18:57:29  kapustin
  * +SAlignedCompartment::GetBox()
  *
