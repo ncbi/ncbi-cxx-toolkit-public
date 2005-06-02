@@ -55,6 +55,7 @@ CNWAligner::CNWAligner()
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
       m_abc(g_nwaligner_nucleotides),
+      m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_Seq1(0), m_SeqLen1(0),
       m_Seq2(0), m_SeqLen2(0),
@@ -77,6 +78,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
       m_abc(g_nwaligner_nucleotides),
+      m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
@@ -99,6 +101,7 @@ CNWAligner::CNWAligner(const string& seq1,
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
       m_abc(g_nwaligner_nucleotides),
+      m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_Seq1(seq1.data()), m_SeqLen1(seq1.size()),
       m_Seq2(seq2.data()), m_SeqLen2(seq2.size()),
@@ -333,7 +336,8 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
 CNWAligner::TScore CNWAligner::Run()
 {
-    if(Uint4(m_ScoreMatrix.s[0][0]) == kMax_UInt) {
+    if(m_ScoreMatrixInvalid) {
+
         NCBI_THROW(CAlgoAlignException, eInvalidMatrix,
                    "CNWAligner::SetScoreMatrix(NULL) must be called "
                    "after changing match/mismatch scores "
@@ -813,14 +817,14 @@ void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
 void CNWAligner::SetWms(TScore val)
 {
     m_Wms = val;
-    m_ScoreMatrix.s[0][0] = kMax_UInt; // invalidate score matrix
+    m_ScoreMatrixInvalid = true;
 }
 
 
 void CNWAligner::SetWm(TScore val)
 {
     m_Wm = val;
-    m_ScoreMatrix.s[0][0] = kMax_UInt; // invalidate score matrix
+    m_ScoreMatrixInvalid = true;
 }
 
  
@@ -844,6 +848,7 @@ void CNWAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix* psm)
         iupacna_psm.defscore = m_Wms;
         NCBISM_Unpack(&iupacna_psm, &m_ScoreMatrix);        
     }
+    m_ScoreMatrixInvalid = false;
 }
 
 
@@ -1314,6 +1319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2005/06/02 15:01:52  kapustin
+ * Use explicit flag to invalidate score matrix
+ *
  * Revision 1.66  2005/06/02 14:18:02  kapustin
  * Invalidate score matrix after setting match and mismatch scores
  *

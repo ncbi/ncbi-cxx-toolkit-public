@@ -206,6 +206,7 @@ protected:
     // alphabet and score matrix
     const char*               m_abc;
     SNCBIFullScoreMatrix      m_ScoreMatrix;
+    bool                      m_ScoreMatrixInvalid;
 
     // progress callback
     FProgressCallback         m_prg_callback;
@@ -305,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/06/02 15:01:39  kapustin
+ * Use explicit flag to invalidate score matrix
+ *
  * Revision 1.43  2005/06/02 14:16:48  kapustin
  * Invalidate score matrix after setting match and mismatch scores
  *
