@@ -30,7 +30,8 @@ Die() {
 Success() {
     echo "$@" >& 2
     echo $nc_pid > netcached.pid    
-    cat netcached.out | mail -s "$@" $mail_to    
+    cat netcached.out >& 2
+#    | mail -s "$@" $mail_to    
     cd $start_dir
     exit 0
 }
@@ -86,7 +87,8 @@ if ! $nc_control -retry 7 -v $host $port > /dev/null  2>&1; then
         sleep $service_wait
         
         if ! $nc_control -v $host $port > /dev/null  2>&1; then
-            cat netcached.out | mail -s "[PROBLEM] netcached @ $host:$port failed to start" $mail_to
+            cat netcached.out >& 2
+#            | mail -s "[PROBLEM] netcached @ $host:$port failed to start" $mail_to
             
             kill $nc_pid
             sleep 3
@@ -101,8 +103,9 @@ if ! $nc_control -retry 7 -v $host $port > /dev/null  2>&1; then
             sleep $service_wait
             
             if ! $nc_control -v $host $port > /dev/null  2>&1; then
-                echo "Service failed to start with database reinitialization"
-                cat netcached.out | mail -s "[PROBLEM] netcached @ $host:$port failed to start with -reinit" $mail_to
+                echo "Service failed to start with database reinitialization" >& 2
+                cat netcached.out >& 2
+#                | mail -s "[PROBLEM] netcached @ $host:$port failed to start with -reinit" $mail_to
                 Die "Failed to start service"
             else
                 Success "netcached started with -reinit (pid=$nc_pid) at $host:$port"
