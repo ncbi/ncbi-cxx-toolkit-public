@@ -1289,6 +1289,9 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_Text :
             tuple[i] = pythonpp::CString( value.GetString() );
             break;
+        /* Future development
+        case eDB_Text :
+        */
         case eDB_Image :
         case eDB_LongBinary :
         case eDB_VarBinary :
@@ -1296,6 +1299,9 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_Numeric :
             tuple[i] = pythonpp::CString( value.GetString() );
             break;
+        /* Future development
+        case eDB_Binary :
+        */
         case eDB_UnsupportedType :
             break;
         }
@@ -1525,6 +1531,16 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         return CVariant( pythonpp::CFloat(obj) );
     } else if ( pythonpp::CString::HasSameType(obj) ) {
         return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+
+        /* Future development ...
+        const pythonpp::CString str(obj);
+
+        if ( str.GetSize() <= 255 ) {
+            return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+        } else {
+            // BLOB
+        }
+        */
     }
 
     return CVariant(eDB_UnsupportedType);
@@ -2542,6 +2558,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/06/02 22:08:41  ssikorsk
+* Declared new development points to support BLOB data types.
+*
 * Revision 1.19  2005/06/02 18:40:14  ssikorsk
 * Code cleanup
 *
