@@ -92,10 +92,11 @@ CRowID::~CRowID(void)
 void 
 CStmtStr::SetStr(const string& str, EStatementType default_type)
 {
+    m_StmType = RetrieveStatementType(str, default_type);
+
+    /* Do not delete this code ...
     static char const* space_characters = " \t\n";
 
-    m_StmType = RetrieveStatementType(str, default_type);
-    /* Do not delete this code ...
     if ( GetType() == estFunction ) {
         // Cut off the "EXECUTE" prefix if any ...
 
@@ -2541,6 +2542,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/06/02 18:40:14  ssikorsk
+* Code cleanup
+*
 * Revision 1.18  2005/06/01 18:38:18  ssikorsk
 * Code optimization
 *
