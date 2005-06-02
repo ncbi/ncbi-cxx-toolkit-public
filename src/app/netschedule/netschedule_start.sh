@@ -27,9 +27,10 @@ Die() {
 }
 
 Success() {
-    echo "$@"
+    echo "$@" >& 2
     echo $ns_pid > netscheduled.pid    
-    cat netscheduled.out | mail -s "$@" $mail_to    
+    cat netscheduled.out >& 2
+#    | mail -s "$@" $mail_to    
     cd $start_dir
     exit 0
 }
@@ -79,19 +80,20 @@ if ! $ns_control -retry 7 -v $host $port > /dev/null  2>&1; then
     sleep $service_wait
     
     if ! $ns_control -v $host $port > /dev/null  2>&1; then
-        echo "Service failed to start in $service_wait seconds"
+        echo "Service failed to start in $service_wait seconds" >& 2
         
-        echo "Giving it $service_wait seconds more..."
+        echo "Giving it $service_wait seconds more..." >& 2
         sleep $service_wait
         
         if ! $ns_control -v $host $port > /dev/null  2>&1; then
-            cat netscheduled.out | mail -s "[PROBLEM] netscheduled @ $host:$port failed to start" $mail_to
+            cat netscheduled.out >& 2
+#            | mail -s "[PROBLEM] netscheduled @ $host:$port failed to start" $mail_to
             
             kill $ns_pid
             sleep 3
             kill -9 $ns_pid
             
-            echo "Database reinitialization."
+            echo "Database reinitialization." >& 2
             
             $netscheduled -reinit >> netscheduled.out  2>&1 &
             ns_pid=$!
@@ -100,8 +102,9 @@ if ! $ns_control -retry 7 -v $host $port > /dev/null  2>&1; then
             sleep $service_wait
             
             if ! $ns_control -v $host $port > /dev/null  2>&1; then
-                echo "Service failed to start with database reinitialization"
-                cat netscheduled.out | mail -s "[PROBLEM] netscheduled @ $host:$port failed to start with -reinit" $mail_to
+                echo "Service failed to start with database reinitialization" >& 2
+                cat netscheduled.out >& 2
+#                | mail -s "[PROBLEM] netscheduled @ $host:$port failed to start with -reinit" $mail_to
                 Die "Failed to start service"
             else
                 Success "netscheduled started with -reinit (pid=$ns_pid) at $host:$port"
@@ -116,4 +119,4 @@ fi
 
 Success "netscheduled started (pid=$ns_pid) at $host:$port"
 
-cd $start_dir
+#cd $start_dir
