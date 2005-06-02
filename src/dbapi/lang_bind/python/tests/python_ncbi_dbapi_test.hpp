@@ -135,6 +135,7 @@ public:
     void TestFromFile(void);
 
 private:
+    static void ExecuteStr(const char* cmd);
 
 private:
     pythonpp::CEngine m_Engine;
@@ -155,6 +156,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/06/02 22:09:43  ssikorsk
+ * Added "ExecuteStr" method
+ *
  * Revision 1.8  2005/06/01 18:41:12  ssikorsk
  * Do not check the "get_proc_return_status" method after "execute"
  * stored procedute with the ODBC driver.
