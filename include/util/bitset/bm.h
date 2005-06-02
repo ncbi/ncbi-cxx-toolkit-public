@@ -2905,6 +2905,33 @@ public:
             }
             return 0; // not allocated
         }
+        
+        bool is_no_more_blocks(unsigned nb) const
+        {
+            unsigned block = nb;
+            unsigned block_idx = nb >> bm::set_array_shift;
+            for (unsigned i = block_idx; i < top_block_size_; ++i) { 
+                bm::word_t** blk_blk = blocks_[i];
+                if (blk_blk)                 
+                { 
+                    for (unsigned j = block & bm::set_array_mask; 
+                         j < bm::set_array_size; ++j)
+                    {
+                        bm::word_t* blk = blk_blk[j];
+                        if (blk && !is_block_zero(i, blk)) 
+                        {
+                            return false;
+                        }
+                        ++block;
+                    }
+                } 
+                else 
+                {
+                    block += bm::set_array_size;
+                }
+            }
+            return true;
+        }
 
         /**
            \brief Finds block in 2-level blocks array

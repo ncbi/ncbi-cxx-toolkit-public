@@ -124,10 +124,28 @@ inline void encoder::put_16(bm::short_t s)
 */
 inline void encoder::put_16(const bm::short_t* s, unsigned count)
 {
+    unsigned char* buf = buf_;
+    const bm::short_t* s_end = s + count;
+    do 
+    {
+        bm::short_t w16 = *s++;
+        unsigned char a = (unsigned char)  w16;
+        unsigned char b = (unsigned char) (w16 >> 8);
+        
+        *buf++ = a;
+        *buf++ = b;
+                
+    } while (s < s_end);
+    
+    buf_ = (unsigned char*)buf;
+    
+    
+/*
     for (unsigned i = 0; i < count; ++i) 
     {
         put_16(s[i]);
     }
+*/
 }
 
 

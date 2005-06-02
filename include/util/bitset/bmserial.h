@@ -183,6 +183,13 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
         flag = bman.is_block_zero(i, blk);
         if (flag)
         {
+
+            if (bman.is_no_more_blocks(i+1)) 
+            {
+                enc.put_8(set_block_azero);
+                break; 
+            }
+
             // Look ahead for similar blocks
             for(j = i+1; j < bm::set_total_blocks; ++j)
             {
@@ -253,7 +260,7 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
             */
             continue;
         }
-
+        
         // -------------------------------
         // BIT BLOCK serialization
 
