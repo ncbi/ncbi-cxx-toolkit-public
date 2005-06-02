@@ -51,6 +51,7 @@ public:
     enum EErrCode {
         eInternal,
         eBadParameter,
+        eInvalidMatrix,
         eMemoryLimit,
         eInvalidCharacter,
         eIncorrectSequenceOrder,
@@ -65,6 +66,8 @@ public:
             return "Internal error";
         case eBadParameter:
             return "One or more parameters passed are invalid";
+        case eInvalidMatrix:
+            return "Invalid score matrix";
         case eMemoryLimit:
             return "Memory limit exceeded";
         case eInvalidCharacter:
@@ -96,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/02 14:16:48  kapustin
+ * Invalidate score matrix after setting match and mismatch scores
+ *
  * Revision 1.1  2004/12/15 19:55:16  kapustin
  * Move to algo/align/nw
  *

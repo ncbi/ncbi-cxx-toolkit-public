@@ -333,6 +333,13 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
 CNWAligner::TScore CNWAligner::Run()
 {
+    if(Uint4(m_ScoreMatrix.s[0][0]) == kMax_UInt) {
+        NCBI_THROW(CAlgoAlignException, eInvalidMatrix,
+                   "CNWAligner::SetScoreMatrix(NULL) must be called "
+                   "after changing match/mismatch scores "
+                   "to make sure that the new parameters are engaged.");
+    }
+
     if(!m_Seq1 || !m_Seq2) {
         NCBI_THROW(CAlgoAlignException, eNoData,
                    g_msg_DataNotAvailable);
@@ -800,6 +807,20 @@ void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
 {
     m_prg_callback = prg_callback;
     m_prg_info.m_data = data;
+}
+
+
+void CNWAligner::SetWms(TScore val)
+{
+    m_Wms = val;
+    m_ScoreMatrix.s[0][0] = kMax_UInt; // invalidate score matrix
+}
+
+
+void CNWAligner::SetWm(TScore val)
+{
+    m_Wm = val;
+    m_ScoreMatrix.s[0][0] = kMax_UInt; // invalidate score matrix
 }
 
  
@@ -1293,6 +1314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/06/02 14:18:02  kapustin
+ * Invalidate score matrix after setting match and mismatch scores
+ *
  * Revision 1.65  2005/05/24 19:35:36  kapustin
  * +CNWAligner::s_RunLength{En|De}Code()
  *

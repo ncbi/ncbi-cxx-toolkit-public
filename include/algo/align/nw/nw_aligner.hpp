@@ -1,5 +1,5 @@
-#ifndef ALGO___NW_ALIGNER__HPP
-#define ALGO___NW_ALIGNER__HPP
+#ifndef ALGO_ALIGN_NW_NW_ALIGNER__HPP
+#define ALGO_ALIGN_NW_NW_ALIGNER__HPP
 
 /* $Id$
 * ===========================================================================
@@ -90,8 +90,8 @@ public:
   
     void SetScoreMatrix(const SNCBIPackedScoreMatrix* scoremat);
 
-    void SetWm  (TScore value)  { m_Wm  = value; }   // match (na)
-    void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
+    void SetWm  (TScore value);                      // match (na)
+    void SetWms (TScore value);                      // mismatch (na)
     void SetWg  (TScore value)  { m_Wg  = value; }   // gap opening
     void SetWs  (TScore value)  { m_Ws  = value; }   // gap extension
 
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/06/02 14:16:48  kapustin
+ * Invalidate score matrix after setting match and mismatch scores
+ *
  * Revision 1.42  2005/05/24 19:35:19  kapustin
  * +CNWAligner::s_RunLength{En|De}Code()
  *
