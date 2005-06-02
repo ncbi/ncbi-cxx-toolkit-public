@@ -52,10 +52,10 @@ typedef struct SBlastHitsParameters {
 
 /** Sets up small structures used by blast_hit.c and hspstream_collector.c
  * for saving HSPs.
- * @param hitSavingOptions field hitlist_size and hsp_num_max needed, a pointer to 
+ * @param hit_options field hitlist_size and hsp_num_max needed, a pointer to 
  *      this structure will be stored on resulting structure.[in]
- * @param extOptions field compositionBasedStats needed here. [in]
- * @param scoringOptions gapped_calculation needed here. [in]
+ * @param ext_options field compositionBasedStats needed here. [in]
+ * @param scoring_options gapped_calculation needed here. [in]
  * @param retval the allocated SBlastHitsParameters*
  * @return zero on success, 1 on NULL parameter, 2 if calloc fails.
  */
@@ -67,7 +67,7 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
 
 /** Deallocated SBlastHitsParameters.
  * @param param object to be freed.
- * @param NULL pointer.
+ * @return NULL pointer.
  */
 NCBI_XBLAST_EXPORT
 SBlastHitsParameters* SBlastHitsParametersFree(SBlastHitsParameters* param);
