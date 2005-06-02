@@ -289,8 +289,11 @@ void CAppNWA::x_RunOnPair() const
 
     auto_ptr<CNWAligner> aligner (pnwaligner);
 
-    aligner->SetWm  (args["Wm"]. AsInteger());
-    aligner->SetWms (args["Wms"].AsInteger());
+    if(psm == NULL) {
+        aligner->SetWm  (args["Wm"]. AsInteger());
+        aligner->SetWms (args["Wms"].AsInteger());
+        aligner->SetScoreMatrix(NULL);
+    }
     aligner->SetWg  (args["Wg"]. AsInteger());
     aligner->SetWs  (args["Ws"]. AsInteger());
 
@@ -444,6 +447,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/02 15:14:58  kapustin
+ * Call SetScoreMatrix(NULL) after changing diag scores
+ *
  * Revision 1.3  2005/06/01 21:26:15  kapustin
  * Re-set scoring matrix to account for ambiguity chars
  *

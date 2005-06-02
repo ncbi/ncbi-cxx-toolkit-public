@@ -482,6 +482,7 @@ int CSplignApp::Run()
   aligner->SetWms(args["Wms"].AsInteger());
   aligner->SetWg(args["Wg"].AsInteger());
   aligner->SetWs(args["Ws"].AsInteger());
+  aligner->SetScoreMatrix(NULL);
 
   for(size_t i = 0, n = aligner->GetSpliceTypeCount(); i < n; ++i) {
       string arg_name ("Wi");
@@ -705,6 +706,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/06/02 15:13:36  kapustin
+ * Call SetScoreMatrix(NULL) after changing diag scores
+ *
  * Revision 1.40  2005/05/10 18:02:01  kapustin
  * Advance version number
  *
