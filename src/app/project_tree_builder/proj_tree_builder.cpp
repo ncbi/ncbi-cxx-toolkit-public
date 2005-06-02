@@ -1450,6 +1450,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         set<string> keys;
         keys.insert("LIBS");
         keys.insert("SRC");
+        keys.insert("DLL_LIB");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
     }}
 }
@@ -1549,6 +1550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/06/02 19:27:29  gouriano
+ * Added macro substitution in DLL_LIB
+ *
  * Revision 1.28  2005/05/25 12:32:32  gouriano
  * Added FILES option into conditional macro
  *
