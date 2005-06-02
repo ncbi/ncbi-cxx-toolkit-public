@@ -44,6 +44,12 @@ CPythonDBAPITest::CPythonDBAPITest(const CTestArguments& args)
 {
 }
 
+void 
+CPythonDBAPITest::ExecuteStr(const char* cmd)
+{
+    pythonpp::CEngine::ExecuteStr(cmd);
+}
+
 void
 CPythonDBAPITest::MakeTestPreparation(void)
 {
@@ -62,13 +68,19 @@ CPythonDBAPITest::MakeTestPreparation(void)
                                 connection_args + 
                                 "')\n");
 
-        m_Engine.ExecuteStr("import python_ncbi_dbapi\n");
-        m_Engine.ExecuteStr( connection_str.c_str() );
-        m_Engine.ExecuteStr( conn_simple_str.c_str() );
+        ExecuteStr("import python_ncbi_dbapi\n");
+        ExecuteStr( connection_str.c_str() );
+        ExecuteStr( conn_simple_str.c_str() );
 
-        m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
-        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
-        m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t2 ( int_val int null, text_val text null)') \n");
+        ExecuteStr("cursor_simple = conn_simple.cursor() \n");
+        ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
+        // ExecuteStr("cursor_simple.execute('CREATE TABLE #t2 ( int_val int null, text_val text null)') \n");
+        ExecuteStr("cursor_simple.execute("
+            "'CREATE TABLE #t2 ( "
+            "   int_val int null, "
+            "   varchar_val varchar(255) null, "
+            "   text_val text null)') \n"
+            );
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -79,49 +91,49 @@ void
 CPythonDBAPITest::TestBasic(void)
 {
     try {
-        m_Engine.ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
-        m_Engine.ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
-        m_Engine.ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
-        m_Engine.ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
+        ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
+        ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
+        ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
+        ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
 
-        m_Engine.ExecuteStr("connection.commit()\n");
-        m_Engine.ExecuteStr("connection.rollback()\n");
+        ExecuteStr("connection.commit()\n");
+        ExecuteStr("connection.rollback()\n");
 
-        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-        m_Engine.ExecuteStr("cursor2 = conn_simple.cursor()\n");
+        ExecuteStr("cursor = connection.cursor()\n");
+        ExecuteStr("cursor2 = conn_simple.cursor()\n");
 
-        m_Engine.ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
-        m_Engine.ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
-        m_Engine.ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
-        m_Engine.ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
+        ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
+        ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
+        ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
+        ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
 
-        m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33') \n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.execute('select qq = 57.55 + 0.0033')\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.execute('select qq = GETDATE()')\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("rowcount = cursor.rowcount \n");
-        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
-        m_Engine.ExecuteStr("cursor.fetchmany()\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.nextset()\n");
-        m_Engine.ExecuteStr("cursor.setinputsizes()\n");
-        m_Engine.ExecuteStr("cursor.setoutputsize()\n");
+        ExecuteStr("cursor.execute('select qq = 57 + 33') \n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.execute('select qq = 57.55 + 0.0033')\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.execute('select qq = GETDATE()')\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("rowcount = cursor.rowcount \n");
+        ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
+        ExecuteStr("cursor.fetchmany()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.nextset()\n");
+        ExecuteStr("cursor.setinputsizes()\n");
+        ExecuteStr("cursor.setoutputsize()\n");
 
-        m_Engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
-        m_Engine.ExecuteStr("cursor2.fetchone()\n");
+        ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
+        ExecuteStr("cursor2.fetchone()\n");
 
-        m_Engine.ExecuteStr("cursor.close()\n");
-        m_Engine.ExecuteStr("cursor2.close()\n");
+        ExecuteStr("cursor.close()\n");
+        ExecuteStr("cursor2.close()\n");
 
-        m_Engine.ExecuteStr("cursor_simple.close()\n");
-        m_Engine.ExecuteStr("connection.close()\n");
+        ExecuteStr("cursor_simple.close()\n");
+        ExecuteStr("connection.close()\n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -134,9 +146,9 @@ CPythonDBAPITest::TestExecute(void)
     try {
         // Simple test
         {
-            m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-            m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
-            m_Engine.ExecuteStr("cursor.fetchone()\n");
+            ExecuteStr("cursor = connection.cursor()\n");
+            ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
+            ExecuteStr("cursor.fetchone()\n");
         }
     }
     catch( const string& ex ) {
@@ -149,17 +161,17 @@ CPythonDBAPITest::TestFetch(void)
 {
     try {
         // Prepare ...
-        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-        m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
+        ExecuteStr("cursor = connection.cursor()\n");
+        ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
 
         // fetchone
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.fetchone()\n");
         // fetchmany
-        m_Engine.ExecuteStr("cursor.fetchmany(1)\n");
-        m_Engine.ExecuteStr("cursor.fetchmany(2)\n");
-        m_Engine.ExecuteStr("cursor.fetchmany(3)\n");
+        ExecuteStr("cursor.fetchmany(1)\n");
+        ExecuteStr("cursor.fetchmany(2)\n");
+        ExecuteStr("cursor.fetchmany(3)\n");
         // fetchall
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.fetchall()\n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -170,25 +182,47 @@ void
 CPythonDBAPITest::TestParameters(void)
 {
     try {
+        // Prepare ...
+        {
+            ExecuteStr("cursor = conn_simple.cursor()\n");
+        }
+
         // Very first test ...
         {
-            // Prepare ...
-            m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
-            m_Engine.ExecuteStr("cursor.execute('SELECT name, type FROM sysobjects WHERE type = @type_par', {'@type_par':'S'})\n");
+            ExecuteStr("cursor.execute('SELECT name, type FROM sysobjects WHERE type = @type_par', {'@type_par':'S'})\n");
 
             // fetchall
-            m_Engine.ExecuteStr("cursor.fetchall()\n");
+            ExecuteStr("cursor.fetchall()\n");
         }
 
-        // Test for long strings ...
+        // Test for varchar strings ...
         {
-            m_Engine.ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
-            m_Engine.ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-            // m_Engine.ExecuteStr("print seq_align \n");
-            m_Engine.ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv' : seq_align})\n");
-            m_Engine.ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
-            // m_Engine.ExecuteStr("print cursor.fetchone()\n");
+            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+            ExecuteStr("seq_align = 254 * '-' + 'X' \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(varchar_val) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteStr("cursor.execute('SELECT varchar_val FROM #t2') \n");
+            ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
         }
+
+        /* Future development ...
+        // Test for text strings ...
+        {
+            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+            // ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+            ExecuteStr("seq_align = 254 * '-' + 'X' \n");
+            ExecuteStr("if len(seq_align) != 255 : raise StandardError('Invalid string length.') \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+            ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
+
+            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+            ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+            ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+            ExecuteStr("if len(cursor.fetchone()[0]) != 355 : raise StandardError('Invalid string length.') \n");
+        }
+        */
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -201,10 +235,10 @@ CPythonDBAPITest::TestExecuteMany(void)
     try {
         // Excute with empty parameter list
         {
-            m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
-            m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
-            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'value':value} for value in range(1, 11) ]) \n");
+            ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+            ExecuteStr("cursor = conn_simple.cursor()\n");
+            ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            ExecuteStr("cursor.executemany(sql_ins, [ {'value':value} for value in range(1, 11) ]) \n");
         }
     }
     catch( const string& ex ) {
@@ -219,29 +253,29 @@ CPythonDBAPITest::TestTransaction(void)
     try {
         // "Simple mode" test ...
         {
-            m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
-            m_Engine.ExecuteStr("sql_sel = 'SELECT * FROM #t' \n");
-            m_Engine.ExecuteStr("cursor = conn_simple.cursor() \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
-            m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
-            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
-            m_Engine.ExecuteStr("conn_simple.commit() \n");
-            m_Engine.ExecuteStr("conn_simple.rollback() \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
-            m_Engine.ExecuteStr("cursor.execute('ROLLBACK TRANSACTION') \n");
-            m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
-            m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
-            m_Engine.ExecuteStr("cursor.execute('COMMIT TRANSACTION') \n");
-            m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
-            m_Engine.ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+            ExecuteStr("sql_sel = 'SELECT * FROM #t' \n");
+            ExecuteStr("cursor = conn_simple.cursor() \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+            ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("conn_simple.commit() \n");
+            ExecuteStr("conn_simple.rollback() \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("cursor.execute('ROLLBACK TRANSACTION') \n");
+            ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
+            ExecuteStr("cursor.execute('COMMIT TRANSACTION') \n");
+            ExecuteStr("cursor.execute(sql_sel) \n");
+            ExecuteStr("cursor.fetchall() \n");
         }
     }
     catch( const string& ex ) {
@@ -266,25 +300,25 @@ CPythonDBAPITest::Test_callproc(void)
 {
     try {
         // CALL stored procedure ...
-        m_Engine.ExecuteStr("cursor.callproc('sp_databases')\n");
+        ExecuteStr("cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW( 
-            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
             string 
             );
         BOOST_CHECK_THROW( 
-            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
             string 
             );
 
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.fetchmany(5)\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.fetchmany(5)\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
-        m_Engine.ExecuteStr("cursor.callproc('sp_server_info')\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("cursor.callproc('sp_server_info')\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -297,30 +331,30 @@ CPythonDBAPITest::TestExecuteStoredProc(void)
 {
     try {
         // EXECUTE stored procedure without parameters ...
-        m_Engine.ExecuteStr("cursor.execute('execute sp_databases')\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("cursor.execute('execute sp_databases')\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
         // EXECUTE stored procedure with parameters ...
-        m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
+        ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
         BOOST_CHECK_THROW( 
-            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
             string 
             );
         BOOST_CHECK_THROW( 
-            m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
             string 
             );
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
-        m_Engine.ExecuteStr("cursor.execute('execute sp_server_info 2')\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.fetchall()\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
-        m_Engine.ExecuteStr("cursor.fetchmany(5)\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
-        m_Engine.ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("cursor.execute('execute sp_server_info 2')\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.fetchall()\n");
+        ExecuteStr("cursor.fetchone()\n");
+        ExecuteStr("cursor.fetchmany(5)\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
+        ExecuteStr("rc = cursor.get_proc_return_status()\n");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -372,7 +406,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-    
+
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
 //     add(tc);
@@ -508,6 +542,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/06/02 22:12:20  ssikorsk
+* Added new tests. Simplified the code.
+*
 * Revision 1.13  2005/06/02 18:42:00  ssikorsk
 * Added new test for passing long strings as a parameter
 *
