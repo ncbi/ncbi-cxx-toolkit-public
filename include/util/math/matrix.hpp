@@ -53,64 +53,70 @@ public:
     CNcbiMatrix();
     CNcbiMatrix(size_t r, size_t c, T val = T(0));
 
-    // make this matrix an identity matrix of a given size
+    /// make this matrix an identity matrix of a given size
     void Identity(size_t size);
 
-    // make this matrix an identity matrix
+    /// make this matrix an identity matrix
     void Identity();
 
-    // make this matrix a diagonal matrix of a given size, with a given value
-    // on the diagonal
+    /// make this matrix a diagonal matrix of a given size, with a given value
+    /// on the diagonal
     void Diagonal(size_t size, T val);
 
-    // make this matrix a diagonal matrix, with a given value on the diagonal
+    /// make this matrix a diagonal matrix, with a given value on the diagonal
     void Diagonal(T val);
 
-    // transpose this matrix
+    /// transpose this matrix
     void Transpose();
 
-    // resize this matrix, filling the empty cells with a known value
+    /// resize this matrix, filling the empty cells with a known value
     void Resize(size_t i, size_t j, T val = T(0));
 
-    // swap two rows in the matrix
+    /// swap two rows in the matrix
     void SwapRows(size_t i, size_t j);
 
-    // get the number of rows in this matrix
+    /// remove a given row in the matrix
+    void RemoveRow(size_t i);
+
+    /// remove a given column in the matrix
+    void RemoveCol(size_t i);
+
+    /// get the number of rows in this matrix
     size_t GetRows() const;
 
-    // get the number of columns in this matrix
+    /// get the number of columns in this matrix
     size_t GetCols() const;
 
-    // retrieve the data associated with this matrix
+    /// retrieve the data associated with this matrix
     TData&         GetData();
     const TData&   GetData() const;
 
-    // iterators
+    /// iterators
     iterator begin();
     iterator end();
     const_iterator begin() const;
     const_iterator end() const;
 
-    // set all values in the matrix to a known value
+    /// set all values in the matrix to a known value
     void Set(T val);
 
-    // swap two matrices efficiently
+    /// swap two matrices efficiently
     void Swap(CNcbiMatrix<T>& M);
 
-    // operator[] for raw data indexing
+    /// operator[] for raw data indexing
     const T&    operator[] (size_t i) const;
     T&          operator[] (size_t i);
 
-    // operator() for row/column indexing
+    /// operator() for row/column indexing
     const T&    operator() (size_t i, size_t j) const;
     T&          operator() (size_t i, size_t j);
 
 protected:
 
-    // the data strip we use
+    /// the data strip we use
     TData  m_Data;
 
-    // size of this matrix
+    /// size of this matrix
     size_t m_Rows;
     size_t m_Cols;
 };
@@ -385,7 +391,7 @@ inline void CNcbiMatrix<T>::Resize(size_t new_rows, size_t new_cols, T val)
 {
 
     if (new_cols == m_Cols && new_rows >= m_Rows) {
-        // common special case that can easily be handled efficiently
+        /// common special case that can easily be handled efficiently
         m_Data.resize(new_rows * new_cols, val);
     } else {
         /// hack: we just make a new strip and copy things correctly
@@ -499,6 +505,34 @@ inline void CNcbiMatrix<T>::Swap(CNcbiMatrix<T>& M)
     swap(m_Rows, M.m_Rows);
 }
 
+
+template <class T>
+inline void CNcbiMatrix<T>::RemoveRow(size_t r)
+{
+    _ASSERT(r < m_Rows);
+    for (++r; r < m_Rows;  ++r) {
+        for (size_t c = 0;  c < m_Cols;  ++c) {
+            m_Data[(r - 1) * m_Cols + c] = m_Data[r * m_Cols + c];
+        }
+    }
+
+    --m_Rows;
+    m_Data.resize(m_Rows * m_Cols);
+}
+
+
+template <class T>
+inline void CNcbiMatrix<T>::RemoveCol(size_t col)
+{
+    _ASSERT(col < m_Cols);
+    for (size_t r = 0;  r < m_Rows;  ++r) {
+        for (size_t c = col + 1;  c < m_Cols;  ++c) {
+            m_Data[r * m_Cols + c - 1] = m_Data[r * m_Cols + c];
+        }
+    }
+
+    Resize(m_Rows, m_Cols - 1);
+}
 
 ///
 /// global operators
@@ -962,6 +996,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/06/02 16:54:25  dicuccio
+ * Doxygenated comments.  Added RemoveRow(), RemoveCol()
+ *
  * Revision 1.7  2004/08/19 13:11:19  dicuccio
  * ncbistr --> ncbistd for broader coverage of NCBI definitions
  *
@@ -1000,4 +1037,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  // UTIL_MATH___MATRIX__HPP
+#endif  /// UTIL_MATH___MATRIX__HPP
