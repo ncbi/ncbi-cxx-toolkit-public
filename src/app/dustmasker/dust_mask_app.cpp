@@ -59,20 +59,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-struct CIupac2Ncbi2na_converter
-{
-    Uint1 operator()( Uint1 r ) const
-    {
-        switch( r )
-        {
-            case 67: return 1;
-            case 71: return 2;
-            case 84: return 3;
-            default: return 0;
-        }
-    }
-};
-
 //-------------------------------------------------------------------------
 static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
 {
@@ -162,8 +148,7 @@ int CDustMaskApplication::Run (void)
     scope->AddDefaults();
 
     // Set up the duster object.
-    typedef CSymDustMasker< objects::CSeqVector, CIupac2Ncbi2na_converter >
-        duster_type;
+    typedef CSymDustMasker duster_type;
     Uint4 level = GetArgs()["level"].AsInteger();
     duster_type::size_type window = GetArgs()["window"].AsInteger();
     duster_type::size_type linker = GetArgs()["linker"].AsInteger();
@@ -220,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/06/02 18:33:05  morgulis
+ * Fixed application to use non-templatized library.
+ *
  * Revision 1.2  2005/06/01 19:13:54  morgulis
  * Verified to work identically to out of tree version.
  *
