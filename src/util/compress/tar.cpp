@@ -1402,6 +1402,7 @@ string CTar::x_ToArchiveName(const string& path) const
     if (!m_BaseDir.empty()  &&  NStr::StartsWith(retval, m_BaseDir)) {
         retval.erase(0, m_BaseDir.length()/*separator too*/);
     }
+    // FIXME Workaround: _ASSERT(!retval.empty()); should be here instead
     if (retval.empty()) {
         retval.assign(".");
     }
@@ -1592,6 +1593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/06/03 21:40:32  lavr
+ * Add FIXME reminder for CDirEntry::NormalizePath()
+ *
  * Revision 1.23  2005/06/03 17:04:29  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
