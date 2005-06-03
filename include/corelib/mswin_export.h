@@ -165,6 +165,7 @@
 #  define NCBI_XALGOPHYTREE_EXPORTS
 #  define NCBI_XALGOSEQQA_EXPORTS
 #  define NCBI_XALGOWINMASK_EXPORTS
+#  define NCBI_XALGODUSTMASK_EXPORTS
 #endif
 
 
@@ -736,6 +737,14 @@
 #  define NCBI_XALGOWINMASK_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library xalgodustmask
+ */
+#ifdef NCBI_XALGODUSTMASK_EXPORTS
+#  define NCBI_XALGODUSTMASK_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XALGODUSTMASK_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xalnmgr
  */
 #ifdef NCBI_XALNMGR_EXPORTS
@@ -1115,6 +1124,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.98  2005/06/03 19:33:23  morgulis
+ * Added NCBI_XALGODUSTMASK_EXPORT.
+ *
  * Revision 1.97  2005/05/31 15:16:02  didenko
  * Added NCBI_XGRIDCGI_EXPORT
  *
