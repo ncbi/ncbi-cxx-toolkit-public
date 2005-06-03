@@ -147,7 +147,7 @@ static string GetPublicModuleName(TTypeInfo type)
     string name;
     for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
         char c = *i;
-        if ( !isalnum(c) )
+        if ( !isalnum((unsigned char) c) )
             name += ' ';
         else
             name += c;
@@ -1367,6 +1367,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/06/03 17:44:49  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.81  2005/05/23 15:40:14  gouriano
 * Handle containers of elements with mixed content
 *

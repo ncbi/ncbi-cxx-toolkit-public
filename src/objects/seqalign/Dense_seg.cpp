@@ -906,7 +906,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     while(ii < ie) {
 
         c = *ii;
-        if(isalpha(c)) {
+        if(isalpha((unsigned char) c)) {
 
             if(seg_type == 0 && (c == 'M' || c == 'R')) {
                 ++pos1;
@@ -966,14 +966,14 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
         }
         else {
 
-            if(!isdigit(c)) {
+            if(!isdigit((unsigned char) c)) {
 
                 NCBI_THROW(CSeqalignException, eInvalidInputData,
                            "Alignment transcript corrupt");
             }
 
             size_t len = 0;
-            while(ii < ie && isdigit(*ii)) {
+            while(ii < ie && isdigit((unsigned char)(*ii))) {
                 len = 10*len + *ii - '0';
                 ++ii;
             }
@@ -1016,6 +1016,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/06/03 17:44:26  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.20  2005/03/02 14:58:58  dicuccio
 * Added CDense_seg::Compact(): merges abutting segments where appropriate
 *

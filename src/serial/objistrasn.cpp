@@ -81,13 +81,13 @@ string CObjectIStreamAsn::GetPosition(void) const
 inline
 bool CObjectIStreamAsn::FirstIdChar(char c)
 {
-    return isalpha(c) || c == '_';
+    return isalpha((unsigned char) c) || c == '_';
 }
 
 inline
 bool CObjectIStreamAsn::IdChar(char c)
 {
-    return isalnum(c) || c == '_' || c == '.';
+    return isalnum((unsigned char) c) || c == '_' || c == '.';
 }
 
 inline
@@ -279,11 +279,11 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
 CLightString CObjectIStreamAsn::ReadNumber(void)
 {
     char c = SkipWhiteSpace();
-    if ( c != '-' && c != '+' && !isdigit(c) )
+    if ( c != '-' && c != '+' && !isdigit((unsigned char) c) )
         ThrowError(fFormatError, "invalid number");
     for ( size_t i = 1; ; ++i ) {
         c = m_Input.PeekChar(i);
-        if ( !isdigit(c) ) {
+        if ( !isdigit((unsigned char) c) ) {
             const char* ptr = m_Input.GetCurrentPos();
             m_Input.SkipChars(i);
             return CLightString(ptr, i);
@@ -294,13 +294,13 @@ CLightString CObjectIStreamAsn::ReadNumber(void)
 inline
 CLightString CObjectIStreamAsn::ReadUCaseId(char c)
 {
-    return ScanEndOfId(isupper(c) != 0);
+    return ScanEndOfId(isupper((unsigned char) c) != 0);
 }
 
 inline
 CLightString CObjectIStreamAsn::ReadLCaseId(char c)
 {
-    return ScanEndOfId(islower(c) != 0);
+    return ScanEndOfId(islower((unsigned char) c) != 0);
 }
 
 inline
@@ -323,7 +323,7 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
         }
     }
     else {
-        return ScanEndOfId(islower(c) != 0);
+        return ScanEndOfId(islower((unsigned char) c) != 0);
     }
 }
 
@@ -332,7 +332,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
      const CLightString& id)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = classType->GetMembers().Find
             (CMemberId::TTag(NStr::StringToInt(id)));
     }
@@ -348,7 +348,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
      const TMemberIndex pos)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = classType->GetMembers().Find
             (CMemberId::TTag(NStr::StringToInt(id)), pos);
     }
@@ -363,7 +363,7 @@ TMemberIndex CObjectIStreamAsn::GetChoiceIndex
      const CLightString& id)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = choiceType->GetVariants().Find
             (CMemberId::TTag(NStr::StringToInt(id)));
     }
@@ -400,7 +400,7 @@ void CObjectIStreamAsn::ReadAnyContent(string& value)
     bool space = false;
     for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
         if (to != '\"') {
-            if (isspace(c)) {
+            if (isspace((unsigned char) c)) {
                 if (space) {
                     m_Input.SkipChar();
                     continue;
@@ -1299,6 +1299,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2005/06/03 17:44:44  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.93  2004/12/06 18:28:02  gouriano
 * Adjusted processing of CEofException
 *
