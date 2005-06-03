@@ -1070,6 +1070,7 @@
 #  define NCBI_XALGOSEQQA_EXPORT
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGOWINMASK_EXPORT
+#  define NCBI_XALGODUSTMASK_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLASTFORMAT_EXPORT
@@ -1124,6 +1125,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.99  2005/06/03 19:41:37  morgulis
+ * *** empty log message ***
+ *
  * Revision 1.98  2005/06/03 19:33:23  morgulis
  * Added NCBI_XALGODUSTMASK_EXPORT.
  *
