@@ -53,7 +53,7 @@ MD4_CTX context;
 	len = strlen(passwd);
 	if (len>MAX_PW_SZ) len=MAX_PW_SZ;
 	for (i=0; i<len; i++)
-		passwd_up[i] = toupper((unsigned char) passwd[i]);
+		passwd_up[i] = toupper(passwd[i]);
 
 	/* hash the first 7 characters */
 	tds_convert_key(passwd_up, ks);
