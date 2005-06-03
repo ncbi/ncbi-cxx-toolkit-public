@@ -41,8 +41,8 @@
 
 USING_NCBI_SCOPE;
 
-/*extern "C" */ static int yyerror (const char *s);
-/* extern "C" */static int yylex (CBDB_Query::TQueryClause** lvalp, void* param);
+/* extern "C" */ static int yyerror (const char *s);
+/* extern "C" */ static int yylex (CBDB_Query::TQueryClause** lvalp, void* param);
 
 BEGIN_NCBI_SCOPE
 
@@ -172,7 +172,7 @@ END_NCBI_SCOPE
 
 
 #include "bdb_query_bison.tab.c"
-#include "bdb_query_lexer.cpp"
+#include "bdb_query_lexer.inc"
 
 /// Called by yyparse on error 
 static
@@ -217,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/06/03 16:43:46  lavr
+ * bdb_query_lexer.cpp -> bdb_query_lexer.inc
+ *
  * Revision 1.6  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
