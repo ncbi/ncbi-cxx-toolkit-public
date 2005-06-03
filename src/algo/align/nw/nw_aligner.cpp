@@ -864,8 +864,8 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
     
     size_t k;
     for(k = 0; k < abc_size; ++k) {
-        Flags[unsigned(toupper(m_abc[k]))] = 1;
-        Flags[unsigned(tolower(m_abc[k]))] = 1;
+        Flags[unsigned(toupper((unsigned char) m_abc[k]))] = 1;
+        Flags[unsigned(tolower((unsigned char) m_abc[k]))] = 1;
         Flags[unsigned(k)] = 1;
     }
 
@@ -1319,6 +1319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2005/06/03 16:22:01  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.67  2005/06/02 15:01:52  kapustin
  * Use explicit flag to invalidate score matrix
  *

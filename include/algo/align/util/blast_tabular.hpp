@@ -246,19 +246,19 @@ template<class TId>
 CBlastTabular<TId>::CBlastTabular(const char* m8)
 {
     const char* p = m8;
-    for(; *p && isspace(*p); ++p); // skip spaces
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     const char* p0 = p;
-    for(; *p && !isspace(*p); ++p); // get first id
+    for(; *p && !isspace((unsigned char)(*p)); ++p); // get first id
     CNcbiIstrstream iss1 (p0);
     iss1 >> TParent::m_Id[0]; 
     
-    for(; *p && isspace(*p); ++p); // skip spaces
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     p0 = p;
-    for(; *p && !isspace(*p); ++p); // get second id
+    for(; *p && !isspace((unsigned char)(*p)); ++p); // get second id
     CNcbiIstrstream iss2 (p0);
     iss2 >> TParent::m_Id[1];
     
-    for(; *p && isspace(*p); ++p); // skip trailing spaces
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip trailing spaces
 
     if(iss1.fail() || iss2.fail()) {
         NCBI_THROW(CAlgoAlignUtilException, eFormat, 
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/03 16:20:21  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.1  2005/04/18 15:23:00  kapustin
  * Initial revision
  *

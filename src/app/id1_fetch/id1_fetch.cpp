@@ -248,7 +248,7 @@ void CId1FetchApp::Init(void)
 // Workaround for "replace_if"
 inline bool s_IsControl(char c)
 {
-    return iscntrl(c) ? true : false;
+    return iscntrl((unsigned char) c) ? true : false;
 }
 
 
@@ -750,6 +750,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/06/03 16:27:05  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.52  2004/11/01 19:33:08  grichenk
 * Removed deprecated methods
 *

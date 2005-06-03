@@ -146,7 +146,7 @@ int CLocalFinderApp::Run(void)
       right = min(right,len-1);
       for(int i = left; i <= right; ++i)
       {
-      int c = toupper(seq[i]);
+      int c = toupper((unsigned char) seq[i]);
       if(c == 'C' || c == 'G') ++cgcontent;
       }
       cgcontent = cgcontent*100./(right-left+1)+0.5;
@@ -211,6 +211,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/03 16:23:19  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.2  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *

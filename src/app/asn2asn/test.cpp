@@ -19,13 +19,13 @@ int main(int argc, char** argv)
 inline
 bool FirstIdChar(char c)
 {
-    return isalpha(c) || c == '_';
+    return isalpha((unsigned char) c) || c == '_';
 }
 
 inline
 bool IdChar(char c)
 {
-    return isalnum(c) || c == '_' || c == '.';
+    return isalnum((unsigned char) c) || c == '_' || c == '.';
 }
 
 inline

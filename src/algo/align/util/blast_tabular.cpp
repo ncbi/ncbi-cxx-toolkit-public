@@ -70,8 +70,8 @@ template<>
 CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
 {
     const char* p0 = m8, *p = p0;
-    for(; *p && isspace(*p); ++p); // skip spaces
-    for(p0 = p; *p && !isspace(*p); ++p); // get token
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
+    for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
         string id1 (p0, p - p0);
         CSeq_id* pseqid = new CSeq_id(id1);
@@ -81,8 +81,8 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
         }
     }
 
-    for(; *p && isspace(*p); ++p); // skip spaces
-    for(p0 = p; *p && !isspace(*p); ++p); // get token
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
+    for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
         string id2 (p0, p - p0);
         CSeq_id* pseqid = new CSeq_id(id2);
@@ -92,7 +92,7 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
         }
     }
 
-    for(; *p && isspace(*p); ++p); // skip spaces
+    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
 
     x_PartialDeserialize(p);
 }

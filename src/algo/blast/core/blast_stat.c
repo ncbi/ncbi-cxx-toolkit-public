@@ -787,15 +787,15 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
    if (sbp->alphabet_code == BLASTAA_SEQ_CODE)
    {
       sbp->ambiguous_res[sbp->ambig_occupy] = 
-         AMINOACID_TO_NCBISTDAA[toupper(ambiguous_res)];
+         AMINOACID_TO_NCBISTDAA[toupper((unsigned char) ambiguous_res)];
    }
    else {
       if (sbp->alphabet_code == BLASTNA_SEQ_CODE)
          sbp->ambiguous_res[sbp->ambig_occupy] = 
-            IUPACNA_TO_BLASTNA[toupper(ambiguous_res)];
+            IUPACNA_TO_BLASTNA[toupper((unsigned char) ambiguous_res)];
       else if (sbp->alphabet_code == NCBI4NA_SEQ_CODE)
          sbp->ambiguous_res[sbp->ambig_occupy] = 
-            IUPACNA_TO_NCBI4NA[toupper(ambiguous_res)];
+            IUPACNA_TO_NCBI4NA[toupper((unsigned char) ambiguous_res)];
    }
    (sbp->ambig_occupy)++;
    
@@ -942,9 +942,9 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
             continue;
         while (lp != NULL) {
            if (sbp->alphabet_code == BLASTAA_SEQ_CODE)
-              ch = AMINOACID_TO_NCBISTDAA[toupper(*lp)];
+              ch = AMINOACID_TO_NCBISTDAA[toupper((unsigned char)(*lp))];
            else if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
-              ch = IUPACNA_TO_BLASTNA[toupper(*lp)];
+              ch = IUPACNA_TO_BLASTNA[toupper((unsigned char)(*lp))];
            } else {
               ch = *lp;
            }
@@ -978,10 +978,10 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
         }
 
         if (sbp->alphabet_code == BLASTAA_SEQ_CODE) {
-           ch = AMINOACID_TO_NCBISTDAA[toupper(ch)];
+           ch = AMINOACID_TO_NCBISTDAA[toupper((unsigned char) ch)];
         } else {
             if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
-                ch = IUPACNA_TO_BLASTNA[toupper(ch)];
+                ch = IUPACNA_TO_BLASTNA[toupper((unsigned char) ch)];
             }
         }
         a1chars[a1cnt++] = ch;
@@ -1379,7 +1379,7 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
       if (alphabet_code == BLASTAA_SEQ_CODE)
       {
          residues[index] = 
-            AMINOACID_TO_NCBISTDAA[toupper(STD_AMINO_ACID_FREQS[index].ch)];
+            AMINOACID_TO_NCBISTDAA[toupper((unsigned char) STD_AMINO_ACID_FREQS[index].ch)];
       }
       else
       {
@@ -3683,6 +3683,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.116  2005/06/03 16:22:37  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.115  2005/04/27 17:20:15  papadopo
  * copy X scores to U scores when building score matrix
  *

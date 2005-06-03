@@ -100,7 +100,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
 
 static inline unsigned int ScreenResidueCharacter(char original)
 {
-    char ch = toupper(original);
+    char ch = toupper((unsigned char) original);
     switch (ch) {
         case 'A': case 'R': case 'N': case 'D': case 'C':
         case 'Q': case 'E': case 'G': case 'H': case 'I':
@@ -472,9 +472,9 @@ bool BlockMultipleAlignment::GetCharacterAt(
 
     *character = (seqIndex >= 0) ? sequence->m_sequenceString[seqIndex] : '~';
     if (isAligned)
-        *character = toupper(*character);
+        *character = toupper((unsigned char)(*character));
     else
-        *character = tolower(*character);
+        *character = tolower((unsigned char)(*character));
 
     return true;
 }
@@ -1648,6 +1648,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/06/03 16:24:10  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.13  2004/07/28 19:32:04  thiessen
 * expose a few useful functions
 *

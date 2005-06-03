@@ -1823,7 +1823,7 @@ inline bool CBDB_FieldString::IsBlank() const
     const char* str = (const char*) GetBuffer();
     _ASSERT(str);
     for (;  *str;  ++str) {
-        if ( !isspace(*str) )
+        if ( !isspace((unsigned char)(*str)) )
             return false;
     }
     return true;
@@ -2062,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/06/03 16:20:36  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.50  2005/03/30 15:04:25  jcherry
  * Added export specifiers
  *

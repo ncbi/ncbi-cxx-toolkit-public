@@ -175,8 +175,8 @@ string FilterDefine(const string& define)
         if ( !(ch == '$'   || 
                ch == '('   || 
                ch == '_'   || 
-               isalpha(ch) || 
-               isdigit(ch) ) )
+               isalpha((unsigned char) ch) || 
+               isdigit((unsigned char) ch) ) )
             break;
         res += ch;
     }
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/06/03 16:27:50  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.9  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *

@@ -184,8 +184,8 @@ void IFlatFormatter::FormatDate(const CDate& date, string& s) const
         date.GetDate(&s, "%2D-%3N-%Y");
     }
     for (SIZE_TYPE i = pos;  i < s.size();  ++i) {
-        if (islower(s[i])) {
-            s[i] = toupper(s[i]);
+        if (islower((unsigned char)(s[i]))) {
+            s[i] = toupper((unsigned char) s[i]);
         }
     }
 }
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/06/03 16:21:34  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.6  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -234,7 +234,7 @@ double GetStandardProbability(char ch)
         sfree(probs);
     }
 
-    CharDoubleMap::const_iterator f = standardProbabilities.find(toupper(ch));
+    CharDoubleMap::const_iterator f = standardProbabilities.find(toupper((unsigned char) ch));
     if (f != standardProbabilities.end())
         return f->second;
     WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
@@ -577,6 +577,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/06/03 16:25:24  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.4  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

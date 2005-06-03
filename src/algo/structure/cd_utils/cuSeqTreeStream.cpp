@@ -74,7 +74,7 @@ bool CdTreeStream::read(std::istream& is, SeqTree& seqTree)
 	std::string delimiters = "(),";
 	while(is.get(ch))
 	{
-		if (!isspace(ch))
+		if (!isspace((unsigned char) ch))
 		{
 			SeqItem tmp1;
 			switch (ch)
@@ -280,7 +280,7 @@ void CdTreeStream::readToDelimiter(std::istream& is, std::string& str)
 	//str.erase();
 	char ch;
 	while (is.get(ch) && (!isDelimiter(ch)))
-		//if (!isspace(ch))
+		//if (!isspace((unsigned char) ch))
 			str += ch;
 	if (isDelimiter(ch))
 		is.putback(ch);
@@ -306,6 +306,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  * 
  * $Log$
+ * Revision 1.2  2005/06/03 16:23:32  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

@@ -997,7 +997,7 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
 
         s += 3;
 put_args_parse:
-        while (*s && isspace(*s)) {
+        while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
 
@@ -1007,10 +1007,10 @@ put_args_parse:
                 req->timeout = time_out;
             }
         }
-        while (*s && isdigit(*s)) {
+        while (*s && isdigit((unsigned char)(*s))) {
             ++s;
         }
-        while (*s && isspace(*s)) {
+        while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
         req->req_id = s;
@@ -1022,7 +1022,7 @@ put_args_parse:
         req->req_type = eGet;
         s += 3;
 parse_blob_id:
-        while (*s && isspace(*s)) {
+        while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
 
@@ -1509,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/06/03 16:27:15  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.56  2005/05/02 17:42:57  kuznets
  * Added support of reinit flag in the ini file
  *

@@ -681,7 +681,7 @@ Int2 BlastScoringOptionsSetMatrix(BlastScoringOptions* opts,
         opts->matrix = strdup(matrix_name);
         /* Make it all upper case */
         for (i=0; i<strlen(opts->matrix); ++i)
-            opts->matrix[i] = toupper(opts->matrix[i]);
+            opts->matrix[i] = toupper((unsigned char) opts->matrix[i]);
     }
     return 0;
 }
@@ -1196,6 +1196,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.169  2005/06/03 16:22:22  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.168  2005/06/02 16:18:40  camacho
  * Remove LookupTableOptions::use_pssm
  *

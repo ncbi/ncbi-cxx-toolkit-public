@@ -257,7 +257,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
                     if (ch == '~')
                         os << (isA2M ? '.' : '-');
                     else
-                        os << (isA2M ? ch : (char) toupper(ch));
+                        os << (isA2M ? ch : (char) toupper((unsigned char) ch));
                 } else
                     ERRORMSG("GetCharacterTraitsAt failed!");
             }
@@ -548,6 +548,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2005/06/03 16:26:57  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.69  2004/11/02 12:45:39  thiessen
 * enable sequence viewer menu items properly
 *

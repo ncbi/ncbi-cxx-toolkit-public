@@ -54,7 +54,7 @@ BEGIN_SCOPE(Cn3D)
 
 char ScreenResidueCharacter(char original)
 {
-    char ch = toupper(original);
+    char ch = toupper((unsigned char) original);
     switch (ch) {
         case 'A': case 'R': case 'N': case 'D': case 'C':
         case 'Q': case 'E': case 'G': case 'H': case 'I':
@@ -473,6 +473,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/06/03 16:26:00  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.39  2005/03/25 15:10:45  thiessen
 * matched self-hit E-values with CDTree2
 *

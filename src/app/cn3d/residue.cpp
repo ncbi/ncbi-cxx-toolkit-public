@@ -400,7 +400,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
                 oss << code;
             } else if (settings.proteinLabels.type == StyleSettings::eThreeLetter) {
                 for (int i=0; i<nameGraph.size() && i<3; ++i)
-                    oss << ((i == 0) ? (char) toupper(nameGraph[0]) : (char) tolower(nameGraph[i]));
+                    oss << ((i == 0) ? (char) toupper((unsigned char) nameGraph[0]) : (char) tolower((unsigned char) nameGraph[i]));
             }
             // add number if necessary
             if (settings.proteinLabels.numbering == StyleSettings::eSequentialNumbering)
@@ -460,6 +460,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/06/03 16:26:28  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.35  2005/03/15 18:53:49  thiessen
 * don't draw single-residue heterogens in aa/nuc style
 *

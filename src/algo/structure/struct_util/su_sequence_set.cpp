@@ -319,7 +319,7 @@ Sequence::Sequence(ncbi::objects::CBioseq& bioseq) :
 
         // force uppercase
         for (unsigned int i=0; i<m_sequenceString.size(); ++i)
-            m_sequenceString[i] = toupper(m_sequenceString[i]);
+            m_sequenceString[i] = toupper((unsigned char) m_sequenceString[i]);
 
     } else
         THROW_MESSAGE("Sequence::Sequence(): confused by sequence representation");
@@ -371,6 +371,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/06/03 16:24:21  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.4  2004/06/14 13:49:51  thiessen
 * make BlockMultipleAlignment and Sequence classes public
 *

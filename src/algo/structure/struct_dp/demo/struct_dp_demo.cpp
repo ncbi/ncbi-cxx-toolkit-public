@@ -57,7 +57,7 @@ void DPApp::Init(void)
 
 static inline char ScreenResidueCharacter(char original)
 {
-    char ch = toupper(original);
+    char ch = toupper((unsigned char) original);
     switch (ch) {
         case 'A': case 'R': case 'N': case 'D': case 'C':
         case 'Q': case 'E': case 'G': case 'H': case 'I':
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/06/03 16:23:54  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.11  2004/05/21 21:41:04  gorelenk
 * Added PCH ncbi_pch.hpp
 *

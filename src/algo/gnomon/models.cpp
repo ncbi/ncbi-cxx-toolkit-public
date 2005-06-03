@@ -331,7 +331,7 @@ cluster_set(cls), fshifts(initial_fshifts), shift(from), contig(cntg)
     for(int i = 0; i < len; ++i)
     {
         char c = sequence[i];
-        if(repeats && c != toupper(c))
+        if(repeats && c != toupper((unsigned char) c))
         {
             laststop[Plus][0][i] = i;
             laststop[Plus][1][i] = i;
@@ -846,6 +846,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2005/06/03 16:23:05  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.4  2004/07/28 12:33:19  dicuccio
  * Sync with Sasha's working tree
  *

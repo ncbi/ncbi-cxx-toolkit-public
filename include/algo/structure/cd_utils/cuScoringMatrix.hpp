@@ -113,7 +113,7 @@ string GetScoringMatrixName(EScoreMatrixType type);
 
 inline char ScreenResidueCharacter(char original)
 {
-    char ch = toupper(original);
+    char ch = toupper((unsigned char) original);
     switch (ch) {
     case 'A': case 'R': case 'N': case 'D': case 'C':
     case 'Q': case 'E': case 'G': case 'H': case 'I':
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/06/03 16:20:29  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

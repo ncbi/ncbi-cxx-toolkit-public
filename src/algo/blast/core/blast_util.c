@@ -1314,7 +1314,7 @@ char* BLAST_StrToUpper(const char* string)
     }
 
     for (p = retval; *p != NULLB; p++) {
-        *p = toupper(*p);
+        *p = toupper((unsigned char)(*p));
     }
     return retval;
 }

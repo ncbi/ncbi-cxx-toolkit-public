@@ -274,7 +274,7 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
         return (sid.GetLocal().GetStr() == accession || (accession.size() == 0 &&
                     // special case where local accession is actually a PDB identifier + extra stuff
                     sid.GetLocal().GetStr().size() >= 7 && sid.GetLocal().GetStr()[4] == ' ' &&
-                    sid.GetLocal().GetStr()[6] == ' ' && isalpha(sid.GetLocal().GetStr()[5]) &&
+                    sid.GetLocal().GetStr()[6] == ' ' && isalpha((unsigned char) sid.GetLocal().GetStr()[5]) &&
                     sid.GetLocal().GetStr().substr(0, 4) == pdbID && sid.GetLocal().GetStr()[5] == pdbChain));
 
     if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession())
@@ -339,6 +339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/03 16:26:18  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.16  2004/09/27 23:35:17  thiessen
 * don't abort on sequence import if gi/acc mismatch, but only on original load
 *

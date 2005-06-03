@@ -206,7 +206,7 @@ CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::E
 {
     // determine whether this is an integer MMDB ID or alphanumeric PDB ID
     int mmdbID = 0;
-    if (uid.size() == 4 && (isalpha(uid[1]) || isalpha(uid[2]) || isalpha(uid[3]))) {
+    if (uid.size() == 4 && (isalpha((unsigned char) uid[1]) || isalpha((unsigned char) uid[2]) || isalpha((unsigned char) uid[3]))) {
         TRACEMSG("Fetching PDB " << uid);
     } else {    // mmdb id
         unsigned long tmp;
@@ -302,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/06/03 16:25:16  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.15  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -308,9 +308,9 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
     *character = (seqIndex >= 0) ? sequence->sequenceString[seqIndex] : '~';
     if (isAligned)
-        *character = toupper(*character);
+        *character = toupper((unsigned char)(*character));
     else
-        *character = tolower(*character);
+        *character = tolower((unsigned char)(*character));
 
     // try to color by molecule first
     if (sequence->molecule) {
@@ -326,14 +326,14 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
         // color by hydrophobicity
         if (sequence->isProtein && colorScheme == StyleSettings::eHydrophobicity) {
-            double hydrophobicity = GetHydrophobicity(toupper(*character));
+            double hydrophobicity = GetHydrophobicity(toupper((unsigned char)(*character)));
             *color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
                 GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
                 GlobalColors()->Get(Colors::eNoHydrophobicity);
         }
         // or color by charge
         else if (sequence->isProtein && colorScheme == StyleSettings::eCharge) {
-            int charge = GetCharge(toupper(*character));
+            int charge = GetCharge(toupper((unsigned char)(*character)));
             *color = GlobalColors()->Get(
                 (charge > 0) ? Colors::ePositive : ((charge < 0) ? Colors::eNegative : Colors::eNeutral));;
         }
@@ -1903,6 +1903,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2005/06/03 16:25:01  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.68  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

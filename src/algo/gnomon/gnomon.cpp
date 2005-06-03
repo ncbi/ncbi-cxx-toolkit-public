@@ -217,7 +217,7 @@ void CGnomon::Run(void)
     // compute the GC content of the sequence
     TSeqPos gc_content = 0;
     ITERATE (vector<char>, iter, m_Seq) {
-        int c = toupper(*iter);
+        int c = toupper((unsigned char)(*iter));
         if (c == 'C'  ||  c == 'G') {
             ++gc_content;
         }
@@ -393,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/06/03 16:22:57  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.10  2005/04/26 17:28:26  dicuccio
  * Fix compiler warning
  *

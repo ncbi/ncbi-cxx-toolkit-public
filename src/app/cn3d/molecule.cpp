@@ -105,7 +105,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 accession = graph.GetSeq_id().GetLocal().GetStr();
                 // special case where local accession is actually a PDB chain + extra stuff
                 if (pdbID.size() == 0 && accession.size() >= 7 &&
-                        accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
+                        accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
                     pdbID = accession.substr(0, 4);
                     pdbChain = accession[5];
                     accession.erase();
@@ -408,6 +408,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/06/03 16:26:08  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.45  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

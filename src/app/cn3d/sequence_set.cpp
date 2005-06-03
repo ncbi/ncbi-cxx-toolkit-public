@@ -213,7 +213,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             accession = (*s)->GetLocal().GetStr();
             // special case where local accession is actually a PDB chain + extra stuff
             if (pdbID.size() == 0 && accession.size() >= 7 &&
-                    accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
+                    accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
                 pdbID = accession.substr(0, 4);
                 pdbChain = accession[5];
                 accession.erase();
@@ -337,7 +337,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
 
         // force uppercase
         for (int i=0; i<sequenceString.length(); ++i)
-            sequenceString[i] = toupper(sequenceString[i]);
+            sequenceString[i] = toupper((unsigned char) sequenceString[i]);
 
     } else {
         ERRORMSG("Sequence::Sequence() - sequence " << gi << ": confused by sequence representation");
@@ -493,7 +493,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
         static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
         int i;
         for (i=0; i<prosite.size(); ++i)
-            if (allowed.find(toupper(prosite[i])) == string::npos) break;
+            if (allowed.find(toupper((unsigned char) prosite[i])) == string::npos) break;
         if (i != prosite.size()) throw "invalid ProSite character";
         if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
 
@@ -523,7 +523,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
             }
             if (characterHandled) continue;
             if (!inGroup && (
-                    (isalpha(prosite[i]) && toupper(prosite[i]) != 'X') ||
+                    (isalpha((unsigned char) prosite[i]) && toupper((unsigned char) prosite[i]) != 'X') ||
                     prosite[i] == '[' || prosite[i] == '{')) {
                 *regex += '(';
                 (*nGroups)++;
@@ -548,7 +548,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
                     *regex += '.';
                     break;
                 default:
-                    *regex += toupper(prosite[i]);
+                    *regex += toupper((unsigned char) prosite[i]);
                     break;
             }
         }
@@ -664,6 +664,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2005/06/03 16:26:44  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.69  2004/09/27 23:35:17  thiessen
 * don't abort on sequence import if gi/acc mismatch, but only on original load
 *

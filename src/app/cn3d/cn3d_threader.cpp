@@ -99,7 +99,7 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
             charMap[Threader::ThreaderResidues[i]] = i;
     }
 
-    Char2Int::const_iterator c = charMap.find(toupper(r));
+    Char2Int::const_iterator c = charMap.find((unsigned char) toupper(r));
     return ((c != charMap.end()) ? c->second : -1);
 }
 
@@ -110,7 +110,7 @@ const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 // gives NCBIStdaa residue number for a threader residue number (or # for 'X' if char == -1)
 int LookupNCBIStdaaNumberFromThreaderResidueNumber(char r)
 {
-    r = toupper(r);
+    r = toupper((unsigned char) r);
     return LookupNCBIStdaaNumberFromCharacter(
             (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
 }
@@ -1252,6 +1252,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/06/03 16:25:34  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.46  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

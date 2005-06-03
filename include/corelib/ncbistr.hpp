@@ -2496,7 +2496,7 @@ bool NStr::StartsWith(const string& str, char start, ECase use_case)
 {
     return !str.empty()  &&
         ((use_case == eCase) ? (str[0] == start) :
-         (toupper(str[0]) == start  ||  tolower(str[0])));
+         (toupper((unsigned char) str[0]) == start  ||  tolower((unsigned char) str[0])));
 }
 
 inline
@@ -2512,7 +2512,7 @@ bool NStr::EndsWith(const string& str, char end, ECase use_case)
     if (!str.empty()) {
         char last = str[str.length() - 1];
         return (use_case == eCase) ? (last == end) :
-               (toupper(last) == end  ||  tolower(last) == end);
+               (toupper((unsigned char) last) == end  ||  tolower((unsigned char) last) == end);
     }
     return false;
 }
@@ -2694,6 +2694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2005/06/03 16:20:47  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.87  2005/05/27 13:54:30  lavr
  * Unprintable character from eSign's comment removed
  *

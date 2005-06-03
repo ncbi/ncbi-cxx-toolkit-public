@@ -446,7 +446,7 @@ public:
 inline
 char Upcase(char c)
 {
-    return static_cast<char>(toupper(c));
+    return static_cast<char>(toupper((unsigned char) c));
 }
 
 inline
@@ -537,6 +537,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/06/03 16:21:11  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.42  2005/05/13 11:39:32  ivanov
  * Define CNcbiOstream& operator<< __int64 for MSVC 6 only
  *

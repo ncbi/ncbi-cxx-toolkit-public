@@ -1349,7 +1349,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
             req->port = (unsigned)port;
         }
 
-        for (; *s && isdigit(*s); ++s) {}
+        for (; *s && isdigit((unsigned char)(*s)); ++s) {}
 
         NS_SKIPSPACE(s)
 
@@ -1429,8 +1429,8 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s) {
             req->job_return_code = atoi(s);
             // skip digits
-            for (;isdigit(*s); ++s) {}            
-            if (!isspace(*s)) {
+            for (; isdigit((unsigned char)(*s)); ++s) {}
+            if (!isspace((unsigned char)(*s))) {
                 goto put_format_error;
             }
         } else {
@@ -1469,7 +1469,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
             req->port = (unsigned)port;
         }
 
-        for (; *s && isdigit(*s); ++s) {}
+        for (; *s && isdigit((unsigned char)(*s)); ++s) {}
 
         NS_CHECKEND(s, "Misformed WGET request")
 
@@ -2010,6 +2010,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/06/03 16:27:36  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.43  2005/05/17 14:25:00  ucko
  * Tweak ProcessShutdown to avoid jumping over a variable declaration.
  *

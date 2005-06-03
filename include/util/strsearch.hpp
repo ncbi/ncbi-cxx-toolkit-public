@@ -392,7 +392,7 @@ typename CTextFsm<MatchType>::CState *CTextFsm<MatchType>::GetState(int state)
 
 template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(const CState& from, char letter) const {
-    char ch = m_CaseSensitive ? letter : toupper(letter);
+    char ch = m_CaseSensitive ? letter : toupper((unsigned char) letter);
     return from.GetNextState(ch);
 }
 
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/06/03 16:21:46  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.20  2004/06/30 21:57:11  vasilche
 * Fixed warnings and wrong bound check.
 *

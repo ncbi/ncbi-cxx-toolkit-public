@@ -226,7 +226,7 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
     static const std::string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
     int i;
     for (i=0; i<prosite.size(); i++) {
-      if (allowed.find(toupper(prosite[i])) == std::string::npos) break;
+      if (allowed.find(toupper((unsigned char) prosite[i])) == std::string::npos) break;
     }
     if (i != prosite.size()) throw "invalid ProSite character";
     if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
@@ -256,7 +256,7 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
       }
       if (characterHandled) continue;
       if (!inGroup && (
-        (isalpha(prosite[i]) && toupper(prosite[i]) != 'X') ||
+        (isalpha((unsigned char) prosite[i]) && toupper((unsigned char) prosite[i]) != 'X') ||
         prosite[i] == '[' || prosite[i] == '{')) {
         *regex += '(';
         inGroup = true;
@@ -280,7 +280,7 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
         *regex += '.';
         break;
       default:
-        *regex += toupper(prosite[i]);
+        *regex += toupper((unsigned char) prosite[i]);
         break;
       }
     }
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/06/03 16:23:47  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.2  2005/04/19 22:05:04  ucko
  * +<stdio.h> due to use of sprintf()
  *

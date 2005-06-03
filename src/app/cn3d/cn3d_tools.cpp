@@ -124,8 +124,8 @@ bool RegistryIsValidBoolean(const string& section, const string& name)
 {
     string regStr = registry.Get(section, name);
     return (regStr.size() > 0 && (
-        toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'F' ||
-        toupper(regStr[0]) == 'Y' || toupper(regStr[0]) == 'N'));
+        toupper((unsigned char) regStr[0]) == 'T' || toupper((unsigned char) regStr[0]) == 'F' ||
+        toupper((unsigned char) regStr[0]) == 'Y' || toupper((unsigned char) regStr[0]) == 'N'));
 }
 
 bool RegistryIsValidString(const string& section, const string& name)
@@ -160,12 +160,12 @@ bool RegistryGetBoolean(const string& section, const string& name, bool *value)
 {
     string regStr = registry.Get(section, name);
     if (regStr.size() == 0 || !(
-            toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'F' ||
-            toupper(regStr[0]) == 'Y' || toupper(regStr[0]) == 'N')) {
+            toupper((unsigned char) regStr[0]) == 'T' || toupper((unsigned char) regStr[0]) == 'F' ||
+            toupper((unsigned char) regStr[0]) == 'Y' || toupper((unsigned char) regStr[0]) == 'N')) {
         WARNINGMSG("Can't get boolean from registry: " << section << ", " << name);
         return false;
     }
-    *value = (toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'Y');
+    *value = (toupper((unsigned char) regStr[0]) == 'T' || toupper((unsigned char) regStr[0]) == 'Y');
     return true;
 }
 
@@ -329,7 +329,7 @@ unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
             charMap[NCBIStdaaResidues[i]] = (unsigned char) i;
     }
 
-    Char2UChar::const_iterator n = charMap.find(toupper(r));
+    Char2UChar::const_iterator n = charMap.find(toupper((unsigned char) r));
     if (n != charMap.end())
         return n->second;
     else
@@ -350,6 +350,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/06/03 16:25:51  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.10  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *
