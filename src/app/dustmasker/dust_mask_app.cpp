@@ -177,7 +177,7 @@ int CDustMaskApplication::Run (void)
 
             CSeqVector data 
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
-            auto_ptr< duster_type::TMaskList > res = duster( data );
+			std::auto_ptr< duster_type::TMaskList > res = duster( data );
 
             if( output_stream != 0 )
             {
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/06/03 15:33:36  morgulis
+ * Namespace bug fix.
+ *
  * Revision 1.3  2005/06/02 18:33:05  morgulis
  * Fixed application to use non-templatized library.
  *
