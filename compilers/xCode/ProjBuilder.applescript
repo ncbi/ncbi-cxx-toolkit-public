@@ -208,12 +208,12 @@ script ProjBuilder
 		
 		set buildFileRefs to {}
 		set libFileRefs to {}
-		repeat with f in src_files
+		repeat with F in src_files
 			set nameRef to "FILE" & srcFileCount
 			set nameBuild to "REF_FILE" & srcFileCount
 			
-			set filePath to f --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
-			set fileName to x_FileNameFromPath(f)
+			set filePath to F --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
+			set fileName to x_FileNameFromPath(F)
 			if fileName ends with ".cpp" then
 				set fileType to "sourcecode.cpp.cpp"
 			else
@@ -300,11 +300,6 @@ script ProjBuilder
 		addPair(libGroup, tgName)
 	end MakeNewTarget
 	
-	(*
-    TOOL="$INSTALL_PATH/app_datatool"
-echo Updating $PRODUCT_NAME
-$TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.files  -oc access -odi -od /Users/lebedev/tmp/access.def
-*)
 	
 	on MakeNewLibraryTarget(lib_info, src_files)
 		set libName to name of lib_info
@@ -312,7 +307,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set buildPhaseName to "BUILDPHASE__" & libName
 		
 		set installPath to TheOUTPath & "/lib" --"/Users/lebedev/Projects/tmp3"
-		set linkerFlags to "-flat_namespace -undefined suppress" -- warning -- additional liker flags (like -lxncbi)
+		set linkerFlags to "" --  -flat_namespace -undefined suppress" -- warning -- additional liker flags (like -lxncbi)
 		set symRoot to TheOUTPath & "/lib"
 		
 		-- build DLLs by default
@@ -412,9 +407,6 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		-- Carbon
 		copy "FW_CARBON" to the end of children of fworks
 		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"Carbon.framework", |path|:"/System/Library/Frameworks/Carbon.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_CARBON")
-		-- AGL
-		copy "FW_AGL" to the end of children of fworks
-		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"AGL.framework", |path|:"/System/Library/Frameworks/AGL.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_AGL")
 		-- OpenGL
 		copy "FW_OpenGL" to the end of children of fworks
 		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"OpenGL.framework", |path|:"/System/Library/Frameworks/OpenGL.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_OpenGL")
@@ -510,7 +502,13 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			end repeat
 		end try
 		
-		set linkFlags to linkFlags & " -framework Carbon -framework AGL -framework OpenGL"
+		try -- set frameworks
+			set fwString to fworks of info
+			set fwList to x_Str2List(fwString)
+			repeat with d in fwList
+				set linkFlags to linkFlags & " -framework " & d
+			end repeat
+		end try
 		return linkFlags
 	end x_CreateLinkerFlags
 	
@@ -617,6 +615,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/06/03 12:37:06  lebedev
+ * Build libraries as fully resolved DLLs
+ *
  * Revision 1.27  2005/05/25 13:57:10  lebedev
  * NCBI icon for Genome Workbench added
  *
