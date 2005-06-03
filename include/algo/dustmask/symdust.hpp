@@ -50,7 +50,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSymDustMasker
+class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 {
     private:
 
