@@ -144,7 +144,7 @@ void static WrapOutputLine(string str, size_t line_len,
                 do_wrap = true;
             }   
             out << str[i];
-            if (do_wrap && isspace(str[i])) {
+            if (do_wrap && isspace((unsigned char) str[i])) {
                 out << endl;  
                 do_wrap = false;
             }

@@ -502,7 +502,7 @@ int test1(int argc, char ** argv)
         if ((s == "-gi2bs") || (s == "-gi2bs-target")) {
             CSeqDB db(dbname, seqtype);
             
-            if (args.empty() || (! isdigit(args.begin()->c_str()[0]))) {
+            if (args.empty() || (! isdigit((unsigned char) args.begin()->c_str()[0]))) {
                 cout << "The gi2bs command needs a GI to work with." << endl;
                 return 1;
             }
@@ -537,7 +537,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-gi2bs] [-gi2bs-target]";
         
         if ((s == "-gi2bs-ugl")) {
-            if ((args.size() < 2) || (! isdigit(args.begin()->c_str()[0]))) {
+            if ((args.size() < 2) || (! isdigit((unsigned char) args.begin()->c_str()[0]))) {
                 cout << "The gi2bs command needs a GI and user-gi-list filename to work with." << endl;
                 return 1;
             }

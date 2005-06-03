@@ -52,8 +52,8 @@ int NCBISM_GetIndex(const SNCBIPackedScoreMatrix* sm, int aa)
     /* Translate to NCBIeaa */
     if (aa >= 0  &&  aa < sizeof(kNCBIstdaa)) {
         aa = kNCBIstdaa[aa];
-    } else if (islower(aa)) {
-        aa = toupper(aa);
+    } else if (islower((unsigned char) aa)) {
+        aa = toupper((unsigned char) aa);
     }
 
     p = strchr(sm->symbols, aa);
@@ -97,7 +97,7 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
             fsm->s[aa1][aa2] = fsm->s[aa1][(int)kNCBIstdaa[aa2]];
         }
         for (aa2 = 'a';  aa2 <= 'z';  ++aa2) {
-            fsm->s[aa1][aa2] = fsm->s[aa1][toupper(aa2)];
+            fsm->s[aa1][aa2] = fsm->s[aa1][toupper((unsigned char) aa2)];
         }
     }
     /* extend vertically */
@@ -105,7 +105,7 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
         memcpy(fsm->s[aa1], fsm->s[(int)kNCBIstdaa[aa1]], NCBI_FSM_DIM);
     }
     for (aa1 = 'a';  aa1 <= 'z';  ++aa1) {
-        memcpy(fsm->s[aa1], fsm->s[toupper(aa1)], NCBI_FSM_DIM);
+        memcpy(fsm->s[aa1], fsm->s[toupper((unsigned char) aa1)], NCBI_FSM_DIM);
     }
 }
 
@@ -113,6 +113,9 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/03 17:04:16  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.3  2003/12/29 21:25:50  ucko
  * +PAM250
  *

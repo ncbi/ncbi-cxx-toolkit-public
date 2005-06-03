@@ -1013,7 +1013,7 @@ SIZE_TYPE CSeqConvert_imp::Subseq
                 const char* end  = iter + length;
                 
                 for ( ; iter != end; ++iter, ++dst ) {
-                    *dst++ = toupper(*iter);
+                    *dst++ = toupper((unsigned char)(*iter));
                 }
                 converted = length;
             }}
@@ -1144,6 +1144,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/06/03 17:04:10  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.3  2005/03/04 14:46:18  lavr
 * Add default cases to make GCC less annoying with warnings
 *

@@ -65,7 +65,7 @@ bool NStr::IsBlank(const string& str, SIZE_TYPE pos)
 {
     SIZE_TYPE len = str.length();
     for (SIZE_TYPE idx = pos; idx < len; ++idx) {
-        if (!isspace(str[idx])) {
+        if (!isspace((unsigned char) str[idx])) {
             return false;
         }
     }
@@ -261,7 +261,7 @@ char* NStr::ToLower(char* str)
 {
     char* s;
     for (s = str;  *str;  str++) {
-        *str = tolower(*str);
+        *str = tolower((unsigned char)(*str));
     }
     return s;
 }
@@ -270,7 +270,7 @@ char* NStr::ToLower(char* str)
 string& NStr::ToLower(string& str)
 {
     NON_CONST_ITERATE (string, it, str) {
-        *it = tolower(*it);
+        *it = tolower((unsigned char)(*it));
     }
     return str;
 }
@@ -280,7 +280,7 @@ char* NStr::ToUpper(char* str)
 {
     char* s;
     for (s = str;  *str;  str++) {
-        *str = toupper(*str);
+        *str = toupper((unsigned char)(*str));
     }
     return s;
 }
@@ -289,7 +289,7 @@ char* NStr::ToUpper(char* str)
 string& NStr::ToUpper(string& str)
 {
     NON_CONST_ITERATE (string, it, str) {
-        *it = toupper(*it);
+        *it = toupper((unsigned char)(*it));
     }
     return str;
 }
@@ -610,19 +610,19 @@ static Uint8 s_DataSizeConvertQual(const char*&         qual,
     Uint8 v = value;
     bool throw_err = false;
 
-    if (toupper(*qual) == 'K') {
+    if (toupper((unsigned char)(*qual)) == 'K') {
         ++qual;
         if ( (kMax_UI8 / 1024) < v ) {
             throw_err = true;
         }
         v *= 1024;
-    } else if (toupper(*qual) == 'M') {
+    } else if (toupper((unsigned char)(*qual)) == 'M') {
         ++qual;
         if ( (kMax_UI8 / 1024 / 1024) < v ) {
             throw_err = true;
         }
         v *= 1024 * 1024;
-    } else if (toupper(*qual) == 'G') {
+    } else if (toupper((unsigned char)(*qual)) == 'G') {
         ++qual;
         if ( (kMax_UI8 / 1024 / 1024 / 1024) < v ) {
             throw_err = true;
@@ -646,7 +646,7 @@ static Uint8 s_DataSizeConvertQual(const char*&         qual,
         errno = ERANGE;
         return 0;
     }
-    if (*qual  &&  toupper(*qual) == 'B') {
+    if (*qual  &&  toupper((unsigned char)(*qual)) == 'B') {
         ++qual;
     }
     return v;
@@ -1639,7 +1639,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_pos   = pos2;
                 best_score = eNewline;
                 break;
-            } else if (isspace(c)) {
+            } else if (isspace((unsigned char) c)) {
                 if ( !do_flat  &&  pos2 > 0  &&
                      isspace((unsigned char) str[pos2 - 1])) {
                     continue; // take the first space of a group
@@ -1996,6 +1996,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.154  2005/06/03 16:41:52  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.153  2005/05/26 20:24:25  lavr
  * Accurately assert errno in StringToXXX() when not throwing on error
  *

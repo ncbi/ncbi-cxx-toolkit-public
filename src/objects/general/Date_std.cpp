@@ -223,7 +223,7 @@ void CDate_std::GetDate(string* label, const string& format) const
 
         unsigned int length = 0;
         int          value  = -1;
-        while (isdigit(*it)) {
+        while (isdigit((unsigned char)(*it))) {
             length = length * 10 + *it - '0';
             if (++it == format.end()) {
                 NCBI_THROW2(CGeneralParseException, eFormat,
@@ -325,6 +325,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.8  2005/06/03 16:51:39  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.7  2004/05/19 17:21:39  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

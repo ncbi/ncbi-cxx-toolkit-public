@@ -107,8 +107,8 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 
     input.read((char*)buf, sizeof(buf));
     size_t count = input.gcount();
-	input.clear();  // in case we reached eof
-	input.seekg(orig_pos);
+    input.clear();  // in case we reached eof
+    input.seekg(orig_pos);
 
     if (!count) {
         return eUnknown;
@@ -142,7 +142,7 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     unsigned int i = 0;
     {{
         for (i = 0;  i < count;  ++i) {
-            if ( !isgraph(buf[i])  &&  !isspace(buf[i]) ) {
+            if ( !isgraph((unsigned char) buf[i])  &&  !isspace((unsigned char) buf[i]) ) {
                 return eBinaryASN;
             }
         }
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/06/03 17:04:45  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.18  2005/05/12 15:08:21  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *

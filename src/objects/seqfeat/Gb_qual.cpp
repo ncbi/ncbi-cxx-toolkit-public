@@ -94,10 +94,10 @@ static void s_CleanupRptUnit(CGb_qual& gbq)
         while (it != end  &&  (*it == '('  ||  *it == ')'  ||  *it == ',')) {
             s += *it++;
         }
-        while (it != end  &&  isspace(*it)) {
+        while (it != end  &&  isspace((unsigned char)(*it))) {
             ++it;
         }
-        while (it != end  &&  isdigit(*it)) {
+        while (it != end  &&  isdigit((unsigned char)(*it))) {
             s += *it++;
         }
         if (it != end  &&  (*it == '.'  ||  *it == '-')) {
@@ -106,19 +106,19 @@ static void s_CleanupRptUnit(CGb_qual& gbq)
             }
             s += "..";
         }
-        while (it != end  &&  isspace(*it)) {
+        while (it != end  &&  isspace((unsigned char)(*it))) {
             ++it;
         }
-        while (it != end  &&  isdigit(*it)) {
+        while (it != end  &&  isdigit((unsigned char)(*it))) {
             s += *it++;
         }
-        while (it != end  &&  isspace(*it)) {
+        while (it != end  &&  isspace((unsigned char)(*it))) {
             ++it;
         }
         if (it != end) {
             char c = *it;
             if (c != '('  &&  c != ')'  &&  c != ','  &&  c != '.'  &&
-                !isspace(c)  &&  !isdigit(c)) {
+                !isspace((unsigned char) c)  &&  !isdigit((unsigned char) c)) {
                 NStr::ToLower(val);
                 return;
             }
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2005/06/03 16:52:36  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.1  2005/05/20 13:36:54  shomrat
 * Added BasicCleanup()
 *

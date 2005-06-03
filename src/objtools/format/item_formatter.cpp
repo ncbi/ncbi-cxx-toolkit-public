@@ -138,7 +138,7 @@ static bool s_IsSuccessor(const string& acc, const string& prev)
         return false;
     }
     size_t i;
-    for (i = 0; i < acc.length()  &&  !isdigit(acc[i]); ++i) {
+    for (i = 0; i < acc.length()  &&  !isdigit((unsigned char) acc[i]); ++i) {
         if (acc[i] != prev[i]) {
             return false;
         }
@@ -382,14 +382,14 @@ static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
     }
 
     // numbers come first
-    if (isdigit(pages[0])) {
+    if (isdigit((unsigned char) pages[0])) {
         first_digits = true;
         dig = NStr::StringToUInt(pages, 10, NStr::eCheck_Skip);
         SIZE_TYPE i = pages.find_first_not_of(kDigits);
         if (i != NPOS) {
             let = pages.substr(i);
         }
-    } else if (isalpha(pages[0])) {  // letters come first
+    } else if (isalpha((unsigned char) pages[0])) {  // letters come first
         first_digits = false;
         SIZE_TYPE i = pages.find_first_of(kDigits);
         if (i == NPOS) {
@@ -451,7 +451,7 @@ static void s_FixPages(string& pages)
 
     // reject if contain non alpha numeric characters other than dash
     ITERATE (string, it, pages) {
-        if (!isalnum(*it)  &&  *it != '-') {
+        if (!isalnum((unsigned char)(*it))  &&  *it != '-') {
             return;
         }
     }
@@ -1226,6 +1226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/06/03 17:00:30  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.25  2005/04/07 18:24:38  shomrat
 * Use \n instead of Endl()
 *

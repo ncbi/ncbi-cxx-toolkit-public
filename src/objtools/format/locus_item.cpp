@@ -126,13 +126,13 @@ static bool s_IsSeperatorNeeded(const string& basename, size_t suffix_len)
     char next_to_last = basename[basename.length() - 2];
 
     // If the last character is not a digit then don't use a seperator.
-    if (!isdigit(last)) {
+    if (!isdigit((unsigned char) last)) {
         return false;
     }
 
     // If the last two characters are a non-digit followed by a '0',
     // then don't use seperator.
-    if ((last == '0')  &&  (!isdigit(next_to_last))) {
+    if ((last == '0')  &&  (!isdigit((unsigned char) next_to_last))) {
         return false;
     }
 
@@ -238,7 +238,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
 bool CLocusItem::x_NameHasBadChars(const string& name) const
 {
     ITERATE(string, iter, name) {
-        if ( !isalnum(*iter) ) {
+        if ( !isalnum((unsigned char)(*iter)) ) {
             return true;
         }
     }
@@ -616,6 +616,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/06/03 17:00:39  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.18  2005/04/27 15:55:59  shomrat
 * Added ENV division
 *

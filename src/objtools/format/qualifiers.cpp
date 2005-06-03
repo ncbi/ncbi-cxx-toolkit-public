@@ -305,7 +305,7 @@ void CFlatNumberQVal::Format
         }
         bool has_space = false;
         ITERATE (string, it, m_Value) {
-            if (isspace(*it)) {
+            if (isspace((unsigned char)(*it))) {
                 has_space = true;
             } else if (has_space) {
                 // non-space after space
@@ -944,6 +944,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/06/03 17:00:44  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.29  2005/04/27 17:13:18  shomrat
 * Changed anticodon formatting
 *

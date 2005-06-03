@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.19  2005/01/06 20:22:38  gouriano
 * Added name property to lexers - for better diagnostics
 *
@@ -96,12 +99,12 @@ BEGIN_NCBI_SCOPE
 
 inline bool IsAlNum(char c)
 {
-    return isalnum(c) ? true : false;
+    return isalnum((unsigned char) c) ? true : false;
 }
 
 inline bool IsDigit(char c)
 {
-    return isdigit(c) ? true : false;
+    return isdigit((unsigned char) c) ? true : false;
 }
 
 ASNLexer::ASNLexer(CNcbiIstream& in, const string& name)

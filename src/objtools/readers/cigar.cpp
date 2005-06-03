@@ -48,12 +48,12 @@ SCigarAlignment::SCigarAlignment(const string& s)
     SSegment seg = { eNotSet, 0 };
 
     for (SIZE_TYPE pos = 0;  pos < s.size();  ++pos) {
-        if (isalpha(s[pos])) {
-            seg.op = static_cast<EOperation>(toupper(s[pos]));
+        if (isalpha((unsigned char) s[pos])) {
+            seg.op = static_cast<EOperation>(toupper((unsigned char) s[pos]));
             if (seg.len) {
                 x_AddAndClear(seg);
             }
-        } else if (isdigit(s[pos])) {
+        } else if (isdigit((unsigned char) s[pos])) {
             SIZE_TYPE pos2 = s.find_first_not_of("0123456789", pos + 1);
             seg.len = NStr::StringToInt(s.substr(pos, pos2 - pos));
             if (seg.op) {
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/06/03 17:01:15  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.3  2004/11/08 14:46:10  dicuccio
 * iterate -> ITERATE
 *

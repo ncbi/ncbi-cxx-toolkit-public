@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.3  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -56,7 +59,7 @@ string Identifier(const string& typeName, bool capitalize)
     s.reserve(typeName.size());
     string::const_iterator i = typeName.begin();
     if ( i != typeName.end() ) {
-        s += capitalize? toupper(*i): *i;
+        s += capitalize? toupper((unsigned char)(*i)): *i;
         while ( ++i != typeName.end() ) {
             char c = *i;
             if ( c == '-' || c == '.' )

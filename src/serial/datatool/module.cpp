@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.37  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -376,7 +379,7 @@ string DTDPublicModuleName(const string& name)
     string res;
     ITERATE ( string, i, name ) {
         char c = *i;
-        if ( !isalnum(c) )
+        if ( !isalnum((unsigned char) c) )
             res += ' ';
         else
             res += c;

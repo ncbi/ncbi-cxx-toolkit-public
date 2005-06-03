@@ -437,10 +437,10 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             SIZE_TYPE   res_count = 0;
             for (SIZE_TYPE i = 0;  i < line_size;  ++i) {
                 char c = line_data[i];
-                if (isalpha(c)) {
+                if (isalpha((unsigned char) c)) {
                     in_gap = false;
                     if (lowercase) {
-                        bool is_lc = islower(c) ? true : false;
+                        bool is_lc = islower((unsigned char) c) ? true : false;
                         if (is_lc && !was_lc) {
                             lc_start = pos;
                         } else if (was_lc && !is_lc) {
@@ -450,7 +450,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         was_lc = is_lc;
                         ++pos;
                     }
-                    res_data[res_count++] = toupper(c);
+                    res_data[res_count++] = toupper((unsigned char) c);
                 } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
                     CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
                     if (in_gap) {
@@ -492,7 +492,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 } else if (c == ';') {
                     i = line_size;
                     continue; // skip rest of line
-                } else if ( !isspace(c) ) {
+                } else if ( !isspace((unsigned char) c) ) {
                     ERR_POST(Warning << "ReadFasta: Ignoring invalid residue "
                              << c << " at position "
                              << (in.tellg() - CT_POS_TYPE(0)));
@@ -576,6 +576,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/06/03 17:01:25  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.15  2005/02/23 19:25:30  ucko
 * ReadFasta: deal properly with runs of hyphens in ParseGaps mode;
 * really support inline comments set off by semicolons.

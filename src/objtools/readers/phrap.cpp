@@ -198,7 +198,7 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
         cnt += line.size();
     }
     char next = in.eof() ? ' ' : in.peek();
-    if ( m_Data.size() != m_PaddedLength  || !isspace(next) ) {
+    if ( m_Data.size() != m_PaddedLength  || !isspace((unsigned char) next) ) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "ReadPhrap: invalid data length for " + m_Name + ".",
                     in.tellg() - CT_POS_TYPE(0));
@@ -800,7 +800,7 @@ void CPhrap_Contig::ReadBaseQualities(CNcbiIstream& in)
         m_BaseQuals.push_back(bq);
     }
     CheckStreamState(in, "BQ data.");
-    _ASSERT( isspace(in.peek()) );
+    _ASSERT( isspace((unsigned char) in.peek()) );
 }
 
 
@@ -1792,6 +1792,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/06/03 17:01:32  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.4  2005/05/10 19:08:23  dicuccio
 * Fixed warning concerning precedence of operators
 *

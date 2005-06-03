@@ -733,8 +733,8 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
             ch2 = s_SeqDBIsam_NullifyEOLs(ch2);
             
             if (ignore_case) {
-                ch1 = toupper(ch1);
-                ch2 = toupper(ch2);
+                ch1 = toupper((unsigned char) ch1);
+                ch2 = toupper((unsigned char) ch2);
             }
             
             if (ch1 != ch2) {
@@ -1304,8 +1304,8 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     }
     
     if (dbname.empty() ||
-        (! isalpha(prot_nucl)) ||
-        (! isalpha(file_ext_char))) {
+        (! isalpha((unsigned char) prot_nucl)) ||
+        (! isalpha((unsigned char) file_ext_char))) {
         
         NCBI_THROW(CSeqDBException,
                    eArgErr,

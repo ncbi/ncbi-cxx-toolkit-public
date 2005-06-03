@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2005/06/03 16:52:53  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.5  2005/05/20 13:36:54  shomrat
  * Added BasicCleanup()
  *
@@ -172,7 +175,7 @@ static COrgMod* s_StringToOrgMod(const string& str)
         size_t num_spaces = 0;
         bool has_comma = false;
         ITERATE (string, it, subname) {
-            if (isspace(*it)) {
+            if (isspace((unsigned char)(*it))) {
                 ++num_spaces;
             } else if (*it == ',') {
                 has_comma = true;

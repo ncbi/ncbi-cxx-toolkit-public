@@ -381,7 +381,7 @@ string CDbtag::GetUrl(void) const
             if (pos != NPOS) {
                 tag = tag.substr(pos + 4);
                 remove(tag.begin(), tag.end(), '-');
-            } else if (!isdigit(tag[0])) {
+            } else if (!isdigit((unsigned char) tag[0])) {
                 return kEmptyStr;
             }
             break;
@@ -398,7 +398,7 @@ string CDbtag::GetUrl(void) const
             break;
 
         case CDbtag::eDbtagType_taxon:
-            if (isdigit(tag[0])) {
+            if (isdigit((unsigned char) tag[0])) {
                 tag.insert(0, "id=");
             } else {
                 tag.insert(0, "name=");
@@ -431,11 +431,11 @@ static void s_TagCleanup(CDbtag::TTag& tag)
 
     bool all_zero = true;
     ITERATE (CDbtag::TTag::TStr, it, str) {
-        if (isdigit(*it)) {
+        if (isdigit((unsigned char)(*it))) {
             if (*it != '0') {
                 all_zero = false;
             }
-        } else if (!isspace(*it)) {
+        } else if (!isspace((unsigned char)(*it))) {
             return;
         }
     }
@@ -506,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2005/06/03 16:51:49  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.25  2005/05/20 13:31:29  shomrat
  * Added BasicCleanup()
  *

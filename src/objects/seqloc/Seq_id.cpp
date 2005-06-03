@@ -516,7 +516,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 1:
-        if (main_size == 6  &&  isalpha(acc[2])) {
+        if (main_size == 6  &&  isalpha((unsigned char) acc[2])) {
             return eAcc_swissprot; // alpha digit ALPHA alnum alnum digit
         }
         switch (pfx[0]) {
@@ -807,8 +807,8 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
                 char chain = (char)pid.GetChain();
                 if (chain == '|') {
                     *label += pid.GetMol().Get() + "|VB";
-                } else if (islower(chain) != 0) {
-                    *label += pid.GetMol().Get() + "-" + (char) toupper(chain);
+                } else if (islower((unsigned char) chain) != 0) {
+                    *label += pid.GetMol().Get() + "-" + (char) toupper((unsigned char) chain);
                 } else if ( chain == '\0' ) {
                     *label += pid.GetMol().Get() + "-";
                 } else {
@@ -1549,6 +1549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.106  2005/06/03 16:53:08  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.105  2005/05/04 19:03:32  ucko
  * Take advantage of PCase_CStr when comparing C strings.
  *

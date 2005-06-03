@@ -118,7 +118,7 @@ static void s_FixInitials(string& initials)
     string fixed;
 
     string::iterator it = initials.begin();
-    while (it != initials.end()  &&  !isalpha(*it)) {  // skip junk
+    while (it != initials.end()  &&  !isalpha((unsigned char)(*it))) {  // skip junk
         ++it;
     }
     char prev = '\0';
@@ -128,8 +128,8 @@ static void s_FixInitials(string& initials)
         if (c == ',') {
             *it = c = '.';
         }
-        if (isalpha(c)) {
-            if (prev != '\0'  &&  isupper(c)  &&  isupper(prev)) {
+        if (isalpha((unsigned char) c)) {
+            if (prev != '\0'  &&  isupper((unsigned char) c)  &&  isupper((unsigned char) prev)) {
                 fixed += '.';
             }
         } else if (c == '-') {
@@ -189,11 +189,11 @@ void CName_std::x_FixInitials(void)
     string::iterator it1 = f_initials.begin();
     string::iterator it2 = initials.begin();
     while (it1 != f_initials.end()  &&  it2 != initials.end()  &&
-        toupper(*it1) == toupper(*it2)) {
+        toupper((unsigned char)(*it1)) == toupper((unsigned char)(*it2))) {
         ++it1;
         ++it2;
     }
-    if (it2 != initials.end()  &&  it1 != f_initials.end()  &&  *it1 == '.'  &&  islower(*it2)) {
+    if (it2 != initials.end()  &&  it1 != f_initials.end()  &&  *it1 == '.'  &&  islower((unsigned char)(*it2))) {
         f_initials.erase(it1);
     }
     while (it2 != initials.end()) {
@@ -294,7 +294,7 @@ CName_std::TInitials CName_std::x_GetInitialsFromFirst(void) const
     }
 
     bool up =
-        IsSetInitials()  &&  !GetInitials().empty()  &&  isupper(GetInitials()[0]);
+        IsSetInitials()  &&  !GetInitials().empty()  &&  isupper((unsigned char) GetInitials()[0]);
 
     string initials;
 
@@ -302,21 +302,21 @@ CName_std::TInitials CName_std::x_GetInitialsFromFirst(void) const
 	string::const_iterator it = first.begin();
 	while (it != end) {
         // skip "junk"
-        while (it != end  &&  !isalpha(*it)) {
+        while (it != end  &&  !isalpha((unsigned char)(*it))) {
             ++it;
         }
         // copy the first character of each word
         if (it != end) {
             if (!initials.empty()) {
                 char c = *initials.rbegin();
-                if (isupper(*it)  &&  c != '.'  &&  c != '-') {
+                if (isupper((unsigned char)(*it))  &&  c != '.'  &&  c != '-') {
                     initials += '.';
                 }
             }
-            initials += up ? toupper(*it) : *it;
+            initials += up ? toupper((unsigned char)(*it)) : *it;
         }
         // skip the rest of the word
-        while (it != end  &&  !isspace(*it)  &&  *it != ','  &&  *it != '-') {
+        while (it != end  &&  !isspace((unsigned char)(*it))  &&  *it != ','  &&  *it != '-') {
             ++it;
         }
         if (it != end  &&  *it == '-') {
@@ -341,6 +341,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2005/06/03 16:52:09  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.1  2005/05/20 13:31:29  shomrat
 * Added BasicCleanup()
 *

@@ -284,7 +284,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         CSeqdesc_CI it(hnd, CSeqdesc::e_Pdb);
         for (;  it;  ++it) {
             if ( !it->GetPdb().GetCompound().empty() ) {
-                if (isprint(pdb_id->GetChain())) {
+                if (isprint((unsigned char) pdb_id->GetChain())) {
                     title = string("Chain ") + (char)pdb_id->GetChain() + ", ";
                 }
                 title += it->GetPdb().GetCompound().front();
@@ -507,8 +507,8 @@ static string s_TitleFromBioSource(const CBioSource& source,
 
     string title = NStr::TruncateSpaces(name + strain + chromosome + clone
                                         + map_ + sfx);
-    if (islower(title[0])) {
-        title[0] = toupper(title[0]);
+    if (islower((unsigned char) title[0])) {
+        title[0] = toupper((unsigned char) title[0]);
     }
 
     return title;
@@ -650,7 +650,7 @@ static string s_TitleFromChromosome(const CBioSource& source,
     result = NStr::Replace(result, "Plasmid", "plasmid");
     result = NStr::Replace(result, "Element", "element");
     if (!result.empty()) {
-        result[0] = toupper(result[0]);
+        result[0] = toupper((unsigned char) result[0]);
     }
     return result;
 }
@@ -865,6 +865,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.50  2005/06/03 16:57:46  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.49  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

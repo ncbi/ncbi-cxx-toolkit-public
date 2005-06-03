@@ -223,12 +223,12 @@ void CValidError_bioseq::ValidateSeqIds
                 is_wgs = acc.length() == 12  ||  acc.length() == 13;
 
                 ITERATE(string, s, acc) {
-                    if (isupper(*s)) {
+                    if (isupper((unsigned char)(*s))) {
                         num_letters++;
                         if (num_digits > 0) {
                             letter_after_digit = true;
                         }
-                    } else if (isdigit(*s)) {
+                    } else if (isdigit((unsigned char)(*s))) {
                         num_digits++;
                     } else {
                         bad_id_chars = true;
@@ -273,7 +273,7 @@ void CValidError_bioseq::ValidateSeqIds
                 if ( tsid->IsSetName() ) {
                     const string& name = tsid->GetName();
                     ITERATE (string, s, name) {
-                        if (isspace(*s)) {
+                        if (isspace((unsigned char)(*s))) {
                             PostErr(eDiag_Critical,
                                 eErr_SEQ_INST_SeqIdNameHasSpace,
                                 "Seq-id.name " + name + " should be a single "
@@ -294,9 +294,9 @@ void CValidError_bioseq::ValidateSeqIds
                     bool letter_after_digit = false;
 
                     for ( ; i < acc.length(); ++i ) {
-                        if ( isupper(acc[i]) ) {
+                        if ( isupper((unsigned char) acc[i]) ) {
                             num_letters++;
-                        } else if ( isdigit(acc[i]) ) {
+                        } else if ( isdigit((unsigned char) acc[i]) ) {
                             num_digits++;
                         } else if ( acc[i] == '_' ) {
                             num_underscores++;
@@ -3908,6 +3908,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.97  2005/06/03 17:02:31  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.96  2005/03/15 20:09:29  dicuccio
 * +algorithm for binary_search
 *

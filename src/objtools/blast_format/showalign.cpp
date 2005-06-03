@@ -286,7 +286,7 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
                 do_wrap = true;
             }   
             out << str[i];
-            if(do_wrap && isspace(str[i])){
+            if(do_wrap && isspace((unsigned char) str[i])){
                 out << endl;  
                 CBlastFormatUtil::AddSpace(out, front_space);
                 do_wrap = false;
@@ -442,7 +442,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
     TSeqPos previous_num_letter = 0;
     
     for (size_t i = 0; i <= feat_aln_start_totalexon; i ++){
-        if(isalpha(concat_exon[i])){
+        if(isalpha((unsigned char) concat_exon[i])){
             previous_num_letter ++;
         }
     }
@@ -457,7 +457,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
         TSeqPos cur_num = 0;
         bool has_intron = false;
         for(size_t j = i; j < actual_line_len + i; j ++){
-            if(isalpha(line[j])){
+            if(isalpha((unsigned char) line[j])){
                 cur_num ++;
             } else if(line[j] == k_IntronChar){
                 has_intron = true;
@@ -722,7 +722,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     for (int index = j; index < j + (int)actualLineLen && 
                              index < (int)sequence[row].size(); index ++){
                         if (sequence[row][index] == sequence[0][index] &&
-                            isalpha(sequence[row][index])) {
+                            isalpha((unsigned char) sequence[row][index])) {
                             sequence[row][index] = k_IdentityChar;           
                         } else if (!has_mismatch) {
                             has_mismatch = true;
@@ -1378,7 +1378,7 @@ const void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
                             eachSeqloc.Set(i, eachSeqloc.GetTo());
                         }
                         if (m_SeqLocChar==eX){
-                            if(isalpha(actualSeq[i-start])){
+                            if(isalpha((unsigned char) actualSeq[i-start])){
                                 actualSeq[i-start]='X';
                             }
                         } else if (m_SeqLocChar==eN){
@@ -1614,7 +1614,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                        
                                         if(m_AV->IsPositiveStrand(row)){
                                             if(is_first_exon_start &&
-                                               isalpha(line[i])){
+                                               isalpha((unsigned char) line[i])){
                                                 feat_aln_start_totalexon = 
                                                     product_adj_seq_pos;
                                                 is_first_exon_start = false;
@@ -1942,11 +1942,11 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
         dbtmp = new char[sizeof(char)*length + 2]; /* aditional space and NULL */
         memset(dbtmp, '\0', sizeof(char)*length + 2);
         for(i = 0; i < length; i++) {            
-            if(isspace(dbname[i]) || dbname[i] == ',') {/* Rolling spaces */
+            if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {/* Rolling spaces */
                 continue;
             }
             j = 0;
-            while (!isspace(dbname[i]) && j < 256  && i < length) { 
+            while (!isspace((unsigned char) dbname[i]) && j < 256  && i < length) { 
                 tmpbuff[j] = dbname[i];
                 j++; i++;
                 if(dbname[i] == ',') { /* Comma is valid delimiter */
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.77  2005/06/03 16:58:24  lavr
+*Explicit (unsigned char) casts in ctype routines
+*
 *Revision 1.76  2005/05/25 16:53:40  jianye
 *fix warning under sun solaris
 *

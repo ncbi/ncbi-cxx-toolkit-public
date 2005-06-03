@@ -51,7 +51,7 @@ void CleanString(string& str)
             if (amp != NPOS) {
                 remove = false;
                 for (size_t i = amp + 1; i < semicolon; ++i) {
-                    if (isspace(str.data()[i])) {
+                    if (isspace((unsigned char) str.data()[i])) {
                         remove = true;
                         break;
                     }
@@ -78,7 +78,7 @@ void RemoveSpaces(string& str)
     size_t next = 0;
 
     NON_CONST_ITERATE(string, it, str) {
-        if (!isspace(*it)) {
+        if (!isspace((unsigned char)(*it))) {
             str[next++] = *it;
         }
     }
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2005/06/03 16:52:18  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.1  2005/05/20 13:31:29  shomrat
 * Added BasicCleanup()
 *

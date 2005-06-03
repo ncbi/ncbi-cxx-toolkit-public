@@ -188,7 +188,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
                         ERR_POST(Error << "master sequence too long at alnLoc " << alnLoc
                             << " row " << (i+1) << "masterLoc" << masterLoc);
                         return false;
-                    } else if (toupper(masterChar) != toupper(alignment->master->sequenceString[masterLoc])) {
+                    } else if (toupper((unsigned char) masterChar) != toupper((unsigned char) alignment->master->sequenceString[masterLoc])) {
                         ERR_POST(Error << "master sequence mismatch at alnLoc " << alnLoc
                             << " row " << (i+1) << "masterLoc" << masterLoc);
                         return false;
@@ -201,7 +201,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
                     ERR_POST(Error << "slave sequence too long at alnLoc " << alnLoc
                         << " row " << (i+1) << "slaveLoc" << slaveLoc);
                     return false;
-                } else if (toupper(slaveChar) != toupper(alignment->slave->sequenceString[slaveLoc])) {
+                } else if (toupper((unsigned char) slaveChar) != toupper((unsigned char) alignment->slave->sequenceString[slaveLoc])) {
                     ERR_POST(Error << "slave sequence mismatch at alnLoc " << alnLoc
                         << " row " << (i+1) << "slaveLoc" << slaveLoc);
                     return false;
@@ -474,6 +474,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/06/03 16:59:07  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.7  2005/05/13 14:17:41  thiessen
 * require asn memory buffer size
 *

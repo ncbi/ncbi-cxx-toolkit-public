@@ -652,7 +652,7 @@ void CDictionaryUtil::GetSoundex(const string& in, string* out,
 
     // preserve the first character, in upper case
     string::const_iterator iter = in.begin();
-    *out += toupper(*iter);
+    *out += toupper((unsigned char)(*iter));
 
     // now, iterate substituting codes, using no more than four characters
     // total
@@ -852,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/06/03 17:04:37  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.8  2005/02/07 16:02:28  ivanov
  * Fixed Workshop compiler warnings in 64bit mode
  *

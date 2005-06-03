@@ -1416,7 +1416,7 @@ string CTar::x_ToArchiveName(const string& path) const
 
     SIZE_TYPE pos = 0;
     // Remove disk name if present
-    if (isalpha(retval[0])  &&  retval.find(":") == 1) {
+    if (isalpha((unsigned char) retval[0])  &&  retval.find(":") == 1) {
         pos = 2;
     }
 
@@ -1592,6 +1592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/06/03 17:04:29  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.22  2005/06/01 20:15:27  lavr
  * Do not use special bits yet on Windows in CDirEntry:: SetMode()
  *

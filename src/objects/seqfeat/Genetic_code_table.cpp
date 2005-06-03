@@ -379,7 +379,7 @@ static bool s_ValidCodon(const string& codon)
     if ( codon.length() != 3 ) return false;
     
     for ( int i = 0; i < 3; ++i ) {
-        char ch = toupper(codon[i]);
+        char ch = toupper((unsigned char) codon[i]);
         if ( ch != 'A' && ch != 'G' && ch != 'C' && ch != 'T'  && ch != 'U' ) {
             return false;
         }
@@ -396,7 +396,7 @@ int CGen_code_table::CodonToIndex(const string& codon)
     int index = 0;
     int mul = 16;
     for ( int i = 0; i < 3; ++i ) {
-        switch ( toupper(codon[i]) ) {
+        switch ( toupper((unsigned char) codon[i]) ) {
         case 'A' :
             weight = 2;
             break;
@@ -725,6 +725,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.21  2005/06/03 16:52:45  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.20  2004/12/28 21:20:15  grichenk
 * auto_ptr replaced with AutoPtr
 *

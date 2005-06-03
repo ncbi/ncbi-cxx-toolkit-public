@@ -628,7 +628,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     }
     if ( gene.CanGetLocus()  &&  !gene.GetLocus().empty() ) {
         ITERATE (string, it, gene.GetLocus() ) {
-            if ( isspace(*it) != 0 ) {
+            if ( isspace((unsigned char)(*it)) != 0 ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
                     "Gene locus_tag '" + gene.GetLocus() + 
                     "' should be a single word without any spaces", feat);
@@ -1520,7 +1520,7 @@ void CValidError_feat::ValidateImpGbquals
                             found = true;
                         } else if ( *it == '('  ||  *it == ')'  ||
                             *it == ','  ||  *it == '.'  ||
-                            isdigit(*it) ) {
+                            isdigit((unsigned char)(*it)) ) {
                         } else {
                             multiple_rpt_unit = false;
                         }
@@ -1568,10 +1568,10 @@ void CValidError_feat::ValidateImpGbquals
                         has_spaces = false;
                     
                     ITERATE(string, it, val) {
-                        if ( isspace(*it) ) {
+                        if ( isspace((unsigned char)(*it)) ) {
                             has_spaces = true;
                         }
-                        if ( !isdigit(*it) ) {
+                        if ( !isdigit((unsigned char)(*it)) ) {
                             only_digits = false;
                         }
                     }
@@ -3039,6 +3039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2005/06/03 17:02:31  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.74  2005/02/18 15:07:10  shomrat
 * CSeq_loc interface changes
 *

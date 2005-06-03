@@ -62,7 +62,7 @@ TToken DTDLexer::LookupToken(void)
     case '<':
         if (Char(1)=='!') {
             SkipChars(2);
-            if (isalpha(Char())) {
+            if (isalpha((unsigned char) Char())) {
                 return LookupIdentifier();
             } else if (Char() == '[') {
 // Conditional section
@@ -100,7 +100,7 @@ TToken DTDLexer::LookupToken(void)
         }
         break;
     default:
-        if (isalpha(c)) {
+        if (isalpha((unsigned char) c)) {
             tok = LookupIdentifier();
             return tok;
         }
@@ -181,7 +181,7 @@ bool DTDLexer::IsIdentifierSymbol(char c)
 {
 // complete specification is here:
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-common-syn
-    return isalnum(c) || strchr("#._-:", c);
+    return isalnum((unsigned char) c) || strchr("#._-:", c);
 }
 
 TToken DTDLexer::LookupIdentifier(void)
@@ -263,9 +263,9 @@ TToken DTDLexer::LookupEntity(void)
     if (c != '%') {
         LexerError("Unexpected symbol: %");
     }
-    if (isspace(Char(1))) {
+    if (isspace((unsigned char) Char(1))) {
         return T_SYMBOL;
-    } else if (isalpha(Char(1))) {
+    } else if (isalpha((unsigned char) Char(1))) {
         SkipChar();
         StartToken();
         for (c = Char(); c != ';' && c != 0; c = Char()) {
@@ -321,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2005/06/03 17:05:33  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.9  2005/01/06 20:27:51  gouriano
  * Find out the end of an identifier name to process compound identifiers
  *

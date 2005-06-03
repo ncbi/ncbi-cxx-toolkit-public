@@ -51,9 +51,9 @@ COrgRefCache::~COrgRefCache()
 {
     delete[] m_ppEntries;
     for( list<SCacheEntry*>::iterator i = m_lCache.begin();
-	 i != m_lCache.end();
-	 ++i ) {
-	delete *i;
+         i != m_lCache.end();
+         ++i ) {
+        delete *i;
     }
 }
 
@@ -88,7 +88,7 @@ COrgRefCache::Init( unsigned nCapacity )
     SetIndexEntry( 1, pRoot );
 
     if( nCapacity != 0 ) {
-	m_nCacheCapacity = nCapacity;
+        m_nCacheCapacity = nCapacity;
     }
     InitRanks();
     InitDivisions();
@@ -101,7 +101,7 @@ COrgRefCache::Lookup( int tax_id, CTaxon1Node** ppNode )
     if( (unsigned)tax_id < m_nMaxTaxId ) {
         *ppNode = m_ppEntries[tax_id];
     } else {
-	*ppNode = NULL;
+        *ppNode = NULL;
     }
     return *ppNode != NULL;
 }
@@ -127,38 +127,38 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
                     list< CRef<CTaxon1_name> >& lLin = resp.SetTaxalineage();
                     CTaxon1Node* pParent = 0;
                     pNode   = 0;
-		    // Check if this is a secondary node
-		    if( lLin.front()->GetTaxid() != tax_id ) {
-			// Secondary node, try to get primary from index
-			pNode = m_ppEntries[ lLin.front()->GetTaxid() ];
-		    }
-		    if( !pNode ) {
-			list< CRef< CTaxon1_name > >::reverse_iterator i;
-			// Fill in storage
-			for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
-			    if( !m_ppEntries[ (*i)->GetTaxid() ] ) {
-				// Create node
-				break;
-			    } else {
-				pParent = m_ppEntries[ (*i)->GetTaxid() ];
-			    }
-			}
-			// Create tree iterator
-			CTreeIterator* pIt = ( m_tPartTree.GetIterator() );
-			if( !pParent ) {
-			    pParent = static_cast<CTaxon1Node*>(pIt->GetNode());
-			}
-			pIt->GoNode( pParent );
-			for( ; i != lLin.rend(); ++i ) {
-			    pNode = new CTaxon1Node(*i);
-			    m_ppEntries[ pNode->GetTaxId() ] = pNode;
-			    pIt->AddChild( pNode );
-			    pIt->GoNode( pNode );
-			}
-		    } else { // Store secondary in index
-			m_ppEntries[ tax_id ] = pNode;
-		    }
-		    _ASSERT( pNode );
+                    // Check if this is a secondary node
+                    if( lLin.front()->GetTaxid() != tax_id ) {
+                        // Secondary node, try to get primary from index
+                        pNode = m_ppEntries[ lLin.front()->GetTaxid() ];
+                    }
+                    if( !pNode ) {
+                        list< CRef< CTaxon1_name > >::reverse_iterator i;
+                        // Fill in storage
+                        for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
+                            if( !m_ppEntries[ (*i)->GetTaxid() ] ) {
+                                // Create node
+                                break;
+                            } else {
+                                pParent = m_ppEntries[ (*i)->GetTaxid() ];
+                            }
+                        }
+                        // Create tree iterator
+                        CTreeIterator* pIt = ( m_tPartTree.GetIterator() );
+                        if( !pParent ) {
+                            pParent = static_cast<CTaxon1Node*>(pIt->GetNode());
+                        }
+                        pIt->GoNode( pParent );
+                        for( ; i != lLin.rend(); ++i ) {
+                            pNode = new CTaxon1Node(*i);
+                            m_ppEntries[ pNode->GetTaxId() ] = pNode;
+                            pIt->AddChild( pNode );
+                            pIt->GoNode( pNode );
+                        }
+                    } else { // Store secondary in index
+                        m_ppEntries[ tax_id ] = pNode;
+                    }
+                    _ASSERT( pNode );
                     *ppData = pNode;
                     return true;
                 } else { // Internal: wrong respond type
@@ -268,9 +268,9 @@ s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
                                   sz+pNode->GetName().size()+2, sp_rank );
             if( bCont ) {
                 str.append( pNode->GetName() );
-		if( sz != 0 ) {
-		    str.append( "; " );
-		}
+                if( sz != 0 ) {
+                    str.append( "; " );
+                }
             }
             return bCont;
         }
@@ -338,47 +338,47 @@ s_NofTokens( const string& s )
     int bracket_level, token;
 
     if( !s.empty() ) {
-	string::size_type pos = 0;
-	while( pos < s.size() ) {
-	    bracket_level= 0;
-	    token = 0;
+        string::size_type pos = 0;
+        while( pos < s.size() ) {
+            bracket_level= 0;
+            token = 0;
 
-	    do { // Skip heading white space
-		first= s[pos++];
-	    } while( (isspace(first) || iscntrl(first)) &&
-		     pos < s.size() );
+            do { // Skip heading white space
+                first= s[pos++];
+            } while( (isspace((unsigned char) first) || iscntrl((unsigned char) first)) &&
+                     pos < s.size() );
 	    
-	    switch( first ) {
-	    case '"': last= '"'; break;
-	    case '(': last= ')'; break;
-	    case '{': last= '}'; break;
-	    case '[': last= ']'; break;
-	    default:  last= 0;   break;
-	    }
+            switch( first ) {
+            case '"': last= '"'; break;
+            case '(': last= ')'; break;
+            case '{': last= '}'; break;
+            case '[': last= ']'; break;
+            default:  last= 0;   break;
+            }
 
-	    for(; pos < s.size(); ++pos) {
-		c = s[pos];
-		if( !isalnum(c) ) {
-		    if( last != 0 ) {
-			if( first == c ) {
-			    ++bracket_level;
-			}
-			if( last == c && (!bracket_level--) ) {
-			    ++pos;
-			    break;
-			}
-		    } else {
-			if( c == '.' || isspace(c) || iscntrl(c) ) {
-			    ++pos;
-			    break;
-			}
-		    }
-		} else {
-		    token = 1;
-		}
-	    }
-	    nof += token;
-	}
+            for(; pos < s.size(); ++pos) {
+                c = s[pos];
+                if( !isalnum((unsigned char) c) ) {
+                    if( last != 0 ) {
+                        if( first == c ) {
+                            ++bracket_level;
+                        }
+                        if( last == c && (!bracket_level--) ) {
+                            ++pos;
+                            break;
+                        }
+                    } else {
+                        if( c == '.' || isspace((unsigned char) c) || iscntrl((unsigned char) c) ) {
+                            ++pos;
+                            break;
+                        }
+                    }
+                } else {
+                    token = 1;
+                }
+            }
+            nof += token;
+        }
     }            
     return nof;
 }
@@ -391,31 +391,31 @@ COrgRefCache::GetSubtypeFromName( string& sName )
 
     string::size_type pos;
     if( sName.find('.') == string::npos ) {
-	return COrgMod::eSubtype_other;
+        return COrgMod::eSubtype_other;
     }
     /* ignore subsp. cf. and subsp. aff. */
     if( NStr::FindNoCase( sName, s_sSubspCf ) != string::npos ) {
-	return COrgMod::eSubtype_other;
+        return COrgMod::eSubtype_other;
     }
     if( NStr::FindNoCase( sName, s_sSubspAff ) != string::npos ) {
-	return COrgMod::eSubtype_other;
+        return COrgMod::eSubtype_other;
     }
 
     /* check for subsp */
     SSubtypeAbbr* pSubtypeAbbr = &s_aSubtypes[0];
     while( pSubtypeAbbr->m_eSubtype != COrgMod::eSubtype_other ) {
-	if( (pos=NStr::FindNoCase( sName,
-	       string(pSubtypeAbbr->m_pchAbbr,
-		      pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
-	    sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
-	    sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
-	    if( pSubtypeAbbr->m_eSubtype == COrgMod::eSubtype_sub_species
-		&& s_NofTokens( sName ) != 1 ) {
-		break; // Return other
-	    }
-	    return pSubtypeAbbr->m_eSubtype;
-	}
-	++pSubtypeAbbr;
+        if( (pos=NStr::FindNoCase( sName,
+                                   string(pSubtypeAbbr->m_pchAbbr,
+                                          pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
+            sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
+            sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
+            if( pSubtypeAbbr->m_eSubtype == COrgMod::eSubtype_sub_species
+                && s_NofTokens( sName ) != 1 ) {
+                break; // Return other
+            }
+            return pSubtypeAbbr->m_eSubtype;
+        }
+        ++pSubtypeAbbr;
     }
     return COrgMod::eSubtype_other;
 }
@@ -452,23 +452,23 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
     pMod->SetSubtype( GetSubtypeFromName( pMod->SetSubname() ) );
 
     if( pMod->GetSubtype() == COrgMod_Base::eSubtype_sub_species &&
-	pNode->GetRank() != GetSubspeciesRank() ) {
+        pNode->GetRank() != GetSubspeciesRank() ) {
         pMod->SetSubtype( COrgMod_Base::eSubtype_other );
     }
 
     if( pMod->GetSubtype() == COrgMod_Base::eSubtype_other ) {
-	int rank = pNode->GetRank();
-	if( rank == GetSubspeciesRank() ) {
+        int rank = pNode->GetRank();
+        if( rank == GetSubspeciesRank() ) {
             if( s_NofTokens( pNode->GetName() ) == 3 ) {
-		pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
-	    }
-	} else if( rank == GetVarietyRank() ) {
-	    pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
-	} else if( rank == GetFormaRank() ) {
-	    pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
-	} else { // Do not insert invalid modifier
-	    return false;
-	}
+                pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
+            }
+        } else if( rank == GetVarietyRank() ) {
+            pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
+        } else if( rank == GetFormaRank() ) {
+            pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
+        } else { // Do not insert invalid modifier
+            return false;
+        }
     }
     // Store it into list
     on.SetMod().push_back( pMod );
@@ -605,12 +605,12 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             int syn_cls(GetSynonymNameClass());
             int comm_cls(GetCommonNameClass());
             for( i = lLin.begin(); i != lLin.end(); ++i ) {
-		if( (*i)->CanGetCde() ) {
-		    int cls = (*i)->GetCde();
-		    if( cls == syn_cls || cls == comm_cls ) {
-			org.SetSyn().push_back( (*i)->GetOname() );
-		    }
-		}
+                if( (*i)->CanGetCde() ) {
+                    int cls = (*i)->GetCde();
+                    if( cls == syn_cls || cls == comm_cls ) {
+                        org.SetSyn().push_back( (*i)->GetOname() );
+                    }
+                }
             }
             // Set taxid as db tag
             org.SetTaxId( node.GetTaxId() );
@@ -622,19 +622,19 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                 on.SetDiv( GetDivisionCode( div_id ) );
             }
             on.SetGcode( node.GetGC() );
-	    if( node.GetMGC() > 0 ) {
-		on.SetMgcode( node.GetMGC() );
-	    }
+            if( node.GetMGC() > 0 ) {
+                on.SetMgcode( node.GetMGC() );
+            }
             // Build lineage
             CTaxon1Node* pNode;
             if( !node.IsRoot() ) {
                 pNode = node.GetParent();
-		on.SetLineage(kEmptyStr);
+                on.SetLineage(kEmptyStr);
                 s_BuildLineage( on.SetLineage(), pNode, 0,
-				GetSpeciesRank() );
+                                GetSpeciesRank() );
                 if( on.GetLineage().empty() ) {
                     on.ResetLineage();
-		}
+                }
             }
             // Set rank
             int rank_id( node.GetRank() );
@@ -695,28 +695,28 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             } else { // above species
                 SetPartialName( node, on );
             }
-	    // Add some genbank names as organism modifiers
-	    if( org.IsSetOrgname() ) { // OrgName is not empty
-		for( i = lLin.begin(); i != lLin.end(); ++i ) {
-		    if( (*i)->CanGetCde() ) {
-			int cde = (*i)->GetCde();
-			COrgMod::ESubtype stype = (COrgMod::ESubtype)0;
-			if( cde == GetGBAcronymNameClass() ) {
-			    stype = COrgMod::eSubtype_gb_acronym;
-			} else if( cde == GetGBSynonymNameClass() ) {
-			    stype = COrgMod::eSubtype_gb_synonym;
-			} else if( cde == GetGBAnamorphNameClass() ) {
-			    stype = COrgMod::eSubtype_gb_anamorph;
-			}
-			if( stype ) {
-			    CRef<COrgMod> pMod( new COrgMod );
-			    pMod->SetSubname().swap( (*i)->SetOname() );
-			    pMod->SetSubtype( stype );
-			    on.SetMod().push_back( pMod );
-			}
-		    }
-		}
-	    }
+            // Add some genbank names as organism modifiers
+            if( org.IsSetOrgname() ) { // OrgName is not empty
+                for( i = lLin.begin(); i != lLin.end(); ++i ) {
+                    if( (*i)->CanGetCde() ) {
+                        int cde = (*i)->GetCde();
+                        COrgMod::ESubtype stype = (COrgMod::ESubtype)0;
+                        if( cde == GetGBAcronymNameClass() ) {
+                            stype = COrgMod::eSubtype_gb_acronym;
+                        } else if( cde == GetGBSynonymNameClass() ) {
+                            stype = COrgMod::eSubtype_gb_synonym;
+                        } else if( cde == GetGBAnamorphNameClass() ) {
+                            stype = COrgMod::eSubtype_gb_anamorph;
+                        }
+                        if( stype ) {
+                            CRef<COrgMod> pMod( new COrgMod );
+                            pMod->SetSubname().swap( (*i)->SetOname() );
+                            pMod->SetSubtype( stype );
+                            on.SetMod().push_back( pMod );
+                        }
+                    }
+                }
+            }
 
         } else {
             m_host.SetLastError
@@ -813,12 +813,12 @@ COrgRefCache::SCacheEntry::GetData1()
         m_pTax1 = new CTaxon1_data;
         if( m_pTax2->IsSetOrg() ) {
             m_pTax1->SetOrg( m_pTax2->SetOrg() );
-	}
+        }
         if( m_pTax2->GetOrg().GetOrgname().CanGetDiv() ) {
             m_pTax1->SetDiv( m_pTax2->GetOrg().GetOrgname().GetDiv() );
         } else {
             m_pTax1->SetDiv( kEmptyStr );
-	}
+        }
         m_pTax1->SetIs_species_level(m_pTax2->GetIs_species_level());
     }
     return m_pTax1;
@@ -831,7 +831,7 @@ COrgRefCache::SCacheEntry::GetData2()
         m_pTax2 = new CTaxon2_data;
         if( m_pTax1->IsSetOrg() ) {
             m_pTax2->SetOrg( m_pTax1->SetOrg() );
-	}
+        }
         CTaxon1Node* pNode = ( m_pTreeNode );
         while( !pNode->IsRoot() ) {
             if( !pNode->GetBlastName().empty() ) {
@@ -889,7 +889,7 @@ COrgRefCache::InitRanks()
                     m_rankStorage
                         .insert( TRankMap::value_type((*i)->GetIval1(),
                                                       (*i)->GetSval()) );
-		}
+                }
             } else { // Internal: wrong respond type
                 m_host.SetLastError( "Response type is not Getranks" );
                 return false;
@@ -1015,17 +1015,17 @@ COrgRefCache::InitNameClasses()
             return false;
         }
 
-	m_ncGBAcronym= FindNameClassByName("genbank acronym");
+        m_ncGBAcronym= FindNameClassByName("genbank acronym");
         if( m_ncGBAcronym < 0 ) {
             m_host.SetLastError( "Genbank acrony name class was not found" );
             return false;
         }
-	m_ncGBSynonym= FindNameClassByName("genbank synonym");
+        m_ncGBSynonym= FindNameClassByName("genbank synonym");
         if( m_ncGBSynonym < 0 ) {
             m_host.SetLastError( "Genbank synonym name class was not found" );
             return false;
         }
-	m_ncGBAnamorph= FindNameClassByName("genbank anamorph");
+        m_ncGBAnamorph= FindNameClassByName("genbank anamorph");
         if( m_ncGBAnamorph < 0 ) {
             m_host.SetLastError( "Genbank anamorph name class was not found" );
             return false;
@@ -1131,20 +1131,20 @@ CTaxTreeConstIterator::IsLastChild() const
     bool bResult = true;
 
     while( m_it->GoParent() ) {
-	if( IsVisible( m_it->GetNode() ) ) {
-	    const CTreeContNodeBase* pParent = m_it->GetNode();
-	    m_it->GoNode( pOldNode );
-	    while( m_it->GetNode() != pParent ) {
-		if( m_it->GoSibling() ) {
-		    bResult = !NextVisible( pParent );
-		    break;
-		}
-		if( !m_it->GoParent() ) {
-		    break;
-		}
-	    }
-	    break;
-	}
+        if( IsVisible( m_it->GetNode() ) ) {
+            const CTreeContNodeBase* pParent = m_it->GetNode();
+            m_it->GoNode( pOldNode );
+            while( m_it->GetNode() != pParent ) {
+                if( m_it->GoSibling() ) {
+                    bResult = !NextVisible( pParent );
+                    break;
+                }
+                if( !m_it->GoParent() ) {
+                    break;
+                }
+            }
+            break;
+        }
     }
     m_it->GoNode( pOldNode );
     return bResult;
@@ -1157,13 +1157,13 @@ CTaxTreeConstIterator::IsFirstChild() const
     bool bResult = false;
 
     while( m_it->GoParent() ) {
-	if( IsVisible( m_it->GetNode() ) ) {
-	    const CTreeContNodeBase* pParent = m_it->GetNode();
-	    if( m_it->GoChild() ) {
-		bResult = NextVisible(pParent) && m_it->GetNode() == pOldNode;
-	    }
-	    break;
-	}
+        if( IsVisible( m_it->GetNode() ) ) {
+            const CTreeContNodeBase* pParent = m_it->GetNode();
+            if( m_it->GoChild() ) {
+                bResult = NextVisible(pParent) && m_it->GetNode() == pOldNode;
+            }
+            break;
+        }
     }
     m_it->GoNode( pOldNode );
     return bResult;
@@ -1175,9 +1175,9 @@ CTaxTreeConstIterator::IsTerminal() const
     const CTreeContNodeBase* pOldNode = m_it->GetNode();
 
     if( m_it->GoChild() ) {
-	bool bResult = NextVisible( pOldNode );
-	m_it->GoNode( pOldNode );
-	return !bResult;
+        bool bResult = NextVisible( pOldNode );
+        m_it->GoNode( pOldNode );
+        return !bResult;
     }
     return true;
 }
@@ -1186,22 +1186,22 @@ bool
 CTaxTreeConstIterator::NextVisible( const CTreeContNodeBase* pParent ) const
 {
     if( m_it->GetNode() == pParent ) {
-	return false;
+        return false;
     }
  next:
     if( IsVisible( m_it->GetNode() ) ) {
-	return true;
+        return true;
     }
     if( m_it->GoChild() ) {
-	goto next;
+        goto next;
     } else if( m_it->GoSibling() ) {
-	goto next;
+        goto next;
     } else {
-	while( m_it->GoParent() && m_it->GetNode() != pParent ) {
-	    if( m_it->GoSibling() ) {
-		goto next;
-	    }
-	}
+        while( m_it->GoParent() && m_it->GetNode() != pParent ) {
+            if( m_it->GoSibling() ) {
+                goto next;
+            }
+        }
     }
     return false;
 }
@@ -1212,13 +1212,13 @@ CTaxTreeConstIterator::GoParent()
     const CTreeContNodeBase* pOldNode = m_it->GetNode();
     bool bResult = false;
     while( m_it->GoParent() ) {
-	if( IsVisible( m_it->GetNode() ) ) {
-	    bResult = true;
-	    break;
-	}
+        if( IsVisible( m_it->GetNode() ) ) {
+            bResult = true;
+            break;
+        }
     }
     if( !bResult ) {
-	m_it->GoNode( pOldNode );
+        m_it->GoNode( pOldNode );
     }
     return bResult;
 }
@@ -1230,10 +1230,10 @@ CTaxTreeConstIterator::GoChild()
     bool bResult = false;
     
     if( m_it->GoChild() ) {
-	bResult = NextVisible( pOldNode );
+        bResult = NextVisible( pOldNode );
     }
     if( !bResult ) {
-	m_it->GoNode( pOldNode );
+        m_it->GoNode( pOldNode );
     }
     return bResult;
 }
@@ -1245,20 +1245,20 @@ CTaxTreeConstIterator::GoSibling()
     bool bResult = false;
 
     if( GoParent() ) {
-	const CTreeContNodeBase* pParent = m_it->GetNode();
-	m_it->GoNode( pOldNode );
-	while( m_it->GetNode() != pParent ) {
-	    if( m_it->GoSibling() ) {
-		bResult = NextVisible( pParent );
-		break;
-	    }
-	    if( !m_it->GoParent() ) {
-		break;
-	    }
-	}
-	if( !bResult ) {
-	    m_it->GoNode( pOldNode );
-	}
+        const CTreeContNodeBase* pParent = m_it->GetNode();
+        m_it->GoNode( pOldNode );
+        while( m_it->GetNode() != pParent ) {
+            if( m_it->GoSibling() ) {
+                bResult = NextVisible( pParent );
+                break;
+            }
+            if( !m_it->GoParent() ) {
+                break;
+            }
+        }
+        if( !bResult ) {
+            m_it->GoNode( pOldNode );
+        }
     }
     return bResult;
 }
@@ -1269,7 +1269,7 @@ CTaxTreeConstIterator::GoNode( const ITaxon1Node* pNode )
     const CTreeContNodeBase* pTaxNode = CastIC( pNode );
 
     if( pNode && IsVisible( pTaxNode ) ) {
-	return m_it->GoNode( pTaxNode );
+        return m_it->GoNode( pTaxNode );
     }
     return false;
 }
@@ -1279,23 +1279,23 @@ CTaxTreeConstIterator::GoAncestor(const ITaxon1Node* pINode)
 {
     const CTreeContNodeBase* pNode = CastIC( pINode );
     if( pNode && IsVisible( pNode ) ) {
-	const CTreeContNodeBase* pOldNode = m_it->GetNode();
+        const CTreeContNodeBase* pOldNode = m_it->GetNode();
     
-	vector< const CTreeContNodeBase* > v;
-	do {
-	    v.push_back( m_it->GetNode() );
-	} while( GoParent() );
+        vector< const CTreeContNodeBase* > v;
+        do {
+            v.push_back( m_it->GetNode() );
+        } while( GoParent() );
 
-	m_it->GoNode( pNode );
-	vector< const CTreeContNodeBase* >::const_iterator vi;
-	do {
-	    vi = find( v.begin(), v.end(), m_it->GetNode() );
-	    if( vi != v.end() ) {
-		return true;
-	    }
-	} while( GoParent() );
-	// Restore old position
-	m_it->GoNode( pOldNode );
+        m_it->GoNode( pNode );
+        vector< const CTreeContNodeBase* >::const_iterator vi;
+        do {
+            vi = find( v.begin(), v.end(), m_it->GetNode() );
+            if( vi != v.end() ) {
+                return true;
+            }
+        } while( GoParent() );
+        // Restore old position
+        m_it->GoNode( pOldNode );
     }
     return false;
 }
@@ -1305,16 +1305,16 @@ CTaxTreeConstIterator::BelongSubtree(const ITaxon1Node* pIRoot) const
 {
     const CTreeContNodeBase* pRoot = CastIC( pIRoot );
     if( pRoot && IsVisible( pRoot ) ) {
-	const CTreeContNodeBase* pOldNode = m_it->GetNode();
-	do {
-	    if( IsVisible( m_it->GetNode() ) ) {
-		if( m_it->GetNode() == pRoot ) {
-		    m_it->GoNode( pOldNode );
-		    return true;
-		}
-	    }
-	} while( m_it->GoParent() );
-	m_it->GoNode( pOldNode );
+        const CTreeContNodeBase* pOldNode = m_it->GetNode();
+        do {
+            if( IsVisible( m_it->GetNode() ) ) {
+                if( m_it->GetNode() == pRoot ) {
+                    m_it->GoNode( pOldNode );
+                    return true;
+                }
+            }
+        } while( m_it->GoParent() );
+        m_it->GoNode( pOldNode );
     }
     return false;
 }
@@ -1325,21 +1325,21 @@ CTaxTreeConstIterator::AboveNode(const ITaxon1Node* pINode) const
 {
     const CTreeContNodeBase* pNode = CastIC( pINode );
     if( pNode == m_it->GetNode() ) { // Node is not above itself
-	return false;
+        return false;
     }
 
     if( pNode && IsVisible( pNode ) ) {
-	const CTreeContNodeBase* pOldNode = m_it->GetNode();
-	m_it->GoNode( pNode );
-	do {
-	    if( IsVisible( m_it->GetNode() ) ) {
-		if( m_it->GetNode() == pOldNode ) {
-		    m_it->GoNode( pOldNode );
-		    return true;
-		}
-	    }
-	} while( m_it->GoParent() );
-	m_it->GoNode( pOldNode );
+        const CTreeContNodeBase* pOldNode = m_it->GetNode();
+        m_it->GoNode( pNode );
+        do {
+            if( IsVisible( m_it->GetNode() ) ) {
+                if( m_it->GetNode() == pOldNode ) {
+                    m_it->GoNode( pOldNode );
+                    return true;
+                }
+            }
+        } while( m_it->GoParent() );
+        m_it->GoNode( pOldNode );
     }
     return false;
 }
@@ -1348,17 +1348,17 @@ bool
 CTreeLeavesBranchesIterator::IsVisible( const CTreeContNodeBase* pNode ) const
 {
     return pNode &&
-	( pNode->IsRoot() || pNode->IsTerminal() ||
-	  !pNode->Child()->IsLastChild() );
+        ( pNode->IsRoot() || pNode->IsTerminal() ||
+          !pNode->Child()->IsLastChild() );
 }
 
 bool
 CTreeBestIterator::IsVisible( const CTreeContNodeBase* pNode ) const
 {
     return pNode &&
-	( pNode->IsRoot() || pNode->IsTerminal() ||
-	  !pNode->Child()->IsLastChild() ||
-	  !(pNode->IsLastChild() && pNode->IsFirstChild()) );
+        ( pNode->IsRoot() || pNode->IsTerminal() ||
+          !pNode->Child()->IsLastChild() ||
+          !(pNode->IsLastChild() && pNode->IsFirstChild()) );
 
 }
 
@@ -1366,7 +1366,7 @@ bool
 CTreeBlastIterator::IsVisible( const CTreeContNodeBase* pNode ) const
 {
     return pNode && ( pNode->IsRoot() ||
-		      !CastCI(pNode)->GetBlastName().empty() );
+                      !CastCI(pNode)->GetBlastName().empty() );
 }
 
 
@@ -1377,6 +1377,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.24  2005/06/03 16:56:26  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.23  2004/10/06 18:52:06  domrach
  * Bug fix in the s_NofTokens. Some weird modifier assigning rule removed
  *

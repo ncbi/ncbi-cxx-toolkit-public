@@ -390,7 +390,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
 static bool s_IsLegalECNumber(const string& ec_number)
 {
     ITERATE (string, it, ec_number) {
-        if (!isdigit(*it)  &&  *it != '.'  &&  *it != '-') {
+        if (!isdigit((unsigned char)(*it))  &&  *it != '.'  &&  *it != '-') {
             return false;
         }
     }
@@ -3673,6 +3673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2005/06/03 16:59:43  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.54  2005/05/04 19:05:00  ucko
 * Take advantage of PNoase_CStr when comparing C strings.
 *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2005/06/03 16:53:00  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.11  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -105,9 +108,9 @@ ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 
     if (chain == '|') {
         return s << GetMol().Get() << "|VB";
-    } else if ( islower(chain) != 0 ) {
+    } else if ( islower((unsigned char) chain) != 0 ) {
         return s << GetMol().Get() << '|'
-                 << (char) toupper(chain) << (char) toupper(chain);
+                 << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
     } else if ( chain == '\0' ) {
         return s << GetMol().Get() << "| ";
     } 

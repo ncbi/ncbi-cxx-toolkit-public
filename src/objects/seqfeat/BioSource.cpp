@@ -136,7 +136,7 @@ static CSubSource* s_StringToSubSource(const string& str)
         size_t num_spaces = 0;
         bool has_comma = false;
         ITERATE (string, it, name) {
-            if (isspace(*it)) {
+            if (isspace((unsigned char)(*it))) {
                 ++num_spaces;
             } else if (*it == ',') {
                 has_comma = true;
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2005/06/03 16:52:28  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.5  2005/05/20 20:57:57  ucko
 * Rework x_SubtypeCleanup to build against WorkShop's STL implementation,
 * which doesn't allow sorting lists via custom comparators.

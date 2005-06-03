@@ -509,7 +509,7 @@ static string& s_FixMedlineName(string& s)
         for (SIZE_TYPE i = space + 1;  i < s.size();  ++i) {
             if (s[i] == ' ') {
                 break;
-            } else if (isupper(s[i])) {
+            } else if (isupper((unsigned char) s[i])) {
                 s.insert(++i, 1, ',');
             }
         }
@@ -651,6 +651,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/06/03 16:59:26  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.12  2005/03/31 13:11:33  dicuccio
 * Added export specifiers.  Implemented dtor, added hidden copy ctor/alignment
 * operator to satisfy requirements of predeclaration.

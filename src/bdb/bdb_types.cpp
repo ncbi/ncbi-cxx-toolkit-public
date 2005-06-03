@@ -831,7 +831,7 @@ bool CBDB_FieldLString::IsBlank() const
     str = GetLString(str, check_legacy, &str_len);
 
     for (int i = 0; i < str_len; ++i) {
-        if (!isspace(str[i]))
+        if (!isspace((unsigned char) str[i]))
             return false;
     }
 
@@ -1034,6 +1034,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/06/03 16:39:34  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.33  2005/03/15 14:46:45  kuznets
  * Optimization in record packing
  *

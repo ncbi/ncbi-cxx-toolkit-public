@@ -199,7 +199,7 @@ void CBDB_ConfigStructureParser::ParseConfigFile(const string& fname)
 
         // check if it is a comment
         const char* s = line.c_str();
-        for( ;isspace(*s); ++s) {}
+        for(; isspace((unsigned char)(*s)); ++s) {}
         
         if (*s == 0 || *s == '#') // empty line or comment
             continue;
@@ -513,6 +513,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/06/03 16:40:17  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.9  2004/09/29 13:08:10  kuznets
  * Improved error diagnostics
  *

@@ -65,7 +65,7 @@ CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
     // Init the word deimiting alphabet
     if (m_WholeWord) {
         for (int i = 0; i < sm_AlphabetSize; ++i) {
-            m_WordDelimiters[i] = (isspace(i) != 0);
+            m_WordDelimiters[i] = (isspace((unsigned char) i) != 0);
         }
     }
 }
@@ -97,7 +97,7 @@ void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
 
     // Init the word delimiting alphabet
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper(i);
+        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
         string::size_type n = word_d.find_first_of(ch);
         m_WordDelimiters[i] = (!invert_delimiters) == (n != string::npos);
     }
@@ -115,7 +115,7 @@ void CBoyerMooreMatcher::AddDelimiters(const string& word_delimeters)
     }
 
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper(i);
+        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
         string::size_type n = word_d.find_first_of(ch);
         if (n != NPOS) {
             m_WordDelimiters[i] = true;
@@ -131,7 +131,7 @@ void CBoyerMooreMatcher::AddDelimiters(char ch)
     m_WordDelimiters[ch] = true;
 
     if (m_CaseSensitive == NStr::eNocase) {
-        ch = toupper(ch);
+        ch = toupper((unsigned char) ch);
     }
     
     m_WordDelimiters[ch] = true;
@@ -144,7 +144,7 @@ void CBoyerMooreMatcher::InitCommonDelimiters()
     }
 
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper(i);
+        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
         if ((ch >= 'A' && ch <= 'Z') ||
             (ch >= '0' && ch <= '9') ||
             (ch == '_')){
@@ -203,15 +203,15 @@ SIZE_TYPE CBoyerMooreMatcher::Search(const char*  text,
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
-            for(char text_char = toupper(text[shift + j]);
-                j >= 0 && m_Pattern[j]==(text_char=toupper(text[shift + j]));
+            for(char text_char = toupper((unsigned char) text[shift + j]);
+                j >= 0 && m_Pattern[j]==(text_char=toupper((unsigned char) text[shift + j]));
                 --j) {}
 
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
                 shift += 
-                    (unsigned int)m_LastOccurrence[toupper(text[shift + j])];
+                    (unsigned int)m_LastOccurrence[toupper((unsigned char) text[shift + j])];
             }
         }
     }
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/06/03 17:04:55  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.17  2004/05/27 13:40:58  kuznets
 * Fixed warnings (GCC 3.4)
 *

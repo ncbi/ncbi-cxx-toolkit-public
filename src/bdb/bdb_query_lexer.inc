@@ -65,7 +65,7 @@ int yylex(YYSTYPE *lvalp, void* param)
     CBDB_QueryParserEnvironment* env = (CBDB_QueryParserEnvironment*) param;
 
     // Skip white space 
-    while (isspace(c = env->GetChar()));
+    while (isspace((unsigned char)(c = env->GetChar())));
 
     // Process single char tokens
     for (i = 0; i < sizeof(char_tokens) / sizeof(char_tokens[0]); ++i) {
@@ -126,11 +126,11 @@ int yylex(YYSTYPE *lvalp, void* param)
     }
 
     // Process AND token
-    if (toupper(c) == 'A') {
+    if (toupper((unsigned char) c) == 'A') {
         // look ahead if it is AND
-        if (toupper(tok_start[1]) == 'N' &&
-            toupper(tok_start[2]) == 'D' &&
-            isspace(tok_start[3])
+        if (toupper((unsigned char) tok_start[1]) == 'N' &&
+            toupper((unsigned char) tok_start[2]) == 'D' &&
+            isspace((unsigned char) tok_start[3])
            ) {
             env->Skip(3);
             return AND;
@@ -138,10 +138,10 @@ int yylex(YYSTYPE *lvalp, void* param)
     }
 
     // Process OR token
-    if (toupper(c) == 'O') {
+    if (toupper((unsigned char) c) == 'O') {
         // look ahead if it is OR
-        if (toupper(tok_start[1]) == 'R' &&
-            isspace(tok_start[2])
+        if (toupper((unsigned char) tok_start[1]) == 'R' &&
+            isspace((unsigned char) tok_start[2])
            ) {
             env->Skip(2);
             return OR;
@@ -149,11 +149,11 @@ int yylex(YYSTYPE *lvalp, void* param)
     }
 
     // Process NOT token
-    if (toupper(c) == 'N') {
+    if (toupper((unsigned char) c) == 'N') {
         // look ahead if it is NOT
-        if (toupper(tok_start[1]) == 'O' &&
-            toupper(tok_start[2]) == 'T' &&
-            isspace(tok_start[3])
+        if (toupper((unsigned char) tok_start[1]) == 'O' &&
+            toupper((unsigned char) tok_start[2]) == 'T' &&
+            isspace((unsigned char) tok_start[3])
            ) {
             env->Skip(3);
             return NOT;
@@ -161,10 +161,10 @@ int yylex(YYSTYPE *lvalp, void* param)
     }
 
     // Process name-like tokens
-    if (isalnum(c)) {
+    if (isalnum((unsigned char) c)) {
         do {
             c = env->GetChar();            
-        } while (isalnum(c) || c == '_');
+        } while (isalnum((unsigned char) c) || c == '_');
 
         env->UnGetChar();
         const char* tok_end = env->GetBufPtr();
@@ -191,6 +191,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/06/03 16:43:30  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.7  2004/03/23 16:37:55  kuznets
  * Implemented NOT predicate
  *

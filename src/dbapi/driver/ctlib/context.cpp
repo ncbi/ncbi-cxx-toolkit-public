@@ -874,7 +874,7 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
         } else {
             char* e;
             long v= strtol(vers.c_str(), &e, 10);
-            if ( v > 0 && (e == 0 || (!isalpha(*e))) ) version= v;
+            if ( v > 0 && (e == 0 || (!isalpha((unsigned char)(*e)))) ) version= v;
         }
     }
     CTLibContext* cntx= new CTLibContext(reuse_context, version);
@@ -1051,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/06/03 16:44:03  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.38  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

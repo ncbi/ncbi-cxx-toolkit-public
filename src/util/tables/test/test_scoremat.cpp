@@ -75,11 +75,11 @@ void CSMTestApplication::Init(void)
 
 
 inline static string s_FormatAA(int aa) {
-    return isprint(aa) ? string(1, (char)aa) : NStr::IntToString(aa);
+    return isprint((unsigned char) aa) ? string(1, (char) aa) : NStr::IntToString(aa);
 }
 
 inline static int s_ParseAA(string aa) {
-    return isdigit(aa[0]) ? NStr::StringToInt(aa) : aa[0];
+    return isdigit((unsigned char) aa[0]) ? NStr::StringToInt(aa) : aa[0];
 }
 
 
@@ -189,6 +189,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/06/03 17:04:20  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.4  2005/05/04 18:35:01  lavr
  * CSMTestApplication::Run(): Always init psm
  *

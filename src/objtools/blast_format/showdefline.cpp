@@ -188,11 +188,11 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             memset(dbtmp, '\0', sizeof(char)*length + 2);
             for(i = 0; i < length; i++) {    
                 /* Rolling spaces */
-                if(isspace(dbname[i]) || dbname[i] == ',') {
+                if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {
                     continue;
                 }
                 j = 0;
-                while (!isspace(dbname[i]) && j < 256  && i < length) { 
+                while (!isspace((unsigned char) dbname[i]) && j < 256  && i < length) { 
                     tmpbuff[j] = dbname[i];
                     j++; i++;
                     if(dbname[i] == ',') { /* Comma is valid delimiter */
@@ -812,6 +812,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.13  2005/06/03 16:58:34  lavr
+*Explicit (unsigned char) casts in ctype routines
+*
 *Revision 1.12  2005/05/13 14:21:37  jianye
 *No showing internal blastdb id
 *

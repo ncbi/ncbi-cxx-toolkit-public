@@ -975,19 +975,19 @@ bool s_GetDigits(const string& pages, string& digits)
     digits.erase();
 
     // skip alpha at the begining 
-    while (pos < len  &&  !isdigit(pages[pos])) {
+    while (pos < len  &&  !isdigit((unsigned char) pages[pos])) {
         ++pos;
     }
 
-    while (pos < len  &&  isdigit(pages[pos])) {
+    while (pos < len  &&  isdigit((unsigned char) pages[pos])) {
         digits += pages[pos];
         ++pos;
     }
 
-    _ASSERT (pos >= len  ||  !isdigit(pages[pos]));
+    _ASSERT (pos >= len  ||  !isdigit((unsigned char) pages[pos]));
 
     while (pos < len) {
-        if (isdigit(pages[pos])) {
+        if (isdigit((unsigned char) pages[pos])) {
             digits.erase();
             return false;
         }
@@ -1010,7 +1010,7 @@ void CValidError_imp::x_ValidatePages
     EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
     
     ITERATE (string, it, pages) {
-        if (!isalnum(*it)  &&  *it != '-') {
+        if (!isalnum((unsigned char)(*it))  &&  *it != '-') {
             PostErr(sev, eErr_GENERIC_BadPageNumbering,
                 "Page numbering contain bad characters", obj);
             return;
@@ -1031,8 +1031,8 @@ void CValidError_imp::x_ValidatePages
         return;
     }
     
-    if ((isalpha(start[0])  &&  !isalpha(stop[0]))  ||
-        (isdigit(start[0])  &&  !isdigit(stop[0]))) {
+    if ((isalpha((unsigned char) start[0])  &&  !isalpha((unsigned char) stop[0]))  ||
+        (isdigit((unsigned char) start[0])  &&  !isdigit((unsigned char) stop[0]))) {
         PostErr(sev, eErr_GENERIC_BadPageNumbering,
             "Inconsistent page numbering", obj);
         return;
@@ -1964,7 +1964,7 @@ void CValidError_imp::ReportBioseqsWithNoMolinfo(void)
 
 bool CValidError_imp::IsNucAcc(const string& acc)
 {
-    if ( isupper(acc[0])  &&  acc.find('_') != NPOS ) {
+    if ( isupper((unsigned char) acc[0])  &&  acc.find('_') != NPOS ) {
         return true;
     }
 
@@ -2043,8 +2043,8 @@ bool CValidError_imp::IsSerialNumberInComment(const string& comment)
     size_t pos = comment.find('[', 0);
     while ( pos != string::npos ) {
         ++pos;
-        if ( isdigit(comment[pos]) ) {
-            while ( isdigit(comment[pos]) ) {
+        if ( isdigit((unsigned char) comment[pos]) ) {
+            while ( isdigit((unsigned char) comment[pos]) ) {
                 ++pos;
             }
             if ( comment[pos] == ']' ) {
@@ -2405,7 +2405,7 @@ void CValidError_imp::ValidateSourceQualTags
             bool okay = true;
             if ( (int)(i - str_len) >= 0 ) {
                 char ch = str[i - str_len];
-                if ( !isspace(ch) || ch != ';' ) {
+                if ( !isspace((unsigned char) ch) || ch != ';' ) {
                     okay = false;
                 }
             }
@@ -2591,6 +2591,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/06/03 17:02:31  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.64  2005/01/12 17:24:26  vasilche
 * Avoid performance warning on MSVC.
 *

@@ -121,9 +121,9 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
                     alignedSlaveSeqLoc = (*a)->masterToSlave[masterSeqLoc];
                     if (alignedSlaveSeqLoc >= 0) {
                         textRows.front()->SetCharAt(alnLoc,
-                            toupper(textRows.front()->GetCharAt(alnLoc)));
+                            toupper((unsigned char) textRows.front()->GetCharAt(alnLoc)));
                         textRows.back()->SetCharAt(alnLoc,
-                            toupper((*a)->slave->sequenceString[alignedSlaveSeqLoc]));
+                            toupper((unsigned char) (*a)->slave->sequenceString[alignedSlaveSeqLoc]));
                     }
                 }
 
@@ -1059,7 +1059,7 @@ int AlignmentDisplay::DumpFASTA(int firstCol, int lastCol, int nColumns,
         for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
             for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                 char ch = textRows[row]->GetCharAt(firstCol+paragraphStart+i);
-                if (!doLowercase) ch = toupper(ch);
+                if (!doLowercase) ch = toupper((unsigned char) ch);
                 os << ch;
             }
             os << '\n';
@@ -1107,7 +1107,7 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
     Char2Double profile;
     Char2Double::iterator p, pe;
     for (row=0; row<GetNRows(); ++row) {
-        char ch = toupper(textRows[row]->GetCharAt(alnLoc));
+        char ch = toupper((unsigned char) textRows[row]->GetCharAt(alnLoc));
         switch (ch) {
             case 'A': case 'R': case 'N': case 'D': case 'C':
             case 'Q': case 'E': case 'G': case 'H': case 'I':
@@ -1243,6 +1243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/06/03 16:58:48  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.7  2004/09/23 19:26:22  thiessen
 * shorten and escape single quotes in status strings
 *

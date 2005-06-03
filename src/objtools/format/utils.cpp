@@ -78,9 +78,9 @@ void ExpandTildes(string& s, ETildeStyle style)
         char next = (tilde + 1) < length ? s[tilde + 1] : 0;
         switch ( style ) {
         case eTilde_space:
-            if ( (tilde + 1 < length  &&  isdigit(next) )  ||
+            if ( (tilde + 1 < length  &&  isdigit((unsigned char) next) )  ||
                  (tilde + 2 < length  &&  (next == ' '  ||  next == '(')  &&
-                  isdigit(s[tilde + 2]))) {
+                  isdigit((unsigned char) s[tilde + 2]))) {
                 result += '~';
             } else {
                 result += ' ';
@@ -193,7 +193,7 @@ void TrimSpaces(string& str, int indent)
     }
 
     int end = str.length() - 1;
-    while (end >= indent  &&  isspace(str[end])) {
+    while (end >= indent  &&  isspace((unsigned char) str[end])) {
         end--;
     }
     if (end < indent) {
@@ -250,7 +250,7 @@ static bool s_IsWholeWord(const string& str, size_t pos)
     // This was an old bug in the C toolkit that was never fixed and by now
     // has become the expected behavior.
     return (pos > 0) ?
-        isspace(str[pos - 1])  ||  ispunct(str[pos - 1]) : true;
+        isspace((unsigned char) str[pos - 1])  ||  ispunct((unsigned char) str[pos - 1]) : true;
 }
 
 
@@ -307,7 +307,7 @@ static bool s_IsValidAccession(const string& acc)
     }
 
     // first character must be uppercase letter
-    if ( !(isalpha(acc[0])  &&  isupper(acc[0])) ) {
+    if ( !(isalpha((unsigned char) acc[0])  &&  isupper((unsigned char) acc[0])) ) {
         return false;
     }
 
@@ -319,9 +319,9 @@ static bool s_IsValidAccession(const string& acc)
     if ( NStr::StartsWith(acc, "NZ_") ) {
         ptr += 3;
     }
-    for ( ; isalpha(*ptr); ++ptr, ++num_alpha );
+    for ( ; isalpha((unsigned char)(*ptr)); ++ptr, ++num_alpha );
     for ( ; *ptr == '_'; ++ptr, ++num_undersc );
-    for ( ; isdigit(*ptr); ++ptr, ++num_digits );
+    for ( ; isdigit((unsigned char)(*ptr)); ++ptr, ++num_digits );
 
     if ( (*ptr != '\0')  &&  (*ptr != ' ')  &&  (*ptr != '.') ) {
         return false;
@@ -385,7 +385,7 @@ static bool s_IsValidDotVersion(const string& accn)
     }
     size_t num_digis = 0;
     for (++pos; pos < accn.size(); ++pos) {
-        if (isdigit(accn[pos])) {
+        if (isdigit((unsigned char) accn[pos])) {
             ++num_digis;
         } else {
             return false;
@@ -681,6 +681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/06/03 17:01:02  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.22  2005/03/29 18:18:09  shomrat
 * Bug fix in TrimSpaces
 *

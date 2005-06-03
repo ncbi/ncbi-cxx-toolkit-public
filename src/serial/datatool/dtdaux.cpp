@@ -277,7 +277,7 @@ string DTDElement::CreateEmbeddedName(int depth) const
     list<string>::const_iterator i;
     for ( i = m_Refs.begin(); i != m_Refs.end(); ++i) {
         tmp = i->substr(0,depth);
-        tmp[0] = toupper(tmp[0]);
+        tmp[0] = toupper((unsigned char) tmp[0]);
         name += tmp;
     }
     return name;
@@ -320,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2005/06/03 17:05:33  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.3  2005/01/06 20:22:14  gouriano
  * Added name property to lexers - for better diagnostics
  *

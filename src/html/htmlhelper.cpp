@@ -199,7 +199,7 @@ string CHTMLHelper::StripTags(const string& str)
             break;
         }
         if (pos < s.size()  &&
-            (isalpha((int)s[pos + 1]) || s[pos + 1] == '/' )) {
+            (isalpha((unsigned char) s[pos + 1]) || s[pos + 1] == '/' )) {
             s.erase(pos, pos_end - pos + 1);
         } else {
             pos++;
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/03 16:48:43  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.21  2005/05/05 12:19:50  ivanov
  * Fixed CHTMLHelper::StripTags() to correct strip consecutive tags
  *

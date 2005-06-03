@@ -182,7 +182,7 @@ CNcbiOstrstreamToString::operator string(void) const
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
-        out.put(char(toupper(*c)));
+        out.put(char(toupper((unsigned char)(*c))));
     }
     return out;
 }
@@ -198,7 +198,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s)
 {
     for ( const char* c = s.m_String; *c; ++c ) {
-        out.put(char(toupper(*c)));
+        out.put(char(toupper((unsigned char)(*c))));
     }
     return out;
 }
@@ -376,6 +376,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/06/03 16:42:03  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.34  2005/05/13 11:39:51  ivanov
  * Define CNcbiOstream& operator<< __int64 for MSVC 6 only
  *

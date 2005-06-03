@@ -191,7 +191,7 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
     }
 
     for (const char* s = str.c_str();  *s;  s++) {
-        if ( !isprint(*s) ) {
+        if ( !isprint((unsigned char)(*s)) ) {
             NCBI_THROW2(CCgiCookieException, eValue,
                         "Unprintable symbol '"
                         + NStr::PrintableString(string(1, *s))
@@ -1565,6 +1565,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.95  2005/06/03 16:40:27  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.94  2005/05/31 13:43:21  didenko
 * Created private methods for Query String and Input Stream processing
 *

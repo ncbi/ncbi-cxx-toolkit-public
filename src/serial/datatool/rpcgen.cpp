@@ -65,7 +65,7 @@ static void s_SplitName(const string& name, string& type, string& field)
 {
     for (SIZE_TYPE pos = name.find('.');  pos != NPOS;
          pos = name.find('.', pos + 1)) {
-        if (islower(name[pos + 1])) {
+        if (islower((unsigned char) name[pos + 1])) {
             type.assign(name, 0, pos);
             field.assign(name, pos + 1, NPOS);
             return;
@@ -517,6 +517,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.13  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

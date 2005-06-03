@@ -209,8 +209,8 @@ void g_SubstituteParam(string& query, const string& name, const string& val)
             continue;
         }
         if (NStr::Compare(query, pos, name_len, name) == 0
-            && (pos == 0 || !isalnum(query[pos - 1]))
-            && !isalnum(query[pos + name_len])
+            && (pos == 0 || !isalnum((unsigned char) query[pos - 1]))
+            && !isalnum((unsigned char) query[pos + name_len])
             && query[pos + name_len] != '_') {
             query.replace(pos, name_len, val);
             len = query.length();
@@ -227,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/06/03 16:43:55  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.13  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -2027,7 +2027,7 @@ static int s_StringNICmp (char * str1, char *str2, int cmp_count)
     cp2 = str2;
     char_count = 0;
     while (*cp1 != 0  &&  *cp2 != 0  &&  char_count < cmp_count) {
-        diff = toupper ((int) *cp1) - toupper ((int) *cp2);
+        diff = toupper ((unsigned char)(*cp1)) - toupper ((unsigned char)(*cp2));
         if (diff != 0) {
             return diff;
         }
@@ -5853,6 +5853,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/03 17:03:57  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.21  2005/05/12 17:41:01  bollin
  * changed cast for ctype classification macros
  *

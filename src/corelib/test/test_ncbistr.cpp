@@ -251,7 +251,7 @@ struct SStringNumericValues
         return u8 != Uint8(kBadValue);
     }
     bool Same(const string& s) const {
-        if ( str[0] == '+' && isdigit(str[1]&255) )
+        if ( str[0] == '+' && isdigit((unsigned char) str[1]) )
             return s == str + 1;
         else
             return s == str;
@@ -354,7 +354,7 @@ int CTestApplication::Run(void)
             int value = NStr::StringToNumeric(str);
             Uint8 num = test->u8;
             int expected = -1;
-            if ( isdigit(str[0]&255) &&
+            if ( isdigit((unsigned char) str[0]) &&
                  test->IsGoodU8() &&
                  num <= Uint8(kMax_Int) ) {
                 expected = int(num);
@@ -1169,6 +1169,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.45  2005/06/03 16:42:46  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.44  2005/05/16 15:55:42  ivanov
  * Fixed compilation warning
  *

@@ -1067,7 +1067,7 @@ bool IsBlankString(const string& str)
     if ( !str.empty() ) {
         size_t len = str.length();
         for ( size_t i = 0; i < len; ++i ) {
-            if ( !isspace(str[i]) ) {
+            if ( !isspace((unsigned char) str[i]) ) {
                 return false;
             }
         }
@@ -1142,6 +1142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/06/03 17:02:31  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.23  2004/12/06 17:42:45  ucko
 * GetSequenceFromLoc: don't use the CSeqVector constructor that just disappeared.
 *

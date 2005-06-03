@@ -377,10 +377,10 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
             }
             code = min(kInvalidCode, code);
             if ( case_cvt == eCaseConversion_upper ) {
-                code = toupper(char(code));
+                code = toupper((unsigned char)code);
             }
             else if( case_cvt == eCaseConversion_lower ) {
-                code = tolower(char(code));
+                code = tolower((unsigned char) code);
             }
             table[i] = char(code);
         }
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/06/03 16:57:34  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.74  2005/04/26 18:48:00  vasilche
 * Use case conversion to get gap symbol.
 * Removed obsolete structur SSeqData.

@@ -191,9 +191,9 @@ string IFlatFormatter::ExpandTildes(const string& s, ETildeStyle style)
         char next = start < length ? s[start] : 0;
         switch (style) {
         case eTilde_space:
-            if ((start < length  &&  isdigit(next))
+            if ((start < length  &&  isdigit((unsigned char) next))
                 ||  (start + 1 < length  &&  (next == ' '  ||  next == '(')
-                     &&  isdigit(s[start + 1]))) {
+                     &&  isdigit((unsigned char) s[start + 1]))) {
                 result += '~';
             } else {
                 result += ' ';
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/06/03 16:59:17  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.11  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
