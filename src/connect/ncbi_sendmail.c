@@ -326,6 +326,7 @@ const char* CORE_SendMailEx(const char*          to,
                             const char*          body,
                             const SSendMailInfo* uinfo)
 {
+    static const STimeout zero;
     const SSendMailInfo* info;
     SSendMailInfo ainfo;
     char buffer[1024];
@@ -430,6 +431,8 @@ const char* CORE_SendMailEx(const char*          to,
         int/*bool*/ newline = 0/*false*/;
         while (n < m) {
             size_t k = 0;
+            if (SOCK_Wait(sock, eIO_Read, &zero) != eIO_Timeout)
+                break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (info->header[n] == '\n') {
                     memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
@@ -447,6 +450,8 @@ const char* CORE_SendMailEx(const char*          to,
             if (!s_SockWrite(sock, buffer))
                 SENDMAIL_RETURN("Write error while sending custom header");
         }
+        if (n < m)
+            SENDMAIL_RETURN("Header write error");
         if (!newline && !s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error while finalizing custom header");
     }
@@ -460,6 +465,8 @@ const char* CORE_SendMailEx(const char*          to,
         }
         while (n < m) {
             size_t k = 0;
+            if (SOCK_Wait(sock, eIO_Read, &zero) != eIO_Timeout)
+                break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
                     memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
@@ -482,12 +489,15 @@ const char* CORE_SendMailEx(const char*          to,
             if (!s_SockWrite(sock, buffer))
                 SENDMAIL_RETURN("Write error while sending message body");
         }
+        if (n < m)
+            SENDMAIL_RETURN("Body write error");
         if ((!newline  &&  m  &&  !s_SockWrite(sock, MX_CRLF))
             ||  !s_SockWrite(sock, "." MX_CRLF)) {
             SENDMAIL_RETURN("Write error while finalizing message body");
         }
     } else if (!s_SockWrite(sock, "." MX_CRLF))
         SENDMAIL_RETURN("Write error while finalizing message");
+
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in sending message", buffer);
 
@@ -509,6 +519,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2005/06/04 00:14:58  lavr
+ * Do read probes when writing long data chunks
+ *
  * Revision 6.23  2005/03/18 16:35:39  lavr
  * Fix \r\n parse bug in both header and body
  *
