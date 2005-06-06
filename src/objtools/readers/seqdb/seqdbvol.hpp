@@ -74,14 +74,14 @@ public:
     /// extension.
     /// 
     /// @param atlas
-    ///   The memory management layer object
+    ///   The memory management layer object.
     /// @param name
-    ///   The base name of the volumes files
+    ///   The base name of the volumes files.
     /// @param prot_nucl
-    ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl
+    ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl.
     /// @param user_gilist
     ///   If specified, will be used to filter deflines by GI.
-    /// @param locked
+    /// @param locked.
     ///   The lock holder object for this thread.
     CSeqDBVol(CSeqDBAtlas    & atlas,
               const string   & name,

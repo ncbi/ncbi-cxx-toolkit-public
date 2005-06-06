@@ -1177,8 +1177,6 @@ public:
     /// 
     /// @param memreg
     ///   Memory registration tracking object.
-    /// @param locked
-    ///   The lock hold object for this thread.
     void UnregisterExternal(CSeqDBMemReg & memreg);
     
     /// Lock the atlas.

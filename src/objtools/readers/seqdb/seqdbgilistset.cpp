@@ -76,10 +76,10 @@ public:
     /// Given a GI list file mapped into a region of memory, this
     /// class reads the GIs from the file.
     ///
-    /// @param beginp
-    ///   Beginning of the memory mapped region.
-    /// @param endp
-    ///   First byte past the end of the memory mapped region.
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param fname
+    ///   The filename of this GI list.
     /// @param locked
     ///   Lock holder object for this thread.
     CSeqDBNodeFileGiList(CSeqDBAtlas    & atlas,

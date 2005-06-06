@@ -80,6 +80,8 @@ public:
     ///   The CSeqDBAtlas object.
     /// @param volumes
     ///   The set of database volumes.
+    /// @param gi_list
+    ///   The User GI List (if there is one).
     /// @param locked
     ///   The lock holder object for this thread.
     CSeqDBOIDList(CSeqDBAtlas        & atlas,
@@ -332,6 +334,8 @@ private:
     ///   The object specifying the filtering options.
     /// @param vol
     ///   The volume entry describing the volume to work with.
+    /// @param gis
+    ///   An object that manages the GI lists used here.
     /// @param locked
     ///   The lock holder object for this thread.
     void x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,

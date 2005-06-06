@@ -723,6 +723,8 @@ private:
     /// key is less than the sample, or 1 if the key is greater.  If
     /// the match is exact, it will also return the data in data_out.
     ///
+    /// @param index_lease
+    ///   The memory lease to use with the index file.
     /// @param index
     ///   The index of the sample to get.
     /// @param key_in
@@ -746,6 +748,8 @@ private:
     /// data value will also be returned.  The offset of the data
     /// block is computed and returned as well.
     ///
+    /// @param index_lease
+    ///   The memory lease to use with the index file.
     /// @param index
     ///   The index of the sample to get.
     /// @param key_out
@@ -753,10 +757,31 @@ private:
     /// @param data_out
     ///   If an exact match, the data found will be returned here.
     void x_GetNumericSample(CSeqDBMemLease & index_lease,
-                            int   index,
-                            int & key_out,
-                            int & data_out);
+                            int              index,
+                            int            & key_out,
+                            int            & data_out);
     
+    /// Advance the GI list
+    ///
+    /// Skip over any GIs in the GI list that are less than the key,
+    /// translate any that are equal to it, and skip past any GI/OID
+    /// pairs that have already been translated.  Uses the parabolic
+    /// binary search technique.
+    ///
+    /// @param vol_start
+    ///   The starting OID of the volume.
+    /// @param vol_end
+    ///   The ending OID of the volume.
+    /// @param gis
+    ///   The GI list to advance through.
+    /// @param index
+    ///   The working index into the GI list.
+    /// @param key
+    ///   The current key in the ISAM file.
+    /// @param data
+    ///   The data corresponding to key.
+    /// @return
+    ///   Returns true if any advancement was possible.
     bool x_AdvanceGiList(int            vol_start,
                          int            vol_end,
                          CSeqDBGiList & gis,
@@ -764,6 +789,23 @@ private:
                          int            key,
                          int            data);
     
+    /// Advance the ISAM file
+    ///
+    /// Skip over any GI/OID pairs in the ISAM file that are less than
+    /// the target_gi.  Uses the parabolic binary search technique.
+    ///
+    /// @param index_lease
+    ///   The memory lease to use with the index file.
+    /// @param index
+    ///   The working index into the ISAM file.
+    /// @param target_gi
+    ///   The GI from the GI list for which we are searching.
+    /// @param isam_key
+    ///   The key of the current location in the ISAM file.
+    /// @param isam_data
+    ///   The data corresponding to isam_key.
+    /// @return
+    ///   Returns true if any advancement was possible.
     bool x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                             int            & index,
                             int              target_gi,

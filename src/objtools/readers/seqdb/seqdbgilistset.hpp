@@ -66,6 +66,8 @@ public:
     /// mentioned in the user GI list will be available (but the
     /// translation should be faster).
     ///
+    /// @param atlas
+    ///   The memory management layer object.
     /// @param vol_set
     ///   The set of database volumes.
     /// @param user_gi_list
@@ -94,6 +96,14 @@ public:
     ///
     /// @param filename
     ///   The filename of the GI list file.
+    /// @param volp
+    ///   The volume to which this GI list is applied.
+    /// @param vol_start
+    ///   Starting oid for this volume 
+    /// @param vol_end
+    ///   Ending oid for this volume.
+    /// @param locked
+    ///   The lock holder object for this thread.
     /// @return
     ///   A reference to the specified GI list.
     TListRef GetNodeGiList(const string    & filename,

@@ -82,6 +82,9 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
 ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
 ///   fails, this platform does not support it, the less efficient
 ///   read and write calls are used instead.
+/// @param gi_list
+///   If non-null, this GI list will be used to filter the deflines
+///   and OIDs.
 /// @return
 ///   The CSeqDBImpl object that was created.
 

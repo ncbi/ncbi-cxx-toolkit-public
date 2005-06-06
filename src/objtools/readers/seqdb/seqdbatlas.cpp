@@ -388,7 +388,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 
 void CRegionMap::x_Roundup(TIndx       & begin,
                            TIndx       & end,
-                           Int4        & penalty,
+                           int         & penalty,
                            TIndx         file_size,
                            bool          use_mmap,
                            CSeqDBAtlas * atlas)

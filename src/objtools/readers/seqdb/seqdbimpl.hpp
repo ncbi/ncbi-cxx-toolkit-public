@@ -107,9 +107,6 @@ private:
 
 class CSeqDBImpl {
 public:
-    /// Numeric type that can span all OIDs for one instance of SeqDB.
-    typedef int TOID;
-    
     /// Constructor
     ///
     /// This builds a CSeqDBImpl object from the provided parameters,
@@ -389,10 +386,10 @@ public:
     /// @return
     ///   eOidList in enumeration case, or eOidRange in begin/end range case.
     CSeqDB::EOidListType
-    GetNextOIDChunk(TOID         & begin_chunk,
-                    TOID         & end_chunk,
-                    vector<TOID> & oid_list,
-                    int          * oid_state);
+    GetNextOIDChunk(int         & begin_chunk,
+                    int         & end_chunk,
+                    vector<int> & oid_list,
+                    int         * oid_state);
     
     /// Get list of database names.
     ///
@@ -436,10 +433,10 @@ public:
     bool OidToGi(int oid, int & gi) const;
     
     /// Find OIDs matching the specified string.
-    void AccessionToOids(const string & acc, vector<TOID> & oids) const;
+    void AccessionToOids(const string & acc, vector<int> & oids) const;
     
     /// Translate a CSeq-id to a list of OIDs.
-    void SeqidToOids(const CSeq_id & seqid, vector<TOID> & oids) const;
+    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
     
     /// Find the OID corresponding to the offset given in residues,
     /// into the database as a whole.
