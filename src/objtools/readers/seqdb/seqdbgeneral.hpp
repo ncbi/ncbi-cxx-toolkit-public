@@ -40,7 +40,7 @@
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include "seqdbatlas.hpp"
-
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -281,6 +281,94 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 /// Thow a SeqDB exception; this is seperated into a function
 /// primarily to allow a breakpoint to be set.
 void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
+
+
+/// Simple "Copy Collector" Like Cache
+///
+/// This code implements a simple STL map based cache with limited LRU
+/// properties.  The cache is given a size, and will maintain a size
+/// somewhere between half this number and this number of entries.
+
+template<typename TKey, typename TValue>
+class CSeqDBSimpleCache {
+public:
+    /// Constructor
+    ///
+    /// Constructs a cache with the specified size limit.
+    ///
+    /// @param sz
+    ///   Maximum size of the cache.
+    CSeqDBSimpleCache(int sz)
+        : m_MaxSize(sz/2)
+    {
+        if (m_MaxSize < 4) {
+            m_MaxSize = 4;
+        }
+    }
+    
+    /// Lookup a value in the cache.
+    ///
+    /// Like the C++ STL's map::operator[], this method will find the
+    /// specified cache mapping and return a reference to the value at
+    /// that location.  If the key was not found, the key will be
+    /// inserted with a null value and the reference to that null
+    /// returned (the caller may assign to it to add a value).
+    ///
+    /// @param k
+    ///     The key to find or insert in the cache.
+    TValue & Lookup(const TKey & k)
+    {
+        TMapIter i = m_Mapping.find(k);
+        
+        // If we have it, just return it.
+        
+        if (i != m_Mapping.end()) {
+            return (*i).second;
+        }
+        
+        i = m_OldMap.find(k);
+        
+        // If the old version has it, transfer to the new version.
+        // The erase here is optional.  It should not affect the
+        // code except to reduce memory requirements and possibly
+        // to speed up lookups in oldmap.
+        
+        if (i != m_OldMap.end()) {
+            TValue & rv = m_Mapping[k] = ((*i).second);
+            m_OldMap.erase(i);
+            
+            return rv;
+        }
+        
+        // Otherwise, add a new value, returning a reference to it.
+        // Since we are expanding the map, we may swap the containers
+        // and discard the old values here.
+        
+        if (int(m_Mapping.size()) >= m_MaxSize) {
+            m_OldMap.clear();
+            m_Mapping.swap(m_OldMap);
+        }
+        
+        return m_Mapping[k];
+    }
+    
+private:
+    /// The underlying associative array type.
+    typedef std::map<TKey, TValue> TMap;
+    
+    /// The underlying associative array iterator type.
+    typedef typename TMap::iterator TMapIter;
+    
+    /// Values will be added to this mapping until size is reached.
+    TMap m_Mapping;
+    
+    /// Values from m_Mapping are moved here when size is exceeded.
+    TMap m_OldMap;
+    
+    /// Maximum size of the m_Mapping container.
+    int m_MaxSize;
+};
+
 
 END_NCBI_SCOPE
 

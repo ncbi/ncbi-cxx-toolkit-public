@@ -619,6 +619,9 @@ private:
     
     /// The User GI list for the entire CSeqDB object.
     mutable CRef<CSeqDBGiList> m_UserGiList;
+    
+    /// Cache header data for sequences.
+    mutable CSeqDBSimpleCache<int, CRef<CBlast_def_line_set> > m_HeaderCache;
 };
 
 END_NCBI_SCOPE

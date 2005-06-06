@@ -791,7 +791,7 @@ private:
     mutable CRef<CSeqDBIsam> m_IsamStr;
     
     /// This cache allows CBioseqs to share taxonomic objects.
-    mutable map< int, CRef<CSeqdesc> > m_TaxCache;
+    mutable CSeqDBSimpleCache< int, CRef<CSeqdesc> > m_TaxCache;
     
     /// The user GI list, if one exists.
     mutable CRef<CSeqDBGiList> m_UserGiList;

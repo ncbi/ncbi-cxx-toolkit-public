@@ -56,7 +56,8 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
       m_VolName (name),
       m_Idx     (atlas, name, prot_nucl, locked),
       m_Seq     (atlas, name, prot_nucl, locked),
-      m_Hdr     (atlas, name, prot_nucl, locked)
+      m_Hdr     (atlas, name, prot_nucl, locked),
+      m_TaxCache(256)
 {
     if (user_gilist) {
         m_UserGiList.Reset(user_gilist);
@@ -876,8 +877,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                          CSeqDBLockHold      & locked) const
 {
     const bool provide_new_taxonomy_info = true;
-    const bool use_taxinfo_cache         = false;
-    const int  max_taxcache_size         = 200;
+    const bool use_taxinfo_cache         = true;
     
     const char * TAX_ORGREF_DB_NAME = "taxon";
     
@@ -911,7 +911,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
         
         bool have_org_desc = false;
         
-        if (use_taxinfo_cache && m_TaxCache[taxid].NotEmpty()) {
+        if (use_taxinfo_cache && m_TaxCache.Lookup(taxid).NotEmpty()) {
             have_org_desc = true;
         }
         
@@ -935,7 +935,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
         
         if (provide_new_taxonomy_info) {
             if (have_org_desc) {
-                taxonomy.push_back(m_TaxCache[taxid]);
+                taxonomy.push_back(m_TaxCache.Lookup(taxid));
             } else {
                 CRef<CDbtag> org_tag(new CDbtag);
                 org_tag->SetDb(TAX_ORGREF_DB_NAME);
@@ -956,28 +956,11 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                 taxonomy.push_back(desc);
                 
                 if (use_taxinfo_cache) {
-                    // Simple memory usage limitation.  This could
-                    // probably be profiled to determine the best max
-                    // size to use.  If you use more than 200 or so,
-                    // the cache may be hurting more than helping.  It
-                    // would be easy to make this more sophisticated.
-                    
-                    if ((int) m_TaxCache.size() > max_taxcache_size) {
-                        m_TaxCache.clear();
-                    }
-                    
-                    m_TaxCache[taxid] = desc;
+                    m_TaxCache.Lookup(taxid) = desc;
                 }
             }
         }
     }
-    
-//     int counter(0);
-//    
-//     ITERATE(list< CRef<CSeqdesc> >, iter, taxonomy) {
-//         cout << "DATA: " << counter << " " << (*iter)->GetSource().GetOrg().GetTaxname() << endl;
-//         counter++;
-//     }
     
     return taxonomy;
 }

@@ -56,7 +56,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_VolumeLength (0),
       m_SeqType      (prot_nucl),
       m_OidListSetup (false),
-      m_UserGiList   (gi_list)
+      m_UserGiList   (gi_list),
+      m_HeaderCache  (256)
 {
     INIT_CLASS_MARK();
     m_Aliases.SetMasks(m_VolSet);
@@ -390,8 +391,10 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi) const
 void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
     CHECK_MARKER();
+    
     // This can return either an allocated object or a reference to
     // part of a memory mapped region.
+    
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
@@ -560,16 +563,24 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
     CHECK_MARKER();
     m_Atlas.Lock(locked);
     
+    CRef<CBlast_def_line_set> & rvref = m_HeaderCache.Lookup(oid);
+    
+    if (! rvref.Empty()) {
+        return rvref;
+    }
+    
     int vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         bool have_oidlist = m_OIDList.NotEmpty();
         Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
         
-        return vol->GetFilteredHeader(vol_oid,
-                                      have_oidlist,
-                                      memb_bit,
-                                      locked);
+        rvref = vol->GetFilteredHeader(vol_oid,
+                                    have_oidlist,
+                                    memb_bit,
+                                    locked);
+        
+        return rvref;
     }
     
     NCBI_THROW(CSeqDBException,
