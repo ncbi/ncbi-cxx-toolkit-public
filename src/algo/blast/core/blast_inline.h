@@ -33,161 +33,293 @@
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
 
-/** Given a word packed into an integer, compute a discontiguous word lookup 
- *  index.
- * @param subject Pointer to the next byte of the sequence after the end of 
- *        the word (needed when word template is longer than 16 bases) [in]
- * @param word A piece of the sequence packed into an integer [in]
- * @param template_type What type of discontiguous word template to use [in]
- * @return The lookup table index of the discontiguous word [out]
+/** Forms a lookup table index for the 11-of-16 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 22-bit lookup table index
  */
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1* subject, Int4 word,
-                  Uint1 template_type)
+static NCBI_INLINE Int4 DiscontigIndex_11_16_Coding(Uint8 accum)
 {
-   Int4 index;
-   Int4 extra_code;   
-
-   switch (template_type) {
-   case TEMPL_11_16:
-      index = GET_WORD_INDEX_11_16(word);
-      break;
-   case TEMPL_12_16:
-      index = GET_WORD_INDEX_12_16(word);
-      break;
-   case TEMPL_11_16_OPT:
-      index = GET_WORD_INDEX_11_16_OPT(word);
-      break;
-   case TEMPL_12_16_OPT:
-      index = GET_WORD_INDEX_12_16_OPT(word);
-      break;
-   case TEMPL_11_18: 
-     extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18(subject);
-     index = (GET_WORD_INDEX_11_18(word) | extra_code);
-     break;
-   case TEMPL_12_18: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18(subject);
-      index = (GET_WORD_INDEX_12_18(word) | extra_code);
-      break;
-   case TEMPL_11_18_OPT: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18_OPT(subject);
-      index = (GET_WORD_INDEX_11_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_18_OPT:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18_OPT(subject);
-      index = (GET_WORD_INDEX_12_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_11_21: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21(subject);
-      index = (GET_WORD_INDEX_11_21(word) | extra_code);
-      break;
-   case TEMPL_12_21:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21(subject);
-      index = (GET_WORD_INDEX_12_21(word) | extra_code);
-      break;
-   case TEMPL_11_21_OPT: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21_OPT(subject);
-      index = (GET_WORD_INDEX_11_21_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_21_OPT:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21_OPT(subject);
-      index = (GET_WORD_INDEX_12_21_OPT(word) | extra_code);
-         break;
-   default: 
-      extra_code = 0; 
-      index = 0;
-      break;
-   }
-#ifdef USE_HASH_TABLE
-   hash_buf = (Uint1*)&index;
-   CRC32(crc, hash_buf);
-   index = (crc>>hash_shift) & hash_mask;
-#endif
-
-   return index;
+    Uint4 lo = (Uint4)accum;
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00003c00) >>  4) |
+           ((lo & 0x000f0000) >>  6) |
+           ((lo & 0x03c00000) >>  8) |
+           ((lo & 0xf0000000) >> 10);
 }
 
-/** Compute the lookup table index for the first word template, given a word 
- * position, template type and previous value of the word, in case of 
- * one-base (2 bit) database scanning.
- * @param word_start Pointer to the start of a word in the sequence [in]
- * @param word The word packed into an integer value [in]
- * @param sequence_bit By how many bits the real word start is shifted within 
- *        a compressed sequence byte [in]
- * @param template_type What discontiguous word template to use for index 
- *        computation [in]
- * @return The lookup index for the discontiguous word.
-*/
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1* word_start, 
-                      Int4 word, Uint1 sequence_bit, Uint1 template_type)
+/** Forms a lookup table index for the 11-of-16 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 22-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_11_16_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    return ((lo & 0x0000003f)      ) |
+           ((lo & 0x00000f00) >>  2) |
+           ((lo & 0x0003c000) >>  4) |
+           ((lo & 0x00300000) >>  6) |
+           ((lo & 0xfc000000) >> 10);
+}
+
+/** Forms a lookup table index for the 11-of-18 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 22-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_11_18_Coding(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00003c00) >>  4) |
+           ((lo & 0x00030000) >>  6) |
+           ((lo & 0x03c00000) >> 10) |
+           ((lo & 0xf0000000) >> 12) |
+           ((hi & 0x0000000c) << 18);
+}
+
+/** Forms a lookup table index for the 11-of-18 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 22-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_11_18_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x0000003f)      ) |
+           ((lo & 0x00000300) >>  2) |
+           ((lo & 0x0003c000) >>  6) |
+           ((lo & 0x00300000) >>  8) |
+           ((lo & 0x0c000000) >> 12) |
+           ((lo & 0xc0000000) >> 14) |
+           ((hi & 0x0000000f) << 18);
+}
+
+/** Forms a lookup table index for the 11-of-21 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 22-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_11_21_Coding(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00000c00) >>  4) |
+           ((lo & 0x000f0000) >>  8) |
+           ((lo & 0x00c00000) >> 10) |
+           ((lo & 0xf0000000) >> 14) |
+           ((hi & 0x0000000c) << 16) |
+           ((hi & 0x00000300) << 12);
+}
+
+/** Forms a lookup table index for the 11-of-21 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_11_21_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x0000003f)      ) |
+           ((lo & 0x00000300) >>  2) |
+           ((lo & 0x0000c000) >>  6) |
+           ((lo & 0x00c00000) >> 12) |
+           ((lo & 0x0c000000) >> 14) |
+           ((hi & 0x00000003) << 14) |
+           ((hi & 0x000003f0) << 12);
+}
+
+/** Forms a lookup table index for the 12-of-16 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_16_Coding(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00003c00) >>  4) |
+           ((lo & 0x000f0000) >>  6) |
+           ((lo & 0xffc00000) >>  8);
+}
+
+/** Forms a lookup table index for the 12-of-16 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_16_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    return ((lo & 0x0000003f)     ) |
+           ((lo & 0x00000f00) >> 2) |
+           ((lo & 0x0003c000) >> 4) |
+           ((lo & 0x00f00000) >> 6) |
+           ((lo & 0xfc000000) >> 8);
+}
+
+/** Forms a lookup table index for the 12-of-18 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_18_Coding(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00003c00) >>  4) |
+           ((lo & 0x000f0000) >>  6) |
+           ((lo & 0x03c00000) >>  8) |
+           ((lo & 0xf0000000) >> 10) |
+           ((hi & 0x0000000c) << 20);
+}
+
+/** Forms a lookup table index for the 12-of-18 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_18_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x0000003f)      ) |
+           ((lo & 0x00000f00) >>  2) |
+           ((lo & 0x0000c000) >>  4) |
+           ((lo & 0x00f00000) >>  8) |
+           ((lo & 0x0c000000) >> 10) |
+           ((lo & 0xc0000000) >> 12) |
+           ((hi & 0x0000000f) << 20);
+}
+
+/** Forms a lookup table index for the 12-of-21 coding template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_21_Coding(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x00000003)      ) |
+           ((lo & 0x000000f0) >>  2) |
+           ((lo & 0x00000c00) >>  4) |
+           ((lo & 0x000f0000) >>  8) |
+           ((lo & 0x03c00000) >> 10) |
+           ((lo & 0xf0000000) >> 12) |
+           ((hi & 0x0000000c) << 18) |
+           ((hi & 0x00000300) << 14);
+}
+
+/** Forms a lookup table index for the 12-of-21 optimal template in
+ *  discontiguous megablast
+ * @param accum accumulator containing the 2-bit bases that will
+ *              be used to create the index. Bases most recently
+ *              added to the accumulator are in the low-order bits
+ * @return The 24-bit lookup table index
+ */
+static NCBI_INLINE Int4 DiscontigIndex_12_21_Optimal(Uint8 accum)
+{
+    Uint4 lo = (Uint4)accum;
+    Uint4 hi = (Uint4)(accum >> 32);
+    return ((lo & 0x0000003f)      ) |
+           ((lo & 0x00000300) >>  2) |
+           ((lo & 0x0000c000) >>  6) |
+           ((lo & 0x00f00000) >> 10) |
+           ((lo & 0x0c000000) >> 12) |
+           ((hi & 0x00000003) << 16) |
+           ((hi & 0x000003f0) << 14);
+}
+
+/** Given an accumulator containing packed bases, compute the discontiguous
+ *  word index specified by template_type. Only the low-order (2 *
+ *  template_length) bits of the accumulator are used; the base most recently
+ *  added to the accumulator is in the two lowest bits.
+*
+ * @param The accumulator [in]
+ * @param template_type What type of discontiguous word template to use [in]
+ * @return The lookup table index of the discontiguous word
+ */
+static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint8 accum,
+                                    EDiscTemplateType template_type)
 {
    Int4 index;
-   Uint1* subject = (Uint1 *) word_start;
-   Uint1 bit;
-   Int4 extra_code, tmpval;   
-
-   /* Prepare auxiliary variables for extra code calculation */
-   tmpval = 0;
-   extra_code = 0;
-   /* The bits in an integer byte are counted in a reverse order than in a
-      sequence byte */
-   bit = 6 - sequence_bit;
 
    switch (template_type) {
-   case TEMPL_11_16:
-      index = GET_WORD_INDEX_11_16(word);
+   case eDiscTemplate_11_16_Coding:
+      index = DiscontigIndex_11_16_Coding(accum);
       break;
-   case TEMPL_12_16:
-      index = GET_WORD_INDEX_12_16(word);
+   case eDiscTemplate_12_16_Coding:
+      index = DiscontigIndex_12_16_Coding(accum);
       break;
-   case TEMPL_11_16_OPT:
-      index = GET_WORD_INDEX_11_16_OPT(word);
+   case eDiscTemplate_11_16_Optimal:
+      index = DiscontigIndex_11_16_Optimal(accum);
       break;
-   case TEMPL_12_16_OPT:
-      index = GET_WORD_INDEX_12_16_OPT(word);
+   case eDiscTemplate_12_16_Optimal:
+      index = DiscontigIndex_12_16_Optimal(accum);
       break;
-   case TEMPL_11_18: 
-      GET_EXTRA_CODE_PACKED_18(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_18(word) | extra_code);
+   case eDiscTemplate_11_18_Coding: 
+      index = DiscontigIndex_11_18_Coding(accum);
+     break;
+   case eDiscTemplate_12_18_Coding: 
+      index = DiscontigIndex_12_18_Coding(accum);
       break;
-   case TEMPL_12_18: 
-      GET_EXTRA_CODE_PACKED_18(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_18(word) | extra_code);
+   case eDiscTemplate_11_18_Optimal: 
+      index = DiscontigIndex_11_18_Optimal(accum);
       break;
-   case TEMPL_11_18_OPT: 
-      GET_EXTRA_CODE_PACKED_18_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_18_OPT(word) | extra_code);
+   case eDiscTemplate_12_18_Optimal:
+      index = DiscontigIndex_12_18_Optimal(accum);
       break;
-   case TEMPL_12_18_OPT:
-      GET_EXTRA_CODE_PACKED_18_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_18_OPT(word) | extra_code);
+   case eDiscTemplate_11_21_Coding: 
+      index = DiscontigIndex_11_21_Coding(accum);
       break;
-   case TEMPL_11_21: 
-      GET_EXTRA_CODE_PACKED_21(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_21(word) | extra_code);
+   case eDiscTemplate_12_21_Coding:
+      index = DiscontigIndex_12_21_Coding(accum);
       break;
-   case TEMPL_12_21:
-      GET_EXTRA_CODE_PACKED_21(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_21(word) | extra_code);
+   case eDiscTemplate_11_21_Optimal: 
+      index = DiscontigIndex_11_21_Optimal(accum);
       break;
-   case TEMPL_11_21_OPT: 
-      GET_EXTRA_CODE_PACKED_21_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_21_OPT(word) | extra_code);
+   case eDiscTemplate_12_21_Optimal:
+      index = DiscontigIndex_12_21_Optimal(accum);
       break;
-   case TEMPL_12_21_OPT:
-      GET_EXTRA_CODE_PACKED_21_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_21_OPT(word) | extra_code);
-         break;
-   default: 
-      extra_code = 0; 
+   default:
       index = 0;
       break;
    }
-#ifdef USE_HASH_TABLE
-   hash_buf = (Uint1*)&index;
-   CRC32(crc, hash_buf);
-   index = (crc>>hash_shift) & hash_mask;
-#endif
-  
+
    return index;
 }
 
