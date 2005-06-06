@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/06/06 17:41:07  gouriano
+* Added generation of modular XML schema
+*
 * Revision 1.9  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -116,8 +119,11 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void BeginXMLSchema(CNcbiOstream& out) const;
+    void EndXMLSchema(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(void) const;
+    void PrintXMLSchemaModular(void) const;
 
     const string& GetSourceFileName(void) const;
     string GetFileNamePrefix(void) const;
@@ -173,6 +179,7 @@ public:
     void PrintDTD(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(void) const;
+    void PrintXMLSchemaModular(void) const;
 
     CDataType* ExternalResolve(const string& moduleName,
                                const string& typeName,

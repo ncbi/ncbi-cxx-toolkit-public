@@ -93,7 +93,7 @@ void CDataTool::Init(void)
                       "write DTD file (\"-fx m\" writes modular DTD file)",
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("fxs", "XMLSchemaFile",
-                      "write XML Schema file",
+                      "write XML Schema file (\"-fxs m\" writes modular Schema file)",
                       CArgDescriptions::eOutputFile);
 
     // data arguments
@@ -256,8 +256,12 @@ bool CDataTool::ProcessModules(void)
         if (srctype == SourceFile::eDTD) {
             CDataType::SetEnforcedStdXml(true);
         }
-        generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
-        ax.CloseFile();
+        if ( ax.AsString() == "m" )
+            generator.GetMainModules().PrintXMLSchemaModular();
+        else {
+            generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
+            ax.CloseFile();
+        }
     }
     
     if (srctype != SourceFile::eDTD) {
@@ -606,6 +610,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2005/06/06 17:40:42  gouriano
+* Added generation of modular XML schema
+*
 * Revision 1.79  2005/04/13 15:57:02  gouriano
 * Handle paths with spaces
 *

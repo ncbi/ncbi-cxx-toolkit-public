@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/06/06 17:40:42  gouriano
+* Added generation of modular XML schema
+*
 * Revision 1.38  2005/06/03 17:05:33  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
@@ -404,7 +407,7 @@ void PrintModularDTDModuleReference(CNcbiOstream& out, const string name)
     string pubName = DTDPublicModuleName(name);
     out <<
         "\n"
-        "<!ENTITY % "<<fileName<<"_module PUBLIC \"-//NCBI//"<<pubName<<" Module//EN\" \""<<fileName<<".mod\">\n"
+        "<!ENTITY % "<<fileName<<"_module PUBLIC \"-//NCBI//"<<pubName<<" Module//EN\" \""<<fileName<<".mod.dtd\">\n"
         "%"<<fileName<<"_module;\n";
 }
 
@@ -420,6 +423,20 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
     PrintModularDTDModuleReference(out, GetName());
     ITERATE ( TImports, i, m_Imports ) {
         PrintModularDTDModuleReference(out, (*i)->moduleName);
+    }
+}
+
+void CDataTypeModule::PrintXMLSchemaModular(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- "<<DTDFileNameBase(GetName())<<".xsd\n"
+        "  This file is built from a series of basic modules.\n"
+        "  The actual declarations are in the modules.\n"
+        "  This file is used to put them together.\n"
+        "-->\n";
+    out << "<xs:include schemaLocation=\"" << GetName() << ".mod.xsd\"/>\n";
+    ITERATE ( TImports, i, m_Imports ) {
+        out << "<xs:include schemaLocation=\"" << (*i)->moduleName << ".mod.xsd\"/>\n";
     }
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/06/06 17:41:07  gouriano
+* Added generation of modular XML schema
+*
 * Revision 1.10  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -139,6 +142,7 @@ public:
     virtual void PrintDTD(CNcbiOstream& out) const;
     virtual void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(CNcbiOstream& out) const;
+    void PrintXMLSchemaModular(CNcbiOstream& out) const;
     string GetDTDPublicName(void) const;
     string GetDTDFileNameBase(void) const;
 

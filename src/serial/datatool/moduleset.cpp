@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/06/06 17:40:42  gouriano
+* Added generation of modular XML schema
+*
 * Revision 1.36  2004/07/29 15:52:07  gouriano
 * use XML namespace name provided in arguments when generating schema
 *
@@ -193,7 +196,7 @@ void CFileModules::PrintDTDModular(void) const
     ITERATE ( TModules, mi, m_Modules ) {
         string fileNameBase = (*mi)->GetDTDFileNameBase();
         {
-            string fileName = fileNameBase + ".mod";
+            string fileName = fileNameBase + ".mod.dtd";
             CNcbiOfstream out(fileName.c_str());
             (*mi)->PrintDTD(out);
             if ( !out )
@@ -209,9 +212,32 @@ void CFileModules::PrintDTDModular(void) const
     }
 }
 
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
+void CFileModules::PrintXMLSchemaModular(void) const
+{
+    ITERATE ( TModules, mi, m_Modules ) {
+        string fileNameBase = (*mi)->GetDTDFileNameBase();
+        {
+            string fileName = fileNameBase + ".mod.xsd";
+            CNcbiOfstream out(fileName.c_str());
+            if ( !out )
+                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+            BeginXMLSchema(out);
+            (*mi)->PrintXMLSchema(out);
+            EndXMLSchema(out);
+        }
+        {
+            string fileName = fileNameBase + ".xsd";
+            CNcbiOfstream out(fileName.c_str());
+            if ( !out )
+                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+            BeginXMLSchema(out);
+            (*mi)->PrintXMLSchemaModular(out);
+            EndXMLSchema(out);
+        }
+    }
+}
+
+void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
 {
     string nsName("http://www.ncbi.nlm.nih.gov");
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
@@ -225,12 +251,23 @@ void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
         << "  targetNamespace=\"" << nsName << "\"\n"
         << "  elementFormDefault=\"qualified\"\n"
         << "  attributeFormDefault=\"unqualified\">\n\n";
+}
 
+void CFileModules::EndXMLSchema(CNcbiOstream& out) const
+{
+    out << "</xs:schema>\n";
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
+{
+    BeginXMLSchema(out);
     ITERATE ( TModules, mi, m_Modules ) {
         (*mi)->PrintXMLSchema(out);
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
-    out << "</xs:schema>\n";
+    EndXMLSchema(out);
 }
 
 
@@ -334,6 +371,13 @@ void CFileSet::PrintDTDModular(void) const
 {
     ITERATE ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintDTDModular();
+    }
+}
+
+void CFileSet::PrintXMLSchemaModular(void) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintXMLSchemaModular();
     }
 }
 
