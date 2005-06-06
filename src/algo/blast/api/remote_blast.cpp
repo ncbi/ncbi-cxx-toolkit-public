@@ -62,16 +62,16 @@ BEGIN_SCOPE(blast)
 
 
 /// Error value type used by Blast4 ASN.1 objects.
-typedef list< CRef<CBlast4_error> > TErrorList;
+typedef list< CRef<objects::CBlast4_error> > TErrorList;
 
 
 /// Determine whether the search is still running.
 /// @param reply Reply from get-search-results request.
 /// @return True if search needs more time, false if done or failed.
 static bool
-s_SearchPending(CRef<CBlast4_reply> reply)
+s_SearchPending(CRef<objects::CBlast4_reply> reply)
 {
-    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
+    const list< CRef<objects::CBlast4_error> > & errors = reply->GetErrors();
     
     TErrorList::const_iterator i;
     
@@ -84,7 +84,7 @@ s_SearchPending(CRef<CBlast4_reply> reply)
 }
 
 
-void CRemoteBlast::x_SearchErrors(CRef<CBlast4_reply> reply)
+void CRemoteBlast::x_SearchErrors(CRef<objects::CBlast4_reply> reply)
 {
     const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
     
@@ -158,8 +158,8 @@ void CRemoteBlast::x_CheckConfig(void)
     }
 }
 
-CRef<CBlast4_reply>
-CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
+CRef<objects::CBlast4_reply>
+CRemoteBlast::x_SendRequest(CRef<objects::CBlast4_request_body> body)
 {
     // If not configured, throw.
     x_CheckConfig();
@@ -192,7 +192,7 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
     return reply;
 }
 
-CRef<CBlast4_reply>
+CRef<objects::CBlast4_reply>
 CRemoteBlast::x_GetSearchResults(void)
 {
     CRef<CBlast4_get_search_results_request>
@@ -293,7 +293,7 @@ CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
     return rv;
 }
 
-CRef<CSeq_align_set> CRemoteBlast::GetAlignments(void)
+CRef<objects::CSeq_align_set> CRemoteBlast::GetAlignments(void)
 {
     CRef<CSeq_align_set> rv;
     
@@ -342,7 +342,7 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
     return rv;
 }
 
-CRef<CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
+CRef<objects::CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
 {
     CRef<CBlast4_phi_alignments> rv;
     
@@ -355,7 +355,7 @@ CRef<CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
     return rv;
 }
 
-CRef<CBlast4_mask> CRemoteBlast::GetMask(void)
+CRef<objects::CBlast4_mask> CRemoteBlast::GetMask(void)
 {
     CRef<CBlast4_mask> rv;
     
@@ -368,7 +368,7 @@ CRef<CBlast4_mask> CRemoteBlast::GetMask(void)
     return rv;
 }
 
-list< CRef<CBlast4_ka_block > > CRemoteBlast::GetKABlocks(void)
+list< CRef<objects::CBlast4_ka_block > > CRemoteBlast::GetKABlocks(void)
 { 
     list< CRef<CBlast4_ka_block > > rv;
         
@@ -394,7 +394,7 @@ list< string > CRemoteBlast::GetSearchStats(void)
     return rv;
 }
 
-CRef<CPssmWithParameters> CRemoteBlast::GetPSSM(void)
+CRef<objects::CPssmWithParameters> CRemoteBlast::GetPSSM(void)
 {
     CRef<CPssmWithParameters> rv;
     
@@ -700,7 +700,8 @@ void CRemoteBlast::x_SetOneParam(const char * name, const char ** x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name, CPssmWithParameters * matrix)
+void CRemoteBlast::x_SetOneParam(const char * name,
+                                 objects::CPssmWithParameters * matrix)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetMatrix(*matrix);
@@ -712,7 +713,7 @@ void CRemoteBlast::x_SetOneParam(const char * name, CPssmWithParameters * matrix
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::SetQueries(CRef<CBioseq_set> bioseqs)
+void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
 {
     if (bioseqs.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -726,7 +727,7 @@ void CRemoteBlast::SetQueries(CRef<CBioseq_set> bioseqs)
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(list< CRef<CSeq_loc> > & seqlocs)
+void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
 {
     if (seqlocs.empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -740,7 +741,7 @@ void CRemoteBlast::SetQueries(list< CRef<CSeq_loc> > & seqlocs)
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(CRef<CPssmWithParameters> pssm)
+void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
 {
     if (pssm.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -930,7 +931,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     }
 }
 
-void CRemoteBlast::SetMatrixTable(CRef<CPssmWithParameters> matrix)
+void CRemoteBlast::SetMatrixTable(CRef<objects::CPssmWithParameters> matrix)
 {
     if (matrix.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -960,11 +961,11 @@ const int CRemoteBlast::x_DefaultTimeout(void)
     return int(3600*3.5);
 }
 
-CRef<CBlast4_request> CRemoteBlast::
-x_BuildGetSeqRequest(vector< CRef<CSeq_id> > & seqids,   // in
-                     const string            & database, // in
-                     char                      seqtype,  // 'p' or 'n'
-                     string                  & errors)   // out
+CRef<objects::CBlast4_request> CRemoteBlast::
+x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
+                     const string                     & database, // in
+                     char                               seqtype,  // 'p' or 'n'
+                     string                           & errors)   // out
 {
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
@@ -1023,10 +1024,10 @@ x_BuildGetSeqRequest(vector< CRef<CSeq_id> > & seqids,   // in
 }
 
 void
-CRemoteBlast::x_GetSeqsFromReply(CRef<CBlast4_reply>       reply,
-                                 vector< CRef<CBioseq> > & bioseqs,  // out
-                                 string                  & errors,   // out
-                                 string                  & warnings) // out
+CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
+                                 vector< CRef<objects::CBioseq> > & bioseqs,  // out
+                                 string                           & errors,   // out
+                                 string                           & warnings) // out
 {
     // Read the data from the reply into the output arguments.
     
@@ -1071,12 +1072,12 @@ CRemoteBlast::x_GetSeqsFromReply(CRef<CBlast4_reply>       reply,
 }
 
 void
-CRemoteBlast::GetSequences(vector< CRef<CSeq_id> > & seqids,   // in
-                           const string            & database, // in
-                           char                      seqtype,  // 'p' or 'n'
-                           vector< CRef<CBioseq> > & bioseqs,  // out
-                           string                  & errors,   // out
-                           string                  & warnings) // out
+CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
+                           const string                     & database, // in
+                           char                               seqtype,  // 'p' or 'n'
+                           vector< CRef<objects::CBioseq> > & bioseqs,  // out
+                           string                           & errors,   // out
+                           string                           & warnings) // out
 {
     // Build the request
     
@@ -1111,6 +1112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/06/06 23:17:07  bealer
+* - De-confuse doxygen.
+*
 * Revision 1.25  2005/05/19 17:58:21  bealer
 * - Add warning vector getter.
 *
