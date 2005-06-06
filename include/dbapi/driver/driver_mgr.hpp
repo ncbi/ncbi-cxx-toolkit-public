@@ -80,13 +80,24 @@ template<>
 class CDllResolver_Getter<I_DriverContext>
 {
 public:
-    CPluginManager_DllResolver* operator()(void);
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver
+            (CInterfaceVersion<I_DriverContext>::GetName(),
+             kEmptyStr,
+             CVersionInfo::kAny,
+             CDll::eNoAutoUnload);
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
 };
 
 
 NCBI_DBAPIDRIVER_EXPORT
 I_DriverContext*
-Get_I_DriverContext(const string& driver_name, const map<string, string>* attr);
+Get_I_DriverContext(const string&              driver_name,
+                    const map<string, string>* attr);
 
 END_NCBI_SCOPE
 
@@ -97,8 +108,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.17  2005/06/06 16:46:38  ssikorsk
- * Moved a definition of CDllResolver_Getter<I_DriverContext>::operator()(void) into cpp.
+ * Revision 1.18  2005/06/06 22:23:45  vakatov
+ * Rollback previous revision as it caused linking errors in static MSVC++
  *
  * Revision 1.16  2005/03/08 17:13:10  ssikorsk
  * Allow to add a driver search path for the driver manager
