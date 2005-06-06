@@ -60,6 +60,20 @@ MakePluginManagerParamTree(const string& driver_name, const map<string, string>*
     return tr;
 }
 
+CPluginManager_DllResolver* 
+CDllResolver_Getter<I_DriverContext>::operator()(void)
+{
+    CPluginManager_DllResolver* resolver =
+        new CPluginManager_DllResolver
+        (CInterfaceVersion<I_DriverContext>::GetName(),
+         kEmptyStr,
+         CVersionInfo::kAny,
+         CDll::eNoAutoUnload);
+    resolver->SetDllNamePrefix("ncbi");
+
+    return resolver;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 class C_xDriverMgr : public I_DriverMgr
 {
@@ -363,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/06/06 16:47:04  ssikorsk
+ * Moved a definition of CDllResolver_Getter<I_DriverContext>::operator()(void) into cpp.
+ *
  * Revision 1.24  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
