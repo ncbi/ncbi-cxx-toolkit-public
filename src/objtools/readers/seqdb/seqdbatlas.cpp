@@ -674,11 +674,8 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
             }
         }
         
-#ifdef _DEBUG
-        if (m_UseMmap && (!retval)) {
-            cerr << "Warning: mmap failed, trying file mapping..." << endl;
-        }
-#endif
+        // mmap() sometimes fails for no discernable reason.. if it
+        // does, try reading the file.
         
         if (retval == 0 && newmap->MapFile(this)) {
             retval = newmap->Data(begin, end);
@@ -1024,13 +1021,20 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
         }
         
         if (expt.length()) {
-            expt = string("CSeqDBAtlas::MapMmap: While mapping file [") + (*m_Fname) + "] with " +
-                NStr::UInt8ToString(atlas->GetCurrentAllocationTotal()) +
-                " bytes allocated, caught exception:" + expt;
             
-            SeqDB_ThrowException(CSeqDBException::eFileErr, expt);
+            // For now, if I can't memory map the file, I'll revert to
+            // the old way: malloc a chunk of core and copy the data
+            // into it.
+            
+            if (expt.find(": Cannot allocate memory") == expt.npos) {
+                expt = string("CSeqDBAtlas::MapMmap: While mapping file [") + (*m_Fname) + "] with " +
+                    NStr::UInt8ToString(atlas->GetCurrentAllocationTotal()) +
+                    " bytes allocated, caught exception:" + expt;
+                
+                SeqDB_ThrowException(CSeqDBException::eFileErr, expt);
+            }
         }
-
+        
         if (m_Data) {
             rv = true;
         } else {
