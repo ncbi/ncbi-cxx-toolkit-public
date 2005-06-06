@@ -407,58 +407,57 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
 {
     static const string default_str = "?";
 
-    if ( !ctx.IsWGSMaster()  ||  ctx.GetWGSMasterAccn().empty() ) {
+    if (!ctx.IsWGSMaster()) {
         return kEmptyStr;
     }
-    const string& wgsaccn = ctx.GetWGSMasterAccn();
 
-    const string* taxname = 0;
+    const string& wgsaccn = ctx.GetWGSMasterAccn();
+    const string& wgsname = ctx.GetWGSMasterName();
+
+    if (NStr::IsBlank(wgsaccn)  ||  NStr::IsBlank(wgsname)) {
+        return kEmptyStr;
+    }
+
+    const string* taxname = &default_str;
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source); it; ++it) {
         const CBioSource& src = it->GetSource();
-        if ( src.CanGetOrg()  &&  src.GetOrg().CanGetTaxname() ) {
+        if (src.IsSetOrg()  &&  src.GetOrg().IsSetTaxname()  &&
+            !NStr::IsBlank(src.GetOrg().GetTaxname()) ) {
             taxname = &(src.GetOrg().GetTaxname());
         }
     }
 
-    const string* first = 0, *last = 0;
+    const string* first = &default_str, *last = &default_str;
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
         const CUser_object& uo = it->GetUser();
-        if ( uo.CanGetType()  &&  uo.GetType().IsStr()  &&
-             NStr::CompareNocase(uo.GetType().GetStr(), "WGSProjects") == 0 ) {
-            if ( uo.HasField("WGS_accession_first") ) {
+        if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
+            NStr::EqualNocase(uo.GetType().GetStr(), "WGSProjects")) {
+            if (uo.HasField("WGS_accession_first")) {
                 const CUser_field& uf = uo.GetField("WGS_accession_first");
-                if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr()) ) {
                     first = &(uf.GetData().GetStr());
                 }
             }
-            if ( uo.HasField("WGS_accession_last") ) {
+            if (uo.HasField("WGS_accession_last")) {
                 const CUser_field& uf = uo.GetField("WGS_accession_last");
-                if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr())) {
                     last = &(uf.GetData().GetStr());
                 }
             }
         }
     }
 
-    if ( taxname == 0  ||  taxname->empty() ) {
-        taxname = &default_str;
-    }
-    if ( first == 0  ||  first->empty() ) {
-        first = &default_str;
-    }
-    if ( last == 0  ||  last->empty() ) {
-        last = &default_str;
-    }
-
-    string version = (wgsaccn.length() == 15) ? wgsaccn.substr(4) :
-                                                wgsaccn.substr(7);
+    string version = (wgsname.length() == 15) ? 
+        wgsname.substr(7, 2) : wgsname.substr(4, 2);
 
     CNcbiOstrstream text;
     text << "The " << *taxname 
-         << "whole genome shotgun (WGS) project has the project accession " 
+         << " whole genome shotgun (WGS) project has the project accession " 
          << wgsaccn << ".  This version of the project (" << version 
-         << ") has the accession number " << ctx.GetWGSMasterName() << ",";
-    if ( (*first != *last) ) {
+         << ") has the accession number " << wgsname << ",";
+    if (*first != *last) {
         text << " and consists of sequences " << *first << "-" << *last;
     } else {
         text << " and consists of sequence " << *first;
@@ -1168,6 +1167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/06/06 18:32:42  shomrat
+* Fixed WGS comment text
+*
 * Revision 1.22  2005/05/19 19:27:33  shomrat
 * Handle empty comments
 *
