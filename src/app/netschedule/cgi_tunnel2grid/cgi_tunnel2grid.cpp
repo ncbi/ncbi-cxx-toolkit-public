@@ -429,7 +429,7 @@ bool CCgiTunnel2Grid::JobStopRequested(void) const
 void /*static*/ CCgiTunnel2Grid::x_RenderView(CHTMLPage& page, 
                                               const string& view_name)
 {
-    page.AddTagMap("VIEW", new CHTMLText(view_name));  
+    page.AddTagMap("STAT_VIEW", new CHTMLText(view_name));  
 }
 
 void CCgiTunnel2Grid::x_SetupArgs()
@@ -484,6 +484,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/06 15:34:57  didenko
+ * Changed <@VIEW@> meta-tag to <@STAT_VIEW@>
+ *
  * Revision 1.21  2005/06/01 15:18:54  didenko
  * Cosmetics
  *

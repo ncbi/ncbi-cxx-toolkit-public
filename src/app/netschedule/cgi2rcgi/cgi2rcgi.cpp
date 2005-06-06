@@ -364,7 +364,7 @@ bool CCgi2RCgiApp::JobStopRequested(void) const
 void /*static*/ CCgi2RCgiApp::x_RenderView(CHTMLPage& page, 
                                               const string& view_name)
 {
-    page.AddTagMap("VIEW", new CHTMLText(view_name));  
+    page.AddTagMap("STAT_VIEW", new CHTMLText(view_name));  
 }
 
 void CCgi2RCgiApp::x_SetupArgs()
@@ -408,6 +408,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/06 15:34:57  didenko
+ * Changed <@VIEW@> meta-tag to <@STAT_VIEW@>
+ *
  * Revision 1.1  2005/06/01 15:20:29  didenko
  * Added cgi2rcgi application
  *
