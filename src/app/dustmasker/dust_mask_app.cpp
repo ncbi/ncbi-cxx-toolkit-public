@@ -192,6 +192,30 @@ int CDustMaskApplication::Run (void)
                     *output_stream << it->first  << " - " 
                                    << it->second << "\n";
             }
+
+            /*
+            CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
+            std::vector< CConstRef< objects::CSeq_loc > > locs;
+            duster.GetMaskedLocs( 
+                const_cast< objects::CSeq_id & >(*id.GetPointer()), 
+                data, locs );
+
+            if( output_stream != 0 )
+            {
+                *output_stream << ">"
+                               << CSeq_id::GetStringDescr( 
+                                    *bsh.GetCompleteBioseq(),
+                                    CSeq_id::eFormat_FastA )
+                               << " " << sequence::GetTitle( bsh ) << "\n";
+                for( std::vector< CConstRef< objects::CSeq_loc > >::iterator 
+                        it = locs.begin(); it != locs.end(); ++it )
+                    *output_stream 
+                      << it->GetPointer()->GetStart((objects::ESeqLocExtremes)1) 
+                      << " - " 
+                      << it->GetPointer()->GetStop((objects::ESeqLocExtremes)1) 
+                      << "\n";
+            }
+            */
         }
     }
 
@@ -205,6 +229,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/06/06 20:33:53  morgulis
+ * Small change in usage of linker parameter.
+ * Added (commented out) code for testing SeqLoc based interface.
+ *
  * Revision 1.4  2005/06/03 15:33:36  morgulis
  * Namespace bug fix.
  *

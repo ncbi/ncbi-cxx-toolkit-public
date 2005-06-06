@@ -158,7 +158,7 @@ CSymDustMasker::operator()( const sequence_type & seq )
                 {
                     TMaskedInterval last = res->back();
 
-                    if( last.second < b.first )
+                    if( last.second + linker_ < b.first )
                         res->push_back( b );
                     else if( last.second < b.second )
                         res->back().second = b.second;
