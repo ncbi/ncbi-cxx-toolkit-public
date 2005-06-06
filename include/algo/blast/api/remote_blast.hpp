@@ -418,12 +418,40 @@ private:
     /// Poll until results are found, error occurs, or timeout expires.
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
+    /// Build Sequence Fetching Request
+    ///
+    /// This method builds a blast4 request designed to fetch a list
+    /// of bioseqs from the blast4 server.
+    ///
+    /// @param seqids
+    ///     The seqids of the sequences to fetch.
+    /// @param database
+    ///     The database or databases containing the desired sequences.
+    /// @param seqtype
+    ///     Either 'p' or 'n' for protein or nucleotide.
+    /// @param errors
+    ///     Returned string containing any errors encountered.
+    /// @return
+    ///     The blast4 sequence fetching request object.
     static CRef<objects::CBlast4_request>
     x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
-                         const string            & database, // in
-                         char                      seqtype,  // 'p' or 'n'
-                         string                  & errors);  // out
+                         const string                     & database, // in
+                         char                               seqtype,  // 'p' or 'n'
+                         string                           & errors);  // out
     
+    /// Get bioseqs from a sequence fetching reply.
+    ///
+    /// This method reads the reply from a sequence fetching request
+    /// and extracts the bioseqs, errors and warnings from it.
+    ///
+    /// @param reply
+    ///     The reply from a sequence fetching request.
+    /// @param bioseqs
+    ///     The returned list of bioseqs from the request.
+    /// @param errors
+    ///     Returned string containing any errors encountered.
+    /// @param warnings
+    ///     Returned string containing any warnigns encountered.
     static void
     x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
                        vector< CRef<objects::CBioseq> > & bioseqs,   // out
@@ -481,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/06 23:16:06  bealer
+ * - Document several private remote blast methods.
+ *
  * Revision 1.21  2005/05/19 17:58:43  bealer
  * - Add vector warning gettger.
  *
