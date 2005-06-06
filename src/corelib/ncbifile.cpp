@@ -2817,8 +2817,8 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
     }
 
     // Copy symbolic link (create new one)
-    char buf[PATH_MAX];
-    int  len = readlink(GetPath().c_str(), buf, sizeof(buf));
+    char buf[PATH_MAX+1];
+    int  len = readlink(GetPath().c_str(), buf, sizeof(buf)-1);
     if ( len < 1 ) {
         return false;
     }
@@ -3415,6 +3415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2005/06/06 20:18:23  vasilche
+ * Added one more byte for trailing zero.
+ *
  * Revision 1.102  2005/05/27 13:51:20  lavr
  * Fix accidental typo (an extra char) introduced in MS-Win-specific code
  *
