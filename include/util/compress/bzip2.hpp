@@ -112,8 +112,8 @@ public:
 
     // (De)compress the source buffer into the destination buffer.
     // Return TRUE if operation was succesfully or FALSE otherwise.
-    // Notice that altogether the total size of the destination buffer must
-    // be little more then size of the source buffer. 
+    // Notice that altogether the total size of the destination buffer
+    // must be little more then size of the source buffer. 
     virtual bool CompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
@@ -157,13 +157,6 @@ protected:
 //////////////////////////////////////////////////////////////////////////////
 //
 // CBZip2CompressionFile class
-//
-
-// Note, Read() copies data from the compressed file in chunks of size
-// BZ_MAX_UNUSED bytes before decompressing it. If the file contains more
-// bytes than strictly needed to reach the logical end-of-stream, Read()
-// will almost certainly read some of the trailing data before signalling of
-// sequence end.
 //
 
 class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
@@ -323,6 +316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/06/06 10:54:25  ivanov
+ * Removed redundand comment
+ *
  * Revision 1.11  2005/04/25 19:01:44  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
