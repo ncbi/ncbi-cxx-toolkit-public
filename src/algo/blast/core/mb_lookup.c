@@ -64,46 +64,46 @@ BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
 /** Convert weight, template length and template type from input options into
     an MBTemplateType enum
 */
-static DiscTemplateType 
+static EDiscTemplateType 
 s_GetDiscTemplateType(Int4 weight, Uint1 length, 
-                                     DiscWordType type)
+                                     EDiscWordType type)
 {
    if (weight == 11) {
       if (length == 16) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_11_16;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_11_16_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_11_16_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_11_16_Optimal;
       } else if (length == 18) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_11_18;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_11_18_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_11_18_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_11_18_Optimal;
       } else if (length == 21) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_11_21;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_11_21_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_11_21_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_11_21_Optimal;
       }
    } else if (weight == 12) {
       if (length == 16) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_12_16;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_12_16_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_12_16_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_12_16_Optimal;
       } else if (length == 18) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_12_18;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_12_18_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_12_18_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_12_18_Optimal;
       } else if (length == 21) {
-         if (type == MB_WORD_CODING || type == MB_TWO_TEMPLATES)
-            return TEMPL_12_21;
-         else if (type == MB_WORD_OPTIMAL)
-            return TEMPL_12_21_OPT;
+         if (type == eMBWordCoding || type == eMBWordTwoTemplates)
+            return eDiscTemplate_12_21_Coding;
+         else if (type == eMBWordOptimal)
+            return eDiscTemplate_12_21_Optimal;
       }
    }
-   return TEMPL_CONTIGUOUS; /* All unsupported cases default to 0 */
+   return eDiscTemplateContiguous; /* All unsupported cases default to 0 */
 }
 
 /** Fills in the hashtable and next_pos fields of BlastMBLookupTable*
@@ -125,15 +125,15 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
 {
    BlastSeqLoc* loc;
-   Int4 mask;
-   Int4 word_length, extra_length;
-   DiscTemplateType template_type;
+   EDiscTemplateType template_type;
+   EDiscTemplateType second_template_type;
    const Uint1 kNucMask = 0xfc;
    const Boolean kTwoTemplates = 
-      (lookup_options->mb_template_type == MB_TWO_TEMPLATES);
+      (lookup_options->mb_template_type == eMBWordTwoTemplates);
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
    Int4 index;
+   Int4 template_length;
    /* The calculation of the longest chain can be cpu intensive for 
       long queries or sets of queries. So we use a helper_array to 
       keep track of this, but compress it by kCompressionFactor so 
@@ -156,7 +156,9 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
    template_type = s_GetDiscTemplateType(lookup_options->word_size,
                       lookup_options->mb_template_length, 
-                      (DiscWordType)lookup_options->mb_template_type);
+                      (EDiscWordType)lookup_options->mb_template_type);
+
+   ASSERT(template_type != eDiscTemplateContiguous);
 
    mb_lt->template_type = template_type;
    mb_lt->two_templates = kTwoTemplates;
@@ -165,7 +167,7 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       and the optimal templates for one combination of word size
       and template length. */
    if (kTwoTemplates) {
-      mb_lt->second_template_type = template_type + 1;
+      second_template_type = mb_lt->second_template_type = template_type + 1;
 
       mb_lt->hashtable2 = (Int4*)calloc(mb_lt->hashsize, sizeof(Int4));
       mb_lt->next_pos2 = (Int4*)calloc(query->length + 1, sizeof(Int4));
@@ -179,125 +181,54 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
    mb_lt->discontiguous = TRUE;
    mb_lt->compressed_wordsize = width + 1;
-   word_length = mb_lt->word_length = COMPRESSION_RATIO*(width+1);
+   mb_lt->word_length = COMPRESSION_RATIO*(width+1);
    mb_lt->template_length = lookup_options->mb_template_length;
-   extra_length = mb_lt->template_length - word_length;
    mb_lt->mask = (Int4) (-1);
-   mask = (1 << (8*(width+1) - 2)) - 1;
+   template_length = lookup_options->mb_template_length;
 
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
 
    for (loc = location; loc; loc = loc->next) {
-      Boolean amb_cond = TRUE;
-      /* We want index to be always pointing to the start of the word.
-         Since sequence pointer points to the end of the word, subtract
-         word length from the loop boundaries.  */
-      Int4 from = loc->ssr->left;
-      Int4 to = loc->ssr->right - word_length;
-      Int4 ecode = 0;
+      Int4 from;
+      Int4 to;
+      Uint8 accum = 0;
       Int4 ecode1 = 0;
       Int4 ecode2 = 0;
-      Int4 last_offset;
       Uint1* pos;
       Uint1* seq;
       Uint1 val;
 
-      seq = query->sequence_start + from;
-      pos = seq + word_length;
-      
-      /* Also add 1 to all indices, because lookup table indices count 
-         from 1. */
-      from -= word_length - 2;
-      last_offset = to - extra_length + 2;
+      /* A word is added to the table after its last base is added.
+         At that point, the start offset of the word is
+         template_length - 1 positions behind. This index is
+         also incremented, because lookup table indices are 
+         1-based (offset 0 is reserved). */
 
-      for (index = from; index <= last_offset; index++) {
+      from = loc->ssr->left - (template_length - 2);
+      to = loc->ssr->right - (template_length - 2);
+      seq = query->sequence_start + loc->ssr->left;
+      pos = seq + template_length;
+
+      for (index = from; index <= to; index++) {
          val = *++seq;
-         if ((val & kNucMask) != 0) { /* ambiguity or gap */
-            ecode = 0;
-            pos = seq + word_length;
+         /* if an ambiguity is encountered, do not add
+            any words that would contain it */
+         if ((val & kNucMask) != 0) {
+            accum = 0;
+            pos = seq + template_length;
             continue;
          }
 
          /* get next base */
-         ecode = ((ecode & mask) << 2) + val;
+         accum = (accum << 2) | val;
          if (seq < pos)
-            continue;
-
-         if (extra_length) {
-            switch (template_type) {
-            case TEMPL_11_18: case TEMPL_12_18:
-               amb_cond = !GET_AMBIG_CONDITION_18(seq);
-               break;
-            case TEMPL_11_18_OPT: case TEMPL_12_18_OPT:
-               amb_cond = !GET_AMBIG_CONDITION_18_OPT(seq);
-               break;
-            case TEMPL_11_21: case TEMPL_12_21:
-               amb_cond = !GET_AMBIG_CONDITION_21(seq);
-               break;
-            case TEMPL_11_21_OPT: case TEMPL_12_21_OPT:
-               amb_cond = !GET_AMBIG_CONDITION_21_OPT(seq);
-               break;
-            default:
-               break;
-            }
-         }
-               
-         if (!amb_cond)
             continue;
 
          /* compute the hashtable index for the first template
             and add 'index' at that position */
-         switch (template_type) {
-         case TEMPL_11_16:
-            ecode1 = GET_WORD_INDEX_11_16(ecode);
-            break;
-         case TEMPL_12_16:
-            ecode1 = GET_WORD_INDEX_12_16(ecode);
-            break;
-         case TEMPL_11_16_OPT:
-            ecode1 = GET_WORD_INDEX_11_16_OPT(ecode);
-            break;
-         case TEMPL_12_16_OPT:
-            ecode1 = GET_WORD_INDEX_12_16_OPT(ecode);
-            break;
-         case TEMPL_11_18:
-            ecode1 = (GET_WORD_INDEX_11_18(ecode)) |
-                      (GET_EXTRA_CODE_18(seq));
-            break;
-         case TEMPL_12_18:
-            ecode1 = (GET_WORD_INDEX_12_18(ecode)) |
-                      (GET_EXTRA_CODE_18(seq));
-            break;
-         case TEMPL_11_18_OPT:
-            ecode1 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
-                      (GET_EXTRA_CODE_18_OPT(seq));
-            break;
-         case TEMPL_12_18_OPT:
-            ecode1 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
-                      (GET_EXTRA_CODE_18_OPT(seq));
-            break;
-         case TEMPL_11_21:
-            ecode1 = (GET_WORD_INDEX_11_21(ecode)) |
-                      (GET_EXTRA_CODE_21(seq));
-            break;
-         case TEMPL_12_21:
-            ecode1 = (GET_WORD_INDEX_12_21(ecode)) |
-                      (GET_EXTRA_CODE_21(seq));
-            break;
-         case TEMPL_11_21_OPT:
-            ecode1 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
-                      (GET_EXTRA_CODE_21_OPT(seq));
-            break;
-         case TEMPL_12_21_OPT:
-            ecode1 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
-                      (GET_EXTRA_CODE_21_OPT(seq));
-            break;
-         default:
-            ecode1 = ecode; /* unknown template; assume contiguous word */
-            break;
-         }
-            
+
+         ecode1 = ComputeDiscontiguousIndex(accum, template_type);
          if (mb_lt->hashtable[ecode1] == 0) {
             mb_lt->num_unique_pos_added++;
             pv_array[ecode1>>pv_array_bts] |= 
@@ -313,34 +244,8 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
             continue;
 
          /* repeat for the second template, if applicable */
-         switch (template_type) {
-         case TEMPL_11_16:
-            ecode2 = GET_WORD_INDEX_11_16_OPT(ecode);
-            break;
-         case TEMPL_12_16:
-            ecode2 = GET_WORD_INDEX_12_16_OPT(ecode);
-            break;
-         case TEMPL_11_18:
-            ecode2 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
-               (GET_EXTRA_CODE_18_OPT(seq));
-            break;
-         case TEMPL_12_18:
-            ecode2 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
-               (GET_EXTRA_CODE_18_OPT(seq));
-            break;
-         case TEMPL_11_21:
-            ecode2 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
-               (GET_EXTRA_CODE_21_OPT(seq));
-            break;
-         case TEMPL_12_21:
-            ecode2 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
-               (GET_EXTRA_CODE_21_OPT(seq));
-            break;
-         default:
-            ecode2 = 0; /* incorrect template; make hashtable ignore it */
-            break;
-         }
          
+         ecode2 = ComputeDiscontiguousIndex(accum, second_template_type);
          if (mb_lt->hashtable2[ecode2] == 0) {
             mb_lt->num_unique_pos_added++;
             pv_array[ecode2>>pv_array_bts] |= 
@@ -761,132 +666,170 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        Int4* end_offset)
 {
    Uint1* s;
-   Uint1* s_start,* abs_start;
    Int4 total_hits = 0;
    Uint4 q_off, s_off;
-   Int4 word, index, index2=0;
-   BlastMBLookupTable* mb_lt;
+   Int4 index, index2=0;
+   Uint8 accum;
    Boolean two_templates;
-   Uint1 template_type;
-   Uint1 second_template_type;
+   BlastMBLookupTable* mb_lt;
+   EDiscTemplateType template_type;
+   EDiscTemplateType second_template_type;
    PV_ARRAY_TYPE *pv_array;
    Uint1 pv_array_bts;
-   Int4 compressed_wordsize;
-   Uint4 word_end_offset;
-   Uint4 last_end_offset = *end_offset;
+   Int4 template_length;
+   Uint4 curr_base;
+   Uint4 last_base;
 
    ASSERT(lookup->lut_type == MB_LOOKUP_TABLE);
    mb_lt = (BlastMBLookupTable*) lookup->lut;
+
+   /* Since the test for number of hits here is done after adding them, 
+      subtract the longest chain length from the allowed offset array size. */
+   max_hits -= mb_lt->longest_chain;
 
    two_templates = mb_lt->two_templates;
    template_type = mb_lt->template_type;
    second_template_type = mb_lt->second_template_type;
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
-   compressed_wordsize = mb_lt->compressed_wordsize;
-   word_end_offset = start_offset + mb_lt->word_length;
+   template_length = mb_lt->template_length;
+   last_base = *end_offset;
 
-   /* Since the test for number of hits here is done after adding them, 
-      subtract the longest chain length from the allowed offset array size. */
-   max_hits -= mb_lt->longest_chain;
+   s = subject->sequence + start_offset / COMPRESSION_RATIO;
+   accum = (Uint8)(*s++);
+   curr_base = COMPRESSION_RATIO - (start_offset % COMPRESSION_RATIO);
 
-   abs_start = subject->sequence;
-   s_start = abs_start + start_offset/COMPRESSION_RATIO;
-
-   s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s_start, &word);
-
-   /* s now points to the byte right after the end of the current word */
    if (mb_lt->full_byte_scan) {
 
-      while (word_end_offset <= last_end_offset) {
-         index = ComputeDiscontiguousIndex(s, word, template_type);
-  
-         if (two_templates) {
-            index2 = ComputeDiscontiguousIndex(s, word, second_template_type);
+      /* The accumulator is filled with the first (template_length -
+         COMPRESSION_RATIO) bases to scan, 's' points to the first byte
+         of 'sequence' that contains bases not in the accumulator,
+         and curr_base is the offset of the next base to add */
+
+      while (curr_base < template_length - COMPRESSION_RATIO) {
+         accum = accum << FULL_BYTE_SHIFT | *s++;
+         curr_base += COMPRESSION_RATIO;
+      }
+      if (curr_base > template_length - COMPRESSION_RATIO) {
+         accum = accum >> (2 * (curr_base - 
+                    (template_length - COMPRESSION_RATIO)));
+         s--;
+      }
+      curr_base = start_offset + template_length;
+
+      while (curr_base <= last_base) {
+          
+         /* add the next 4 bases to the accumulator. These are
+            shifted into the low-order 8 bits. curr_base was already
+            incremented, but that doesn't change how the next bases
+            are shifted in */
+
+         accum = (accum << FULL_BYTE_SHIFT);
+         switch (curr_base % COMPRESSION_RATIO) {
+         case 0: accum |= s[0]; break;
+         case 1: accum |= (s[0] << 2 | s[1] >> 6); break;
+         case 2: accum |= (s[0] << 4 | s[1] >> 4); break;
+         case 3: accum |= (s[0] << 6 | s[1] >> 2); break;
          }
+         s++;
+
+         index = ComputeDiscontiguousIndex(accum, template_type);
+  
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             q_off = mb_lt->hashtable[index];
-            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
+            s_off = curr_base - template_length;
             while (q_off) {
                offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
                offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
-         if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-            q_off = mb_lt->hashtable2[index2];
-            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-            while (q_off) {
-               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               q_off = mb_lt->next_pos2[q_off];
+         if (two_templates) {
+            index2 = ComputeDiscontiguousIndex(accum, second_template_type);
+
+            if (NA_PV_TEST(pv_array, index2, pv_array_bts)) {
+               q_off = mb_lt->hashtable2[index2];
+               s_off = curr_base - template_length;
+               while (q_off) {
+                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
+                  q_off = mb_lt->next_pos2[q_off];
+               }
             }
          }
-         word_end_offset += COMPRESSION_RATIO;
+
+         curr_base += COMPRESSION_RATIO;
+
          /* test for buffer full. This test counts 
             for both templates (they both add hits 
             or neither one does) */
          if (total_hits >= max_hits)
             break;
-  
-         word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
-                             mb_lt->mask, s++, word);
+
       }
    } else {
       const Int4 kScanStep = 1; /* scan one letter at a time. */
-      const Int4 kScanShift = 2; /* scan 2 bits (that is, one letter) at a time. */
-      Uint1 bit = 2*(start_offset % COMPRESSION_RATIO);
-      Int4 adjusted_word;
+      const Int4 kScanShift = 2; /* scan 2 bits (i.e. one base) at a time*/
 
-      while (word_end_offset <= last_end_offset) {
-         /* Adjust the word index by the base within a byte */
-         adjusted_word = BlastNaLookupAdjustIndex(s, word, mb_lt->mask,
-                                         bit);
-   
-         index = ComputeDiscontiguousIndex_1b(s, adjusted_word, bit,
-                    template_type);
+      /* The accumulator is filled with the first (template_length -
+         kScanStep) bases to scan, 's' points to the first byte
+         of 'sequence' that contains bases not in the accumulator,
+         and curr_base is the offset of the next base to add */
+
+      while (curr_base < template_length - kScanStep) {
+         accum = accum << FULL_BYTE_SHIFT | *s++;
+         curr_base += COMPRESSION_RATIO;
+      }
+      if (curr_base > template_length - kScanStep) {
+         accum = accum >> (2 * (curr_base - (template_length - kScanStep)));
+         s--;
+      }
+      curr_base = start_offset + template_length;
+
+      while (curr_base <= last_base) {
+
+         /* shift the next base into the low-order bits of the accumulator */
+         accum = (accum << kScanShift) | 
+                 NCBI2NA_UNPACK_BASE(s[0], 
+                         3 - (curr_base - kScanStep) % COMPRESSION_RATIO);
+         if (curr_base % COMPRESSION_RATIO == 0)
+            s++;
+
+         index = ComputeDiscontiguousIndex(accum, template_type);
        
-         if (two_templates)
-            index2 = ComputeDiscontiguousIndex_1b(s, adjusted_word, bit,
-                        second_template_type);
-
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             q_off = mb_lt->hashtable[index];
-            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
-               + bit/2;
+            s_off = curr_base - template_length;
             while (q_off) {
                offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
                offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
-         if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-            q_off = mb_lt->hashtable2[index2];
-            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
-               + bit/2;
-            while (q_off) {
-               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               q_off = mb_lt->next_pos2[q_off];
+         if (two_templates) {
+            index2 = ComputeDiscontiguousIndex(accum, second_template_type);
+
+            if (NA_PV_TEST(pv_array, index2, pv_array_bts)) {
+               q_off = mb_lt->hashtable2[index2];
+               s_off = curr_base - template_length;
+               while (q_off) {
+                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
+                  q_off = mb_lt->next_pos2[q_off];
+               }
             }
          }
-         word_end_offset += kScanStep;
+
+         curr_base += kScanStep;
+
          /* test for buffer full. This test counts 
             for both templates (they both add hits 
             or neither one does) */
          if (total_hits >= max_hits)
             break;
-
-         bit += kScanShift;
-         if (bit >= FULL_BYTE_SHIFT) {
-            /* Advance to the next full byte */
-            bit -= FULL_BYTE_SHIFT;
-            word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
-                                mb_lt->mask, s++, word);
-         }
       }
    }
-   *end_offset = word_end_offset - mb_lt->word_length;
+   *end_offset = curr_base - template_length;
 
    return total_hits;
 }
