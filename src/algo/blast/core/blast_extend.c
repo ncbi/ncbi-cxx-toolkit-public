@@ -1135,7 +1135,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
    start_offset = 0;
    if (mb_lt->discontiguous) {
       last_start = subject_length - mb_lt->template_length;
-      last_end = last_start + mb_lt->word_length;
+      last_end = subject_length;
    } else {
       last_end = subject_length;
       switch (word_params->extension_method) {
