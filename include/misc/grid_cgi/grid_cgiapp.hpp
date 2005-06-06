@@ -95,6 +95,8 @@ public:
     /// Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }
 
+    string GetHiddenFields() const;
+
 private:
 
     /// Remove all persisted entries from cookie and self url.
@@ -250,6 +252,7 @@ protected:
                               int delay);
 private:
     int m_RefreshDelay;
+    bool x_JobStopRequested(const CGridCgiContext&) const;
 
     auto_ptr<CNetScheduleClient> m_NSClient;
     auto_ptr<INetScheduleStorage> m_NSStorage;
@@ -265,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/06/06 15:32:10  didenko
+ * Added GetHiddenFields method
+ *
  * Revision 1.16  2005/06/01 15:17:15  didenko
  * Now a query string is parsed in the CGridCgiContext constructor
  * Got rid of unsed code

@@ -70,8 +70,22 @@ string CGridCgiContext::GetSelfURL() const
                 url += '&';
             url += name + '=' + URL_EncodeString(value);
         }
-    }        
+    }
     return url;
+}
+
+string CGridCgiContext::GetHiddenFields() const
+{
+    string ret;
+    TPersistedEntries::const_iterator it;
+    for (it = m_PersistedEntries.begin(); 
+         it != m_PersistedEntries.end(); ++it) {
+        const string& name = it->first;
+        const string& value = it->second;
+        ret += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + name 
+             + "\" VALUE=\"" + value + "\">\n";
+    }        
+    return ret;
 }
 
 void CGridCgiContext::SetJobKey(const string& job_key)
@@ -95,10 +109,23 @@ const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
 void CGridCgiContext::PersistEntry(const string& entry_name)
 {
     string value = kEmptyStr;
-    TCgiEntries::const_iterator eit = m_ParsedQueryString.find(entry_name);
-    if (eit != m_ParsedQueryString.end())
-       value = eit->second;
-
+    ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
+        if (NStr::CompareNocase(entry_name, eit->first) == 0 ) {
+            string v = eit->second;
+            if (!v.empty())
+                value = v;
+        }
+    }
+    if (value.empty()) {
+        const TCgiEntries entries = m_CgiContext.GetRequest().GetEntries();
+        ITERATE(TCgiEntries, eit, entries) {
+            if (NStr::CompareNocase(entry_name, eit->first) == 0 ) {
+                string v = eit->second;
+                if (!v.empty())
+                    value = v;
+            }
+        }
+    }
     PersistEntry(entry_name, value);
 }
 void CGridCgiContext::PersistEntry(const string& entry_name, 
@@ -158,6 +185,10 @@ void CGridCgiApplication::OnQueueIsBusy(CGridCgiContext& ctx)
     OnJobFailed("NetSchedule Queue is busy", ctx);
 }
 
+const string kGridCgiForm = "<FORM METHOD=\"GET\" ACTION=\"<@SELF_URL@>\">\n"
+                            "<@HIDDEN_FIELDS@>\n<@STAT_VIEW@>\n"
+                            "</FORM>";
+
 int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
     // Given "CGI context", get access to its "HTTP request" and
@@ -170,6 +201,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     auto_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage(GetPageTitle(), GetPageTemplate()));
+        CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
+        page->AddTagMap("VIEW", stat_view);
     } catch (exception& e) {
         ERR_POST("Failed to create " << GetPageTitle()
                                      << " HTML page: " << e.what());
@@ -177,12 +210,15 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     }
     CGridCgiContext grid_ctx(*page, ctx);
     grid_ctx.PersistEntry("job_key");
+    grid_ctx.PersistEntry("Cancel");
     string job_key = grid_ctx.GetEntryValue("job_key");
     try {
         try {
         OnBeginProcessRequest(grid_ctx);
+
         if (!job_key.empty()) {
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+
             CNetScheduleClient::EJobStatus status;
             status = job_status.GetStatus();
         
@@ -231,7 +267,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
             }
 
-            if (JobStopRequested())
+            if (x_JobStopRequested(grid_ctx)) 
                 GetGridClient().CancelJob(job_key);
 
             if (remove_cookie) 
@@ -271,9 +307,14 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         } // try
         catch (CNetServiceException& ex) {
             OnJobFailed(ex.what(), grid_ctx);
-        }
-        CHTMLPlainText* self_url = new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
+        }       
+        CHTMLPlainText* self_url =
+            new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
         page->AddTagMap("SELF_URL", self_url);
+        CHTMLPlainText* hidden_fields = 
+            new CHTMLPlainText(grid_ctx.GetHiddenFields(),true);
+        page->AddTagMap("HIDDEN_FIELDS", hidden_fields);
+
         OnEndProcessRequest(grid_ctx);
     } //try
     catch (exception& e) {
@@ -284,7 +325,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
     // Compose and flush the resultant HTML page
     try {
-        _TRACE("stream status: " << ctx.GetStreamStatus());
         response.WriteHeader();
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
@@ -295,6 +335,15 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 
     return 0;
+}
+
+bool CGridCgiApplication::x_JobStopRequested(const CGridCgiContext& ctx) const
+{
+    if (JobStopRequested())
+        return true;
+    if (!ctx.GetEntryValue("Cancel").empty()) 
+        return true;
+    return false;
 }
 
 void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
@@ -326,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/06/06 15:32:10  didenko
+ * Added GetHiddenFields method
+ *
  * Revision 1.20  2005/06/01 20:28:37  didenko
  * Fixed a bug with exceptions reporting
  *
