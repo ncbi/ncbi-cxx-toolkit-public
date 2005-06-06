@@ -54,5 +54,6 @@ cline = '''
        os.environ['NCBI_INCLUDE'],
        swig_input_fname + '.mpp')
 status = os.system(cline)
-if status:
-    sys.exit(status)
+#if status:
+#    sys.exit(status)
+sys.exit(0)
