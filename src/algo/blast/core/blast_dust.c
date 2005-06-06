@@ -333,16 +333,34 @@ GetDustLocations (BlastSeqLoc** loc, DREGION* reg, Int4 nreg)
 
    /* point to dusted locations */
    if (nreg > 0) {
-      BlastSeqLoc* last_loc = NULL;
       Int4 i;
       for (i = 0; reg && i < nreg; i++) {
-         if (!last_loc)
-            last_loc = BlastSeqLocNew (loc, reg->from, reg->to);
-         else 
-            last_loc = BlastSeqLocNew (&last_loc, reg->from, reg->to);
+         BlastSeqLocNew(loc, reg->from, reg->to);
          reg = reg->next;
       }
    }
+#if 0
+   /* N.B.: 
+    * additional error checking added below results in unit test failures!
+    */
+
+   /* point to dusted locations */
+   if (nreg > 0) {
+      Int4 i;
+      for (i = 0; reg && i < nreg; i++) {
+         if (BlastSeqLocNew(loc, reg->from, reg->to) == NULL) {
+             break;
+         }
+         reg = reg->next;
+      }
+      /* either BlastSeqLocNew failed or nreg didn't match the number of
+       * elements in reg, so return error */
+      if (reg) {
+          *loc = BlastSeqLocFree(*loc);
+          return -1;
+      }
+   }
+#endif
    return 0;
 }
 

@@ -2163,25 +2163,20 @@ s_MergeSegs(SSequence* seq, SSeg* segs)
 static Int2 
 s_SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
 {
-   BlastSeqLoc* last_slp = NULL;
-
    for ( ; segs; segs = segs->next) {
       Int4 left = segs->begin + offset;
       Int4 right = segs->end + offset;
 
-      if (!last_slp) {
-         last_slp = BlastSeqLocNew(seg_locs, left, right);
-      } else {
-         last_slp = BlastSeqLocNew(&last_slp, left, right);
-      }
       /* Check that allocation succeeded. */
-      if (!last_slp)
+      if (BlastSeqLocNew(seg_locs, left, right) == NULL)
           break;
    }
    /* If not all segs have been processed, it means that memory allocation 
       failed, hence return error status. */
-   if (segs)
+   if (segs) {
+       *seg_locs = BlastSeqLocFree(*seg_locs);
        return -1;
+   }
 
    return 0;
 }

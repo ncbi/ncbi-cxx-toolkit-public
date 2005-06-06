@@ -100,8 +100,8 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
     ASSERT(results->num_queries == (Int4)query.size());
     
     for (Int4 query_index = 0; query_index < (Int4)query.size(); ++query_index) {
-        BlastSeqLoc* loc_list = NULL, *ordered_loc_list = NULL;
-        BlastSeqLoc* last_loc = NULL;
+        BlastSeqLoc* loc_list = NULL;
+        BlastSeqLoc* ordered_loc_list = NULL;
         BlastHitList* hit_list = results->hitlist_array[query_index];
        
         if (!hit_list) {
@@ -114,9 +114,6 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
         
         // Get the previous mask locations
         loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
-        // Find the last location in the list
-        for (last_loc = loc_list; last_loc && last_loc->next; 
-             last_loc = last_loc->next);
         
         /* Find all HSP intervals in query */
         for (Int4 hit_index = 0; hit_index < hit_list->hsplist_count; 
@@ -143,12 +140,7 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
                 left += query_start;
                 right += query_start;
 
-                // If this is the first mask, create a new BlastSeqLoc, 
-                // otherwise append to the end of the list.
-                if (!last_loc)
-                    loc_list = last_loc = BlastSeqLocNew(NULL, left, right);
-                else
-                    last_loc = BlastSeqLocNew(&last_loc, left, right);
+                BlastSeqLocNew(&loc_list, left, right);
             }
         }
         // Make the intervals unique
@@ -244,6 +236,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.20  2005/06/06 14:56:35  camacho
+ *  Remove premature optimizations when using BlastSeqLocNew
+ *
  *  Revision 1.19  2005/03/31 20:43:38  madden
  *  Blast_FindRepeatFilterLoc now takes CBlastOptionsHandle rather than char*
  *

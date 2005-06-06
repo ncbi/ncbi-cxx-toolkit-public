@@ -548,7 +548,6 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
             BlastSeqLoc* seqloc_var;
             Int2 frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
 
-            prot_head = NULL;
             for (seqloc_var = dna_seqloc; seqloc_var; 
                  seqloc_var = seqloc_var->next) {
                 Int4 from, to;
@@ -694,7 +693,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
    SSeqRange* ssr = NULL;
    BlastSeqLoc* loc_head=NULL,* last_loc=NULL,* loc_var=NULL;
-   BlastSeqLoc* new_loc = NULL,* new_loc_last = NULL;
+   BlastSeqLoc* new_loc = NULL;
    
    if (!mask_loc) {
       *mask_loc_out = NULL;
@@ -727,10 +726,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
       if (ssr && ((stop + link_value) > ssr->left)) {
          stop = MAX(stop, ssr->right);
       } else {
-         if (!new_loc)
-            new_loc_last = BlastSeqLocNew(&new_loc, start, stop);
-         else
-            new_loc_last = BlastSeqLocNew(&new_loc_last, start, stop);
+         BlastSeqLocNew(&new_loc, start, stop);
          if (loc_var->next) {
              start = ssr->left;
              stop = ssr->right;
@@ -940,7 +936,6 @@ static Int2
 s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 query_length)
 {
    BlastSeqLoc* mask_loc = NULL;
-   BlastSeqLoc* last_filter_per_context = NULL;
 
    ASSERT(filter_out);
 
@@ -952,10 +947,7 @@ s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 que
         
         start = query_length - 1 - loc->right;
         stop = query_length - 1 - loc->left;
-        if (last_filter_per_context == NULL)
-              last_filter_per_context = BlastSeqLocNew(filter_out, start, stop);
-        else
-              last_filter_per_context = BlastSeqLocNew(&last_filter_per_context, start, stop);
+        BlastSeqLocNew(filter_out, start, stop);
    }
 
    return 0;

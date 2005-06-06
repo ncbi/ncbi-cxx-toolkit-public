@@ -425,42 +425,30 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
 
     _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
-    BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
+    CBlastSeqLoc retval;
 
     if (slp->IsInt()) {
-        bsl = 
-            BlastSeqLocNew(NULL, slp->GetInt().GetFrom(), slp->GetInt().GetTo());
+        BlastSeqLocNew(&retval, slp->GetInt().GetFrom(), slp->GetInt().GetTo());
     } else if (slp->IsPacked_int()) {
-        ITERATE(list< CRef<CSeq_interval> >, itr, 
-                slp->GetPacked_int().Get()) {
-            curr = BlastSeqLocNew(NULL, (*itr)->GetFrom(), (*itr)->GetTo());
-            if (!bsl) {
-                bsl = tail = curr;
-            } else {
-                tail->next = curr;
-                tail = tail->next;
-            }
+        ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
+            BlastSeqLocNew(&retval, (*itr)->GetFrom(), (*itr)->GetTo());
         }
     } else if (slp->IsMix()) {
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
             if ((*itr)->IsInt()) {
-                curr = BlastSeqLocNew(NULL, (*itr)->GetInt().GetFrom(), 
-                                      (*itr)->GetInt().GetTo());
+                BlastSeqLocNew(&retval, (*itr)->GetInt().GetFrom(), 
+                                        (*itr)->GetInt().GetTo());
             } else if ((*itr)->IsPnt()) {
-                curr = BlastSeqLocNew(NULL, (*itr)->GetPnt().GetPoint(), 
-                                      (*itr)->GetPnt().GetPoint());
-            }
-
-            if (!bsl) {
-                bsl = tail = curr;
-            } else {
-                tail->next = curr;
-                tail = tail->next;
+                BlastSeqLocNew(&retval, (*itr)->GetPnt().GetPoint(), 
+                                        (*itr)->GetPnt().GetPoint());
             }
         }
+    } else {
+        NCBI_THROW(CBlastException, eBadParameter, 
+                   "Unsupported CSeq_loc type");
     }
 
-    return bsl;
+    return retval.Release();
 }
 
 TAutoUint1ArrayPtr
@@ -539,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2005/06/06 14:56:35  camacho
+ * Remove premature optimizations when using BlastSeqLocNew
+ *
  * Revision 1.73  2005/05/25 18:58:39  camacho
  * + CBlastSeqLoc::DebugDump
  *
