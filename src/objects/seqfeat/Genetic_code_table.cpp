@@ -103,7 +103,7 @@ void CTrans_table::x_InitFsaTable (void)
     for (i = eBase_gap; i <= eBase_N; i++) {
         ch = charToBase [i];
         sm_BaseToIdx [(int) ch] = i;
-        ch = tolower (ch);
+        ch = tolower ((unsigned char) ch);
         sm_BaseToIdx [(int) ch] = i;
     }
     sm_BaseToIdx [(int) 'U'] = eBase_T;
@@ -725,6 +725,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.22  2005/06/06 15:30:06  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 6.21  2005/06/03 16:52:45  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

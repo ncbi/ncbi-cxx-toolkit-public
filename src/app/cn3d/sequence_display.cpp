@@ -125,7 +125,7 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(
     if (index > toIndex)
         return false;
 
-    *character = tolower(sequence->sequenceString[index]);
+    *character = tolower((unsigned char) sequence->sequenceString[index]);
     if (sequence->molecule)
         *color = sequence->molecule->GetResidueColor(index);
     else
@@ -1322,6 +1322,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/06/06 15:28:03  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.79  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

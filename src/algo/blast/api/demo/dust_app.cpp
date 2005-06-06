@@ -272,7 +272,7 @@ int CDustApplication::Run(void)
                         start = (TSeqPos) temp_loc->ssr->left;
                         end = (TSeqPos) temp_loc->ssr->right;
                         for (; start <= end; start++)
-                            copy_data[start] = tolower(copy_data[start]);
+                            copy_data[start] = tolower((unsigned char) copy_data[start]);
                     }
 
                     // Get lowercase positions
@@ -286,7 +286,7 @@ int CDustApplication::Run(void)
                                 start = (TSeqPos) (*itr)->GetFrom();
                                 end = (TSeqPos) (*itr)->GetTo();
                                 for (; start < end; start++)
-                                    copy_data[start] = tolower(copy_data[start]);
+                                    copy_data[start] = tolower((unsigned char) copy_data[start]);
                             }
                     }
 

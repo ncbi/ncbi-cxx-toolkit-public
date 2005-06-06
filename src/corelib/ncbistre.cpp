@@ -190,7 +190,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
-        out.put(char(tolower(*c)));
+        out.put(char(tolower((unsigned char)(*c))));
     }
     return out;
 }
@@ -207,7 +207,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s)
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 {
     for ( const char* c = s.m_String; *c; ++c ) {
-        out.put(char(tolower(*c)));
+        out.put(char(tolower((unsigned char)(*c))));
     }
     return out;
 }
@@ -376,6 +376,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/06/06 15:29:12  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.35  2005/06/03 16:42:03  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

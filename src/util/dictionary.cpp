@@ -323,11 +323,11 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
         size_t remaining = in.length() - prev_len - 1;
 
         if (prev_len  &&
-            tolower(*iter) == tolower(*(iter - 1))  &&
-            tolower(*iter) != 'c') {
+            tolower((unsigned char)(*iter)) == tolower((unsigned char)(*(iter - 1)))  &&
+            tolower((unsigned char)(*iter)) != 'c') {
             continue;
         }
-        switch (tolower(*iter)) {
+        switch (tolower((unsigned char)(*iter))) {
         case 'a':
         case 'e':
         case 'i':
@@ -350,7 +350,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
         case 'l':
         case 'n':
         case 'r':
-            *out += tolower(*iter);
+            *out += tolower((unsigned char)(*iter));
             break;
 
         case 'c':
@@ -465,7 +465,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *(iter - 1) != 'p'  &&
                 *(iter - 1) != 's'  &&
                 *(iter - 1) != 't') {
-                *out += tolower(*iter);
+                *out += tolower((unsigned char)(*iter));
                 ++iter;
             }
             break;
@@ -477,7 +477,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *out += 'n';
                 break;
             }
-            *out += tolower(*iter);
+            *out += tolower((unsigned char)(*iter));
             break;
 
         case 'p':
@@ -490,7 +490,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *out += 'f';
                 break;
             }
-            *out += tolower(*iter);
+            *out += tolower((unsigned char)(*iter));
             break;
 
         case 'q':
@@ -535,7 +535,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 ++iter;
                 break;
             }
-            *out += tolower(*iter);
+            *out += tolower((unsigned char)(*iter));
             break;
 
         case 'v':
@@ -550,7 +550,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                     ++iter;
                     break;
                 }
-                *out += tolower(*iter);
+                *out += tolower((unsigned char)(*iter));
                 break;
             }
 
@@ -559,7 +559,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                  *(iter - 1) == 'i'  ||
                  *(iter - 1) == 'o'  ||
                  *(iter - 1) == 'u') {
-                *out += tolower(*iter);
+                *out += tolower((unsigned char)(*iter));
             }
             break;
 
@@ -588,7 +588,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                  *(iter - 1) != 'u') {
                 break;
             }
-            *out += tolower(*iter);
+            *out += tolower((unsigned char)(*iter));
             break;
 
         case 'z':
@@ -693,8 +693,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
             string::const_iterator iter1 = pstr1->begin();
             string::const_iterator iter2 = pstr2->begin();
             for ( ;  iter1 != pstr1->end()  &&  iter2 != pstr2->end();  ) {
-                char c1_0 = tolower(*iter1);
-                char c2_0 = tolower(*iter2);
+                char c1_0 = tolower((unsigned char)(*iter1));
+                char c2_0 = tolower((unsigned char)(*iter2));
                 if (c1_0 == c2_0) {
                     /// identity: easy out
                     ++iter1;
@@ -718,8 +718,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                     char corner2 = *(iter2 + radius);
                     bool match = false;
                     for (int i = radius;  i >= 0;  --i) {
-                        c1_0 = tolower(*(iter1 + i));
-                        c2_0 = tolower(*(iter2 + i));
+                        c1_0 = tolower((unsigned char)(*(iter1 + i)));
+                        c2_0 = tolower((unsigned char)(*(iter2 + i)));
                         if (c1_0 == corner2) {
                             match = true;
                             cost = radius;
@@ -785,8 +785,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                 row1_ptr[0] = i + 1;
                 //cout << (*long_str)[i] << " ";
                 for (j = 0;  j < short_str->size();  ++j) {
-                    int c0 = tolower((*short_str)[j]);
-                    int c1 = tolower((*long_str)[i]);
+                    int c0 = tolower((unsigned char) (*short_str)[j]);
+                    int c1 = tolower((unsigned char) (*long_str)[i]);
                     size_t cost = (c0 == c1 ? 0 : 1);
                     row1_ptr[j + 1] =
                         min(row0_ptr[j] + cost,
@@ -837,7 +837,7 @@ int CDictionaryUtil::Score(const string& word1, const string& meta1,
     score -= CDictionaryUtil::GetEditDistance(meta1, meta2, method);
 
     // one point for first letter of word being same
-    //score += (tolower(word1[0]) == tolower(word2[0]));
+    //score += (tolower((unsigned char) word1[0]) == tolower((unsigned char) word2[0]));
 
     // one point for identical lengths of words
     //score += (word1.length() == word2.length());
@@ -852,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/06/06 15:31:27  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.9  2005/06/03 17:04:37  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

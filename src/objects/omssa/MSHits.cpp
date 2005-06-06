@@ -83,7 +83,7 @@ void CMSHits::MakePepString(string& StringOut) const
         NStr::ToUpper(StringOut);
         ITERATE(TMods, i, GetMods()) {
             if((*i)->GetSite() < StringOut.size())
-                StringOut[(*i)->GetSite()] = tolower(StringOut[(*i)->GetSite()]);
+                StringOut[(*i)->GetSite()] = tolower((unsigned char) StringOut[(*i)->GetSite()]);
         }
     }
 }
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/06/06 15:29:56  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.5  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

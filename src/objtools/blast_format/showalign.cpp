@@ -1384,7 +1384,7 @@ const void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
                         } else if (m_SeqLocChar==eN){
                             actualSeq[i-start]='n';
                         } else if (m_SeqLocChar==eLowerCase){
-                            actualSeq[i-start]=tolower(actualSeq[i-start]);
+                            actualSeq[i-start]=tolower((unsigned char) actualSeq[i-start]);
                         }
                         //store seqloc start for font tag below
                         if ((m_AlignOption & eHtml) 
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.78  2005/06/06 15:30:29  lavr
+*Explicit (unsigned char) casts in ctype routines
+*
 *Revision 1.77  2005/06/03 16:58:24  lavr
 *Explicit (unsigned char) casts in ctype routines
 *

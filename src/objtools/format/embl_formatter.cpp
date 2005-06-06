@@ -546,7 +546,7 @@ void CEmblFormatter::FormatSequence
             if ( count % 10 == 0 ) {
                 seq_line << ' ';
             }
-            seq_line << (char)tolower(*iter);
+            seq_line << (char)tolower((unsigned char)(*iter));
         }
         seq_line << '\n';
     }

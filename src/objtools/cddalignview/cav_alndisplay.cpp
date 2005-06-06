@@ -64,7 +64,7 @@ static const string
 static string StrToLower(const string& str)
 {
     string newStr(str);
-    for (int i=0; i<newStr.size(); ++i) newStr[i] = tolower(newStr[i]);
+    for (int i=0; i<newStr.size(); ++i) newStr[i] = tolower((unsigned char) newStr[i]);
     return newStr;
 }
 
@@ -183,7 +183,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
             for (l=0; l<unalignedLength; ++l) {
                 textRows.back()->SetCharAt(
                     i->alnLocBefore + 1 + ((i->seqLocFrom == 0) ? l + extraSpace : l),
-                    tolower((*a)->slave->sequenceString[i->seqLocFrom + l]));
+                    tolower((unsigned char) (*a)->slave->sequenceString[i->seqLocFrom + l]));
             }
         }
     }
@@ -1243,6 +1243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/06/06 15:30:38  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.8  2005/06/03 16:58:48  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

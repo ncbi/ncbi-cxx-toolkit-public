@@ -64,14 +64,14 @@ void CWinMaskWriterFasta::Print( CBioseq_Handle& bsh,
 
             if( imask != mask.end() && i >= imask->first )
                 if( i <= imask->second ) 
-                    letter = tolower( letter );
+                    letter = tolower((unsigned char) letter);
                 else
                 {
                     ++imask;
 
                     if(    imask != mask.end() 
                         && i >= imask->first && i <= imask->second )
-                        letter = tolower( letter );
+                        letter = tolower((unsigned char) letter);
                 }
 
             accumulator.append( 1, letter );
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/06/06 15:28:17  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.3  2005/04/06 15:57:10  morgulis
  * Fix in the output fasta formatter for skipping a base in the case of two
  * adjacent masked intervals.

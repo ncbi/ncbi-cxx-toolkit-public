@@ -2068,7 +2068,7 @@ static int s_StringICmp (char * str1, char *str2)
     cp1 = str1;
     cp2 = str2;
     while (*cp1 != 0  &&  *cp2 != 0) {
-        diff = toupper ((int) *cp1) - toupper ((int) *cp2);
+        diff = toupper ((unsigned char) *cp1) - toupper ((unsigned char) *cp2);
         if (diff != 0) {
             return diff;
         }
@@ -5853,6 +5853,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/06/06 15:31:34  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.22  2005/06/03 17:03:57  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

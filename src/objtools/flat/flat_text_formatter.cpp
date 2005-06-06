@@ -366,7 +366,7 @@ void CFlatTextFormatter::FormatData(const CFlatData& data)
             if (i % 10 == 0) {
                 oss << ' ';
             }
-            oss.put(tolower(buf[i]));
+            oss.put(tolower((unsigned char) buf[i]));
         }
         NStr::Split(CNcbiOstrstreamToString(oss), "\n", lines);
         // should use narrower location
@@ -441,6 +441,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/06/06 15:30:51  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.7  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

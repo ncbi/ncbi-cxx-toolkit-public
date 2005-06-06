@@ -2279,7 +2279,7 @@ int NStr::strcasecmp(const char* s1, const char* s2)
     for ( ;; ++s1, ++s2) {
         char c1 = *s1;
         // calculate difference
-        diff = tolower(c1) - tolower(*s2);
+        diff = tolower((unsigned char) c1) - tolower((unsigned char)(*s2));
         // if end of string or different
         if (!c1  ||  diff)
             break; // return difference
@@ -2304,7 +2304,7 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
             return 0;
         char c1 = *s1;
         // calculate difference
-        diff = tolower(c1) - tolower(*s2);
+        diff = tolower((unsigned char) c1) - tolower((unsigned char)(*s2));
         // if end of string or different
         if (!c1  ||  diff)
             break; // return difference
@@ -2694,6 +2694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2005/06/06 15:26:30  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.88  2005/06/03 16:20:47  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

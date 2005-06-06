@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/06/06 15:31:15  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.30  2005/02/22 15:07:34  gouriano
 * Corrected writing element's default value when generating XML schema
 *
@@ -450,7 +453,7 @@ CEnumDataType::SEnumCInfo CEnumDataType::GetEnumCInfo(void) const
     }
     string prefix = GetVar("_prefix");
     if ( prefix.empty() ) {
-        prefix = char(tolower(enumName[0])) + enumName.substr(1) + '_';
+        prefix = char(tolower((unsigned char) enumName[0])) + enumName.substr(1) + '_';
     }
     return SEnumCInfo(enumName, typeName, prefix);
 }

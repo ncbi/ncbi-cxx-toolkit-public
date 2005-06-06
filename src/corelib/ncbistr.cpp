@@ -88,7 +88,8 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  *s == *pattern) {
+    int diff;
+    while (n  &&  *pattern  &&  !(diff = *s - *pattern)) {
         s++;  pattern++;  n--;
     }
 
@@ -96,7 +97,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return *pattern ? -1 : 0;
     }
 
-    return *s - *pattern;
+    return diff;
 }
 
 
@@ -115,7 +116,9 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  tolower(*s) == tolower(*pattern)) {
+    int diff;
+    while (n  &&  *pattern  &&
+           !(diff = tolower((unsigned char)(*s)) - tolower((unsigned char)(*pattern)))) {
         s++;  pattern++;  n--;
     }
 
@@ -123,7 +126,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return *pattern ? -1 : 0;
     }
 
-    return tolower(*s) - tolower(*pattern);
+    return diff;
 }
 
 
@@ -147,7 +150,8 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  *s == *p) {
+    int diff;
+    while (n_cmp  &&  !(diff = *s - *p)) {
         s++;  p++;  n_cmp--;
     }
 
@@ -157,7 +161,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return n > pattern.length() ? 1 : -1;
     }
 
-    return *s - *p;
+    return diff;
 }
 
 
@@ -181,7 +185,8 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  tolower(*s) == tolower(*p)) {
+    int diff;
+    while (n_cmp  &&  !(diff = tolower((unsigned char)(*s)) - tolower((unsigned char)(*p)))) {
         s++;  p++;  n_cmp--;
     }
 
@@ -191,7 +196,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return n > pattern.length() ? 1 : -1;
     }
 
-    return tolower(*s) - tolower(*p);
+    return diff;
 }
 
 
@@ -238,8 +243,8 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
             // Compare nonpattern character in mask and name
             char s = *str++;
             if ( use_case == eNocase ) {
-                c = tolower(c);
-                s = tolower(s);
+                c = tolower((unsigned char) c);
+                s = tolower((unsigned char) s);
             }
             if ( c != s ) {
                 return false;
@@ -1996,6 +2001,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.155  2005/06/06 15:29:05  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 1.154  2005/06/03 16:41:52  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

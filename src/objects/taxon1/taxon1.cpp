@@ -235,12 +235,12 @@ public:
                 if( !isspace((unsigned char) in[i]) ) {
                     bSpace = false;
                     if( prevc )
-                        out += tolower(prevc);
+                        out += tolower((unsigned char) prevc);
                     prevc = in[i];
                 }
             } else {
                 if( prevc )
-                    out += tolower(prevc);
+                    out += tolower((unsigned char) prevc);
                 if( isspace((unsigned char) in[i]) ) {
                     prevc = ' ';
                     bSpace = true;
@@ -250,7 +250,7 @@ public:
             }
         }
         if( prevc && prevc != ' ' )
-            out += tolower(prevc);
+            out += tolower((unsigned char) prevc);
     }
 
 private:
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.29  2005/06/06 15:30:15  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
  * Revision 6.28  2005/06/03 16:57:25  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

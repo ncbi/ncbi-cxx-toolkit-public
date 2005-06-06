@@ -1220,7 +1220,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
         // Otherwise, search for the next sample.
         
         if (ignore_case
-            ? tolower(term_in[diff]) < tolower(KeyData[diff])
+            ? tolower((unsigned char) term_in[diff]) < tolower((unsigned char) KeyData[diff])
             : term_in[diff] < KeyData[diff]) {
             Stop = --SampleNum;
         } else {

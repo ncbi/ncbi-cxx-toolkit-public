@@ -291,7 +291,7 @@ void CFlatEMBLFormatter::FormatData(const CFlatData& data)
             if (i % 10 == 0) {
                 oss << ' ';
             }
-            oss.put(tolower(buf[i]));
+            oss.put(tolower((unsigned char) buf[i]));
         }
         if (l % 60) {
             oss << string((60 - (l % 60)) * 11 / 10 + 1, ' ')
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/06/06 15:30:45  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
 * Revision 1.11  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *
