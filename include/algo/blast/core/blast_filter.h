@@ -65,11 +65,12 @@ extern const Uint1 kProtMask;
 #define REPEAT_MASK_LINK_VALUE 5
 
 /** Create and initialize a new sequence interval.
- * @param head existing BlastSeqLoc to add onto, if *head
+ * @param head existing BlastSeqLoc to append onto, if *head
  *   is NULL then it will be set to new BlastSeqLoc, may be NULL [in|out]
  * @param from Start of the interval [in]
  * @param to End of the interval [in]
- * @return Pointer to the allocated BlastSeqLoc structure.
+ * @return Pointer to the allocated BlastSeqLoc structure (i.e.: tail of the
+ * list).
  */
 NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to);
