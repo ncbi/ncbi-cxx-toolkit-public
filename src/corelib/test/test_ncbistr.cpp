@@ -161,9 +161,9 @@ enum ContainerType {
 
 void DumpSize(void)
 {
-    char buffer[1024];
     NcbiCout << "Press enter..." << flush;
-    gets(buffer);
+    string str;
+    getline(NcbiCin, str);
 }
 
 
@@ -1169,6 +1169,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.46  2005/06/06 20:22:21  vasilche
+ * Use getline instead of gets.
+ *
  * Revision 6.45  2005/06/03 16:42:46  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
