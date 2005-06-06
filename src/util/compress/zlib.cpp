@@ -37,6 +37,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbifile.hpp>
 #include <util/compress/zlib.hpp>
 #include <zlib.h>
 
@@ -69,8 +70,8 @@ BEGIN_NCBI_SCOPE
 #define LIMIT_SIZE_PARAM(value) if (value > (size_t)kMax_Int) value = kMax_Int
 #define LIMIT_SIZE_PARAM_U(value) if (value > kMax_UInt) value = kMax_UInt
 
-// Maximum size of memory buffer for data caching
-const size_t kMaxCacheSize = 1024;
+// Maximum size of gzip file header
+const size_t kMaxHeaderSize = 1024*4;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -116,9 +117,35 @@ const int gz_magic[2] = {0x1f, 0x8b};
 #define RESERVED     0xE0 // bits 5..7: reserved/
 
 
+// Store only 4 bytes for value
+static void s_StoreUI4(unsigned char* buf, unsigned long value)
+{
+    if ( value > kMax_UI4 ) {
+        ERR_POST("CZipCompression:  Stored value " \
+                 "exceeded maximum size for Uint4 type");
+    }
+    for (int i = 0; i < 4; i++) {
+        buf[i] = (unsigned char)(value & 0xff);
+        value >>= 8;
+    }
+}
+
+
+static void s_GetUI4(unsigned char* buf, unsigned long& value)
+{
+    value = 0;
+    for (int i = 3; i >= 0; i--) {
+        value <<= 8;
+        value += buf[i];
+    }
+}
+
+
 // Returns length of the .gz header if it exist or 0 otherwise.
+// If 'info' not NULL, fill it with information from header.
 static
-size_t s_CheckGZipHeader(const void* src_buf, size_t src_len)
+size_t s_CheckGZipHeader(const void* src_buf, size_t src_len,
+                         CZipCompression::SFileInfo* info = 0)
 {
     unsigned char* buf = (unsigned char*)src_buf;
     // .gz header cannot be less than 10 bytes
@@ -139,6 +166,10 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len)
     // gz_magic (2) + methos (1) + flags (1) + time, xflags and OS code (6)
     size_t header_len = 10; 
 
+    if ( info ) {
+        s_GetUI4((unsigned char*)buf+4, (unsigned long&)info->mtime);
+    }
+
     // Skip the extra fields
     if ((flags & EXTRA_FIELD) != 0) {
         if (header_len + 2 > src_len) {
@@ -150,11 +181,19 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len)
     }
     // Skip the original file name
     if ((flags & ORIG_NAME) != 0) {
+        size_t pos = header_len;
         while (header_len < src_len  &&  buf[header_len++] != 0);
+        if ( info ) {
+            info->name.assign((char*)buf+pos, header_len-pos);
+        }
     }
     // Skip the file comment
     if ((flags & COMMENT) != 0) {
+        size_t pos = header_len;
         while (header_len < src_len  &&  buf[header_len++] != 0);
+        if ( info ) {
+            info->comment.assign((char*)buf+pos, header_len-pos);
+        }
     }
     // Skip the header CRC
     if ((flags & HEAD_CRC) != 0) {
@@ -167,29 +206,52 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len)
 }
 
 
-static size_t s_WriteGZipHeader(void* buf, size_t buf_size)
+static size_t s_WriteGZipHeader(void* src_buf, size_t buf_size,
+                                const CZipCompression::SFileInfo* info = 0)
 {
+    char* buf = (char*)src_buf;
+
     // .gz header cannot be less than 10 bytes
     if (buf_size < 10) {
         return 0;
     }
-    sprintf((char*)buf, "%c%c%c%c%c%c%c%c%c%c", gz_magic[0], gz_magic[1],
-            Z_DEFLATED, 0 /*flags*/, 0,0,0,0 /*time*/, 0 /*xflags*/, OS_CODE);
-    return 10;
-}
+    unsigned char flags = 0;
+    size_t header_len = 10;  // write beginnning of header later
 
+    // Store the original file name.
+    // Store it only if buffer have enough size.
+    if ( info  &&  !info->name.empty()  &&
+         buf_size > (info->name.length() + header_len) ) {
+        flags |= ORIG_NAME;
+        strncpy((char*)buf+header_len, info->name.data(),info->name.length());
+        header_len += info->name.length();
+        buf[header_len++] = '\0';
+    }
+    // Store file comment.
+    // Store it only if buffer have enough size.
+    if ( info  &&  !info->comment.empty()  &&
+         buf_size > (info->comment.length() + header_len) ) {
+        flags |= COMMENT;
+        strncpy((char*)buf+header_len, info->comment.data(),
+                info->comment.length());
+        header_len += info->comment.length();
+        buf[header_len++] = '\0';
+    }
 
-// Store only 4 bytes for value
-static void s_StoreSize(unsigned char* buf, unsigned long value)
-{
-    if ( value > kMax_UI4 ) {
-        ERR_POST("CZipCompression::s_WriteGzipFooter:  Stored value " \
-                 "exceeded maximum size for Uint4 type");
+    // Set beginning of header
+    memset(buf, 0, 10);
+    buf[0] = gz_magic[0];
+    buf[1] = gz_magic[1];
+    buf[2] = Z_DEFLATED;
+    buf[3] = flags;
+    /* 4-7 mtime */
+    if ( info  &&  info->mtime ) {
+        s_StoreUI4((unsigned char*)buf+4, info->mtime);
     }
-    for (int i = 0; i < 4; i++) {
-        buf[i] = (unsigned char)(value & 0xff);
-        value >>= 8;
-    }
+    /* 8 - xflags == 0*/
+    buf[9] = OS_CODE;
+
+    return header_len;
 }
 
 
@@ -202,10 +264,21 @@ static size_t s_WriteGZipFooter(void*         buf,
     if (buf_size < 8) {
         return 0;
     }
-    s_StoreSize((unsigned char*)buf, crc);
-    s_StoreSize((unsigned char*)buf+4, total);
+    s_StoreUI4((unsigned char*)buf, crc);
+    s_StoreUI4((unsigned char*)buf+4, total);
 
     return 8;
+}
+
+
+void s_CollectFileInfo(const string& filename, 
+                       CZipCompression::SFileInfo& info)
+{
+    CFile file(filename);
+    info.name = file.GetName();
+    time_t mtime;
+    file.GetTimeT(&mtime);
+    info.mtime = mtime;
 }
 
 
@@ -265,8 +338,8 @@ bool CZipCompression::CompressBuffer(
     stream.opaque = (voidpf)0;
 
     errcode = deflateInit2_(&stream, GetLevel(), Z_DEFLATED,
-                            header_len ? -MAX_WBITS : MAX_WBITS,
-                            DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+                            header_len ? -m_WindowBits : m_WindowBits,
+                            m_MemLevel, m_Strategy,
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode == Z_OK) {
         errcode = deflate(&stream, Z_FINISH);
@@ -356,7 +429,7 @@ bool CZipCompression::DecompressBuffer(
     // return Z_STREAM_END. Here the gzip CRC32 ensures that 4 bytes are
     // present after the compressed stream.
         
-    errcode = inflateInit2_(&stream, header_len ? -MAX_WBITS : MAX_WBITS,
+    errcode = inflateInit2_(&stream, header_len ? -m_WindowBits :m_WindowBits,
                             ZLIB_VERSION, (int)sizeof(z_stream));
 
     if (errcode == Z_OK) {
@@ -384,9 +457,20 @@ bool CZipCompression::CompressFile(const string& src_file,
                                    const string& dst_file,
                                    size_t        buf_size)
 {
-    CZipCompressionFile cf(dst_file,
-                           CCompressionFile::eMode_Write, GetLevel(),
-                           m_WindowBits, m_MemLevel, m_Strategy);
+    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
+    cf.SetFlags(GetFlags());
+
+    // Collect info about compressed file
+    CZipCompression::SFileInfo info;
+    if ( F_ISSET(fWriteGZipFormat) ) {
+        s_CollectFileInfo(src_file, info);
+    }
+    // Open output file
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
+        F_ISSET(fWriteGZipFormat) ? &info : 0) ) {
+        return false;
+    } 
+    // Make compression
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
         return cf.Close();
     }
@@ -405,9 +489,12 @@ bool CZipCompression::DecompressFile(const string& src_file,
                                      const string& dst_file,
                                      size_t        buf_size)
 {
-    CZipCompressionFile cf(src_file,
-                           CCompressionFile::eMode_Read, GetLevel(),
-                           m_WindowBits, m_MemLevel, m_Strategy);
+    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
+    cf.SetFlags(GetFlags());
+
+    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+        return false;
+    } 
     if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
         return cf.Close();
     }
@@ -446,7 +533,8 @@ string CZipCompression::FormatErrorMessage(string where,
 CZipCompressionFile::CZipCompressionFile(
     const string& file_name, EMode mode,
     ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level, window_bits, mem_level, strategy)
+    : CZipCompression(level, window_bits, mem_level, strategy),
+      m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
@@ -460,7 +548,8 @@ CZipCompressionFile::CZipCompressionFile(
 
 CZipCompressionFile::CZipCompressionFile(
     ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level, window_bits, mem_level, strategy)
+    : CZipCompression(level, window_bits, mem_level, strategy),
+      m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
     return;
 }
@@ -475,43 +564,68 @@ CZipCompressionFile::~CZipCompressionFile(void)
 
 bool CZipCompressionFile::Open(const string& file_name, EMode mode)
 {
-    string open_mode;
+    return Open(file_name, mode, 0 /*info*/);
+}
 
-    // Form a string file mode using template" <r/w>b<level><strategy>"
-    if ( mode == eMode_Read ) {
-        open_mode = "rb";
-    } else {
-        open_mode = "wb";
-        // Add comression level
-        open_mode += NStr::IntToString((long)GetLevel());
-        // Add strategy 
-        switch (m_Strategy) {
-            case Z_FILTERED:
-                open_mode += "f";
-                break;
-            case Z_HUFFMAN_ONLY:
-                open_mode += "h";
-            default:
-                ; // Z_DEFAULT_STRATEGY
-        }
-    }
 
-    // Open file
-    m_File = gzopen(file_name.c_str(), open_mode.c_str()); 
+bool CZipCompressionFile::Open(const string& file_name, EMode mode,
+                               SFileInfo* info)
+{
     m_Mode = mode;
 
-    if ( !m_File ) {
-        int err = errno;
+    // Open a file
+    if ( mode == eMode_Read ) {
+        m_File = new CNcbiFstream(file_name.c_str(),
+                                  IOS_BASE::in | IOS_BASE::binary);
+    } else {
+        m_File = new CNcbiFstream(file_name.c_str(),
+                                  IOS_BASE::out | IOS_BASE::binary |
+                                  IOS_BASE::trunc);
+    }
+    if ( !m_File->good() ) {
         Close();
-        if ( err == 0 ) {
-            SetError(Z_MEM_ERROR, zError(Z_MEM_ERROR));
-        } else {
-            SetError(Z_MEM_ERROR, strerror(errno));
-        }
-        ERR_POST(FormatErrorMessage("CZipCompressionFile::Open", false));
         return false;
-    }; 
-    SetError(Z_OK);
+    }
+    // Get file information
+    if ( mode == eMode_Read  &&  F_ISSET(fCheckFileHeader)  &&  info) {
+        char buf[kMaxHeaderSize];
+        m_File->read(buf, kMaxHeaderSize);
+        m_File->seekg(0);
+        s_CheckGZipHeader(buf, m_File->gcount(), info);
+    }
+
+    // Create compression stream for I/O
+    if ( mode == eMode_Read ) {
+        CZipDecompressor* decompressor = 
+            new CZipDecompressor(m_WindowBits, GetFlags());
+        CCompressionStreamProcessor* processor = 
+            new CCompressionStreamProcessor(
+                decompressor, CCompressionStreamProcessor::eDelete,
+                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+        m_Zip = 
+            new CCompressionIOStream(
+                *m_File, processor, 0, CCompressionStream::fOwnReader);
+    } else {
+        CZipCompressor* compressor = 
+            new CZipCompressor(
+                GetLevel(), m_WindowBits, m_MemLevel, m_Strategy, GetFlags());
+        if ( F_ISSET(fWriteGZipFormat)  &&  info) {
+            // Enable compressor to write info information about
+            // compressed file into gzip file header
+            compressor->SetFileInfo(*info);
+        }
+        CCompressionStreamProcessor* processor = 
+            new CCompressionStreamProcessor(
+                compressor, CCompressionStreamProcessor::eDelete,
+                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+        m_Zip = 
+            new CCompressionIOStream(
+                *m_File, 0, processor, CCompressionStream::fOwnWriter);
+    }
+    if ( !m_Zip->good() ) {
+        Close();
+        return false;
+    }
     return true;
 } 
 
@@ -520,56 +634,56 @@ long CZipCompressionFile::Read(void* buf, size_t len)
 {
     LIMIT_SIZE_PARAM_U(len);
 
-    int nread = gzread(m_File, buf, (unsigned int)len);
-    if ( nread == -1 ) {
-        int err_code;
-        const char* err_msg = gzerror(m_File, &err_code);
-        SetError(err_code, err_msg);
-        ERR_POST(FormatErrorMessage("CZipCompressionFile::Read", false));
-        return -1;
+    if ( !m_Zip  ||  m_Mode != eMode_Read ) {
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+            "[CZipCompressionFile::Read]  File must be opened for reading");
     }
-    SetError(Z_OK);
-    return nread;
+    m_Zip->read((char*)buf, len);
+    streamsize nread = m_Zip->gcount();
+    if ( nread ) {
+        return nread;
+    }
+    if ( m_Zip->eof() ) {
+        return 0;
+    }
+    return -1;
 }
 
 
 long CZipCompressionFile::Write(const void* buf, size_t len)
 {
+    if ( !m_Zip  ||  m_Mode != eMode_Write ) {
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+            "[CZipCompressionFile::Write]  File must be opened for writing");
+    }
     // Redefine standard behaviour for case of writing zero bytes
     if (len == 0) {
         return 0;
     }
     LIMIT_SIZE_PARAM_U(len);
 
-    int nwrite = gzwrite(m_File, const_cast<void* const>(buf),
-                         (unsigned int)len); 
-    if ( nwrite <= 0 ) {
-        int err_code;
-        const char* err_msg = gzerror(m_File, &err_code);
-        SetError(err_code, err_msg);
-        ERR_POST(FormatErrorMessage("CZipCompressionFile::Write", false));
-        return -1;
+    m_Zip->write((char*)buf, len);
+    if ( m_Zip->good() ) {
+        return len;
     }
-    SetError(Z_OK);
-    return nwrite;
- 
+    return -1;
 }
 
 
 bool CZipCompressionFile::Close(void)
 {
-    if ( m_File ) {
-        int errcode = gzclose(m_File); 
-        m_File = 0;
-        if ( errcode != Z_OK) {
-            int err_code;
-            const char* err_msg = gzerror(m_File, &err_code);
-            SetError(errcode, err_msg);
-            ERR_POST(FormatErrorMessage("CZipCompressionFile::Close", false));
-            return false;
-        }
+    // Close compression/decompression stream
+    if ( m_Zip ) {
+        m_Zip->Finalize();
+        delete m_Zip;
+        m_Zip = 0;
     }
-    SetError(Z_OK);
+    // Close file stream
+    if ( m_File ) {
+        m_File->close();
+        delete m_File;
+        m_File = 0;
+    }
     return true;
 }
 
@@ -595,6 +709,12 @@ CZipCompressor::~CZipCompressor()
 }
 
 
+void CZipCompressor::SetFileInfo(const SFileInfo& info)
+{
+    m_FileInfo = info;
+}
+
+
 CCompressionProcessor::EStatus CZipCompressor::Init(void)
 {
     // Initialize members
@@ -603,7 +723,7 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     m_CRC32 = 0;
     m_NeedWriteHeader = true;
     m_Cache.erase();
-    m_Cache.reserve(kMaxCacheSize);
+    //!!!m_Cache.reserve(kMaxHeaderSize);
 
     // Initialize the compressor stream structure
     memset(STREAM, 0, sizeof(z_stream));
@@ -636,7 +756,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
 
     // Write gzip file header
     if ( F_ISSET(fWriteGZipFormat)  &&  m_NeedWriteHeader ) {
-        header_len = s_WriteGZipHeader(out_buf, out_size);
+        header_len = s_WriteGZipHeader(out_buf, out_size, &m_FileInfo);
         if (!header_len) {
             ERR_POST("CZipCompressor::Process:  Cannot write gzip header");
             return eStatus_Error;
@@ -781,7 +901,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     SetBusy();
     m_NeedCheckHeader = true;
     m_Cache.erase();
-    m_Cache.reserve(kMaxCacheSize);
+    m_Cache.reserve(kMaxHeaderSize);
 
     // Initialize the compressor stream structure
     memset(STREAM, 0, sizeof(z_stream));
@@ -824,11 +944,11 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     if ( F_ISSET(fCheckFileHeader) ) {
         size_t header_len = 0;
         if ( m_NeedCheckHeader ) {
-            if (in_buf  &&  m_Cache.size() < kMaxCacheSize) {
-                size_t n = min(kMaxCacheSize - m_Cache.size(), in_len);
+            if (in_buf  &&  m_Cache.size() < kMaxHeaderSize) {
+                size_t n = min(kMaxHeaderSize - m_Cache.size(), in_len);
                 m_Cache.append(in_buf, n);
                 avail_adj -= n;
-                if (m_Cache.size() < kMaxCacheSize) {
+                if (m_Cache.size() < kMaxHeaderSize) {
                     // Data block is very small and was cached.
                     *in_avail  = 0;
                     *out_avail = 0;
@@ -837,14 +957,14 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             }
             // Check gzip header in the buffer
             header_len = s_CheckGZipHeader(m_Cache.c_str(), m_Cache.size());
-            _ASSERT(header_len < kMaxCacheSize);
+            _ASSERT(header_len < kMaxHeaderSize);
             // If gzip header found, skip it
             if ( header_len ) {
                 m_Cache.erase(0, header_len);
                 inflateEnd(STREAM);
                 int errcode = inflateInit2_(STREAM,
-                                            header_len ? -MAX_WBITS :
-					    m_WindowBits,
+                                            header_len ? -m_WindowBits :
+                                                          m_WindowBits,
                                             ZLIB_VERSION,
                                             (int)sizeof(z_stream));
 
@@ -943,6 +1063,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/06/06 10:52:48  ivanov
+ * Rewritten CZipCompressionFile using compression streams.
+ * CompressFile() now can write file`s name/mtime into gzip file header.
+ *
  * Revision 1.20  2005/05/14 20:00:13  vakatov
  * CZipCompressionFile::Write() -- a thinko bug fixed
  *

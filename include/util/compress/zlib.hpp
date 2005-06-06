@@ -90,35 +90,30 @@ class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 public:
     /// Zip stream processing flags.
     enum EFlags {
-        fCheckFileHeader = (1<<1), // Check & skip file header
-                                   // for decompression stream;
-        fWriteGZipFormat = (1<<2)  // Use .gz file format to write
-                                   // into compression stream
+        fCheckFileHeader = (1<<1), ///< Check & skip file header
+                                   ///< for decompression stream;
+        fWriteGZipFormat = (1<<2)  ///< Use .gz file format to write
+                                   ///< into compression stream
     };
 
-    // 'ctors
+    /// Constructor
     CZipCompression(
         ELevel level       = eLevel_Default,
         int    window_bits = kZlibDefaultWbits,     // [8..15]
         int    mem_level   = kZlibDefaultMemLevel,  // [1..9] 
         int    strategy    = kZlibDefaultStrategy   // [0..2]
     );
+
+    /// Destructor
     virtual ~CZipCompression(void);
 
-    // Returns default compression level for a compression algorithm
+    /// Returns default compression level for a compression algorithm
     virtual ELevel GetDefaultLevel(void) const
         { return ELevel(kZlibDefaultCompression); };
 
     //
     // Utility functions 
     //
-    // Note:
-    //    The CompressBuffer/DecompressBuffer do not use extended options
-    //    passed in constructor like <window_bits>, <mem_level> and
-    //    <strategy>; because the native ZLib compress2/uncompress
-    //    functions use primitive initialization methods without a such
-    //    options. 
-  
 
     // (De)compress the source buffer into the destination buffer.
     // Return TRUE if operation was succesfully or FALSE otherwise.
@@ -148,18 +143,26 @@ public:
         const string& dst_file, 
         size_t        buf_size = kCompressionDefaultBufSize
     );
-    
+
+    // Structure to keep compressed file information
+    struct SFileInfo {
+        string  name;
+        string  comment;
+        time_t  mtime;
+        SFileInfo(void) : mtime(0) {};
+    };
+
 protected:
-    // Format string with last error description
+    /// Format string with last error description
     string FormatErrorMessage(string where, bool use_stream_data =true) const;
 
 protected:
-    void*  m_Stream;      // Compressor stream
-    int    m_WindowBits;  // The base two logarithm of the window size
-                          // (the size of the history buffer). 
-    int    m_MemLevel;    // The allocation memory level for the
-                          // internal compression state.
-    int    m_Strategy;    // The parameter to tune the compression algorithm.
+    void*     m_Stream;     ///< Compressor stream
+    int       m_WindowBits; ///< The base two logarithm of the window size
+                            ///< (the size of the history buffer). 
+    int       m_MemLevel;   ///< The allocation memory level for the
+                            ///< internal compression state.
+    int       m_Strategy;   ///< The parameter to tune compression algorithm.
 };
 
  
@@ -169,18 +172,13 @@ protected:
 // CZipCompressionFile class
 //
 
-// Note, Read() copies data from the compressed file in chunks of size
-// BZ_MAX_UNUSED bytes before decompressing it. If the file contains more
-// bytes than strictly needed to reach the logical end-of-stream, Read()
-// will almost certainly read some of the trailing data before signalling of
-// sequence end.
-//
 class NCBI_XUTIL_EXPORT CZipCompressionFile : public CZipCompression,
                                               public CCompressionFile
 {
 public:
     // 'ctors (for a special parameters description see CZipCompression)
-    // Throw exception CCompressionException::eCompressionFile on error.
+    // Throw exception CCompressionException::eCompressionFile on
+    // critical error.
     CZipCompressionFile(
         const string& file_name,
         EMode         mode,
@@ -197,17 +195,20 @@ public:
     );
     ~CZipCompressionFile(void);
 
-    // Opens a gzip (.gz) file for reading or writing.
-    // This function can be used to read a file which is not in gzip format;
-    // in this case Read() will directly read from the file without
-    // decompression. 
+    // Opens a compressed file for reading or writing.
+    // For reading/writing gzip (.gz) files the appropriate
+    // CZipCompression::EFlags flags should be set before Open() call.
     // Return TRUE if file was opened succesfully or FALSE otherwise.
     virtual bool Open(const string& file_name, EMode mode);
 
+    // Do the same as revious version, but can also get/set file info.
+    // If 'info' is not NULL, that it will be used to get information
+    // about compressed file in the read mode, and set it in the write mode
+    // for gzip files.
+    virtual bool Open(const string& file_name, EMode mode, SFileInfo* info);
+
     // Read up to "len" uncompressed bytes from the compressed file "file"
-    // into the buffer "buf". If the input file was not in gzip format,
-    // gzread copies the given number of bytes into the buffer. 
-    // Return the number of bytes actually read
+    // into the buffer "buf". Return the number of bytes actually read
     // (0 for end of file, -1 for error).
     // The number of really readed bytes can be less than requested.
     virtual long Read(void* buf, size_t len);
@@ -219,6 +220,11 @@ public:
     // Flushes all pending output if necessary, closes the compressed file.
     // Return TRUE on success, FALSE on error.
     virtual bool Close(void);
+
+private:
+    EMode                  m_Mode;     ///< I/O mode (read/write)
+    CNcbiFstream*          m_File;     ///< File stream
+    CCompressionIOStream*  m_Zip;      ///< [De]comression stream
 };
 
 
@@ -242,6 +248,10 @@ public:
     );
     virtual ~CZipCompressor(void);
 
+    // Set information about compressed file.
+    // Used for compression gzip files.
+    void SetFileInfo(const SFileInfo& info);
+
 protected:
     virtual EStatus Init   (void);
     virtual EStatus Process(const char* in_buf,  size_t  in_len,
@@ -255,10 +265,11 @@ protected:
     virtual EStatus End    (void);
 
 private:
-    unsigned long m_CRC32;  // CRC32 for compressed data
-    string        m_Cache;  // Buffer to cache small pieces of data
+    unsigned long m_CRC32;    ///< CRC32 for compressed data
+    string        m_Cache;    ///< Buffer to cache small pieces of data
     bool          m_NeedWriteHeader;
-                            // Is true if needed to write a file header
+                              ///< Is true if needed to write a file header
+    SFileInfo     m_FileInfo; ///< Compressed file info
 };
 
 
@@ -292,8 +303,8 @@ protected:
     virtual EStatus End    (void);
 
 private:
-    bool   m_NeedCheckHeader; // Is true if needed to check at file header
-    string m_Cache;           // Buffer to cache small pieces of data
+    bool   m_NeedCheckHeader; ///< Is TRUE if needed to check at file header
+    string m_Cache;           ///< Buffer to cache small pieces of data
 };
 
 
@@ -307,7 +318,7 @@ class NCBI_XUTIL_EXPORT CZipStreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
-    // Full constructor
+    /// Full constructor
     CZipStreamCompressor(
         CCompression::ELevel  level,
         streamsize            in_bufsize,
@@ -322,7 +333,7 @@ public:
               eDelete, in_bufsize, out_bufsize)
     {}
 
-    // Conventional constructors
+    /// Conventional constructor
     CZipStreamCompressor(
         CCompression::ELevel  level,
         CCompression::TFlags  flags = 0
@@ -333,6 +344,8 @@ public:
                                  flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Conventional constructor
     CZipStreamCompressor(CCompression::TFlags flags = 0)
         : CCompressionStreamProcessor(
               new CZipCompressor(CCompression::eLevel_Default,
@@ -347,7 +360,7 @@ class NCBI_XUTIL_EXPORT CZipStreamDecompressor
     : public CCompressionStreamProcessor
 {
 public:
-    // Full constructor
+    /// Full constructor
     CZipStreamDecompressor(
         streamsize            in_bufsize,
         streamsize            out_bufsize,
@@ -359,7 +372,7 @@ public:
               eDelete, in_bufsize, out_bufsize)
     {}
 
-    // Conventional constructor
+    /// Conventional constructor
     CZipStreamDecompressor(CCompression::TFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CZipDecompressor(kZlibDefaultWbits, flags),
@@ -377,6 +390,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/06/06 10:53:40  ivanov
+ * Rewritten CZipCompressionFile using compression streams.
+ * CompressFile() now can write file`s name/mtime into gzip file header.
+ *
  * Revision 1.14  2005/04/25 19:01:44  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
