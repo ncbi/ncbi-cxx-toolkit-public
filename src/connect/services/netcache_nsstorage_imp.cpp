@@ -83,8 +83,7 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
             if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                 throw;
 
-            LOG_POST(Error << "Communication Error : " 
-                            << ex.what());
+            ERR_POST("Communication Error : " << ex.what());
             if (++try_count >= 2)
                 throw;
             SleepMilliSec(1000 + try_count*2000);
@@ -160,8 +159,10 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
                 break;
             }
             catch (CNetServiceException& ex) {
-                LOG_POST(Error << "Communication Error : " 
-                         << ex.what());
+                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                    throw;
+
+                ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
             SleepMilliSec(1000 + try_count*2000);
@@ -209,8 +210,7 @@ void CNetCacheNSStorage::Reset()
             catch (CNetServiceException& ex) {
                 if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                     throw;
-                LOG_POST(Error << "Communication Error : " 
-                         << ex.what());
+                ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
                 SleepMilliSec(1000 + try_count*2000);
@@ -238,6 +238,11 @@ void CNetCacheNSStorage::Reset()
         m_CreatedBlobId = NULL;
         
     }
+    if (m_OStream.get()) {
+        m_OStream->flush();
+        if (!m_OStream->good())
+            ERR_POST("Something bad has happened during Output stream closing.");
+    }
     m_OStream.reset();
 }
 
@@ -246,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/06/06 15:33:27  didenko
+ * Improved errors handling and exceptiona reporting
+ *
  * Revision 1.9  2005/06/01 20:28:37  didenko
  * Fixed a bug with exceptions reporting
  *
