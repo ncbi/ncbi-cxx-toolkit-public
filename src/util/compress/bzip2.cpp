@@ -157,9 +157,13 @@ bool CBZip2Compression::CompressFile(const string& src_file,
                                      const string& dst_file,
                                      size_t        buf_size)
 {
-    CBZip2CompressionFile cf(dst_file,
-                             CCompressionFile::eMode_Write, GetLevel(),
+    CBZip2CompressionFile cf(GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    cf.SetFlags(GetFlags());
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+        return false;
+    } 
+
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
         return cf.Close();
     }
@@ -178,9 +182,12 @@ bool CBZip2Compression::DecompressFile(const string& src_file,
                                        const string& dst_file,
                                        size_t        buf_size)
 {
-    CBZip2CompressionFile cf(src_file,
-                             CCompressionFile::eMode_Read, GetLevel(),
+    CBZip2CompressionFile cf(GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    cf.SetFlags(GetFlags());
+    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+        return false;
+    } 
     if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
         return cf.Close();
     }
@@ -615,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/06/06 10:57:54  ivanov
+ * [De]CompressFile -- set flags for used CBZip2CompressionFile
+ *
  * Revision 1.12  2005/04/25 19:01:41  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
