@@ -184,7 +184,7 @@ public:
     ///   The type of sequences stored here, either kSeqTypeProt or kSeqTypeNucl.
     char GetSeqType() const;
     
-    /// Get taxid for an OID.
+    /// Get gi to taxid map for an OID.
     ///
     /// This finds the TAXIDS associated with a given OID and computes
     /// a mapping from GI to taxid.  This mapping is added to the
@@ -202,6 +202,26 @@ public:
     void GetTaxIDs(int             oid,
                    map<int, int> & gi_to_taxid,
                    bool            persist) const;
+    
+    /// Get taxids for an OID.
+    ///
+    /// This finds the TAXIDS associated with a given OID and returns
+    /// them in a vector.  If the "persist" flag is set to true, the
+    /// new taxids will simply be appended to the vector.  If it is
+    /// false (the default), the vector will be cleared first.  One
+    /// advantage of this interface over the map<int,int> version is
+    /// that the vector interface works with databases with local IDs
+    /// but lacking GIs.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param taxids
+    ///   A returned list of taxids.
+    /// @param persist
+    ///   If false, the map will be cleared before adding new entries.
+    void GetTaxIDs(int           oid,
+                   vector<int> & taxids,
+                   bool          persist) const;
     
     /// Get a CBioseq for a sequence.
     ///

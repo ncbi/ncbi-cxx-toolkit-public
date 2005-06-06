@@ -334,6 +334,31 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
     }
 }
 
+void CSeqDBImpl::GetTaxIDs(int           oid,
+                           vector<int> & taxids,
+                           bool          persist) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (! persist) {
+        taxids.clear();
+    }
+    
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetHdr(oid, locked);
+    
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->IsSetTaxid()) {
+                continue;
+            }
+            
+            taxids.push_back((*defline)->GetTaxid());
+        }
+    }
+}
+
 CRef<CBioseq>
 CSeqDBImpl::GetBioseq(int oid, int target_gi) const
 {
