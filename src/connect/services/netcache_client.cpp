@@ -172,7 +172,7 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
     : CNetServiceClient(client_name),
-      m_PutVersion(0)
+      m_PutVersion(2)
 {
 }
 
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/06/06 15:32:49  kuznets
+ * Use data transfer protocol 2
+ *
  * Revision 1.41  2005/05/06 15:13:55  didenko
  * Fixed possible uninitialized variable bugs
  *
