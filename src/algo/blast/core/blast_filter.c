@@ -108,7 +108,7 @@ s_LoadOptionsToBuffer(const char *instructions, char* buffer)
 
 /** Parses repeat filtering options string.
  * @param repeat_options Input character string [in]
- * @dbname Database name for repeats filtering [out]
+ * @param dbname Database name for repeats filtering [out]
  */
 static Int2  
 s_ParseRepeatOptions(const char* repeat_options, char** dbname)

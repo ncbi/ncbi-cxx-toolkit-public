@@ -430,6 +430,7 @@ s_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
 
 /// Converts a traceback editing block to a Seq-align, provided the 2 sequence 
 /// identifiers.
+/// @param program Type of BLAST program [in]
 /// @param hsp Internal HSP structure [in]
 /// @param id1 Query sequence identifier [in]
 /// @param id2 Subject sequence identifier [in]
@@ -1208,6 +1209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/06/07 17:41:27  dondosha
+* Tiny doxygen fix
+*
 * Revision 1.57  2005/04/18 14:00:44  camacho
 * Updates following BlastSeqSrc reorganization
 *
