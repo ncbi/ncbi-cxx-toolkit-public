@@ -676,7 +676,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    EDiscTemplateType second_template_type;
    PV_ARRAY_TYPE *pv_array;
    Uint1 pv_array_bts;
-   Int4 template_length;
+   Uint4 template_length;
    Uint4 curr_base;
    Uint4 last_base;
 
