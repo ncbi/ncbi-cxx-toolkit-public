@@ -195,13 +195,13 @@ void CCgi2RCgiApp::x_Init()
     NStr::Tokenize(incs, ",; ", m_HtmlIncs);
 
 
-    m_FallBackUrl = GetConfig().GetString("cgi2rcgi", "error_url", "");
+    m_FallBackUrl = GetConfig().GetString("cgi2rcgi", "fall_back_url", "");
     m_FallBackDelay = 
-        GetConfig().GetInt("cgi2rcgi", "error_url_delay", -1, 
+        GetConfig().GetInt("cgi2rcgi", "error_fall_back_delay", -1, 
                            IRegistry::eReturn);
 
     m_CancelGoBackDelay = 
-        GetConfig().GetInt("cgi2rcgi", "cancel_goback_delay", 0, 
+        GetConfig().GetInt("cgi2rcgi", "cancel_fall_back_delay", 0, 
                            IRegistry::eReturn);
 
     if (m_FallBackUrl.empty()) {
@@ -408,6 +408,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/07 20:16:09  didenko
+ * Changed some paramters names
+ *
  * Revision 1.2  2005/06/06 15:34:57  didenko
  * Changed <@VIEW@> meta-tag to <@STAT_VIEW@>
  *
