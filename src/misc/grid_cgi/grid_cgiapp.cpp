@@ -131,7 +131,14 @@ void CGridCgiContext::PersistEntry(const string& entry_name)
 void CGridCgiContext::PersistEntry(const string& entry_name, 
                                    const string& value)
 {   
-    m_PersistedEntries[entry_name] = value;
+    if (value.empty()) {
+        TPersistedEntries::iterator it = 
+              m_PersistedEntries.find(entry_name);
+        if (it != m_PersistedEntries.end())
+            m_PersistedEntries.erase(it);
+    } else {
+        m_PersistedEntries[entry_name] = value;
+    }
 }
 
 void CGridCgiContext::Clear()
@@ -277,10 +284,9 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             if (CollectParams(grid_ctx)) {
                 // Get a job submiter
                 CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
-                PrepareJobData(job_submiter);
-
                 // Submit a job
                 try {
+                    PrepareJobData(job_submiter);
                     string job_key = job_submiter.Submit();
                     grid_ctx.SetJobKey(job_key);
                     OnJobSubmitted(grid_ctx);
@@ -305,7 +311,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             }
         }
         } // try
-        catch (CNetServiceException& ex) {
+        catch (/*CNetServiceException*/ exception& ex) {
             OnJobFailed(ex.what(), grid_ctx);
         }       
         CHTMLPlainText* self_url =
@@ -375,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/07 20:15:27  didenko
+ * Improved exceptions handling
+ *
  * Revision 1.21  2005/06/06 15:32:10  didenko
  * Added GetHiddenFields method
  *
