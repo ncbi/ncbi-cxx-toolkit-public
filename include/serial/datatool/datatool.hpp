@@ -56,7 +56,8 @@ private:
 
     SourceFile::EType LoadDefinitions(
         CFileSet& fileSet, const list <string>& modulesPath,
-        const string& names, bool split_names,
+        const CArgValue::TStringArray& names,
+        bool split_names,
         SourceFile::EType srctype = SourceFile::eUnknown);
 
     CCodeGenerator generator;
@@ -70,6 +71,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/06/07 19:21:48  gouriano
+* Allow multiple -m and -M command line arguments
+*
 * Revision 1.4  2005/04/13 15:56:07  gouriano
 * Handle paths with spaces
 *

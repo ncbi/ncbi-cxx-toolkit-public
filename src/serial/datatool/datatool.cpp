@@ -80,10 +80,12 @@ void CDataTool::Init(void)
     // module arguments
     d->AddKey("m", "moduleFile",
               "module file(s)",
-              CArgDescriptions::eInputFile);
+              CArgDescriptions::eString,
+              CArgDescriptions::fAllowMultiple);
     d->AddDefaultKey("M", "externalModuleFile",
                      "external module file(s)",
-                     CArgDescriptions::eInputFile, NcbiEmptyString);
+                     CArgDescriptions::eString, NcbiEmptyString,
+                     CArgDescriptions::fAllowMultiple);
     d->AddFlag("i",
                "ignore unresolved symbols");
     d->AddOptionalKey("f", "moduleFile",
@@ -229,7 +231,7 @@ bool CDataTool::ProcessModules(void)
     
     SourceFile::EType srctype =
         LoadDefinitions(generator.GetMainModules(),
-                        modulesPath, args["m"].AsString(), false);
+                        modulesPath, args["m"].GetStringList(), false);
 
     if ( args["sxo"] ) {
         CDataType::SetEnforcedStdXml(true);
@@ -266,7 +268,7 @@ bool CDataTool::ProcessModules(void)
     
     if (srctype != SourceFile::eDTD) {
         LoadDefinitions(generator.GetImportModules(),
-                        modulesPath, args["M"].AsString(), true, srctype);
+                        modulesPath, args["M"].GetStringList(), true, srctype);
     }
 
     if ( !generator.Check() ) {
@@ -536,15 +538,22 @@ bool CDataTool::GenerateCode(void)
 
 SourceFile::EType CDataTool::LoadDefinitions(
     CFileSet& fileSet, const list<string>& modulesPath,
-    const string& nameList, bool split_names, SourceFile::EType srctype)
+    const CArgValue::TStringArray& nameList,
+    bool split_names, SourceFile::EType srctype)
 {
     SourceFile::EType moduleType;
     list<string> names;
-    if (split_names) {
-        NStr::Split(nameList, " ", names);
-    } else {
-        names.push_back(nameList);
+
+    ITERATE (CArgValue::TStringArray, n, nameList) {
+        if (split_names) {
+            list<string> t;
+            NStr::Split(*n, " ", t);
+            names.merge(t);
+        } else {
+            names.push_back(*n);
+        }
     }
+
     ITERATE ( list<string>, fi, names ) {
         const string& name = *fi;
         if ( !name.empty() ) {
@@ -610,6 +619,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2005/06/07 19:22:26  gouriano
+* Allow multiple -m and -M command line arguments
+*
 * Revision 1.80  2005/06/06 17:40:42  gouriano
 * Added generation of modular XML schema
 *
