@@ -249,7 +249,7 @@ public:
     ///   residues).  In case of an error, an exception is thrown.
     int GetSequence(int oid, const char ** buffer) const;
     
-    /// Get a pointer to sequence data with embedded ambiguities.
+    /// Get a pointer to a range of sequence data with ambiguities.
     ///
     /// This is like GetAmbigSeq(), but the allocated object should be
     /// deleted by the caller.  This is intended for users who are
@@ -272,10 +272,11 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    int GetAmbigSeq(int             oid,
-                      char         ** buffer,
-                      int             nucl_code,
-                      ESeqDBAllocType strategy) const;
+    int GetAmbigSeq(int               oid,
+                    char           ** buffer,
+                    int               nucl_code,
+                    SSeqDBSlice     * region,
+                    ESeqDBAllocType   strategy) const;
     
     /// Returns any resources associated with the sequence.
     ///

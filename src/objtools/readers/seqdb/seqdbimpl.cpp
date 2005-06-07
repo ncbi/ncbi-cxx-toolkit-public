@@ -419,10 +419,11 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
                "OID not in valid range.");
 }
 
-int CSeqDBImpl::GetAmbigSeq(int             oid,
-                              char         ** buffer,
-                              int             nucl_code,
-                              ESeqDBAllocType alloc_type) const
+int CSeqDBImpl::GetAmbigSeq(int               oid,
+                            char           ** buffer,
+                            int               nucl_code,
+                            SSeqDBSlice     * region,
+                            ESeqDBAllocType   alloc_type) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -431,7 +432,12 @@ int CSeqDBImpl::GetAmbigSeq(int             oid,
     
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type, locked);
+        return vol->GetAmbigSeq(vol_oid,
+                                buffer,
+                                nucl_code,
+                                alloc_type,
+                                region,
+                                locked);
     }
     
     NCBI_THROW(CSeqDBException,

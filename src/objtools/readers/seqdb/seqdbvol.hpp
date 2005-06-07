@@ -257,16 +257,19 @@ public:
     ///   The encoding of the returned sequence data
     /// @param alloc_type
     ///   The allocation routine used
+    /// @param region
+    ///   If non-null, the offset range to get
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
     ///   The length of this sequence in bases
-    int GetAmbigSeq(int              oid,
-                     char           ** buffer,
-                     int               nucl_code,
-                     ESeqDBAllocType   alloc_type,
-                     CSeqDBLockHold  & locked) const;
-    
+    int GetAmbigSeq(int               oid,
+                    char           ** buffer,
+                    int               nucl_code,
+                    ESeqDBAllocType   alloc_type,
+                    SSeqDBSlice     * region,
+                    CSeqDBLockHold  & locked) const;
+
     /// Get the Seq-ids associated with a sequence
     /// 
     /// This method returns a list containing all the CSeq_id objects
@@ -631,6 +634,8 @@ private:
     ///   The encoding of the returned sequence data
     /// @param alloc_type
     ///   The allocation routine used
+    /// @param region
+    ///   If non-null, the offset range to get
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -639,6 +644,7 @@ private:
                       char            ** buffer,
                       int                nucl_code,
                       ESeqDBAllocType    alloc_type,
+                      SSeqDBSlice      * region,
                       CSeqDBLockHold   & locked) const;
     
     /// Allocate memory in one of several ways
@@ -688,6 +694,37 @@ private:
                       bool             keep,
                       CSeqDBLockHold & locked,
                       bool             can_release) const;
+    
+    /// Get partial sequence data
+    /// 
+    /// The sequence data is found and returned for the specified oid
+    /// and offset range.  If the region argument is non-null, the
+    /// region endpoints are verified against the sequence endpoints.
+    /// Otherwise, this method is the same as x_GetSequence().  Note
+    /// that the code returns the length of the region in bases, but
+    /// buffer is set to a pointer to the beginning of the sequence,
+    /// not the beginning of the region.
+    /// 
+    /// @param oid
+    ///   The ordinal ID of the sequence to get
+    /// @param buffer
+    ///   The returned sequence data buffer
+    /// @param keep
+    ///   Specify true if the caller wants a hold on the sequence
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @param can_release
+    ///   Specify true if the atlas lock can be released
+    /// @param region
+    ///   If non-null, the offset range to get
+    /// @return
+    ///   The length of the returned portion in bases
+    int x_GetSequence(int              oid,
+                      const char    ** buffer,
+                      bool             keep,
+                      CSeqDBLockHold & locked,
+                      bool             can_release,
+                      SSeqDBSlice    * region) const;
     
     /// Get defline filtered by several criteria
     ///

@@ -282,7 +282,7 @@ public:
     ///
     /// This builds and returns the header and sequence data
     /// corresponding to the indicated sequence as a CBioseq.
-    ///
+    /// 
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @return
@@ -295,7 +295,7 @@ public:
     /// corresponding to the indicated sequence as a CBioseq.  If
     /// target_gi is non-zero, the header information will be filtered
     /// to only include the defline associated with that gi.
-    ///
+    /// 
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param target_gi
@@ -309,6 +309,7 @@ public:
     /// Get the raw sequence (strand data).  When done, resources
     /// should be returned with RetSequence.  This data pointed to
     /// by *buffer is in read-only memory (where supported).
+    /// 
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param buffer
@@ -318,7 +319,7 @@ public:
     ///   residues).  In case of an error, an exception is thrown.
     int GetSequence(int oid, const char ** buffer) const;
     
-    /// Get a pointer to sequence data with embedded ambiguities.
+    /// Get a pointer to sequence data with ambiguities.
     ///
     /// In the protein case, this is identical to GetSequence().  In
     /// the nucleotide case, it stores 2 bases per byte instead of 4.
@@ -326,6 +327,7 @@ public:
     /// data, either kSeqDBNucl4NA or kSeqDBNuclBlastNA, ignored if
     /// the sequence is a protein sequence.  When done, resources
     /// should be returned with RetSequence.
+    /// 
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param buffer
@@ -337,7 +339,32 @@ public:
     ///   residues).  In case of an error, an exception is thrown.
     int GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const;
     
-    /// Get a pointer to sequence data with embedded ambiguities.
+    /// Get a pointer to a range of sequence data with ambiguities.
+    /// 
+    /// This is like GetAmbigSeq(), but only a range of the sequence
+    /// data is computed and returned.  When done, resources should be
+    /// returned with RetSequence.
+    /// 
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param buffer
+    ///   A returned pointer to the data in the sequence.
+    /// @param nucl_code
+    ///   The encoding to use for the returned sequence data.
+    /// @param begin_offset
+    ///   The zero-based offset at which to start translating.
+    /// @param end_offset
+    ///   The zero-based offset at which to end translation.
+    /// @return
+    ///   The return value is the subsequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
+    int GetAmbigSeq(int           oid,
+                    const char ** buffer,
+                    int           nucl_code,
+                    int           begin_offset,
+                    int           end_offset) const;
+    
+    /// Get a pointer to sequence data with ambiguities.
     ///
     /// This is like GetAmbigSeq(), but the allocated object should be
     /// deleted by the caller.  This is intended for users who are

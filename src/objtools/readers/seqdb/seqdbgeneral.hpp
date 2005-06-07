@@ -282,6 +282,24 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 /// primarily to allow a breakpoint to be set.
 void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 
+/// Range type to simplify interfaces.
+struct SSeqDBSlice {
+    /// Default constructor
+    SSeqDBSlice()
+    {
+        begin = end = -1;
+    }
+    
+    /// Constructor
+    SSeqDBSlice(int b, int e)
+        : begin (b),
+          end   (e)
+    {
+    }
+    
+    int begin;
+    int end;
+};
 
 /// Simple "Copy Collector" Like Cache
 ///

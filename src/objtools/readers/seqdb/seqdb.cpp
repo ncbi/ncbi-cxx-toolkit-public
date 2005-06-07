@@ -222,6 +222,22 @@ int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
     return m_Impl->GetAmbigSeq(oid,
                                (char **)buffer,
                                nucl_code,
+                               0,
+                               (ESeqDBAllocType) 0);
+}
+
+int CSeqDB::GetAmbigSeq(int           oid,
+                        const char ** buffer,
+                        int           nucl_code,
+                        int           begin_offset,
+                        int           end_offset) const
+{
+    SSeqDBSlice region(begin_offset, end_offset);
+    
+    return m_Impl->GetAmbigSeq(oid,
+                               (char **)buffer,
+                               nucl_code,
+                               & region,
                                (ESeqDBAllocType) 0);
 }
 
@@ -236,7 +252,7 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
                    "Invalid allocation strategy specified.");
     }
     
-    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, strategy);
+    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy);
 }
 
 string CSeqDB::GetTitle() const
