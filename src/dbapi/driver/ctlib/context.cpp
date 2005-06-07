@@ -31,11 +31,14 @@
 
 #include <ncbi_pch.hpp>
 
-#include <dbapi/driver/ctlib/interfaces.hpp>
-#include <dbapi/driver/util/numeric_convert.hpp>
-
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+
+// DO NOT DELETE this include !!!
+#include <dbapi/driver/driver_mgr.hpp>
+
+#include <dbapi/driver/ctlib/interfaces.hpp>
+#include <dbapi/driver/util/numeric_convert.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock.h>
@@ -1051,6 +1054,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/06/07 16:22:51  ssikorsk
+ * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
+ *
  * Revision 1.39  2005/06/03 16:44:03  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

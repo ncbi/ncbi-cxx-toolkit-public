@@ -35,6 +35,9 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+// DO NOT DELETE this include !!!
+#include <dbapi/driver/driver_mgr.hpp>
+
 #include <dbapi/driver/mysql/interfaces.hpp>
 
 
@@ -165,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/06/07 16:22:51  ssikorsk
+ * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
+ *
  * Revision 1.11  2005/03/02 21:19:20  ssikorsk
  * Explicitly call a new RegisterDriver function from the old one
  *

@@ -36,6 +36,9 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+// DO NOT DELETE this include !!!
+#include <dbapi/driver/driver_mgr.hpp>
+
 #ifndef USE_MS_DBLIB
 #  include <dbapi/driver/dblib/interfaces.hpp>
 #  include <dbapi/driver/dblib/interfaces_p.hpp>
@@ -745,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/06/07 16:22:51  ssikorsk
+ * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
+ *
  * Revision 1.39  2005/04/14 18:35:32  ssikorsk
  * Prepare code for correct driver deinitialization
  *
