@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/grid_cgi/grid_worker_cgiapp.hpp>
+#include <misc/grid_cgi/remote_cgiapp.hpp>
 
 
 #if defined(NCBI_OS_UNIX)
@@ -43,8 +43,8 @@ extern "C"
 void CgiGridWorker_SignalHandler( int )
 {
     try {
-        ncbi::CGridWorkerCgiApp* app = 
-            dynamic_cast<ncbi::CGridWorkerCgiApp*>(ncbi::CNcbiApplication::Instance());
+        ncbi::CRemoteCgiApp* app = 
+            dynamic_cast<ncbi::CRemoteCgiApp*>(ncbi::CNcbiApplication::Instance());
         if (app) {
             app->RequestShutdown();
         }
@@ -62,7 +62,7 @@ BEGIN_NCBI_SCOPE
 class CCgiWorkerNodeJob : public IWorkerNodeJob
 {
 public:
-    CCgiWorkerNodeJob(CGridWorkerCgiApp& app) : m_App(app) {}
+    CCgiWorkerNodeJob(CRemoteCgiApp& app) : m_App(app) {}
     virtual ~CCgiWorkerNodeJob() {} 
 
     int Do(CWorkerNodeJobContext& context)
@@ -77,13 +77,13 @@ public:
     }
 
 private:
-    CGridWorkerCgiApp& m_App;
+    CRemoteCgiApp& m_App;
 };
 
 class CCgiWorkerNodeJobFactory : public IWorkerNodeJobFactory
 {
 public:
-    CCgiWorkerNodeJobFactory(CGridWorkerCgiApp& app): m_App(app) {}
+    CCgiWorkerNodeJobFactory(CRemoteCgiApp& app): m_App(app) {}
     virtual IWorkerNodeJob* CreateInstance(void)
     {
         return new  CCgiWorkerNodeJob(m_App);
@@ -94,13 +94,13 @@ public:
     } 
 
 private:
-    CGridWorkerCgiApp& m_App;
+    CRemoteCgiApp& m_App;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-CGridWorkerCgiApp::CGridWorkerCgiApp( 
+CRemoteCgiApp::CRemoteCgiApp( 
                    INetScheduleStorageFactory* storage_factory,
                    INetScheduleClientFactory* client_factory)
     : m_WorkerNodeContext(NULL)
@@ -117,7 +117,7 @@ CGridWorkerCgiApp::CGridWorkerCgiApp(
 #endif
 }
 
-void CGridWorkerCgiApp::Init(void)
+void CRemoteCgiApp::Init(void)
 {
     CCgiApplication::Init();
 
@@ -133,7 +133,7 @@ void CGridWorkerCgiApp::Init(void)
     m_AppImpl->Init();
 }
 
-void CGridWorkerCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
+void CRemoteCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     arg_desc->AddOptionalKey("control_port", 
                              "control_port",
@@ -143,24 +143,24 @@ void CGridWorkerCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
     CCgiApplication::SetupArgDescriptions(arg_desc);
 }
 
-int CGridWorkerCgiApp::Run(void)
+int CRemoteCgiApp::Run(void)
 {
     m_AppImpl->ForceSingleThread();
     return m_AppImpl->Run();
 }
 
-void CGridWorkerCgiApp::RequestShutdown()
+void CRemoteCgiApp::RequestShutdown()
 {
     if (m_AppImpl.get())
         m_AppImpl->RequestShutdown();
 }
 
-string CGridWorkerCgiApp::GetJobVersion() const
+string CRemoteCgiApp::GetJobVersion() const
 {
     return GetProgramDisplayName() + " 1.0.0"; 
 }
 
-int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
+int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
                               CWorkerNodeJobContext& wn_context)
 {
     auto_ptr<CCgiContext> cgi_context( 
@@ -185,7 +185,7 @@ int CGridWorkerCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
     return ret;
 }
 
-void  CGridWorkerCgiApp::PutProgressMessage(const string& msg)
+void  CRemoteCgiApp::PutProgressMessage(const string& msg)
 {
     if (m_WorkerNodeContext)
         m_WorkerNodeContext->PutProgressMessage(msg);
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2005/06/07 20:14:16  didenko
+ * CGridWorkerCgiApp class renamed to CRemoteCgiApp
+ *
  * Revision 1.6  2005/06/06 15:36:39  didenko
  * Forsing using cache_output for CGridWorkerCgiApp classes
  *

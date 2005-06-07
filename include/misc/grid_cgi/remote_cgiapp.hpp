@@ -1,5 +1,5 @@
-#ifndef __GRID_WORKER_CGIAPP_HPP
-#define __GRID_WORKER_CGIAPP_HPP
+#ifndef __MISC__GRID_CGI__REMOTE_CGIAPP_HPP
+#define __MISC__GRID_CGI__REMOTE_CGIAPP_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -51,10 +51,10 @@ BEGIN_NCBI_SCOPE
 
 class CCgiWorkerNodeJob;
 
-class NCBI_XGRIDCGI_EXPORT CGridWorkerCgiApp : public CCgiApplication
+class NCBI_XGRIDCGI_EXPORT CRemoteCgiApp : public CCgiApplication
 {
 public:
-    CGridWorkerCgiApp( 
+    CRemoteCgiApp( 
                    INetScheduleStorageFactory* storage_factory = NULL,
                    INetScheduleClientFactory* client_factory = NULL);
 
@@ -80,6 +80,9 @@ private:
 
 };
 
+
+/* @} */
+
 /////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2005/06/07 20:14:16  didenko
+ * CGridWorkerCgiApp class renamed to CRemoteCgiApp
+ *
  * Revision 1.5  2005/06/01 20:29:37  didenko
  * Added progress reporting
  *
@@ -107,4 +113,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif //__GRID_WORKER_CGIAPP_HPP
+#endif //__MISC__GRID_CGI__REMOTE_CGIAPP_HPP
