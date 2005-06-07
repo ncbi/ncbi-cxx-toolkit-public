@@ -83,9 +83,11 @@ environment.
 // For repeats filtering
 #include <algo/blast/api/repeats_filter.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+#endif
 
 class CBlastApplication : public CNcbiApplication
 {
@@ -95,10 +97,8 @@ private:
     virtual void Exit(void);
     void InitScope(void);
     void InitOptions(void);
-    void SetOptions(const CArgs& args);
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
                                 BlastSeqSrc* seq_src);
-    int BlastSearch(void);
     void PrintSeqAlign(const TSeqAlignVector& seqalignv);
     /// NB: The object manager member field must be put in front of the scope
     /// member field, to guarantee the correct order of destruction.
