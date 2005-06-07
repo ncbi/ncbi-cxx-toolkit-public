@@ -313,6 +313,11 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
                    bool                sentinel_bytes,
                    const SSeqDBSlice & range)
 {
+    // Design note: The variable "p" makes this algorithm much easier
+    // to write correctly.  It represents a pointer into the input
+    // data and is maintained to point at the next unused byte of
+    // input data.
+    
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
     
     int sreserve = 0;
@@ -326,32 +331,47 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     
     buf8bit.reserve(base_length + sreserve);
     
+    // 0, 1
+    // 1, 0
+    
     int input_chars_begin = range.begin     / 4;
     int input_chars_end   = (range.end + 3) / 4;
     
     int whole_chars_begin = (range.begin + 3) / 4;
     int whole_chars_end   = range.end         / 4;
     
-    if (whole_chars_begin != input_chars_begin) {
+    int p = input_chars_begin;
+    
+    if (p < whole_chars_begin) {
         Int4 table_offset = (buf2bit[input_chars_begin] & 0xFF) * 4;
         
-        switch(range.begin & 0x3) {
-        case 0:
-            _ASSERT(0);
-            break;
-            
-        case 1:
-            buf8bit.push_back(expanded[ table_offset + 1 ]);
-            // FT
-            
-        case 2:
-            buf8bit.push_back(expanded[ table_offset + 2 ]);
-            // FT
-            
-        case 3:
-            buf8bit.push_back(expanded[ table_offset + 3 ]);
-            // FT
+        int endpt = (input_chars_begin + 1) * 4;
+        
+        if (endpt > range.end) {
+            endpt = range.end;
         }
+        
+        for(int k = range.begin; k < endpt; k++) {
+            switch(k & 0x3) {
+            case 0:
+                _ASSERT(0);
+                break;
+                
+            case 1:
+                buf8bit.push_back(expanded[ table_offset + 1 ]);
+                break;
+                
+            case 2:
+                buf8bit.push_back(expanded[ table_offset + 2 ]);
+                break;
+                
+            case 3:
+                buf8bit.push_back(expanded[ table_offset + 3 ]);
+                break;
+            }
+        }
+        
+        p ++;
     }
     
     // In a nucleotide search, this loop is probably a noticeable time
@@ -361,20 +381,20 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     // the arithmetic in the ~Setup() function, we can just pull bytes
     // from a vector.
     
-    int i = whole_chars_begin;
+    p = whole_chars_begin;
     
-    while(i < whole_chars_end) {
-        Int4 table_offset = (buf2bit[i] & 0xFF) * 4;
+    while(p < whole_chars_end) {
+        Int4 table_offset = (buf2bit[p] & 0xFF) * 4;
         
         buf8bit.push_back(expanded[ table_offset ]);
         buf8bit.push_back(expanded[ table_offset + 1 ]);
         buf8bit.push_back(expanded[ table_offset + 2 ]);
         buf8bit.push_back(expanded[ table_offset + 3 ]);
-        i++;
+        p++;
     }
     
-    if (whole_chars_end != input_chars_end) {
-        Int4 table_offset = (buf2bit[whole_chars_end] & 0xFF) * 4;
+    if (p < input_chars_end) {
+        Int4 table_offset = (buf2bit[p] & 0xFF) * 4;
         
         int remains = (range.end & 0x3);
         _ASSERT(remains);
@@ -1371,8 +1391,11 @@ int CSeqDBVol::x_GetSequence(int              oid,
     
     if (region) {
         if (region->end > base_length) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Input error: the region end is out of bounds.");
+            string msg = "Input error: the requested sub-region is [";
+            msg = msg + NStr::IntToString(region->begin) + ":" + NStr::IntToString(region->end) +
+                "] but the sequence length is " + NStr::IntToString(base_length) + ".";
+            
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
         }
         
         if (region->begin < 0) {
