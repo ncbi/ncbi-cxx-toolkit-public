@@ -81,7 +81,7 @@ public:
     ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl.
     /// @param user_gilist
     ///   If specified, will be used to filter deflines by GI.
-    /// @param locked.
+    /// @param locked
     ///   The lock holder object for this thread.
     CSeqDBVol(CSeqDBAtlas    & atlas,
               const string   & name,
