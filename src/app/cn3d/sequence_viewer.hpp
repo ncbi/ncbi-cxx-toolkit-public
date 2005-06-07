@@ -77,7 +77,8 @@ public:
         asFASTA,    // plain FASTA with gaps and all uppercase
         asFASTAa2m, // a2m variant of FASTA, lowercase unaligned and '.' as unaligned gap
         asText,     // plain text with id's and locations
-        asHTML      // HTML, like text but with color
+        asHTML,     // HTML, like text but with color
+        asPSSM      // asn PssmWithParameters
     };
     void ExportAlignment(eExportType type);
 
@@ -95,6 +96,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.33  2004/02/19 17:05:08  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

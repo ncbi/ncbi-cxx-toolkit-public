@@ -35,14 +35,17 @@
 #define CN3D_PSSM__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistre.hpp>
 
-#include <blastkar.h>
+#include <blastkar.h>   // for BLAST_Matrix
 
 BEGIN_SCOPE(Cn3D)
 
 class BlockMultipleAlignment;
 
 BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma);
+
+void OutputPSSM(const BlockMultipleAlignment *bma, ncbi::CNcbiOstream& os);
 
 END_SCOPE(Cn3D)
 
@@ -51,6 +54,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.1  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

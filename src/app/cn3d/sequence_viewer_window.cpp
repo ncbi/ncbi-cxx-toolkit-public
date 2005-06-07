@@ -75,7 +75,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_SORT_IDENT, MID_PROXIMITY_SORT,  SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
-    EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
+    EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_PSSM,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
     EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,            SequenceViewerWindow::OnTaxonomy)
     EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_RESTRICT_HIGHLIGHTS,   SequenceViewerWindow::OnHighlight)
@@ -96,6 +96,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_EXPORT_A2M, "&A2M FASTA");
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
     subMenu->Append(MID_EXPORT_HTML, "&HTML");
+    subMenu->Append(MID_EXPORT_PSSM, "&PSSM");
     viewMenu->Append(MID_EXPORT, "&Export...", subMenu);
     subMenu = new wxMenu;
     subMenu->Append(MID_TAXONOMY_FULL, "&Full");
@@ -461,6 +462,7 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
     else if (event.GetId() == MID_EXPORT_A2M) type = SequenceViewer::asFASTAa2m;
     else if (event.GetId() == MID_EXPORT_TEXT) type = SequenceViewer::asText;
     else if (event.GetId() == MID_EXPORT_HTML) type = SequenceViewer::asHTML;
+    else if (event.GetId() == MID_EXPORT_PSSM) type = SequenceViewer::asPSSM;
     sequenceViewer->ExportAlignment(type);
 }
 
@@ -570,6 +572,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.57  2004/11/02 12:45:39  thiessen
 * enable sequence viewer menu items properly
 *

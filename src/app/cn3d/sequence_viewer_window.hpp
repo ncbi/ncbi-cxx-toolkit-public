@@ -74,6 +74,7 @@ private:
             MID_EXPORT_A2M,
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
+            MID_EXPORT_PSSM,
         MID_HIGHLIGHT_BLOCKS,
         MID_EXPAND_HIGHLIGHTS,
         MID_RESTRICT_HIGHLIGHTS,
@@ -178,6 +179,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.31  2004/11/02 12:45:39  thiessen
 * enable sequence viewer menu items properly
 *

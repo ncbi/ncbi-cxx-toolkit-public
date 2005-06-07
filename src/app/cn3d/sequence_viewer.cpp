@@ -49,6 +49,7 @@
 #include "molecule_identifier.hpp"
 #include "cn3d_tools.hpp"
 #include "sequence_set.hpp"
+#include "cn3d_pssm.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -497,6 +498,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
     else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
     else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
     else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
+    else if (type == asPSSM) { extension = ".pssm"; wildcard = "PSSM Files (*.pssm)|*.pssm"; }
 
     wxString outputFolder = wxString(GetUserDir().c_str(), GetUserDir().size() - 1); // remove trailing /
     wxString baseName, outputFile;
@@ -538,6 +540,9 @@ void SequenceViewer::ExportAlignment(eExportType type)
             INFOMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
             DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
                 rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
+        } else if (type == asPSSM) {
+            INFOMSG("exporting PSSM to " << outputFile.c_str());
+            OutputPSSM(alignmentManager->GetCurrentMultipleAlignment(), *ofs);
         }
     }
 }
@@ -548,6 +553,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.70  2005/06/03 16:26:57  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

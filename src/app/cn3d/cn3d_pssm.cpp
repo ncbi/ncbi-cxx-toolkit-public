@@ -328,7 +328,7 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     diag.information_content = false;
     diag.residue_frequencies = false;
     diag.weighted_residue_frequencies = false;
-    diag.frequency_ratios = false;      // true to match cdtree
+    diag.frequency_ratios = true;      // true to match cdtree
     diag.gapless_column_weights = false;
 
     // create PSIBlastOptions
@@ -572,11 +572,28 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
     return matrix;
 }
 
+void OutputPSSM(const BlockMultipleAlignment *bma, CNcbiOstream& os)
+{
+    try {
+        Cn3DPSSMInput input(bma);
+        CPssmEngine engine(&input);
+        CRef < CPssmWithParameters > pssm = engine.Run();
+        pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
+        CObjectOStreamAsn osa(os, false);
+        osa << *pssm;
+    } catch (exception& e) {
+        ERRORMSG("OutputPSSM() failed with exception: " << e.what());
+    }
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/06/07 12:18:52  thiessen
+* add PSSM export
+*
 * Revision 1.5  2005/06/03 16:25:24  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
