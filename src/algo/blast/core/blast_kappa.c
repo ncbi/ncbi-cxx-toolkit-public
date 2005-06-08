@@ -399,8 +399,11 @@ isAlreadyContained(
  * matching sequence.
  */
 typedef struct SWheapRecord {
-  double   bestEvalue;     /**< best (smallest) evalue of all alignments
+  double        bestEvalue;     /**< best (smallest) evalue of all alignments
                                      in the record */
+  Int4          bestScore;      /**< best (largest) score; used to break
+                                     ties between records with the same
+                                     e-value */
   Int4          subject_index;  /**< index of the subject sequence in
                                      the database */
   BlastHSPList * theseAlignments;  /**< a list of alignments */
@@ -412,31 +415,41 @@ static Boolean
 SWheapRecordCompare(SWheapRecord * place1,
                     SWheapRecord * place2)
 {
-  return ((place1->bestEvalue    >  place2->bestEvalue) ||
-          (place1->bestEvalue    == place2->bestEvalue &&
-           place1->subject_index >  place2->subject_index));
+    int result;
+    if(0 == (result = BLAST_CMP(place1->bestEvalue, place2->bestEvalue)) &&
+       0 == (result = BLAST_CMP(place2->bestScore, place1->bestScore))) {
+        result = BLAST_CMP(place1->subject_index, place2->subject_index);
+    }
+    return result > 0;
 }
 
 
 /** swap two records in the heap*/
 static void
-SWheapRecordSwap(SWheapRecord * heapArray,
-                 Int4 i,
-                 Int4 j)
+SWheapRecordSwap(SWheapRecord * record1,
+                 SWheapRecord * record2)
 {
-  /* bestEvalue, theseAlignments and subject_index are temporary
+  /* bestEvalue, bestScore, theseAlignments and subject_index are temporary
    * variables used to perform the swap. */
-  double bestEvalue       = heapArray[i].bestEvalue;
-  BlastHSPList * theseAlignments  = heapArray[i].theseAlignments;
-  Int4        subject_index    = heapArray[i].subject_index;
+  double bestEvalue;
+  Int4 bestScore, subject_index;
+  BlastHSPList * theseAlignments;
+  
+  bestEvalue           = record1->bestEvalue;
+  record1->bestEvalue  = record2->bestEvalue;
+  record2->bestEvalue  = bestEvalue;
 
-  heapArray[i].bestEvalue      = heapArray[j].bestEvalue;
-  heapArray[i].theseAlignments = heapArray[j].theseAlignments;
-  heapArray[i].subject_index   = heapArray[j].subject_index;
+  bestScore            = record1->bestScore;
+  record1->bestScore   = record2->bestScore;
+  record2->bestScore   = bestScore;
 
-  heapArray[j].bestEvalue      = bestEvalue;
-  heapArray[j].theseAlignments = theseAlignments;
-  heapArray[j].subject_index   = subject_index;
+  subject_index             = record1->subject_index;
+  record1->subject_index    = record2->subject_index;
+  record2->subject_index    = subject_index;
+
+  theseAlignments           = record1->theseAlignments;
+  record1->theseAlignments  = record2->theseAlignments;
+  record2->theseAlignments  = theseAlignments;
 }
 
 
@@ -500,7 +513,7 @@ SWheapifyDown(SWheapRecord * heapArray,
        (SWheapRecordCompare(&(heapArray[right]), &(heapArray[largest]))))
       largest  = right;
     if(largest != i) {
-      SWheapRecordSwap(heapArray, i, largest);
+      SWheapRecordSwap(&heapArray[i], &heapArray[largest]);
       /* push largest up the heap */
       i       = largest;       /* check next level down */
     } else
@@ -527,7 +540,7 @@ SWheapifyUp(SWheapRecord * heapArray,
                                    parent of node i */
   while(parent >= 1 &&
         SWheapRecordCompare(&(heapArray[i]), &(heapArray[parent]))){
-    SWheapRecordSwap(heapArray, i, parent);
+    SWheapRecordSwap(&heapArray[i], &heapArray[parent]);
 
     i       = parent;
     parent /= 2;
@@ -572,7 +585,8 @@ typedef struct SWheap {
   Int4 n;                       /**< The current number of elements */
   Int4 capacity;                /**< The maximum number of elements
                                      that may be inserted before the
-                                     SWheap must be resized */
+                                     SWheap must be resized, this
+                                     number must be >= heapThreshold */
   Int4 heapThreshold;           /**< see above */
   double ecutoff;          /**< matches with evalue below ecutoff may
                                      always be inserted in the SWheap */
@@ -620,17 +634,39 @@ ConvertToHeap(SWheap * self)
 /** @sa SWHEAP_RESIZE_FACTOR */
 #define SWHEAP_MIN_RESIZE 100
 
-/** Return true if self would insert a match that had the given eValue
- *  @param self         a SWheap
- *  @param eValue       the evalue to be tested.
+/** Return true if self may insert a match that had the given eValue,
+ * score and subject_index.
+ * 
+ *  @param self           a SWheap
+ *  @param eValue         the evalue to be tested.
+ *  @param score          the score to be tested
+ *  @param subject_index  the subject_index to be tested.
  */
 static Boolean
 SWheapWouldInsert(SWheap * self,
-                  double eValue)
+                  double eValue, 
+                  Int4 score, 
+                  Int4 subject_index)
 {
-  return self->n < self->heapThreshold ||
-    eValue <= self->ecutoff ||
-    eValue < self->worstEvalue;
+  if(self->n < self->heapThreshold ||
+      eValue <= self->ecutoff ||
+      eValue <  self->worstEvalue) {
+    return TRUE;
+  } else {
+    /* self is either currently a heap, or must be converted to one;
+     * use SWheapRecordCompare to compare against the worst element in
+     * the heap */
+    SWheapRecord heapRecord; /* temporary record to compare against */
+
+    if(self->heapArray == NULL) ConvertToHeap(self);
+    
+    heapRecord.bestEvalue       = eValue;
+    heapRecord.bestScore        = score;
+    heapRecord.subject_index    = subject_index;
+    heapRecord.theseAlignments  = NULL;
+    
+    return SWheapRecordCompare(&self->heapArray[1], &heapRecord);
+  }
 }
 
 
@@ -642,6 +678,7 @@ SWheapWouldInsert(SWheap * self,
  * @param self              the heap
  * @param alignments        a list of alignments
  * @param eValue            the best evalue among the alignments
+ * @param score             the best score among the alignments
  * @param subject_index     the index of the subject sequence in the database
  */
 static void
@@ -649,6 +686,7 @@ SWheapInsert(
   SWheap * self,
   BlastHSPList * alignments,
   double eValue,
+  Int4 score,
   Int4 subject_index)
 {
   if(self->array && self->n >= self->heapThreshold) {
@@ -659,6 +697,7 @@ SWheapInsert(
     SWheapRecord *heapRecord;   /* destination for the new alignments */
     heapRecord                  = &self->array[++self->n];
     heapRecord->bestEvalue      = eValue;
+    heapRecord->bestScore       = score;
     heapRecord->theseAlignments = alignments;
     heapRecord->subject_index   = subject_index;
     if( self->worstEvalue < eValue ) {
@@ -684,6 +723,7 @@ SWheapInsert(
       /* end if the heap must be resized */
       heapRecord    = &self->heapArray[++self->n];
       heapRecord->bestEvalue      = eValue;
+      heapRecord->bestScore       = score;
       heapRecord->theseAlignments = alignments;
       heapRecord->subject_index   = subject_index;
 
@@ -692,23 +732,23 @@ SWheapInsert(
       /* Some set of alignments must be discarded; discardedAlignments
        * will hold a pointer to these alignments. */
       BlastHSPList * discardedAlignments = NULL;
+      SWheapRecord heapRecord;   /* Candidate record for insertion */
 
-      if(eValue >= self->worstEvalue) {
-        /* The new alignments must be discarded. */
-        discardedAlignments = alignments;
+      heapRecord.bestEvalue      = eValue;
+      heapRecord.bestScore       = score;
+      heapRecord.theseAlignments = alignments;
+      heapRecord.subject_index   = subject_index;
+
+      if(SWheapRecordCompare(&self->heapArray[1], &heapRecord)) {
+        /* The new record should be inserted, and the largest
+         * element currently in the heap may be disgarded */
+        discardedAlignments = self->heapArray[1].theseAlignments;
+        memcpy(&self->heapArray[1], &heapRecord, sizeof(SWheapRecord));
       } else {
-        /* The largest element in the heap must be discarded. */
-        SWheapRecord *heapRecord;     /* destination for the new alignments */
-        discardedAlignments         = self->heapArray[1].theseAlignments;
-
-        heapRecord                  = &self->heapArray[1];
-        heapRecord->bestEvalue      = eValue;
-        heapRecord->theseAlignments = alignments;
-        heapRecord->subject_index   = subject_index;
-
-        SWheapifyDown(self->heapArray, 1, self->n);
+        discardedAlignments         = heapRecord.theseAlignments;
       }
-      /* end else the largest element in the heap must be discarded */
+      SWheapifyDown(self->heapArray, 1, self->n);
+
       if(discardedAlignments != NULL) {
         Blast_HSPListFree(discardedAlignments);
       }
@@ -740,7 +780,6 @@ SWheapWillAcceptOnlyBelowCutoff(SWheap * self)
  * directly to fields in the SWheap */
 static void
 SWheapInitialize(SWheap * self,
-                 Int4 capacity,
                  Int4 heapThreshold,
                  double ecutoff)
 {
@@ -748,12 +787,11 @@ SWheapInitialize(SWheap * self,
   self->heapThreshold = heapThreshold;
   self->ecutoff       = ecutoff;
   self->heapArray     = NULL;
-  self->capacity      = 0;
+  self->capacity      = heapThreshold;
   self->worstEvalue   = 0;
   /* Begin life as a list */
   self->array =
-    (SWheapRecord *) calloc(capacity + 1, sizeof(SWheapRecord));
-  self->capacity      = capacity;
+    (SWheapRecord *) malloc((self->capacity + 1) * sizeof(SWheapRecord));
 }
 
 
@@ -770,6 +808,7 @@ SWheapRelease(SWheap * self)
   if(self->array) sfree(self->array);
 
   self->n = self->capacity = self->heapThreshold = 0;
+  self->heapArray = NULL;  self->array = NULL;
 }
 
 
@@ -791,12 +830,12 @@ SWheapPop(SWheap * self)
     last  = &self->heapArray[self->n];
 
     results = first->theseAlignments;
+    if( --self->n > 0 ) {
+      /* The heap is still not empty */
+      memcpy(first, last, sizeof(SWheapRecord));
 
-    first->theseAlignments = last->theseAlignments;
-    first->bestEvalue      = last->bestEvalue;
-    first->subject_index   = last->subject_index;
-
-    SWheapifyDown(self->heapArray, 1, --self->n);
+      SWheapifyDown(self->heapArray, 1, self->n);
+    }
   }
 
   KAPPA_ASSERT(SWheapIsValid(self->heapArray, 1, self->n));
@@ -1713,7 +1752,7 @@ static void scaleMatrix(Int4 **matrix, Int4 **startMatrix,
    for (p = 0; p < numPositions; p++) {
      for (c = 0; c < BLASTAA_SIZE; c++) {
        if (matrix[p][c] == BLAST_SCORE_MIN)
-     matrix[p][c] = startMatrix[p][c];
+         matrix[p][c] = startMatrix[p][c];
        else {
          temp = log(startFreqRatios[p][c]);
          temp = temp/Lambda;
@@ -1723,6 +1762,7 @@ static void scaleMatrix(Int4 **matrix, Int4 **startMatrix,
      }
    }
 }
+
 
 /** SCALING_FACTOR is a multiplicative factor used to get more bits of
  * precision in the integer matrix scores. It cannot be arbitrarily
@@ -1893,7 +1933,7 @@ location_compare_windows(const void * vp1, const void *vp2)
  * @param border            Number of extra amino acids to include
  *                          at the start and end of each HSP.
  * @param sequence_length   length of the sequence containing these
- *                          HSPs, in amino acid coordinates.
+ *                          HSPs, in nucleotide coordinates.
  * @param pwindows          a pointer to an array of windows;
  *                          the array may be resized by this routine. [in][out]
  * @param nWindows          the number of windows in *pwindows [in][out]
@@ -1974,7 +2014,7 @@ WindowsFromHSPs(
     if(nextWindow != NULL                 && /* there is a next window; and */
        window->frame == nextWindow->frame && /* it is in the same frame; and
                                                 it is very near this one */
-       window->end + 3 * KAPPA_WINDOW_BORDER >= nextWindow->begin) {
+       window->end >= nextWindow->begin) {
       /* Join the current window with the next window.  Do not add the
          current window to the output list. */
       nextWindow->begin = MIN(window->begin, nextWindow->begin);
@@ -2861,7 +2901,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
   windows[0] = malloc(sizeof(Kappa_WindowInfo));
 
   SWheapInitialize(&significantMatches, hitParams->options->hitlist_size,
-                   hitParams->options->hitlist_size, inclusion_ethresh);
+                   inclusion_ethresh);
 
   /**** Validate parameters *************/
   if(0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20") &&
@@ -2991,11 +3031,20 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                      queryInfo->contexts[0].eff_searchsp,
                                      positionBased,
                                      &forbidden);
-            alignment_is_significant =
-              ( do_link_hsps && aSwScore >= cutoff_s) ||
-              (!do_link_hsps && newSwEvalue <
-               hitParams->options->expect_value &&
-               SWheapWouldInsert(&significantMatches, newSwEvalue));
+            if( do_link_hsps ) {
+              alignment_is_significant = aSwScore >= cutoff_s;
+            } else {
+              alignment_is_significant =
+                newSwEvalue < hitParams->options->expect_value;
+              if( alignments == NULL ) {
+                /* this is the most significant alignment; if it will not
+                 * be accepted, no alignments from this match will */
+                alignment_is_significant =
+                  alignment_is_significant &&
+                    SWheapWouldInsert(&significantMatches, newSwEvalue,
+                                 aSwScore, thisMatch->oid);
+              }
+            }
 
             if(alignment_is_significant) {
               Int4 matchStart, queryStart;  /* the start of the
@@ -3100,7 +3149,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
     if( alignments != NULL) { /* alignments were found */
       BlastHSPList * hsp_list; /* a hitlist containing the newly-computed
                                 * alignments */
-      double  bestEvalue; /* best evalue among alignments in the hitlist */
+      double  bestEvalue;     /* best evalue among alignments in the hitlist */
+      Int4 bestScore;         /* best score among alignments in the hitlist */
 
       hsp_list = s_HSPListFromDistinctAlignments(&alignments,
                                                  matchingSeq.index);
@@ -3131,9 +3181,11 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                          they will cancel each other. */
       }
       bestEvalue = hsp_list->best_evalue;
+      bestScore  = hsp_list->hsp_array[0]->score;
 
       if(bestEvalue <= hitParams->options->expect_value &&
-         SWheapWouldInsert(&significantMatches, bestEvalue)) {
+         SWheapWouldInsert(&significantMatches, bestEvalue,
+                           bestScore, thisMatch->oid)) {
         /* If the best alignment is significant, then save the current list */
 
         Blast_HSPListReapByEvalue(hsp_list, hitParams->options);
@@ -3141,7 +3193,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
         s_HSPListRescaleScores(hsp_list, kbp->Lambda, kbp->logK,
                                  localScalingFactor);
 
-        SWheapInsert(&significantMatches, hsp_list, bestEvalue,
+        SWheapInsert(&significantMatches, hsp_list, bestEvalue, bestScore,
                      thisMatch->oid);
       } else { /* the best alignment is not significant */
         Blast_HSPListFree(hsp_list);
