@@ -287,7 +287,7 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 
 void
 SetupQueries(const TSeqLocVector& queries, 
-             const CBlastQueryInfo& qinfo, 
+             const BlastQueryInfo* qinfo, 
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog,
              ENa_strand strand_opt,
@@ -998,6 +998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2005/06/08 19:20:49  camacho
+* Minor change in SetupQueries
+*
 * Revision 1.48  2005/06/08 17:28:56  madden
 * Use functions from blast_program.c
 *

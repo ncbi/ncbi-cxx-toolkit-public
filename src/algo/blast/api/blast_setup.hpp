@@ -89,7 +89,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
 
 void
 SetupQueries(const TSeqLocVector& queries,
-             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
+             const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog, 
              objects::ENa_strand strand_opt,
              const Uint1* genetic_code,
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/06/08 19:20:48  camacho
+* Minor change in SetupQueries
+*
 * Revision 1.40  2005/06/01 15:51:59  camacho
 * doxygen fix
 *
