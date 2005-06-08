@@ -866,7 +866,7 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
 
       if (extend_partial_byte) {
          /* mini extension to the left */
-         Uint4 max_bases = MIN(COMPRESSION_RATIO, MIN(q_offset, s_offset));
+         Uint1 max_bases = MIN(COMPRESSION_RATIO, MIN(q_offset, s_offset));
          left = BlastNaMiniExtendLeft(q, s-1, max_bases);
          
          /* mini extension to the right */
