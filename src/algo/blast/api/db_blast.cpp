@@ -444,12 +444,7 @@ void CDbBlast::SetupSearch()
     }
     
     // Check if subject sequence source is of correct molecule type
-    bool seqsrc_is_prot = (BlastSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
-    bool db_is_prot = (x_eProgram == eBlastTypeBlastp || 
-                       x_eProgram == eBlastTypeBlastx ||
-                       Blast_ProgramIsRpsBlast(x_eProgram) ||
-                       x_eProgram == eBlastTypePhiBlastp);
-    if (seqsrc_is_prot != db_is_prot) {
+    if ((bool) BlastSeqSrcGetIsProt(m_pSeqSrc) != (bool) Blast_SubjectIsProtein(x_eProgram)) {
         NCBI_THROW(CBlastException, eBadParameter, 
             "Database molecule does not correspond to BLAST program type");
     }
@@ -729,6 +724,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.73  2005/06/08 17:42:16  madden
+ * Use functions from blast_program.c
+ *
  * Revision 1.72  2005/06/08 16:23:39  camacho
  * Experimental: added CDbBlast ctor which uses query retrieval interface
  *
