@@ -344,7 +344,7 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
                    &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &code) >= 6) {
             break;
         }
-        strcpy(buf, c + code);
+        memmove(buf, c + code, strlen(c + code) + 1);
     }
     for (i = 0; i < (unsigned int)(sizeof(o)/sizeof(o[0])); i++) {
         if (o[i] < 0  ||  o[i] > 255)
@@ -744,6 +744,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2005/06/08 20:42:05  lavr
+ * Use safer memmove() instead of strcpy() in PASV parsing
+ *
  * Revision 1.13  2005/06/02 17:52:31  lavr
  * s_VT_Write(): Unused variable "s" removed
  *
