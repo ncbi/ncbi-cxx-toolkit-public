@@ -135,6 +135,7 @@ public:                                                                     \
         m_Ptr = NULL;                                                       \
         return retval;                                                      \
     }                                                                       \
+    struct_name* Get() const { return m_Ptr; }                              \
     operator struct_name *() { return m_Ptr; }                              \
     operator struct_name *() const { return m_Ptr; }                        \
     struct_name* operator->() { return m_Ptr; }                             \
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/06/08 19:49:00  camacho
+* Added Get() method to auto class wrapper
+*
 * Revision 1.58  2005/05/25 17:37:30  camacho
 * + RAII wrapper for BlastSeqLoc
 *
