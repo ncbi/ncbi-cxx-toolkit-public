@@ -113,16 +113,6 @@ private:
     TSeqPos m_MasterLen;
     ///internal match list
     list<AlnInfo*> m_AlnInfoList;
-    
-    ///Sort on sealign range from
-    ///@param info1: the first range
-    ///@param info2: the second range
-    ///
-    inline static bool AlnFromRangeAscendingSort(CRef<CSeq_align> const& info1,
-                                                 CRef<CSeq_align> const& info2)
-    {
-        return info1->GetSeqRange(0).GetFrom() < info2->GetSeqRange(0).GetFrom();
-    }
 
     ///Sort on range from
     ///@param info1: the first range
@@ -194,6 +184,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.2  2005/06/08 16:12:57  jianye
+*move AlnFromRangeAscendingSort to .cpp
+*
 *Revision 1.1  2005/05/25 16:17:59  jianye
 *initial checkin
 *
