@@ -188,6 +188,8 @@ public:
     static string GetParam(const TParamTree* params,
                            const string& param_name);
 
+    CReadDispatcher& GetDispatcher(void);
+
 protected:
     friend class CGBReaderRequestResult;
 

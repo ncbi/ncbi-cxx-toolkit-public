@@ -1083,6 +1083,12 @@ string CGBDataLoader::BlobIdToString(const TBlobId& id) const
 }
 
 
+CReadDispatcher& CGBDataLoader::GetDispatcher(void)
+{
+    return *m_Dispatcher;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================
