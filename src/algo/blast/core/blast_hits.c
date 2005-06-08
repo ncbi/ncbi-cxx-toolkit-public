@@ -2071,8 +2071,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
    Boolean gapped;
    Boolean purge, delete_hsp;
    Int2 status = 0;
-   const Boolean kTranslateSubject = (program == eBlastTypeTblastn ||
-                                      program == eBlastTypeTblastx); 
+   const Boolean kTranslateSubject = Blast_SubjectIsTranslated(program);
    Boolean partial_translation;
    Uint1* translation_buffer = NULL;
    Int4* frame_offsets = NULL;

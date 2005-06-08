@@ -248,9 +248,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
 
    const Boolean kTranslatedSubject = 
-       (program_number == eBlastTypeTblastn ||
-        program_number == eBlastTypeTblastx ||
-        program_number == eBlastTypeRpsTblastn);
+        (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
 

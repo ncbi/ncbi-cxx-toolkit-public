@@ -136,14 +136,12 @@ SetupQueryInfo(const TSeqLocVector& queries,
     }
     
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
-    bool translate = 
-        ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
-         (prog == eBlastTypeRpsTblastn));
+    const bool kTranslatedQuery = Blast_QueryIsTranslated(prog);
 
     // Adjust first context depending on the first query strand
     ENa_strand strand;
 
-    if (is_na || translate) {
+    if (is_na || kTranslatedQuery) {
         if (strand_opt == eNa_strand_both || 
             strand_opt == eNa_strand_unknown) {
             strand = sequence::GetStrand(*queries.front().seqloc, 
@@ -153,7 +151,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
         }
 
         if (strand == eNa_strand_minus) {
-            if (translate) {
+            if (kTranslatedQuery) {
                 query_info->first_context = 3;
             } else {
                 query_info->first_context = 1;
@@ -180,7 +178,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
             strand = strand_opt;
         }
 
-        if (translate) {
+        if (kTranslatedQuery) {
             for (unsigned int i = 0; i < nframes; i++) {
                 unsigned int prot_length = 
                     (length == 0 ? 0 : 
@@ -310,9 +308,7 @@ SetupQueries(const TSeqLocVector& queries,
     }
 
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
-    bool translate = 
-       ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
-        (prog == eBlastTypeRpsTblastn));
+    const bool kTranslatedQuery = Blast_QueryIsTranslated(prog);
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
@@ -331,7 +327,7 @@ SetupQueries(const TSeqLocVector& queries,
             ENa_strand strand;
             BlastSeqLoc* bsl_tmp=NULL;
 
-            if ((is_na || translate) &&
+            if ((is_na || kTranslatedQuery) &&
                 (strand_opt == eNa_strand_unknown || 
                  strand_opt == eNa_strand_both)) 
             {
@@ -347,7 +343,7 @@ SetupQueries(const TSeqLocVector& queries,
 
             SBlastSequence sequence;
 
-            if (translate) {
+            if (kTranslatedQuery) {
                 ASSERT(strand == eNa_strand_both ||
                        strand == eNa_strand_plus ||
                        strand == eNa_strand_minus);
@@ -432,7 +428,7 @@ SetupQueries(const TSeqLocVector& queries,
     }
 
     // Translate the lower case mask coordinates, if it is a translated search
-    if (translate)
+    if (kTranslatedQuery)
         BlastMaskLocDNAToProtein(mask, qinfo);
 
     if (BlastSeqBlkNew(seqblk) < 0) {
@@ -1002,6 +998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2005/06/08 17:28:56  madden
+* Use functions from blast_program.c
+*
 * Revision 1.47  2005/05/26 14:33:03  dondosha
 * Added PHIBlast_Results2CSeqAlign function for conversion of PHI BLAST results to a discontinuous Seq-align
 *

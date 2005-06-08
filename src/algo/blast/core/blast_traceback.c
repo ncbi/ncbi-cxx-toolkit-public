@@ -320,8 +320,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
-      (program_number == eBlastTypeTblastn ||
-       program_number == eBlastTypeRpsTblastn); 
+        (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
    BlastQueryInfo* query_info = query_info_in;
    Int4 offsets[2];
    BlastIntervalTree* tree = NULL;

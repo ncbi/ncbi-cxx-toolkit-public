@@ -445,7 +445,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 	LinkHelpStruct *lh_helper=0;
    Int4 lh_helper_size;
 	Int4 query_context; /* AM: to support query concatenation. */
-   Boolean translated_query;
+   const Boolean kTranslatedQuery = Blast_QueryIsTranslated(program_number);
    LinkHSPStruct** link_hsp_array;
 
 	if (hsp_list == NULL)
@@ -472,8 +472,6 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 	gap_prob = link_hsp_params->gap_prob;
 	gap_decay_rate = link_hsp_params->gap_decay_rate;
 
-	translated_query = (program_number == eBlastTypeBlastx || 
-                       program_number == eBlastTypeTblastx);
    if (program_number == eBlastTypeTblastn ||
        program_number == eBlastTypeTblastx)
       num_subject_frames = NUM_STRANDS;
@@ -488,7 +486,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    }
 
    /* Sort by (reverse) position. */
-   if (translated_query) {
+   if (kTranslatedQuery) {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             s_RevCompareHSPsTbx);
    } else {
@@ -502,7 +500,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    ignore_small_gaps = (cutoff[0] == 0);
    
    /* If query is nucleotide, it has 2 strands that should be separated. */
-   if (translated_query || program_number == eBlastTypeBlastn)
+   if (kTranslatedQuery || program_number == eBlastTypeBlastn)
       num_query_frames = NUM_STRANDS*query_info->num_queries;
    else
       num_query_frames = query_info->num_queries;
@@ -517,7 +515,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    /* Put entries from different strands into separate 'query_frame's. */
    {
       Int4 cur_frame=0;
-      Int4 strand_factor = (translated_query ? 3 : 1);
+      Int4 strand_factor = (kTranslatedQuery ? 3 : 1);
       for (index=0;index<number_of_hsps;index++) 
       {
         H=link_hsp_array[index];
@@ -995,7 +993,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    sfree(hp_start->hsp);
    sfree(hp_start);
 
-   if (translated_query) {
+   if (kTranslatedQuery) {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             s_RevCompareHSPsTransl);
       qsort(link_hsp_array, total_number_of_hsps,sizeof(LinkHSPStruct*), 
