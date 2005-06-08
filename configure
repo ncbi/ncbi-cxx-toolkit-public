@@ -16990,6 +16990,13 @@ echo "${ECHO_T}$ncbi_cv_path_sybase_new" >&6
       fi
    fi # No local Sybase (requested)?
 
+   if test -d "${SYBASE_PATH}${bit64_sfx:-32}"; then
+      SYBASE_PATH=${SYBASE_PATH}${bit64_sfx:-32}
+   fi
+   if test -d "${SYBASE_LCL_PATH}${bit64_sfx:-32}"; then
+      SYBASE_LCL_PATH=${SYBASE_LCL_PATH}${bit64_sfx:-32}
+   fi
+
    # Lock in the version we found, ignoring symlinks further up
    if test -d "$SYBASE_PATH"; then
       SYBASE_PATH_=`cd $SYBASE_PATH && /bin/pwd`

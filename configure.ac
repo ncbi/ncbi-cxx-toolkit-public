@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.377 2005/06/08 19:46:41 ucko Exp $
+#  $Id: configure.ac,v 1.378 2005/06/08 20:26:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2574,6 +2574,13 @@ if test "$with_sybase" != "no" ; then
          : ${SYBASE_LCL_PATH:="$local_sybase_root/current"}
       fi
    fi # No local Sybase (requested)?
+
+   if test -d "${SYBASE_PATH}${bit64_sfx:-32}"; then
+      SYBASE_PATH=${SYBASE_PATH}${bit64_sfx:-32}
+   fi
+   if test -d "${SYBASE_LCL_PATH}${bit64_sfx:-32}"; then
+      SYBASE_LCL_PATH=${SYBASE_LCL_PATH}${bit64_sfx:-32}
+   fi
 
    # Lock in the version we found, ignoring symlinks further up
    if test -d "$SYBASE_PATH"; then
