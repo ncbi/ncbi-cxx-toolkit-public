@@ -244,7 +244,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     if (info->http_proxy_adjusted  ||  !*info->http_proxy_host)
         return 0/*false*/;
 
-    if (strlen(info->host) + strlen(info->path) + 16 > sizeof(info->path)) {
+    if (strlen(info->host) + 16 + strlen(info->path) >= sizeof(info->path)) {
         CORE_LOG(eLOG_Error,
                  "[ConnNetInfo_AdjustForHttpProxy]  Adjusted path too long");
         assert(0);
@@ -252,11 +252,11 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     }
 
     {{
-        char x_path[sizeof(info->path)];
+        char x_path[sizeof(info->host) + 16 + sizeof(info->path)];
         sprintf(x_path, "http://%s:%hu%s%s", info->host, info->port,
                 *info->path == '/' ? "" : "/", info->path);
         assert(strlen(x_path) < sizeof(x_path));
-        strcpy(info->path, x_path);
+        strncpy0(info->path, x_path, sizeof(info->path) - 1);
     }}
 
     assert(sizeof(info->host) >= sizeof(info->http_proxy_host));
@@ -1691,6 +1691,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.76  2005/06/08 20:42:41  lavr
+ * Buffer size better adjustment in ConnNetInfo_AdjustForProxy()
+ *
  * Revision 6.75  2005/06/08 16:59:38  lavr
  * ConnNetInfo_ParseURL(): Use default port for absolute URL
  *
