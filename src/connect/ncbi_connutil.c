@@ -302,8 +302,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             if (sscanf(a, ":%hu%n", &port, &n) < 1 || a + n != s)
                 return 0/*failure*/;
             info->port = port;
-        } else
+        } else {
             a = s;
+            info->port = DEF_CONN_PORT;
+        }
         if ((size_t)(a - h) < sizeof(info->host)) {
             memcpy(info->host, h, (size_t)(a - h));
             info->host[(size_t)(a - h)] = '\0';
@@ -1689,6 +1691,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.75  2005/06/08 16:59:38  lavr
+ * ConnNetInfo_ParseURL(): Use default port for absolute URL
+ *
  * Revision 6.74  2005/05/13 21:12:23  lavr
  * BASE64_Encode(): fix a critical encoding bug (stray ending char)
  *
