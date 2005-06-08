@@ -80,6 +80,84 @@ static const TSeqPos kBarHeight = 20;
 static const TSeqPos kNumScales = 5;
 
 
+///group hsp with same id togather
+///@param seqalign: the seqalign
+///
+static void s_RestoreHspPos(CSeq_align_set& seqalign){
+    CSeq_align_set::Tdata::iterator next_iter; 
+    CSeq_align_set::Tdata::iterator cur_iter = seqalign.Set().begin();
+    
+    while(cur_iter != seqalign.Set().end()){ 
+        next_iter = cur_iter;
+        next_iter ++;
+        const CSeq_id& cur_id  = (*cur_iter)->GetSeq_id(1);
+        while(next_iter != seqalign.Set().end()){
+            //only care the ones starting from the next next one
+            //because we don't need to do anything for the next one
+            next_iter ++;
+            if(next_iter != seqalign.Set().end()){
+                const CSeq_id& next_id  = (*next_iter)->GetSeq_id(1);
+                if (cur_id.Match(next_id)){
+                    CSeq_align_set::Tdata::iterator temp_iter = next_iter;
+                    next_iter ++;
+                    seqalign.Set().insert(cur_iter, *temp_iter);
+                    cur_iter ++;
+                    seqalign.Set().erase(temp_iter); 
+                } else {
+                    next_iter ++;
+                }
+            }
+        }
+        cur_iter ++;
+    } 
+   
+}
+  
+///Sort on seqalign range from
+///@param info1: the first seqalign
+///@param info2: the second seqalign
+///
+static bool AlnFromRangeAscendingSort(CRef<CSeq_align> const& info1,
+                                      CRef<CSeq_align> const& info2)
+{
+    int score1,  score2, sum_n, num_ident;
+    double bits, evalue;
+    list<int> use_this_gi;
+    TSeqPos from1, from2;
+    
+    CBlastFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
+                                   sum_n, num_ident, use_this_gi);
+    CBlastFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
+                                   sum_n, num_ident, use_this_gi);
+    from1 = info1->GetSeqRange(0).GetFrom();
+    from2 = info2->GetSeqRange(0).GetFrom();
+    if(from1 == from2) {
+        return score2 > score1;
+    } else {
+        return from1 < from2;
+    }
+}
+
+
+///Sort on sealign score
+///@param info1: the first seqalign
+///@param info2: the second seqalign
+///
+static bool AlnScoreDescendingSort(CRef<CSeq_align> const& info1,
+                                  CRef<CSeq_align> const& info2)
+{
+    int score1,  score2, sum_n, num_ident;
+    double bits, evalue;
+    list<int> use_this_gi;
+    
+    CBlastFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
+                                   sum_n, num_ident, use_this_gi);
+    CBlastFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
+                                   sum_n, num_ident, use_this_gi);
+    
+    return (score1 > score2);
+}
+
 CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
                                                  TSeqPos master_len)
 {
@@ -120,15 +198,37 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
 void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
                                           CSeq_align_set& seqalign_lower)
 {
+    //get merged range for higher seqalign
+    list<CRange<TSeqPos> > range_list;
+    CRange<TSeqPos> prev_range, cur_range;
+    int j = 0;
+    ITERATE(CSeq_align_set::Tdata, iter, seqalign_higher.Get()){ 
+        cur_range.Set((*iter)->GetSeqRange(0).GetFrom(), 
+                      (*iter)->GetSeqRange(0).GetTo());
+        //merge if previous range intersect with current range
+        if(j > 0){ 
+            prev_range = range_list.back();
+            if(prev_range.IntersectingWith(cur_range)){
+                range_list.back() = 
+                    range_list.back().CombinationWith(cur_range);
+            } else {
+                range_list.push_back(cur_range);
+            }
+        } else {
+            range_list.push_back(cur_range); //store current range
+        }
+        j ++;
+    }
     
-    ITERATE(CSeq_align_set::Tdata, iter_higher, seqalign_higher.Get()){
+    //merge lower rank seqalign
+    ITERATE(list<CRange<TSeqPos> >, iter_higher,  range_list){
         CSeq_align_set::Tdata::iterator iter_lower =
             seqalign_lower.Set().begin();
         while(iter_lower != seqalign_lower.Set().end()){
             if((*iter_lower)->GetSeqRange(0).GetFrom() >=
-               (*iter_higher)->GetSeqRange(0).GetFrom() &&
+               iter_higher->GetFrom() &&
                (*iter_lower)->GetSeqRange(0).GetTo() <=
-               (*iter_higher)->GetSeqRange(0).GetTo()){
+               iter_higher->GetTo()){
                 CSeq_align_set::Tdata::iterator temp_iter = iter_lower;
                 iter_lower ++;
                 seqalign_lower.Set().erase(temp_iter);
@@ -159,38 +259,34 @@ CVecscreen::~CVecscreen()
 
 void CVecscreen::x_MergeInclusiveSeqalign(CSeq_align_set& seqalign)
 {   
-   
-    CSeq_align_set::Tdata::iterator prev_iter; 
+    //seqalign is presorted by score already.  Delete ones that are contained
+    //in seqaligns with higher scores
+    CSeq_align_set::Tdata::iterator next_iter; 
     CSeq_align_set::Tdata::iterator cur_iter = seqalign.Set().begin();
-    int i = 0;
-    while(cur_iter != seqalign.Set().end()){
-        CRange<TSeqPos> cur_range = (*cur_iter)->GetSeqRange(0); 
-        if(i > 0){
-            CRange<TSeqPos> prev_range = (*prev_iter)->GetSeqRange(0);
-            if(cur_range.GetFrom() <= prev_range.GetFrom() &&
-               cur_range.GetTo() >= prev_range.GetTo()){
-                //if cur_range contains prev_range
-                seqalign.Set().erase(prev_iter); 
-                prev_iter = cur_iter;
-                cur_iter ++;
-            } else if (cur_range.GetFrom() >= prev_range.GetFrom() &&
-                       cur_range.GetTo() <= prev_range.GetTo()){
-                //if cur_range is contained in prev_range
-                CSeq_align_set::Tdata::iterator temp_iter = cur_iter; 
-                cur_iter ++;
-                seqalign.Set().erase(temp_iter);                    
-            } else {
-                prev_iter = cur_iter;
-                cur_iter ++;
-            }
-       
-        } else {
-            prev_iter = cur_iter;
-            cur_iter ++;
-        }
-        i ++;
-    }
     
+    while(cur_iter != seqalign.Set().end()){ 
+        next_iter = cur_iter;
+        next_iter ++;
+        
+        CRange<TSeqPos> cur_range = (*cur_iter)->GetSeqRange(0);
+        while(next_iter != seqalign.Set().end()){
+            CRange<TSeqPos> next_range = (*next_iter)->GetSeqRange(0);
+            if (cur_range.GetFrom() <= next_range.GetFrom() &&
+                cur_range.GetTo() >= next_range.GetTo()){
+                //if cur_range contains next_range
+                CSeq_align_set::Tdata::iterator temp_iter = next_iter;
+                next_iter ++;
+                seqalign.Set().erase(temp_iter); 
+            } else if (cur_range.IntersectingWith(next_range)){
+                cur_range = 
+                    cur_range.CombinationWith(next_range);
+                next_iter ++;
+            } else {
+                next_iter ++;
+            }
+        }
+        cur_iter ++;
+    } 
 }
 
 void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
@@ -217,11 +313,14 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
     }
     
     for(unsigned int i = 0; i < catagorized_seqalign.size(); i ++){
-        catagorized_seqalign[i]->Set().sort(AlnFromRangeAscendingSort);
+        //sort for x_MergeInclusiveSeqalign
+        catagorized_seqalign[i]->Set().sort(AlnScoreDescendingSort);
         x_MergeInclusiveSeqalign(*(catagorized_seqalign[i]));
+        //restore alnrangesort
+        catagorized_seqalign[i]->Set().sort(AlnFromRangeAscendingSort);
     }
     
-  
+    
     for(int i = eStrong; i < kNumSeqalignMatchTypes - 1 ; i ++){
         for(int j = i + 1; j < kNumSeqalignMatchTypes; j ++){
             x_MergeLowerRankSeqalign(*(catagorized_seqalign[i]), 
@@ -318,38 +417,27 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     b->Print(out);
     CRef<CHTML_a> a;
     
-    //output seqalign matches
-    MatchType prev_type = eNoMatch;
-    ITERATE(CSeq_align_set::Tdata, iter, m_FinalSeqalign->Get()){ 
-        MatchType type = x_GetMatchType(**iter, m_MasterLen);
-        if(type != prev_type){
-            out << endl;
-            a = new CHTML_a(kMatchUrl + "#" + 
-                            kGifLegend[type]);
-            a->AppendPlainText(kMatchUrlLegend[type] + ":");
-            a->Print(out);
-        } else {
-            out << ",";
-        }
-        out << " " << (*iter)->GetSeqRange(0).GetFrom() + 1 << "-"
-            << (*iter)->GetSeqRange(0).GetTo() + 1;
-       
-        prev_type = type;
-    }
-   
-    //output suspect matches
-    ITERATE(list<AlnInfo*>, iter, m_AlnInfoList){ 
-        if((*iter)->type == eSuspect){
-            out << endl;
-            a = new CHTML_a(kMatchUrl + "#" + 
-                            kGifLegend[(*iter)->type]);
-            a->AppendPlainText(kMatchUrlLegend[(*iter)->type] + ":");
-            a->Print(out);
-            out << " " << (*iter)->range.GetFrom() + 1 << "-"
-                << (*iter)->range.GetTo() + 1;
-            out << endl;
+    for (int i = 0; i < kNumSeqalignMatchTypes + 1; i ++){
+        bool is_first = true;
+        ITERATE(list<AlnInfo*>, iter, m_AlnInfoList){ 
+            if((*iter)->type == i){
+                if(is_first){
+                    out << endl;
+                    a = new CHTML_a(kMatchUrl + "#" + 
+                                    kGifLegend[(*iter)->type]);
+                    a->AppendPlainText(kMatchUrlLegend[(*iter)->type] + ":");
+                    a->Print(out);
+                    is_first = false;
+                } else {
+                    out << ",";
+                }
+                out << " " << (*iter)->range.GetFrom() + 1 << "-"
+                    << (*iter)->range.GetTo() + 1;
+                
+            }
         }
     }
+  
     out << endl << endl;
 }
 
@@ -360,6 +448,8 @@ CRef<CSeq_align_set> CVecscreen::VecscreenDisplay(CNcbiOstream& out){
                                                      *m_SeqalignSetRef);
     x_MergeSeqalign(actual_aln_list);  
     x_BuildHtmlBar(out);
+    m_FinalSeqalign->Set().sort(AlnScoreDescendingSort);
+    s_RestoreHspPos(*m_FinalSeqalign);
     return m_FinalSeqalign;
 }
 
@@ -390,11 +480,14 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                 if(prev_range->IntersectingWith(cur_aln_info->range)){
                     aln_info_vec[i].back()->range = 
                         aln_info_vec[i].back()->range.CombinationWith(cur_aln_info->range);
+                    delete cur_aln_info;
                 } else {
                     aln_info_vec[i].push_back(cur_aln_info);
                 }
+            } else {
+                aln_info_vec[i].push_back(cur_aln_info); //store current range
             }
-            aln_info_vec[i].push_back(cur_aln_info); //store current range
+            j ++;
         }
     }
     
@@ -471,6 +564,7 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
         ITERATE(list<AlnInfo*>, iter, aln_info_vec[i]){
             m_AlnInfoList.push_back(*iter);
         }
+        
     }
     m_AlnInfoList.sort(FromRangeAscendingSort);
 
@@ -536,6 +630,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.2  2005/06/08 16:12:10  jianye
+*merge to higher score only within the same catagory
+*
 *Revision 1.1  2005/05/25 16:18:12  jianye
 *initial checkin
 *
