@@ -2217,10 +2217,12 @@ public:
         CFile(s).Remove();
     }
 
+#if defined(NCBI_OS_MSWIN)
     CTmpStream(const char* s, FILE* file) : fstream(file)
     {
         m_FileName = s; 
     }
+#endif    
 
     virtual ~CTmpStream(void) 
     { 
@@ -3452,6 +3454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2005/06/08 16:20:16  ivanov
+ * Fix compilation errors
+ *
  * Revision 1.105  2005/06/08 15:26:54  ivanov
  * A little improvement for previous commit:
  * Try to delete file in the CTmpStream destructor in any case, regardless
