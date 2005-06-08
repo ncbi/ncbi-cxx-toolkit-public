@@ -216,7 +216,7 @@ void CCgi2RCgiApp::x_Init()
     bool donot_parse_content = 
         GetConfig().GetBool("cgi2rcgi", "donot_parse_content", true, 
                            IRegistry::eReturn);
-    CCgiRequest::TFlags flags;
+    CCgiRequest::TFlags flags = 0;
     if (ignore_query_string)
         flags |= CCgiRequest::fIgnoreQueryString;
     if (donot_parse_content)
@@ -408,6 +408,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/08 16:20:52  didenko
+ * Got rid of a compiler warning
+ *
  * Revision 1.3  2005/06/07 20:16:09  didenko
  * Changed some paramters names
  *
