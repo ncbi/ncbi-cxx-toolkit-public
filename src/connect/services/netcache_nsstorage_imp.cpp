@@ -238,7 +238,7 @@ void CNetCacheNSStorage::Reset()
         m_CreatedBlobId = NULL;
         
     }
-    if (m_OStream.get()) {
+    if (m_OStream.get() && !m_OutputCached) {
         m_OStream->flush();
         if (!m_OStream->good())
             ERR_POST("Something bad has happened during Output stream closing.");
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/06/08 16:21:58  didenko
+ * Fixed the wrong error message
+ *
  * Revision 1.10  2005/06/06 15:33:27  didenko
  * Improved errors handling and exceptiona reporting
  *
