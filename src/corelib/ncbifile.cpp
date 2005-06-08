@@ -2217,9 +2217,9 @@ public:
         CFile(s).Remove();
     }
 
-    CTmpStream(FILE* file) : fstream(file)
+    CTmpStream(const char* s, FILE* file) : fstream(file)
     {
-        return;
+        m_FileName = s; 
     }
 
     virtual ~CTmpStream(void) 
@@ -2229,6 +2229,7 @@ public:
             CFile(m_FileName).Remove();
         }
     }
+
 protected:
     string m_FileName;  // Temporary file name
 };
@@ -2260,7 +2261,7 @@ fstream* CFile::CreateTmpFile(const string& filename,
         return 0;
     }
     // Create FILE* based fstream.
-    fstream* stream = new CTmpStream(file);
+    fstream* stream = new CTmpStream(tmpname.c_str(), file);
     // We dont need to close FILE*, it will be closed in the fstream
 
 #else
@@ -3451,6 +3452,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2005/06/08 15:26:54  ivanov
+ * A little improvement for previous commit:
+ * Try to delete file in the CTmpStream destructor in any case, regardless
+ * ot the support DELETE_ON_CLOSE flag by OS.
+ *
  * Revision 1.104  2005/06/08 15:11:08  ivanov
  * CFile::CreateTmpFile() -- create self-deleting file om MS Windows
  * using OS specific flags. Moved deleting file by name into ~CTmpStream().
