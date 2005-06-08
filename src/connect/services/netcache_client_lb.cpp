@@ -35,6 +35,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
+#include <util/transmissionrw.hpp>
 #include "../ncbi_servicep.h"
 
 #include <memory>
@@ -299,11 +300,24 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
             CNetCacheClient cl(m_ClientName);
             IWriter* wrt = cl.PutData(key, time_to_live);
             cl.DetachSocket();
-            CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(wrt);
-            if (rw) {
-                rw->OwnSocket();
-            } else {
-                _ASSERT(0);
+
+            CTransmissionWriter* tw = dynamic_cast<CTransmissionWriter*>(wrt);
+
+            if (tw) {
+                IWriter& tww = tw->GetWriter();
+                CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(&tww);
+                if (rw) {
+                    rw->OwnSocket();
+                } else {
+                    _ASSERT(0);
+                }
+            } else {  // for protocol ver 1 (0)
+                CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(wrt);
+                if (rw) {
+                    rw->OwnSocket();
+                } else {
+                    _ASSERT(0);
+                }
             }
             return wrt;
         }
@@ -440,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/06/08 13:17:57  kuznets
+ * Fixed bug with transmission writer (put v.2)
+ *
  * Revision 1.17  2005/04/25 19:01:39  kuznets
  * Local host affinity turned ON
  *
