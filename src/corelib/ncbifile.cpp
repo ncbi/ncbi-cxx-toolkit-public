@@ -42,6 +42,8 @@
 #  include <io.h>
 #  include <direct.h>
 #  include <sys/utime.h>
+// for _O_* flags
+#  include <fcntl.h>
 // for CDirEntry::GetOwner()
 #  include <accctrl.h>
 #  include <aclapi.h>
@@ -2206,17 +2208,29 @@ string CFile::GetTmpNameEx(const string&        dir,
 class CTmpStream : public fstream
 {
 public:
-    CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode) 
+
+    CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode)
     {
         m_FileName = s; 
+        // Try to remove file and OS will automatically delete it after
+        // the last file descriptor to it is closed (works only on UNIXes)
+        CFile(s).Remove();
     }
+
+    CTmpStream(FILE* file) : fstream(file)
+    {
+        return;
+    }
+
     virtual ~CTmpStream(void) 
     { 
         close();
-        CFile(m_FileName).Remove();
+        if ( !m_FileName.empty() ) {
+            CFile(m_FileName).Remove();
+        }
     }
 protected:
-    string m_FileName;
+    string m_FileName;  // Temporary file name
 };
 
 
@@ -2224,6 +2238,33 @@ fstream* CFile::CreateTmpFile(const string& filename,
                               ETextBinary text_binary,
                               EAllowRead  allow_read)
 {
+    string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
+    if ( tmpname.empty() ) {
+        return 0;
+    }
+#if defined(NCBI_OS_MSWIN)
+    // Open file manually, because we cannot say to fstream
+    // to use some specific flags for file opening.
+    // MS Windows should delete created file automaticaly
+    // after closing all opened file descriptors.
+
+    // We cannot enable "only write" mode here,
+    // so ignore 'allow_read' flag.
+    // Specify 'TD' (_O_SHORT_LIVED | _O_TEMPORARY)
+    char mode[6] = "w+TDb";
+    if (text_binary != eBinary) {
+        mode[4] = '\0';
+    }
+    FILE* file = fopen(tmpname.c_str(), mode);
+    if ( !file ) {
+        return 0;
+    }
+    // Create FILE* based fstream.
+    fstream* stream = new CTmpStream(file);
+    // We dont need to close FILE*, it will be closed in the fstream
+
+#else
+    // Create filename based fstream
     ios::openmode mode = ios::out | ios::trunc;
     if ( text_binary == eBinary ) {
         mode = mode | ios::binary;
@@ -2231,14 +2272,9 @@ fstream* CFile::CreateTmpFile(const string& filename,
     if ( allow_read == eAllowRead ) {
         mode = mode | ios::in;
     }
-    string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
-    if ( tmpname.empty() ) {
-        return 0;
-    }
     fstream* stream = new CTmpStream(tmpname.c_str(), mode);
-    // Try to remove file and OS will automatically delete it after
-    // the last file descriptor to it is closed (works only on UNIXes)
-    CFile(tmpname).Remove();
+#endif
+
     return stream;
 }
 
@@ -3415,6 +3451,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2005/06/08 15:11:08  ivanov
+ * CFile::CreateTmpFile() -- create self-deleting file om MS Windows
+ * using OS specific flags. Moved deleting file by name into ~CTmpStream().
+ *
  * Revision 1.103  2005/06/06 20:18:23  vasilche
  * Added one more byte for trailing zero.
  *
