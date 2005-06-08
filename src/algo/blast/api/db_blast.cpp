@@ -335,6 +335,13 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
     x_InitRPSFields();
 }
 
+CDbBlast::CDbBlast(const ILocalQueryData* query_data,
+                   BlastSeqSrc* seq_src, 
+                   CBlastOptionsHandle& opts)
+{
+    throw runtime_error("Unimplemented");
+}
+
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts, 
                    BlastHSPStream* hsp_stream, int nthreads)
@@ -722,6 +729,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2005/06/08 16:23:39  camacho
+ * Experimental: added CDbBlast ctor which uses query retrieval interface
+ *
  * Revision 1.71  2005/05/26 14:39:48  dondosha
  * For PHI BLAST conversion to Seq-align, call a new function PHIBlast_Results2CSeqAlign
  *

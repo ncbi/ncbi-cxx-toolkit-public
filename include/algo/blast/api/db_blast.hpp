@@ -72,6 +72,8 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+class ILocalQueryData; // forward declaration
+
 /// Type definition for a vector of error messages from the BLAST engine
 typedef vector<Blast_Message*> TBlastError;
 
@@ -102,6 +104,10 @@ public:
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
              CBlastOptionsHandle& opts,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
+
+    CDbBlast(const ILocalQueryData* query_data,
+             BlastSeqSrc* seq_src, CBlastOptionsHandle& opts);
+
     /// Destructor
     virtual ~CDbBlast();
     /// Allocates and initializes internal data structures for the query 
@@ -317,6 +323,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2005/06/08 16:23:08  camacho
+* Experimental: added CDbBlast ctor which uses query retrieval interface
+*
 * Revision 1.35  2005/04/27 14:41:12  papadopo
 * remove friendship for CRPSTest class
 *
