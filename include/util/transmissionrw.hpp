@@ -65,6 +65,8 @@ public:
     virtual ERW_Result PendingCount(size_t* count);
 
 
+    /// Get underlying reader
+    IReader& GetReader() { _ASSERT(m_Rdr); return *m_Rdr; }
 
 private:
 
@@ -100,6 +102,9 @@ public:
 
     virtual ERW_Result Flush(void);
 
+    /// Get underlying writer
+    IWriter& GetWriter() { _ASSERT(m_Wrt); return *m_Wrt; }
+
 private:
     IWriter*     m_Wrt;
     EOwnership   m_OwnWrt;
@@ -111,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/08 13:17:10  kuznets
+ * Added accessor functions for underlying IReader/IWriter
+ *
  * Revision 1.2  2005/04/14 16:28:00  kuznets
  * Added ownership flags
  *
