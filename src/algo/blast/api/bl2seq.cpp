@@ -231,7 +231,7 @@ CBl2Seq::SetupSearch()
         if (st != 0) {
             string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
             Blast_MessageFree(blmsg);
-            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+            NCBI_THROW(CBlastException, eInternal, msg);
         }
         Blast_MessageFree(blmsg);
 
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2005/06/08 19:13:37  camacho
+ * Minor
+ *
  * Revision 1.74  2005/05/24 20:02:42  camacho
  * Changed signature of SetupQueries and SetupQueryInfo
  *
