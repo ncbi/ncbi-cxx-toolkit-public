@@ -303,10 +303,10 @@ s_SeqDBMapNA2ToNA8Setup()
 ///    The NA2 input data
 /// @param buf8bit
 ///    The Ncbi-NA8 output data
-/// @param base_length
-///    The length (in bases) of the input data
 /// @param sentinel_bytes
 ///    Specify true if sentinel bytes should be included
+/// @param region
+///    The subregion of the sequence to work on.
 static void
 s_SeqDBMapNA2ToNA8(const char        * buf2bit,
                    vector<char>      & buf8bit,

@@ -267,6 +267,8 @@ public:
     ///   A returned pointer to the data in the sequence.
     /// @param nucl_code
     ///   The encoding to use for the returned sequence data.
+    /// @param region
+    ///   If non-null, the offset range to get.
     /// @param strategy
     ///   Selects which function is used to allocate the buffer.
     /// @return
