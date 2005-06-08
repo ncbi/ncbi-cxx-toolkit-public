@@ -7,7 +7,7 @@ SRC_C = aa_ungapped blast_diagnostics blast_dust blast_engine blast_extend \
         blast_traceback blast_util gapinfo greedy_align hspstream_collector \
         link_hsps lookup_util lookup_wrap matrix_freq_ratios mb_lookup \
         ncbi_std ncbi_math blast_encoding pattern phi_extend phi_gapalign \
-        phi_lookup blast_parameters blast_posit
+        phi_lookup blast_parameters blast_posit blast_program
     
 SRC   = $(SRC_C)
 
