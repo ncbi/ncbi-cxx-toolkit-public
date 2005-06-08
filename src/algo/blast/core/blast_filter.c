@@ -954,7 +954,7 @@ s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 que
 }
 
 static Int2
-s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
+s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int4 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
@@ -965,7 +965,7 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
         Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
         const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
-        Int2 index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
+        Int4 index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
         
         context_offset = query_info->contexts[context].query_offset;
         buffer = &query_blk->sequence[context_offset];
@@ -1026,7 +1026,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
 {
 
     Int2 status = 0;
-    Int2 context = 0; /* loop variable. */
+    Int4 context = 0; /* loop variable. */
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
     Boolean no_forward_strand = (query_info->first_context > 0);  /* filtering needed on reverse strand. */
 

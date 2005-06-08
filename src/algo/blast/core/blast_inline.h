@@ -518,7 +518,7 @@ BlastNaMiniExtendRight(Uint1* q, const Uint1* s, Uint1 max_right)
  * @param context offset in the QueryInfo array
  * @return index in the maskloc
  */
-static NCBI_INLINE Int2 BlastGetMaskLocIndexFromContext(Boolean is_na, Int2 context)
+static NCBI_INLINE Int4 BlastGetMaskLocIndexFromContext(Boolean is_na, Int4 context)
 {
      return (is_na ? context / 2 : context);
 }
@@ -529,7 +529,7 @@ static NCBI_INLINE Int2 BlastGetMaskLocIndexFromContext(Boolean is_na, Int2 cont
  * @param context offset in the QueryInfo array
  * @return TRUE if this is minus strand
  */
-static NCBI_INLINE Boolean BlastIsReverseStrand(Boolean is_na, Int2 context)
+static NCBI_INLINE Boolean BlastIsReverseStrand(Boolean is_na, Int4 context)
 {
      return (is_na && ((context & 1) != 0));
 
