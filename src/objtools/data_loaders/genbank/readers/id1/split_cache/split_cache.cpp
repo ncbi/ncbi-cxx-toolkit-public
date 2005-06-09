@@ -44,12 +44,14 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -60,6 +62,9 @@
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk_Id.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Content.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Info.hpp>
+#include <objects/seqsplit/ID2S_Seq_descr_Info.hpp>
 
 // Object manager includes
 #include <objmgr/object_manager.hpp>
@@ -68,11 +73,15 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
+#include <objtools/data_loaders/genbank/processors.hpp>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objmgr/split/split_exceptions.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
@@ -82,7 +91,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 // cache
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
+// #include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
@@ -207,6 +216,8 @@ void CSplitCacheApp::Init(void)
                       "process all entries referenced by specified ones");
     arg_desc->AddFlag("verbose",
                       "issue additional trace messages");
+    arg_desc->AddFlag("test",
+                      "test loading of the split data");
 
     // cache parameters
     arg_desc->AddDefaultKey("cache_dir", "CacheDir",
@@ -260,6 +271,10 @@ int CSplitCacheApp::Run(void)
     SetupCache();
     
     Process();
+
+    if ( GetArgs()["test"] ) {
+        TestSplit();
+    }
 
     return 0;
 }
@@ -357,9 +372,8 @@ void CSplitCacheApp::SetupCache(void)
     }}
 
     {{ // create loader
-        m_Reader = new CCachedId1Reader(1, &*m_Cache, &*m_IdCache);
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
-            *m_ObjMgr, m_Reader).GetLoader());
+            *m_ObjMgr, "cache;id1").GetLoader());
     }}
 
     {{ // Create scope
@@ -545,31 +559,6 @@ void DumpData(CSplitCacheApp* app, const C& obj,
 }
 
 
-template<class C>
-void StoreToCache(CSplitCacheApp* app, const C& obj,
-                  CID2_Reply_Data::EData_type data_type,
-                  const CBlob_id& blob_id, int version,
-                  const string& suffix = kEmptyStr)
-{
-    string key = app->GetReader().GetBlobKey(blob_id);
-    WAIT_LINE4(app) << "Storing to cache " << key << "." << suffix << " ...";
-    CNcbiOstrstream stream;
-    {{
-        CSplitDataMaker data(app->GetParams(), data_type);
-        data << obj;
-        AutoPtr<CObjectOStream> out
-            (CObjectOStream::Open(eSerial_AsnBinary, stream));
-        *out << data.GetData();
-    }}
-    size_t size = stream.pcount();
-    line << setiosflags(ios::fixed) << setprecision(2) <<
-        " " << setw(7) << (size/1024.0) << " KB";
-    const char* data = stream.str();
-    stream.freeze(false);
-    app->GetCache().Store(key, version, suffix, data, size);
-}
-
-
 void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
 {
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
@@ -637,6 +626,59 @@ void CSplitCacheApp::PrintVersion(int version)
 }
 
 
+typedef set< CConstRef<CSeqdesc> > TDescSet;
+
+void CollectDescriptors(const CSeq_descr& descr, TDescSet& desc_set)
+{
+    ITERATE(CSeq_descr::Tdata, it, descr.Get()) {
+        desc_set.insert(ConstRef(&**it));
+    }
+}
+
+
+void CollectDescriptors(const CBioseq_set& seqset,
+                           TDescSet& seq_desc_set,
+                           TDescSet& set_desc_set)
+{
+    if ( seqset.IsSetDescr() ) {
+        CollectDescriptors(seqset.GetDescr(), set_desc_set);
+    }
+    ITERATE(CBioseq_set::TSeq_set, entry, seqset.GetSeq_set()) {
+        if ( (*entry)->IsSet() ) {
+            CollectDescriptors((*entry)->GetSet(),
+                seq_desc_set, set_desc_set);
+        }
+        else {
+            if ( (*entry)->GetSeq().IsSetDescr() ) {
+                CollectDescriptors((*entry)->GetSeq().GetDescr(),
+                    seq_desc_set);
+            }
+        }
+    }
+}
+
+
+pair<size_t, size_t> CollectDescriptors(const CSeq_entry& tse,
+                                        bool dump = true)
+{
+    TDescSet seq_desc_set, set_desc_set;
+    if ( tse.IsSet() ) {
+        CollectDescriptors(tse.GetSet(), seq_desc_set, set_desc_set);
+    }
+    else {
+        if ( tse.GetSeq().IsSetDescr() ) {
+            CollectDescriptors(tse.GetSeq().GetDescr(), seq_desc_set);
+        }
+    }
+    if ( dump ) {
+        NcbiCout << "    bioseq/bioseq-set descriptors: "
+            << seq_desc_set.size() << "/"
+            << set_desc_set.size() << NcbiEndl;
+    }
+    return pair<size_t, size_t>(seq_desc_set.size(), set_desc_set.size());
+}
+
+
 void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
 {
     CSeq_entry_Handle tse;
@@ -668,27 +710,28 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         return;
     }
 
-    if ( m_Reader->IsSNPBlob_id(blob_id) ) {
-        LINE("Skipping SNP blob: not implemented");
-        return;
-    }
-
     LINE("Processing blob "<< blob_id.ToString());
     CLevelGuard level(m_RecursionLevel);
     PrintVersion(version);
 
-    string key = m_Reader->GetBlobKey(blob_id);
+    string key = SCacheInfo::GetBlobKey(blob_id);
     if ( m_Resplit ) {
-        if ( m_Cache->GetSize(key, version, m_Reader->GetSkeletonSubkey()) ||
-             m_Cache->GetSize(key, version, m_Reader->GetSplitInfoSubkey()) ) {
+        if ( m_Cache->GetSize(key, version,
+                              SCacheInfo::GetBlobSubkey(0)) ||
+             m_Cache->GetSize(key, version,
+                              SCacheInfo::GetBlobSubkey(-1) )) {
             WAIT_LINE << "Removing old cache data...";
-            m_Cache->Remove(key, version, m_Reader->GetSkeletonSubkey());
-            m_Cache->Remove(key, version, m_Reader->GetSplitInfoSubkey());
+            m_Cache->Remove(key, version,
+                            SCacheInfo::GetBlobSubkey(0));
+            m_Cache->Remove(key, version,
+                            SCacheInfo::GetBlobSubkey(-1));
         }
     }
     else {
-        if ( m_Cache->GetSize(key, version, m_Reader->GetSkeletonSubkey()) &&
-             m_Cache->GetSize(key, version, m_Reader->GetSplitInfoSubkey()) ) {
+        if ( m_Cache->GetSize(key, version,
+                              SCacheInfo::GetBlobSubkey(0)) &&
+             m_Cache->GetSize(key, version,
+                              SCacheInfo::GetBlobSubkey(-1)) ) {
             LINE("Already split: skipping");
             return;
         }
@@ -717,7 +760,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                 return;
             }
 
-            key = m_Reader->GetBlobKey(blob_id);
+            key = SCacheInfo::GetBlobKey(blob_id);
         }
         else if ( tse.GetBlobVersion() != version ) {
             version = tse.GetBlobVersion();
@@ -776,18 +819,58 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             WAIT_LINE << "Removing old split data...";
             m_Cache->Remove(key);
         }}
-        StoreToCache(this, blob.GetMainBlob(),
-                     CID2_Reply_Data::eData_type_seq_entry,
-                     blob_id, version, m_Reader->GetSkeletonSubkey());
-        StoreToCache(this, blob.GetSplitInfo(),
-                     CID2_Reply_Data::eData_type_id2s_split_info,
-                     blob_id, version, m_Reader->GetSplitInfoSubkey());
-        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
-            StoreToCache(this, *it->second,
-                         CID2_Reply_Data::eData_type_id2s_chunk,
-                         blob_id, version,
-                         m_Reader->GetChunkSubkey(it->first));
+
+        // Remember which data has been split to check loading later
+        CRef<CSplitContentIndex>& content_index = m_ContentMap[idh];
+        _ASSERT( !content_index );
+        content_index.Reset(new CSplitContentIndex);
+        ITERATE(CID2S_Split_Info::TChunks, ch, blob.GetSplitInfo().GetChunks()) {
+            ITERATE(CID2S_Chunk_Info::TContent, it, (*ch)->GetContent()) {
+                content_index->IndexChunkContent((*ch)->GetId().Get(), **it);
+            }
         }
+        pair<size_t, size_t> desc_counts =
+            CollectDescriptors(*seq_entry, false);
+        content_index->SetSeqDescCount(desc_counts.first);
+        content_index->SetSetDescCount(desc_counts.second);
+
+        CReadDispatcher& disp = m_Loader->GetDispatcher();
+        CStandaloneRequestResult result(idh);
+        result.SetLevel(1);
+        CLoadLockBlob blob_lock(result, blob_id);
+        blob_lock.SetBlobVersion(version);
+        {{
+            const CProcessor_ID2AndSkel& proc_skel =
+                dynamic_cast<const CProcessor_ID2AndSkel&>(
+                disp.GetProcessor(CProcessor::eType_ID2AndSkel));
+            CSplitDataMaker split_data(GetParams(),
+                CID2_Reply_Data::eData_type_id2s_split_info);
+            split_data << blob.GetSplitInfo();
+            CSplitDataMaker skel_data(GetParams(),
+                CID2_Reply_Data::eData_type_seq_entry);
+            skel_data << blob.GetMainBlob();
+            proc_skel.SaveDataAndSkel(result,
+                                      blob_id,
+                                      CProcessor::kMain_ChunkId,
+                                      proc_skel.GetWriter(result),
+                                      1,
+                                      split_data.GetData(),
+                                      skel_data.GetData());
+        }}
+        {{
+            const CProcessor_ID2& proc = dynamic_cast<const CProcessor_ID2&>(
+                disp.GetProcessor(CProcessor::eType_ID2));
+            ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
+                CSplitDataMaker data(GetParams(),
+                    CID2_Reply_Data::eData_type_id2s_chunk);
+                data << *it->second;
+                proc.SaveData(result,
+                            blob_id,
+                            it->first,
+                            proc.GetWriter(result),
+                            data.GetData());
+            }
+        }}
     }}
 }
 
@@ -795,6 +878,172 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
 const CBlob_id& CSplitCacheApp::GetBlob_id(CSeq_entry_Handle tse)
 {
     return dynamic_cast<const CBlob_id&>(*tse.GetBlobId());
+}
+
+
+void CSplitContentIndex::IndexChunkContent(int chunk_id,
+                                           const CID2S_Chunk_Content& content)
+{
+    const CID2S_Seq_descr_Info::TType_mask kMask_low =
+        (1 << CSeqdesc::e_Pub) +
+        (1 << CSeqdesc::e_Comment);
+    const CID2S_Seq_descr_Info::TType_mask kMask_high =
+        (1 << CSeqdesc::e_Source) +
+        (1 << CSeqdesc::e_Molinfo) +
+        (1 << CSeqdesc::e_Title);
+    const CID2S_Seq_descr_Info::TType_mask kMask_other =
+        ~(kMask_low + kMask_high);
+
+    TContentFlags flags = 0;
+    switch ( content.Which() ) {
+    case CID2S_Chunk_Content::e_Seq_descr:
+        {
+            const CID2S_Seq_descr_Info& info = content.GetSeq_descr();
+            if ( (info.GetType_mask() & kMask_low) != 0 ) {
+                flags |= fDescLow;
+            }
+            if ( (info.GetType_mask() & kMask_high) != 0 ) {
+                flags |= fDescHigh;
+            }
+            if ( (info.GetType_mask() & kMask_other) != 0 ) {
+                flags |= fDescOther;
+            }
+            if ( info.IsSetBioseqs() ) {
+                flags |= fSeqDesc;
+            }
+            if ( info.IsSetBioseq_sets() ) {
+                flags |= fSetDesc;
+            }
+            break;
+        }
+    case CID2S_Chunk_Content::e_Seq_annot:
+        flags = fAnnot;
+        break;
+    case CID2S_Chunk_Content::e_Seq_data:
+        flags = fData;
+        break;
+    case CID2S_Chunk_Content::e_Seq_assembly:
+        flags = fAssembly;
+        break;
+    }
+    m_SplitContent |= flags;
+    m_ContentIndex[chunk_id] |= flags;
+}
+
+
+void CSplitCacheApp::TestSplit(void)
+{
+    m_Cache.reset();
+    m_IdCache.reset();
+    m_Scope.Reset();
+    m_ObjMgr->RevokeDataLoader(m_Loader->GetName());
+    m_Loader.Reset();
+
+    m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
+        *m_ObjMgr, "cache;id1").GetLoader());
+
+    m_Scope.Reset(new CScope(*m_ObjMgr));
+    m_Scope->AddDefaults();
+
+    ITERATE(TContentMap, it, m_ContentMap) {
+        TestSplitBlob(it->first, *it->second);
+    }
+}
+
+
+void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
+                                   const CSplitContentIndex& content)
+{
+    NcbiCout << NcbiEndl << "------------------------------------" << NcbiEndl;
+    NcbiCout << "Testing split data loading for " << id.AsString() << NcbiEndl;
+    if ( content.GetSplitContent() == 0 ) {
+        // blob was not split
+        return;
+    }
+
+    CBioseq_Handle handle = m_Scope->GetBioseqHandle(id);
+    _ASSERT( handle );
+    CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
+    CConstRef<CSeq_entry> tse_core =
+        handle.GetTopLevelEntry().GetSeq_entryCore();
+
+    // Analyse split content
+    bool check_set_desc = false;  // Check descriptors on bioseq-set
+    bool check_high_desc = false; // Check high-priority descriptors
+    bool check_assembly = false;  // Check history assembly
+    ITERATE(CSplitContentIndex::TContentIndex, it, content.GetContentIndex()) {
+        const CSplitContentIndex::TContentFlags kDescNotLow =
+            CSplitContentIndex::fDescHigh +
+            CSplitContentIndex::fDescOther;
+        if ((content.GetSplitContent() & kDescNotLow) != 0) {
+            if ((it->second & kDescNotLow) == 0) {
+                // Have chunks without high priority descriptors
+                check_high_desc = true;
+            }
+        }
+        if ((content.GetSplitContent() & CSplitContentIndex::fSetDesc) != 0) {
+            if ((it->second & CSplitContentIndex::fSetDesc) == 0) {
+                // Have chunks without bioseq-set descriptors
+                check_set_desc = true;
+            }
+        }
+        if ( content.HaveSplitAssembly() ) {
+            check_assembly = true;
+        }
+    }
+    // Check descriptors' loading
+    if ( check_set_desc  ||  check_high_desc ) {
+        NcbiCout << "Enumerating loaded descriptors..." << NcbiEndl;
+        // Collect descriptors on the sleleton
+        CollectDescriptors(*tse_core);
+        if ( check_set_desc ) {
+            // Load descriptors for each bioseq
+            NcbiCout << "Loading bioseqs' descriptors..." << NcbiEndl;
+            for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
+                CSeqdesc_CI desc_ci(*seq);
+            }
+            CollectDescriptors(*tse_core);
+        }
+        if ( check_high_desc ) {
+            // Load descriptors with high priority. Low priority
+            // may be already loaded by seq/set test.
+            NcbiCout << "Loading bioseq-set descriptors..." << NcbiEndl;
+            CSeqdesc_CI::TDescChoices choices;
+            choices.push_back(CSeqdesc::e_Source);
+            choices.push_back(CSeqdesc::e_Molinfo);
+            choices.push_back(CSeqdesc::e_Title);
+            CSeqdesc_CI desc_ci(handle.GetTopLevelEntry(), choices);
+            for ( ; desc_ci; ++desc_ci);
+            CollectDescriptors(*tse_core);
+        }
+    }
+    if ( check_assembly ) {
+        NcbiCout << "Testing split history assembly..." << NcbiEndl;
+        for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
+            if ( !seq->IsSetInst_Hist() ) {
+                continue;
+            }
+            CBioseq_Handle::TBioseqCore core = seq->GetBioseqCore();
+            bool have_assembly = core->GetInst().GetHist().IsSetAssembly();
+            // Assembly should be loaded on other members' requests
+            seq->GetInst_Length();
+            _ASSERT(have_assembly == core->GetInst().GetHist().IsSetAssembly());
+            seq->GetInst_Hist();
+            if (!have_assembly && core->GetInst().GetHist().IsSetAssembly()) {
+                NcbiCout << "    assembly loaded for "
+                    << seq->GetSeqId()->AsFastaString() << NcbiEndl;
+            }
+        }
+    }
+    {{
+        NcbiCout << "Loading complete TSE..." << NcbiEndl;
+        CConstRef<CSeq_entry> complete_tse =
+            handle.GetTopLevelEntry().GetCompleteSeq_entry();
+        _ASSERT(tse_core == complete_tse);
+        pair<size_t, size_t> desc_counts = CollectDescriptors(*complete_tse);
+        _ASSERT(desc_counts.first == content.GetSeqDescCount());
+        _ASSERT(desc_counts.second == content.GetSetDescCount());
+    }}
 }
 
 
@@ -813,6 +1062,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/06/09 15:19:08  grichenk
+* Redesigned split_cache to work with the new GB loader.
+* Test loading of the split data.
+*
 * Revision 1.33  2005/03/24 01:23:44  vakatov
 * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
 * CNcbiRegistry::Get*()

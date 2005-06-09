@@ -58,9 +58,10 @@ class CScope;
 class CBioseq_Handle;
 class CSeq_entry_Handle;
 class CDataLoader;
-class CCachedId1Reader;
 class CGBDataLoader;
 class CBlob_id;
+class CID2S_Chunk_Id;
+class CID2S_Chunk_Content;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -99,6 +100,83 @@ class CSplitDataMaker;
 #define LINE(Msg) do { WAIT_LINE << Msg; } while(0)
 
 
+class CSplitContentIndex : public CObject
+{
+public:
+    CSplitContentIndex(void) {}
+
+    void IndexChunkContent(int chunk_id,
+                           const CID2S_Chunk_Content& content);
+
+    enum EContentFlags {
+        fSeqDesc   = 1 << 0,
+        fSetDesc   = 1 << 1,
+        fDescLow   = 1 << 2,
+        fDescHigh  = 1 << 3,
+        fDescOther = 1 << 4,
+        fDesc      = fSeqDesc + fSetDesc + fDescLow + fDescHigh + fDescOther,
+        fAnnot     = 1 << 5,
+        fData      = 1 << 6,
+        fAssembly  = 1 << 7,
+        fOther     = 1 << 8
+    };
+    typedef int                     TContentFlags;
+    typedef map<int, TContentFlags> TContentIndex;
+
+    TContentFlags GetSplitContent(void) const
+        {
+            return m_SplitContent;
+        }
+    bool HaveSplitDesc(void) const
+        {
+            return (m_SplitContent & fDesc) != 0;
+        }
+    bool HaveSplitAnnot(void) const
+        {
+            return (m_SplitContent & fAnnot) != 0;
+        }
+    bool HaveSplitData(void) const
+        {
+            return (m_SplitContent & fData) != 0;
+        }
+    bool HaveSplitAssembly(void) const
+        {
+            return (m_SplitContent & fAssembly) != 0;
+        }
+    bool HaveSplitOther(void) const
+        {
+            return (m_SplitContent & fOther) != 0;
+        }
+    const TContentIndex& GetContentIndex(void) const
+        {
+            return m_ContentIndex;
+        }
+
+    void SetSeqDescCount(size_t count)
+        {
+            m_SeqDescCount = count;
+        }
+    void SetSetDescCount(size_t count)
+        {
+            m_SetDescCount = count;
+        }
+    size_t GetSeqDescCount(void) const
+        {
+            return m_SeqDescCount;
+        }
+    size_t GetSetDescCount(void) const
+        {
+            return m_SetDescCount;
+        }
+
+private:
+    TContentFlags m_SplitContent;
+    TContentIndex m_ContentIndex;
+    size_t        m_SeqDescCount;
+    size_t        m_SetDescCount;
+};
+
+
 class CSplitCacheApp : public CNcbiApplication
 {
 public:
@@ -110,10 +188,13 @@ public:
 
     void SetupCache(void);
     void Process(void);
+    void TestSplit(void);
 
     void ProcessSeqId(const CSeq_id& seq_id);
     void ProcessGi(int gi);
     void ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
+
+    void TestSplitBlob(CSeq_id_Handle id, const CSplitContentIndex& content);
 
     bool GetBioseqHandle(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
     void PrintVersion(int version);
@@ -127,11 +208,6 @@ public:
     const SSplitterParams GetParams(void) const
     {
         return m_SplitterParams;
-    }
-
-    const CCachedId1Reader& GetReader(void) const
-    {
-        return *m_Reader;
     }
 
     ICache& GetCache(void)
@@ -149,6 +225,7 @@ protected:
 
     typedef set<CBlob_id> TProcessedBlobs;
     typedef set<CSeq_id_Handle> TProcessedIds;
+    typedef map< CSeq_id_Handle, CRef<CSplitContentIndex> > TContentMap;
 
 private:
     // parameters
@@ -161,15 +238,16 @@ private:
     // splitter loaders/managers
     auto_ptr<ICache>            m_Cache;
     auto_ptr<ICache>            m_IdCache;
-    CCachedId1Reader*           m_Reader;
     CRef<CGBDataLoader>         m_Loader;
     CRef<CObjectManager>        m_ObjMgr;
     CRef<CScope>                m_Scope;
 
     // splitter process state
-    size_t      m_RecursionLevel;
+    size_t           m_RecursionLevel;
     TProcessedBlobs  m_ProcessedBlobs;
-    TProcessedIds  m_ProcessedIds;
+    TProcessedIds    m_ProcessedIds;
+
+    TContentMap      m_ContentMap;
 };
 
 
@@ -179,6 +257,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/06/09 15:19:08  grichenk
+* Redesigned split_cache to work with the new GB loader.
+* Test loading of the split data.
+*
 * Revision 1.15  2004/08/19 17:00:51  vasilche
 * Moved Sat/SatKey enums from obsolete class CSeqref.
 *
