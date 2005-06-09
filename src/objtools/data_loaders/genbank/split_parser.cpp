@@ -83,6 +83,9 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
                 x_Attach(*ret, **it2);
             }
             break;
+        case CID2S_Chunk_Content::e_Seq_assembly:
+            x_Attach(*ret, content.GetSeq_assembly());
+            break;
         default:
             NCBI_THROW(CLoaderException, eOtherError,
                        "Unexpected split data");
@@ -183,6 +186,22 @@ namespace {
             }
         CTSE_Chunk_Info& m_Chunk;
     };
+    struct FAddAssemblyInfo
+    {
+        FAddAssemblyInfo(CTSE_Chunk_Info& chunk)
+            : m_Chunk(chunk)
+            {
+            }
+        void operator()(const CSeq_id_Handle& id) const
+            {
+                m_Chunk.x_AddAssemblyInfo(id);
+            }
+        void operator()(int id) const
+            {
+                m_Chunk.x_AddAssemblyInfo(id);
+            }
+        CTSE_Chunk_Info& m_Chunk;
+    };
 }
 
 
@@ -254,6 +273,12 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
     }
 }
 
+
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Seq_assembly_Info& place)
+{
+    ForEach(place.GetBioseqs(), FAddAssemblyInfo(chunk));
+}
 
 inline
 void CSplitParser::x_AddWhole(TLocationSet& vec,
@@ -427,6 +452,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.16  2005/06/09 15:17:29  grichenk
+ * Added support for split history assembly.
+ *
  * Revision 1.15  2005/03/14 17:20:32  vasilche
  * Removed variable name clash.
  *

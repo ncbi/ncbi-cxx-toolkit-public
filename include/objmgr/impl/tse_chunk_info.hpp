@@ -82,6 +82,8 @@ public:
     typedef vector<TDescInfo> TDescInfos;
     typedef vector<TBioseq_setId> TBioseqPlaces;
     typedef vector<TBioseqId> TBioseqIds;
+    typedef TPlace TAssemblyInfo;
+    typedef vector<TAssemblyInfo> TAssemblyInfos;
 
     // annot contents identification
     typedef CSeq_id_Handle TLocationId;
@@ -126,6 +128,9 @@ public:
     void x_AddDescInfo(TDescTypeMask type_mask, const TBioseqId& id);
     void x_AddDescInfo(TDescTypeMask type_mask, TBioseq_setId id);
     void x_AddDescInfo(const TDescInfo& info);
+
+    void x_AddAssemblyInfo(const TBioseqId& id);
+    void x_AddAssemblyInfo(const TBioseq_setId& id);
 
     void x_AddAnnotPlace(const TBioseqId& id);
     void x_AddAnnotPlace(TBioseq_setId id);
@@ -208,17 +213,18 @@ private:
     CTSE_Chunk_Info(const CTSE_Chunk_Info&);
     CTSE_Chunk_Info& operator=(const CTSE_Chunk_Info&);
 
-    CTSE_Split_Info*m_SplitInfo;
-    TChunkId        m_ChunkId;
+    CTSE_Split_Info* m_SplitInfo;
+    TChunkId         m_ChunkId;
 
-    bool            m_AnnotIndexEnabled;
+    bool             m_AnnotIndexEnabled;
 
-    TDescInfos      m_DescInfos;
-    TPlaces         m_AnnotPlaces;
-    TBioseqPlaces   m_BioseqPlaces;
-    TBioseqIds      m_BioseqIds;
-    TAnnotContents  m_AnnotContents;
-    TLocationSet    m_Seq_data;
+    TDescInfos       m_DescInfos;
+    TPlaces          m_AnnotPlaces;
+    TBioseqPlaces    m_BioseqPlaces;
+    TBioseqIds       m_BioseqIds;
+    TAnnotContents   m_AnnotContents;
+    TLocationSet     m_Seq_data;
+    TAssemblyInfos   m_AssemblyInfos;
 
     CInitMutex<CObject> m_LoadLock;
     TObjectIndexList m_ObjectIndexList;
@@ -252,6 +258,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/09 15:17:29  grichenk
+* Added support for split history assembly.
+*
 * Revision 1.18  2005/05/23 14:10:20  grichenk
 * Added comments
 *

@@ -141,6 +141,7 @@ public:
 
     void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
     void x_AddAnnotChunkId(TChunkId chunk_id);
+    void x_AddAssemblyChunkId(TChunkId chunk_id);
 
     virtual TObjAnnot& x_SetObjAnnot(void) = 0;
     virtual void x_ResetObjAnnot(void) = 0;
@@ -160,6 +161,7 @@ private:
     TObjAnnot*          m_ObjAnnot;
 
     TChunkIds           m_DescrChunks;
+    TChunkIds           m_AssemblyChunks;
     typedef vector<TDescTypeMask> TDescTypeMasks;
     TDescTypeMasks      m_DescrTypeMasks;
     TChunkIds           m_AnnotChunks;
@@ -216,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/06/09 15:17:29  grichenk
+ * Added support for split history assembly.
+ *
  * Revision 1.7  2005/02/28 15:23:05  grichenk
  * RemoveDesc() returns CRef<CSeqdesc>
  *

@@ -73,6 +73,7 @@ public:
     typedef CTSE_Chunk_Info::TAssembly              TAssembly;
     typedef CTSE_Chunk_Info::TLocationSet           TLocationSet;
     typedef vector<CSeq_id_Handle>                  TBioseqsIds;
+    typedef CTSE_Chunk_Info::TAssemblyInfo          TAssemblyInfo;
 
     CTSE_Split_Info(void);
     ~CTSE_Split_Info(void);
@@ -107,6 +108,7 @@ public:
     void x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id);
     void x_AddBioseqPlace(TBioseq_setId place_id, TChunkId chunk_id);
     void x_AddSeq_data(const TLocationSet& location, CTSE_Chunk_Info& chunk);
+    void x_AddAssemblyInfo(const TAssemblyInfo& info, TChunkId chunk_id);
 
     void x_AddDescInfo(CTSE_Info& tse_info,
                        const TDescInfo& info, TChunkId chunk_id);
@@ -116,6 +118,9 @@ public:
                           TBioseq_setId place_id, TChunkId chunk_id);
     void x_AddSeq_data(CTSE_Info& tse_info,
                        const TLocationSet& location, CTSE_Chunk_Info& chunk);
+    void x_AddAssemblyInfo(CTSE_Info& tse_info,
+                           const TAssemblyInfo& info,
+                           TChunkId chunk_id);
 
     // id indexing
     void x_UpdateCore(void);

@@ -101,6 +101,11 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
         split_info.x_AddDescInfo(*it, chunk_id);
     }
 
+    // register assembly places
+    ITERATE ( TAssemblyInfos, it, m_AssemblyInfos ) {
+        split_info.x_AddAssemblyInfo(*it, chunk_id);
+    }
+
     // register annots places
     ITERATE ( TPlaces, it, m_AnnotPlaces ) {
         split_info.x_AddAnnotPlace(*it, chunk_id);
@@ -145,6 +150,11 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
     // register descrs places
     ITERATE ( TDescInfos, it, m_DescInfos ) {
         m_SplitInfo->x_AddDescInfo(tse_info, *it, chunk_id);
+    }
+
+    // register assembly places
+    ITERATE ( TAssemblyInfos, it, m_AssemblyInfos ) {
+        m_SplitInfo->x_AddAssemblyInfo(tse_info, *it, chunk_id);
     }
 
     // register annots places
@@ -241,6 +251,26 @@ void CTSE_Chunk_Info::x_AddDescInfo(const TDescInfo& info)
     m_DescInfos.push_back(info);
     if ( m_SplitInfo ) {
         m_SplitInfo->x_AddDescInfo(info, GetChunkId());
+    }
+}
+
+
+void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseqId& id)
+{
+    TAssemblyInfo info(id, 0);
+    m_AssemblyInfos.push_back(info);
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddAssemblyInfo(info, GetChunkId());
+    }
+}
+
+
+void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseq_setId& id)
+{
+    TAssemblyInfo info(CSeq_id_Handle(), id);
+    m_AssemblyInfos.push_back(info);
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddAssemblyInfo(info, GetChunkId());
     }
 }
 
@@ -482,6 +512,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/06/09 15:17:29  grichenk
+* Added support for split history assembly.
+*
 * Revision 1.21  2005/03/15 19:14:27  vasilche
 * Correctly update and check  bioseq ids in split blobs.
 *

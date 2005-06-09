@@ -47,6 +47,7 @@ class CID2S_Seq_annot_place_Info;
 class CID2S_Bioseq_place_Info;
 class CID2S_Seq_data_Info;
 class CID2S_Seq_loc;
+class CID2S_Seq_assembly_Info;
 
 class CTSE_Info;
 class CTSE_Chunk_Info;
@@ -69,6 +70,8 @@ public:
                          const CID2S_Seq_annot_place_Info& place);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Seq_data_Info& data);
+    static void x_Attach(CTSE_Chunk_Info& chunk,
+                         const CID2S_Seq_assembly_Info& data);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Bioseq_place_Info& data);
 
@@ -94,6 +97,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2005/06/09 15:17:29  grichenk
+* Added support for split history assembly.
+*
 * Revision 1.7  2004/10/18 14:01:28  vasilche
 * Updated split parser for new SeqSplit specs.
 *

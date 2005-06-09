@@ -170,6 +170,13 @@ void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
 }
 
 
+void CBioseq_Base_Info::x_AddAssemblyChunkId(TChunkId id)
+{
+    m_AssemblyChunks.push_back(id);
+    x_SetNeedUpdate(fNeedUpdate_assembly);
+}
+
+
 void CBioseq_Base_Info::x_AddAnnotChunkId(TChunkId id)
 {
     m_AnnotChunks.push_back(id);
@@ -181,6 +188,9 @@ void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & fNeedUpdate_descr ) {
         x_LoadChunks(m_DescrChunks);
+    }
+    if ( flags & fNeedUpdate_assembly ) {
+        x_LoadChunks(m_AssemblyChunks);
     }
     if ( flags & (fNeedUpdate_annot|fNeedUpdate_children) ) {
         x_LoadChunks(m_AnnotChunks);
@@ -436,6 +446,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/06/09 15:17:29  grichenk
+* Added support for split history assembly.
+*
 * Revision 1.8  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

@@ -200,6 +200,23 @@ void CTSE_Split_Info::x_AddDescInfo(CTSE_Info& tse_info,
 }
 
 
+void CTSE_Split_Info::x_AddAssemblyInfo(const TAssemblyInfo& info,
+                                        TChunkId chunk_id)
+{
+    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        x_AddAssemblyInfo(**it, info, chunk_id);
+    }
+}
+
+
+void CTSE_Split_Info::x_AddAssemblyInfo(CTSE_Info& tse_info,
+                                        const TAssemblyInfo& info,
+                                        TChunkId chunk_id)
+{
+    x_GetBase(tse_info, info).x_AddAssemblyChunkId(chunk_id);
+}
+
+
 void CTSE_Split_Info::x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id)
 {
     ITERATE ( TTSE_Set, it, m_TSE_Set ) {
