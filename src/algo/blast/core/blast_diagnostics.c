@@ -94,6 +94,9 @@ void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats,
 void 
 Blast_DiagnosticsUpdate(BlastDiagnostics* global, BlastDiagnostics* local)
 {
+    if (!local)
+        return;
+
    if (global->mt_lock) 
       MT_LOCK_Do(global->mt_lock, eMT_Lock);
 
