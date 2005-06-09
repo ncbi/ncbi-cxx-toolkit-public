@@ -46,7 +46,7 @@
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_seqalign.hpp"
-#include "blast_setup.hpp"
+#include "blast_objmgr_priv.hpp"
 #include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
@@ -724,6 +724,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2005/06/09 20:35:29  camacho
+ * Use new private header blast_objmgr_priv.hpp
+ *
  * Revision 1.74  2005/06/09 12:17:32  camacho
  * eliminate compiler warnings
  *

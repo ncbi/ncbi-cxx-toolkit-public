@@ -41,7 +41,7 @@
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/api/seqinfosrc_seqvec.hpp>
 #include "blast_seqalign.hpp"
-#include "blast_setup.hpp"
+#include "blast_objmgr_priv.hpp"
 
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2005/06/09 20:35:29  camacho
+ * Use new private header blast_objmgr_priv.hpp
+ *
  * Revision 1.75  2005/06/08 19:13:37  camacho
  * Minor
  *

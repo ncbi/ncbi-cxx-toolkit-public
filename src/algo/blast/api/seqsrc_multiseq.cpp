@@ -36,7 +36,7 @@
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_seqsrc_impl.h>
-#include "blast_setup.hpp"
+#include "blast_objmgr_priv.hpp"
 
 #include <memory>
 
@@ -446,6 +446,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2005/06/09 20:35:29  camacho
+ * Use new private header blast_objmgr_priv.hpp
+ *
  * Revision 1.34  2005/05/25 12:47:56  camacho
  * doxygen fix
  *
