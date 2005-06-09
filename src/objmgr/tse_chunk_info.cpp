@@ -267,7 +267,8 @@ void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseqId& id)
 
 void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseq_setId& id)
 {
-    TAssemblyInfo info(CSeq_id_Handle(), id);
+    CSeq_id_Handle h;
+    TAssemblyInfo info(h, id);
     m_AssemblyInfos.push_back(info);
     if ( m_SplitInfo ) {
         m_SplitInfo->x_AddAssemblyInfo(info, GetChunkId());
@@ -512,6 +513,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/06/09 15:56:19  ucko
+* Tweak x_AddAssemblyInfo to avoid confusing some parsers (including GCC 3.3's).
+*
 * Revision 1.22  2005/06/09 15:17:29  grichenk
 * Added support for split history assembly.
 *
