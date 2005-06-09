@@ -646,7 +646,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                 while( !pNode->IsRoot() ) {
                     int rank( pNode->GetRank() );
                     if(rank >= 0) {
-                        is_species= (rank >= GetSpeciesRank()-1);
+                        is_species= (rank >= GetSpeciesRank());
                         break;
                     }
                     pNode = pNode->GetParent();
@@ -1377,6 +1377,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.25  2005/06/09 16:44:17  domrach
+ * Changes heuristic of assigning is_species flag for no-ranks under species subgroup parent
+ *
  * Revision 6.24  2005/06/03 16:56:26  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
