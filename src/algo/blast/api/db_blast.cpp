@@ -335,9 +335,9 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
     x_InitRPSFields();
 }
 
-CDbBlast::CDbBlast(const ILocalQueryData* query_data,
-                   BlastSeqSrc* seq_src, 
-                   CBlastOptionsHandle& opts)
+CDbBlast::CDbBlast(const ILocalQueryData* /*query_data*/,
+                   BlastSeqSrc* /*seq_src*/, 
+                   CBlastOptionsHandle& /*opts*/)
 {
     throw runtime_error("Unimplemented");
 }
@@ -724,6 +724,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2005/06/09 12:17:32  camacho
+ * eliminate compiler warnings
+ *
  * Revision 1.73  2005/06/08 17:42:16  madden
  * Use functions from blast_program.c
  *
