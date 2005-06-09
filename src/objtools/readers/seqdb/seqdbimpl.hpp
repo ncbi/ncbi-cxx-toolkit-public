@@ -106,6 +106,9 @@ private:
 /// details of CSeqDB are kept from the public interface.
 
 class CSeqDBImpl {
+    /// Import type to allow shorter name.
+    typedef TSeqDBAliasFileValues TAliasFileValues;
+    
 public:
     /// Constructor
     ///
@@ -486,6 +489,31 @@ public:
     /// @param oid_end
     ///   Iterator will return up to (but not including) this OID.
     void SetIterationRange(int oid_begin, int oid_end);
+    
+    /// Get Name/Value Data From Alias Files
+    ///
+    /// SeqDB treats each alias file as a map from a variable name to
+    /// a value.  This method will return a map from the basename of
+    /// the filename of each alias file, to a mapping from variable
+    /// name to value for each entry in that file.  For example, the
+    /// value of the "DBLIST" entry in the "wgs.nal" file would be
+    /// values["wgs"]["DBLIST"].  The lines returned have been
+    /// processed somewhat by SeqDB, including normalizing tabs to
+    /// whitespace, trimming leading and trailing whitespace, and
+    /// removal of comments and other non-value lines.  Care should be
+    /// taken when using the values returned by this method.  SeqDB
+    /// uses an internal "virtual" alias file entry to aggregate the
+    /// values passed into SeqDB by the user.  This mapping uses a
+    /// filename of "-" and contains a single entry mapping "DBLIST"
+    /// to SeqDB's database name input.  This entry is the root of the
+    /// alias file inclusion tree.  Also note that alias files that
+    /// appear in several places in the alias file inclusion tree only
+    /// have one entry in the returned map (and are only parsed once
+    /// by SeqDB).
+    /// 
+    /// @param alias_files
+    ///   The alias file contents will be returned here.
+    void GetAliasFileValues(TAliasFileValues & afv) const;
     
 private:
     CLASS_MARKER_FIELD("IMPL")

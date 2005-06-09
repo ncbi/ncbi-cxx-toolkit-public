@@ -62,7 +62,8 @@ BEGIN_NCBI_SCOPE
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
                                  char             prot_nucl)
-    : m_Atlas(atlas)
+    : m_Atlas    (atlas),
+      m_ThisName ("-")
 {
     CSeqDBLockHold locked(atlas);
     
@@ -98,13 +99,12 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas      & atlas,
                                  CSeqDBAliasStack & recurse,
                                  CSeqDBLockHold   & locked)
     : m_Atlas(atlas),
-      m_DBPath(dbpath)
+      m_DBPath(dbpath),
+      m_ThisName(x_MkPath(m_DBPath, dbname, prot_nucl))
 {
-    string full_filename( x_MkPath(m_DBPath, dbname, prot_nucl) );
+    recurse.Push(m_ThisName);
     
-    recurse.Push(full_filename);
-    
-    x_ReadValues(full_filename, locked);
+    x_ReadValues(m_ThisName, locked);
     NStr::Tokenize(m_Values["DBLIST"], " ", m_DBList, NStr::eMergeDelims);
     x_ExpandAliases(dbname, prot_nucl, recurse, locked);
     
@@ -923,6 +923,18 @@ int CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
     WalkNodes(& walk, volset);
     
     return walk.GetMembBit();
+}
+
+void CSeqDBAliasNode::
+GetAliasFileValues(TAliasFileValues & afv) const
+{
+    _ASSERT(! m_ThisName.empty());
+    
+    afv[m_ThisName].push_back(m_Values);
+    
+    ITERATE(TSubNodeList, node, m_SubNodes) {
+        (**node).GetAliasFileValues(afv);
+    }
 }
 
 END_NCBI_SCOPE

@@ -3273,6 +3273,35 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-prot]";
 
+        if (s == "-print-alias") {
+            CSeqDB db(dbname, seqtype);
+            
+            typedef map<string, string>      TAliasFile;
+            typedef vector<TAliasFile>       TAliasFileVector;
+            typedef CSeqDB::TAliasFileValues TAliasFileMap;
+            
+            TAliasFileMap af;
+            db.GetAliasFileValues(af);
+            
+            ITERATE(TAliasFileMap, afile_iter, af) {
+                cout << "\nFILENAME: -> " << (*afile_iter).first << " <-\n";
+                
+                int j = 0;
+                
+                ITERATE(TAliasFileVector, vecelem, ((*afile_iter).second)) {
+                    cout << "\n  VERSION [" << j++ << "]:\n";
+                    
+                    ITERATE(TAliasFile, nvpair, *vecelem) {
+                        cout << "    m[" << (*nvpair).first << "]={" << (*nvpair).second << "}\n";
+                    }
+                }
+            }
+            
+            cout << endl;
+            
+            return 0;
+        } else desc += " [-print-alias]";
+
         if (s == "-show-ambig") {
             CSeqDB db(dbname.c_str(), seqtype);
             

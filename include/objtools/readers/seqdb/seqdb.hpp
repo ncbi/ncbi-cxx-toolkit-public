@@ -148,6 +148,9 @@ class CSeqDBGiList;
 
 class NCBI_XOBJREAD_EXPORT CSeqDB : public CObject {
 public:
+    /// Import type to allow shorter name.
+    typedef TSeqDBAliasFileValues TAliasFileValues;
+    
     /// Indicates how block of OIDs was returned.
     enum EOidListType {
         eOidList,
@@ -670,6 +673,31 @@ public:
     /// @param oid_end
     ///   Iterator will return up to (but not including) this OID.
     void SetIterationRange(int oid_begin, int oid_end);
+    
+    /// Get Name/Value Data From Alias Files
+    ///
+    /// SeqDB treats each alias file as a map from a variable name to
+    /// a value.  This method will return a map from the basename of
+    /// the filename of each alias file, to a vector of maps from
+    /// variable name to value for each entry in that file.  For
+    /// example, the value of the "DBLIST" entry in the "wgs.nal" file
+    /// would be values["wgs"][0]["DBLIST"].  The lines returned have
+    /// been processed somewhat by SeqDB, including normalizing tabs
+    /// to whitespace, trimming leading and trailing whitespace, and
+    /// removal of comments and other non-value lines.  Care should be
+    /// taken when using the values returned by this method.  SeqDB
+    /// uses an internal "virtual" alias file entry, which maps from a
+    /// filename of "-" and contains a single entry mapping "DBLIST"
+    /// to SeqDB's database name input.  This entry is the root of the
+    /// alias file inclusion tree.  Also note that alias files that
+    /// appear in several places in the alias file inclusion tree may
+    /// be different -- SeqDB's internal editing distributes GI lists
+    /// over sub-alias files, which is why the value type of the
+    /// returned data is a vector.
+    /// 
+    /// @param afv
+    ///   The alias file contents will be returned here.
+    void GetAliasFileValues(TAliasFileValues & afv) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

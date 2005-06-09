@@ -228,6 +228,9 @@ public:
     CSeqDBFileGiList(const string & fname);
 };
 
+/// Alias file contents will be returned in this type of container.
+typedef map< string, vector< map<string, string> > > TSeqDBAliasFileValues;
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBCOMMON_HPP

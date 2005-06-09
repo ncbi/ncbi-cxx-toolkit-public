@@ -216,6 +216,12 @@ private:
 /// which are provided to the CSeqDB constructor.
 
 class CSeqDBAliasNode : public CObject {
+    /// Type of set used for KEY/VALUE pairs within each node
+    typedef map<string, string> TVarList;
+    
+    /// Import type to allow shorter name.
+    typedef TSeqDBAliasFileValues TAliasFileValues;
+    
 public:
     /// Public Constructor
     ///
@@ -359,6 +365,31 @@ public:
     /// @param volset
     ///   The database volume set
     void SetMasks(CSeqDBVolSet & volset);
+    
+    /// Get Name/Value Data From Alias Files
+    ///
+    /// SeqDB treats each alias file as a map from a variable name to
+    /// a value.  This method will return a map from the basename of
+    /// the filename of each alias file, to a mapping from variable
+    /// name to value for each entry in that file.  For example, the
+    /// value of the "DBLIST" entry in the "wgs.nal" file would be
+    /// values["wgs"]["DBLIST"].  The lines returned have been
+    /// processed somewhat by SeqDB, including normalizing tabs to
+    /// whitespace, trimming leading and trailing whitespace, and
+    /// removal of comments and other non-value lines.  Care should be
+    /// taken when using the values returned by this method.  SeqDB
+    /// uses an internal "virtual" alias file entry to aggregate the
+    /// values passed into SeqDB by the user.  This mapping uses a
+    /// filename of "-" and contains a single entry mapping "DBLIST"
+    /// to SeqDB's database name input.  This entry is the root of the
+    /// alias file inclusion tree.  Also note that alias files that
+    /// appear in several places in the alias file inclusion tree only
+    /// have one entry in the returned map (and are only parsed once
+    /// by SeqDB).
+    /// 
+    /// @param alias_files
+    ///   The alias file contents will be returned here.
+    void GetAliasFileValues(TAliasFileValues & afv) const;
     
 private:
     /// Private Constructor
@@ -558,9 +589,6 @@ private:
     void x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end);
     
     
-    /// Type of set used for KEY/VALUE pairs within each node
-    typedef map<string, string> TVarList;
-    
     /// Type used to store a set of volume names for each node
     typedef vector<string> TVolNames;
     
@@ -583,6 +611,9 @@ private:
     /// List of subnodes contained by this node
     TSubNodeList m_SubNodes;
     
+    /// Filename of this alias file
+    string m_ThisName;
+    
     /// Tokenized version of DBLIST
     vector<string> m_DBList;
 };
@@ -595,6 +626,9 @@ private:
 /// need to understand alias walkers, nodes, and tree traversal.
 
 class CSeqDBAliasFile {
+    /// Import type to allow shorter name.
+    typedef TSeqDBAliasFileValues TAliasFileValues;
+    
 public:
     /// Constructor
     ///
@@ -747,6 +781,34 @@ public:
     void SetMasks(CSeqDBVolSet & volset)
     {
         m_Node.SetMasks(volset);
+    }
+    
+    /// Get Name/Value Data From Alias Files
+    ///
+    /// SeqDB treats each alias file as a map from a variable name to
+    /// a value.  This method will return a map from the basename of
+    /// the filename of each alias file, to a mapping from variable
+    /// name to value for each entry in that file.  For example, the
+    /// value of the "DBLIST" entry in the "wgs.nal" file would be
+    /// values["wgs"]["DBLIST"].  The lines returned have been
+    /// processed somewhat by SeqDB, including normalizing tabs to
+    /// whitespace, trimming leading and trailing whitespace, and
+    /// removal of comments and other non-value lines.  Care should be
+    /// taken when using the values returned by this method.  SeqDB
+    /// uses an internal "virtual" alias file entry to aggregate the
+    /// values passed into SeqDB by the user.  This mapping uses a
+    /// filename of "-" and contains a single entry mapping "DBLIST"
+    /// to SeqDB's database name input.  This entry is the root of the
+    /// alias file inclusion tree.  Also note that alias files that
+    /// appear in several places in the alias file inclusion tree only
+    /// have one entry in the returned map (and are only parsed once
+    /// by SeqDB).
+    /// 
+    /// @param alias_files
+    ///   The alias file contents will be returned here.
+    void GetAliasFileValues(TAliasFileValues & afv) const
+    {
+        m_Node.GetAliasFileValues(afv);
     }
     
 private:
