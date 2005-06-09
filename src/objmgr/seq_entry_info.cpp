@@ -472,7 +472,7 @@ void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 
 bool CSeq_entry_Info::IsSetDescr(void) const
 {
-    x_Update(fNeedUpdate_descr);
+    // x_Update(fNeedUpdate_descr);
     return m_Contents && m_Contents->IsSetDescr();
 }
 
@@ -587,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/06/09 20:33:55  grichenk
+ * Fixed loading of split descriptors by CSeqdesc_CI
+ *
  * Revision 1.22  2005/02/28 15:23:05  grichenk
  * RemoveDesc() returns CRef<CSeqdesc>
  *

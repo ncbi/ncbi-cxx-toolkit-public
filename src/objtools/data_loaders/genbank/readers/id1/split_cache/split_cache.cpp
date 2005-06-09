@@ -972,12 +972,13 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
     bool check_high_desc = false; // Check high-priority descriptors
     bool check_assembly = false;  // Check history assembly
     ITERATE(CSplitContentIndex::TContentIndex, it, content.GetContentIndex()) {
-        const CSplitContentIndex::TContentFlags kDescNotLow =
-            CSplitContentIndex::fDescHigh +
+        const CSplitContentIndex::TContentFlags kDescNotHigh =
+            CSplitContentIndex::fDescLow +
             CSplitContentIndex::fDescOther;
-        if ((content.GetSplitContent() & kDescNotLow) != 0) {
-            if ((it->second & kDescNotLow) == 0) {
-                // Have chunks without high priority descriptors
+        if ((content.GetSplitContent() & kDescNotHigh) != 0) {
+            if ((it->second & CSplitContentIndex::fDesc) != 0  &&
+                (it->second & CSplitContentIndex::fDescHigh) == 0) {
+                // Have chunks with low priority descriptors only
                 check_high_desc = true;
             }
         }
@@ -995,26 +996,35 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
     if ( check_set_desc  ||  check_high_desc ) {
         NcbiCout << "Enumerating loaded descriptors..." << NcbiEndl;
         // Collect descriptors on the sleleton
-        CollectDescriptors(*tse_core);
+        pair<size_t, size_t> desc_counts = CollectDescriptors(*tse_core);
         if ( check_set_desc ) {
             // Load descriptors for each bioseq
             NcbiCout << "Loading bioseqs' descriptors..." << NcbiEndl;
             for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
                 CSeqdesc_CI desc_ci(*seq);
             }
-            CollectDescriptors(*tse_core);
+            size_t seq_desc_count = CollectDescriptors(*tse_core).first;
+            // All bioseq descriptors must be loaded
+            _ASSERT(seq_desc_count == content.GetSeqDescCount());
         }
         if ( check_high_desc ) {
             // Load descriptors with high priority. Low priority
             // may be already loaded by seq/set test.
-            NcbiCout << "Loading bioseq-set descriptors..." << NcbiEndl;
+            // !!! CSeqdesc_CI loads all descriptors for each requested
+            // seq-entry (seq or set). All descriptors will be loaded
+            // in this test.
+            NcbiCout << "Loading high-priority descriptors..." << NcbiEndl;
             CSeqdesc_CI::TDescChoices choices;
             choices.push_back(CSeqdesc::e_Source);
             choices.push_back(CSeqdesc::e_Molinfo);
             choices.push_back(CSeqdesc::e_Title);
-            CSeqdesc_CI desc_ci(handle.GetTopLevelEntry(), choices);
-            for ( ; desc_ci; ++desc_ci);
-            CollectDescriptors(*tse_core);
+            for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
+                for (CSeqdesc_CI desc_ci(*seq, choices); desc_ci; ++desc_ci);
+            }
+            pair<size_t, size_t> counts = CollectDescriptors(*tse_core);
+            if ( !check_set_desc ) {
+                _ASSERT(counts.first + counts.second < content.GetDescCount());
+            }
         }
     }
     if ( check_assembly ) {
@@ -1062,6 +1072,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/06/09 20:33:55  grichenk
+* Fixed loading of split descriptors by CSeqdesc_CI
+*
 * Revision 1.34  2005/06/09 15:19:08  grichenk
 * Redesigned split_cache to work with the new GB loader.
 * Test loading of the split data.

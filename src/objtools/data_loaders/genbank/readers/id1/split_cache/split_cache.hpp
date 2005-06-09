@@ -103,7 +103,11 @@ class CSplitDataMaker;
 class CSplitContentIndex : public CObject
 {
 public:
-    CSplitContentIndex(void) {}
+    CSplitContentIndex(void)
+        : m_SplitContent(0),
+          m_SeqDescCount(0),
+          m_SetDescCount(0)
+        {}
 
     void IndexChunkContent(int chunk_id,
                            const CID2S_Chunk_Content& content);
@@ -167,6 +171,10 @@ public:
     size_t GetSetDescCount(void) const
         {
             return m_SetDescCount;
+        }
+    size_t GetDescCount(void) const
+        {
+            return m_SeqDescCount + m_SetDescCount;
         }
 
 private:
@@ -257,6 +265,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/09 20:33:55  grichenk
+* Fixed loading of split descriptors by CSeqdesc_CI
+*
 * Revision 1.16  2005/06/09 15:19:08  grichenk
 * Redesigned split_cache to work with the new GB loader.
 * Test loading of the split data.

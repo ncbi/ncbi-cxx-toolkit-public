@@ -51,7 +51,8 @@ inline
 bool CSeqdesc_CI::x_ValidDesc(void) const
 {
     _ASSERT(m_Entry);
-    return m_Desc_CI != m_Entry.GetSeq_entry_Handle().GetDescr().Get().end();
+    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
+    return !entry.x_IsEndDesc(m_Desc_CI);
 }
 
 
@@ -259,6 +260,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/09 20:33:55  grichenk
+* Fixed loading of split descriptors by CSeqdesc_CI
+*
 * Revision 1.16  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
