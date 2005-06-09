@@ -55,58 +55,6 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 class CBlastOptions;
 
-/** Allocates the query information structure and fills the context 
- * offsets, in case of multiple queries, frames or strands. If query seqids
- * cannot be resolved, they will be ignored as warnings will be issued in
- * blast::SetupQueries.
- * NB: effective length will be assigned inside the engine.
- * @param queries Vector of query locations [in]
- * @param prog program type from the CORE's point of view [in]
- * @param strand_opt Unless the strand option is set to single strand, the 
- * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
- * during the search [in]
- * @param qinfo Allocated query info structure [out]
- */
-void
-SetupQueryInfo(const TSeqLocVector& queries, 
-               EBlastProgramType prog,
-               objects::ENa_strand strand_opt,
-               BlastQueryInfo** qinfo); // out
-
-/// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
-/// @param queries vector of blast::SSeqLoc structures [in]
-/// @param qinfo BlastQueryInfo structure to obtain context information [in]
-/// @param seqblk Structure to save sequence data, allocated in this 
-/// function [out]
-/// @param blast_msg Structure to save warnings/errors, allocated in this
-/// function [out]
-/// @param prog program type from the CORE's point of view [in]
-/// @param strand_opt Unless the strand option is set to single strand, the 
-/// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
-/// during the search [in]
-/// @param genetic_code genetic code string as returned by
-/// blast::FindGeneticCode()
-
-void
-SetupQueries(const TSeqLocVector& queries,
-             const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
-             EBlastProgramType prog, 
-             objects::ENa_strand strand_opt,
-             const Uint1* genetic_code,
-             Blast_Message** blast_msg);
-
-/** Sets up internal subject data structure for the BLAST search.
- * @param subjects Vector of subject locations [in]
- * @param program BLAST program [in]
- * @param seqblk_vec Vector of subject sequence data structures [out]
- * @param max_subjlen Maximal length of the subject sequences [out]
- */
-void
-SetupSubjects(const TSeqLocVector& subjects, 
-              EBlastProgramType program,
-              vector<BLAST_SequenceBlk*>* seqblk_vec, 
-              unsigned int* max_subjlen);
-
 /// Structure to store sequence data and its length for use in the CORE
 /// of BLAST (it's a malloc'ed array of Uint1 and its length)
 /// FIXME: do not confuse with blast_seg.c's SSequence
@@ -144,34 +92,78 @@ enum ESentinelType {
     eNoSentinels
 };
 
-/** Retrieves a sequence using the object manager.
- * @param sl seqloc of the sequence to obtain [in]
- * @param encoding encoding for the sequence retrieved.
- *        Supported encodings include: eBlastEncodingNcbi2na, 
- *        eBlastEncodingNcbi4na, eBlastEncodingNucleotide, and 
- *        eBlastEncodingProtein. [in]
- * @param scope Scope from which the sequences are retrieved [in]
- * @param strand strand to retrieve (applies to nucleotide only).
- *        N.B.: When requesting the eBlastEncodingNcbi2na, only the plus strand
- *        is retrieved, because BLAST only requires one strand on the subject
- *        sequences (as in BLAST databases). [in]
- * @param sentinel Use eSentinels to guard nucleotide sequence with sentinel 
- *        bytes (ignored for protein sequences, which always have sentinels) 
- *        When using eBlastEncodingNcbi2na, this argument should be set to
- *        eNoSentinels as a sentinel byte cannot be represented in this 
- *        encoding. [in]
- * @param warnings Used to emit warnings when fetching sequence (e.g.:
- *        replacement of invalid characters). Parameter must be allocated by
- *        caller of this function and warnings will be appended. [out]
- * @throws CBlastException, CSeqVectorException, CException
- * @return pair containing the buffer and its length. 
+// Wrapper for SeqLocVector (ObjMgr case) or other sequences (non-OM case).
+
+struct IBlastQuerySource {
+    virtual ~IBlastQuerySource() {}
+    
+    virtual objects::ENa_strand GetStrand(int j) const = 0;
+    
+    virtual TSeqPos Size() const = 0;
+
+    bool Empty() const { return (Size() == 0); }
+    
+    virtual CConstRef<objects::CSeq_loc> GetMask(int j) const = 0;
+    
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int j) const = 0;
+    
+    virtual SBlastSequence GetBlastSequence(int j,
+                                            EBlastEncoding encoding,
+                                            objects::ENa_strand strand,
+                                            ESentinelType sentinel,
+                                            std::string* warnings) const = 0;
+    
+    virtual TSeqPos GetLength(int j) const = 0;
+};
+
+
+/** ObjMgr Free version of SetupQueryInfo.
+ * NB: effective length will be assigned inside the engine.
+ * @param queries Vector of query locations [in]
+ * @param strand_opt Unless the strand option is set to single strand, the 
+ * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+ * during the search [in]
+ * @param qinfo Allocated query info structure [out]
  */
-SBlastSequence
-GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding, 
-            objects::CScope* scope,
-            objects::ENa_strand strand = objects::eNa_strand_plus, 
-            ESentinelType sentinel = eSentinels,
-            std::string* warnings = NULL);
+void
+SetupQueryInfo_OMF(const IBlastQuerySource& queries,
+                   EBlastProgramType prog,
+                   objects::ENa_strand strand_opt,
+                   BlastQueryInfo** qinfo); // out
+
+/// ObjMgr Free version of SetupQueries.
+/// @param queries vector of blast::SSeqLoc structures [in]
+/// @param qinfo BlastQueryInfo structure to obtain context information [in]
+/// @param seqblk Structure to save sequence data, allocated in this 
+/// function [out]
+/// @param blast_msg Structure to save warnings/errors, allocated in this
+/// function [out]
+/// @param prog program type from the CORE's point of view [in]
+/// @param strand_opt Unless the strand option is set to single strand, the 
+/// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+/// during the search [in]
+/// @param genetic_code genetic code string as returned by
+/// blast::FindGeneticCode()
+
+void
+SetupQueries_OMF(const IBlastQuerySource& queries,
+                 const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
+                 EBlastProgramType prog, 
+                 objects::ENa_strand strand_opt,
+                 const Uint1* genetic_code,
+                 Blast_Message** blast_msg);
+
+/** Object manager free version of SetupSubjects
+ * @param subjects Vector of subject locations [in]
+ * @param program BLAST program [in]
+ * @param seqblk_vec Vector of subject sequence data structures [out]
+ * @param max_subjlen Maximal length of the subject sequences [out]
+ */
+void
+SetupSubjects_OMF(const IBlastQuerySource& subjects,
+                  EBlastProgramType program,
+                  vector<BLAST_SequenceBlk*> seqblk_vec,
+                  unsigned int* max_subjlen);
 
 /** Calculates the length of the buffer to allocate given the desired encoding,
  * strand (if applicable) and use of sentinel bytes around sequence.
@@ -261,6 +253,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/06/09 20:34:52  camacho
+* Object manager dependent functions reorganization
+*
 * Revision 1.41  2005/06/08 19:20:48  camacho
 * Minor change in SetupQueries
 *

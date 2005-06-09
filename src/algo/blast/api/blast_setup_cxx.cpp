@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/metareg.hpp>
+#include <algo/blast/core/blast_setup.h>
 
 #include "blast_setup.hpp"
 
@@ -49,6 +50,359 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
+
+/** Set field values for one element of the context array of a
+ * concatenated query.  All previous contexts should have already been
+ * assigned correct values.
+ * @param qinfo  Query info structure containing contexts. [in/out]
+ * @param index  Index of the context to fill. [in]
+ * @param length Length of this context. [in]
+ * @param prog   Program type of this search. [in]
+ */
+static void
+s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
+                       Uint4             index,
+                       Uint4             length,
+                       EBlastProgramType prog)
+{
+    qinfo->contexts[index].frame = BLAST_ContextToFrame(prog, index);
+    ASSERT(qinfo->contexts[index].frame != 127);
+    
+    qinfo->contexts[index].query_index =
+        Blast_GetQueryIndexFromContext(index, prog);
+    ASSERT(qinfo->contexts[index].query_index != -1);
+    
+    if (index) {
+        Uint4 prev_loc = qinfo->contexts[index-1].query_offset;
+        Uint4 prev_len = qinfo->contexts[index-1].query_length;
+        
+        Uint4 shift = prev_len ? prev_len + 1 : 0;
+        
+        qinfo->contexts[index].query_offset = prev_loc + shift;
+        qinfo->contexts[index].query_length = length;
+    } else {
+        // First context
+        qinfo->contexts[0].query_offset = 0;
+        qinfo->contexts[0].query_length = length;
+    }
+}
+
+
+void
+SetupQueryInfo_OMF(const IBlastQuerySource& queries,
+                   EBlastProgramType prog,
+                   ENa_strand strand_opt,
+                   BlastQueryInfo** qinfo)
+{
+    ASSERT(qinfo);
+    BlastQueryInfo* query_info = *qinfo = NULL;
+
+    // Allocate and initialize the query info structure
+    if ( !(query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)))) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
+    }
+
+    unsigned int nframes = GetNumberOfFrames(prog);
+    query_info->num_queries = static_cast<int>(queries.Size());
+    query_info->first_context = 0;
+    query_info->last_context = query_info->num_queries * nframes - 1;
+
+    query_info->contexts =
+        (BlastContextInfo*) calloc(query_info->last_context + 1, 
+                                   sizeof(BlastContextInfo));
+    
+    if ( !query_info->contexts ) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
+    }
+    
+    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+    bool translate = 
+        ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
+         (prog == eBlastTypeRpsTblastn));
+
+    // Adjust first context depending on the first query strand
+    ENa_strand strand;
+
+    if (is_na || translate) {
+        if (strand_opt == eNa_strand_both || 
+            strand_opt == eNa_strand_unknown) {
+            strand = queries.GetStrand(0);
+        } else {
+            strand = strand_opt;
+        }
+
+        if (strand == eNa_strand_minus) {
+            if (translate) {
+                query_info->first_context = 3;
+            } else {
+                query_info->first_context = 1;
+            }
+        }
+    }
+
+    // Set up the context offsets into the sequence that will be added
+    // to the sequence block structure.
+    unsigned int ctx_index = 0;      // index into context_offsets array
+    // Longest query length, to be saved in the query info structure
+    Uint4 max_length = 0;
+
+    for(TSeqPos j = 0; j < queries.Size(); j++) {
+        TSeqPos length = 0;
+        try { length = queries.GetLength(j); }
+        catch (const CException&) { 
+            // Ignore exceptions in this function as they will be caught in
+            // SetupQueries
+        }
+
+        strand = queries.GetStrand(j);
+        
+        if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
+            strand = strand_opt;
+        }
+
+        if (translate) {
+            for (unsigned int i = 0; i < nframes; i++) {
+                unsigned int prot_length = 
+                    (length == 0 ? 0 : 
+                     (length - i % CODON_LENGTH) / CODON_LENGTH);
+                max_length = MAX(max_length, prot_length);
+                
+                Uint4 ctx_len(0);
+                
+                switch (strand) {
+                case eNa_strand_plus:
+                    ctx_len = (i<3) ? prot_length : 0;
+                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
+                                           prog);
+                    break;
+
+                case eNa_strand_minus:
+                    ctx_len = (i<3) ? 0 : prot_length;
+                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
+                                           prog);
+                    break;
+
+                case eNa_strand_both:
+                case eNa_strand_unknown:
+                    s_QueryInfo_SetContext(query_info, ctx_index + i, 
+                                           prot_length, prog);
+                    break;
+
+                default:
+                    abort();
+                }
+            }
+        } else {
+            max_length = MAX(max_length, length);
+            
+            if (is_na) {
+                switch (strand) {
+                case eNa_strand_plus:
+                    s_QueryInfo_SetContext(query_info, ctx_index, length,
+                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, 0, prog);
+                    break;
+
+                case eNa_strand_minus:
+                    s_QueryInfo_SetContext(query_info, ctx_index, 0, prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, length,
+                                           prog);
+                    break;
+
+                case eNa_strand_both:
+                case eNa_strand_unknown:
+                    s_QueryInfo_SetContext(query_info, ctx_index, length,
+                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, length,
+                                           prog);
+                    break;
+
+                default:
+                    abort();
+                }
+            } else {    // protein
+                s_QueryInfo_SetContext(query_info, ctx_index, length, prog);
+            }
+        }
+        ctx_index += nframes;
+    }
+    query_info->max_length = max_length;
+    *qinfo = query_info;
+}
+
+void
+SetupQueries_OMF(const IBlastQuerySource& queries, 
+                 const BlastQueryInfo* qinfo, 
+                 BLAST_SequenceBlk** seqblk,
+                 EBlastProgramType prog,
+                 ENa_strand strand_opt,
+                 const Uint1* genetic_code,
+                 Blast_Message** blast_msg)
+{
+    ASSERT(seqblk);
+    ASSERT(blast_msg);
+    ASSERT( !queries.Empty() );
+
+    EBlastEncoding encoding = GetQueryEncoding(prog);
+    
+    int buflen = QueryInfo_GetSeqBufLen(qinfo);
+    TAutoUint1Ptr buf((Uint1*) calloc(buflen+1, sizeof(Uint1)));
+    
+    if ( !buf ) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
+    }
+
+    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+    bool translate = 
+       ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
+        (prog == eBlastTypeRpsTblastn));
+
+    unsigned int ctx_index = 0;      // index into context_offsets array
+    unsigned int nframes = GetNumberOfFrames(prog);
+
+    CBlastMaskLoc mask(BlastMaskLocNew(qinfo->num_queries));
+
+    int index = 0;
+    string error_string;
+
+    // to keep track of the query position in its vector for error reporting
+    int query_num = 0;  
+    
+    for(TSeqPos j = 0; j < queries.Size(); j++) {
+        try {
+            query_num++;
+            ENa_strand strand;
+            BlastSeqLoc* bsl_tmp=NULL;
+
+            if ((is_na || translate) &&
+                (strand_opt == eNa_strand_unknown || 
+                 strand_opt == eNa_strand_both)) 
+            {
+                strand = queries.GetStrand(j);
+            } else {
+                strand = strand_opt;
+            }
+            
+            bsl_tmp = CSeqLoc2BlastSeqLoc(queries.GetMask(j));
+            
+            BlastSeqLoc_RestrictToInterval(&bsl_tmp,
+                   queries.GetSeqLoc(j)->GetStart(eExtreme_Positional),
+                   queries.GetSeqLoc(j)->GetStop(eExtreme_Positional));
+            
+            SBlastSequence sequence;
+            
+            if (translate) {
+                ASSERT(strand == eNa_strand_both ||
+                       strand == eNa_strand_plus ||
+                       strand == eNa_strand_minus);
+
+                // The only programs for which we translate the query
+                ASSERT(prog == eBlastTypeBlastx ||
+                       prog == eBlastTypeTblastx ||
+                       prog == eBlastTypeRpsTblastn);
+
+                // Get both strands of the original nucleotide sequence with
+                // sentinels
+                sequence = queries.GetBlastSequence(j, encoding, strand, 
+                                                    eSentinels, 0);
+                
+                int na_length = queries.GetLength(j);
+                Uint1* seqbuf_rev = NULL;  // negative strand
+                if (strand == eNa_strand_both)
+                   seqbuf_rev = sequence.data.get() + na_length + 1;
+                else if (strand == eNa_strand_minus)
+                   seqbuf_rev = sequence.data.get();
+
+                // Populate the sequence buffer
+                for (unsigned int i = 0; i < nframes; i++) {
+                    if (qinfo->contexts[i].query_length <= 0) {
+                        continue;
+                    }
+                    
+                    int offset = qinfo->contexts[ctx_index + i].query_offset;
+                    short frame = BLAST_ContextToFrame(prog, i);
+                    // Note: either value could have been used in the function
+                    // below
+                    ASSERT(frame == qinfo->contexts[ctx_index + i].frame);
+
+                    BLAST_GetTranslation(sequence.data.get() + 1,
+                                         seqbuf_rev,
+                                         na_length,
+                                         frame,
+                                         & buf.get()[offset],
+                                         genetic_code);
+                }
+
+            } else if (is_na) {
+
+                ASSERT(strand == eNa_strand_both ||
+                       strand == eNa_strand_plus ||
+                       strand == eNa_strand_minus);
+                
+                sequence = queries.GetBlastSequence(j, encoding, strand, 
+                                                    eSentinels, 0);
+                
+                int idx = (strand == eNa_strand_minus) ? 
+                    ctx_index + 1 : ctx_index;
+
+                int offset = qinfo->contexts[idx].query_offset;
+                memcpy(&buf.get()[offset], sequence.data.get(), 
+                       sequence.length);
+
+            } else {
+
+                string warnings;
+                sequence = queries.GetBlastSequence(j,
+                                                    encoding,
+                                                    eNa_strand_unknown,
+                                                    eSentinels,
+                                                    &warnings);
+                
+                int offset = qinfo->contexts[ctx_index].query_offset;
+                memcpy(&buf.get()[offset], sequence.data.get(), 
+                       sequence.length);
+                if ( !warnings.empty() ) {
+                    error_string += warnings + " ";
+                }
+            }
+
+            mask->seqloc_array[index] = bsl_tmp;
+            ++index;
+            ctx_index += nframes;
+        } catch (const CException& e) {
+            error_string += 
+                "Query number " + NStr::IntToString(query_num) + ": ";
+            error_string += e.ReportThis(eDPF_ErrCodeExplanation) + " ";
+        }
+    }
+
+    if (error_string.size() != 0) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, 0, 0,
+                           error_string.c_str());
+    }
+
+    // Translate the lower case mask coordinates, if it is a translated search
+    if (translate)
+        BlastMaskLocDNAToProtein(mask, qinfo);
+
+    if (BlastSeqBlkNew(seqblk) < 0) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence block");
+    }
+
+    BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);
+
+    (*seqblk)->lcase_mask = mask.Release();
+    (*seqblk)->lcase_mask_allocated = TRUE;
+}
+
+void
+SetupSubjects_OMF(const IBlastQuerySource& subjects,
+                  EBlastProgramType program,
+                  vector<BLAST_SequenceBlk*> seqblk_vec,
+                  unsigned int* max_subjlen)
+{
+    throw runtime_error("Unimplemented");
+}
 
 EBlastEncoding
 GetQueryEncoding(EBlastProgramType program)
@@ -420,6 +774,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/06/09 20:34:52  camacho
+ * Object manager dependent functions reorganization
+ *
  * Revision 1.84  2005/05/26 14:36:47  dondosha
  * Added PHI BLAST cases in switch statements
  *
