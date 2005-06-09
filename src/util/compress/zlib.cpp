@@ -458,10 +458,11 @@ bool CZipCompression::CompressFile(const string& src_file,
                                    size_t        buf_size)
 {
     CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
-    cf.SetFlags(GetFlags());
+    cf.SetFlags(GetFlags() | fWriteGZipFormat);
 
     // Collect info about compressed file
     CZipCompression::SFileInfo info;
+/* +++
     if ( F_ISSET(fWriteGZipFormat) ) {
         s_CollectFileInfo(src_file, info);
     }
@@ -470,6 +471,14 @@ bool CZipCompression::CompressFile(const string& src_file,
         F_ISSET(fWriteGZipFormat) ? &info : 0) ) {
         return false;
     } 
+*/
+    // To support backward compatibility -- write .gz file format
+    s_CollectFileInfo(src_file, info);
+    // Open output file
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
+        return false;
+    } 
+/* --- */
     // Make compression
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
         return cf.Close();
@@ -490,7 +499,7 @@ bool CZipCompression::DecompressFile(const string& src_file,
                                      size_t        buf_size)
 {
     CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
-    cf.SetFlags(GetFlags());
+    cf.SetFlags(GetFlags() | fCheckFileHeader);
 
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
         return false;
@@ -1063,6 +1072,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/06/09 11:10:39  ivanov
+ * CZipCompression::CompressFile() -- always write .gz file format
+ * to support backward compatibility.
+ *
  * Revision 1.21  2005/06/06 10:52:48  ivanov
  * Rewritten CZipCompressionFile using compression streams.
  * CompressFile() now can write file`s name/mtime into gzip file header.
