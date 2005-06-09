@@ -1,3 +1,6 @@
+#ifndef CORELIB___PLUGIN_MANAGER_STORE__HPP
+#define CORELIB___PLUGIN_MANAGER_STORE__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/06/09 15:06:11  ucko
+ * Guard against multiple inclusion.
+ *
  * Revision 1.7  2005/03/23 14:41:45  vasilche
  * Do not use non-portable CSingletonObjectStore.
  * Removed non-MT-safe "created" flag.
@@ -174,3 +180,4 @@ END_NCBI_SCOPE
  * ==========================================================================
  */
 
+#endif  /* CORELIB___PLUGIN_MANAGER_STORE__HPP */
