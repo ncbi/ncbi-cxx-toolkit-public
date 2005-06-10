@@ -184,72 +184,8 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
-    ASSERT(seqblk_vec);
-    ASSERT(max_subjlen);
-    ASSERT(subjects.size() != 0);
-
-    // Nucleotide subject sequences are stored in ncbi2na format, but the
-    // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
-    // the ambiguities
-    bool subj_is_na = (prog == eBlastTypeBlastn  ||
-                       prog == eBlastTypeTblastn ||
-                       prog == eBlastTypeTblastx);
-
-    ESentinelType sentinels = eSentinels;
-    if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
-        sentinels = eNoSentinels;
-    }
-
-    EBlastEncoding encoding = GetSubjectEncoding(prog);
-       
-    // TODO: Should strand selection on the subject sequences be allowed?
-    //ENa_strand strand = options->GetStrandOption(); 
-    int index = 0; // Needed for lower case masks only.
-
-    *max_subjlen = 0;
-
-    ITERATE(TSeqLocVector, itr, subjects) {
-        BLAST_SequenceBlk* subj = NULL;
-
-        SBlastSequence sequence = GetSequence(*itr->seqloc, encoding, 
-                                              itr->scope, eNa_strand_plus, 
-                                              sentinels);
-
-        if (BlastSeqBlkNew(&subj) < 0) {
-            NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
-        }
-
-        /* Set the lower case mask, if it exists */
-        if (subj->lcase_mask)  /*FIXME?? */
-            subj->lcase_mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask);
-        ++index;
-
-        if (subj_is_na) {
-            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
-               ((sentinels == eSentinels) ? sequence.length - 2 :
-                sequence.length));
-
-            try {
-                // Get the compressed sequence
-                SBlastSequence compressed_seq = 
-                    GetSequence(*itr->seqloc, eBlastEncodingNcbi2na, itr->scope,
-                                 eNa_strand_plus, eNoSentinels);
-                BlastSeqBlkSetCompressedSequence(subj, 
-                                                 compressed_seq.data.release());
-            } catch (const CSeqVectorException& sve) {
-                BlastSequenceBlkFree(subj);
-                NCBI_THROW(CBlastException, eInternal, sve.what());
-            }
-        } else {
-            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
-                                   sequence.length - 2);
-        }
-
-        seqblk_vec->push_back(subj);
-        (*max_subjlen) = MAX((*max_subjlen),
-                sequence::GetLength(*itr->seqloc, itr->scope));
-
-    }
+    SetupSubjects_OMF(CBlastQuerySourceOM(subjects), prog, seq_blk, 
+                      max_subjlen);
 }
 
 /// Tests if a number represents a valid residue
@@ -735,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2005/06/10 14:54:56  camacho
+* Implement SetupSubjects_OMF
+*
 * Revision 1.50  2005/06/09 20:34:51  camacho
 * Object manager dependent functions reorganization
 *

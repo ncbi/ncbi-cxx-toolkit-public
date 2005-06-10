@@ -398,10 +398,75 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 void
 SetupSubjects_OMF(const IBlastQuerySource& subjects,
                   EBlastProgramType program,
-                  vector<BLAST_SequenceBlk*> seqblk_vec,
+                  vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen)
 {
-    throw runtime_error("Unimplemented");
+    ASSERT(seqblk_vec);
+    ASSERT(max_subjlen);
+    ASSERT(!subjects.Empty());
+
+    // Nucleotide subject sequences are stored in ncbi2na format, but the
+    // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
+    // the ambiguities
+    bool subj_is_na = (prog == eBlastTypeBlastn  ||
+                       prog == eBlastTypeTblastn ||
+                       prog == eBlastTypeTblastx);
+
+    ESentinelType sentinels = eSentinels;
+    if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
+        sentinels = eNoSentinels;
+    }
+
+    EBlastEncoding encoding = GetSubjectEncoding(prog);
+       
+    // TODO: Should strand selection on the subject sequences be allowed?
+    //ENa_strand strand = options->GetStrandOption(); 
+    int index = 0; // Needed for lower case masks only.
+
+    *max_subjlen = 0;
+
+    for (TSeqPos i = 0; i < subjects.Size(); i++) {
+        BLAST_SequenceBlk* subj = NULL;
+
+        SBlastSequence sequence = subjects.GetBlastSequence(i, encoding, 
+                                                            eNa_strand_plus, 
+                                                            sentinels);
+
+        if (BlastSeqBlkNew(&subj) < 0) {
+            NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
+        }
+
+        /* Set the lower case mask, if it exists */
+        if (subj->lcase_mask)  /*FIXME?? */
+            subj->lcase_mask->seqloc_array[index] = 
+                CSeqLoc2BlastSeqLoc(subjects.GetMask(i));
+        ++index;
+
+        if (subj_is_na) {
+            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
+               ((sentinels == eSentinels) ? sequence.length - 2 :
+                sequence.length));
+
+            try {
+                // Get the compressed sequence
+                SBlastSequence compressed_seq = 
+                    subjects.GetBlastSequence(i, eBlastEncodingNcbi2na, 
+                                              eNa_strand_plus, eNoSentinels);
+                BlastSeqBlkSetCompressedSequence(subj, 
+                                                 compressed_seq.data.release());
+            } catch (const CException& e) {
+                BlastSequenceBlkFree(subj);
+                NCBI_THROW(CBlastException, eInternal, e.what());
+            }
+        } else {
+            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
+                                   sequence.length - 2);
+        }
+
+        seqblk_vec->push_back(subj);
+        (*max_subjlen) = MAX((*max_subjlen), subjects.GetLength(i));
+
+    }
 }
 
 EBlastEncoding
@@ -774,6 +839,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2005/06/10 14:56:18  camacho
+ * Implement SetupSubjects_OMF
+ *
  * Revision 1.85  2005/06/09 20:34:52  camacho
  * Object manager dependent functions reorganization
  *
