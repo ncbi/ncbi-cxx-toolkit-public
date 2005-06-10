@@ -187,6 +187,11 @@ public:
     virtual void CreateSubNodes(void);
     // Call CreateSubNodes() if it's not called yet.
     void Initialize(void);
+    // Reinitialize node, so hierarhy can be created anew.
+    // All previously set attributes remains unchanged. 
+    // On the next Print() the CreateSubNodes() method
+    // will be called again.
+    void ReInitialize(void);
 
     // Find and replace text with a node.
     virtual CNCBINode* MapTag(const string& tagname);
@@ -287,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/06/10 13:47:57  ivanov
+ * + CNCBINode::ReInitialize()
+ *
  * Revision 1.26  2004/03/18 12:28:15  ivanov
  * Remove extra comma after last enum value in EExceptionFlags.
  *

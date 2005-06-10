@@ -337,6 +337,13 @@ void CNCBINode::Initialize(void)
 }
 
 
+void CNCBINode::ReInitialize(void)
+{
+    RemoveAllChildren();
+    m_CreateSubNodesCalled = false;
+}
+
+
 void CNCBINode::CreateSubNodes(void)
 {
     return;
@@ -362,6 +369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/06/10 13:47:49  ivanov
+ * + CNCBINode::ReInitialize()
+ *
  * Revision 1.34  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
