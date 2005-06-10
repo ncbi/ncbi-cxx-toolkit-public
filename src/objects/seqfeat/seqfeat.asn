@@ -1,4 +1,4 @@
---$Revision: 6.13 $
+--$Revision: 6.14 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -439,7 +439,8 @@ BioSource ::= SEQUENCE {
         apicoplast (16) ,
         leucoplast (17) ,
         proplastid (18) ,
-        endogenous-virus (19)
+        endogenous-virus (19) ,
+        hydrogenosome (20)
       } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
