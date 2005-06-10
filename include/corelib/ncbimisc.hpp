@@ -39,6 +39,7 @@
 #ifdef NCBI_OS_UNIX
 #  include <sys/types.h>
 #endif
+#include <ctype.h>
 
 
 /** @addtogroup AppFramework
@@ -352,10 +353,168 @@ const T& max(const T& a, const T& b) {
 // strdup()
 //
 
-#if !defined(HAVE_STRDUP)
+#ifndef HAVE_STRDUP
 /// Supply string duplicate function, if one is not defined.
 extern char* strdup(const char* str);
 #endif
+
+
+
+// ctype hacks
+//
+
+#if defined(_DEBUG)  &&  defined(NCBI_STRICT_CTYPE_ARGS)
+
+#define NCBI_CTYPEFAKEBODY \
+  { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
+
+#ifdef isalpha
+inline int NCBI_isalpha(unsigned char c) { return isalpha(c); }
+inline int NCBI_isalpha(int           c) { return isalpha(c); }
+template<class C>
+int isalpha(C c) NCBI_CTYPEFAKEBODY
+#undef  isalpha
+#define isalpha NCBI_isalpha
+#endif
+
+#ifdef isalnum
+inline int NCBI_isalnum(unsigned char c) { return isalnum(c); }
+inline int NCBI_isalnum(int           c) { return isalnum(c); }
+template<class C>
+int isalnum(C c) NCBI_CTYPEFAKEBODY
+#undef  isalnum
+#define isalnum NCBI_isalnum
+#endif
+
+#ifdef isascii
+inline int NCBI_isascii(unsigned char c) { return isascii(c); }
+inline int NCBI_isascii(int           c) { return isascii(c); }
+template<class C>
+int NCBI_isascii(C c) NCBI_CTYPEFAKEBODY
+#undef  isascii
+#define isascii NCBI_isascii
+#endif
+
+#ifdef isblank
+inline int NCBI_isblank(unsigned char c) { return isblank(c); }
+inline int NCBI_isblank(int           c) { return isblank(c); }
+template<class C>
+int NCBI_isblank(C c) NCBI_CTYPEFAKEBODY
+#undef  isblank
+#define isblank NCBI_isblank
+#endif
+
+#ifdef iscntrl
+inline int NCBI_iscntrl(unsigned char c) { return iscntrl(c); }
+inline int NCBI_iscntrl(int           c) { return iscntrl(c); }
+template<class C>
+int NCBI_iscntrl(C c) NCBI_CTYPEFAKEBODY
+#undef  iscntrl
+#define iscntrl NCBI_iscntrl
+#endif
+
+#ifdef isdigit
+inline int NCBI_isdigit(unsigned char c) { return isdigit(c); }
+inline int NCBI_isdigit(int           c) { return isdigit(c); }
+template<class C>
+int NCBI_isdigit(C c) NCBI_CTYPEFAKEBODY
+#undef  isdigit
+#define isdigit NCBI_isdigit
+#endif
+
+#ifdef isgraph
+inline int NCBI_isgraph(unsigned char c) { return isgraph(c); }
+inline int NCBI_isgraph(int           c) { return isgraph(c); }
+template<class C>
+int NCBI_isgraph(C c) NCBI_CTYPEFAKEBODY
+#undef  isgraph
+#define isgraph NCBI_isgraph
+#endif
+
+#ifdef islower
+inline int NCBI_islower(unsigned char c) { return islower(c); }
+inline int NCBI_islower(int           c) { return islower(c); }
+template<class C>
+int NCBI_islower(C c) NCBI_CTYPEFAKEBODY
+#undef  islower
+#define islower NCBI_islower
+#endif
+
+#ifdef isprint
+inline int NCBI_isprint(unsigned char c) { return isprint(c); }
+inline int NCBI_isprint(int           c) { return isprint(c); }
+template<class C>
+int NCBI_isprint(C c) NCBI_CTYPEFAKEBODY
+#undef  isprint
+#define isprint NCBI_isprint
+#endif
+
+#ifdef ispunct
+inline int NCBI_ispunct(unsigned char c) { return ispunct(c); }
+inline int NCBI_ispunct(int           c) { return ispunct(c); }
+template<class C>
+int NCBI_ispunct(C c) NCBI_CTYPEFAKEBODY
+#undef  ispunct
+#define ispunct NCBI_ispunct
+#endif
+
+#ifdef isspace
+inline int NCBI_isspace(unsigned char c) { return isspace(c); }
+inline int NCBI_isspace(int           c) { return isspace(c); }
+template<class C>
+int NCBI_isspace(C c) NCBI_CTYPEFAKEBODY
+#undef  isspace
+#define isspace NCBI_isspace
+#endif
+
+#ifdef isupper
+inline int NCBI_isupper(unsigned char c) { return isupper(c); }
+inline int NCBI_isupper(int           c) { return isupper(c); }
+template<class C>
+int NCBI_isupper(C c) NCBI_CTYPEFAKEBODY
+#undef  isupper
+#define isupper NCBI_isupper
+#endif
+
+#ifdef isxdigit
+inline int NCBI_isxdigit(unsigned char c) { return isxdigit(c); }
+inline int NCBI_isxdigit(int           c) { return isxdigit(c); }
+template<class C>
+int NCBI_isxdigit(C c) NCBI_CTYPEFAKEBODY
+#undef  isxdigit
+#define isxdigit NCBI_isxdigit
+#endif
+
+#ifdef toascii
+inline int NCBI_toascii(unsigned char c) { return toascii(c); }
+inline int NCBI_toascii(int           c) { return toascii(c); }
+template<class C>
+int NCBI_toascii(C c) NCBI_CTYPEFAKEBODY
+#undef  toascii
+#define toascii NCBI_toascii
+#endif
+
+#ifdef tolower
+inline int NCBI_tolower(unsigned char c) { return tolower(c); }
+inline int NCBI_tolower(int           c) { return tolower(c); }
+template<class C>
+int NCBI_tolower(C c) NCBI_CTYPEFAKEBODY
+#undef  tolower
+#define tolower NCBI_tolower
+#endif
+
+#ifdef toupper
+inline int NCBI_toupper(unsigned char c) { return toupper(c); }
+inline int NCBI_toupper(int           c) { return toupper(c); }
+template<class C>
+int NCBI_toupper(C c) NCBI_CTYPEFAKEBODY
+#undef  toupper
+#define toupper NCBI_toupper
+#endif
+
+#undef NCBI_CTYPEFAKEBODY
+
+#endif //_DEBUG
 
 
 
@@ -497,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2005/06/10 20:45:40  lavr
+ * <ctype.h> hacks added; inactive for now
+ *
  * Revision 1.80  2005/04/28 14:01:02  ivanov
  * Added REVERSE_ITERATE and NON_CONST_REVERSE_ITERATE macros
  *
