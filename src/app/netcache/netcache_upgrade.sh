@@ -58,8 +58,11 @@ fi
 
 cp -R $base_dir/* $target_dir/. || Die "Cannot copy base directory to target"
 
-cp $update_dir/netcached target_dir/ 
-cp $update_dir/*.so target_dir/
+if [ -f $update_dir/netcached ]; then
+   echo Copying netcached to $target_dir
+   cp $update_dir/netcached $target_dir/ 
+fi
+cp $update_dir/*.so $target_dir/
 
 cd $base_dir_name
 lpath=$link1
@@ -67,6 +70,8 @@ if [ "x$lpath" != "x" ]; then
     if [ -d $lpath ]; then
         echo "Link $lpath reassigned"
         rm $lpath
+        ln -s $target_dir $lpath
+    else 
         ln -s $target_dir $lpath
     fi
 fi
@@ -76,6 +81,8 @@ if [ "x$lpath" != "x" ]; then
     if [ -d $lpath ]; then
         echo "Link $lpath reassigned"
         rm $lpath
+        ln -s $target_dir $lpath
+    else
         ln -s $target_dir $lpath
     fi
 fi
