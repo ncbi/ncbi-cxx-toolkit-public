@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/06/10 19:45:52  gouriano
+* Give access to SubSourceCollector
+*
 * Revision 1.34  2005/04/26 14:11:04  vasilche
 * Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
 *
@@ -267,6 +270,10 @@ public:
 
     void StartSubSource(void);
     CRef<CByteSource> EndSubSource(void);
+    CRef<CSubSourceCollector>& GetSubSourceCollector(void)
+    {
+        return m_Collector;
+    }
 
 protected:
     // action: fill buffer so *pos char is valid
