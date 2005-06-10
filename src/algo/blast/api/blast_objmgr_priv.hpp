@@ -53,15 +53,15 @@ class CBlastQuerySourceOM : public IBlastQuerySource {
 public:
     CBlastQuerySourceOM(const TSeqLocVector & v);
     
-    objects::ENa_strand GetStrand(int j) const;
-    CConstRef<objects::CSeq_loc> GetMask(int j) const;
-    CConstRef<objects::CSeq_loc> GetSeqLoc(int j) const;
-    SBlastSequence GetBlastSequence(int j,
+    objects::ENa_strand GetStrand(int i) const;
+    CConstRef<objects::CSeq_loc> GetMask(int i) const;
+    CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
+    SBlastSequence GetBlastSequence(int i,
                                     EBlastEncoding encoding,
                                     objects::ENa_strand strand,
                                     ESentinelType sentinel,
                                     string* warnings = 0) const;
-    TSeqPos GetLength(int j) const;
+    TSeqPos GetLength(int i) const;
     TSeqPos Size() const;
     
 private:
