@@ -304,7 +304,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                 // Get both strands of the original nucleotide sequence with
                 // sentinels
                 sequence = queries.GetBlastSequence(j, encoding, strand, 
-                                                    eSentinels, 0);
+                                                    eSentinels);
                 
                 int na_length = queries.GetLength(j);
                 Uint1* seqbuf_rev = NULL;  // negative strand
@@ -340,7 +340,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                        strand == eNa_strand_minus);
                 
                 sequence = queries.GetBlastSequence(j, encoding, strand, 
-                                                    eSentinels, 0);
+                                                    eSentinels);
                 
                 int idx = (strand == eNa_strand_minus) ? 
                     ctx_index + 1 : ctx_index;
@@ -428,9 +428,9 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
     for (TSeqPos i = 0; i < subjects.Size(); i++) {
         BLAST_SequenceBlk* subj = NULL;
 
-        SBlastSequence sequence = subjects.GetBlastSequence(i, encoding, 
-                                                            eNa_strand_plus, 
-                                                            sentinels);
+        SBlastSequence sequence =
+            subjects.GetBlastSequence(i, encoding, 
+                                      eNa_strand_plus, sentinels);
 
         if (BlastSeqBlkNew(&subj) < 0) {
             NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
@@ -449,11 +449,11 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
 
             try {
                 // Get the compressed sequence
-                SBlastSequence compressed_seq = 
+                SBlastSequence compressed_seq =
                     subjects.GetBlastSequence(i, eBlastEncodingNcbi2na, 
                                               eNa_strand_plus, eNoSentinels);
                 BlastSeqBlkSetCompressedSequence(subj, 
-                                                 compressed_seq.data.release());
+                                          compressed_seq.data.release());
             } catch (const CException& e) {
                 BlastSequenceBlkFree(subj);
                 NCBI_THROW(CBlastException, eInternal, e.what());
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2005/06/10 18:07:01  camacho
+ * Use default argument for GetBlastSequence
+ *
  * Revision 1.87  2005/06/10 15:20:48  ucko
  * Use consistent parameter names in SetupSubjects(_OMF).
  *
