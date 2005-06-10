@@ -102,9 +102,9 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
     case 0:
         // Here we're the child
         if (mode == CExec::eDetach) {
-            fclose(stdin);
-            fclose(stdout);
-            fclose(stderr);
+            freopen("/dev/null", "r", stdin);
+            freopen("/dev/null", "a", stdout);
+            freopen("/dev/null", "a", stderr);
             setsid();
         }
         int status =-1;
@@ -349,6 +349,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/06/10 14:21:06  ivanov
+ * UNIX: use freopen() to redirect standard I/O streams to /dev/null
+ * for detached process
+ *
  * Revision 1.22  2004/08/19 17:08:58  ucko
  * More cleanups to s_CheckExecArg; in particular, perform the sizeof
  * test at compilation-time rather than runtime.
