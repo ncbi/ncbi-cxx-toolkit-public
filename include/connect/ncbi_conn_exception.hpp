@@ -83,8 +83,7 @@ public:
 
     virtual const char* GetErrCodeString(void) const
     {
-        switch (GetErrCode())
-        {
+        switch (GetErrCode()) {
         case eTimeout:      return "eIO_Timeout";
         case eClosed:       return "eIO_Closed";
         case eInterrupt:    return "eIO_Interrupt";
@@ -131,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2005/06/10 19:26:35  lavr
+ * Small code formatting issue
+ *
  * Revision 6.10  2005/05/02 16:01:23  lavr
  * Proper order of included headers and exception class derivation
  *
