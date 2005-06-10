@@ -59,6 +59,7 @@ class CBlastOptions;
 /// of BLAST (it's a malloc'ed array of Uint1 and its length)
 /// FIXME: do not confuse with blast_seg.c's SSequence
 struct SBlastSequence {
+    // AutoPtr<Uint1, CDeleter<Uint1> > == TAutoUint1Ptr
     TAutoUint1Ptr   data;       /**< Sequence data */
     TSeqPos         length;     /**< Length of the buffer above (not
                                   necessarily sequence length!) */
@@ -94,25 +95,39 @@ enum ESentinelType {
 
 // Wrapper for SeqLocVector (ObjMgr case) or other sequences (non-OM case).
 
+/// Lightweight wrapper around an indexed sequence container. These sequences
+/// are then used to set up internal BLAST data structures for sequence data
 struct IBlastQuerySource {
     virtual ~IBlastQuerySource() {}
     
-    virtual objects::ENa_strand GetStrand(int j) const = 0;
+    /// Return strand for a sequence
+    /// @param index index of the sequence in the sequence container
+    virtual objects::ENa_strand GetStrand(int index) const = 0;
     
+    /// Return the number of elements in the sequence container
     virtual TSeqPos Size() const = 0;
 
+    /// Returns true if the container is empty, else false
     bool Empty() const { return (Size() == 0); }
     
-    virtual CConstRef<objects::CSeq_loc> GetMask(int j) const = 0;
+    /// Return the filtered (masked) regions for a sequence
+    /// @param index index of the sequence in the sequence container
+    virtual CConstRef<objects::CSeq_loc> GetMask(int index) const = 0;
     
-    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int j) const = 0;
+    /// Return the CSeq_loc associated with a sequence
+    /// @param index index of the sequence in the sequence container
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const = 0;
     
-    virtual SBlastSequence 
-    GetBlastSequence(int j, EBlastEncoding encoding, 
+    /// Return the sequence data for a sequence
+    /// @param index index of the sequence in the sequence container
+    virtual SBlastSequence
+    GetBlastSequence(int index, EBlastEncoding encoding, 
                      objects::ENa_strand strand, ESentinelType sentinel, 
                      std::string* warnings = 0) const = 0;
     
-    virtual TSeqPos GetLength(int j) const = 0;
+    /// Return the length of a sequence
+    /// @param index index of the sequence in the sequence container
+    virtual TSeqPos GetLength(int index) const = 0;
 };
 
 
@@ -252,6 +267,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/06/10 18:08:36  camacho
+* Document IBlastQuerySource
+*
 * Revision 1.43  2005/06/10 14:55:54  camacho
 * Give warnings argument in IBlastQuerySource::GetBlastSequence default value
 *
