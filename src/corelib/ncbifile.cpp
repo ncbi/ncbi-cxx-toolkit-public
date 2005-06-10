@@ -47,7 +47,7 @@
 // for CDirEntry::GetOwner()
 #  include <accctrl.h>
 #  include <aclapi.h>
-typedef unisgned int mode_t;
+typedef unsigned int mode_t;
 
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -3466,6 +3466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2005/06/10 20:44:39  lavr
+ * Fix typo in a typename (affected MS-Win build only)
+ *
  * Revision 1.107  2005/06/10 20:02:10  lavr
  * Special mode bits have been added
  *
