@@ -114,12 +114,12 @@ public:
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
 
-    CWriter* GetWriter(CReaderRequestResult& result) const;
-
 protected:
     CProcessor(CReadDispatcher& dispatcher);
 
     CReadDispatcher* m_Dispatcher;
+
+    CWriter* GetWriter(const CReaderRequestResult& result) const;
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
     static void LogStat(const char* type,

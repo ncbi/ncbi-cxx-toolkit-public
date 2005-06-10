@@ -407,7 +407,7 @@ void CProcessor::SetSNPReadHooks(CObjectIStream& in)
 
 
 inline
-CWriter* CProcessor::GetWriter(CReaderRequestResult& result) const
+CWriter* CProcessor::GetWriter(const CReaderRequestResult& result) const
 {
     return m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
 }
