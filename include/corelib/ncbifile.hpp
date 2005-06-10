@@ -724,6 +724,13 @@ public:
     };
     typedef unsigned int TMode;  ///< Binary OR of "EMode"
 
+    enum ESpecialModeBits {
+        fSticky = 1,
+        fSetGID = 2,
+        fSetUID = 4
+    };
+    typedef unsigned int TSpecialModeBits; ///< Bitwise OR of ESpecialModeBits
+
     /// Get permission mode(s) of a directory entry.
     ///
     /// On WINDOWS, there is only the "user_mode" permission setting,
@@ -733,9 +740,10 @@ public:
     ///   FALSE otherwise.
     /// @sa
     ///   SetMode
-    bool GetMode(TMode* user_mode,
-                 TMode* group_mode = 0,
-                 TMode* other_mode = 0) const;
+    bool GetMode(TMode*            user_mode,
+                 TMode*            group_mode   = 0,
+                 TMode*            other_mode   = 0,
+                 TSpecialModeBits* special_bits = 0) const;
 
     /// Set permission mode(s) of a directory entry.
     ///
@@ -746,9 +754,10 @@ public:
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
     ///   SetDefaultMode, SetDefaultModeGlobal, GetMode
-    bool SetMode(TMode user_mode,  // e.g. fDefault
-                 TMode group_mode = fDefault,
-                 TMode other_mode = fDefault) const;
+    bool SetMode(TMode            user_mode,  // e.g. fDefault
+                 TMode            group_mode   = fDefault,
+                 TMode            other_mode   = fDefault,
+                 TSpecialModeBits special_bits = 0) const;
 
     /// Set default permission modes globally for all CDirEntry objects.
     ///
@@ -2299,6 +2308,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/06/10 20:06:54  lavr
+ * Special mode bits have been added
+ *
  * Revision 1.59  2005/05/27 13:36:19  lavr
  * CDirEntry::Stat() to return bool (not int)
  * EDirRemoveMode::eTopDirOnly added

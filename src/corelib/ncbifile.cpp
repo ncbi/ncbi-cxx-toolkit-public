@@ -47,6 +47,7 @@
 // for CDirEntry::GetOwner()
 #  include <accctrl.h>
 #  include <aclapi.h>
+typedef unisgned int mode_t;
 
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -117,45 +118,55 @@ static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 
 // Construct real entry mode from parts.
 // Parameters must not have "fDefault" value.
-static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode usr_mode, 
-                                        CDirEntry::TMode grp_mode, 
-                                        CDirEntry::TMode oth_mode)
+static mode_t s_ConstructMode(CDirEntry::TMode            usr_mode,
+                              CDirEntry::TMode            grp_mode,
+                              CDirEntry::TMode            oth_mode,
+                              CDirEntry::TSpecialModeBits special)
 {
-    CDirEntry::TMode mode = (
+    mode_t mode = (
+#ifdef S_ISUID
+                   (special & CDirEntry::fSetUID   ? S_ISUID    : 0) |
+#endif
+#ifdef S_ISGID
+                   (special & CDirEntry::fSetUID   ? S_ISGID    : 0) |
+#endif
+#ifdef S_ISVTX
+                   (special & CDirEntry::fSticky   ? S_ISVTX    : 0) |
+#endif
 #if   defined(S_IRUSR)
-                             (usr_mode & CDirEntry::fRead    ? S_IRUSR    : 0)|
+                   (usr_mode & CDirEntry::fRead    ? S_IRUSR    : 0) |
 #elif defined(S_IREAD)
-                             (usr_mode & CDirEntry::fRead    ? S_IREAD    : 0)|
+                   (usr_mode & CDirEntry::fRead    ? S_IREAD    : 0) |
 #endif
 #if   defined(S_IWUSR)
-                             (usr_mode & CDirEntry::fWrite   ? S_IWUSR    : 0)|
+                   (usr_mode & CDirEntry::fWrite   ? S_IWUSR    : 0) |
 #elif defined(S_IWRITE)
-                             (usr_mode & CDirEntry::fWrite   ? S_IWRITE   : 0)|
+                   (usr_mode & CDirEntry::fWrite   ? S_IWRITE   : 0) |
 #endif
 #if   defined(S_IXUSR)
-                             (usr_mode & CDirEntry::fExecute ? S_IXUSR    : 0)|
+                   (usr_mode & CDirEntry::fExecute ? S_IXUSR    : 0) |
 #elif defined(S_IEXEC)
-                             (usr_mode & CDirEntry::fExecute ? S_IEXEC    : 0)|
+                   (usr_mode & CDirEntry::fExecute ? S_IEXEC    : 0) |
 #endif
 #ifdef S_IRGRP
-                             (grp_mode & CDirEntry::fRead    ? S_IRGRP    : 0)|
+                   (grp_mode & CDirEntry::fRead    ? S_IRGRP    : 0) |
 #endif
 #ifdef S_IWGRP
-                             (grp_mode & CDirEntry::fWrite   ? S_IWGRP    : 0)|
+                   (grp_mode & CDirEntry::fWrite   ? S_IWGRP    : 0) |
 #endif
 #ifdef S_IXGRP
-                             (grp_mode & CDirEntry::fExecute ? S_IXGRP    : 0)|
+                   (grp_mode & CDirEntry::fExecute ? S_IXGRP    : 0) |
 #endif
 #ifdef S_IROTH
-                             (oth_mode & CDirEntry::fRead    ? S_IROTH    : 0)|
+                   (oth_mode & CDirEntry::fRead    ? S_IROTH    : 0) |
 #endif
 #ifdef S_IWOTH
-                             (oth_mode & CDirEntry::fWrite   ? S_IWOTH    : 0)|
+                   (oth_mode & CDirEntry::fWrite   ? S_IWOTH    : 0) |
 #endif
 #ifdef S_IXOTH
-                             (oth_mode & CDirEntry::fExecute ? S_IXOTH    : 0)|
+                   (oth_mode & CDirEntry::fExecute ? S_IXOTH    : 0) |
 #endif
-                             0);
+                   0);
     return mode;
 }
 
@@ -437,8 +448,6 @@ static void s_StripDir(const string& dir, vector<string> * dir_parts)
 string CDirEntry::CreateRelativePath( const string& path_from, 
                                       const string& path_to )
 {
-
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string path; // the result    
     
     if ( !IsAbsolutePath(path_from) ) {
@@ -473,11 +482,10 @@ string CDirEntry::CreateRelativePath( const string& path_from,
                    "path_to is empty path");
     }
 
-// Platform-dependent compare mode
+    // Platform-dependent compare mode
 #ifdef NCBI_OS_MSWIN
 #  define DIR_PARTS_CMP_MODE NStr::eNocase
-#endif
-#ifdef NCBI_OS_UNIX
+#else /*NCBI_OS_UNIX*/
 #  define DIR_PARTS_CMP_MODE NStr::eCase
 #endif
     // Roots must be the same to create relative path from one to another
@@ -510,11 +518,6 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     }
     
     return path + base_to + ext_to;
-#else
-    NCBI_THROW(CFileException, eRelativePath, 
-               "not implemented");
-    return string();
-#endif
 }
 
 
@@ -609,11 +612,10 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
 
 string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     static const char kSeps[] = { DIR_SEPARATOR,
-#  ifdef DIR_SEPARATOR_ALT
+#ifdef DIR_SEPARATOR_ALT
                                   DIR_SEPARATOR_ALT,
-#  endif
+#endif
                                   '\0' };
 
     list<string> head;              // already resolved to our satisfaction
@@ -627,13 +629,13 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             NStr::Split(current, kSeps, pretail, NStr::eNoMergeDelims);
             current.erase();
             if (pretail.front().empty()
-#  ifdef DISK_SEPARATOR
+#ifdef DISK_SEPARATOR
                 ||  pretail.front().find(DISK_SEPARATOR) != NPOS
-#  endif
+#endif
                 ) {
                 // Absolute path
                 head.clear();
-#  if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
                 // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\".
                 static const char* const kUNC[] = { "", "", "?", "UNC" };
                 list<string>::iterator it = pretail.begin();
@@ -652,7 +654,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                     head.push_back(kEmptyStr);
                     break;
                 }
-#  endif
+#endif
             }
             tail.splice(tail.begin(), pretail);
         }
@@ -670,31 +672,31 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             } else if (next == DIR_CURRENT) {
                 // Leave out, since we already have content
                 continue;
-#  ifdef DISK_SEPARATOR
+#ifdef DISK_SEPARATOR
             } else if (last[last.size()-1] == DISK_SEPARATOR) {
                 // Allow almost anything right after a volume specification
-#  endif
+#endif
             } else if (next.empty()) {
                 continue; // leave out empty components in most cases
             } else if (next == DIR_PARENT) {
-#  ifdef DISK_SEPARATOR
+#ifdef DISK_SEPARATOR
                 SIZE_TYPE pos;
-#  endif
+#endif
                 // Back up if possible, assuming existing path to be "physical"
                 if (last.empty()) {
                     // Already at the root; .. is a no-op
                     continue;
-#  ifdef DISK_SEPARATOR
+#ifdef DISK_SEPARATOR
                 } else if ((pos = last.find(DISK_SEPARATOR) != NPOS)) {
                     last.erase(pos + 1);
-#  endif
+#endif
                 } else if (last != DIR_PARENT) {
                     head.pop_back();
                     continue;
                 }
             }
         }
-#  if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
         // Is there a Windows equivalent for readlink?
         if ( follow_links ) {
             string s(head.empty() ? next
@@ -713,7 +715,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 continue;
             }
         }
-#  endif
+#endif
         // Normal case: just append the next element to head
         head.push_back(next);
     }
@@ -722,37 +724,33 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
         return string(1, DIR_SEPARATOR);
     }
     return NStr::Join(head, string(1, DIR_SEPARATOR));
-
-#else // Not Unix or Windows
-    // NOT implemented!
-    return path;
-#endif
 }
 
 
-bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode, TMode* oth_mode)
-    const
+bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
+                        TMode* oth_mode, TSpecialModeBits* special) const
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
     }
+    // Owner
     if (usr_mode) {
         *usr_mode = (
 #if   defined(S_IRUSR)
-                     (st.st_mode & S_IRUSR  ? fRead    : 0) |
+                     (st.st_mode & S_IRUSR  ? fRead              : 0) |
 #elif defined(S_IREAD)
-                     (st.st_mode & S_IREAD  ? fRead    : 0) |
+                     (st.st_mode & S_IREAD  ? fRead              : 0) |
 #endif
 #if   defined(S_IWUSR)
-                     (st.st_mode & S_IWUSR  ? fWrite   : 0) |
+                     (st.st_mode & S_IWUSR  ? fWrite             : 0) |
 #elif defined(S_IWRITE)
-                     (st.st_mode & S_IWRITE ? fWrite   : 0) |
+                     (st.st_mode & S_IWRITE ? fWrite             : 0) |
 #endif
 #if   defined(S_IXUSR)
-                     (st.st_mode & S_IXUSR  ? fExecute : 0) |
+                     (st.st_mode & S_IXUSR  ? fExecute           : 0) |
 #elif defined(S_IEXEC)
-                     (st.st_mode & S_IEXEC  ? fExecute : 0) |
+                     (st.st_mode & S_IEXEC  ? fExecute           : 0) |
 #endif
                      0);
     }
@@ -760,13 +758,13 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode, TMode* oth_mode)
     if (grp_mode) {
         *grp_mode = (
 #ifdef S_IRGRP
-                     (st.st_mode & S_IRGRP  ? fRead    : 0) |
+                     (st.st_mode & S_IRGRP  ? fRead              : 0) |
 #endif
 #ifdef S_IWGRP
-                     (st.st_mode & S_IWGRP  ? fWrite   : 0) |
+                     (st.st_mode & S_IWGRP  ? fWrite             : 0) |
 #endif
 #ifdef S_IXGRP
-                     (st.st_mode & S_IXGRP  ? fExecute : 0) |
+                     (st.st_mode & S_IXGRP  ? fExecute           : 0) |
 #endif
                      0);
     }
@@ -774,22 +772,36 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode, TMode* oth_mode)
     if (oth_mode) {
         *oth_mode = (
 #ifdef S_IROTH
-                     (st.st_mode & S_IROTH  ? fRead    : 0) |
+                     (st.st_mode & S_IROTH  ? fRead              : 0) |
 #endif
 #ifdef S_IWOTH
-                     (st.st_mode & S_IWOTH  ? fWrite   : 0) |
+                     (st.st_mode & S_IWOTH  ? fWrite             : 0) |
 #endif
 #ifdef S_IXOTH
-                     (st.st_mode & S_IXOTH  ? fExecute : 0) |
+                     (st.st_mode & S_IXOTH  ? fExecute           : 0) |
 #endif
                      0);
+    }
+    // Special bits
+    if (special) {
+        *special = (
+#ifdef S_ISUID
+                    (st.st_mode & S_ISUID   ? CDirEntry::fSetUID : 0) |
+#endif
+#ifdef S_ISGID
+                    (st.st_mode & S_ISGID   ? CDirEntry::fSetGID : 0) |
+#endif
+#ifdef S_ISVTX
+                    (st.st_mode & S_ISVTX   ? CDirEntry::fSticky : 0) |
+#endif
+                    0);
     }
     return true;
 }
 
 
-bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
-    const
+bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
+                        TMode other_mode, TSpecialModeBits special) const
 {
     if (user_mode == fDefault) {
         user_mode = m_DefaultMode[eUser];
@@ -800,7 +812,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
     if (other_mode == fDefault) {
         other_mode = m_DefaultMode[eOther];
     }
-    TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
+    mode_t mode = s_ConstructMode(user_mode, group_mode, other_mode, special);
 
     return chmod(GetPath().c_str(), mode) == 0;
 }
@@ -843,7 +855,7 @@ void CDirEntry::SetDefaultMode(EType entry_type, TMode user_mode,
                                TMode group_mode, TMode other_mode)
 {
     if ( user_mode == fDefault ) {
-        user_mode = m_DefaultModeGlobal[entry_type][eUser];
+        user_mode  = m_DefaultModeGlobal[entry_type][eUser];
     }
     if ( group_mode == fDefault ) {
         group_mode = m_DefaultModeGlobal[entry_type][eGroup];
@@ -861,7 +873,7 @@ void CDirEntry::GetDefaultModeGlobal(EType  entry_type, TMode* user_mode,
                                      TMode* group_mode, TMode* other_mode)
 {
     if ( user_mode ) {
-        *user_mode = m_DefaultModeGlobal[entry_type][eUser];
+        *user_mode  = m_DefaultModeGlobal[entry_type][eUser];
     }
     if ( group_mode ) {
         *group_mode = m_DefaultModeGlobal[entry_type][eGroup];
@@ -876,7 +888,7 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
                                TMode* other_mode) const
 {
     if ( user_mode ) {
-        *user_mode = m_DefaultMode[eUser];
+        *user_mode  = m_DefaultMode[eUser];
     }
     if ( group_mode ) {
         *group_mode = m_DefaultMode[eGroup];
@@ -887,7 +899,7 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
 bool s_FileTimeToCTime(const FILETIME& filetime, CTime& t) 
 {
@@ -948,13 +960,13 @@ void s_UnixTimeToFileTime(time_t t, long nanosec, FILETIME& filetime)
     filetime.dwHighDateTime = (DWORD)(res >> 32);
 }
 
-#endif
+#endif // NCBI_OS_MSWIN
 
 
 bool CDirEntry::GetTime(CTime* modification,
                         CTime* creation, CTime* last_access) const
 {
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     HANDLE handle;
     WIN32_FIND_DATA buf;
 
@@ -980,7 +992,7 @@ bool CDirEntry::GetTime(CTime* modification,
     }
     return true;
 
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
 
     struct SStat st;
     if ( !Stat(&st) ) {
@@ -1014,7 +1026,7 @@ bool CDirEntry::SetTime(CTime* modification,
         return true;
     }
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
     FILETIME   x_modification, x_creation, x_lastaccess;
     LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
@@ -1051,9 +1063,9 @@ bool CDirEntry::SetTime(CTime* modification,
 
     return true;
 
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
 
-#  if defined(HAVE_UTIMES)
+#  ifdef HAVE_UTIMES
     // Get current times
     CTime x_modification, x_lastaccess;
     GetTime(modification ? &x_modification : 0,
@@ -1073,14 +1085,14 @@ bool CDirEntry::SetTime(CTime* modification,
     tvp[1].tv_sec  = modification->GetTimeT();;
     tvp[1].tv_usec = modification->NanoSecond() / 1000;
 
-#    if defined(HAVE_LUTIMES)
+#    ifdef HAVE_LUTIMES
     return lutimes(GetPath().c_str(), tvp) == 0;
 #    else
     return utimes(GetPath().c_str(), tvp) == 0;
 #    endif
 
 # else
-    // utimes() does not exists on current platform,
+    // utimes() does not exist on current platform,
     // so use less accurate utime().
 
     // Get current times
@@ -1095,7 +1107,7 @@ bool CDirEntry::SetTime(CTime* modification,
 
 #  endif // HAVE_UTIMES
 
-#endif // OS selection
+#endif
 }
 
 
@@ -1126,7 +1138,7 @@ bool CDirEntry::SetTimeT(time_t* modification,
         return true;
     }
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
     FILETIME   x_modification, x_creation, x_lastaccess;
     LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
@@ -1160,7 +1172,7 @@ bool CDirEntry::SetTimeT(time_t* modification,
 
     return true;
 
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
     // Get current times
     time_t x_modification, x_lastaccess;
     GetTimeT(&x_modification, 0, &x_lastaccess);
@@ -1183,9 +1195,9 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     }
 
     int errcode;
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     errcode = stat(GetPath().c_str(), &buffer->orig);
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
     if (follow_links == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &buffer->orig);
     } else {
@@ -1276,7 +1288,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 
 #if defined(NCBI_OS_MSWIN)
     errcode = stat(GetPath().c_str(), &st);
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
     if (follow == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &st);
     } else {
@@ -1292,10 +1304,10 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
         return eDir;
     case S_IFCHR:
         return eCharSpecial;
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     case _S_IFIFO:
         return ePipe;
-#elif defined(NCBI_OS_UNIX)
+#else // NCBI_OS_UNIX
     case S_IFIFO:
         return ePipe;
     case S_IFLNK:
@@ -1304,7 +1316,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
         return eSocket;
     case S_IFBLK:
         return eBlockSpecial;
-#  if defined(S_IFDOOR) /* only Solaris seems to have this */
+#  ifdef S_IFDOOR /* only Solaris seems to have this one */
     case S_IFDOOR:
         return eDoor;
 #  endif
@@ -1320,7 +1332,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 
 string CDirEntry::LookupLink(void)
 {
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
     char buf[PATH_MAX];
     string name;
     int length = readlink(GetPath().c_str(), buf, sizeof(buf));
@@ -1328,7 +1340,7 @@ string CDirEntry::LookupLink(void)
         name.assign(buf, length);
     }
     return name;
-#else
+#else // NCBI_OS_MSWIN
     return kEmptyStr;
 #endif
 }
@@ -1804,7 +1816,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 //     destination entry.  The owner of a file may change the group of
 //     the file to any group of which that owner is a member.
 // WINDOWS:
-//     This function doesn't support ownerhip change yet.
+//     This function doesn't support ownership change yet.
 //
 static bool s_CopyAttrs(const char* from, const char* to,
                         CDirEntry::EType type, CDirEntry::TCopyFlags flags)
@@ -1982,7 +1994,7 @@ bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         return os.good() ? true : false;
     }
 
-    auto_ptr<char> buf_ptr(new char[buf_size]);
+    AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[buf_size]);
     char* buf = buf_ptr.get();
     bool failed = false;
  
@@ -2591,7 +2603,7 @@ bool CDir::Create(void) const
 {
     TMode user_mode, group_mode, other_mode;
     GetDefaultMode(&user_mode, &group_mode, &other_mode);
-    TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
+    mode_t mode = s_ConstructMode(user_mode, group_mode, other_mode, 0);
 
 #if defined(NCBI_OS_MSWIN)
     errno = 0;
@@ -3454,6 +3466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2005/06/10 20:02:10  lavr
+ * Special mode bits have been added
+ *
  * Revision 1.106  2005/06/08 16:20:16  ivanov
  * Fix compilation errors
  *
