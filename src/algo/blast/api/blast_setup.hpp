@@ -107,11 +107,10 @@ struct IBlastQuerySource {
     
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int j) const = 0;
     
-    virtual SBlastSequence GetBlastSequence(int j,
-                                            EBlastEncoding encoding,
-                                            objects::ENa_strand strand,
-                                            ESentinelType sentinel,
-                                            std::string* warnings) const = 0;
+    virtual SBlastSequence 
+    GetBlastSequence(int j, EBlastEncoding encoding, 
+                     objects::ENa_strand strand, ESentinelType sentinel, 
+                     std::string* warnings = 0) const = 0;
     
     virtual TSeqPos GetLength(int j) const = 0;
 };
@@ -162,7 +161,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 void
 SetupSubjects_OMF(const IBlastQuerySource& subjects,
                   EBlastProgramType program,
-                  vector<BLAST_SequenceBlk*> seqblk_vec,
+                  vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen);
 
 /** Calculates the length of the buffer to allocate given the desired encoding,
@@ -253,6 +252,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/06/10 14:55:54  camacho
+* Give warnings argument in IBlastQuerySource::GetBlastSequence default value
+*
 * Revision 1.42  2005/06/09 20:34:52  camacho
 * Object manager dependent functions reorganization
 *

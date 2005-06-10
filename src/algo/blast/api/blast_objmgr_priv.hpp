@@ -60,7 +60,7 @@ public:
                                     EBlastEncoding encoding,
                                     objects::ENa_strand strand,
                                     ESentinelType sentinel,
-                                    string* warnings) const;
+                                    string* warnings = 0) const;
     TSeqPos GetLength(int j) const;
     TSeqPos Size() const;
     
