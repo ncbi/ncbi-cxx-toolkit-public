@@ -407,14 +407,16 @@ unsigned long GetVirtualMemoryPageSize(void)
     ps = si.dwAllocationGranularity;
 #elif defined(NCBI_OS_UNIX)
     long x = 0;
-#  ifdef _SC_PAGESIZE
+#  if defined(_SC_PAGESIZE)
     x = sysconf(_SC_PAGESIZE);
+#  elif defined(_SC_PAGE_SIZE)
+    x = sysconf(_SC_PAGE_SIZE);
 #  endif
 #  ifdef HAVE_GETPAGESIZE
     if (x <= 0) {
         x = getpagesize();
     }
-    ps = (x <= 0) ? 0 : x;
+    ps = x < 0 ? 0 : x;
 #  endif
 #endif /*OS_TYPE*/
     return ps;
@@ -506,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/06/10 19:23:30  lavr
+ * _SC_PAGE_SIZE case added in GetVirtualMemoryPageSize()
+ *
  * Revision 1.42  2005/05/03 18:08:21  lavr
  * Better implementation of Sleep*() on Linux; better CLK_TCK usage
  *
