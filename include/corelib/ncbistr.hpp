@@ -37,18 +37,17 @@
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistl.hpp>
 #include <string.h>
 #ifdef NCBI_OS_OSF1
 #  include <strings.h>
 #endif
-#include <ctype.h>
 #include <time.h>
 #include <stdarg.h>
 #include <string>
 #include <list>
 #include <vector>
-
 
 
 BEGIN_NCBI_SCOPE
@@ -2694,6 +2693,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2005/06/10 20:46:07  lavr
+ * #include <corelib/ncbimisc.h> instead of <ctype.h>
+ *
  * Revision 1.89  2005/06/06 15:26:30  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
