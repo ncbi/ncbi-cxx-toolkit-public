@@ -256,33 +256,34 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
     if (TopFrame().GetNotag()) {
         return SelfClosedTag();
     }
-    _ASSERT(InsideOpeningTag());
-    char c = SkipWS();
-    if (m_Attlist) {
-        return false;
-    }
-    if ( c == '/' && m_Input.PeekChar(1) == '>' ) {
-        // end of self closed tag
-        m_Input.SkipChars(2);
-        Found_slash_gt();
-        return true;
-    }
-
-    if ( c != '>' ) {
-        c = ReadUndefinedAttributes();
+    if( InsideOpeningTag() ) {
+        char c = SkipWS();
+        if (m_Attlist) {
+            return false;
+        }
         if ( c == '/' && m_Input.PeekChar(1) == '>' ) {
             // end of self closed tag
             m_Input.SkipChars(2);
             Found_slash_gt();
             return true;
         }
-        if ( c != '>' )
-            ThrowError(fFormatError, "end of tag expected");
-    }
 
-    // end of open tag
-    m_Input.SkipChar(); // '>'
-    Found_gt();
+        if ( c != '>' ) {
+            c = ReadUndefinedAttributes();
+            if ( c == '/' && m_Input.PeekChar(1) == '>' ) {
+                // end of self closed tag
+                m_Input.SkipChars(2);
+                Found_slash_gt();
+                return true;
+            }
+            if ( c != '>' )
+                ThrowError(fFormatError, "end of tag expected");
+        }
+
+        // end of open tag
+        m_Input.SkipChar(); // '>'
+        Found_gt();
+    }
     return false;
 }
 
@@ -1008,6 +1009,10 @@ void CObjectIStreamXml::StartDelayBuffer(void)
 {
     BeginData();
     CObjectIStream::StartDelayBuffer();
+    if (!m_RejectedTag.empty()) {
+        m_Input.GetSubSourceCollector()->AddChunk("<", 1);
+        m_Input.GetSubSourceCollector()->AddChunk(m_RejectedTag.c_str(), m_RejectedTag.size());
+    }
 }
 
 CRef<CByteSource> CObjectIStreamXml::EndDelayBuffer(void)
@@ -2139,6 +2144,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/06/10 19:44:41  gouriano
+* Corrected EndOpeningTagSelfClosed() - to not to rely on being inside opening tag; and StartDelayBuffer() - to take into account rejected tag.
+*
 * Revision 1.73  2005/05/23 15:40:14  gouriano
 * Handle containers of elements with mixed content
 *
