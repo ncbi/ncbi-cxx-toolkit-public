@@ -28,7 +28,9 @@
  */
 
 /** @file blast_setup.hpp
- * Auxiliary setup functions for Blast objects interface
+ * Internal auxiliary setup classes/functions for C++ BLAST APIs.
+ * These facilities are free of any dependencies on the NCBI C++ object
+ * manager.
  */
 
 #ifndef ALGO_BLAST_API___BLAST_SETUP__HPP
@@ -89,15 +91,14 @@ struct SBlastSequence {
 
 /// Allows specification of whether sentinel bytes should be used or not
 enum ESentinelType {
-    eSentinels,
-    eNoSentinels
+    eSentinels,         ///< Use sentinel bytes
+    eNoSentinels        ///< Do not use sentinel bytes
 };
-
-// Wrapper for SeqLocVector (ObjMgr case) or other sequences (non-OM case).
 
 /// Lightweight wrapper around an indexed sequence container. These sequences
 /// are then used to set up internal BLAST data structures for sequence data
 struct IBlastQuerySource {
+    /// Our no-op virtual destructor
     virtual ~IBlastQuerySource() {}
     
     /// Return strand for a sequence
@@ -143,7 +144,7 @@ void
 SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    EBlastProgramType prog,
                    objects::ENa_strand strand_opt,
-                   BlastQueryInfo** qinfo); // out
+                   BlastQueryInfo** qinfo);
 
 /// ObjMgr Free version of SetupQueries.
 /// @param queries vector of blast::SSeqLoc structures [in]
@@ -267,6 +268,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/06/10 18:38:49  camacho
+* Doxygen fixes
+*
 * Revision 1.44  2005/06/10 18:08:36  camacho
 * Document IBlastQuerySource
 *
