@@ -852,7 +852,8 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             proc_skel.SaveDataAndSkel(result,
                                       blob_id,
                                       CProcessor::kMain_ChunkId,
-                                      proc_skel.GetWriter(result),
+                                      disp.GetWriter(result,
+                                                     CWriter::eBlobWriter),
                                       1,
                                       split_data.GetData(),
                                       skel_data.GetData());
@@ -867,7 +868,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                 proc.SaveData(result,
                             blob_id,
                             it->first,
-                            proc.GetWriter(result),
+                            disp.GetWriter(result, CWriter::eBlobWriter),
                             data.GetData());
             }
         }}
@@ -1072,6 +1073,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/06/10 19:20:19  vasilche
+* Use dispatcher to get writer.
+*
 * Revision 1.35  2005/06/09 20:33:55  grichenk
 * Fixed loading of split descriptors by CSeqdesc_CI
 *
