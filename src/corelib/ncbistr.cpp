@@ -317,15 +317,15 @@ int NStr::StringToNumeric(const string& str)
 }
 
 
-# define CHECK_ENDPTR(conv)                                             \
-    if (check_endptr == eCheck_Need  &&  *endptr) {                     \
-        if ( on_error == eConvErr_Throw ) {                             \
-            NCBI_THROW2(CStringException, eBadArgs,                     \
-                        "String cannot be converted to " conv           \
-                        " - trailing junk", s_DiffPtr(endptr, begptr)); \
-        }                                                               \
-        errno = EINVAL;                                                 \
-        return 0;                                                       \
+# define CHECK_ENDPTR(conv)                                                  \
+    if (check_endptr == eCheck_Need  &&  *endptr) {                          \
+        if ( on_error == eConvErr_Throw ) {                                  \
+            NCBI_THROW2(CStringException, eBadArgs,                          \
+                        "Cannot convert string to " conv                     \
+                        " - invalid characters", s_DiffPtr(endptr, begptr)); \
+        }                                                                    \
+        errno = EINVAL;                                                      \
+        return 0;                                                            \
     }
 
 int NStr::StringToInt(const string&  str,
@@ -1997,6 +1997,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.157  2005/06/10 19:50:31  lavr
+ * Beautify string->number trailing pointer exception message
+ *
  * Revision 1.156  2005/06/06 18:59:34  lavr
  * Fix previous commit
  *
