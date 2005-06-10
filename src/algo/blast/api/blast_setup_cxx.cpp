@@ -397,7 +397,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 
 void
 SetupSubjects_OMF(const IBlastQuerySource& subjects,
-                  EBlastProgramType program,
+                  EBlastProgramType prog,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen)
 {
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2005/06/10 15:20:48  ucko
+ * Use consistent parameter names in SetupSubjects(_OMF).
+ *
  * Revision 1.86  2005/06/10 14:56:18  camacho
  * Implement SetupSubjects_OMF
  *

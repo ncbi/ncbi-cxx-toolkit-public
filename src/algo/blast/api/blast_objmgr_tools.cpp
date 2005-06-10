@@ -184,7 +184,7 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
-    SetupSubjects_OMF(CBlastQuerySourceOM(subjects), prog, seq_blk, 
+    SetupSubjects_OMF(CBlastQuerySourceOM(subjects), prog, seqblk_vec, 
                       max_subjlen);
 }
 
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2005/06/10 15:20:48  ucko
+* Use consistent parameter names in SetupSubjects(_OMF).
+*
 * Revision 1.51  2005/06/10 14:54:56  camacho
 * Implement SetupSubjects_OMF
 *
