@@ -38,7 +38,7 @@ global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : "bz2 z"
-property IMG_LIBS : " jpeg png tiff gif"
+property IMG_LIBS : " jpeg png tiff gif z"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -100,6 +100,7 @@ property biotree : {name:"biotree", path:"objects:biotree", inc:{"biotree__.cpp"
 property xnetblast : {name:"xnetblast", path:"objects:blast", inc:{"blast__.cpp", "blast___.cpp"}, asn1:true}
 property xnetblastcli : {name:"xnetblastcli", path:"objects:blast", inc:{"blastclient.cpp", "blastclient_.cpp"}, asn1:true}
 property blastdb : {name:"blastdb", path:"objects:blastdb", inc:{"blastdb__.cpp", "blastdb___.cpp"}, asn1:true}
+property blastxml : {name:"blastxml", path:"objects:blastxml", inc:{"blastxml__.cpp", "blastxml___.cpp"}, asn1:true}
 property cdd : {name:"cdd", path:"objects:cdd", inc:{"cdd__.cpp", "cdd___.cpp"}, asn1:true}
 property cn3d : {name:"cn3d", path:"objects:cn3d", inc:{"cn3d__.cpp", "cn3d___.cpp"}, asn1:true}
 property docsum : {name:"docsum", path:"objects:docsum", inc:{"docsum__.cpp", "docsum___.cpp"}, asn1:true}
@@ -265,7 +266,7 @@ property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", r
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoalignnw, xalgoseq, xalgoseqqa, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
-property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, taxon1, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
+property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
@@ -405,6 +406,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/06/13 18:05:30  lebedev
+ * blastxml added
+ *
  * Revision 1.58  2005/06/03 12:37:06  lebedev
  * Build libraries as fully resolved DLLs
  *
