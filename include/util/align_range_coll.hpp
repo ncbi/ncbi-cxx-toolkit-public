@@ -617,7 +617,7 @@ public:
                     m_ToOpen = max(m_ToOpen, r->GetSecondToOpen());
                 }
 
-                m_Ranges.insert(TFrom2Range::value_type
+                m_Ranges.insert(typename TFrom2Range::value_type
                                 (r->GetSecondFrom(), r));
             }
 
@@ -693,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/13 23:11:51  ucko
+ * Sigh, add a missing "typename" keyword to satisfy GCC 3.4 again.
+ *
  * Revision 1.3  2005/06/13 21:37:23  ucko
  * More tweaks needed for WorkShop compatibility.
  *
