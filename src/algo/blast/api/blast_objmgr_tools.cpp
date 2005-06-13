@@ -116,7 +116,7 @@ CBlastQuerySourceOM::GetLength(int i) const
 TSeqPos
 CBlastQuerySourceOM::Size() const
 {
-    return m_TSeqLocVector.size();
+    return static_cast<TSeqPos>(m_TSeqLocVector.size());
 }
 
 void
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/06/13 14:01:53  camacho
+* Fix compiler warning
+*
 * Revision 1.52  2005/06/10 15:20:48  ucko
 * Use consistent parameter names in SetupSubjects(_OMF).
 *
