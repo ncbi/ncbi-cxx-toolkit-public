@@ -400,6 +400,9 @@ void CObjectIStreamAsn::ReadAnyContent(string& value)
     bool space = false;
     for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
         if (to != '\"') {
+            if (to != '}' && c == '\n') {
+                return;
+            }
             if (isspace((unsigned char) c)) {
                 if (space) {
                     m_Input.SkipChar();
@@ -442,8 +445,8 @@ void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
 
 void CObjectIStreamAsn::SkipAnyContentObject(void)
 {
-    CAnyContentObject obj;
-    ReadAnyContentObject(obj);
+    string value;
+    ReadAnyContent(value);
 }
 
 string CObjectIStreamAsn::ReadFileHeader()
@@ -1299,6 +1302,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2005/06/13 18:02:19  gouriano
+* Corrected SkipAnyContentObject()
+*
 * Revision 1.94  2005/06/03 17:44:44  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
