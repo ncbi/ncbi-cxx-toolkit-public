@@ -612,6 +612,9 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
 
 string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 {
+    if ( path.empty() ) {
+        return path;
+    }
     static const char kSeps[] = { DIR_SEPARATOR,
 #ifdef DIR_SEPARATOR_ALT
                                   DIR_SEPARATOR_ALT,
@@ -619,9 +622,24 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                                   '\0' };
 
     list<string> head;              // already resolved to our satisfaction
-    string       current    = path; // to resolve next
     list<string> tail;              // to resolve afterwards
+    string       current;           // to resolve next
     int          link_depth = 0;
+
+    // Delete trailing slash for all pathes except similar to 'd:\'
+#  ifdef DISK_SEPARATOR
+    if ( path.find(DISK_SEPARATOR) == NPOS ) {
+        current = DeleteTrailingPathSeparator(path);
+    } else {
+        current = path;
+    }
+#  else
+    current = DeleteTrailingPathSeparator(path);
+#  endif
+    if ( current.empty() ) {
+        // root dir
+        return string(1, DIR_SEPARATOR);
+    }
 
     while ( !current.empty()  ||  !tail.empty() ) {
         list<string> pretail;
@@ -667,8 +685,10 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
         if ( !head.empty() ) { // empty heads should accept anything
             string& last = head.back();
             if (last == DIR_CURRENT) {
-                head.pop_back();
-                _ASSERT(head.empty());
+                if (!next.empty()) {
+                    head.pop_back();
+                    _ASSERT(head.empty());
+                }
             } else if (next == DIR_CURRENT) {
                 // Leave out, since we already have content
                 continue;
@@ -719,10 +739,19 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
         // Normal case: just append the next element to head
         head.push_back(next);
     }
-    if (head.size() == 1  &&  head.front().empty() ) {
+
+    // Special cases
+    if ( (head.size() == 0)  ||
+         (head.size() == 2  &&  head.front() == DIR_CURRENT  &&
+         head.back().empty()) ) {
+        // current dir
+        return DIR_CURRENT;
+    }
+    if (head.size() == 1  &&  head.front().empty()) {
         // root dir
         return string(1, DIR_SEPARATOR);
     }
+    // Compose path
     return NStr::Join(head, string(1, DIR_SEPARATOR));
 }
 
@@ -3466,6 +3495,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2005/06/13 14:57:38  ivanov
+ * CDirEntry::NormalizePath() -- fixed conversion of relative pathes
+ * representing current directory
+ *
  * Revision 1.108  2005/06/10 20:44:39  lavr
  * Fix typo in a typename (affected MS-Win build only)
  *
