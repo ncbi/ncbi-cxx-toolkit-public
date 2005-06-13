@@ -217,12 +217,12 @@ public:
     /// Get parsed command line arguments.
     ///
     /// Get command line arguments parsed according to the arg descriptions
-    /// set by SetArgDescriptions(). Throw exception if no descriptions
+    /// set by SetupArgDescriptions(). Throw exception if no descriptions
     /// have been set.
     /// @return
     ///   The CArgs object containing parsed cmd.-line arguments.
     /// @sa
-    ///   SetArgDescriptions().
+    ///   SetupArgDescriptions().
     virtual const CArgs& GetArgs(void) const;
 
     /// Get the application's cached environment.
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/06/13 19:16:38  lavr
+ * Fix SetArgDescriptions -> SetupArgDescriptions
+ *
  * Revision 1.53  2005/05/12 15:15:32  ucko
  * Fix some (meta)registry buglets and add support for reloading.
  *
