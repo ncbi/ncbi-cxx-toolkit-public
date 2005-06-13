@@ -118,13 +118,13 @@ public:
     {
         return GetSecondToOpen() - 1;
     }
-    CRange<Position>  GetFirstRange()  const
+    TRange GetFirstRange()  const
     {
-        return CRange(GetFrom(), GetTo());
+        return TRange(this->GetFrom(), this->GetTo());
     }
-    CRange<Position>  GetSecondRange()  const
+    TRange GetSecondRange()  const
     {
-        return CRange(GetSecondFrom(), GetSecondTo());
+        return TRange(GetSecondFrom(), GetSecondTo());
     }
     bool Empty(void) const
     {
@@ -238,7 +238,8 @@ public:
     }
     bool IntersectingWith(const CRange<position_type>& r) const
     {
-        return ! (GetFrom() > r.GetTo()  ||  r.GetFrom() > GetTo());
+        return ! (this->GetFrom() > r.GetTo()
+                  ||  r.GetFrom() > this->GetTo());
     }
     bool    IsAbutting(const TThisType& r) const
     {
@@ -321,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/06/13 20:48:02  ucko
+* Portability fixes, needed at least by GCC.
+*
 * Revision 1.1  2005/06/13 18:55:11  yazhuk
 * Initial revision
 *

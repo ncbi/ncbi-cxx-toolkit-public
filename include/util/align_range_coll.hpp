@@ -605,7 +605,7 @@ public:
             _ASSERT(m_Coll);
 
             m_Ranges.clear();
-            ITERATE(TColl, it, *m_Coll)  {
+            ITERATE (typename TColl, it, *m_Coll)  {
                 const TAlignRange* r = &*it;
                 
                 if(m_Ranges.empty())   {
@@ -657,7 +657,7 @@ public:
     const_iterator FindOnSecond(position_type pos) const
     {
         PItLess p;
-        TFrom2Range::const_iterator it = lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, p); 
+        typename TFrom2Range::const_iterator it = lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, p); 
         if(it != m_Ranges.end())    {
             const TAlignRange& r = *it->second;
             _ASSERT(r.GetSecondTo() >= pos);
@@ -690,6 +690,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/13 20:48:03  ucko
+ * Portability fixes, needed at least by GCC.
+ *
  * Revision 1.1  2005/06/13 18:55:18  yazhuk
  * Initial revision
  *
