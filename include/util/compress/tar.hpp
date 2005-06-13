@@ -44,25 +44,6 @@
 #include <corelib/ncbifile.hpp>
 
 
-/* Permission bits as defined in tar */
-
-// Special mode bits
-#define TSUID     04000  /* set UID on execution    */
-#define TSGID     02000  /* set GID on execution    */
-#define TSVTX     01000  /* reserved (sticky bit)   */
-// File permissions
-#define TUREAD    00400  /* read by owner           */
-#define TUWRITE   00200  /* write by owner          */
-#define TUEXEC    00100  /* execute/search by owner */
-#define TGREAD    00040  /* read by group           */
-#define TGWRITE   00020  /* write by group          */
-#define TGEXEC    00010  /* execute/search by group */
-#define TOREAD    00004  /* read by other           */
-#define TOWRITE   00002  /* write by other          */
-#define TOEXEC    00001  /* execute/search by other */
-#define TMODEMASK 07777  /* all of the above        */
-
-
 /** @addtogroup Compression
  *
  * @{
@@ -70,6 +51,32 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ETarMode --
+///
+/// Permission bits as defined in tar
+///
+
+enum ETarModeBits {
+    // Special mode bits
+    fTarSetUID    = 04000,   // set UID on execution
+    fTarSetGID    = 02000,   // set GID on execution
+    fTarSticky    = 01000,   // reserved (sticky bit)
+    // File permissions
+    fTarURead     = 00400,   // read by owner
+    fTarUWrite    = 00200,   // write by owner
+    fTarUExecute  = 00100,   // execute/search by owner
+    fTarGRead     = 00040,   // read by group
+    fTarGWrite    = 00020,   // write by group
+    fTarGExecute  = 00010,   // execute/search by group
+    fTarORead     = 00004,   // read by other
+    fTarOWrite    = 00002,   // write by other
+    fTarOExecute  = 00001,   // execute/search by other
+};
+typedef unsigned int TTarMode; // Bitwise OR of ETarModeBits
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,11 +165,11 @@ public:
     const string& GetName(void)             const { return m_Name;          }
     EType         GetType(void)             const { return m_Type;          }
     Int8          GetSize(void)             const { return m_Stat.st_size;  }
-    unsigned int  GetMode(void)             const; // Raw mode as stored in tar
+    TTarMode      GetMode(void)             const; // Raw mode as stored in tar
     void          GetMode(CDirEntry::TMode*            user_mode,
                           CDirEntry::TMode*            group_mode   = 0,
-                          CDirEntry::TMode*            other_mode   = 0
-                          /*,CDirEntry::TSpecialModeBits* special_bits = 0*/) const;
+                          CDirEntry::TMode*            other_mode   = 0,
+                          CDirEntry::TSpecialModeBits* special_bits = 0) const;
     int           GetUserId(void)           const { return m_Stat.st_uid;   }
     int           GetGroupId(void)          const { return m_Stat.st_gid;   }
     const string& GetLinkName(void)         const { return m_LinkName;      }
@@ -543,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/06/13 18:27:20  lavr
+ * Use enums for mode; define special bits' manipulations
+ *
  * Revision 1.11  2005/06/01 19:58:57  lavr
  * Fix previous "fix" of getting page size
  * Move tar permission bits to the header; some cosmetics
