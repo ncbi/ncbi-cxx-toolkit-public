@@ -41,6 +41,10 @@
 #endif
 #include <ctype.h>
 
+#if defined(_DEBUG)  &&  !defined(NCBI_NO_STRICT_CTYPE_ARGS)
+#  define NCBI_STRICT_CTYPE_ARGS
+#endif
+
 
 /** @addtogroup AppFramework
  *
@@ -90,7 +94,7 @@ enum EFollowLinks {
 };
 
 
-#if defined(HAVE_NO_AUTO_PTR)
+#ifdef HAVE_NO_AUTO_PTR
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -363,7 +367,7 @@ extern char* strdup(const char* str);
 // ctype hacks
 //
 
-#if defined(_DEBUG)  &&  defined(NCBI_STRICT_CTYPE_ARGS)
+#ifdef NCBI_STRICT_CTYPE_ARGS
 
 #define NCBI_CTYPEFAKEBODY \
   { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
@@ -514,7 +518,7 @@ inline int NCBI_toupper(C c) NCBI_CTYPEFAKEBODY
 
 #undef NCBI_CTYPEFAKEBODY
 
-#endif //_DEBUG
+#endif // NCBI_STRICT_CTYPE_ARGS
 
 
 
@@ -656,6 +660,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2005/06/13 19:05:23  lavr
+ * Engage <ctype.h> argument checks (DEBUG builds only)
+ *
  * Revision 1.82  2005/06/10 21:04:19  lavr
  * <ctype.h> hacks:  fix some typos, add inline keywords;  still inactive
  *
