@@ -129,7 +129,7 @@ public:
         eConstraint,    ///< Argument value outside constraints
         eArgType,       ///< Wrong argument type
         eNoArg,         ///< No argument
-        eSynopsis       ///< Synopois error
+        eSynopsis       ///< Synopsis error
     };
 
     /// Translate from the error code value to its string representation.
@@ -472,7 +472,7 @@ public:
     ///
     /// Any argument can be later referenced using its unique name "name".
     void AddKey(const string& name,       ///< Name of argument key
-                const string& synopsis,   ///< Synopis for argument
+                const string& synopsis,   ///< Synopsis for argument
                 const string& comment,    ///< Argument description
                 EType         type,       ///< Argument type
                 TFlags        flags = 0   ///< Optional file related flags
@@ -492,7 +492,7 @@ public:
     ///
     /// Any argument can be later referenced using its unique name "name".
     void AddOptionalKey(const string& name,     ///< Name of argument key 
-                        const string& synopsis, ///< Synopis for argument
+                        const string& synopsis, ///< Synopsis for argument
                         const string& comment,  ///< Argument description
                         EType         type,     ///< Argument type
                         TFlags        flags = 0 ///< Optional file flags
@@ -512,7 +512,7 @@ public:
     ///
     /// Any argument can be later referenced using its unique name "name".
     void AddDefaultKey(const string& name,          ///< Name of argument key 
-                       const string& synopsis,      ///< Synopis for argument
+                       const string& synopsis,      ///< Synopsis for argument
                        const string& comment,       ///< Argument description
                        EType         type,          ///< Argument type
                        const string& default_value, ///< Default value
@@ -1155,7 +1155,7 @@ public:
     /// Get arument description.
     const string& GetComment(void) const { return m_Comment; }
 
-    /// Get usage synopis.
+    /// Get usage synopsis.
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
 
     /// Get usage comment attribute.
@@ -1201,6 +1201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/06/13 19:25:57  lavr
+ * Spell synopsis
+ *
  * Revision 1.44  2005/03/10 17:59:30  vakatov
  * Fixed CGI-related arg processing
  *
