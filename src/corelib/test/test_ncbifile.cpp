@@ -135,7 +135,7 @@ static void s_TEST_SplitPath(void)
 
 static void s_TEST_CheckPath(void)
 {
-     CDirEntry d;
+    CDirEntry d;
 
     // IsAbsolutePath() test
 
@@ -158,6 +158,67 @@ static void s_TEST_CheckPath(void)
     assert(!d.IsAbsolutePath("../file") );
     assert(!d.IsAbsolutePath("dir/file") );
 #endif
+
+
+    // Normalize path test
+
+#if defined(NCBI_OS_MSWIN)
+    assert( d.NormalizePath("")                 == "" );
+    assert( d.NormalizePath("c:\\")             == "c:\\" );
+    assert( d.NormalizePath("c:\\file")         == "c:\\file" );
+    assert( d.NormalizePath("c:file")           == "c:file" );
+    assert( d.NormalizePath("c:\\dir\\..\\file")== "c:\\file" );
+    assert( d.NormalizePath("c:..\\file")       == "c:..\\file" );
+    assert( d.NormalizePath("c\\")              == "c" );
+    assert( d.NormalizePath("..\\file")         == "..\\file" );
+    assert( d.NormalizePath("\\..\\file")       == "\\file" );
+    assert( d.NormalizePath(".\\..\\dir\\..")   == ".." );
+    assert( d.NormalizePath(".\\dir\\.")        == "dir" );
+    assert( d.NormalizePath(".\\.\\.\\.")       == "." );
+    assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\.." );
+    assert( d.NormalizePath("dir\\\\dir\\\\")   == "dir\\dir" );
+    assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
+    assert( d.NormalizePath("\\\\?\\x")         == "\\x" );
+    assert( d.NormalizePath("\\\\?\\UNC\\m\\d") == "\\\\m\\d" );
+    assert( d.NormalizePath("dir/file")         == "dir\\file" );
+    assert( d.NormalizePath("/")                == "\\" );
+    assert( d.NormalizePath("\\")               == "\\" );
+    assert( d.NormalizePath("\\.\\")            == "\\" );
+    assert( d.NormalizePath("\\..\\")           == "\\" );
+    assert( d.NormalizePath(".")                == "." );
+    assert( d.NormalizePath(".\\")              == "." );
+    assert( d.NormalizePath(".\\.")             == "." );
+    assert( d.NormalizePath(".\\dir\\..")       == "." );
+    assert( d.NormalizePath("dir\\..")          == "." );
+    assert( d.NormalizePath("dir\\..\\")        == "." );
+    
+#elif defined(NCBI_OS_UNIX )
+    assert( d.NormalizePath("")                 == "" );
+    assert( d.NormalizePath("/file")            == "/file" );
+    assert( d.NormalizePath("./file")           == "file" );
+    assert( d.NormalizePath("dir1/dir2/../file")== "dir1/file" );
+    assert( d.NormalizePath("../file")          == "../file" );
+    assert( d.NormalizePath("/../file")         == "/file" );
+    assert( d.NormalizePath("dir/")             == "dir" );
+    assert( d.NormalizePath("./../dir/..")      == ".." );
+    assert( d.NormalizePath("./dir/.")          == "dir" );
+    assert( d.NormalizePath("./././.")          == "." );
+    assert( d.NormalizePath("../../../..")      == "../../../.." );
+    assert( d.NormalizePath("dir//dir//")       == "dir/dir" );
+    assert( d.NormalizePath("///dir//")         == "/dir" );
+    assert( d.NormalizePath("dir\\file")        == "dir\\file" );
+    assert( d.NormalizePath("\\")               == "\\" );
+    assert( d.NormalizePath("/")                == "/" );
+    assert( d.NormalizePath("/./")              == "/" );
+    assert( d.NormalizePath("/../")             == "/" );
+    assert( d.NormalizePath(".")                == "." );
+    assert( d.NormalizePath("./")               == "." );
+    assert( d.NormalizePath("./.")              == "." );
+    assert( d.NormalizePath("./dir/..")         == "." );
+    assert( d.NormalizePath("dir/..")           == "." );
+    assert( d.NormalizePath("dir/../")          == "." );
+#endif
+
 
     // Convert path to OS dependent test
 
@@ -215,53 +276,6 @@ static void s_TEST_CheckPath(void)
     assert( d.ConcatPathEx("dir/", ":file")     == "dir/file" );
     assert( d.ConcatPathEx("dir/dir", "file")   == "dir/dir/file" );
     assert( d.ConcatPathEx("dir:dir", "file")   == "dir:dir:file" );
-
-    // Normalize path test
-
-#if defined(NCBI_OS_MSWIN)
-    assert( d.NormalizePath("")                 == "" );
-    assert( d.NormalizePath("c:\\")             == "c:\\" );
-    assert( d.NormalizePath("c:\\file")         == "c:\\file" );
-    assert( d.NormalizePath("c:file")           == "c:file" );
-    assert( d.NormalizePath("c:\\dir\\..\\file")== "c:\\file" );
-    assert( d.NormalizePath("c:..\\file")       == "c:..\\file" );
-    assert( d.NormalizePath("c\\")              == "c" );
-    assert( d.NormalizePath("..\\file")         == "..\\file" );
-    assert( d.NormalizePath("\\..\\file")       == "\\file" );
-    assert( d.NormalizePath(".\\..\\dir\\..")   == ".." );
-    assert( d.NormalizePath(".\\dir\\.")        == "dir" );
-    assert( d.NormalizePath(".\\.\\.\\.")       == "." );
-    assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\.." );
-    assert( d.NormalizePath("dir\\\\dir\\\\")   == "dir\\dir" );
-    assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
-    assert( d.NormalizePath("\\\\?\\x")         == "\\x" );
-    assert( d.NormalizePath("\\\\?\\UNC\\m\\d") == "\\\\m\\d" );
-    assert( d.NormalizePath("dir/file")         == "dir\\file" );
-    assert( d.NormalizePath("/")                == "\\" );
-    assert( d.NormalizePath("\\")               == "\\" );
-    assert( d.NormalizePath("\\.\\")            == "\\" );
-    assert( d.NormalizePath("\\..\\")           == "\\" );
-
-#elif defined(NCBI_OS_UNIX )
-    assert( d.NormalizePath("")                 == "" );
-    assert( d.NormalizePath("/file")            == "/file" );
-    assert( d.NormalizePath("./file")           == "file" );
-    assert( d.NormalizePath("dir1/dir2/../file")== "dir1/file" );
-    assert( d.NormalizePath("../file")          == "../file" );
-    assert( d.NormalizePath("/../file")         == "/file" );
-    assert( d.NormalizePath("dir/")             == "dir" );
-    assert( d.NormalizePath("./../dir/..")      == ".." );
-    assert( d.NormalizePath("./dir/.")          == "dir" );
-    assert( d.NormalizePath("./././.")          == "." );
-    assert( d.NormalizePath("../../../..")      == "../../../.." );
-    assert( d.NormalizePath("dir//dir//")       == "dir/dir" );
-    assert( d.NormalizePath("///dir//")         == "/dir" );
-    assert( d.NormalizePath("dir\\file")        == "dir\\file" );
-    assert( d.NormalizePath("\\")               == "\\" );
-    assert( d.NormalizePath("/")                == "/" );
-    assert( d.NormalizePath("/./")              == "/" );
-    assert( d.NormalizePath("/../")             == "/" );
-#endif
 }
 
 
@@ -590,8 +604,8 @@ static void s_TEST_Dir(void)
         assert( CDir("dir3/subdir1").Create() );
         assert( CDir("dir3/subdir2").Create() );
         
-	s_CreateTestFile("dir3/file");
-	s_CreateTestFile("dir3/subdir1/file");
+        s_CreateTestFile("dir3/file");
+        s_CreateTestFile("dir3/subdir1/file");
 	
         // Delete dir
         dir.Reset("dir3");
@@ -754,7 +768,7 @@ static void s_TEST_MemoryFile(void)
         // Map empty file, expect an exception also.
         CMemoryFile m(s_FileName);
         assert( m.GetPtr() == 0);
-        // Do not expect an exception here!!! (special case)
+        // Do not expect an exception here (special case)
         assert( m.GetSize() == 0);
     }}
 
@@ -988,6 +1002,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/06/13 14:58:08  ivanov
+ * Added more tests for CDirEntry::NormalizePath()
+ *
  * Revision 1.49  2005/04/27 15:04:37  ivanov
  * Use ".." instead of "." as test directory for FindFiles algorithms,
  * because current directory changes very often.
