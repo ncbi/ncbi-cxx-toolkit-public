@@ -250,7 +250,8 @@ public:
     }
     void    pop_back()
     {
-        erase(--end());
+        const_iterator it = end();
+        erase(--it);
     } 
     const CRange<position_type>& operator[](size_type pos)   const   
     {  
@@ -582,7 +583,7 @@ public:
 
     typedef multimap<position_type, const TAlignRange*>    TFrom2Range;
     typedef typename TFrom2Range::const_iterator     const_iterator;
-    
+
 public:
     CAlignRangeCollExtender(const TColl& coll)
     {
@@ -616,7 +617,8 @@ public:
                     m_ToOpen = max(m_ToOpen, r->GetSecondToOpen());
                 }
 
-                m_Ranges.insert(make_pair(r->GetSecondFrom(), r));
+                m_Ranges.insert(TFrom2Range::value_type
+                                (r->GetSecondFrom(), r));
             }
 
             m_MapDirty = false;
@@ -669,7 +671,8 @@ protected:
     struct PItLess
     {
         typedef typename TAlignRange::position_type   position_type;
-        bool    operator()(const pair<position_type, const TAlignRange*> p, position_type pos)  
+        bool    operator()(const typename TFrom2Range::value_type& p,
+                           position_type pos)  
         { 
             return p.second->GetSecondTo() < pos;  
         }    
@@ -690,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/13 21:37:23  ucko
+ * More tweaks needed for WorkShop compatibility.
+ *
  * Revision 1.2  2005/06/13 20:48:03  ucko
  * Portability fixes, needed at least by GCC.
  *
