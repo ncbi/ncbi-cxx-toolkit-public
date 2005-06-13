@@ -32,22 +32,22 @@
  *   Supports subset of POSIX.1-1988 (ustar) format.
  *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
  *   New archives are created using POSIX (genuine ustar) format, using
- *   GNU extensions for long names/links only when unavoidably.
+ *   GNU extensions for long names/links only when unavoidable.
  *   Can handle no exotics like sparse files, devices, etc,
  *   but just regular files, directories, and symbolic links.
  *
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_limits.h>
+#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <util/compress/tar.hpp>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
 #  error "Class CTar can be defined on MS-Windows and UNIX platforms only!"
 #endif
 
-#include <corelib/ncbi_limits.h>
-#include <corelib/ncbi_system.hpp>
-#include <ctype.h>
 #include <memory>
 
 #ifdef NCBI_OS_MSWIN
@@ -63,12 +63,13 @@ BEGIN_NCBI_SCOPE
 
 // Convert a number to an octal string padded to the left
 // with [leading] zeros ('0') and having _no_ trailing '\0'.
-static bool s_NumToOctal(unsigned long value, char* ptr, size_t size)
+static bool s_NumToOctal(unsigned long value, char* ptr, size_t len)
 {
+    _ASSERT(len > 0);
     do {
-        ptr[--size] = '0' + char(value & 7);
+        ptr[--len] = '0' + char(value & 7);
         value >>= 3;
-    } while (size);
+    } while (len);
     return !value ? true : false;
 }
 
@@ -78,127 +79,131 @@ static bool s_NumToOctal(unsigned long value, char* ptr, size_t size)
 static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
 {
     _ASSERT(ptr  &&  size > 0);
-    bool retval = false;
-    size_t i;
-    for (i = *ptr ? 0 : 1; i < size  &&  ptr[i]; i++) {
+    size_t i = *ptr ? 0 : 1;
+    while (i < size  &&  ptr[i]) {
         if (!isspace((unsigned char) ptr[i]))
             break;
+        i++;
     }
     value = 0;
-    while (i < size  &&  ptr[i]) {
-        if (ptr[i] < '0'  ||  ptr[i] > '7')
-            return false;
+    bool retval = false;
+    while (i < size  &&  ptr[i] >= '0'  &&  ptr[i] <= '7') {
         retval = true;
         value <<= 3;
         value  |= ptr[i++] - '0';
+    }
+    while (i < size  &&  ptr[i]) {
+        if (!isspace((unsigned char) ptr[i]))
+            return false;
+        i++;
     }
     return retval;
 }
 
 
-static mode_t s_TarToMode(unsigned int value)
+static mode_t s_TarToMode(TTarMode value)
 {
     mode_t mode = (
 #ifdef S_ISUID
-                   (value & TSUID   ? S_ISUID  : 0) |
+                   (value & fTarSetUID   ? S_ISUID  : 0) |
 #endif
 #ifdef S_ISGID
-                   (value & TSGID   ? S_ISGID  : 0) |
+                   (value & fTarSetGID   ? S_ISGID  : 0) |
 #endif
 #ifdef S_ISVTX
-                   (value & TSVTX   ? S_ISVTX  : 0) |
+                   (value & fTarSticky   ? S_ISVTX  : 0) |
 #endif
 #if   defined(S_IRUSR)
-                   (value & TUREAD  ? S_IRUSR  : 0) |
+                   (value & fTarURead    ? S_IRUSR  : 0) |
 #elif defined(S_IREAD)
-                   (value & TUREAD  ? S_IREAD  : 0) |
+                   (value & fTarURead    ? S_IREAD  : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (value & TUWRITE ? S_IWUSR  : 0) |
+                   (value & fTarUWrite   ? S_IWUSR  : 0) |
 #elif defined(S_IWRITE)
-                   (value & TUWRITE ? S_IWRITE : 0) |
+                   (value & fTarUWrite   ? S_IWRITE : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (value & TUEXEC  ? S_IXUSR  : 0) |
+                   (value & fTarUExecute ? S_IXUSR  : 0) |
 #elif defined(S_IEXEC)
-                   (value & TUEXEC  ? S_IEXEC  : 0) |
+                   (value & fTarUExecute ? S_IEXEC  : 0) |
 #endif
 #ifdef S_IRGRP
-                   (value & TGREAD  ? S_IRGRP  : 0) |
+                   (value & fTarGRead    ? S_IRGRP  : 0) |
 #endif
 #ifdef S_IWGRP
-                   (value & TGWRITE ? S_IWGRP  : 0) |
+                   (value & fTarGWrite   ? S_IWGRP  : 0) |
 #endif
 #ifdef S_IXGRP
-                   (value & TGEXEC  ? S_IXGRP  : 0) |
+                   (value & fTarGExecute ? S_IXGRP  : 0) |
 #endif
 #ifdef S_IROTH
-                   (value & TOREAD  ? S_IROTH  : 0) |
+                   (value & fTarORead    ? S_IROTH  : 0) |
 #endif
 #ifdef S_IWOTH
-                   (value & TOWRITE ? S_IWOTH  : 0) |
+                   (value & fTarOWrite   ? S_IWOTH  : 0) |
 #endif
 #ifdef S_IXOTH
-                   (value & TOEXEC  ? S_IXOTH  : 0) |
+                   (value & fTarOExecute ? S_IXOTH  : 0) |
 #endif
                    0);
     return mode;
 }
 
 
-static unsigned int s_ModeToTar(mode_t mode)
+static TTarMode s_ModeToTar(mode_t mode)
 {
     /* Foresee that the mode can be extracted on a different platform */
-    unsigned int value = (
+    TTarMode value = (
 #ifdef S_ISUID
-                           (mode & S_ISUID  ? TSUID   : 0) |
+                      (mode & S_ISUID  ? fTarSetUID   : 0) |
 #endif
 #ifdef S_ISGID
-                           (mode & S_ISGID  ? TSGID   : 0) |
+                      (mode & S_ISGID  ? fTarSetGID   : 0) |
 #endif
 #ifdef S_ISVTX
-                           (mode & S_ISVTX  ? TSVTX   : 0) |
+                      (mode & S_ISVTX  ? fTarSticky   : 0) |
 #endif
 #if   defined(S_IRUSR)
-                           (mode & S_IRUSR  ? TUREAD  : 0) |
+                      (mode & S_IRUSR  ? fTarURead    : 0) |
 #elif defined(S_IREAD)
-                           (mode & S_IREAD  ? TUREAD  : 0) |
+                      (mode & S_IREAD  ? fTarURead    : 0) |
 #endif
 #if   defined(S_IWUSR)
-                           (mode & S_IWUSR  ? TUWRITE : 0) |
+                      (mode & S_IWUSR  ? fTarUWrite   : 0) |
 #elif defined(S_IWRITE)
-                           (mode & S_IWRITE ? TUWRITE : 0) |
+                      (mode & S_IWRITE ? fTarUWrite   : 0) |
 #endif
 #if   defined(S_IXUSR)
-                           (mode & S_IXUSR  ? TUEXEC  : 0) |
+                      (mode & S_IXUSR  ? fTarUExecute : 0) |
 #elif defined(S_IEXEC)
-                           (mode & S_IEXEC  ? TUEXEC  : 0) |
+                      (mode & S_IEXEC  ? fTarUExecute : 0) |
 #endif
 #if   defined(S_IRGRP)
-                           (mode & S_IRGRP  ? TGREAD  : 0) |
+                      (mode & S_IRGRP  ? fTarGRead    : 0) |
 #elif defined(S_IREAD)
-                           /* emulate read permission when file is readable */
-                           (mode & S_IREAD  ? TGREAD  : 0) |
+                      /* emulate read permission when file is readable */
+                      (mode & S_IREAD  ? fTarGRead    : 0) |
 #endif
 #ifdef S_IWGRP
-                           (mode & S_IWGRP  ? TGWRITE : 0) |
+                      (mode & S_IWGRP  ? fTarGWrite   : 0) |
 #endif
 #ifdef S_IXGRP
-                           (mode & S_IXGRP  ? TGEXEC  : 0) |
+                      (mode & S_IXGRP  ? fTarGExecute : 0) |
 #endif
 #if   defined(S_IROTH)
-                           (mode & S_IROTH  ? TOREAD  : 0) |
+                      (mode & S_IROTH  ? fTarORead    : 0) |
 #elif defined(S_IREAD)
-                           /* emulate read permission when file is readable */
-                           (mode & S_IREAD  ? TOREAD  : 0) |
+                      /* emulate read permission when file is readable */
+                      (mode & S_IREAD  ? fTarORead    : 0) |
 #endif
 #ifdef S_IWOTH
-                           (mode & S_IWOTH  ? TOWRITE : 0) |
+                      (mode & S_IWOTH  ? fTarOWrite   : 0) |
 #endif
 #ifdef S_IXOTH
-                           (mode & S_IXOTH  ? TOEXEC  : 0) |
+                      (mode & S_IXOTH  ? fTarOExecute : 0) |
 #endif
-                           0);
+                      0);
     return value;
 }
 
@@ -222,7 +227,7 @@ static const size_t kBlockSize = 512;
 #define ALIGN_SIZE(size) ((((size) + kBlockSize-1) / kBlockSize) * kBlockSize)
 
 
-/// POSIX tar file header
+/// POSIX "ustar" tar archive member header
 struct SHeader {        // byte offset
     char name[100];     //   0
     char mode[8];       // 100
@@ -250,9 +255,10 @@ union TBlock {
 };
 
 
-static void s_TarChecksum(TBlock* block)
+static void s_TarChecksum(TBlock* block, bool isgnu = false)
 {
     SHeader* h = &block->header;
+    size_t len = sizeof(h->checksum) - (isgnu ? 2 : 1);
 
     // Compute the checksum
     memset(h->checksum, ' ', sizeof(h->checksum));
@@ -261,12 +267,12 @@ static void s_TarChecksum(TBlock* block)
     for (size_t i = 0; i < sizeof(block->buffer); i++) {
         checksum += *p++;
     }
-    // Checksum (Special: 6 digits, then '\0', then a space [already in place])
-    if (!s_NumToOctal((unsigned short) checksum/*cut it!*/,
-                      h->checksum, sizeof(h->checksum) - 2)) {
+    // ustar:       '\0'-terminated checksum
+    // GNU special: 6 digits, then '\0', then a space [already in place]
+    if (!s_NumToOctal(checksum, h->checksum, len)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store checksum");
     }
-    h->checksum[6] = '\0';
+    h->checksum[len] = '\0';
 }
 
 
@@ -278,90 +284,52 @@ struct SProcessData {
 };
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // CTarEntryInfo
 //
 
-
 unsigned int CTarEntryInfo::GetMode(void) const
 {
     // Raw tar mode gets returned here (as kept in the info)
-    return (unsigned int) m_Stat.st_mode;
+    return (TTarMode)(m_Stat.st_mode & 07777);
 }
 
 
 void CTarEntryInfo::GetMode(CDirEntry::TMode*            usr_mode,
                             CDirEntry::TMode*            grp_mode,
-                            CDirEntry::TMode*            oth_mode
-                            /*,CDirEntry::TSpecialModeBits* special_bits*/) const
+                            CDirEntry::TMode*            oth_mode,
+                            CDirEntry::TSpecialModeBits* special_bits) const
 {
-    mode_t mode = s_TarToMode(m_Stat.st_mode);
+    TTarMode mode = GetMode();
+
     // User
     if (usr_mode) {
-        *usr_mode = (
-#if   defined(S_IRUSR)
-                     (mode & S_IRUSR     ? CDirEntry::fRead    : 0) |
-#elif defined(S_IREAD)
-                     (mode & S_IREAD     ? CDirEntry::fRead    : 0) |
-#endif
-#if   defined(S_IWUSR)
-                     (mode & S_IWUSR     ? CDirEntry::fWrite   : 0) |
-#elif defined(S_IWRITE)
-                     (mode & S_IWRITE    ? CDirEntry::fWrite   : 0) |
-#endif
-#if   defined(S_IXUSR)
-                     (mode & S_IXUSR     ? CDirEntry::fExecute : 0) |
-#elif defined(S_IEXEC)
-                     (mode & S_IEXEC     ? CDirEntry::fExecute : 0) |
-#endif
-                     0);
+        *usr_mode = ((mode & fTarURead    ? CDirEntry::fRead    : 0) |
+                     (mode & fTarUWrite   ? CDirEntry::fWrite   : 0) |
+                     (mode & fTarUExecute ? CDirEntry::fExecute : 0));
     }
+
     // Group
     if (grp_mode) {
-        *grp_mode = (
-#ifdef S_IRGRP
-                     (mode & S_IRGRP     ? CDirEntry::fRead    : 0) |
-#endif
-#ifdef S_IWGRP
-                     (mode & S_IWGRP     ? CDirEntry::fWrite   : 0) |
-#endif
-#ifdef S_IXGRP
-                     (mode & S_IXGRP     ? CDirEntry::fExecute : 0) |
-#endif
-                     0);
+        *grp_mode = ((mode & fTarGRead    ? CDirEntry::fRead    : 0) |
+                     (mode & fTarGWrite   ? CDirEntry::fWrite   : 0) |
+                     (mode & fTarGExecute ? CDirEntry::fExecute : 0));
     }
+
     // Others
     if (oth_mode) {
-        *oth_mode = (
-#ifdef S_IROTH
-                     (mode & S_IROTH     ? CDirEntry::fRead    : 0) |
-#endif
-#ifdef S_IWOTH
-                     (mode & S_IWOTH     ? CDirEntry::fWrite   : 0) |
-#endif
-#ifdef S_IXOTH
-                     (mode & S_IXOTH     ? CDirEntry::fExecute : 0) |
-#endif
-                     0);
+        *oth_mode = ((mode & fTarORead    ? CDirEntry::fRead    : 0) |
+                     (mode & fTarOWrite   ? CDirEntry::fWrite   : 0) |
+                     (mode & fTarOExecute ? CDirEntry::fExecute : 0));
     }
-#if 0
+
     // Special bits
     if (special_bits) {
-        *special_bits = (
-#ifdef S_ISUID
-                         (mode & S_ISUID ? CDirEntry::fSetUID  : 0) |
-#endif
-#ifdef S_ISGID
-                         (mode & S_ISGID ? CDirEntry::fSetGID  : 0) |
-#endif
-#ifdef S_ISVTX
-                         (mode & S_ISVTX ? CDirEntry::fSticky  : 0) |
-#endif
-                         0);
+        *special_bits = ((mode & fTarSetUID ? CDirEntry::fSetUID  : 0) |
+                         (mode & fTarSetGID ? CDirEntry::fSetGID  : 0) |
+                         (mode & fTarSticky ? CDirEntry::fSticky  : 0));
     }
-#endif
 
     return;
 }
@@ -370,42 +338,42 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode*            usr_mode,
 static string s_ModeAsString(const CTarEntryInfo& info)
 {
     // Take raw tar mode
-    unsigned int mode = info.GetMode();
+    TTarMode mode = info.GetMode();
 
     string usr("---");
     string grp("---");
     string oth("---");
-    if (mode & TUREAD) {
+    if (mode & fTarURead) {
         usr[0] = 'r';
     }
-    if (mode & TUWRITE) {
+    if (mode & fTarUWrite) {
         usr[1] = 'w';
     }
-    if (mode & TUEXEC) {
-        usr[2] = mode & TSUID ? 's' : 'x';
-    } else if (mode & TSUID) {
+    if (mode & fTarUExecute) {
+        usr[2] = mode & fTarSetUID ? 's' : 'x';
+    } else if (mode & fTarSetUID) {
         usr[2] = 'S';
     }
-    if (mode & TGREAD) {
+    if (mode & fTarGRead) {
         grp[0] = 'r';
     }
-    if (mode & TGWRITE) {
+    if (mode & fTarGWrite) {
         grp[1] = 'w';
     }
-    if (mode & TGEXEC) {
-        grp[2] = mode & TSGID ? 's' : 'x';
-    } else if (mode & TSGID) {
+    if (mode & fTarGExecute) {
+        grp[2] = mode & fTarSetGID ? 's' : 'x';
+    } else if (mode & fTarSetGID) {
         grp[2] = 'S';
     }
-    if (mode & TOREAD) {
+    if (mode & fTarORead) {
         oth[0] = 'r';
     }
-    if (mode & TOWRITE) {
+    if (mode & fTarOWrite) {
         oth[1] = 'w';
     }
-    if (mode & TOEXEC) {
-        oth[2] = mode & TSVTX ? 't' : 'x';
-    } else if (mode & TSVTX) {
+    if (mode & fTarOExecute) {
+        oth[2] = mode & fTarSticky ? 't' : 'x';
+    } else if (mode & fTarSticky) {
         oth[2] = 'T';
     }
 
@@ -533,7 +501,7 @@ void CTar::x_Init(void)
     // Assume that the page size is a power of 2
     _ASSERT((pagesize & pagemask) == 0);
     m_BufPtr = new char[m_BufferSize + pagemask];
-    // m_Buffer is page-aligned
+    // Make m_Buffer page-aligned
     m_Buffer = m_BufPtr +
         ((((size_t) m_BufPtr + pagemask) & ~pagemask) - (size_t) m_BufPtr);
 }
@@ -804,8 +772,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
         NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file mode");
     }
-    // Quietly strip unknown bits
-    info.m_Stat.st_mode = (mode_t)(value & TMODEMASK);
+    info.m_Stat.st_mode = (mode_t) value;
 
     // User Id
     if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
@@ -885,6 +852,12 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
             return eSuccess;
         }
         /*FALLTHRU*/
+    case '1':
+        if (h->typeflag == '1') {
+            // Fixup although we don't handle hard links
+            info.m_Stat.st_size = 0;
+        }
+        /*FALLTHRU*/
     default:
         info.m_Type = CTarEntryInfo::eUnknown;
         break;
@@ -924,30 +897,42 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
                    " entry '" + name + '\'');
     }
 
-    // Mode ('\0'-terminated)
-    if (!s_NumToOctal(info.m_Stat.st_mode, h->mode, sizeof(h->mode) - 1)) {
+    /* NOTE:  Although some sources on the Internet indicate that
+     * all but size, mtime and version numeric fields are '\0'-terminated,
+     * we could not confirm that with existing tar programs, all of
+     * which used either '\0' or ' '-terminated values in both size
+     * and mtime fields.  For ustar archive we have found a document
+     * that definitively tells that _all_ numeric fields are '\0'-terminated,
+     * and can keep maximum sizeof(field)-1 octal digits.  We follow it here.
+     * However, GNU and ustar checksums seem to be different indeed,
+     * so we don't use a trailing space for ustar, but for GNU only.
+     */
+
+    // Mode
+    if (!s_NumToOctal(info.GetMode(), h->mode, sizeof(h->mode) - 1)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store file mode");
     }
 
-    // User ID ('\0'-terminated)
-    if (!s_NumToOctal(info.m_Stat.st_uid, h->uid, sizeof(h->uid) - 1)) {
+    // User ID
+    if (!s_NumToOctal(info.GetUserId(), h->uid, sizeof(h->uid) - 1)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store user ID");
     }
 
-    // Group ID ('\0'-terminated)
-    if (!s_NumToOctal(info.m_Stat.st_gid, h->gid, sizeof(h->gid) - 1)) {
+    // Group ID
+    if (!s_NumToOctal(info.GetGroupId(), h->gid, sizeof(h->gid) - 1)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store group ID");
     }
 
-    // Size (not '\0'-terminated)
+    // Size
     if (!s_NumToOctal((unsigned long)
                       (type == CTarEntryInfo::eFile ? info.GetSize() : 0),
-                      h->size, sizeof(h->size))) {
+                      h->size, sizeof(h->size) - 1)) {
         NCBI_THROW(CTarException, eMemory, "Cannot store file size");
     }
 
-    // Modification time (not '\0'-terminated)
-    if (!s_NumToOctal(info.GetModificationTime(), h->mtime, sizeof(h->mtime))){
+    // Modification time
+    if (!s_NumToOctal((unsigned long) info.GetModificationTime(),
+                      h->mtime, sizeof(h->mtime) - 1)){
         NCBI_THROW(CTarException, eMemory, "Cannot store modification time");
     }
 
@@ -969,20 +954,21 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
         break;
     }
 
-    // User and group names (must be '\0'-terminated)
-    string user, group;
-    if ( CDirEntry(name).GetOwner(&user, &group, eIgnoreLinks) ) {
-        if (user.length() < sizeof(h->uname)) {
-            strcpy(h->uname, user.c_str());
-        }
-        if (group.length() < sizeof(h->gname)) {
-            strcpy(h->gname, group.c_str());
-        }
+    // User and group names
+    const string& usr = info.GetUserName();
+    size_t len = usr.length();
+    if (len < sizeof(h->uname)) {
+        memcpy(h->uname, usr.c_str(), len);
+    }
+    const string& grp = info.GetGroupName();
+    len = grp.length();
+    if (len < sizeof(h->gname)) {
+        memcpy(h->gname, grp.c_str(), len);
     }
 
-    // Magic ('\0'-terminated)
+    // Magic
     strcpy(h->magic,   "ustar");
-    // Version (not '\0' terminated)
+    // Version (EXCEPTION:  not '\0' terminated)
     memcpy(h->version, "00", 2);
 
     s_TarChecksum(&block);
@@ -1037,16 +1023,16 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     s_NumToOctal(0,        h->mode,  sizeof(h->mode) - 1);
     s_NumToOctal(0,        h->uid,   sizeof(h->uid)  - 1);
     s_NumToOctal(0,        h->gid,   sizeof(h->gid)  - 1);
-    if (!s_NumToOctal(len, h->size,  sizeof(h->size))) {
+    if (!s_NumToOctal(len, h->size,  sizeof(h->size) - 1)) {
         return false;
     }
-    s_NumToOctal(0,        h->mtime, sizeof(h->mtime));
+    s_NumToOctal(0,        h->mtime, sizeof(h->mtime)- 1);
     h->typeflag = link ? 'K' : 'L';
 
     // NB: Old GNU magic protrudes into adjacent verion field
     memcpy(h->magic, "ustar  ", 8); // 2 spaces and '\0'-terminated
 
-    s_TarChecksum(block);
+    s_TarChecksum(block, true);
 
     // Write the header
     x_WriteArchive(sizeof(block->buffer));
@@ -1479,7 +1465,7 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     entry.GetOwner(&info.m_UserName, &info.m_GroupName);
     info.m_Stat = st.orig;
     // Fixup for mode bits
-    info.m_Stat.st_mode = (mode_t)(s_ModeToTar(st.orig.st_mode) & TMODEMASK);
+    info.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
     bool update_directory = true;
@@ -1593,6 +1579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/06/13 18:27:56  lavr
+ * Use enums for mode; define special bits' manipulations; better ustar-ness
+ *
  * Revision 1.24  2005/06/03 21:40:32  lavr
  * Add FIXME reminder for CDirEntry::NormalizePath()
  *
