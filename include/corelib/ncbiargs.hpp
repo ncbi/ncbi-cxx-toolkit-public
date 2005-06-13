@@ -652,6 +652,7 @@ public:
     bool Exist(const string& name) const;
 
     /// Delete description of argument with name "name".
+    /// Extra arguments get deleted by the name passed as "".
     ///
     /// Throw the CArgException (eSynopsis error code) exception if the
     /// specified name cannot be found.
@@ -1201,6 +1202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/06/13 19:28:26  lavr
+ * CArgDescriptions::Delete() document name=""
+ *
  * Revision 1.45  2005/06/13 19:25:57  lavr
  * Spell synopsis
  *
