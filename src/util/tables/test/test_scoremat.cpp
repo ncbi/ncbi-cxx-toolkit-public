@@ -32,11 +32,11 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <util/tables/raw_scoremat.h>
 
-#include <ctype.h>
-
 #include <test/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 
@@ -189,6 +189,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/06/13 18:24:56  lavr
+ * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
+ *
  * Revision 1.5  2005/06/03 17:04:20  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

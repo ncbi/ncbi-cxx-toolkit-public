@@ -32,9 +32,10 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <ctype.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -325,8 +326,8 @@ istream& istream::read(char *s, streamsize n)
 #  endif  /* NCBI_COMPILER_VERSION == 530 */
 #endif  /* NCBI_COMPILER_WORKSHOP */
 
-END_NCBI_SCOPE
 
+END_NCBI_SCOPE
 
 
 // See in the header why it is outside of NCBI scope (SunPro bug workaround...)
@@ -370,12 +371,16 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
     return is;
 }
 
+
 #endif  /* NCBI_USE_OLD_IOSTREAM */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/06/13 18:23:59  lavr
+ * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
+ *
  * Revision 1.36  2005/06/06 15:29:12  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

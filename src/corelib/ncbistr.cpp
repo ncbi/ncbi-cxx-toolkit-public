@@ -31,11 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <memory>
 #include <algorithm>
-#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -1997,6 +1997,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.158  2005/06/13 18:23:58  lavr
+ * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
+ *
  * Revision 1.157  2005/06/10 19:50:31  lavr
  * Beautify string->number trailing pointer exception message
  *

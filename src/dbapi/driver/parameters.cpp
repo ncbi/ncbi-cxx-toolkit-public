@@ -30,8 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <dbapi/driver/util/parameters.hpp>
-#include <ctype.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -227,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/06/13 18:24:10  lavr
+ * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
+ *
  * Revision 1.14  2005/06/03 16:43:55  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

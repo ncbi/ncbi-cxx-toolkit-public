@@ -38,11 +38,10 @@
 #include <util/strsearch.hpp>
 #include <algorithm>
 #include <vector>
-#include <ctype.h>
 
-NCBI_USING_NAMESPACE_STD;
 
 BEGIN_NCBI_SCOPE
+
 
 //==============================================================================
 //                            CBoyerMooreMatcher
@@ -261,6 +260,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/06/13 18:24:32  lavr
+* #include <corelib/ncbimisc.hpp> instead of <ctype.h>
+*
 * Revision 1.18  2005/06/03 17:04:55  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
