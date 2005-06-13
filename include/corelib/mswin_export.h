@@ -91,6 +91,7 @@
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLAST_EXPORTS
 #  define NCBI_BLASTDB_EXPORTS
+#  define NCBI_BLASTXML_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
@@ -238,6 +239,14 @@
 #  define NCBI_BLASTDB_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_BLASTDB_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library blastxml
+ */
+#ifdef NCBI_BLASTXML_EXPORTS
+#  define NCBI_BLASTXML_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BLASTXML_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library blast
@@ -1007,6 +1016,7 @@
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
+#  define NCBI_BLASTXML_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
@@ -1125,6 +1135,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.100  2005/06/13 16:20:16  ucko
+ * +NCBI_BLASTXML_EXPORT (under NCBI_SEQ_EXPORTS, like NCBI_BLASTDB_EXPORT)
+ *
  * Revision 1.99  2005/06/03 19:41:37  morgulis
  * *** empty log message ***
  *
