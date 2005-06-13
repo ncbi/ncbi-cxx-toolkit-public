@@ -43,6 +43,8 @@
 #include <objmgr/split/annot_piece.hpp>
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -92,7 +94,21 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
     if ( m_Pieces.size() <= eAnnotPriority_skeleton ) {
         return false;
     }
-    
+
+    size_t total_size = 0;
+    ITERATE( TPieces, pi, m_Pieces ) {
+        if ( !(*pi) ) {
+            continue;
+        }
+        ITERATE( CAnnotPieces, i, **pi ) {
+            const SIdAnnotPieces& id_pieces = i->second;
+            total_size += id_pieces.m_Size.GetAsnSize();
+        }
+    }
+    if (total_size <= m_Params.m_MaxChunkSize) {
+        return false;
+    }
+
     // split pieces in chunks
     SplitPieces();
 
@@ -145,7 +161,7 @@ void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
 {
     const CPlaceId& place_id = info.m_PlaceId;
     if ( info.m_Descr ) {
-        Add(SAnnotPiece(place_id, *info.m_Descr));
+        CollectPieces(place_id, *info.m_Descr);
     }
     ITERATE ( CPlace_SplitInfo::TSeq_annots, it, info.m_Annots ) {
         CollectPieces(place_id, it->second);
@@ -155,6 +171,9 @@ void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
         ITERATE( CSeq_inst_SplitInfo::TSeq_data, it, inst_info.m_Seq_data ){
             Add(SAnnotPiece(place_id, *it));
         }
+    }
+    if ( info.m_Hist ) {
+        CollectPieces(place_id, *info.m_Hist);
     }
     ITERATE ( CPlace_SplitInfo::TBioseqs, it, info.m_Bioseqs ) {
         Add(SAnnotPiece(place_id, *it));
@@ -191,6 +210,87 @@ void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
 }
 
 
+EAnnotPriority GetSeqdescPriority(const CSeqdesc& desc)
+{
+    switch ( desc.Which() ) {
+    case CSeqdesc::e_Source:
+    case CSeqdesc::e_Molinfo:
+    case CSeqdesc::e_Title:
+        return eAnnotPriority_skeleton;
+    case CSeqdesc::e_Pub:
+    case CSeqdesc::e_Comment:
+        return eAnnotPriority_low;
+    }
+    return eAnnotPriority_regular;
+}
+
+
+void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
+                                      const CSeq_descr_SplitInfo& info)
+{
+    size_t max_size = m_Params.m_MaxChunkSize;
+    size_t size = info.m_Size.GetZipSize();
+    bool add_as_whole = size <= max_size;
+    bool have_skeleton_priority = false;
+    bool have_other_priority = false;
+    ITERATE ( CSeq_descr::Tdata, i, info.m_Descr->Get() ) {
+        if (GetSeqdescPriority(**i) == eAnnotPriority_skeleton) {
+            have_skeleton_priority = true;
+        }
+        else {
+            have_other_priority = true;
+        }
+    }
+    if ( have_skeleton_priority && have_other_priority ) {
+        add_as_whole = false;
+    }
+    if ( add_as_whole ) {
+        // add whole Seq-descr as one piece because header overhead is too big
+        Add(SAnnotPiece(place_id, info));
+    }
+    else {
+        // split descriptors
+        _ASSERT(info.m_Location.size() == 1);
+        TSeqPos seq_length = info.m_Location.begin()->second.
+            GetTotalRange().GetLength();
+        ITERATE ( CSeq_descr::Tdata, i, info.m_Descr->Get() ) {
+            CRef<CSeqdesc> desc(&NonConst(**i));
+            CRef<CSeq_descr> descr_piece(new CSeq_descr);
+            descr_piece->Set().push_back(desc);
+            CSeq_descr_SplitInfo* piece_info =
+                new CSeq_descr_SplitInfo(place_id, seq_length,
+                *descr_piece, m_Params);
+            piece_info->m_Priority = GetSeqdescPriority(*desc);
+            Add(SAnnotPiece(place_id, *piece_info));
+        }
+    }
+}
+
+
+void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
+                                      const CSeq_hist_SplitInfo& info)
+{
+    size_t max_size = m_Params.m_MaxChunkSize;
+    size_t size = info.m_Size.GetZipSize();
+    bool add_as_whole = size <= max_size  ||  info.m_Assembly.size() <= 1;
+    if ( 0 && add_as_whole ) {
+        // add whole history asembly as one piece
+        Add(SAnnotPiece(place_id, info));
+    }
+    else {
+        // split assembly alignments
+        _ASSERT(info.m_Location.size() == 1);
+        TSeqPos seq_length = info.m_Location.begin()->second.
+            GetTotalRange().GetLength();
+        ITERATE ( CSeq_hist::TAssembly, i, info.m_Assembly ) {
+            CSeq_hist_SplitInfo* piece_info =
+                new CSeq_hist_SplitInfo(place_id, **i, m_Params);
+            Add(SAnnotPiece(place_id, *piece_info));
+        }
+    }
+}
+
+
 void CBlobSplitterImpl::Add(const SAnnotPiece& piece)
 {
     EAnnotPriority priority = piece.m_Priority;
@@ -216,7 +316,7 @@ SChunkInfo* CBlobSplitterImpl::NextChunk(SChunkInfo* chunk, const CSize& size)
     if ( chunk ) {
         CSize::TDataSize cur_size = chunk->m_Size.GetZipSize();
         CSize::TDataSize new_size = cur_size + size.GetZipSize();
-        if ( cur_size < m_Params.m_MinChunkSize ||
+        if ( /* cur_size < m_Params.m_MinChunkSize || */
              cur_size <= m_Params.m_ChunkSize &&
              new_size <= m_Params.m_MaxChunkSize ) {
             return chunk;
@@ -253,29 +353,66 @@ void CBlobSplitterImpl::SplitPieces(void)
         }
     }
 
-    SChunkInfo& main_chunk = m_Chunks[0];
-    if ( m_Params.m_JoinSmallChunks &&
-         main_chunk.m_Size.GetZipSize() < m_Params.m_MinChunkSize ) {
-        // attach too small chunks to the skeleton
-        typedef multimap<double, int> TSizes;
-        TSizes sizes;
-        ITERATE ( TChunks, it, m_Chunks ) {
-            if ( it->first != 0 ) {
-                sizes.insert(TSizes::value_type(it->second.m_Size.GetZipSize(),
-                                                it->first));
-            }
-        }
-        
+    if (  m_Params.m_JoinSmallChunks ) {
         if ( m_Params.m_Verbose ) {
             LOG_POST("Joining small chunks");
         }
-        ITERATE ( TSizes, it, sizes ) {
-            double new_size = main_chunk.m_Size.GetZipSize() + it->first;
-            if ( new_size > m_Params.m_MinChunkSize ) {
+
+        typedef multimap<size_t, int> TSizes;
+        TSizes sizes;
+        ITERATE ( TChunks, it, m_Chunks ) {
+            size_t zip_size = it->second.m_Size.GetZipSize();
+            if ( it->first != 0  &&  zip_size < m_Params.m_MinChunkSize) {
+                sizes.insert(TSizes::value_type(zip_size, it->first));
+            }
+        }
+
+        // Create main chunk if not created yet
+        m_Chunks[0];
+        // merge too small chunks to higher priority chunks
+        NON_CONST_ITERATE( TChunks, chunk_it, m_Chunks ) {
+            if ( sizes.empty() ) {
                 break;
             }
-            main_chunk.Add(m_Chunks[it->second]);
-            m_Chunks.erase(it->second);
+            SChunkInfo& dst_chunk = chunk_it->second;
+            while (dst_chunk.m_Size.GetZipSize() < m_Params.m_MinChunkSize) {
+                TSizes::iterator small = sizes.begin();
+                while ( small->second <= chunk_it->first ) {
+                    // Do not try to merge already processed chunks or
+                    // a chunk to itself
+                    sizes.erase(small);
+                    if (sizes.empty()) {
+                        break;
+                    }
+                    small = sizes.begin();
+                }
+                if (sizes.empty()) {
+                    break;
+                }
+                size_t new_size =
+                    dst_chunk.m_Size.GetZipSize() + small->first;
+                if ( new_size > m_Params.m_MaxChunkSize ) {
+                    // No more merging to the current chunk
+                    break;
+                }
+                if ( m_Params.m_Verbose ) {
+                    LOG_POST("    merging chunk " << small->second
+                        << " into " << chunk_it->first
+                        << " new size: " << new_size);
+                }
+                dst_chunk.Add(m_Chunks[small->second]);
+                m_Chunks.erase(small->second);
+                sizes.erase(small);
+                if ( sizes.empty() ) {
+                    break;
+                }
+            }
+        }
+        if ( m_Params.m_Verbose  &&  !sizes.empty() ) {
+            ITERATE( TSizes, i, sizes ) {
+                LOG_POST("Small chunk not merged: "
+                    << i->second << ", size: " << i->first);
+            }
         }
     }
 }
@@ -438,6 +575,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.13  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

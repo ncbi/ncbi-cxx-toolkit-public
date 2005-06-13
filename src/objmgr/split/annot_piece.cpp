@@ -118,6 +118,19 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_descr_SplitInfo& d
 }
 
 
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_hist_SplitInfo& hist)
+    : m_PlaceId(place_id),
+      m_ObjectType(hist_assembly),
+      m_AnnotObject(0),
+      m_Priority(hist.GetPriority()),
+      m_Size(hist.m_Size),
+      m_Location(hist.m_Location),
+      m_IdRange(TRange::GetEmpty())
+{
+    m_Seq_hist = &hist;
+}
+
+
 SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CBioseq_SplitInfo& seq)
     : m_PlaceId(place_id),
       m_ObjectType(bioseq),
@@ -259,6 +272,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.8  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

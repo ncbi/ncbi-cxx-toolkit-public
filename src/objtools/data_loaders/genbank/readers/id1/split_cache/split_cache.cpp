@@ -240,6 +240,8 @@ void CSplitCacheApp::Init(void)
                       "do not strip sequence data");
     arg_desc->AddFlag("keep_annotations",
                       "do not strip annotations");
+    arg_desc->AddFlag("keep_assembly",
+                      "do not strip assembly");
     arg_desc->AddFlag("join_small_chunks",
                       "attach very small chunks to skeleton");
 
@@ -484,9 +486,10 @@ void CSplitCacheApp::Process(void)
     if ( args["compress"] ) {
         m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
     }
-    m_SplitterParams.m_DisableSplitDescriptions |= args["keep_descriptions"];
-    m_SplitterParams.m_DisableSplitSequence |= args["keep_sequence"];
-    m_SplitterParams.m_DisableSplitAnnotations |= args["keep_annotations"];
+    m_SplitterParams.m_DisableSplitDescriptions = args["keep_descriptions"];
+    m_SplitterParams.m_DisableSplitSequence = args["keep_sequence"];
+    m_SplitterParams.m_DisableSplitAnnotations = args["keep_annotations"];
+    m_SplitterParams.m_DisableSplitAssembly = args["keep_assembly"];
     m_Resplit = args["resplit"];
     m_Recurse = args["recurse"];
     m_SplitterParams.m_JoinSmallChunks = args["join_small_chunks"];
@@ -1073,6 +1076,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.36  2005/06/10 19:20:19  vasilche
 * Use dispatcher to get writer.
 *

@@ -328,20 +328,51 @@ CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
     s_Sizer.Set(descr, params);
     m_Size = CSize(s_Sizer);
     m_Priority = eAnnotPriority_regular;
-    /*
-    if ( seq_length <= 10000 || m_Size.GetZipSize() > 1000 ) {
-        m_Priority = eAnnotPriority_regular;
-    }
-    else {
-        m_Priority = eAnnotPriority_landmark;
-    }
-    */
 }
 
 
 EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
 {
-    return eAnnotPriority_regular;
+    return m_Priority;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_hist_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
+CSeq_hist_SplitInfo::CSeq_hist_SplitInfo(const CPlaceId& place_id,
+                                         const CSeq_hist& hist,
+                                         const SSplitterParams& params)
+{
+    _ASSERT( hist.IsSetAssembly() );
+    m_Assembly = hist.GetAssembly();
+    _ASSERT( place_id.IsBioseq() );
+    m_Location.Add(place_id.GetBioseqId(), CRange<TSeqPos>::GetWhole());
+    s_Sizer.Set(hist, params);
+    m_Size = CSize(s_Sizer);
+    m_Priority = eAnnotPriority_low;
+}
+
+
+CSeq_hist_SplitInfo::CSeq_hist_SplitInfo(const CPlaceId& place_id,
+                                         const CSeq_align& align,
+                                         const SSplitterParams& params)
+{
+    CRef<CSeq_align> dst(&const_cast<CSeq_align&>(align));
+    m_Assembly.push_back(dst);
+    _ASSERT( place_id.IsBioseq() );
+    m_Location.Add(place_id.GetBioseqId(), CRange<TSeqPos>::GetWhole());
+    s_Sizer.Set(align, params);
+    m_Size = CSize(s_Sizer);
+    m_Priority = eAnnotPriority_low;
+}
+
+
+EAnnotPriority CSeq_hist_SplitInfo::GetPriority(void) const
+{
+    return m_Priority;
 }
 
 
@@ -399,6 +430,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.12  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

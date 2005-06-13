@@ -54,6 +54,7 @@ class CSeq_annot_SplitInfo;
 class CSeq_descr_SplitInfo;
 class CSeq_data_SplitInfo;
 class CSeq_inst_SplitInfo;
+class CSeq_hist_SplitInfo;
 class CBioseq_SplitInfo;
 
 struct SAnnotPiece;
@@ -72,11 +73,14 @@ struct SChunkInfo
     typedef map<CPlaceId, TPlaceSeq_data> TChunkSeq_data;
     typedef vector<CBioseq_SplitInfo> TPlaceBioseq;
     typedef map<CPlaceId, TPlaceBioseq> TChunkBioseq;
+    typedef vector<CSeq_hist_SplitInfo> TPlaceSeq_hist;
+    typedef map<CPlaceId, TPlaceSeq_hist> TChunkSeq_hist;
 
     void Add(const SChunkInfo& info);
 
     void Add(const CPlaceId& place_id, const CSeq_descr_SplitInfo& info);
     void Add(const CPlaceId& place_id, const CSeq_annot_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CSeq_hist_SplitInfo& info);
     void Add(TAnnotObjects& objs,
              const CLocObjects_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
@@ -91,6 +95,7 @@ struct SChunkInfo
     TChunkSeq_descr m_Seq_descr;
     TChunkAnnots    m_Annots;
     TChunkSeq_data  m_Seq_data;
+    TChunkSeq_hist  m_Seq_hist;
     TChunkBioseq    m_Bioseq;
 };
 
@@ -101,6 +106,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.8  2004/10/18 14:00:17  vasilche
 * Updated splitter for new SeqSplit specs.
 *

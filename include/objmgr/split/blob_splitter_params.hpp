@@ -69,6 +69,7 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     bool         m_DisableSplitDescriptions;
     bool         m_DisableSplitSequence;
     bool         m_DisableSplitAnnotations;
+    bool         m_DisableSplitAssembly;
     bool         m_JoinSmallChunks;
     bool         m_SplitWholeBioseqs;
 };
@@ -80,6 +81,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.9  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

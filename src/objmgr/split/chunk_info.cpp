@@ -60,6 +60,10 @@ void SChunkInfo::Add(const SChunkInfo& chunk)
         TPlaceSeq_data& dst = m_Seq_data[i->first];
         dst.insert(dst.end(), i->second.begin(), i->second.end());
     }
+    ITERATE ( TChunkSeq_hist, i, chunk.m_Seq_hist ) {
+        TPlaceSeq_hist& dst = m_Seq_hist[i->first];
+        dst.insert(dst.end(), i->second.begin(), i->second.end());
+    }
     ITERATE ( TChunkBioseq, i, chunk.m_Bioseq ) {
         TPlaceBioseq& dst = m_Bioseq[i->first];
         dst.insert(dst.end(), i->second.begin(), i->second.end());
@@ -108,6 +112,9 @@ void SChunkInfo::Add(const SAnnotPiece& piece)
         break;
     case SAnnotPiece::seq_data:
         Add(piece.m_PlaceId, *piece.m_Seq_data);
+        break;
+    case SAnnotPiece::hist_assembly:
+        Add(piece.m_PlaceId, *piece.m_Seq_hist);
         break;
     case SAnnotPiece::bioseq:
         Add(piece.m_PlaceId, *piece.m_Bioseq);
@@ -159,6 +166,14 @@ void SChunkInfo::Add(const CPlaceId& place_id,
 }
 
 
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CSeq_hist_SplitInfo& info)
+{
+    m_Seq_hist[place_id].push_back(info);
+    m_Size += info.m_Size;
+}
+
+
 size_t SChunkInfo::CountAnnotObjects(void) const
 {
     size_t count = 0;
@@ -177,6 +192,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.10  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

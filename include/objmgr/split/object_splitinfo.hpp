@@ -43,6 +43,8 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 #include <objmgr/annot_name.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -168,7 +170,7 @@ public:
     CSeq_annot_SplitInfo(void);
     CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
                          EAnnotPriority priority);
-    
+
     void SetSeq_annot(const CSeq_annot& annot,
                       const SSplitterParams& params);
     void Add(const CAnnotObject_SplitInfo& obj);
@@ -214,6 +216,27 @@ public:
 
     CSize       m_Size;
     CSeqsRange  m_Location;
+};
+
+
+class CSeq_hist_SplitInfo : public CObject
+{
+public:
+    CSeq_hist_SplitInfo(const CPlaceId& place_id,
+                        const CSeq_hist& hist,
+                        const SSplitterParams& params);
+    CSeq_hist_SplitInfo(const CPlaceId& place_id,
+                        const CSeq_align& align,
+                        const SSplitterParams& params);
+
+    EAnnotPriority GetPriority(void) const;
+
+    typedef CSeq_hist::TAssembly TAssembly;
+
+    TAssembly      m_Assembly;
+    EAnnotPriority m_Priority;
+    CSize          m_Size;
+    CSeqsRange     m_Location;
 };
 
 
@@ -285,6 +308,7 @@ public:
     CRef<CSeq_descr_SplitInfo>  m_Descr;
     TSeq_annots                 m_Annots;
     CRef<CSeq_inst_SplitInfo>   m_Inst;
+    CRef<CSeq_hist_SplitInfo>   m_Hist;
     TBioseqs                    m_Bioseqs;
 };
 
@@ -295,6 +319,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.11  2004/10/18 14:00:17  vasilche
 * Updated splitter for new SeqSplit specs.
 *

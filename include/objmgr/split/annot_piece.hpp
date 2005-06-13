@@ -77,6 +77,8 @@ struct SAnnotPiece
     explicit SAnnotPiece(const CPlaceId& place_id,
                          const CSeq_data_SplitInfo& data);
     explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_hist_SplitInfo& hist);
+    explicit SAnnotPiece(const CPlaceId& place_id,
                          const CBioseq_SplitInfo& data);
     SAnnotPiece(const SAnnotPiece& base, const COneSeqRange& range);
 
@@ -91,6 +93,7 @@ struct SAnnotPiece
         seq_annot,
         annot_object,
         seq_data,
+        hist_assembly,
         bioseq
     };
 
@@ -101,6 +104,7 @@ struct SAnnotPiece
         const CSeq_descr_SplitInfo* m_Seq_descr;
         const CSeq_annot_SplitInfo* m_Seq_annot;
         const CSeq_data_SplitInfo*  m_Seq_data;
+        const CSeq_hist_SplitInfo*  m_Seq_hist;
         const CBioseq_SplitInfo*    m_Bioseq;
     };
     const CAnnotObject_SplitInfo*   m_AnnotObject;
@@ -230,6 +234,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.7  2004/10/18 14:00:17  vasilche
 * Updated splitter for new SeqSplit specs.
 *

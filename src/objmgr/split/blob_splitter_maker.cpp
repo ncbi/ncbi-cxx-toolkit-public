@@ -658,6 +658,7 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     typedef set<CSeq_id_Handle> TBioseqIds;
     typedef map<CPlaceId, TBioseqIds> TBioseqPlaces;
     TBioseqPlaces all_bioseqs;
+    TPlaces all_assemblies;
 
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
         const CPlaceId& place_id = it->first;
@@ -739,6 +740,19 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
                 ids.insert(CSeq_id_Handle::GetHandle(**idit));
             }
         }
+    }
+
+    ITERATE ( SChunkInfo::TChunkSeq_hist, it, info.m_Seq_hist ) {
+        const CPlaceId& place_id = it->first;
+        CID2S_Chunk_Data::TAssembly& dst =
+            GetChunkData(chunk_data, place_id).SetAssembly();
+        ITERATE ( SChunkInfo::TPlaceSeq_hist, hit, it->second ) {
+            const CSeq_hist::TAssembly& assm = hit->m_Assembly;
+            ITERATE ( CSeq_hist::TAssembly, i, assm ) {
+                dst.push_back(*i);
+            }
+        }
+        AddPlace(all_assemblies, place_id);
     }
 
     NON_CONST_ITERATE ( TAllAnnots, nit, all_annots ) {
@@ -851,6 +865,13 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
         chunk_content.push_back(content);
     }
 
+    if ( !all_assemblies.first.empty() ) {
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        CID2S_Seq_assembly_Info& inf = content->SetSeq_assembly();
+        inf.SetBioseqs(*MakeBioseqIds(all_assemblies.first));
+            chunk_content.push_back(content);
+    }
+
     CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
     CID2S_Chunk::TData& dst_chunk_data = chunk->SetData();
     ITERATE ( TChunkData, it, chunk_data ) {
@@ -945,6 +966,18 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
             }
         }
     }
+
+    ITERATE ( SChunkInfo::TChunkSeq_hist, it, info.m_Seq_hist ) {
+        TEntries::iterator seq_it = m_Entries.find(it->first);
+        _ASSERT(seq_it != m_Entries.end());
+        _ASSERT( seq_it->second.m_Bioseq );
+        ITERATE ( SChunkInfo::TPlaceSeq_hist, hit, it->second ) {
+            const CSeq_hist::TAssembly& src = hit->m_Assembly;
+            CSeq_hist::TAssembly* dst;
+            dst = &seq_it->second.m_Bioseq->SetInst().SetHist().SetAssembly();
+            dst->insert(dst->end(), src.begin(), src.end());
+        }
+    }
 }
 
 
@@ -1023,6 +1056,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.19  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *

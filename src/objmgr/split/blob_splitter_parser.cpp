@@ -342,23 +342,10 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
         dst.SetDate(NonConst(src.GetDate()));
     }
 
-    bool need_split_descr;
-    if ( m_Params.m_DisableSplitDescriptions ) {
-        need_split_descr = false;
-    }
-    else {
-        need_split_descr = false;
-        if ( src.IsSetDescr() ) {
-            ITERATE ( CBioseq_set::TDescr::Tdata, it, src.GetDescr().Get() ) {
-                const CSeqdesc& desc = **it;
-                if ( desc.Which() == CSeqdesc::e_Pub ) {
-                    // only publication descriptors will be split
-                    need_split_descr = true;
-                    break;
-                }
-            }
-        }
-    }
+    // Try to split all descriptors, the most important of them will get
+    // skeleton priority anyway.
+    bool need_split_descr = !m_Params.m_DisableSplitDescriptions
+        &&  src.IsSetDescr();
 
     bool need_split_annot;
     if ( m_Params.m_DisableSplitAnnotations ) {
@@ -451,18 +438,40 @@ bool CBlobSplitterImpl::CopyDescr(CPlace_SplitInfo& place_info,
                                   TSeqPos seq_length,
                                   const CSeq_descr& descr)
 {
-    if ( !place_info.m_Bioseq ) {
-        // we will not split descriptors of Bioseq-sets
-        return false;
-    }
-    if ( seq_length != kInvalidSeqPos && seq_length > 100000 ) {
-        // we will not split descriptors of very long sequences
-        return false;
-    }
     _ASSERT(!place_info.m_Descr);
     place_info.m_Descr = new CSeq_descr_SplitInfo(place_info.m_PlaceId,
                                                   seq_length,
                                                   descr, m_Params);
+    if ( !place_info.m_Bioseq ) {
+        // try not to split descriptors of Bioseq-sets
+        place_info.m_Descr->m_Priority = eAnnotPriority_skeleton;
+    }
+    if ( seq_length != kInvalidSeqPos && seq_length > 100000 ) {
+        // try not to split descriptors of very long sequences
+        place_info.m_Descr->m_Priority = eAnnotPriority_skeleton;
+    }
+    return true;
+}
+
+
+bool CBlobSplitterImpl::CopyHist(CPlace_SplitInfo& place_info,
+                                 const CSeq_hist& hist)
+{
+    if ( m_Params.m_DisableSplitAssembly ) {
+        return false;
+    }
+    _ASSERT( place_info.m_Bioseq );
+    _ASSERT(!place_info.m_Hist);
+    // Split history with big assembly only
+    if ( !hist.IsSetAssembly() ) {
+        return false;
+    }
+    place_info.m_Hist = new CSeq_hist_SplitInfo(place_info.m_PlaceId,
+                                                hist, m_Params);
+    if (place_info.m_Hist->m_Size.GetZipSize() < m_Params.m_MinChunkSize) {
+        place_info.m_Hist.Reset();
+        return false;
+    }
     return true;
 }
 
@@ -492,8 +501,27 @@ bool CBlobSplitterImpl::CopySequence(CPlace_SplitInfo& place_info,
         dst.SetTopology(src.GetTopology());
     if ( src.IsSetStrand() )
         dst.SetStrand(src.GetStrand());
-    if ( src.IsSetHist() )
-        dst.SetHist(const_cast<CSeq_hist&>(src.GetHist()));
+    if ( src.IsSetHist() ) {
+        if ( !CopyHist(place_info, src.GetHist()) ) {
+            dst.SetHist(const_cast<CSeq_hist&>(src.GetHist()));
+        }
+        else {
+            // Create history, but do not create assembly
+            dst.SetHist();
+            if ( src.GetHist().IsSetReplaces() ) {
+                dst.SetHist().SetReplaces(const_cast<CSeq_hist_rec&>(
+                    src.GetHist().GetReplaces()));
+            }
+            if ( src.GetHist().IsSetReplaced_by() ) {
+                dst.SetHist().SetReplaced_by(const_cast<CSeq_hist_rec&>(
+                    src.GetHist().GetReplaced_by()));
+            }
+            if ( src.GetHist().IsSetDeleted() ) {
+                dst.SetHist().SetDeleted(const_cast<CSeq_hist::TDeleted&>(
+                    src.GetHist().GetDeleted()));
+            }
+        }
+    }
 
     if ( src.IsSetSeq_data() ) {
         CSeq_data_SplitInfo data;
@@ -644,6 +672,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.16  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

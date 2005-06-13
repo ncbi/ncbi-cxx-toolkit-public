@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
 
 
 #define DISABLE_SPLIT_DESCRIPTIONS false
+#define DISABLE_SPLIT_ASSEMBLY     true
 
 
 SSplitterParams::SSplitterParams(void)
@@ -50,6 +51,7 @@ SSplitterParams::SSplitterParams(void)
       m_DisableSplitDescriptions(DISABLE_SPLIT_DESCRIPTIONS),
       m_DisableSplitSequence(false),
       m_DisableSplitAnnotations(false),
+      m_DisableSplitAssembly(DISABLE_SPLIT_ASSEMBLY),
       m_JoinSmallChunks(false),
       m_SplitWholeBioseqs(true)
 {
@@ -173,6 +175,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.15  2005/04/25 19:15:02  ucko
 * Update CompressChunk for recent compression API changes.
 *

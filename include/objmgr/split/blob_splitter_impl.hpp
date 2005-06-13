@@ -120,6 +120,8 @@ public:
     bool CopyDescr(CPlace_SplitInfo& place_info,
                    TSeqPos seq_length,
                    const CSeq_descr& descr);
+    bool CopyHist(CPlace_SplitInfo& place_info,
+                  const CSeq_hist& hist);
     bool CopySequence(CPlace_SplitInfo& place_info,
                       TSeqPos seq_length,
                       CSeq_inst& dst, const CSeq_inst& src);
@@ -132,6 +134,10 @@ public:
     void CollectPieces(const CPlace_SplitInfo& info);
     void CollectPieces(const CPlaceId& place_id,
                        const CSeq_annot_SplitInfo& info);
+    void CollectPieces(const CPlaceId& place_id,
+                       const CSeq_descr_SplitInfo& info);
+    void CollectPieces(const CPlaceId& place_id,
+                       const CSeq_hist_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void SplitPieces(void);
     void AddToSkeleton(CAnnotPieces& pieces);
@@ -209,6 +215,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/06/13 15:44:53  grichenk
+* Implemented splitting of assembly. Added splitting of seqdesc objects
+* into multiple chunks.
+*
 * Revision 1.12  2004/10/18 14:00:17  vasilche
 * Updated splitter for new SeqSplit specs.
 *
