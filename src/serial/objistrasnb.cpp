@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/06/13 15:50:51  gouriano
+* Implemented SkipAnyContentObject
+*
 * Revision 1.74  2005/04/27 17:02:17  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.
@@ -1360,9 +1363,7 @@ void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
 
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
-        "CObjectIStreamAsnBinary::SkipAnyContentObject: "
-        "unable to skip AnyContent object in ASN binary");
+    ReadAnyContent();
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
