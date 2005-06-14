@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2005/06/14 15:35:49  kholodov
+* Fixed: uninitialized m_destroyConn
+*
 * Revision 1.9  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *
@@ -102,7 +105,8 @@ CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
                            size_t datasize, 
                            streamsize bufsize,
                            bool log_it)
-                           : ostream(new CByteStreamBuf(bufsize)), m_desc(0), m_conn(0)
+                           : ostream(new CByteStreamBuf(bufsize)), m_desc(0), m_conn(0),
+                           m_destroyConn(false)
 {
     if( log_it ) {
         _TRACE("CBlobOStream::ctor(): Transaction log enabled");
