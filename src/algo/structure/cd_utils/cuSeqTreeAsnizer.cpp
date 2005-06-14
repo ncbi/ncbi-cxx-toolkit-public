@@ -136,6 +136,12 @@ void SeqTreeAsnizer::fillAsnSeqTreeNode(const AlignmentCollection& ac, const Seq
 		range.SetFrom(ac.GetLowerBound(cursor->rowID));
 		range.SetTo(ac.GetUpperBound(cursor->rowID));
 		fp.SetRowId(cursor->rowID);
+		//child memship
+		CCdCore* cd = ac.GetScopedLeafCD(cursor->rowID);
+        if (cd ) 
+		{
+			asnNode.SetAnnotation().SetPresentInChildCD(cd->GetAccession());
+		}
 	}
 }
 
