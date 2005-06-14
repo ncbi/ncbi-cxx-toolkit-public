@@ -402,7 +402,7 @@ public:
     /// specified by SetBackupSuffix(). By default this extension is ".bak".
     /// Backups can be automatically created in 'copy' or 'rename' operations.
     /// If an entry with the name of the backup already exists, then it will
-    /// be deleted (if possible).  The current entry name components are
+    /// be deleted (if possible). The current entry name components are
     /// changed to reflect the backed up copy.
     /// @param suffix
     ///   Extension to add to backup entry. If empty, GetBackupSuffix()
@@ -502,6 +502,17 @@ public:
     /// @sa
     ///   IsFile, IsDir, IsLink
     EType GetType(EFollowLinks follow = eIgnoreLinks) const;
+
+    /// Get a type of a directory entry by status information.
+    ///
+    /// @param st
+    ///   Status file information.
+    /// @return
+    ///   Return one of the values in EType. If the directory entry does
+    ///   not exist, return "eUnknown".
+    /// @sa
+    ///   IsFile, IsDir, IsLink
+    EType GetType(const struct stat& st) const;
 
     /// Check whether a directory entry is a file.
     /// @sa
@@ -631,7 +642,7 @@ public:
     /// @param tm
     ///   Time to compare with the current entry modification time.
     /// @return
-    ///   TRUE is the modification time of the current entry is newer than
+    ///   TRUE if the modification time of the current entry is newer than
     ///   the specified time. Return FALSE otherwise.
     /// @sa
     ///   GetTime
@@ -642,11 +653,24 @@ public:
     /// @param tm
     ///   Time to compare with the current entry modification time.
     /// @return
-    ///   TRUE is the modification time of the current entry is newer than
+    ///   TRUE if the modification time of the current entry is newer than
     ///   the specified time. Return FALSE otherwise.
     /// @sa
     ///   GetTime
     bool IsNewer(const CTime& tm) const;
+
+    /// Check if the current entry and the given entry_name are identical.
+    ///
+    /// Note that entries can be checked accurately only on UNIX.
+    /// On MS Windows function can check it only by file name.
+    /// @param entry_name
+    ///   An entry name, of which to compare current entry.
+    /// @return
+    ///   TRUE if both entries exists and identical. Return FALSE otherwise.
+    /// @param follow_links
+    ///   Whether to follow symlinks (shortcuts, aliases)
+    bool IsIdentical(const string& entry_name,
+                     EFollowLinks  follow_links = eIgnoreLinks) const;
 
     /// Get an entry owner.
     ///
@@ -2308,6 +2332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/06/14 13:05:02  ivanov
+ * + CDirEntry::IsIdentical()
+ * + CDirEntry::GetType(const struct stat&)
+ *
  * Revision 1.60  2005/06/10 20:06:54  lavr
  * Special mode bits have been added
  *
