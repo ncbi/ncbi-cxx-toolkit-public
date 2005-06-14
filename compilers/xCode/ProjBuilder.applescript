@@ -531,20 +531,15 @@ script ProjBuilder
 			set theScript to theScript & "  m=\"" & asnName & "\"" & ret
 			
 			set theScript to theScript & "  echo Running Datatool" & ret
-			if asnName is "gui_project" or asnName is "plugin" then -- Should use sed properly here (but how?)
+			if asnName is "gui_project" or asnName is "plugin" or asnName is "seqalign_ext" then -- Should use sed properly here (but how?)
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9_]*\\)/\\1.asn/g')\"" & ret
 			else
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
 			end if
 			
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
-			(*if asnName is "gui_project" then
-				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			else if asnName is "gui_dlg_seq_feat_edit" then
-				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/dialogs/edit/feature\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			else *)
+			
 			set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"" & posixPath & "\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			--end if
 			set theScript to theScript & "else" & ret
 			set theScript to theScript & "  echo ASN files are up to date" & ret
 			set theScript to theScript & "fi" & ret & ret
@@ -615,6 +610,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/06/14 12:20:35  lebedev
+ * seqalign_ext added
+ *
  * Revision 1.28  2005/06/03 12:37:06  lebedev
  * Build libraries as fully resolved DLLs
  *

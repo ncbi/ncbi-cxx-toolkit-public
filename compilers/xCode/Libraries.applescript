@@ -209,7 +209,8 @@ property w_flu : {name:"w_flu", path:"gui:widgets:FLU"}
 property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
-property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data"}
+property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", inc:{"align_ds.cpp", "sparse_alignment.cpp", "sparse_iterator.cpp"}}
+property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
 property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic", exc:{"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"}}
 property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix"}
 property w_aln_crossaln : {name:"w_aln_crossaln", path:"gui:widgets:aln_crossaln"}
@@ -293,7 +294,7 @@ property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_fe
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
+property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
 property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
@@ -406,6 +407,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/06/14 12:20:35  lebedev
+ * seqalign_ext added
+ *
  * Revision 1.59  2005/06/13 18:05:30  lebedev
  * blastxml added
  *
