@@ -253,7 +253,7 @@ void CObjectIStreamXml::EndTag(void)
 
 bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 {
-    if (TopFrame().GetNotag()) {
+    if (!StackIsEmpty() && TopFrame().GetNotag()) {
         return SelfClosedTag();
     }
     if( InsideOpeningTag() ) {
@@ -905,30 +905,33 @@ void CObjectIStreamXml::ReadTagData(string& str)
     BeginData();
     bool skip_spaces = false;
     bool encoded = false;
-    for ( ;; ) {
-        int c = ReadEscapedChar(m_Attlist ? '\"' : '<', &encoded);
-        if ( c < 0 ) {
-            break;
-        }
-        if (!encoded) {
-            if (c == '\n' || c == '\r') {
-                skip_spaces = true;
-                continue;
+    try {
+        for ( ;; ) {
+            int c = ReadEscapedChar(m_Attlist ? '\"' : '<', &encoded);
+            if ( c < 0 ) {
+                break;
             }
-            if (skip_spaces) {
-                if (IsWhiteSpace(c)) {
+            if (!encoded) {
+                if (c == '\n' || c == '\r') {
+                    skip_spaces = true;
                     continue;
-                } else {
-                    skip_spaces = false;
-                    str += ' ';
+                }
+                if (skip_spaces) {
+                    if (IsWhiteSpace(c)) {
+                        continue;
+                    } else {
+                        skip_spaces = false;
+                        str += ' ';
+                    }
                 }
             }
+            str += char(c);
+            // pre-allocate memory for long strings
+            if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
+                str.reserve(str.size()*2);
+            }
         }
-        str += char(c);
-        // pre-allocate memory for long strings
-        if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
-            str.reserve(str.size()*2);
-        }
+    } catch (CEofException&) {
     }
     str.reserve(str.size());
 }
@@ -1269,7 +1272,13 @@ bool CObjectIStreamXml::HasAnyContent(const CClassTypeInfoBase* classType)
 
 bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 {
-    if (ThisTagIsSelfClosed() || NextTagIsClosing()) {
+    bool no_more=false;
+    try {
+        no_more = ThisTagIsSelfClosed() || NextTagIsClosing();
+    } catch (CEofException&) {
+        no_more = true;
+    }
+    if (no_more) {
         m_LastPrimitive.erase();
         return false;
     }
@@ -2168,6 +2177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/06/14 17:18:53  gouriano
+* Corrected handling end-of-file when reading primitives and containers
+*
 * Revision 1.75  2005/06/14 13:11:02  gouriano
 * Corrected implementation of SkipAnyContentObject()
 *
