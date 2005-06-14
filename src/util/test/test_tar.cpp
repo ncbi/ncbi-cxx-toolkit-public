@@ -23,15 +23,15 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Ivanov
+ * Author:  Anton Lavrentiev
  *
- * File Description:  Test program for the Compression API
+ * File Description:  Test case for CTar API:
+ *                    basically, a very limited verion of a tar utility.
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <util/compress/tar.hpp>
 #include <test/test_assert.h>  // This header must go last
 
@@ -46,40 +46,143 @@ USING_NCBI_SCOPE;
 
 class CTest : public CNcbiApplication
 {
-public:
-    void Init(void);
-    int  Run(void);
+protected:
+    virtual void Init(void);
+    virtual int  Run(void);
 };
 
 
 void CTest::Init(void)
 {
+    HideStdArgs(fHideHelp | fHideLogfile | fHideConffile | fHideVersion);
+
+    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    if (args->Exist("h")) {
+        args->Delete("h");
+    }
+    args->AddFlag("c", "Create archive");
+    args->AddFlag("r", "Append archive");
+    args->AddFlag("u", "Update archive");
+    args->AddFlag("t", "List archive");
+    args->AddFlag("x", "Extract archive");
+    args->AddFlag("T", "Test archive");
+    args->AddOptionalKey("f", "filename",
+                         "Default = cin/cout", CArgDescriptions::eString);
+    args->AddDefaultKey("b", "blocking_factor",
+                        "", CArgDescriptions::eInteger, "20");
+    args->SetConstraint("b", new CArgAllow_Integers(1, 1<<10));
+    args->AddExtra(0, 1<<20, "File list to process",CArgDescriptions::eString);
+    args->SetUsageContext(GetArguments().GetProgramBasename(),
+                          "Tar test suite");
+    SetupArgDescriptions(args.release());
+
     SetDiagPostLevel(eDiag_Warning);
 }
 
 
 int CTest::Run(void)
 {
-    //CTar tar("e:\\tar\\f_cvf.tar");
-    //CTar tar("e:\\tar\\f_cvf_dir.tar");
-    //CTar tar("e:\\tar\\cmd.tar");
-    //CTar tar("e:\\tar\\0021-9193-19910101_173.19-208369-1100877641.58635.tar");
-    //CTar tar("e:\\tar\\0021-9193-19940101_176.12-205570-1100884818.17906.tar");
+    enum EAction {
+        fNone    =  0,
+        fCreate  = (1 << 0),
+        fAppend  = (1 << 1),
+        fUpdate  = (1 << 2),
+        fList    = (1 << 3),
+        fExtract = (1 << 4),
+        fTest    = (1 << 5)
+    };
+    typedef unsigned int TAction;
+    TAction action = fNone;
 
-    //CNcbiIfstream is("e:\\tar\\cmd.tar",
-    //    IOS_BASE::in | IOS_BASE::binary);
-    CNcbiFstream fs("e:\\tar\\0021-9193-19940101_176.12-205570-1100884818.17906.tar",
-        IOS_BASE::in | IOS_BASE::binary);
-    CTar tar(fs);
+    const CArgs& args = GetArgs();
 
-    //CTar tar("/home/ivanov/tar/0021-9193-19940101_176.12-205570-1100884818.17906.tar");
-    
-    //tar.Extract("e:\\tar\\out");
-    tar.Extract("/home/ivanov/tar/out");
+    if (args["c"].HasValue())
+        action |= fCreate;
+    if (args["r"].HasValue())
+        action |= fAppend;
+    if (args["u"].HasValue())
+        action |= fUpdate;
+    if (args["t"].HasValue())
+        action |= fList;
+    if (args["x"].HasValue())
+        action |= fExtract;
+    if (args["T"].HasValue())
+        action |= fTest;
+
+    if (!action  ||  (action & (action - 1)) != 0) {
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "You have to specify exactly one of c, r, u, t, x, or T");
+    }
+
+    size_t blocking_factor = args["b"].AsInteger();
+
+    string file;
+    if (args["f"].HasValue()) {
+        file = args["f"].AsString();
+        if (file == "-") {
+            file.erase();
+        }
+    }
+
+    auto_ptr<CTar> tar;
+
+    if (file.empty()) {
+        CNcbiIos* io = 0;
+        if (action == fList  ||  action == fExtract  ||  action == fTest) {
+            io = &cin;
+        } else if (action == fCreate  ||  action == fAppend) {
+            io = &cout;
+        } else {
+            NCBI_THROW(CArgException, eInvalidArg, "Cannot update in a pipe");
+        }
+        _ASSERT(io);
+        tar.reset(new CTar(*io, blocking_factor));
+    } else {
+        tar.reset(new CTar(file, blocking_factor));
+    }
+
+    if (action == fCreate) {
+        tar->Create();
+    }
+    if (action == fCreate  ||  action == fAppend) {
+        size_t n = args.GetNExtra();
+        if (n == 0) {
+            NCBI_THROW(CArgException, eInvalidArg, "Must specify filename");
+        }
+        for (size_t i = 1;  i <= n;  i++) {
+            const string& member = args[i].AsString();
+            cerr << "Adding " << member << " to archive" << endl;
+            tar->Append(member);
+        }
+    } else if (action == fTest) {
+        if (args.GetNExtra()) {
+            NCBI_THROW(CArgException, eInvalidArg, "Extra args not allowed");
+        }
+        cerr << "Testing archive... ";
+        cerr.flush();
+        tar->Test();
+        cerr << "Done." << endl;
+    } else {
+        size_t n = args.GetNExtra();
+        if (n) {
+            auto_ptr<CMaskFileName> mask(new CMaskFileName);
+            for (size_t i = 1;  i <= n;  i++) {
+                mask->Add(args[i].AsString());
+            }
+            tar->SetMask(mask.release(), eTakeOwnership);
+        }
+        if (action == fList) {
+            CTar::TEntries list = tar->List();
+            ITERATE(CTar::TEntries, it, list) {
+                cout << **it;
+            }
+        } else {
+            tar->Extract(".");
+        }
+    }
 
     return 0;
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -97,14 +200,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2005/05/27 14:47:53  ucko
- * Adjust for CTar's current API, which takes fstream rather than ifstream.
- *
- * Revision 1.2  2005/01/31 15:54:14  ivanov
- * Fixed path to tar.hpp
- *
- * Revision 1.1  2004/12/02 17:49:16  ivanov
- * Initial draft revision
+ * Revision 1.4  2005/06/14 00:34:41  lavr
+ * True CTar test suite (Initial revision)
  *
  * ===========================================================================
  */
