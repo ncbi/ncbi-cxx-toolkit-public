@@ -1327,6 +1327,12 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
     if (errcode != 0) {
         return eUnknown;
     }
+    return GetType(st);
+}
+
+
+CDirEntry::EType CDirEntry::GetType(const struct stat& st) const
+{
     unsigned int mode = st.st_mode & S_IFMT;
     switch (mode) {
     case S_IFDIR:
@@ -1446,7 +1452,26 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     }
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
-        return false;
+        if ( errno != EACCES ) {
+            return false;
+        }
+        // The rename() can fails in the case of cross-device renaming.
+        // So, try to copy and remove it.
+        auto_ptr<CDirEntry> 
+            e(CDirEntry::CreateObject(src_type, src.GetPath()));
+        if ( !e->Copy(dst.GetPath(), fCF_Recursive | fCF_PreserveAll ) ) {
+            auto_ptr<CDirEntry> 
+                tmp(CDirEntry::CreateObject(src_type, dst.GetPath()));
+            tmp->Remove(eRecursive);
+            return false;
+        }
+        // Remove 'src'
+        if ( !e->Remove(eRecursive) ) {
+            // Do not delete 'dst' here, because in the case of dirs
+            // the source directory can be already partly removed and
+            // we can lost data.
+            return false;
+        }
     }
     Reset(newname);
     return true;
@@ -1516,6 +1541,24 @@ bool CDirEntry::IsNewer(const CTime& tm) const
         return false;
     }
     return current > tm;
+}
+
+
+bool CDirEntry::IsIdentical(const string& entry_name,
+                            EFollowLinks  follow_links) const
+{
+#if defined(NCBI_OS_UNIX)
+    struct SStat st1, st2;
+    if ( !Stat(&st1, follow_links)  ||
+         !CDirEntry(entry_name).Stat(&st2, follow_links) ) {
+        return false;
+    }
+    return st1.orig.st_dev == st2.orig.st_dev  &&
+           st1.orig.st_ino == st2.orig.st_ino;
+#else
+    return NormalizePath(GetPath(), follow_links) ==
+           NormalizePath(entry_name, follow_links);
+#endif
 }
 
 
@@ -1954,12 +1997,11 @@ static bool s_CopyAttrs(const char* from, const char* to,
     // Owner
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
         string owner, group;
-        if ( !efrom.GetOwner(&owner, &group) ) {
-            return false;
-        }
         // We dont check result here, because often is not impossible
         // to save an original owner name without administators rights.
-        eto.SetOwner(owner, group);
+        if ( efrom.GetOwner(&owner, &group) ) {
+            eto.SetOwner(owner, group);
+        }
     }
 
     return true;
@@ -2060,11 +2102,19 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     if ( src_type != eFile )  {
         return false;
     }
+
     EType dst_type   = dst.GetType();
     bool  dst_exists = (dst_type != eUnknown);
     
     // If destination exists...
     if ( dst_exists ) {
+        // UNIX: check on copying file into yourself.
+        // MS Window's ::CopyFile() can recognise such case.
+#if defined(NCBI_OS_UNIX)
+        if ( src.IsIdentical(dst.GetPath()) ) {
+            return false;
+        }
+#endif
         // Can copy entries with different types?
         // The Destination must be a file too.
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
@@ -2700,6 +2750,10 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     
     // If destination exists...
     if ( dst_exists ) {
+        // Check on copying dir into yourself
+        if ( src.IsIdentical(dst.GetPath()) ) {
+            return false;
+        }
         // Can rename entries with different types?
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
             return false;
@@ -2869,6 +2923,10 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 
     // If destination exists...
     if ( dst_exists ) {
+        // Check on copying link into yourself.
+        if ( IsIdentical(dst.GetPath()) ) {
+            return false;
+        }
         // Can copy entries with different types?
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
             return false;
@@ -3495,6 +3553,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2005/06/14 13:06:15  ivanov
+ * + CDirEntry::IsIdentical()
+ * + CDirEntry::GetType(const struct stat&)
+ * *::Copy() -- added check on copying dir entry into yourself.
+ * CDirEntry::Rename() -- try to copy/remove if rename() call failed.
+ * s_CopyAttrs(): do not check result of get/set owner on MS Windows.
+ *
  * Revision 1.109  2005/06/13 14:57:38  ivanov
  * CDirEntry::NormalizePath() -- fixed conversion of relative pathes
  * representing current directory
