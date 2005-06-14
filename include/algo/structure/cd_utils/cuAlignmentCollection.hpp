@@ -109,6 +109,7 @@ public:
 	MultipleAlignment();
 
 	bool setAlignment(const CDFamily& family);
+	bool setAlignment(const CDFamily& family, CDFamilyIterator& start);
 	void setAlignment(CCdCore* cd, bool scoped=true);
 	void setAlignment(CRef<CSeq_align>& seqAlign);
 	bool setAlignment(const AlignmentCollection& ac, int row);
@@ -129,7 +130,7 @@ public:
 private:
 	//to hide the one in the base class
 	void AddAlignment(CCdCore* cd, CCdCore::AlignmentUsage alignUse){ }
-	bool setAlignment(const CDFamily& family, CDFamilyIterator& start);
+	
 	void makeBlockTable();
 	int transferOneRow(CCdCore* cd, int row);
 
