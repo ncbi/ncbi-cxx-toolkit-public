@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/06/14 13:12:13  gouriano
+* Renamed  ReadAnyContent to SkipAnyContent
+*
 * Revision 1.75  2005/06/13 15:50:51  gouriano
 * Implemented SkipAnyContentObject
 *
@@ -1135,7 +1138,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            ReadAnyContent();
+            SkipAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType);
         }
@@ -1159,7 +1162,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            ReadAnyContent();
+            SkipAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType, pos);
         }
@@ -1333,14 +1336,21 @@ void CObjectIStreamAsnBinary::ReadNull(void)
     EndOfTag();
 }
 
-bool CObjectIStreamAsnBinary::ReadAnyContent()
+void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamAsnBinary::ReadAnyContentObject: "
+        "unable to read AnyContent object in ASN binary");
+}
+
+bool CObjectIStreamAsnBinary::SkipAnyContent(void)
 {
     TByte byte = PeekAnyTagFirstByte();
     if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
         ExpectIndefiniteLength();
-        if ( ReadAnyContent() ) {
+        if ( SkipAnyContent() ) {
             while (HaveMoreElements()) {
-                ReadAnyContent();
+                SkipAnyContent();
             }
             ExpectEndOfContent();
         }
@@ -1354,16 +1364,9 @@ bool CObjectIStreamAsnBinary::ReadAnyContent()
     return (length != 0);
 }
 
-void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
-{
-    NCBI_THROW(CSerialException,eNotImplemented,
-        "CObjectIStreamAsnBinary::ReadAnyContentObject: "
-        "unable to read AnyContent object in ASN binary");
-}
-
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 {
-    ReadAnyContent();
+    SkipAnyContent();
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)

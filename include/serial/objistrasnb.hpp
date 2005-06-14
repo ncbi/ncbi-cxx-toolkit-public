@@ -65,8 +65,8 @@ public:
 
     virtual void ReadNull(void);
 
-    bool ReadAnyContent();
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
     EFixNonPrint FixNonPrint(EFixNonPrint how)
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/06/14 13:11:57  gouriano
+* Renamed  ReadAnyContent to SkipAnyContent
+*
 * Revision 1.47  2005/04/27 17:01:38  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.
