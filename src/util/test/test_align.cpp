@@ -457,7 +457,7 @@ void AC_AddToCollection(TAlignColl& coll, const SARange* ranges, int count)
 void AC_Collection_Equals(TAlignColl& coll, const SARange* ranges, int count)
 {
     TAlignColl::const_iterator it = coll.begin();
-    BOOST_REQUIRE(coll.size() == count);
+    BOOST_REQUIRE(count == (int) coll.size());
 
     for( int i = 0; i < count;  ++i, ++it )   {
         const SARange& st = ranges[i];
@@ -469,7 +469,7 @@ void AC_Collection_Equals(TAlignColl& coll, const SARange* ranges, int count)
 ostream& operator<<(ostream& out, const TAlignColl& coll)
 {
     char s[32];
-    sprintf(s, "%lX", coll.GetFlags());
+    sprintf(s, "%X", (unsigned int) coll.GetFlags());
     out << "CAlignRangeCollection  Flags = " << s << ", : ";
 
     for ( TAlignColl::const_iterator it = coll.begin();  it != coll.end();  ++it) {
@@ -546,7 +546,7 @@ void AC_Test_Constructors()
     // check state of an empty collection
     TAlignColl coll_1;
 
-    BOOST_CHECK_EQUAL(coll_1.size(), 0);
+    BOOST_CHECK_EQUAL((int) coll_1.size(), 0);
     BOOST_CHECK_EQUAL(coll_1.empty(), true);
     BOOST_CHECK_EQUAL(coll_1.GetFlags(), TAlignColl::fKeepNormalized);
 
@@ -554,7 +554,7 @@ void AC_Test_Constructors()
     SARange ranges_1[] = { {101, 1101, 10, true}, {151, 1151, 20, true},  {201, 1201, 30, true} };  
     AC_AddToCollection(coll_1, ranges_1, sizeof(ranges_1) / sizeof(SARange));
 
-    BOOST_CHECK_EQUAL(coll_1.size(), 3);
+    BOOST_CHECK_EQUAL((int) coll_1.size(), 3);
     BOOST_CHECK_EQUAL(coll_1.empty(), false);
     BOOST_CHECK_EQUAL(coll_1.GetFlags(), TAlignColl::fKeepNormalized | TAlignColl::fDirect);
 
@@ -589,7 +589,7 @@ void AC_Test_Erase()
     // erase the remaining one
     it = coll.erase(coll.begin());
     
-    BOOST_CHECK_EQUAL(coll.size(), 0);
+    BOOST_CHECK_EQUAL((int) coll.size(), 0);
     BOOST_CHECK_EQUAL(coll.empty(), true);
     BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fKeepNormalized);   
 }
@@ -1250,6 +1250,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 
 /* ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/14 19:54:50  yazhuk
+ * Fixed GCC warnings
+ *
  * Revision 1.1  2005/06/13 19:31:36  yazhuk
  * Initial revision
  *
