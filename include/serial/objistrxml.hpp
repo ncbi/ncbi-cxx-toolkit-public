@@ -89,6 +89,7 @@ protected:
     void ReadAnyContentTo(const string& ns_prefix, string& value,
                           const CLightString& tagName);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    void SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
     virtual void StartDelayBuffer(void);
@@ -257,6 +258,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/06/14 13:11:19  gouriano
+* Corrected implementation of SkipAnyContentObject()
+*
 * Revision 1.37  2004/09/09 19:16:58  vasilche
 * StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
 *

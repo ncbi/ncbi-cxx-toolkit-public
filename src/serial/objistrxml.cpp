@@ -839,10 +839,34 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     END_OBJECT_FRAME();
 }
 
+void CObjectIStreamXml::SkipAnyContent(void)
+{
+    if (ThisTagIsSelfClosed()) {
+        EndSelfClosedTag();
+        return;
+    }
+    while (!NextTagIsClosing()) {
+        while (NextIsTag()) {
+            string tagName = ReadName(BeginOpeningTag());
+            SkipAnyContent();
+            CloseTag(tagName);
+        }
+        string data;
+        ReadTagData(data);
+    }
+    return;
+}
+
 void CObjectIStreamXml::SkipAnyContentObject(void)
 {
-    CAnyContentObject obj;
-    ReadAnyContentObject(obj);
+    string tagName;
+    if (!m_RejectedTag.empty()) {
+        tagName = RejectedName();
+    }
+    SkipAnyContent();
+    if (!tagName.empty()) {
+        CloseTag(tagName);
+    }
 }
 
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
@@ -2144,6 +2168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/06/14 13:11:02  gouriano
+* Corrected implementation of SkipAnyContentObject()
+*
 * Revision 1.74  2005/06/10 19:44:41  gouriano
 * Corrected EndOpeningTagSelfClosed() - to not to rely on being inside opening tag; and StartDelayBuffer() - to take into account rejected tag.
 *
