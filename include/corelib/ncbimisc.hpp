@@ -39,7 +39,13 @@
 #ifdef NCBI_OS_UNIX
 #  include <sys/types.h>
 #endif
-#include <ctype.h>
+#ifdef NCBI_COMPILER_ICC
+// Preemptively pull in <cctype>, which breaks if we've already
+// repointed is* at NCBI_is*.
+#  include <cctype>
+#else
+#  include <ctype.h>
+#endif
 
 #if defined(_DEBUG)  &&  !defined(NCBI_NO_STRICT_CTYPE_ARGS)
 #  define NCBI_STRICT_CTYPE_ARGS
@@ -660,6 +666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2005/06/15 15:21:07  ucko
+ * When building with ICC, preemptively pull in <cctype> rather than <ctype.h>.
+ *
  * Revision 1.83  2005/06/13 19:05:23  lavr
  * Engage <ctype.h> argument checks (DEBUG builds only)
  *
