@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gbench.bat,v 1.4 2005/03/17 12:52:09 ivanov Exp $
+REM $Id: all_gbench.bat,v 1.5 2005/06/15 17:01:49 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -57,7 +57,7 @@ GOTO EXIT
 :CONTINUE
 TIME /T
 ECHO INFO: Building "dll\gbench\%CFG%"
-devenv gbench\ncbi_gbench.sln /build %CFG% /project "-BUILD-ALL-"
+devenv gbench\ncbi_gbench.sln /build %CFG% /project "gbench-install"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT
