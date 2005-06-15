@@ -128,7 +128,7 @@ static mode_t s_ConstructMode(CDirEntry::TMode            usr_mode,
                    (special & CDirEntry::fSetUID   ? S_ISUID    : 0) |
 #endif
 #ifdef S_ISGID
-                   (special & CDirEntry::fSetUID   ? S_ISGID    : 0) |
+                   (special & CDirEntry::fSetGID   ? S_ISGID    : 0) |
 #endif
 #ifdef S_ISVTX
                    (special & CDirEntry::fSticky   ? S_ISVTX    : 0) |
@@ -3553,6 +3553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2005/06/15 16:56:09  lavr
+ * Fix fSetGID typo
+ *
  * Revision 1.110  2005/06/14 13:06:15  ivanov
  * + CDirEntry::IsIdentical()
  * + CDirEntry::GetType(const struct stat&)
