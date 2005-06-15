@@ -142,7 +142,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 
     // Set up the context offsets into the sequence that will be added
     // to the sequence block structure.
-    unsigned int ctx_index = 0;      // index into context_offsets array
+    unsigned int ctx_index = 0; // index into BlastQueryInfo::contexts array
     // Longest query length, to be saved in the query info structure
     Uint4 max_length = 0;
 
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2005/06/15 21:48:53  camacho
+ * Fix out of date comment
+ *
  * Revision 1.88  2005/06/10 18:07:01  camacho
  * Use default argument for GetBlastSequence
  *
