@@ -214,6 +214,17 @@ void CTSE_Info::SetName(const CAnnotName& name)
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 {
     entry.Parentize();
+
+    if ( Which() != CSeq_entry::e_not_set ) {
+        if ( m_LoadState == eNotLoaded ) {
+            Reset();
+            m_Object.Reset();
+            m_Split.Reset();
+            m_RequestedId.Reset();
+            m_AnnotIdsFlags = 0;
+        }
+    }
+
     if ( HasDataSource() ) {
         {{
             CDataSource::TMainLock::TWriteLockGuard guard
