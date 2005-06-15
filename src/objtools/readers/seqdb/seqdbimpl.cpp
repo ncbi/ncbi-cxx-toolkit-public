@@ -190,7 +190,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
         state_obj = & m_NextChunkOID;
     }
     
-    int max_oids = (int) oid_list.size();
+    int max_oids = (int) oid_list.capacity();
     
     // This has to be done before ">=end" check, to insure correctness
     // in empty-range cases.
@@ -237,8 +237,9 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
         if (next_oid >= m_RestrictEnd) {
             break;
         }
-        
-        if (m_OIDList->CheckOrFindOID(next_oid)) {
+        // Find next ordinal id, and save it if it falls within iteration range.
+        if (m_OIDList->CheckOrFindOID(next_oid) &&
+            next_oid < m_RestrictEnd) {
             oid_list[iter++] = next_oid++;
         } else {
             next_oid = m_RestrictEnd;
