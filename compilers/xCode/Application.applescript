@@ -136,7 +136,14 @@ on clicked theObject
 		x_SelectAll(false)
 	end if
 	
-	if name of theObject is "otherLibs" then
+	if name of theObject is "otherLibs" then -- install 3rd party libs
+		-- first, be sure the C++ Toolkit path is set correctly
+		set TheNCBIPath to contents of text field "pathNCBI" of tab view item "tab1" of tab view "theTab" of window "Main"
+		if (do shell script "file " & TheNCBIPath & "/include/ncbiconf.h") contains "No such file or directory" then
+			x_ShowAlert("NCBI C++ Toolkit was not found at " & TheNCBIPath)
+			return
+		end if
+		
 		set homePath to the POSIX path of (path to home folder) as string
 		set contents of text field "tmp_dir" of window "install_libs" to homePath & "tmp"
 		set contents of text field "ins_dir" of window "install_libs" to homePath & "sw"
@@ -291,6 +298,12 @@ end idle
 
 (* Launch shell script to install third party libraries *)
 on x_Install3rdPartyLibs()
+	set libScriptTmpDir to contents of text field "tmp_dir" of window "install_libs"
+	if (do shell script "file " & libScriptTmpDir) contains "No such file or directory" then
+		display dialog "Temporary directory was not found at:" & return & libScriptTmpDir buttons {"OK"} default button 1 with icon caution
+		return
+	end if
+	
 	set libScriptRunning to true
 	set libScriptWasRun to true
 	tell progress indicator "progress" of window "install_libs" to start
@@ -616,6 +629,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/06/15 15:33:34  lebedev
+ * A few validation checks added for 3rd party libs build script
+ *
  * Revision 1.15  2005/03/24 15:40:12  lebedev
  * Support for installing third-party libraries added
  *
