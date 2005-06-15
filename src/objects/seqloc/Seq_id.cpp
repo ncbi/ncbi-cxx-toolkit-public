@@ -593,9 +593,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'I': case 'J':                     return eAcc_ddbj_est;
             case 'P': case 'Y':                     return eAcc_gb_genome;
             case 'Q': case 'S':                     return eAcc_embl_patent;
-            case 'R':                               return eAcc_embl_genome;
-                // no specific assignments for CT-CU yet
-            case 'T': case 'U':                     return eAcc_embl_other_nuc;
+            case 'R': case 'T':                     return eAcc_embl_genome;
+                // no specific assignment yet
+            case 'U':                               return eAcc_embl_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1549,6 +1549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.107  2005/06/15 18:23:55  ucko
+ * IdentifyAccession: CT has been assigned to eAcc_embl_genome.
+ *
  * Revision 6.106  2005/06/03 16:53:08  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
