@@ -57,6 +57,7 @@
  * @{
  */
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -375,6 +376,8 @@ extern char* strdup(const char* str);
 
 #ifdef NCBI_STRICT_CTYPE_ARGS
 
+END_NCBI_SCOPE
+
 #define NCBI_CTYPEFAKEBODY \
   { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
 
@@ -524,6 +527,8 @@ inline int NCBI_toupper(C c) NCBI_CTYPEFAKEBODY
 
 #undef NCBI_CTYPEFAKEBODY
 
+BEGIN_NCBI_SCOPE
+
 #endif // NCBI_STRICT_CTYPE_ARGS
 
 
@@ -666,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2005/06/16 20:13:41  lavr
+ * Define ctype substitues outside any namespace
+ *
  * Revision 1.84  2005/06/15 15:21:07  ucko
  * When building with ICC, preemptively pull in <cctype> rather than <ctype.h>.
  *
