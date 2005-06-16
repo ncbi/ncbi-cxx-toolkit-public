@@ -497,13 +497,13 @@ CRef<CDense_seg> CContigAssembly::BestLocalSubAlignment(const CDense_seg& ds_in,
             previous_score = 0;
         }
         if (res0 == '-') {
-            if (i > 0 and avec.GetResidue(0, i - 1) == '-') {
+            if (i > 0 && avec.GetResidue(0, i - 1) == '-') {
                 scores[i] = previous_score + Ws;
             } else {
                 scores[i] = previous_score + Wg + Ws;
             }
         } else if (res1 == '-') {
-            if (i > 0 and avec.GetResidue(1, i - 1) == '-') {
+            if (i > 0 && avec.GetResidue(1, i - 1) == '-') {
                 scores[i] = previous_score + Ws;
             } else {
                 scores[i] = previous_score + Wg + Ws;
@@ -655,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/16 18:00:42  jcherry
+ * Windows compilation fix
+ *
  * Revision 1.1  2005/06/16 17:30:23  jcherry
  * Initial version
  *
