@@ -671,8 +671,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2005/06/16 20:18:20  lavr
+ * Spell substitutes
+ *
  * Revision 1.85  2005/06/16 20:13:41  lavr
- * Define ctype substitues outside any namespace
+ * Define ctype substitutes outside any namespace
  *
  * Revision 1.84  2005/06/15 15:21:07  ucko
  * When building with ICC, preemptively pull in <cctype> rather than <ctype.h>.
