@@ -44,19 +44,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CPHIBlastProtOptionsHandle::CPHIBlastProtOptionsHandle(EAPILocality locality)
-    : CBlastAdvancedProteinOptionsHandle(locality)
+    : CBlastProteinOptionsHandle(locality)
 {
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
     SetDefaults();
     m_Opts->SetProgram(ePHIBlastp);
-}
-
-void CPHIBlastProtOptionsHandle::SetGappedExtensionDefaults()
-{
-    CBlastAdvancedProteinOptionsHandle::SetGappedExtensionDefaults();
-    m_Opts->SetCompositionBasedStatsMode(false);
 }
 
 END_SCOPE(blast)
@@ -69,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/16 19:36:44  dondosha
+ * Derive PHI BLAST protein options handle directly from general protein options handle
+ *
  * Revision 1.1  2005/05/26 14:35:04  dondosha
  * Implementation of PHI BLAST options handle classes
  *

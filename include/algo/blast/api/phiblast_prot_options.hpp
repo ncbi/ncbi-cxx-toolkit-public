@@ -51,7 +51,7 @@ BEGIN_SCOPE(blast)
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
 
-class NCBI_XBLAST_EXPORT CPHIBlastProtOptionsHandle : public CBlastAdvancedProteinOptionsHandle
+class NCBI_XBLAST_EXPORT CPHIBlastProtOptionsHandle : public CBlastProteinOptionsHandle
 {
 public:
     
@@ -62,12 +62,6 @@ public:
     /******************* PHI options ***********************/
     const char* GetPHIPattern() const;
     void SetPHIPattern(const char* p);
-
-protected:
-    /// Overrides CBlastAdvancedProteinOptionsHandle's 
-    /// SetGappedExtensionDefaults for PHI BLAST options.
-    /// Composition based statistics is off by default for PHI BLAST.
-    void SetGappedExtensionDefaults();
 
 private:
     /// Disallow copy constructor
@@ -100,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/16 19:36:25  dondosha
+ * Derive PHI BLAST protein options handle directly from general protein options handle
+ *
  * Revision 1.1  2005/05/26 14:35:30  dondosha
  * PHI BLAST options handle classes
  *
