@@ -39,6 +39,9 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #elif defined(NCBI_OS_UNIX)
+#  ifdef NCBI_OS_DARWIN
+#    include <mach-o/dyld.h>
+#  endif
 #  ifdef HAVE_DLFCN_H
 #    include <dlfcn.h>
 #  endif
@@ -197,27 +200,22 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
         Load();
     }
     _TRACE("Getting entry point: "<<name);
-    // Add leading underscore on Darwin platform
-#if defined(NCBI_OS_DARWIN)
-    const string entry_name = "_" + name;
-#else
-    const string entry_name = name;
-#endif
     TEntryPoint entry;
+
     // Return address of entry (function or data)
 #if defined(NCBI_OS_MSWIN)
-    FARPROC ptr = GetProcAddress(m_Handle->handle, entry_name.c_str());
-#elif defined(NCBI_OS_UNIX)
+    FARPROC ptr = GetProcAddress(m_Handle->handle, name.c_str());
+#elif defined(NCBI_OS_DARWIN)
+    NSModule module = (NSModule)m_Handle->handle;
+    NSSymbol nssymbol = NSLookupSymbolInModule(module, name.c_str());
+	void* ptr = 0;
+    ptr = NSAddressOfSymbol(nssymbol);
+	if (ptr == NULL) {
+		ptr = dlsym (m_Handle->handle, name.c_str());
+	}
+#elif defined(NCBI_OS_UNIX)  &&  defined(HAVE_DLFCN_H)
     void* ptr = 0;
-#  if defined(HAVE_DLFCN_H)
-    ptr = dlsym(m_Handle->handle, entry_name.c_str());
-#    if defined(NCBI_OS_DARWIN)
-    // Try again without the underscore, since 10.3 and up don't need it.
-    if ( !ptr ) {
-        ptr = dlsym(m_Handle->handle, entry_name.c_str() + 1);
-    }
-#    endif
-#  endif
+    ptr = dlsym(m_Handle->handle, name.c_str());
 #else
     void* ptr = 0;
 #endif
@@ -417,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/06/16 17:56:42  lebedev
+ * GetEntryPoint reworked for Mac OS X 10.4
+ *
  * Revision 1.29  2005/05/09 14:46:05  ivanov
  * Added TFlags type and 2 new constructors.
  * Added RTLD_LOCAL/RTLD_GLOBAL support (Unix only).
