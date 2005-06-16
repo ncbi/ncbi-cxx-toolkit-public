@@ -1452,9 +1452,15 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     }
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
+#ifdef NCBI_OS_MSWIN
         if ( errno != EACCES ) {
             return false;
         }
+#else // NCBI_OS_UNIX
+        if ( errno != EXDEV ) {
+            return false;
+        }
+#endif // NCBI_OS_...
         // The rename() can fails in the case of cross-device renaming.
         // So, try to copy and remove it.
         auto_ptr<CDirEntry> 
@@ -3553,6 +3559,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2005/06/16 21:02:44  lavr
+ * Fix UNIX version of CDirEntry::Rename()
+ *
  * Revision 1.111  2005/06/15 16:56:09  lavr
  * Fix fSetGID typo
  *
