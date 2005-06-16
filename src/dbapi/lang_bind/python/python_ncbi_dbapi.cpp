@@ -720,37 +720,34 @@ CTransaction::DestroySelectConnection(IConnection* db_conn)
 EStatementType
 RetrieveStatementType(const string& stmt, EStatementType default_type)
 {
-    string::size_type pos;
     EStatementType stmtType = default_type;
 
-    string stmt_uc = stmt;
-    NStr::ToUpper(stmt_uc);
-    pos = stmt_uc.find_first_not_of(" \t\n");
+    string::size_type pos = stmt.find_first_not_of(" \t\n");
     if (pos != string::npos)
     {
         // "CREATE" should be before DML ...
-        if (stmt_uc.compare(pos, sizeof("CREATE") - 1, "CREATE") == 0)
+        if (NStr::EqualNocase(stmt, pos, sizeof("CREATE") - 1, "CREATE"))
         {
             stmtType = estCreate;
-        } else if (stmt_uc.compare(pos, sizeof("SELECT") - 1, "SELECT") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("SELECT") - 1, "SELECT"))
         {
             stmtType = estSelect;
-        } else if (stmt_uc.compare(pos, sizeof("UPDATE") - 1, "UPDATE") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("UPDATE") - 1, "UPDATE"))
         {
             stmtType = estUpdate;
-        } else if (stmt_uc.compare(pos, sizeof("DELETE") - 1, "DELETE") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("DELETE") - 1, "DELETE"))
         {
             stmtType = estDelete;
-        } else if (stmt_uc.compare(pos, sizeof("INSERT") - 1, "INSERT") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("INSERT") - 1, "INSERT"))
         {
             stmtType = estInsert;
-        } else if (stmt_uc.compare(pos, sizeof("DROP") - 1, "DROP") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("DROP") - 1, "DROP"))
         {
             stmtType = estDrop;
-        } else if (stmt_uc.compare(pos, sizeof("ALTER") - 1, "ALTER") == 0)
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("ALTER") - 1, "ALTER"))
         {
             stmtType = estAlter;
-        // } else if (stmt_uc.compare(pos, sizeof("EXEC") - 1, "EXEC") == 0)
+        // } else if (NStr::EqualNocase(stmt, pos, sizeof("EXEC") - 1, "EXEC"))
         // {
         //    stmtType = estFunction;
         }
@@ -2558,6 +2555,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/06/16 14:53:34  vasilche
+* Fixed incompatibility with gcc 2.95: string::compare -> NStr::Equals()
+*
 * Revision 1.20  2005/06/02 22:08:41  ssikorsk
 * Declared new development points to support BLOB data types.
 *
