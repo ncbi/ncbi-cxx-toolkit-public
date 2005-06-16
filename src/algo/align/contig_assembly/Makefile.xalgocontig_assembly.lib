@@ -1,0 +1,10 @@
+# $Id$
+
+ASN_DEP = seq seqalign
+
+SRC = contig_assembly
+
+LIB = xalgocontig_assembly
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
