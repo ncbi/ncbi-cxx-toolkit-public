@@ -1134,7 +1134,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
 #else
  MinThreshold
 #endif
-, Peaks, true);
+, Peaks , true );
 		
 	int taxid;
 	const CMSSearchSettings::TTaxids& Tax = MyRequest->GetSettings().GetTaxids();
@@ -1333,7 +1333,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 			       GetHits(Threshold, Peaks->GetMaxI(Which)),
 			       Peaks->GetPeptidesExamined(Charge));
 	    }
-	    double eval = pval * Peaks->GetPeptidesExamined(Charge);
+	    double eval = 1e5 * pval * Peaks->GetPeptidesExamined(Charge);
 	    ScoreList.insert(pair<const double, CMSHit *> 
 			     (eval, &(HitList[iHitList])));
 	}   
@@ -1373,8 +1373,9 @@ double CSearch::CalcPvalue(double Mean, int Hits, int n)
 	
     for(i = 0; i < Hits; i++)
 		retval += CalcPoisson(Mean, i);
-	
-    retval = 1.0L - pow(retval, n);
+
+    retval = 1.0L - retval;
+//    retval = 1.0L - pow(retval, n);
     if(retval <= 0.0L) retval = numeric_limits<double>::min();
     return retval;
 }
@@ -1415,7 +1416,8 @@ double CSearch::CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, do
 
     retval /= Normal;
 	
-    retval = 1.0L - pow(retval, n);
+//    retval = 1.0L - pow(retval, n);
+    retval = 1.0L - retval;
     if(retval <= 0.0L) retval = numeric_limits<double>::min();
     return retval;
 }
@@ -1484,6 +1486,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.51  2005/06/16 21:22:11  lewisg
+fix n dependence
+
 Revision 1.50  2005/05/27 20:23:38  lewisg
 top-down charge handling
 

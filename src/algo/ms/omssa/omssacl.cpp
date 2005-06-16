@@ -299,7 +299,7 @@ void COMSSA::Init()
 int main(int argc, const char* argv[]) 
 {
     COMSSA theTestApp;
-    return theTestApp.AppMain(argc, argv);
+    return theTestApp.AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 
@@ -589,6 +589,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.37  2005/06/16 21:22:11  lewisg
+  fix n dependence
+
   Revision 1.36  2005/05/27 20:23:38  lewisg
   top-down charge handling
 
