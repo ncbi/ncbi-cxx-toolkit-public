@@ -89,6 +89,10 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) ir.out
 
-purge: clean purge-headers
+purge: clean purge-headers deactivate
+
+deactivate:
 	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
+
+.PHONY: default_rule all clean purge deactivate

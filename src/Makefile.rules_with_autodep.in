@@ -91,6 +91,9 @@ endif
 ifeq ($(MAKECMDGOALS),requirements)
 DONT_INCLUDE = 1
 endif
+ifeq ($(MAKECMDGOALS),deactivate)
+DONT_INCLUDE = 1
+endif
 
 ifndef DONT_INCLUDE
 ifdef SOURCES

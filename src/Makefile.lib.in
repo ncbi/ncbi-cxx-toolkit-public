@@ -72,6 +72,10 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) ir.out
 
-purge: clean purge-headers
+purge: clean purge-headers deactivate
+
+deactivate:
 	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
 	    $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK)
+
+.PHONY: default_rule all clean purge deactivate

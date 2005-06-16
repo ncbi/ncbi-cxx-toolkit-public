@@ -64,3 +64,6 @@ purge-headers:
 	    rm -f $(exp_headers); \
 	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
 	fi
+
+.PHONY: export-headers purge-headers requirements
+
