@@ -71,7 +71,7 @@ static void s_SplitCommandLine(string s, vector<string>& result) {
         } else {
             if (in_space) {
                 // first non-space
-                item.clear();
+                item.erase();
                 in_space = false;
             }
             if (c == '\'') {
@@ -655,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/17 00:38:57  ucko
+ * Use string::erase() rather than string::clear() for GCC 2.95 compatibility.
+ *
  * Revision 1.2  2005/06/16 18:00:42  jcherry
  * Windows compilation fix
  *
