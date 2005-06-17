@@ -146,7 +146,10 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 MySpectrum->SetIds().push_back(NStr::PrintableString(Match));
             }
             {
-                getline(DTA, Line);
+                do {
+                    getline(DTA, Line);
+                } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
+                
                 CNcbiIstrstream istr(Line.c_str());
     
                 if(!GetDTAHeader(istr, MySpectrum)) {
@@ -206,7 +209,10 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
             MySpectrum->SetNumber(iIndex);
             iIndex++;
             {
-                getline(DTA, Line);
+                do {
+                    getline(DTA, Line);
+                } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
+                
                 CNcbiIstrstream istr(Line.c_str());
 
                 if (!GetDTAHeader(istr, MySpectrum, isPKL)) 
@@ -264,7 +270,6 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
     double dummy(0.0L);
     double precursor(0.0L);
 
-    // read in precursor
     if(!(DTA >> precursor) || precursor < 0) {
         return false;
     }
@@ -366,7 +371,10 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
         MySpectrum->SetNumber(1);
 
         {
-            getline(DTA, Line);
+            do {
+                getline(DTA, Line);
+            } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
+            
             CNcbiIstrstream istr(Line.c_str());
             if(!GetDTAHeader(istr, MySpectrum)) return 1;
         }
@@ -524,6 +532,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/06/17 18:11:55  lewisg
+ * allow blank lines
+ *
  * Revision 1.21  2005/06/01 16:33:18  lewisg
  * deal with spectrum with 0 intensity
  *
