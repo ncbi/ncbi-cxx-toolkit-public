@@ -767,10 +767,9 @@ class CInternalRWLock;
 template <class Class>
 struct SSimpleReadLock
 {
-    bool operator()(Class& inst)
+    void operator()(Class& inst) const
     {
         inst.ReadLock();
-        return true;
     }
 };
 
@@ -786,10 +785,9 @@ typedef TReadLockGuard                             CReadLockGuard;
 template <class Class>
 struct SSimpleWriteLock
 {
-    bool operator()(Class& inst)
+    void operator()(Class& inst) const
     {
         inst.WriteLock();
-        return true;
     }
 };
 
@@ -942,6 +940,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/06/17 15:20:59  vasilche
+ * Changed Lock::() and Unlock::() to return void because it was not used anyway.
+ *
  * Revision 1.37  2004/06/16 21:22:20  vasilche
  * Fixed Read/Write typo.
  *
