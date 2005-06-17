@@ -383,7 +383,6 @@ public:
 
         const_iterator it_closest = end();
         TSignedSeqPos min_dist = -1, min_pos = -1; 
-        ESearchDirection min_dir = eNone;
         
         for( const_iterator it = begin();  it != end(); it++)   {
             const TAlignRange& r = *it;
@@ -693,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/17 20:29:36  yazhuk
+ * Removed unused variable
+ *
  * Revision 1.4  2005/06/13 23:11:51  ucko
  * Sigh, add a missing "typename" keyword to satisfy GCC 3.4 again.
  *
