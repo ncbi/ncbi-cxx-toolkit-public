@@ -1452,15 +1452,13 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     }
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
-#ifdef NCBI_OS_MSWIN
-        if ( errno != EACCES ) {
+        if ( errno != EACCES
+#ifdef NCBI_OS_UNIX
+             &&  errno != EXDEV
+#endif // NCBI_OS_UNIX
+             ) {
             return false;
         }
-#else // NCBI_OS_UNIX
-        if ( errno != EXDEV ) {
-            return false;
-        }
-#endif // NCBI_OS_...
         // The rename() can fails in the case of cross-device renaming.
         // So, try to copy and remove it.
         auto_ptr<CDirEntry> 
@@ -3559,6 +3557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2005/06/17 13:43:09  lavr
+ * CDirEntry::Rename() to Copy() on EACCES on UNIX, too
+ *
  * Revision 1.112  2005/06/16 21:02:44  lavr
  * Fix UNIX version of CDirEntry::Rename()
  *
