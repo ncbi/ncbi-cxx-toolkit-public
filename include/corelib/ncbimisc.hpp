@@ -101,6 +101,127 @@ enum EFollowLinks {
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+/// Support for safe bool operators
+/////////////////////////////////////////////////////////////////////////////
+
+
+/// Macro to hide all oprators with bool argument which may be used
+/// unintentially when second argument is of class having operator bool().
+/// All methods are simply declared private without body definition.
+#define HIDE_SAFE_BOOL_OPERATORS()                      \
+    private:                                            \
+    void operator<(bool) const;                         \
+    void operator>(bool) const;                         \
+    void operator<=(bool) const;                        \
+    void operator>=(bool) const;                        \
+    void operator==(bool) const;                        \
+    void operator!=(bool) const;                        \
+    void operator+(bool) const;                         \
+    void operator-(bool) const;                         \
+    public:
+
+
+/// Low level macro for declaring bool operator.
+#define DECLARE_SAFE_BOOL_METHOD(Expr)                  \
+    operator bool(void) const {                         \
+        return (Expr);                                  \
+    }
+
+
+/// Declaration of safe bool operator from boolean expression.
+/// Actual operator declaration will be:
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL(Expr)             \
+    HIDE_SAFE_BOOL_OPERATORS()                  \
+    DECLARE_SAFE_BOOL_METHOD(Expr)
+
+
+/// Declaration of safe bool operator from pointer expression.
+/// Actual operator declaration will be:
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL_PTR(Ptr)          \
+    DECLARE_OPERATOR_BOOL((Ptr) != 0)
+
+
+/// Declaration of safe bool operator from CRef<>/CConstRef<> expression.
+/// Actual operator declaration will be:
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL_REF(Ref)          \
+    DECLARE_OPERATOR_BOOL((Ref).NotNull())
+
+
+/// Template used for empty base class optimization.
+/// See details in the August '97 "C++ Issue" of Dr. Dobb's Journal
+/// Also available from http://www.cantrip.org/emptyopt.html
+/// We store usually empty template argument class together with data member.
+/// This template is much like STL's pair<>, but the access to members
+/// is done though methods first() and second() returning references
+/// to corresponding members.
+/// First template argument is represented as private base class,
+/// while second template argument is represented as private member.
+/// In addition to constructor taking two arguments,
+/// we add constructor for initialization of only data member (second).
+/// This is useful since usually first type is empty and doesn't require
+/// non-trivial constructor.
+/// We do not define any comparison functions as this template is intented
+/// to be used internally within another templates,
+/// which themselves should provide any additional functionality.
+
+template<class Base, class Member>
+class pair_base_member : private Base
+{
+public:
+    typedef Base base_type;
+    typedef Base first_type;
+    typedef Member member_type;
+    typedef Member second_type;
+    
+    pair_base_member(void)
+        : base_type(), m_Member()
+        {
+        }
+    
+    explicit pair_base_member(const member_type& member_value)
+        : base_type(), m_Member(member_value)
+        {
+        }
+    
+    explicit pair_base_member(const first_type& first_value,
+                              const second_type& second_value)
+        : base_type(first_value), m_Member(second_value)
+        {
+        }
+    
+    const first_type& first() const
+        {
+            return *this;
+        }
+    first_type& first()
+        {
+            return *this;
+        }
+
+    const second_type& second() const
+        {
+            return m_Member;
+        }
+    second_type& second()
+        {
+            return m_Member;
+        }
+
+    void Swap(pair_base_member<first_type, second_type>& p)
+        {
+            swap(first(), p.first());
+            swap(second(), p.second());
+        }
+
+private:
+    member_type m_Member;
+};
+
+
 #ifdef HAVE_NO_AUTO_PTR
 
 
@@ -113,7 +234,7 @@ enum EFollowLinks {
 /// Replacement of STL's std::auto_ptr for compilers with poor "auto_ptr"
 /// implementation.
 /// 
-/// See C++ Toolkit documentation for limiatations and use of auto_ptr.
+/// See C++ Toolkit documentation for limitations and use of auto_ptr.
 
 template <class X>
 class auto_ptr
@@ -247,16 +368,23 @@ class AutoPtr
 {
 public:
     typedef X element_type;         ///< Define element type.
+    typedef Del deleter_type;       ///< Alias for template argument.
 
     /// Constructor.
-    AutoPtr(X* p = 0)
-        : m_Ptr(p), m_Owner(true)
+    AutoPtr(element_type* p = 0)
+        : m_Ptr(p), m_Data(true)
+    {
+    }
+
+    /// Constructor.
+    AutoPtr(element_type* p, const deleter_type& deleter)
+        : m_Ptr(p), m_Data(deleter, true)
     {
     }
 
     /// Copy constructor.
     AutoPtr(const AutoPtr<X, Del>& p)
-        : m_Ptr(0), m_Owner(p.m_Owner)
+        : m_Ptr(0), m_Data(p.m_Data)
     {
         m_Ptr = p.x_Release();
     }
@@ -271,61 +399,64 @@ public:
     AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p)
     {
         if (this != &p) {
-            bool owner = p.m_Owner;
+            bool owner = p.m_Data.second();
             reset(p.x_Release());
-            m_Owner = owner;
+            m_Data.second() = owner;
         }
         return *this;
     }
 
     /// Assignment operator.
-    AutoPtr<X, Del>& operator=(X* p)
+    AutoPtr<X, Del>& operator=(element_type* p)
     {
         reset(p);
         return *this;
     }
 
     /// Bool operator for use in if() clause.
-    operator bool(void) const
-    {
-        return m_Ptr != 0;
-    }
+    DECLARE_OPERATOR_BOOL_PTR(m_Ptr);
 
     // Standard getters.
 
     /// Dereference operator.
-    X& operator* (void) const { return *m_Ptr; }
+    element_type& operator* (void) const { return *m_Ptr; }
 
     /// Reference operator.
-    X* operator->(void) const { return  m_Ptr; }
+    element_type* operator->(void) const { return  m_Ptr; }
 
     /// Get pointer.
-    X* get       (void) const { return  m_Ptr; }
+    element_type* get       (void) const { return  m_Ptr; }
 
     /// Release will release ownership of pointer to caller.
-    X* release(void)
+    element_type* release(void)
     {
-        m_Owner = false;
+        m_Data.second() = false;
         return m_Ptr;
     }
 
     /// Reset will delete old pointer, set content to new value,
     /// and accept ownership upon the new pointer.
-    void reset(X* p = 0)
+    void reset(element_type* p = 0)
     {
-        if (m_Ptr  &&  m_Owner) {
-            Del::Delete(release());
+        if (m_Ptr  &&  m_Data.second()) {
+            m_Data.first().Delete(release());
         }
         m_Ptr   = p;
-        m_Owner = true;
+        m_Data.second() = true;
+    }
+
+    void Swap(AutoPtr<X, Del>& a)
+    {
+        swap(m_Ptr, a.m_Ptr);
+        swap(m_Data, a.m_Data);
     }
 
 private:
-    X* m_Ptr;                       ///< Internal pointer representation.
-    mutable bool m_Owner;
+    element_type* m_Ptr;                  ///< Internal pointer representation.
+    mutable pair_base_member<deleter_type, bool> m_Data; ///< State info.
 
     /// Release for const object.
-    X* x_Release(void) const
+    element_type* x_Release(void) const
     {
         return const_cast<AutoPtr<X, Del>*>(this)->release();
     }
@@ -612,57 +743,29 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-/// Support for safe bool operators
-/////////////////////////////////////////////////////////////////////////////
-
-
-/// Macro to hide all oprators with bool argument which may be used
-/// unintentially when second argument is of class having operator bool().
-/// All methods are simply declared private without body definition.
-#define HIDE_SAFE_BOOL_OPERATORS()                      \
-    private:                                            \
-    void operator<(bool) const;                         \
-    void operator>(bool) const;                         \
-    void operator<=(bool) const;                        \
-    void operator>=(bool) const;                        \
-    void operator==(bool) const;                        \
-    void operator!=(bool) const;                        \
-    void operator+(bool) const;                         \
-    void operator-(bool) const;                         \
-    public:
-
-
-/// Low level macro for declaring bool operator.
-#define DECLARE_SAFE_BOOL_METHOD(Expr)                  \
-    operator bool(void) const {                         \
-        return (Expr);                                  \
-    }
-
-
-/// Declaration of safe bool operator from boolean expression.
-/// Actual operator declaration will be:
-///    operator bool(void) const;
-#define DECLARE_OPERATOR_BOOL(Expr)             \
-    HIDE_SAFE_BOOL_OPERATORS()                  \
-    DECLARE_SAFE_BOOL_METHOD(Expr)
-
-
-/// Declaration of safe bool operator from pointer expression.
-/// Actual operator declaration will be:
-///    operator bool(void) const;
-#define DECLARE_OPERATOR_BOOL_PTR(Ptr)          \
-    DECLARE_OPERATOR_BOOL((Ptr) != 0)
-
-
-/// Declaration of safe bool operator from CRef<>/CConstRef<> expression.
-/// Actual operator declaration will be:
-///    operator bool(void) const;
-#define DECLARE_OPERATOR_BOOL_REF(Ref)          \
-    DECLARE_OPERATOR_BOOL((Ref).NotNull())
-
-
 END_NCBI_SCOPE
+
+BEGIN_STD_SCOPE
+
+template<class T1, class T2>
+inline
+void swap(NCBI_NS_NCBI::pair_base_member<T1,T2>& pair1,
+          NCBI_NS_NCBI::pair_base_member<T1,T2>& pair2)
+{
+    pair1.Swap(pair2);
+}
+
+
+template<class P, class D>
+inline
+void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
+          NCBI_NS_NCBI::AutoPtr<P,D>& ptr2)
+{
+    ptr1.Swap(ptr2);
+}
+
+
+END_STD_SCOPE
 
 
 /* @} */
@@ -671,6 +774,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2005/06/17 15:16:36  vasilche
+ * New template pair_base_member<> for empty base optimization.
+ * Changed AutoPtr to store Deleter object using pair_base_member.
+ * Implemented AutoPtr::Swap.
+ *
  * Revision 1.86  2005/06/16 20:18:20  lavr
  * Spell substitutes
  *
