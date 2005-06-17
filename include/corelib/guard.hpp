@@ -48,7 +48,7 @@ template <class Resource>
 struct SSimpleLock
 {
     typedef Resource resource_type;
-    void operator()(resource_type& resource)
+    void operator()(resource_type& resource) const
     {
         resource.Lock();
     }
@@ -64,7 +64,7 @@ template <class Resource>
 struct SSimpleUnlock
 {
     typedef Resource resource_type;
-    void operator()(resource_type& resource)
+    void operator()(resource_type& resource) const
     {
         resource.Unlock();
     }
@@ -75,8 +75,8 @@ struct SSimpleUnlock
 /// class CGuard<> implements a templatized "resource acquisition is
 /// initialization" (RAII) locking guard.
 ///
-/// This guard is useful for locking resources in an exception-safe manner.  The
-/// classic use of this is to lock a mutex within a C++ scope, as follows:
+/// This guard is useful for locking resources in an exception-safe manner.
+/// The classic use of this is to lock a mutex within a C++ scope, as follows:
 ///
 /// void SomeFunction()
 /// {
@@ -84,9 +84,9 @@ struct SSimpleUnlock
 ///     [...perform some thread-safe operations...]
 /// }
 ///
-/// If an exception is thrown during the performance of any operations while the
-/// guard is held, the guarantee of C++ stack-unwinding will force the guard's
-/// destructor to release whatever resources were acquired.
+/// If an exception is thrown during the performance of any operations while
+/// the guard is held, the guarantee of C++ stack-unwinding will force
+/// the guard's destructor to release whatever resources were acquired.
 ///
 ///
 
@@ -97,60 +97,82 @@ class CGuard
 {
 public:
     typedef Resource resource_type;
+    typedef resource_type* resource_ptr;
     typedef Lock lock_type;
     typedef Unlock unlock_type;
-
-    CGuard(const lock_type& lock = lock_type(),
-           const unlock_type unlock = unlock_type())
-        : m_Resource(0),
-          m_Lock(lock),
-          m_Unlock(unlock)
-    {
-    }
-
+    typedef CGuard<Resource, Lock, Unlock> TThisType;
+    
+    CGuard(void)
+        {
+        }
+    
     /// This constructor locks the resource passed.
-    CGuard(resource_type& resource,
-           const lock_type& lock = lock_type(),
-           const unlock_type unlock = unlock_type())
-        : m_Resource(0),
-          m_Lock(lock),
-          m_Unlock(unlock)
-    {
-        Guard(resource);
-    }
-
+    explicit CGuard(resource_type& resource)
+        {
+            Guard(resource);
+        }
+    
+    explicit CGuard(const lock_type& lock,
+                    const unlock_type& unlock = unlock_type())
+        : m_Data(lock, pair_base_member<unlock_type, resource_ptr>(unlock, 0))
+        {
+        }
+    
+    /// This constructor locks the resource passed.
+    explicit CGuard(resource_type& resource,
+                    const lock_type& lock,
+                    const unlock_type& unlock = unlock_type())
+        : m_Data(lock, pair_base_member<unlock_type, resource_ptr>(unlock, 0))
+        {
+            Guard(resource);
+        }
+    
     /// Destructor releases the resource.
     ~CGuard()
-    {
-        try {
-            Release();
-        } catch(std::exception& ) {
-            // catch and ignore std exceptions in destructor
+        {
+            try {
+                Release();
+            } catch(std::exception& ) {
+                // catch and ignore std exceptions in destructor
+            }
         }
-    }
-
+    
     /// Manually force the resource to be released.
     void Release()
-    {
-        if (m_Resource) {
-            m_Unlock(*m_Resource);
-            m_Resource = 0;
+        {
+            if ( GetResource() ) {
+                GetUnlock()(*GetResource());
+                GetResource() = 0;
+            }
         }
-    }
-
+    
     /// Manually force the guard to protect some other resource.
     void Guard(resource_type& resource)
-    {
-        Release();
-        m_Lock(resource);
-        m_Resource = &resource;
-    }
+        {
+            Release();
+            GetLock()(resource);
+            GetResource() = &resource;
+        }
+    
+protected:
+    resource_ptr& GetResource(void)
+        {
+            return m_Data.second().second();
+        }
+    lock_type& GetLock(void)
+        {
+            return m_Data.first();
+        }
+    unlock_type& GetUnlock(void)
+        {
+            return m_Data.second().first();
+        }
 
 private:
     /// Maintain a pointer to the original resource that is being guarded
-    resource_type*  m_Resource;
-    lock_type       m_Lock;
-    unlock_type     m_Unlock;
+    pair_base_member<lock_type,
+                     pair_base_member<unlock_type,
+                                      resource_ptr> >  m_Data;
 
 private:
     // prevent copying
@@ -166,6 +188,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/17 15:20:19  vasilche
+ * Changed CGuard<> to store locking and unlocking objects using pair_base_member.
+ * Changed Lock::() and Unlock::() to return void because it was not used anyway.
+ *
  * Revision 1.3  2004/10/06 16:14:02  kuznets
  * try and ignore exceptions in ~CGuard
  *
