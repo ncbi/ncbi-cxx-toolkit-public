@@ -605,11 +605,17 @@ public:
     /// @sa
     ///   Reset()
     inline
-    void Reset(TObjectType* ptr)
+    void Reset(TObjectType* newPtr)
         {
-            if ( ptr != m_Data.second() ) {
-                Reset();
-                x_Set(ptr);
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr != oldPtr ) {
+                if ( newPtr ) {
+                    m_Data.first().Lock(newPtr);
+                }
+                m_Data.second() = newPtr;
+                if ( oldPtr ) {
+                    m_Data.first().Unlock(oldPtr);
+                }
             }
         }
 
@@ -1138,11 +1144,17 @@ public:
     /// @sa
     ///   Reset()
     inline
-    void Reset(TObjectType* ptr)
+    void Reset(TObjectType* newPtr)
         {
-            if ( ptr != m_Data.second() ) {
-                Reset();
-                x_Set(ptr);
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr != oldPtr ) {
+                if ( newPtr ) {
+                    m_Data.first().Lock(newPtr);
+                }
+                m_Data.second() = newPtr;
+                if ( oldPtr ) {
+                    m_Data.first().Unlock(oldPtr);
+                }
             }
         }
 
@@ -1719,6 +1731,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/06/17 21:29:31  vasilche
+ * Add reference to new object _before_ removing reference to old object in Reset.
+ *
  * Revision 1.64  2005/06/17 15:29:02  vasilche
  * Changed CRef<> and CConstRef<> to use second template argument for locking.
  * Store locking object in CRef<>/CConstRef<> using pair_base_member.
