@@ -338,39 +338,132 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////
+// Inline methods of CObject
+////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CRefBase --
-///
-/// Define a template class for adding, removing, and releasing references.
 
-template<class C>
-class CRefBase
+inline
+bool CObject::ObjectStateCanBeDeleted(TCount count)
+{
+    return (count & eStateBitsInHeap) != 0;
+}
+
+
+inline
+bool CObject::ObjectStateIsAllocatedInPool(TCount count)
+{
+    return (count & eStateBitsInHeapMask) ==
+        (eInitCounterInPool & eStateBitsInHeapMask);
+}
+
+
+inline
+bool CObject::ObjectStateValid(TCount count)
+{
+    return count >= TCount(eCounterValid);
+}
+
+
+inline
+bool CObject::ObjectStateReferenced(TCount count)
+{
+    return count >= TCount(eCounterValidRef1);
+}
+
+
+inline
+bool CObject::ObjectStateUnreferenced(TCount count)
+{
+    return (count & ~eStateBitsInHeapMask) == eCounterValid;
+}
+
+
+inline
+bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
+{
+    return (count & ~eStateBitsInHeapMask) == eCounterValidRef1;
+}
+
+
+inline
+bool CObject::CanBeDeleted(void) const THROWS_NONE
+{
+    return ObjectStateCanBeDeleted(m_Counter.Get());
+}
+
+
+inline
+bool CObject::IsAllocatedInPool(void) const THROWS_NONE
+{
+    return ObjectStateIsAllocatedInPool(m_Counter.Get());
+}
+
+
+inline
+bool CObject::Referenced(void) const THROWS_NONE
+{
+    return ObjectStateReferenced(m_Counter.Get());
+}
+
+
+inline
+bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
+{
+    return ObjectStateReferencedOnlyOnce(m_Counter.Get());
+}
+
+
+inline
+CObject& CObject::operator=(const CObject& ) THROWS_NONE
+{
+    return *this;
+}
+
+
+inline
+void CObject::AddReference(void) const
+{
+    TCount newCount = m_Counter.Add(eCounterStep);
+    if ( !ObjectStateReferenced(newCount) ) {
+        m_Counter.Add(-eCounterStep); // undo
+        CheckReferenceOverflow(newCount - eCounterStep);
+    }
+}
+
+
+inline
+void CObject::RemoveReference(void) const
+{
+    TCount newCount = m_Counter.Add(-eCounterStep);
+    if ( !ObjectStateReferenced(newCount) ) {
+        RemoveLastReference();
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+// Default locker class for CRef/CConstRef templates
+////////////////////////////////////////////////////////////////////////////
+
+class CObjectCounterLocker
 {
 public:
-    /// Add reference to specified object.
-    static
-    void AddReference(const C* object)
+    void Lock(const CObject* object) const
         {
             object->AddReference();
         }
 
-    /// Remove reference from specified object.
-    static
-    void RemoveReference(const C* object)
+    void Unlock(const CObject* object) const
         {
             object->RemoveReference();
         }
-    
-    /// Release reference from specified object.
-    static
-    void ReleaseReference(const C* object)
+
+    void UnlockRelease(const CObject* object) const
         {
             object->ReleaseReference();
         }
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -380,75 +473,92 @@ public:
 /// Define a template class that stores a pointer to an object and defines
 /// methods for referencing that object.
 
-template<class C>
+template<class C, class Locker = CObjectCounterLocker>
 class CRef {
 public:
     typedef C element_type;             ///< Define alias element_type
     typedef element_type TObjectType;   ///< Define alias TObjectType
+    typedef Locker locker_type;         ///< Define alias for locking type
+    typedef CRef<C, Locker> TThisType;  ///< Alias for this template type
 
     /// Constructor for null pointer.
     inline
     CRef(void) THROWS_NONE
-        : m_Ptr(0)
         {
         }
 
     /// Constructor for ENull pointer.
     inline
     CRef(ENull /*null*/) THROWS_NONE
-        : m_Ptr(0)
         {
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     explicit CRef(TObjectType* ptr)
         {
-            if ( ptr )
-                CRefBase<C>::AddReference(ptr);
-            m_Ptr = ptr;
+            x_Set(ptr);
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    CRef(TObjectType* ptr, const locker_type& locker_value)
+        : m_Data(locker_value, 0)
+        {
+            x_Set(ptr);
         }
 
     /// Copy constructor from an existing CRef object, 
-    CRef(const CRef<C>& ref)
+    CRef(const TThisType& ref)
+        : m_Data(ref.m_Data.first(), 0)
         {
-            TObjectType* ptr = ref.m_Ptr;
-            if ( ptr )
-                CRefBase<C>::AddReference(ptr);
-            m_Ptr = ptr;
+            x_Set(ref.m_Data.second());
         }
 
     /// Destructor.
     ~CRef(void)
         {
-            TObjectType* ptr = m_Ptr;
-            if ( ptr )
-                CRefBase<C>::RemoveReference(ptr);
+            Reset();
         }
-    
+
+    /// Get reference to locker object
+    const locker_type& GetLocker(void) const
+        {
+            return m_Data.first();
+        }
+
     /// Check if CRef is empty -- not pointing to any object, which means
     /// having a null value. 
     ///
     /// @sa
-    ///   IsNull()
+    ///   Empty(), IsNull()
+    bool operator!(void) const THROWS_NONE
+        {
+            return m_Data.second() == 0;
+        }
+
+    /// Check if CRef is empty -- not pointing to any object, which means
+    /// having a null value. 
+    ///
+    /// @sa
+    ///   IsNull(), operator!()
     bool Empty(void) const THROWS_NONE
         {
-            return m_Ptr == 0;
+            return m_Data.second() == 0;
         }
 
     /// Check if CRef is not empty -- pointing to an object and has
     /// a non-null value. 
     bool NotEmpty(void) const THROWS_NONE
         {
-            return m_Ptr != 0;
+            return m_Data.second() != 0;
         }
 
     /// Check if pointer is null -- same effect as Empty().
     ///
     /// @sa
-    ///   Empty()
+    ///   Empty(), operator!()
     bool IsNull(void) const THROWS_NONE
         {
-            return m_Ptr == 0;
+            return m_Data.second() == 0;
         }
 
     /// Check if pointer is not null -- same effect as NotEmpty().
@@ -457,19 +567,17 @@ public:
     ///   NotEmpty()
     bool NotNull(void) const THROWS_NONE
         {
-            return m_Ptr != 0;
+            return m_Data.second() != 0;
         }
 
     /// Swaps the pointer with another reference
     ///
     /// @sa
-    ///   Swap(CRef<C>&)
+    ///   Swap(CRef<>&)
     inline
-    void Swap(CRef<C>& ref)
+    void Swap(TThisType& ref)
         {
-            TObjectType* ptr = m_Ptr;
-            m_Ptr = ref.m_Ptr;
-            ref.m_Ptr = ptr;
+            swap(m_Data, ref.m_Data);
         }
 
     /// Reset reference object.
@@ -482,10 +590,10 @@ public:
     inline
     void Reset(void)
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( ptr ) {
-                m_Ptr = 0;
-                CRefBase<C>::RemoveReference(ptr);
+                m_Data.second() = 0;
+                m_Data.first().Unlock(ptr);
             }
         }
 
@@ -497,15 +605,11 @@ public:
     /// @sa
     ///   Reset()
     inline
-    void Reset(TObjectType* newPtr)
+    void Reset(TObjectType* ptr)
         {
-            TObjectType* oldPtr = m_Ptr;
-            if ( newPtr != oldPtr ) {
-                if ( newPtr )
-                    CRefBase<C>::AddReference(newPtr);
-                m_Ptr = newPtr;
-                if ( oldPtr )
-                    CRefBase<C>::RemoveReference(oldPtr);
+            if ( ptr != m_Data.second() ) {
+                Reset();
+                x_Set(ptr);
             }
         }
 
@@ -523,11 +627,12 @@ public:
     inline
     TObjectType* ReleaseOrNull(void)
         {
-            TObjectType* ptr = m_Ptr;
-            if ( !ptr )
+            TObjectType* ptr = m_Data.second();
+            if ( ptr ) {
                 return 0;
-            m_Ptr = 0;
-            CRefBase<C>::ReleaseReference(ptr);
+            }
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
             return ptr;
         }
 
@@ -546,12 +651,12 @@ public:
     inline
     TObjectType* Release(void)
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
                 CObject::ThrowNullPointerException();
             }
-            m_Ptr = 0;
-            CRefBase<C>::ReleaseReference(ptr);
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
             return ptr;
         }
 
@@ -567,14 +672,14 @@ public:
     /// @sa
     ///   AtomicReleaseTo(CRef& ref);
     inline
-    void AtomicResetFrom(const CRef& ref)
+    void AtomicResetFrom(const TThisType& ref)
         {
-            TObjectType* ptr = ref.m_Ptr;
+            TObjectType* ptr = ref.m_Data.second();
             if ( ptr )
-                CRefBase<C>::AddReference(ptr); // for this
+                m_Data.first().Lock(ptr); // for this
             TObjectType* old_ptr = AtomicSwap(ptr);
             if ( old_ptr )
-                CRefBase<C>::RemoveReference(old_ptr);
+                m_Data.first().Unlock(old_ptr);
         }
     /// Release referenced object to another CRef<> object.
     ///
@@ -588,12 +693,12 @@ public:
     /// @sa
     ///   AtomicResetFrom(const CRef& ref);
     inline
-    void AtomicReleaseTo(CRef& ref)
+    void AtomicReleaseTo(TThisType& ref)
         {
             TObjectType* old_ptr = AtomicSwap(0);
             if ( old_ptr ) {
                 ref.Reset(old_ptr);
-                CRefBase<C>::RemoveReference(old_ptr);
+                m_Data.first().Unlock(old_ptr);
             }
             else {
                 ref.Reset();
@@ -601,24 +706,24 @@ public:
         }
 
     /// Assignment operator for references.
-    CRef<C>& operator=(const CRef<C>& ref)
+    TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Ptr);
+            Reset(ref.m_Data.second());
             return *this;
         }
 
     /// Assignment operator for references with right hand side set to
     /// a pointer.
-    CRef<C>& operator=(TObjectType* ptr)
+    TThisType& operator=(TObjectType* ptr)
         {
             Reset(ptr);
             return *this;
         }
 
     /// Assignment operator with right hand side set to ENull.
-    CRef<C>& operator=(ENull /*null*/)
+    TThisType& operator=(ENull /*null*/)
         {
-            Reset(0);
+            Reset();
             return *this;
         }
 
@@ -634,7 +739,7 @@ public:
     inline
     TObjectType* GetNonNullPointer(void)
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
                 CObject::ThrowNullPointerException();
             }
@@ -652,7 +757,7 @@ public:
     inline
     TObjectType* GetPointerOrNull(void) THROWS_NONE
         {
-            return m_Ptr;
+            return m_Data.second();
         }
 
     /// Get pointer,
@@ -713,7 +818,7 @@ public:
     ///   GetPointerOrNull(), GetPointer(), GetObject()
     const TObjectType* GetNonNullPointer(void) const
         {
-            const TObjectType* ptr = m_Ptr;
+            const TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
                 CObject::ThrowNullPointerException();
             }
@@ -730,7 +835,7 @@ public:
     ///   GetNonNullPointer()
     const TObjectType* GetPointerOrNull(void) const THROWS_NONE
         {
-            return m_Ptr;
+            return m_Data.second();
         }
 
     /// Get pointer -- constant version,
@@ -798,17 +903,86 @@ public:
             return GetPointerOrNull();
         }
     
+    /// Get pointer value and throw a null pointer exception if pointer
+    /// is null.
+    ///
+    /// Similar to GetPointerOrNull() except that this method throws a null
+    /// pointer exception if pointer is null, whereas GetPointerOrNull()
+    /// returns a null value.
+    ///
+    /// @sa
+    ///   GetPointerOrNull(), GetPointer(), GetObject()
+    inline
+    TObjectType* GetNonNullNCPointer(void) const
+        {
+            TObjectType* ptr = m_Data.second();
+            if ( !ptr ) {
+                CObject::ThrowNullPointerException();
+            }
+            return ptr;
+        }
+
+    /// Get pointer value.
+    ///
+    /// Similar to GetNonNullPointer() except that this method returns a null
+    /// if the pointer is null, whereas GetNonNullPointer() throws a null
+    /// pointer exception.
+    ///
+    /// @sa
+    ///   GetNonNullPointer()
+    inline
+    TObjectType* GetNCPointerOrNull(void) const THROWS_NONE
+        {
+            return m_Data.second();
+        }
+
+    /// Get pointer,
+    ///
+    /// Same as GetPointerOrNull().
+    ///
+    /// @sa
+    ///   GetPointerOrNull()
+    inline
+    TObjectType* GetNCPointer(void) const THROWS_NONE
+        {
+            return GetNCPointerOrNull();
+        }
+
+    /// Get object.
+    ///
+    /// Similar to GetNonNullPointer(), except that this method returns the
+    /// object whereas GetNonNullPointer() returns a pointer to the object.
+    /// 
+    /// @sa
+    ///   GetNonNullPointer()
+    inline
+    TObjectType& GetNCObject(void) const
+        {
+            return *GetNonNullNCPointer();
+        }
+
 private:
     TObjectType* AtomicSwap(TObjectType* ptr)
         {
             // MIPSpro won't accept static_cast for some reason.
             return reinterpret_cast<TObjectType*>
                 (SwapPointers(const_cast<void*volatile*>(
-                                  reinterpret_cast<void**>(&m_Ptr)),
+                                  reinterpret_cast<void**>(&m_Data.second())),
                               ptr));
         }
+
+    // Opposite to Reset().
+    // Change CRef<> state from null to ptr.
+    // Preconditions: m_Data.second() == 0
+    void x_Set(TObjectType* ptr)
+        {
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
+        }
     
-    TObjectType* m_Ptr;             ///< Pointer to object
+    pair_base_member<locker_type, TObjectType*> m_Data; ///< Pointer to object
     
 private:
 // Hide incorrect operators
@@ -825,85 +999,99 @@ private:
 /// Define a template class that stores a pointer to an object and defines
 /// methods for constant referencing of object. 
 
-template<class C>
+template<class C, class Locker = CObjectCounterLocker>
 class CConstRef {
 public:
     typedef C element_type;                 ///< Define alias element_type
     typedef const element_type TObjectType; ///< Define alias TObjectType
+    typedef Locker locker_type;             ///< Define alias for locking type
+    typedef CConstRef<C, Locker> TThisType; ///< Alias for this template type
 
     /// Constructor for null pointer.
     inline
     CConstRef(void) THROWS_NONE
-        : m_Ptr(0)
         {
         }
 
     /// Constructor for ENull pointer.
     inline
     CConstRef(ENull /*null*/) THROWS_NONE
-        : m_Ptr(0)
         {
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     explicit CConstRef(TObjectType* ptr)
         {
-            if ( ptr )
-                CRefBase<C>::AddReference(ptr);
-            m_Ptr = ptr;
+            x_Set(ptr);
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    CConstRef(TObjectType* ptr, const locker_type& locker_value)
+        : m_Data(locker_value, 0)
+        {
+            x_Set(ptr);
+        }
+
+    /// Constructor from an existing CConstRef object, 
+    CConstRef(const TThisType& ref)
+        : m_Data(ref.m_Data.first(), 0)
+        {
+            x_Set(ref.m_Data.second());
         }
 
     /// Constructor from an existing CRef object, 
-    CConstRef(const CConstRef<C>& ref)
+    CConstRef(const CRef<C, Locker>& ref)
+        : m_Data(ref.GetLocker(), 0)
         {
-            TObjectType* ptr = ref.m_Ptr;
-            if ( ptr )
-                CRefBase<C>::AddReference(ptr);
-            m_Ptr = ptr;
-        }
-
-    /// Constructor from an existing CRef object, 
-    CConstRef(const CRef<C>& ref)
-        {
-            TObjectType* ptr = ref.GetPointerOrNull();
-            if ( ptr )
-                CRefBase<C>::AddReference(ptr);
-            m_Ptr = ptr;
+            x_Set(ref.GetPointerOrNull());
         }
 
     /// Destructor.
     ~CConstRef(void)
         {
-            TObjectType* ptr = m_Ptr;
-            if ( ptr )
-                CRefBase<C>::RemoveReference(ptr);
+            Reset();
         }
     
+    /// Get reference to locker object
+    const locker_type& GetLocker(void) const
+        {
+            return m_Data.first();
+        }
 
+    /// Check if CConstRef is empty -- not pointing to any object, which means
+    /// having a null value. 
+    ///
+    /// @sa
+    ///   Empty(), IsNull()
+    bool operator!(void) const THROWS_NONE
+        {
+            return m_Data.second() == 0;
+        }
+    
     /// Check if CConstRef is empty -- not pointing to any object which means
     /// having a null value. 
     ///
     /// @sa
-    ///   IsNull()
+    ///   IsNull(), operator!()
     bool Empty(void) const THROWS_NONE
         {
-            return m_Ptr == 0;
+            return m_Data.second() == 0;
         }
 
     /// Check if CConstRef is not empty -- pointing to an object and has
     /// a non-null value. 
     bool NotEmpty(void) const THROWS_NONE
         {
-            return m_Ptr != 0;
+            return m_Data.second() != 0;
         }
 
     /// Check if pointer is null -- same effect as Empty().
     ///
     /// @sa
-    ///   Empty()
+    ///   Empty(), operator!()
     bool IsNull(void) const THROWS_NONE
         {
-            return m_Ptr == 0;
+            return m_Data.second() == 0;
         }
 
     /// Check if pointer is not null -- same effect as NotEmpty().
@@ -912,19 +1100,17 @@ public:
     ///   NotEmpty()
     bool NotNull(void) const THROWS_NONE
         {
-            return m_Ptr != 0;
+            return m_Data.second() != 0;
         }
 
     /// Swaps the pointer with another reference
     ///
     /// @sa
-    ///   Swap(ConstRef<C>&)
+    ///   Swap(ConstRef<>&)
     inline
-    void Swap(CConstRef<C>& ref)
+    void Swap(TThisType& ref)
         {
-            TObjectType* ptr = m_Ptr;
-            m_Ptr = ref.m_Ptr;
-            ref.m_Ptr = ptr;
+            swap(m_Data, ref.m_Data);
         }
 
     /// Reset reference object.
@@ -937,10 +1123,10 @@ public:
     inline
     void Reset(void)
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( ptr ) {
-                m_Ptr = 0;
-                CRefBase<C>::RemoveReference(ptr);
+                m_Data.second() = 0;
+                m_Data.first().Unlock(ptr);
             }
         }
 
@@ -952,15 +1138,11 @@ public:
     /// @sa
     ///   Reset()
     inline
-    void Reset(TObjectType* newPtr)
+    void Reset(TObjectType* ptr)
         {
-            TObjectType* oldPtr = m_Ptr;
-            if ( newPtr != oldPtr ) {
-                if ( newPtr )
-                    CRefBase<C>::AddReference(newPtr);
-                m_Ptr = newPtr;
-                if ( oldPtr )
-                    CRefBase<C>::RemoveReference(oldPtr);
+            if ( ptr != m_Data.second() ) {
+                Reset();
+                x_Set(ptr);
             }
         }
 
@@ -978,11 +1160,12 @@ public:
     inline
     TObjectType* ReleaseOrNull(void)
         {
-            TObjectType* ptr = m_Ptr;
-            if ( !ptr )
+            TObjectType* ptr = m_Data.second();
+            if ( !ptr ) {
                 return 0;
-            m_Ptr = 0;
-            CRefBase<C>::ReleaseReference(ptr);
+            }
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
             return ptr;
         }
 
@@ -1001,12 +1184,12 @@ public:
     inline
     TObjectType* Release(void)
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
                 CObject::ThrowNullPointerException();
             }
-            m_Ptr = 0;
-            CRefBase<C>::ReleaseReference(ptr);
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
             return ptr;
         }
 
@@ -1024,12 +1207,12 @@ public:
     inline
     void AtomicResetFrom(const CConstRef& ref)
         {
-            TObjectType* ptr = ref.m_Ptr;
+            TObjectType* ptr = ref.m_Data.second();
             if ( ptr )
-                CRefBase<C>::AddReference(ptr); // for this
+                m_Data.first().Lock(ptr); // for this
             TObjectType* old_ptr = AtomicSwap(ptr);
             if ( old_ptr )
-                CRefBase<C>::RemoveReference(old_ptr);
+                m_Data.first().Unlock(old_ptr);
         }
     /// Release referenced object to another CConstRef<> object.
     ///
@@ -1048,7 +1231,7 @@ public:
             TObjectType* old_ptr = AtomicSwap(0);
             if ( old_ptr ) {
                 ref.Reset(old_ptr);
-                CRefBase<C>::RemoveReference(old_ptr);
+                m_Data.first().Unlock(old_ptr);
             }
             else {
                 ref.Reset();
@@ -1056,14 +1239,14 @@ public:
         }
 
     /// Assignment operator for const references.
-    CConstRef<C>& operator=(const CConstRef<C>& ref)
+    TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Ptr);
+            Reset(ref.m_Data.second());
             return *this;
         }
 
     /// Assignment operator for assigning a reference to a const reference.
-    CConstRef<C>& operator=(const CRef<C>& ref)
+    TThisType& operator=(const CRef<C, Locker>& ref)
         {
             Reset(ref.GetPointerOrNull());
             return *this;
@@ -1071,16 +1254,16 @@ public:
 
     /// Assignment operator for const references with right hand side set to
     /// a pointer.
-    CConstRef<C>& operator=(TObjectType* ptr)
+    TThisType& operator=(TObjectType* ptr)
         {
             Reset(ptr);
             return *this;
         }
 
     /// Assignment operator with right hand side set to ENull.
-    CConstRef<C>& operator=(ENull /*null*/)
+    TThisType& operator=(ENull /*null*/)
         {
-            Reset(0);
+            Reset();
             return *this;
         }
 
@@ -1096,7 +1279,7 @@ public:
     inline
     TObjectType* GetNonNullPointer(void) const
         {
-            TObjectType* ptr = m_Ptr;
+            TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
                 CObject::ThrowNullPointerException();
             }
@@ -1114,7 +1297,7 @@ public:
     inline
     TObjectType* GetPointerOrNull(void) const THROWS_NONE
         {
-            return m_Ptr;
+            return m_Data.second();
         }
 
     /// Get pointer,
@@ -1179,12 +1362,23 @@ private:
             return reinterpret_cast<TObjectType*>
                 (SwapPointers(const_cast<void*volatile*>(
                                   const_cast<void**>(
-                                      reinterpret_cast<const void**>(&m_Ptr))),
+                                      reinterpret_cast<const void**>(&m_Data.second()))),
                               const_cast<C*>(ptr)));
         }
 
-    TObjectType* m_Ptr;             ///< Pointer to object
-
+    // Opposite to Reset().
+    // Change CRef<> state from null to ptr.
+    // Preconditions: m_Data.second() == 0
+    void x_Set(TObjectType* ptr)
+        {
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
+        }
+    
+    pair_base_member<locker_type, TObjectType*> m_Data; ///< Pointer to object
+    
 private:
 // Hide incorrect operators
     void operator-(TObjectType*) const;
@@ -1197,65 +1391,65 @@ private:
 /// Comparison operators for CRef<> and CConstRef<> with ENull
 
 /// Template operator == function for CRef objects -- rhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CRef<T>& r1, ENull /*null*/)
+bool operator== (const CRef<T,L>& r1, ENull /*null*/)
 {
     return r1.IsNull();
 }
 
 /// Template operator == function for CRef objects -- lhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (ENull /*null*/, const CRef<T>& r1)
+bool operator== (ENull /*null*/, const CRef<T,L>& r1)
 {
     return r1.IsNull();
 }
 
 /// Template operator != function for CRef objects -- rhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CRef<T>& r1, ENull /*null*/)
+bool operator!= (const CRef<T,L>& r1, ENull /*null*/)
 {
     return !r1.IsNull();
 }
 
 /// Template operator != function for CRef objects -- lhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (ENull /*null*/, const CRef<T>& r1)
+bool operator!= (ENull /*null*/, const CRef<T,L>& r1)
 {
     return !r1.IsNull();
 }
 
 /// Template operator == function for CConstRef objects -- rhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CConstRef<T>& r1, ENull /*null*/)
+bool operator== (const CConstRef<T,L>& r1, ENull /*null*/)
 {
     return r1.IsNull();
 }
 
 /// Template operator == function for CConstRef objects -- lhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (ENull /*null*/, const CConstRef<T>& r1)
+bool operator== (ENull /*null*/, const CConstRef<T,L>& r1)
 {
     return r1.IsNull();
 }
 
 /// Template operator != function for CConstRef objects -- rhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CConstRef<T>& r1, ENull /*null*/)
+bool operator!= (const CConstRef<T,L>& r1, ENull /*null*/)
 {
     return !r1.IsNull();
 }
 
 /// Template operator != function for CConstRef objects -- lhs is null.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
+bool operator!= (ENull /*null*/, const CConstRef<T,L>& r1)
 {
     return !r1.IsNull();
 }
@@ -1267,49 +1461,49 @@ bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
 /// Comparison operators for CRef<>
 
 /// Template operator < function for CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator< (const CRef<T>& r1, const CRef<T>& r2)
+bool operator< (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() < r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator> (const CRef<T>& r1, const CRef<T>& r2)
+bool operator> (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() > r2.GetPointerOrNull();
 }
 
 /// Template operator < function for CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator<= (const CRef<T>& r1, const CRef<T>& r2)
+bool operator<= (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() <= r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator>= (const CRef<T>& r1, const CRef<T>& r2)
+bool operator>= (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() >= r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CRef<T>& r1, const CRef<T>& r2)
+bool operator== (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef and CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
+bool operator!= (const CRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
@@ -1318,49 +1512,49 @@ bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
 /// Comparison operators for CConstRef<>
 
 /// Template operator < function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator< (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() < r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator> (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator> (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() > r2.GetPointerOrNull();
 }
 
 /// Template operator < function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator<= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator<= (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() <= r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator>= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator>= (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() >= r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator== (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+bool operator!= (const CConstRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
@@ -1370,33 +1564,33 @@ bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
 /// Mixed comparison operators
 
 /// Template operator == function for CConstRef and CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CConstRef<T>& r1, const CRef<T>& r2)
+bool operator== (const CConstRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef and CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator== (const CRef<T>& r1, const CConstRef<T>& r2)
+bool operator== (const CRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CConstRef and CRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CConstRef<T>& r1, const CRef<T>& r2)
+bool operator!= (const CConstRef<T,L>& r1, const CRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CRef and CConstRef objects.
-template<class T>
+template<class T, class L>
 inline
-bool operator!= (const CRef<T>& r1, const CConstRef<T>& r2)
+bool operator!= (const CRef<T,L>& r1, const CConstRef<T,L>& r2)
 {
     return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
@@ -1445,6 +1639,15 @@ class CObjectFor : public CObject
 public:
     typedef T TObjectType;          ///< Define alias for template parameter
 
+    CObjectFor(void)
+        {
+        }
+
+    explicit CObjectFor(const TObjectType& data)
+        : m_Data(data)
+        {
+        }
+
     /// Get data as a reference.
     T& GetData(void)
         {
@@ -1490,23 +1693,23 @@ private:
 /* @} */
 
 
-#include <corelib/ncbiobj.inl>
-
 END_NCBI_SCOPE
 
 BEGIN_STD_SCOPE
 
-template<class C>
+template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CRef<C>& ref1, NCBI_NS_NCBI::CRef<C>& ref2)
+void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
+          NCBI_NS_NCBI::CRef<C,L>& ref2)
 {
     ref1.Swap(ref2);
 }
 
 
-template<class C>
+template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CConstRef<C>& ref1, NCBI_NS_NCBI::CConstRef<C>& ref2)
+void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
+          NCBI_NS_NCBI::CConstRef<C,L>& ref2)
 {
     ref1.Swap(ref2);
 }
@@ -1516,6 +1719,12 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/06/17 15:29:02  vasilche
+ * Changed CRef<> and CConstRef<> to use second template argument for locking.
+ * Store locking object in CRef<>/CConstRef<> using pair_base_member.
+ * Moved CObject inline methods from ncbiobj.inl to ncbiobj.hpp.
+ * Added set of CRef::GetNC*() const methods to allow getting non-const pointer.
+ *
  * Revision 1.63  2005/04/26 14:08:33  vasilche
  * Allow allocation of CObjects from CObjectMemoryPool.
  * Documented CObject counter bits.
