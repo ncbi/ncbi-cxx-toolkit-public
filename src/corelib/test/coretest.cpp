@@ -821,6 +821,65 @@ static void TestHeapStack(void)
 }
 
 
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 300)
+# define NO_EMPTY_BASE_OPTIMIZATION
+#endif
+
+class CEmpty
+{
+};
+
+class CSubclass : CEmpty
+{
+    int i;
+};
+
+
+template<class A, class B>
+class CObjectSizeTester
+{
+public:
+    static void Test(bool& error)
+        {
+            size_t a_size = sizeof(A);
+            size_t b_size = sizeof(B);
+            if ( a_size != b_size ) {
+                NcbiCerr
+                    << "Object size test failed:" << NcbiEndl
+                    << "  sizeof(" << typeid(A).name() << ") = " << a_size
+                    << NcbiEndl
+                    << "  sizeof(" << typeid(B).name() << ") = " << b_size
+                    << NcbiEndl;
+                error = true;
+            }
+        }
+};
+
+
+static void TestObjectSizes(void)
+{
+    NcbiCout <<
+        "Check if compiler supports empty-base optimization" << NcbiEndl;
+    // check if it works
+    bool error = false;
+    CObjectSizeTester<CSubclass, int>::Test(error);
+    CObjectSizeTester<CRef<CObject>, CObject*>::Test(error);
+    CObjectSizeTester<CConstRef<CObject>, const CObject*>::Test(error);
+    CObjectSizeTester<CMutexGuard, CMutexGuard::resource_type*>::Test(error);
+    if ( !error ) {
+        NcbiCout <<
+            "This compiler supports empty-base optimization!" << NcbiEndl;
+    }
+    else {
+        NcbiCerr <<
+            "Test for empty-base optimization failed!" << NcbiEndl;
+#ifndef NO_EMPTY_BASE_OPTIMIZATION
+        assert(!error);
+#endif
+    }
+}
+
+
 /////////////////////////////////
 // Test application
 //
@@ -844,6 +903,7 @@ int CTestApplication::Run(void)
     TestRegistry();
     TestThrowTrace();
     TestHeapStack();
+    TestObjectSizes();
 
     NcbiCout << NcbiEndl << "CORETEST execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
@@ -891,6 +951,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2005/06/17 15:30:06  vasilche
+ * Added test of compiler support for empty base optimization.
+ *
  * Revision 1.94  2005/04/14 20:27:03  ssikorsk
  * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
  *
