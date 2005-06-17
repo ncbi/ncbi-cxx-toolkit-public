@@ -634,7 +634,7 @@ public:
     TObjectType* ReleaseOrNull(void)
         {
             TObjectType* ptr = m_Data.second();
-            if ( ptr ) {
+            if ( !ptr ) {
                 return 0;
             }
             m_Data.second() = 0;
@@ -1731,6 +1731,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/06/17 21:37:45  vasilche
+ * Fixed type in CRef<>::ReleaseOrNull().
+ *
  * Revision 1.65  2005/06/17 21:29:31  vasilche
  * Add reference to new object _before_ removing reference to old object in Reset.
  *
