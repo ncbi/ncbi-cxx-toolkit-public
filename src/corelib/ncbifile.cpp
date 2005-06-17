@@ -1452,16 +1452,18 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     }
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
-        if ( errno != EACCES
-#ifdef NCBI_OS_UNIX
-             &&  errno != EXDEV
-#endif // NCBI_OS_UNIX
-             ) {
+#ifdef NCBI_OS_MSWIN
+        if ( errno != EACCES ) {
             return false;
         }
-        // The rename() can fails in the case of cross-device renaming.
-        // So, try to copy and remove it.
-        auto_ptr<CDirEntry> 
+#else  // NCBI_OS_UNIX
+        if ( errno != EXDEV ) {
+            return false;
+        }
+#endif // NCBI_OS_...
+        // Note that rename() fails in the case of cross-device renaming.
+        // So, try to copy, instead, then remove the original.
+        auto_ptr<CDirEntry>
             e(CDirEntry::CreateObject(src_type, src.GetPath()));
         if ( !e->Copy(dst.GetPath(), fCF_Recursive | fCF_PreserveAll ) ) {
             auto_ptr<CDirEntry> 
@@ -1471,9 +1473,8 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         }
         // Remove 'src'
         if ( !e->Remove(eRecursive) ) {
-            // Do not delete 'dst' here, because in the case of dirs
-            // the source directory can be already partly removed and
-            // we can lost data.
+            // Do not delete 'dst' here because in case of directories the
+            // source may be already partially removed, so we can lose data.
             return false;
         }
     }
@@ -3557,6 +3558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2005/06/17 13:49:56  lavr
+ * Rollback to 1.112
+ *
  * Revision 1.113  2005/06/17 13:43:09  lavr
  * CDirEntry::Rename() to Copy() on EACCES on UNIX, too
  *
