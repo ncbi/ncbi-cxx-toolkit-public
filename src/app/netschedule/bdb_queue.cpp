@@ -849,6 +849,8 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
         lst_size = wnodes.size();
     }}
 
+    time_t curr = time(0);
+
     for (SLockedQueue::TListenerList::size_type i = 0; i < lst_size; ++i) {
         {{
         CReadLockGuard guard(m_LQueue.wn_lock);  
@@ -856,6 +858,12 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
         host = ql->host;
         port = ql->udp_port;
         last_connect = ql->last_connect;
+
+        // cut off one day old obsolete connections
+        if ( (last_connect + (24 * 3600)) < curr) {
+            continue;
+        }
+
         auth = ql->auth;
         }}
 
@@ -2018,6 +2026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/06/20 15:49:43  kuznets
+ * Node statistics: do not show obsolete connections
+ *
  * Revision 1.36  2005/06/20 13:31:08  kuznets
  * Added access control for job submitters and worker nodes
  *
