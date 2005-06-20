@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/06/20 18:46:56  gouriano
+* Corrected generation of schema for enum
+*
 * Revision 1.31  2005/06/06 15:31:15  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
@@ -306,6 +309,10 @@ void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
         if(IsInteger()) {
             out << "    <xs:simpleContent>\n"
                 << "      <xs:extension base=\"xs:integer\">\n";
+            use = "optional";
+        }
+        const CDataMember* mem = GetDataMember();
+        if (mem && mem->Optional() && mem->GetDefault()) {
             use = "optional";
         }
     }
