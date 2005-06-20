@@ -40,17 +40,20 @@
 extern "C" {
 #endif
 
-/** Blast error message severities */
+/** Blast error message severities .
+ * These start with 1 to be consistent
+ * with the C toolkit severity numbers.
+ */
 typedef enum {
-   BLAST_SEV_INFO = 0,
-   BLAST_SEV_WARNING,
-   BLAST_SEV_ERROR,
-   BLAST_SEV_FATAL
-} BlastSeverity;
+   eBlastSevInfo = 1,
+   eBlastSevWarning,
+   eBlastSevError,
+   eBlastSevFatal
+} EBlastSeverity;
 
 /** Structure to hold the a message from the BLAST code. */
 typedef struct Blast_Message {
-	BlastSeverity severity; /**< severity code */
+	EBlastSeverity severity; /**< severity code */
 	Int4 code;		/**< major code for error (currently unused) */
 	Int4 subcode;	/**< minor code for this error (currently unused). */
 	char* message;	/**< User message to be saved. */
@@ -71,7 +74,7 @@ Blast_Message* Blast_MessageFree(Blast_Message* blast_msg);
  * @param message User message to be saved [in]
 */
 
-Int2 Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity, 
+Int2 Blast_MessageWrite(Blast_Message* *blast_msg, EBlastSeverity severity, 
                         Int4 code, Int4 subcode, const char *message);
 
 
