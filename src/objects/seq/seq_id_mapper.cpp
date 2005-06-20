@@ -87,10 +87,6 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
     s_ResetInstance(this);
-#ifdef _DEBUG
-    CSeq_id_Handle::DumpRegister("~CSeq_id_Mapper");
-#endif
-
     ITERATE ( TTrees, it, m_Trees ) {
         _ASSERT((*it)->Empty());
     }
@@ -203,6 +199,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/06/20 17:28:20  vasilche
+* Use CRef's locker for CSeq_id_Info locking.
+* Removed obsolete registering functions.
+* Changed sorting order of CSeq_id_Handle to put gi's first.
+*
 * Revision 1.51  2004/09/30 18:42:40  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 * Added thread safety to CSeq_id_Mapper::GetInstance().

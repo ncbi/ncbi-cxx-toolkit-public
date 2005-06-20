@@ -62,114 +62,183 @@ class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
 
-class NCBI_SEQ_EXPORT CSeq_id_Info : public CObject
+class CSeq_id_Info : public CObject
 {
 public:
-    explicit CSeq_id_Info(CSeq_id::E_Choice type,
-                          CSeq_id_Mapper* mapper);
-    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
-                          CSeq_id_Mapper* mapper);
-    ~CSeq_id_Info(void);
+    NCBI_SEQ_EXPORT CSeq_id_Info(CSeq_id::E_Choice type,
+                                 CSeq_id_Mapper* mapper);
+    NCBI_SEQ_EXPORT CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
+                                 CSeq_id_Mapper* mapper);
+    NCBI_SEQ_EXPORT ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
         {
             return m_Seq_id;
         }
-    CConstRef<CSeq_id> GetGiSeqId(int gi) const;
+    NCBI_SEQ_EXPORT CConstRef<CSeq_id> GetGiSeqId(int gi) const;
 
-    void AddLock(void) const;
-    void RemoveLock(void) const;
+    // locking
+    void AddLock(void) const
+        {
+            _VERIFY(m_LockCounter.Add(1) > 0);
+        }
+    void RemoveLock(void) const
+        {
+            if ( m_LockCounter.Add(-1) <= 0 ) {
+                x_RemoveLastLock();
+            }
+        }
+    int GetLockCounter(void) const
+        {
+            int counter = m_LockCounter.Get();
+            _ASSERT(counter >= 0);
+            return counter;
+        }
 
-    int GetLockCounter(void) const;
-
-    CSeq_id::E_Choice GetType(void) const;
-    CSeq_id_Mapper& GetMapper(void) const;
-    CSeq_id_Which_Tree& GetTree(void) const;
+    CSeq_id::E_Choice GetType(void) const
+        {
+            return m_Seq_id_Type;
+        }
+    CSeq_id_Mapper& GetMapper(void) const
+        {
+            return *m_Mapper;
+        }
+    NCBI_SEQ_EXPORT CSeq_id_Which_Tree& GetTree(void) const;
 
 private:
-    CSeq_id_Info(const CSeq_id_Info&);
-    const CSeq_id_Info& operator=(const CSeq_id_Info&);
-
-    void x_RemoveLastLock(void) const;
+    NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
 
     mutable CAtomicCounter       m_LockCounter;
     CSeq_id::E_Choice            m_Seq_id_Type;
     CConstRef<CSeq_id>           m_Seq_id;
     mutable CRef<CSeq_id_Mapper> m_Mapper;
+
+private:
+    // to prevent copying
+    CSeq_id_Info(const CSeq_id_Info&);
+    const CSeq_id_Info& operator=(const CSeq_id_Info&);
 };
 
 
-class NCBI_SEQ_EXPORT CSeq_id_Handle
+class CSeq_id_InfoLocker : protected CObjectCounterLocker
+{
+public:
+    void Lock(const CSeq_id_Info* info) const
+        {
+            CObjectCounterLocker::Lock(info);
+            info->AddLock();
+        }
+    void Unlock(const CSeq_id_Info* info) const
+        {
+            info->RemoveLock();
+            CObjectCounterLocker::Unlock(info);
+        }
+};
+
+
+class CSeq_id_Handle
 {
 public:
     // 'ctors
-    CSeq_id_Handle(void);
-    ~CSeq_id_Handle(void);
-    explicit CSeq_id_Handle(const CSeq_id_Info* info, int gi = 0);
-
-    CSeq_id_Handle(const CSeq_id_Handle& handle);
-    CSeq_id_Handle& operator=(const CSeq_id_Handle& handle);
+    CSeq_id_Handle(void)
+        : m_Info(null), m_Gi(0)
+        {
+        }
+    explicit CSeq_id_Handle(const CSeq_id_Info* info, int gi = 0)
+        : m_Info(info), m_Gi(gi)
+        {
+            _ASSERT(info);
+        }
 
     /// Faster way to create a handle for a gi.
-    static CSeq_id_Handle GetGiHandle(int gi);
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetGiHandle(int gi);
 
     /// Normal way of getting a handle, works for any seq-id.
-    static CSeq_id_Handle GetHandle(const CSeq_id& id);
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const CSeq_id& id);
 
-    bool operator== (const CSeq_id_Handle& handle) const;
-    bool operator!= (const CSeq_id_Handle& handle) const;
-    bool operator<  (const CSeq_id_Handle& handle) const;
-    bool operator== (const CSeq_id& id) const;
+    bool operator== (const CSeq_id_Handle& handle) const
+        {
+            return m_Gi == handle.m_Gi && m_Info == handle.m_Info;
+        }
+    bool operator!= (const CSeq_id_Handle& handle) const
+        {
+            return m_Gi != handle.m_Gi || m_Info != handle.m_Info;
+        }
+    bool operator<  (const CSeq_id_Handle& handle) const
+        {
+            return m_Gi > handle.m_Gi || // gi != 0 first
+                m_Gi == handle.m_Gi && m_Info < handle.m_Info;
+        }
+    bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
     /// Check if the handle is a valid or an empty one
     DECLARE_OPERATOR_BOOL_REF(m_Info);
 
     /// Reset the handle (remove seq-id reference)
-    void Reset(void);
+    void Reset(void)
+        {
+            m_Info.Reset();
+            m_Gi = 0;
+        }
 
     //
-    bool HaveMatchingHandles(void) const;
-    bool HaveReverseMatch(void) const;
+    bool NCBI_SEQ_EXPORT HaveMatchingHandles(void) const;
+    bool NCBI_SEQ_EXPORT HaveReverseMatch(void) const;
 
     //
     typedef set<CSeq_id_Handle> TMatches;
-    void GetMatchingHandles(TMatches& matches) const;
-    void GetReverseMatchingHandles(TMatches& matches) const;
+    void NCBI_SEQ_EXPORT GetMatchingHandles(TMatches& matches) const;
+    void NCBI_SEQ_EXPORT GetReverseMatchingHandles(TMatches& matches) const;
 
     /// True if *this matches to h.
     /// This mean that *this is either the same as h,
     /// or more generic version of h.
-    bool MatchesTo(const CSeq_id_Handle& h) const;
+    bool NCBI_SEQ_EXPORT MatchesTo(const CSeq_id_Handle& h) const;
 
     /// True if "this" is a better bioseq than "h".
-    bool IsBetter(const CSeq_id_Handle& h) const;
+    bool NCBI_SEQ_EXPORT IsBetter(const CSeq_id_Handle& h) const;
 
-    string AsString(void) const;
-    bool IsGi(void) const;
-    int GetGi(void) const;
-    unsigned GetHash(void) const;
+    string NCBI_SEQ_EXPORT AsString(void) const;
 
-    CSeq_id::E_Choice Which(void) const;
-    CSeq_id::EAccessionInfo IdentifyAccession(void) const;
+    bool IsGi(void) const
+        {
+            return m_Gi != 0;
+        }
+    int GetGi(void) const
+        {
+            return m_Gi;
+        }
+    unsigned NCBI_SEQ_EXPORT GetHash(void) const;
 
-    CConstRef<CSeq_id> GetSeqId(void) const;
-    CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
+    CSeq_id::E_Choice Which(void) const
+        {
+            return m_Info->GetType();
+        }
+    CSeq_id::EAccessionInfo IdentifyAccession(void) const
+        {
+            return m_Info->GetSeqId()->IdentifyAccession();
+        }
 
-    CSeq_id_Mapper& GetMapper(void) const;
+    CConstRef<CSeq_id> NCBI_SEQ_EXPORT GetSeqId(void) const;
+    CConstRef<CSeq_id> NCBI_SEQ_EXPORT GetSeqIdOrNull(void) const;
 
-    static void DumpRegister(const char* msg);
+    CSeq_id_Mapper& GetMapper(void) const
+        {
+            return m_Info->GetMapper();
+        }
 
-    void Swap(CSeq_id_Handle& idh);
+    void Swap(CSeq_id_Handle& idh)
+        {
+            m_Info.Swap(idh.m_Info);
+            swap(m_Gi, idh.m_Gi);
+        }
 
 private:
-    void x_Register(void);
-    void x_Deregister(void);
-    
     friend class CSeq_id_Mapper;
 
     // Seq-id info
-    CConstRef<CSeq_id_Info>    m_Info;
-    int                        m_Gi;
+    CConstRef<CSeq_id_Info, CSeq_id_InfoLocker> m_Info;
+    int m_Gi;
 };
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container
@@ -188,183 +257,6 @@ CConstRef<CSeq_id> Get_ConstRef_Seq_id(const CSeq_id_Handle& id)
 //
 /////////////////////////////////////////////////////////////////////
 
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_id_Info
-/////////////////////////////////////////////////////////////////////////////
-
-
-inline
-void CSeq_id_Info::AddLock(void) const
-{
-    _VERIFY(m_LockCounter.Add(1) > 0);
-}
-
-
-inline
-void CSeq_id_Info::RemoveLock(void) const
-{
-    if ( m_LockCounter.Add(-1) <= 0 ) {
-        x_RemoveLastLock();
-    }
-}
-
-
-inline
-int CSeq_id_Info::GetLockCounter(void) const
-{
-    int counter = m_LockCounter.Get();
-    _ASSERT(counter >= 0);
-    return counter;
-}
-
-
-inline
-CSeq_id::E_Choice CSeq_id_Info::GetType(void) const
-{
-    return m_Seq_id_Type;
-}
-
-
-inline
-CSeq_id_Mapper& CSeq_id_Info::GetMapper(void) const
-{
-    return *m_Mapper;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_id_Handle
-/////////////////////////////////////////////////////////////////////////////
-
-
-inline
-CSeq_id_Handle::CSeq_id_Handle(void)
-    : m_Info(0), m_Gi(0)
-{
-}
-
-
-inline
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Info* info, int gi)
-    : m_Info(info), m_Gi(gi)
-{
-    m_Info->AddLock();
-    _ASSERT(info);
-}
-
-
-inline
-CSeq_id_Handle::~CSeq_id_Handle(void)
-{
-    if ( m_Info ) {
-        m_Info->RemoveLock();
-    }
-}
-
-
-inline
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
-{
-    m_Info = handle.m_Info;
-    m_Gi = handle.m_Gi;
-    if ( m_Info ) {
-        m_Info->AddLock();
-    }
-}
-
-
-inline
-CSeq_id_Handle& CSeq_id_Handle::operator=(const CSeq_id_Handle& handle)
-{
-    if (this != &handle) {
-        if ( m_Info ) {
-            m_Info->RemoveLock();
-        }
-        m_Info = handle.m_Info;
-        m_Gi = handle.m_Gi;
-        if ( m_Info ) {
-            m_Info->AddLock();
-        }
-    }
-    return *this;
-}
-
-
-inline
-void CSeq_id_Handle::Reset(void)
-{
-    if ( m_Info ) {
-        m_Info->RemoveLock();
-    }
-    m_Info.Reset();
-    m_Gi = 0;
-}
-
-
-inline
-bool CSeq_id_Handle::operator==(const CSeq_id_Handle& handle) const
-{
-    return m_Gi == handle.m_Gi && m_Info == handle.m_Info;
-}
-
-
-inline
-bool CSeq_id_Handle::operator!=(const CSeq_id_Handle& handle) const
-{
-    return m_Gi != handle.m_Gi || m_Info != handle.m_Info;
-}
-
-
-inline
-bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
-{
-    return m_Gi < handle.m_Gi ||
-        m_Gi == handle.m_Gi && m_Info < handle.m_Info;
-}
-
-
-inline
-CSeq_id::E_Choice CSeq_id_Handle::Which(void) const
-{
-    return m_Info->GetType();
-}
-
-
-inline
-CSeq_id::EAccessionInfo CSeq_id_Handle::IdentifyAccession(void) const
-{
-    return m_Info->GetSeqId()->IdentifyAccession();
-}
-
-
-inline
-bool CSeq_id_Handle::IsGi(void) const
-{
-    return m_Gi != 0;
-}
-
-
-inline
-int CSeq_id_Handle::GetGi(void) const
-{
-    return m_Gi;
-}
-
-
-inline
-CSeq_id_Mapper& CSeq_id_Handle::GetMapper(void) const
-{
-    return m_Info->GetMapper();
-}
-
-inline 
-void CSeq_id_Handle::Swap(CSeq_id_Handle& idh)
-{
-    m_Info.Swap(idh.m_Info);
-    swap(m_Gi,idh.m_Gi);
-
-}
 /* @} */
 
 
@@ -378,10 +270,16 @@ void swap(NCBI_NS_NCBI::objects::CSeq_id_Handle& idh1,
 {
     idh1.Swap(idh2);
 }
+
 END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/06/20 17:28:20  vasilche
+* Use CRef's locker for CSeq_id_Info locking.
+* Removed obsolete registering functions.
+* Changed sorting order of CSeq_id_Handle to put gi's first.
+*
 * Revision 1.35  2005/03/03 18:46:44  didenko
 * Added Swap method and std::swap funtion
 * for CSeq_id_Handle class

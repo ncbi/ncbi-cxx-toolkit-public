@@ -162,108 +162,6 @@ CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 }
 
 
-#ifdef _DEBUG
-static int s_GetDebugSeqIds(void)
-{
-    const char* env = getenv("NCBI_OBJMGR_DEBUG_SEQID");
-    if ( !env || !*env ) return 0;
-    if ( *env >= '0' && *env <= '9' ) return *env - '0';
-    return 1;
-}
-
-static int s_DebugSeqIds(void)
-{
-    static int debug = s_GetDebugSeqIds();
-    return debug;
-}
-
-static int s_GetDebugSeqIdsCounter(void)
-{
-    const char* env = getenv("NCBI_OBJMGR_DEBUG_SEQID_COUNTER");
-    if ( !env || !*env ) return 0;
-    try {
-        return NStr::StringToInt(env);
-    }
-    catch ( ... ) {
-        return 0;
-    }
-}
-
-static int s_DebugSeqIdsCounter(void)
-{
-    static int debug = s_GetDebugSeqIdsCounter();
-    return debug;
-}
-
-DEFINE_STATIC_FAST_MUTEX(s_RegisterMutex);
-typedef map<const CSeq_id_Handle*, int> TRegisterSet;
-static TRegisterSet* s_RegisterSet = 0;
-static int s_Counter = 0;
-#endif
-
-void CSeq_id_Handle::x_Register(void)
-{
-#ifdef _DEBUG
-    int debug = s_DebugSeqIds();
-    if ( debug ) {
-        CFastMutexGuard guard(s_RegisterMutex);
-        if ( debug >= 5 ) {
-            ERR_POST(Warning << "Register of CSeq_id_Handle: "<<this);
-        }
-        if ( ++s_Counter == s_DebugSeqIdsCounter() ) {
-            _ASSERT("CSeq_id_Handle counter" && 0);
-        }
-        if ( !s_RegisterSet ) s_RegisterSet = new TRegisterSet;
-        pair<TRegisterSet::iterator, bool> ins = 
-            s_RegisterSet->insert(TRegisterSet::value_type(this, s_Counter));
-        if ( !ins.second ) {
-            ERR_POST("Double register of CSeq_id_Handle: "<<this<<
-                     " index: "<<s_Counter<<
-                     ", first index: " << ins.first->second);
-        }
-    }
-#endif
-}
-
-
-void CSeq_id_Handle::x_Deregister(void)
-{
-#ifdef _DEBUG
-    int debug = s_DebugSeqIds();
-    if ( debug ) {
-        CFastMutexGuard guard(s_RegisterMutex);
-        if ( debug >= 5 ) {
-            ERR_POST(Warning << "Deregister of CSeq_id_Handle: "<<this);
-        }
-        if ( !s_RegisterSet || !s_RegisterSet->erase(this) ) {
-            ERR_POST("Deregister of non-registered CSeq_id_Handle: "<<this);
-        }
-        if ( s_RegisterSet && s_RegisterSet->empty() ) {
-            delete s_RegisterSet;
-            s_RegisterSet = 0;
-        }
-    }
-#endif
-}
-
-
-void CSeq_id_Handle::DumpRegister(const char* _DEBUG_ARG(msg))
-{
-#ifdef _DEBUG
-    if ( s_DebugSeqIds() ) {
-        CFastMutexGuard guard(s_RegisterMutex);
-        if ( s_RegisterSet && !s_RegisterSet->empty() ) {
-            ERR_POST("CSeq_id_Handle::x_DumpRegister: " << msg);
-            ITERATE ( TRegisterSet, it, *s_RegisterSet ) {
-                ERR_POST("    CSeq_id_Handle: "<<it->first<<
-                         " was registered at index: "<<it->second);
-            }
-        }
-    }
-#endif
-}
-
-
 bool CSeq_id_Handle::HaveMatchingHandles(void) const
 {
     return GetMapper().HaveMatchingHandles(*this);
@@ -341,6 +239,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/06/20 17:28:20  vasilche
+* Use CRef's locker for CSeq_id_Info locking.
+* Removed obsolete registering functions.
+* Changed sorting order of CSeq_id_Handle to put gi's first.
+*
 * Revision 1.29  2005/01/12 15:00:57  vasilche
 * Fixed the way to get pointer in GetHash().
 *
