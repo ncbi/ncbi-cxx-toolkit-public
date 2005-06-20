@@ -496,7 +496,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     sv.SetCoding(CSeq_data::e_Ncbistdaa);
     buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
     if (buflen == 0) {
-        NCBI_THROW(CBlastException, eInternal, "Error in " + string(__func__));
+        NCBI_THROW(CBlastException, eInternal, "Error in GetSequenceProtein");
     }
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
@@ -562,7 +562,8 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
     buflen = CalculateSeqBufferLength(sv.size(), encoding,
                                       strand, sentinel);
     if (buflen == 0) {
-        NCBI_THROW(CBlastException, eInternal, "Error in " + string(__func__));
+        NCBI_THROW(CBlastException, eInternal,
+                   "Error in GetSequenceSingleNucleotideStrand");
     }
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
@@ -1074,6 +1075,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2005/06/20 18:55:37  ucko
+ * Replace non-portable __func__ with the relevant hardcoded strings.
+ *
  * Revision 1.91  2005/06/20 17:32:47  camacho
  * Add blast::GetSequence object manager-free interface
  *
