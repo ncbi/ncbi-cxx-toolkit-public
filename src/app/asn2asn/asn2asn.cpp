@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/06/20 17:32:45  vasilche
+* Optionally use memory pool.
+*
 * Revision 1.46  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *
@@ -183,8 +186,18 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbimempool.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -325,6 +338,101 @@ public:
     CCounter m_Level;
 };
 
+
+template<typename Member>
+class CReadInSkipClassMemberHook : public CSkipClassMemberHook
+{
+public:
+    typedef Member TObject;
+    CReadInSkipClassMemberHook() : object() {}
+    
+    void SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& member)
+        {
+            _ASSERT((*member).GetTypeInfo()->GetSize() == sizeof(object));
+            CObjectInfo info(&object, (*member).GetTypeInfo());
+            in.ReadObject(info);
+            NcbiCout << "Skipped class member: " <<
+                member.GetClassType().GetTypeInfo()->GetName() << '.' <<
+                member.GetMemberInfo()->GetId().GetName() << ": " <<
+                MSerial_AsnText << info << NcbiEndl;
+        }
+    
+private:
+    TObject object;
+};
+
+template<typename Object>
+class CReadInSkipObjectHook : public CSkipObjectHook
+{
+public:
+    typedef Object TObject;
+
+    CReadInSkipObjectHook() : object() {}
+
+    void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
+        {
+            _ASSERT(type.GetTypeInfo()->GetSize() == sizeof(object));
+            CObjectInfo info(&object, type.GetTypeInfo());
+            in.ReadObject(info);
+
+            const CSeq_descr& descr = object;
+            string title;
+            string genome;
+            int subtype;
+            string taxname;
+            string taxid;
+            int biomol;
+            int complete;
+            int tech;
+
+            NcbiCout << "Skipped object: " <<
+                type.GetTypeInfo()->GetName() << ": " <<
+                MSerial_AsnText << info << NcbiEndl;
+            ITERATE(list< CRef< CSeqdesc > >,it,descr.Get()) {
+                CConstRef<CSeqdesc> desc = *it;
+                if (desc->IsTitle()) {
+                    title = desc->GetTitle();
+                    string lt = NStr::ToLower(title); 
+                }
+                else if (desc->IsSource()) { 
+                    const CBioSource & source = desc->GetSource();
+                    if (source.IsSetGenome())
+                        genome = source.GetGenome();					
+                    if (source.IsSetSubtype()) {
+                        ITERATE(list< CRef< CSubSource > >,it,source.GetSubtype()) {
+                            string name = (*it)->GetName();
+                            int st = (*it)->GetSubtype();
+                            if (st == 19) subtype = st;
+                        }
+                    }
+                    if (source.IsSetOrg()) {
+                        const COrg_ref & orgref= source.GetOrg();
+                        taxname = orgref.GetTaxname();
+                        ITERATE(vector< CRef< CDbtag > > ,it,orgref.GetDb()) {
+                            if (CDbtag::eDbtagType_taxon == (*it)->GetType()) {
+                                taxid = (*it)->GetTag().GetId();
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if (desc->IsMolinfo()) {
+                    const CMolInfo & molinfo = desc->GetMolinfo();
+                    if  (molinfo.IsSetBiomol())
+                        biomol = molinfo.GetBiomol();
+                    if (molinfo.IsSetCompleteness())
+                        complete = molinfo.GetCompleteness();
+                    if (molinfo.IsSetTech())
+                        tech = molinfo.GetTech();
+                }
+            }
+        }
+
+private:
+    TObject object;
+};
+
+
 /*****************************************************************************
 *
 *   Main program loop to read, process, write SeqEntrys
@@ -356,6 +464,8 @@ void CAsn2Asn::Init(void)
                "Convert data without reading in memory");
     d->AddFlag("S",
                "Skip data without reading in memory");
+    d->AddFlag("P",
+               "Use memory pool for deserialization");
     d->AddOptionalKey("l", "logFile",
                       "log errors to <logFile>",
                       CArgDescriptions::eOutputFile);
@@ -480,6 +590,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     bool convert = args["C"];
     bool readHook = args["ih"];
     bool writeHook = args["oh"];
+    bool usePool = args["P"];
 
     bool quiet = args["q"];
 
@@ -493,6 +604,9 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
             NcbiCerr << "Step " << i << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
                                                          eSerial_StdWhenAny));
+        if ( usePool ) {
+            in->UseMemoryPool();
+        }
         auto_ptr<CObjectOStream> out(!haveOutput? 0:
                                      CObjectOStream::Open(outFormat, outFile,
                                                           eSerial_StdWhenAny));
@@ -501,7 +615,27 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
             if ( skip ) {
                 if ( displayMessages )
                     NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
-                in->Skip(CType<CSeq_entry>());
+                if ( readHook ) {
+                    {{
+                        CObjectTypeInfo type = CType<CSeq_descr>();
+                        type.SetLocalSkipHook
+                            (*in, new CReadInSkipObjectHook<CSeq_descr>);
+                    }}
+                    {{
+                        CObjectTypeInfo type = CType<CBioseq_set>();
+                        type.FindMember("class").SetLocalSkipHook
+                            (*in, new CReadInSkipClassMemberHook<CBioseq_set::TClass>);
+                    }}
+                    {{
+                        CObjectTypeInfo type = CType<CSeq_inst>();
+                        type.FindMember("topology").SetLocalSkipHook
+                            (*in, new CReadInSkipClassMemberHook<CSeq_inst::TTopology>);
+                    }}
+                    in->Skip(CType<CSeq_entry>());
+                }
+                else {
+                    in->Skip(CType<CSeq_entry>());
+                }
             }
             else if ( convert && haveOutput ) {
                 if ( displayMessages )
