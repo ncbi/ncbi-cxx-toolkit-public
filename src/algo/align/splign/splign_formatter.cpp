@@ -252,6 +252,11 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
           eNa_strand_minus;
       ds.FromTranscript(query_start, query_strand, subj_start, subj_strand,
                         transcripts[i]);
+      // don't include strands when both are positive
+      if(query_strand == eNa_strand_plus && subj_strand == eNa_strand_plus) {
+          ds.ResetStrands();
+      }
+
       vector< CRef< CSeq_id > > &ids = ds.SetIds();
 
       CRef<CSeq_id> id_query (new CSeq_id());
@@ -279,6 +284,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/06/20 17:49:26  kapustin
+ * Strip strand info when both strands are positive
+ *
  * Revision 1.16  2005/05/24 19:36:27  kapustin
  * RLE() -> CNWAligner::s_RunLengthEncode()
  *
