@@ -303,7 +303,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                      segOptions = SSegOptionsFree(segOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
-                                       Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                       Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
                                             error_buffer);
                                      sfree(buffer);
                                      return status;
@@ -326,7 +326,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                      dustOptions = SDustOptionsFree(dustOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
-                                       Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                       Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
                                             error_buffer);
                                      sfree(buffer);
                                      return status;
@@ -349,7 +349,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                   repeatOptions = SRepeatFilterOptionsFree(repeatOptions);
                                   sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                   if (blast_message)
-                                     Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                     Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
                                             error_buffer);
                                    sfree(buffer);
                                    return status;
@@ -1055,7 +1055,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
             Int4 filter_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
             if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context, blast_message)))
             {
-               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+               Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                   "Failure at filtering");
                return status;
             }

@@ -455,7 +455,7 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
                             multiword_items->inputPatternMasked[posIndex++] = 
                                 kMaskAaAlphabetBits; 
                             if (posIndex >= PHI_MAX_PATTERN_LENGTH) {
-                                Blast_MessageWrite(error_msg, BLAST_SEV_WARNING,
+                                Blast_MessageWrite(error_msg, eBlastSevWarning,
                                                    2, 1, "Pattern too long");
                                 return(-1);
                             }
@@ -506,7 +506,7 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
                   add its probability to positionProbability*/
                 while ((next_char=pattern[++charIndex]) != ']') { /*end of set*/
                     if ((next_char < 'A') || (next_char > 'Z') || (next_char == '\0')) {
-                        Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+                        Blast_MessageWrite(error_msg, eBlastSevWarning, 2, 1, 
                             "pattern description has a non-alphabetic"
                             "character inside a bracket");
                         
@@ -558,7 +558,7 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
             pattern_blk->patternProbability *= positionProbability;
         }
         if (posIndex >= PHI_MAX_PATTERN_LENGTH) {
-            Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+            Blast_MessageWrite(error_msg, eBlastSevWarning, 2, 1, 
                                "Pattern is too long");
         }
     }
@@ -633,7 +633,7 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
         s_InitDNAPattern(pattern_blk);
 
     if (wildcardProduct > kWildcardThreshold) {
-        Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+        Blast_MessageWrite(error_msg, eBlastSevWarning, 2, 1, 
                            "Due to variable wildcards pattern is likely to "
                            "occur too many times in a single sequence\n");
     }

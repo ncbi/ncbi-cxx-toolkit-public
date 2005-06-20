@@ -49,7 +49,7 @@ Blast_MessageFree(Blast_Message* blast_msg)
 }
 
 Int2 
-Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity, 
+Blast_MessageWrite(Blast_Message* *blast_msg, EBlastSeverity severity, 
                    Int4 code,	Int4 subcode, const char *message)
 {
 	if (blast_msg == NULL)
@@ -85,13 +85,13 @@ Blast_Perror(Int2 error_code)
     case BLASTERR_IDEALSTATPARAMCALC:
         retval->message = strdup("Failed to calculate ideal Karlin-Altschul "
                                  "parameters");
-        retval->severity = BLAST_SEV_ERROR;
+        retval->severity = eBlastSevError;
         break;
     case BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED:
         retval->message = strdup("Composition based statistics or "
                                  "Smith-Waterman not supported for your "
                                  "program type");
-        retval->severity = BLAST_SEV_ERROR;
+        retval->severity = eBlastSevError;
         break;
     case 0:
         retval = Blast_MessageFree(retval);
@@ -101,7 +101,7 @@ Blast_Perror(Int2 error_code)
             char buf[512];
             snprintf(buf, sizeof(buf) - 1, "Unknown error code %d", error_code);
             retval->message = strdup(buf);
-            retval->severity = BLAST_SEV_ERROR;
+            retval->severity = eBlastSevError;
         }
         break;
     }
@@ -113,6 +113,9 @@ Blast_Perror(Int2 error_code)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/06/20 13:09:36  madden
+ * Rename BlastSeverity enums in line with C++ tookit convention
+ *
  * Revision 1.17  2005/02/07 15:18:39  bealer
  * - Fix doxygen file-level comments.
  *

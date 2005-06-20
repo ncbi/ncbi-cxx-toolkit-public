@@ -2622,7 +2622,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
             sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
          else
             sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
-         Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
       }
    }
 
@@ -2656,13 +2656,13 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
          vnp = head = BlastLoadMatrixValues();
 
          sprintf(buffer, "%s is not a supported matrix", matrix_name);
-         Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
 
          while (vnp)
          {
             matrix_info = vnp->ptr;
             sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-            Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
+            Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
             vnp = vnp->next;
          }
 
@@ -2674,7 +2674,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
             sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
          else
             sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-         Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
          BlastKarlinReportAllowedValues(matrix_name, error_return);
       }
    }
@@ -3683,6 +3683,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.117  2005/06/20 13:09:36  madden
+ * Rename BlastSeverity enums in line with C++ tookit convention
+ *
  * Revision 1.116  2005/06/03 16:22:37  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

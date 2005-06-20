@@ -377,7 +377,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
     }
 
     if (error_string.size() != 0) {
-        Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, 0, 0,
+        Blast_MessageWrite(blast_msg, eBlastSevWarning, 0, 0,
                            error_string.c_str());
     }
 
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2005/06/20 13:10:11  madden
+ * Rename BlastSeverity enums in line with C++ tookit convention
+ *
  * Revision 1.89  2005/06/15 21:48:53  camacho
  * Fix out of date comment
  *

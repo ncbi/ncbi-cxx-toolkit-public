@@ -280,7 +280,7 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
        sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
    }
    if (status) 
-       Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
+       Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, buffer);
    else {
        /* Put a copy the Karlin block into the kbp_std array */
        sbp->kbp_std[0] = (Blast_KarlinBlk*) 
@@ -373,7 +373,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     } else {
        if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
                         query_blk->sequence, query_info)) != 0) {
-          Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+          Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
              "Could not calculate ungapped Karlin-Altschul parameters due "
              "to an invalid query sequence. Please verify the query "
              "sequence(s) and/or filtering options");
@@ -384,7 +384,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
           status = Blast_ScoreBlkKbpGappedCalc(sbp, scoring_options, 
                                            program_number, query_info);
           if (status) {
-             Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+             Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                                 "Unable to initialize scoring block");
           }
        }
