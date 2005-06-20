@@ -238,7 +238,8 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
         if (IsCancelCode(old_status)) {
             break;
         }
-        old_status = IsStatusNoLock(job_id, 
+        old_status = IsStatusNoLock(job_id,
+                                    CNetScheduleClient::ePending,
                                     CNetScheduleClient::eRunning,
                                     CNetScheduleClient::eReturned);
         if ((int)old_status >= 0) {
@@ -394,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/06/20 15:36:25  kuznets
+ * Let job go from pending to done (rescheduling)
+ *
  * Revision 1.12  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *
