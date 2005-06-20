@@ -71,6 +71,8 @@ public:
     CConstRef<TObject> GetCompleteBioseq_set(void) const;
     CConstRef<TObject> GetBioseq_setCore(void) const;
 
+    bool IsEmptySeq_set(void) const;
+
     // Bioseq-set access
     typedef TObject::TId TId;
     bool IsSetId(void) const;
@@ -439,20 +441,22 @@ void CBioseq_set_Info::SetDate(TDate& v)
 inline
 bool CBioseq_set_Info::IsSetSeq_set(void) const
 {
-    return m_Object->IsSetSeq_set();
+    return m_Object->IsSetSeq_set() || x_NeedUpdate(fNeedUpdate_bioseq);
 }
 
 
 inline
 bool CBioseq_set_Info::CanGetSeq_set(void) const
 {
-    return m_Object  &&  m_Object->CanGetSeq_set();
+    return m_Object  &&
+        (m_Object->CanGetSeq_set() || x_NeedUpdate(fNeedUpdate_bioseq));
 }
 
 
 inline
 const CBioseq_set_Info::TSeq_set& CBioseq_set_Info::GetSeq_set(void) const
 {
+    x_Update(fNeedUpdate_bioseq);
     return m_Seq_set;
 }
 
@@ -460,7 +464,16 @@ const CBioseq_set_Info::TSeq_set& CBioseq_set_Info::GetSeq_set(void) const
 inline
 CBioseq_set_Info::TSeq_set& CBioseq_set_Info::SetSeq_set(void)
 {
+    x_Update(fNeedUpdate_bioseq);
     return m_Seq_set;
+}
+
+
+inline
+bool CBioseq_set_Info::IsEmptySeq_set(void) const
+{
+    return !x_NeedUpdate(fNeedUpdate_bioseq) &&
+        (!IsSetSeq_set() || GetSeq_set().empty());
 }
 
 
@@ -470,6 +483,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/06/20 18:37:55  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.7  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

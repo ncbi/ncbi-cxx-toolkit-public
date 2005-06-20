@@ -179,14 +179,16 @@ void CBioseq_set_Info::x_ParentDetach(CSeq_entry_Info& parent)
 void CBioseq_set_Info::x_AddBioseqChunkId(TChunkId id)
 {
     m_BioseqChunks.push_back(id);
-    x_SetNeedUpdate(fNeedUpdate_core);
+    x_SetNeedUpdate(fNeedUpdate_bioseq);
 }
 
 
 void CBioseq_set_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
-    if ( flags & (fNeedUpdate_core|fNeedUpdate_children) ) {
+    if (flags & (fNeedUpdate_bioseq|fNeedUpdate_core|fNeedUpdate_children)) {
         x_LoadChunks(m_BioseqChunks);
+    }
+    if ( flags & (fNeedUpdate_core|fNeedUpdate_children) ) {
         if ( !m_Seq_set.empty() ) {
             const CBioseq_set::TSeq_set& seq_set = m_Object->GetSeq_set();
             _ASSERT(seq_set.size() == m_Seq_set.size());
@@ -436,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/06/20 18:37:55  grichenk
+ * Optimized loading of whole split bioseqs
+ *
  * Revision 1.11  2004/08/31 14:25:00  vasilche
  * Load relevant chunks when object is requested.
  *

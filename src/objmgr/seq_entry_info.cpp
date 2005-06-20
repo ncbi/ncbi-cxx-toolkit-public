@@ -119,6 +119,7 @@ void CSeq_entry_Info::x_CheckWhich(E_Choice which) const
 const CBioseq_Info& CSeq_entry_Info::GetSeq(void) const
 {
     x_CheckWhich(CSeq_entry::e_Seq);
+    x_Update(fNeedUpdate_bioseq);
     const CBioseq_Base_Info& base = *m_Contents;
     return dynamic_cast<const CBioseq_Info&>(base);
 }
@@ -127,6 +128,7 @@ const CBioseq_Info& CSeq_entry_Info::GetSeq(void) const
 CBioseq_Info& CSeq_entry_Info::SetSeq(void)
 {
     x_CheckWhich(CSeq_entry::e_Seq);
+    x_Update(fNeedUpdate_bioseq);
     CBioseq_Base_Info& base = *m_Contents;
     return dynamic_cast<CBioseq_Info&>(base);
 }
@@ -339,7 +341,7 @@ void CSeq_entry_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_entry_Info::x_SetObject(TObject& obj)
 {
-    x_CheckWhich(CSeq_entry::e_not_set);
+    // x_CheckWhich(CSeq_entry::e_not_set);
     _ASSERT(!m_Object);
     _ASSERT(!m_Contents);
 
@@ -363,7 +365,7 @@ void CSeq_entry_Info::x_SetObject(TObject& obj)
 
 void CSeq_entry_Info::x_SetObject(const CSeq_entry_Info& info)
 {
-    x_CheckWhich(CSeq_entry::e_not_set);
+    //x_CheckWhich(CSeq_entry::e_not_set);
     _ASSERT(!m_Object);
     _ASSERT(!m_Contents);
 
@@ -559,6 +561,14 @@ void CSeq_entry_Info::RemoveAnnot(CRef<CSeq_annot_Info> annot)
 }
 
 
+void CSeq_entry_Info::x_SetBioseqChunkId(TChunkId /* chunk_id */)
+{
+    x_CheckWhich(CSeq_entry::e_not_set);
+    x_SetNeedUpdate(CTSE_Info::fNeedUpdate_bioseq);
+    m_Which = CSeq_entry::e_Seq;
+}
+
+
 CRef<CSeq_entry_Info> CSeq_entry_Info::AddEntry(CSeq_entry& entry,
                                                   int index)
 {
@@ -587,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/06/20 18:37:55  grichenk
+ * Optimized loading of whole split bioseqs
+ *
  * Revision 1.23  2005/06/09 20:33:55  grichenk
  * Fixed loading of split descriptors by CSeqdesc_CI
  *

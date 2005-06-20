@@ -159,6 +159,8 @@ public:
 
     void UpdateAnnotIndex(void) const;
 
+    void x_SetBioseqChunkId(TChunkId chunk_id);
+
 protected:
     friend class CScope_Impl;
     friend class CDataSource;
@@ -268,6 +270,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/20 18:37:55  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.18  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

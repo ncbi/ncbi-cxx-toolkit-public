@@ -929,6 +929,8 @@ void CSplitContentIndex::IndexChunkContent(int chunk_id,
     case CID2S_Chunk_Content::e_Seq_assembly:
         flags = fAssembly;
         break;
+    case CID2S_Chunk_Content::e_Bioseq_place:
+        flags = fBioseq;
     }
     m_SplitContent |= flags;
     m_ContentIndex[chunk_id] |= flags;
@@ -996,6 +998,10 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
             check_assembly = true;
         }
     }
+    // Check bioseq loading
+    if ( content.HaveSplitBioseq() ) {
+        TestSplitBioseq(handle.GetTopLevelEntry());
+    }
     // Check descriptors' loading
     if ( check_set_desc  ||  check_high_desc ) {
         NcbiCout << "Enumerating loaded descriptors..." << NcbiEndl;
@@ -1061,6 +1067,30 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
 }
 
 
+void CSplitCacheApp::TestSplitBioseq(CSeq_entry_Handle seh)
+{
+    if ( seh.IsSeq() ) {
+    }
+    else {
+        if ( !seh.GetSet().IsEmptySeq_set() ) {
+            const CSeq_entry& se_core = *seh.GetSeq_entryCore();
+            size_t count = se_core.GetSet().IsSetSeq_set() ?
+                se_core.GetSet().GetSeq_set().size() : 0;
+            size_t hcount = 0;
+            for (CSeq_entry_CI it(seh); it; ++it) {
+                ++hcount;
+                TestSplitBioseq(*it);
+            }
+            _ASSERT(hcount >= count);
+            if (hcount > count) {
+                _ASSERT(se_core.GetSet().IsSetSeq_set() &&
+                    se_core.GetSet().GetSeq_set().size() == hcount);
+            }
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1076,6 +1106,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/06/20 18:37:55  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.37  2005/06/13 15:44:53  grichenk
 * Implemented splitting of assembly. Added splitting of seqdesc objects
 * into multiple chunks.

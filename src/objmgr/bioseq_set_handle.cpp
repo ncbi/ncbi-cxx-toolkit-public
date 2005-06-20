@@ -84,6 +84,12 @@ CConstRef<CBioseq_set> CBioseq_set_Handle::GetBioseq_setCore(void) const
 }
 
 
+bool CBioseq_set_Handle::IsEmptySeq_set(void) const
+{
+    return x_GetInfo().IsEmptySeq_set();
+}
+
+
 CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 {
     CSeq_entry_Handle ret;
@@ -491,6 +497,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/06/20 18:37:55  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.15  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

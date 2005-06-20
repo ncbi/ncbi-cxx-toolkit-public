@@ -107,6 +107,9 @@ public:
     /// Some information may be not loaded yet.
     CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
+    /// Check if the bioseq set is empty
+    bool IsEmptySeq_set(void) const;
+
     // member access
     typedef CBioseq_set::TId TId;
     bool IsSetId(void) const;
@@ -525,6 +528,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/20 18:37:54  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.16  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

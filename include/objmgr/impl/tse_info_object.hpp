@@ -114,6 +114,7 @@ public:
         fNeedUpdate_seq_data          = 1<<2, //< seq-data of this object
         fNeedUpdate_core              = 1<<3, //< core
         fNeedUpdate_assembly          = 1<<4, //< assembly of this object
+        fNeedUpdate_bioseq            = 1<<5, //< whole bioseq
 
         /// specific fields of children
         fNeedUpdate_children_descr    = fNeedUpdate_descr   <<kNeedUpdate_bits,
@@ -198,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/06/20 18:37:55  grichenk
+ * Optimized loading of whole split bioseqs
+ *
  * Revision 1.7  2005/05/09 18:41:14  ucko
  * Name the enum containing kNeedUpdate_bits (as ENeedUpdateAux) to
  * avoid build errors with GCC 4.x, which otherwise protests that it

@@ -50,6 +50,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+static const int kTSE_Place_id = 0;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_Chunk_Info
 /////////////////////////////////////////////////////////////////////////////
@@ -235,7 +239,7 @@ void CTSE_Split_Info::x_AddAnnotPlace(CTSE_Info& tse_info,
 void CTSE_Split_Info::x_AddBioseqPlace(TBioseq_setId place_id,
                                        TChunkId chunk_id)
 {
-    if ( place_id == 0 ) {
+    if ( place_id == kTSE_Place_id ) {
         _ASSERT(m_BioseqChunkId < 0);
         _ASSERT(chunk_id >= 0);
         m_BioseqChunkId = chunk_id;
@@ -250,8 +254,8 @@ void CTSE_Split_Info::x_AddBioseqPlace(CTSE_Info& tse_info,
                                        TBioseq_setId place_id,
                                        TChunkId chunk_id)
 {
-    if ( place_id == 0 ) {
-        tse_info.x_SetNeedUpdate(CTSE_Info::fNeedUpdate_core);
+    if ( place_id == kTSE_Place_id ) {
+        tse_info.x_SetBioseqChunkId(chunk_id);
     }
     else {
         x_GetBioseq_set(tse_info, place_id).x_AddBioseqChunkId(chunk_id);
@@ -448,7 +452,12 @@ void CTSE_Split_Info::x_LoadBioseq(CTSE_Info& tse_info,
     {{
         CDataSource::TMainLock::TWriteLockGuard guard
             (tse_info.GetDataSource().m_DSMainLock);
-        x_GetBioseq_set(tse_info, place).AddEntry(entry);
+        if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
+            tse_info.x_SetObject(*entry); //???
+        }
+        else {
+            x_GetBioseq_set(tse_info, place).AddEntry(entry);
+        }
     }}
 }
 

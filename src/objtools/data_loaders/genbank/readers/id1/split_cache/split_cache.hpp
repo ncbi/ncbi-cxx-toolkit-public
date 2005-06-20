@@ -122,7 +122,8 @@ public:
         fAnnot     = 1 << 5,
         fData      = 1 << 6,
         fAssembly  = 1 << 7,
-        fOther     = 1 << 8
+        fBioseq    = 1 << 8,
+        fOther     = 1 << 9
     };
     typedef int                     TContentFlags;
     typedef map<int, TContentFlags> TContentIndex;
@@ -146,6 +147,10 @@ public:
     bool HaveSplitAssembly(void) const
         {
             return (m_SplitContent & fAssembly) != 0;
+        }
+    bool HaveSplitBioseq(void) const
+        {
+            return (m_SplitContent & fBioseq) != 0;
         }
     bool HaveSplitOther(void) const
         {
@@ -203,6 +208,7 @@ public:
     void ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
 
     void TestSplitBlob(CSeq_id_Handle id, const CSplitContentIndex& content);
+    void TestSplitBioseq(CSeq_entry_Handle seh);
 
     bool GetBioseqHandle(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
     void PrintVersion(int version);
@@ -265,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/06/20 18:37:55  grichenk
+* Optimized loading of whole split bioseqs
+*
 * Revision 1.17  2005/06/09 20:33:55  grichenk
 * Fixed loading of split descriptors by CSeqdesc_CI
 *
