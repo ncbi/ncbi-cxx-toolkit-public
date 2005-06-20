@@ -38,7 +38,6 @@
 #include <corelib/ddumpable.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/metareg.hpp>
-#include <objmgr/scope.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
@@ -205,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2005/06/20 17:30:50  camacho
+* Remove unneeded header which brings dependency on the object manager
+*
 * Revision 1.59  2005/06/08 19:49:00  camacho
 * Added Get() method to auto class wrapper
 *
