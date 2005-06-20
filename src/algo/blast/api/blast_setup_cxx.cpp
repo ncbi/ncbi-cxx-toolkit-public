@@ -279,6 +279,12 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                  strand_opt == eNa_strand_both)) 
             {
                 strand = queries.GetStrand(j);
+                // The default for nucleotide queries is both strands
+                // FIXME: this should be handled inside the GetStrand() call
+                // above
+                if (strand == eNa_strand_unknown) {
+                    strand = eNa_strand_both;
+                }
             } else {
                 strand = strand_opt;
             }
@@ -469,6 +475,192 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
     }
 }
 
+/// Tests if a number represents a valid residue
+/// @param res Value to test [in]
+/// @return TRUE if value is a valid residue ( < 26)
+static bool s_IsValidResidue(Uint1 res) { return res < 26; }
+
+/// Protein sequences are always encoded in eBlastEncodingProtein and always 
+/// have sentinel bytes around sequence data
+static SBlastSequence 
+GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
+{
+    Uint1* buf = NULL;          // buffer to write sequence
+    Uint1* buf_var = NULL;      // temporary pointer to buffer
+    TSeqPos buflen;             // length of buffer allocated
+    TSeqPos i;                  // loop index of original sequence
+    TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
+    vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
+    vector<TSeqPos> invalid_residues;        // Invalid residue positions
+
+    sv.SetCoding(CSeq_data::e_Ncbistdaa);
+    buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
+    if (buflen == 0) {
+        NCBI_THROW(CBlastException, eInternal, "Error in " + string(__func__));
+    }
+    buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
+    if ( !buf ) {
+        NCBI_THROW(CBlastException, eOutOfMemory, 
+                   "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
+    }
+    safe_buf.reset(buf);
+    *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
+    for (i = 0; i < sv.size(); i++) {
+        // Change Selenocysteine to X
+        if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
+            replaced_selenocysteins.push_back(i);
+            *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
+        } else if (!s_IsValidResidue(sv[i])) {
+            invalid_residues.push_back(i);
+        } else {
+            *buf_var++ = sv[i];
+        }
+    }
+    if (invalid_residues.size() > 0) {
+        string error("Invalid residues found at positions ");
+        error += NStr::IntToString(invalid_residues[0]);
+        for (i = 1; i < invalid_residues.size(); i++) {
+            error += ", " + NStr::IntToString(invalid_residues[i]);
+        }
+        NCBI_THROW(CBlastException, eInvalidCharacter, error);
+    }
+
+    *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
+    if (warnings && replaced_selenocysteins.size() > 0) {
+        *warnings += "Selenocysteine (U) replaced by X at positions ";
+        *warnings += NStr::IntToString(replaced_selenocysteins[0]);
+        for (i = 1; i < replaced_selenocysteins.size(); i++) {
+            *warnings += ", " + NStr::IntToString(replaced_selenocysteins[i]);
+        }
+    }
+    return SBlastSequence(safe_buf.release(), buflen);
+}
+
+static SBlastSequence
+GetSequenceCompressedNucleotide(IBlastSeqVector& sv)
+{
+    sv.SetCoding(CSeq_data::e_Ncbi4na);
+    return CompressNcbi2na(sv.GetCompressedPlusStrand());
+}
+
+static SBlastSequence
+GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
+                                  EBlastEncoding encoding,
+                                  objects::ENa_strand strand,
+                                  ESentinelType sentinel)
+{
+    ASSERT(strand == eNa_strand_plus || strand == eNa_strand_minus);
+
+    Uint1* buf = NULL;          // buffer to write sequence
+    Uint1* buf_var = NULL;      // temporary pointer to buffer
+    TSeqPos buflen;             // length of buffer allocated
+    TSeqPos i;                  // loop index of original sequence
+    TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
+
+    // We assume that this packs one base per byte in the requested encoding
+    sv.SetCoding(CSeq_data::e_Ncbi4na);
+    buflen = CalculateSeqBufferLength(sv.size(), encoding,
+                                      strand, sentinel);
+    if (buflen == 0) {
+        NCBI_THROW(CBlastException, eInternal, "Error in " + string(__func__));
+    }
+    buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
+    if ( !buf ) {
+        NCBI_THROW(CBlastException, eOutOfMemory, 
+                   "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
+    }
+    safe_buf.reset(buf);
+    if (sentinel == eSentinels)
+        *buf_var++ = GetSentinelByte(encoding);
+
+    if (encoding == eBlastEncodingNucleotide) {
+        for (i = 0; i < sv.size(); i++) {
+            ASSERT(sv[i] < BLASTNA_SIZE);
+            *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
+        }
+    } else {
+        for (i = 0; i < sv.size(); i++) {
+            *buf_var++ = sv[i];
+        }
+    }
+    if (sentinel == eSentinels)
+        *buf_var++ = GetSentinelByte(encoding);
+
+    return SBlastSequence(safe_buf.release(), buflen);
+}
+
+static SBlastSequence
+GetSequenceNucleotideBothStrands(IBlastSeqVector& sv, 
+                                 EBlastEncoding encoding, 
+                                 ESentinelType sentinel)
+{
+    sv.SetPlusStrand();
+    SBlastSequence plus = 
+        GetSequenceSingleNucleotideStrand(sv, encoding, 
+                                          eNa_strand_plus, 
+                                          eNoSentinels);
+
+    sv.SetMinusStrand();
+    SBlastSequence minus = 
+        GetSequenceSingleNucleotideStrand(sv, encoding, 
+                                          eNa_strand_minus,
+                                          eNoSentinels);
+
+    // Stitch the two together
+    TSeqPos buflen = CalculateSeqBufferLength(sv.size(), encoding, 
+                                              eNa_strand_both, sentinel);
+    Uint1* buf_ptr = (Uint1*) malloc(sizeof(Uint1) * buflen);
+    if ( !buf_ptr ) {
+        throw bad_alloc();
+    }
+    SBlastSequence retval(buf_ptr, buflen);
+
+    if (sentinel == eSentinels) {
+        *buf_ptr++ = GetSentinelByte(encoding);
+    }
+    memcpy(buf_ptr, plus.data.get(), plus.length);
+    buf_ptr += plus.length;
+    if (sentinel == eSentinels) {
+        *buf_ptr++ = GetSentinelByte(encoding);
+    }
+    memcpy(buf_ptr, minus.data.get(), minus.length);
+    buf_ptr += minus.length;
+    if (sentinel == eSentinels) {
+        *buf_ptr++ = GetSentinelByte(encoding);
+    }
+
+    return retval;
+}
+
+
+SBlastSequence
+GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding, 
+            objects::ENa_strand strand, 
+            ESentinelType sentinel,
+            std::string* warnings) 
+{
+    switch (encoding) {
+    case eBlastEncodingProtein:
+        return GetSequenceProtein(sv, warnings);
+
+    case eBlastEncodingNcbi4na:
+    case eBlastEncodingNucleotide: // Used for nucleotide blastn queries
+        if (strand == eNa_strand_both) {
+            return GetSequenceNucleotideBothStrands(sv, encoding, sentinel);
+        } else {
+            return GetSequenceSingleNucleotideStrand(sv, encoding, strand,
+                                                     sentinel);
+        }
+
+    case eBlastEncodingNcbi2na:
+        ASSERT(sentinel == eNoSentinels);
+        return GetSequenceCompressedNucleotide(sv);
+
+    default:
+        NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
+    }
+}
+
 EBlastEncoding
 GetQueryEncoding(EBlastProgramType program)
 {
@@ -526,6 +718,49 @@ GetSubjectEncoding(EBlastProgramType program)
         NCBI_THROW(CBlastException, eBadParameter, "Subject Encoding");
     }
 
+    return retval;
+}
+
+SBlastSequence CompressNcbi2na(const SBlastSequence& source)
+{
+    ASSERT(source.data.get());
+
+    TSeqPos i;                  // loop index of original sequence
+    TSeqPos ci;                 // loop index for compressed sequence
+
+    // Allocate the return value
+    SBlastSequence retval(CalculateSeqBufferLength(source.length,
+                                                   eBlastEncodingNcbi2na,
+                                                   eNa_strand_plus,
+                                                   eNoSentinels));
+    Uint1* source_ptr = source.data.get();
+
+    // Populate the compressed sequence up to the last byte
+    for (ci = 0, i = 0; ci < retval.length-1; ci++, i+= COMPRESSION_RATIO) {
+        Uint1 a, b, c, d;
+        a = ((*source_ptr & NCBI2NA_MASK)<<6); ++source_ptr;
+        b = ((*source_ptr & NCBI2NA_MASK)<<4); ++source_ptr;
+        c = ((*source_ptr & NCBI2NA_MASK)<<2); ++source_ptr;
+        d = ((*source_ptr & NCBI2NA_MASK)<<0); ++source_ptr;
+        retval.data.get()[ci] = a | b | c | d;
+    }
+
+    // Set the last byte in the compressed sequence
+    retval.data.get()[ci] = 0;
+    for (; i < source.length; i++) {
+            Uint1 bit_shift = 0;
+            switch (i%COMPRESSION_RATIO) {
+               case 0: bit_shift = 6; break;
+               case 1: bit_shift = 4; break;
+               case 2: bit_shift = 2; break;
+               default: abort();   // should never happen
+            }
+            retval.data.get()[ci] |= ((*source_ptr & NCBI2NA_MASK)<<bit_shift);
+            ++source_ptr;
+    }
+    // Set the number of bases in the last 2 bits of the last byte in the
+    // compressed sequence
+    retval.data.get()[ci] |= source.length%COMPRESSION_RATIO;
     return retval;
 }
 
@@ -839,6 +1074,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2005/06/20 17:32:47  camacho
+ * Add blast::GetSequence object manager-free interface
+ *
  * Revision 1.90  2005/06/20 13:10:11  madden
  * Rename BlastSeverity enums in line with C++ tookit convention
  *

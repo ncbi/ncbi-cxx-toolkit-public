@@ -41,6 +41,7 @@
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -77,7 +78,8 @@ struct SBlastSequence {
         : data((Uint1*)calloc(buf_len, sizeof(Uint1))), length(buf_len)
     {
         if ( !data ) {
-            throw std::bad_alloc();
+            NCBI_THROW(CBlastException, eOutOfMemory, "Failed to allocate " +
+                       NStr::IntToString(buf_len) + " bytes");
         }
     }
 
@@ -131,6 +133,34 @@ struct IBlastQuerySource {
     virtual TSeqPos GetLength(int index) const = 0;
 };
 
+struct IBlastSeqVector {
+    virtual ~IBlastSeqVector() {}
+
+    // Two encodings are really necessary: ncbistdaa and ncbi4na, both use 1
+    // byte per residue/base
+    virtual void SetCoding(objects::CSeq_data::E_Choice coding) = 0;
+    virtual TSeqPos size() const = 0;
+    virtual Uint1 operator[] (TSeqPos pos) const = 0;
+
+    void SetPlusStrand() {
+        x_SetPlusStrand();
+        m_Strand = objects::eNa_strand_plus;
+    }
+    void SetMinusStrand() {
+        x_SetMinusStrand();
+        m_Strand = objects::eNa_strand_minus;
+    }
+    objects::ENa_strand GetStrand() const {
+        return m_Strand;
+    }
+    virtual SBlastSequence GetCompressedPlusStrand() = 0;
+
+protected:
+    virtual void x_SetPlusStrand() = 0;
+    virtual void x_SetMinusStrand() = 0;
+
+    objects::ENa_strand m_Strand;
+};
 
 /** ObjMgr Free version of SetupQueryInfo.
  * NB: effective length will be assigned inside the engine.
@@ -180,6 +210,13 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen);
 
+/** Object manager free version of GetSequence */
+SBlastSequence
+GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding, 
+            objects::ENa_strand strand, 
+            ESentinelType sentinel,
+            std::string* warnings = 0);
+
 /** Calculates the length of the buffer to allocate given the desired encoding,
  * strand (if applicable) and use of sentinel bytes around sequence.
  * @param sequence_length Length of the sequence [in]
@@ -198,6 +235,15 @@ CalculateSeqBufferLength(TSeqPos sequence_length, EBlastEncoding encoding,
                          objects::eNa_strand_unknown,
                          ESentinelType sentinel = eSentinels)
                          THROWS((CBlastException));
+
+/// Compresses the sequence data passed in to the function from 1 base per byte
+/// to 4 bases per byte
+/// @param source input sequence data in ncbi2na format, with ambiguities
+/// randomized [in]
+/// @return compressed version of the input
+/// @throws CBlastException in case of memory allocation failure
+/// @todo use CSeqConvert::Pack?
+SBlastSequence CompressNcbi2na(const SBlastSequence& source);
 
 /** Convenience function to centralize the knowledge of which sentinel bytes we
  * use for supported encodings. Note that only eBlastEncodingProtein,
@@ -268,6 +314,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2005/06/20 17:32:47  camacho
+* Add blast::GetSequence object manager-free interface
+*
 * Revision 1.45  2005/06/10 18:38:49  camacho
 * Doxygen fixes
 *

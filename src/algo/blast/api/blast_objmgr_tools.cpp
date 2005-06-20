@@ -128,43 +128,6 @@ SetupQueryInfo(const TSeqLocVector& queries,
     SetupQueryInfo_OMF(CBlastQuerySourceOM(queries), prog, strand_opt, qinfo);
 }
 
-/// Compresses sequence data on vector to buffer, which should have been
-/// allocated and have the right size.
-void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
-{
-    TSeqPos i;                  // loop index of original sequence
-    TSeqPos ci;                 // loop index for compressed sequence
-    CSeqVector_CI iter(vec);
-
-    iter.SetRandomizeAmbiguities();
-    iter.SetCoding(CSeq_data::e_Ncbi2na);
-
-
-    for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
-        Uint1 a, b, c, d;
-        a = ((*iter & NCBI2NA_MASK)<<6); ++iter;
-        b = ((*iter & NCBI2NA_MASK)<<4); ++iter;
-        c = ((*iter & NCBI2NA_MASK)<<2); ++iter;
-        d = ((*iter & NCBI2NA_MASK)<<0); ++iter;
-        buffer[ci] = a | b | c | d;
-    }
-
-    buffer[ci] = 0;
-    for (; i < vec.size(); i++) {
-            Uint1 bit_shift = 0;
-            switch (i%COMPRESSION_RATIO) {
-               case 0: bit_shift = 6; break;
-               case 1: bit_shift = 4; break;
-               case 2: bit_shift = 2; break;
-               default: abort();   // should never happen
-            }
-            buffer[ci] |= ((*iter & NCBI2NA_MASK)<<bit_shift);
-            ++iter;
-    }
-    // Set the number of bases in the last byte.
-    buffer[ci] |= vec.size()%COMPRESSION_RATIO;
-}
-
 void
 SetupQueries(const TSeqLocVector& queries, 
              const BlastQueryInfo* qinfo, 
@@ -188,10 +151,50 @@ SetupSubjects(const TSeqLocVector& subjects,
                       max_subjlen);
 }
 
-/// Tests if a number represents a valid residue
-/// @param res Value to test [in]
-/// @return TRUE if value is a valid residue ( < 26)
-static bool s_IsValidResidue(Uint1 res) { return res < 26; }
+class CBlastSeqVectorOM : public IBlastSeqVector
+{
+public:
+    CBlastSeqVectorOM(const CSeq_loc& seqloc, CScope& scope)
+        : m_SeqLoc(seqloc), m_Scope(scope), m_SeqVector(seqloc, scope) {}
+
+    void SetCoding(CSeq_data::E_Choice coding) {
+        m_SeqVector.SetCoding(coding);
+    }
+
+    TSeqPos size() const { return m_SeqVector.size(); }
+
+    Uint1 operator[] (TSeqPos pos) const { return m_SeqVector[pos]; }
+
+    SBlastSequence GetCompressedPlusStrand() {
+        CSeqVector_CI iter(m_SeqVector);
+        iter.SetRandomizeAmbiguities();
+        iter.SetCoding(CSeq_data::e_Ncbi2na);
+
+        SBlastSequence retval(size());
+        for (TSeqPos i = 0; i < size(); i++) {
+            retval.data.get()[i] = *iter++;
+        }
+        return retval;
+    }
+
+protected:
+    void x_SetPlusStrand() {
+        x_SetStrand(eNa_strand_plus);
+    }
+    void x_SetMinusStrand() {
+        x_SetStrand(eNa_strand_minus);
+    }
+    void x_SetStrand(ENa_strand s) {
+        if (s != m_SeqVector.GetStrand()) {
+            m_SeqVector = CSeqVector(m_SeqLoc, m_Scope,
+                                     CBioseq_Handle::eCoding_Ncbi, s);
+        }
+    }
+private:
+    const CSeq_loc& m_SeqLoc;
+    CScope& m_Scope;
+    CSeqVector  m_SeqVector;
+};
 
 SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding, 
@@ -200,133 +203,10 @@ GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding,
             ESentinelType sentinel,
             std::string* warnings) 
 {
-    Uint1* buf = NULL;          // buffer to write sequence
-    Uint1* buf_var = NULL;      // temporary pointer to buffer
-    TSeqPos buflen;             // length of buffer allocated
-    TSeqPos i;                  // loop index of original sequence
-    TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
-
     // Retrieves the correct strand (plus or minus), but not both
-    CSeqVector sv(sl, *scope);
-
-    switch (encoding) {
-    // Protein sequences (query & subject) always have sentinels around sequence
-    case eBlastEncodingProtein:
-    {
-        vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
-        vector<TSeqPos> invalid_residues;        // Invalid residue positions
-        sv.SetCoding(CSeq_data::e_Ncbistdaa);
-        buflen = CalculateSeqBufferLength(sv.size(), encoding);
-        if (buflen == 0) {
-            break;
-        }
-        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        safe_buf.reset(buf);
-        *buf_var++ = GetSentinelByte(encoding);
-        for (i = 0; i < sv.size(); i++) {
-            // Change Selenocysteine to X
-            if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
-                replaced_selenocysteins.push_back(i);
-                *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
-            } else if (!s_IsValidResidue(sv[i])) {
-                invalid_residues.push_back(i);
-            } else {
-                *buf_var++ = sv[i];
-            }
-        }
-        if (invalid_residues.size() > 0) {
-            string error("Invalid residues found at positions ");
-            error += NStr::IntToString(invalid_residues[0]);
-            for (i = 1; i < invalid_residues.size(); i++) {
-                error += ", " + NStr::IntToString(invalid_residues[i]);
-            }
-            NCBI_THROW(CBlastException, eInvalidCharacter, error);
-        }
-
-        *buf_var++ = GetSentinelByte(encoding);
-        if (warnings && replaced_selenocysteins.size() > 0) {
-            *warnings += "Selenocysteine (U) replaced by X at positions ";
-            *warnings += NStr::IntToString(replaced_selenocysteins[0]);
-            for (i = 1; i < replaced_selenocysteins.size(); i++) {
-                *warnings += ", " + NStr::IntToString(replaced_selenocysteins[i]);
-            }
-        }
-        break;
-    }
-
-    case eBlastEncodingNcbi4na:
-    case eBlastEncodingNucleotide: // Used for nucleotide blastn queries
-        sv.SetCoding(CSeq_data::e_Ncbi4na);
-        buflen = CalculateSeqBufferLength(sv.size(), encoding,
-                                          strand, sentinel);
-        if (buflen == 0) {
-            break;
-        }
-        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        safe_buf.reset(buf);
-        if (sentinel == eSentinels)
-            *buf_var++ = GetSentinelByte(encoding);
-
-        if (encoding == eBlastEncodingNucleotide) {
-            for (i = 0; i < sv.size(); i++) {
-                *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-            }
-        } else {
-            for (i = 0; i < sv.size(); i++) {
-                *buf_var++ = sv[i];
-            }
-        }
-        if (sentinel == eSentinels)
-            *buf_var++ = GetSentinelByte(encoding);
-
-        if (strand == eNa_strand_both) {
-            // Get the minus strand if both strands are required
-            sv = CSeqVector(sl, *scope,
-                            CBioseq_Handle::eCoding_Ncbi, 
-                            eNa_strand_minus);
-            sv.SetCoding(CSeq_data::e_Ncbi4na);
-            if (encoding == eBlastEncodingNucleotide) {
-                for (i = 0; i < sv.size(); i++) {
-                    *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-                }
-            } else {
-                for (i = 0; i < sv.size(); i++) {
-                    *buf_var++ = sv[i];
-                }
-            }
-            if (sentinel == eSentinels) {
-                *buf_var++ = GetSentinelByte(encoding);
-            }
-        }
-
-        break;
-
-    /* Used only in Blast2Sequences for the subject sequence. 
-     * No sentinels can be used. As in readdb, remainder 
-     * (sv.size()%COMPRESSION_RATIO != 0) goes in the last 2 bits of the 
-     * last byte.
-     */
-    case eBlastEncodingNcbi2na:
-        ASSERT(sentinel == eNoSentinels);
-        sv.SetCoding(CSeq_data::e_Ncbi2na);
-        buflen = CalculateSeqBufferLength(sv.size(), encoding,
-                                          eNa_strand_plus, eNoSentinels);
-        if (buflen == 0) {
-            break;
-        }
-        sv.SetCoding(CSeq_data::e_Ncbi4na);
-        buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        safe_buf.reset(buf);
-        CompressDNA(sv, buf, buflen);
-        break;
-
-    default:
-        NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
-    }
-
-    return SBlastSequence(safe_buf.release(), buflen);
+    CBlastSeqVectorOM sv = CBlastSeqVectorOM(sl, *scope);
+    return GetSequence_OMF(sv, encoding, strand, sentinel, warnings);
 }
-
 /** Retrieves subject sequence Seq-id and length.
  * @param seqinfo_src Source of subject sequences information [in]
  * @param oid Ordinal id (index) of the subject sequence [in]
@@ -671,6 +551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2005/06/20 17:32:47  camacho
+* Add blast::GetSequence object manager-free interface
+*
 * Revision 1.53  2005/06/13 14:01:53  camacho
 * Fix compiler warning
 *
