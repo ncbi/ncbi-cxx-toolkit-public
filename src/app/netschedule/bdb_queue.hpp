@@ -58,6 +58,7 @@
 #include "job_time_line.hpp"
 #include "queue_vc.hpp"
 #include "queue_monitor.hpp"
+#include "access_list.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -211,11 +212,16 @@ struct SLockedQueue
     CDatagramSocket              udp_socket;    ///< UDP notification socket
     CFastMutex                   us_lock;       ///< UDP socket lock
 
-    // Client program version control
+    /// Client program version control
     CQueueClientInfoList         program_version_list;
 
+    /// Host access list for job submission
+    CNetSchedule_AccessList      subm_hosts;
+    /// Host access list for job execution (workers)
+    CNetSchedule_AccessList      wnode_hosts;
 
-    // Queue monitor
+
+    /// Queue monitor
     CNetScheduleMonitor          monitor;
 
     SLockedQueue(const string& queue_name) 
@@ -323,7 +329,10 @@ public:
     class CQueue
     {
     public:
-        CQueue(CQueueDataBase& db, const string& queue_name);
+        /// @param client_host_addr - 0 means internal use
+        CQueue(CQueueDataBase& db, 
+               const string&   queue_name,
+               unsigned        client_host_addr);
 
         unsigned int Submit(const char*   input,
                             unsigned      host_addr = 0,
@@ -428,6 +437,8 @@ public:
 
         void PrintStat(CNcbiOstream & out);
         void PrintNodeStat(CNcbiOstream & out) const;
+        void PrintSubmHosts(CNcbiOstream & out) const;
+        void PrintWNodeHosts(CNcbiOstream & out) const;
 
         void PrintJobDbStat(unsigned job_id, CNcbiOstream & out);
         /// Dump all job records
@@ -443,6 +454,20 @@ public:
         bool IsMatchingClient(const CQueueClientInfo& cinfo) const
         {
             return m_LQueue.program_version_list.IsMatchingClient(cinfo);
+        }
+
+        /// Check if client is a configured submitter
+        bool IsSubmitAllowed() const
+        {
+            return (m_ClientHostAddr == 0) || 
+                   m_LQueue.subm_hosts.IsAllowed(m_ClientHostAddr);
+        }
+
+        /// Check if client is a configured worker node
+        bool IsWorkerAllowed() const
+        {
+            return (m_ClientHostAddr == 0) || 
+                   m_LQueue.wnode_hosts.IsAllowed(m_ClientHostAddr);
         }
 
     private:
@@ -464,6 +489,7 @@ public:
     private:
         CQueueDataBase& m_Db;      ///< Parent structure reference
         SLockedQueue&   m_LQueue;  
+        unsigned        m_ClientHostAddr;
     };
 
     const CQueueCollection& GetQueueCollection() const 
@@ -509,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/06/20 13:31:08  kuznets
+ * Added access control for job submitters and worker nodes
+ *
  * Revision 1.26  2005/05/16 16:21:26  kuznets
  * Added available queues listing
  *

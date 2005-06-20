@@ -321,6 +321,13 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
             }
         }
 
+        SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+        string subm_host = reg.GetString(sname,  "subm_host",  kEmptyStr);
+        queue.subm_hosts.SetHosts(subm_host);
+
+        string wnode_host = reg.GetString(sname, "wnode_host", kEmptyStr);
+        queue.wnode_hosts.SetHosts(wnode_host);
+
     } // ITERATE
 
 }
@@ -458,7 +465,7 @@ void CQueueDataBase::NotifyListeners()
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
         const string qname = it->first;
-        CQueue jq(*this, qname);
+        CQueue jq(*this, qname, 0);
 
         jq.NotifyListeners();
     }
@@ -469,7 +476,7 @@ void CQueueDataBase::CheckExecutionTimeout()
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
         const string qname = it->first;
-        CQueue jq(*this, qname);
+        CQueue jq(*this, qname, 0);
 
         jq.CheckExecutionTimeout();
     }    
@@ -490,7 +497,7 @@ void CQueueDataBase::Purge()
         const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
         ITERATE(CQueueCollection::TQueueMap, it, qm) {
             const string qname = it->first;
-            CQueue jq(*this, qname);
+            CQueue jq(*this, qname, 0);
 
             jq.Return2Pending();
         }
@@ -522,7 +529,7 @@ void CQueueDataBase::Purge()
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
         const string qname = it->first;
-        CQueue jq(*this, qname);
+        CQueue jq(*this, qname, 0);
 
         unsigned del_rec, total_del_rec = 0;
         const unsigned batch_size = 100;
@@ -587,7 +594,7 @@ void CQueueDataBase::Purge()
         const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
         ITERATE(CQueueCollection::TQueueMap, it, qm) {
             const string qname = it->first;
-            CQueue jq(*this, qname);
+            CQueue jq(*this, qname, 0);
             jq.FreeUnusedMem();
             {{
                 CFastMutexGuard guard(m_PurgeLock);
@@ -696,9 +703,12 @@ void CQueueDataBase::StopExecutionWatcherThread()
 
 
 
-CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, const string& queue_name)
+CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, 
+                               const string&   queue_name,
+                               unsigned        client_host_addr)
 : m_Db(db),
-  m_LQueue(db.m_QueueCollection.GetLockedQueue(queue_name))
+  m_LQueue(db.m_QueueCollection.GetLockedQueue(queue_name)),
+  m_ClientHostAddr(client_host_addr)
 {
 }
 
@@ -855,6 +865,17 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
             << "  UDP:" << port << "  " << lc_time.AsString() << "\n";
     }
 }
+
+void CQueueDataBase::CQueue::PrintSubmHosts(CNcbiOstream & out) const
+{
+    m_LQueue.subm_hosts.PrintHosts(out);
+}
+
+void CQueueDataBase::CQueue::PrintWNodeHosts(CNcbiOstream & out) const
+{
+    m_LQueue.wnode_hosts.PrintHosts(out);
+}
+
 
 unsigned int 
 CQueueDataBase::CQueue::Submit(const char*   input,
@@ -1997,6 +2018,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/06/20 13:31:08  kuznets
+ * Added access control for job submitters and worker nodes
+ *
  * Revision 1.35  2005/05/12 18:37:33  kuznets
  * Implemented config reload
  *

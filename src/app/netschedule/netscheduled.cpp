@@ -63,13 +63,14 @@
 #endif
 
 #include "job_time_line.hpp"
+#include "access_list.hpp"
 
 
 USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.4.3  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.4.4  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -358,7 +359,8 @@ private:
     CFastLocalTime              m_LocalTimer;
 
     /// List of admin stations allowed to enter
-    bm::bvector<>              m_AdminHosts;
+    CNetSchedule_AccessList    m_AdminHosts;
+//    bm::bvector<>              m_AdminHosts;
 
 };
 
@@ -467,8 +469,10 @@ void CNetScheduleServer::Process(SOCK sock)
                 m_AccessLog << tdata->lmsg;
             }
 
+            unsigned peer_ha;
+            socket.GetPeerAddress(&peer_ha, 0, eNH_NetworkByteOrder);
 
-            CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue);
+            CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue, peer_ha);
 
             monitor = queue.GetMonitor();
             if (monitor) {
@@ -544,18 +548,34 @@ end_version_control:
 
             switch (req.req_type) {
             case eSubmitJob:
+                if (!queue.IsSubmitAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
                 ProcessSubmit(socket, *tdata, queue);
                 break;
             case eCancelJob:
+                if (!queue.IsSubmitAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
                 ProcessCancel(socket, *tdata, queue);
                 break;
             case eStatusJob:
                 ProcessStatus(socket, *tdata, queue);
                 break;
             case eGetJob:
+                if (!queue.IsWorkerAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
                 ProcessGet(socket, *tdata, queue);
                 break;
             case eWaitGetJob:
+                if (!queue.IsWorkerAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
                 ProcessWaitGet(socket, *tdata, queue);
                 break;
             case ePutJobResult:
@@ -571,6 +591,10 @@ end_version_control:
                 ProcessJobRunTimeout(socket, *tdata, queue);
                 break;
             case eDropJob:
+                if (!queue.IsSubmitAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
                 ProcessDropJob(socket, *tdata, queue);
                 break;
             case eGetProgressMsg:
@@ -1165,6 +1189,24 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
         ostr.freeze(false);
     }}
 
+
+
+    {{
+        SOCK sk = sock.GetSOCK();
+        sock.SetOwnership(eNoOwnership);
+        sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+        CConn_SocketStream ios(sk);
+
+
+        WriteMsg(sock, "OK:", "[Configured job submitters]:");
+        queue.PrintSubmHosts(ios);
+
+        WriteMsg(sock, "OK:", "[Configured workers]:");
+        queue.PrintWNodeHosts(ios);
+    }}
+
+
     WriteMsg(sock, "OK:", "END");
 }
 
@@ -1201,12 +1243,12 @@ void CNetScheduleServer::ProcessShutdown(CSocket&                sock,
         admin_host = admin_host.substr(0, pos);
     }
     unsigned ha;
-    if (m_AdminHosts.count() == 0) { // no control
+    if (!m_AdminHosts.IsRestrictionSet()) { // no control
         goto process_shutdown;
     }
     ha = CSocketAPI::gethostbyname(admin_host);
 
-    if (m_AdminHosts[ha]) {
+    if (m_AdminHosts.IsAllowed(ha)) {
     process_shutdown:
         string msg = "Shutdown request... ";
         msg += admin_host;
@@ -1760,18 +1802,7 @@ void CNetScheduleServer::x_MakeLogMessage(CSocket& sock, SThreadData& tdata)
 
 void CNetScheduleServer::SetAdminHosts(const string& host_names)
 {
-    vector<string> hosts;
-    NStr::Tokenize(host_names, ";, ", hosts, NStr::eMergeDelims);
-    ITERATE(vector<string>, it, hosts) {
-        unsigned int ha = CSocketAPI::gethostbyname(*it);
-        if (ha != 0) {
-            m_AdminHosts.set(ha);
-            LOG_POST(Info << *it << " has been accepted as an admin host.");
-        } else {
-            ERR_POST(Info << *it << " not a valid host name.");
-        }
-    }
-    m_AdminHosts.optimize();
+    m_AdminHosts.SetHosts(host_names);
 }
 
 
@@ -2010,6 +2041,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/06/20 13:31:08  kuznets
+ * Added access control for job submitters and worker nodes
+ *
  * Revision 1.44  2005/06/03 16:27:36  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
