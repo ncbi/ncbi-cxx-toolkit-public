@@ -173,6 +173,8 @@ void CAsn2FlatApp::Init(void)
             "End of shown range", CArgDescriptions::eInteger);
         
         // strand
+        arg_desc->AddDefaultKey("count", "Count", "Number of runs",
+                                CArgDescriptions::eInteger, "1");
         
         // accession to extract
 
@@ -220,6 +222,7 @@ int CAsn2FlatApp::Run(void)
 
     // open the input file (default: stdin)
     auto_ptr<CObjectIStream> is(x_OpenIStream(args));
+    is->UseMemoryPool();
     if (is.get() != NULL) {
         if ( args["batch"] ) {
             CGBReleaseFile in(*is.release());
@@ -302,9 +305,12 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         m_FFGenerator->Generate(loc, *scope, *m_Os);
     } else {
         try {
-            m_FFGenerator->Generate(entry, *m_Os);
+            int count = args["count"].AsInteger();
+            for ( int i = 0; i < count; ++i ) {
+                m_FFGenerator->Generate(entry, *m_Os);
+            }
         } catch (CException& e) {
-            _TRACE(e.ReportThis() + " " + label);
+            ERR_POST(e.ReportThis() + " " + label);
         }
     }
 
@@ -548,6 +554,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/06/20 17:31:09  vasilche
+* Do not blindly catch/drop exceptions.
+*
 * Revision 1.14  2005/03/28 17:36:46  shomrat
 * GBLoader is made optional
 *
