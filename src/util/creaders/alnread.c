@@ -2695,6 +2695,11 @@ static TCommentLocPtr s_CreateOrderedOrgCommentList (TCommentLocPtr org_clp)
     clp_list = s_FindComment (org_clp->start); /* this is the org= */
     prev_clp = NULL;
     ordered_start = s_FindComment (clp_list->end);
+    if (s_IsOrganismComment (ordered_start))
+    {
+      s_CommentLocFree (ordered_start);
+      ordered_start = NULL;
+    }
     if (ordered_start == NULL) {
         return clp_list;
     }
@@ -5853,6 +5858,10 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/06/20 14:59:17  bollin
+ * when creating an ordered organism name, stop when the next organism comment
+ * is found
+ *
  * Revision 1.23  2005/06/06 15:31:34  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
