@@ -1157,6 +1157,10 @@ void CNetScheduleClient::CheckOK(string* str)
         if (*str == "QUEUE_NOT_FOUND") {
             NCBI_THROW(CNetScheduleException, eUnknownQueue, 
                        "Queue not found.");
+        } else
+        if (*str == "OPERATION_ACCESS_DENIED") {
+            NCBI_THROW(CNetScheduleException, eOperationAccessDenied, 
+                       "Access to operation denied.");
         }
 
         msg += *str;
@@ -1235,6 +1239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/06/20 13:32:00  kuznets
+ * Added access denied error
+ *
  * Revision 1.33  2005/05/17 13:50:50  kuznets
  * Added error checking for shutdown request
  *

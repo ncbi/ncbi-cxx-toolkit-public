@@ -668,7 +668,8 @@ public:
         eUnknownQueue,
         eTooManyPendingJobs,
         eDataTooLong,
-        eInvalidClientOrVersion
+        eInvalidClientOrVersion,
+        eOperationAccessDenied,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -682,6 +683,7 @@ public:
         case eTooManyPendingJobs:     return "eTooManyPendingJobs";
         case eDataTooLong:            return "eDataTooLong";
         case eInvalidClientOrVersion: return "eInvalidClientOrVersion";
+        case eOperationAccessDenied:  return "eOperationAccessDenied";
         default:                      return CException::GetErrCodeString();
         }
     }
@@ -744,6 +746,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/06/20 13:32:36  kuznets
+ * Added access denied error
+ *
  * Revision 1.35  2005/05/16 16:18:15  kuznets
  * + GetQueueList()
  *
