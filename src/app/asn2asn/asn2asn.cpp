@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/06/20 21:26:27  vasilche
+* Fix compilation error on MSVC.
+*
 * Revision 1.47  2005/06/20 17:32:45  vasilche
 * Optionally use memory pool.
 *
@@ -344,7 +347,7 @@ class CReadInSkipClassMemberHook : public CSkipClassMemberHook
 {
 public:
     typedef Member TObject;
-    CReadInSkipClassMemberHook() : object() {}
+    CReadInSkipClassMemberHook() { object = TObject(); }
     
     void SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& member)
         {
