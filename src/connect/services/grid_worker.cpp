@@ -227,6 +227,8 @@ static void s_RunJob(CGridThreadContext& thr_context)
                 }
                 break;
             } catch (CNetServiceException& ex) {
+                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                    throw;
                 ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
@@ -427,6 +429,8 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                 }
             }
             catch (CNetServiceException& ex) {
+                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                    throw;
                 ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2) {
                     RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
@@ -557,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/06/20 17:54:16  didenko
+ * Fixed exception handling
+ *
  * Revision 1.29  2005/05/27 14:46:06  didenko
  * Fixed a worker node statistics
  *
