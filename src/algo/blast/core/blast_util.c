@@ -730,16 +730,17 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
    return retval;
 }
 
-/** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
- * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
- */
-Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, EBlastEncoding encoding, 
+Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding, 
                           Uint1** packed_seq)
 {
    Int4 new_length = length/COMPRESSION_RATIO + 1;
    Uint1* new_buffer = (Uint1*) malloc(new_length);
    Int4 index, new_index;
    Uint1 shift;     /* bit shift to pack bases */
+
+   if ( !new_buffer ) {
+       return -1;
+   }
 
    for (index=0, new_index=0; new_index < new_length-1; 
         ++new_index, index += COMPRESSION_RATIO) {
