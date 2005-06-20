@@ -241,9 +241,19 @@ Int2 Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr,
                               BLAST_SequenceBlk* query, Int4 query_index);
 
 
+/** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
+ * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
+ * @param buffer original sequence data (one base per byte) [in]
+ * @param length length of the sequence data above [in]
+ * @param encoding source encoding of the sequence data above [in]
+ * @param packed_seq output buffer containing compressed sequence. Its length
+ * will be (length/COMPRESSION_RATIO + 1), caller is responsible for
+ * deallocating it [out]
+ * @return 0 in case of success, -1 in case of memory allocation failure
+ */
 NCBI_XBLAST_EXPORT
-Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, EBlastEncoding encoding, 
-                   Uint1** packed_seq);
+Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, 
+                   EBlastEncoding encoding, Uint1** packed_seq);
 
 /** Initialize the mixed-frame sequence for out-of-frame gapped extension.
  * @param query_blk Sequence block containing the concatenated frames of the 
