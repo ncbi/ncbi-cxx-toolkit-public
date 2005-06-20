@@ -190,7 +190,13 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
         state_obj = & m_NextChunkOID;
     }
     
-    int max_oids = (int) oid_list.capacity();
+    int max_oids = (int) oid_list.size();
+    
+    if (! max_oids) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "GetNextOIDChunk(): Illegal argument; OIDs requested = 0.");
+    }
     
     // This has to be done before ">=end" check, to insure correctness
     // in empty-range cases.
