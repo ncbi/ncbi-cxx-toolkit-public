@@ -88,20 +88,27 @@ static void s_RestoreHspPos(CSeq_align_set& seqalign){
     CSeq_align_set::Tdata::iterator cur_iter = seqalign.Set().begin();
     
     while(cur_iter != seqalign.Set().end()){ 
+        bool is_first = true;
         next_iter = cur_iter;
         next_iter ++;
         const CSeq_id& cur_id  = (*cur_iter)->GetSeq_id(1);
         while(next_iter != seqalign.Set().end()){
             //only care the ones starting from the next next one
             //because we don't need to do anything for the next one
-            next_iter ++;
+            if(is_first){
+                next_iter ++;
+                is_first = false;
+            }
             if(next_iter != seqalign.Set().end()){
                 const CSeq_id& next_id  = (*next_iter)->GetSeq_id(1);
                 if (cur_id.Match(next_id)){
                     CSeq_align_set::Tdata::iterator temp_iter = next_iter;
                     next_iter ++;
-                    seqalign.Set().insert(cur_iter, *temp_iter);
+                    //insert after cur_iter
                     cur_iter ++;
+                    seqalign.Set().insert(cur_iter, *temp_iter);
+                    //move back to the newly inserted one
+                    cur_iter --; 
                     seqalign.Set().erase(temp_iter); 
                 } else {
                     next_iter ++;
@@ -220,8 +227,12 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
         j ++;
     }
     
-    //merge lower rank seqalign
-    ITERATE(list<CRange<TSeqPos> >, iter_higher,  range_list){
+    //merge lower rank seqalign if it's contained in higher rank seqalign
+    //or if it's contained in the new range formed by higher and lower
+    //seqalign with a higher score 
+    seqalign_lower.Set().sort(AlnScoreDescendingSort);
+    
+    NON_CONST_ITERATE(list<CRange<TSeqPos> >, iter_higher,  range_list){
         CSeq_align_set::Tdata::iterator iter_lower =
             seqalign_lower.Set().begin();
         while(iter_lower != seqalign_lower.Set().end()){
@@ -232,7 +243,13 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
                 CSeq_align_set::Tdata::iterator temp_iter = iter_lower;
                 iter_lower ++;
                 seqalign_lower.Set().erase(temp_iter);
-            } else {
+            } else if ((*iter_lower)->GetSeqRange(0).
+                       IntersectingWith(*iter_higher)){
+                CRange<TSeqPos> lower_range = (*iter_lower)->GetSeqRange(0);
+                *iter_higher = 
+                    iter_higher->CombinationWith(lower_range);
+                iter_lower ++;
+            }else {
                 iter_lower ++;
                 
             }
@@ -353,6 +370,8 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
  
     tbl = new CHTML_table;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
+    tbl->SetAttribute("width", kNumScales*kMasterPixel/(kNumScales - 1));
+    
     //scale bar
     double scale = ((double)m_MasterLen)/(kNumScales - 1);
     for(TSeqPos i = 0; i < kNumScales; i ++){
@@ -370,6 +389,8 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     column = 0;
     tbl = new CHTML_table;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
+
+    int width_adjust = 1;
     ITERATE(list<AlnInfo*>, iter, m_AlnInfoList){     
         double width = (*iter)->range.GetLength()*pixel_factor;
         //rounding to int this way as round() is not portable
@@ -377,8 +398,10 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         if(((int)width) > 1){ 
             //no show for less than one pixel as the border already
             //looks like one pixel
+            //width_adjust to compensate for the border width
+           
             image = new CHTML_img(m_ImagePath + kGif[(*iter)->type], 
-                                  (int)width, kBarHeight);
+                                  (int)width - width_adjust, kBarHeight);
             image->SetAttribute("border", 1);
             tc = tbl->InsertAt(0, column, image);
             tc->SetAttribute("align", "LEFT");
@@ -425,14 +448,19 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
                     out << endl;
                     a = new CHTML_a(kMatchUrl + "#" + 
                                     kGifLegend[(*iter)->type]);
+                    a->SetAttribute("TARGET", "VecScreenInfo");
                     a->AppendPlainText(kMatchUrlLegend[(*iter)->type] + ":");
                     a->Print(out);
                     is_first = false;
                 } else {
                     out << ",";
                 }
-                out << " " << (*iter)->range.GetFrom() + 1 << "-"
-                    << (*iter)->range.GetTo() + 1;
+                if((*iter)->range.GetFrom() == (*iter)->range.GetTo()){
+                    out << " " << (*iter)->range.GetFrom() + 1;
+                } else {
+                    out << " " << (*iter)->range.GetFrom() + 1 << "-"
+                        << (*iter)->range.GetTo() + 1;
+                }
                 
             }
         }
@@ -630,6 +658,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.3  2005/06/20 14:47:09  jianye
+*modify redundancy filtering
+*
 *Revision 1.2  2005/06/08 16:12:10  jianye
 *merge to higher score only within the same catagory
 *
