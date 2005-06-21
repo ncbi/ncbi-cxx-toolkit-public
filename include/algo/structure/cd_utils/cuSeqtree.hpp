@@ -77,13 +77,13 @@ public:
 	bool collapsed;
 	bool interesting;
 	long taxid;
-	void* membershipColor; //color to indicate whether this node belongs to a child
+	string membership; //child cd accession to color the tree
 private:
 	void init();
 };
 
 typedef map<int, std::string> IntToStringMap;
-typedef map<int, void*> RowMembershipColor;
+typedef map<int, string> RowMembershipColor;
 
 typedef tree<SeqItem> SeqTreeBase;
 typedef SeqTreeBase::iterator SeqTreeIterator;
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  * 
  * $Log$
+ * Revision 1.2  2005/06/21 13:10:20  cliu
+ * add tree layout.
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

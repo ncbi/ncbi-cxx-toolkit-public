@@ -40,7 +40,8 @@ SRC = \
 	cuSequenceTable \
 	cuTaxClient \
 	cuTaxTree \
-	cuSeqTreeAsnizer
+	cuSeqTreeAsnizer \
+	cuSeqTreeRootedLayout
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 			$(NCBI_C_INCLUDE)

@@ -117,6 +117,18 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd);
 bool obeysParentTypeConstraints(const CCdCore* pCD);
 void calcDiversityRanking(CCdCore* pCD, list<int>& rankList);
 
+struct SeqTreeNode
+{
+	string name; //gi or PDB for a leaf node; empty for internal node
+	int x;
+	int y;
+	bool isLeaf;
+	string childAcc;
+};
+typedef pair<SeqTreeNode, SeqTreeNode> SeqTreeEdge;
+
+int layoutSeqTree(CCdCore* pCD, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edgs);
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -127,6 +139,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/06/21 13:10:20  cliu
+ * add tree layout.
+ *
  * Revision 1.1  2005/04/19 14:28:00  lanczyck
  * initial version under algo/structure
  *

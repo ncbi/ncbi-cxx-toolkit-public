@@ -52,7 +52,6 @@ void SeqItem::init()
 	//num = 0;
 	//numSelected = 0;
 	selected = false;
-	membershipColor = 0;
 	taxid = -1;
 	collapsed = false;
 	interesting = false;
@@ -73,7 +72,7 @@ SeqItem::SeqItem(int rowid, double dist) : selections(), name()
 
 SeqItem::SeqItem(const SeqItem& rhs): name(rhs.name), id(rhs.id), distance(rhs.distance), 
 	distanceToRoot(rhs.distanceToRoot),x(rhs.x), y(rhs.y), rowID(rhs.rowID),	
-	selected(rhs.selected), membershipColor(rhs.membershipColor), 
+	selected(rhs.selected), membership(rhs.membership), 
 	collapsed(rhs.collapsed),interesting(rhs.interesting), selections(rhs.selections) {}
 
 //The format of nameDist is "rowID_gi:distance"
@@ -536,6 +535,9 @@ void SeqTree::fixRowName(AlignmentCollection& aligns, SeqNameMode mode)
 	{
 		if ((cursor.number_of_children() == 0) && (cursor->rowID >= 0) && (cursor->rowID < num))  // has a valid row ID
 		{
+			CCdCore* cd = aligns.GetScopedLeafCD(cursor->rowID);
+			if (cd)
+				cursor->membership = cd->GetAccession();
 			cursor->name.erase();
 			std::string gi, species;
 			char loc[200];
@@ -694,7 +696,7 @@ void SeqTree::setMembershipColor(const RowMembershipColor* rowColorMap)
 		if (mapIt != m_leafNodes.end())
 		{
 			leafNode = mapIt->second;
-			leafNode->membershipColor = cit->second;
+			leafNode->membership = cit->second;
 		}
 		++cit;
 	}
@@ -705,6 +707,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/06/21 13:09:43  cliu
+ * add tree layout.
+ *
  * Revision 1.2  2005/04/19 22:05:04  ucko
  * +<stdio.h> due to use of sprintf()
  *

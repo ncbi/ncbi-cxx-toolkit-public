@@ -66,6 +66,7 @@
 //#include "algComponent.hpp"
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
+#include <algo/structure/cd_utils/cuSeqTreeRootedLayout.hpp>
 #include <math.h>
 
 BEGIN_NCBI_SCOPE
@@ -609,6 +610,18 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	delete seqTree;
 }
 
+int layoutSeqTree(CCdCore* cd, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
+{
+	MultipleAlignment ma(cd);
+	TreeOptions treeOptions;
+	SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
+	seqTree->fixRowName(ma, SeqTree::eGI);
+	SeqTreeRootedLayout treeLayout(yInt);
+	treeLayout.calculateNodePositions(*seqTree, maxX, maxY);
+	treeLayout.getAllEdges(*seqTree, edges);
+	return edges.size();
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -616,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2005/06/21 13:09:43  cliu
+ * add tree layout.
+ *
  * Revision 1.5  2005/05/10 20:11:31  cliu
  * make and save trees
  *
