@@ -576,17 +576,19 @@ static void s_TEST_Dir(void)
 
         FindFiles(files, paths.begin(), paths.end(), 
                          masks.begin(), masks.end());
-
-        for (unsigned int i = 0; i < contents.size(); ++i) {
-            const CDirEntry& entry1 = *contents[i];
-            const CDirEntry& entry2 = *contents2[i];
+        assert(contents.size() == contents2.size());
+        assert(files.size() == contents2.size());
+        for (unsigned int i = 0; i < files.size(); ++i) {
+            const CDirEntry& entry1 = *contents.front();
+            const CDirEntry& entry2 = *contents2.front();
             string ep1 = entry1.GetPath();
             string ep2 = entry2.GetPath();
             const string& f = files[i];
             assert(ep1 == ep2);
             assert(ep1 == f);
+            contents.pop_front();
+            contents2.pop_front();
         }
-
         // Recursive content
         cout << "Recursive content" << endl;
         files.clear();
@@ -1002,6 +1004,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/06/21 13:40:08  ivanov
+ * CDir::TEntries: use list<> instead of vector<> as container class
+ *
  * Revision 1.50  2005/06/13 14:58:08  ivanov
  * Added more tests for CDirEntry::NormalizePath()
  *
