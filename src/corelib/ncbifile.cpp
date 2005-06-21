@@ -2529,9 +2529,9 @@ CDir::~CDir(void)
 
 
 // Helper function for GetEntries(). Add entry to the list.
-static void s_AddDirEntry(CDir::TEntries& contents, const string& path)
+static void s_AddDirEntry(CDir::TEntries* contents, const string& path)
 {
-    contents.push_back(
+    contents->push_back(
         CDirEntry::CreateObject(CDirEntry(path).GetType(), path)
     );
 }
@@ -2549,14 +2549,35 @@ CDir::TEntries CDir::GetEntries(const string&   mask,
 }
 
 
+CDir::TEntries* CDir::GetEntriesPtr(const string&   mask,
+                                    EGetEntriesMode mode,
+                                    NStr::ECase     use_case) const
+{
+    CMaskFileName masks;
+    if ( !mask.empty() ) {
+        masks.Add(mask);
+    }
+    return GetEntriesPtr(masks, mode, use_case);
+}
+
+
 CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
                                 EGetEntriesMode        mode,
                                 NStr::ECase            use_case) const
 {
+    auto_ptr<TEntries> contents(GetEntriesPtr(masks, mode, use_case));
+    return *contents.get();
+}
+
+
+CDir::TEntries* CDir::GetEntriesPtr(const vector<string>&  masks,
+                                    EGetEntriesMode        mode,
+                                    NStr::ECase            use_case) const
+{
     if ( masks.empty() ) {
-        return GetEntries("", mode, use_case);
+        return GetEntriesPtr("", mode, use_case);
     }
-    TEntries contents;
+    TEntries* contents = new(TEntries);
     string path_base = AddTrailingPathSeparator(GetPath());
 
 #if defined(NCBI_OS_MSWIN)
@@ -2633,7 +2654,16 @@ CDir::TEntries CDir::GetEntries(const CMask&    masks,
                                 EGetEntriesMode mode,
                                 NStr::ECase     use_case) const
 {
-    TEntries contents;
+    auto_ptr<TEntries> contents(GetEntriesPtr(masks, mode, use_case));
+    return *contents.get();
+}
+
+
+CDir::TEntries* CDir::GetEntriesPtr(const CMask&    masks,
+                                    EGetEntriesMode mode,
+                                    NStr::ECase     use_case) const
+{
+    TEntries* contents = new(TEntries);
     string path_base = AddTrailingPathSeparator(GetPath());
 
 #if defined(NCBI_OS_MSWIN)
@@ -2800,10 +2830,10 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     }
 
     // Read all entries in source directory
-    TEntries contents = src.GetEntries("*", eIgnoreRecursive);
+    auto_ptr<TEntries> contents(src.GetEntriesPtr("*", eIgnoreRecursive));
 
     // And copy each of them to target directory
-    ITERATE(TEntries, e, contents) {
+    ITERATE(TEntries, e, *contents.get()) {
         CDirEntry& entry = **e;
         if ( !F_ISSET(flags, fCF_Recursive)  &&
              entry.IsDir(follow ? eFollowLinks : eIgnoreLinks)) {
@@ -2837,10 +2867,10 @@ bool CDir::Remove(EDirRemoveMode mode) const
         return CParent::Remove(eOnlyEmpty);
     }
     // Read all entries in directory
-    TEntries contents = GetEntries();
+    auto_ptr<TEntries> contents(GetEntriesPtr());
 
     // Remove each entry
-    ITERATE(TEntries, entry, contents) {
+    ITERATE(TEntries, entry, *contents.get()) {
         string name = (*entry)->GetName();
         if ( name == "."  ||  name == ".."  ||  
              name == string(1, GetPathSeparator()) ) {
@@ -3558,6 +3588,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2005/06/21 13:39:37  ivanov
+ * CDir::TEntries: use list<> instead of vector<> as container class
+ * + CDir::GetEntriesPtr()
+ *
  * Revision 1.114  2005/06/17 13:49:56  lavr
  * Rollback to 1.112
  *

@@ -1087,8 +1087,8 @@ public:
     /// Get the current working directory.
     static string GetCwd(void);
 
-    /// Define a vector of pointers to directory entries.
-    typedef vector< AutoPtr<CDirEntry> > TEntries;
+    /// Define a list of pointers to directory entries.
+    typedef list< AutoPtr<CDirEntry> > TEntries;
 
     /// Modes for GetEntries
     /// @sa GetEntries
@@ -1133,6 +1133,22 @@ public:
     TEntries GetEntries(const CMask&    masks,
                         EGetEntriesMode mode     = eAllEntries,
                         NStr::ECase     use_case = NStr::eCase) const;
+
+
+    /// Versions of GetEntries() which returns pointer to TEntries.
+    /// This methods are faster on big directories than GetEntries().
+    /// NOTE: Do not forget to release allocated memory using return pointer.
+    TEntries* GetEntriesPtr(const string&      mask     = kEmptyStr,
+                            EGetEntriesMode    mode     = eAllEntries,
+                            NStr::ECase        use_case = NStr::eCase) const;
+
+    TEntries* GetEntriesPtr(const vector<string>& masks,
+                            EGetEntriesMode    mode     = eAllEntries,
+                            NStr::ECase        use_case = NStr::eCase) const;
+
+    TEntries* GetEntriesPtr(const CMask&       masks,
+                            EGetEntriesMode    mode     = eAllEntries,
+                            NStr::ECase        use_case = NStr::eCase) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -2332,6 +2348,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/06/21 13:39:26  ivanov
+ * CDir::TEntries: use list<> instead of vector<> as container class
+ * + CDir::GetEntriesPtr()
+ *
  * Revision 1.61  2005/06/14 13:05:02  ivanov
  * + CDirEntry::IsIdentical()
  * + CDirEntry::GetType(const struct stat&)
