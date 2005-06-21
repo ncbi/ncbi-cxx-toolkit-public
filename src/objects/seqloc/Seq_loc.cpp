@@ -745,10 +745,10 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             }
             info.m_Loc = &loc;
             if (loc.GetInt().IsSetFuzz_from()) {
-                info.m_Fuzz[0] = &loc.GetInt().GetFuzz_from();
+                info.m_Fuzz.first = &loc.GetInt().GetFuzz_from();
             }
             if (loc.GetInt().IsSetFuzz_to()) {
-                info.m_Fuzz[1] = &loc.GetInt().GetFuzz_to();
+                info.m_Fuzz.second = &loc.GetInt().GetFuzz_to();
             }
             m_LocList.push_back(info);
             return;
@@ -763,7 +763,8 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             }
             info.m_Loc = &loc;
             if (loc.GetPnt().IsSetFuzz()) {
-                info.m_Fuzz[0] = info.m_Fuzz[1] = &loc.GetPnt().GetFuzz();
+                info.m_Fuzz.first = info.m_Fuzz.second
+                    = &loc.GetPnt().GetFuzz();
             }
             m_LocList.push_back(info);
             return;
@@ -779,10 +780,10 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 }
                 info.m_Loc = &loc;
                 if ((*ii)->IsSetFuzz_from()) {
-                    info.m_Fuzz[0] = &(*ii)->GetFuzz_from();
+                    info.m_Fuzz.first = &(*ii)->GetFuzz_from();
                 }
                 if ((*ii)->IsSetFuzz_to()) {
-                    info.m_Fuzz[1] = &(*ii)->GetFuzz_to();
+                    info.m_Fuzz.second = &(*ii)->GetFuzz_to();
                 }
                 m_LocList.push_back(info);
             }
@@ -799,7 +800,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 }
                 info.m_Loc = &loc;
                 if (loc.GetPacked_pnt().IsSetFuzz()) {
-                    info.m_Fuzz[0] = info.m_Fuzz[1]
+                    info.m_Fuzz.first = info.m_Fuzz.second
                         = &loc.GetPacked_pnt().GetFuzz();
                 }
                 m_LocList.push_back(info);
@@ -831,7 +832,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             }
             infoA.m_Loc = &loc;
             if (loc.GetBond().GetA().IsSetFuzz()) {
-                infoA.m_Fuzz[0] = infoA.m_Fuzz[1]
+                infoA.m_Fuzz.first = infoA.m_Fuzz.second
                     = &loc.GetBond().GetA().GetFuzz();
             }
             m_LocList.push_back(infoA);
@@ -845,7 +846,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 }
                 infoB.m_Loc = &loc;
                 if (loc.GetBond().GetB().IsSetFuzz()) {
-                    infoB.m_Fuzz[0] = infoB.m_Fuzz[1]
+                    infoB.m_Fuzz.first = infoB.m_Fuzz.second
                         = &loc.GetBond().GetB().GetFuzz();
                 }
                 m_LocList.push_back(infoB);
@@ -2460,6 +2461,10 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.57  2005/06/21 14:20:53  ucko
+ * Tweak CSeq_loc_CI::SLoc_Info::m_Fuzz's type to avoid GCC 3.0.4
+ * optimizer crashes (probably brought on by the recent changes to CRef).
+ *
  * Revision 6.56  2005/04/26 14:33:14  shomrat
  * Handle bond variant in GetStart, GetStop and GetStrand
  *

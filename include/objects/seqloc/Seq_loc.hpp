@@ -355,7 +355,7 @@ private:
         ENa_strand          m_Strand;
         // The original seq-loc for the interval
         CConstRef<CSeq_loc> m_Loc;
-        CConstRef<CInt_fuzz> m_Fuzz[2];
+        pair<CConstRef<CInt_fuzz>, CConstRef<CInt_fuzz> > m_Fuzz;
     };
 
     typedef list<SLoc_Info> TLocList;
@@ -566,14 +566,14 @@ inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzFrom(void) const
 {
     x_CheckNotValid("GetFuzzFrom()");
-    return m_CurLoc->m_Fuzz[0];
+    return m_CurLoc->m_Fuzz.first;
 }
 
 inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzTo(void) const
 {
     x_CheckNotValid("GetFuzzTo()");
-    return m_CurLoc->m_Fuzz[1];
+    return m_CurLoc->m_Fuzz.second;
 }
 
 inline
@@ -615,6 +615,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/06/21 14:20:46  ucko
+ * Tweak CSeq_loc_CI::SLoc_Info::m_Fuzz's type to avoid GCC 3.0.4
+ * optimizer crashes (probably brought on by the recent changes to CRef).
+ *
  * Revision 1.47  2005/02/18 15:00:47  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *
