@@ -52,6 +52,8 @@
 #include <map>
 #include <vector>
 
+#include <util/logrotate.hpp>
+
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
@@ -224,12 +226,21 @@ struct SLockedQueue
     /// Queue monitor
     CNetScheduleMonitor          monitor;
 
+    /// Database records when they are deleted can be dumped to an archive
+    /// file for further processing
+    CRotatingLogStream           rec_dump;
+    CFastMutex                   rec_dump_lock;
+    bool                         rec_dump_flag;
+
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
           last_notif(0), 
           q_notif("NCBI_JSQ_"),
-          run_time_line(0)
+          run_time_line(0),
+
+          rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
+          rec_dump_flag(false)
     {
         _ASSERT(!queue_name.empty());
         q_notif.append(queue_name);
@@ -480,7 +491,15 @@ public:
 
 
         /// db should be already positioned
-        void x_PrintJobDbStat(SQueueDB& db, CNcbiOstream & out);
+        void x_PrintJobDbStat(SQueueDB&     db, 
+                              CNcbiOstream& out,
+                              const char*   fld_separator = "\n",
+                              bool          print_fname = true);
+
+        /// Delete record using positioned cursor, dumps content
+        /// to text file if necessary
+        void x_DeleteDBRec(SQueueDB&  db, 
+                           CBDB_FileCursor& cur);
 
     private:
         CQueue(const CQueue&);
@@ -535,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/06/21 16:00:22  kuznets
+ * Added archival dump of all deleted records
+ *
  * Revision 1.27  2005/06/20 13:31:08  kuznets
  * Added access control for job submitters and worker nodes
  *

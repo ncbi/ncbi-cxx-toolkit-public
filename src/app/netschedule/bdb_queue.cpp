@@ -328,6 +328,12 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
         string wnode_host = reg.GetString(sname, "wnode_host", kEmptyStr);
         queue.wnode_hosts.SetHosts(wnode_host);
 
+        {{
+        bool dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
+        CFastMutexGuard guard(queue.rec_dump_lock);
+        queue.rec_dump_flag = dump_db;
+        }}
+
     } // ITERATE
 
 }
@@ -728,55 +734,60 @@ unsigned CQueueDataBase::CQueue::CountRecs()
       out << msg << (tt ? _t.AsString() : kEmptyStr) << "\n"; \
     } while(0)
 
+#define NS_PFNAME(x_fname) \
+    (fflag ? (const char*)x_fname : (const char*)"")
 
-void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB& db, CNcbiOstream & out)
+void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db, 
+                                              CNcbiOstream&  out,
+                                              const char*    fsp,
+                                              bool           fflag)
 {
-    out << "\nid: "     << (unsigned) db.id << "\n";
+    out << fsp << NS_PFNAME("id: ") << (unsigned) db.id << fsp;
     CNetScheduleClient::EJobStatus status = 
         (CNetScheduleClient::EJobStatus)(int)db.status;
-    out << "status: " << CNetScheduleClient::StatusToString(status) 
-        << "\n";
+    out << NS_PFNAME("status: ") << CNetScheduleClient::StatusToString(status) 
+        << fsp;
 
-    NS_PRINT_TIME("time_submit: ", db.time_submit);
-    NS_PRINT_TIME("time_run: ", db.time_run);
-    NS_PRINT_TIME("time_done: ", db.time_done);
+    NS_PRINT_TIME(NS_PFNAME("time_submit: "), db.time_submit);
+    NS_PRINT_TIME(NS_PFNAME("time_run: "), db.time_run);
+    NS_PRINT_TIME(NS_PFNAME("time_done: "), db.time_done);
 
-    out << "timeout: " << (unsigned)db.timeout << "\n";
-    out << "run_timeout: " << (unsigned)db.run_timeout << "\n";
+    out << NS_PFNAME("timeout: ") << (unsigned)db.timeout << fsp;
+    out << NS_PFNAME("run_timeout: ") << (unsigned)db.run_timeout << fsp;
 
     unsigned subm_addr = db.subm_addr;
-    out << "subm_addr: " 
-        << (subm_addr ? CSocketAPI::gethostbyaddr(subm_addr) : kEmptyStr) << "\n";
-    out << "subm_port: " << (unsigned) db.subm_port << "\n";
-    out << "subm_timeout: " << (unsigned) db.subm_timeout << "\n";
+    out << NS_PFNAME("subm_addr: ") 
+        << (subm_addr ? CSocketAPI::gethostbyaddr(subm_addr) : kEmptyStr) << fsp;
+    out << NS_PFNAME("subm_port: ") << (unsigned) db.subm_port << fsp;
+    out << NS_PFNAME("subm_timeout: ") << (unsigned) db.subm_timeout << fsp;
 
     unsigned addr = db.worker_node1;
-    out << "worker_node1: " 
-        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+    out << NS_PFNAME("worker_node1: ")
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
 
     addr = db.worker_node2;
-    out << "worker_node2: " 
-        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+    out << NS_PFNAME("worker_node2: ") 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
 
     addr = db.worker_node3;
-    out << "worker_node3: " 
-        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+    out << NS_PFNAME("worker_node3: ") 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
 
     addr = db.worker_node4;
-    out << "worker_node4: " 
-        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+    out << NS_PFNAME("worker_node4: ") 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
 
     addr = db.worker_node5;
-    out << "worker_node5: " 
-        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << "\n";
+    out << NS_PFNAME("worker_node5: ") 
+        << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
 
-    out << "run_counter: " << (unsigned) db.run_counter << "\n";
-    out << "ret_code: " << (unsigned) db.ret_code << "\n";
+    out << NS_PFNAME("run_counter: ") << (unsigned) db.run_counter << fsp;
+    out << NS_PFNAME("ret_code: ") << (unsigned) db.ret_code << fsp;
 
-    out << "input: "        << (string) db.input        << "\n";
-    out << "output: "       << (string) db.output       << "\n";
-    out << "err_msg: "      << (string) db.err_msg      << "\n";
-    out << "progress_msg: " << (string) db.progress_msg << "\n";
+    out << NS_PFNAME("input: ")        << (string) db.input        << fsp;
+    out << NS_PFNAME("output: ")       << (string) db.output       << fsp;
+    out << NS_PFNAME("err_msg: ")      << (string) db.err_msg      << fsp;
+    out << NS_PFNAME("progress_msg: ") << (string) db.progress_msg << fsp;
 }
 
 void 
@@ -1011,12 +1022,24 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
 
     m_LQueue.status_tracker.SetStatus(job_id, 
                                       CNetScheduleClient::eJobNotFound);
-
+    {{
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
-    db.id = job_id;
-    db.Delete(CBDB_File::eIgnoreError);
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
+
+    if (cur.FetchFirst() != eBDB_Ok) {
+        return;
+    }
+
+    x_DeleteDBRec(db, cur);
+    }}
+
     trans.Commit();
+    
 
     if (m_LQueue.monitor.IsMonitorActive()) {
         CTime tmp_t(CTime::eCurrent);
@@ -1678,7 +1701,9 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
             return false;
         }
     }
-    cur.Delete(CBDB_File::eIgnoreError);
+
+    x_DeleteDBRec(db, cur);
+    //cur.Delete(CBDB_File::eIgnoreError);
 
     }}
     trans.Commit();
@@ -1705,6 +1730,25 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
 
     return true;
 }
+
+void CQueueDataBase::CQueue::x_DeleteDBRec(SQueueDB&  db, 
+                                           CBDB_FileCursor& cur)
+{
+    // dump the record
+    {{
+        CFastMutexGuard dguard(m_LQueue.rec_dump_lock);
+        if (m_LQueue.rec_dump_flag) {
+            x_PrintJobDbStat(db,
+                             m_LQueue.rec_dump,
+                             ";",               // field separator
+                             false              // no field names
+                             );
+        }
+    }}
+
+    cur.Delete(CBDB_File::eIgnoreError);
+}
+
 
 unsigned 
 CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size,
@@ -2026,6 +2070,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/06/21 16:00:22  kuznets
+ * Added archival dump of all deleted records
+ *
  * Revision 1.37  2005/06/20 15:49:43  kuznets
  * Node statistics: do not show obsolete connections
  *
