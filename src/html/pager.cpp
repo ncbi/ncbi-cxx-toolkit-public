@@ -407,6 +407,7 @@ void CPagerViewButtons::CreateSubNodes()
     int itemCount   = m_Pager.m_ItemCount;
     int lastPage    = max(0, (itemCount + pageSize - 1) / pageSize - 1);
 
+    SetId("pager"+m_jssuffix);
     if (currentPage > 0) {
         CHTML_a* prev = new CHTML_a("javascript:var frm = " \
                                     "document.frmQueryBox; " \
@@ -516,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/06/21 21:48:46  yasmax
+ * id is added
+ *
  * Revision 1.45  2005/05/12 11:09:39  ivanov
  * Dropped default parameter in the NStr::IntToString()
  *
