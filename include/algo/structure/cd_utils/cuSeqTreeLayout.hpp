@@ -32,7 +32,7 @@
 #ifndef CU_SEQTREE_LAYOUT_HPP
 #define CU_SEQTREE_LAYOUT_HPP
 
-#include <algo/structure/cd_utils/cuSeqTree.hpp>
+#include <algo/structure/cd_utils/cuSeqtree.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
