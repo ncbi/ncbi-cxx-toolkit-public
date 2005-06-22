@@ -903,9 +903,7 @@ void CFlatGatherer::x_CollectSourceFeatures
       .SetNoMapping(false)
       .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
 
-    for ( CFeat_CI fi(bh.GetScope(),
-                      *bh.GetRangeSeq_loc(range.GetFrom(), range.GetTo()),
-                      as); fi; ++fi ) {
+    for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
         if ( stop >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
             CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx));
@@ -1400,7 +1398,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
     if ( ctx.GetMasterLocation() != 0 ) {
         loc.Assign(*ctx.GetMasterLocation());
     } else {
-        loc.SetWhole().Assign(*ctx.GetHandle().GetSeqId());
+        loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
     }
 
     // collect features
@@ -1604,6 +1602,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2005/06/22 14:33:21  vasilche
+* Use more efficient CFeat_CI constructor.
+* Use GetRangeSeq_lock() instead of possibly null GetSeqId().
+*
 * Revision 1.47  2005/04/27 17:12:07  shomrat
 * GetStringForRefTrack signature change
 *
