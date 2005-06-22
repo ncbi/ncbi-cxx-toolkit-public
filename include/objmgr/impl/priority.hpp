@@ -116,6 +116,8 @@ public:
                 TPriority priority);
     bool Insert(const CPriorityTree& tree,
                 TPriority priority);
+    bool Insert(TLeaf& leaf,
+                TPriority priority);
     bool Insert(CScope_Impl& scope,
                 CDataSource& ds,
                 TPriority priority);
@@ -147,6 +149,8 @@ public:
     value_type* operator->(void) const;
 
     const CPriority_I& operator++(void);
+
+    const CPriority_I& InsertBefore(TLeaf& leaf);
 
 private:
     CPriority_I(const CPriority_I&);
@@ -271,6 +275,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/22 14:12:08  vasilche
+* Allow adding nodes at specific place.
+*
 * Revision 1.18  2005/03/29 19:21:56  jcherry
 * Added export specifiers
 *

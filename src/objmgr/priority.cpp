@@ -77,6 +77,20 @@ bool CPriorityTree::Insert(const CPriorityTree& tree,
 }
 
 
+bool CPriorityTree::Insert(TLeaf& leaf,
+                           TPriority priority)
+{
+    for ( TPriorityMap::const_iterator it = m_Map.lower_bound(priority);
+          it != m_Map.end() && it->first == priority; ++it ) {
+        if ( it->second.IsLeaf() &&
+             &it->second.GetLeaf().GetDataSource() == &leaf.GetDataSource() ) {
+            return false;
+        }
+    }
+    return Insert(CPriorityNode(leaf), priority);
+}
+
+
 bool CPriorityTree::Insert(CScope_Impl& scope,
                            CDataSource& ds,
                            TPriority priority)
@@ -127,7 +141,7 @@ CPriorityNode::CPriorityNode(TLeaf& leaf)
 
 
 CPriorityNode::CPriorityNode(CScope_Impl& scope, CDataSource& ds)
-    : m_Leaf(scope.GetDSInfo(ds))
+    : m_Leaf(scope.x_GetDSInfo(ds))
 {
 }
 
@@ -146,7 +160,7 @@ CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
     else if ( node.IsLeaf() ) {
         CDataSource& ds =
             const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
-        m_Leaf = scope.GetDSInfo(ds);
+        m_Leaf = scope.x_GetDSInfo(ds);
     }
 }
 
@@ -244,12 +258,32 @@ const CPriority_I& CPriority_I::operator++(void)
 }
 
 
+const CPriority_I& CPriority_I::InsertBefore(TLeaf& leaf)
+{
+    _ASSERT(m_Node && m_Map && m_Map_I != m_Map->end());
+    if ( m_Sub_I.get() ) {
+        m_Sub_I->InsertBefore(leaf);
+        return *this;
+    }
+    _ASSERT(m_Node->IsLeaf());
+    CRef<TLeaf> old_leaf(&m_Node->GetLeaf());
+    m_Node->SetTree().Insert(leaf, 0);
+    m_Node->SetTree().Insert(*old_leaf, 1);
+    m_Sub_I.reset(new CPriority_I(m_Node->GetTree()));
+    _ASSERT(*m_Sub_I && &**m_Sub_I == &leaf);
+    return *this;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/06/22 14:12:08  vasilche
+* Allow adding nodes at specific place.
+*
 * Revision 1.8  2004/12/22 15:56:25  vasilche
 * Implemented deep copying of CPriorityTree.
 *
