@@ -79,9 +79,14 @@ CDustMasker::TMaskList * CDustMasker::operator()( const CSeqVector & data )
     // Transform to BLASTNA.
     string data_blastna;
     data_blastna.reserve( data.size() );
+    transform( data.begin(), data.end(), 
+                    back_inserter< string >( data_blastna ), 
+                    iupacna_to_blastna );
+/*
     ITERATE (CSeqVector, it, data) {
         data_blastna.push_back(iupacna_to_blastna(*it));
     }
+*/
 
     // Now dust.
     BlastSeqLoc * blast_loc( 0 );
@@ -114,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/06/22 14:49:53  vasilche
+ * CSeqVector_CI now supports its usage in std::transform().
+ *
  * Revision 1.6  2005/03/22 01:56:04  ucko
  * Don't use transform<> when converting to blastna, as some
  * implementations require postincrement, which CSeqVector_CI lacks.
