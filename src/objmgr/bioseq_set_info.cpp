@@ -65,10 +65,11 @@ CBioseq_set_Info::CBioseq_set_Info(TObject& seqset)
 }
 
 
-CBioseq_set_Info::CBioseq_set_Info(const CBioseq_set_Info& info)
-    : m_Bioseq_set_Id(-1)
+CBioseq_set_Info::CBioseq_set_Info(const CBioseq_set_Info& info,
+                                   TObjectCopyMap* copy_map)
+    : TParent(info, copy_map), m_Bioseq_set_Id(-1)
 {
-    x_SetObject(info);
+    x_SetObject(info, copy_map);
 }
 
 
@@ -227,20 +228,20 @@ void CBioseq_set_Info::x_SetObject(TObject& obj)
 }
 
 
-void CBioseq_set_Info::x_SetObject(const CBioseq_set_Info& info)
+void CBioseq_set_Info::x_SetObject(const CBioseq_set_Info& info,
+                                   TObjectCopyMap* copy_map)
 {
     _ASSERT(!m_Object);
     m_Object = sx_ShallowCopy(info.x_GetObject());
     if ( info.IsSetSeq_set() ) {
         _ASSERT(m_Object->GetSeq_set().size() == info.m_Seq_set.size());
+        m_Object->SetSeq_set().clear();
         ITERATE ( TSeq_set, it, info.m_Seq_set ) {
-            CRef<CSeq_entry_Info> info2(new CSeq_entry_Info(**it));
-            m_Seq_set.push_back(info2);
-            x_AttachEntry(info2);
+            AddEntry(Ref(new CSeq_entry_Info(**it, copy_map)));
         }
     }
     if ( info.IsSetAnnot() ) {
-        x_SetAnnot(info);
+        x_SetAnnot(info, copy_map);
     }
 }
 
@@ -338,7 +339,7 @@ void CBioseq_set_Info::x_ResetObjAnnot(void)
 
 
 CRef<CSeq_entry_Info> CBioseq_set_Info::AddEntry(CSeq_entry& entry,
-                                                   int index)
+                                                 int index)
 {
     CRef<CSeq_entry_Info> info(new CSeq_entry_Info(entry));
     AddEntry(info, index);
@@ -438,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/06/22 14:23:48  vasilche
+ * Added support for original->edited map.
+ *
  * Revision 1.12  2005/06/20 18:37:55  grichenk
  * Optimized loading of whole split bioseqs
  *

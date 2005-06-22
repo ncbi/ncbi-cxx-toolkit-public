@@ -406,7 +406,7 @@ void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
             add = annot;
         }
         else {
-            add = new CSeq_annot_Info(*annot);
+            add = new CSeq_annot_Info(*annot, 0);
         }
         x_LoadAnnot(**it, place, add);
     }
@@ -438,7 +438,7 @@ void CTSE_Split_Info::x_LoadBioseq(const TPlace& place, const CBioseq& bioseq)
             add->SelectSeq(const_cast<CBioseq&>(bioseq));
         }
         else {
-            add = new CSeq_entry_Info(*add);
+            add = new CSeq_entry_Info(*add, 0);
         }
         x_LoadBioseq(**it, place, add);
     }
@@ -453,7 +453,7 @@ void CTSE_Split_Info::x_LoadBioseq(CTSE_Info& tse_info,
         CDataSource::TMainLock::TWriteLockGuard guard
             (tse_info.GetDataSource().m_DSMainLock);
         if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
-            tse_info.x_SetObject(*entry); //???
+            tse_info.x_SetObject(*entry, 0); //???
         }
         else {
             x_GetBioseq_set(tse_info, place).AddEntry(entry);

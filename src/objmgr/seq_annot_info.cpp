@@ -63,9 +63,11 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
 }
 
 
-CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info)
+CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info,
+                                 TObjectCopyMap* copy_map)
+    : TParent(info, copy_map)
 {
-    x_SetObject(info);
+    x_SetObject(info, copy_map);
 }
 
 
@@ -233,7 +235,8 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
 }
 
 
-void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info)
+void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info,
+                                  TObjectCopyMap* copy_map)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object = info.m_Object;
@@ -535,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/06/22 14:23:48  vasilche
+ * Added support for original->edited map.
+ *
  * Revision 1.29  2005/04/05 13:40:59  vasilche
  * TSE IdFlags are updated within CTSE_Info.
  *

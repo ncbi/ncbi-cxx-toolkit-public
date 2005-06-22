@@ -63,7 +63,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 public:
     explicit CSeq_annot_Info(const CSeq_annot& annot);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
-    explicit CSeq_annot_Info(const CSeq_annot_Info&);
+    explicit CSeq_annot_Info(const CSeq_annot_Info& src,
+                             TObjectCopyMap* copy_map);
     ~CSeq_annot_Info(void);
 
     const CBioseq_Base_Info& GetParentBioseq_Base_Info(void) const;
@@ -99,7 +100,7 @@ public:
     const TObject& x_GetObject(void) const;
 
     void x_SetObject(const TObject& obj);
-    void x_SetObject(const CSeq_annot_Info& info);
+    void x_SetObject(const CSeq_annot_Info& info, TObjectCopyMap* copy_map);
 
     void x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
     bool x_HasSNP_annot_Info(void) const;
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/06/22 14:23:48  vasilche
+* Added support for original->edited map.
+*
 * Revision 1.21  2005/04/05 13:40:59  vasilche
 * TSE IdFlags are updated within CTSE_Info.
 *

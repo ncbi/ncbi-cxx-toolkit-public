@@ -83,10 +83,10 @@ CBioseq_Info::CBioseq_Info(CBioseq& seq)
 }
 
 
-CBioseq_Info::CBioseq_Info(const CBioseq_Info& info)
-    : m_AssemblyChunk(-1)
+CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
+    : TParent(info, copy_map), m_AssemblyChunk(-1)
 {
-    x_SetObject(info);
+    x_SetObject(info, copy_map);
 }
 
 
@@ -222,7 +222,8 @@ void CBioseq_Info::x_SetObject(TObject& obj)
 }
 
 
-void CBioseq_Info::x_SetObject(const CBioseq_Info& info)
+void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
+                               TObjectCopyMap* copy_map)
 {
     _ASSERT(!m_Object);
 
@@ -233,7 +234,7 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info)
     m_Id = info.m_Id;
     m_SeqMap = info.m_SeqMap;
     if ( info.IsSetAnnot() ) {
-        x_SetAnnot(info);
+        x_SetAnnot(info, copy_map);
     }
 }
 
@@ -1028,6 +1029,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/06/22 14:23:48  vasilche
+* Added support for original->edited map.
+*
 * Revision 1.30  2005/02/02 21:59:39  vasilche
 * Implemented CBioseq_Handle AddId() & RemoveId().
 *

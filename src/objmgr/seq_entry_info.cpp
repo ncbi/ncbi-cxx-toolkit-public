@@ -65,10 +65,12 @@ CSeq_entry_Info::CSeq_entry_Info(CSeq_entry& entry)
 }
 
 
-CSeq_entry_Info::CSeq_entry_Info(const CSeq_entry_Info& info)
-    : m_Which(CSeq_entry::e_not_set)
+CSeq_entry_Info::CSeq_entry_Info(const CSeq_entry_Info& info,
+                                 TObjectCopyMap* copy_map)
+    : TParent(info, copy_map),
+      m_Which(CSeq_entry::e_not_set)
 {
-    x_SetObject(info);
+    x_SetObject(info, copy_map);
 }
 
 
@@ -162,13 +164,13 @@ void CSeq_entry_Info::x_Select(CSeq_entry::E_Choice which,
         m_Contents = contents;
         switch ( m_Which ) {
         case CSeq_entry::e_Seq:
-            x_AttachObjectVariant(SetSeq().x_GetObject());
+            m_Object->SetSeq(SetSeq().x_GetObject());
             break;
         case CSeq_entry::e_Set:
-            x_AttachObjectVariant(SetSet().x_GetObject());
+            m_Object->SetSet(SetSet().x_GetObject());
             break;
         default:
-            x_DetachObjectVariant();
+            m_Object->Reset();
             break;
         }
         x_AttachContents();
@@ -363,77 +365,30 @@ void CSeq_entry_Info::x_SetObject(TObject& obj)
 }
 
 
-void CSeq_entry_Info::x_SetObject(const CSeq_entry_Info& info)
+void CSeq_entry_Info::x_SetObject(const CSeq_entry_Info& info,
+                                  TObjectCopyMap* copy_map)
 {
     //x_CheckWhich(CSeq_entry::e_not_set);
     _ASSERT(!m_Object);
     _ASSERT(!m_Contents);
 
-    m_Which = info.m_Which;
     m_Object.Reset(new CSeq_entry);
     if ( HasDataSource() ) {
         x_DSMapObject(m_Object, GetDataSource());
     }
-    switch ( m_Which ) {
+    CRef<CBioseq_Base_Info> cinfo;
+    switch ( info.Which() ) {
     case CSeq_entry::e_Seq:
-    {
-        CRef<CBioseq_Info> seq(new CBioseq_Info(info.GetSeq()));
-        m_Contents.Reset(seq);
-        x_AttachObjectVariant(seq->x_GetObject());
+        cinfo.Reset(new CBioseq_Info(info.GetSeq(), copy_map));
         break;
-    }
     case CSeq_entry::e_Set:
-    {
-        CRef<CBioseq_set_Info> seqset(new CBioseq_set_Info(info.GetSet()));
-        m_Contents.Reset(seqset);
-        x_AttachObjectVariant(seqset->x_GetObject());
-        break;
-    }
-    default:
-        break;
-    }
-    x_AttachContents();
-}
-
-
-void CSeq_entry_Info::x_DetachObjectVariant(void)
-{
-    m_Object->Reset();
-}
-
-
-void CSeq_entry_Info::x_AttachObjectVariant(CBioseq_set& seqset)
-{
-    x_DetachObjectVariant();
-    m_Object->SetSet(seqset);
-}
-
-
-void CSeq_entry_Info::x_AttachObjectVariant(CBioseq& seq)
-{
-    x_DetachObjectVariant();
-    m_Object->SetSeq(seq);
-}
-
-/*
-CRef<CSeq_entry> CSeq_entry_Info::x_CreateObject(void) const
-{        
-    CRef<TObject> obj(new TObject);
-    switch ( Which() ) {
-    case CSeq_entry::e_Set:
-        obj->SetSet(const_cast<CBioseq_set&>
-                    (*GetSet().GetCompleteBioseq_set()));
-        break;
-    case CSeq_entry::e_Seq:
-        obj->SetSeq(const_cast<CBioseq&>
-                    (*GetSeq().GetCompleteBioseq()));
+        cinfo.Reset(new CBioseq_set_Info(info.GetSet(), copy_map));
         break;
     default:
         break;
     }
-    return obj;
+    x_Select(info.Which(), cinfo);
 }
-*/
 
 
 void CSeq_entry_Info::x_AttachContents(void)
@@ -597,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/06/22 14:23:48  vasilche
+ * Added support for original->edited map.
+ *
  * Revision 1.24  2005/06/20 18:37:55  grichenk
  * Optimized loading of whole split bioseqs
  *

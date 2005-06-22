@@ -60,6 +60,14 @@ CBioseq_Base_Info::CBioseq_Base_Info(void)
 }
 
 
+CBioseq_Base_Info::CBioseq_Base_Info(const CBioseq_Base_Info& src,
+                                     TObjectCopyMap* copy_map)
+    : TParent(src, copy_map)
+{
+}
+
+
+
 CBioseq_Base_Info::~CBioseq_Base_Info(void)
 {
 }
@@ -141,13 +149,14 @@ void CBioseq_Base_Info::x_SetAnnot(void)
 }
 
 
-void CBioseq_Base_Info::x_SetAnnot(const CBioseq_Base_Info& annot)
+void CBioseq_Base_Info::x_SetAnnot(const CBioseq_Base_Info& annot,
+                                   TObjectCopyMap* copy_map)
 {
     m_ObjAnnot = &x_SetObjAnnot();
     _ASSERT(m_ObjAnnot->size() == annot.m_Annot.size());
     m_ObjAnnot->clear();
     ITERATE ( TAnnot, it, annot.m_Annot ) {
-        AddAnnot(Ref(new CSeq_annot_Info(**it)));
+        AddAnnot(Ref(new CSeq_annot_Info(**it, copy_map)));
     }
 }
 
@@ -446,6 +455,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/06/22 14:23:48  vasilche
+* Added support for original->edited map.
+*
 * Revision 1.9  2005/06/09 15:17:29  grichenk
 * Added support for split history assembly.
 *

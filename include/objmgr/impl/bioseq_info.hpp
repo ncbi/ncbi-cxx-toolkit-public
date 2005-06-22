@@ -77,7 +77,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CBioseq_Base_Info
     typedef CBioseq_Base_Info TParent;
 public:
     // 'ctors
-    explicit CBioseq_Info(const CBioseq_Info&);
+    explicit CBioseq_Info(const CBioseq_Info& src, TObjectCopyMap* copy_map);
     explicit CBioseq_Info(CBioseq& seq);
     virtual ~CBioseq_Info(void);
 
@@ -243,7 +243,7 @@ private:
     const TObject& x_GetObject(void) const;
 
     void x_SetObject(TObject& obj);
-    void x_SetObject(const CBioseq_Info& info);
+    void x_SetObject(const CBioseq_Info& info, TObjectCopyMap* copy_map);
 
     typedef vector< CConstRef<TObject> > TDSMappedObjects;
     virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
@@ -306,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2005/06/22 14:23:48  vasilche
+ * Added support for original->edited map.
+ *
  * Revision 1.24  2005/02/02 21:59:39  vasilche
  * Implemented CBioseq_Handle AddId() & RemoveId().
  *

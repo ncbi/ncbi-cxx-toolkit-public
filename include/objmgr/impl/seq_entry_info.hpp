@@ -75,7 +75,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_entry_Info : public CTSE_Info_Object
 public:
     // 'ctors
     CSeq_entry_Info(void);
-    explicit CSeq_entry_Info(const CSeq_entry_Info& info);
+    explicit CSeq_entry_Info(const CSeq_entry_Info& info,
+                             TObjectCopyMap* copy_map);
     explicit CSeq_entry_Info(CSeq_entry& entry);
     virtual ~CSeq_entry_Info(void);
 
@@ -181,11 +182,7 @@ protected:
     const TObject& x_GetObject(void) const;
 
     void x_SetObject(TObject& obj);
-    void x_SetObject(const CSeq_entry_Info& info);
-
-    void x_DetachObjectVariant(void);
-    void x_AttachObjectVariant(CBioseq& seq);
-    void x_AttachObjectVariant(CBioseq_set& seqset);
+    void x_SetObject(const CSeq_entry_Info& info, TObjectCopyMap* copy_map);
 
     void x_Select(CSeq_entry::E_Choice which,
                   CBioseq_Base_Info* contents);
@@ -270,6 +267,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/22 14:23:48  vasilche
+* Added support for original->edited map.
+*
 * Revision 1.19  2005/06/20 18:37:55  grichenk
 * Optimized loading of whole split bioseqs
 *

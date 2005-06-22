@@ -68,6 +68,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Base_Info : public CTSE_Info_Object
 public:
     // 'ctors
     CBioseq_Base_Info(void);
+    CBioseq_Base_Info(const CBioseq_Base_Info& src, TObjectCopyMap* copy_map);
     virtual ~CBioseq_Base_Info(void);
 
     // info tree
@@ -137,7 +138,7 @@ public:
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
     void x_SetAnnot(void);
-    void x_SetAnnot(const CBioseq_Base_Info& info);
+    void x_SetAnnot(const CBioseq_Base_Info& info, TObjectCopyMap* copy_map);
 
     void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
     void x_AddAnnotChunkId(TChunkId chunk_id);
@@ -152,9 +153,6 @@ public:
 private:
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_CI;
-
-    CBioseq_Base_Info(const CBioseq_Base_Info& info);
-    CBioseq_Base_Info& operator=(const CBioseq_Base_Info&);
 
     // members
     TAnnot              m_Annot;
@@ -218,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/06/22 14:23:48  vasilche
+ * Added support for original->edited map.
+ *
  * Revision 1.8  2005/06/09 15:17:29  grichenk
  * Added support for split history assembly.
  *
