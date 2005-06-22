@@ -83,8 +83,13 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
         // id, but without the "lcl|" prefix.
         if (itr->GetSeqId()->IsLocal()) {
             vector<string> title_tokens;
-            id_token = 
-                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+            title_tokens = NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens);
+            if(title_tokens.empty()){
+                id_token = NcbiEmptyString;
+            } else {
+                id_token = title_tokens[0];
+            }
+            
             if (id_token == NcbiEmptyString) {
                 const CObject_id& obj_id = itr->GetSeqId()->GetLocal();
                 if (obj_id.IsStr())
@@ -316,6 +321,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/06/22 19:34:25  jianye
+* make sure vector is non-empty before accessing the elements
+*
 * Revision 1.5  2005/05/11 16:12:13  dondosha
 * Avoid coredump if alignment segments have different lengths due to a bad input Seq-align
 *
