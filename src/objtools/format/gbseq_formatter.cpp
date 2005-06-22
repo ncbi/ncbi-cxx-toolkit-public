@@ -43,7 +43,6 @@
 #include <objects/gbseq/GBQualifier.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/impl/scope_info.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/impl/synonyms.hpp>
@@ -435,7 +434,8 @@ static void s_SetIntervals(CGBFeature::TIntervals& intervals,
             CConstRef<CSynonymsSet> syns = scope.GetSynonyms(*best);
             vector< CRef<CSeq_id> > ids;
             ITERATE (CSynonymsSet, id_iter, *syns) {
-                CConstRef<CSeq_id> id = (*id_iter)->first.GetSeqId();
+                CConstRef<CSeq_id> id =
+                    syns->GetSeq_id_Handle(id_iter).GetSeqId();
                 CRef<CSeq_id> sip(const_cast<CSeq_id*>(id.GetPointerOrNull()));
                 ids.push_back(sip);
             }
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/06/22 14:34:36  vasilche
+* Use CSynonymsSet::GetSeq_id_Handle() instead of access to internal members.
+*
 * Revision 1.9  2005/02/09 14:56:41  shomrat
 * x_FormatRefJournal take a context instead of config as parameter
 *
