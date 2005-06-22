@@ -36,6 +36,7 @@
 
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -159,7 +160,7 @@ public:
                        TBlobState blob_state,
                        const TBlobId& blob_id,
                        TBlobVersion blob_version = -1);
-    explicit CTSE_Info(const CTSE_Info& info);
+    explicit CTSE_Info(const CTSE_Lock& tse);
     virtual ~CTSE_Info(void);
 
     bool HasDataSource(void) const;
@@ -407,6 +408,7 @@ private:
     // ID to bioseq-info
     TBioseq_sets           m_Bioseq_sets;
     TBioseqs               m_Bioseqs;
+    mutable CFastMutex     m_BioseqsMutex;
 
     // Split chunks
     CRef<CTSE_Split_Info>  m_Split;
@@ -429,6 +431,19 @@ private:
 
     // Do not use ID matching for annotations
     TAnnotIdsFlags m_AnnotIdsFlags;
+
+    // information about original TSE for its copy
+    struct SBaseTSE
+    {
+        SBaseTSE(const CTSE_Lock& tse)
+            : m_BaseTSE(tse)
+            {
+            }
+
+        CTSE_Lock      m_BaseTSE;
+        TObjectCopyMap m_ObjectCopyMap;
+    };
+    auto_ptr<SBaseTSE> m_BaseTSE;
 
 private:
     // Hide copy methods

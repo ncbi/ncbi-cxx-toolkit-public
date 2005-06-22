@@ -161,16 +161,17 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
 }
 
 
-CTSE_Info::CTSE_Info(const CTSE_Info& info)
-    : TParent(info)
+CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
+    : m_BaseTSE(new SBaseTSE(tse))
 {
     x_Initialize();
 
-    m_BlobState = info.m_BlobState;
-    m_Name = info.m_Name;
-    m_UsedMemory = info.m_UsedMemory;
+    m_BlobState = tse->m_BlobState;
+    m_Name = tse->m_Name;
+    m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
-    m_Split = info.m_Split;
+    m_Split = tse->m_Split;
+    x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
 
     x_TSEAttach(*this);
 }
@@ -410,8 +411,7 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
 {
     {{
-        CDataSource::TMainLock::TReadLockGuard guard
-            (GetDataSource().m_DSMainLock);
+        CFastMutexGuard guard(m_BioseqsMutex);
         ITERATE ( TBioseqs, it, m_Bioseqs ) {
             ids.push_back(it->first);
         }
@@ -429,8 +429,7 @@ void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
 bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 {
     {{
-        CDataSource::TMainLock::TReadLockGuard guard
-            (GetDataSource().m_DSMainLock);
+        CFastMutexGuard guard(m_BioseqsMutex);
         if ( m_Bioseqs.find(id) != m_Bioseqs.end() ) {
             return true;
         }
@@ -467,8 +466,7 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
     CConstRef<CBioseq_Info> ret;
     x_GetRecords(id, true);
     {{
-        CDataSource::TMainLock::TReadLockGuard guard
-            (GetDataSource().m_DSMainLock);
+        CFastMutexGuard guard(m_BioseqsMutex);
         TBioseqs::const_iterator it = m_Bioseqs.find(id);
         if ( it != m_Bioseqs.end() ) {
             ret = it->second;
@@ -533,31 +531,36 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
                               CBioseq_Info* info)
 {
     _ASSERT(info);
-    pair<TBioseqs::iterator, bool> ins =
-        m_Bioseqs.insert(TBioseqs::value_type(id, info));
-    if ( ins.second ) {
-        // register this TSE in data source as containing the sequence
-        x_IndexSeqTSE(id);
-    }
-    else {
-        // No duplicate bioseqs in the same TSE
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "duplicate Bioseq id "+id.AsString()+" present in"+
-                   "\n  seq1: " + ins.first->second->IdString()+
-                   "\n  seq2: " + info->IdString());
-    }
+    {{
+        CFastMutexGuard guard(m_BioseqsMutex);
+        pair<TBioseqs::iterator, bool> ins =
+            m_Bioseqs.insert(TBioseqs::value_type(id, info));
+        if ( !ins.second ) {
+            // No duplicate bioseqs in the same TSE
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "duplicate Bioseq id "+id.AsString()+" present in"+
+                       "\n  seq1: " + ins.first->second->IdString()+
+                       "\n  seq2: " + info->IdString());
+        }
+    }}
+    // register this TSE in data source as containing the sequence
+    x_IndexSeqTSE(id);
 }
 
 
 void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
                                 CBioseq_Info* _DEBUG_ARG(info))
 {
-    TBioseqs::iterator iter = m_Bioseqs.lower_bound(id);
-    if ( iter != m_Bioseqs.end() && iter->first == id ) {
+    {{
+        CFastMutexGuard guard(m_BioseqsMutex);
+        TBioseqs::iterator iter = m_Bioseqs.lower_bound(id);
+        if ( iter == m_Bioseqs.end() || iter->first != id ) {
+            return;
+        }
         _ASSERT(iter->second == info);
         m_Bioseqs.erase(iter);
-        x_UnindexSeqTSE(id);
-    }
+    }}
+    x_UnindexSeqTSE(id);
 }
 
 
@@ -626,7 +629,6 @@ void CTSE_Info::UpdateAnnotIndex(const CTSE_Info_Object& object) const
 
 void CTSE_Info::UpdateAnnotIndex(void)
 {
-    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
     UpdateAnnotIndex(*this);
 }
 
@@ -634,15 +636,19 @@ void CTSE_Info::UpdateAnnotIndex(void)
 void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetTSE_Info() == this);
-    TAnnotLockWriteGuard guard(GetAnnotLock());
-    object.x_UpdateAnnotIndex(*this);
-    _ASSERT(!object.x_DirtyAnnotIndex());
+    if ( object.x_DirtyAnnotIndex() ) {
+        CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+        TAnnotLockWriteGuard guard2(GetAnnotLock());
+        object.x_UpdateAnnotIndex(*this);
+        _ASSERT(!object.x_DirtyAnnotIndex());
+    }
 }
 
 
 void CTSE_Info::UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
-    TAnnotLockWriteGuard guard(GetAnnotLock());
+    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+    TAnnotLockWriteGuard guard2(GetAnnotLock());
     chunk.x_UpdateAnnotIndex(*this);
 }
 
@@ -925,6 +931,7 @@ CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 
 CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 {
+    CFastMutexGuard guard(m_BioseqsMutex);
     TBioseqs::iterator iter = m_Bioseqs.find(id);
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
