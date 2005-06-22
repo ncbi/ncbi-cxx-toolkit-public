@@ -276,13 +276,6 @@ static void s_TarChecksum(TBlock* block, bool isgnu = false)
 }
 
 
-/// Structure with additional info about entries being processed.
-/// Each archive action interprets fields in this structure differently.
-struct SProcessData {
-    CTar::TEntries entries;
-    string         dir;
-};
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -422,7 +415,6 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
     if (info.GetType() == CTarEntryInfo::eLink) {
         os << " -> " << info.GetLinkName();
     }
-    os << endl;
     return os;
 }
 
@@ -435,7 +427,7 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 CTar::CTar(const string& file_name, size_t blocking_factor)
     : m_FileName(file_name),
       m_FileStream(new CNcbiFstream),
-      m_OpenMode(eUndefined),
+      m_OpenMode(eNone),
       m_Stream(0),
       m_BufferSize(blocking_factor * kBlockSize),
       m_BufferPos(0),
@@ -454,7 +446,7 @@ CTar::CTar(const string& file_name, size_t blocking_factor)
 CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
     : m_FileName(kEmptyStr),
       m_FileStream(0),
-      m_OpenMode(eUndefined),
+      m_OpenMode(eNone),
       m_Stream(&stream),
       m_BufferSize(blocking_factor * kBlockSize),
       m_BufferPos(0),
@@ -473,7 +465,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
 CTar::~CTar()
 {
     // Close stream(s)
-    x_Close();
+    Close();
     if ( m_FileStream ) {
         delete m_FileStream;
         m_FileStream = 0;
@@ -507,35 +499,28 @@ void CTar::x_Init(void)
 }
 
 
-CTar::TEntries CTar::List(void)
-{
-    SProcessData data;
-    x_ReadAndProcess(eList, &data);
-    return data.entries;
-}
-
-
-void CTar::x_Close(void)
-{
-    x_Flush();
-    if (m_FileStream  &&  m_FileStream->is_open()) {
-        m_FileStream->close();
-        m_Stream = 0;
-    }
-    m_OpenMode = eUndefined;
-    m_BufferPos = 0;
-}
-
-
 void CTar::x_Flush(void)
 {
-    if (!m_Stream || m_OpenMode != eUpdate || !m_IsModified || !m_BufferPos) {
+    if (!m_Stream  ||  !m_IsModified) {
         return;
     }
+    _ASSERT(m_OpenMode == eRW);
+    _ASSERT(m_BufferSize >= m_BufferPos);
     size_t pad = m_BufferSize - m_BufferPos;
     // Assure proper blocking factor and pad the archive as necessary
     memset(m_Buffer + m_BufferPos, 0, pad);
     x_WriteArchive(pad);
+    _ASSERT(m_BufferPos == 0);
+    if (pad < kBlockSize  ||  pad - (pad % kBlockSize) < (kBlockSize << 1)) {
+        // Write EOT (two zero blocks), if have not already done so by padding
+        memset(m_Buffer, 0, m_BufferPos);
+        x_WriteArchive(m_BufferSize);
+        _ASSERT(m_BufferPos == 0);
+        if (m_BufferSize == kBlockSize) {
+            x_WriteArchive(kBlockSize);
+            _ASSERT(m_BufferPos == 0);
+        }
+    }
     if (m_Stream->rdbuf()->PUBSYNC() != 0) {
         NCBI_THROW(CTarException, eWrite, "Archive flush error");
     }
@@ -543,98 +528,153 @@ void CTar::x_Flush(void)
 }
 
 
-void CTar::x_Open(EOpenMode mode)
+void CTar::x_Close(void)
 {
+    if (m_FileStream  &&  m_FileStream->is_open()) {
+        m_FileStream->close();
+        m_Stream = 0;
+    }
+    m_OpenMode  = eNone;
+    m_BufferPos = 0;
+}
+
+
+auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
+{
+    _ASSERT(action);
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if ( !m_FileStream ) {
-        x_Close();
+        if (m_IsModified  &&  action != eAppend) {
+            ERR_POST(Warning << string("Pending changes may be "
+                                       "discarded upon archive reopen"));
+            m_IsModified = false;
+            m_BufferPos = 0;
+        }
         if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
+            m_OpenMode = eNone;
             NCBI_THROW(CTarException, eOpen,
                        "Cannot open archive from bad IO stream");
         } else {
+            m_OpenMode = EOpenMode(action & eRW);
+        }
+    } else {
+        EOpenMode mode = EOpenMode(action & eRW);
+        _ASSERT(mode != eNone);
+        if (mode != eWO  &&  action != eAppend) {
+            x_Flush();
+        }
+        if (mode == eWO  ||  m_OpenMode < mode) {
+            x_Close();
+            switch (mode) {
+            case eWO:
+                /// WO access
+                m_FileStream->open(m_FileName.c_str(),
+                                   IOS_BASE::out    |
+                                   IOS_BASE::binary | IOS_BASE::trunc);
+                break;
+            case eRO:
+                /// RO access
+                m_FileStream->open(m_FileName.c_str(),
+                                   IOS_BASE::in     |
+                                   IOS_BASE::binary);
+                break;
+            case eRW:
+                /// RW access
+                m_FileStream->open(m_FileName.c_str(),
+                                   IOS_BASE::in     |  IOS_BASE::out  |
+                                   IOS_BASE::binary);
+                break;
+            default:
+                _TROUBLE;
+                break;
+            }
+            if ( !m_FileStream->good() ) {
+                NCBI_THROW(CTarException, eOpen,
+                           "Cannot open archive '" + m_FileName + '\'');
+            }
+            m_Stream = m_FileStream;
+        }
+
+        if (m_OpenMode) {
+            _ASSERT(action != eCreate);
+            if (action != eAppend) {
+                m_BufferPos = 0;
+                m_FileStream->seekg(0, IOS_BASE::beg);
+            }
+        } else {
+            if (action == eAppend  &&  !m_IsModified) {
+                // There may be an extra and unnecessary archive scanning
+                // if Append() follows Update() that caused no modifications;
+                // but there is no way to distinguish this, currently :-/
+                // Also, this sequence should be a real rarity in practice.
+                // Position at logical EOF
+                x_ReadAndProcess(action);
+            }
             m_OpenMode = mode;
         }
-        return;
     }
+    _ASSERT(m_Stream);
+    _ASSERT(m_Stream->rdbuf());
 
-    if (m_OpenMode == mode  ||  (m_OpenMode == eUpdate  &&
-                                 mode == eRead          &&
-                                 /*FIXME*/!m_IsModified)) {
-        if (mode == eRead) {
-            x_Flush();
-            m_FileStream->seekg(0, IOS_BASE::beg);
-            m_BufferPos = 0;
-        }
-        // Do nothing for eUpdate mode because the file put position
-        // is already at the end of file.
+    if (action == eList  ||  action == eUpdate  ||  action == eTest) {
+        return x_ReadAndProcess(action, action != eUpdate);
     } else {
-        // Make sure that the file is properly closed first
-        x_Close();
-
-        // Open file using specified mode
-        switch (mode) {
-        case eCreate:
-            m_FileStream->open(m_FileName.c_str(),
-                               IOS_BASE::out    |
-                               IOS_BASE::binary | IOS_BASE::trunc);
-            break;
-        case eRead:
-            m_FileStream->open(m_FileName.c_str(),
-                               IOS_BASE::in     |
-                               IOS_BASE::binary);
-            break;
-        case eUpdate:
-            m_FileStream->open(m_FileName.c_str(),
-                               IOS_BASE::in     |  IOS_BASE::out  |
-                               IOS_BASE::binary);
-            if (m_FileStream->seekp(0, IOS_BASE::end)) {
-                m_BufferPos = (size_t)(m_FileStream->tellp() % m_BufferSize);
-                memset(m_Buffer, 0, m_BufferPos);
-            }
-            break;
-        default:
-            _TROUBLE;
-            break;
-        }
-        m_OpenMode = mode;
-    }
-    // Check result
-    if ( !m_FileStream->good() ) {
-        NCBI_THROW(CTarException, eOpen,
-                   "Cannot open archive '" + m_FileName + '\'');
-    } else {
-        m_Stream = m_FileStream;
+        return auto_ptr<TEntries>(0);
     }
 }
 
 
-void CTar::Update(const string& name)
+auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
-    x_Open(eUpdate);
-
-    // Get list of all entries in the archive
-    SProcessData data;
-    x_ReadAndProcess(eList, &data, eIgnoreMask);
-
-    // Update entries (recursively for dirs)
-    x_Append(name, &data.entries);
-}
-
-
-void CTar::Extract(const string& dst_dir)
-{
-    SProcessData data;
-    data.dir = dst_dir;
+    x_Open(eExtract);
 
     // Extract
-    x_ReadAndProcess(eExtract, &data);
+    auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
 
-    // Restore attributes of "delayed" entries (usually directories)
-    ITERATE(TEntries, i, data.entries) {
-        x_RestoreAttrs(**i);
+    // Restore attributes of "delayed" directory entries
+    ITERATE(TEntries, i, *entries.get()) {
+        if (i->GetType() == CTarEntryInfo::eDir) {
+            if (m_Flags & fPreserveAll) {
+                x_RestoreAttrs(*i);
+            }
+        }
     }
+
+    return entries;
+}
+
+
+Uint8 CTar::EstimateArchiveSize(const TFiles& files)
+{
+    Uint8 result = 0;
+
+    ITERATE(TFiles, it, files) {
+        // Compose file name for relative names
+        string file;
+        if (CDirEntry::IsAbsolutePath(it->first)  ||  m_BaseDir.empty()) {
+            file = it->first;
+        } else {
+            file = CDirEntry::ConcatPath(m_BaseDir, it->first);
+        }
+        string name = x_ToArchiveName(file);
+
+        result += kBlockSize/*header*/ + ALIGN_SIZE(it->second);
+        size_t size = name.length();
+        if (size > sizeof(((SHeader*) 0)->name)) {
+            result += kBlockSize/*header*/ + ALIGN_SIZE(size);
+        }
+    }
+    if (result) {
+        result += kBlockSize << 1; // EOT
+        Uint8 incomplete = result % m_BufferSize;
+        if (incomplete) {
+            result += m_BufferSize - incomplete;
+        }
+    }
+
+    return result;
 }
 
 
@@ -743,8 +783,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     char* p = block->buffer;
     memset(h->checksum, ' ', sizeof(h->checksum));
     for (size_t i = 0; i < sizeof(block->buffer); i++)  {
-        ssum += *p;
-        usum += (unsigned char) *p;
+        ssum +=                 *p;
+        usum += (unsigned char)(*p);
         p++;
     }
 
@@ -949,7 +989,7 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
         break;
     default:
         NCBI_THROW(CTarException, eUnsupportedEntryType,
-                   "Don't know how to store entry type " +
+                   "Don't know how to store entry type #" +
                    NStr::IntToString(int(type)) + " in archive");
         break;
     }
@@ -1001,9 +1041,13 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
             if (len - i > sizeof(h->name))
                 break;
         }
-        if (i  &&  len - i - 1  &&  len - i <= sizeof(h->name)) {
+        size_t dir = info.GetType() == CTarEntryInfo::eDir ? 2 : 1;
+        if (i  &&  len - i - dir <= sizeof(h->name)) {
             memcpy(&h->prefix, name.c_str(),         i);
-            memcpy(&h->name,   name.c_str() + i + 1, len - i - 1);
+            memcpy(&h->name,   name.c_str() + i + 1, (len - i - 1 <=
+                                                      sizeof(h->name) ?
+                                                      len - i - 1     :
+                                                      len - i - dir));
             return true;
         }
     }
@@ -1049,42 +1093,79 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 }
 
 
-void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
+void CTar::x_Backspace(EAction action, size_t blocks)
 {
-    // Open file for reading (won't affect unmodified eUpdate)
-    x_Open(eRead);
+    if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
+        return;
+    }
+    if (!m_FileStream) {
+        ERR_POST(Warning << "In-stream update results in gapped tar archive");
+        return;
+    }
+
+    CT_POS_TYPE pos = m_FileStream->tellg();  // Current read position
+    if (pos == CT_POS_TYPE(-1)) {
+        NCBI_THROW(CTarException, eRead, "Archive backspace error");
+    }
+    size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
+    CT_POS_TYPE rec;                          // Record number (0-based)
+
+    if (pos <= gap) {
+        rec = 0;
+        m_BufferPos = 0;
+    } else {
+        // pos > 0 here
+        pos += m_BufferSize - 1;
+        rec  = pos / m_BufferSize;
+        rec -= 1;
+        if (m_BufferPos < gap) {
+            size_t n = gap / m_BufferSize;        // Full records in the gap
+            gap %= m_BufferSize;                  // Remaining gap size
+            pos -= n;                             // Backup this many records
+            m_FileStream->seekg(rec * m_BufferSize);
+            m_BufferPos = 0;
+            n = kBlockSize;
+            x_ReadArchive(n);                     // Refetch the record
+            m_BufferPos = m_BufferSize - gap;
+        } else {
+            m_BufferPos -= gap;                   // Entirely within buffer
+        }
+    }
+
+    m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
+}
+
+
+auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
+{
+    auto_ptr<TEntries> entries(new TEntries);
 
     string nextLongName, nextLongLink;
-    bool prev_zeroblock = false;
+    size_t zeroblock_count = 0;
 
     for (;;) {
-        // Next block supposed to be a header
+        // Next block is supposed to be a header
         CTarEntryInfo info;
         EStatus status = x_ReadEntryInfo(info);
         switch (status) {
-        case eEOF:
-            return;
-        case eZeroBlock:
-            // FIXME
-            // Skip zero blocks
-            if (m_Flags & fIgnoreZeroBlocks) {
-                continue;
-            }
-            // Check previous status
-            if (prev_zeroblock) {
-                // Two zero blocks -> eEOF
-                return;
-            }
-            prev_zeroblock = true;
-            continue;
         case eSuccess:
             // processed below
             break;
+        case eZeroBlock:
+            zeroblock_count++;
+            if ((m_Flags & fIgnoreZeroBlocks)  ||  zeroblock_count < 2) {
+                continue;
+            }
+            // Two zero blocks -> eEOF
+            /*FALLTHRU*/
+        case eEOF:
+            x_Backspace(action, zeroblock_count);
+            return entries;
         default:
             NCBI_THROW(CCoreException, eCore, "Unknown error");
             break;
         }
-        prev_zeroblock = false;
+        zeroblock_count = 0;
 
         //
         // Process entry
@@ -1105,60 +1186,46 @@ void CTar::x_ReadAndProcess(EAction action, SProcessData* data, EMask use_mask)
 
         // Correct 'info' if long names have been previously defined
         if (!nextLongName.empty()) {
-            info.m_Name = nextLongName;
+            info.m_Name.swap(nextLongName);
             nextLongName.erase();
         }
         if (!nextLongLink.empty()) {
             if (info.GetType() == CTarEntryInfo::eLink) {
-                info.m_LinkName = nextLongLink;
+                info.m_LinkName.swap(nextLongLink);
             }
             nextLongLink.erase();
         }
 
         // Match file name by set of masks
         bool match = true;
-        if (action != eTest  &&  use_mask == eUseMask  &&  m_Mask) {
-            match = m_Mask->Match(info.GetName(), m_MaskUseCase);
+        if (action != eTest  &&  action != eAppend) {
+            if (use_mask  &&  m_Mask) {
+                match = m_Mask->Match(info.GetName(), m_MaskUseCase);
+            }
+            if (match) {
+                entries->push_back(info);
+            }
         }
 
-        // Process
-        switch (action) {
-        case eList:
-            // Save entry info
-            if ( match ) {
-                data->entries.push_back(new CTarEntryInfo(info));
-            }
-            // Skip the entry
-            x_ProcessEntry(info, false, eList);
-            break;
-
-        case eExtract:
-            // Extract an entry (if)
-            x_ProcessEntry(info, match, eExtract, data);
-            break;
-
-        case eTest:
-            // Test the entry integrity
-            x_ProcessEntry(info, true, eTest);
-            break;
-
-        default:
-            _TROUBLE;
-            break;
+        if (action == eExtract) {
+            // Extract entry (if)
+            x_ProcessEntry(info, match);
+        } else {
+            // Skip entry
+            x_ProcessEntry(info);
         }
     }
+    /*NOTREACHED*/
 }
 
 
-void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool process,
-                          EAction action, SProcessData* data)
+void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
 {
     // Remaining entry size in the archive
     streamsize size;
-
-    if (process  &&  action == eExtract) {
-        _ASSERT(data);
-        size = x_ExtractEntry(info, *data);
+    
+    if (extract) {
+        size = x_ExtractEntry(info);
     } else {
         size = (streamsize) info.GetSize();
     }
@@ -1173,7 +1240,7 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool process,
 }
 
 
-streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
+streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
 {
     bool extract = true;
 
@@ -1183,7 +1250,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
     // Destination for extraction
     auto_ptr<CDirEntry>
         dst(CDirEntry::CreateObject(CDirEntry::EType(type),
-                                    CDir::ConcatPath(data.dir,
+                                    CDir::ConcatPath(m_BaseDir,
                                                      info.GetName())));
     // Dereference sym.link if requested
     if (type != CTarEntryInfo::eLink  &&  (m_Flags & fFollowLinks)) {
@@ -1261,8 +1328,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
             _ASSERT(file.good());
             file.close();
 
+            // Restore attributes
             if (m_Flags & fPreserveAll) {
-                // Restore attributes
                 x_RestoreAttrs(info, dst.get());
             }
         }}
@@ -1274,13 +1341,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data)
                        "Cannot create directory '" + dst->GetPath() + '\'');
         }
         // Attributes for directories must be set only when all
-        // its files have been already extracted. At this point add
-        // the directory to the waiting list to set the attributes later.
-        if (m_Flags & fPreserveAll) {
-            AutoPtr<CTarEntryInfo> waiting(new CTarEntryInfo(info));
-            waiting->m_Name = dst->GetPath();
-            data.entries.push_back(waiting);
-        }
+        // its files have been already extracted.
         _ASSERT(size == 0);
         break;
 
@@ -1315,9 +1376,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
 {
     auto_ptr<CDirEntry> dst_ptr;
     if (!dst) {
-        dst_ptr.reset(CDirEntry::CreateObject(CDirEntry::EType(info.GetType()),
-                                              info.GetName()));
-        dst = dst_ptr.get();
+        dst = CDirEntry::CreateObject(CDirEntry::EType(info.GetType()),
+                                      CDir::ConcatPath(m_BaseDir,
+                                                       info.GetName()));
+        dst_ptr.reset(dst);
     }
 
     // Date/time.
@@ -1328,7 +1390,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         if ( !dst->SetTimeT(&modification) ) {
             NCBI_THROW(CTarException, eRestoreAttrs,
                        "Cannot restore date/time for '" +
-                       dst->GetPath() + '\'');
+                       info.GetName() + '\'');
         }
     }
 
@@ -1374,7 +1436,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         if (failed) {
             NCBI_THROW(CTarException, eRestoreAttrs,
                        "Cannot restore file mode for '" +
-                       dst->GetPath() + '\'');
+                       info.GetName() + '\'');
         }
     }
 }
@@ -1388,10 +1450,7 @@ string CTar::x_ToArchiveName(const string& path) const
     if (!m_BaseDir.empty()  &&  NStr::StartsWith(retval, m_BaseDir)) {
         retval.erase(0, m_BaseDir.length()/*separator too*/);
     }
-    // FIXME Workaround: _ASSERT(!retval.empty()); should be here instead
-    if (retval.empty()) {
-        retval.assign(".");
-    }
+    _ASSERT(!retval.empty());
 
     // Check on '..'
     if (retval.find("..") != NPOS) {
@@ -1426,14 +1485,17 @@ string CTar::x_ToArchiveName(const string& path) const
 }
 
 
-void CTar::x_Append(const string& entry_name, const TEntries* update_list)
+auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
+                                        const TEntries* toc)
 {
+    auto_ptr<TEntries> entries(new TEntries);
+
     // Compose entry name for relative names
     string name;
     if (CDirEntry::IsAbsolutePath(entry_name)  ||  m_BaseDir.empty()) {
         name = entry_name;
     } else {
-        name = CDirEntry::ConcatPath(GetBaseDir(), entry_name);
+        name = CDirEntry::ConcatPath(m_BaseDir, entry_name);
     }
     EFollowLinks follow_links = m_Flags & fFollowLinks
         ? eFollowLinks : eIgnoreLinks;
@@ -1443,13 +1505,13 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     CDirEntry::SStat st;
     if (!entry.Stat(&st, follow_links)) {
         NCBI_THROW(CTarException, eOpen,
-                   "Cannot get status information on '" + entry_name + "'");
+                   "Cannot get status information on '" + entry_name + '\'');
     }
     CDirEntry::EType type = entry.GetType();
 
     // Create the entry info
     CTarEntryInfo info;
-    string x_name = x_ToArchiveName(name);
+    string x_name(x_ToArchiveName(name));
     info.m_Name = type == CDirEntry::eDir ? x_name + '/' : x_name;
     if (info.GetName().empty()) {
         NCBI_THROW(CTarException, eBadName, "Empty entry name not allowed");
@@ -1468,15 +1530,15 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
     info.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
-    bool update_directory = true;
-    if ( update_list ) {
+    bool update = true;
+    if ( toc ) {
         bool found = false;
         const CTarEntryInfo* x_info;
 
         // Start searching from the end of the list, to find
         // the most recently updated entry (if any) first
-        REVERSE_ITERATE(CTar::TEntries, i, *update_list) {
-            x_info = (*i).get();
+        REVERSE_ITERATE(CTar::TEntries, i, *toc) {
+            x_info = &(*i);
             if (info.GetName() == x_info->GetName()  &&
                 (info.GetType() == x_info->GetType()  ||
                  !(m_Flags & fEqualTypes))) {
@@ -1488,13 +1550,13 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
         if (found) {
             if (!entry.IsNewer(x_info->GetModificationTime())) {
                 if (type == CDirEntry::eDir) {
-                    update_directory = false;
+                    update = false;
                 } else {
-                    return;
+                    return entries;
                 }
             }
         } else {
-            update_directory = false;
+            update = false;
         }
     }
 
@@ -1504,18 +1566,22 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
         info.m_Stat.st_size = 0;
         /*FALLTHRU*/
     case CDirEntry::eFile:
+        _ASSERT(update);
         x_AppendFile(name, info);
+        entries->push_back(info);
         break;
 
     case CDirEntry::eDir:
         {{
-            if (update_directory) {
+            if (update) {
                 x_WriteEntryInfo(name, info);
+                entries->push_back(info);
             }
             // Append/Update all files from that directory
             CDir::TEntries dir = entry.GetEntries("*", CDir::eIgnoreRecursive);
             ITERATE(CDir::TEntries, i, dir) {
-                x_Append((*i)->GetPath(), update_list);
+                auto_ptr<TEntries> e = x_Append((*i)->GetPath(), toc);
+                entries->splice(entries->end(), *e.get());
             }
         }}
         break;
@@ -1528,25 +1594,27 @@ void CTar::x_Append(const string& entry_name, const TEntries* update_list)
         ERR_POST(Warning << "Skipping unsupported source '" + name + '\'');
         break;
     }
+
+    return entries;
 }
 
 
 // Works for both regular files and symbolic links
-void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
+void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
 {
     CNcbiIfstream ifs;
 
     if (info.GetType() == CTarEntryInfo::eFile) {
         // Open file
-        ifs.open(file_name.c_str(), IOS_BASE::binary | IOS_BASE::in);
+        ifs.open(filename.c_str(), IOS_BASE::binary | IOS_BASE::in);
         if ( !ifs ) {
             NCBI_THROW(CTarException, eOpen,
-                       "Cannot open file '" + file_name + "'");
+                       "Cannot open file '" + filename + '\'');
         }
     }
 
     // Write file header
-    x_WriteEntryInfo(file_name, info);
+    x_WriteEntryInfo(filename, info);
     streamsize size = (streamsize) info.GetSize();
 
     while (size) {
@@ -1558,7 +1626,7 @@ void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
             NCBI_THROW(CTarException, eRead,
-                       "Error reading file '" + file_name + "'");
+                       "Error reading file '" + filename + '\'');
         }
         avail = (size_t) ifs.gcount();
         // Write buffer to the archive
@@ -1570,6 +1638,7 @@ void CTar::x_AppendFile(const string& file_name, const CTarEntryInfo& info)
     size_t zero = ALIGN_SIZE(m_BufferPos) - m_BufferPos;
     memset(m_Buffer + m_BufferPos, 0, zero);
     x_WriteArchive(zero);
+    _ASSERT(m_BufferPos % kBlockSize == 0);
 }
 
 
@@ -1579,6 +1648,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/06/22 20:03:34  lavr
+ * Proper append/update implementation; Major actions got return values
+ *
  * Revision 1.25  2005/06/13 18:27:56  lavr
  * Use enums for mode; define special bits' manipulations; better ustar-ness
  *

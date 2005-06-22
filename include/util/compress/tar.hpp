@@ -42,6 +42,8 @@
  */
 
 #include <corelib/ncbifile.hpp>
+#include <list>
+#include <utility>
 
 
 /** @addtogroup Compression
@@ -95,9 +97,9 @@ public:
     enum EErrCode {
         eUnsupportedTarFormat,
         eUnsupportedEntryType,
-        eBadName,
         eNameTooLong,
         eChecksum,
+        eBadName,
         eCreate,
         eOpen,
         eRead,
@@ -113,9 +115,9 @@ public:
         switch (GetErrCode()) {
         case eUnsupportedTarFormat: return "eUnsupportedTarFormat";
         case eUnsupportedEntryType: return "eUnsupportedEntryType";
-        case eBadName:              return "eBadName";
         case eNameTooLong:          return "eNameTooLong";
         case eChecksum:             return "eChecksum";
+        case eBadName:              return "eBadName";
         case eCreate:               return "eCreate";
         case eOpen:                 return "eOpen";
         case eRead:                 return "eRead";
@@ -164,7 +166,7 @@ public:
     // Getters only!
     const string& GetName(void)             const { return m_Name;          }
     EType         GetType(void)             const { return m_Type;          }
-    Int8          GetSize(void)             const { return m_Stat.st_size;  }
+    Uint8         GetSize(void)             const { return m_Stat.st_size;  }
     TTarMode      GetMode(void)             const; // Raw mode as stored in tar
     void          GetMode(CDirEntry::TMode*            user_mode,
                           CDirEntry::TMode*            group_mode   = 0,
@@ -192,9 +194,8 @@ private:
 NCBI_XUTIL_EXPORT ostream& operator << (ostream&, const CTarEntryInfo&);
 
 
-/// Forward declarations of helper structures used in archive processing.
+/// Forward declaration of tar header used internally
 struct SHeader;
-struct SProcessData;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -204,8 +205,10 @@ struct SProcessData;
 /// (Throws exceptions on most errors.)
 /// Note that if a stream constructor was used then CTar can only perform
 /// one pass over the archive.  This means that only one full action will
-/// succeed.  Before next action, you should explicitly reset the stream
-/// position to the beginning of the acrhive.
+/// succeed (and it the action was to update the archive, it has to
+/// be explicitly followed by Close().  Before next action, you should
+/// explicitly reset the stream position to the beginning of the archive
+/// for read/update operations or to end of archive for append operations.
 
 class NCBI_XUTIL_EXPORT CTar
 {
@@ -256,8 +259,11 @@ public:
     ///   Close
     virtual ~CTar();
 
-    /// Define a vector of pointers to entries.
-    typedef vector< AutoPtr<CTarEntryInfo> > TEntries;
+
+    /// Define a list of entries.
+    typedef list< CTarEntryInfo > TEntries;
+    /// Define a list of files with sizes.
+    typedef list< pair<string, Uint8> > TFiles;
 
 
     //------------------------------------------------------------------------
@@ -268,7 +274,7 @@ public:
     ///
     /// If a file with such name already exists it will be reset.
     /// @sa
-    ///   Append, Update
+    ///   Append
     void Create(void);
 
     /// Close the archive making sure all pending output is flushed.
@@ -291,8 +297,8 @@ public:
     /// (that is, to have forward slashes in the paths).
     /// All entries will be added at the end of the archive.
     /// @sa
-    ///   Create, Update
-    void Append(const string& entry_name);
+    ///   Create, Update, SetBaseDir
+    auto_ptr<TEntries> Append(const string& entry_name);
 
     /// Only append entries that are newer than corresponding ones
     /// already found in the archive.
@@ -300,25 +306,23 @@ public:
     /// Add more recent copies, if available, of archive members,
     /// and place them at the end of the archive.
     /// @sa
-    ///   Create, Append
-    void Update(const string& entry_name);
+    ///   Append, SetBaseDir
+    auto_ptr<TEntries> Update(const string& entry_name);
 
 /*
     // Delete an entry from the archive (not for use on magnetic tapes :-)
     void Delete(const string& entry_name);
 
-    // Find entires on the file system that differ with corresponding
+    // Find file system entries that differ from corresponding
     // entries already in the archive.
-    TEntries Diff(const string& diff_dir);
+    auto_ptr<TEntries> Diff(const string& diff_dir);
 */
 
     /// Extract the entire archive into a specified directory.
     ///
     /// Extract all archive entries, which names match pre-set masks.
-    /// @param dst_dir
-    ///   Directory name to extract the files to.
-    /// @sa SetMask, UnsetMask
-    void Extract(const string& dst_dir);
+    /// @sa SetMask, SetBaseDir
+    auto_ptr<TEntries> Extract(void);
 
     /// Get information about archive entries.
     ///
@@ -326,13 +330,21 @@ public:
     ///   An array containing information on those archive entries
     ///   which names match pre-set masks.
     /// @sa SetMask
-    TEntries List(void);
+    auto_ptr<TEntries> List(void);
 
     /// Verify archive integrity.
     /// 
     /// Emulate extracting files from archive without creating them on disk.
-    /// @sa SetMask
     void Test(void);
+
+    /// Return archive size as if input entries were put in it.
+    /// Note that the return value is not exact but upper bound of
+    /// what the archive size can be expected.  This call does not recurse
+    /// in any subdirectries but relies solely upon the information as
+    /// passed via parameter.
+    ///
+    /// The returned size includes all necessary alignments and padding.
+    Uint8 EstimateArchiveSize(const TFiles& files);
 
 
     //------------------------------------------------------------------------
@@ -356,7 +368,8 @@ public:
     ///   Flag to take ownership on the masks (delete on destruction).
     /// @param use_case
     ///   Whether to do a case sensitive (eCase = default),
-    ///   or a case-insensitive (eNocase) match .
+    ///   or a case-insensitive (eNocase) match.
+    /// @sa UnsetMask
     void SetMask(CMask *mask, EOwnership if_to_own = eNoOwnership,
                  NStr::ECase use_case = NStr::eCase);
 
@@ -364,48 +377,56 @@ public:
     ///
     /// Upon mask reset, all entries become subject to achive processing in
     /// list/test/extract operations.
+    /// @sa SetMask
     void UnsetMask();
 
-    /// Get base directory to search for files while adding to the archive.
+    /// Get base directory to use for files while extracting from/adding to
+    /// the archive, and in the latter case used only for relative paths.
+    /// @sa SetBaseDir
     const string& GetBaseDir(void) const;
 
-    /// Set base directory to search for files while adding to the archive.
-    /// Only used for files that are specified via relative paths.
+    /// Set base directory to use for files while extracting from/adding to
+    /// the archive, and in the latter case used only for relative paths.
+    /// @sa GetBaseDir
     void SetBaseDir(const string& dir_name);
 
 protected:
-    /// File archive open mode
+    /// Archive action
     enum EOpenMode {
-        eCreate,
-        eRead,
-        eUpdate,
-        eUndefined
-    };
-    enum EStatus {
-        eSuccess = 0,
-        eFailure,
-        eEOF,
-        eZeroBlock
+        eNone = 0,
+        eWO   = 1,
+        eRO   = 2,
+        eRW   = eRO | eWO
     };
     enum EAction {
-        eList,
-        eExtract,
-        eTest
+        eUndefined =  eNone,
+        eList      = (1 << 2) | eRO,
+        eAppend    = (2 << 2) | eRW,
+        eUpdate    = eList | eAppend,
+        eExtract   = (4 << 2) | eRO,
+        eTest      = eList | eExtract,
+        eCreate    = (8 << 2) | eWO
     };
-    enum EMask {
-        eUseMask,
-        eIgnoreMask
+    /// IO completion code
+    enum EStatus {
+        eFailure = -1,
+        eSuccess =  0,
+        eZeroBlock,
+        eEOF
     };
 
     // Common part of initialization.
     void x_Init(void);
 
     // Open/close the archive.
-    void x_Open(EOpenMode mode);
+    auto_ptr<TEntries> x_Open(EAction action);
     void x_Close(void);
 
-    // Flush the archive.
+    // Flush the archive (writing an appropriate EOT if necessary).
     void x_Flush(void);
+
+    // Backspace the archive.
+    void x_Backspace(EAction action, size_t blocks);
 
     // Read information about next entry in the archive.
     EStatus x_ReadEntryInfo(CTarEntryInfo& info);
@@ -417,17 +438,15 @@ protected:
     void x_WriteEntryInfo(const string& name, const CTarEntryInfo& info);
 
     // Read the archive and do some "action".
-    void x_ReadAndProcess(EAction action, SProcessData* data = 0,
-                          EMask use_mask = eUseMask);
+    auto_ptr<TEntries> x_ReadAndProcess(EAction action, bool use_mask = true);
 
-    // Process next entry from the archive for a specified action.
-    // If process == FALSE, just skip the entry without processing.
-    void x_ProcessEntry(const CTarEntryInfo& info, bool process,
-                        EAction action, SProcessData* data = 0);
+    // Process next entry from the archive.
+    // If extract == FALSE, then just skip the entry without any processing.
+    void x_ProcessEntry(const CTarEntryInfo& info, bool extract = false);
 
     // Extract an entry from the archive into the file system,
     // and return the entry size (if any) still remaining in the archive.
-    streamsize x_ExtractEntry(const CTarEntryInfo& info, SProcessData& data);
+    streamsize x_ExtractEntry(const CTarEntryInfo& info);
 
     // Restore attributes of a specified entry.
     // If 'target' not specified, then CDirEntry will be constructed
@@ -443,26 +462,26 @@ protected:
     string x_ToArchiveName(const string& path) const;
 
     // Append an entry to the archive.
-    void x_Append(const string& name, const TEntries* update_list = 0);
-    // Append file/symlink entry to the archive.
+    auto_ptr<TEntries> x_Append(const string&   name,
+                                const TEntries* toc = 0);
+    // Append a file/symlink entry to the archive.
     void x_AppendFile(const string& name, const CTarEntryInfo& info);
 
 protected:
     string         m_FileName;       ///< Tar archive file name.
     CNcbiFstream*  m_FileStream;     ///< File stream of the archive.
-    EOpenMode      m_OpenMode;       ///< What was it open for.
+    EOpenMode      m_OpenMode;       ///< What was it opened for.
     CNcbiIos*      m_Stream;         ///< Archive stream (used for all I/O).
     const size_t   m_BufferSize;     ///< Buffer size for I/O operations.
     size_t         m_BufferPos;      ///< Position within the record.
-    char*          m_BufPtr;         ///< Page unaligned buffer pointer
+    char*          m_BufPtr;         ///< Page unaligned buffer pointer.
     char*          m_Buffer;         ///< I/O buffer (page-aligned).
     TFlags         m_Flags;          ///< Bitwise OR of flags.
     CMask*         m_Mask;           ///< Masks for list/test/extract.
     EOwnership     m_MaskOwned;      ///< Flag to take ownership for m_Mask.
     NStr::ECase    m_MaskUseCase;    ///< Flag for mask matching.
     bool           m_IsModified;     ///< True after at least one write.
-    string         m_BaseDir;        ///< Base directory to seek files to add
-                                     ///< by relative paths.
+    string         m_BaseDir;        ///< Base directory for relative paths.
 };
 
 
@@ -477,24 +496,37 @@ void CTar::Create(void)
     x_Open(eCreate);
 }
 
-
 inline
 void CTar::Close(void)
 {
+    x_Flush();
     x_Close();
 }
 
 inline
-void CTar::Append(const string& name)
+auto_ptr<CTar::TEntries> CTar::Append(const string& name)
 {
-    x_Open(eUpdate);
-    x_Append(name);
+    x_Open(eAppend);
+    return x_Append(name);
+}
+
+inline
+auto_ptr<CTar::TEntries> CTar::Update(const string& name)
+{
+    auto_ptr<TEntries> toc = x_Open(eUpdate);
+    return x_Append(name, toc.get());
+}
+
+inline
+auto_ptr<CTar::TEntries> CTar::List(void)
+{
+    return x_Open(eList);
 }
 
 inline
 void CTar::Test(void)
 {
-    x_ReadAndProcess(eTest);
+    x_Open(eTest);
 }
 
 inline
@@ -513,15 +545,14 @@ inline
 void CTar::SetMask(CMask *mask, EOwnership if_to_own, NStr::ECase use_case)
 {
     UnsetMask();
-    m_Mask = mask;
-    m_MaskOwned = if_to_own;
+    m_Mask        = mask;
+    m_MaskOwned   = if_to_own;
     m_MaskUseCase = use_case;
 }
 
 inline
 void CTar::UnsetMask()
 {
-    // Delete owned mask
     if ( m_MaskOwned ) {
         delete m_Mask;
     }
@@ -550,6 +581,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/06/22 20:03:34  lavr
+ * Proper append/update implementation; Major actions got return values
+ *
  * Revision 1.12  2005/06/13 18:27:20  lavr
  * Use enums for mode; define special bits' manipulations
  *
