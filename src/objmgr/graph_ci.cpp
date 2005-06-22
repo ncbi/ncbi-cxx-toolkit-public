@@ -95,6 +95,134 @@ void CMappedGraph::MakeMappedGraph(void) const
 }
 
 
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq,
+                     range,
+                     strand)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown,
+                     &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq,
+                     range,
+                     eNa_strand_unknown,
+                     &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq,
+                     range,
+                     strand,
+                     &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
 CGraph_CI::~CGraph_CI(void)
 {
 }
@@ -106,6 +234,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/06/22 14:07:42  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.32  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *

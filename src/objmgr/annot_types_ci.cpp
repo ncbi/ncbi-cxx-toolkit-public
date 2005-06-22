@@ -52,7 +52,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
     return;
 }
 
-
+/*
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CBioseq_Handle& bioseq,
                                const SAnnotSelector* params)
@@ -78,6 +78,29 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                       bioseq,
                                       CRange<TSeqPos>::GetWhole(),
                                       eNa_strand_unknown);
+    }
+    Rewind();
+}
+*/
+
+CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
+                               const CBioseq_Handle& bioseq,
+                               const CRange<TSeqPos>& range,
+                               ENa_strand strand,
+                               const SAnnotSelector* params)
+    : m_DataCollector(new CAnnot_Collector(bioseq.GetScope()))
+{
+    if ( !params ) {
+        SAnnotSelector sel(type);
+        m_DataCollector->x_Initialize(sel, bioseq, range, strand);
+    }
+    else if ( !params->CheckAnnotType(type) ) {
+        SAnnotSelector sel(*params);
+        sel.ForceAnnotType(type);
+        m_DataCollector->x_Initialize(sel, bioseq, range, strand);
+    }
+    else {
+        m_DataCollector->x_Initialize(*params, bioseq, range, strand);
     }
     Rewind();
 }
@@ -184,6 +207,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.128  2005/06/22 14:07:41  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.127  2005/05/10 17:03:55  grichenk
 * Check for null params
 *

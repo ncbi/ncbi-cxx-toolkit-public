@@ -39,6 +39,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
+class CAnnot_CI;
+
 // Base class for specific annotation iterators
 class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI
 {
@@ -47,9 +49,11 @@ public:
 
     CAnnotTypes_CI(void);
 
-    // Search on the whole bioseq
+    // Search on the part of bioseq
     CAnnotTypes_CI(TAnnotType type,
                    const CBioseq_Handle& bioseq,
+                   const CRange<TSeqPos>& range,
+                   ENa_strand strand,
                    const SAnnotSelector* params = 0);
 
     // Search on location
@@ -81,6 +85,8 @@ public:
     size_t GetSize(void) const;
 
 protected:
+    friend class CAnnot_CI;
+
     typedef CAnnot_Collector::TAnnotSet TAnnotSet;
     typedef TAnnotSet::const_iterator   TIterator;
 
@@ -193,6 +199,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/06/22 14:07:41  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.74  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.

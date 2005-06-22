@@ -60,7 +60,7 @@ struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
 class CSeq_loc_Conversion_Set;
 class CSeq_feat_Handle;
-
+class CAnnot_CI;
 
 class NCBI_XOBJMGR_EXPORT CAnnotMapping_Info
 {
@@ -301,11 +301,11 @@ private:
     void x_SearchAll(const CSeq_annot_Info& annot_info);
     void x_Sort(void);
     
-    bool x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
+    void x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
                             CSeq_loc_Conversion* cvt,
                             unsigned int         loc_index);
-    bool x_AddObject(CAnnotObject_Ref& object_ref);
-    bool x_AddObject(CAnnotObject_Ref&    object_ref,
+    void x_AddObject(CAnnotObject_Ref& object_ref);
+    void x_AddObject(CAnnotObject_Ref&    object_ref,
                      CSeq_loc_Conversion* cvt,
                      unsigned int         loc_index);
 
@@ -319,16 +319,22 @@ private:
                       const SAnnotObject_Index& index) const;
     bool x_MatchLocIndex(const SAnnotObject_Index& index) const;
 
-    size_t x_GetAnnotCount(void) const;
+    bool x_NoMoreObjects(void) const;
+
+    void x_AddPostMappings(void);
+    void x_AddTSE(const CTSE_Handle& tse);
+    void x_AddAnnot(const CAnnotObject_Ref& ref);
 
     // Set of processed annot-locs to avoid duplicates
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
     typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
+    typedef map<const CSeq_annot_Info*, CSeq_annot_Handle> TAnnotLockMap;
 
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockMap                     m_TSE_LockMap;
+    TAnnotLockMap                    m_AnnotLockMap;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
@@ -341,6 +347,7 @@ private:
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
     friend class CMappedGraph;
+    friend class CAnnot_CI;
 };
 
 
@@ -780,6 +787,10 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/06/22 14:07:42  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.29  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.

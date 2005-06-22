@@ -44,6 +44,103 @@ BEGIN_SCOPE(objects)
 
 
 
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq,
+                     range,
+                     strand)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown,
+                     &sel)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq,
+                     range,
+                     eNa_strand_unknown,
+                     &sel)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq,
+                     range,
+                     strand,
+                     &sel)
+{
+}
+
+
+CAlign_CI::CAlign_CI(CScope& scope,
+                     const CSeq_loc& loc)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc)
+{
+}
+
+
+CAlign_CI::CAlign_CI(CScope& scope,
+                     const CSeq_loc& loc,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc, &sel)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot, &sel)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry, &sel)
+{
+}
+
+
 CAlign_CI::~CAlign_CI(void)
 {
 }
@@ -120,6 +217,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/06/22 14:07:42  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.31  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *

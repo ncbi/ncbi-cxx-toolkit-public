@@ -206,6 +206,31 @@ public:
               const SAnnotSelector& sel);
 
     /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given bioseq
+    CGraph_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              ENa_strand strand = eNa_strand_unknown);
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CGraph_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CGraph_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              ENa_strand strand,
+              const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_graph objects 
     /// related to the given seq-loc
     CGraph_CI(CScope& scope,
               const CSeq_loc& loc);
@@ -262,90 +287,6 @@ CGraph_CI::CGraph_CI(void)
 }
 
 inline
-CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, &sel)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, &sel)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, &sel)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
-CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, &sel)
-{
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-inline
 CGraph_CI& CGraph_CI::operator++ (void)
 {
     Next();
@@ -387,6 +328,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/06/22 14:07:41  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.42  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

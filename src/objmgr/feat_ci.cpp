@@ -79,7 +79,10 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 
 
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable, bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown)
 {
     Update();
 }
@@ -89,6 +92,47 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      bioseq,
+                     CRange<TSeqPos>::GetWhole(),
+                     eNa_strand_unknown,
+                     &sel)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   const CRange<TSeqPos>& range,
+                   ENa_strand strand)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq,
+                     range,
+                     strand)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   const CRange<TSeqPos>& range,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq,
+                     range,
+                     eNa_strand_unknown,
+                     &sel)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   const CRange<TSeqPos>& range,
+                   ENa_strand strand,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq,
+                     range,
+                     strand,
                      &sel)
 {
     Update();
@@ -219,12 +263,19 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         m_OriginalFeat.m_AnnotInfoType =
             CSeq_feat_Handle::eType_Seq_annot_Info;
     }
-    if ( m_OriginalFeat.m_Annot.m_Info.GetPointerOrNull() != annot_info ) {
+    if ( !m_OriginalFeat.m_Annot ||
+         &m_OriginalFeat.m_Annot.x_GetInfo() != annot_info ) {
+        CAnnot_Collector::TAnnotLockMap::const_iterator annot_it =
+            collector.m_AnnotLockMap.find(annot_info);
+        _ASSERT(annot_it != collector.m_AnnotLockMap.end());
+        m_OriginalFeat.m_Annot = annot_it->second;
+        /*
         CAnnot_Collector::TTSE_LockMap::const_iterator tse_it =
             collector.m_TSE_LockMap.find(&annot_info->GetTSE_Info());
         _ASSERT(tse_it != collector.m_TSE_LockMap.end());
-        m_OriginalFeat.m_Annot.m_Info = annot_info;
-        m_OriginalFeat.m_Annot.m_TSE = tse_it->second;
+        m_OriginalFeat.m_Annot =
+            CSeq_annot_Handle(*annot_info, tse_it->second);
+        */
     }
 
     m_OriginalFeat.m_Index = feat_ref.GetAnnotObjectIndex();
@@ -251,6 +302,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/06/22 14:07:42  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.43  2005/04/07 18:10:33  vasilche
 * Fixed compatibility with Sun.
 *

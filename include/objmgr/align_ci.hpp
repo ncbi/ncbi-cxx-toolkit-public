@@ -71,10 +71,35 @@ public:
 
     /// Create an iterator that enumerates CSeq_align objects 
     /// related to the given bioseq
+    CAlign_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              ENa_strand strand = eNa_strand_unknown);
+
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given bioseq
     ///
     /// @sa
     ///   SAnnotSelector
     CAlign_CI(const CBioseq_Handle& bioseq,
+              const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAlign_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAlign_CI(const CBioseq_Handle& bioseq,
+              const CRange<TSeqPos>& range,
+              ENa_strand strand,
               const SAnnotSelector& sel);
 
     /// Create an iterator that enumerates CSeq_align objects 
@@ -153,77 +178,6 @@ private:
 inline
 CAlign_CI::CAlign_CI(void)
 {
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq, &sel)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc, &sel)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot, &sel)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry)
-{
-    return;
-}
-
-
-inline
-CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry, &sel)
-{
-    return;
 }
 
 
@@ -236,6 +190,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/06/22 14:07:41  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.34  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

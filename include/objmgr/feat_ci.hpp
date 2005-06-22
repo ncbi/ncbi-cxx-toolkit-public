@@ -224,6 +224,22 @@ public:
     CFeat_CI(const CBioseq_Handle& bioseq,
              const SAnnotSelector& sel);
 
+    /// Search features on part of the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             const CRange<TSeqPos>& range,
+             ENa_strand strand = eNa_strand_unknown);
+
+    /// Search features on part of the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             const CRange<TSeqPos>& range,
+             const SAnnotSelector& sel);
+
+    /// Search features on part of the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             const CRange<TSeqPos>& range,
+             ENa_strand strand,
+             const SAnnotSelector& sel);
+
     /// Search features related to the location
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc);
@@ -362,6 +378,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/06/22 14:07:41  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+*
 * Revision 1.53  2005/04/26 17:27:42  dicuccio
 * Use CSeq_feat::TId instead of CFeat_id
 *
