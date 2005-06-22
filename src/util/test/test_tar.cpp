@@ -47,6 +47,18 @@ USING_NCBI_SCOPE;
 class CTest : public CNcbiApplication
 {
 protected:
+    enum EAction {
+        fNone    =  0,
+        fCreate  = (1 << 0),
+        fAppend  = (1 << 1),
+        fUpdate  = (1 << 2),
+        fList    = (1 << 3),
+        fExtract = (1 << 4),
+        fTest    = (1 << 5)
+    };
+    typedef unsigned int TAction;
+
+protected:
     virtual void Init(void);
     virtual int  Run(void);
 };
@@ -63,17 +75,20 @@ void CTest::Init(void)
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
-    args->AddFlag("t", "List archive");
+    args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
-    args->AddFlag("T", "Test archive");
+    args->AddFlag("T", "Test archive [non-standard option]");
     args->AddOptionalKey("f", "filename",
                          "Default = cin/cout", CArgDescriptions::eString);
+    args->AddOptionalKey("C", "directory",
+                         "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey("b", "blocking_factor",
                         "", CArgDescriptions::eInteger, "20");
-    args->SetConstraint("b", new CArgAllow_Integers(1, 1<<10));
+    args->SetConstraint("b", new CArgAllow_Integers(1, (1<<22) - 1));
+    args->AddFlag("i", "Ignore zero blocks");
     args->AddExtra(0, 1<<20, "File list to process",CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
-                          "Tar test suite");
+                          "Tar test suite: VERY simplified tar utility");
     SetupArgDescriptions(args.release());
 
     SetDiagPostLevel(eDiag_Warning);
@@ -82,16 +97,6 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    enum EAction {
-        fNone    =  0,
-        fCreate  = (1 << 0),
-        fAppend  = (1 << 1),
-        fUpdate  = (1 << 2),
-        fList    = (1 << 3),
-        fExtract = (1 << 4),
-        fTest    = (1 << 5)
-    };
-    typedef unsigned int TAction;
     TAction action = fNone;
 
     const CArgs& args = GetArgs();
@@ -109,7 +114,7 @@ int CTest::Run(void)
     if (args["T"].HasValue())
         action |= fTest;
 
-    if (!action  ||  (action & (action - 1)) != 0) {
+    if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
                    "You have to specify exactly one of c, r, u, t, x, or T");
     }
@@ -141,18 +146,34 @@ int CTest::Run(void)
         tar.reset(new CTar(file, blocking_factor));
     }
 
+    if (args["C"].HasValue()) {
+        tar->SetBaseDir(args["C"].AsString());
+    }
+
+    if (args["i"].HasValue()) {
+        tar->SetFlags(tar->GetFlags() | CTar::fIgnoreZeroBlocks);
+    }
+
     if (action == fCreate) {
         tar->Create();
     }
-    if (action == fCreate  ||  action == fAppend) {
+    auto_ptr<CTar::TEntries> entries;
+    if (action == fCreate  ||  action == fAppend  ||  action == fUpdate) {
         size_t n = args.GetNExtra();
         if (n == 0) {
-            NCBI_THROW(CArgException, eInvalidArg, "Must specify filename");
+            NCBI_THROW(CArgException, eInvalidArg, "Must specify filename(s)");
         }
         for (size_t i = 1;  i <= n;  i++) {
-            const string& member = args[i].AsString();
-            cerr << "Adding " << member << " to archive" << endl;
-            tar->Append(member);
+            const string& name   = args[i].AsString();
+            const string& what   = action == fUpdate ? "Updating " : "Adding ";
+            const string& prefix = action == fUpdate ? "u " : "a ";
+            LOG_POST(what << name);
+            entries = action == fUpdate? tar->Update(name) : tar->Append(name);
+            if (!entries->empty()) {
+                ITERATE(CTar::TEntries, it, *entries.get()) {
+                    LOG_POST(prefix << it->GetName());
+                }
+            }
         }
     } else if (action == fTest) {
         if (args.GetNExtra()) {
@@ -172,12 +193,15 @@ int CTest::Run(void)
             tar->SetMask(mask.release(), eTakeOwnership);
         }
         if (action == fList) {
-            CTar::TEntries list = tar->List();
-            ITERATE(CTar::TEntries, it, list) {
-                cout << **it;
+            entries = tar->List();
+            ITERATE(CTar::TEntries, it, *entries.get()) {
+                LOG_POST(*it);
             }
         } else {
-            tar->Extract(".");
+            entries = tar->Extract();
+            ITERATE(CTar::TEntries, it, *entries.get()) {
+                LOG_POST("x " << it->GetName());
+            }
         }
     }
 
@@ -200,6 +224,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/22 20:04:20  lavr
+ * Proper test -- simplified tar command line utility
+ *
  * Revision 1.4  2005/06/14 00:34:41  lavr
  * True CTar test suite (Initial revision)
  *
