@@ -230,6 +230,8 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
                 }
             }
         }}
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                "sequence::GetId(): gi seq-id not found in the list");
         break;
 
     case eGetId_ForceAcc:
@@ -241,19 +243,16 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
                 return best;
             }
         }}
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                "sequence::GetId(): text seq-id not found in the list");
         break;
 
     case eGetId_Best:
         {{
             return FindBestChoice(ids, ScoreSeqIdHandle);
         }}
-
-    default:
-        return CSeq_id_Handle();
     }
-
-    NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-               "sequence::GetId(): request could not be filled");
+    return CSeq_id_Handle();
 }
 
 
@@ -2698,6 +2697,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.130  2005/06/22 14:05:32  grichenk
+* Fixed error messages in x_GetId()
+*
 * Revision 1.129  2005/06/02 15:13:15  dicuccio
 * Added GetMolInfo() - returns a pointer to the MolInfo object for a bioseq handle
 *
