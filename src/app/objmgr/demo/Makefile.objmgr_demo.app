@@ -10,6 +10,6 @@ REQUIRES = objects
 
 APP = objmgr_demo
 SRC = objmgr_demo
-LIB = $(OBJMGR_LIBS)
+LIB = xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

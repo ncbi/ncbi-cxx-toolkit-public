@@ -52,6 +52,8 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/general/Name_std.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 // Object manager includes
 #include <objmgr/scope.hpp>
@@ -63,6 +65,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -224,6 +227,7 @@ void CDemoApp::Init(void)
                             NStr::IntToString(CSeqFeatData::eSubtype_any));
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
+    arg_desc->AddFlag("modify", "try to modify Bioseq object");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -255,9 +259,73 @@ typename C::E_Choice GetVariant(const CArgValue& value)
     return E_Choice(NStr::StringToInt(value.AsString()));
 }
 
+#if 0
+void s_Test()
+{
+    string filename("newgiforcdd.CSV");
+	CRef<CObjectManager> x_mgr = CObjectManager::GetInstance();
+	CGBDataLoader::RegisterInObjectManager(*x_mgr);
+	ifstream iff(filename.c_str());
+	string ofilename = filename + ".out";
+	ofstream of(ofilename.c_str());
+    CStopWatch sw;
+    sw.Start();
+	for ( size_t count = 0; iff; ++count ) {
+        if ( count == 1000 ) {
+            NcbiCout << "Processed " << count << " proteins in "
+                 << sw.Elapsed() << " secs" << NcbiEndl;
+            static int block = 0;
+            if ( ++block == 10 && ::getenv("TEST_EXIT") ) {
+                _exit(1);
+            }
+            sw.Start();
+            count = 0;
+        }
+        CScope Scope(*x_mgr);
+        Scope.AddDefaults();
+
+        int gi;
+        iff >> gi;
+        CRef<CSeq_id> gen = CRef<CSeq_id>(new CSeq_id());
+        gen->SetGeneral().SetTag().SetId(gi);
+        gen->SetGeneral().SetDb("ANNOT:CDD");
+        CBioseq_Handle han;
+        try {
+            han = Scope.GetBioseqHandle(*gen);
+            if (!han) 	continue;
+        }
+        catch (...) {
+            continue;
+        }
+        CFeat_CI iff(han,
+                     SAnnotSelector(CSeqFeatData::e_Region)
+                     .SetSearchExternal(han));
+        for (;iff;++iff) {
+            CConstRef<CSeq_feat>  feat(&iff->GetMappedFeature());
+            if (feat->IsSetDbxref()) {
+                ITERATE (CSeq_feat::TDbxref,t,feat->GetDbxref()) {
+                    string ats_val;
+                    if ((*t)->GetTag().IsStr()) {
+                        ats_val = (*t)->GetTag().GetStr();
+                    }
+                    else {
+                        ats_val = NStr::IntToString((*t)->GetTag().GetId());
+                    }
+                    of << 	gi	<< "\t" << ats_val << "\t";
+                    of<<feat->GetLocation().GetTotalRange().GetFrom()+1<<"\t";
+                    of<<feat->GetLocation().GetTotalRange().GetTo()+1<< endl;
+                }
+            }
+        }
+    }
+}
+#endif
+
 
 int CDemoApp::Run(void)
 {
+    //s_Test();
+
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
@@ -792,9 +860,9 @@ int CDemoApp::Run(void)
                     else {
                         ++no_product_count;
                         /*
-                        ERR_POST("Cdregion with no product");
-                        NcbiCout << "Original location: " << MSerial_AsnText <<
-                            it->GetOriginalFeature().GetLocation();
+                          ERR_POST("Cdregion with no product");
+                          NcbiCout << "Original location: " << MSerial_AsnText <<
+                          it->GetOriginalFeature().GetLocation();
                         */
                         continue;
                     }
@@ -970,6 +1038,9 @@ int CDemoApp::Run(void)
             _ASSERT(total_length == handle.GetBioseqLength());
         }
 
+        if ( args["modify"] ) {
+            CBioseq_EditHandle ebh = handle.GetEditHandle();
+        }
         if ( used_memory_check ) {
             if ( args["reset_scope"] ) {
                 scope.ResetHistory();
@@ -979,6 +1050,10 @@ int CDemoApp::Run(void)
         }
 
         handle.Reset();
+    }
+    if ( args["modify"] ) {
+        handle = scope.GetBioseqHandle(idh);
+        CBioseq_EditHandle ebh = handle.GetEditHandle();
     }
 
     NcbiCout << "Done" << NcbiEndl;
@@ -1006,6 +1081,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2005/06/22 14:36:45  vasilche
+* Added test of edit interface.
+*
 * Revision 1.101  2005/03/14 18:12:44  vasilche
 * Allow loading Seq-annot from file.
 *
