@@ -680,7 +680,7 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files)
 
 // Return a pointer to buffer, which is always block-aligned,
 // and reflect the number of bytes available via the parameter.
-char* CTar::x_ReadArchive(size_t& n)
+const char* CTar::x_ReadArchive(size_t& n)
 {
     _ASSERT(n != 0);
     _ASSERT(m_BufferPos % kBlockSize == 0);
@@ -741,16 +741,16 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 {
     // Read block
-    TBlock* block;
+    const TBlock* block;
     size_t nread = kBlockSize;
     _ASSERT(sizeof(block->buffer) == nread);
-    if (!(block = (TBlock*) x_ReadArchive(nread))) {
+    if (!(block = (const TBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
     if (nread != kBlockSize) {
         NCBI_THROW(CTarException, eRead, "Unexpected EOF in archive");
     }
-    SHeader* h = &block->header;
+    const SHeader* h = &block->header;
 
     bool ustar = false, oldgnu = false;
     // Check header format
@@ -780,11 +780,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
     unsigned int usum = 0;
-    char* p = block->buffer;
-    memset(h->checksum, ' ', sizeof(h->checksum));
+    const char* p = block->buffer;
     for (size_t i = 0; i < sizeof(block->buffer); i++)  {
         ssum +=                 *p;
         usum += (unsigned char)(*p);
+        p++;
+    }
+    p = h->checksum;
+    for (size_t j = 0; j < sizeof(h->checksum); j++) {
+        ssum -=                 *p  - ' ';
+        usum -= (unsigned char)(*p) - ' ';
         p++;
     }
 
@@ -879,7 +884,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
             size_t size = (streamsize) info.GetSize();
             while (size) {
                 size_t nread = size;
-                char* xbuf = x_ReadArchive(nread);
+                const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
                     NCBI_THROW(CTarException, eRead,
                                "Unexpected EOF while reading long name");
@@ -1312,7 +1317,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
             while (size) {
                 // Read from the archive
                 size_t nread = size;
-                char* xbuf = x_ReadArchive(nread);
+                const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
                     NCBI_THROW(CTarException, eRead, "Cannot extract '"
                                + info.GetName() + "' from archive");
@@ -1648,6 +1653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/06/22 21:07:10  lavr
+ * Avoid buffer modification (which may lead to data corruption) while reading
+ *
  * Revision 1.26  2005/06/22 20:03:34  lavr
  * Proper append/update implementation; Major actions got return values
  *

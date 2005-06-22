@@ -455,8 +455,8 @@ protected:
     void x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst = 0);
 
     // Read/write specified number of bytes from/to the archive.
-    char* x_ReadArchive(size_t& n);
-    void  x_WriteArchive(size_t n, const char* buffer = 0);
+    const char* x_ReadArchive(size_t& n);
+    void        x_WriteArchive(size_t n, const char* buffer = 0);
 
     // Check path and convert it to an archive name.
     string x_ToArchiveName(const string& path) const;
@@ -581,6 +581,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/06/22 21:07:10  lavr
+ * Avoid buffer modification (which may lead to data corruption) while reading
+ *
  * Revision 1.13  2005/06/22 20:03:34  lavr
  * Proper append/update implementation; Major actions got return values
  *
