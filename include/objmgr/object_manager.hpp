@@ -61,6 +61,7 @@ class CLoaderMaker_Base;
 class CDataLoaderFactory;
 class CSeq_entry;
 class CBioseq;
+class CSeq_annot;
 class CSeq_id;
 class CScope;
 class CScope_Impl;
@@ -175,7 +176,9 @@ protected:
 
     TDataSourceLock AcquireDataLoader(CDataLoader& loader);
     TDataSourceLock AcquireDataLoader(const string& loader_name);
-    TDataSourceLock AcquireTopLevelSeqEntry(CSeq_entry& top_entry);
+    TDataSourceLock AcquireSharedSeq_entry(const CSeq_entry& object);
+    TDataSourceLock AcquireSharedBioseq(const CBioseq& object);
+    TDataSourceLock AcquireSharedSeq_annot(const CSeq_annot& object);
     void AcquireDefaultDataSources(TDataSourcesLock& sources);
 
 private:
@@ -183,7 +186,6 @@ private:
 
     // these are for Object Manager itself
     // nobody else should use it
-    TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
     TDataSourceLock x_RegisterLoader(CDataLoader& loader,
                                      TPriority priority,
                                      EIsDefault   is_default = eNonDefault,
@@ -233,6 +235,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/06/22 14:13:23  vasilche
+* Removed obsolete methods.
+* Register only shared Seq-entries.
+*
 * Revision 1.32  2004/12/22 15:56:10  vasilche
 * ReleaseDataSource made public.
 * Removed obsolete DebugDump.

@@ -328,19 +328,65 @@ CObjectManager::AcquireDataLoader(const string& loader_name)
 
 
 CObjectManager::TDataSourceLock
-CObjectManager::AcquireTopLevelSeqEntry(CSeq_entry& top_entry)
+CObjectManager::AcquireSharedSeq_entry(const CSeq_entry& object)
 {
     TReadLockGuard guard(m_OM_Lock);
-    TDataSourceLock lock = x_FindDataSource(&top_entry);
+    TDataSourceLock lock = x_FindDataSource(&object);
     if ( !lock ) {
         guard.Release();
         
-        TDataSourceLock source(new CDataSource(top_entry, *this));
+        TDataSourceLock source(new CDataSource(object, object));
         source->DoDeleteThisObject();
 
         TWriteLockGuard wguard(m_OM_Lock);
         lock = m_mapToSource.insert(
-            TMapToSource::value_type(&top_entry, source)).first->second;
+            TMapToSource::value_type(&object, source)).first->second;
+        _ASSERT(lock);
+    }
+    return lock;
+}
+
+
+CObjectManager::TDataSourceLock
+CObjectManager::AcquireSharedBioseq(const CBioseq& object)
+{
+    TReadLockGuard guard(m_OM_Lock);
+    TDataSourceLock lock = x_FindDataSource(&object);
+    if ( !lock ) {
+        guard.Release();
+        
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(const_cast<CBioseq&>(object));
+        TDataSourceLock source(new CDataSource(object, *entry));
+        source->DoDeleteThisObject();
+
+        TWriteLockGuard wguard(m_OM_Lock);
+        lock = m_mapToSource.insert(
+            TMapToSource::value_type(&object, source)).first->second;
+        _ASSERT(lock);
+    }
+    return lock;
+}
+
+
+CObjectManager::TDataSourceLock
+CObjectManager::AcquireSharedSeq_annot(const CSeq_annot& object)
+{
+    TReadLockGuard guard(m_OM_Lock);
+    TDataSourceLock lock = x_FindDataSource(&object);
+    if ( !lock ) {
+        guard.Release();
+        
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSet().SetSeq_set(); // it's not optional
+        entry->SetSet().SetAnnot()
+            .push_back(Ref(&const_cast<CSeq_annot&>(object)));
+        TDataSourceLock source(new CDataSource(object, *entry));
+        source->DoDeleteThisObject();
+
+        TWriteLockGuard wguard(m_OM_Lock);
+        lock = m_mapToSource.insert(
+            TMapToSource::value_type(&object, source)).first->second;
         _ASSERT(lock);
     }
     return lock;
@@ -389,7 +435,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
     ins.first->second = &loader;
 
     // create data source
-    TDataSourceLock source(new CDataSource(loader, *this));
+    TDataSourceLock source(new CDataSource(loader));
     source->DoDeleteThisObject();
     if (priority != kPriority_NotSet) {
         source->SetDefaultPriority(priority);
@@ -400,23 +446,6 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
         m_setDefaultSource.insert(source);
     }
     return source;
-}
-
-
-CObjectManager::TDataSourceLock
-CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
-{
-    TDataSourceLock ret = x_FindDataSource(&top_entry);
-    if ( !ret ) {
-        TDataSourceLock source(new CDataSource(top_entry, *this));
-        source->DoDeleteThisObject();
-
-        ret = m_mapToSource.insert(
-            TMapToSource::value_type(&top_entry, source)).first->second;
-    }
-    
-    _ASSERT(ret);
-    return ret;
 }
 
 
@@ -437,16 +466,14 @@ void CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
         return;
     }
 
-    CConstRef<CSeq_entry> key = ds.GetTopEntry();
+    CConstRef<CObject> key = ds.GetSharedObject();
     if ( !key ) {
-        ERR_POST("CObjectManager::ReleaseDataSource: "
-                 "unknown data source key");
         pSource.Reset();
         return;
     }
 
     TWriteLockGuard guard(m_OM_Lock);
-    TMapToSource::iterator iter = m_mapToSource.find(key.GetPointer());
+    TMapToSource::iterator iter = m_mapToSource.find(key);
     if ( iter == m_mapToSource.end() ) {
         guard.Release();
         ERR_POST("CObjectManager::ReleaseDataSource: "
@@ -477,6 +504,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/06/22 14:13:23  vasilche
+* Removed obsolete methods.
+* Register only shared Seq-entries.
+*
 * Revision 1.47  2005/01/27 17:57:29  grichenk
 * Throw exception if loader can not be created.
 *
