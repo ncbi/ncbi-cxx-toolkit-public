@@ -28,6 +28,7 @@
  */
 
 /** @file blast_objmgr_priv.hpp
+ * Definitions which are dependant on the NCBI C++ Object Manager
  */
 
 #ifndef ALGO_BLAST_API___BLAST_OBJMGR_PRIV__HPP
@@ -49,22 +50,44 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+/// Implements the object manager dependant version of the IBlastQuerySource
 class CBlastQuerySourceOM : public IBlastQuerySource {
 public:
+    /// Constructor which takes a TSeqLocVector
+    /// @param v vector of SSeqLoc structures containing the queries [in]
     CBlastQuerySourceOM(const TSeqLocVector & v);
     
+    /// Return strand for a sequence
+    /// @param i index of the sequence in the sequence container [in]
     objects::ENa_strand GetStrand(int i) const;
+    /// Return the filtered (masked) regions for a sequence
+    /// @param i index of the sequence in the sequence container [in]
     CConstRef<objects::CSeq_loc> GetMask(int i) const;
+    /// Return the CSeq_loc associated with a sequence
+    /// @param i index of the sequence in the sequence container [in]
     CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
+    /// Return the sequence data for a sequence
+    /// @param i index of the sequence in the sequence container [in]
+    /// @param encoding desired encoding [in]
+    /// @param strand strand to fetch [in]
+    /// @param sentinel specifies to use or not to use sentinel bytes around
+    ///        sequence data [in]
+    /// @param warnings if not NULL, warnings will be returned in this string
+    ///        [in|out]
+    /// @return SBlastSequence structure containing sequence data requested
     SBlastSequence GetBlastSequence(int i,
                                     EBlastEncoding encoding,
                                     objects::ENa_strand strand,
                                     ESentinelType sentinel,
                                     string* warnings = 0) const;
+    /// Return the length of a sequence
+    /// @param index index of the sequence in the sequence container [in]
     TSeqPos GetLength(int i) const;
+    /// Return the number of elements in the sequence container
     TSeqPos Size() const;
     
 private:
+    /// Reference to input TSeqLocVector
     const TSeqLocVector& m_TSeqLocVector;
 };
 
@@ -84,7 +107,7 @@ void
 SetupQueryInfo(const TSeqLocVector& queries, 
                EBlastProgramType prog,
                objects::ENa_strand strand_opt,
-               BlastQueryInfo** qinfo); // out
+               BlastQueryInfo** qinfo);
 
 /// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
 /// @param queries vector of blast::SSeqLoc structures [in]

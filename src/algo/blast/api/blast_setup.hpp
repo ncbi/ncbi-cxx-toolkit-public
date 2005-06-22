@@ -99,12 +99,13 @@ enum ESentinelType {
 
 /// Lightweight wrapper around an indexed sequence container. These sequences
 /// are then used to set up internal BLAST data structures for sequence data
-struct IBlastQuerySource {
+class IBlastQuerySource {
+public:
     /// Our no-op virtual destructor
     virtual ~IBlastQuerySource() {}
     
     /// Return strand for a sequence
-    /// @param index index of the sequence in the sequence container
+    /// @param index index of the sequence in the sequence container [in]
     virtual objects::ENa_strand GetStrand(int index) const = 0;
     
     /// Return the number of elements in the sequence container
@@ -114,51 +115,79 @@ struct IBlastQuerySource {
     bool Empty() const { return (Size() == 0); }
     
     /// Return the filtered (masked) regions for a sequence
-    /// @param index index of the sequence in the sequence container
+    /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetMask(int index) const = 0;
     
     /// Return the CSeq_loc associated with a sequence
-    /// @param index index of the sequence in the sequence container
+    /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const = 0;
     
     /// Return the sequence data for a sequence
-    /// @param index index of the sequence in the sequence container
+    /// @param index index of the sequence in the sequence container [in]
+    /// @param encoding desired encoding [in]
+    /// @param strand strand to fetch [in]
+    /// @param sentinel specifies to use or not to use sentinel bytes around
+    ///        sequence data [in]
+    /// @param warnings if not NULL, warnings will be returned in this string
+    ///        [in|out]
+    /// @return SBlastSequence structure containing sequence data requested
     virtual SBlastSequence
     GetBlastSequence(int index, EBlastEncoding encoding, 
                      objects::ENa_strand strand, ESentinelType sentinel, 
                      std::string* warnings = 0) const = 0;
     
     /// Return the length of a sequence
-    /// @param index index of the sequence in the sequence container
+    /// @param index index of the sequence in the sequence container [in]
     virtual TSeqPos GetLength(int index) const = 0;
 };
 
-struct IBlastSeqVector {
+/// Lightweight wrapper around sequence data which provides a CSeqVector-like
+/// interface to the data
+class IBlastSeqVector {
+public:
+    /// Our no-op virtual destructor
     virtual ~IBlastSeqVector() {}
 
-    // Two encodings are really necessary: ncbistdaa and ncbi4na, both use 1
-    // byte per residue/base
+    /// Sets the encoding for the sequence data.
+    /// Two encodings are really necessary: ncbistdaa and ncbi4na, both use 1
+    /// byte per residue/base
     virtual void SetCoding(objects::CSeq_data::E_Choice coding) = 0;
+    /// Returns the length of the sequence data (in the case of nucleotides,
+    /// only one strand)
     virtual TSeqPos size() const = 0;
+    /// Allows index-based access to the sequence data
     virtual Uint1 operator[] (TSeqPos pos) const = 0;
 
+    /// For nucleotide sequences this instructs the implementation to convert
+    /// its representation to be that of the plus strand
     void SetPlusStrand() {
         x_SetPlusStrand();
         m_Strand = objects::eNa_strand_plus;
     }
+    /// For nucleotide sequences this instructs the implementation to convert
+    /// its representation to be that of the minus strand
     void SetMinusStrand() {
         x_SetMinusStrand();
         m_Strand = objects::eNa_strand_minus;
     }
+    /// Accessor for the strand currently set
     objects::ENa_strand GetStrand() const {
         return m_Strand;
     }
+    /// Returns the compressed nucleotide data for the plus strand, still
+    /// occupying one base per byte.
     virtual SBlastSequence GetCompressedPlusStrand() = 0;
 
 protected:
+    /// Method which does the work for setting the plus strand of the 
+    /// nucleotide sequence data
     virtual void x_SetPlusStrand() = 0;
+    /// Method which does the work for setting the minus strand of the 
+    /// nucleotide sequence data
     virtual void x_SetMinusStrand() = 0;
 
+    /// Maintains the state of the strand currently saved by the implementation
+    /// of this class
     objects::ENa_strand m_Strand;
 };
 
@@ -314,6 +343,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/06/22 21:03:02  camacho
+* Doxygen comments
+*
 * Revision 1.46  2005/06/20 17:32:47  camacho
 * Add blast::GetSequence object manager-free interface
 *
