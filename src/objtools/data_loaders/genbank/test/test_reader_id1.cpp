@@ -23,25 +23,55 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <iostream>
-#include <serial/serial.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objmgr/impl/tse_info.hpp>
+#include <corelib/ncbiapp.hpp>
 
-#include <connect/ncbi_util.h>
+#include <objmgr/object_manager.hpp>
+
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
+
 #include <connect/ncbi_core_cxx.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-using namespace std;
 
-int main()
+class CTestApplication : public CNcbiApplication
+{
+public:
+    virtual int Run(void);
+    virtual void Init(void);
+};
+
+
+void CTestApplication::Init(void)
+{
+    CONNECT_Init(&GetConfig());
+
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    arg_desc->AddDefaultKey("gi_from", "GiFrom",
+                            "first GI to fetch",
+                            CArgDescriptions::eInteger, "100");
+    arg_desc->AddDefaultKey("gi_to", "GiTo",
+                            "last GI to fetch",
+                            CArgDescriptions::eInteger, "200");
+    arg_desc->AddDefaultKey("count", "Count",
+                            "number of passes",
+                            CArgDescriptions::eInteger, "1");
+
+    // Program description
+    string prog_description = "Test id1 reader\n";
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              prog_description, false);
+
+    // Pass argument descriptions to the application
+    //
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+int CTestApplication::Run(void)
 {
     //export CONN_DEBUG_PRINTOUT=data
     //CORE_SetLOG(LOG_cxx2c());
@@ -51,32 +81,65 @@ int main()
 
     //test_id1_calls();
 
-    int gi = 5;
+    const CArgs& args = GetArgs();
+    int count = args["count"].AsInteger();
+    int gi_from = args["gi_from"].AsInteger();
+    int gi_to = args["gi_to"].AsInteger();
 
-    CId1Reader reader;
-    for(int k = 0; k < 500; k++) {
-        CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
-        CStandaloneRequestResult request(seq_id);
-        CLoadLockBlob_ids ids(request, seq_id);
-        reader.LoadSeq_idSeq_ids(request, seq_id);
-        ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
-            const CBlob_id& blob_id = i->first;
-            cout << "K: " << k << " " << gi << endl;
-
-            CLoadLockBlob blob(request, blob_id);
-            reader.LoadBlob(request, blob_id);
-            if ( !blob.IsLoaded() ) {
-                cout << "blob is not available\n";
-                continue;
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    for ( int i = 0; i < 100; ++i ) {
+        CGBDataLoader::RegisterInObjectManager(*om, new CId1Reader);
+    }
+    for ( int pass = 0; pass < count; ++pass ) {
+        CRef<CReadDispatcher> dispatcher(new CReadDispatcher);
+        CRef<CReader> reader(new CId1Reader);
+        dispatcher->InsertReader(0, reader);
+        for ( int gi = gi_from; gi <= gi_to; gi++ ) {
+            NcbiCout << "gi: " << gi << ": " << NcbiEndl;
+            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
+            CStandaloneRequestResult request(seq_id);
+            dispatcher->LoadSeq_idSeq_ids(request, seq_id);
+            CLoadLockSeq_ids seq_ids(request, seq_id);
+            NcbiCout << "  ids:";
+            ITERATE ( CLoadInfoSeq_ids, i, *seq_ids ) {
+                NcbiCout << " " << i->AsString();
             }
-            cout << "K: " <<k<<" " <<gi<<" "<<1<<" blobs" << endl;
+            NcbiCout << NcbiEndl;
+            
+            dispatcher->LoadSeq_idBlob_ids(request, seq_id);
+            CLoadLockBlob_ids blob_ids(request, seq_id);
+            ITERATE ( CLoadInfoBlob_ids, i, *blob_ids ) {
+                const CBlob_id& blob_id = i->first;
+                NcbiCout << "  " << blob_id.ToString() << NcbiEndl;
+
+                if ( !blob_id.IsMainBlob() ) {
+                    continue;
+                }
+                CLoadLockBlob blob(request, blob_id);
+                dispatcher->LoadBlob(request, blob_id);
+                if ( !blob.IsLoaded() ) {
+                    NcbiCout << "blob is not available" << NcbiEndl;
+                    continue;
+                }
+                NcbiCout << "    loaded" << NcbiEndl;
+            }
         }
     }
     return 0;
 }
 
+
+int main(int argc, const char* argv[])
+{
+    return CTestApplication().AppMain(argc, argv);
+}
+
+
 /*
 * $Log$
+* Revision 1.10  2005/06/22 14:32:16  vasilche
+* Updated ID1 reader test.
+*
 * Revision 1.9  2005/03/14 18:17:15  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to
