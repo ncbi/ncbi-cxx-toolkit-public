@@ -55,7 +55,7 @@ BEGIN_SCOPE(objects)
 ///  the specified bioseq or location
 ///
 
-class NCBI_XOBJMGR_EXPORT CAnnot_CI : public CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CAnnot_CI
 {
 public:
     /// Create an empty iterator
@@ -63,7 +63,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_annot objects 
     /// related to the given bioseq
-    CAnnot_CI(const CBioseq_Handle& bioseq);
+    explicit CAnnot_CI(const CBioseq_Handle& bioseq);
 
     /// Create an iterator that enumerates CSeq_annot objects 
     /// related to the given bioseq
@@ -87,9 +87,13 @@ public:
               const CSeq_loc& loc,
               const SAnnotSelector& sel);
 
-    /// Create an iterator that enumerates CSeq_annot objects
-    /// from the annotation regardless of their location
+    /// Copy constructor
     CAnnot_CI(const CAnnot_CI& iter);
+
+    /// Create an iterator that enumerates all CSeq_annot objects
+    /// collected by another iterator CFeat_CI, CGraph_CI, or CAlign_CI
+    explicit CAnnot_CI(const CAnnotTypes_CI& iter);
+
     virtual ~CAnnot_CI(void);
 
     CAnnot_CI& operator= (const CAnnot_CI& iter);
@@ -100,14 +104,22 @@ public:
     /// Move to the pervious object in iterated sequence
     CAnnot_CI& operator-- (void);
 
+    void Rewind(void);
+
     /// Check if iterator points to an object
     DECLARE_OPERATOR_BOOL(x_IsValid());
 
-    CSeq_annot_Handle& operator*(void) const;
-    CSeq_annot_Handle* operator->(void) const;
+    /// Check if iterator is empty
+    bool empty(void) const;
+
+    /// Get number of collected Seq-annots
+    size_t size(void) const;
+
+    const CSeq_annot_Handle& operator*(void) const;
+    const CSeq_annot_Handle* operator->(void) const;
 
 private:
-    void x_Collect(void);
+    void x_Initialize(const CAnnotTypes_CI& iter);
 
     bool x_IsValid(void) const;
 
@@ -115,11 +127,10 @@ private:
     CAnnot_CI operator-- (int);
 
     typedef set<CSeq_annot_Handle> TSeqAnnotSet;
-    typedef TSeqAnnotSet::iterator TIterator;
+    typedef TSeqAnnotSet::const_iterator TIterator;
 
-    mutable TSeqAnnotSet m_SeqAnnotSet;
+    TSeqAnnotSet m_SeqAnnotSet;
     TIterator m_Iterator;
-    mutable CSeq_annot_Handle m_Value;
 };
 
 
@@ -142,19 +153,18 @@ CAnnot_CI& CAnnot_CI::operator-- (void)
 
 
 inline
-CSeq_annot_Handle& CAnnot_CI::operator*(void) const
+const CSeq_annot_Handle& CAnnot_CI::operator*(void) const
 {
     _ASSERT(*this);
-    return m_Value = *m_Iterator;
+    return *m_Iterator;
 }
 
 
 inline
-CSeq_annot_Handle* CAnnot_CI::operator->(void) const
+const CSeq_annot_Handle* CAnnot_CI::operator->(void) const
 {
     _ASSERT(*this);
-    m_Value = *m_Iterator;
-    return &m_Value;
+    return &*m_Iterator;
 }
 
 
@@ -162,6 +172,27 @@ inline
 bool CAnnot_CI::x_IsValid(void) const
 {
     return m_Iterator != m_SeqAnnotSet.end();
+}
+
+
+inline
+bool CAnnot_CI::empty(void) const
+{
+    return m_SeqAnnotSet.empty();
+}
+
+
+inline
+size_t CAnnot_CI::size(void) const
+{
+    return m_SeqAnnotSet.size();
+}
+
+
+inline
+void CAnnot_CI::Rewind(void)
+{
+    m_Iterator = m_SeqAnnotSet.begin();
 }
 
 
@@ -174,6 +205,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/06/22 14:08:46  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+* Allow construction from another annotations iterator.
+* Make CAnnot_CI separate from CAnnotTypes_CI.
+*
 * Revision 1.32  2005/03/15 22:05:28  grichenk
 * Fixed operator bool.
 *

@@ -47,100 +47,95 @@ CAnnot_CI::CAnnot_CI(void)
 
 
 CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
-    : CAnnotTypes_CI(iter)
+    : m_SeqAnnotSet(iter.m_SeqAnnotSet),
+      m_Iterator(iter? m_SeqAnnotSet.find(*iter): m_SeqAnnotSet.end())
 {
-    m_SeqAnnotSet = iter.m_SeqAnnotSet;
-    if (iter) {
-        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
-    }
-    else {
-        m_Iterator = m_SeqAnnotSet.end();
-    }
 }
 
 
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     scope, loc,
-                     &SAnnotSelector()
-                     .SetNoMapping(true)
-                     .SetCollectSeq_annots(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
-    x_Collect();
+    x_Initialize(
+        CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                       scope, loc,
+                       &SAnnotSelector()
+                       .SetNoMapping(true)
+                       .SetCollectSeq_annots(true)
+                       .SetSortOrder(SAnnotSelector::eSortOrder_None)));
 }
 
 
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     scope, loc,
-                     &SAnnotSelector(sel)
-                     .SetNoMapping(true)
-                     .SetCollectSeq_annots(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
-    x_Collect();
+    x_Initialize(
+        CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                       scope, loc,
+                       &SAnnotSelector(sel)
+                       .SetNoMapping(true)
+                       .SetCollectSeq_annots(true)
+                       .SetSortOrder(SAnnotSelector::eSortOrder_None)));
 }
 
 
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     bioseq,
-                     &SAnnotSelector()
-                     .SetNoMapping(true)
-                     .SetCollectSeq_annots(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
-    x_Collect();
+    x_Initialize(
+        CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                       bioseq,
+                       CRange<TSeqPos>::GetWhole(),
+                       eNa_strand_unknown,
+                       &SAnnotSelector()
+                       .SetNoMapping(true)
+                       .SetCollectSeq_annots(true)
+                       .SetSortOrder(SAnnotSelector::eSortOrder_None)));
 }
 
 
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     bioseq,
-                     &SAnnotSelector(sel)
-                     .SetNoMapping(true)
-                     .SetCollectSeq_annots(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
-    x_Collect();
+    x_Initialize(
+        CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                       bioseq,
+                       CRange<TSeqPos>::GetWhole(),
+                       eNa_strand_unknown,
+                       &SAnnotSelector(sel)
+                       .SetNoMapping(true)
+                       .SetCollectSeq_annots(true)
+                       .SetSortOrder(SAnnotSelector::eSortOrder_None)));
+}
+
+
+CAnnot_CI::CAnnot_CI(const CAnnotTypes_CI& iter)
+{
+    x_Initialize(iter);
+}
+
+
+CAnnot_CI::~CAnnot_CI(void)
+{
 }
 
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
     if ( this != &iter ) {
-        CAnnotTypes_CI::operator=(iter);
         m_SeqAnnotSet = iter.m_SeqAnnotSet;
-        if (iter) {
-            m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
-        }
-        else {
-            m_Iterator = m_SeqAnnotSet.end();
-        }
+        m_Iterator = iter? m_SeqAnnotSet.find(*iter): m_SeqAnnotSet.end();
     }
     return *this;
 }
 
 
-CAnnot_CI::~CAnnot_CI(void)
+void CAnnot_CI::x_Initialize(const CAnnotTypes_CI& iter)
 {
-    return;
-}
-
-
-void CAnnot_CI::x_Collect(void)
-{
-    while ( IsValid() ) {
-        CSeq_annot_Handle h = GetAnnot();
-        if ( h ) {
-            m_SeqAnnotSet.insert(h);
-        }
-        Next();
+    _ASSERT(m_SeqAnnotSet.empty());
+    ITERATE ( CAnnot_Collector::TAnnotLockMap, it,
+              iter.m_DataCollector->m_AnnotLockMap ) {
+        m_SeqAnnotSet.insert(it->second);
     }
-    m_Iterator = m_SeqAnnotSet.begin();
+    Rewind();
 }
 
 
@@ -150,6 +145,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/06/22 14:08:46  vasilche
+* Added constructor from CBioseq_Handle, CRange, and strand.
+* Moved constructors out of inline section.
+* Allow construction from another annotations iterator.
+* Make CAnnot_CI separate from CAnnotTypes_CI.
+*
 * Revision 1.39  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.
