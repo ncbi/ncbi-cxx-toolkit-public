@@ -79,6 +79,41 @@ public:
 };
 
 
+/// CSeqDBAliasExplorer class
+/// 
+/// This is similar to the AliasWalker class.  Where the AliasWalker
+/// provides a search key, the AliasExplorer is provided access to the
+/// name->value map.  This allows it to examine relationships between
+/// values and to do more complex analyses.
+
+class CSeqDB_AliasExplorer {
+public:
+    /// Type of set used for KEY/VALUE pairs within each node
+    typedef map<string, string> TVarList;
+    
+    /// Destructor
+    virtual ~CSeqDB_AliasExplorer() {}
+    
+    /// This will be called with each CVolume that is in the alias
+    /// file tree structure (in order of traversal).
+    /// 
+    /// @param volumes
+    ///   A volume found during alias file traversal.
+    virtual void Accumulate(const CSeqDBVol & volumes) = 0;
+    
+    /// This will be called with the map of key/value pairs associated
+    /// with this alias file.  It should return true if this branch of
+    /// the traversal tree has been satisfied, or false if traversal
+    /// below this point is desireable.
+    /// 
+    /// @param values
+    ///   The name/value pair map for this node.
+    /// @return
+    ///   True if this branch of traversal is done.
+    virtual bool Explore(const TVarList & values) = 0;
+};
+
+
 /// CSeqDBAliasStack
 /// 
 /// When expanding a CSeqDBAliasNode, a test must be done to determine
@@ -332,6 +367,18 @@ public:
     ///   The membership bit, or zero if none was found.
     int GetMembBit(const CSeqDBVolSet & volset) const;
     
+    /// Check whether a db scan is need to compute correct totals.
+    ///
+    /// This traverses this node and its subnodes to determine whether
+    /// accurate estimation of the total number of sequences and bases
+    /// requires a linear time scan of the index files.
+    ///
+    /// @param volset
+    ///   The set of database volumes.
+    /// @return
+    ///   True if the database scan is required.
+    bool NeedTotalsScan(const CSeqDBVolSet & volset) const;
+    
     /// Apply a visitor to each node of the alias node tree
     ///
     /// This iterates this node and possibly subnodes of it.  If the
@@ -351,6 +398,26 @@ public:
     ///   The set of database volumes
     void WalkNodes(CSeqDB_AliasWalker * walker,
                    const CSeqDBVolSet & volset) const;
+    
+    /// Apply a visitor to each node of the alias node tree
+    ///
+    /// This iterates this node and possibly subnodes of it.  If the
+    /// alias file provides a value, it will be applied to walker with
+    /// the AddString() method.  If the alias file does not provide
+    /// the value, the walker object will be applied to each subnode
+    /// (by calling WalkNodes), and then to each volume of the tree by
+    /// calling the Accumulate() method on the walker object.  Each
+    /// type of summary data has its own properties, so there is a
+    /// CSeqDB_AliasWalker derived class for each type of summary data
+    /// that needs this kind of traversal.  This technique is referred
+    /// to as the "visitor" design pattern.
+    ///
+    /// @param walker
+    ///   The visitor object to recursively apply to the tree.
+    /// @param volset
+    ///   The set of database volumes
+    void WalkNodes(CSeqDB_AliasExplorer * explorer,
+                   const CSeqDBVolSet   & volset) const;
     
     /// Set filtering options for all volumes
     ///
@@ -766,6 +833,21 @@ public:
     int GetMembBit(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetMembBit(volset);
+    }
+
+    /// Check whether a db scan is need to compute correct totals.
+    ///
+    /// This traverses this node and its subnodes to determine whether
+    /// accurate estimation of the total number of sequences and bases
+    /// requires a linear time scan of the index files.
+    ///
+    /// @param volset
+    ///   The set of database volumes.
+    /// @return
+    ///   True if the database scan is required.
+    bool NeedTotalsScan(const CSeqDBVolSet & volset) const
+    {
+        return m_Node.NeedTotalsScan(volset);
     }
     
     /// Set filtering options for all volumes

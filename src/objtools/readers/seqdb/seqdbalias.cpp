@@ -702,6 +702,83 @@ private:
 };
 
 
+/// Test for completeness of GI list alias file values.
+///
+/// This searches alias files to determine whether NSEQS and LENGTH
+/// are specified in all of the cases where they should be.  If any
+/// volume has a GI list but the number of included sequences or
+/// length is not specified, then SeqDB must scan the database to
+/// compute this length.
+
+class CSeqDB_GiListValuesTest : public CSeqDB_AliasExplorer {
+public:
+    /// Constructor
+    CSeqDB_GiListValuesTest()
+    {
+        m_NeedScan = false;
+    }
+    
+    /// Collect data from the volume
+    ///
+    /// Volume data is not used by this class.
+    virtual void Accumulate(const CSeqDBVol &)
+    {
+        // Volumes don't have this data, only alias files.
+    }
+    
+    /// Explore the values in this alias file
+    ///
+    /// If the NSEQ and LENGTH fields are specified, this method can
+    /// close this branch of the traversal tree.  Otherwise, if the
+    /// GILIST is specified, then this branch of the traversal will
+    /// fail to produce accurate totals information, therefore an oid
+    /// scan is required, and we are done.
+    /// 
+    /// @param vars
+    ///   The name/value mapping for this node.
+    /// @return
+    ///   True if the traversal should cease descent.
+    virtual bool Explore(const TVarList & vars)
+    {
+        // If we already know that a scan is needed, we can skip all
+        // further analysis (by returning true at all points).
+        
+        if (m_NeedScan)
+            return true;
+        
+        // If we find both NSEQ and LENGTH, then this branch of the
+        // alias file is covered.
+        
+        if (vars.find("NSEQ")   != vars.end() &&
+            vars.find("LENGTH") != vars.end()) {
+            
+            return true;
+        }
+        
+        // If we we have an attached GILIST (but don't have both NSEQ
+        // and LENGTH), then we need to scan the entire database.
+        
+        if (vars.find("GILIST") != vars.end()) {
+            m_NeedScan = true;
+            return true;
+        }
+        
+        // If none of those conditions is met, traversal proceeds.
+        return false;
+    }
+    
+    /// Returns true if a scan is required.
+    bool NeedScan() const
+    {
+        return m_NeedScan;
+    }
+    
+private:
+    /// True unless/until a node with incomplete totals was found.
+    bool m_NeedScan;
+};
+
+
 void
 CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
                            const CSeqDBVolSet & volset) const
@@ -721,6 +798,25 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
     ITERATE(TVolNames, volname, m_VolNames) {
         if (const CSeqDBVol * vptr = volset.GetVol(*volname)) {
             walker->Accumulate( *vptr );
+        }
+    }
+}
+
+void
+CSeqDBAliasNode::WalkNodes(CSeqDB_AliasExplorer * explorer,
+                           const CSeqDBVolSet   & volset) const
+{
+    if (explorer->Explore(m_Values)) {
+        return;
+    }
+    
+    ITERATE(TSubNodeList, node, m_SubNodes) {
+        (*node)->WalkNodes( explorer, volset );
+    }
+    
+    ITERATE(TVolNames, volname, m_VolNames) {
+        if (const CSeqDBVol * vptr = volset.GetVol(*volname)) {
+            explorer->Accumulate( *vptr );
         }
     }
 }
@@ -923,6 +1019,14 @@ int CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
     WalkNodes(& walk, volset);
     
     return walk.GetMembBit();
+}
+
+bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
+{
+    CSeqDB_GiListValuesTest explore;
+    WalkNodes(& explore, volset);
+    
+    return explore.NeedScan();
 }
 
 void CSeqDBAliasNode::

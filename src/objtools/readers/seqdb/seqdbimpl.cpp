@@ -65,10 +65,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     
     SetIterationRange(oid_begin, oid_end);
     
-    m_NumSeqs      = x_GetNumSeqs();
-    m_NumOIDs      = x_GetNumOIDs();
-    m_TotalLength  = x_GetTotalLength();
     m_VolumeLength = x_GetVolumeLength();
+    m_NumOIDs      = x_GetNumOIDs();
     
     try {
         m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
@@ -81,6 +79,19 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     // flush unconstructed memory leases).
     
     m_FlushCB.SetImpl(this);
+    
+    // If the alias files seem to provide correct data for the totals,
+    // use it; otherwise scan the OID list and use approximate lengths
+    // to compute the totals.  Presence of a user GI list implies that
+    // the alias file cannot have correct values.
+    
+    if (gi_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
+        x_ScanTotals();
+    } else {
+        m_NumSeqs      = x_GetNumSeqs();
+        m_TotalLength  = x_GetTotalLength();
+    }
+    
     CHECK_MARKER();
 }
 
@@ -878,6 +889,35 @@ CSeqDBImpl::FindVolumePaths(vector<string> & paths) const
 void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv) const
 {
     m_Aliases.GetAliasFileValues(afv);
+}
+
+void CSeqDBImpl::x_ScanTotals()
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    int   oid_count(0);
+    Uint8 base_count(0);
+    
+    const CSeqDBVol * volp = 0;
+    
+    for(int oid = 0; x_CheckOrFindOID(oid, locked); oid++) {
+        ++ oid_count;
+        
+        int vol_oid = 0;
+        
+        volp = m_VolSet.FindVol(oid, vol_oid);
+        
+        _ASSERT(volp);
+        
+        if ('p' == m_SeqType) {
+            base_count += volp->GetSeqLengthProt(vol_oid);
+        } else {
+            base_count += volp->GetSeqLengthApprox(vol_oid);
+        }
+    }
+    
+    m_TotalLength = base_count;
+    m_NumSeqs = oid_count;
 }
 
 END_NCBI_SCOPE

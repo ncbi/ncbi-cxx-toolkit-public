@@ -593,6 +593,14 @@ private:
     ///   The length of the sequence in bases.
     CRef<CBlast_def_line_set> x_GetHdr(int oid, CSeqDBLockHold & locked) const;
     
+    /// Compute totals via iteration
+    ///
+    /// This method loops over the database, computing the total
+    /// number of (included) sequences and bases from the OID mask and
+    /// sequence lengths.  It stores the computed values in m_NumSeqs
+    /// and m_TotalLength.
+    void x_ScanTotals();
+    
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
     CSeqDBImplFlush m_FlushCB;
