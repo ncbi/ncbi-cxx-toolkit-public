@@ -41,152 +41,30 @@ BEGIN_SCOPE(objects)
 class CTSE_Lock;
 class CTSE_ScopeInfo;
 
-class CTSE_ScopeInternalLock
+
+class CTSE_ScopeLocker : protected CObjectCounterLocker
 {
 public:
-    typedef CTSE_ScopeInfo TObject;
-
-    CTSE_ScopeInternalLock(void)
-        {
-        }
-    CTSE_ScopeInternalLock(TObject& object)
-        {
-            x_Lock(object);
-        }
-    ~CTSE_ScopeInternalLock(void)
-        {
-            Reset();
-        }
-
-    CTSE_ScopeInternalLock(const CTSE_ScopeInternalLock& src)
-        {
-            x_Relock(src);
-        }
-    CTSE_ScopeInternalLock& operator=(const CTSE_ScopeInternalLock& src)
-        {
-            if ( *this != src ) {
-                x_Relock(src);
-            }
-            return *this;
-        }
-
-    DECLARE_OPERATOR_BOOL_REF(m_Object);
-
-    TObject& operator*(void) const
-        {
-            return const_cast<TObject&>
-                (reinterpret_cast<const TObject&>(*m_Object));
-        }
-    TObject* operator->(void) const
-        {
-            return &**this;
-        }
-
-    bool operator==(const CTSE_ScopeInternalLock& lock) const
-        {
-            return m_Object == lock.m_Object;
-        }
-    bool operator!=(const CTSE_ScopeInternalLock& lock) const
-        {
-            return m_Object != lock.m_Object;
-        }
-    bool operator<(const CTSE_ScopeInternalLock& lock) const
-        {
-            return m_Object < lock.m_Object;
-        }
-
-    void Reset(void)
-        {
-            if ( *this ) {
-                x_Unlock();
-            }
-        }
-
-private:
-    void x_Lock(TObject& object);
-    void x_Relock(const CTSE_ScopeInternalLock& src);
-    void x_Unlock(void);
-    
-    CRef<CObject> m_Object;
+    void Lock(CTSE_ScopeInfo* tse) const;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CTSE_ScopeUserLock
+class CTSE_ScopeInternalLocker : public CTSE_ScopeLocker
 {
 public:
-    typedef CTSE_ScopeInfo TObject;
-
-    CTSE_ScopeUserLock(void)
-        {
-        }
-    CTSE_ScopeUserLock(TObject& object)
-        {
-            x_Lock(object);
-        }
-    CTSE_ScopeUserLock(TObject& object, const CTSE_Lock& tse_lock)
-        {
-            x_Lock(object, tse_lock);
-        }
-    ~CTSE_ScopeUserLock(void)
-        {
-            Reset();
-        }
-
-    CTSE_ScopeUserLock(const CTSE_ScopeUserLock& src)
-        {
-            x_Relock(src);
-        }
-    CTSE_ScopeUserLock& operator=(const CTSE_ScopeUserLock& src)
-        {
-            if ( *this != src ) {
-                x_Relock(src);
-            }
-            return *this;
-        }
-
-    DECLARE_OPERATOR_BOOL_REF(m_Object);
-
-    TObject& operator*(void) const
-        {
-            return const_cast<TObject&>
-                (reinterpret_cast<const TObject&>(*m_Object));
-        }
-    TObject* operator->(void) const
-        {
-            return &**this;
-        }
-    const CTSE_Lock& GetTSE_Lock(void) const;
-
-    bool operator==(const CTSE_ScopeUserLock& lock) const
-        {
-            return m_Object == lock.m_Object;
-        }
-    bool operator!=(const CTSE_ScopeUserLock& lock) const
-        {
-            return m_Object != lock.m_Object;
-        }
-    bool operator<(const CTSE_ScopeUserLock& lock) const
-        {
-            return m_Object < lock.m_Object;
-        }
-
-    void Reset(void)
-        {
-            if ( *this ) {
-                x_Unlock();
-            }
-        }
-
-    void Release(void);
-
-private:
-    void x_Lock(TObject& object);
-    void x_Lock(TObject& object, const CTSE_Lock& tse_lock);
-    void x_Relock(const CTSE_ScopeUserLock& src);
-    void x_Unlock(void);
-    
-    CRef<CObject> m_Object;
+    void Unlock(CTSE_ScopeInfo* tse) const;
 };
+
+
+class CTSE_ScopeUserLocker : public CTSE_ScopeLocker
+{
+public:
+    void Unlock(CTSE_ScopeInfo* tse) const;
+};
+
+
+typedef CRef<CTSE_ScopeInfo, CTSE_ScopeInternalLocker> CTSE_ScopeInternalLock;
+typedef CRef<CTSE_ScopeInfo, CTSE_ScopeUserLocker> CTSE_ScopeUserLock;
 
 
 END_SCOPE(objects)
