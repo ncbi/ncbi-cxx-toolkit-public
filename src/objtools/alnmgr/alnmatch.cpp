@@ -60,17 +60,36 @@ CAlnMixMatches::CAlnMixMatches(CRef<CAlnMixSequences>& sequences,
 
 inline
 bool
-CAlnMixMatches::x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1, 
-                                        const CRef<CAlnMixMatch>& aln_match2) 
+CAlnMixMatches::x_CompareScores(const CRef<CAlnMixMatch>& match1, 
+                                const CRef<CAlnMixMatch>& match2) 
 {
-    return aln_match1->m_Score > aln_match2->m_Score;
+    return match1->m_Score > match2->m_Score;
+}
+
+
+inline
+bool
+CAlnMixMatches::x_CompareChainScores(const CRef<CAlnMixMatch>& match1, 
+                                     const CRef<CAlnMixMatch>& match2) 
+{
+    return 
+        match1->m_ChainScore == match2->m_ChainScore  &&
+        match1->m_Score > match2->m_Score  ||
+        match1->m_ChainScore > match2->m_ChainScore;
 }
 
 
 void
 CAlnMixMatches::SortByScore()
 {
-    stable_sort(m_Matches.begin(), m_Matches.end(), x_CompareAlnMatchScores);
+    stable_sort(m_Matches.begin(), m_Matches.end(), x_CompareScores);
+}
+
+
+void
+CAlnMixMatches::SortByChainScore()
+{
+    stable_sort(m_Matches.begin(), m_Matches.end(), x_CompareChainScores);
 }
 
 
@@ -88,8 +107,11 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
     CAlnMap::TNumrow first_non_gapped_row_found;
     bool             strands_exist =
         ds.GetStrands().size() == (size_t)ds.GetNumseg() * ds.GetDim();
+    int              total_aln_score = 0;
 
     vector<CRef<CAlnMixSeq> >& ds_seq = m_AlnMixSequences->m_DsSeq[&ds];
+
+    size_t prev_matches_size = m_Matches.size();
 
     for (CAlnMap::TNumseg seg =0;  seg < ds.GetNumseg();  seg++) {
         len = ds.GetLens()[seg];
@@ -230,7 +252,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                         } else {
                             match->m_Score = len;
                         }
-                        
+                        total_aln_score += match->m_Score;
 
                         // add to the sequences' scores
                         aln_seq1->m_Score += match->m_Score;
@@ -279,6 +301,24 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
         }
         seg_off += ds.GetDim();
     }
+
+
+    // Update chain scores
+    {{
+        // iterate through the newly added matches to set the m_ChainScore
+        size_t new_maches_size = m_Matches.size() - prev_matches_size;
+        NON_CONST_REVERSE_ITERATE(TMatches, match_i, m_Matches) {
+            (*match_i)-> m_ChainScore = total_aln_score;
+            if ( !(--new_maches_size) ) {
+                break;
+            }
+        }
+
+        // update m_ChainScore in the participating sequences
+        for (size_t row = 0;  row < ds_seq.size();  row++) {
+            ds_seq[row]->m_ChainScore += total_aln_score;
+        }
+    }}
 }
 
 
@@ -289,6 +329,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *

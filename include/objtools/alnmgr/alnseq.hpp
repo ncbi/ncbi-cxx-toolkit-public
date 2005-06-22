@@ -66,8 +66,6 @@ public:
     const TSeqs& Get        () const { return m_Seqs; };
     TSeqs&       Set        () { return m_Seqs; };
 
-    void         SortByScore();
-
     enum EAddFlags {
         // Determine score of each aligned segment in the process of mixing
         // (only makes sense if scope was provided at construction time)
@@ -85,6 +83,13 @@ public:
 
     void         Add        (const CDense_seg& ds, TAddFlags flags = 0);
 
+
+    // Sorting algirithms
+    void         SortByScore();
+    void         SortByChainScore();
+
+
+    // Rows-related methods
     void         BuildRows();
     void         InitRowsStartIts();
     void         InitExtraRowsStartIts();
@@ -107,11 +112,13 @@ private:
     };
     typedef map<CRef<CSeq_id>, CRef<CAlnMixSeq>, SSeqIds> TSeqIdMap;
 
-    static bool x_CompareAlnSeqScores  (const CRef<CAlnMixSeq>& aln_seq1,
-                                        const CRef<CAlnMixSeq>& aln_seq2);
+    static bool x_CompareScores     (const CRef<CAlnMixSeq>& seq1,
+                                     const CRef<CAlnMixSeq>& seq2);
+    static bool x_CompareChainScores(const CRef<CAlnMixSeq>& seq1,
+                                     const CRef<CAlnMixSeq>& seq2);
 
-    void x_IdentifyAlnMixSeq           (CRef<CAlnMixSeq>& aln_seq,
-                                        const CSeq_id& seq_id);
+    void x_IdentifyAlnMixSeq        (CRef<CAlnMixSeq>& aln_seq,
+                                     const CSeq_id& seq_id);
 
     size_t                          m_DsCnt;
     map<const CDense_seg*,
@@ -134,6 +141,7 @@ public:
     CAlnMixSeq(void) 
         : m_DsCnt(0),
           m_Score(0),
+          m_ChainScore(0),
           m_StrandScore(0),
           m_Width(1),
           m_Frame(-1),
@@ -152,6 +160,7 @@ public:
     const CBioseq_Handle* m_BioseqHandle;
     CRef<CSeq_id>         m_SeqId;
     int                   m_Score;
+    int                   m_ChainScore;
     int                   m_StrandScore;
     bool                  m_IsAA;
     unsigned              m_Width;
@@ -190,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.2  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes
 *

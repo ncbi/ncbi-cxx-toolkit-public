@@ -159,6 +159,11 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
+        ("sortinputbyscore", "bool",
+         "Sort input by score.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
         ("noobjmgr", "bool",
         // ObjMgr is used to identify sequences and obtain a bioseqhandle.
         // Also used to calc scores and determine the type of molecule
@@ -380,6 +385,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fSortSeqsByScore;
     }
 
+    if (args["sortinputbyscore"]  &&  args["sortinputbyscore"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fSortInputByScore;
+    }
+
     if ( !(args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) ) {
         GetScope(); // first call creates the scope
     }
@@ -479,6 +488,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.32  2005/03/15 20:28:32  ucko
 * Port to new CAln*Printer interface.
 *

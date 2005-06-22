@@ -67,17 +67,36 @@ CAlnMixSequences::CAlnMixSequences(CScope& scope)
 
 inline
 bool
-CAlnMixSequences::x_CompareAlnSeqScores(const CRef<CAlnMixSeq>& aln_seq1,
-                                        const CRef<CAlnMixSeq>& aln_seq2) 
+CAlnMixSequences::x_CompareScores(const CRef<CAlnMixSeq>& seq1,
+                                  const CRef<CAlnMixSeq>& seq2) 
 {
-    return aln_seq1->m_Score > aln_seq2->m_Score;
+    return seq1->m_Score >seq2->m_Score;
+}
+
+
+inline
+bool
+CAlnMixSequences::x_CompareChainScores(const CRef<CAlnMixSeq>& seq1,
+                                       const CRef<CAlnMixSeq>& seq2) 
+{
+    return 
+        seq1->m_ChainScore == seq2->m_ChainScore  &&
+        seq1->m_Score > seq2->m_Score  ||
+        seq1->m_ChainScore > seq2->m_ChainScore;
 }
 
 
 void
 CAlnMixSequences::SortByScore()
 {
-    stable_sort(m_Seqs.begin(), m_Seqs.end(), x_CompareAlnSeqScores);
+    stable_sort(m_Seqs.begin(), m_Seqs.end(), x_CompareScores);
+}
+
+
+void
+CAlnMixSequences::SortByChainScore()
+{
+    stable_sort(m_Seqs.begin(), m_Seqs.end(), x_CompareChainScores);
 }
 
 
@@ -333,6 +352,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.3  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes
 *

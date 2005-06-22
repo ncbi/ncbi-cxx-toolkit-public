@@ -101,10 +101,11 @@ public:
         fTryOtherMethodOnFail = 0x0008,
         fGapJoin              = 0x0010, // join equal len segs gapped on refseq
         fMinGap               = 0x0020, // minimize segs gapped on refseq
-        fSortSeqsByScore      = 0x0040, // Seqs with better scoring aligns on top
-        fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
+        fSortSeqsByScore      = 0x0040, // Better scoring seqs go towards the top
+        fSortInputByScore     = 0x0080, // Process better scoring input alignments first
+        fQuerySeqMergeOnly    = 0x0100, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fFillUnalignedRegions = 0x0100
+        fFillUnalignedRegions = 0x0200
     };
     typedef int TMergeFlags;
 
@@ -192,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.50  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *

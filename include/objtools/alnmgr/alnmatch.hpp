@@ -1,3 +1,4 @@
+
 #ifndef OBJECTS_ALNMGR___ALNMATCH__HPP
 #define OBJECTS_ALNMGR___ALNMATCH__HPP
 
@@ -91,14 +92,17 @@ public:
 
     /// Modifying algorithms
     void           SortByScore();
+    void           SortByChainScore();
 
 
 private:
 
     friend class CAlnMixMerger;
 
-    static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
-                                        const CRef<CAlnMixMatch>& aln_match2);
+    static bool x_CompareScores     (const CRef<CAlnMixMatch>& match1,
+                                     const CRef<CAlnMixMatch>& match2);
+    static bool x_CompareChainScores(const CRef<CAlnMixMatch>& match1,
+                                     const CRef<CAlnMixMatch>& match2);
         
     
     size_t                      m_DsCnt;
@@ -118,11 +122,11 @@ class CAlnMixMatch : public CObject
 {
 public:
     CAlnMixMatch(void)
-        : m_Score(0), m_Start1(0), m_Start2(0),
+        : m_Score(0), m_ChainScore(0), m_Start1(0), m_Start2(0),
           m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
     {};
         
-    int                              m_Score;
+    int                              m_Score, m_ChainScore;
     CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;
     TSeqPos                          m_Start1, m_Start2, m_Len;
     bool                             m_StrandsDiffer;
@@ -141,6 +145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *

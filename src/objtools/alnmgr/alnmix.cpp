@@ -252,9 +252,17 @@ void
 CAlnMix::Merge(TMergeFlags flags)
 {
     if (flags & fSortSeqsByScore) {
-        m_AlnMixSequences->SortByScore();
+        if (flags & fSortInputByScore) {
+            m_AlnMixSequences->SortByChainScore();
+        } else {
+            m_AlnMixSequences->SortByScore();
+        }
     }
-    m_AlnMixMatches->SortByScore();
+    if (flags & fSortInputByScore) {
+        m_AlnMixMatches->SortByChainScore();
+    } else {
+        m_AlnMixMatches->SortByScore();
+    }
     m_AlnMixMerger->Merge(flags);
 }
 
@@ -280,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.123  2005/06/22 22:14:33  todorov
+* Added an option to process stronger input alns first
+*
 * Revision 1.122  2005/03/08 16:21:41  todorov
 * Added CAlnMix::EAddFlags to m_AlnMixMatches->Add
 *
