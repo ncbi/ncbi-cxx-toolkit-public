@@ -111,7 +111,7 @@ void CPromote::PromoteFeatures(void) const
 
 
 // Promote features from a specific Seq-annot
-void CPromote::PromoteFeatures(CSeq_annot_Handle& annot) const
+void CPromote::PromoteFeatures(const CSeq_annot_Handle& annot) const
 {
     _ASSERT(annot);
 
@@ -672,6 +672,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/06/22 14:31:22  vasilche
+* Added constness of CSeq_annot_Handle argument.
+*
 * Revision 1.4  2005/02/18 15:06:27  shomrat
 * CSeq_loc interface changes
 *

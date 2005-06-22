@@ -92,7 +92,7 @@ public:
     // Promote features from all attached Seq-annots
     void PromoteFeatures(void) const;
     // Promote features from a specific Seq-annot
-    void PromoteFeatures(CSeq_annot_Handle& annot) const;
+    void PromoteFeatures(const CSeq_annot_Handle& annot) const;
 
     // Promote a single coding region feature
     void PromoteCdregion(CSeq_feat_Handle& feat) const;
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/06/22 14:31:22  vasilche
+* Added constness of CSeq_annot_Handle argument.
+*
 * Revision 1.2  2005/03/02 13:44:52  shomrat
 * Fixed warning
 *
