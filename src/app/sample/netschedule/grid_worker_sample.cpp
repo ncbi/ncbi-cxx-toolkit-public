@@ -37,6 +37,7 @@
 #include <connect/services/grid_worker_app.hpp>
 
 #include <vector>
+#include <algorithm>
 
 USING_NCBI_SCOPE;
 
@@ -167,6 +168,9 @@ NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/06/22 14:37:13  vasilche
+ * #include <algorithm> for std::sort().
+ *
  * Revision 1.15  2005/05/10 14:15:19  didenko
  * Minor changes
  *
