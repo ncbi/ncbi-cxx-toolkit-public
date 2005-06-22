@@ -580,7 +580,7 @@ bool CId2Reader::LoadChunk(CReaderRequestResult& result,
         req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
         x_ProcessRequest(result, req);
     }
-    _ASSERT(chunk_info.IsLoaded());
+    //_ASSERT(chunk_info.IsLoaded());
     return true;
 }
 
