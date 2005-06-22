@@ -81,6 +81,10 @@ void CTestApp::Init(void)
 }
 
 
+//typedef CConstRef<CSeq_entry> TEntry;
+typedef CRef<CSeq_entry> TEntry;
+
+
 int CTestApp::Run(void)
 {
     SetDiagPostFlag(eDPF_All);
@@ -102,16 +106,16 @@ int CTestApp::Run(void)
         CScope Scope(*m_ObjMgr);
         // populate
 #if 1
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope1.AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope2.AddTopLevelSeqEntry(*entry2);
         Scope.AddScope(Scope1);
         Scope.AddScope(Scope2);
 #else
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope.AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope.AddTopLevelSeqEntry(*entry2);
 #endif
         // retrieve data
@@ -123,9 +127,9 @@ int CTestApp::Run(void)
         CScope Scope1(*m_ObjMgr);
         CScope Scope(*m_ObjMgr);
         // populate
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope1.AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope1.AddTopLevelSeqEntry(*entry2);
         Scope.AddScope(Scope1);
         Scope.AddScope(Scope1);
@@ -137,9 +141,9 @@ int CTestApp::Run(void)
     for (idx = 1; idx <= 1; idx++) {
         CRef<CScope> pScope(new CScope(*m_ObjMgr));
         // populate
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
         pScope->AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         pScope->AddTopLevelSeqEntry(*entry2);
         // retrieve data
         CTestHelper::TestDataRetrieval( *pScope, idx, 0);
@@ -152,7 +156,7 @@ int CTestApp::Run(void)
         // populate
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         pScope->AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         pScope->AddTopLevelSeqEntry(*entry2);
         CTestHelper::TestDataRetrieval( *pScope, idx, 0);
         // add annotation
@@ -173,10 +177,10 @@ int CTestApp::Run(void)
     for (idx = 1; idx <= 1; idx++) {
         CRef<CSeqVector> vec;
         CScope Scope(*m_ObjMgr);
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope.AddTopLevelSeqEntry(*entry1);
         {{
-            CRef<CSeq_entry> constr_entry
+            TEntry constr_entry
                 (&CDataGenerator::CreateConstructedEntry( idx, 1));
             Scope.AddTopLevelSeqEntry(*constr_entry);
             // test
@@ -186,7 +190,7 @@ int CTestApp::Run(void)
                 0, 3, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
-            CRef<CSeq_entry> constr_entry
+            TEntry constr_entry
                 (&CDataGenerator::CreateConstructedEntry( idx, 2));
             Scope.AddTopLevelSeqEntry(*constr_entry);
             // test
@@ -204,8 +208,8 @@ int CTestApp::Run(void)
     for (idx = 1; idx <= 1; idx++) {
         // populate scopes
         CRef<CScope> pScope2(new CScope(*m_ObjMgr));
-        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
-        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        TEntry entry1(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         pScope2->AddTopLevelSeqEntry(*entry2);
         // Test with unresolvable references
         id.SetGi(21+idx*1000);
@@ -217,7 +221,7 @@ int CTestApp::Run(void)
             1, -1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
 
         // add more data to the scope - to make references resolvable
-        CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));
+        TEntry entry1a(&CDataGenerator::CreateTestEntry1a(idx));
         pScope2->AddTopLevelSeqEntry(*entry1a);
         // Test with resolvable references
         id.SetGi(21+idx*1000);
@@ -227,7 +231,7 @@ int CTestApp::Run(void)
             1, 2, 2, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
-        CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
+        TEntry entry1b(&CDataGenerator::CreateTestEntry1(idx));
         pScope2->AddTopLevelSeqEntry(*entry1b);
         id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
         // gi|11 from entry1a must be selected
@@ -262,6 +266,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/06/22 14:28:30  vasilche
+* Updated to changes in object manager.
+*
 * Revision 1.45  2005/01/12 15:20:10  vasilche
 * Added check for removal of scope before CSeqVector.
 *

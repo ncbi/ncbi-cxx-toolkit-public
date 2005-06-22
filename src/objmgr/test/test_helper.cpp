@@ -1268,7 +1268,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for ( CFeat_CI feat_it(scope, *handle.GetRangeSeq_loc(0, 10),
+        for ( CFeat_CI feat_it(handle, CRange<TSeqPos>(0, 10),
                                SAnnotSelector()
                                .SetLimitTSE(handle.GetTopLevelEntry()));
               feat_it;  ++feat_it) {
@@ -1327,7 +1327,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for (CAlign_CI align_it(scope, *handle.GetRangeSeq_loc(10, 20),
+        for (CAlign_CI align_it(handle, CRange<TSeqPos>(10, 20),
                                 SAnnotSelector()
                                 .SetLimitTSE(handle.GetTopLevelEntry()));
              align_it;  ++align_it) {
@@ -1340,25 +1340,61 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(annot_set.size() == alignrg_annots_cnt);
     CHECK_END("get align set");
     if ( sm_TestRemoveEntry ) {
+        bool trace = false;
         CHECK_WRAP();
-        CRef<CSeq_entry> tse
-            (const_cast<CSeq_entry*>(
-            handle.GetTopLevelEntry().GetCompleteSeq_entry().GetPointer()));
-        
-        CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
-            handle.GetParentEntry().GetCompleteSeq_entry().GetPointer()));
-        CSeq_entry* parent = entry->GetParentEntry();
-        scope.RemoveEntry(*entry);
+        CConstRef<CBioseq> seq = handle.GetCompleteBioseq();
+        CTSE_Handle tseh = handle.GetTSE_Handle();
+        CConstRef<CSeq_entry> tsent =
+            tseh.GetTopLevelEntry().GetCompleteSeq_entry();
+        if ( trace ) {
+            NcbiCout << "Removing " <<
+                MSerial_AsnText << *seq <<
+                "From " <<
+                MSerial_AsnText << *tsent << NcbiEndl;
+        }
+        CSeq_entry_Handle eh = handle.GetParentEntry();
+        _ASSERT(eh);
+        CConstRef<CSeq_entry> ent = eh.GetCompleteSeq_entry();
+        _ASSERT(ent);
+        _ASSERT(ent.GetPointer() == seq->GetParentEntry());
+        CSeq_entry_Handle peh = eh.GetParentEntry();
+        CConstRef<CSeq_entry> pent;
+        if ( peh ) {
+            pent = peh.GetCompleteSeq_entry();
+            _ASSERT(pent);
+            _ASSERT(pent.GetPointer() == ent->GetParentEntry());
+        }
+        _ASSERT(eh != peh);
+        _ASSERT(ent != pent);
+        _ASSERT(tseh.CanBeEdited() == (eh == eh.GetEditHandle()));
+        if ( trace && pent ) {
+            NcbiCout << "Removing " <<
+                MSerial_AsnText << *ent <<
+                "From " <<
+                MSerial_AsnText << *pent << NcbiEndl;
+        }
+        CSeq_entry_EditHandle eeh = eh.GetEditHandle();
+        eeh.Remove();
+        _ASSERT(!eeh);
+        _ASSERT(!handle);
         handle = scope.GetBioseqHandle(id);
-        _ASSERT(!handle  ||
-            handle.GetParentEntry().GetCompleteSeq_entry() != entry);
-        if ( parent ) {
+        if ( trace && pent ) {
+            NcbiCout << "New " <<
+                MSerial_AsnText << *pent << NcbiEndl;
+        }
+        _ASSERT(!handle || handle.GetTSE_Handle() != tseh);
+        if ( pent ) {
+            _ASSERT(peh);
+            _ASSERT(tseh);
             // Non-TSE
-            scope.AttachEntry(*parent, *entry);
+            _ASSERT(tseh.CanBeEdited() == (peh == peh.GetEditHandle()));
+            peh.GetEditHandle().AttachEntry(const_cast<CSeq_entry&>(*ent));
         }
         else {
+            _ASSERT(!peh);
+            _ASSERT(!tseh);
             // TSE
-            scope.AddTopLevelSeqEntry(*entry);
+            scope.AddTopLevelSeqEntry(*ent);
         }
         handle = scope.GetBioseqHandle(id);
         _ASSERT(handle);
@@ -1413,6 +1449,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/06/22 14:28:30  vasilche
+* Updated to changes in object manager.
+*
 * Revision 1.62  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *
