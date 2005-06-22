@@ -731,7 +731,7 @@ unsigned CQueueDataBase::CQueue::CountRecs()
     do \
     { unsigned tt = t; \
       CTime _t(tt); _t.ToLocalTime(); \
-      out << msg << (tt ? _t.AsString() : kEmptyStr) << "\n"; \
+      out << msg << (tt ? _t.AsString() : kEmptyStr) << fsp; \
     } while(0)
 
 #define NS_PFNAME(x_fname) \
@@ -784,10 +784,11 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("run_counter: ") << (unsigned) db.run_counter << fsp;
     out << NS_PFNAME("ret_code: ") << (unsigned) db.ret_code << fsp;
 
-    out << NS_PFNAME("input: ")        << (string) db.input        << fsp;
-    out << NS_PFNAME("output: ")       << (string) db.output       << fsp;
-    out << NS_PFNAME("err_msg: ")      << (string) db.err_msg      << fsp;
-    out << NS_PFNAME("progress_msg: ") << (string) db.progress_msg << fsp;
+    out << NS_PFNAME("input: ")        << "'" << (string) db.input       << "'" << fsp;
+    out << NS_PFNAME("output: ")       << "'" <<(string) db.output       << "'" << fsp;
+    out << NS_PFNAME("err_msg: ")      << "'" <<(string) db.err_msg      << "'" << fsp;
+    out << NS_PFNAME("progress_msg: ") << "'" <<(string) db.progress_msg << "'" << fsp;
+    out << "\n";
 }
 
 void 
@@ -2070,6 +2071,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/06/22 15:36:09  kuznets
+ * Minor tweaks in record print formatting
+ *
  * Revision 1.38  2005/06/21 16:00:22  kuznets
  * Added archival dump of all deleted records
  *
