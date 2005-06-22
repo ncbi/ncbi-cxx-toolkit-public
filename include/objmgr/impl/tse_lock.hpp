@@ -107,8 +107,14 @@ public:
     
     void Reset(void)
         {
-            if ( *this ) {
+            if ( m_Info ) {
                 x_Unlock();
+            }
+        }
+    void Drop(void)
+        {
+            if ( m_Info ) {
+                x_Drop();
             }
         }
     
@@ -138,6 +144,7 @@ protected:
     void x_Assign(const CTSE_LoadLock& load_lock);
 
     void x_Unlock(void);
+    void x_Drop(void);
     bool x_Lock(const CTSE_Info* info);
     void x_Relock(const CTSE_Info* info);
 
@@ -150,10 +157,28 @@ private:
 class NCBI_XOBJMGR_EXPORT CTSE_LockSet
 {
 public:
+    typedef map<const CTSE_Info*, CTSE_Lock>  TTSE_LockSet;
+    typedef TTSE_LockSet::const_iterator const_iterator;
+    const_iterator begin(void) const
+        {
+            return m_TSE_LockSet.begin();
+        }
+    const_iterator end(void) const
+        {
+            return m_TSE_LockSet.end();
+        }
 
-    bool IsEmpty(void) const;
+    bool empty(void) const
+        {
+            return m_TSE_LockSet.empty();
+        }
+    size_t size(void) const
+        {
+            return m_TSE_LockSet.size();
+        }
 
-    void Clear(void);
+    void clear(void);
+    void Drop(void);
 
     CTSE_Lock FindLock(const CTSE_Info* info) const;
 
@@ -165,7 +190,6 @@ public:
     static bool IsBetter(const CTSE_Info& tse1, const CTSE_Info& tse2);
 
 private:
-    typedef map<const CTSE_Info*, CTSE_Lock>  TTSE_LockSet;
 
     TTSE_LockSet m_TSE_LockSet;
 };
