@@ -50,14 +50,20 @@ class CScope_Impl;
 //    used internally in interface classes (iterators, handles etc)
 /////////////////////////////////////////////////////////////////////////////
 
-class NCBI_XOBJMGR_EXPORT CHeapScope
+class CHeapScope
 {
 public:
     CHeapScope(void)
         {
         }
-    explicit CHeapScope(CScope& scope);
-    explicit CHeapScope(CScope* scope);
+    explicit CHeapScope(CScope& scope)
+        {
+            Set(&scope);
+        }
+    explicit CHeapScope(CScope* scope)
+        {
+            Set(scope);
+        }
 
     // check is scope is not null
     bool IsSet(void) const
@@ -83,8 +89,8 @@ public:
         }
 
     // scope getters
-    CScope& GetScope(void) const;
-    CScope* GetScopeOrNull(void) const;
+    NCBI_XOBJMGR_EXPORT CScope& GetScope(void) const;
+    NCBI_XOBJMGR_EXPORT CScope* GetScopeOrNull(void) const;
     operator CScope&(void) const
         {
             return GetScope();
@@ -99,7 +105,7 @@ public:
         }
 
     // scope impl getters
-    CScope_Impl* GetImpl(void) const;
+    NCBI_XOBJMGR_EXPORT CScope_Impl* GetImpl(void) const;
 
     operator CScope_Impl*(void) const
         {
@@ -111,7 +117,7 @@ public:
         }
 
 
-    void Set(CScope* scope);
+    NCBI_XOBJMGR_EXPORT void Set(CScope* scope);
     void Reset(void)
         {
             m_Scope.Reset();
@@ -128,26 +134,15 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-inline
-CHeapScope::CHeapScope(CScope& scope)
-{
-    Set(&scope);
-}
-
-
-inline
-CHeapScope::CHeapScope(CScope* scope)
-{
-    Set(scope);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/06/22 14:14:38  vasilche
+* Avoid exporting inlined methods.
+*
 * Revision 1.4  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

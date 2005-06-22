@@ -67,14 +67,13 @@ void CHeapScope::Set(CScope* scope)
 
 CScope& CHeapScope::GetScope(void) const
 {
-    return static_cast<CScope&>(const_cast<CObject&>(*m_Scope));
+    return static_cast<CScope&>(m_Scope.GetNCObject());
 }
 
 
 CScope* CHeapScope::GetScopeOrNull(void) const
 {
-    return static_cast<CScope*>
-        (const_cast<CObject*>(m_Scope.GetPointerOrNull()));
+    return static_cast<CScope*>(m_Scope.GetNCPointerOrNull());
 }
 
 
@@ -90,6 +89,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/06/22 14:14:38  vasilche
+* Avoid exporting inlined methods.
+*
 * Revision 1.3  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
