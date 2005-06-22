@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/22 14:35:47  vasilche
+* Added test of non-location feature iterators.
+* Added test of CAnnot_CI.
+*
 * Revision 1.16  2005/04/26 15:44:31  vasilche
 * Added option -no_external. More detailed error report.
 *
@@ -172,6 +176,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/prefetch.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -241,6 +246,7 @@ protected:
     bool m_prefetch;
     bool m_verbose;
     int  m_pass_count;
+    int  m_idx;
     bool m_no_reset;
     bool m_keep_handles;
 };
@@ -297,7 +303,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 
 int CTestOM::Run(void)
 {
-    if ( !Thread_Run(0) )
+    if ( !Thread_Run(m_idx) )
         return 1;
     else
         return 0;
@@ -390,8 +396,6 @@ bool CTestOM::Thread_Run(int idx)
                 }
 
                 if ( !m_load_only ) {
-                    int count = 0;
-
                     // check CSeqMap_CI
                     if ( !m_no_seq_map ) {
                         SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
@@ -421,11 +425,12 @@ bool CTestOM::Thread_Run(int idx)
 
                     // enumerate descriptions
                     // Seqdesc iterator
+                    int desc_count = 0;
                     for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                        count++;
+                        desc_count++;
                     }
                     // verify result
-                    SetValue(m_DescMap, sih, count);
+                    SetValue(m_DescMap, sih, desc_count);
 
                     // enumerate features
                     SAnnotSelector sel(CSeqFeatData::e_not_set);
@@ -443,26 +448,77 @@ bool CTestOM::Thread_Run(int idx)
                     }
 
                     feats.clear();
+                    set<CSeq_annot_Handle> annots;
                     if ( idx%2 == 0 ) {
                         sel.SetResolveMethod(sel.eResolve_All);
                         for ( CFeat_CI it(handle, sel); it; ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                            annots.insert(it.GetAnnot());
                         }
+                        CAnnot_CI annot_it(handle, sel);
                         if ( m_verbose ) {
-                            NcbiCout << " features: " << count << NcbiEndl;
+                            NcbiCout
+                                << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size() << NcbiEndl;
                         }
+
                         // verify result
                         SetValue(m_Feat0Map, sih, feats);
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
                     }
-                    else {
+                    else if ( idx%4 == 1 ) {
                         sel.SetOverlapType(sel.eOverlap_Intervals);
                         CSeq_loc loc;
                         loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
                         for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                            annots.insert(it.GetAnnot());
                         }
+                        CAnnot_CI annot_it(scope, loc, sel);
+                        if ( m_verbose ) {
+                            NcbiCout
+                                << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size() << NcbiEndl;
+                        }
+
                         // verify result
                         SetValue(m_Feat1Map, sih, feats);
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
+                    }
+                    else {
+                        CFeat_CI feat_it(handle.GetTopLevelEntry(), sel);
+                        for ( ; feat_it; ++feat_it ) {
+                            feats.push_back(ConstRef(&feat_it->GetOriginalFeature()));
+                            annots.insert(feat_it.GetAnnot());
+                        }
+                        CAnnot_CI annot_it(feat_it);
+                        if ( m_verbose ) {
+                            NcbiCout
+                                << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size() << NcbiEndl;
+                        }
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
                     }
                 }
                 if ( m_no_reset && m_keep_handles ) {
@@ -525,6 +581,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("no_external", "Exclude all external annotations");
     args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
     args.AddFlag("verbose", "Print each Seq-id before processing");
+    args.AddDefaultKey("thread_index", "ThreadIndex",
+                       "Thread index, affects test mode",
+                       CArgDescriptions::eInteger, "0");
     args.AddDefaultKey
         ("pause", "Pause",
          "Pause between requests in seconds",
@@ -591,6 +650,7 @@ bool CTestOM::TestApp_Init(void)
     m_pass_count = args["pass_count"].AsInteger();
     m_no_reset = args["no_reset"];
     m_keep_handles = args["keep_handles"];
+    m_idx = args["thread_index"].AsInteger();
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);

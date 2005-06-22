@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/06/22 14:35:47  vasilche
+* Added test of non-location feature iterators.
+* Added test of CAnnot_CI.
+*
 * Revision 1.11  2005/03/15 19:16:55  vasilche
 * Removed unnecessary includes.
 *
@@ -151,6 +155,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -220,6 +225,7 @@ protected:
     int  m_pass_count;
     bool m_no_reset;
     bool m_keep_handles;
+    bool m_verbose;
 
     bool failed;
 };
@@ -326,6 +332,11 @@ bool CTestOM::Thread_Run(int idx)
         TFeats feats;
         for ( int i = from, end = to+delta; i != end; i += delta ) {
             CSeq_id_Handle sih = m_Ids[i];
+            CNcbiOstrstream out;
+            if ( m_verbose ) {
+                out << CTime(CTime::eCurrent).AsString() << " " <<
+                    abs(i-from) << ": " << sih.AsString();
+            }
             TMapKey key(sih, delta>0);
             try {
                 // load sequence
@@ -339,8 +350,6 @@ bool CTestOM::Thread_Run(int idx)
                 }
 
                 if ( !m_load_only ) {
-                    int count = 0;
-
                     // check CSeqMap_CI
                     if ( !m_no_seq_map ) {
                         SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
@@ -351,11 +360,12 @@ bool CTestOM::Thread_Run(int idx)
 
                     // enumerate descriptions
                     // Seqdesc iterator
+                    int desc_count = 0;
                     for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                        count++;
+                        desc_count++;
                     }
                     // verify result
-                    SetValue(m_DescMap, key, count);
+                    SetValue(m_DescMap, key, desc_count);
 
                     // enumerate features
                     CSeq_loc loc;
@@ -376,26 +386,86 @@ bool CTestOM::Thread_Run(int idx)
                     }
 
                     feats.clear();
+                    set<CSeq_annot_Handle> annots;
                     if ( idx%2 == 0 ) {
                         for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                            annots.insert(it.GetAnnot());
                         }
+                        CAnnot_CI annot_it(scope, loc, sel);
+                        if ( m_verbose ) {
+                            out << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size();
+                        }
+
                         // verify result
                         SetValue(m_Feat0Map, key, feats);
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
                     }
-                    else {
+                    else if ( idx%4 == 1 ) {
                         for ( CFeat_CI it(handle, sel); it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                            annots.insert(it.GetAnnot());
                         }
+                        CAnnot_CI annot_it(handle, sel);
+                        if ( m_verbose ) {
+                            out << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size();
+                        }
+
                         // verify result
                         SetValue(m_Feat1Map, key, feats);
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
                     }
+                    else {
+                        CFeat_CI feat_it(handle.GetTopLevelEntry(), sel);
+                        for ( ; feat_it; ++feat_it ) {
+                            feats.push_back(ConstRef(&feat_it->GetOriginalFeature()));
+                            annots.insert(feat_it.GetAnnot());
+                        }
+                        CAnnot_CI annot_it(feat_it);
+                        if ( m_verbose ) {
+                            out << " Seq-annots: " << annot_it.size()
+                                << " features: " << feats.size();
+                        }
+
+                        _ASSERT(annot_it.size() == annots.size());
+                        set<CSeq_annot_Handle> annots2;
+                        for ( ; annot_it; ++annot_it ) {
+                            annots2.insert(*annot_it);
+                        }
+                        _ASSERT(annots.size() == annots2.size());
+                        _ASSERT(annots == annots2);
+                    }
+                }
+                if ( m_verbose ) {
+                    out << NcbiEndl;
+                    string msg = CNcbiOstrstreamToString(out);
+                    NcbiCout << msg << NcbiFlush;
                 }
                 if ( m_no_reset && m_keep_handles ) {
                     handles.insert(handle);
                 }
             }
             catch (CLoaderException& e) {
+                if ( m_verbose ) {
+                    string msg = CNcbiOstrstreamToString(out);
+                    LOG_POST("T" << idx << ": " << msg);
+                }
                 LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                          ": EXCEPTION = " << e.what());
                 ok = false;
@@ -407,6 +477,10 @@ bool CTestOM::Thread_Run(int idx)
                 }
             }
             catch (exception& e) {
+                if ( m_verbose ) {
+                    string msg = CNcbiOstrstreamToString(out);
+                    LOG_POST("T" << idx << ": " << msg);
+                }
                 LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                          ": EXCEPTION = " << e.what());
                 ok = false;
@@ -451,6 +525,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("no_reset", "Do not reset scope history after each id");
     args.AddFlag("keep_handles",
                  "Remember bioseq handles if not resetting scope history");
+    args.AddFlag("verbose", "Print each Seq-id before processing");
     return true;
 }
 
@@ -503,6 +578,7 @@ bool CTestOM::TestApp_Init(void)
     m_pass_count = args["pass_count"].AsInteger();
     m_no_reset = args["no_reset"];
     m_keep_handles = args["keep_handles"];
+    m_verbose = args["verbose"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
