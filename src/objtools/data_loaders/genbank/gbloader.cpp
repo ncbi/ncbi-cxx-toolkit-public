@@ -128,7 +128,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TReaderPtrMaker maker(driver);
+    TReaderPtrMaker maker(Ref(driver));
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -176,7 +176,8 @@ string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /* params */)
 }
 
 
-CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *reader)
+CGBDataLoader::CGBDataLoader(const string& loader_name,
+                             CRef<CReader> reader)
   : CDataLoader(loader_name)
 {
     GBLOG_POST( "CGBDataLoader");

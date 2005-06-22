@@ -121,10 +121,10 @@ public:
     typedef SRegisterLoaderInfo<CGBDataLoader> TRegisterLoaderInfo;
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
-        CReader* driver = 0,
+        CReader* reader = 0,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-        static string GetLoaderNameFromArgs(CReader* driver = 0);
+        static string GetLoaderNameFromArgs(CReader* reader = 0);
 
     // Select reader by name. If failed, select default reader.
     // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
@@ -200,15 +200,15 @@ protected:
                               TBlobContentsMask sr_mask);
 
 private:
-    typedef CParamLoaderMaker<CGBDataLoader, CReader*>      TReaderPtrMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, CRef<CReader> > TReaderPtrMaker;
     typedef CParamLoaderMaker<CGBDataLoader, const string&> TReaderNameMaker;
     typedef CParamLoaderMaker<CGBDataLoader, const TParamTree&> TParamMaker;
-    friend class CParamLoaderMaker<CGBDataLoader, CReader*>;
+    friend class CParamLoaderMaker<CGBDataLoader, CRef<CReader> >;
     friend class CParamLoaderMaker<CGBDataLoader, const string&>;
     friend class CParamLoaderMaker<CGBDataLoader, const TParamTree&>;
 
     CGBDataLoader(const string&     loader_name,
-                  CReader*          driver);
+                  CRef<CReader>     reader);
     CGBDataLoader(const string&     loader_name,
                   const string&     reader_name);
     CGBDataLoader(const string&     loader_name,
