@@ -41,6 +41,7 @@
 #include <objmgr/impl/tse_lock.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/tse_handle.hpp>
 
 #include <set>
 #include <map>
@@ -53,22 +54,37 @@ class CObjectManager;
 class CDataSource;
 class CDataLoader;
 class CSeqMap;
+
 class CScope;
 class CScope_Impl;
+class CSynonymsSet;
+
+class CTSE_Info_Object;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CBioseq_Info;
-class CSynonymsSet;
+class CBioseq_set_Info;
+
 class CDataSource_ScopeInfo;
 class CTSE_ScopeInfo;
 class CBioseq_ScopeInfo;
+
 class CTSE_Handle;
+
+class CScopeInfo_Base;
+class CSeq_entry_ScopeInfo;
+class CSeq_annot_ScopeInfo;
+class CBioseq_set_ScopeInfo;
+class CBioseq_ScopeInfo;
+
 struct SSeqMatch_Scope;
 struct SSeqMatch_DS;
 struct SSeq_id_ScopeInfo;
+
 class CSeq_entry;
 class CSeq_annot;
 class CBioseq;
+class CBioseq_set;
 
 template<typename Key, typename Value>
 class CDeleteQueue
@@ -77,7 +93,7 @@ public:
     typedef Key key_type;
     typedef Value value_type;
 
-    CDeleteQueue(size_t max_size = 0)
+    explicit CDeleteQueue(size_t max_size = 0)
         : m_MaxSize(max_size)
         {
         }
@@ -168,11 +184,14 @@ public:
     typedef CDeleteQueue<const CTSE_ScopeInfo*,
                          CTSE_ScopeInternalLock>        TTSE_UnlockQueue;
 
-    CDataSource_ScopeInfo(CScope_Impl& scope, CDataSource& ds);
+    CDataSource_ScopeInfo(CScope_Impl& scope, CDataSource& ds,
+                          bool shared = true);
     ~CDataSource_ScopeInfo(void);
 
     void DetachFromOM(CObjectManager& om);
     CScope_Impl& GetScopeImpl(void) const;
+
+    bool IsShared(void) const;
 
     void Reset(void);
 
@@ -186,7 +205,7 @@ public:
     void UpdateTSELock(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
     void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
-    void RemoveFromHistory(const CTSE_ScopeInfo& tse);
+    void RemoveFromHistory(CTSE_ScopeInfo& tse);
     bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
 
     CDataSource& GetDataSource(void);
@@ -196,7 +215,7 @@ public:
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
-    typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock>    TBioseq_Lock;
+    typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
 
     TTSE_Lock GetTSE_Lock(const CTSE_Lock& tse);
     TTSE_Lock FindTSE_Lock(const CSeq_entry& tse);
@@ -207,6 +226,8 @@ public:
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
 
 protected:
+    friend class CScope_Impl;
+
     SSeqMatch_Scope x_GetSeqMatch(const CSeq_id_Handle& idh);
     SSeqMatch_Scope x_FindBestTSE(const CSeq_id_Handle& idh);
     void x_SetMatch(SSeqMatch_Scope& match,
@@ -226,6 +247,7 @@ private: // members
     CScope_Impl*                m_Scope;
     TDataSourceLock             m_DataSource;
     bool                        m_CanBeUnloaded;
+    bool                        m_Shared;
     int                         m_NextTSEIndex;
     TTSE_InfoMap                m_TSE_InfoMap;
     mutable TTSE_InfoMapMutex   m_TSE_InfoMapMutex;
@@ -233,6 +255,7 @@ private: // members
     TTSE_LockSet                m_TSE_LockSet;
     TTSE_UnlockQueue            m_TSE_UnlockQueue;
     mutable TTSE_LockSetMutex   m_TSE_LockSetMutex;
+    CRef<CDataSource_ScopeInfo> m_EditDS;
 
 private: // to prevent copying
     CDataSource_ScopeInfo(const CDataSource_ScopeInfo&);
@@ -244,7 +267,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
 {
 public:
     typedef CConstRef<CObject>                            TBlobId;
-    typedef map<CSeq_id_Handle, CRef<CBioseq_ScopeInfo> > TBioseqs;
+    typedef multimap<CSeq_id_Handle, CRef<CBioseq_ScopeInfo> >  TBioseqById;
     typedef vector<CSeq_id_Handle>                        TBioseqsIds;
     typedef pair<int, int>                                TBlobOrder;
     typedef set<CTSE_ScopeInternalLock>                   TUsedTSE_LockSet;
@@ -258,8 +281,9 @@ public:
     CScope_Impl& GetScopeImpl(void) const;
     CDataSource_ScopeInfo& GetDSInfo(void) const;
 
-    CRef<CBioseq_ScopeInfo> GetBioseqInfo(const SSeqMatch_Scope& match);
     bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
+
+    bool IsAttached(void) const;
 
     bool CanBeUnloaded(void) const;
     // True if the TSE is referenced
@@ -270,8 +294,6 @@ public:
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
 
-    void ClearCacheOnRemoveData(const CBioseq_Info& bioseq);
-
     bool x_SameTSE(const CTSE_Info& tse) const;
 
     int GetLoadIndex(void) const;
@@ -281,24 +303,56 @@ public:
 
     bool AddUsedTSE(const CTSE_ScopeUserLock& lock) const;
 
-protected:
-    void x_LockTSE(void);
-    void x_LockTSE(const CTSE_Lock& tse_lock);
-    void x_RelockTSE(void);
-    void x_UserUnlockTSE(void);
-    void x_InternalUnlockTSE(void);
-    void x_ReleaseTSE(void);
+    // gets locked CScopeInfo_Base object
+    typedef CScopeInfo_Ref<CSeq_entry_ScopeInfo> TSeq_entry_Lock;
+    typedef CScopeInfo_Ref<CSeq_annot_ScopeInfo> TSeq_annot_Lock;
+    typedef CScopeInfo_Ref<CBioseq_set_ScopeInfo> TBioseq_set_Lock;
+    typedef CScopeInfo_Ref<CBioseq_ScopeInfo> TBioseq_Lock;
+    TSeq_entry_Lock GetScopeLock(const CTSE_Handle& tse,
+                                 const CSeq_entry_Info& info);
+    TSeq_annot_Lock GetScopeLock(const CTSE_Handle& tse,
+                                 const CSeq_annot_Info& info);
+    TBioseq_set_Lock GetScopeLock(const CTSE_Handle& tse,
+                                  const CBioseq_set_Info& info);
 
+    CRef<CBioseq_ScopeInfo> GetBioseqInfo(const SSeqMatch_Scope& match);
+    TBioseq_Lock GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
+                               CConstRef<CBioseq_Info> bioseq);
+
+    void ResetEntry(const CSeq_entry_ScopeInfo& info);
+    void RemoveEntry(const CSeq_entry_ScopeInfo& info);
+    void RemoveAnnot(const CSeq_annot_ScopeInfo& info);
+
+    void x_CleanRemovedObjects(void);
+
+    void RemoveLastInfoLock(CScopeInfo_Base& info);
+
+    void x_LockTSE(void);
+    void x_InternalUnlockTSE(void);
+    void x_UserUnlockTSE(void);
+
+protected:
     void x_ForgetLocks(void);
 
     // Number of internal locks, not related to handles
     int x_GetDSLocksCount(void) const;
 
+    CRef<CBioseq_ScopeInfo> x_FindBioseqInfo(const TBioseqsIds& ids) const;
+    CRef<CBioseq_ScopeInfo> x_CreateBioseqInfo(const TBioseqsIds& ids);
+    void x_IndexBioseq(const CSeq_id_Handle& id,
+                       CBioseq_ScopeInfo* info);
+    void x_UnindexBioseq(const CSeq_id_Handle& id,
+                         const CBioseq_ScopeInfo* info);
+
 private: // members
     friend class CScope_Impl;
+    friend class CTSE_Handle;
     friend class CDataSource_ScopeInfo;
-    friend class CTSE_ScopeInternalLock;
-    friend class CTSE_ScopeUserLock;
+    friend class CBioseq_ScopeInfo;
+
+    typedef CConstRef<CTSE_Info_Object>                 TScopeInfoMapKey;
+    typedef CRef<CScopeInfo_Base>                       TScopeInfoMapValue;
+    typedef map<TScopeInfoMapKey, TScopeInfoMapValue>   TScopeInfoMap;
 
     CDataSource_ScopeInfo*      m_DS_Info;
     int                         m_LoadIndex;
@@ -313,13 +367,18 @@ private: // members
     };
 
     AutoPtr<SUnloadedInfo>      m_UnloadedInfo;
-    TBioseqs                    m_Bioseqs;
+    TBioseqById                 m_BioseqById;
     // TSE locking support
+    mutable CMutex              m_TSE_LockMutex;
     mutable CAtomicCounter      m_TSE_LockCounter;
     mutable CTSE_Lock           m_TSE_Lock;
     // Used by TSE support
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;
     mutable TUsedTSE_LockSet        m_UsedTSE_Set;
+
+    mutable CTSE_ScopeUserLock  m_EditLock;
+
+    TScopeInfoMap               m_ScopeInfoMap;
 
 private: // to prevent copying
     CTSE_ScopeInfo(const CTSE_ScopeInfo&);
@@ -327,7 +386,7 @@ private: // to prevent copying
 };
 
 
-class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CObject
+class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CScopeInfo_Base
 {
 public:
     typedef CRef<CTSE_ScopeInfo>                        TTSE_ScopeInfo;
@@ -335,57 +394,64 @@ public:
     typedef map<TTSE_ScopeInfo, TSeq_idSet>             TTSE_MatchSet;
     typedef CObjectFor<TTSE_MatchSet>                   TTSE_MatchSetObject;
     typedef CInitMutex<TTSE_MatchSetObject>             TAnnotRefInfo;
-    typedef vector<CSeq_id_Handle>                      TIds;
+    typedef TIndexIds                                   TIds;
     typedef int                                         TBlobStateFlags;
+    typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
 
-    CBioseq_ScopeInfo(CScope_Impl& scope); // no sequence
-    CBioseq_ScopeInfo(const SSeqMatch_Scope& match);
+    explicit CBioseq_ScopeInfo(TBlobStateFlags flag); // no sequence
+    explicit CBioseq_ScopeInfo(CTSE_ScopeInfo& tse); // unnamed
+    CBioseq_ScopeInfo(CTSE_ScopeInfo& tse, const TIds& ids);
     ~CBioseq_ScopeInfo(void);
 
-    CScope_Impl& GetScopeImpl(void) const;
-    const CTSE_ScopeInfo& GetTSE_ScopeInfo(void) const;
-    const CSeq_id_Handle& GetLookupId(void) const;
+    const CBioseq_Info& GetObjectInfo(void) const
+        {
+            return reinterpret_cast<const CBioseq_Info&>(GetObjectInfo_Base());
+        }
+
+    const TIds& GetIds(void) const
+        {
+            return m_Ids;
+        }
+    const TIndexIds* GetIndexIds(void) const;
 
     bool HasBioseq(void) const;
-    CConstRef<CBioseq_Info> GetBioseqInfo(const CTSE_Info& tse) const;
-
-    const TIds& GetIds(void) const;
 
     string IdString(void) const;
 
     TBlobStateFlags GetBlobState(void) const
-    {
-        return m_BlobState;
-    }
+        {
+            return m_BlobState;
+        }
 
+    TBioseq_Lock GetLock(CConstRef<CBioseq_Info> bioseq);
+
+    // id modification methods are required because we need to update
+    // index information in CTSE_ScopeInfo.
+    void ResetId(void);
+    bool AddId(const CSeq_id_Handle& id);
+    bool RemoveId(const CSeq_id_Handle& id);
+    
 protected: // protected object manager interface
     friend class CScope_Impl;
     friend class CTSE_ScopeInfo;
     friend class CSeq_id_ScopeInfo;
 
-    struct SUnloadedInfo
-    {
-        CSeq_id_Handle  m_LookupId;
-        TIds            m_Ids;
-    };
+    //void x_ResetLock(void);
+    void x_DetachTSE(CTSE_ScopeInfo* tse);
+    void x_ForgetTSE(CTSE_ScopeInfo* tse);
 
 private: // members
-    // TSE info where bioseq is located
-    CScope_Impl*                    m_ScopeInfo;
-    const CTSE_ScopeInfo*           m_TSE_ScopeInfo;
-    AutoPtr<SUnloadedInfo>          m_UnloadedInfo;
-    
-    // cache CBioseq_Info pointer
-    mutable CConstRef<CBioseq_Info> m_Bioseq;
+    // Real Seq-ids of the bioseq.
+    TIds                            m_Ids;
+    // Additional blob state flags.
+    TBlobStateFlags                 m_BlobState;
 
-    // cache synonyms of bioseq if any
-    // all synonyms share the same CBioseq_ScopeInfo object
+    // Cached information.
+    // Cache synonyms of bioseq if any.
+    // All synonyms share the same CBioseq_ScopeInfo object.
     CInitMutex<CSynonymsSet>        m_SynCache;
-
-    // cache and lock TSEs with external annotations on this Bioseq
+    // Cache TSEs with external annotations on this Bioseq.
     CInitMutex<TTSE_MatchSetObject> m_BioseqAnnotRef_Info;
-
-    TBlobStateFlags                m_BlobState;
 
 private: // to prevent copying
     CBioseq_ScopeInfo(const CBioseq_ScopeInfo& info);
@@ -393,19 +459,20 @@ private: // to prevent copying
 };
 
 
-struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
+struct SSeq_id_ScopeInfo
 {
     SSeq_id_ScopeInfo(void);
     ~SSeq_id_ScopeInfo(void);
 
     typedef CBioseq_ScopeInfo::TTSE_MatchSetObject TTSE_MatchSetObject;
 
-    // caches and locks other (not main) TSEs with annotations on this Seq-id
+    // Resolved Bioseq information.
     CInitMutex<CBioseq_ScopeInfo>   m_Bioseq_Info;
 
-    // caches and locks other (not main) TSEs with annotations on this Seq-id
+    // Caches other (not main) TSEs with annotations on this Seq-id.
     CInitMutex<TTSE_MatchSetObject> m_AllAnnotRef_Info;
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Inline methods
@@ -427,6 +494,13 @@ inline
 const CDataSource& CDataSource_ScopeInfo::GetDataSource(void) const
 {
     return *m_DataSource;
+}
+
+
+inline
+bool CDataSource_ScopeInfo::IsShared(void) const
+{
+    return m_Shared;
 }
 
 
@@ -458,9 +532,31 @@ int CTSE_ScopeInfo::GetLoadIndex(void) const
 
 
 inline
+bool CTSE_ScopeInfo::IsAttached(void) const
+{
+    return m_DS_Info != 0;
+}
+
+
+inline
 bool CTSE_ScopeInfo::CanBeUnloaded(void) const
 {
     return m_UnloadedInfo;
+}
+
+
+inline
+CDataSource_ScopeInfo& CTSE_ScopeInfo::GetDSInfo(void) const
+{
+    _ASSERT(m_DS_Info);
+    return *m_DS_Info;
+}
+
+
+inline
+CScope_Impl& CTSE_ScopeInfo::GetScopeImpl(void) const
+{
+    return GetDSInfo().GetScopeImpl();
 }
 
 
@@ -472,7 +568,7 @@ bool CTSE_ScopeInfo::CanBeUnloaded(void) const
 inline
 bool CBioseq_ScopeInfo::HasBioseq(void) const
 {
-    return m_Bioseq || m_UnloadedInfo;
+    return !IsRemoved();
 }
 
 
@@ -482,6 +578,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.18  2005/04/20 15:45:36  vasilche
 * Fixed removal of TSE from scope's history.
 *

@@ -70,31 +70,25 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
-                               const CBioseq_ScopeInfo& binfo,
-                               const CTSE_Handle& tse)
-    : m_TSE(tse),
-      m_Seq_id(id),
-      m_ScopeInfo(&binfo),
-      m_Info(binfo.GetBioseqInfo(tse.x_GetTSE_Info()))
+                               const CBioseq_ScopeInfo& binfo)
+    : m_Handle_Seq_id(id),
+      m_Info(const_cast<CBioseq_ScopeInfo&>(binfo).GetLock(null))
 {
 }
 
 
 CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
-                               const CBioseq_ScopeInfo& binfo)
-    : m_Seq_id(id),
-      m_ScopeInfo(&binfo)
+                               const TLock& lock)
+    : m_Handle_Seq_id(id),
+      m_Info(lock)
 {
 }
 
 
 void CBioseq_Handle::Reset(void)
 {
-    // order is significant
     m_Info.Reset();
-    m_ScopeInfo.Reset();
-    m_Seq_id.Reset();
-    m_TSE.Reset();
+    m_Handle_Seq_id.Reset();
 }
 
 
@@ -103,38 +97,20 @@ CBioseq_Handle& CBioseq_Handle::operator=(const CBioseq_Handle& bh)
     // order is significant
     if ( this != &bh ) {
         m_Info = bh.m_Info;
-        m_ScopeInfo = bh.m_ScopeInfo;
-        m_Seq_id = bh.m_Seq_id;
-        m_TSE = bh.m_TSE;
+        m_Handle_Seq_id = bh.m_Handle_Seq_id;
     }
     return *this;
-}
-
-
-bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
-{
-    // No need to check m_TSE, because m_ScopeInfo is scope specific too.
-    return m_ScopeInfo == h.m_ScopeInfo;
-}
-
-
-bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
-{
-    if ( m_TSE != h.m_TSE ) {
-        return m_TSE < h.m_TSE;
-    }
-    return m_ScopeInfo < h.m_ScopeInfo;
 }
 
 
 CBioseq_Handle::TBioseqStateFlags CBioseq_Handle::GetState(void) const
 {
     TBioseqStateFlags state = x_GetScopeInfo().GetBlobState();
-    if ( m_TSE ) {
-        state |= m_TSE.x_GetTSE_Info().GetBlobState();
+    if ( m_Info->HasBioseq() ) {
+        state |= m_Info->GetTSE_Handle().x_GetTSE_Info().GetBlobState();
     }
-    if (state == 0) {
-        return bool(*this) ? 0 : fState_not_found;
+    if ( state == 0 && !*this ) {
+        state |= fState_not_found;
     }
     return state;
 }
@@ -142,13 +118,13 @@ CBioseq_Handle::TBioseqStateFlags CBioseq_Handle::GetState(void) const
 
 const CBioseq_ScopeInfo& CBioseq_Handle::x_GetScopeInfo(void) const
 {
-    return static_cast<const CBioseq_ScopeInfo&>(*m_ScopeInfo);
+    return *m_Info;
 }
 
 
 const CBioseq_Info& CBioseq_Handle::x_GetInfo(void) const
 {
-    return static_cast<const CBioseq_Info&>(*m_Info);
+    return m_Info->GetObjectInfo();
 }
 
 
@@ -187,7 +163,7 @@ bool CBioseq_Handle::IsSetId(void) const
 
 bool CBioseq_Handle::CanGetId(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetId();
+    return *this  &&  x_GetInfo().CanGetId();
 }
 
 
@@ -205,7 +181,7 @@ bool CBioseq_Handle::IsSetDescr(void) const
 
 bool CBioseq_Handle::CanGetDescr(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetDescr();
+    return *this  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -223,7 +199,7 @@ bool CBioseq_Handle::IsSetInst(void) const
 
 bool CBioseq_Handle::CanGetInst(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst();
+    return *this  &&  x_GetInfo().CanGetInst();
 }
 
 
@@ -241,7 +217,7 @@ bool CBioseq_Handle::IsSetInst_Repr(void) const
 
 bool CBioseq_Handle::CanGetInst_Repr(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Repr();
+    return *this  &&  x_GetInfo().CanGetInst_Repr();
 }
 
 
@@ -259,7 +235,7 @@ bool CBioseq_Handle::IsSetInst_Mol(void) const
 
 bool CBioseq_Handle::CanGetInst_Mol(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Mol();
+    return *this  &&  x_GetInfo().CanGetInst_Mol();
 }
 
 
@@ -277,7 +253,7 @@ bool CBioseq_Handle::IsSetInst_Length(void) const
 
 bool CBioseq_Handle::CanGetInst_Length(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Length();
+    return *this  &&  x_GetInfo().CanGetInst_Length();
 }
 
 
@@ -306,7 +282,7 @@ bool CBioseq_Handle::IsSetInst_Fuzz(void) const
 
 bool CBioseq_Handle::CanGetInst_Fuzz(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Fuzz();
+    return *this  &&  x_GetInfo().CanGetInst_Fuzz();
 }
 
 
@@ -324,7 +300,7 @@ bool CBioseq_Handle::IsSetInst_Topology(void) const
 
 bool CBioseq_Handle::CanGetInst_Topology(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Topology();
+    return *this  &&  x_GetInfo().CanGetInst_Topology();
 }
 
 
@@ -342,7 +318,7 @@ bool CBioseq_Handle::IsSetInst_Strand(void) const
 
 bool CBioseq_Handle::CanGetInst_Strand(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Strand();
+    return *this  &&  x_GetInfo().CanGetInst_Strand();
 }
 
 
@@ -360,7 +336,7 @@ bool CBioseq_Handle::IsSetInst_Seq_data(void) const
 
 bool CBioseq_Handle::CanGetInst_Seq_data(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Seq_data();
+    return *this  &&  x_GetInfo().CanGetInst_Seq_data();
 }
 
 
@@ -379,7 +355,7 @@ bool CBioseq_Handle::IsSetInst_Ext(void) const
 
 bool CBioseq_Handle::CanGetInst_Ext(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Ext();
+    return *this  &&  x_GetInfo().CanGetInst_Ext();
 }
 
 
@@ -397,7 +373,7 @@ bool CBioseq_Handle::IsSetInst_Hist(void) const
 
 bool CBioseq_Handle::CanGetInst_Hist(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetInst_Hist();
+    return *this  &&  x_GetInfo().CanGetInst_Hist();
 }
 
 
@@ -561,8 +537,7 @@ bool CBioseq_Handle::IsSynonym(const CSeq_id_Handle& idh) const
 
 CSeq_entry_Handle CBioseq_Handle::GetTopLevelEntry(void) const
 {
-    return CSeq_entry_Handle(x_GetInfo().GetTSE_Info(),
-                             GetTSE_Handle());
+    return CSeq_entry_Handle(GetTSE_Handle());
 }
 
 
@@ -668,9 +643,15 @@ CBioseq_EditHandle::CBioseq_EditHandle(const CBioseq_Handle& h)
 
 
 CBioseq_EditHandle::CBioseq_EditHandle(const CSeq_id_Handle& id,
-                                       CBioseq_ScopeInfo& binfo,
-                                       const CTSE_Handle& tse)
-    : CBioseq_Handle(id, binfo, tse)
+                                       CBioseq_ScopeInfo& binfo)
+    : CBioseq_Handle(id, binfo)
+{
+}
+
+
+CBioseq_EditHandle::CBioseq_EditHandle(const CSeq_id_Handle& id,
+                                       const TLock& lock)
+    : CBioseq_Handle(id, lock)
 {
 }
 
@@ -713,7 +694,7 @@ CBioseq_EditHandle::MoveTo(const CSeq_entry_EditHandle& entry,
 
 CBioseq_EditHandle
 CBioseq_EditHandle::MoveTo(const CBioseq_set_EditHandle& seqset,
-                                int index) const
+                           int index) const
 {
     return seqset.TakeBioseq(*this, index);
 }
@@ -737,19 +718,19 @@ void CBioseq_EditHandle::Remove(void) const
 
 void CBioseq_EditHandle::ResetId(void) const
 {
-    x_GetInfo().ResetId();
+    x_GetScopeInfo().ResetId();
 }
 
 
 bool CBioseq_EditHandle::AddId(const CSeq_id_Handle& id) const
 {
-    return x_GetInfo().AddId(id);
+    return x_GetScopeInfo().AddId(id);
 }
 
 
 bool CBioseq_EditHandle::RemoveId(const CSeq_id_Handle& id) const
 {
-    return x_GetInfo().RemoveId(id);
+    return x_GetScopeInfo().RemoveId(id);
 }
 
 
@@ -853,16 +834,35 @@ CRef<CSeq_loc> CBioseq_Handle::GetRangeSeq_loc(TSeqPos start,
                                                TSeqPos stop,
                                                ENa_strand strand) const
 {
-    CRef<CSeq_id> id(new CSeq_id);
-    CConstRef<CSeq_id> orig_id = GetSeqId();
+    CSeq_id_Handle orig_id = GetSeq_id_Handle();
     if ( !orig_id ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-            "CRangeSeq_loc -- can not get seq-id to create seq-loc");
+        ITERATE ( TId, it, GetId() ) {
+            CBioseq_Handle bh =
+                GetScope().GetBioseqHandleFromTSE(*it, GetTSE_Handle());
+            if ( bh == *this ) {
+                orig_id = bh.GetSeq_id_Handle();
+                _ASSERT(orig_id);
+                break;
+            }
+        }
+        if ( !orig_id ) {
+            NCBI_THROW(CObjMgrException, eOtherError,
+                       "CRangeSeq_loc -- "
+                       "can not get seq-id to create seq-loc");
+        }
     }
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*orig_id.GetSeqId());
     CRef<CSeq_loc> res(new CSeq_loc);
-    id->Assign(*orig_id);
     if (start == 0  &&  stop == 0) {
-        res->SetWhole(*id);
+        if ( strand == eNa_strand_unknown ) {
+            res->SetWhole(*id);
+        }
+        else {
+            CRef<CSeq_interval> interval
+                (new CSeq_interval(*id, 0, GetBioseqLength()-1, strand));
+            res->SetInt(*interval);
+        }
     }
     else {
         CRef<CSeq_interval> interval(new CSeq_interval
@@ -889,6 +889,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.90  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

@@ -93,6 +93,7 @@ class CSeq_entry_EditHandle;
 class CBioseq_set_EditHandle;
 class CHandleRangeMap;
 class CDataSource_ScopeInfo;
+class CTSE_ScopeInfo;
 struct SAnnotTypeSelector;
 struct SAnnotSelector;
 class CPriorityTree;
@@ -106,11 +107,14 @@ class CPriorityNode;
 
 struct SSeqMatch_Scope : public SSeqMatch_TSE
 {
-    SSeqMatch_Scope(void)
-        : m_BlobState(0) {}
-
     typedef int TBlobStateFlags;
-    CTSE_ScopeUserLock   m_TSE_Lock;
+
+    SSeqMatch_Scope(void)
+        : m_BlobState(0)
+        {
+        }
+
+    CTSE_ScopeUserLock  m_TSE_Lock;
     TBlobStateFlags     m_BlobState;
 };
 
@@ -142,24 +146,30 @@ public:
     void AddDataLoader(const string& loader_name,
                        TPriority priority = kPriority_NotSet);
     // Add the scope's datasources as a single group with the given priority
-    void AddScope(CScope_Impl& scope,
-                  TPriority priority = kPriority_NotSet);
+    void AddScope(CScope_Impl& scope, TPriority priority = kPriority_NotSet);
 
     // Add seq_entry, default priority is higher than for defaults or loaders
-    CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                                          TPriority pri = kPriority_NotSet);
+    CSeq_entry_Handle AddSeq_entry(CSeq_entry& entry,
+                                   TPriority pri = kPriority_NotSet);
+    CSeq_entry_Handle AddSharedSeq_entry(const CSeq_entry& entry,
+                                         TPriority pri = kPriority_NotSet);
     // Add bioseq, return bioseq handle. Try to use unresolved seq-id
     // from the bioseq, fail if all ids are already resolved to
     // other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
+    CBioseq_Handle AddSharedBioseq(const CBioseq& bioseq,
+                                   TPriority pri = kPriority_NotSet);
 
     // Add Seq-annot.
-    CSeq_annot_Handle AddAnnot(CSeq_annot& annot,
-                               TPriority pri = kPriority_NotSet);
+    CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
+                                   TPriority pri = kPriority_NotSet);
+    CSeq_annot_Handle AddSharedSeq_annot(const CSeq_annot& annot,
+                                         TPriority pri = kPriority_NotSet);
 
     //////////////////////////////////////////////////////////////////
     // Modification of existing object tree
+    CTSE_Handle GetEditHandle(const CTSE_Handle& src_tse);
     CBioseq_EditHandle GetEditHandle(const CBioseq_Handle& seq);
     CSeq_entry_EditHandle GetEditHandle(const CSeq_entry_Handle& entry);
     CSeq_annot_EditHandle GetEditHandle(const CSeq_annot_Handle& annot);
@@ -172,6 +182,7 @@ public:
     CSeq_entry_EditHandle CopyEntry(const CBioseq_set_EditHandle& seqset,
                                     const CSeq_entry_Handle& entry,
                                     int index = -1);
+    // Argument entry will be reset.
     CSeq_entry_EditHandle TakeEntry(const CBioseq_set_EditHandle& seqset,
                                     const CSeq_entry_EditHandle& entry,
                                     int index = -1);
@@ -181,10 +192,11 @@ public:
                                       const CSeq_annot& annot);
     CSeq_annot_EditHandle CopyAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_Handle& annot);
+    // Argument annot will be reset.
     CSeq_annot_EditHandle TakeAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_EditHandle& annot);
 
-    // Remove methods
+    // Remove methods, handle argument will be reset
     void RemoveEntry(const CSeq_entry_EditHandle& entry);
     void RemoveBioseq(const CBioseq_EditHandle& seq);
     void RemoveBioseq_set(const CBioseq_set_EditHandle& seqset);
@@ -196,6 +208,7 @@ public:
                                  CBioseq& seq);
     CBioseq_EditHandle CopySeq(const CSeq_entry_EditHandle& entry,
                                const CBioseq_Handle& seq);
+    // Argument seq will be reset.
     CBioseq_EditHandle TakeSeq(const CSeq_entry_EditHandle& entry,
                                const CBioseq_EditHandle& seq);
 
@@ -203,6 +216,7 @@ public:
                                      CBioseq_set& seqset);
     CBioseq_set_EditHandle CopySet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_Handle& seqset);
+    // Argument seqset will be reset.
     CBioseq_set_EditHandle TakeSet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_EditHandle& seqset);
 
@@ -217,15 +231,15 @@ public:
 
     // History cleanup methods
     void ResetHistory(void);
-    void RemoveFromHistory(CBioseq_Handle& bioseq);
-    void RemoveFromHistory(CTSE_Handle& tse);
+    void RemoveFromHistory(const CBioseq_Handle& bioseq);
+    void RemoveFromHistory(const CTSE_Handle& tse);
 
     // Revoke data sources from the scope. Throw exception if the
     // operation fails (e.g. data source is in use or not found).
     void RemoveDataLoader(const string& loader_name);
     // Remove TSE previously added using AddTopLevelSeqEntry() or
     // AddBioseq().
-    void RemoveTopLevelSeqEntry(CTSE_Handle& entry);
+    void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
 
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
@@ -243,8 +257,6 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,
                                         int get_flag);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
-    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
-                                   const CBioseq_ScopeInfo& binfo);
 
     typedef vector<CSeq_entry_Handle> TTSE_Handles;
     void GetAllTSEs(TTSE_Handles& tses, int kind);
@@ -267,19 +279,14 @@ private:
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
     void x_ResetHistory(void);
-    void x_RemoveFromHistory(CTSE_Handle& tse);
+    void x_RemoveFromHistory(const CTSE_Handle& tse);
 
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);
+    void x_ClearCacheOnRemoveData(void);
     void x_ClearAnnotCache(void);
-    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
-                                  const CSeq_entry_Info& entry);
-    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
-                                  const CBioseq_set_Info& seqset);
-    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
-                                  const CBioseq_Info& seq);
 
-    CRef<CTSE_ScopeInfo> x_GetEditTSE(const CTSE_Info& src_tse);
+    CRef<CDataSource_ScopeInfo> GetEditDataSource(CDataSource_ScopeInfo& ds);
 
     CSeq_entry_EditHandle x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                                         CRef<CSeq_entry_Info> entry,
@@ -310,26 +317,34 @@ private:
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Handle& tse);
 
+    // guarded
     CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq,
                                    const CTSE_Handle& tse);
+    // unguarded
     CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq,
                                      const CTSE_Handle& tse);
 
 public:
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
-    typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock> TBioseq_Lock;
+    typedef CDataSource_ScopeInfo::TBioseq_Lock TBioseq_Lock;
 
     TTSE_Lock x_GetTSE_Lock(const CSeq_entry& tse);
     TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry);
     TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
     TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
-    TBioseq_Lock x_GetBioseq_Lock(const CBioseq_ScopeInfo& binfo);
+    TBioseq_Lock x_GetBioseq_Lock(CBioseq_ScopeInfo& info,
+                                  CConstRef<CBioseq_Info> bioseq);
 
     TTSE_Lock x_GetTSE_Lock(const CTSE_Lock& lock, CDataSource_ScopeInfo& ds);
     TTSE_Lock x_GetTSE_Lock(const CTSE_ScopeInfo& tse);
 
-    CRef<CDataSource_ScopeInfo> GetDSInfo(CDataSource& ds);
+    CRef<CDataSource_ScopeInfo> x_GetDSInfo(CDataSource& ds,
+                                            bool shared = true);
+    CRef<CDataSource_ScopeInfo> AddDS(CRef<CDataSource> ds,
+                                      TPriority priority);
+    CRef<CDataSource_ScopeInfo> AddDSBefore(CRef<CDataSource> ds,
+                                            CRef<CDataSource_ScopeInfo> ds2);
 
 private:
     // Get bioseq handles for sequences from the given TSE using the filter
@@ -395,7 +410,6 @@ private:
 
     TSeq_idMap      m_Seq_idMap;
     mutable TRWLock m_Seq_idMapLock;
-    TEditInfoMap    m_EditInfoMap;
 
     friend class CScope;
     friend class CHeapScope;
@@ -414,6 +428,8 @@ private:
     friend class CSeq_annot_CI;
     friend class CSeqMap_CI;
     friend class CPrefetchToken_Impl;
+    friend class CDataSource_ScopeInfo;
+    friend class CTSE_ScopeInfo;
 };
 
 

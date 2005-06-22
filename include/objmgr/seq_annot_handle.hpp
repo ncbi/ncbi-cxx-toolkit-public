@@ -62,6 +62,24 @@ class CSeq_entry_EditHandle;
 class CSeq_annot_Info;
 
 
+class CSeq_annot_ScopeInfo : public CScopeInfo_Base
+{
+public:
+    typedef CSeq_annot_Info TObjectInfo;
+
+    CSeq_annot_ScopeInfo(const CTSE_Handle& tse, const TObjectInfo& info)
+        : CScopeInfo_Base(tse, reinterpret_cast<const CObject&>(info))
+        {
+        }
+
+    const TObjectInfo& GetObjectInfo(void) const
+        {
+            return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
+        }
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CSeq_annot_Handle --
@@ -75,14 +93,12 @@ public:
     CSeq_annot_Handle(void);
 
 
-    DECLARE_OPERATOR_BOOL_REF(m_Info);
+    DECLARE_OPERATOR_BOOL(m_Info.IsValid());
 
 
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
 
-
-    CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
 
     // Reset handle and make it not to point to any seq-annot
     void Reset(void);
@@ -154,16 +170,15 @@ protected:
     friend class CAnnot_Collector;
     friend class CMappedFeat;
 
-    CSeq_annot_Handle(const CSeq_annot_Info& annot,
-                      const CTSE_Handle& tse);
+    typedef CSeq_annot_ScopeInfo TScopeInfo;
+    CSeq_annot_Handle(const CSeq_annot_Info& annot, const CTSE_Handle& tse);
 
     CScope_Impl& x_GetScopeImpl(void) const;
-    void x_Set(CScope& scope, const CSeq_annot_Info& annot);
 
-    CTSE_Handle         m_TSE;
-    CConstRef<CObject>  m_Info;
+    CScopeInfo_Ref<TScopeInfo>  m_Info;
 
 public: // non-public section
+    const TScopeInfo& x_GetScopeInfo(void) const;
     const CSeq_annot_Info& x_GetInfo(void) const;
     const CSeq_annot& x_GetSeq_annotCore(void) const;
 };
@@ -194,10 +209,10 @@ protected:
     friend class CSeq_entry_EditHandle;
 
     CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
-    CSeq_annot_EditHandle(CSeq_annot_Info& info,
-                          const CTSE_Handle& tse);
+    CSeq_annot_EditHandle(CSeq_annot_Info& info, const CTSE_Handle& tse);
 
 public: // non-public section
+    TScopeInfo& x_GetScopeInfo(void) const;
     CSeq_annot_Info& x_GetInfo(void) const;
 };
 
@@ -216,51 +231,48 @@ CSeq_annot_Handle::CSeq_annot_Handle(void)
 inline
 const CTSE_Handle& CSeq_annot_Handle::GetTSE_Handle(void) const
 {
-    return m_TSE;
+    return m_Info->GetTSE_Handle();
 }
 
 
 inline
 CScope& CSeq_annot_Handle::GetScope(void) const
 {
-    return m_TSE.GetScope();
+    return GetTSE_Handle().GetScope();
 }
 
 
 inline
 CScope_Impl& CSeq_annot_Handle::x_GetScopeImpl(void) const
 {
-    return m_TSE.x_GetScopeImpl();
+    return GetTSE_Handle().x_GetScopeImpl();
 }
 
 
 inline
-const CSeq_annot_Info& CSeq_annot_Handle::x_GetInfo(void) const
+const CSeq_annot_ScopeInfo& CSeq_annot_Handle::x_GetScopeInfo(void) const
 {
-    return reinterpret_cast<const CSeq_annot_Info&>(*m_Info);
+    return *m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& handle) const
 {
-    return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
+    return m_Info == handle.m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& handle) const
 {
-    return m_TSE != handle.m_TSE  ||  m_Info != handle.m_Info;
+    return m_Info != handle.m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& handle) const
 {
-    if ( m_TSE != handle.m_TSE ) {
-        return m_TSE < handle.m_TSE;
-    }
     return m_Info < handle.m_Info;
 }
 
@@ -285,6 +297,13 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(CSeq_annot_Info& info,
 {
 }
 
+inline
+CSeq_annot_ScopeInfo& CSeq_annot_EditHandle::x_GetScopeInfo(void) const
+{
+    return m_Info.GetNCObject();
+}
+
+
 /* @} */
 
 
@@ -294,6 +313,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.19  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

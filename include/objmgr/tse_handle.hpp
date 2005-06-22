@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,10 +47,14 @@ class CTSE_ScopeInfo;
 class CTSE_Info;
 class CTSE_Lock;
 class CBioseq_Handle;
+class CSeq_entry;
 class CSeq_entry_Handle;
 class CSeq_id;
 class CSeq_id_Handle;
 class CBlobIdKey;
+
+class CScopeInfo_Base;
+class CScopeInfoLocker;
 
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_Handle definition
@@ -61,13 +66,16 @@ class NCBI_XOBJMGR_EXPORT CTSE_Handle
 public:
     /// Default constructor/destructor and assignment
     CTSE_Handle(void);
+    CTSE_Handle(const CTSE_Handle& tse);
     CTSE_Handle& operator=(const CTSE_Handle& tse);
+    ~CTSE_Handle(void);
 
     /// Returns scope
     CScope& GetScope(void) const;
 
     /// State check
-    DECLARE_OPERATOR_BOOL(m_TSE);
+    bool IsValid(void) const;
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     bool operator==(const CTSE_Handle& tse) const;
     bool operator!=(const CTSE_Handle& tse) const;
@@ -83,6 +91,12 @@ public:
     bool Blob_IsSuppressedTemp(void) const;
     bool Blob_IsSuppressedPerm(void) const;
     bool Blob_IsDead(void) const;
+
+    /// Complete and get const reference to the seq-entry
+    CConstRef<CSeq_entry> GetCompleteTSE(void) const;
+
+    /// Get const reference to the seq-entry
+    CConstRef<CSeq_entry> GetTSECore(void) const;
 
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
@@ -104,8 +118,12 @@ public:
     ///   Circular reference in 'used' tree.
     bool AddUsedTSE(const CTSE_Handle& tse) const;
 
+    /// Return true if this TSE handle is local to scope and can be edited.
+    bool CanBeEdited(void) const;
+
 protected:
     friend class CScope_Impl;
+    friend class CTSE_ScopeInfo;
 
     typedef CTSE_ScopeInfo TObject;
 
@@ -117,6 +135,8 @@ private:
     CTSE_ScopeUserLock  m_TSE;
 
 public: // non-public section
+
+    CTSE_Handle(const CTSE_ScopeUserLock& lock);
 
     TObject& x_GetScopeInfo(void) const;
     const CTSE_Info& x_GetTSE_Info(void) const;
@@ -173,8 +193,208 @@ bool CTSE_Handle::operator<(const CTSE_Handle& tse) const
 inline
 CTSE_Handle::TObject& CTSE_Handle::x_GetScopeInfo(void) const
 {
-    return *m_TSE;
+    return const_cast<TObject&>(*m_TSE);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CScopeInfo classes
+/////////////////////////////////////////////////////////////////////////////
+
+class CScopeInfo_Base : public CObject
+{
+public:
+    // creates object with one reference
+    NCBI_XOBJMGR_EXPORT CScopeInfo_Base(void);
+    NCBI_XOBJMGR_EXPORT CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
+                                        const CObject& info);
+    NCBI_XOBJMGR_EXPORT CScopeInfo_Base(const CTSE_Handle& tse,
+                                        const CObject& info);
+    NCBI_XOBJMGR_EXPORT ~CScopeInfo_Base(void);
+    
+    bool IsRemoved(void) const
+        {
+            return !m_TSE_ScopeInfo;
+        }
+    bool HasObject(void) const
+        {
+            return m_ObjectInfo.NotNull();
+        }
+    bool IsValid(void) const
+        {
+            return m_ObjectInfo.NotNull();
+        }
+
+    typedef CSeq_id_Handle TIndexId;
+    typedef vector<TIndexId> TIndexIds;
+
+    virtual NCBI_XOBJMGR_EXPORT const TIndexIds* GetIndexIds(void) const;
+
+    bool IsTemporary(void) const
+        {
+            const TIndexIds* ids = GetIndexIds();
+            return !ids || ids->empty();
+        }
+    
+    CTSE_ScopeInfo& x_GetTSE_ScopeInfo(void) const
+        {
+            CTSE_ScopeInfo* info = m_TSE_ScopeInfo;
+            _ASSERT(info);
+            return *info;
+        }
+
+    const CTSE_Handle& GetTSE_Handle(void) const
+        {
+            return m_TSE_Handle;
+        }
+
+    NCBI_XOBJMGR_EXPORT CScope_Impl& x_GetScopeImpl(void) const;
+
+    const CObject& GetObjectInfo_Base(void) const
+        {
+            return *m_ObjectInfo;
+        }
+
+protected:
+    friend class CTSE_ScopeInfo;
+    friend class CScopeInfoLocker;
+
+    // attached new tse and object info
+    virtual NCBI_XOBJMGR_EXPORT void x_SetLock(const CTSE_ScopeUserLock& tse,
+                                               const CObject& info);
+    virtual NCBI_XOBJMGR_EXPORT void x_ResetLock(void);
+
+    // disconnect from TSE
+    virtual NCBI_XOBJMGR_EXPORT void x_AttachTSE(CTSE_ScopeInfo* tse);
+    virtual NCBI_XOBJMGR_EXPORT void x_DetachTSE(CTSE_ScopeInfo* tse);
+    virtual NCBI_XOBJMGR_EXPORT void x_ForgetTSE(CTSE_ScopeInfo* tse);
+
+    enum ECheckFlags {
+        fAllowZero  = 0x00,
+        fForceZero  = 0x01,
+        fForbidZero = 0x02,
+        fAllowInfo  = 0x00,
+        fForceInfo  = 0x10,
+        fForbidInfo = 0x20
+    };
+    typedef int TCheckFlags;
+
+    bool NCBI_XOBJMGR_EXPORT x_Check(TCheckFlags zero_counter_mode) const;
+    void NCBI_XOBJMGR_EXPORT x_RemoveLastInfoLock(void);
+
+    void AddInfoLock(void)
+        {
+            _ASSERT(x_Check(fForceInfo));
+            m_LockCounter.Add(1);
+            _ASSERT(x_Check(fForbidZero));
+        }
+    void RemoveInfoLock(void)
+        {
+            _ASSERT(x_Check(fForbidZero));
+            if ( m_LockCounter.Add(-1) <= 0 ) {
+                x_RemoveLastInfoLock();
+            }
+        }
+
+private: // data members
+
+    CTSE_ScopeInfo*         m_TSE_ScopeInfo; // null if object is removed.
+    CAtomicCounter          m_LockCounter; // counts all referencing handles.
+    // The following members are not null when handle is locked (counter > 0)
+    // and not removed.
+    CTSE_Handle             m_TSE_Handle; // locks TSE from releasing.
+    CConstRef<CObject>      m_ObjectInfo; // current object info.
+
+private: // to prevent copying
+    CScopeInfo_Base(const CScopeInfo_Base&);
+    void operator=(const CScopeInfo_Base&);
+};
+
+
+class CScopeInfoLocker : protected CObjectCounterLocker
+{
+public:
+    void Lock(CScopeInfo_Base* info) const
+        {
+            CObjectCounterLocker::Lock(info);
+            info->AddInfoLock();
+        }
+    void Unlock(CScopeInfo_Base* info) const
+        {
+            info->RemoveInfoLock();
+            CObjectCounterLocker::Unlock(info);
+        }
+};
+
+
+typedef CRef<CScopeInfo_Base, CScopeInfoLocker> CScopeInfo_RefBase;
+
+
+template<class Info>
+class CScopeInfo_Ref : public CScopeInfo_RefBase
+{
+public:
+    typedef Info TScopeInfo;
+
+    CScopeInfo_Ref(void)
+        {
+        }
+    explicit CScopeInfo_Ref(TScopeInfo& info)
+        : CScopeInfo_RefBase(toBase(&info))
+        {
+        }
+
+    bool IsValid(void) const
+        {
+            return NotNull() && GetPointerOrNull()->IsValid();
+        }
+
+    void Reset(void)
+        {
+            CScopeInfo_RefBase::Reset();
+        }
+
+    void Reset(TScopeInfo* info)
+        {
+            CScopeInfo_RefBase::Reset(toBase(info));
+        }
+
+    TScopeInfo& operator*(void)
+        {
+            return *toInfo(GetNonNullPointer());
+        }
+    const TScopeInfo& operator*(void) const
+        {
+            return *toInfo(GetNonNullPointer());
+        }
+    TScopeInfo& GetNCObject(void) const
+        {
+            return *toInfo(GetNonNullNCPointer());
+        }
+
+    TScopeInfo* operator->(void)
+        {
+            return toInfo(GetNonNullPointer());
+        }
+    const TScopeInfo* operator->(void) const
+        {
+            return toInfo(GetNonNullPointer());
+        }
+
+protected:
+    static CScopeInfo_Base* toBase(TScopeInfo* info)
+        {
+            return reinterpret_cast<CScopeInfo_Base*>(info);
+        }
+    static TScopeInfo* toInfo(CScopeInfo_Base* base)
+        {
+            return reinterpret_cast<TScopeInfo*>(base);
+        }
+    static const TScopeInfo* toInfo(const CScopeInfo_Base* base)
+        {
+            return reinterpret_cast<const TScopeInfo*>(base);
+        }
+};
 
 
 END_SCOPE(objects)

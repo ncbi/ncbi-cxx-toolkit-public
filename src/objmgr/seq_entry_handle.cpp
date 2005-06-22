@@ -53,34 +53,33 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_entry_Handle::CSeq_entry_Handle(const CTSE_Handle& tse)
-    : m_TSE(tse), m_Info(&tse.x_GetTSE_Info())
+    : m_Info(tse.x_GetScopeInfo().GetScopeLock(tse, tse.x_GetTSE_Info()))
 {
 }
 
 
 CSeq_entry_Handle::CSeq_entry_Handle(const CSeq_entry_Info& info,
                                      const CTSE_Handle& tse)
-    : m_TSE(tse), m_Info(&info)
+    : m_Info(tse.x_GetScopeInfo().GetScopeLock(tse, info))
 {
 }
 
 
-CSeq_entry_Handle& CSeq_entry_Handle::operator=(const CSeq_entry_Handle& seh)
+CSeq_entry_Handle::CSeq_entry_Handle(const TLock& lock)
+    : m_Info(lock)
 {
-    // order is significant
-    if ( this != &seh ) {
-        m_Info = seh.m_Info;
-        m_TSE = seh.m_TSE;
-    }
-    return *this;
 }
 
 
 void CSeq_entry_Handle::Reset(void)
 {
-    // order is significant
     m_Info.Reset();
-    m_TSE.Reset();
+}
+
+
+const CSeq_entry_Info& CSeq_entry_Handle::x_GetInfo(void) const
+{
+    return m_Info->GetObjectInfo();
 }
 
 
@@ -104,7 +103,7 @@ CConstRef<CSeq_entry> CSeq_entry_Handle::GetSeq_entryCore(void) const
 
 bool CSeq_entry_Handle::HasParentEntry(void) const
 {
-    return m_Info  &&  x_GetInfo().HasParent_Info();
+    return *this  &&  x_GetInfo().HasParent_Info();
 }
 
 
@@ -359,13 +358,13 @@ CSeq_entry_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 void
 CSeq_entry_EditHandle::TakeAllAnnots(const CSeq_entry_EditHandle& entry) const
 {
-    vector<CSeq_annot_Handle> annots;
+    vector<CSeq_annot_EditHandle> annots;
     // we have to copy all handles as moving annots directly could break iter
     for ( CSeq_annot_CI it(entry, CSeq_annot_CI::eSearch_entry); it; ++it ) {
-        annots.push_back(*it);
+        annots.push_back(it->GetEditHandle());
     }
-    ITERATE ( vector<CSeq_annot_Handle>, it, annots ) {
-        TakeAnnot(it->GetEditHandle());
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, annots ) {
+        TakeAnnot(*it);
     }
 }
 
@@ -495,6 +494,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.17  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

@@ -40,19 +40,63 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#if 1
+# define _TRACE_TSE_LOCK(x) _TRACE(x)
+#else
+# define _TRACE_TSE_LOCK(x) ((void)0)
+#endif
+
+#define _CHECK() _ASSERT(!*this || &m_TSE->GetScopeImpl() == m_Scope.GetImpl())
 
 CTSE_Handle::CTSE_Handle(TObject& object)
     : m_Scope(object.GetScopeImpl().GetScope()),
-      m_TSE(object)
+      m_TSE(&object)
 {
+    if ( m_TSE.GetPointer() )
+        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _CHECK();
+}
+
+
+CTSE_Handle::CTSE_Handle(const CTSE_ScopeUserLock& lock)
+    : m_Scope(lock->GetScopeImpl().GetScope()),
+      m_TSE(lock)
+{
+    if ( m_TSE.GetPointer() )
+        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _CHECK();
+}
+
+
+CTSE_Handle::CTSE_Handle(const CTSE_Handle& tse)
+    : m_Scope(tse.m_Scope),
+      m_TSE(tse.m_TSE)
+{
+    if ( m_TSE.GetPointer() )
+        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _CHECK();
+}
+
+
+CTSE_Handle::~CTSE_Handle(void)
+{
+    _CHECK();
+    if ( m_TSE.GetPointer() )
+        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
 }
 
 
 CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 {
+    _CHECK();
     if ( this != &tse ) {
+        if ( m_TSE.GetPointer() )
+            _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
         m_TSE = tse.m_TSE;
         m_Scope = tse.m_Scope;
+        if ( m_TSE.GetPointer() )
+            _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+        _CHECK();
     }
     return *this;
 }
@@ -60,14 +104,18 @@ CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 
 void CTSE_Handle::Reset(void)
 {
+    _CHECK();
+    if ( m_TSE.GetPointer() )
+        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
     m_TSE.Reset();
     m_Scope.Reset();
+    _CHECK();
 }
 
 
 const CTSE_Info& CTSE_Handle::x_GetTSE_Info(void) const
 {
-    return *m_TSE.GetTSE_Lock();
+    return *m_TSE->m_TSE_Lock;
 }
 
 
@@ -82,6 +130,12 @@ CBlobIdKey CTSE_Handle::GetBlobId(void) const
 }
 
 
+bool CTSE_Handle::IsValid(void) const
+{
+    return m_TSE && m_TSE->IsAttached();
+}
+
+
 bool CTSE_Handle::Blob_IsSuppressed(void) const
 {
     return Blob_IsSuppressedTemp()  ||  Blob_IsSuppressedPerm();
@@ -90,22 +144,34 @@ bool CTSE_Handle::Blob_IsSuppressed(void) const
 
 bool CTSE_Handle::Blob_IsSuppressedTemp(void) const
 {
-    return x_GetTSE_Info().GetBlobState() &
-        CBioseq_Handle::fState_suppress_temp;
+    return (x_GetTSE_Info().GetBlobState() &
+            CBioseq_Handle::fState_suppress_temp) != 0;
 }
 
 
 bool CTSE_Handle::Blob_IsSuppressedPerm(void) const
 {
     return (x_GetTSE_Info().GetBlobState() &
-        CBioseq_Handle::fState_suppress_perm) != 0;
+            CBioseq_Handle::fState_suppress_perm) != 0;
 }
 
 
 bool CTSE_Handle::Blob_IsDead(void) const
 {
     return (x_GetTSE_Info().GetBlobState() &
-        CBioseq_Handle::fState_dead) != 0;
+            CBioseq_Handle::fState_dead) != 0;
+}
+
+
+CConstRef<CSeq_entry> CTSE_Handle::GetCompleteTSE(void) const
+{
+    return x_GetTSE_Info().GetCompleteSeq_entry();
+}
+
+
+CConstRef<CSeq_entry> CTSE_Handle::GetTSECore(void) const
+{
+    return x_GetTSE_Info().GetSeq_entryCore();
 }
 
 
@@ -130,6 +196,169 @@ CBioseq_Handle CTSE_Handle::GetBioseqHandle(const CSeq_id& id) const
 bool CTSE_Handle::AddUsedTSE(const CTSE_Handle& tse) const
 {
     return x_GetScopeInfo().AddUsedTSE(tse.m_TSE);
+}
+
+
+bool CTSE_Handle::CanBeEdited(void) const
+{
+    CDataSource& ds = x_GetTSE_Info().GetDataSource();
+    return !ds.GetDataLoader() && !ds.GetSharedObject();
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+// CHandleInfo_Base
+////////////////////////////////////////////////////////////////////////////
+
+
+CScopeInfo_Base::CScopeInfo_Base(void)
+    : m_TSE_ScopeInfo(0)
+{
+    m_LockCounter.Set(0);
+    _ASSERT(x_Check(fForceZero | fForbidInfo));
+}
+
+
+CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
+                                 const CObject& info)
+    : m_TSE_ScopeInfo(tse.GetNonNullNCPointer()),
+      m_TSE_Handle(tse),
+      m_ObjectInfo(&info)
+{
+    m_LockCounter.Set(0);
+    _ASSERT(x_Check(fForceZero | fForceInfo));
+}
+
+
+CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse, const CObject& info)
+    : m_TSE_ScopeInfo(&tse.x_GetScopeInfo()),
+      m_TSE_Handle(tse),
+      m_ObjectInfo(&info)
+{
+    m_LockCounter.Set(0);
+    _ASSERT(x_Check(fForceZero | fForceInfo));
+}
+
+
+CScopeInfo_Base::~CScopeInfo_Base(void)
+{
+    _ASSERT(x_Check(fForceZero | fForbidInfo));
+}
+
+
+CScope_Impl& CScopeInfo_Base::x_GetScopeImpl(void) const
+{
+    return x_GetTSE_ScopeInfo().GetScopeImpl();
+}
+
+
+const CScopeInfo_Base::TIndexIds* CScopeInfo_Base::GetIndexIds(void) const
+{
+    return 0;
+}
+
+
+bool CScopeInfo_Base::x_Check(TCheckFlags zero_counter_mode) const
+{
+    if ( IsRemoved() ) {
+        return !m_TSE_Handle && !m_ObjectInfo;
+    }
+    if ( m_LockCounter.Get() <= 0 ) {
+        if ( zero_counter_mode & fForbidZero ) {
+            return false;
+        }
+        if ( m_ObjectInfo ) {
+            if ( zero_counter_mode & fForbidInfo ) {
+                return false;
+            }
+            return m_TSE_Handle;
+        }
+        else {
+            if ( zero_counter_mode & fForceInfo ) {
+                return false;
+            }
+            return !m_TSE_Handle;
+        }
+    }
+    else {
+        if ( zero_counter_mode & fForceZero ) {
+            return false;
+        }
+        return m_TSE_Handle && m_ObjectInfo ||
+            !m_TSE_Handle && !m_ObjectInfo;
+    }
+}
+
+
+void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
+                                const CObject& info)
+{
+    _ASSERT(x_Check(fAllowZero|fAllowInfo));
+    _ASSERT(!IsRemoved());
+    _ASSERT(tse);
+    _ASSERT(&*tse == m_TSE_ScopeInfo);
+    _ASSERT(!m_TSE_Handle || &m_TSE_Handle.x_GetScopeInfo() == &*tse);
+    _ASSERT(!m_ObjectInfo || m_ObjectInfo == &info);
+    m_TSE_Handle = tse;
+    m_ObjectInfo = &info;
+    _ASSERT(x_Check(fAllowZero|fForceInfo));
+}
+
+
+void CScopeInfo_Base::x_ResetLock(void)
+{
+    //_ASSERT(x_Check(fForceZero|fAllowInfo));
+    _ASSERT(!IsRemoved());
+    m_ObjectInfo.Reset();
+    m_TSE_Handle.Reset();
+    //_ASSERT(x_Check(fForceZero|fForbidInfo));
+}
+
+
+void CScopeInfo_Base::x_RemoveLastInfoLock(void)
+{
+    if ( m_TSE_ScopeInfo ) {
+        m_TSE_ScopeInfo->RemoveLastInfoLock(*this);
+    }
+    else {
+        _ASSERT(!m_TSE_Handle && !m_ObjectInfo);
+    }
+}
+
+
+void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
+{
+    _ASSERT(tse);
+    _ASSERT(!m_TSE_ScopeInfo);
+    _ASSERT(IsRemoved());
+    _ASSERT(x_Check(fAllowZero|fForbidInfo));
+    m_TSE_ScopeInfo = tse;
+    _ASSERT(x_Check(fAllowZero|fForbidInfo));
+}
+
+
+void CScopeInfo_Base::x_DetachTSE(CTSE_ScopeInfo* tse)
+{
+    _ASSERT(tse);
+    _ASSERT(!IsRemoved());
+    _ASSERT(m_TSE_ScopeInfo == tse);
+    //_ASSERT(x_Check(fForceZero|fForbidInfo));
+    _ASSERT(!m_ObjectInfo && !m_TSE_Handle);
+    m_TSE_ScopeInfo = 0;
+    //_ASSERT(x_Check(fForceZero|fForbidInfo));
+}
+
+
+void CScopeInfo_Base::x_ForgetTSE(CTSE_ScopeInfo* tse)
+{
+    _ASSERT(tse);
+    _ASSERT(!IsRemoved());
+    _ASSERT(m_TSE_ScopeInfo == tse);
+    _ASSERT(x_Check(fAllowZero));
+    m_ObjectInfo.Reset();
+    m_TSE_Handle.Reset();
+    m_TSE_ScopeInfo = 0;
+    _ASSERT(x_Check(fForceZero|fForbidInfo));
 }
 
 

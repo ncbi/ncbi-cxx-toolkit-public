@@ -73,6 +73,24 @@ class CSeq_annot_EditHandle;
 class CBioseq_set_Info;
 
 
+class CBioseq_set_ScopeInfo : public CScopeInfo_Base
+{
+public:
+    typedef CBioseq_set_Info TObjectInfo;
+
+    CBioseq_set_ScopeInfo(const CTSE_Handle& tse, const TObjectInfo& info)
+        : CScopeInfo_Base(tse, reinterpret_cast<const CObject&>(info))
+        {
+        }
+
+    const TObjectInfo& GetObjectInfo(void) const
+        {
+            return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
+        }
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CBioseq_set_Handle --
@@ -152,13 +170,10 @@ public:
     ///
     /// @sa
     ///    operator !()
-    DECLARE_OPERATOR_BOOL_REF(m_Info);
+    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
         
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
-
-
-    CBioseq_set_Handle& operator=(const CBioseq_set_Handle& bsh);
 
     // Reset handle and make it not to point to any bioseq-set
     void Reset(void);
@@ -195,16 +210,15 @@ protected:
     friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
 
-    CBioseq_set_Handle(const CBioseq_set_Info& info,
-                       const CTSE_Handle& tse);
+    typedef CBioseq_set_ScopeInfo TScopeInfo;
+    CBioseq_set_Handle(const CBioseq_set_Info& info, const CTSE_Handle& tse);
 
     typedef int TComplexityTable[20];
     static const TComplexityTable& sx_GetComplexityTable(void);
 
     static TComplexityTable sm_ComplexityTable;
 
-    CTSE_Handle         m_TSE;
-    CConstRef<CObject>  m_Info;
+    CScopeInfo_Ref<TScopeInfo>  m_Info;
 
 public: // non-public section
 
@@ -437,51 +451,41 @@ CBioseq_set_Handle::CBioseq_set_Handle(void)
 inline
 const CTSE_Handle& CBioseq_set_Handle::GetTSE_Handle(void) const
 {
-    return m_TSE;
+    return m_Info->GetTSE_Handle();
 }
 
 
 inline
 CScope& CBioseq_set_Handle::GetScope(void) const
 {
-    return m_TSE.GetScope();
+    return GetTSE_Handle().GetScope();
 }
 
 
 inline
 CScope_Impl& CBioseq_set_Handle::x_GetScopeImpl(void) const
 {
-    return m_TSE.x_GetScopeImpl();
-}
-
-
-inline
-const CBioseq_set_Info& CBioseq_set_Handle::x_GetInfo(void) const
-{
-    return reinterpret_cast<const CBioseq_set_Info&>(*m_Info);
+    return GetTSE_Handle().x_GetScopeImpl();
 }
 
 
 inline
 bool CBioseq_set_Handle::operator ==(const CBioseq_set_Handle& handle) const
 {
-    return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
+    return m_Info == handle.m_Info;
 }
 
 
 inline
 bool CBioseq_set_Handle::operator !=(const CBioseq_set_Handle& handle) const
 {
-    return m_TSE != handle.m_TSE  ||  m_Info != handle.m_Info;
+    return m_Info != handle.m_Info;
 }
 
 
 inline
 bool CBioseq_set_Handle::operator <(const CBioseq_set_Handle& handle) const
 {
-    if ( m_TSE != handle.m_TSE ) {
-        return m_TSE < handle.m_TSE;
-    }
     return m_Info < handle.m_Info;
 }
 
@@ -512,13 +516,6 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(CBioseq_set_Info& info,
 }
 
 
-inline
-CBioseq_set_Info& CBioseq_set_EditHandle::x_GetInfo(void) const
-{
-    return const_cast<CBioseq_set_Info&>(CBioseq_set_Handle::x_GetInfo());
-}
-
-
 /* @} */
 
 
@@ -528,6 +525,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.17  2005/06/20 18:37:54  grichenk
 * Optimized loading of whole split bioseqs
 *

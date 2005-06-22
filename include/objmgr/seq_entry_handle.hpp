@@ -67,6 +67,24 @@ class CTSE_Info;
 class CSeqdesc;
 
 
+class CSeq_entry_ScopeInfo : public CScopeInfo_Base
+{
+public:
+    typedef CSeq_entry_Info TObjectInfo;
+
+    CSeq_entry_ScopeInfo(const CTSE_Handle& tse, const TObjectInfo& info)
+        : CScopeInfo_Base(tse, reinterpret_cast<const CObject&>(info))
+        {
+        }
+
+    const TObjectInfo& GetObjectInfo(void) const
+        {
+            return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
+        }
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CSeq_entry_Handle --
@@ -139,14 +157,12 @@ public:
 
     // Utility methods/operators
 
-    DECLARE_OPERATOR_BOOL_REF(m_Info);
+    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
 
 
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
 
-
-    CSeq_entry_Handle& operator=(const CSeq_entry_Handle& seh);
 
     /// Reset handle and make it not to point to any seq-entry
     void Reset(void);
@@ -175,16 +191,19 @@ protected:
     friend class CSeqMap_CI;
     friend class CSeq_entry_CI;
 
-    CSeq_entry_Handle(const CSeq_entry_Info& info,
-                      const CTSE_Handle& tse);
+    typedef CSeq_entry_ScopeInfo TScopeInfo;
+    typedef CScopeInfo_Ref<TScopeInfo> TLock;
+
+    CSeq_entry_Handle(const CSeq_entry_Info& info, const CTSE_Handle& tse);
+    CSeq_entry_Handle(const TLock& lock);
 
     CScope_Impl& x_GetScopeImpl(void) const;
 
-    CTSE_Handle         m_TSE;
-    CConstRef<CObject>  m_Info;
+    TLock m_Info;
 
 public: // non-public section
 
+    const TScopeInfo& x_GetScopeInfo(void) const;
     const CSeq_entry_Info& x_GetInfo(void) const;
 };
 
@@ -248,6 +267,7 @@ public:
     /// from the argument seqset.
     /// Returns new Bioseq-set handle which could be different 
     /// from the argument is the argument is from another scope.
+    /// Argument seqset will be reset.
     TSet TakeSet(const TSet& seqset) const;
 
     /// Make the empty Seq-entry be in seq state with specified Bioseq object.
@@ -262,6 +282,7 @@ public:
     /// from the argument seq.
     /// Returns new Bioseq handle which could be different from the argument
     /// is the argument is from another scope.
+    /// Argument seq will be reset.
     TSeq TakeSeq(const TSeq& seq) const;
 
     /// Convert the entry from Bioseq to Bioseq-set.
@@ -316,7 +337,8 @@ public:
     /// Remove the annotation from its location and attach to current one
     ///
     /// @param annot
-    ///  An annotation  pointed by this handle will be removed and attached
+    ///  An annotation pointed by this handle will be removed and attached.
+    ///  Argument annot will be reset.
     ///
     /// @return
     ///  Edit handle to the attached annotation
@@ -376,6 +398,7 @@ public:
     ///
     /// @param seq
     ///  bioseq pointed by this handle will be removed and attached
+    ///  Argument seq will be reset.
     /// @param index
     ///  Start index is 0 and -1 means end
     ///
@@ -426,6 +449,7 @@ public:
     ///
     /// @param entry
     ///  seq-entry pointed by this handle will be removed and attached
+    ///  Argument entry will be reset.
     /// @param index
     ///  Start index is 0 and -1 means end
     ///
@@ -451,10 +475,10 @@ protected:
     friend class CSeq_entry_I;
 
     CSeq_entry_EditHandle(const CSeq_entry_Handle& h);
-    CSeq_entry_EditHandle(CSeq_entry_Info& info,
-                          const CTSE_Handle& tse);
+    CSeq_entry_EditHandle(CSeq_entry_Info& info, const CTSE_Handle& tse);
 
 public: // non-public section
+    TScopeInfo& x_GetScopeInfo(void) const;
     CSeq_entry_Info& x_GetInfo(void) const;
 };
 
@@ -473,51 +497,48 @@ CSeq_entry_Handle::CSeq_entry_Handle(void)
 inline
 const CTSE_Handle& CSeq_entry_Handle::GetTSE_Handle(void) const
 {
-    return m_TSE;
+    return m_Info->GetTSE_Handle();
 }
 
 
 inline
 CScope& CSeq_entry_Handle::GetScope(void) const
 {
-    return m_TSE.GetScope();
+    return GetTSE_Handle().GetScope();
 }
 
 
 inline
 CScope_Impl& CSeq_entry_Handle::x_GetScopeImpl(void) const
 {
-    return m_TSE.x_GetScopeImpl();
+    return GetTSE_Handle().x_GetScopeImpl();
 }
 
 
 inline
-const CSeq_entry_Info& CSeq_entry_Handle::x_GetInfo(void) const
+const CSeq_entry_ScopeInfo& CSeq_entry_Handle::x_GetScopeInfo(void) const
 {
-    return reinterpret_cast<const CSeq_entry_Info&>(*m_Info);
+    return *m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator ==(const CSeq_entry_Handle& handle) const
+bool CSeq_entry_Handle::operator==(const CSeq_entry_Handle& handle) const
 {
-    return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
+    return m_Info == handle.m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator !=(const CSeq_entry_Handle& handle) const
+bool CSeq_entry_Handle::operator!=(const CSeq_entry_Handle& handle) const
 {
-    return m_TSE != handle.m_TSE  ||  m_Info != handle.m_Info;
+    return m_Info != handle.m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator <(const CSeq_entry_Handle& handle) const
+bool CSeq_entry_Handle::operator<(const CSeq_entry_Handle& handle) const
 {
-    if ( m_TSE != handle.m_TSE ) {
-        return m_TSE < handle.m_TSE;
-    }
     return m_Info < handle.m_Info;
 }
 
@@ -561,6 +582,14 @@ CSeq_entry_EditHandle::CSeq_entry_EditHandle(CSeq_entry_Info& info,
 {
 }
 
+
+inline
+CSeq_entry_ScopeInfo& CSeq_entry_EditHandle::x_GetScopeInfo(void) const
+{
+    return m_Info.GetNCObject();
+}
+
+
 /* @} */
 
 
@@ -570,6 +599,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.19  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

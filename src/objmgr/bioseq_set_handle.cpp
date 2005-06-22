@@ -48,27 +48,20 @@ BEGIN_SCOPE(objects)
 
 CBioseq_set_Handle::CBioseq_set_Handle(const CBioseq_set_Info& info,
                                        const CTSE_Handle& tse)
-    : m_TSE(tse), m_Info(&info)
+    : m_Info(tse.x_GetScopeInfo().GetScopeLock(tse, info))
 {
 }
 
 
 void CBioseq_set_Handle::Reset(void)
 {
-    // order is significant
     m_Info.Reset();
-    m_TSE.Reset();
 }
 
 
-CBioseq_set_Handle&
-CBioseq_set_Handle::operator=(const CBioseq_set_Handle& bsh)
+const CBioseq_set_Info& CBioseq_set_Handle::x_GetInfo(void) const
 {
-    if ( this != &bsh ) {
-        m_Info = bsh.m_Info;
-        m_TSE = bsh.m_TSE;
-    }
-    return *this;
+    return m_Info->GetObjectInfo();
 }
 
 
@@ -122,7 +115,7 @@ bool CBioseq_set_Handle::IsSetId(void) const
 
 bool CBioseq_set_Handle::CanGetId(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetId();
+    return *this  &&  x_GetInfo().CanGetId();
 }
 
 
@@ -140,7 +133,7 @@ bool CBioseq_set_Handle::IsSetColl(void) const
 
 bool CBioseq_set_Handle::CanGetColl(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetColl();
+    return *this  &&  x_GetInfo().CanGetColl();
 }
 
 
@@ -158,7 +151,7 @@ bool CBioseq_set_Handle::IsSetLevel(void) const
 
 bool CBioseq_set_Handle::CanGetLevel(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetLevel();
+    return *this  &&  x_GetInfo().CanGetLevel();
 }
 
 
@@ -176,7 +169,7 @@ bool CBioseq_set_Handle::IsSetClass(void) const
 
 bool CBioseq_set_Handle::CanGetClass(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetClass();
+    return *this  &&  x_GetInfo().CanGetClass();
 }
 
 
@@ -194,7 +187,7 @@ bool CBioseq_set_Handle::IsSetRelease(void) const
 
 bool CBioseq_set_Handle::CanGetRelease(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetRelease();
+    return *this  &&  x_GetInfo().CanGetRelease();
 }
 
 
@@ -212,7 +205,7 @@ bool CBioseq_set_Handle::IsSetDate(void) const
 
 bool CBioseq_set_Handle::CanGetDate(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetDate();
+    return *this  &&  x_GetInfo().CanGetDate();
 }
 
 
@@ -230,7 +223,7 @@ bool CBioseq_set_Handle::IsSetDescr(void) const
 
 bool CBioseq_set_Handle::CanGetDescr(void) const
 {
-    return m_Info  &&  x_GetInfo().CanGetDescr();
+    return *this  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -327,6 +320,12 @@ CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
                                     GetTSE_Handle());
     }
     return ret;
+}
+
+
+CBioseq_set_Info& CBioseq_set_EditHandle::x_GetInfo(void) const
+{
+    return const_cast<CBioseq_set_Info&>(CBioseq_set_Handle::x_GetInfo());
 }
 
 
@@ -428,14 +427,16 @@ CBioseq_set_EditHandle::AttachBioseq(CBioseq& seq, int index) const
 
 
 CBioseq_EditHandle
-CBioseq_set_EditHandle::CopyBioseq(const CBioseq_Handle& seq, int index) const
+CBioseq_set_EditHandle::CopyBioseq(const CBioseq_Handle& seq,
+                                   int index) const
 {
     return AddNewEntry(index).CopySeq(seq);
 }
 
 
 CBioseq_EditHandle
-CBioseq_set_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq, int index) const
+CBioseq_set_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq,
+                                   int index) const
 {
     return AddNewEntry(index).TakeSeq(seq);
 }
@@ -497,6 +498,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.16  2005/06/20 18:37:55  grichenk
 * Optimized loading of whole split bioseqs
 *

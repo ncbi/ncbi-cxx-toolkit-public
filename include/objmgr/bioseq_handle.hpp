@@ -326,6 +326,8 @@ public:
     CSeqVector GetSeqVector(EVectorStrand strand) const;
 
     /// Return CSeq_loc referencing the given range and strand on the bioseq
+    /// If start == 0, stop == 0, and strand == eNa_strand_unknown,
+    /// CSeq_loc will be of type 'whole'.
     CRef<CSeq_loc> GetRangeSeq_loc(TSeqPos start,
                                    TSeqPos stop,
                                    ENa_strand strand
@@ -355,7 +357,7 @@ public:
     ///
     /// @sa
     ///    operator !()
-    DECLARE_OPERATOR_BOOL_REF(m_Info);
+    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
 
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
@@ -415,22 +417,17 @@ protected:
     friend class CScope_Impl;
     friend class CSynonymsSet;
 
-    //CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
-    CBioseq_Handle(const CSeq_id_Handle& id,
-                   const CBioseq_ScopeInfo& binfo,
-                   const CTSE_Handle& tse);
+    typedef CBioseq_ScopeInfo TScopeInfo;
+    typedef CScopeInfo_Ref<TScopeInfo> TLock;
 
-    // Create empty bioseq handle from empty info with error status
-    CBioseq_Handle(const CSeq_id_Handle&    id,
-                   const CBioseq_ScopeInfo& binfo);
+    CBioseq_Handle(const CSeq_id_Handle& id, const TScopeInfo& info);
+    CBioseq_Handle(const CSeq_id_Handle& id, const TLock& lock);
 
     CScope_Impl& x_GetScopeImpl(void) const;
     const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
 
-    CTSE_Handle         m_TSE;
-    CSeq_id_Handle      m_Seq_id;
-    CConstRef<CObject>  m_ScopeInfo;
-    CConstRef<CObject>  m_Info;
+    CSeq_id_Handle  m_Handle_Seq_id;
+    TLock           m_Info;
 
 public: // non-public section
     const CBioseq_Info& x_GetInfo(void) const;
@@ -576,11 +573,11 @@ protected:
     friend class CScope_Impl;
 
     CBioseq_EditHandle(const CBioseq_Handle& h);
-    CBioseq_EditHandle(const CSeq_id_Handle& id,
-                       CBioseq_ScopeInfo& binfo,
-                       const CTSE_Handle& tse);
+    CBioseq_EditHandle(const CSeq_id_Handle& id, TScopeInfo& info);
+    CBioseq_EditHandle(const CSeq_id_Handle& id, const TLock& lock);
 
 public: // non-public section
+    CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
     CBioseq_Info& x_GetInfo(void) const;
 };
 
@@ -662,35 +659,57 @@ bool CBioseq_Handle::State_NotFound(void) const
 inline
 const CTSE_Handle& CBioseq_Handle::GetTSE_Handle(void) const
 {
-    return m_TSE;
+    return m_Info.GetObject().GetTSE_Handle();
 }
 
 
 inline
 const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 {
-    return m_Seq_id;
+    return m_Handle_Seq_id;
 }
 
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 
 {
-    return m_TSE.GetScope();
+    return GetTSE_Handle().GetScope();
 }
 
 
 inline
 CScope_Impl& CBioseq_Handle::x_GetScopeImpl(void) const 
 {
-    return m_TSE.x_GetScopeImpl();
+    return GetTSE_Handle().x_GetScopeImpl();
 }
 
 
 inline
-bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
+bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
-    return !(*this == h);
+    // No need to check m_TSE, because m_ScopeInfo is scope specific too.
+    return m_Info == h.m_Info;
+}
+
+
+inline
+bool CBioseq_Handle::operator<(const CBioseq_Handle& h) const
+{
+    return m_Info < h.m_Info;
+}
+
+
+inline
+bool CBioseq_Handle::operator!=(const CBioseq_Handle& h) const
+{
+    return m_Info != h.m_Info;
+}
+
+
+inline
+CBioseq_ScopeInfo& CBioseq_EditHandle::x_GetScopeInfo(void) const
+{
+    return const_cast<CBioseq_ScopeInfo&>(CBioseq_Handle::x_GetScopeInfo());
 }
 
 
@@ -710,6 +729,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.79  2005/03/29 16:02:30  grichenk
 * Added IsSynonym(const CSeq_id_Handle&)
 *

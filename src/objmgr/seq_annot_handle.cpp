@@ -43,27 +43,20 @@ BEGIN_SCOPE(objects)
 
 CSeq_annot_Handle::CSeq_annot_Handle(const CSeq_annot_Info& info,
                                      const CTSE_Handle& tse)
-    : m_TSE(tse), m_Info(&info)
+    : m_Info(tse.x_GetScopeInfo().GetScopeLock(tse, info))
 {
 }
 
 
 void CSeq_annot_Handle::Reset(void)
 {
-    // order is significant
     m_Info.Reset();
-    m_TSE.Reset();
 }
 
 
-CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
+const CSeq_annot_Info& CSeq_annot_Handle::x_GetInfo(void) const
 {
-    // order is significant
-    if ( this != &sah ) {
-        m_Info = sah.m_Info;
-        m_TSE = sah.m_TSE;
-    }
-    return *this;
+    return m_Info->GetObjectInfo();
 }
 
 
@@ -243,6 +236,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/06/22 14:27:31  vasilche
+* Implemented copying of shared Seq-entries at edit request.
+* Added invalidation of handles to removed objects.
+*
 * Revision 1.16  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.
