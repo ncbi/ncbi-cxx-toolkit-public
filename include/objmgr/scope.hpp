@@ -114,6 +114,12 @@ public:
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
+    //CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
+
+    CBioseq_EditHandle GetBioseqEditHandle(const CBioseq& bioseq);
+    CSeq_entry_EditHandle GetSeq_entryEditHandle(const CSeq_entry& entry);
+    CSeq_annot_EditHandle GetSeq_annotEditHandle(const CSeq_annot& annot);
+    //CBioseq_set_EditHandle GetBioseq_setEditHandle(const CBioseq_set& seqset);
 
 
     /// Get bioseq handle for sequence withing one TSE
@@ -160,14 +166,27 @@ public:
     /// Add seq_entry, default priority is higher than for defaults or loaders
     CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                           TPriority pri = kPriority_NotSet);
+    /// Add shared Seq-entry, scope will not modify it.
+    /// If edit handle is requested, scope will create a copy object.
+    CSeq_entry_Handle AddTopLevelSeqEntry(const CSeq_entry& top_entry,
+                                          TPriority pri = kPriority_NotSet);
 
     /// Add bioseq, return bioseq handle. Try to use unresolved seq-id
     /// from the bioseq, fail if all ids are already resolved to
     /// other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
-    /// Add Seq-annot
+    /// Add shared Bioseq, scope will not modify it.
+    /// If edit handle is requested, scope will create a copy object.
+    CBioseq_Handle AddBioseq(const CBioseq& bioseq,
+                             TPriority pri = kPriority_NotSet);
+
+    /// Add Seq-annot, return its CSeq_annot_Handle.
     CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
+                                   TPriority pri = kPriority_NotSet);
+    /// Add shared Seq-annot, scope will not modify it.
+    /// If edit handle is requested, scope will create a copy object.
+    CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
                                    TPriority pri = kPriority_NotSet);
 
     /// Get editable Biosec handle by regular one
@@ -188,15 +207,13 @@ public:
     /// Remove single TSE from the scope's history. If there are other
     /// live handles referencing the TSE, nothing is removed.
     /// @param tse
-    ///  TSE to be removed from the cache. If the TSE is removed from the
-    ///  histoty, the handle is reset.
-    void RemoveFromHistory(CTSE_Handle& tse);
+    ///  TSE to be removed from the cache.
+    void RemoveFromHistory(const CTSE_Handle& tse);
     /// Remove the bioseq's TSE from the scope's history. If there are other
     /// live handles referencing the TSE, nothing is removed.
     /// @param bioseq
-    ///  Bioseq, which TSE is to be removed from the cache. The handle
-    /// is reset even if the TSE can not be removed from the scope's history.
-    void RemoveFromHistory(CBioseq_Handle& bioseq);
+    ///  Bioseq, which TSE is to be removed from the cache.
+    void RemoveFromHistory(const CBioseq_Handle& bioseq);
 
     /// Revoke data loader from the scope. Throw exception if the
     /// operation fails (e.g. data source is in use or not found).
@@ -204,7 +221,7 @@ public:
     // Revoke TSE previously added using AddTopLevelSeqEntry() or
     // AddBioseq(). Throw exception if the TSE is still in use or
     /// not found in the scope.
-    void RemoveTopLevelSeqEntry(CTSE_Handle& entry);
+    void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
 
     typedef CBioseq_Handle::TId TIds;
     /// Get "native" bioseq ids without filtering and matching.
@@ -284,6 +301,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/06/22 14:11:19  vasilche
+* Added more methods.
+* Fixed constness of handle arguments in some methods.
+* Distinguish shared and private manually added Seq-entries.
+*
 * Revision 1.85  2005/03/14 18:17:14  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to

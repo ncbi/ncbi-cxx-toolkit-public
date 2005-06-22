@@ -141,6 +141,52 @@ CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot)
 }
 
 
+CSeq_entry_EditHandle CScope::GetSeq_entryEditHandle(const CSeq_entry& entry)
+{
+    CSeq_entry_Handle h = m_Impl->GetSeq_entryHandle(entry);
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::GetSeq_entryEditHandle: entry cannot be edited");
+    }
+    return m_Impl->GetEditHandle(h);
+}
+
+
+CSeq_annot_EditHandle CScope::GetSeq_annotEditHandle(const CSeq_annot& annot)
+{
+    CSeq_annot_Handle h = m_Impl->GetSeq_annotHandle(annot);
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::GetSeq_annotEditHandle: annot cannot be edited");
+    }
+    return m_Impl->GetEditHandle(h);
+}
+
+
+CBioseq_EditHandle CScope::GetBioseqEditHandle(const CBioseq& bioseq)
+{
+    CBioseq_Handle h = m_Impl->GetBioseqHandle(bioseq);
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::GetBioseqEditHandle: bioseq cannot be edited");
+    }
+    return m_Impl->GetEditHandle(h);
+}
+
+/*
+CBioseq_set_EditHandle
+CScope::GetBioseq_setEditHandle(const CBioseq_set& seqset)
+{
+    CBioseq_set_Handle h = m_Impl->GetBioseq_setHandle(seqset);
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::GetBioseq_setEditHandle: "
+                   "bioseq set cannot be edited");
+    }
+    return m_Impl->GetEditHandle(h);
+}
+*/
+
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CTSE_Handle& tse)
 {
@@ -219,13 +265,13 @@ void CScope::ResetHistory(void)
 }
 
 
-void CScope::RemoveFromHistory(CBioseq_Handle& bioseq)
+void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq)
 {
     m_Impl->RemoveFromHistory(bioseq);
 }
 
 
-void CScope::RemoveFromHistory(CTSE_Handle& tse)
+void CScope::RemoveFromHistory(const CTSE_Handle& tse)
 {
     m_Impl->RemoveFromHistory(tse);
 }
@@ -237,7 +283,7 @@ void CScope::RemoveDataLoader(const string& loader_name)
 }
 
 
-void CScope::RemoveTopLevelSeqEntry(CTSE_Handle& entry)
+void CScope::RemoveTopLevelSeqEntry(const CTSE_Handle& entry)
 {
     m_Impl->RemoveTopLevelSeqEntry(entry);
 }
@@ -291,22 +337,45 @@ void CScope::AddScope(CScope& scope, TPriority priority)
 }
 
 
-CSeq_entry_Handle CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
+CSeq_entry_Handle CScope::AddTopLevelSeqEntry(CSeq_entry& entry,
                                               TPriority priority)
 {
-    return m_Impl->AddTopLevelSeqEntry(top_entry, priority);
+    return m_Impl->AddSeq_entry(entry, priority);
 }
 
 
-CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq, TPriority priority)
+CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq,
+                                 TPriority priority)
 {
     return m_Impl->AddBioseq(bioseq, priority);
 }
 
 
-CSeq_annot_Handle CScope::AddSeq_annot(CSeq_annot& annot, TPriority priority)
+CSeq_annot_Handle CScope::AddSeq_annot(CSeq_annot& annot,
+                                       TPriority priority)
 {
-    return m_Impl->AddAnnot(annot, priority);
+    return m_Impl->AddSeq_annot(annot, priority);
+}
+
+
+CSeq_entry_Handle CScope::AddTopLevelSeqEntry(const CSeq_entry& entry,
+                                              TPriority priority)
+{
+    return m_Impl->AddSharedSeq_entry(entry, priority);
+}
+
+
+CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq,
+                                 TPriority priority)
+{
+    return m_Impl->AddSharedBioseq(bioseq, priority);
+}
+
+
+CSeq_annot_Handle CScope::AddSeq_annot(const CSeq_annot& annot,
+                                       TPriority priority)
+{
+    return m_Impl->AddSharedSeq_annot(annot, priority);
 }
 
 
@@ -329,29 +398,29 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
     //ERR_POST_ONCE(Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");
-    m_Impl->GetSeq_entryHandle(parent).GetSet().GetEditHandle().AttachEntry(entry);
+    GetSeq_entryEditHandle(parent).SetSet().AttachEntry(entry);
 }
 
 
 void CScope::RemoveEntry(CSeq_entry& entry)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveEntry() is deprecated: use class CSeq_entry_EditHandle.");
-    m_Impl->GetSeq_entryHandle(entry).GetEditHandle().Remove();
+    GetSeq_entryEditHandle(entry).Remove();
 }
 
 
 void CScope::AttachAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::AttachAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    m_Impl->GetSeq_entryHandle(parent).GetEditHandle().AttachAnnot(annot);
+    GetSeq_entryEditHandle(parent).AttachAnnot(annot);
 }
 
 
 void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle eh = m_Impl->GetSeq_entryHandle(parent).GetEditHandle();
-    CSeq_annot_EditHandle ah = m_Impl->GetSeq_annotHandle(annot).GetEditHandle();
+    CSeq_entry_EditHandle eh = GetSeq_entryEditHandle(parent);
+    CSeq_annot_EditHandle ah = GetSeq_annotEditHandle(annot);
     if ( ah.GetParentEntry() != eh ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::RemoveAnnot: parent doesn't contain annot");
@@ -364,8 +433,8 @@ void CScope::ReplaceAnnot(CSeq_entry& parent,
                           CSeq_annot& old_annot, CSeq_annot& new_annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle eh = m_Impl->GetSeq_entryHandle(parent).GetEditHandle();
-    CSeq_annot_EditHandle ah = m_Impl->GetSeq_annotHandle(old_annot).GetEditHandle();
+    CSeq_entry_EditHandle eh = GetSeq_entryEditHandle(parent);
+    CSeq_annot_EditHandle ah = GetSeq_annotEditHandle(old_annot);
     if ( ah.GetParentEntry() != eh ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::ReplaceAnnot: parent doesn't contain old_annot");
@@ -381,6 +450,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2005/06/22 14:11:19  vasilche
+* Added more methods.
+* Fixed constness of handle arguments in some methods.
+* Distinguish shared and private manually added Seq-entries.
+*
 * Revision 1.114  2005/03/14 18:17:15  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to
