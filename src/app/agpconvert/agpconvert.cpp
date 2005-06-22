@@ -58,6 +58,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiexec.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -144,14 +145,31 @@ int CAgpconvertApplication::Run(void)
         // a Seq-entry?
         args["template"].AsInputFile() >> MSerial_AsnText >> ent_templ;
     } catch (...) {
-        // a Seq-submit?
+        // a Seq-submit or Submit-block?
         submit_templ.Reset(new CSeq_submit);
         CNcbiIfstream istr(args["template"].AsString().c_str());
-        istr >> MSerial_AsnText >> *submit_templ;
-        if (!submit_templ->GetData().IsEntrys()
-            || submit_templ->GetData().GetEntrys().size() != 1) {
-            throw runtime_error("Seq-submit template must contain "
-                                "exactly one Seq-entry");
+        try {
+            // a Seq-submit?
+            istr >> MSerial_AsnText >> *submit_templ;
+            if (!submit_templ->GetData().IsEntrys()
+                || submit_templ->GetData().GetEntrys().size() != 1) {
+                throw runtime_error("Seq-submit template must contain "
+                                    "exactly one Seq-entry");
+            }
+        } catch(...) {
+            // a Submit-block?
+            CRef<CSubmit_block> submit_block(new CSubmit_block);
+            istr.seekg(0);
+            istr >> MSerial_AsnText >> *submit_block;
+            
+            // Build a Seq-submit containing this plus a bogus Seq-entry
+            submit_templ->SetSub(*submit_block);
+            CRef<CSeq_entry> ent(new CSeq_entry);
+            CRef<CSeq_id> dummy_id(new CSeq_id("lcl|dummy_id"));
+            ent->SetSeq().SetId().push_back(dummy_id);
+            ent->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+            ent->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+            submit_templ->SetData().SetEntrys().push_back(ent);
         }
         ent_templ.Assign(*submit_templ->GetData().GetEntrys().front());
         // incorporate any Seqdesc's that follow in the file
@@ -388,6 +406,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/22 15:38:16  jcherry
+ * Support Submit-block + descriptors as a third template option
+ *
  * Revision 1.4  2005/05/23 20:22:25  jcherry
  * When template file contains a Seq-submit, read in any Seqdesc's that
  * follow and incorporate them into the template
