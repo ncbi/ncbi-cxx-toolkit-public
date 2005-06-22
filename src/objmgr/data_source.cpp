@@ -73,16 +73,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CDataSource::CDataSource(void)
-    : m_Loader(0),
-      m_ObjMgr(0),
-      m_DefaultPriority(9)
+    : m_DefaultPriority(9)
 {
 }
 
 
-CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
+CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader),
-      m_ObjMgr(&objmgr),
       m_DefaultPriority(99),
       m_Blob_Map(SBlobIdComp(&loader))
 {
@@ -90,12 +87,11 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
 }
 
 
-CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
-    : m_Loader(0),
-      m_ObjMgr(&objmgr),
+CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
+    : m_SharedObject(&shared_object),
       m_DefaultPriority(9)
 {
-    m_ManualBlob = AddTSE(entry);
+    m_StaticBlobs.AddLock(AddTSE(const_cast<CSeq_entry&>(entry)));
 }
 
 
@@ -108,12 +104,6 @@ CDataSource::~CDataSource(void)
     }
     DropAllTSEs();
     m_Loader.Reset();
-}
-
-
-CDataSource::TTSE_Lock CDataSource::GetTopEntry_Info(void)
-{
-    return m_ManualBlob;
 }
 
 
@@ -142,7 +132,7 @@ void CDataSource::DropAllTSEs(void)
         // check if any TSE is locked by user 
         ITERATE ( TBlob_Map, it, m_Blob_Map ) {
             int lock_counter = it->second->m_LockCounter.Get();
-            int used_counter = it->second == m_ManualBlob;
+            int used_counter = m_StaticBlobs.FindLock(it->second)? 1: 0;
             if ( lock_counter != used_counter ) {
                 ERR_POST("CDataSource::DropAllTSEs: tse is locked");
             }
@@ -150,14 +140,18 @@ void CDataSource::DropAllTSEs(void)
         NON_CONST_ITERATE( TBlob_Map, it, m_Blob_Map ) {
             x_ForgetTSE(it->second);
         }
-        if ( m_ManualBlob ) {
-            //_TRACE("TSE_Lock("<<&*m_ManualBlob<<") "<<&m_ManualBlob<<" unlock");
-            _VERIFY(m_ManualBlob->m_LockCounter.Add(-1) == 0);
-            m_ManualBlob.m_Info.Reset();
-        }
+        m_StaticBlobs.Drop();
         m_Blob_Map.clear();
         m_Blob_Cache.clear();
     }}
+}
+
+
+CDataSource::TTSE_Lock CDataSource::GetSharedTSE(void) const
+{
+    _ASSERT(GetSharedObject());
+    _ASSERT(m_StaticBlobs.size() == 1);
+    return m_StaticBlobs.begin()->second;
 }
 
 
@@ -177,8 +171,23 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
 }
 
 
+CDataSource::TTSE_Lock CDataSource::AddStaticTSE(CRef<CTSE_Info> info)
+{
+    TTSE_Lock lock = AddTSE(info);
+    m_StaticBlobs.AddLock(lock);
+    return lock;
+}
+
+
+CDataSource::TTSE_Lock CDataSource::AddStaticTSE(CSeq_entry& se)
+{
+    return AddStaticTSE(Ref(new CTSE_Info(se)));
+}
+
+
 CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
 {
+    _ASSERT(!m_SharedObject || m_StaticBlobs.empty());
     TTSE_Lock lock;
     _ASSERT(IsLoaded(*info));
     _ASSERT(!info->IsLocked());
@@ -713,9 +722,11 @@ CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
             x_AddTSEOrphanAnnots(ret, ids, *tse_it);
         }
     }
-    else if ( m_ManualBlob ) {
-        // without loader we look only in manual TSE if any        
-        x_AddTSEOrphanAnnots(ret, ids, m_ManualBlob);
+    else {
+        // without loader we look only in static TSE if any
+        ITERATE ( TTSE_LockSet, tse_it, m_StaticBlobs ) {
+            x_AddTSEOrphanAnnots(ret, ids, tse_it->second);
+        }
     }
 
     return ret;
@@ -745,7 +756,7 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
     else {
         // without loader bioseq TSE is the same as manually added TSE
         // and we already have added it
-        _ASSERT(tse == m_ManualBlob);
+        _ASSERT(m_StaticBlobs.FindLock(tse));
     }
 
     return ret;
@@ -934,7 +945,7 @@ CDataSource::TSeqMatches CDataSource::GetMatches(CSeq_id_Handle idh,
 {
     TSeqMatches ret;
 
-    if ( !history.IsEmpty() ) {
+    if ( !history.empty() ) {
         TMainLock::TReadLockGuard guard(m_DSMainLock);
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
         if ( tse_set != m_TSE_seq.end() ) {
@@ -1061,8 +1072,8 @@ CDataSource::TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
         }
     }
     if ( (flags & fLockNoManual) == 0 ) {
-        if ( m_ManualBlob.GetPointerOrNull() == &tse_info ) {
-            ret = m_ManualBlob;
+        ret = m_StaticBlobs.FindLock(&tse_info);
+        if ( ret ) {
             return ret;
         }
     }
@@ -1377,6 +1388,15 @@ void CTSE_LoadLock::ReleaseLoadLock(void)
 }
 
 
+void CTSE_Lock::x_Drop(void)
+{
+    _ASSERT(*this);
+    const CTSE_Info* info = GetNonNullPointer();
+    _VERIFY(info->m_LockCounter.Add(-1) == 0);
+    m_Info.Reset();
+}
+
+
 void CTSE_Lock::x_Unlock(void)
 {
     _ASSERT(*this);
@@ -1413,14 +1433,17 @@ void CTSE_Lock::x_Relock(const CTSE_Info* info)
 }
 
 
-bool CTSE_LockSet::IsEmpty(void) const
+void CTSE_LockSet::clear(void)
 {
-    return m_TSE_LockSet.empty();
+    m_TSE_LockSet.clear();
 }
 
 
-void CTSE_LockSet::Clear(void)
+void CTSE_LockSet::Drop(void)
 {
+    NON_CONST_ITERATE ( TTSE_LockSet, it, m_TSE_LockSet ) {
+        it->second.Drop();
+    }
     m_TSE_LockSet.clear();
 }
 

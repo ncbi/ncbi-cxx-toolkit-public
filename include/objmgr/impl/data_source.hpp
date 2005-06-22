@@ -123,8 +123,8 @@ class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 public:
     /// 'ctors
     CDataSource(void);
-    CDataSource(CDataLoader& loader, CObjectManager& objmgr);
-    CDataSource(CSeq_entry& entry, CObjectManager& objmgr);
+    CDataSource(CDataLoader& loader);
+    CDataSource(const CObject& shared_object, const CSeq_entry& entry);
     virtual ~CDataSource(void);
 
     // typedefs
@@ -142,6 +142,8 @@ public:
     TTSE_Lock AddTSE(CSeq_entry& se,
                      bool dead);
     TTSE_Lock AddTSE(CRef<CTSE_Info> tse);
+    TTSE_Lock AddStaticTSE(CSeq_entry& se);
+    TTSE_Lock AddStaticTSE(CRef<CTSE_Info> tse);
 
     // Modification methods.
     /// Add new sub-entry to "parent".
@@ -172,9 +174,8 @@ public:
     bool IsEmpty(void) const;
 
     CDataLoader* GetDataLoader(void) const;
-
-    CConstRef<CSeq_entry> GetTopEntry(void);
-    TTSE_Lock GetTopEntry_Info(void);
+    const CConstRef<CObject>& GetSharedObject(void) const;
+    TTSE_Lock GetSharedTSE(void) const;
 
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
@@ -376,8 +377,8 @@ private:
     mutable TCacheLock    m_DSCacheLock;
 
     CRef<CDataLoader>     m_Loader;
-    TTSE_Lock             m_ManualBlob;     // manually added TSEs
-    CObjectManager*       m_ObjMgr;
+    CConstRef<CObject>    m_SharedObject;
+    TTSE_LockSet          m_StaticBlobs;     // manually added TSEs
 
     TTSE_InfoMap          m_TSE_InfoMap;    // All known TSEs
     TEntry_InfoMap        m_Entry_InfoMap;  // All known Seq-entries
@@ -437,9 +438,9 @@ CDataLoader* CDataSource::GetDataLoader(void) const
 }
 
 inline
-CConstRef<CSeq_entry> CDataSource::GetTopEntry(void)
+const CConstRef<CObject>& CDataSource::GetSharedObject(void) const
 {
-    return m_ManualBlob->GetSeq_entryCore();
+    return m_SharedObject;
 }
 
 inline
