@@ -1434,9 +1434,9 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         }
 #else
         CDirEntry::TMode user, group, other;
-        /* CDirEntry::TSpecialModeBits special_bits; */
-        info.GetMode(&user, &group, &other/*, &special_bits*/);
-        failed = !dst->SetMode(user, group, other/*, special_bits*/);
+        CDirEntry::TSpecialModeBits special_bits;
+        info.GetMode(&user, &group, &other, &special_bits);
+        failed = !dst->SetMode(user, group, other, special_bits);
 #endif /*NCBI_OS_UNIX*/
         if (failed) {
             NCBI_THROW(CTarException, eRestoreAttrs,
@@ -1653,6 +1653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/06/22 21:10:55  lavr
+ * x_RestoreAttrs(): Take advantage of special bits (in file modes)
+ *
  * Revision 1.27  2005/06/22 21:07:10  lavr
  * Avoid buffer modification (which may lead to data corruption) while reading
  *
