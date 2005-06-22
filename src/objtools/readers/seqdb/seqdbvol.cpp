@@ -1089,6 +1089,7 @@ CSeqDBVol::GetBioseq(int                   oid,
                      int                   memb_bit,
                      int                   target_gi,
                      CRef<CSeqDBTaxInfo>   tax_info,
+                     bool                  seqdata,
                      CSeqDBLockHold      & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TDeflines;
@@ -1142,58 +1143,66 @@ CSeqDBVol::GetBioseq(int                   oid,
     
     // Get length & sequence.
     
-    const char * seq_buffer = 0;
-    
-    int length = x_GetSequence(oid, & seq_buffer, false, locked, false);
-    
-    if (length < 1) {
-        return null_result;
-    }
-    
-    // If protein, we set bsp->mol = Seq_mol_aa, seq_data_type =
-    // Seq_code_ncbistdaa; then we write the buffer into the byte
-    // store (or equivalent).
-    //
-    // Nucleotide sequences require more work:
-    // a. Try to get ambchars
-    // b. If there are any, convert sequence to 4 byte rep.
-    // c. Otherwise write to a byte store.
-    // d. Set mol = Seq_mol_na;
-    
     CRef<CBioseq> bioseq(new CBioseq);
     
-    CSeq_inst & seqinst = bioseq->SetInst();
-    
-    bool is_prot = (x_GetSeqType() == 'p');
-    
-    if (is_prot) {
-        s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
-    } else {
-        // nucl
-        vector<Int4> ambchars;
+    if (seqdata) {
+        const char * seq_buffer = 0;
+        int length = x_GetSequence(oid, & seq_buffer, false, locked, false);
         
-        x_GetAmbChar(oid, ambchars, locked);
-        
-        if (ambchars.empty()) {
-            // keep as 2 bit
-            s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length);
-        } else {
-            // translate to 4 bit
-            s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length, ambchars);
+        if (length < 1) {
+            return null_result;
         }
         
-        // mol = na
-        seqinst.SetMol(CSeq_inst::eMol_na);
+        // If protein, we set bsp->mol = Seq_mol_aa, seq_data_type =
+        // Seq_code_ncbistdaa; then we write the buffer into the byte
+        // store (or equivalent).
+        //
+        // Nucleotide sequences require more work:
+        // a. Try to get ambchars
+        // b. If there are any, convert sequence to 4 byte rep.
+        // c. Otherwise write to a byte store.
+        // d. Set mol = Seq_mol_na;
+        
+        CSeq_inst & seqinst = bioseq->SetInst();
+        
+        bool is_prot = (x_GetSeqType() == 'p');
+        
+        if (is_prot) {
+            s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
+        } else {
+            // nucl
+            vector<Int4> ambchars;
+            
+            x_GetAmbChar(oid, ambchars, locked);
+            
+            if (ambchars.empty()) {
+                // keep as 2 bit
+                s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length);
+            } else {
+                // translate to 4 bit
+                s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length, ambchars);
+            }
+            
+            // mol = na
+            seqinst.SetMol(CSeq_inst::eMol_na);
+        }
+        
+        if (seq_buffer) {
+            seq_buffer = 0;
+        }
+        
+        // Set the length and repr (== raw).
+        
+        seqinst.SetLength(length);
+        seqinst.SetRepr(CSeq_inst::eRepr_raw);
+    } else {
+        CSeq_inst & seqinst = bioseq->SetInst();
+        seqinst.SetRepr(CSeq_inst::eRepr_not_set);
+        seqinst.SetMol(CSeq_inst::eMol_not_set);
     }
     
-    if (seq_buffer) {
-        seq_buffer = 0;
-    }
+    // Set the id (Seq_id)
     
-    // Set the length, id (Seq_id), and repr (== raw).
-    
-    seqinst.SetLength(length);
-    seqinst.SetRepr(CSeq_inst::eRepr_raw);
     bioseq->SetId().swap(seqids);
     
     // If the format is binary, we get the defline and chain it onto

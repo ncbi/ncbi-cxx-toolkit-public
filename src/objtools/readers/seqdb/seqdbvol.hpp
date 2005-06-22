@@ -209,6 +209,7 @@ public:
               int                   memb_bit,
               int                   pref_gi,
               CRef<CSeqDBTaxInfo>   tax_info,
+              bool                  seqdata,
               CSeqDBLockHold      & locked) const;
     
     /// Get the sequence data

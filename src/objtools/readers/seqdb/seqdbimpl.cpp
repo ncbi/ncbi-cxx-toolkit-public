@@ -379,7 +379,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 }
 
 CRef<CBioseq>
-CSeqDBImpl::GetBioseq(int oid, int target_gi) const
+CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -398,6 +398,7 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi) const
                               memb_bit,
                               target_gi,
                               m_TaxInfo,
+                              seqdata,
                               locked);
     }
     

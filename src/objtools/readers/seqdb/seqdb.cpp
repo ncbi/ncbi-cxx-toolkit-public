@@ -184,7 +184,13 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid) const
 {
-    return m_Impl->GetBioseq(oid, 0);
+    return m_Impl->GetBioseq(oid, 0, true);
+}
+
+CRef<CBioseq>
+CSeqDB::GetBioseqNoData(int oid, int target_gi) const
+{
+    return m_Impl->GetBioseq(oid, target_gi, false);
 }
 
 void CSeqDB::GetTaxIDs(int             oid,
@@ -204,7 +210,7 @@ void CSeqDB::GetTaxIDs(int           oid,
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, int target_gi) const
 {
-    return m_Impl->GetBioseq(oid, target_gi);
+    return m_Impl->GetBioseq(oid, target_gi, true);
 }
 
 void CSeqDB::RetSequence(const char ** buffer) const
@@ -448,7 +454,7 @@ CSeqDB::GiToBioseq(int gi) const
     CRef<CBioseq> bs;
     
     if (m_Impl->GiToOid(gi, oid)) {
-        bs = m_Impl->GetBioseq(oid, 0);
+        bs = m_Impl->GetBioseq(oid, 0, true);
     }
     
     return bs;
@@ -461,7 +467,7 @@ CSeqDB::PigToBioseq(int pig) const
     CRef<CBioseq> bs;
     
     if (m_Impl->PigToOid(pig, oid)) {
-        bs = m_Impl->GetBioseq(oid, 0);
+        bs = m_Impl->GetBioseq(oid, 0, true);
     }
     
     return bs;
@@ -476,7 +482,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     m_Impl->SeqidToOids(seqid, oids);
     
     if (! oids.empty()) {
-        bs = m_Impl->GetBioseq(oids[0], 0);
+        bs = m_Impl->GetBioseq(oids[0], 0, true);
     }
     
     return bs;

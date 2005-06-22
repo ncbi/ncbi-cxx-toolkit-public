@@ -292,6 +292,22 @@ public:
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(int oid) const;
     
+    /// Get a CBioseq for a sequence without sequence data.
+    /// 
+    /// This builds and returns the data corresponding to the
+    /// indicated sequence as a CBioseq, but without the sequence
+    /// data.  It is used when processing large sequences, to avoid
+    /// accessing unused parts of the sequence.
+    /// 
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param target_gi
+    ///   If nonzero, the target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence, but without
+    ///   sequence data.
+    CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0) const;
+    
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
