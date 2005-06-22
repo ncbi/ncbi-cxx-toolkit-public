@@ -49,6 +49,19 @@ CTSE_Info_Object::CTSE_Info_Object(void)
 }
 
 
+CTSE_Info_Object::CTSE_Info_Object(const CTSE_Info_Object& src,
+                                   TObjectCopyMap* copy_map)
+    : m_TSE_Info(0),
+      m_Parent_Info(0),
+      m_DirtyAnnotIndex(true),
+      m_NeedUpdateFlags(0)
+{
+    if ( copy_map ) {
+        (*copy_map)[CConstRef<CObject>(&src)] = this;
+    }
+}
+
+
 CTSE_Info_Object::~CTSE_Info_Object(void)
 {
 }
@@ -323,6 +336,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/22 14:21:12  vasilche
+ * Added support for original->edited map.
+ * Added BelongsToTSE().
+ *
  * Revision 1.5  2004/10/07 14:03:32  vasilche
  * Use shared among TSEs CTSE_Split_Info.
  * Use typedefs and methods for TSE and DataSource locking.

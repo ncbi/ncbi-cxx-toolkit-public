@@ -58,8 +58,10 @@ class CSeq_descr;
 class NCBI_XOBJMGR_EXPORT CTSE_Info_Object : public CObject
 {
 public:
+    typedef map<CConstRef<CObject>, CRef<CObject> > TObjectCopyMap;
     // 'ctors
     CTSE_Info_Object(void);
+    CTSE_Info_Object(const CTSE_Info_Object& src, TObjectCopyMap* copy_map);
     virtual ~CTSE_Info_Object(void);
 
     // info tree
@@ -67,6 +69,7 @@ public:
     CDataSource& GetDataSource(void) const;
 
     bool HasTSE_Info(void) const;
+    bool BelongsToTSE_Info(const CTSE_Info& tse) const;
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
 
@@ -173,6 +176,13 @@ bool CTSE_Info_Object::HasTSE_Info(void) const
 
 
 inline
+bool CTSE_Info_Object::BelongsToTSE_Info(const CTSE_Info& tse) const
+{
+    return m_TSE_Info == &tse;
+}
+
+
+inline
 bool CTSE_Info_Object::HasParent_Info(void) const
 {
     return m_Parent_Info != 0;
@@ -199,6 +209,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/06/22 14:21:07  vasilche
+ * Added support for original->edited map.
+ * Added BelongsToTSE().
+ *
  * Revision 1.8  2005/06/20 18:37:55  grichenk
  * Optimized loading of whole split bioseqs
  *
