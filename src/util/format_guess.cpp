@@ -44,7 +44,7 @@ static bool isDNA_Alphabet(char ch)
 // Check if letter belongs to amino acid alphabet
 static bool isProtein_Alphabet(char ch)
 {
-    return ::strchr("ACDEFGHIKLMNPQRSTVWYBZ", ch) != 0;
+    return ::strchr("ACDEFGHIKLMNPQRSTVWYBZX", ch) != 0;
 }
 
 // Check if character belongs to the CR/LF group of symbols
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/06/22 15:45:56  kuznets
+ * Added X as a legal protein character
+ *
  * Revision 1.19  2005/06/03 17:04:45  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
