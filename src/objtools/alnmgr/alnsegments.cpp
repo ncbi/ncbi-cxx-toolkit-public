@@ -329,7 +329,6 @@ CAlnMixSegments::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
 
     bool         cache = false;
     string       s1;
-    TSeqPos      start1;
     int          score1;
     CAlnMixSeq * seq1;
     CAlnMixSeq * seq2;
@@ -363,25 +362,10 @@ CAlnMixSegments::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
 
                     seq1 = seg1->m_StartIts.begin()->first;
                     
-                    start1 = seg1->m_StartIts[seq1]->first;
-                    TSeqPos start1_plus_len = 
-                        start1 + seg1->m_Len * seq1->m_Width;
-                        
-                    if (seq1->m_PositiveStrand) {
-                        seq1->m_BioseqHandle->GetSeqVector
-                            (CBioseq_Handle::eCoding_Iupac,
-                             CBioseq_Handle::eStrand_Plus).
-                            GetSeqData(start1, start1_plus_len, s1);
-                    } else {
-                        CSeqVector seq_vec = 
-                            seq1->m_BioseqHandle->GetSeqVector
-                            (CBioseq_Handle::eCoding_Iupac,
-                             CBioseq_Handle::eStrand_Minus);
-                        TSeqPos size = seq_vec.size();
-                        seq_vec.GetSeqData(size - start1_plus_len,
-                                           size - start1, 
-                                           s1);
-                    }                                
+                    seq2->GetSeqString(s1,
+                                       seg1->m_StartIts[seq1]->first,
+                                       seg1->m_Len * seq1->m_Width,
+                                       seq1->m_PositiveStrand);
 
                     score1 = x_CalculateScore(s1,
                                               s1,
@@ -391,26 +375,10 @@ CAlnMixSegments::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
                 }
                 
                 string s2;
-
-                const TSeqPos& start2 = seg2->m_StartIts[seq2]->first;
-                TSeqPos start2_plus_len = 
-                    start2 + seg2->m_Len * seq2->m_Width;
-                            
-                if (seq2->m_PositiveStrand) {
-                    seq2->m_BioseqHandle->GetSeqVector
-                        (CBioseq_Handle::eCoding_Iupac,
-                         CBioseq_Handle::eStrand_Plus).
-                        GetSeqData(start2, start2_plus_len, s2);
-                } else {
-                    CSeqVector seq_vec = 
-                        seq2->m_BioseqHandle->GetSeqVector
-                        (CBioseq_Handle::eCoding_Iupac,
-                         CBioseq_Handle::eStrand_Minus);
-                    TSeqPos size = seq_vec.size();
-                    seq_vec.GetSeqData(size - start2_plus_len,
-                                       size - start2, 
-                                       s2);
-                }                                
+                seq2->GetSeqString(s2,
+                                   seg2->m_StartIts[seq2]->first,
+                                   seg2->m_Len * seq2->m_Width,
+                                   seq2->m_PositiveStrand);
 
                 int score2 = 
                     x_CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
@@ -592,6 +560,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/06/23 18:00:50  todorov
+* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
+*
 * Revision 1.2  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes
 *

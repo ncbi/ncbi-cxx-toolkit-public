@@ -37,6 +37,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/alnmgr/alnsegments.hpp>
+#include <objtools/alnmgr/alnexception.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -177,15 +178,52 @@ public:
     TStarts::iterator     m_StartIt;
     TMatchList            m_MatchList;
 
-    CSeqVector& GetSeqVector(void) {
-        if ( !m_SeqVector ) {
-            m_SeqVector = new CSeqVector
-                (m_BioseqHandle->GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+    CSeqVector& GetPlusStrandSeqVector(void)
+    {
+        if ( !m_PlusStrandSeqVector ) {
+            m_PlusStrandSeqVector = new CSeqVector
+                (m_BioseqHandle->GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                              CBioseq_Handle::eStrand_Plus));
         }
-        return *m_SeqVector;
+        return *m_PlusStrandSeqVector;
     }
+
+    CSeqVector& GetMinusStrandSeqVector(void)
+    {
+        if ( !m_MinusStrandSeqVector ) {
+            m_MinusStrandSeqVector = new CSeqVector
+                (m_BioseqHandle->GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                              CBioseq_Handle::eStrand_Minus));
+        }
+        return *m_MinusStrandSeqVector;
+    }
+
+    void GetSeqString(string& s,
+                      TSeqPos start, 
+                      TSeqPos len,
+                      bool    positive_strand = true)
+    {
+        if (positive_strand) {
+            GetPlusStrandSeqVector().GetSeqData(start, start + len, s);
+        } else {
+            TSeqPos size = GetMinusStrandSeqVector().size();
+            GetMinusStrandSeqVector().GetSeqData(size - (start + len),
+                                                 size - start, 
+                                                 s);
+        }
+        if (s.length() != len) {
+            string errstr = "Unable to load data for seq-id=\"" + 
+                m_SeqId->AsFastaString() + "\" "
+                "start=" + NStr::IntToString(start) + " "
+                "length=" + NStr::IntToString(len) + ".";
+            NCBI_THROW(CAlnException, eInvalidSegment,
+                       errstr);
+        }
+    }
+
 private:
-    CRef<CSeqVector> m_SeqVector;
+    CRef<CSeqVector> m_PlusStrandSeqVector;
+    CRef<CSeqVector> m_MinusStrandSeqVector;
 };
 
 
@@ -199,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/06/23 18:00:50  todorov
+* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
+*
 * Revision 1.3  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *

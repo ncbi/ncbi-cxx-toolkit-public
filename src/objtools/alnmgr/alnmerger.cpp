@@ -53,8 +53,8 @@ CAlnMixMerger::CAlnMixMerger(CRef<CAlnMixMatches>& aln_mix_matches,
       m_Seqs(aln_mix_matches->m_Seqs),
       m_Rows(m_AlnMixSequences->m_Rows),
       m_ExtraRows(m_AlnMixSequences->m_ExtraRows),
-      m_SingleRefseq(false),
       m_AlnMixSegments(new CAlnMixSegments(m_AlnMixSequences)),
+      m_SingleRefseq(false),
       x_CalculateScore(calc_score)
 {
 }
@@ -1119,6 +1119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/06/23 18:00:50  todorov
+* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
+*
 * Revision 1.2  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes
 *

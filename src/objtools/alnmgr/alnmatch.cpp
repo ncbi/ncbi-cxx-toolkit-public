@@ -180,70 +180,14 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                         if (x_CalculateScore) {
                             // calc the score by seq comp
                             string s1, s2;
-                            TSeqPos len1 = len * aln_seq1->m_Width;
-                            TSeqPos len2 = len * aln_seq2->m_Width;
-
-                            if (strand1 == eNa_strand_minus) {
-                                CSeqVector seq_vec = 
-                                    aln_seq1->m_BioseqHandle->GetSeqVector
-                                    (CBioseq_Handle::eCoding_Iupac,
-                                     CBioseq_Handle::eStrand_Minus);
-                                TSeqPos size = seq_vec.size();
-                                seq_vec.GetSeqData
-                                    (size - (start1 + len1),
-                                     size - start1, 
-                                     s1);
-                            } else {
-                                aln_seq1->m_BioseqHandle->GetSeqVector
-                                    (CBioseq_Handle::eCoding_Iupac,
-                                     CBioseq_Handle::eStrand_Plus).
-                                    GetSeqData(start1, 
-                                               start1 + len1,
-                                               s1);
-                            }                                
-                            if (strand2 ==  eNa_strand_minus) {
-                                CSeqVector seq_vec = 
-                                    aln_seq2->m_BioseqHandle->GetSeqVector
-                                    (CBioseq_Handle::eCoding_Iupac,
-                                     CBioseq_Handle::eStrand_Minus);
-                                TSeqPos size = seq_vec.size();
-                                seq_vec.GetSeqData
-                                    (size - (start2 + len2),
-                                     size - start2, 
-                                     s2);
-                            } else {
-                                aln_seq2->m_BioseqHandle->GetSeqVector
-                                    (CBioseq_Handle::eCoding_Iupac,
-                                     CBioseq_Handle::eStrand_Plus).
-                                    GetSeqData(start2,
-                                               start2 + len2,
-                                               s2);
-                            }
-
-                            //verify that we were able to load all data
-                            if (s1.length() != len1 || s2.length() != len2) {
-
-                                string symptoms  = "Input Dense-seg " +
-                                    NStr::IntToString(m_DsCnt) + ":" +
-                                    " Unable to load data for segment=" +
-                                    NStr::IntToString(seg) +
-                                    " (length=" + NStr::IntToString(len) + ") " +
-                                    ", rows " + NStr::IntToString(row1) +
-                                    " (seq-id=\"" + aln_seq1->m_SeqId->AsFastaString() +
-                                    "\" start=" + NStr::IntToString(start1) + ")" +
-                                    " and " + NStr::IntToString(row2) +
-                                    " (seq-id\"" + aln_seq2->m_SeqId->AsFastaString() +
-                                    "\" start=" + NStr::IntToString(start2) + ").";
-                                
-                                string diagnosis = "Looks like the sequence coords for row " +
-                                    NStr::IntToString(s1.length() < len1 ? row1 : row2) +
-                                    " are out of range.";
-
-                                string errstr = string("CAlnMixMatches::Add(): ") +
-                                    symptoms + " " + diagnosis;
-                                NCBI_THROW(CAlnException, eInvalidSegment,
-                                           errstr);
-                            }
+                            aln_seq1->GetSeqString(s1,
+                                                   start1,
+                                                   len * aln_seq1->m_Width,
+                                                   strand1 != eNa_strand_minus);
+                            aln_seq2->GetSeqString(s2,
+                                                   start2,
+                                                   len * aln_seq2->m_Width,
+                                                   strand2 != eNa_strand_minus);
 
                             match->m_Score = x_CalculateScore(s1,
                                                               s2,
@@ -329,6 +273,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/06/23 18:00:50  todorov
+* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
+*
 * Revision 1.2  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *
