@@ -736,7 +736,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
     TSeqPos&                      len     = match->m_Len;
     const int&                    width1  = seq1->m_Width;
     const int&                    width2  = seq2->m_Width;
-    CAlnMixSeq::TStarts::iterator start_i;
+    CAlnMixSeq::TStarts::iterator starts2_i;
     TSignedSeqPos                 delta, delta1, delta2;
 
     // subject sequences go on separate rows if requested
@@ -780,19 +780,19 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             return eInconsistentFrame;
         }
 
-        start_i = seq2->m_Starts.lower_bound(start2);
+        starts2_i = seq2->m_Starts.lower_bound(start2);
 
         // check below
-        if (start_i != seq2->m_Starts.begin()) {
-            start_i--;
+        if (starts2_i != seq2->m_Starts.begin()) {
+            starts2_i--;
             
             // check for inconsistency on the first row
             if ( !m_IndependentDSs ) {
-                CAlnMixSegment::TStartIterators::iterator start_it_i =
-                    start_i->second->m_StartIts.find(seq1);
-                if (start_it_i != start_i->second->m_StartIts.end()) {
+                CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
+                    starts2_i->second->m_StartIts.find(seq1);
+                if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        delta = start1 + len * width1 - start_it_i->second->first;
+                        delta = start1 + len * width1 - seq1_start_it_i->second->first;
                         if (delta > 0) {
                             // target above
                             // x----- x-)-)
@@ -811,8 +811,8 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             }
                         }
                     } else {
-                        delta = start_it_i->second->first
-                            + start_i->second->m_Len * width1
+                        delta = seq1_start_it_i->second->first
+                            + starts2_i->second->m_Len * width1
                             - start1;
                         if (delta > 0) {
                             // below target
@@ -837,7 +837,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             }
 
             // check for overlap with the segment below on second row
-            if ((delta = start_i->first + start_i->second->m_Len * width2
+            if ((delta = starts2_i->first + starts2_i->second->m_Len * width2
                  - start2) > 0) {
                 //       target
                 // ----- ------
@@ -858,29 +858,29 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                     return eSecondRowOverlap;
                 }
             }
-            if (start_i != seq2->m_Starts.end()) {
-                start_i++;
+            if (starts2_i != seq2->m_Starts.end()) {
+                starts2_i++;
             }
         }
 
         // check the overlapping area for consistency
-        while (start_i != seq2->m_Starts.end()  &&  
-               start_i->first < start2 + len * width2) {
+        while (starts2_i != seq2->m_Starts.end()  &&  
+               starts2_i->first < start2 + len * width2) {
             if ( !m_IndependentDSs ) {
-                CAlnMixSegment::TStartIterators::iterator start_it_i =
-                    start_i->second->m_StartIts.find(seq1);
-                if (start_it_i != start_i->second->m_StartIts.end()) {
+                CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
+                    starts2_i->second->m_StartIts.find(seq1);
+                if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
                         // x---..- x---..--)
                         // (---..- (--x..--x
-                        delta1 = (start1 - start_it_i->second->first) / width1 +
-                            len - start_i->second->m_Len;
+                        delta1 = (start1 - seq1_start_it_i->second->first) / width1 +
+                            len - starts2_i->second->m_Len;
                     } else {
                         // x--..- x---...-)
                         // x--..- x---...-)
-                        delta1 = (start_it_i->second->first - start1) / width1;
+                        delta1 = (seq1_start_it_i->second->first - start1) / width1;
                     }
-                    delta2 = (start_i->first - start2) / width2;
+                    delta2 = (starts2_i->first - start2) / width2;
                     if (delta1 != delta2) {
                         if (m_MergeFlags & fTruncateOverlaps) {
                             delta = (delta1 < delta2 ? delta1 : delta2);
@@ -898,18 +898,18 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                     }
                 }
             }
-            start_i++;
+            starts2_i++;
         }
 
         // check above for consistency
-        if (start_i != seq2->m_Starts.end()) {
+        if (starts2_i != seq2->m_Starts.end()) {
             if ( !m_IndependentDSs ) {
-                CAlnMixSegment::TStartIterators::iterator start_it_i =
-                    start_i->second->m_StartIts.find(seq1);
-                if (start_it_i != start_i->second->m_StartIts.end()) {
+                CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
+                    starts2_i->second->m_StartIts.find(seq1);
+                if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        delta = start_it_i->second->first + 
-                            start_i->second->m_Len * width1 - start1;
+                        delta = seq1_start_it_i->second->first + 
+                            starts2_i->second->m_Len * width1 - start1;
                         if (delta > 0) {
                             // below target
                             // x---- x-)--)
@@ -927,7 +927,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             }
                         }
                     } else {
-                        delta = start1 + len * width1 - start_it_i->second->first;
+                        delta = start1 + len * width1 - seq1_start_it_i->second->first;
                         if (delta > 0) {
                             // target above
                             // x--x-) ----)
@@ -949,8 +949,9 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
         }
 
         // check for inconsistent matches
-        if ((start_i = seq1->m_Starts.find(start1)) == seq1->m_Starts.end() ||
-            start_i->first != start1) {
+        CAlnMixSeq::TStarts::iterator starts1_i;
+        if ((starts1_i = seq1->m_Starts.find(start1)) == seq1->m_Starts.end() ||
+            starts1_i->first != start1) {
             // commenting out for now, since moved the function call ahead            
 //             NCBI_THROW(CAlnException, eMergeFailure,
 //                        "CAlnMixMerger::x_SecondRowFits(): "
@@ -959,14 +960,14 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
                 match->m_StrandsDiffer ? start2 + len * width2 : start2;
-            while (start_i != seq1->m_Starts.end()  &&
-                   start_i->first < start1 + len * width1) {
+            while (starts1_i != seq1->m_Starts.end()  &&
+                   starts1_i->first < start1 + len * width1) {
 
                 CAlnMixSegment::TStartIterators& its = 
-                    start_i->second->m_StartIts;
+                    starts1_i->second->m_StartIts;
 
                 if (match->m_StrandsDiffer) {
-                    tmp_start -= start_i->second->m_Len * width2;
+                    tmp_start -= starts1_i->second->m_Len * width2;
                 }
 
                 if ((it = its.find(seq2)) != its.end()) {
@@ -977,10 +978,10 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                 }
 
                 if ( !match->m_StrandsDiffer ) {
-                    tmp_start += start_i->second->m_Len * width2;
+                    tmp_start += starts1_i->second->m_Len * width2;
                 }
 
-                start_i++;
+                starts1_i++;
             }
         }
     }
@@ -1119,6 +1120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/06/23 18:53:32  todorov
+* Renamed iterators to improve readability.
+*
 * Revision 1.3  2005/06/23 18:00:50  todorov
 * Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
 *
