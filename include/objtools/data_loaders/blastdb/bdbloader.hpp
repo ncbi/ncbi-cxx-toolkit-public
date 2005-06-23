@@ -57,7 +57,7 @@ class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
 public:
 
-    /// Describes the type of blast database to use, equivalent to READDB_DB_* #defines
+    /// Describes the type of blast database to use
     enum EDbType {
         eNucleotide = 0,    ///< nucleotide database
         eProtein = 1,       ///< protein database
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.14  2005/06/23 16:21:15  camacho
+ * Doxygen fix
+ *
  * Revision 1.13  2004/11/29 20:57:09  grichenk
  * Added GetLoaderNameFromArgs with full set of arguments.
  * Fixed BlastDbDataLoader name.
