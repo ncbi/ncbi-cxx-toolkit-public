@@ -302,10 +302,10 @@ private:
 
 
 /// @internal
-class CBDB_CacheIWriter : public IWriter
+class CDBAPI_CacheIWriter : public IWriter
 {
 public:
-    CBDB_CacheIWriter(CDBAPI_Cache*            cache,
+    CDBAPI_CacheIWriter(CDBAPI_Cache*            cache,
                       const string&            key,
                       int                      version,
                       const string&            subkey,
@@ -324,7 +324,7 @@ public:
         m_Buffer = new unsigned char[m_MemBufferSize];
     }
 
-    ~CBDB_CacheIWriter()
+    ~CDBAPI_CacheIWriter()
     {
         CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
@@ -353,6 +353,8 @@ public:
             return eRW_Error;
 
         if (m_Flushed) {
+            if (bytes_written)
+                *bytes_written = 0;
             NCBI_THROW(CDBAPI_ICacheException, eStreamClosed,
                 "Cannot call IWriter::Write after Flush");
         }
@@ -854,8 +856,8 @@ IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
-    auto_ptr<CBDB_CacheIWriter> wrt(
-        new CBDB_CacheIWriter(this, key, version, subkey, GetMemBufferSize()));
+    auto_ptr<CDBAPI_CacheIWriter> wrt(
+        new CDBAPI_CacheIWriter(this, key, version, subkey, GetMemBufferSize()));
     wrt->SetTemps(m_TempDir, m_TempPrefix);
 
     return wrt.release();
@@ -1244,6 +1246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/06/23 16:39:54  kuznets
+ * Changed IWriter implementation class name
+ *
  * Revision 1.17  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *
