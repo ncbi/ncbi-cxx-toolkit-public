@@ -1113,7 +1113,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         NCBI_THROW(CTarException, eRead, "Archive backspace error");
     }
     size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
-    CT_POS_TYPE rec;                          // Record number (0-based)
+    CT_POS_TYPE rec = 0;                      // Record number (0-based)
 
     if (pos <= gap) {
         rec = 0;
@@ -1653,6 +1653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/06/23 14:57:39  rsmith
+ * pos_type must be intialized with a value. (fpos<> does not have a default cnstr).
+ *
  * Revision 1.28  2005/06/22 21:10:55  lavr
  * x_RestoreAttrs(): Take advantage of special bits (in file modes)
  *
