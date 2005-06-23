@@ -130,6 +130,9 @@ static int s_GetRoundNumber (int number){
         } 
     } else {
         round = number;
+        if(round < 1){
+            round = 1;
+        }
     }
     return round;
 }
@@ -300,7 +303,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
         wid->GetLabel(&info, CSeq_id::eContent, 0);
         title = GetTitle(handle);
 
-        if (title.size() > kDeflineLength){
+        if ((int)title.size() > kDeflineLength){
             title = title.substr(0, kDeflineLength) + "..";
         }
         info += " " + title;   
@@ -498,12 +501,12 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
 
     //second scale mark and on 
     float scale_unit = ((float)(master_len))/(kNumMark - 1);
-    int round_number = s_GetRoundNumber(scale_unit);
+    int round_number = s_GetRoundNumber((int)scale_unit);
     int spacer_length;
     double pixel_factor = ((double)kMasterPixel)/master_len;
 
     for (int i = 1; i*round_number <= master_len; i++) {
-        spacer_length = pixel_factor*round_number - kScaleWidth;
+        spacer_length = (int)(pixel_factor*round_number) - kScaleWidth;
         image = new CHTML_img(m_ImagePath + kGifWhite, spacer_length, m_BarHeight);
         tc = tbl->InsertAt(0, column, image);
         tc->SetAttribute("align", "LEFT");
@@ -536,10 +539,10 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     previous_digitstr = NStr::IntToString(0);
     
     //print scale digits from second mark and on
-    for (TSeqPos i = 1; i*round_number <= master_len; i++) {
+    for (TSeqPos i = 1; (int)i*round_number <= master_len; i++) {
        
         digit_str = NStr::IntToString(i*round_number);        
-        spacer_length = pixel_factor*round_number 
+        spacer_length = (int)(pixel_factor*round_number) 
             - kDigitWidth*(previous_digitstr.size() 
                            - previous_digitstr.size()/2) 
             - kDigitWidth*(digit_str.size()/2);
@@ -602,7 +605,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             //white space in front of this alignment
             temp_value = ((*iter2)->range->GetFrom() - (previous_end + 1))*pixel_factor;
             //rounding to int this way as round() is not portable
-            front_margin = temp_value + (temp_value < 0.0 ? -0.5 : 0.5);
+            front_margin = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
             //Need to add white space
             if(front_margin > 0) {
               
@@ -624,9 +627,9 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             previous_end = (*iter2)->range->GetTo();
             previous_id = current_id;
             temp_value = (*iter2)->range->GetLength()*pixel_factor;
-            bar_length = temp_value + (temp_value < 0.0 ? -0.5 : 0.5);
+            bar_length = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
             if(bar_length > 0){
-                image = new CHTML_img(m_ImagePath + s_GetGif((*iter2)->bits), 
+                image = new CHTML_img(m_ImagePath + s_GetGif((int)(*iter2)->bits), 
                                       bar_length, m_BarHeight);
                 image->SetAttribute("border", 0);
                 if(m_View & eMouseOverInfo){
@@ -670,6 +673,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.5  2005/06/23 15:58:55  jianye
+*return minimal round number 1 in getroundnumber()
+*
 *Revision 1.4  2004/07/22 15:25:11  jianye
 *use handle.GetBioseqLength
 *
