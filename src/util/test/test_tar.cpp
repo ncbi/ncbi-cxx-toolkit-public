@@ -168,7 +168,11 @@ int CTest::Run(void)
             const string& what   = action == fUpdate ? "Updating " : "Adding ";
             const string& prefix = action == fUpdate ? "u " : "a ";
             LOG_POST(what << name);
-            entries = action == fUpdate? tar->Update(name) : tar->Append(name);
+            if (action == fUpdate) {
+                entries.reset(tar->Update(name).release());
+            } else {
+                entries.reset(tar->Append(name).release());
+            }
             if (!entries->empty()) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
                     LOG_POST(prefix << it->GetName());
@@ -193,12 +197,12 @@ int CTest::Run(void)
             tar->SetMask(mask.release(), eTakeOwnership);
         }
         if (action == fList) {
-            entries = tar->List();
+            entries.reset(tar->List().release());
             ITERATE(CTar::TEntries, it, *entries.get()) {
                 LOG_POST(*it);
             }
         } else {
-            entries = tar->Extract();
+            entries.reset(tar->Extract().release());
             ITERATE(CTar::TEntries, it, *entries.get()) {
                 LOG_POST("x " << it->GetName());
             }
@@ -224,6 +228,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/23 15:13:30  ucko
+ * Adjust usage of auto_ptr<> for compatibility with GCC 2.95.
+ *
  * Revision 1.5  2005/06/22 20:04:20  lavr
  * Proper test -- simplified tar command line utility
  *
