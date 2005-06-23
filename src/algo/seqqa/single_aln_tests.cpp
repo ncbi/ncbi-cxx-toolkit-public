@@ -65,6 +65,18 @@ bool CTestSingleAln::CanTest(const CSerialObject& obj,
 }
 
 
+// Like CSeq_align::GetSeqStrand, but if the strand is not set,
+// returns eNa_strand_plus rather than throwing an exception
+static ENa_strand s_GetSeqStrand(const CSeq_align& aln, CSeq_align::TDim row)
+{
+    try {
+        return aln.GetSeqStrand(row);
+    } catch(CSeqalignException& e) {
+        return eNa_strand_plus;
+    }
+}
+
+
 CRef<CSeq_test_result_set>
 CTestSingleAln_All::RunTest(const CSerialObject& obj,
                             const CSeqTestContext* ctx)
@@ -135,7 +147,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             min_exon_length = exon_length;
         }
 
-        if (exon.GetSeqStrand(1) == eNa_strand_minus) {
+        if (s_GetSeqStrand(exon, 1) == eNa_strand_minus) {
             intron_length = last_genomic_end - exon.GetSeqStop(1)- 1;
         } else {
             intron_length = exon.GetSeqStart(1) - last_genomic_end - 1;
@@ -153,7 +165,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             // splice consensus
             CSeq_loc loc;
             loc.SetInt().SetId().Assign(exon.GetSeq_id(1));
-            if (exon.GetSeqStrand(1) == eNa_strand_minus) {
+            if (s_GetSeqStrand(exon, 1) == eNa_strand_minus) {
                 loc.SetInt().SetFrom(last_genomic_end - 2);
                 loc.SetInt().SetTo  (last_genomic_end - 1);
                 loc.SetInt().SetStrand(eNa_strand_minus);
@@ -166,7 +178,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             string splice5;
             vec5.GetSeqData(0, 2, splice5);
 
-            if (exon.GetSeqStrand(1) == eNa_strand_minus) {
+            if (s_GetSeqStrand(exon, 1) == eNa_strand_minus) {
                 loc.SetInt().SetFrom(exon.GetSeqStop(1) + 1);
                 loc.SetInt().SetTo  (exon.GetSeqStop(1) + 2);
                 loc.SetInt().SetStrand(eNa_strand_minus);                
@@ -202,7 +214,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             }
         } // exon_index > 0
 
-        if (exon.GetSeqStrand(1) == eNa_strand_minus) {
+        if (s_GetSeqStrand(exon, 1) == eNa_strand_minus) {
             last_genomic_end = exon.GetSeqStart(1);
         } else {
             last_genomic_end = exon.GetSeqStop(1);
@@ -339,7 +351,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     const CSeq_align& last_exon = *disc.back();
     const CSeq_id& genomic_id = first_exon.GetSeq_id(1);
     CBioseq_Handle genomic_hand = scope.GetBioseqHandle(genomic_id);
-    bool is_minus = first_exon.GetSeqStrand(1) == eNa_strand_minus;
+    bool is_minus = s_GetSeqStrand(first_exon, 1) == eNa_strand_minus;
 
     // Distance from alignment limits to genomic sequence
     // gap or end
@@ -471,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/06/23 20:23:49  jcherry
+ * Deal with missing strands (assume they're plus)
+ *
  * Revision 1.13  2005/03/14 18:19:02  grichenk
  * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
  * SAnnotSelector.
