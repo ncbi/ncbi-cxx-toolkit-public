@@ -9,6 +9,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
+/* Define to 1 if you have the `asprintf' function. */
+#undef HAVE_ASPRINTF
+
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
@@ -43,17 +46,29 @@
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
 
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #undef HAVE_FCGX_ACCEPT_R
 
 /* Define to 1 if FLTK is available. */
 #undef HAVE_FLTK
 
+/* Define to 1 if you have the `freehostent' function. */
+#undef HAVE_FREEHOSTENT
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
 /* Define to 1 if you have the <fstream.h> header file. */
 #undef HAVE_FSTREAM_H
+
+/* Define to 1 if your localtime_r returns a int. */
+#undef HAVE_FUNC_LOCALTIME_R_INT
+
+/* Define to 1 if your localtime_r returns a struct tm*. */
+#undef HAVE_FUNC_LOCALTIME_R_TM
 
 /* Define to 1 if you have the `getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
@@ -66,6 +81,12 @@
    arguments it takes (normally 5 or 6). */
 #undef HAVE_GETHOSTBYNAME_R
 
+/* Define to 1 if you have the `getipnodebyaddr' function. */
+#undef HAVE_GETIPNODEBYADDR
+
+/* Define to 1 if you have the `getipnodebyname' function. */
+#undef HAVE_GETIPNODEBYNAME
+
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
 
@@ -75,15 +96,34 @@
 /* Define to 1 if you have the `getpagesize' function. */
 #undef HAVE_GETPAGESIZE
 
+/* Define to 1 if you have the `getpwuid' function. */
+#undef HAVE_GETPWUID
+
+/* If you have the `getpwuid_r' function, define to the number of arguments it
+   takes (normally 4 or 5). */
+#undef HAVE_GETPWUID_R
+
 /* If you have the `getservbyname_r' function, define to the number of
    arguments it takes (normally 5 or 6). */
 #undef HAVE_GETSERVBYNAME_R
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the `getuid' function. */
+#undef HAVE_GETUID
 
 /* Define to 1 if ICU libraries are available. */
 #undef HAVE_ICU
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
+
+/* Define to 1 if you have the `inet_ntoa_r' function. */
+#undef HAVE_INET_NTOA_R
+
+/* Define to 1 if you have the `inet_ntop' function. */
+#undef HAVE_INET_NTOP
 
 /* Define to 1 if the system has the type `intptr_t'. */
 #undef HAVE_INTPTR_T
@@ -226,8 +266,14 @@
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
 
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netinet/tcp.h> header file. */
+#undef HAVE_NETINET_TCP_H
 
 /* Define to 1 if `auto_ptr<T>' is missing or broken. */
 #undef HAVE_NO_AUTO_PTR
@@ -314,6 +360,9 @@
 /* Define to 1 if you have the <strstrea.h> header file. */
 #undef HAVE_STRSTREA_H
 
+/* Define to 1 if you have the `strtok_r' function. */
+#undef HAVE_STRTOK_R
+
 /* Define to 1 if SYBASE has reentrant libraries. */
 #undef HAVE_SYBASE_REENTRANT
 
@@ -326,6 +375,9 @@
 /* Define to 1 if you have SysV semaphores. */
 #undef HAVE_SYSV_SEMAPHORES
 
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
@@ -337,6 +389,9 @@
 
 /* Define to 1 if you have the <sys/sysinfo.h> header file. */
 #undef HAVE_SYS_SYSINFO_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
@@ -358,6 +413,9 @@
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the <wchar.h> header file. */
+#undef HAVE_WCHAR_H
 
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
@@ -385,6 +443,9 @@
 
 /* System vendor only */
 #undef HOST_VENDOR
+
+/* Define as const if the declaration of iconv() needs const. */
+#undef ICONV_CONST
 
 /* Define to 0xffffffff if your operating system doesn't. */
 #undef INADDR_NONE
@@ -470,6 +531,9 @@
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
 
+/* Define to 1 if the BSD-style netdb interface is reentrant. */
+#undef NETDB_REENTRANT
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -527,6 +591,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
 /* Define to 1 if using a local copy of bzlib. */
 #undef USE_LOCAL_BZLIB
 
@@ -539,6 +606,11 @@
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
+
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.378 2005/06/08 20:26:16 ucko Exp $
+#  $Id: configure.ac,v 1.379 2005/06/23 13:41:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -691,8 +691,6 @@ case "$host_os:$compiler" in
 
  linux*:GCC )
    LDFLAGS="-Wl,-E $LDFLAGS"
-   # May be needed for pthread_{set,get}concurrency
-   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
 
  linux*:ICC )
@@ -700,13 +698,6 @@ case "$host_os:$compiler" in
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
-   # May be needed for pthread_{set,get}concurrency
-   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
-   ;;
-
- linux*)
-   # May be needed for pthread_{set,get}concurrency
-   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
 
  freebsd*:GCC )
@@ -1490,6 +1481,8 @@ else
    prof_sfx=
 fi
 
+### Should go before any test compiler runs
+AC_GNU_SOURCE
 
 #### Determine whether this is implicitly a 64-bit platform
 AC_TYPE_SIZE_T
@@ -1863,6 +1856,13 @@ else
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
 fi
 
+case "$host_os" in
+   cygwin* | osf* )
+      AC_DEFINE(NETDB_REENTRANT, 1,
+                [Define to 1 if the BSD-style netdb interface is reentrant.])
+      ;;
+esac
+
 # AC_CHECK_TYPES is insufficient, as linking may still fail :-/
 AC_CACHE_CHECK([for wstring], ac_cv_type_wstring_linkable,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -1878,8 +1878,10 @@ fi
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/sockio.h sys/sysinfo.h)
-# for FreeTDS 0.60
-AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
+# for FreeTDS 0.6x
+AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h netinet/in.h \
+                 netinet/tcp.h sys/select.h sys/socket.h sys/time.h wchar.h)
+AC_HEADER_TIME
 
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
@@ -2012,10 +2014,58 @@ if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
      arguments it takes (normally 5 or 6).])
 fi
 
+## getservbyname_r() -- 2 major variants: 4-arg, 5-arg (POSIX).
+## (Alternate 4-arg interface ignored due to rarity.)
+
+AC_CACHE_CHECK([for getpwuid_r], ncbi_cv_func_getpwuid_r,
+   [ncbi_cv_func_getpwuid_r="no"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <unistd.h>
+         #include <pwd.h>]],
+       [[struct passwd bpw;
+         char buf[1024];
+         char *dir = getpwuid_r(getuid(), &bpw, buf, sizeof(buf))->pw_dir;
+       ]])],
+       [ncbi_cv_func_getpwuid_r=4])
+    if test "$ncbi_cv_func_getpwuid_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <unistd.h>
+         #include <pwd.h>]],
+       [[struct passwd *pw, bpw;
+         char buf[1024];
+         getpwuid_r(getuid(), &bpw, buf, sizeof(buf), &pw);
+       ]])],
+       [ncbi_cv_func_getpwuid_r=5])
+    fi])
+
+if test "$ncbi_cv_func_getpwuid_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETPWUID_R, $ncbi_cv_func_getpwuid_r,
+    [If you have the `getpwuid_r' function, define to the number of
+     arguments it takes (normally 4 or 5).])
+fi
+
 
 AC_LANG_PUSH(C)
 # some of these can lose in C++ due to the way autoconf works
 AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
+if test "$ac_cv_func_localtime_r" = "yes" ; then
+   AC_CACHE_CHECK(return type of localtime_r, ac_cv_func_which_localtime_r,
+      [AC_TRY_COMPILE(
+          [[#include <unistd.h>
+            #include <time.h>]],
+          [[struct tm mytm;
+            time_t t;
+            int y = localtime_r(&t, &mytm)->tm_year;]],
+          ac_cv_func_which_localtime_r=struct,
+          ac_cv_func_which_localtime_r=int)])
+   if test $ac_cv_func_which_localtime_r = struct; then
+      AC_DEFINE(HAVE_FUNC_LOCALTIME_R_TM, 1,
+         [Define to 1 if your localtime_r returns a struct tm*.])
+   else
+     AC_DEFINE(HAVE_FUNC_LOCALTIME_R_INT, 1,
+        [Define to 1 if your localtime_r returns a int.])
+   fi
+fi
 
 AC_SEARCH_LIBS(sched_yield, rt,
     AC_DEFINE(HAVE_SCHED_YIELD, 1,
@@ -2026,8 +2076,9 @@ AC_SEARCH_LIBS(sched_yield, rt,
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf vsnprintf \
-               getpagesize lchown utimes lutimes)
+AC_CHECK_FUNCS(atoll lchown getpagesize getpwuid gettimeofday getuid \
+               asprintf vasprintf vsnprintf strcasecmp strdup strtok_r sysmp \
+               timegm utimes lutimes)
 AC_LANG_POP(C)
 
 # We want the program to return 0, which is *false* in C.  Also, since
@@ -2364,11 +2415,12 @@ else
    RESOLVER_LIBS=
 fi
 
+orig_LIBS=$LIBS
+LIBS="$NETWORK_LIBS $orig_LIBS"
+AC_CHECK_FUNCS(inet_ntoa_r)
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
-   AC_MSG_NOTICE([Skipping checks for get{addr,name}info (new in Solaris 8).])
+   AC_MSG_NOTICE([Skipping checks for network functions new to Solaris 8.])
 else
-   orig_LIBS=$LIBS
-   LIBS="$NETWORK_LIBS $orig_LIBS"
    AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <netdb.h>]],
@@ -2388,8 +2440,9 @@ else
    test "$ac_cv_func_getnameinfo" = "yes" && \
      AC_DEFINE(HAVE_GETNAMEINFO, 1,
                [Define to 1 if you have the `getnameinfo' function.])
-   LIBS=$orig_LIBS
+   AC_CHECK_FUNCS(freehostent getipnodebyaddr getipnodebyname inet_ntop)
 fi
+LIBS=$orig_LIBS
 
 MATH_LIBS=${MATH_LIBS:="-lm"}
 
@@ -2449,6 +2502,27 @@ if test "x$ac_cv_search_iconv" != xno; then
    AC_DEFINE(HAVE_LIBICONV, 1,
    [Define to 1 if ICONV is available, either in its own library or as part
     of the standard libraries.])
+   AC_MSG_CHECKING([for iconv declaration])
+   AC_CACHE_VAL(am_cv_proto_iconv, [
+      AC_TRY_COMPILE([
+#include <stdlib.h>
+#include <iconv.h>
+extern
+#ifdef __cplusplus
+"C"
+#endif
+#if defined(__STDC__) || defined(__cplusplus)
+size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
+#else
+size_t iconv();
+#endif
+], [], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
+      am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"])
+   am_cv_proto_iconv=`echo "[$]am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
+   AC_MSG_RESULT([$]{ac_t:-
+       }[$]am_cv_proto_iconv)
+   AC_DEFINE_UNQUOTED(ICONV_CONST, $am_cv_proto_iconv_arg1,
+     [Define as const if the declaration of iconv() needs const.])
    if test "x$ac_cv_search_iconv" != "xnone required"; then
       ICONV_LIBS=$ac_cv_search_iconv
    fi
