@@ -81,7 +81,7 @@ public:
                                     ESentinelType sentinel,
                                     string* warnings = 0) const;
     /// Return the length of a sequence
-    /// @param index index of the sequence in the sequence container [in]
+    /// @param i index of the sequence in the sequence container [in]
     TSeqPos GetLength(int i) const;
     /// Return the number of elements in the sequence container
     TSeqPos Size() const;

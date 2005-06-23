@@ -92,7 +92,9 @@ public:
         return err_code_string.c_str();
     }
 
+#ifndef SKIP_DOXYGEN_PROCESSING
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 };
 
 END_SCOPE(blast)
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/06/23 16:18:45  camacho
+ * Doxygen fixes
+ *
  * Revision 1.12  2004/11/17 20:13:13  camacho
  * Add error code for BlastSeqSrc
  *

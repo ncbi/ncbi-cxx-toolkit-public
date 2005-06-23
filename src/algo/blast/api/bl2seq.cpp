@@ -143,7 +143,6 @@ CBl2Seq::~CBl2Seq()
     x_ResetSubjectDs();
 }
 
-/// Resets query data structures
 void
 CBl2Seq::x_ResetQueryDs()
 {
@@ -158,7 +157,6 @@ CBl2Seq::x_ResetQueryDs()
     // TODO: should clean filtered regions?
 }
 
-/// Resets subject data structures
 void
 CBl2Seq::x_ResetSubjectDs()
 {
@@ -290,7 +288,7 @@ CBl2Seq::ScanDB()
 }
 
 
-/** Unlike the database search, we want to make sure that a seqalign list is   
+/* Unlike the database search, we want to make sure that a seqalign list is   
  * returned for each query/subject pair, even if it is empty. Also we don't 
  * want subjects to be sorted in seqalign results. Hence we retrieve results 
  * for each subject separately and append the resulting vectors of seqalign
@@ -366,6 +364,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2005/06/23 16:18:45  camacho
+ * Doxygen fixes
+ *
  * Revision 1.76  2005/06/09 20:35:29  camacho
  * Use new private header blast_objmgr_priv.hpp
  *

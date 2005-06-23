@@ -42,8 +42,6 @@
 
 USING_NCBI_SCOPE;
 
-USING_SCOPE(objects);
-
 /// CAlignParms class sets formatting options for DisplaySeqalign.
 ///
 /// During the setup and execution of the search, this object is
@@ -88,7 +86,7 @@ public:
     /// Set the accumulated and calculated formatting and output
     /// options in the specified CDisplaySeqalign object.
     /// @param disp The object to adjust.
-    void AdjustDisplay(CDisplaySeqalign & disp);
+    void AdjustDisplay(objects::CDisplaySeqalign & disp);
     
 private:
     /// RID of this search.
@@ -104,6 +102,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/06/23 16:18:46  camacho
+ * Doxygen fixes
+ *
  * Revision 1.2  2005/02/22 14:25:33  camacho
  * Moved showalign.[hc]pp to objtools/blast_format
  *

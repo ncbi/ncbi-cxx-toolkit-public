@@ -29,7 +29,7 @@
 
 /** @file pattern.c
  * Functions for finding pattern matches in sequence.
- * The following functions are defined here.
+ * The following functions are defined here. @sa phi_lookup.h
  *
  * <pre>
  * SPHIQueryInfoNew, SPHIQueryInfoFree, SPHIQueryInfoCopy - life cycle functions
@@ -49,7 +49,7 @@
  *                 calls s_FindHitsShortHead for every word and extends them
  * 
  * For pattern occurrences in subject (database), 
- * FindPatternHits is called from PHIBlastScanSubject. @sa phi_lookup.h
+ * FindPatternHits is called from PHIBlastScanSubject.
  * </pre>
  *
  */

@@ -35,7 +35,7 @@
 #include <ncbi_pch.hpp>
 #include "align_parms.hpp"
 
-void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
+void CAlignParms::AdjustDisplay(objects::CDisplaySeqalign & disp)
 {
     if ( !m_RID.empty() ) {
         disp.SetRid(m_RID);
@@ -45,7 +45,7 @@ void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
         disp.SetNumAlignToShow(m_NumAlgn.GetValue());
     }
     
-    typedef CDisplaySeqalign   TDS;
+    typedef objects::CDisplaySeqalign   TDS;
     typedef TDS::DisplayOption TDSdo;
                 
     disp.SetAlignOption(TDSdo(0
@@ -54,14 +54,17 @@ void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
                               | TDS::eShowMiddleLine
                               ));
     
-    disp.SetAlignType(CDisplaySeqalign::eProt);
-    disp.SetMiddleLineStyle(CDisplaySeqalign::eChar);
+    disp.SetAlignType(objects::CDisplaySeqalign::eProt);
+    disp.SetMiddleLineStyle(objects::CDisplaySeqalign::eChar);
 }
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/06/23 16:18:46  camacho
+ * Doxygen fixes
+ *
  * Revision 1.3  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

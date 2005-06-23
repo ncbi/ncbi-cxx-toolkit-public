@@ -45,13 +45,13 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-
 /** @addtogroup BlastFormat
  *
  * @{
  */
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr)
     : m_Ostream(ostr) 
@@ -63,7 +63,7 @@ CBlastTabularInfo::~CBlastTabularInfo()
     m_Ostream.flush();
 }
 
-void CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
+void CBlastTabularInfo::SetQueryId(list<CRef<objects::CSeq_id> >& id)
 {
     m_QueryId = NcbiEmptyString;
     ITERATE(list<CRef<CSeq_id> >, itr, id) {
@@ -73,7 +73,7 @@ void CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
         m_QueryId.erase(m_QueryId.size() - 1);
 }
 
-void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
+void CBlastTabularInfo::SetQueryId(const objects::CBioseq_Handle& bh)
 {
     m_QueryId = NcbiEmptyString;
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
@@ -106,7 +106,7 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
         m_QueryId.erase(m_QueryId.size() - 1);
 }
 
-void CBlastTabularInfo::SetSubjectId(list<CRef<CSeq_id> >& id)
+void CBlastTabularInfo::SetSubjectId(list<CRef<objects::CSeq_id> >& id)
 {
     m_SubjectId = NcbiEmptyString;
     ITERATE(list<CRef<CSeq_id> >, itr, id) {
@@ -116,7 +116,7 @@ void CBlastTabularInfo::SetSubjectId(list<CRef<CSeq_id> >& id)
         m_SubjectId.erase(m_SubjectId.size() - 1);
 }
 
-void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
+void CBlastTabularInfo::SetSubjectId(const objects::CBioseq_Handle& bh)
 {
     m_SubjectId = NcbiEmptyString;
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
@@ -139,7 +139,8 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
         m_SubjectId.erase(m_SubjectId.size() - 1);
 }
 
-int CBlastTabularInfo::SetFields(const CSeq_align& align, CScope& scope)
+int CBlastTabularInfo::SetFields(const objects::CSeq_align& align, 
+                                 objects::CScope& scope)
 {
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
@@ -281,7 +282,8 @@ void CBlastTabularInfo::Print(ETabularOption opt)
 }
 
 void 
-CBlastTabularInfo::PrintHeader(const string& program_in, const CBioseq& bioseq, 
+CBlastTabularInfo::PrintHeader(const string& program_in, 
+                               const objects::CBioseq& bioseq, 
                                const string& dbname, int iteration, 
                                ETabularOption opt)
 {
@@ -321,6 +323,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/06/23 16:18:46  camacho
+* Doxygen fixes
+*
 * Revision 1.6  2005/06/22 19:34:25  jianye
 * make sure vector is non-empty before accessing the elements
 *

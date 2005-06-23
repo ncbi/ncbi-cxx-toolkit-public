@@ -190,7 +190,9 @@ private:
     /// Regions filtered out from the query sequence, one per query
     vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
 
+    /// Resets query data structures
     void x_ResetQueryDs();
+    /// Resets subject data structures
     void x_ResetSubjectDs();
 };
 
@@ -288,6 +290,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/06/23 16:18:45  camacho
+* Doxygen fixes
+*
 * Revision 1.41  2005/05/12 15:35:35  camacho
 * Remove dead fields
 *

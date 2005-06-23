@@ -1816,6 +1816,10 @@ computeScaledStandardMatrix(
  *                          used to fill positions where frequencies are
  *                          irrelevant
  * @param sbp               stores various parameters of the search
+ * @param matrixName        name of the standard substitution matrix [in]
+ * @param posFreqs          PSSM's frequency ratios [in]
+ * @param query             Query sequence data [in]
+ * @param queryLength       Length of the query sequence above [in]
  */
 static int
 scalePosMatrix(int **fillPosMatrix, 

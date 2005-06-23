@@ -98,7 +98,7 @@ CBlastQuerySourceOM::GetSeqLoc(int i) const
 SBlastSequence
 CBlastQuerySourceOM::GetBlastSequence(int i,
                                       EBlastEncoding encoding,
-                                      ENa_strand strand,
+                                      objects::ENa_strand strand,
                                       ESentinelType sentinel,
                                       string* warnings) const
 {
@@ -551,6 +551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2005/06/23 16:18:46  camacho
+* Doxygen fixes
+*
 * Revision 1.54  2005/06/20 17:32:47  camacho
 * Add blast::GetSequence object manager-free interface
 *

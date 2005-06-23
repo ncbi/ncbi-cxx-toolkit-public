@@ -194,6 +194,7 @@ protected:
 /** ObjMgr Free version of SetupQueryInfo.
  * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
+ * @param prog program type from the CORE's point of view [in]
  * @param strand_opt Unless the strand option is set to single strand, the 
  * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
  * during the search [in]
@@ -343,6 +344,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2005/06/23 16:18:46  camacho
+* Doxygen fixes
+*
 * Revision 1.47  2005/06/22 21:03:02  camacho
 * Doxygen comments
 *

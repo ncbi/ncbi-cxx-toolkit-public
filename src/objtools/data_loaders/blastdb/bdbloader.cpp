@@ -157,8 +157,11 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 void
-CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
+    // dummy assignment to eliminate compiler and doxygen warnings
+    depth = depth;  
+
     //LOG_POST("CBlastDbDataLoader::DebugDump\n");
     ddc.SetFrame("CBlastDbDataLoader");
     // CObject::DebugDump( ddc, depth);
@@ -266,6 +269,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.23  2005/06/23 16:18:46  camacho
+ * Doxygen fixes
+ *
  * Revision 1.22  2005/05/10 15:36:06  bealer
  * - Silence warning.
  *

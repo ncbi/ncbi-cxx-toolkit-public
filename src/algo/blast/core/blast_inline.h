@@ -269,7 +269,7 @@ static NCBI_INLINE Int4 DiscontigIndex_12_21_Optimal(Uint8 accum)
  *  template_length) bits of the accumulator are used; the base most recently
  *  added to the accumulator is in the two lowest bits.
 *
- * @param The accumulator [in]
+ * @param accum The accumulator [in]
  * @param template_type What type of discontiguous word template to use [in]
  * @return The lookup table index of the discontiguous word
  */

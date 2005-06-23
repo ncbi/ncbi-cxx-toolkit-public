@@ -51,10 +51,8 @@ static char const rcsid[] = "$Id$";
  * @{
  */
 
-//BEGIN_NCBI_SCOPE
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-//BEGIN_SCOPE(blast)
 USING_SCOPE(blast);
 
 CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
@@ -271,15 +269,15 @@ void CBlastTabularFormatThread::OnExit(void)
 { 
 }
 
-//END_SCOPE(blast)
-//END_NCBI_SCOPE
-
 /* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/06/23 16:18:46  camacho
+* Doxygen fixes
+*
 * Revision 1.16  2005/04/18 14:00:44  camacho
 * Updates following BlastSeqSrc reorganization
 *

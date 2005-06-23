@@ -75,8 +75,11 @@ typedef AutoPtr<type, CDeleter<type> > TAuto ## type ## Ptr
 #define TYPEDEF_AUTOPTR_ARRAYDELETER(type) \
 typedef AutoPtr<type, ArrayDeleter<type> > TAuto ## type ## ArrayPtr
 
+/// Declares TAutoUint1Ptr (for Uint1 arrays allocated with malloc/calloc)
 TYPEDEF_AUTOPTR_CDELETER(Uint1);
+/// Declares TAutoCharPtr (for Char arrays allocated with malloc/calloc)
 TYPEDEF_AUTOPTR_CDELETER(Char);
+/// Declares TAutoUint1ArrayPtr (for Uint1 arrays allocated with new[])
 TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
 
 /// Map a string into an element of the ncbi::blast::EProgram enumeration 
@@ -204,6 +207,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2005/06/23 16:18:45  camacho
+* Doxygen fixes
+*
 * Revision 1.60  2005/06/20 17:30:50  camacho
 * Remove unneeded header which brings dependency on the object manager
 *

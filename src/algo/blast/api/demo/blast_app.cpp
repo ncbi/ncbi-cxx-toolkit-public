@@ -96,7 +96,6 @@ private:
     virtual int Run(void);
     virtual void Exit(void);
     void InitScope(void);
-    void InitOptions(void);
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
                                 BlastSeqSrc* seq_src);
     void PrintSeqAlign(const TSeqAlignVector& seqalignv);
