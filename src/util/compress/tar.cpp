@@ -1115,11 +1115,8 @@ void CTar::x_Backspace(EAction action, size_t blocks)
     size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
     CT_POS_TYPE rec = 0;                      // Record number (0-based)
 
-    if (pos <= gap) {
-        rec = 0;
-        m_BufferPos = 0;
-    } else {
-        // pos > 0 here
+    if (pos > (CT_POS_TYPE)(gap)) {
+        // NB: pos > 0 here
         pos += m_BufferSize - 1;
         rec  = pos / m_BufferSize;
         rec -= 1;
@@ -1135,6 +1132,8 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         } else {
             m_BufferPos -= gap;                   // Entirely within buffer
         }
+    } else {
+        m_BufferPos = 0;
     }
 
     m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
@@ -1653,6 +1652,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/06/23 18:00:14  lavr
+ * Heed MSVC warning in x_Backspace()
+ *
  * Revision 1.29  2005/06/23 14:57:39  rsmith
  * pos_type must be intialized with a value. (fpos<> does not have a default cnstr).
  *
