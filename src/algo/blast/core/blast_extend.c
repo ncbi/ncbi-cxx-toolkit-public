@@ -405,6 +405,7 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
  * @param min_step Distance at which new word hit lies within the previously
  *                 extended hit. Non-zero only when ungapped extension is not
  *                 performed, e.g. for contiguous megablast. [in]
+ * @param template_length specifies overlap of two words in two-hit model [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param diag_table Structure containing diagonal table with word extension 
@@ -419,6 +420,7 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
 static Boolean
 s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, Uint4 min_step,
+   Uint1 template_length,
    const BlastInitialWordParameters* word_params, 
    Int4** matrix, BLAST_DiagTable* diag_table, Int4 q_off, Int4 s_end,
    Int4 s_off, BlastInitHitList* init_hitlist)
@@ -455,7 +457,7 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
    } else {
       /* Previous hit was the first hit */
       new_hit = (step > window_size);
-      second_hit = (step > 0 && step <= window_size);
+      second_hit = (step >= template_length && step < window_size);
    }
 
    hit_ready = ((window_size == 0) && new_hit) || second_hit;
@@ -485,7 +487,8 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
    } else {
       /* First hit in the 2-hit case or a direct extension of the previous 
          hit - update the last hit information only */
-      last_hit = s_pos;
+      if (step > window_size)
+         last_hit = s_pos;
       if (new_hit)
          hit_saved = 0;
    }
@@ -521,7 +524,7 @@ s_DiscMbDiagExtendInitialHits(BLAST_SequenceBlk* query,
    Int4 hits_extended = 0;
 
    for (index = 0; index < num_hits; ++index) {
-       if (s_BlastnDiagExtendInitialHit(query, subject, mb_lt->scan_step,
+       if (s_BlastnDiagExtendInitialHit(query, subject, mb_lt->scan_step, mb_lt->template_length,
                word_params, matrix, diag_table, offset_pairs[index].qs_offsets.q_off, 
                offset_pairs[index].qs_offsets.s_off, offset_pairs[index].qs_offsets.s_off, 
                init_hitlist))
@@ -540,6 +543,7 @@ s_DiscMbDiagExtendInitialHits(BLAST_SequenceBlk* query,
  * @param min_step Distance at which new word hit lies within the previously
  *                 extended hit. Non-zero only when ungapped extension is not
  *                 performed, e.g. for contiguous megablast. [in]
+ * @param template_length specifies overlap of two words in two-hit model [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param stack_table Structure containing stacks of initial hits [in] [out]
@@ -553,6 +557,7 @@ s_DiscMbDiagExtendInitialHits(BLAST_SequenceBlk* query,
 static Boolean
 s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, Uint4 min_step,
+   Uint1 template_length,
    const BlastInitialWordParameters* word_params, 
    Int4** matrix, BLAST_StackTable* stack_table, Int4 q_off, Int4 s_end,
    Int4 s_off, BlastInitHitList* init_hitlist)
@@ -594,7 +599,7 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
          } else {
             /* Previous hit was the first hit */
             new_hit = (step > window_size);
-            second_hit = (step > 0 && step <= window_size);
+            second_hit = (step >= template_length && step < window_size);
          }
 
          hit_ready = (!two_hits && new_hit) || second_hit;
@@ -623,7 +628,8 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
          } else {
             /* First hit in the 2-hit case or a direct extension of the previous 
                hit - update the last hit information only */
-            last_hit = s_end;
+            if (step > window_size)
+               last_hit = s_end;
             if (new_hit)
                hit_saved = 0;
          }
@@ -716,7 +722,7 @@ s_DiscMbStacksExtendInitialHits(BLAST_SequenceBlk* query,
    Int4 hits_extended = 0;
 
    for (index = 0; index < num_hits; ++index) {
-       if (s_BlastnStacksExtendInitialHit(query, subject, mb_lt->scan_step, 
+       if (s_BlastnStacksExtendInitialHit(query, subject, mb_lt->scan_step, mb_lt->template_length,
                word_params, matrix, stack_table, offset_pairs[index].qs_offsets.q_off, 
                offset_pairs[index].qs_offsets.s_off, offset_pairs[index].qs_offsets.s_off, 
                init_hitlist))
@@ -813,6 +819,7 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
    Int4 hits_extended = 0;
    Boolean extend_partial_byte = FALSE;
    Uint4 min_step = 0;
+   Uint1 template_length = 0;
 
    if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
       BlastMBLookupTable* mb_lt = (BlastMBLookupTable*)lookup_wrap->lut;
@@ -825,6 +832,7 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
          it more than scan_step away from the previous hit. */
       if(!word_params->options->ungapped_extension)
          min_step = mb_lt->scan_step;
+      template_length = mb_lt->template_length;
    } else {
       BlastLookupTable* lookup = (BlastLookupTable*)lookup_wrap->lut;
       word_length = lookup->word_length;
@@ -891,13 +899,13 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
          /* Check if this diagonal has already been explored. */
          if (word_params->container_type == eWordStacks) {
             hit_ready = 
-               s_BlastnStacksExtendInitialHit(query, subject, min_step, 
+               s_BlastnStacksExtendInitialHit(query, subject, min_step, template_length,
                   word_params, matrix, ewp->stack_table, q_offset, 
                   s_offset + reduced_word_length + right, 
                   s_offset, init_hitlist);
          } else {
             hit_ready = 
-               s_BlastnDiagExtendInitialHit(query, subject, min_step, 
+               s_BlastnDiagExtendInitialHit(query, subject, min_step, template_length,
                   word_params, matrix, ewp->diag_table, q_offset, 
                   s_offset + reduced_word_length + right, 
                   s_offset, init_hitlist);
@@ -1052,6 +1060,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
    Uint4 min_step = 0;
    Boolean variable_wordsize = FALSE;
    Int4 hits_extended = 0;
+   Uint1 template_length = 0;
 
    if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
       BlastMBLookupTable* lut = (BlastMBLookupTable*)lookup_wrap->lut;
@@ -1061,6 +1070,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
       if(!word_params->options->ungapped_extension)
          min_step = lut->scan_step;
       variable_wordsize = lut->variable_wordsize;
+      template_length = lut->template_length;
    } else {
       BlastLookupTable* lut = (BlastLookupTable*)lookup_wrap->lut;
       word_length = lut->word_length;
@@ -1096,12 +1106,12 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
          /* Check if this diagonal has already been explored. */
          if (word_params->container_type == eWordStacks) {
             hit_ready = 
-               s_BlastnStacksExtendInitialHit(query, subject, min_step, 
+               s_BlastnStacksExtendInitialHit(query, subject, min_step, template_length,
                   word_params, matrix, ewp->stack_table, q_offset, 
                   s_off + extended_right, s_offset, init_hitlist);
          } else {
             hit_ready = 
-               s_BlastnDiagExtendInitialHit(query, subject, min_step, 
+               s_BlastnDiagExtendInitialHit(query, subject, min_step, template_length,
                   word_params, matrix, ewp->diag_table, q_offset, 
                   s_off + extended_right, s_offset, init_hitlist);
          }
