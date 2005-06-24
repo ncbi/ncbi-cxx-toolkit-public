@@ -87,9 +87,9 @@ protected:
     TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     void ReadAnyContentTo(const string& ns_prefix, string& value,
-                          const CLightString& tagName);
+                          const string& tagName);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
-    void SkipAnyContent(void);
+    bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
     virtual void StartDelayBuffer(void);
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/06/24 18:25:27  gouriano
+* Corrected and optimized skipping anycontent object
+*
 * Revision 1.38  2005/06/14 13:11:19  gouriano
 * Corrected implementation of SkipAnyContentObject()
 *

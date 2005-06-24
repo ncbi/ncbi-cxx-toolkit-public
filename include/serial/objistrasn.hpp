@@ -64,6 +64,7 @@ public:
 
     void ReadAnyContent(string& value);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    void SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
     EFixNonPrint FixNonPrint(EFixNonPrint how)
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2005/06/24 18:25:27  gouriano
+* Corrected and optimized skipping anycontent object
+*
 * Revision 1.61  2004/04/30 13:28:40  gouriano
 * Remove obsolete function declarations
 *

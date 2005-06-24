@@ -443,10 +443,39 @@ void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
     obj.SetValue(value);
 }
 
+void CObjectIStreamAsn::SkipAnyContent(void)
+{
+    char to = GetChar(true);
+    if (to == '{') {
+        to = '}';
+    } else if (to == '\"') {
+    } else {
+        to = '\0';
+    }
+    for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
+        if (to != '\"') {
+            if (to != '}' && (c == '\n' || c == ',')) {
+                return;
+            } else if (c == '\"' || c == '{') {
+                SkipAnyContent();
+                continue;
+            }
+        }
+        if (c == to) {
+            m_Input.SkipChar();
+            return;
+        }
+        if (c == '\"' || c == '{') {
+            SkipAnyContent();
+            continue;
+        }
+        m_Input.SkipChar();
+    }
+}
+
 void CObjectIStreamAsn::SkipAnyContentObject(void)
 {
-    string value;
-    ReadAnyContent(value);
+    SkipAnyContent();
 }
 
 string CObjectIStreamAsn::ReadFileHeader()
@@ -1003,8 +1032,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            string value;
-            ReadAnyContent(value);
+            SkipAnyContent();
             return BeginClassMember(classType);
         } else {
             UnexpectedMember(id, classType->GetMembers());
@@ -1024,8 +1052,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            string value;
-            ReadAnyContent(value);
+            SkipAnyContent();
             return BeginClassMember(classType, pos);
         } else {
             UnexpectedMember(id, classType->GetMembers());
@@ -1302,6 +1329,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2005/06/24 18:25:55  gouriano
+* Corrected and optimized skipping anycontent object
+*
 * Revision 1.95  2005/06/13 18:02:19  gouriano
 * Corrected SkipAnyContentObject()
 *

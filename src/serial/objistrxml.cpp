@@ -756,7 +756,7 @@ void CObjectIStreamXml::ReadNull(void)
 }
 
 void CObjectIStreamXml::ReadAnyContentTo(
-    const string& ns_prefix, string& value, const CLightString& tagName)
+    const string& ns_prefix, string& value, const string& tagName)
 {
     if (ThisTagIsSelfClosed()) {
         EndSelfClosedTag();
@@ -764,7 +764,7 @@ void CObjectIStreamXml::ReadAnyContentTo(
     }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
-            CLightString tagAny;
+            string tagAny;
             tagAny = ReadName(BeginOpeningTag());
             value += '<';
             value += tagAny;
@@ -839,22 +839,23 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     END_OBJECT_FRAME();
 }
 
-void CObjectIStreamXml::SkipAnyContent(void)
+bool CObjectIStreamXml::SkipAnyContent(void)
 {
     if (ThisTagIsSelfClosed()) {
         EndSelfClosedTag();
-        return;
+        return false;
     }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
             string tagName = ReadName(BeginOpeningTag());
-            SkipAnyContent();
-            CloseTag(tagName);
+            if (SkipAnyContent()) {
+                CloseTag(tagName);
+            }
         }
         string data;
         ReadTagData(data);
     }
-    return;
+    return true;
 }
 
 void CObjectIStreamXml::SkipAnyContentObject(void)
@@ -863,8 +864,7 @@ void CObjectIStreamXml::SkipAnyContentObject(void)
     if (!m_RejectedTag.empty()) {
         tagName = RejectedName();
     }
-    SkipAnyContent();
-    if (!tagName.empty()) {
+    if (SkipAnyContent() && !tagName.empty()) {
         CloseTag(tagName);
     }
 }
@@ -1081,8 +1081,11 @@ CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
         }
     case TFrame::eFrameArrayElement:
         {
-            tag = SkipStackTagName(tag, level + 1);
-            return SkipTagName(tag, "_E");
+            if (GetStackDepth() > level+1) {
+                tag = SkipStackTagName(tag, level + 1);
+                return SkipTagName(tag, "_E");
+            }
+            return CLightString();
         }
     default:
         break;
@@ -1642,8 +1645,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            string value;
-            ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
+            string tag(tagName);
+            if (SkipAnyContent()) {
+                CloseTag(tag);
+            }
             return BeginClassMember(classType);
         } else {
             UnexpectedMember(id, classType->GetMembers());
@@ -1774,8 +1779,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
         }
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes &&
             pos <= classType->GetMembers().LastIndex()) {
-            string value;
-            ReadAnyContentTo(m_CurrNsPrefix,value, RejectedName());
+            string tag(RejectedName());
+            if (SkipAnyContent()) {
+                CloseTag(tag);
+            }
             return BeginClassMember(classType, pos);
         }
         return kInvalidMember;
@@ -1784,8 +1791,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
-            string value;
-            ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
+            string tag(tagName);
+            if (SkipAnyContent()) {
+                CloseTag(tag);
+            }
             return BeginClassMember(classType, pos);
         } else {
            UnexpectedMember(id, classType->GetMembers());
@@ -2177,6 +2186,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/06/24 18:25:55  gouriano
+* Corrected and optimized skipping anycontent object
+*
 * Revision 1.76  2005/06/14 17:18:53  gouriano
 * Corrected handling end-of-file when reading primitives and containers
 *
