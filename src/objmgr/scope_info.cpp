@@ -56,7 +56,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if 1
+#if 0
 # define _TRACE_TSE_LOCK(x) _TRACE(x)
 #else
 # define _TRACE_TSE_LOCK(x) ((void)0)
@@ -1331,6 +1331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/06/24 19:14:13  vasilche
+* Disabled excessive _TRACE messages.
+*
 * Revision 1.17  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

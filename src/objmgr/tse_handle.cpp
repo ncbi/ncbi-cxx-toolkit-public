@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if 1
+#if 0
 # define _TRACE_TSE_LOCK(x) _TRACE(x)
 #else
 # define _TRACE_TSE_LOCK(x) ((void)0)
