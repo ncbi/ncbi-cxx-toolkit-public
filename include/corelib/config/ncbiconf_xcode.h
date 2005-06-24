@@ -74,10 +74,10 @@
 #define HAVE_FSTREAM_H 1
 
 /* Define to 1 if your localtime_r returns a int. */
-#define HAVE_FUNC_LOCALTIME_R_INT 1
+/* #undef HAVE_FUNC_LOCALTIME_R_INT */
 
 /* Define to 1 if your localtime_r returns a struct tm*. */
-/* #undef HAVE_FUNC_LOCALTIME_R_TM */
+#define HAVE_FUNC_LOCALTIME_R_TM 1
 
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
@@ -454,7 +454,7 @@
 #define HOST_VENDOR "apple"
 
 /* Define as const if the declaration of iconv() needs const. */
-#define ICONV_CONST const
+#define ICONV_CONST
 
 /* Define to 0xffffffff if your operating system doesn't. */
 /* #undef INADDR_NONE */
