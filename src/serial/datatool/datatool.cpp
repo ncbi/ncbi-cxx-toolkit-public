@@ -68,6 +68,10 @@ int CDataTool::Run(void)
     return 0;
 }
 
+CDataTool::CDataTool(void)
+{
+    SetVersion( CVersionInfo(1,0,0) );
+}
 
 void CDataTool::Init(void)
 {
@@ -619,6 +623,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2005/06/24 15:17:04  gouriano
+* Added version info
+*
 * Revision 1.81  2005/06/07 19:22:26  gouriano
 * Allow multiple -m and -M command line arguments
 *

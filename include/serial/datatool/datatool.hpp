@@ -46,6 +46,7 @@ class CFileSet;
 class CDataTool : public CNcbiApplication
 {
 public:
+    CDataTool(void);
     void Init(void);
     int Run(void);
 
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/06/24 15:16:44  gouriano
+* Added version info
+*
 * Revision 1.5  2005/06/07 19:21:48  gouriano
 * Allow multiple -m and -M command line arguments
 *
