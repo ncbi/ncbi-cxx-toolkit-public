@@ -82,14 +82,16 @@ CDll::CDll(const string& path, const string& name, TFlags flags)
 CDll::CDll(const string& name, ELoad when_to_load, EAutoUnload auto_unload,
            EBasename treate_as)
 {
-    x_Init(kEmptyStr, name, TFlags(when_to_load | auto_unload | treate_as));
+    x_Init(kEmptyStr, name,
+           TFlags(when_to_load) | TFlags(auto_unload) | TFlags(treate_as));
 }
 
 
 CDll::CDll(const string& path, const string& name, ELoad when_to_load,
            EAutoUnload auto_unload, EBasename treate_as)
 {
-    x_Init(path, name, TFlags(when_to_load | auto_unload | treate_as));
+    x_Init(path, name, 
+           TFlags(when_to_load) | TFlags(auto_unload) | TFlags(treate_as));
 }
 
 
@@ -415,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/06/24 11:49:21  ivanov
+ * Heed Workshop compiler warnings in CDll constructors
+ *
  * Revision 1.30  2005/06/16 17:56:42  lebedev
  * GetEntryPoint reworked for Mac OS X 10.4
  *
