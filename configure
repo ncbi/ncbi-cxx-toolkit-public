@@ -893,6 +893,8 @@ Optional Packages:
  --with-ncbi-public      ensure compatibility for all in-house platforms
  --with-strip            strip binaries at build time
  --with-pch              use precompiled headers if possible
+ --with-caution          cancel configuration unconditionally when in doubt
+ --without-caution       proceed without asking when in doubt
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -1666,6 +1668,18 @@ if test "${with_pch+set}" = set; then
 
 fi;
 
+# Check whether --with-caution or --without-caution was given.
+if test "${with_caution+set}" = set; then
+  withval="$with_caution"
+
+fi;
+
+# Check whether --with-caution2 or --without-caution2 was given.
+if test "${with_caution2+set}" = set; then
+  withval="$with_caution2"
+
+fi;
+
 ## NCBI packages
 
 # Check whether --with-ncbi-c or --without-ncbi-c was given.
@@ -2207,7 +2221,7 @@ fi;
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs pch \
+check static-exe strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
@@ -3979,14 +3993,26 @@ case "$compiler:$compiler_version" in
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
        echo "better use a special shell script located in \"compilers/*.sh\"!"
-       echo "Do you still want to proceed (at your own risk)? [n/y]"
+       case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
+   { (exit 1); exit 1; }; } ;;
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you still want to proceed (at your own risk)? [y/N]"
        read answer
        case "$answer" in
-         y )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
-echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ; echo ;;
-         * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1;;
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
        esac
+       ;;
+ esac
        echo
     fi ;;
 esac
@@ -4224,8 +4250,8 @@ echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
          if test -d "$NCBI/safe-sw"; then
              CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
              LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
-	 fi
-	 ;;
+         fi
+         ;;
    esac
 
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
@@ -4246,15 +4272,28 @@ if test -z "$compiler" ; then
   Compiler $CXX $compiler_ver is not fully supported.
   Consult doc/config.html\#ref_Compilers for the list of
   fully supported platforms/compilers.
-  Do you still want to proceed (at your own risk)? [n/y]
 EOF
-   read answer
-   case "$answer" in
-      y )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
-echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ; echo ;;
-      * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1 ;;
-   esac
+   case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
+   { (exit 1); exit 1; }; } ;;
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you still want to proceed (at your own risk)? [y/N]"
+       read answer
+       case "$answer" in
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+       esac
+       ;;
+ esac
+   echo
    compiler="UNKNOWN"
 fi
 
@@ -4463,7 +4502,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       GCC:2* )
         # GCC 2.9x sometimes experiences internal errors at high optimization.
         DEF_FAST_FLAGS="-O2"
-	;;
+        ;;
       GCC:* )
         DEF_FAST_FLAGS="-O9 -finline-functions -ffast-math -fstrict-aliasing"
         if test "$with_profiling" != "yes"; then
@@ -4631,13 +4670,26 @@ if test "$with_dll" = "yes" ; then
     * )
       echo
       echo "DLLs may not be buildable by $CXX $compiler_ver on $host!"
-      echo "Do you still want to try build DLLs (at your own risk)? [y/n]"
-      read answer
-      case "$answer" in
-         y | Y | yes | YES ) ;;
-         * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1 ;;
-      esac
+      case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
+   { (exit 1); exit 1; }; } ;;
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you still want to try build DLLs (at your own risk)? [y/N]"
+       read answer
+       case "$answer" in
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+       esac
+       ;;
+ esac
       echo
       ;;
    esac
@@ -6819,14 +6871,26 @@ mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
 if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
    echo
    echo "There is already a built \"${ncbiconf}\"!"
-   echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
-   read answer
-   case "$answer" in
-      y | Y | yes | YES ) ;;
-      * )  { { echo "$as_me:$LINENO: error: Re-configuration has been canceled by user." >&5
-echo "$as_me: error: Re-configuration has been canceled by user." >&2;}
+   case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
    { (exit 1); exit 1; }; } ;;
-   esac
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you want to re-configure in \"${builddir}\"? [y/N]"
+       read answer
+       case "$answer" in
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+       esac
+       ;;
+ esac
    echo
 fi
 
@@ -9092,14 +9156,14 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-[#include <unistd.h>
-            #include <time.h>]
+#include <unistd.h>
+               #include <time.h>
 int
 main ()
 {
-[struct tm mytm;
-            time_t t;
-            int y = localtime_r(&t, &mytm)->tm_year;]
+struct tm mytm;
+               time_t t;
+               int y = localtime_r(&t, &mytm)->tm_year;
   ;
   return 0;
 }
@@ -16947,13 +17011,13 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdlib.h>
-#include <iconv.h>
+           #include <iconv.h>
 int
 main ()
 {
 iconv_t cd = iconv_open("","");
-      iconv(cd,NULL,NULL,NULL,NULL);
-      iconv_close(cd);
+           iconv(cd,NULL,NULL,NULL,NULL);
+           iconv_close(cd);
   ;
   return 0;
 }
@@ -16998,13 +17062,13 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdlib.h>
-#include <iconv.h>
+                  #include <iconv.h>
 int
 main ()
 {
 iconv_t cd = iconv_open("","");
-            iconv(cd,NULL,NULL,NULL,NULL);
-            iconv_close(cd);
+                  iconv(cd,NULL,NULL,NULL,NULL);
+                  iconv_close(cd);
   ;
   return 0;
 }
@@ -17058,11 +17122,6 @@ echo $ECHO_N "checking for iconv declaration... $ECHO_C" >&6
 else
 
       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
 
 #include <stdlib.h>
 #include <iconv.h>
@@ -17076,13 +17135,6 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
 size_t iconv();
 #endif
 
-int
-main ()
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -17106,12 +17158,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  am_cv_proto_iconv_arg1=""
+  :
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-am_cv_proto_iconv_arg1="const"
+am_cv_proto_iconv_arg1=""
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
       am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"
@@ -21875,11 +21927,11 @@ if test "$with_orbacus" != no; then
       yes:* | *:-L*MT/lib* )
          LIBOB="-lOB $LIBJTC"
          LIBIMR="-lIMR"
-	 ;;
+         ;;
       * )
          LIBOB="-lOB"
          LIBIMR=
-	 ;;
+         ;;
    esac
    echo "$as_me:$LINENO: checking for ORBacus in $ORBACUS_PATH" >&5
 echo $ECHO_N "checking for ORBacus in $ORBACUS_PATH... $ECHO_C" >&6
@@ -22415,6 +22467,13 @@ if test "$with_xerces" != no; then
       XERCES_PATH=$vpath
    elif test -d "$vpath"; then
       : ${XERCES_LIBPATH=$vpath}
+   else
+      vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         XERCES_PATH=`cd $vpath && $smart_pwd`
+      elif test -d "$vpath"; then
+         : ${XERCES_LIBPATH=`cd $vpath && $smart_pwd`}
+      fi
    fi
    if test -d $XERCES_PATH; then
       in_path=" in $XERCES_PATH"
@@ -22431,7 +22490,7 @@ if test "${ncbi_cv_lib_xerces_c+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
-       LIBS="$XERCES_LIBS $orig_LIBS"
+       LIBS="$XERCES_LIBS $ICU_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -22520,6 +22579,13 @@ if test "$with_xalan" != no; then
       XALAN_PATH=$vpath
    elif test -d "$vpath"; then
       : ${XALAN_LIBPATH=$vpath}
+   else
+      vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         XALAN_PATH=`cd $vpath && $smart_pwd`
+      elif test -d "$vpath"; then
+         : ${XALAN_LIBPATH=`cd $vpath && $smart_pwd`}
+      fi
    fi
    if test -d $XALAN_PATH; then
       in_path=" in $XALAN_PATH"
@@ -22536,7 +22602,7 @@ if test "${ncbi_cv_lib_xalan_c+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
-       LIBS="$XALAN_LIBS $XERCES_LIBS $orig_LIBS"
+       LIBS="$XALAN_LIBS $XERCES_LIBS $ICU_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF

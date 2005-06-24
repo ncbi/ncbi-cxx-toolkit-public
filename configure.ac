@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.379 2005/06/23 13:41:42 ucko Exp $
+#  $Id: configure.ac,v 1.380 2005/06/24 20:01:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -132,6 +132,10 @@ AC_ARG_WITH(strip,
    [ --with-strip            strip binaries at build time])
 AC_ARG_WITH(pch,
    [ --with-pch              use precompiled headers if possible])
+AC_ARG_WITH(caution,
+   [ --with-caution          cancel configuration unconditionally when in doubt])
+AC_ARG_WITH(caution2,
+   [ --without-caution       proceed without asking when in doubt])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -322,7 +326,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs pch \
+check static-exe strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
@@ -583,14 +587,7 @@ case "$compiler:$compiler_version" in
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
        echo "better use a special shell script located in \"compilers/*.sh\"!"
-changequote(, )dnl
-       echo "Do you still want to proceed (at your own risk)? [n/y]"
-changequote([, ])dnl
-       read answer
-       case "$answer" in
-         y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
-         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1;;
-       esac
+       NCBI_CAUTION([Do you still want to proceed (at your own risk)?])
        echo
     fi ;;
 esac
@@ -827,8 +824,8 @@ case "$host_os:$compiler" in
          if test -d "$NCBI/safe-sw"; then
              CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
              LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
-	 fi
-	 ;;
+         fi
+         ;;
    esac
 
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
@@ -846,20 +843,14 @@ changequote([, ])dnl
 
 #### Check if the compiler matches one of supported compilers on this platform
 if test -z "$compiler" ; then
-changequote(, )dnl
    cat <<EOF
 
   Compiler $CXX $compiler_ver is not fully supported.
   Consult doc/config.html\#ref_Compilers for the list of
   fully supported platforms/compilers.
-  Do you still want to proceed (at your own risk)? [n/y]
 EOF
-changequote([, ])dnl
-   read answer
-   case "$answer" in
-      y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
-      * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1 ;;
-   esac
+   NCBI_CAUTION([Do you still want to proceed (at your own risk)?])
+   echo
    compiler="UNKNOWN"
 fi
 
@@ -1017,7 +1008,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       GCC:2* )
         # GCC 2.9x sometimes experiences internal errors at high optimization.
         DEF_FAST_FLAGS="-O2"
-	;;
+        ;;
       GCC:* )
         DEF_FAST_FLAGS="-O9 -finline-functions -ffast-math -fstrict-aliasing"
         if test "$with_profiling" != "yes"; then
@@ -1183,14 +1174,7 @@ if test "$with_dll" = "yes" ; then
     * )
       echo
       echo "DLLs may not be buildable by $CXX $compiler_ver on $host!"
-changequote(, )dnl
-      echo "Do you still want to try build DLLs (at your own risk)? [y/n]"
-changequote([, ])dnl
-      read answer
-      case "$answer" in
-         y | Y | yes | YES ) ;;
-         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1 ;;
-      esac
+      NCBI_CAUTION([Do you still want to try build DLLs (at your own risk)?])
       echo
       ;;
    esac
@@ -1706,14 +1690,7 @@ mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
 if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
    echo
    echo "There is already a built \"${ncbiconf}\"!"
-changequote(, )dnl
-   echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
-changequote([, ])dnl
-   read answer
-   case "$answer" in
-      y | Y | yes | YES ) ;;
-      * )  AC_MSG_ERROR([Re-configuration has been canceled by user.]) ;;
-   esac
+   NCBI_CAUTION([Do you want to re-configure in \"${builddir}\"?])
    echo
 fi
 
@@ -2050,12 +2027,13 @@ AC_LANG_PUSH(C)
 AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
 if test "$ac_cv_func_localtime_r" = "yes" ; then
    AC_CACHE_CHECK(return type of localtime_r, ac_cv_func_which_localtime_r,
-      [AC_TRY_COMPILE(
-          [[#include <unistd.h>
-            #include <time.h>]],
-          [[struct tm mytm;
-            time_t t;
-            int y = localtime_r(&t, &mytm)->tm_year;]],
+      [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM(
+             [[#include <unistd.h>
+               #include <time.h>]],
+             [[struct tm mytm;
+               time_t t;
+               int y = localtime_r(&t, &mytm)->tm_year;]])],
           ac_cv_func_which_localtime_r=struct,
           ac_cv_func_which_localtime_r=int)])
    if test $ac_cv_func_which_localtime_r = struct; then
@@ -2480,21 +2458,25 @@ dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # This logic adapted from Bruno Haible's iconv.m4.
 AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
    ac_cv_search_iconv=no
-   AC_TRY_LINK([#include <stdlib.h>
-#include <iconv.h>],
-     [iconv_t cd = iconv_open("","");
-      iconv(cd,NULL,NULL,NULL,NULL);
-      iconv_close(cd);],
-     ac_cv_search_iconv="none required")
+   AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+         [[#include <stdlib.h>
+           #include <iconv.h>]],
+         [[iconv_t cd = iconv_open("","");
+           iconv(cd,NULL,NULL,NULL,NULL);
+           iconv_close(cd);]])],
+      [ac_cv_search_iconv="none required"])
    if test "$ac_cv_search_iconv" != "none required"; then
       for l in iconv; do
          LIBS="-l$l $orig_LIBS"
-         AC_TRY_LINK([#include <stdlib.h>
-#include <iconv.h>],
-           [iconv_t cd = iconv_open("","");
-            iconv(cd,NULL,NULL,NULL,NULL);
-            iconv_close(cd);],
-           ac_cv_search_iconv=-l$l)
+         AC_LINK_IFELSE(
+            [AC_LANG_PROGRAM(
+                [[#include <stdlib.h>
+                  #include <iconv.h>]],
+                [[iconv_t cd = iconv_open("","");
+                  iconv(cd,NULL,NULL,NULL,NULL);
+                  iconv_close(cd);]])],
+            [ac_cv_search_iconv=-l$l])
          LIBS="$orig_LIBS"
       done
    fi])
@@ -2504,7 +2486,7 @@ if test "x$ac_cv_search_iconv" != xno; then
     of the standard libraries.])
    AC_MSG_CHECKING([for iconv declaration])
    AC_CACHE_VAL(am_cv_proto_iconv, [
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([[
 #include <stdlib.h>
 #include <iconv.h>
 extern
@@ -2516,7 +2498,7 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
 #else
 size_t iconv();
 #endif
-], [], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
+]], [], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
       am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"])
    am_cv_proto_iconv=`echo "[$]am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
    AC_MSG_RESULT([$]{ac_t:-
@@ -3940,11 +3922,11 @@ if test "$with_orbacus" != no; then
       yes:* | *:-L*MT/lib* )
          LIBOB="-lOB $LIBJTC"
          LIBIMR="-lIMR"
-	 ;;
+         ;;
       * )
          LIBOB="-lOB"
          LIBIMR=
-	 ;;
+         ;;
    esac
    AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
@@ -4143,6 +4125,13 @@ if test "$with_xerces" != no; then
       XERCES_PATH=$vpath
    elif test -d "$vpath"; then
       : ${XERCES_LIBPATH=$vpath}
+   else
+      vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         XERCES_PATH=`cd $vpath && $smart_pwd`
+      elif test -d "$vpath"; then
+         : ${XERCES_LIBPATH=`cd $vpath && $smart_pwd`}
+      fi
    fi
    if test -d $XERCES_PATH; then
       in_path=" in $XERCES_PATH"
@@ -4155,7 +4144,7 @@ if test "$with_xerces" != no; then
    XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
    AC_CACHE_CHECK([for Xerces-C++$in_path], ncbi_cv_lib_xerces_c,
       [CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
-       LIBS="$XERCES_LIBS $orig_LIBS"
+       LIBS="$XERCES_LIBS $ICU_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([[#include <xercesc/dom/DOM.hpp>]],
              [[xercesc::DOMImplementation* impl
@@ -4195,6 +4184,13 @@ if test "$with_xalan" != no; then
       XALAN_PATH=$vpath
    elif test -d "$vpath"; then
       : ${XALAN_LIBPATH=$vpath}
+   else
+      vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         XALAN_PATH=`cd $vpath && $smart_pwd`
+      elif test -d "$vpath"; then
+         : ${XALAN_LIBPATH=`cd $vpath && $smart_pwd`}
+      fi
    fi
    if test -d $XALAN_PATH; then
       in_path=" in $XALAN_PATH"
@@ -4207,7 +4203,7 @@ if test "$with_xalan" != no; then
    XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
    AC_CACHE_CHECK([for Xalan-C++$in_path], ncbi_cv_lib_xalan_c,
       [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
-       LIBS="$XALAN_LIBS $XERCES_LIBS $orig_LIBS"
+       LIBS="$XALAN_LIBS $XERCES_LIBS $ICU_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([[#include <xalanc/XalanEXSLT/XalanEXSLTMath.hpp>]],
              [[xalanc::XalanEXSLTMathFunctionsInstaller::installGlobal();]])],
