@@ -111,7 +111,10 @@ bool CRequestRateControl::Approve(EThrottleAction action)
             switch(action) {
                 case eSleep:
                     // Get sleep time
-                    sleep_time = *m_TimeLine.front() + m_PerPeriod - now;
+                    {{
+                        CTime next(*m_TimeLine.front() + m_PerPeriod);
+                        sleep_time = next - now;
+                    }}
                     break;
                 case eErrCode:
                     return false;
@@ -132,13 +135,14 @@ bool CRequestRateControl::Approve(EThrottleAction action)
         if ( now - m_LastApproved < m_MinTimeBetweenRequests ) {
             switch(action) {
                 case eSleep:
+                    // Get sleep time
                     {{
-                    CTimeSpan st(m_LastApproved +
-                                 m_MinTimeBetweenRequests - now);
-                    // Get max of 2 sleep times
-                    if ( st > sleep_time ) {
-                        sleep_time = st;
-                    }
+                        CTime next(m_LastApproved + m_MinTimeBetweenRequests);
+                        CTimeSpan st(next - now);
+                        // Get max of two sleep times
+                        if ( st > sleep_time ) {
+                            sleep_time = st;
+                        }
                     }}
                     break;
                 case eErrCode:
@@ -212,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/24 12:07:40  ivanov
+ * Heed Workshop compiler warnings in Approve()
+ *
  * Revision 1.3  2005/03/02 18:58:01  ivanov
  * Renaming:
  *    file request_throttler.cpp -> request_control.cpp
