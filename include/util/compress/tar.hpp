@@ -76,7 +76,7 @@ enum ETarModeBits {
     fTarGExecute  = 00010,   // execute/search by group
     fTarORead     = 00004,   // read by other
     fTarOWrite    = 00002,   // write by other
-    fTarOExecute  = 00001,   // execute/search by other
+    fTarOExecute  = 00001    // execute/search by other
 };
 typedef unsigned int TTarMode; // Bitwise OR of ETarModeBits
 
@@ -581,6 +581,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/06/24 12:35:32  ivanov
+ * Removed extra comma in the enum ETarModeBits enum declaration
+ *
  * Revision 1.14  2005/06/22 21:07:10  lavr
  * Avoid buffer modification (which may lead to data corruption) while reading
  *
