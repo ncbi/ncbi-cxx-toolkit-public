@@ -111,6 +111,24 @@ m4_define([_AS_LINENO_PREPARE],
 ])# _AS_LINENO_PREPARE
 
 
+# Argument: question to ask user.
+AC_DEFUN(NCBI_CAUTION,
+[case "$with_caution" in
+    yes )
+       AC_MSG_ERROR([Configuration has been canceled per --with-caution.]) ;;
+    no )
+       AC_MSG_WARN([Proceeding without questions per --without-caution]) ;;
+    * )
+       echo "$1 [[y/N]]"
+       read answer
+       case "$answer" in
+         [[Yy]]* )  AC_MSG_WARN([Proceeding at your own risk...]) ;;
+         *       )  AC_MSG_ERROR([Configuration has been canceled by user.]) ;;
+       esac
+       ;;
+ esac])
+
+
 # Arguments:
 # 1. library name (turned into environment/make variable)
 # 2. values to check
