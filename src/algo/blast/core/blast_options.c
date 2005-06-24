@@ -733,6 +733,10 @@ LookupTableOptions*
 LookupTableOptionsFree(LookupTableOptions* options)
 
 {
+
+      if (options == NULL)
+          return NULL;
+
       sfree(options->phi_pattern);
    
 	sfree(options);
@@ -1114,6 +1118,10 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options)
 BlastDatabaseOptions* 
 BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options)
 {
+
+   if (db_options == NULL)
+      return NULL;
+
    sfree(db_options->gen_code_string);
    sfree(db_options);
    return NULL;
@@ -1196,6 +1204,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.171  2005/06/24 12:15:40  madden
+ * Add protection against NULL pointers in options free functons
+ *
  * Revision 1.170  2005/06/20 13:09:36  madden
  * Rename BlastSeverity enums in line with C++ tookit convention
  *
