@@ -210,8 +210,8 @@ static TTarMode s_ModeToTar(mode_t mode)
 
 static size_t s_Length(const char* ptr, size_t size)
 {
-    const char* null = (const char*) memchr(ptr, '\0', size);
-    return null ? (size_t)(null - ptr) : size;
+    const char* pos = (const char*) memchr(ptr, '\0', size);
+    return pos ? (size_t)(pos - ptr) : size;
 }
 
 
@@ -557,10 +557,10 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             NCBI_THROW(CTarException, eOpen,
                        "Cannot open archive from bad IO stream");
         } else {
-            m_OpenMode = EOpenMode(action & eRW);
+            m_OpenMode = EOpenMode((int)action & eRW);
         }
     } else {
-        EOpenMode mode = EOpenMode(action & eRW);
+        EOpenMode mode = EOpenMode((int)action & eRW);
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
             x_Flush();
@@ -883,7 +883,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
             info.m_Name.erase();
             size_t size = (streamsize) info.GetSize();
             while (size) {
-                size_t nread = size;
+                nread = size;
                 const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
                     NCBI_THROW(CTarException, eRead,
@@ -1276,8 +1276,9 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
         } else if (m_Flags & fBackup) {
             // Backup destination entry
             try {
-                if (!CDirEntry(*dst).Backup(kEmptyStr,
-                                            CDirEntry::eBackup_Rename)) {
+                CDirEntry dst_tmp(*dst);
+                if (!dst_tmp.Backup(kEmptyStr,
+                                    CDirEntry::eBackup_Rename)) {
                     NCBI_THROW(CTarException, eBackup,
                                "Cannot backup existing destination '" +
                                dst->GetPath() + '\'');
@@ -1652,6 +1653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/06/24 12:54:13  ivanov
+ * Heed Workshop compiler warnings
+ *
  * Revision 1.30  2005/06/23 18:00:14  lavr
  * Heed MSVC warning in x_Backspace()
  *
