@@ -134,15 +134,21 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
     if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
         return;
     }
-    CT_CHAR_TYPE* buf = sp->m_OutBuf;
-    size_t out_size = sp->m_OutBufSize, out_avail = 0;
+    CT_CHAR_TYPE* buf = 0;
+    size_t out_size = 0, out_avail = 0;
 
     do {
+        // Get pointer to the free space in the buffer
         if ( dir == CCompressionStream::eRead ) {
             buf = egptr();
-            out_size = sp->m_OutBuf + sp->m_OutBufSize - egptr();
+        } else {
+            buf = sp->m_End;
         }
+        out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
+
+        // Get remaining data
         sp->m_LastStatus = sp->m_Processor->Finish(buf, out_size, &out_avail);
+        // Check on error
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
            break;
         }
@@ -150,10 +156,11 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
             // Update the get's pointers
             setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
         } else {
-            // Write the data to the underlying stream
-            if ( out_avail  &&
-                 (size_t)m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
-                     out_avail) {
+            // Update the output buffer pointer
+            sp->m_End += out_avail;
+            // Write data to the underlying stream only if the output buffer
+            // is full or an overflow/endofdata occurs.
+            if ( !WriteOutBufToStream() ) {
                 break;
             }
         }
@@ -196,14 +203,20 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
 
     // Flush
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    CT_CHAR_TYPE* buf = sp->m_OutBuf;
-    size_t out_size = sp->m_OutBufSize, out_avail = 0;
+    CT_CHAR_TYPE* buf = 0;
+    size_t out_size = 0, out_avail = 0;
     do {
+        // Get pointer to the free space in the buffer
         if ( dir == CCompressionStream::eRead ) {
             buf = egptr();
-            out_size = sp->m_OutBuf + sp->m_OutBufSize - egptr();
+        } else {
+            buf = sp->m_End;
         }
+        out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
+
+        // Get data from processor
         sp->m_LastStatus = sp->m_Processor->Flush(buf, out_size, &out_avail);
+        // Check on error
         if ( sp->m_LastStatus == CP::eStatus_Error  ||
              sp->m_LastStatus == CP::eStatus_EndOfData ) {
            break;
@@ -212,11 +225,12 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
             // Update the get's pointers
             setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
         } else {
-            // Write the data to the underlying stream
-            if ( out_avail  &&
-                 (size_t)m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
-                     out_avail) {
-                return -1;
+            // Update the output buffer pointer
+            sp->m_End += out_avail;
+            // Write data to the underlying stream only if the output buffer
+            // is full or an overflow/endofdata occurs.
+            if ( !WriteOutBufToStream() ) {
+                return false;
             }
         }
     } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow );
@@ -350,25 +364,50 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     }
     // Loop until no data is left
     while ( in_avail ) {
-        // Process next data piece
+        // Process next data portion
         size_t out_avail = 0;
+        streamsize out_size = m_Writer->m_OutBuf + m_Writer->m_OutBufSize - m_Writer->m_End;
         m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
-            in_buf + count - in_avail, in_avail,
-            m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
+            in_buf + count - in_avail, in_avail, m_Writer->m_End, out_size,
             &in_avail, &out_avail);
-        if ( m_Writer->m_LastStatus != CP::eStatus_Success  &&
-             m_Writer->m_LastStatus != CP::eStatus_EndOfData ) {
-           return false;
+
+        // Check on error / small output buffer
+        if ( m_Writer->m_LastStatus == CP::eStatus_Error ) {
+            return false;
         }
-        // Write the data to the underlying stream
-        if ( out_avail  &&
-             m_Stream->rdbuf()->sputn(m_Writer->m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
+        // Update the output buffer pointer
+        m_Writer->m_End += out_avail;
+
+        // Write data to the underlying stream only if the output buffer
+        // is full or an overflow occurs.
+        if ( !WriteOutBufToStream() ) {
             return false;
         }
     }
     // Decrease the put pointer
-    pbump((int)-count);
+    pbump(-(int)count);
+    return true;
+}
+
+
+bool CCompressionStreambuf::WriteOutBufToStream(void)
+{
+    // Write data from out buffer to the underlying stream only if the buffer
+    // is full or an overflow/endofdata occurs.
+    if ( (m_Writer->m_End == m_Writer->m_OutBuf + m_Writer->m_OutBufSize)  ||
+         m_Writer->m_LastStatus == CP::eStatus_Overflow  ||
+         m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
+
+        streamsize to_write = m_Writer->m_End - m_Writer->m_Begin;
+        streamsize n_write = m_Stream->rdbuf()->sputn(m_Writer->m_Begin, to_write);
+        if ( n_write != to_write ) {
+            m_Writer->m_Begin += n_write;
+            return false;
+        }
+        // Update the output buffer pointers
+        m_Writer->m_Begin = m_Writer->m_OutBuf;
+        m_Writer->m_End   = m_Writer->m_OutBuf;
+    }
     return true;
 }
 
@@ -458,6 +497,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/06/27 13:47:41  ivanov
+ * Optimize process of writing data to the underlying stream.
+ * Write only when the output buffer is full or an overflow occurs.
+ *
  * Revision 1.18  2005/04/25 19:01:41  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
