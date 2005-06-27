@@ -158,8 +158,10 @@ void s_GetServerSet(const string& service_list,
     hosts.clear();
     list<string> srvs;
     NStr::Split(service_list, ";, ", srvs);
-    for_each(srvs.begin(), srvs.end(), 
-             bind2nd(ServerDiscoverer(),&hosts));
+    ServerDiscoverer discover;
+    ITERATE (list<string>, srv, srvs) {
+        discover(*srv, &hosts);
+    }
 }
 
 
@@ -341,6 +343,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/06/27 21:58:16  ucko
+ * Avoid for_each in s_GetServerSet due to a bug in SGI's STL.
+ *
  * Revision 1.3  2005/06/27 19:10:57  didenko
  * cosmetics
  *
