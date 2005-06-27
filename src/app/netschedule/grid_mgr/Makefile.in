@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("grid_mgr.cgi" program)
+#################################
+
+APP_PROJ = grid_mgr
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
