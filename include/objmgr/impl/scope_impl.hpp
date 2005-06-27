@@ -317,6 +317,7 @@ private:
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Handle& tse);
+    void x_UpdateHandleSeq_id(CBioseq_Handle& bh);
 
     // guarded
     CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq,
@@ -336,8 +337,6 @@ public:
     TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
     TBioseq_set_Lock x_GetBioseq_set_Lock(const CBioseq_set& seqset);
     TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
-    TBioseq_Lock x_GetBioseq_Lock(CBioseq_ScopeInfo& info,
-                                  CConstRef<CBioseq_Info> bioseq);
 
     TTSE_Lock x_GetTSE_Lock(const CTSE_Lock& lock, CDataSource_ScopeInfo& ds);
     TTSE_Lock x_GetTSE_Lock(const CTSE_ScopeInfo& tse);

@@ -361,6 +361,7 @@ CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
 
     ret.m_Info = entry.x_GetScopeInfo().x_GetTSE_ScopeInfo()
         .GetBioseqLock(null, bioseq);
+    x_UpdateHandleSeq_id(ret);
     return ret;
 }
 
@@ -603,6 +604,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CBioseq& seq)
     {{
         TReadLockGuard guard(m_Scope_Conf_RWLock);
         ret.m_Info = x_GetBioseq_Lock(seq);
+        x_UpdateHandleSeq_id(ret);
     }}
     return ret;
 }
@@ -1035,6 +1037,7 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
     
     ret.m_Handle_Seq_id = h.m_Handle_Seq_id;
     ret.m_Info = edit_tse.x_GetScopeInfo().GetBioseqLock(null, edit_info);
+    x_UpdateHandleSeq_id(ret);
     return ret;
 }
 
@@ -1187,7 +1190,23 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandle(const CBioseq_Info& seq,
 {
     CBioseq_Handle ret;
     ret.m_Info = tse.x_GetScopeInfo().GetBioseqLock(null, ConstRef(&seq));
+    x_UpdateHandleSeq_id(ret);
     return ret;
+}
+
+
+void CScope_Impl::x_UpdateHandleSeq_id(CBioseq_Handle& bh)
+{
+    if ( bh.m_Handle_Seq_id ) {
+        return;
+    }
+    ITERATE ( CBioseq_Handle::TId, id, bh.GetId() ) {
+        CBioseq_Handle bh2 = x_GetBioseqHandleFromTSE(*id, bh.GetTSE_Handle());
+        if ( bh2 && &bh2.x_GetInfo() == &bh.x_GetInfo() ) {
+            bh.m_Handle_Seq_id = *id;
+            return;
+        }
+    }
 }
 
 
