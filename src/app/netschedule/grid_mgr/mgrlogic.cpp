@@ -37,10 +37,23 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <functional>
+#include <algorithm>
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // class CNSService
+
+namespace {
+struct ServiceInfoCreator
+    :public unary_function<pair<string,string>, AutoPtr<CServiceInfo> >
+{
+    AutoPtr<CServiceInfo> operator() (const pair<string,string>& p)
+    {
+        return AutoPtr<CServiceInfo>(new CServiceInfo(p.first, p.second));
+    }
+};
+        
+}
 
 CNSServices::CNSServices(const string& lbsurl)
 {
@@ -78,11 +91,10 @@ CNSServices::CNSServices(const string& lbsurl)
             }
         }
     }
-    ITERATE(TStrToStr, itm, srv_host) {
-        AutoPtr<CServiceInfo> service_info(new CServiceInfo(itm->first,itm->second));
-        m_Services.push_back(service_info);      
-    }
-        
+    transform(srv_host.begin(), srv_host.end(),
+              back_inserter(m_Services),
+              ServiceInfoCreator());
+
 }
 
 CNSServices::~CNSServices()
@@ -175,6 +187,19 @@ CHostInfo::~CHostInfo()
 {
 }
 
+namespace {
+struct QueueInfoCreator 
+    : public binary_function<string,CHostInfo*,AutoPtr<CQueueInfo> >
+{
+    AutoPtr<CQueueInfo> operator()(const string& name, 
+                                   CHostInfo* host) const
+    {
+        return AutoPtr<CQueueInfo>(new CQueueInfo(name,
+                                                  host->GetHost(),
+                                                  host->GetPort())) ;
+    }
+};
+}
 
 void CHostInfo::CollectInfo()
 {
@@ -186,10 +211,10 @@ void CHostInfo::CollectInfo()
         string squeues = cl.GetQueueList();
         list<string> queues;
         NStr::Split( squeues, ";, ", queues);
-        ITERATE(list<string>, it, queues) {
-            AutoPtr<CQueueInfo> queue( new CQueueInfo(*it, GetHost(), GetPort()));
-            m_Queues.push_back( queue );
-        }
+        transform(queues.begin(), queues.end(),
+                  back_inserter(m_Queues),
+                  bind2nd(QueueInfoCreator(),this));
+
         m_Active = true;
     } catch(...) {}
 }
@@ -218,9 +243,7 @@ void CQueueInfo::CollectInfo()
 
         CNcbiOstrstream os;
         cl.PrintStatistics(os);
-        os << ends;
         string stat = os.str();
-        os.freeze(false);
 
         CNcbiIstrstream is(stat.c_str(), stat.length());
         
@@ -247,17 +270,18 @@ void CQueueInfo::CollectInfo()
                 if (str.empty())
                     continue;
 
-                list<string> fields;
-                NStr::Split( str, " ", fields);           
-                string wn_host, wn_sport, stime, name;
-                name = *fields.begin();
-                list<string>::const_iterator lit = fields.end();
-                --lit;
-                stime = *lit; --lit;
-                stime = *lit + ' ' + stime; --lit;
-                wn_sport = (*lit).substr(4); --lit;
-                wn_host = *lit;
                 try {
+                    list<string> fields;
+                    NStr::Split( str, " ", fields);           
+                    string wn_host, wn_sport, stime, name;
+                    name = *fields.begin();
+                    list<string>::const_iterator lit = fields.end();
+                    --lit;
+                    stime = *lit; --lit;
+                    stime = *lit + ' ' + stime; --lit;
+                    wn_sport = (*lit).substr(4); --lit;
+                    wn_host = *lit;
+
                     unsigned int wn_port = NStr::StringToUInt(wn_sport);
                     AutoPtr<CWorkerNodeInfo> node(
                                    new CWorkerNodeInfo(wn_host, wn_port) );
@@ -301,9 +325,7 @@ string CWorkerNodeInfo::GetStatistics() const
         CNetScheduleClient_Control cl(GetHost(), GetPort());
         CNcbiOstrstream os;
         cl.PrintStatistics(os);
-        os << ends;
-        info = os.str();
-        os.freeze(false);
+        info = CNcbiOstrstreamToString(os);
     } catch(...) {}
     return info;
 }
@@ -319,6 +341,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/27 19:10:57  didenko
+ * cosmetics
+ *
  * Revision 1.2  2005/06/27 16:40:15  didenko
  * Updated the statistics parser to paser an ouput of the NetSchedule ver. 1.4.4
  *
