@@ -1,7 +1,7 @@
 APP = blast
 SRC = blast_app blast_input blast_tabular
-LIB = xblast xnetblastcli xnetblast scoremat ncbi_xloader_blastdb \
-      xblastformat seqdb blastdb xalnmgr xobjutil xobjread connect tables \
+LIB = xblastformat xblast seqdb xnetblastcli xnetblast ncbi_xloader_blastdb \
+      scoremat blastdb xalnmgr xobjutil xobjread connect tables \
       $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
