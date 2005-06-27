@@ -109,6 +109,9 @@ util           = ncbi_pch.hpp
 internal/structure/CDTree2 = cdtree2_pch.hpp
 internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
 internal/structure/PubChem/assay = assay_pch.hpp
+internal/gbench/plugins/proteus = ncbi_pch.hpp
+internal/gbench/plugins/radar = ncbi_pch.hpp
+internal/gbench/plugins/ncbi = ncbi_pch.hpp
 
 DoNotUsePch    = test_mt test_ncbidiag_p
 PchUsageDefine = NCBI_USE_PCH
