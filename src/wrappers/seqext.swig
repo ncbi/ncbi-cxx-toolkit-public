@@ -135,9 +135,8 @@ objtools/readers/fasta.hpp
 objtools/readers/gff_reader.hpp
 objtools/readers/reader_exception.hpp
 objtools/readers/readfeat.hpp
-// CSeqDBIter copy ctor
-//objtools/readers/seqdb/seqdb.hpp
-//objtools/readers/seqdb/seqdbcommon.hpp
+objtools/readers/seqdb/seqdb.hpp
+objtools/readers/seqdb/seqdbcommon.hpp
 objtools/writers/agp_write.hpp
 objtools/manip/sage_manip.hpp
 
@@ -228,6 +227,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 16:59:44  jcherry
+ * seqdb stuff now wrappable
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
