@@ -120,10 +120,8 @@ protected:
 
     void x_UpdateName(void);
 
-    typedef vector< CConstRef<TObject> > TDSMappedObjects;
-
-    virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
-    virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     void x_InitFeats(const CSeq_annot::C_Data::TFtable& objs);
     void x_InitAligns(const CSeq_annot::C_Data::TAlign& objs);
@@ -137,7 +135,6 @@ protected:
 
     // Seq-annot object
     CConstRef<TObject>      m_Object;
-    TDSMappedObjects        m_DSMappedObjects;
 
     // name of Seq-annot
     CAnnotName              m_Name;
@@ -200,6 +197,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/06/27 18:17:03  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.22  2005/06/22 14:23:48  vasilche
 * Added support for original->edited map.
 *

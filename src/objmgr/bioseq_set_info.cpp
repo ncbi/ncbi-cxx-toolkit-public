@@ -95,6 +95,7 @@ CConstRef<CBioseq_set> CBioseq_set_Info::GetBioseq_setCore(void) const
 void CBioseq_set_Info::x_DSAttachContents(CDataSource& ds)
 {
     TParent::x_DSAttachContents(ds);
+    x_DSMapObject(m_Object, ds);
     // members
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         (*it)->x_DSAttach(ds);
@@ -108,7 +109,20 @@ void CBioseq_set_Info::x_DSDetachContents(CDataSource& ds)
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         (*it)->x_DSDetach(ds);
     }
+    x_DSUnmapObject(m_Object, ds);
     TParent::x_DSDetachContents(ds);
+}
+
+
+void CBioseq_set_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    ds.x_Map(obj, this);
+}
+
+
+void CBioseq_set_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    ds.x_Unmap(obj, this);
 }
 
 
@@ -215,6 +229,9 @@ void CBioseq_set_Info::x_SetObject(TObject& obj)
 {
     _ASSERT(!m_Object);
     m_Object.Reset(&obj);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     if ( obj.IsSetSeq_set() ) {
         NON_CONST_ITERATE ( TObject::TSeq_set, it, obj.SetSeq_set() ) {
             CRef<CSeq_entry_Info> info(new CSeq_entry_Info(**it));
@@ -233,6 +250,9 @@ void CBioseq_set_Info::x_SetObject(const CBioseq_set_Info& info,
 {
     _ASSERT(!m_Object);
     m_Object = sx_ShallowCopy(info.x_GetObject());
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     if ( info.IsSetSeq_set() ) {
         _ASSERT(m_Object->GetSeq_set().size() == info.m_Seq_set.size());
         m_Object->SetSeq_set().clear();
@@ -439,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/06/27 18:17:04  vasilche
+ * Allow getting CBioseq_set_Handle from CBioseq_set.
+ *
  * Revision 1.13  2005/06/22 14:23:48  vasilche
  * Added support for original->edited map.
  *

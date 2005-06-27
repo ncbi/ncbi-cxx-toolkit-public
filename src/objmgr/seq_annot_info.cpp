@@ -127,17 +127,13 @@ void CSeq_annot_Info::x_DSDetachContents(CDataSource& ds)
     if ( m_SNP_Info ) {
         m_SNP_Info->x_DSDetach(ds);
     }
-    ITERATE ( TDSMappedObjects, it, m_DSMappedObjects ) {
-        x_DSUnmapObject(*it, ds);
-    }
-    m_DSMappedObjects.clear();
+    x_DSUnmapObject(m_Object, ds);
     TParent::x_DSDetachContents(ds);
 }
 
 
 void CSeq_annot_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
 {
-    m_DSMappedObjects.push_back(obj);
     ds.x_Map(obj, this);
 }
 
@@ -538,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/06/27 18:17:04  vasilche
+ * Allow getting CBioseq_set_Handle from CBioseq_set.
+ *
  * Revision 1.30  2005/06/22 14:23:48  vasilche
  * Added support for original->edited map.
  *

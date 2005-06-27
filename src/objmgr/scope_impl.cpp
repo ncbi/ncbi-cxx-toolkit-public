@@ -567,6 +567,14 @@ void CScope_Impl::x_ClearAnnotCache(void)
 }
 
 
+CBioseq_set_Handle CScope_Impl::GetBioseq_setHandle(const CBioseq_set& seqset)
+{
+    TReadLockGuard guard(m_Scope_Conf_RWLock);
+    TBioseq_set_Lock lock = x_GetBioseq_set_Lock(seqset);
+    return CBioseq_set_Handle(*lock.first, *lock.second);
+}
+
+
 CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CSeq_entry& entry)
 {
     TReadLockGuard guard(m_Scope_Conf_RWLock);
@@ -681,6 +689,21 @@ CScope_Impl::x_GetSeq_annot_Lock(const CSeq_annot& annot)
     }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetSeq_annot_Lock: annot is not attached");
+}
+
+
+CScope_Impl::TBioseq_set_Lock
+CScope_Impl::x_GetBioseq_set_Lock(const CBioseq_set& seqset)
+{
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        TBioseq_set_Lock lock = it->FindBioseq_set_Lock(seqset);
+        if ( lock.first ) {
+            return lock;
+        }
+    }
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope_Impl::x_GetBioseq_set_Lock: "
+               "bioseq set is not attached");
 }
 
 

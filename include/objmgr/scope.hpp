@@ -112,14 +112,14 @@ public:
     // Deprecated interface
     CTSE_Handle GetTSE_Handle(const CSeq_entry& tse);
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
+    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
-    //CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
 
     CBioseq_EditHandle GetBioseqEditHandle(const CBioseq& bioseq);
     CSeq_entry_EditHandle GetSeq_entryEditHandle(const CSeq_entry& entry);
     CSeq_annot_EditHandle GetSeq_annotEditHandle(const CSeq_annot& annot);
-    //CBioseq_set_EditHandle GetBioseq_setEditHandle(const CBioseq_set& seqset);
+    CBioseq_set_EditHandle GetBioseq_setEditHandle(const CBioseq_set& seqset);
 
 
     /// Get bioseq handle for sequence withing one TSE
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/06/27 18:17:03  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.86  2005/06/22 14:11:19  vasilche
 * Added more methods.
 * Fixed constness of handle arguments in some methods.

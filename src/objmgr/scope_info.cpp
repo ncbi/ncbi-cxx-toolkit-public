@@ -356,6 +356,21 @@ CDataSource_ScopeInfo::FindSeq_annot_Lock(const CSeq_annot& annot)
 }
 
 
+CDataSource_ScopeInfo::TBioseq_set_Lock
+CDataSource_ScopeInfo::FindBioseq_set_Lock(const CBioseq_set& seqset)
+{
+    CDataSource::TBioseq_set_Lock lock;
+    {{
+        TTSE_LockSetMutex::TReadLockGuard guard(GetTSE_LockSetMutex());
+        lock = GetDataSource().FindBioseq_set_Lock(seqset, GetTSE_LockSet());
+    }}
+    if ( lock.first ) {
+        return TBioseq_set_Lock(lock.first, GetTSE_Lock(lock.second));
+    }
+    return TBioseq_set_Lock();
+}
+
+
 CDataSource_ScopeInfo::TBioseq_Lock
 CDataSource_ScopeInfo::FindBioseq_Lock(const CBioseq& bioseq)
 {
@@ -1331,6 +1346,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/27 18:17:04  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.18  2005/06/24 19:14:13  vasilche
 * Disabled excessive _TRACE messages.
 *

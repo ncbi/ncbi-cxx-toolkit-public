@@ -245,9 +245,8 @@ private:
     void x_SetObject(TObject& obj);
     void x_SetObject(const CBioseq_Info& info, TObjectCopyMap* copy_map);
 
-    typedef vector< CConstRef<TObject> > TDSMappedObjects;
-    virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
-    virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     static CRef<TObject> sx_ShallowCopy(const TObject& obj);
     static CRef<TInst> sx_ShallowCopy(const TInst& inst);
@@ -306,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2005/06/27 18:17:03  vasilche
+ * Allow getting CBioseq_set_Handle from CBioseq_set.
+ *
  * Revision 1.25  2005/06/22 14:23:48  vasilche
  * Added support for original->edited map.
  *

@@ -127,6 +127,13 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
+CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset)
+{
+    //ERR_POST_ONCE(Warning<<"CScope::GetBioseq_setHandle(CBioseq_set&) is deprecated.");
+    return m_Impl->GetBioseq_setHandle(seqset);
+}
+
+
 CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
@@ -173,7 +180,7 @@ CBioseq_EditHandle CScope::GetBioseqEditHandle(const CBioseq& bioseq)
     return m_Impl->GetEditHandle(h);
 }
 
-/*
+
 CBioseq_set_EditHandle
 CScope::GetBioseq_setEditHandle(const CBioseq_set& seqset)
 {
@@ -185,7 +192,7 @@ CScope::GetBioseq_setEditHandle(const CBioseq_set& seqset)
     }
     return m_Impl->GetEditHandle(h);
 }
-*/
+
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CTSE_Handle& tse)
@@ -450,6 +457,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2005/06/27 18:17:04  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.115  2005/06/22 14:11:19  vasilche
 * Added more methods.
 * Fixed constness of handle arguments in some methods.

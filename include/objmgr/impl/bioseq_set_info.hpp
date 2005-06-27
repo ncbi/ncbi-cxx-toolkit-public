@@ -180,6 +180,9 @@ protected:
     void x_SetObject(TObject& obj);
     void x_SetObject(const CBioseq_set_Info& info, TObjectCopyMap* copy_map);
 
+    void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
+
     int x_GetBioseq_set_Id(const CObject_id& object_id);
 
     TObjAnnot& x_SetObjAnnot(void);
@@ -481,6 +484,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/06/27 18:17:03  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.9  2005/06/22 14:23:48  vasilche
 * Added support for original->edited map.
 *

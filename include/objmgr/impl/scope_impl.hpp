@@ -243,6 +243,7 @@ public:
 
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
+    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
     CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Handle& tse);
@@ -327,11 +328,13 @@ private:
 public:
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
+    typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef CDataSource_ScopeInfo::TBioseq_Lock TBioseq_Lock;
 
     TTSE_Lock x_GetTSE_Lock(const CSeq_entry& tse);
     TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry);
     TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
+    TBioseq_set_Lock x_GetBioseq_set_Lock(const CBioseq_set& seqset);
     TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
     TBioseq_Lock x_GetBioseq_Lock(CBioseq_ScopeInfo& info,
                                   CConstRef<CBioseq_Info> bioseq);

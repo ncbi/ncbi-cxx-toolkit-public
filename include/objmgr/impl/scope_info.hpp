@@ -215,12 +215,14 @@ public:
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
+    typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
 
     TTSE_Lock GetTSE_Lock(const CTSE_Lock& tse);
     TTSE_Lock FindTSE_Lock(const CSeq_entry& tse);
     TSeq_entry_Lock FindSeq_entry_Lock(const CSeq_entry& entry);
     TSeq_annot_Lock FindSeq_annot_Lock(const CSeq_annot& annot);
+    TBioseq_set_Lock FindBioseq_set_Lock(const CBioseq_set& seqset);
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq);
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
@@ -578,6 +580,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/06/27 18:17:03  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.19  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

@@ -70,6 +70,7 @@ class CBioseq_set;
 class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
+class CBioseq_set_Info;
 class CBioseq_Info;
 
 // others
@@ -227,6 +228,7 @@ public:
 
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
+    typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock> TBioseq_Lock;
 
     TTSE_Lock FindTSE_Lock(const CSeq_entry& entry,
@@ -234,6 +236,8 @@ public:
     TSeq_entry_Lock FindSeq_entry_Lock(const CSeq_entry& entry,
                                        const TTSE_LockSet& history) const;
     TSeq_annot_Lock FindSeq_annot_Lock(const CSeq_annot& annot,
+                                       const TTSE_LockSet& history) const;
+    TBioseq_set_Lock FindBioseq_set_Lock(const CBioseq_set& seqset,
                                        const TTSE_LockSet& history) const;
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq,
                                  const TTSE_LockSet& history) const;
@@ -260,6 +264,8 @@ private:
     typedef map<CConstRef<CSeq_entry>, CRef<CTSE_Info> >       TTSE_InfoMap;
     typedef map<CConstRef<CSeq_entry>, CRef<CSeq_entry_Info> > TEntry_InfoMap;
     typedef map<CConstRef<CSeq_annot>, CRef<CSeq_annot_Info> > TAnnot_InfoMap;
+    typedef map<CConstRef<CBioseq_set>,
+                CRef<CBioseq_set_Info> > TBioseq_set_InfoMap;
     typedef map<CConstRef<CBioseq>, CRef<CBioseq_Info> >       TBioseq_InfoMap;
 
     // friend classes
@@ -272,6 +278,7 @@ private:
     friend class CTSE_LoadLock;
     friend class CSeq_entry_Info;
     friend class CSeq_annot_Info;
+    friend class CBioseq_set_Info;
     friend class CBioseq_Info;
     friend class CPrefetchToken_Impl;
     friend class CScope_Impl;
@@ -297,18 +304,26 @@ private:
     void x_Unmap(CConstRef<CSeq_entry> obj, CSeq_entry_Info* info);
     void x_Map(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info);
     void x_Unmap(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info);
+    void x_Map(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info);
+    void x_Unmap(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info);
     void x_Map(CConstRef<CBioseq> obj, CBioseq_Info* info);
     void x_Unmap(CConstRef<CBioseq> obj, CBioseq_Info* info);
 
     // lookup Xxx_Info objects
     // TSE
-    CConstRef<CTSE_Info> x_FindTSE_Info(const CSeq_entry& tse) const;
+    CConstRef<CTSE_Info>
+    x_FindTSE_Info(const CSeq_entry& tse) const;
     // Seq-entry
-    CConstRef<CSeq_entry_Info> x_FindSeq_entry_Info(const CSeq_entry& entry) const;
+    CConstRef<CSeq_entry_Info>
+    x_FindSeq_entry_Info(const CSeq_entry& entry) const;
     // Bioseq
-    CConstRef<CBioseq_Info> x_FindBioseq_Info(const CBioseq& seq) const;
+    CConstRef<CBioseq_Info>
+    x_FindBioseq_Info(const CBioseq& seq) const;
     // Seq-annot
-    CConstRef<CSeq_annot_Info> x_FindSeq_annot_Info(const CSeq_annot& annot) const;
+    CConstRef<CSeq_annot_Info>
+    x_FindSeq_annot_Info(const CSeq_annot& annot) const;
+    CConstRef<CBioseq_set_Info>
+    x_FindBioseq_set_Info(const CBioseq_set& seqset) const;
 
     // Find the seq-entry with best bioseq for the seq-id handle.
     // The best bioseq is the bioseq from the live TSE or from the
@@ -383,6 +398,7 @@ private:
     TTSE_InfoMap          m_TSE_InfoMap;    // All known TSEs
     TEntry_InfoMap        m_Entry_InfoMap;  // All known Seq-entries
     TAnnot_InfoMap        m_Annot_InfoMap;  // All known Seq-annots
+    TBioseq_set_InfoMap   m_Bioseq_set_InfoMap;  // All known Bioseq-sets
     TBioseq_InfoMap       m_Bioseq_InfoMap; // All known Bioseqs
 
     TSeq_id2TSE_Set       m_TSE_seq;        // id -> TSE with bioseq

@@ -189,8 +189,8 @@ protected:
     void x_Select(CSeq_entry::E_Choice which,
                   CRef<CBioseq_Base_Info> contents);
 
-    virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
-    virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/06/27 18:17:04  vasilche
+* Allow getting CBioseq_set_Handle from CBioseq_set.
+*
 * Revision 1.20  2005/06/22 14:23:48  vasilche
 * Added support for original->edited map.
 *

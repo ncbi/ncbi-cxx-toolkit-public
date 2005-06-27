@@ -344,6 +344,18 @@ void CDataSource::x_Unmap(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info)
 }
 
 
+void CDataSource::x_Map(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info)
+{
+    x_MapObject(m_Bioseq_set_InfoMap, obj, Ref(info));
+}
+
+
+void CDataSource::x_Unmap(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info)
+{
+    x_UnmapObject(m_Bioseq_set_InfoMap, obj, info);
+}
+
+
 void CDataSource::x_Map(CConstRef<CBioseq> obj, CBioseq_Info* info)
 {
     x_MapObject(m_Bioseq_InfoMap, obj, Ref(info));
@@ -409,6 +421,22 @@ CDataSource::FindSeq_annot_Lock(const CSeq_annot& annot,
 }
 
 
+CDataSource::TBioseq_set_Lock
+CDataSource::FindBioseq_set_Lock(const CBioseq_set& seqset,
+                                 const TTSE_LockSet& /*history*/) const
+{
+    TBioseq_set_Lock ret;
+    {{
+        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        ret.first = x_FindBioseq_set_Info(seqset);
+        if ( ret.first ) {
+            x_SetLock(ret.second, ConstRef(&ret.first->GetTSE_Info()));
+        }
+    }}
+    return ret;
+}
+
+
 CDataSource::TBioseq_Lock
 CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
                              const TTSE_LockSet& /*history*/) const
@@ -457,6 +485,19 @@ CDataSource::x_FindSeq_annot_Info(const CSeq_annot& obj) const
     TAnnot_InfoMap::const_iterator found =
         m_Annot_InfoMap.find(ConstRef(&obj));
     if ( found != m_Annot_InfoMap.end() ) {
+        ret = found->second;
+    }
+    return ret;
+}
+
+
+CConstRef<CBioseq_set_Info>
+CDataSource::x_FindBioseq_set_Info(const CBioseq_set& obj) const
+{
+    CConstRef<CBioseq_set_Info> ret;
+    TBioseq_set_InfoMap::const_iterator found =
+        m_Bioseq_set_InfoMap.find(ConstRef(&obj));
+    if ( found != m_Bioseq_set_InfoMap.end() ) {
         ret = found->second;
     }
     return ret;
