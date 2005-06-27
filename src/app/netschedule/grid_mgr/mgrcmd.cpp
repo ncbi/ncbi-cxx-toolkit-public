@@ -41,7 +41,7 @@
 #include <memory>
 #include <list>
 
-BEGIN_NCBI_SCOPE
+//BEGIN_NCBI_SCOPE
 
 CGridMgrCommand::CGridMgrCommand( CGridMgrResource& resource )
   : CNcbiCommand( resource )
@@ -402,12 +402,15 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
     return node.release();
 }
 
-END_NCBI_SCOPE
+//END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 13:08:55  didenko
+ * Made it compiling on Windows
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *
