@@ -1156,11 +1156,11 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
     {{
         CNcbiOstrstream ostr;
         queue.PrintStat(ostr);
-        ostr << " ";
+        ostr << ends;
 
         char* stat_str = ostr.str();
-        size_t os_str_len = ostr.pcount()-1;
-        stat_str[os_str_len] = 0;
+//        size_t os_str_len = ostr.pcount()-1;
+//        stat_str[os_str_len] = 0;
         try {
             WriteMsg(sock, "OK:", stat_str);
         } catch (...) {
@@ -1175,11 +1175,11 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
     {{
         CNcbiOstrstream ostr;
         queue.PrintNodeStat(ostr);
-        ostr << " ";
+        ostr << ends;
 
         char* stat_str = ostr.str();
-        size_t os_str_len = ostr.pcount()-1;
-        stat_str[os_str_len] = 0;
+//        size_t os_str_len = ostr.pcount()-1;
+//        stat_str[os_str_len] = 0;
         try {
             WriteMsg(sock, "OK:", stat_str);
         } catch (...) {
@@ -1189,8 +1189,39 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
         ostr.freeze(false);
     }}
 
+    {{
+        WriteMsg(sock, "OK:", "[Configured job submitters]:");
+        CNcbiOstrstream ostr;
+        queue.PrintSubmHosts(ostr);
+        ostr << ends;
 
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg(sock, "OK:", stat_str);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+    }}
 
+    {{
+        WriteMsg(sock, "OK:", "[Configured workers]:");
+        CNcbiOstrstream ostr;
+        queue.PrintWNodeHosts(ostr);
+        ostr << ends;
+
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg(sock, "OK:", stat_str);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+    }}
+
+/*
     {{
         SOCK sk = sock.GetSOCK();
         sock.SetOwnership(eNoOwnership);
@@ -1198,14 +1229,13 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
 
         CConn_SocketStream ios(sk);
 
-
         WriteMsg(sock, "OK:", "[Configured job submitters]:");
         queue.PrintSubmHosts(ios);
 
         WriteMsg(sock, "OK:", "[Configured workers]:");
         queue.PrintWNodeHosts(ios);
     }}
-
+*/
 
     WriteMsg(sock, "OK:", "END");
 }
@@ -2041,6 +2071,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/06/27 15:52:20  kuznets
+ * Minor change in statistics
+ *
  * Revision 1.45  2005/06/20 13:31:08  kuznets
  * Added access control for job submitters and worker nodes
  *
