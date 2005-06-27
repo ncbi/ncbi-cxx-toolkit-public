@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.380 2005/06/24 20:01:16 ucko Exp $
+#  $Id: configure.ac,v 1.381 2005/06/27 17:41:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1856,8 +1856,9 @@ AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.6x
-AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h netinet/in.h \
-                 netinet/tcp.h sys/select.h sys/socket.h sys/time.h wchar.h)
+AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \
+                 netinet/in.h netinet/tcp.h \
+                 sys/ioctl.h sys/select.h sys/socket.h sys/time.h wchar.h)
 AC_HEADER_TIME
 
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).

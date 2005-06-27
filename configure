@@ -8298,8 +8298,10 @@ done
 
 
 
-for ac_header in arpa/inet.h errno.h malloc.h netdb.h netinet/in.h \
-                 netinet/tcp.h sys/select.h sys/socket.h sys/time.h wchar.h
+
+for ac_header in arpa/inet.h errno.h malloc.h netdb.h \
+                 netinet/in.h netinet/tcp.h \
+                 sys/ioctl.h sys/select.h sys/socket.h sys/time.h wchar.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
