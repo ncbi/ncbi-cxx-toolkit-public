@@ -33,7 +33,8 @@ hspstream_queue \
 repeats_filter_cxx \
 blast_mtlock \
 psi_pssm_input \
-blast_advprot_options
+blast_advprot_options \
+version
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
