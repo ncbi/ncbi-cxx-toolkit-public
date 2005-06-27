@@ -104,6 +104,11 @@ protected:
     virtual bool ProcessStreamRead(void);
     virtual bool ProcessStreamWrite(void);
 
+    // Write data from the out buffer to the underlying stream.
+    // NOTE: for writing processor only (m_Writer).
+    // Helper method for ProcessStreamWrite/Sync/Finish.
+    bool WriteOutBufToStream(void);
+
 protected:
     CNcbiIos*     m_Stream;   // Underlying I/O stream
     CCompressionStreamProcessor* 
@@ -175,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/06/27 13:47:30  ivanov
+ * + CCompressionStreambuf::WriteOutBufToStream()
+ *
  * Revision 1.7  2004/01/20 21:07:59  ucko
  * Fix typo in previous revision.
  *
