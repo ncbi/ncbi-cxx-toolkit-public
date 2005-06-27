@@ -154,11 +154,11 @@ CSeqVector::CSeqVector(const CBioseq_Handle& bioseq,
     : m_Scope(bioseq.GetScope()),
       m_SeqMap(&bioseq.GetSeqMap()),
       m_TSE(bioseq.GetTSE_Handle()),
-      m_Size(bioseq.GetBioseqLength()),
-      m_Mol(bioseq.GetBioseqMolType()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    m_Size = bioseq.GetBioseqLength();
+    m_Mol = bioseq.GetBioseqMolType();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -168,11 +168,11 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_Scope(&scope),
       m_SeqMap(&seqMap),
-      m_Size(seqMap.GetLength(&scope)),
-      m_Mol(seqMap.GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    m_Size = m_SeqMap->GetLength(m_Scope);
+    m_Mol = m_SeqMap->GetMol();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -183,11 +183,11 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, const CTSE_Handle& top_tse,
     : m_Scope(top_tse.GetScope()),
       m_SeqMap(&seqMap),
       m_TSE(top_tse),
-      m_Size(seqMap.GetLength(&top_tse.GetScope())),
-      m_Mol(seqMap.GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    m_Size = m_SeqMap->GetLength(m_Scope);
+    m_Mol = m_SeqMap->GetMol();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -197,11 +197,11 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_Scope(&scope),
       m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &scope)),
-      m_Size(m_SeqMap->GetLength(&scope)),
-      m_Mol(m_SeqMap->GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    m_Size = m_SeqMap->GetLength(m_Scope);
+    m_Mol = m_SeqMap->GetMol();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -212,11 +212,11 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
     : m_Scope(top_tse.GetScope()),
       m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &top_tse.GetScope())),
       m_TSE(top_tse),
-      m_Size(m_SeqMap->GetLength(&top_tse.GetScope())),
-      m_Mol(m_SeqMap->GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    m_Size = m_SeqMap->GetLength(m_Scope);
+    m_Mol = m_SeqMap->GetMol();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -232,7 +232,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     if ( &vec != this ) {
         m_Scope  = vec.m_Scope;
         m_SeqMap = vec.m_SeqMap;
-        m_TSE = vec.m_TSE;
+        m_TSE    = vec.m_TSE;
         m_Size   = vec.m_Size;
         m_Mol    = vec.m_Mol;
         m_Strand = vec.m_Strand;
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/06/27 17:16:32  vasilche
+* Workaround problem with excetions on GCC 3.0.4 with optimization.
+*
 * Revision 1.76  2005/06/06 15:30:23  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
