@@ -30,7 +30,7 @@
  *
  */
 
-%ignore BLAST_RPSSearchEngine;
+%ignore ncbi::objects::CScope_Impl::x_GetBioseq_Lock;
 
 %ignore ncbi::CNlmZipBtRdr::GetCompressedSize;
 %ignore ncbi::CNlmZipBtRdr::GetDecompressionTime;
@@ -38,8 +38,6 @@
 %ignore ncbi::CAlignSelector::SetPublicOnly;
 
 %ignore ncbi::CHTML_area::CHTML_area();
-
-%ignore ncbi::CSeqDBIter::CSeqDBIter(const CSeqDBIter&);
 
 // objtools/data_loaders/cdd/cdd.hpp
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
@@ -116,11 +114,6 @@
 
 %ignore ncbi::COptionDescription::COptionDescription();
 
-// blast::CBlastHSPResults::DebugDump not defined in blast_aux.cpp
-// (or anywhere else); it's a virtual function, so this class is unusable.
-// Implementation committed 3/28/05
-%ignore ncbi::blast::CBlastHSPResults;
-
 // inline functions defined in .cpp
 %ignore ncbi::objects::CAnnotObject_Ref::
     CAnnotObject_Ref(const CAnnotObject_Info& object);
@@ -137,6 +130,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 17:11:38  jcherry
+ * Ignore CScope_Impl::x_GetBioseq_Lock; remove some obsolete %ignore's
+ *
  * Revision 1.1  2005/05/11 22:23:14  jcherry
  * Initial version
  *
