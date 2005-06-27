@@ -2040,11 +2040,12 @@ void CBDB_Cache::x_TruncateDB()
     //       directory we may delete some "extra" files
     CDir dir(m_Path);
     string ext;
-    string ov_("ov_");
+    string ov_(".ov_");
     if (dir.Exists()) {
         CDir::TEntries  content(dir.GetEntries());
         ITERATE(CDir::TEntries, it, content) {
-            if (!(*it)->IsFile()) {
+            if ( (*it)->IsFile() ) {
+                ext = (*it)->GetExt();
                 if (ext == ov_) {
                     (*it)->Remove();
                 }
@@ -2398,6 +2399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2005/06/27 16:39:48  grichenk
+ * Fixed overflow blobs cleanup
+ *
  * Revision 1.116  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *
