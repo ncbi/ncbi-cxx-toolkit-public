@@ -237,6 +237,12 @@ void CQueueInfo::CollectInfo()
                     m_Info += "\n";
                 }
             } else {
+                if ( NStr::StartsWith( buff, "[Configured")) {
+                    m_Info += buff;
+                    m_Info += "\n";
+                    nodes_info = false;
+                    continue;
+                }
                 string str(buff);
                 if (str.empty())
                     continue;
@@ -313,6 +319,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 16:40:15  didenko
+ * Updated the statistics parser to paser an ouput of the NetSchedule ver. 1.4.4
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *
