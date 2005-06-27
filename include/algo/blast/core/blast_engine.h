@@ -46,6 +46,13 @@
 extern "C" {
 #endif
 
+extern const int kBlastMajorVersion; /**< Major version */
+extern const int kBlastMinorVersion; /**< Minor version */
+extern const int kBlastPatchVersion; /**< Patch version */
+/** Date of the most recent BLAST release (kept for historical reasons) */
+extern const char* kBlastReleaseDate;
+
+
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
  * @param program_number Type of BLAST program [in]

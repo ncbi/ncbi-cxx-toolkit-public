@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-/******************** Preprocessor definitions ******************************/
+/****************************** Constants *********************************/
 
 extern const int kDustLevel;  /**< Level parameter used by dust. */
 extern const int kDustWindow; /**< Window parameter used by dust. */

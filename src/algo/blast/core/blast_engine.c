@@ -73,6 +73,11 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_gapalign.h>
 #include <algo/blast/core/phi_lookup.h>
 
+const int kBlastMajorVersion = 2;
+const int kBlastMinorVersion = 2;
+const int kBlastPatchVersion = 11;
+const char* kBlastReleaseDate = "Jun-05-2005";
+
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
