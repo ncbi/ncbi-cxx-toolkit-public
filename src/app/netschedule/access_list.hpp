@@ -100,7 +100,7 @@ public:
         for(; en.valid(); ++en) {
             unsigned ha = *en;
             string host = CSocketAPI::gethostbyaddr(ha);
-            out << ha << "\n";
+            out << host << "\n";
         }
     }
     
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 15:53:03  kuznets
+ * Print host name not the address
+ *
  * Revision 1.1  2005/06/20 13:31:08  kuznets
  * Added access control for job submitters and worker nodes
  *
