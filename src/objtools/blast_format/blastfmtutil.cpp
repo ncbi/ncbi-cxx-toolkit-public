@@ -63,24 +63,14 @@
 
 #include <objtools/blast_format/blastfmtutil.hpp>
 
+#include <algo/blast/api/version.hpp>
+
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
-
-//defines
-static const string kBlastEngineVersion = "2.2.10";
-static const string kBlastReleaseDate = "Oct-19-2004";
-static const string kBlastRef = "Altschul, Stephen F., Thomas L. Madden, \
-Alejandro A. Schäffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
-Lipman (1997), \"Gapped BLAST and PSI-BLAST: a new generation of protein \
-database search programs\",  Nucleic Acids Res. 25:3389-3402.";
-                 
-static const string kBlastRefUrl =  "<b><a href=\"http://www.ncbi.nlm.nih.gov/\
-entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9254694&dopt=Citation\">\
-Reference</a>:</b>";
 
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
@@ -188,24 +178,29 @@ void CBlastFormatUtil::BlastPrintVersionInfo(string program, bool html,
                                              CNcbiOstream& out)
 {
     if (html){
-        out << "<b>" << program << " " << kBlastEngineVersion << " " <<"["
-            << kBlastReleaseDate << "]</b>\n";
+        out << "<b>" << program << " " << blast::Version.Print() << " " <<"["
+            << blast::Version.GetReleaseDate() << "]</b>\n";
     } else {
-        out << program << " " << kBlastEngineVersion << " " <<"[" << 
-            kBlastReleaseDate << "]\n";
+        out << program << " " << blast::Version.Print() << " " <<"[" << 
+            blast::Version.GetReleaseDate() << "]\n";
     }
 }
 
 void CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
                                            CNcbiOstream& out) 
 {
+    using blast::CReference;
 
     if(html)
-        out << kBlastRefUrl << endl;
+        out << "<b><a href=\""
+            << CReference::GetPubmedUrl(CReference::eGappedBlast)
+            << "\">Reference</a>:</b>"
+            << endl;
     else
         out << "Reference: ";
     
-    WrapOutputLine(kBlastRef, line_len, out);
+    WrapOutputLine(CReference::GetString(CReference::eGappedBlast), line_len, 
+                   out);
     out << endl;
 }
 
