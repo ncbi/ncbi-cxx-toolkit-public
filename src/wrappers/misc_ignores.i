@@ -30,6 +30,24 @@
  */
 
 
+// "stat" is both a struct and a function; SWIG-generated code won't compile
+%ignore ncbi::CDirEntry::GetType(const struct stat &st) const;
+
+// auto_ptr trouble
+%ignore ncbi::CTar::Append;
+%ignore ncbi::CTar::Update;
+%ignore ncbi::CTar::Extract;
+%ignore ncbi::CTar::List;
+
+// Use protected typedef.  Shouldn't be wrapped anyway (start with "x_")
+%ignore ncbi::objects::CSeq_entry_Handle::x_GetScopeInfo;
+%ignore ncbi::objects::CSeq_entry_CI::x_GetScopeInfo;
+%ignore ncbi::objects::CSeq_entry_I::x_GetScopeInfo;
+%ignore ncbi::objects::CSeq_annot_Handle::x_GetScopeInfo;
+%ignore ncbi::objects::CSeq_annot_EditHandle::x_GetScopeInfo;
+%ignore *::CSeq_annot_CI::x_GetScopeInfo;
+%ignore *::CAnnot_CI::x_GetScopeInfo;
+
 // Declared as friend; we don't want to wrap it,
 // plus SWIG tries to wrap it for CRefs too
 %ignore *::s_CleanupThreads;
@@ -199,6 +217,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/27 17:02:42  jcherry
+ * Various new %ignore's
+ *
  * Revision 1.1  2005/05/11 22:23:13  jcherry
  * Initial version
  *
