@@ -64,8 +64,8 @@ property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"N
 property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT"}
 
 (* Build styles for the project *)
-property buildStyleDevelopment : {isa:"PBXBuildStyle", |name|:"Development", |buildRules|:{}, |buildSettings|:buildSettingsDevelopment}
-property buildStyleDeployment : {isa:"PBXBuildStyle", |name|:"Deployment", |buildRules|:{}, |buildSettings|:buildSettingsDeployment}
+property buildStyleDevelopment : {isa:"PBXBuildStyle", |name|:"Debug", |buildRules|:{}, |buildSettings|:buildSettingsDevelopment}
+property buildStyleDeployment : {isa:"PBXBuildStyle", |name|:"Release", |buildRules|:{}, |buildSettings|:buildSettingsDeployment}
 property projectBuildStyles : {"BUILDSTYLE__Development", "BUILDSTYLE__Deployment"}
 
 
@@ -320,7 +320,7 @@ script ProjBuilder
 			if bundle of lib_info then set libraryStyle to "BUNDLE"
 			set linkerFlags to "" -- do not suppress undefined symbols. Bundles should be fully resolved
 			--set linkerFlags to "-framework Carbon -framework AGL -framework OpenGL"
-			set symRoot to TheOUTPath & "/bin/Genome Workbench.app/Contents/MacOS/plugins"
+			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS/plugins"
 			set isBundle to true
 		end try
 		
@@ -333,7 +333,7 @@ script ProjBuilder
 		
 		set linkerFlags to linkerFlags & x_CreateLinkerFlags(lib_info) -- additional liker flags (like -lxncbi)
 		
-		set buildSettings to {|LIB_COMPATIBILITY_VERSION|:"1", |DYLIB_CURRENT_VERSION|:"1", |INSTALL_PATH|:installPath, |LIBRARY_STYLE|:libraryStyle, |PRODUCT_NAME|:fullLibName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
+		set buildSettings to {|LIB_COMPATIBILITY_VERSION|:"1", |DYLIB_CURRENT_VERSION|:"1", |INSTALL_PATH|:installPath, |LIBRARY_STYLE|:libraryStyle, |PRODUCT_NAME|:fullLibName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot, |TARGET_BUILD_DIR|:symRoot}
 		set libTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullLibName, |productReference|:"", |productType|:libProdType, dependencies:{}}
 		
 		my MakeNewTarget(lib_info, src_files, libTarget, libProduct, 0) -- 0 is library
@@ -349,9 +349,12 @@ script ProjBuilder
 		set linkerFlags to x_CreateLinkerFlags(tool_info) -- additional liker flags (like -lxncbi)
 		
 		set symRoot to TheOUTPath & "/bin"
-		if toolName is "gbench_plugin_scan" then set symRoot to TheOUTPath & "/bin/Genome Workbench.app/Contents/MacOS"
-		
-		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
+		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot, |TARGET_BUILD_DIR|:""}
+		if toolName is "gbench_plugin_scan" then
+			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS"
+			set |SYMROOT| of buildSettings to symRoot
+			set buildSettings to buildSettings & {|TARGET_BUILD_DIR|:symRoot}
+		end if
 		set toolTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullToolName, |productReference|:"", |productType|:"com.apple.product-type.tool", dependencies:{}}
 		
 		my MakeNewTarget(tool_info, src_files, toolTarget, toolProduct, 2) -- is a tool
@@ -556,47 +559,47 @@ script ProjBuilder
 	on x_CopyGBENCHResourses()
 		set theScript to ""
 		set theScript to theScript & "echo Running GBench Plugin Scan" & ret
-		set theScript to theScript & "if test ! -e " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/plugins/plugin-cache ; then" & ret
-		set theScript to theScript & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/gbench_plugin_scan " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/plugins" & ret
+		set theScript to theScript & "if test ! -e " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/plugins/plugin-cache ; then" & ret
+		set theScript to theScript & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/gbench_plugin_scan " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/plugins" & ret
 		set theScript to theScript & "fi" & ret
 		
 		set theScript to theScript & "echo Copying GBench resources" & ret
 		
 		-- Create etc directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc ; then" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		set theScript to theScript & "fi" & ret
 		
 		-- Create Resources directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources ; then" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources" & ret
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources" & ret
 		set theScript to theScript & "fi" & ret
 		
 		-- Create share directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench ; then" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/share/gbench ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/share" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
 		set theScript to theScript & "fi" & ret
 		
 		-- Create executables directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables ; then" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		set theScript to theScript & "fi" & ret
 		
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
 		-- copy png images
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
 		
 		-- copy Info.plist file
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/Info.plist " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/Info.plist " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents" & ret
 		
 		-- copy Icon file
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench.icns " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/Resources/Genome\\ Workbench.icns" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/Genome\\ Workbench.icns" & ret
 		
-		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
-		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		--set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc/patterns" & ret
 		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/news.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/gbench.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
@@ -610,6 +613,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/06/28 17:57:56  lebedev
+ * Added support for Xcode 2.1 and build configurations
+ *
  * Revision 1.29  2005/06/14 12:20:35  lebedev
  * seqalign_ext added
  *

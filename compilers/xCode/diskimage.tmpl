@@ -24,10 +24,16 @@ chmod +w *
 
 echo Patch dylibs
 for i in `find . -name \*.dylib`; do
-        for j in `otool -L $i | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
-                install_name_tool -id $EXEC_PATH/`basename $j` $i
-                install_name_tool -change $j $EXEC_PATH/`basename $j` $i
-        done
+     for j in `otool -L $i | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
+         if ! test -e `basename $j`; then
+            echo Adding more libs: `basename $j`
+   		   cp $j .
+   		   chmod +w `basename $j`
+   		fi
+
+         install_name_tool -id $EXEC_PATH/`basename $j` $i
+         install_name_tool -change $j $EXEC_PATH/`basename $j` $i
+     done
 done
 
 echo Patch Genome Workbench
