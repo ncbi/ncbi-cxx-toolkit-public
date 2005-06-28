@@ -1038,19 +1038,17 @@ bool CValidError_bioseq::LocOnSeg(const CBioseq& seq, const CSeq_loc& loc)
 }
 
 
-bool CValidError_bioseq::NotPeptideException
-(const CFeat_CI& curr,
- const CFeat_CI& prev)
+static bool s_NotPeptideException
+(const CSeq_feat_Handle& curr,
+ const CSeq_feat_Handle& prev)
 {
-    if ( curr->IsSetExcept()  &&  curr->GetExcept()  &&
-         curr->IsSetExcept_text() ) {
-        if ( NStr::FindNoCase(curr->GetExcept_text(), "alternative processing") != NPOS ) {
+    if (curr.IsSetExcept()  &&  curr.GetExcept()  &&  curr.IsSetExcept_text()) {
+        if (NStr::FindNoCase(curr.GetExcept_text(), "alternative processing") != NPOS) {
             return false;
         }
     }
-    if ( prev->IsSetExcept()  &&  prev->GetExcept()  &&
-         prev->IsSetExcept_text() ) {
-        if ( NStr::FindNoCase(prev->GetExcept_text(), "alternative processing") != NPOS ) {
+    if (prev.IsSetExcept()  &&  prev.GetExcept()  &&  prev.IsSetExcept_text()) {
+        if (NStr::FindNoCase(prev.GetExcept_text(), "alternative processing") != NPOS) {
             return false;
         }
     }
@@ -1058,27 +1056,36 @@ bool CValidError_bioseq::NotPeptideException
 }
 
 
-bool CValidError_bioseq::IsSameSeqAnnot
-(const CFeat_CI& fi1,
- const CFeat_CI& fi2)
+inline
+static bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
-    return fi1->GetAnnot() == fi2->GetAnnot();
+    return f1.GetAnnot() == f2.GetAnnot();
 }
 
 
-bool CValidError_bioseq::IsSameSeqAnnotDesc
-(const CFeat_CI& fi1,
- const CFeat_CI& fi2)
+bool CValidError_bioseq::x_IsSameSeqAnnotDesc
+(const CSeq_feat_Handle& f1,
+ const CSeq_feat_Handle& f2)
 {
-    const CSeq_annot& annot1 = *fi1->GetAnnot().GetCompleteSeq_annot();
-    const CSeq_annot& annot2 = *fi2->GetAnnot().GetCompleteSeq_annot();
+    CSeq_annot_Handle ah1 = f1.GetAnnot();
+    CSeq_annot_Handle ah2 = f2.GetAnnot();
 
-    if ( !(annot1.IsSetDesc())  ||  !(annot2.IsSetDesc()) ) {
+    if (!ah1  ||  !ah2) {
         return true;
     }
 
-    CAnnot_descr::Tdata descr1 = annot1.GetDesc().Get();
-    CAnnot_descr::Tdata descr2 = annot2.GetDesc().Get();
+    CConstRef<CSeq_annot> sap1 = ah1.GetCompleteSeq_annot();
+    CConstRef<CSeq_annot> sap2 = ah2.GetCompleteSeq_annot();
+    if (!sap1  ||  !sap2) {
+        return true;
+    }
+
+    if (!sap1->IsSetDesc()  ||  !sap2->IsSetDesc()) {
+        return true;
+    }
+
+    CAnnot_descr::Tdata descr1 = sap1->GetDesc().Get();
+    CAnnot_descr::Tdata descr2 = sap2->GetDesc().Get();
 
     // Check only on the first? (same as in C toolkit)
     const CAnnotdesc& desc1 = descr1.front().GetObject();
@@ -2067,9 +2074,46 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
     }
 
     // Check for CPubdesc on the biodseq
-    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&
-         !CFeat_CI(bsh, CSeqFeatData::e_Pub) ) {
-        m_Imp.AddBioseqWithNoPub(seq);
+    if (CSeqdesc_CI(bsh, CSeqdesc::e_Pub)) {
+        return;
+    }
+
+    // if non found look for a full length pub feature
+    SAnnotSelector sel(CSeqFeatData::e_Pub);
+    TSeqPos seq_length = bsh.GetInst_Length() - 1;
+    for (CFeat_CI it(bsh, sel); it; ++it) {
+        const CSeq_loc& loc = it->GetLocation();
+        if (loc.GetStart(eExtreme_Positional) == 0  &&
+			loc.GetStop(eExtreme_Positional) == seq_length - 1) {
+            return;
+        }
+    }
+
+    // if protein look for pubs applicable to DNA location of CDS
+    size_t partial = 0;
+    if (CSeq_inst::IsAa(bsh.GetInst_Mol())) {
+        const CSeq_feat* cds = GetCDSForProduct(bsh);
+        if (cds != NULL) {
+            const CSeq_loc& cds_loc  = cds->GetLocation();
+            for (CFeat_CI it(*m_Scope, cds_loc, sel); it; ++it) {
+                ECompare comp = Compare(cds_loc, it->GetLocation(), m_Scope);
+                if (comp == eContained  ||  comp == eSame) {
+                    return;
+                } else if (comp != eNoOverlap) { // partially overlapping pub
+                    ++partial;
+                }
+            }
+        }
+    }
+
+    if (partial != 0) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_NoPubFound,
+            "???",
+            *(bsh.GetBioseqCore()));
+    } else {
+        if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&  !CFeat_CI(bsh, CSeqFeatData::e_Pub) ) {
+            m_Imp.AddBioseqWithNoPub(seq);
+        }
     }
 }
 
@@ -2618,14 +2662,20 @@ void CValidError_bioseq::x_ValidateAbuttingCDSGroup
 }
 
 
+static bool s_IsSameStrand(const CSeq_loc& l1, const CSeq_loc& l2, CScope& scope)
+{
+    ENa_strand s1 = GetStrand(l1, &scope);
+    ENa_strand s2 = GetStrand(l2, &scope);
+    return (s1 == s2)  ||  (s1 == eNa_strand_unknown)  ||
+           (s2 == eNa_strand_unknown);
+}
+
+
 void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 {
-    ENa_strand              curr_strand, prev_strand;
     CCdregion::EFrame       curr_frame, prev_frame;
-    const CSeq_loc*         curr_loc = 0, *prev_loc = 0;
     EDiagSev                severity;
-    CSeqFeatData::ESubtype  curr_subtype = CSeqFeatData::eSubtype_bad, 
-                            prev_subtype = CSeqFeatData::eSubtype_bad;
+    
     bool same_label;
     string curr_label, prev_label;
     
@@ -2634,51 +2684,56 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     bool fruit_fly = false;
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
     if ( di ) {
-        if ( NStr::CompareNocase(di->GetSource().GetOrg().GetTaxname(),
+        if ( NStr::EqualNocase(di->GetSource().GetOrg().GetTaxname(),
              "Drosophila melanogaster") == 0 ) {
             fruit_fly = true;
         }
     }
 
-    CFeat_CI curr(bsh);
-    if ( !curr ) {
-        return;
-    }
+    CSeq_feat_Handle curr, prev;
 
-    CFeat_CI prev = curr;
-    ++curr;
-    while ( curr ) {
-        curr_loc = &(curr->GetLocation());
-        prev_loc = &(prev->GetLocation());
-        curr_subtype = curr->GetData().GetSubtype();
-        prev_subtype = prev->GetData().GetSubtype();
+    for (CFeat_CI it(bsh); it; ++it) {
+        curr = it->GetSeq_feat_Handle();
+        if (!curr  ||  !prev) {
+            continue;
+        }
 
-        // if same location, subtype and strand
-        if ( curr_subtype == prev_subtype  &&
-             sequence::Compare(*curr_loc, *prev_loc, m_Scope) == eSame) {
+        const CSeq_feat& feat = *curr.GetSeq_feat();  // original feature
+        // subtypes
+        CSeqFeatData::ESubtype curr_subtype = curr.GetFeatSubtype();
+        CSeqFeatData::ESubtype prev_subtype = prev.GetFeatSubtype();
+        // locations
+        const CSeq_loc& curr_loc = curr.GetLocation();
+        const CSeq_loc& prev_loc = prev.GetLocation();
 
-            curr_strand = GetStrand(*curr_loc, m_Scope);
-            prev_strand = GetStrand(*prev_loc, m_Scope);
-            if ( curr_strand == prev_strand         || 
-                 curr_strand == eNa_strand_unknown  ||
-                 prev_strand == eNa_strand_unknown  ) {
+        // if same subtype
+        if (curr_subtype == prev_subtype) {
+            // if same location and strand
+            if (s_IsSameStrand(curr_loc, prev_loc, *m_Scope)  &&
+                Compare(curr_loc, prev_loc, m_Scope) == eSame) {
 
-                if ( IsSameSeqAnnotDesc(curr, prev)  ||
-                     IsSameSeqAnnot(curr, prev) ) {
+                if (curr_subtype == CSeqFeatData::eSubtype_gene) {
+                    x_ValidateDupGenes(curr, prev);
+                }
+
+                if ( x_IsSameSeqAnnotDesc(curr, prev)  ||
+                     s_IsSameSeqAnnot(curr, prev) ) {
                     severity = eDiag_Error;
 
                     // compare labels and comments
                     same_label = true;
-                    const string &curr_comment = curr->IsSetComment() ? curr->GetComment() : kEmptyStr;
-                    const string &prev_comment = prev->IsSetComment() ? prev->GetComment() : kEmptyStr;
+                    const string& curr_comment =
+                        curr.IsSetComment() ? curr.GetComment() : kEmptyStr;
+                    const string& prev_comment =
+                        prev.IsSetComment() ? prev.GetComment() : kEmptyStr;
                     curr_label.erase();
                     prev_label.erase();
-                    feature::GetLabel(curr->GetOriginalFeature(),
-                                      &curr_label, feature::eContent, m_Scope);
-                    feature::GetLabel(prev->GetOriginalFeature(),
-                                      &prev_label, feature::eContent, m_Scope);
-                    if ( !NStr::EqualNocase(curr_comment, prev_comment) ||
-                         !NStr::EqualNocase(curr_label, prev_label) ) {
+                    feature::GetLabel(feat,
+                        &curr_label, feature::eContent, m_Scope);
+                    feature::GetLabel(*prev.GetSeq_feat(),
+                        &prev_label, feature::eContent, m_Scope);
+                    if (!NStr::EqualNocase(curr_comment, prev_comment) ||
+                        !NStr::EqualNocase(curr_label, prev_label) ) {
                         same_label = false;
                     }
 
@@ -2699,12 +2754,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                     }
                     
                     // if different CDS frames, lower to warning
-                    if ( curr->GetData().Which() == CSeqFeatData::e_Cdregion ) {
-                        curr_frame = curr->GetData().GetCdregion().GetFrame();
-                        prev_frame = CCdregion::eFrame_not_set;
-                        if ( prev->GetData().Which() == CSeqFeatData::e_Cdregion ) {
-                            prev_frame = prev->GetData().GetCdregion().GetFrame();
-                        }
+                    if (curr_subtype == CSeqFeatData::eSubtype_cdregion) {
+                        curr_frame = curr.GetData().GetCdregion().GetFrame();
+                        prev_frame = prev.GetData().GetCdregion().GetFrame();
                         
                         if ( (curr_frame != CCdregion::eFrame_not_set  &&
                             curr_frame != CCdregion::eFrame_one)     ||
@@ -2719,77 +2771,102 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                         severity = eDiag_Warning;
                     }
 
-                    if ( (prev->IsSetDbxref()  &&
-                          IsFlybaseDbxrefs(prev->GetDbxref()))  || 
-                         (curr->IsSetDbxref()  && 
-                          IsFlybaseDbxrefs(curr->GetDbxref())) ) {
+                    if ( (prev.IsSetDbxref()  &&
+                          IsFlybaseDbxrefs(prev.GetDbxref()))  || 
+                         (curr.IsSetDbxref()  && 
+                          IsFlybaseDbxrefs(curr.GetDbxref())) ) {
                         severity = eDiag_Error;
                     }
 
                     // Report duplicates
                     if ( curr_subtype == CSeqFeatData::eSubtype_region  &&
-                        IsDifferentDbxrefs(curr->GetDbxref(), prev->GetDbxref()) ) {
+                        IsDifferentDbxrefs(curr.GetDbxref(), prev.GetDbxref()) ) {
                         // do not report if both have dbxrefs and they are 
                         // different.
-                    } else if ( IsSameSeqAnnot(curr, prev) ) {
+                    } else if ( s_IsSameSeqAnnot(curr, prev) ) {
                         if (same_label) {
                             PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
-                                "Duplicate feature", 
-                                curr->GetOriginalFeature());
+                                "Duplicate feature", feat);
                         } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
                             // do not report if partial flags are different
                             bool curr_partial_start =
-                                curr_loc->IsPartialStart(eExtreme_Biological);
+                                curr_loc.IsPartialStart(eExtreme_Biological);
                             bool curr_partial_stop =
-                                curr_loc->IsPartialStop(eExtreme_Biological);
+                                curr_loc.IsPartialStop(eExtreme_Biological);
                             bool prev_partial_start =
-                                prev_loc->IsPartialStart(eExtreme_Biological);
+                                prev_loc.IsPartialStart(eExtreme_Biological);
                             bool prev_partial_stop =
-                                prev_loc->IsPartialStop(eExtreme_Biological);
+                                prev_loc.IsPartialStop(eExtreme_Biological);
                             if (curr_partial_start == prev_partial_start  &&
                                 curr_partial_stop == prev_partial_stop) {
                                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                                     "Features have identical intervals, but labels differ",
-                                    curr->GetOriginalFeature());
+                                    feat);
                             }
                         }
                     } else {
                         if (same_label) {
                             PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                                 "Duplicate feature (packaged in different feature table)",
-                                curr->GetOriginalFeature());
+                                feat);
                         } else if ( prev_subtype != CSeqFeatData::eSubtype_pub ) {
                             PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                                 "Features have identical intervals, but labels "
                                 "differ (packaged in different feature table)",
-                                curr->GetOriginalFeature());
+                                feat);
                         }
                     }
                 }
             }
         }
-        
-        
+                
         if ( (curr_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
               curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
               curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
              (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
               prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
               prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
-            if (sequence::Compare(*curr_loc, *prev_loc, m_Scope) != eNoOverlap  &&
-                NotPeptideException(curr, prev)) {
+            if (sequence::Compare(curr_loc, prev_loc, m_Scope) != eNoOverlap  &&
+                s_NotPeptideException(curr, prev)) {
                 EDiagSev overlapPepSev = 
                     m_Imp.IsOvlPepErr() ? eDiag_Error :eDiag_Warning;
                 PostErr( overlapPepSev,
                     eErr_SEQ_FEAT_OverlappingPeptideFeat,
                     "Signal, Transit, or Mature peptide features overlap",
-                    curr->GetOriginalFeature());
+                    feat);
             }
         }
 
-        ++prev; 
-        ++curr;
+        prev = curr;
     }  // end of while loop
+}
+
+
+void CValidError_bioseq::x_ValidateDupGenes
+(const CSeq_feat_Handle& g1,
+ const CSeq_feat_Handle& g2)
+{
+//    _ASSERT(g1.GetFeatType() == CSeqFeatData::e_Gene);
+//    _ASSERT(g2.GetFeatType() == CSeqFeatData::e_Gene);
+//    _ASSERT(Compare(g1.GetLocation(), g2.GetLocation(), m_Scope) == eSame);
+//
+//    const CSeq_loc& gene_loc = g1.GetLocation();
+//
+//    SAnnotSelector sel;
+//    sel.ExcludeFeatType(CSeqFeatData::e_Gene);
+//    for (CFeat_CI it(*m_Scope, g1.GetLocation(), sel); it; ++it) {
+//        CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
+//        ECompare comp = Compare(gene_loc, feat.GetLocation(), m_Scope);
+//        if (comp == eContains  || comp == eSame) {
+//            //CConstRef<CGene_ref> grp = feat.GetGeneXref();
+//            if (!grp) {
+//                /*PostErr(eDiag_Error,
+//                    eErr_SEQ_FEAT_MissignGeneXref,
+//                    "Missing gene xref",
+//                    *feat.GetSeq_feat());*/
+//            }
+//        }
+//    }
 }
 
 
@@ -2813,6 +2890,8 @@ bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 // of descriptor list.
 void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 {
+    const CSeq_entry& ctx = *seq.GetParentEntry();
+
     size_t  num_gb   = 0,
             num_embl = 0,
             num_pir  = 0,
@@ -2873,7 +2952,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     current.GetDate(&current_str);
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
                         "Inconsistent create_date [" + create_str +
-                        "] and update_date [" + current_str + "]", seq, desc);
+                        "] and update_date [" + current_str + "]", ctx, desc);
                 }
             } else {
                 create_date = &(desc.GetCreate_date());
@@ -2918,7 +2997,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             PostErr(eDiag_Error,
                                 eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
                                 "BioSource descriptor has focus, "
-                                "but no BioSource feature", seq, desc);
+                                "but no BioSource feature", ctx, desc);
                         }
                     }
                 }
@@ -2952,32 +3031,32 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     if ( num_gb > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple GenBank blocks", seq, *last_gb);
+            "Multiple GenBank blocks", ctx, *last_gb);
     }
 
     if ( num_embl > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple EMBL blocks", seq, *last_embl);
+            "Multiple EMBL blocks", ctx, *last_embl);
     }
 
     if ( num_pir > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple PIR blocks", seq, *last_pir);
+            "Multiple PIR blocks", ctx, *last_pir);
     }
 
     if ( num_pdb > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple PDB blocks", seq, *last_pdb);
+            "Multiple PDB blocks", ctx, *last_pdb);
     }
 
     if ( num_prf > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple PRF blocks", seq, *last_prf);
+            "Multiple PRF blocks", ctx, *last_prf);
     }
 
     if ( num_sp > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Multiple SWISS-PROT blocks", seq, *last_sp);
+            "Multiple SWISS-PROT blocks", ctx, *last_sp);
     }
 }
 
@@ -2988,6 +3067,8 @@ void CValidError_bioseq::ValidateMolInfoContext
  const CBioseq& seq,
  const CSeqdesc& desc)
 {
+    const CSeq_entry& ctx = *seq.GetParentEntry();
+
     if ( minfo.IsSetBiomol() ) {
         int biomol = minfo.GetBiomol();
         if ( seq_biomol < 0 ) {
@@ -2998,20 +3079,20 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eBiomol_peptide:
             if ( seq.IsNa() ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    "Nucleic acid with Molinfo-biomol = peptide", seq, desc);
+                    "Nucleic acid with Molinfo-biomol = peptide", ctx, desc);
             }
             break;
 
         case CMolInfo::eBiomol_other_genetic:
             if ( !x_IsArtificial(seq) ) {
                 PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                    "Molinfo-biomol = other genetic", seq, desc);
+                    "Molinfo-biomol = other genetic", ctx, desc);
             }
             break;
             
         case CMolInfo::eBiomol_unknown:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    "Molinfo-biomol unknown used", seq, desc);
+                    "Molinfo-biomol unknown used", ctx, desc);
             break;
 
         case CMolInfo::eBiomol_other:
@@ -3019,7 +3100,7 @@ void CValidError_bioseq::ValidateMolInfoContext
                 if ( !IsSynthetic(seq) ) {
                     if ( !x_IsMicroRNA(seq)) {
                         PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                            "Molinfo-biomol other used", seq, desc);
+                            "Molinfo-biomol other used", ctx, desc);
                     }
                 }
             }
@@ -3029,13 +3110,13 @@ void CValidError_bioseq::ValidateMolInfoContext
             if ( seq.IsAa() ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                     "Molinfo-biomol [" + NStr::IntToString(biomol) +
-                    "] used on protein", seq, desc);
+                    "] used on protein", ctx, desc);
             } else {
                 if ( biomol != seq_biomol ) {
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
                         "Inconsistent Molinfo-biomol [" + 
                         NStr::IntToString(seq_biomol) + "] and [" +
-                        NStr::IntToString(biomol) + "]", seq, desc);
+                        NStr::IntToString(biomol) + "]", ctx, desc);
                 }
             }
         }
@@ -3056,7 +3137,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eTech_seq_pept_homol:
         case CMolInfo::eTech_concept_trans_a:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Nucleic acid with protein sequence method", seq, desc);
+                "Nucleic acid with protein sequence method", ctx, desc);
             break;
         default:
             break;
@@ -3075,8 +3156,9 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eTech_htc:
         case CMolInfo::eTech_wgs:
         case CMolInfo::eTech_barcode:
+        case CMolInfo::eTech_composite_wgs_htgs:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Protein with nucleic acid sequence method", seq, desc);
+                "Protein with nucleic acid sequence method", ctx, desc);
             break;
         default:
             break;
@@ -3171,18 +3253,20 @@ void CValidError_bioseq::ValidateMolTypeContext
  const CBioseq& seq,
  const CSeqdesc& desc)
 {
+    const CSeq_entry& ctx = *seq.GetParentEntry();
+
     switch ( gibb_mol ) {
     case eGIBB_mol_peptide:
         if ( seq.IsNa() ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Nucleic acid with GIBB-mol = peptide", seq, desc);
+                "Nucleic acid with GIBB-mol = peptide", ctx, desc);
         }
         break;
 
     case eGIBB_mol_unknown:
     case eGIBB_mol_other:
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-            "GIBB-mol unknown or other used", seq, desc);
+            "GIBB-mol unknown or other used", ctx, desc);
         break;
 
     default:                   // the rest are nucleic acid
@@ -3190,7 +3274,7 @@ void CValidError_bioseq::ValidateMolTypeContext
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 "GIBB-mol [" + 
                 ENUM_METHOD_NAME(EGIBB_mol)()->FindName(gibb_mol, true) + 
-                "] used on protein", seq, desc);
+                "] used on protein", ctx, desc);
         } else if ( seq_na_mol != eGIBB_mol_unknown ) {
             if ( seq_na_mol != gibb_mol ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
@@ -3198,7 +3282,7 @@ void CValidError_bioseq::ValidateMolTypeContext
                     ENUM_METHOD_NAME(EGIBB_mol)()->FindName(seq_na_mol, true) +
                     "] and [" + 
                     ENUM_METHOD_NAME(EGIBB_mol)()->FindName(gibb_mol, true) +
-                    "]", seq, desc);
+                    "]", ctx, desc);
             } else {
                 seq_na_mol = gibb_mol;
             }
@@ -3220,7 +3304,8 @@ void CValidError_bioseq::ValidateUpdateDateContext
         create.GetDate(&create_str);
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
             "Inconsistent create_date [" + create_str + 
-            "] and update_date [" + update_str + "]", seq, desc);
+            "] and update_date [" + update_str + "]",
+            *seq.GetParentEntry(), desc);
     }
 }
 
@@ -3236,7 +3321,8 @@ void CValidError_bioseq::ValidateOrgContext
         if ( this_org.GetTaxname() != org.GetTaxname() ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
                 "Inconsistent taxnames [" + this_org.GetTaxname() + 
-                "] and [" + org.GetTaxname() + "]", seq, desc);
+                "] and [" + org.GetTaxname() + "]",
+                *seq.GetParentEntry(), desc);
         }
     }
 }
@@ -3908,6 +3994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.98  2005/06/28 17:38:20  shomrat
+* Errors from Seqdesc must contain a context
+*
 * Revision 1.97  2005/06/03 17:02:31  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

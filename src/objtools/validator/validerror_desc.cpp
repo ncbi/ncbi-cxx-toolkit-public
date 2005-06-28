@@ -62,8 +62,12 @@ CValidError_desc::~CValidError_desc(void)
 /**
  * Validate descriptors as stand alone objects (no context)
  **/
-void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
+void CValidError_desc::ValidateSeqDesc
+(const CSeqdesc& desc,
+ const CSeq_entry& ctx)
 {
+    m_Ctx.Reset(&ctx);
+
     // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
     switch ( desc.Which() ) {
 
@@ -71,7 +75,7 @@ void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
         case CSeqdesc::e_Modif:
         case CSeqdesc::e_Method:
             PostErr(eDiag_Info, eErr_SEQ_DESCR_Obsolete,
-                desc.SelectionName(desc.Which()) + " is obsolete", desc);
+                desc.SelectionName(desc.Which()) + " is obsolete", *m_Ctx, desc);
             break;
 
         case CSeqdesc::e_Comment:
@@ -131,6 +135,8 @@ void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
         default:
             break;
     }
+
+    m_Ctx.Reset();
 }
 
 
@@ -142,7 +148,7 @@ void CValidError_desc::ValidateComment
         PostErr(eDiag_Info, eErr_SEQ_DESCR_SerialInComment,
             "Comment may refer to reference by serial number - "
             "attach reference specific comments to the reference "
-            "REMARK instead.", desc);
+            "REMARK instead.", *m_Ctx, desc);
     }
 }
 
@@ -161,7 +167,7 @@ void CValidError_desc::ValidateUser
     if ( NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 ) {
         if ( !m_Imp.IsTPA() ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Non-TPA record should not have TpaAssembly object", desc);
+                "Non-TPA record should not have TpaAssembly object", *m_Ctx, desc);
         }
     } else if ( NStr::CompareNocase(oi.GetStr(), "RefGeneTracking") == 0 ) {
         bool has_ref_track_status = false;
@@ -179,7 +185,7 @@ void CValidError_desc::ValidateUser
         }
         if ( !has_ref_track_status ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
-                "RefGeneTracking object needs to have Status set", desc);
+                "RefGeneTracking object needs to have Status set", *m_Ctx, desc);
         }
     }
 }
@@ -198,13 +204,13 @@ void CValidError_desc::ValidateMolInfo
     switch ( biomol ) {
     case CMolInfo::eBiomol_unknown:
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-            "Molinfo-biomol unknown used", desc);
+            "Molinfo-biomol unknown used", *m_Ctx, desc);
         break;
 
     case CMolInfo::eBiomol_other:
         if ( !m_Imp.IsXR() ) {
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                "Molinfo-biomol other used", desc);
+                "Molinfo-biomol other used", *m_Ctx, desc);
         }
         break;
 
@@ -223,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/06/28 17:40:29  shomrat
+* Errors from Seqdesc must contain a context
+*
 * Revision 1.8  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

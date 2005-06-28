@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <objmgr/object_manager.hpp>
 
 #include "validatorp.hpp"
@@ -74,6 +75,7 @@
 #include <objects/submit/Submit_block.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -165,7 +167,8 @@ CValidError_imp::CValidError_imp
       m_NumDesc(0),
       m_NumDescr(0),
       m_NumFeat(0),
-      m_NumGraph(0)
+      m_NumGraph(0),
+      m_IsTbl2Asn(false)
 {
     if ( m_SourceQualTags.get() == 0 ) {
         InitializeSourceQualTags();
@@ -188,7 +191,8 @@ void CValidError_imp::PostErr
 {
     const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
     if (desc != 0) {
-        PostErr (sv, et, msg, *desc);
+        LOG_POST("Seqdesc validation error must have a context");
+        //PostErr (sv, et, msg, *desc);
         return;
     }
     const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
@@ -229,18 +233,18 @@ void CValidError_imp::PostErr
 }
 
 
-void CValidError_imp::PostErr
-(EDiagSev       sv,
- EErrType       et,
- const string&  msg,
- TDesc          ds)
-{
-    // Append Descriptor label
-    string desc = "DESCRIPTOR: ";
-    ds.GetLabel (&desc, CSeqdesc::eBoth);
-
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds);
-}
+//void CValidError_imp::PostErr
+//(EDiagSev       sv,
+// EErrType       et,
+// const string&  msg,
+// TDesc          ds)
+//{
+//    // Append Descriptor label
+//    string desc = "DESCRIPTOR: ";
+//    ds.GetLabel (&desc, CSeqdesc::eBoth);
+//
+//    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, *m_Scope);
+//}
 
 
 void CValidError_imp::PostErr
@@ -306,7 +310,7 @@ void CValidError_imp::PostErr
             desc += "]";
         }
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, *m_Scope);
 }
 
 
@@ -315,7 +319,6 @@ static void s_AppendBioseqLabel(string& str, CValidError_imp::TBioseq sq, bool s
     str += "BIOSEQ: ";
     sq.GetLabel(&str, CBioseq::eContent, supress_context);
 }
-
 
 void CValidError_imp::PostErr
 (EDiagSev       sv,
@@ -326,21 +329,7 @@ void CValidError_imp::PostErr
     // Append bioseq label
     string desc;
     s_AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq);
-}
-
-
-void CValidError_imp::PostErr
-(EDiagSev       sv,
- EErrType       et,
- const string&  msg,
- TBioseq        sq,
- TDesc          ds)
-{
-    // Append Descriptor label
-    string desc("DESCRIPTOR: ");
-    ds.GetLabel(&desc, CSeqdesc::eBoth);
-    PostErr(sv, et, msg, sq);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, *m_Scope);
 }
 
 
@@ -354,7 +343,6 @@ static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress
     }
 }
 
-
 void CValidError_imp::PostErr
 (EDiagSev      sv,
  EErrType      et,
@@ -364,23 +352,61 @@ void CValidError_imp::PostErr
     // Append Bioseq_set label
     string desc = "BIOSEQ-SET: ";
     s_AppendSetLabel(desc, st, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, *m_Scope);
 }
 
 
 void CValidError_imp::PostErr
-(EDiagSev        sv,
- EErrType        et,
- const string&   msg,
- TSet            st,
- TDesc           ds)
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TEntry         ctx,
+ TDesc          ds)
 {
     // Append Descriptor label
-    string desc =  " DESCRIPTOR: ";
+    string desc("DESCRIPTOR: ");
     ds.GetLabel(&desc, CSeqdesc::eBoth);
-    s_AppendSetLabel(desc, st, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st);
+
+    if (ctx.IsSeq()) {
+        s_AppendBioseqLabel(desc, ctx.GetSeq(), m_SuppressContext);
+    } else {
+        s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext);
+    }
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, *m_Scope);
 }
+
+
+//void CValidError_imp::PostErr
+//(EDiagSev       sv,
+// EErrType       et,
+// const string&  msg,
+// TBioseq        sq,
+// TDesc          ds)
+//{
+//    // Append Descriptor label
+//    string desc("DESCRIPTOR: ");
+//    ds.GetLabel(&desc, CSeqdesc::eBoth);
+//    
+//    s_AppendBioseqLabel(desc, sq, m_SuppressContext);
+//    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, *m_Scope);
+//    //PostErr(sv, et, msg, sq);
+//}
+
+
+//void CValidError_imp::PostErr
+//(EDiagSev        sv,
+// EErrType        et,
+// const string&   msg,
+// TSet            st,
+// TDesc           ds)
+//{
+//    // Append Descriptor label
+//    string desc =  " DESCRIPTOR: ";
+//    ds.GetLabel(&desc, CSeqdesc::eBoth);
+//    s_AppendSetLabel(desc, st, m_SuppressContext);
+//    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, *m_Scope);
+//
+//}
 
 
 void CValidError_imp::PostErr
@@ -394,7 +420,7 @@ void CValidError_imp::PostErr
 
     // !!! need to decide on the message
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, *m_Scope);
 }
 
 
@@ -414,7 +440,7 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, *m_Scope);
 }
 
 
@@ -435,7 +461,7 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
     s_AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, *m_Scope);
 }
 
 
@@ -453,7 +479,7 @@ void CValidError_imp::PostErr
     desc+= " SEGS: ";
     desc += align.GetSegs().SelectionName(align.GetSegs().Which());
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, *m_Scope);
 }
 
 
@@ -466,7 +492,7 @@ void CValidError_imp::PostErr
     string desc = "SEQ-ENTRY: ";
     entry.GetLabel(&desc, CSeq_entry::eContent);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, *m_Scope);
 }
 
 
@@ -475,6 +501,13 @@ bool CValidError_imp::Validate
  const CCit_sub* cs,
  CScope* scope)
 {
+    _ASSERT(scope != NULL);
+
+    CSeq_entry_Handle eh = scope->GetSeq_entryHandle(se);
+    if (!eh) {
+        return false;
+    }
+
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Initializing;
         if ( m_PrgCallback(&m_PrgInfo) ) {
@@ -534,8 +567,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating feature. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating feature. EXCEPTION: ") +
                 e.what(), *fi);
             return true;
         }
@@ -556,9 +589,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_desc desc_validator(*this);
-    for (CTypeConstIterator<CSeqdesc> di(se); di; ++di) {
+    for (CSeqdesc_CI di(eh); di; ++di) {
+        const CSeq_entry& ctx = *di.GetSeq_entry_Handle().GetSeq_entryCore();
         try {
-            desc_validator.ValidateSeqDesc(*di);
+            desc_validator.ValidateSeqDesc(*di, ctx);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -567,9 +601,9 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating descriptor. EXCEPTION: ") +
-                e.what(), *di);
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating descriptor. EXCEPTION: ") +
+                e.what(), ctx, *di);
             return true;
         }
     }
@@ -597,8 +631,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating bioseq. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating bioseq. EXCEPTION: ") +
                 e.what(), *bi);
             return true;
         }
@@ -633,8 +667,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating bioseq set. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating bioseq set. EXCEPTION: ") +
                 e.what(), *si);
             return true;
         }
@@ -660,8 +694,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating alignment. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating alignment. EXCEPTION: ") +
                 e.what(), *ai);
             return true;
         }
@@ -686,8 +720,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating graph. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating graph. EXCEPTION: ") +
                 e.what(), *gi);
             return true;
         }
@@ -720,8 +754,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating annotation. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating annotation. EXCEPTION: ") +
                 e.what(), *ni);
             return true;
         }
@@ -747,8 +781,8 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_Internal_Exception,
-            string("Exeption while validating annotation. EXCEPTION: ") +
+            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+                string("Exeption while validating annotation. EXCEPTION: ") +
                 e.what(), *ei);
             return true;
         }
@@ -2273,7 +2307,14 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
         m_PrgInfo.m_Total = m_NumAlign + m_NumAnnot + m_NumBioseq + 
             m_NumBioseq_set + m_NumDesc + m_NumDescr + m_NumFeat + 
             m_NumGraph;
-    } 
+    }
+
+    if (CNcbiApplication::Instance()->GetProgramDisplayName() == "tbl2asn") {
+        m_IsTbl2Asn = true;
+    }
+    if (!m_IsTbl2Asn) {
+        m_RequireTaxonID = true;
+    }
 }
 
 
@@ -2470,14 +2511,14 @@ void CValidError_base::PostErr
 }
 
 
-void CValidError_base::PostErr
-(EDiagSev sv,
- EErrType et,
- const string& msg,
- TDesc ds)
-{
-    m_Imp.PostErr(sv, et, msg, ds);
-}
+//void CValidError_base::PostErr
+//(EDiagSev sv,
+// EErrType et,
+// const string& msg,
+// TDesc ds)
+//{
+//    m_Imp.PostErr(sv, et, msg, ds);
+//}
 
 
 void CValidError_base::PostErr
@@ -2504,11 +2545,22 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TBioseq sq,
+ TEntry ctx,
  TDesc ds)
 {
-    m_Imp.PostErr(sv, et, msg, sq, ds);
+    m_Imp.PostErr(sv, et, msg, ctx, ds);
 }
+
+
+//void CValidError_base::PostErr
+//(EDiagSev sv,
+// EErrType et,
+// const string& msg,
+// TBioseq sq,
+// TDesc ds)
+//{
+//    m_Imp.PostErr(sv, et, msg, sq, ds);
+//}
 
 
 void CValidError_base::PostErr
@@ -2521,15 +2573,15 @@ void CValidError_base::PostErr
 }
 
 
-void CValidError_base::PostErr
-(EDiagSev sv, 
- EErrType et, 
- const string& msg, 
- TSet set,
- TDesc ds)
-{
-    m_Imp.PostErr(sv, et, msg, set, ds);
-}
+//void CValidError_base::PostErr
+//(EDiagSev sv, 
+// EErrType et, 
+// const string& msg, 
+// TSet set,
+// TDesc ds)
+//{
+//    m_Imp.PostErr(sv, et, msg, set, ds);
+//}
 
 
 void CValidError_base::PostErr
@@ -2591,6 +2643,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/06/28 17:37:53  shomrat
+* Errors from Seqdesc must contain a context
+*
 * Revision 1.65  2005/06/03 17:02:31  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

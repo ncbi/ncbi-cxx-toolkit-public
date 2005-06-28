@@ -86,6 +86,7 @@ class CRNA_ref;
 class CImp_feat;
 class CSeq_literal;
 class CBioseq_Handle;
+class CSeq_feat_Handle;
 
 
 BEGIN_SCOPE(validator)
@@ -392,14 +393,16 @@ public:
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
         const CSerialObject& obj);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
+    //void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TFeat ft);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry ctx,
         TDesc ds);
+    /*void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+        TDesc ds);*/
+    /*void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
+        TDesc ds);*/
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
-        TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAnnot annot);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
@@ -590,6 +593,8 @@ private:
     SIZE_TYPE   m_NumDescr;
     SIZE_TYPE   m_NumFeat;
     SIZE_TYPE   m_NumGraph;
+
+    bool m_IsTbl2Asn;
 };
 
 
@@ -618,14 +623,16 @@ protected:
 
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
         const CSerialObject& obj);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
+    //void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TFeat ft);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry ctx,
         TDesc ds);
+    /*void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+        TDesc ds);*/
+    /*void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
+        TDesc ds);*/
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set);
-    void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
-        TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAnnot annot);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
@@ -704,6 +711,7 @@ private:
     void x_ValidateAbuttingCDSGroup(const TMappedFeatVec& cds_group, bool minus);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
+    void x_ValidateDupGenes(const CSeq_feat_Handle& g1, const CSeq_feat_Handle& g2);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -742,9 +750,9 @@ private:
     bool IsPrerna(const CBioseq_Handle& bsh);
     size_t NumOfIntervals(const CSeq_loc& loc);
     bool LocOnSeg(const CBioseq& seq, const CSeq_loc& loc);
-    bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
-    bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
-    bool IsSameSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    //bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
+    //bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    bool x_IsSameSeqAnnotDesc(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2);
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
     bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
@@ -849,20 +857,21 @@ private:
 
 // =============================  Validate SeqDesc  ============================
 
-
 class CValidError_desc : private CValidError_base
 {
 public:
     CValidError_desc(CValidError_imp& imp);
     virtual ~CValidError_desc(void);
 
-    void ValidateSeqDesc(const CSeqdesc& desc);
+    void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
+
+    CConstRef<CSeq_entry> m_Ctx;
 };
 
 
@@ -982,6 +991,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2005/06/28 17:37:24  shomrat
+* Errors from Seqdesc must contain a context
+*
 * Revision 1.78  2004/09/22 13:47:59  shomrat
 * + eErr_SEQ_INST_BadHTGSeq
 *
