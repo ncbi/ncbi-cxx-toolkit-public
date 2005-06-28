@@ -59,7 +59,7 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 (* Build settings for the project *)
 
-property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"None", |GCC_MODEL_TUNING|:"None", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
+property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"None", |GCC_MODEL_TUNING|:"None", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"YES", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
 property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _DEBUG _MT"}
 property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT"}
 
@@ -349,7 +349,7 @@ script ProjBuilder
 		set linkerFlags to x_CreateLinkerFlags(tool_info) -- additional liker flags (like -lxncbi)
 		
 		set symRoot to TheOUTPath & "/bin"
-		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot, |TARGET_BUILD_DIR|:""}
+		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
 		if toolName is "gbench_plugin_scan" then
 			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS"
 			set |SYMROOT| of buildSettings to symRoot
@@ -389,7 +389,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -399,11 +399,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -613,6 +613,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/06/28 18:27:17  lebedev
+ * Minor change to how command-line tools are build with Xcode 2.1
+ *
  * Revision 1.30  2005/06/28 17:57:56  lebedev
  * Added support for Xcode 2.1 and build configurations
  *
