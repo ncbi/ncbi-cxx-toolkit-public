@@ -226,7 +226,7 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
             (*detailsStream) << "\nEnd trial " << i+1 << ":\n";
 
             if (m_trial->NumCyclesRun() != m_trial->NumCycles()) {
-                (*detailsStream) << "    (stopped after " << m_trial->NumCyclesRun()+1 << " of " << m_trial->NumCycles() << " cycles)\n";
+                (*detailsStream) << "    (stopped after " << m_trial->NumCyclesRun() << " of " << m_trial->NumCycles() << " cycles)\n";
             }
         }
 

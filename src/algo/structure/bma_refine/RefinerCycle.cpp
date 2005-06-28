@@ -85,9 +85,12 @@ TScoreType CBMARefinerCycle::GetInitialScore() const {
 
 TScoreType CBMARefinerCycle::GetFinalScore() const {
     TScoreType score = REFINER_INVALID_SCORE;
-    unsigned int nPhases = m_phases.size();
-    if (nPhases > 0 && m_phases[nPhases-1]) {
-        score = m_phases[nPhases-1]->GetScore(false);
+    unsigned int phaseNum = m_phases.size() - 1;
+    while (phaseNum >= 0 && m_phases[phaseNum] && m_phases[phaseNum]->PhaseSkipped()) {
+        --phaseNum;
+    }
+    if (phaseNum >= 0 && m_phases[phaseNum]) {
+        score = m_phases[phaseNum]->GetScore(false);
     }
     return score;
 }
@@ -105,7 +108,7 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
     string phaseName;
 
     if (detailsStream) {
-        (*detailsStream) << "    Start Cycle = " << m_cycleId << "\n";
+        (*detailsStream) << "\n    Start Cycle = " << m_cycleId << "\n";
     }
 
     for (unsigned int p = 0; p < nPhases; ++p) {
@@ -119,9 +122,9 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
             if (phaseResult == eRefinerResultOK) {
                 (*detailsStream) << "    End " << phaseName << " phase for cycle " << m_cycleId << endl;
                 (*detailsStream) << "    Phase's initial alignment score = " << m_phases[p]->GetScore(true) 
-                            << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << endl;
+                                 << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << endl << endl;
             } else {
-                (*detailsStream) << "    Skipped " << phaseName << " phase for cycle " << m_cycleId << endl;
+                (*detailsStream) << "    Skipped " << phaseName << " phase for cycle " << m_cycleId << endl << endl;
             }
         }
 
@@ -135,7 +138,7 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
     }
 
     if (detailsStream) {
-        (*detailsStream) << "    End cycle = " << m_cycleId << ":  Cycle's initial alignment score = " << GetInitialScore() << "; Cycle's ending alignment score = " << GetFinalScore() << endl;
+        (*detailsStream) << "    End cycle = " << m_cycleId << ":  Cycle's initial alignment score = " << GetInitialScore() << "; Cycle's ending alignment score = " << GetFinalScore() << endl << endl;
     }
 
     //  If made it here, either all phases completed OK or were skipped.
@@ -241,6 +244,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/28 15:59:15  lanczyck
+ * extract final score from last phase not skipped vs. last phase
+ *
  * Revision 1.2  2005/06/28 14:25:23  lanczyck
  * don't treat cases of skipped phases as errors
  *
