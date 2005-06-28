@@ -44,10 +44,13 @@
 // class CNSService
 
 namespace {
+typedef map<string, string> TStrToStr;
+typedef TStrToStr::value_type TS2SPair;
+
 struct ServiceInfoCreator
-    :public unary_function<pair<string,string>, AutoPtr<CServiceInfo> >
+    :public unary_function<TS2SPair, AutoPtr<CServiceInfo> >
 {
-    AutoPtr<CServiceInfo> operator() (const pair<string,string>& p)
+    AutoPtr<CServiceInfo> operator() (const TS2SPair& p)
     {
         return AutoPtr<CServiceInfo>(new CServiceInfo(p.first, p.second));
     }
@@ -60,7 +63,6 @@ CNSServices::CNSServices(const string& lbsurl)
     char buf[1024];
     CConn_HttpStream is(lbsurl);
     bool started = false;
-    typedef map<string,string> TStrToStr;
     TStrToStr srv_host;
     while(is.good() && !is.eof()) {
         is.getline(buf,sizeof(buf));
@@ -343,6 +345,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/06/28 01:35:30  ucko
+ * Also tweak for WorkShop's (excessively strict) STL...
+ *
  * Revision 1.4  2005/06/27 21:58:16  ucko
  * Avoid for_each in s_GetServerSet due to a bug in SGI's STL.
  *
