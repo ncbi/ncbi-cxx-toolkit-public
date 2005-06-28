@@ -153,6 +153,17 @@ void CAlignmentRefiner::Init(void)
     argDescr->AddOptionalKey("cex","integer", "C-terminal footprint extension size; positive values extend the footprint; negative values shrink the footprint and can be used with -fs; overrides any C-terminal extension from -ex\n", argDescr->eInteger);
 
 
+    //  Block freezing/un-freezing
+    argDescr->AddFlag("ab", "realign all blocks; overrides -f and -l options", true);
+    argDescr->AddOptionalKey("f", "integer", "first block to realign (post-IBM, from 1); overridden if -ab set", argDescr->eInteger);
+    argDescr->SetConstraint("f", new CArgAllow_Integers(1, kMax_Int));
+    argDescr->AddOptionalKey("l", "integer", "last block to realign (post-IBM, from 1); overridden if -ab set", argDescr->eInteger);
+    argDescr->SetConstraint("l", new CArgAllow_Integers(1, kMax_Int));
+//    argDescr->AddExtra(0, 25, "Block number (post-IBM, from 1) to freeze:  can override -ab or -f, -l for a specific block(s) in a range of unfrozen blocks\n", argDescr->eInteger);
+    argDescr->AddExtra(0, 25, "Row OR block numbers to exclude from LOO (from 1 to # rows/blocks); master == row 1 is always excluded\n(See 'extras_are_blocks' flag.)\n", argDescr->eInteger);
+
+    //  Flag to tell whether the extra args are row numbers (if not present) or block numbers (if present).
+    argDescr->AddFlag("extras_are_blocks", "treat extra arguments as block numbers (default is to treat them as row numbers)", true);
 
 
 
@@ -164,6 +175,8 @@ void CAlignmentRefiner::Init(void)
     argDescr->AddFlag("be_noShrink", "do not attempt to shrink block boundaries", true);
     argDescr->AddFlag("be_shrinkFirst", "if set, try to shrink before extending a block; requires be_alg = both\n\n", true);
 
+    argDescr->AddDefaultKey("be_minSize", "integer", "smallest allowed block width (set to 0 to allow block deletion events);\nblocks that start smaller than min size are not truncated.", argDescr->eInteger, "1");
+    argDescr->SetConstraint("be_minSize", new CArgAllow_Integers(0, 1000));
 
     //  Scoring methods and algorithms for block edits.
     argDescr->AddDefaultKey("be_alg", "string", "block editing method", argDescr->eString, "both");
@@ -178,12 +191,12 @@ void CAlignmentRefiner::Init(void)
     //  respectively.  
     //  For future:  Use 'compound' to use same three scorers w/ non-default values.
     /////////////////////////
+    argDescr->AddDefaultKey("be_median", "integer", "if be_score = 'median', '3.3.3', value column median must equal or exceed", argDescr->eInteger, "3");
+    argDescr->SetConstraint("be_median", new CArgAllow_Integers(-10, 20));
     argDescr->AddDefaultKey("be_negScore", "double", "negative score fraction:  fraction of total column score less than zero\nto be added to a block, column's fraction must have at least this value\n** used for 'scoreWeight', 'compound', '3.3.3' scoring only", argDescr->eDouble, ".3");
     argDescr->SetConstraint("be_negScore", new CArgAllow_Doubles(0, 1));
     argDescr->AddDefaultKey("be_negRows", "double", "negative rows fraction:  largest fraction of rows in a column with a negative value\nfor the column to be added to a block\n** used for 'compound', '3.3.3' scoring only", argDescr->eDouble, ".3");
     argDescr->SetConstraint("be_negRows", new CArgAllow_Doubles(0, 1));
-    argDescr->AddDefaultKey("be_median", "integer", "if be_score = 'median', '3.3.3', value column median must equal or exceed", argDescr->eInteger, "3");
-    argDescr->SetConstraint("be_median", new CArgAllow_Integers(-10, 20));
 
 
 
@@ -195,20 +208,6 @@ void CAlignmentRefiner::Init(void)
 //    argDescr->SetConstraint("be_sThresh", new CArgAllow_Doubles(-1000, 1000));
 
 
-    argDescr->AddDefaultKey("be_minSize", "integer", "smallest allowed block width (set to 0 to allow block deletion events);\nblocks that start smaller than min size are not truncated.", argDescr->eInteger, "1");
-    argDescr->SetConstraint("be_minSize", new CArgAllow_Integers(0, 1000));
-
-    //  Block freezing/un-freezing
-    argDescr->AddFlag("ab", "realign all blocks; overrides -f and -l options", true);
-    argDescr->AddOptionalKey("f", "integer", "first block to realign (post-IBM, from 1); overridden if -ab set", argDescr->eInteger);
-    argDescr->SetConstraint("f", new CArgAllow_Integers(1, kMax_Int));
-    argDescr->AddOptionalKey("l", "integer", "last block to realign (post-IBM, from 1); overridden if -ab set", argDescr->eInteger);
-    argDescr->SetConstraint("l", new CArgAllow_Integers(1, kMax_Int));
-//    argDescr->AddExtra(0, 25, "Block number (post-IBM, from 1) to freeze:  can override -ab or -f, -l for a specific block(s) in a range of unfrozen blocks\n", argDescr->eInteger);
-    argDescr->AddExtra(0, 25, "Row OR block numbers to exclude from LOO (from 1 to # rows/blocks); master == row 1 is always excluded\n(See 'extras_are_blocks' flag.)\n", argDescr->eInteger);
-
-    //  Flag to tell whether the extra args are row numbers (if not present) or block numbers (if present).
-    argDescr->AddFlag("extras_are_blocks", "treat extra arguments as block numbers (default is to treat them as row numbers)", true);
 
     // Specify seed to RNG
     argDescr->AddOptionalKey("seed", "positive_integer", "specify the seed for random number generation\n", argDescr->eInteger);
@@ -748,6 +747,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/28 14:26:07  lanczyck
+ * rearrange some of the cmd line options in list
+ *
  * Revision 1.1  2005/06/28 13:44:35  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *
