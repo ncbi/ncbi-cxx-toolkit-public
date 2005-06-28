@@ -154,23 +154,21 @@ struct ServerDiscoverer :
 };
 }
 
-void s_GetServerSet(const string& service_list, 
-                    CServiceInfo::THostInfos& hosts)
-{
-    hosts.clear();
-    list<string> srvs;
-    NStr::Split(service_list, ";, ", srvs);
-    ServerDiscoverer discover;
-    ITERATE (list<string>, srv, srvs) {
-        discover(*srv, &hosts);
-    }
-}
-
 
 CServiceInfo::CServiceInfo(const string& name, const string& val)
     :m_Name(name)
 {
-    s_GetServerSet(val, m_Hosts);
+    list<string> srvs;
+    NStr::Split(val, ";, ", srvs);
+    /*
+    for_each(srvs.begin(), srvs.end(), 
+             bind2nd(ServerDiscoverer(),&m_Hosts));
+    */
+    ServerDiscoverer discover;
+    ITERATE (list<string>, srv, srvs) {
+        discover(*srv, &m_Hosts);
+    }
+
 }
 
 CServiceInfo::~CServiceInfo()
@@ -245,34 +243,25 @@ void CQueueInfo::CollectInfo()
         m_WorkerNodes.clear();
         m_Info = "";
 
-        CNcbiOstrstream os;
-        cl.PrintStatistics(os);
-        string stat = os.str();
-
-        CNcbiIstrstream is(stat.c_str(), stat.length());
+        CNcbiStrstream ios;
+        cl.PrintStatistics(ios);
         
-        char buff[2048];
         bool nodes_info = false;        
-        while (!is.eof() && is.good()) {
-            is.getline(buff, sizeof(buff));
-            buff[is.gcount()] = 0;
+        string str;
+        while ( NcbiGetlineEOL(ios, str) ) {
             if ( !nodes_info ) {
-                if( NStr::Compare( buff, "[Worker node statistics]:") == 0)
+                if( NStr::Compare( str, "[Worker node statistics]:") == 0)
                     nodes_info = true;
-                else {
-                    m_Info += buff;
-                    m_Info += "\n";
-                }
+                else 
+                    m_Info += str + "\n";
             } else {
-                if ( NStr::StartsWith( buff, "[Configured")) {
-                    m_Info += buff;
-                    m_Info += "\n";
+                if (str.empty())
+                    continue;
+                if ( NStr::StartsWith( str, "[Configured")) {
+                    m_Info += str + "\n";
                     nodes_info = false;
                     continue;
                 }
-                string str(buff);
-                if (str.empty())
-                    continue;
 
                 try {
                     list<string> fields;
@@ -345,6 +334,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/28 13:40:22  didenko
+ * Got rid of s_GetServerSet function
+ *
  * Revision 1.5  2005/06/28 01:35:30  ucko
  * Also tweak for WorkShop's (excessively strict) STL...
  *
