@@ -1,0 +1,24 @@
+# $Id$
+#
+# Block Multiple Alignment Refiner library
+# 
+##########################################
+
+REQUIRES = objects ctools
+
+LIB =   xbma_refiner
+
+SRC =   RowSelector \
+        ColumnScorer \
+        BMAUtils \
+        BlockBoundaryAlgorithm \
+        BlockEditor \
+        AlignRefineScorer \
+        RefinerPhase \
+        RefinerCycle \
+        RefinerTrial \
+        RefinerEngine
+
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+
