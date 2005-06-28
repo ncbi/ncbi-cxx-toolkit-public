@@ -669,7 +669,7 @@ public:
         eTooManyPendingJobs,
         eDataTooLong,
         eInvalidClientOrVersion,
-        eOperationAccessDenied,
+        eOperationAccessDenied
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -746,6 +746,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/06/28 01:36:57  ucko
+ * Remove trailing comma from CNetScheduleException::EErrCode (led to
+ * warnings in WorkShop, and also GCC 4 IIRC).
+ *
  * Revision 1.36  2005/06/20 13:32:36  kuznets
  * Added access denied error
  *
