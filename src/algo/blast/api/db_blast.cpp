@@ -60,6 +60,10 @@
 #include <algo/blast/core/hspstream_collector.h>
 #include <algo/blast/core/blast_traceback.h>
 
+#ifdef NEW_CXX_APIS
+#include <algo/blast/api/query_data.hpp>
+#endif
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -328,25 +332,58 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
                    EProgram p, BlastHSPStream* hsp_stream,
                    int nthreads)
     : m_tQueries(queries), m_pSeqSrc(seq_src), 
-      m_pHspStream(hsp_stream), m_iNumThreads(nthreads)
+      m_pHspStream(hsp_stream), m_iNumThreads(nthreads), m_ipQueryData(0)
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
     x_InitFields();
     x_InitRPSFields();
 }
 
-CDbBlast::CDbBlast(const ILocalQueryData* /*query_data*/,
+#if NEW_CXX_APIS
+CDbBlast::CDbBlast(ILocalQueryData* query_data,
+                   BlastSeqSrc* seq_src, 
+                   CBlastOptionsHandle& opts,
+                   BlastHSPStream* hsp_stream, int nthreads)
+    : m_tQueries(0), m_pSeqSrc(seq_src),
+      m_pHspStream(hsp_stream), m_iNumThreads(nthreads),
+      m_ipQueryData(query_data)
+{
+    m_OptsHandle.Reset(&opts);
+    x_InitFields();
+    x_InitRPSFields();
+    x_SetupQueryDataStructuresFromInterface();
+}
+void
+CDbBlast::x_SetupQueryDataStructuresFromInterface(void)
+{
+    ASSERT(m_ipQueryData);
+    m_iclsQueryInfo.Reset(
+            const_cast<BlastQueryInfo*>(m_ipQueryData->GetQueryInfo()));
+    m_iclsQueries.Reset(
+            const_cast<BLAST_SequenceBlk*>(m_ipQueryData->GetSequenceBlk()));
+    ASSERT(m_iclsQueryInfo.Get());
+    ASSERT(m_iclsQueries.Get());
+}
+#else
+CDbBlast::CDbBlast(ILocalQueryData* /*query_data*/,
                    BlastSeqSrc* /*seq_src*/, 
-                   CBlastOptionsHandle& /*opts*/)
+                   CBlastOptionsHandle& /*opts*/,
+                   BlastHSPStream* /*hsp_stream*/, int /*nthreads*/)
 {
     throw runtime_error("Unimplemented");
 }
+void
+CDbBlast::x_SetupQueryDataStructuresFromInterface(void)
+{
+    throw runtime_error("Unimplemented");
+}
+#endif
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts, 
                    BlastHSPStream* hsp_stream, int nthreads)
     : m_tQueries(queries), m_pSeqSrc(seq_src), 
-      m_pHspStream(hsp_stream), m_iNumThreads(nthreads) 
+      m_pHspStream(hsp_stream), m_iNumThreads(nthreads), m_ipQueryData(0)
 {
     m_OptsHandle.Reset(&opts);    
     x_InitFields();
@@ -366,8 +403,13 @@ CDbBlast::x_ResetQueryDs()
 {
     m_ibQuerySetUpDone = false;
     // should be changed if derived classes are created
-    m_iclsQueries.Reset(NULL);
-    m_iclsQueryInfo.Reset(NULL);
+    if (m_ipQueryData) {
+        m_iclsQueries.Release();
+        m_iclsQueryInfo.Release();
+    } else {
+        m_iclsQueries.Reset(NULL);
+        m_iclsQueryInfo.Reset(NULL);
+    }
     m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
     m_ipLookupSegments = BlastSeqLocFree(m_ipLookupSegments);
@@ -409,7 +451,7 @@ CDbBlast::x_InitHSPStream()
             lock = Blast_CMT_LOCKInit();
         int num_results;
 
-        num_results = (int) m_tQueries.size();
+        num_results = (int) x_GetNumberOfQueries();
 
         const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
 
@@ -432,9 +474,9 @@ void CDbBlast::SetupSearch()
     EBlastProgramType x_eProgram = kOptions.GetProgramType();
 
     // Check that query vector is not empty
-    if (m_tQueries.size() == 0) {
+    if (x_GetNumberOfQueries() == 0) {
         NCBI_THROW(CBlastException, eBadParameter, 
-                   "Nothing to search: empty query vector"); 
+                   "Nothing to search: no queries provided"); 
     }
     
     // Check that sequence source exists
@@ -472,11 +514,16 @@ void CDbBlast::SetupSearch()
         x_ResetQueryDs();
 
         EBlastProgramType prog = kOptions.GetProgramType();
-        ENa_strand strand_opt = kOptions.GetStrandOption();
-        TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
-        SetupQueryInfo(m_tQueries, prog, strand_opt, &m_iclsQueryInfo);
-        SetupQueries(m_tQueries, m_iclsQueryInfo, &m_iclsQueries, 
-                     prog, strand_opt, gc.get(), &blast_message);
+        if (m_ipQueryData == NULL) {
+            ENa_strand strand_opt = kOptions.GetStrandOption();
+            TAutoUint1ArrayPtr gc = 
+                FindGeneticCode(kOptions.GetQueryGeneticCode());
+            SetupQueryInfo(m_tQueries, prog, strand_opt, &m_iclsQueryInfo);
+            SetupQueries(m_tQueries, m_iclsQueryInfo, &m_iclsQueries, 
+                         prog, strand_opt, gc.get(), &blast_message);
+        } else {
+            x_SetupQueryDataStructuresFromInterface();
+        }
 
         if (blast_message) {
             m_ivErrors.push_back(blast_message);
@@ -586,7 +633,7 @@ CDbBlast::GetResults()
                                 kOptions.GetExtnOpts(), 
                                 kOptions.GetScoringOpts(), &blasthit_params);
 
-        m_ipResults = Blast_HSPResultsNew((int) GetQueries().size());
+        m_ipResults = Blast_HSPResultsNew((int) x_GetNumberOfQueries());
 
         BlastHSPList* hsp_list = NULL;
         BlastHSPStream* hsp_stream = GetHSPStream();
@@ -724,6 +771,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2005/06/28 20:37:19  camacho
+ * Experimental: implemented ctor which uses query retrieval interface
+ *
  * Revision 1.76  2005/06/28 15:40:52  camacho
  * Remove msvc warning
  *

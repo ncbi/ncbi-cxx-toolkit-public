@@ -105,8 +105,9 @@ public:
              CBlastOptionsHandle& opts,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
 
-    CDbBlast(const ILocalQueryData* query_data,
-             BlastSeqSrc* seq_src, CBlastOptionsHandle& opts);
+    CDbBlast(ILocalQueryData* query_data,
+             BlastSeqSrc* seq_src, CBlastOptionsHandle& opts,
+             BlastHSPStream* hsp_stream=0, int num_threads=1);
 
     /// Destructor
     virtual ~CDbBlast();
@@ -238,6 +239,9 @@ private:
     BlastRPSInfo*       m_ipRpsInfo;      ///< RPS BLAST database information
     CMemoryFile*        m_ipRpsMmap;      ///< Memory mapped RPS lookup table file
     CMemoryFile*        m_ipRpsPssmMmap;  ///< Memory mapped RPS PSSM file
+    ILocalQueryData*    m_ipQueryData;    ///< Query data source
+    void x_SetupQueryDataStructuresFromInterface(void);
+    size_t x_GetNumberOfQueries(void) const;
 };
 
 inline void
@@ -314,6 +318,16 @@ inline LookupTableWrap* CDbBlast::GetLookupTable() const
     return m_ipLookupTable;
 }
 
+inline size_t
+CDbBlast::x_GetNumberOfQueries(void) const
+{
+    if (m_ipQueryData && m_iclsQueryInfo.Get()) {
+        return m_iclsQueryInfo->num_queries;
+    } else {
+        return m_tQueries.size();
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -323,6 +337,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2005/06/28 20:36:47  camacho
+* Experimental: implemented ctor which uses query retrieval interface
+*
 * Revision 1.36  2005/06/08 16:23:08  camacho
 * Experimental: added CDbBlast ctor which uses query retrieval interface
 *
