@@ -249,7 +249,7 @@ static Boolean wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 
 		    if (sum >= SUM_THRESHOLD[loop])
 		    {
-			if (cloc->cursum*loop < sum*cloc->curlength)
+			if ((Uint4)cloc->cursum*loop < sum*cloc->curlength)
 			{
 				cloc->cursum = sum;
 				cloc->curlength = loop;

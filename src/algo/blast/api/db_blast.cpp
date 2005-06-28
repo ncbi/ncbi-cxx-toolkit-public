@@ -444,7 +444,7 @@ void CDbBlast::SetupSearch()
     }
     
     // Check if subject sequence source is of correct molecule type
-    if ((bool) BlastSeqSrcGetIsProt(m_pSeqSrc) != (bool) Blast_SubjectIsProtein(x_eProgram)) {
+    if (BlastSeqSrcGetIsProt(m_pSeqSrc) != Blast_SubjectIsProtein(x_eProgram)) {
         NCBI_THROW(CBlastException, eBadParameter, 
             "Database molecule does not correspond to BLAST program type");
     }
@@ -724,6 +724,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2005/06/28 15:40:52  camacho
+ * Remove msvc warning
+ *
  * Revision 1.75  2005/06/09 20:35:29  camacho
  * Use new private header blast_objmgr_priv.hpp
  *
