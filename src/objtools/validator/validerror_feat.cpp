@@ -283,9 +283,8 @@ void CValidError_feat::ValidateSeqFeatData
 
     default:
         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
-            "Invalid SeqFeat type [" + 
-            NStr::IntToString(data.Which ()) +
-            "]", feat);
+            "Invalid SeqFeat type [" + CSeqFeatData::SelectionName(data.Which()) + "]",
+            feat);
         break;
     }
 
@@ -462,16 +461,18 @@ string CValidError_feat::MapToNTCoords
 
 void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 {
-    unsigned int  partial_prod = eSeqlocPartial_Complete, 
-        partial_loc = eSeqlocPartial_Complete;
-    static string parterr[2] = { "PartialProduct", "PartialLocation" };
-    static string parterrs[4] = {
+    static const string parterr[2] = { "PartialProduct", "PartialLocation" };
+    static const string parterrs[4] = {
         "Start does not include first/last residue of sequence",
         "Stop does not include first/last residue of sequence",
         "Internal partial intervals do not include first/last residue of sequence",
         "Improper use of partial (greater than or less than)"
     };
 
+    unsigned int  partial_prod = eSeqlocPartial_Complete, 
+                  partial_loc  = eSeqlocPartial_Complete;
+
+    bool is_partial = feat.CanGetPartial()  &&  feat.GetPartial();
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
     if (feat.CanGetProduct ()) {
         partial_prod = SeqLocPartialCheck(feat.GetProduct (), m_Scope );
@@ -479,20 +480,20 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
     
     if ( (partial_loc  != eSeqlocPartial_Complete)  ||
          (partial_prod != eSeqlocPartial_Complete)  ||   
-         (feat.CanGetPartial()  &&  feat.GetPartial() == true) ) {
+         is_partial ) {
 
         // a feature on a partial sequence should be partial -- it often isn't
-        if ( (!feat.CanGetPartial()  ||  !feat.GetPartial()) &&
+        if ( !is_partial &&
             partial_loc != eSeqlocPartial_Complete  &&
-            feat.GetLocation ().Which () == CSeq_loc::e_Whole ) {
+            feat.GetLocation ().IsWhole() ) {
             PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                 "On partial Bioseq, SeqFeat.partial should be TRUE", feat);
         }
         // a partial feature, with complete location, but partial product
-        else if ( (feat.CanGetPartial()  &&  feat.GetPartial())  &&
+        else if ( is_partial                        &&
             partial_loc == eSeqlocPartial_Complete  &&
-            feat.CanGetProduct () &&
-            feat.GetProduct ().Which () == CSeq_loc::e_Whole  &&
+            feat.CanGetProduct ()                   &&
+            feat.GetProduct ().IsWhole()            &&
             partial_prod != eSeqlocPartial_Complete ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                 "When SeqFeat.product is a partial Bioseq, SeqFeat.location "
@@ -500,15 +501,14 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
         }
         // gene on segmented set is now 'order', should also be partial
         else if ( feat.GetData ().IsGene ()  &&
-            !feat.CanGetProduct ()  &&
+            !is_partial                      &&
             partial_loc == eSeqlocPartial_Internal ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                 "Gene of 'order' with otherwise complete location should "
                 "have partial flag set", feat);
         }
         // inconsistent combination of partial/complete product,location,partial flag - part 1
-        else if ( partial_prod == eSeqlocPartial_Complete  &&
-                  feat.CanGetProduct() ) {
+        else if (partial_prod == eSeqlocPartial_Complete  &&  feat.CanGetProduct()) {
             // if not local bioseq product, lower severity
             EDiagSev sev = eDiag_Warning;
             if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
@@ -521,53 +521,32 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             }
                         
             string str("Inconsistent: Product= complete, Location= ");
-            if ( partial_loc != eSeqlocPartial_Complete ) {
-                str += "partial, ";
-            } else {
-                str += "complete, ";
-            }
+            str += (partial_loc != eSeqlocPartial_Complete) ? "partial, " : "complete, ";
             str += "Feature.partial= ";
-            if ( feat.CanGetPartial()  &&  feat.GetPartial() ) {
-                str += "TRUE";
-            } else {
-                str += "FALSE";
-            }
+            str += is_partial ? "TRUE" : "FALSE";
             PostErr(sev, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
         }
         // inconsistent combination of partial/complete product,location,partial flag - part 2
-        else if ( partial_loc == eSeqlocPartial_Complete  ||
-                  (feat.CanGetPartial()  &&  !feat.GetPartial()) ) {
+        else if ( partial_loc == eSeqlocPartial_Complete  ||  !is_partial ) {
             string str("Inconsistent: ");
             if ( feat.CanGetProduct() ) {
                 str += "Product= ";
-                if ( partial_prod != eSeqlocPartial_Complete ) {
-                    str += "partial, ";
-                } else {
-                    str += "complete, ";
-                }
-                str += "Location= ";
-                if ( partial_loc != eSeqlocPartial_Complete ) {
-                    str += "partial, ";
-                } else {
-                    str += "complete, ";
-                }
-                str += "Feature.partial= ";
-                if ( feat.CanGetPartial()  &&  feat.GetPartial() ) {
-                    str += "TRUE";
-                } else {
-                    str += "FALSE";
-                }
+                str += (partial_prod != eSeqlocPartial_Complete) ? "partial, " : "complete, ";
             }
+            str += "Location= ";
+            str += (partial_loc != eSeqlocPartial_Complete) ? "partial, " : "complete, ";
+            str += "Feature.partial= ";
+            str += is_partial ? "TRUE" : "FALSE";
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
         }
         // 5' or 3' partial location giving unclassified partial product
-        else if ( (partial_loc & eSeqlocPartial_Start  ||
-                   partial_loc & eSeqlocPartial_Stop)  &&
-                   partial_prod & eSeqlocPartial_Other &&
-                   feat.CanGetPartial()  &&  feat.GetPartial() ) {
+        else if ( (((partial_loc & eSeqlocPartial_Start) != 0)  ||
+                   ((partial_loc & eSeqlocPartial_Stop) != 0))  &&
+                  ((partial_prod & eSeqlocPartial_Other) != 0)  &&
+                  is_partial ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                "5' or 3' partial location should not have unclassified "
-                "partial location", feat);
+                "5' or 3' partial location should not have unclassified"
+                " partial in product molinfo descriptor", feat);
         }
         
         // may have other error bits set as well 
@@ -1257,6 +1236,10 @@ int s_LegalNcbieaaValues[] = { 42, 65, 66, 67, 68, 69, 70, 71, 72, 73,
 
 void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
+    if (!trna.IsSetAa()) {
+        return;
+    }
+
     // Make sure AA coding is ncbieaa.
     if ( trna.GetAa().Which() != CTrna_ext::C_Aa::e_Ncbieaa ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_TrnaCodonWrong,
@@ -1335,7 +1318,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 {
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
-    string key = imp.GetKey();
+    const string& key = imp.GetKey();
 
     switch ( subtype ) {
     case CSeqFeatData::eSubtype_exon:
@@ -1433,24 +1416,35 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 
     if ( feat.CanGetQual() ) {
         ValidateImpGbquals(imp, feat);
-
-        // Make sure a feature has its mandatory qualifiers
-        ITERATE( CFeatQualAssoc::TGBQualTypeVec,
-                 required,
-                 CFeatQualAssoc::GetMandatoryGbquals(subtype) ) {
-            bool found = false;
-            ITERATE( CSeq_feat::TQual, qual, feat.GetQual() ) {
-                if ( CGbqualType::GetType(**qual) == *required ) {
+    }
+    
+    // Make sure a feature has its mandatory qualifiers
+    bool found = false;
+    switch (subtype) {
+    case CSeqFeatData::eSubtype_conflict:
+    case CSeqFeatData::eSubtype_old_sequence:
+        if (!feat.IsSetCit()  &&  !NStr::IsBlank(feat.GetNamedQual("compare"))) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
+                "Feature " + key + " requires either /compare or /citation (or both)",
+                feat);
+        }
+        break;
+    default:
+        ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
+            found = false;
+            ITERATE(CSeq_feat::TQual, qual, feat.GetQual()) {
+                if (CGbqualType::GetType(**qual) == *required) {
                     found = true;
                     break;
                 }
             }
-            if ( !found ) {
+            if (!found) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
                     "Missing qualifier " + CGbqualType::GetString(*required) +
                     " for feature " + key, feat);
             }
         }
+        break;
     }
 }
 
@@ -3039,6 +3033,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2005/06/28 17:40:09  shomrat
+* Fixes in partial location validation; bug fix in trna validation
+*
 * Revision 1.75  2005/06/03 17:02:31  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
