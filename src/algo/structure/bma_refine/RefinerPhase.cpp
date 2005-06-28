@@ -185,6 +185,10 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     bool acceptAll = true;
     AlignmentUtility* auRollbackCopy = NULL;
 
+    if (!m_looParams.doLOO) {
+        return eRefinerResultPhaseSkipped;
+    }
+
 
     //  Make the row selector if needed.
     if (!m_rowSelector) {
@@ -540,8 +544,10 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
     //  Initialize everything from the base class...
     ResetBase();
 
-    if (!au || !m_blockEditParams.editBlocks) {
+    if (!au) {
         return eRefinerResultAlignmentUtilityError;
+    } else if (!m_blockEditParams.editBlocks) {
+        return eRefinerResultPhaseSkipped;
     }
 
     bool writeDetails = (detailsStream != NULL && m_verbose);
@@ -796,6 +802,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/28 14:25:23  lanczyck
+ * don't treat cases of skipped phases as errors
+ *
  * Revision 1.1  2005/06/28 13:44:23  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *

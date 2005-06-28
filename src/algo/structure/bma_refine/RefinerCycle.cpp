@@ -110,22 +110,26 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
 
     for (unsigned int p = 0; p < nPhases; ++p) {
         phaseResult = m_phases[p]->DoPhase(au, detailsStream);
-        if (phaseResult != eRefinerResultOK) {
+        if (phaseResult != eRefinerResultOK && phaseResult != eRefinerResultPhaseSkipped) {
             return phaseResult;
         }
 
         if (detailsStream && m_verbose) {
             phaseName = m_phases[p]->PhaseName();
-            (*detailsStream) << "    End " << phaseName << " phase for cycle " << m_cycleId << endl;
-            (*detailsStream) << "    Phase's initial alignment score = " << m_phases[p]->GetScore(true) 
-                          << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << endl;
+            if (phaseResult == eRefinerResultOK) {
+                (*detailsStream) << "    End " << phaseName << " phase for cycle " << m_cycleId << endl;
+                (*detailsStream) << "    Phase's initial alignment score = " << m_phases[p]->GetScore(true) 
+                            << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << endl;
+            } else {
+                (*detailsStream) << "    Skipped " << phaseName << " phase for cycle " << m_cycleId << endl;
+            }
         }
 
 
         // increment here so if there's an error in some phase, m_nextPhase 
         // left recording the last attempted phase
         ++m_nextPhase;
-        if (IsConverged()) {
+        if (phaseResult == eRefinerResultOK && IsConverged()) {
             break;
         }
     }
@@ -134,7 +138,8 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
         (*detailsStream) << "    End cycle = " << m_cycleId << ":  Cycle's initial alignment score = " << GetInitialScore() << "; Cycle's ending alignment score = " << GetFinalScore() << endl;
     }
 
-    return phaseResult;
+    //  If made it here, either all phases completed OK or were skipped.
+    return eRefinerResultOK;
 }
 
 
@@ -236,6 +241,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/28 14:25:23  lanczyck
+ * don't treat cases of skipped phases as errors
+ *
  * Revision 1.1  2005/06/28 13:44:23  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *
