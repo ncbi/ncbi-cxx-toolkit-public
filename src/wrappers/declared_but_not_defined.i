@@ -30,6 +30,8 @@
  *
  */
 
+%ignore BLAST_RPSSearchEngine;
+
 %ignore ncbi::objects::CScope_Impl::x_GetBioseq_Lock;
 
 %ignore ncbi::CNlmZipBtRdr::GetCompressedSize;
@@ -130,6 +132,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/28 14:50:31  jcherry
+ * Restore %ignore for BLAST_RPSSearchEngine
+ *
  * Revision 1.2  2005/06/27 17:11:38  jcherry
  * Ignore CScope_Impl::x_GetBioseq_Lock; remove some obsolete %ignore's
  *
