@@ -1,3 +1,53 @@
+<!-- -- Services view -- -->
+<@SERVICES_VIEW@>
+<table border="1" cellspacing="0" cellpadding="2">
+<@srvs_table_row_hook@>
+</table>
+</@SERVICES_VIEW@>
+
+<@srvs_table_row_template@>
+<tr class="row_header"><td align="center">
+<@SERVICE_NAME@>
+</td></tr>
+<tr><td>
+<table width="700" cellspacing="0" cellpadding="2">
+    <tr class="row_colored">
+        <td>Host</td>
+        <td>Port</td>
+        <td>Version</td>
+    </tr>
+    <@srv_table_row_hook@>
+</table>
+</td></tr>
+<tr><td>
+</td></tr>
+</@srvs_table_row_template@>
+
+
+<@srv_table_row_template@>
+<tr class="row_<@class@>">
+    <td><@srv_host@></td>
+    <td><@srv_port@></td>
+    <td><@srv_version@></td>
+</tr>
+<tr class="row_<@class@>">
+    <td>&nbsp;</td>
+    <td>Queues</td>
+    <td><@queue_href_hook@></td>
+</tr>
+</@srv_table_row_template@>
+
+<@queue_href_template@>
+<@queue_sep@>
+<a
+href="<@SELF_URL@>?cmd=queue_stat&server=<@queue_host@>&port=<@queue_port@>&queue=<@queue_name@>">
+<@queue_name@>
+</a>
+</@queue_href_template@>
+
+
+
+<!-- -- Queue view -- -->
 <@QUEUE_VIEW@>
 <table width="700" cellspacing="0">
 <tr class="row_header"><td>
@@ -9,7 +59,7 @@ Queue name : <@QUEUE_NAME@> </br>
 </table>
 </br>
 
-<table border="1" cellspacing="0" cellpadding="2">
+<table width="700" border="1" cellspacing="0" cellpadding="2">
 <tr class="row_even"><td><pre class="row_even">
 <@INFO@>
 </pre></td></tr>
@@ -20,7 +70,7 @@ Queue name : <@QUEUE_NAME@> </br>
 </@QUEUE_VIEW@>
 
 <@wm_table@>
-<table border="1" cellspacing="0" cellpadding="2">
+<table width="700" border="1" cellspacing="0" cellpadding="2">
     <tr class="row_colored">
         <td>Client Name</td>
         <td>Program Version</td>
@@ -53,6 +103,7 @@ Queue name : <@QUEUE_NAME@> </br>
 </@wn_host_href@>
 
 
+<!-- -- Worker node view -- -->
 <@WORKERNODE_QUEUE_VIEW@>
 <table width="700" cellspacing="0">
 <tr class="row_header"><td>
@@ -61,57 +112,11 @@ Statistics for worker node @ <@HOST@>:<@PORT@> </br>
 </table>
 </br>
 
-<table border="1" cellspacing="0" cellpadding="2">
+<table width="700" border="1" cellspacing="0" cellpadding="2">
 <tr class="row_even"><td><pre class="row_even">
 <pre>
 <@INFO@>
 </pre></td></tr>
 </table>
 </@WORKERNODE_QUEUE_VIEW@>
-
-
-
-<@SERVICES_VIEW@>
-<table border="1" cellspacing="0" cellpadding="2">
-<@srvs_table_row_hook@>
-</table>
-</@SERVICES_VIEW@>
-
-<@srvs_table_row_template@>
-<tr class="row_header"><td align="center">
-<@SERVICE_NAME@>
-</td></tr>
-<tr><td>
-<table width="700" cellspacing="0" cellpadding="2">
-    <tr class="row_colored">
-        <td>Host</td>
-        <td>Port</td>
-        <td>Version</td>
-    </tr>
-    <@srv_table_row_hook@>
-</table>
-</td></tr>
-</@srvs_table_row_template@>
-
-
-<@srv_table_row_template@>
-<tr class="row_<@class@>">
-    <td><@srv_host@></td>
-    <td><@srv_port@></td>
-    <td><@srv_version@></td>
-</tr>
-<tr class="row_<@class@>">
-    <td>&nbsp;</td>
-    <td>Queues</td>
-    <td><@queue_href_hook@></td>
-</tr>
-</@srv_table_row_template@>
-
-<@queue_href_template@>
-<@queue_sep@>
-<a
-href="<@SELF_URL@>?cmd=queue_stat&server=<@queue_host@>&port=<@queue_port@>&queue=<@queue_name@>">
-<@queue_name@>
-</a>
-</@queue_href_template@>
 
