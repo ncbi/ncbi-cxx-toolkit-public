@@ -55,7 +55,8 @@ public:
 
     virtual ~CBMARefinerPhase() {;}
 
-    virtual int PhaseType() const = 0;
+    virtual int  PhaseType() const = 0;
+    virtual bool PhaseSkipped() const {return false;}
 
     virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream) = 0;
 
@@ -133,7 +134,8 @@ public:
         m_rowSelector = NULL;
     }
 
-    virtual int PhaseType() const {return eRefinerPhaseLOO;}
+    virtual int  PhaseType() const {return eRefinerPhaseLOO;}
+    virtual bool PhaseSkipped() const {return !m_looParams.doLOO;}
 
     virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream);
 
@@ -180,6 +182,7 @@ public:
     virtual ~CBMARefinerBlockEditPhase() {};
 
     virtual int PhaseType() const {return eRefinerPhaseBE;}
+    virtual bool PhaseSkipped() const {return !m_blockEditParams.editBlocks;}
 
     virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream);
 
@@ -205,6 +208,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/28 16:00:12  lanczyck
+ * add virtual check to see if a phase was skipped or not
+ *
  * Revision 1.1  2005/06/28 13:45:25  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *
