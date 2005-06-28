@@ -3,7 +3,7 @@
 # Meta-makefile("algo/structure" projects)
 #################################
 
-SUB_PROJ = struct_dp struct_util cd_utils
+SUB_PROJ = struct_dp struct_util cd_utils bma_refine
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
