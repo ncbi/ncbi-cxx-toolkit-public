@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include "ncbi_core_cxxp.hpp"
 #include <assert.h>
 #include <memory>
 #include <stdio.h>
@@ -1148,6 +1149,7 @@ CPipe::CPipe(void)
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
  
 {
+    CONNECT_InitInternal();
     // Create new OS-specific pipe handle
     m_PipeHandle = new CPipeHandle();
     if ( !m_PipeHandle ) {
@@ -1163,6 +1165,7 @@ CPipe::CPipe(const string& cmd, const vector<string>& args,
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
+    CONNECT_InitInternal();
     // Create new OS-specific pipe handle
     m_PipeHandle = new CPipeHandle();
     if ( !m_PipeHandle ) {
@@ -1344,6 +1347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/06/28 16:26:57  lavr
+ * Call CONNECT_InitInternal() for auto-magic init in ctors
+ *
  * Revision 1.38  2005/04/20 19:13:59  lavr
  * +<assert.h>
  *

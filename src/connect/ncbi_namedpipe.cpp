@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include "ncbi_core_cxxp.hpp"
 #include <assert.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -1014,6 +1015,7 @@ CNamedPipe::CNamedPipe(void)
     : m_PipeName(kEmptyStr), m_PipeBufSize(kDefaultPipeBufSize),
       m_OpenTimeout(0), m_ReadTimeout(0), m_WriteTimeout(0)
 {
+    CONNECT_InitInternal();
     m_NamedPipeHandle = new CNamedPipeHandle;
 }
 
@@ -1275,6 +1277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/06/28 16:26:57  lavr
+ * Call CONNECT_InitInternal() for auto-magic init in ctors
+ *
  * Revision 1.31  2005/05/20 16:25:17  ivanov
  * Some cosmetics
  *
