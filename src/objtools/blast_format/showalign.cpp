@@ -648,7 +648,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
                                m_AV->StrandSign(0), m_AV->StrandSign(1),
                                frame[0], frame[1], 
-                               static_cast<bool>(m_AlignType & eProt));
+							   ((m_AlignType & eProt) != 0 ? true : false));
     }
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.79  2005/06/28 16:03:01  camacho
+*Fix msvc warning
+*
 *Revision 1.78  2005/06/06 15:30:29  lavr
 *Explicit (unsigned char) casts in ctype routines
 *
