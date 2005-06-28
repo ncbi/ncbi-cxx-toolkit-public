@@ -245,7 +245,9 @@ void CTest_validatorApplication::ReadClassMember
 
                 // Validate Seq-entry
                 CValidator validator(*m_ObjMgr);
-                CConstRef<CValidError> eval = validator.Validate(*se, 0, m_Options);
+                CScope scope(*m_ObjMgr);
+                scope.AddTopLevelSeqEntry(*se);
+                CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
                 if ( eval ) {
                     m_Reported += PrintBatchErrors(eval, GetArgs());
                 }
@@ -323,7 +325,9 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
 
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*se, 0, m_Options);
+    CScope scope(*m_ObjMgr);
+    scope.AddTopLevelSeqEntry(*se);
+    return validator.Validate(*se, &scope, m_Options);
 }
 
 
@@ -349,7 +353,9 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
 
     // Validae Seq-annot
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*sa, 0, m_Options);
+    CScope scope(*m_ObjMgr);
+    scope.AddSeq_annot(*sa);
+    return validator.Validate(*sa, &scope, m_Options);
 }
 
 
@@ -492,6 +498,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/06/28 20:47:41  vasilche
+ * Added scope argument which is required by Validate() now.
+ *
  * Revision 1.29  2004/07/29 16:09:09  shomrat
  * Separated error message from offending object's description; Added error group
  *
