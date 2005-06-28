@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_submit;
 class CSeq_annot;
+class CBioseq;
 class CSeqdesc;
 class CObjectManager;
 class CScope;
@@ -385,6 +386,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/06/28 20:52:17  vasilche
+* Added forward declaration for CBioseq.
+*
 * Revision 1.19  2005/06/28 17:34:07  shomrat
 * Include more information in the each error object
 *
