@@ -73,7 +73,8 @@ enum RefinerResultCode {
     eRefinerResultInconsistentArgumentCombination = 18,
     eRefinerResultCantDoBlockEditing = 19,
     eRefinerResultTrialInitializationError = 20,
-    eRefinerResultTrialExecutionError = 21
+    eRefinerResultTrialExecutionError = 21,
+    eRefinerResultPhaseSkipped = 100
 };
 
 
@@ -264,6 +265,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/28 14:26:36  lanczyck
+ * add 'error' code for a skipped phase
+ *
  * Revision 1.1  2005/06/28 13:45:25  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *
