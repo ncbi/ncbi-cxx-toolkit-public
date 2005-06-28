@@ -32,7 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/validator/validator.hpp>
 #include <util/static_map.hpp>
 
@@ -42,6 +46,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
+USING_SCOPE(sequence);
 
 
 // *********************** CValidator implementation **********************
@@ -65,7 +70,7 @@ CConstRef<CValidError> CValidator::Validate
  CScope* scope,
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError());
+    CRef<CValidError> errors(new CValidError(&se));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(se, 0, scope) ) {
@@ -80,7 +85,7 @@ CConstRef<CValidError> CValidator::Validate
  CScope* scope,
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError());
+    CRef<CValidError> errors(new CValidError(&ss));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(ss, scope);
     return errors;
@@ -92,7 +97,7 @@ CConstRef<CValidError> CValidator::Validate
  CScope* scope,
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError());
+    CRef<CValidError> errors(new CValidError(&sa));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(sa, scope);
     return errors;
@@ -109,7 +114,8 @@ void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data
 // *********************** CValidError implementation **********************
 
 
-CValidError::CValidError(void)
+CValidError::CValidError(const CSerialObject* obj) :
+    m_Validated(obj)
 {
 }
 
@@ -118,9 +124,26 @@ void CValidError::AddValidErrItem
  unsigned int         ec,
  const string&        msg,
  const string&        desc,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ CScope&              scope)
 {
-    CConstRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, scope));
+    m_ErrItems.push_back(item);
+    m_Stats[item->GetSeverity()]++;
+}
+
+
+void CValidError::AddValidErrItem
+(EDiagSev             sev,
+ unsigned int         ec,
+ const string&        msg,
+ const string&        desc,
+ const CSeqdesc&      seqdesc,
+ const CSeq_entry&    ctx,
+ CScope&              scope)
+{
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, seqdesc, scope));
+    item->SetContext(ctx);
     m_ErrItems.push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
@@ -275,13 +298,16 @@ CValidErrItem::CValidErrItem
  unsigned int         ec,
  const string&        msg,
  const string&        desc,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ CScope& scope)
   : m_Severity(sev),
     m_ErrIndex(ec),
     m_Message(msg),
     m_Desc(desc),
-    m_Object(&obj)
+    m_Object(&obj),
+    m_Scope(&scope)
 {
+    x_SetAcc();
 }
 
 
@@ -381,6 +407,118 @@ const string& CValidErrItem::GetVerbose(void) const
 const CSerialObject& CValidErrItem::GetObject(void) const
 {
     return *m_Object;
+}
+
+
+const string& CValidErrItem::GetAccession(void) const
+{
+    return m_Acc;
+}
+
+
+void CValidErrItem::SetContext(const CSeq_entry& ctx)
+{
+    m_Ctx.Reset(&ctx);
+    x_SetAcc();
+}
+
+
+static string s_GetBioseqAcc(const CBioseq_Handle& handle)
+{
+    if (handle) {
+        try {
+            return GetId(handle).GetSeqId()->GetSeqIdString();
+        } catch (CException&) {}
+    }
+    return kEmptyStr;
+}
+
+
+void CValidErrItem::x_SetAcc(const CBioseq& seq)
+{
+    CBioseq_Handle handle = m_Scope->GetBioseqHandle(seq);
+    m_Acc = s_GetBioseqAcc(handle);
+}
+
+
+static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope)
+{
+    CBioseq_Handle seq = GetBioseqFromSeqLoc(feat.GetLocation(), scope);
+    return s_GetBioseqAcc(seq);
+}
+
+static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
+{
+    const CBioseq* retval = NULL;
+
+    switch (bsst.GetClass()) {
+        case CBioseq_set::eClass_gen_prod_set:
+            // find the genomic bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    const CSeq_inst& inst = (*it)->GetSeq().GetInst();
+                    if (inst.IsSetMol()  &&  inst.GetMol() == CSeq_inst::eMol_dna) {
+                        retval = &(*it)->GetSeq();
+                        break;
+                    }
+                }
+            }
+            break;
+        case CBioseq_set::eClass_nuc_prot:
+            // find the nucleotide bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()  &&  (*it)->GetSeq().IsNa()) {
+                    retval = &(*it)->GetSeq();
+                    break;
+                }
+            }
+            break;
+        case CBioseq_set::eClass_segset:
+            // find the master bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    retval = &(*it)->GetSeq();
+                    break;
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return retval;
+}
+
+
+void CValidErrItem::x_SetAcc(void)
+{
+    m_Acc.erase();
+
+    if (m_Ctx) {
+        if (m_Ctx->IsSeq()) {
+            x_SetAcc(m_Ctx->GetSeq());
+        } else if (m_Ctx->IsSet()) {
+            const CBioseq* seq = s_GetSeqFromSet(m_Ctx->GetSet(), *m_Scope);
+            if (seq != NULL) {
+                x_SetAcc(*seq);
+            }
+        }
+    } else if (m_Object) {
+        if (m_Object->GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+            const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*m_Object);
+            m_Acc = s_GetSeq_featAcc(feat, *m_Scope);
+        } if (m_Object->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
+            const CBioseq& seq = dynamic_cast<const CBioseq&>(*m_Object);
+            x_SetAcc(seq);
+        } else if (m_Object->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
+            const CBioseq_set& bsst = dynamic_cast<const CBioseq_set&>(*m_Object);
+            const CBioseq* seq = s_GetSeqFromSet(bsst, *m_Scope);
+            if (seq != NULL) {
+                x_SetAcc(*seq);
+            }
+        } // TO DO: graph
+    }
 }
 
 
@@ -1348,6 +1486,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/06/28 17:36:20  shomrat
+* Include more information in the each error object
+*
 * Revision 1.58  2005/01/24 17:16:48  vasilche
 * Safe boolean operators.
 *
