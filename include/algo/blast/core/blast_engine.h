@@ -46,10 +46,14 @@
 extern "C" {
 #endif
 
+NCBI_XBLAST_EXPORT 
 extern const int kBlastMajorVersion; /**< Major version */
+NCBI_XBLAST_EXPORT 
 extern const int kBlastMinorVersion; /**< Minor version */
+NCBI_XBLAST_EXPORT 
 extern const int kBlastPatchVersion; /**< Patch version */
 /** Date of the most recent BLAST release (kept for historical reasons) */
+NCBI_XBLAST_EXPORT 
 extern const char* kBlastReleaseDate;
 
 

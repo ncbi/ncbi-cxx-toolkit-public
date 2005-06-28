@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// Used to perform run-time version checks
 ///
 /// For reference, please refer to http://apr.apache.org/versioning.html
-class CVersion : public CVersionInfo
+class NCBI_XBLAST_EXPORT CVersion : public CVersionInfo
 {
 public:
     /// Constructor - should only be used to create the static object below
@@ -77,7 +77,7 @@ static const CVersion Version(kBlastMajorVersion,
                               kBlastReleaseDate);
 
 /// Class to keep track of the various BLAST references
-class CReference
+class NCBI_XBLAST_EXPORT CReference
 {
 public:
     /// Enumerates the various BLAST publications

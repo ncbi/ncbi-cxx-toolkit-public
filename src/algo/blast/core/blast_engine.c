@@ -73,10 +73,10 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_gapalign.h>
 #include <algo/blast/core/phi_lookup.h>
 
-const int kBlastMajorVersion = 2;
-const int kBlastMinorVersion = 2;
-const int kBlastPatchVersion = 11;
-const char* kBlastReleaseDate = "Jun-05-2005";
+NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
+NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
+NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 11;
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Jun-05-2005";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
@@ -516,7 +516,7 @@ s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
  */
 static Int2 
 s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
-   LookupTableWrap* lookup_wrap,	
+   LookupTableWrap* lookup_wrap,    
    const BlastInitialWordParameters* word_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingOptions* hit_options,
