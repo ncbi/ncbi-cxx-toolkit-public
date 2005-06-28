@@ -73,7 +73,9 @@ send_start_msg=0
 add_to_started_port_list=0
 
 StartNode() {
+    test "$use_launcher" = "yes" && test -f ${new_version_dir}/relaunch.$1 && return
     echo "Testing if $node_name is alive on $host:$1"
+
     $ns_control -v $host $1 > /dev/null  2>&1
     if test $? -ne 0; then
         echo "Service not responding. Starting the $node_name node..."
@@ -81,11 +83,21 @@ StartNode() {
         conf=$2
         test "$1" == "$conf" &&  conf=''
         if [ "x$conf" == "x" ]; then
-            echo "$node -control_port $1"
-            $node -control_port $1 >>  ${node_name}.out  2>&1 &
+            if test "$use_launcher" = "yes" ; then
+                echo "$launcher $node $1"
+                $launcher $node $1 >>  ${node_name}.out  2>&1 &
+            else
+                echo "$node -control_port $1"
+                $node -control_port $1 >>  ${node_name}.out  2>&1 &
+            fi
         else 
-            echo "$node -control_port $1 -conffile $conf "
-            $node -control_port $1 -conffile $conf >>  ${node_name}.out  2>&1 &
+            if test "$use_launcher" = "yes" ; then
+                echo "$launcher $node $1 $conf"
+                $launcher $node $1 $conf >>  ${node_name}.out  2>&1 &
+            else
+                echo "$node -control_port $1 -conffile $conf "
+                $node -control_port $1 -conffile $conf >>  ${node_name}.out  2>&1 &
+            fi
         fi
         node_pid=$!
         echo $node_pid > ${node_name}.$1.pid    
@@ -215,6 +227,8 @@ ns_control=${script_dir}/netschedule_control
 new_version_dir=${BIN_PATH}/NEW_VERSION
 backup_dir=${BIN_PATH}/BACKUP
 worker_nodes_ports=worker_nodes.ports
+use_launcher="no"
+launcher=${script_dir}/grid_node_launcher.sh
 
 cd ${BIN_PATH}
 
@@ -225,6 +239,7 @@ shift
 for cmd_arg in "$@" ; do
   case "$cmd_arg" in
     --mail-to=*  ) mail_to="`echo $cmd_arg | sed -e 's/--mail-to=//'`" ;;
+    --use-launcher ) use_launcher="yes" ;; 
 
     * ) Usage "Inbalid command line argument: $cmd_arg" ;;
   esac
@@ -236,6 +251,7 @@ test ! -f $ini_file &&  Usage "Cannot find $ini_file at $BIN_PATH"
 
 test ! -d $backup_dir &&  mkdir $backup_dir
 test ! -d $new_version_dir &&  mkdir $new_version_dir
+test "$use_launcher" = "yes" && test ! -f $launcher && Usage "Cannot find launcher $launcher"
 
 host=`hostname`
 port=`cat $ini_file | grep control_port= | sed -e 's/control_port=//'`
