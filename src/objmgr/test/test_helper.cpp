@@ -1146,12 +1146,12 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_feat iterator, resolve-all method
     CSeq_loc loc;
     loc.SetWhole(id);
-    count = 0;
     if ( !tse_feat_test ) {
         if ( sm_DumpFeatures ) {
             NcbiCout << "-------------------- CFeat_CI resolve-all over "<<
                 id.AsFastaString()<<" --------------------" << NcbiEndl;
         }
+        count = 0;
         for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetResolveAll());
               feat_it;  ++feat_it) {
             count++;
@@ -1160,7 +1160,29 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
-            //### _ASSERT(feat_it->
+        }
+        _ASSERT(count == seq_feat_ra_cnt);
+        count = 0;
+        for ( CFeat_CI feat_it(handle, SAnnotSelector().SetResolveAll());
+              feat_it;  ++feat_it) {
+            count++;
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
+        }
+        _ASSERT(count == seq_feat_ra_cnt);
+        count = 0;
+        for ( CFeat_CI feat_it(handle.GetParentEntry().GetSeq(),
+                               SAnnotSelector().SetResolveAll());
+              feat_it;  ++feat_it) {
+            count++;
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
         }
         _ASSERT(count == seq_feat_ra_cnt);
     }
@@ -1209,7 +1231,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             NcbiCout << "-------------------- "
                 "LimitTSE --------------------" << NcbiEndl;
         }
-        for ( CFeat_CI feat_it(handle,
+        for ( CFeat_CI feat_it(handle.GetParentEntry().GetSeq(),
                                SAnnotSelector()
                                .SetLimitTSE(handle.GetTopLevelEntry()));
               feat_it;  ++feat_it) {
@@ -1227,7 +1249,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                 "product CFeat_CI --------------------" << NcbiEndl;
         }
         // Get products
-        for ( CFeat_CI feat_it(handle,
+        for ( CFeat_CI feat_it(handle.GetParentEntry().GetSeq(),
                                SAnnotSelector()
                                .SetLimitTSE(handle.GetTopLevelEntry())
                                .SetByProduct());
@@ -1268,7 +1290,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for ( CFeat_CI feat_it(handle, CRange<TSeqPos>(0, 10),
+        for ( CFeat_CI feat_it(handle.GetParentEntry().GetSeq(),
+                               CRange<TSeqPos>(0, 10),
                                SAnnotSelector()
                                .SetLimitTSE(handle.GetTopLevelEntry()));
               feat_it;  ++feat_it) {
@@ -1449,6 +1472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/06/29 16:09:31  vasilche
+* Added test for CFeat_CI over CBioseq_Handle without explicit Seq-id.
+*
 * Revision 1.63  2005/06/22 14:28:30  vasilche
 * Updated to changes in object manager.
 *
