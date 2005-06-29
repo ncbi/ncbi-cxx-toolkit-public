@@ -391,7 +391,7 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
     CArgs args = GetArgs();
     RefinerResultCode result = eRefinerResultOK;
 
-    msg.clear();
+    msg.erase();
 
     m_loo.doLOO      = (!args["no_LOO"]);
     m_loo.fixStructures = (args["fix_structs"]);
@@ -487,7 +487,7 @@ RefinerResultCode CAlignmentRefiner::ExtractBEArgs(string& msg) {
     m_blockEdit.canShrink  = (!args["be_noShrink"]);
     m_blockEdit.extendFirst = (!args["be_shrinkFirst"]);
 
-    msg.clear();
+    msg.erase();
     if (m_blockEdit.editBlocks) {
 
         //  Get algorithm to use.
@@ -747,6 +747,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/29 20:44:33  ucko
+ * Use string::erase rather than string::clear, which GCC 2.95 lacks.
+ *
  * Revision 1.2  2005/06/28 14:26:07  lanczyck
  * rearrange some of the cmd line options in list
  *
