@@ -105,7 +105,6 @@ public:
     TDesc_CI x_GetFirstDesc(TDescTypeMask types) const;
     TDesc_CI x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const;
     bool x_IsEndDesc(TDesc_CI iter) const;
-    bool x_IsEndNextDesc(TDesc_CI iter) const;
     TDesc_CI x_FindDesc(TDesc_CI iter, TDescTypeMask types) const;
     void x_PrefetchDesc(TDesc_CI last, TDescTypeMask types) const;
 
@@ -151,6 +150,8 @@ public:
     void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
 
 private:
+    bool x_IsEndNextDesc(TDesc_CI iter) const; // internal inlined method
+
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_CI;
 
@@ -216,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/06/29 16:05:58  vasilche
+ * Moved internally used inline method to private section.
+ *
  * Revision 1.9  2005/06/22 14:23:48  vasilche
  * Added support for original->edited map.
  *
