@@ -269,9 +269,6 @@ public:
 
     const CTSE_Handle& GetUsingTSE(void) const;
 
-    CConstRef<CSeqMap> x_GetSubSeqMap(bool resolveExternal) const;
-    CConstRef<CSeqMap> x_GetSubSeqMap(void) const;
-
 private:
     typedef CSeqMap_CI_SegmentInfo TSegmentInfo;
 
@@ -640,6 +637,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/06/29 16:10:10  vasilche
+* Removed declarations of obsolete methods.
+*
 * Revision 1.23  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

@@ -170,8 +170,6 @@ public:
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                     ENa_strand strand);
 
-    static TSeqPos ResolveBioseqLength(const CSeq_id& id, CScope* scope);
-
     void SetRegionInChunk(CTSE_Chunk_Info& chunk, TSeqPos pos, TSeqPos length);
     void LoadSeq_data(TSeqPos pos, TSeqPos len, const CSeq_data& data);
 

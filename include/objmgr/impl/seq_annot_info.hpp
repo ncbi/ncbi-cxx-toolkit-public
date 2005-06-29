@@ -107,7 +107,6 @@ public:
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
 
     void x_DoUpdate(TNeedUpdateFlags flags);
-    static CRef<TObject> sx_ShallowCopy(TObject& obj);
 
     typedef SAnnotObjectsIndex::TObjectInfos TAnnotObjectInfos;
     const TAnnotObjectInfos& GetAnnotObjectInfos(void) const;
@@ -197,6 +196,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/06/29 16:10:10  vasilche
+* Removed declarations of obsolete methods.
+*
 * Revision 1.23  2005/06/27 18:17:03  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

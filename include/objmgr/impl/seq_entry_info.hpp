@@ -144,9 +144,6 @@ public:
     void RemoveEntry(CRef<CSeq_entry_Info> entry);
 
     // tree initialization
-    void x_Attach(CRef<CSeq_entry_Info> sub_entry, int index = -1);
-    void x_Attach(CRef<CBioseq_Info> bioseq);
-
     void x_ParentAttach(CBioseq_set_Info& parent);
     void x_ParentDetach(CBioseq_set_Info& parent);
 
@@ -267,6 +264,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/06/29 16:10:10  vasilche
+* Removed declarations of obsolete methods.
+*
 * Revision 1.21  2005/06/27 18:17:04  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

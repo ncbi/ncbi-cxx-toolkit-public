@@ -52,8 +52,6 @@ public:
     typedef TList::const_iterator TList_I;
 
     CSeqMap_Delta_seqs(const TObject& obj);
-    CSeqMap_Delta_seqs(const TObject& obj, CSeqMap_Delta_seqs* parent, size_t index);
-
     ~CSeqMap_Delta_seqs(void);
 
 protected:
@@ -235,6 +233,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/06/29 16:10:10  vasilche
+* Removed declarations of obsolete methods.
+*
 * Revision 1.10  2004/07/12 16:53:28  vasilche
 * Fixed loading of split Seq-data when sequence is not delta.
 *
