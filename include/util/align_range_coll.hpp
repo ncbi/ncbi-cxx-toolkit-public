@@ -253,7 +253,7 @@ public:
         const_iterator it = end();
         erase(--it);
     } 
-    const CRange<position_type>& operator[](size_type pos)   const   
+    const TAlignRange& operator[](size_type pos)   const   
     {  
         return m_Ranges[pos];  
     }
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/29 15:49:16  yazhuk
+ * Fixed operator []
+ *
  * Revision 1.5  2005/06/17 20:29:36  yazhuk
  * Removed unused variable
  *
