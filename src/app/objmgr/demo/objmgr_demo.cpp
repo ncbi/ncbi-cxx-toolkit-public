@@ -294,7 +294,9 @@ void s_Test()
             han = Scope.GetBioseqHandle(*gen);
             if (!han) 	continue;
         }
-        catch (...) {
+        catch ( CException& exc ) {
+            ERR_POST("Cannot resolve " <<gen->AsFastaString()<<": "<<
+                     exc.GetMsg());
             continue;
         }
         CFeat_CI iff(han,
@@ -489,13 +491,19 @@ int CDemoApp::Run(void)
         }
     }
     {{
-        CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
-        if ( !blob_id ) {
-            ERR_POST("Cannot resolve Seq-id "<<id->AsFastaString());
+        try {
+            CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
+            if ( !blob_id ) {
+                ERR_POST("Cannot find blob id of "<<id->AsFastaString());
+            }
+            else {
+                NcbiCout << "Resolved: "<<id->AsFastaString()<<
+                    " -> "<<gb_loader->GetBlobId(blob_id).ToString()<<NcbiEndl;
+            }
         }
-        else {
-            NcbiCout << "Resolved: "<<id->AsFastaString()<<
-                " -> "<<gb_loader->GetBlobId(blob_id).ToString()<<NcbiEndl;
+        catch ( CException& exc ) {
+            ERR_POST("Cannot blob id of "<<id->AsFastaString()<<": "<<
+                     exc.GetMsg());
         }
     }}
 
@@ -1050,6 +1058,7 @@ int CDemoApp::Run(void)
         }
 
         handle.Reset();
+        scope.ResetHistory();
     }
     if ( args["modify"] ) {
         handle = scope.GetBioseqHandle(idh);
@@ -1081,6 +1090,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2005/06/29 16:11:10  vasilche
+* Do not abort if blob id cannot be determined.
+*
 * Revision 1.102  2005/06/22 14:36:45  vasilche
 * Added test of edit interface.
 *
