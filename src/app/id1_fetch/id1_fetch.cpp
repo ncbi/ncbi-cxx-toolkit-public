@@ -605,7 +605,8 @@ int CId1FetchApp::LookUpFlatSeqID(const string& s)
         NStr::Tokenize(data, ",", pieces);
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
-        CSeq_id id(type, pieces[1], pieces[0], pieces[3], pieces[2]);
+        CSeq_id id(type, pieces[1], pieces[0], NStr::StringToInt(pieces[3]),
+                   pieces[2]);
         return m_ID1Client.AskGetgi(id);
     }
     default: // can't happen, but shut the compiler up
@@ -750,6 +751,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/06/29 18:21:45  ucko
+* When parsing exotic ID formats, parse versions ourself rather than
+* requiring CSeq_id to have an extra constructor.
+*
 * Revision 1.53  2005/06/03 16:27:05  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
