@@ -70,7 +70,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,0,0) );
+    SetVersion( CVersionInfo(1,1,0) );
 }
 
 void CDataTool::Init(void)
@@ -236,6 +236,11 @@ bool CDataTool::ProcessModules(void)
     SourceFile::EType srctype =
         LoadDefinitions(generator.GetMainModules(),
                         modulesPath, args["m"].GetStringList(), false);
+    
+    if (srctype != SourceFile::eDTD) {
+        LoadDefinitions(generator.GetImportModules(),
+                        modulesPath, args["M"].GetStringList(), true, srctype);
+    }
 
     if ( args["sxo"] ) {
         CDataType::SetEnforcedStdXml(true);
@@ -250,9 +255,10 @@ bool CDataTool::ProcessModules(void)
         if (srctype == SourceFile::eDTD) {
             CDataType::SetEnforcedStdXml(true);
         }
-        if ( fx.AsString() == "m" )
+        if ( fx.AsString() == "m" ) {
+            generator.ResolveImportRefs();
             generator.GetMainModules().PrintDTDModular();
-        else {
+        } else {
             generator.GetMainModules().PrintDTD(fx.AsOutputFile());
             fx.CloseFile();
         }
@@ -262,17 +268,13 @@ bool CDataTool::ProcessModules(void)
         if (srctype == SourceFile::eDTD) {
             CDataType::SetEnforcedStdXml(true);
         }
-        if ( ax.AsString() == "m" )
+        if ( ax.AsString() == "m" ) {
+            generator.ResolveImportRefs();
             generator.GetMainModules().PrintXMLSchemaModular();
-        else {
+        } else {
             generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
             ax.CloseFile();
         }
-    }
-    
-    if (srctype != SourceFile::eDTD) {
-        LoadDefinitions(generator.GetImportModules(),
-                        modulesPath, args["M"].GetStringList(), true, srctype);
     }
 
     if ( !generator.Check() ) {
@@ -623,6 +625,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2005/06/29 15:09:58  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
 * Revision 1.82  2005/06/24 15:17:04  gouriano
 * Added version info
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/06/29 15:10:16  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
 * Revision 1.11  2005/06/06 17:41:07  gouriano
 * Added generation of modular XML schema
 *
@@ -104,6 +107,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <list>
 #include <map>
+#include <set>
 #include <serial/datatool/mcontainer.hpp>
 #include <serial/datatool/comments.hpp>
 
@@ -172,6 +176,11 @@ public:
         {
             return m_LastComments;
         }
+    const TImports& GetImports(void) const
+        {
+            return m_Imports;
+        }
+    bool AddImportRef(const string& imp);
 
 private:
     bool m_Errors;
@@ -190,6 +199,7 @@ private:
     TTypesByName m_LocalTypes;
     TTypesByName m_ExportedTypes;
     TImportsByName m_ImportedTypes;
+    set<string> m_ImportRef;
 };
 
 END_NCBI_SCOPE

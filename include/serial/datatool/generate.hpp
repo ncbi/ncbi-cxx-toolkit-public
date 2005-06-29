@@ -103,6 +103,10 @@ public:
         {
             return m_ImportFiles;
         }
+    const CFileSet& GetImportModules(void) const
+        {
+            return m_ImportFiles;
+        }
     const string& GetDefFile(void) const
         {
             return m_DefFile;
@@ -154,6 +158,9 @@ public:
         {
             m_DoxygenGroupDescription = str;
         }
+    void ResolveImportRefs(void);
+    void ResolveImportRefs(CDataTypeModule& head, const CDataTypeModule* ref);
+    const CDataTypeModule* FindModuleByName(const string& name) const;
 
 protected:
 
@@ -199,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/06/29 15:10:16  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
 * Revision 1.12  2004/04/29 20:09:44  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *

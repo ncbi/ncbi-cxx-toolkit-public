@@ -811,12 +811,59 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
 }
 #endif
 
+void CCodeGenerator::ResolveImportRefs(void)
+{
+    ITERATE( CFileSet::TModuleSets, fs, GetMainModules().GetModuleSets()) {
+        ITERATE(CFileModules::TModules, fm, (*fs)->GetModules()) {
+            CDataTypeModule* head = const_cast<CDataTypeModule*>(fm->get());
+            head->AddImportRef( head->GetName());
+            ResolveImportRefs(*head,head);
+        }
+    }
+}
+
+void CCodeGenerator::ResolveImportRefs(CDataTypeModule& head, const CDataTypeModule* ref)
+{
+    if (ref) {
+        ITERATE ( CDataTypeModule::TImports, i, ref->GetImports() ) {
+            const string& s = (*i)->moduleName;
+            if (head.AddImportRef(s)) {
+                ResolveImportRefs(head,FindModuleByName(s));
+            }
+        }
+    }
+}
+
+const CDataTypeModule* CCodeGenerator::FindModuleByName(const string& name) const
+{
+    ITERATE( CFileSet::TModuleSets, mm, GetMainModules().GetModuleSets()) {
+        ITERATE(CFileModules::TModules, fm, (*mm)->GetModules()) {
+            if ((*fm)->GetName() == name) {
+                return fm->get();
+            }
+        }
+    }
+    ITERATE( CFileSet::TModuleSets, mi, GetImportModules().GetModuleSets()) {
+        ITERATE(CFileModules::TModules, fm, (*mi)->GetModules()) {
+            if ((*fm)->GetName() == name) {
+                return fm->get();
+            }
+        }
+    }
+    ERR_POST(Error << "cannot find module " << name);
+    return 0;
+}
+
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2005/06/29 15:09:58  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
 * Revision 1.60  2004/08/04 19:49:06  gouriano
 * Use UNIX-style path separator in  *.files
 *

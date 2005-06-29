@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/06/29 15:09:58  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
 * Revision 1.39  2005/06/06 17:40:42  gouriano
 * Added generation of modular XML schema
 *
@@ -420,9 +423,15 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
         "  This file is used to put them together.\n"
         "-->\n";
     PrintModularDTDModuleReference(out, "NCBI-Entity");
-    PrintModularDTDModuleReference(out, GetName());
-    ITERATE ( TImports, i, m_Imports ) {
-        PrintModularDTDModuleReference(out, (*i)->moduleName);
+
+    list<string> l;
+//    l.assign(m_ImportRef.begin(), m_ImportRef.end());
+    ITERATE( set<string>, s, m_ImportRef) {
+        l.push_back(*s);
+    }
+    l.sort();
+    ITERATE (list<string>, i, l) {
+        PrintModularDTDModuleReference(out, (*i));
     }
 }
 
@@ -434,9 +443,15 @@ void CDataTypeModule::PrintXMLSchemaModular(CNcbiOstream& out) const
         "  The actual declarations are in the modules.\n"
         "  This file is used to put them together.\n"
         "-->\n";
-    out << "<xs:include schemaLocation=\"" << GetName() << ".mod.xsd\"/>\n";
-    ITERATE ( TImports, i, m_Imports ) {
-        out << "<xs:include schemaLocation=\"" << (*i)->moduleName << ".mod.xsd\"/>\n";
+
+    list<string> l;
+//    l.assign(m_ImportRef.begin(), m_ImportRef.end());
+    ITERATE( set<string>, s, m_ImportRef) {
+        l.push_back(*s);
+    }
+    l.sort();
+    ITERATE (list<string>, i, l) {
+        out << "<xs:include schemaLocation=\"" << (*i) << ".mod.xsd\"/>\n";
     }
 }
 
@@ -555,6 +570,15 @@ const string CDataTypeModule::GetVar(const string& typeName,
     }
     // default section
     return registry.Get("-", varName);
+}
+
+bool CDataTypeModule::AddImportRef(const string& imp)
+{
+    if (m_ImportRef.find(imp) == m_ImportRef.end()) {
+        m_ImportRef.insert(imp);
+        return true;
+    }
+    return false;
 }
 
 END_NCBI_SCOPE
