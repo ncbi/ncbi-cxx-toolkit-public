@@ -81,7 +81,7 @@ void ColumnScorer::GetAndCopyPSSMScoresForColumn(const BMA& bma, unsigned int al
     if (doubleScores && doubleScores->size() == bma.NRows()) {
         scores.clear();
         for (unsigned int i = 0; i < doubleScores->size(); ++i) {
-            scores.push_back((int) doubleScores->at(i));
+            scores.push_back((int) (*doubleScores)[i]);
         }
     } else {
     //  ... otherwise, find the PSSM scores at each row and cache them if requested
@@ -279,6 +279,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/06/29 00:35:07  ucko
+* Fix GCC 2.95 build errors.
+*
 * Revision 1.1  2005/06/28 13:44:23  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *

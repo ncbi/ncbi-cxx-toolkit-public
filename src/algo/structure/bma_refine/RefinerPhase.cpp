@@ -78,8 +78,6 @@ bool   IsRowPDBInAU(const AlignmentUtility* au, unsigned int row) {
 }
 
 string GetSeqIdStringForRowFromAU(const AlignmentUtility* au, unsigned int row) {
-    char buf[1024];
-    string result = kEmptyStr;
     AlignmentUtility* nonConstAU = const_cast<AlignmentUtility*>(au);
     const BlockMultipleAlignment* bma = (nonConstAU) ? nonConstAU->GetBlockMultipleAlignment() : NULL;
     const Sequence* sequence = (bma) ? bma->GetSequenceOfRow(row) : NULL;
@@ -88,15 +86,14 @@ string GetSeqIdStringForRowFromAU(const AlignmentUtility* au, unsigned int row) 
         const CSeq_id& id = sequence->GetPreferredIdentifier();
         if (id.IsPdb()) {
             char chain = id.GetPdb().GetChain();
-            sprintf(buf, "PDB %s_%c", id.GetPdb().GetMol().Get().c_str(), chain);
+            return "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
         } else if (id.IsGi()) {
-            sprintf(buf, "GI %d", id.GetGi());
+            return "GI " + NStr::IntToString(id.GetGi());
         } else {
-            sprintf(buf, "<Non-GI/PDB Sequence Type at row %d>", row+1);
+            return "<Non-GI/PDB Sequence Type at row "
+                + NStr::IntToString(row + 1) + '>';
         }
-        result = string(buf);
     }
-    return result;
 }
 
 
@@ -802,6 +799,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/06/29 00:35:07  ucko
+ * Fix GCC 2.95 build errors.
+ *
  * Revision 1.2  2005/06/28 14:25:23  lanczyck
  * don't treat cases of skipped phases as errors
  *

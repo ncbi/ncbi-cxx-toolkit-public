@@ -339,7 +339,7 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
                     oss << setw(4) << seqIndex+1 << " slave residue ";
 
                     oss.setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                    oss << right << residue << " score " << setw(5) << thisScore;
+                    oss << residue << " score " << setw(5) << thisScore;
 
                     oss.setf(initFlags, IOS_BASE::adjustfield);
 
@@ -584,6 +584,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/06/29 00:35:07  ucko
+* Fix GCC 2.95 build errors.
+*
 * Revision 1.1  2005/06/28 13:44:23  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
