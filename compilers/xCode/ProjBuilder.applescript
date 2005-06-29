@@ -59,7 +59,7 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 (* Build settings for the project *)
 
-property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"None", |GCC_MODEL_TUNING|:"None", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"YES", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
+property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"None", |GCC_MODEL_TUNING|:"None", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
 property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _DEBUG _MT"}
 property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT"}
 
@@ -540,7 +540,7 @@ script ProjBuilder
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
 			end if
 			
-			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
+			set theScript to theScript & "  " & TheOUTPath & "/bin/$CONFIGURATION/datatool -oR " & TheNCBIPath
 			
 			set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"" & posixPath & "\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
 			set theScript to theScript & "else" & ret
@@ -613,6 +613,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/06/29 12:09:49  lebedev
+ * Do not prebind libraries with Xcode 2.1 (per Apple recommendation)
+ *
  * Revision 1.31  2005/06/28 18:27:17  lebedev
  * Minor change to how command-line tools are build with Xcode 2.1
  *
