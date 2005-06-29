@@ -454,7 +454,6 @@ const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
 }
 
 
-inline
 void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
 {
@@ -2108,6 +2107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2005/06/29 16:08:20  vasilche
+* Changed CAnnotObject_Ref::SetSNP_Point() to be non-inlined.
+*
 * Revision 1.60  2005/06/22 14:07:41  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.
