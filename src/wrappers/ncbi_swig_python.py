@@ -34,6 +34,7 @@ for line in lines:
     if line.startswith('%importfile'):
         m = re.search('%importfile "(.*)"', line)
         fname = m.groups()[0]
+	fname = fname.replace('\\', '/').replace('//', '/')  # Convert Windows path names to UNIX-style
         for header in headers:
             if fname.endswith(header):
                 line = line.replace('%importfile', '%includefile', 1)
