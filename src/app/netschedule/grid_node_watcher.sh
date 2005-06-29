@@ -269,15 +269,23 @@ test  -f ${new_version_dir}/donotrun_me && exit 0
 if [ -f ${new_version_dir}/upgrade_me ]; then
     ls -latrRF > ${node_name}.ls
     touch ${new_version_dir}/donotrun_me
-    StopNodes 
+    StopNodes
+    test -f ${new_version_dir}/pre_install.sh && ${new_version_dir}/pre_install.sh   
     SendMailMsg "New Version of $node_name on $host:$ports_show"  "${node_name}.ls"
     echo "Upgrading the $node_name node..." 
     for file in ${new_version_dir}/* ; do
         fname=`basename $file`
-        test $fname != "upgrade_me" && test $fname != "donotrun_me" && CopyFile $fname
+        test "$fname" = "upgrade_me" && continue
+        test "$fname" = "donotrun_me" && continue
+        test "$fname" = "pre_install.sh" && continue
+        test "$fname" = "post_install.sh" && continue        
+        CopyFile $fname
     done
+    test -f ${new_version_dir}/post_install.sh && ${new_version_dir}/post_install.sh
     rm -f ${new_version_dir}/upgrade_me
     rm -f ${new_version_dir}/donotrun_me
+    rm -f ${new_version_dir}/pre_install.sh
+    rm -f ${new_version_dir}/post_install.sh
 
    SendMailMsg "$node_name on $host:$ports_show has been upgraded" "New version of $node_name on $host:$ports_show has been installed"   
 fi
