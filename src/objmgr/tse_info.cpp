@@ -212,6 +212,12 @@ void CTSE_Info::SetName(const CAnnotName& name)
 }
 
 
+void CTSE_Info::SetUsedMemory(size_t size)
+{
+    m_UsedMemory = size;
+}
+
+
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 {
     entry.Parentize();
