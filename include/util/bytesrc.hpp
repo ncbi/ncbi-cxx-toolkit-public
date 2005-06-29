@@ -305,7 +305,6 @@ public:
         { return m_DataSize; }
     CRef<CMemoryChunk> GetNextChunk(void) const
         { return m_NextChunk; }
-    void SetNextChunk(CRef<CMemoryChunk> chunk);
 
 private:
     char*              m_Data;
@@ -479,6 +478,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/06/29 16:03:30  vasilche
+ * Removed declaration of obsolete method.
+ *
  * Revision 1.26  2004/09/07 14:27:41  vasilche
  * Allow nested CSubSourceCollectors.
  *
