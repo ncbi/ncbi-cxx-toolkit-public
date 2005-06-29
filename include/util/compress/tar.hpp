@@ -288,7 +288,7 @@ public:
     ///   ~CTar
     void Close(void);
 
-    /// Append an entry at the end of an archive that already exists.
+    /// Append an entry at the end of the archive that already exists.
     ///
     /// Appended entry can be either a file, a directory, or a symbolic link.
     /// The name of the entry may not contain leading '..'.
@@ -318,7 +318,8 @@ public:
     auto_ptr<TEntries> Diff(const string& diff_dir);
 */
 
-    /// Extract the entire archive into a specified directory.
+    /// Extract the entire archive (either in current directory or
+    ///	a directory specified by SetBaseDir()).
     ///
     /// Extract all archive entries, which names match pre-set masks.
     /// @sa SetMask, SetBaseDir
@@ -581,6 +582,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/06/29 19:04:45  lavr
+ * Doc'ing
+ *
  * Revision 1.15  2005/06/24 12:35:32  ivanov
  * Removed extra comma in the enum ETarModeBits enum declaration
  *
