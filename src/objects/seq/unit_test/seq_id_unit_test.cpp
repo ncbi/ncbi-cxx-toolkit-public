@@ -118,7 +118,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromNAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("N0068")));
     CHECK_NO_THROW(id.Reset(new CSeq_id("N00068")));
     CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), "N00068");
+    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
     CHECK( !id->GetDdbj().IsSetName() );
     CHECK( !id->GetDdbj().IsSetVersion() );
     CHECK( !id->GetDdbj().IsSetRelease() );
@@ -128,7 +128,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromNAcc)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("N20001.1")));
     CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), "N20001");
+    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
     CHECK( !id->GetGenbank().IsSetName() );
     CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
     CHECK( !id->GetGenbank().IsSetRelease() );
@@ -170,7 +170,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GA")));
     CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV")));
     CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), "1GAV");
+    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV.2")));
@@ -178,7 +178,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAVX")));
     CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|X")));
     CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), "1GAV");
+    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|XY")));
@@ -236,7 +236,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaLocal)
     CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|asdf")));
     CHECK(id->IsLocal());
     CHECK(id->GetLocal().IsStr());
-    CHECK_EQUAL(id->GetLocal().GetStr(), "asdf");
+    CHECK_EQUAL(id->GetLocal().GetStr(), string("asdf"));
 }
 
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaObsolete)
@@ -267,8 +267,8 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGenbank)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")))
     CHECK_NO_THROW(id.Reset(new CSeq_id("gb|U12345.1|AMU12345")));
     CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), "U12345");
-    CHECK_EQUAL(id->GetGenbank().GetName(), "AMU12345");
+    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("U12345"));
+    CHECK_EQUAL(id->GetGenbank().GetName(), string("AMU12345"));
     CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
     CHECK( !id->GetGenbank().IsSetRelease() );
 }
@@ -279,8 +279,8 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaEmbl)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("emb|AL123456|MTBH37RV")));
     CHECK(id->IsEmbl());
-    CHECK_EQUAL(id->GetEmbl().GetAccession(), "AL123456");
-    CHECK_EQUAL(id->GetEmbl().GetName(), "MTBH37RV");
+    CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
+    CHECK_EQUAL(id->GetEmbl().GetName(), string("MTBH37RV"));
     CHECK( !id->GetEmbl().IsSetVersion() );
     CHECK( !id->GetEmbl().IsSetRelease() );
 }
@@ -292,7 +292,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPir)
     CHECK_NO_THROW(id.Reset(new CSeq_id("pir||S16356")));
     CHECK(id->IsPir());
     CHECK( !id->GetPir().IsSetAccession() );
-    CHECK_EQUAL(id->GetPir().GetName(), "S16356");
+    CHECK_EQUAL(id->GetPir().GetName(), string("S16356"));
     CHECK( !id->GetPir().IsSetVersion() );
     CHECK( !id->GetPir().IsSetRelease() );
 }
@@ -303,8 +303,8 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaSwissprot)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0|RS22_SALTY")));
     CHECK(id->IsSwissprot());
-    CHECK_EQUAL(id->GetSwissprot().GetAccession(), "Q7CQJ0");
-    CHECK_EQUAL(id->GetSwissprot().GetName(), "RS22_SALTY");
+    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
+    CHECK_EQUAL(id->GetSwissprot().GetName(), string("RS22_SALTY"));
     CHECK( !id->GetSwissprot().IsSetVersion() );
     CHECK( !id->GetSwissprot().IsSetRelease() );
 
@@ -313,7 +313,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaSwissprot)
 #else
     CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
     CHECK(id->IsSwissprot());
-    CHECK_EQUAL(id->GetSwissprot().GetAccession(), "Q7CQJ0.1");
+    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0.1"));
     CHECK( !id->GetSwissprot().IsSetVersion() );
 #endif
 }
@@ -325,9 +325,10 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPatent)
     CHECK_NO_THROW(id.Reset(new CSeq_id("pat|US|RE33188|1")));
     CHECK(id->IsPatent());
     CHECK_EQUAL(id->GetPatent().GetSeqid(), 1);
-    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), "US");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("US"));
     CHECK(id->GetPatent().GetCit().GetId().IsNumber());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(), "RE33188");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
+                string("RE33188"));
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1.5")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1b")));
@@ -339,14 +340,16 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPatent)
     CHECK_NO_THROW(id.Reset(new CSeq_id("pat|EP|App=0238993|7")));
     CHECK(id->IsPatent());
     CHECK_EQUAL(id->GetPatent().GetSeqid(), 7);
-    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), "EP");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("EP"));
 #if 0 // Cliff had it this way, but for input only, and the C Toolkit
     // seems not to use this syntax at all....
     CHECK(id->GetPatent().GetCit().GetId().IsApp_number());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(), "0238993");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
+                string("0238993"));
 #else
     CHECK(id->GetPatent().GetCit().GetId().IsNumber());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(), "App=0238993");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
+                string("App=0238993"));
 #endif
 }
 
@@ -356,7 +359,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("ref|NM_000170.1")));
     CHECK(id->IsOther());
-    CHECK_EQUAL(id->GetOther().GetAccession(), "NM_000170");
+    CHECK_EQUAL(id->GetOther().GetAccession(), string("NM_000170"));
     CHECK_EQUAL(id->GetOther().GetVersion(), 1);
     // Don't try to do anything with the release field, which is no longer
     // supported.
@@ -368,13 +371,13 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGeneral)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|EcoSeq|EcoAce")));
     CHECK(id->IsGeneral());
-    CHECK_EQUAL(id->GetGeneral().GetDb(), "EcoSeq");
+    CHECK_EQUAL(id->GetGeneral().GetDb(), string("EcoSeq"));
     CHECK(id->GetGeneral().GetTag().IsStr());
-    CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(), "EcoAce");
+    CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(), string("EcoAce"));
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|taxon|9606")));
     CHECK(id->IsGeneral());
-    CHECK_EQUAL(id->GetGeneral().GetDb(), "taxon");
+    CHECK_EQUAL(id->GetGeneral().GetDb(), string("taxon"));
     CHECK(id->GetGeneral().GetTag().IsId());
     CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 9606);
 }
@@ -394,7 +397,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaDdbj)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("dbj|N00068")));
     CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), "N00068");
+    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 }
 
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPrf)
@@ -411,12 +414,12 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPdb)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV")));
     CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), "1GAV");
+    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|X")));
     CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), "1GAV");
+    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|XY")));
@@ -477,7 +480,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromDbtag)
 
     CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
     CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), "N20001");
+    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
     CHECK( !id->GetGenbank().IsSetName() );
     CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
     CHECK( !id->GetGenbank().IsSetRelease() );
@@ -497,11 +500,11 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromDbtag)
 
     CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456")));
     CHECK(id->IsEmbl());
-    CHECK_EQUAL(id->GetEmbl().GetAccession(), "AL123456");
+    CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
 
     CHECK_NO_THROW(id.Reset(s_NewDbtagId("DDBJ", "N00068")));
     CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), "N00068");
+    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 
     CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345X")));
 
@@ -599,9 +602,8 @@ static void s_TestFastaRoundTrip(const char* s)
 
 static boost::unit_test::ut_detail::auto_unit_test_registrar
 s_FastaRoundTripRegistrar
-(boost::unit_test::create_test_case<const char**, const char*>
- (s_TestFastaRoundTrip, "s_TestFastaRoundTrip", kTestFastaStrings,
-  kTestFastaStrings + kNumFastaStrings));
+(BOOST_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
+                       kTestFastaStrings + kNumFastaStrings));
 
 BOOST_AUTO_UNIT_TEST(s_TestNoStrays)
 {
@@ -654,14 +656,14 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
     CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, merged, true), kNumFastaStrings);
     CHECK_EQUAL(ids.size(), kNumFastaStrings);
     CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_FastA),
-                "gi|1234|ref|NM_000170.1|");
+                string("gi|1234|ref|NM_000170.1|"));
     CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_ForceGI),
-                "gi|1234");
+                string("gi|1234"));
     CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_BestWithVersion),
-                "ref|NM_000170.1");
+                string("ref|NM_000170.1"));
     CHECK_EQUAL(CSeq_id::GetStringDescr(bs,
                                         CSeq_id::eFormat_BestWithoutVersion),
-                "ref|NM_000170");
+                string("ref|NM_000170"));
     CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV", true),
                 size_t(2));
     CHECK_THROW_SEQID(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
@@ -671,6 +673,10 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/06/29 21:37:41  ucko
+* Fix WorkShop build.  (It seems BOOST_PARAM_TEST_CASE can be made to
+* work with a little tweaking after all.)
+*
 * Revision 1.1  2005/06/29 19:25:36  ucko
 * Add a Boost-based unit test for CSeq_id.
 *
