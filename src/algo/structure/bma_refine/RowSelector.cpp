@@ -181,7 +181,11 @@ bool CRowSelector::ExcludeRow(unsigned int row) {
     //cout << "Excluding row " << row+1 << " in sequence." << endl;
     //  'row' must be in range, in m_sequence and not already excluded.
     if (row < m_nRows && find(m_excluded.begin(), m_excluded.end(), row) == m_excluded.end()) {
-        nTimes = count(m_sequence.begin(), m_sequence.end(), row);
+        ITERATE (vector<unsigned int>, it, m_sequence) {
+            if (*it == row) {
+                ++nTimes;
+            }
+        }
         if (nTimes > 0) {
             //  If the row was previously selected, decrease # selected as it will subsequently
             //  be removed from the actual sequence.
@@ -263,6 +267,10 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/06/29 01:32:33  ucko
+* Rework ExcludeRow to avoid count(), as WorkShop's STL implementation
+* doesn't support the standard syntax. :-/
+*
 * Revision 1.1  2005/06/28 13:44:23  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
