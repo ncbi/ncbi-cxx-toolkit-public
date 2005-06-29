@@ -29,17 +29,6 @@
  *
  */
 
-// SWIG is confused by recent CConstRef changes
-namespace ncbi {
-    template<class T> class CConstRef
-    {
-    public:
-        const T* operator->();
-        const T& operator*();
-    };
-}
-%ignore ncbi::CConstRef;
-
 %template(vector_CSerialAttribInfoItem)
     std::vector<ncbi::CSerialAttribInfoItem>;
 
@@ -304,6 +293,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/06/29 18:14:29  jcherry
+ * Moved CConstRef (needs to be early)
+ *
  * Revision 1.5  2005/06/27 17:01:31  jcherry
  * Provide a simple declaration for CConstRef (the new real one confuses SWIG)
  *

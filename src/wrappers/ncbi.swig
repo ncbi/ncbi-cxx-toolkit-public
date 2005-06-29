@@ -108,8 +108,19 @@ using namespace ncbi::objects::validator;
 using namespace ncbi::blast;
 %}
 
+// SWIG is confused by recent CConstRef changes
+namespace ncbi {
+    template<class T> class CConstRef
+    {
+    public:
+        const T* operator->();
+        const T& operator*();
+    };
+}
+%ignore ncbi::CConstRef;
+
 %include cref.i           // CRef handling
-%include cobject.i        // Typedefs, etc., for CObject
+%include cobject.i        // Typemaps, etc., for CObject
 %include ncbi_cobjects.i  // A macro call for each CObject (auto-generated)
 
 // Kind of funky.  We want our Python proxies for
@@ -186,6 +197,9 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/06/29 18:14:29  jcherry
+ * Moved CConstRef (needs to be early)
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
