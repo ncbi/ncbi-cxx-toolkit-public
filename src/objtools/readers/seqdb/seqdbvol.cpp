@@ -1145,6 +1145,8 @@ CSeqDBVol::GetBioseq(int                   oid,
     
     CRef<CBioseq> bioseq(new CBioseq);
     
+    bool is_prot = (x_GetSeqType() == 'p');
+    
     if (seqdata) {
         const char * seq_buffer = 0;
         int length = x_GetSequence(oid, & seq_buffer, false, locked, false);
@@ -1164,8 +1166,6 @@ CSeqDBVol::GetBioseq(int                   oid,
         // d. Set mol = Seq_mol_na;
         
         CSeq_inst & seqinst = bioseq->SetInst();
-        
-        bool is_prot = (x_GetSeqType() == 'p');
         
         if (is_prot) {
             s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
@@ -1198,7 +1198,10 @@ CSeqDBVol::GetBioseq(int                   oid,
     } else {
         CSeq_inst & seqinst = bioseq->SetInst();
         seqinst.SetRepr(CSeq_inst::eRepr_not_set);
-        seqinst.SetMol(CSeq_inst::eMol_not_set);
+        
+        bioseq->SetInst().SetMol(is_prot
+                                 ? CSeq_inst::eMol_aa
+                                 : CSeq_inst::eMol_na);
     }
     
     // Set the id (Seq_id)
