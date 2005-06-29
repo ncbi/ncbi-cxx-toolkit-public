@@ -402,6 +402,24 @@ void CBioseq_Base_Info::x_DetachAnnot(CRef<CSeq_annot_Info> annot)
     _ASSERT(!annot->HasParent_Info());
 }
 
+
+void CBioseq_Base_Info::ResetAnnot(void)
+{
+    if ( !IsSetAnnot() ) {
+        return;
+    }
+    x_Update(fNeedUpdate_annot);
+    _ASSERT(IsSetAnnot());
+    _ASSERT(m_ObjAnnot->size() == m_Annot.size());
+    ITERATE ( TAnnot, it, m_Annot ) {
+        x_DetachAnnot(*it);
+    }
+    m_Annot.clear();
+    x_ResetObjAnnot();
+    m_ObjAnnot = 0;
+}
+
+
 CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(const CSeq_annot& annot)
 {
     CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot));
@@ -455,6 +473,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/06/29 16:06:19  vasilche
+* Implemented ResetAnnot() method.
+*
 * Revision 1.10  2005/06/22 14:23:48  vasilche
 * Added support for original->edited map.
 *
