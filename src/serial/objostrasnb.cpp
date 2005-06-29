@@ -217,12 +217,13 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 }
 
 template<typename T>
-void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
+inline
+void CObjectOStreamAsnBinary::WriteBytesOf(const T& value, size_t count)
 {
     for ( size_t shift = (count - 1) * 8; shift > 0; shift -= 8 ) {
-        out.WriteByte(Uint1(value >> shift));
+        WriteByte(Uint1(value >> shift));
     }
-    out.WriteByte(Uint1(value));
+    WriteByte(Uint1(value));
 }
 
 inline
@@ -329,7 +330,7 @@ void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
         }
     }
     WriteByte(TByte(0x80 + count));
-    WriteBytesOf(*this, length, count);
+    WriteBytesOf(length, count);
 }
 
 inline
@@ -388,7 +389,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Int4 data)
         length = sizeof(data);
     }
     WriteShortLength(length);
-    WriteBytesOf(*this, data, length);
+    WriteBytesOf(data, length);
 }
 
 void CObjectOStreamAsnBinary::WriteNumberValue(Int8 data)
@@ -415,7 +416,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Int8 data)
         length = sizeof(data);
     }
     WriteShortLength(length);
-    WriteBytesOf(*this, data, length);
+    WriteBytesOf(data, length);
 }
 
 void CObjectOStreamAsnBinary::WriteNumberValue(Uint4 data)
@@ -442,7 +443,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Uint4 data)
             // full length unsigned - and doesn't fit in signed place
             WriteShortLength(sizeof(data) + 1);
             WriteByte(0);
-            WriteBytesOf(*this, data, sizeof(data));
+            WriteBytesOf(data, sizeof(data));
             return;
         }
         else {
@@ -451,7 +452,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Uint4 data)
         }
     }
     WriteShortLength(length);
-    WriteBytesOf(*this, data, length);
+    WriteBytesOf(data, length);
 }
 
 void CObjectOStreamAsnBinary::WriteNumberValue(Uint8 data)
@@ -478,7 +479,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Uint8 data)
             // full length unsigned - and doesn't fit in signed place
             WriteShortLength(sizeof(data) + 1);
             WriteByte(0);
-            WriteBytesOf(*this, data, sizeof(data));
+            WriteBytesOf(data, sizeof(data));
             return;
         }
         else {
@@ -487,7 +488,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Uint8 data)
         }
     }
     WriteShortLength(length);
-    WriteBytesOf(*this, data, length);
+    WriteBytesOf(data, length);
 }
 
 void CObjectOStreamAsnBinary::WriteBool(bool data)
@@ -1119,6 +1120,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.95  2005/06/29 16:03:00  vasilche
+* WriteByte() becomes private as it's used only internally.
+* WriteBytesOf() made as member template to be able to access private methods.
+*
 * Revision 1.94  2005/04/27 17:02:17  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.

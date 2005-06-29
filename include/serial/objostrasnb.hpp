@@ -80,8 +80,9 @@ public:
             return tmp;
         }
 
-    void WriteByte(Uint1 byte);
 protected:
+    void WriteByte(Uint1 byte);
+    template<typename T> void WriteBytesOf(const T& value, size_t count);
     void WriteBytes(const char* bytes, size_t size);
     void WriteShortTag(ETagClass tag_class, 
                        ETagConstructed tag_constructed,
@@ -212,6 +213,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/06/29 16:02:59  vasilche
+* WriteByte() becomes private as it's used only internally.
+* WriteBytesOf() made as member template to be able to access private methods.
+*
 * Revision 1.46  2005/04/27 17:01:38  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.
