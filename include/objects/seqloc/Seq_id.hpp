@@ -43,6 +43,7 @@
 #include <corelib/ncbi_limits.hpp>
 #include <serial/serializable.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
 // generated classes
@@ -73,54 +74,72 @@ public:
     ///   bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
     ///
 
-    // Default constructor
-    CSeq_id( void );
+    /// Default constructor
+    CSeq_id(void);
 
     /// Takes either a FastA-style string delimited by vertical bars or
-    /// a raw accession (with optional version).
-    CSeq_id( const string& the_id );
+    /// a raw accession (with optional version) or GI.
+    explicit CSeq_id(const string& the_id);
 
-    /// Construct a seq-id from a dbtag
-    CSeq_id(const CDbtag& tag, bool set_as_general = true);
+    /// Construct a seq-id from a dbtag.
+    /// @param tag
+    ///   Input dbtag.
+    /// @param set_as_general
+    ///   Whether to store tags from unrecognized databases as is in
+    ///   Seq-ids of type general rather than rejecting them altogether.
+    explicit CSeq_id(const CDbtag& tag, bool set_as_general = true);
 
-    /// With proper choice
-    CSeq_id(CSeq_id_Base::E_Choice the_type,
-            int           int_seq_id);     // see explanation in x_Init below
-    /// With proper choice
-    CSeq_id(CSeq_id_Base::E_Choice the_type,
-            const string&          acc_in,  // see explanation in x_Init below
-            const string&          name_in,
-            // force not optional; if not given, use the constructor below
-            const string&          version_in,
-            const string&          release_in = kEmptyStr);
+    /// Construct a numeric Seq-id.
+    /// @param the_type
+    ///   Type of Seq-id (normally e_Gi)
+    /// @param int_seq_id
+    ///   Numeric value.
+    CSeq_id(E_Choice the_type,
+            int      int_seq_id);
 
-    CSeq_id(CSeq_id_Base::E_Choice the_type,
-            const string&          acc_in,  // see explanation in x_Init below
-            const string&          name_in,
-            int                    version    = 0,
-            const string&          release_in = kEmptyStr);
-
-    /// Need to lookup choice
-    CSeq_id(const string& the_type,
-            const string& acc_in,     // see explanation in x_Init below
-            const string& name_in,
-            // force not optional; if not given, use the constructor below
-            const string& version_in,
+    /// Construct a Seq-id from a flat representation.
+    /// @param the_type
+    ///   Type of Seq_id to construct
+    /// @param acc_in
+    ///   Primary string value -- normally accession, overridden as
+    ///   country for patents, database for "general" IDs, molecule ID
+    ///   for PDB IDs.
+    /// @param name_in
+    ///   Additional string value -- normally name/locus, overridden as
+    ///   (application) number for patents, tag for "general" IDs,
+    ///   chain ID for PDB.
+    /// @param version
+    ///   Numeric value -- normally version number, overriden as sequence
+    ///   number for patents.
+    CSeq_id(E_Choice      the_type,
+            const string& acc_in,
+            const string& name_in    = kEmptyStr,
+            int           version    = 0,
             const string& release_in = kEmptyStr);
 
-    CSeq_id(const string& the_type,
-            const string& acc_in,   // see explanation in x_Init below
-            const string& name_in,
-            int           version    = 0 ,
-            const string& release_in = kEmptyStr);
+    /// Reassign based on flat specifications; arguments interpreted
+    /// as with constructors.  (Returns a reference to self.)
 
-    // Destructor
+    CSeq_id& Set(const string& the_id);
+
+    CSeq_id& Set(const CDbtag& tag, bool set_as_general = true);
+
+    CSeq_id& Set(E_Choice the_type,
+                 int      int_seq_id);
+
+    CSeq_id& Set(CSeq_id_Base::E_Choice the_type,
+                 const string&          acc_in,
+                 const string&          name_in    = kEmptyStr,
+                 int                    version    = 0,
+                 const string&          release_in = kEmptyStr);
+
+    /// Destructor
     virtual ~CSeq_id(void);
 
     /// Converts a string to a choice, no need to require a member.
-    static CSeq_id::E_Choice WhichInverseSeqId(const char* SeqIdCode);
+    static E_Choice WhichInverseSeqId(const char* SeqIdCode);
 
-    /// For s_IdentifyAccession (below)
+    /// For IdentifyAccession (below)
     enum EAccessionInfo {
         // Mask for Seq_id type; allow 8 bits to be safe
         eAcc_type_mask = 0xff,
@@ -152,9 +171,9 @@ public:
         eAcc_unreserved_nuc  = e_not_set | 128 << 8 | fAcc_nuc,  // XY
         eAcc_unreserved_prot = e_not_set | 128 << 8 | fAcc_prot, // XYZ
         eAcc_ambiguous_nuc   = e_not_set | 192 << 8 | fAcc_nuc,  // N0-N1
-        // Most N accessions are GenBank ESTs, but some low-numbered ones
-        // (now only used as primary accessions) were assigned haphazardly,
-        // and some are therefore ambiguous.
+        // Most N accessions are GenBank ESTs, but some low-numbered
+        // ones (now only used as secondary accessions) were assigned
+        // haphazardly, and some are therefore ambiguous.
         eAcc_maybe_gb        = eAcc_ambiguous_nuc | 1,
         eAcc_maybe_embl      = eAcc_ambiguous_nuc | 2,
         eAcc_maybe_ddbj      = eAcc_ambiguous_nuc | 4,
@@ -200,7 +219,7 @@ public:
         eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot, // unused
 
         eAcc_pir       = e_Pir       | eAcc_other | fAcc_prot,
-        eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,
+        eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot, // P
         eAcc_patent    = e_Patent    | eAcc_other,
 
         eAcc_refseq_prot            = e_Other | eAcc_other  | fAcc_prot,  //NP_
@@ -274,7 +293,7 @@ public:
             return CompareOrdered(sid2) < 0;
         }
 
-    /// Return compatible CTextseq_id
+    /// Return embedded CTextseq_id, if any
     const CTextseq_id* GetTextseq_Id(void) const;
 
     /// Implement serializable interface
@@ -318,6 +337,22 @@ public:
     };
     static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
 
+    /// Parse an entire set of |-delimited FASTA-style IDs, appending
+    /// the results to IDS.
+    /// @param ids
+    ///   Destination ID set.  Existing contents will be preserved and
+    ///   appended to.
+    /// @param s
+    ///   Input string to parse.
+    /// @param allow_partial_failure
+    ///   If s contains invalid IDs, warn about them and try to
+    ///   process the remainder of the string, rather than throwing
+    ///   any exceptions.
+    /// @return
+    ///   The number of IDs successfully parsed.
+    static SIZE_TYPE ParseFastaIds(CBioseq::TId& ids, const string& s,
+                                   bool allow_partial_failure = false);
+
     /// Numerical quality ranking; lower is better.
     /// (Text)Score and WorstRank both basically correspond to the C
     /// Toolkit's SeqIdFindWorst, which favors textual accessions,
@@ -343,20 +378,18 @@ public:
     static int WorstRank(const CRef<CSeq_id>& id)
         { return id ? id->WorstRankScore() : kMax_Int; }
 
+    /// Optimized implementation of CSerialObject::Assign, which is
+    /// not so efficient.
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
+
+    /// Optimized implementation of CSerialObject::Equals, which is
+    /// not so efficient.
     virtual bool Equals(const CSerialObject& object,
                         ESerialRecursionMode how = eRecursive) const;
 
 private:
-    void x_Init
-    (CSeq_id_Base::E_Choice the_type,
-     // Just first string, as in text seqid, for unusual
-     // cases (patents, pdb) not really an acc
-     const string&          acc_in,
-     const string&          name_in    = kEmptyStr,
-     int                    version    = 0,
-     const string&          release_in = kEmptyStr);
+    void x_Init(list<string>& fasta_pieces);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
@@ -367,7 +400,37 @@ private:
 };
 
 
-/// Dummy convertion for container search functions
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CSeqIdException --
+///
+/// Define exceptions generated by CSeq_id.
+
+class CSeqIdException : public CException
+{
+public:
+    /// Error types that CSeq_id can generate.
+    enum EErrCode {
+        eUnknownType,   ///< Unrecognized Seq-id type
+        eFormat         ///< Contents not parsable as expected
+    };
+
+    /// Translate from the error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eUnknownType:  return "eUnknownType";
+        case eFormat:       return "eFormat";
+        default:            return CException::GetErrCodeString();
+        }
+    }
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CSeqIdException, CException);
+};
+
+
+/// Dummy convertor for container search functions
 template<class TId>
 CConstRef<CSeq_id> Get_ConstRef_Seq_id(TId& id)
 {
@@ -449,6 +512,7 @@ int CSeq_id::BaseTextScore(void) const
     case e_Giim:    case e_Gi:                     return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
     case e_Local:   case e_Patent:                 return 10;
+    case e_Gpipe:                                  return 9;
     case e_Other:                                  return 8;
     default:                                       return 5;
     }
@@ -462,6 +526,7 @@ int CSeq_id::BaseBestRankScore(void) const
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
     case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
+    case e_Gpipe:                                 return 68;
     case e_Patent:                                return 67;
     case e_Other:                                 return 65;
 
@@ -484,6 +549,7 @@ int CSeq_id::BaseWorstRankScore(void) const
     case e_Gi: case e_Giim:                       return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
     case e_Local: case e_Patent:                  return 10;
+    case e_Gpipe:                                 return 9;
     case e_Other:                                 return 8;
 
     case e_Ddbj: case e_Prf: case e_Pdb:
@@ -508,6 +574,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2005/06/29 19:19:08  ucko
+ * Refactor, introducing Set methods that can be called on previously
+ * initialized IDs and a static ParseFastaIDs method.
+ * Also introduce CSeqIdException, and use it consistently.
+ * Fully support gpipe IDs.
+ *
  * Revision 1.51  2005/02/15 17:45:54  grichenk
  * Added possibility to use GetSeq_idByType() with containers of CSeq_id_Handle.
  *
