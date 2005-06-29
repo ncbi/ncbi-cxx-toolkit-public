@@ -78,6 +78,23 @@ CSeq_id::~CSeq_id(void)
 }
 
 
+static void s_SplitVersion(const string& acc_in, string& acc, int& ver)
+{
+    string verstr;
+    NStr::SplitInTwo(acc_in, ".", acc, verstr);
+    if (verstr.empty()) {
+        ver = 0;
+    } else {
+        ver = NStr::StringToNumeric(verstr);
+        if (ver <= 0) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Version embedded in accession " + acc_in
+                       + " is not a positive integer");
+        }
+    }
+}
+
+
 const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
 {
     switch ( Which() ) {
@@ -101,6 +118,8 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
         return &GetTpe();
     case e_Tpd:
         return &GetTpd();
+    case e_Gpipe:
+        return &GetGpipe();
     default:
         return 0;
     }
@@ -121,7 +140,7 @@ void x_Assign(CObject_id& dst, const CObject_id& src)
         dst.SetStr(src.GetStr());
         return;
     default:
-        THROW1_TRACE(runtime_error, "invalid Object-id variant");
+        NCBI_THROW(CSeqIdException, eFormat, "invalid Object-id variant");
     }
 }
 
@@ -279,6 +298,9 @@ void CSeq_id::Assign(const CSerialObject& obj, ESerialRecursionMode how)
         case e_Tpd:
             x_Assign(SetTpd(), id.GetTpd());
             return;
+        case e_Gpipe:
+            x_Assign(SetGpipe(), id.GetGpipe());
+            return;
         }
     }
     CSerialObject::Assign(obj, how);
@@ -340,6 +362,8 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
         return GetTpe().Match(sid2.GetTpe()) ? e_YES : e_NO;
     case e_Tpd:
         return GetTpd().Match(sid2.GetTpd()) ? e_YES : e_NO;
+    case e_Gpipe:
+        return GetGpipe().Match(sid2.GetGpipe()) ? e_YES : e_NO;
     default:
         return e_error;
     }
@@ -379,6 +403,47 @@ int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
     }
 }
 
+typedef pair<const char*, CSeq_id::E_Choice> TChoiceMapEntry;
+// used for binary searching; must be in order.
+static const TChoiceMapEntry sc_ChoiceArray[] = {
+    TChoiceMapEntry("???",          CSeq_id::e_not_set),
+    TChoiceMapEntry("bbm",          CSeq_id::e_Gibbmt),
+    TChoiceMapEntry("bbs",          CSeq_id::e_Gibbsq),
+    TChoiceMapEntry("dbj",          CSeq_id::e_Ddbj),
+    TChoiceMapEntry("ddbj",         CSeq_id::e_Ddbj),
+    TChoiceMapEntry("emb",          CSeq_id::e_Embl),
+    TChoiceMapEntry("embl",         CSeq_id::e_Embl),
+    TChoiceMapEntry("gb",           CSeq_id::e_Genbank),
+    TChoiceMapEntry("genbank",      CSeq_id::e_Genbank),
+    TChoiceMapEntry("general",      CSeq_id::e_General),
+    TChoiceMapEntry("gi",           CSeq_id::e_Gi),
+    TChoiceMapEntry("gibbmt",       CSeq_id::e_Gibbmt),
+    TChoiceMapEntry("gibbsq",       CSeq_id::e_Gibbsq),
+    TChoiceMapEntry("giim",         CSeq_id::e_Giim),
+    TChoiceMapEntry("gim",          CSeq_id::e_Giim),
+    TChoiceMapEntry("gnl",          CSeq_id::e_General),
+    TChoiceMapEntry("gpipe",        CSeq_id::e_Gpipe),
+    TChoiceMapEntry("gpp",          CSeq_id::e_Gpipe),
+    TChoiceMapEntry("lcl",          CSeq_id::e_Local),
+    TChoiceMapEntry("local",        CSeq_id::e_Local),
+    TChoiceMapEntry("not_set",      CSeq_id::e_not_set),
+    TChoiceMapEntry("oth",          CSeq_id::e_Other), // deprecated vs. ref
+    TChoiceMapEntry("other",        CSeq_id::e_Other),
+    TChoiceMapEntry("pat",          CSeq_id::e_Patent),
+    TChoiceMapEntry("patent",       CSeq_id::e_Patent),
+    TChoiceMapEntry("pdb",          CSeq_id::e_Pdb),
+    TChoiceMapEntry("pir",          CSeq_id::e_Pir),
+    TChoiceMapEntry("prf",          CSeq_id::e_Prf),
+    TChoiceMapEntry("ref",          CSeq_id::e_Other),
+    TChoiceMapEntry("sp",           CSeq_id::e_Swissprot),
+    TChoiceMapEntry("swissprot",    CSeq_id::e_Swissprot),
+    TChoiceMapEntry("tpd",          CSeq_id::e_Tpd),
+    TChoiceMapEntry("tpe",          CSeq_id::e_Tpe),
+    TChoiceMapEntry("tpg",          CSeq_id::e_Tpg)
+};
+typedef CStaticArrayMap<const char*, CSeq_id::E_Choice, PNocase_CStr> TChoiceMap;
+static const TChoiceMap sc_ChoiceMap(sc_ChoiceArray, sizeof(sc_ChoiceArray));
+
 
 static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
 {   // FASTA_LONG formats
@@ -387,49 +452,39 @@ static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
     "bbs",  // gibbsq = bbs|integer
     "bbm",  // gibbmt = bbm|integer
     "gim",  // giim = gim|integer
-    "gb", // genbank = gb|accession|locus
+    "gb",   // genbank = gb|accession|locus
     "emb",  // embl = emb|accession|locus
     "pir",  // pir = pir|accession|name
-    "sp", // swissprot = sp|accession|name
+    "sp",   // swissprot = sp|accession|name
     "pat",  // patent = pat|country|patent number (string)|seq number (integer)
     "ref",  // other = ref|accession|name|release - changed from oth to ref
     "gnl",  // general = gnl|database(string)|id (string or number)
-    "gi", // gi = gi|integer
+    "gi",   // gi = gi|integer
     "dbj",  // ddbj = dbj|accession|locus
     "prf",  // prf = prf|accession|name
     "pdb",  // pdb = pdb|entry name (string)|chain id (char)
     "tpg",  // tpg = tpg|accession|name
     "tpe",  // tpe = tpe|accession|name
     "tpd",  // tpd = tpd|accession|name
+    "gpp"   // gpipe = gpp|accession|name
     ""  // Placeholder for end of list
 };
 
 CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const char* SeqIdCode)
 {
-    int retval = 0;
-    int dex;
-
-    // Last item in list has null byte for first character, so
-    // *s_TextId[dex] will be zero at end.
-    for (dex = 0;  *s_TextId[dex];  dex++) {
-        if ( !NStr::CompareNocase(s_TextId[dex], SeqIdCode) ) {
-            break;
-        }
-    }
-    if ( !*s_TextId[dex] ) {
-        retval = 0;
+    TChoiceMap::const_iterator it = sc_ChoiceMap.find(SeqIdCode);
+    if (it == sc_ChoiceMap.end()) {
+        return e_not_set;
     } else {
-        retval = dex;
+        return it->second;
     }
-
-    return static_cast<CSeq_id_Base::E_Choice> (retval);
 }
 
 
 static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 {
     _ASSERT(acc[0] == 'N');
-    int n = NStr::StringToInt(acc.substr(1), 10, NStr::eCheck_Skip);
+    int n = NStr::StringToNumeric(acc.substr(1));
     if (n >= 20000) {
         return CSeq_id::eAcc_gb_est;
     } else { // big mess; fortunately, these are all secondary
@@ -493,31 +548,55 @@ typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PCase_CStr> TRefSe
 static const TRefSeqMap sc_RefSeqMap(sc_RefSeqArray, sizeof(sc_RefSeqArray));
 
 
+static const char kDigits[] = "0123456789";
+
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
-    SIZE_TYPE digit_pos = acc.find_first_of("0123456789");
-    if (digit_pos == NPOS) {
-        return eAcc_unknown;
-    }
     SIZE_TYPE main_size = acc.find('.');
     if (main_size == NPOS) {
         main_size = acc.size();
+    } else if (main_size >= acc.size() - 1
+               ||  acc.find_first_not_of(kDigits, main_size + 1) != NPOS) {
+        return eAcc_unknown; // non-numeric "version"
     }
+    SIZE_TYPE digit_pos = acc.find_first_of(kDigits);
     string pfx = acc.substr(0, digit_pos);
     NStr::ToUpper(pfx);
-    switch (pfx.size()) {
+    if (digit_pos == NPOS) {
+        return eAcc_unknown;
+    } else {
+        SIZE_TYPE non_dig_pos = acc.find_first_not_of(kDigits, digit_pos);
+        if (non_dig_pos != NPOS  &&  non_dig_pos != main_size) {
+            if (main_size != acc.size()) {
+                return eAcc_unknown; // these should all be unversioned
+            }
+            if (digit_pos == 0  &&
+                (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|'))) {
+                return eAcc_pdb;
+            } else if (digit_pos == 1  &&  main_size == 6
+                       &&  (pfx[0] == 'O' || pfx[0] == 'P' || pfx[0] == 'Q')
+                       &&  isdigit((unsigned char)acc[1])
+                       &&  isalnum((unsigned char)acc[2])
+                       &&  isalnum((unsigned char)acc[3])
+                       &&  isalnum((unsigned char)acc[4])
+                       &&  isdigit((unsigned char)acc[5])) {
+                return eAcc_swissprot;
+            } else {
+                return eAcc_unknown;
+            }
+        }
+    }
+    switch (digit_pos) {
     case 0:
-        if (acc.find_first_not_of("0123456789") == NPOS) { // just digits
+        if (acc.find_first_not_of(kDigits) == NPOS) { // just digits
             return eAcc_gi;
-        } else if (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|')) {
-            return eAcc_pdb;
         } else {
-            return eAcc_unknown;
+            return eAcc_unknown; // PDB already handled
         }
 
     case 1:
-        if (main_size == 6  &&  isalpha((unsigned char) acc[2])) {
-            return eAcc_swissprot; // alpha digit ALPHA alnum alnum digit
+        if (main_size != 1 + 5) {
+            return eAcc_unknown;
         }
         switch (pfx[0]) {
         case 'A':                                return eAcc_embl_patent;
@@ -530,7 +609,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'H': case 'R': case 'T': case 'W':  return eAcc_gb_est;
         case 'I':                                return eAcc_gb_patent;
         case 'J': case 'K': case 'L': case 'M':  return eAcc_gsdb_dirsub;
-        case 'N':                                return s_IdentifyNAcc(acc);
+        case 'N':
+            return s_IdentifyNAcc(acc.substr(0, main_size));
         case 'O': case 'P': case 'Q':            return eAcc_swissprot;
         case 'S':                                return eAcc_gb_backbone;
         case 'U':                                return eAcc_gb_dirsub;
@@ -539,6 +619,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 2:
+        if (main_size != 2 + 6) {
+            return eAcc_unknown;
+        }
         switch (pfx[0]) {
         case 'A':
             switch (pfx[1]) {
@@ -618,6 +701,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 
     case 3:
         if (pfx[2] == '_') { // refseq
+            if (main_size < 3 + 6  ||  main_size > 3 + 9) {
+                return eAcc_unknown;
+            }
             TRefSeqMap::const_iterator it = sc_RefSeqMap.find(pfx.c_str());
             if (it == sc_RefSeqMap.end()) {
                 return eAcc_refseq_unreserved;
@@ -625,6 +711,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 return it->second;
             }
         } else { // protein
+            if (main_size != 3 + 5) {
+                return eAcc_unknown;
+            }
             switch (pfx[0]) {
             case 'A': return (pfx == "AAE") ? eAcc_gb_patent_prot
                           : eAcc_gb_prot;
@@ -639,6 +728,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 4:
+        if (main_size < 4 + 8  ||  main_size > 4 + 10) {
+            return eAcc_unknown;
+        }
         switch (pfx[0]) {
         case 'A': return eAcc_gb_wgs_nuc;
         case 'B': return eAcc_ddbj_wgs_nuc;
@@ -647,7 +739,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 7:
-        if (NStr::StartsWith(acc, "NZ_")) {
+        if (NStr::StartsWith(acc, "NZ_")  &&  main_size == 7 + 8) {
             return eAcc_refseq_wgs_nuc;
         } else {
             return eAcc_unknown;
@@ -663,13 +755,13 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 {
     EAccessionInfo type = (EAccessionInfo)Which();
     switch (type) {
-    case CSeq_id::e_Pir: case CSeq_id::e_Swissprot: case CSeq_id::e_Prf:
-    case CSeq_id::e_Pdb:
+    case e_Pir: case e_Swissprot: case e_Prf:
+    case e_Pdb:
         return (EAccessionInfo)(type | fAcc_prot); // always just protein
         
-    case CSeq_id::e_Genbank: case CSeq_id::e_Embl: case CSeq_id::e_Ddbj:
-    case CSeq_id::e_Tpg:     case CSeq_id::e_Tpe:  case CSeq_id::e_Tpd:
-    case CSeq_id::e_Other:
+    case e_Genbank: case e_Embl: case e_Ddbj:
+    case e_Tpg:     case e_Tpe:  case e_Tpd:
+    case e_Other:
     {
         const CTextseq_id* tsid = GetTextseq_Id();
         if (tsid->IsSetAccession()) {
@@ -709,7 +801,7 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
         break;
 
     case CSeq_id::e_General:
-        // we may encode 'gln' or the database name as requested
+        // we may encode 'gnl' or the database name as requested
         if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
             *label += id.GetGeneral().GetDb();
         } else {
@@ -752,9 +844,9 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_Local:
             {{
                 const CObject_id& oid = id.GetLocal();
-                if (oid.Which() == CObject_id::e_Id) {
+                if (oid.IsId()) {
                     *label += NStr::IntToString(oid.GetId());
-                } else if (oid.Which() == CObject_id::e_Str) {
+                } else if (oid.IsStr()) {
                     *label += oid.GetStr(); 
                 }
             }}
@@ -778,9 +870,9 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
                 if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
                     *label += dbt.GetDb() + '|';
                 }
-                if (dbt.GetTag().Which() == CObject_id::e_Id) {
+                if (dbt.GetTag().IsId()) {
                     *label += NStr::IntToString(dbt.GetTag().GetId());
-                } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
+                } else if (dbt.GetTag().IsStr()) {
                     *label += dbt.GetTag().GetStr();
                 }
             }}
@@ -937,6 +1029,9 @@ void CSeq_id::WriteAsFasta(ostream& out)
     case e_Tpd:
         GetTpd().AsFastaString(out);
         break;
+    case e_Gpipe:
+        GetGpipe().AsFastaString(out);
+        break;
     default:
         out << "[UnknownSeqIdType]";
         break;
@@ -1026,7 +1121,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                 }
             }
 
-            if (best_id.NotEmpty()  &&  best_id->Which() != CSeq_id::e_Gi) {
+            if (best_id.NotEmpty()  &&  !best_id->IsGi() ) {
                 if (found_gi) {
                     out_str << '|';
                 }
@@ -1078,16 +1173,27 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
 
 CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
 {
-    int version = -1;
-    string acc;
+    Set(dbtag, set_as_general);
+}
 
-    if (dbtag.GetTag().IsStr()) {
-        acc = dbtag.GetTag().GetStr();
-        string::size_type pos = acc.find_last_of(".");
-        if (pos != string::npos) {
-            version = NStr::StringToInt(acc.substr(pos + 1, acc.length() - pos));
-            acc.erase(pos);
-        }
+CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
+{
+    int version = -1;
+    string acc, accver;
+
+    switch (dbtag.GetTag().Which()) {
+    case CObject_id::e_Str:
+        accver = dbtag.GetTag().GetStr();
+        s_SplitVersion(accver, acc, version);
+        break;
+    case CObject_id::e_Id:
+        acc = accver = NStr::IntToString(dbtag.GetTag().GetId());
+        break;
+    default:
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Bad CDbtag tag type "
+                   + CObject_id::SelectionName(dbtag.GetTag().Which()));
+        break;
     }
 
     switch (dbtag.GetType()) {
@@ -1097,30 +1203,21 @@ CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
             SetGi(gi);
         }
         catch (...) {
-            SetGenbank().SetAccession(acc);
-            if (version != -1) {
-                SetGenbank().SetVersion(version);
-            }
+            SetGenbank().Set(accver);
         }
         break;
 
     case CDbtag::eDbtagType_EMBL:
-        SetEmbl().SetAccession(acc);
-        if (version != -1) {
-            SetEmbl().SetVersion(version);
-        }
+        SetEmbl().Set(accver);
         break;
 
     case CDbtag::eDbtagType_DDBJ:
-        SetDdbj().SetAccession(acc);
-        if (version != -1) {
-            SetDdbj().SetVersion(version);
-        }
+        SetDdbj().Set(accver);
         break;
 
     case CDbtag::eDbtagType_GI:
         if (dbtag.GetTag().IsStr()) {
-            SetGi(NStr::StringToInt(dbtag.GetTag().GetStr()));
+            Set(e_Gi, dbtag.GetTag().GetStr());
         } else {
             SetGi(dbtag.GetTag().GetId());
         }
@@ -1128,346 +1225,301 @@ CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
 
     case CDbtag::eDbtagType_bad:
     default:
-        // not understood as a sequence id - leave as e_not_set
+        // not understood as a sequence id
         if (set_as_general) {
             SetGeneral().Assign(dbtag);
+        } else {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Unrecognized Dbtag DB " + dbtag.GetDb());
         }
         break;
     }
+
+    return *this;
 }
 
 
 //SeqIdFastAConstructors
 CSeq_id::CSeq_id( const string& the_id )
 {
-    // If no vertical bar, tries to interpret the string as a pure
-    // accession, inferring the type from the initial letter(s).
-    if (the_id.find('|') == NPOS) {
-        SIZE_TYPE      dot    = the_id.find('.');
-        string         acc_in = the_id.substr(0, dot);
-        EAccessionInfo info   = IdentifyAccession(acc_in);
-        int            ver    = 0;
-        if (dot != NPOS) {
-            ver = NStr::StringToNumeric(the_id.substr(dot + 1));
+    Set(the_id);
+}
+
+CSeq_id& CSeq_id::Set(const string& the_id_in)
+{
+    string the_id = NStr::TruncateSpaces(the_id_in, NStr::eTrunc_Both);
+    if (the_id.empty()) {
+        NCBI_THROW(CSeqIdException, eFormat, "Empty bare accession supplied");
+    } else if (the_id.find('|') == NPOS
+               ||  isdigit((unsigned char)the_id[0])) {
+        // If no vertical bar, tries to interpret the string as a pure
+        // accession, inferring the type from the initial letter(s).
+        EAccessionInfo info = IdentifyAccession(the_id);
+        E_Choice       type = GetAccType(info);
+        switch (type) {
+        case e_not_set:
+            NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID " + the_id);
+        case e_Pdb:
+        {
+            string mol, chain;
+            NStr::SplitInTwo(the_id, "|", mol, chain);
+            return Set(type, mol, chain);
         }
-        if (GetAccType(info) != e_not_set) {
-            x_Init(GetAccType(info), acc_in, kEmptyStr, ver);
+        default:
+        {
+            string acc;
+            int    ver;
+            s_SplitVersion(the_id, acc, ver);
+            return Set(type, acc, kEmptyStr, ver);
         }
-        return;
+        }
+    } else {
+        list<string> fasta_pieces;
+        NStr::Split(the_id, "|", fasta_pieces, NStr::eNoMergeDelims);
+        x_Init(fasta_pieces);
+        if ( !fasta_pieces.empty() ) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "FASTA-style ID " + the_id + " has too many parts.");
+        }
+        return *this;
     }
+}
 
-    // Create an istrstream on string the_id
-    std::istrstream  myin(the_id.c_str() );
 
-    string the_type_in, acc_in, name_in, version_in, release_in;
-
-    // Read the part of the_id up to the vertical bar ( "|" )
-    NcbiGetline(myin, the_type_in, '|');
-    // Remove spaces from front and back of the_type_in
-    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
-
-    // Determine the type from the string
-    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId(the_type_use.c_str());
-
-    // Construct according to type
-    if ( the_type == CSeq_id::e_Local ) {
-        NcbiGetline( myin, acc_in, 0 ); // take rest
-        x_Init( the_type, acc_in );
-        return;
+SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
+                            bool allow_partial_failure)
+{
+    string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
+    list<string> fasta_pieces;
+    NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
+    if (fasta_pieces.size() < 2) {
+        NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID list" + ss);
     }
-
-    if ( !NcbiGetline( myin, acc_in, '|' ) )
-        return;
-
-    if ( the_type == CSeq_id::e_General  ||  the_type == CSeq_id::e_Pdb ) {
-        //Take the rest of the line
-        NcbiGetline( myin, name_in, 0 );
-        x_Init( the_type, acc_in, name_in );
-        return;
-    } else if ( the_type == CSeq_id::e_Gi ) {
-        x_Init( the_type, acc_in );
-        return;
-    }
-
-    if ( NcbiGetline(myin, name_in, '|') ) {
-        if ( NcbiGetline(myin, version_in, '|') ) {
-            NcbiGetline(myin, release_in, '|');
+    SIZE_TYPE count = 0;
+    while ( !fasta_pieces.empty() ) {
+        try {
+            CRef<CSeq_id> id(new CSeq_id);
+            id->x_Init(fasta_pieces);
+            ids.push_back(id);
+            ++count;
+        } catch (std::exception& e) {
+            if (allow_partial_failure) {
+                ERR_POST(Warning << e.what());
+            } else {
+                throw;
+            }
         }
     }
+    return count;
+}
 
-    string version = NStr::TruncateSpaces( version_in, NStr::eTrunc_Both );
+
+void CSeq_id::x_Init(list<string>& fasta_pieces)
+{
+    _ASSERT(!fasta_pieces.empty());
+    string typestr = fasta_pieces.front();
+    fasta_pieces.pop_front();
+    NStr::TruncateSpacesInPlace(typestr, NStr::eTrunc_Both);
+    E_Choice type = WhichInverseSeqId(typestr.c_str());
+    if (type == e_not_set  ||  typestr.size() > 3) {
+        NCBI_THROW(CSeqIdException, eFormat, "Unsupported ID type " + typestr);
+    }
+
+    string    fields[3];
+    SIZE_TYPE min_fields, max_fields;
+    switch (type) {
+    case e_Local:
+    case e_Gibbsq:
+    case e_Gibbmt:
+    case e_Giim:
+    case e_Gi:
+        min_fields = max_fields = 1;
+        break;
+    case e_Patent:
+        min_fields = max_fields = 3;
+        break;
+    case e_General:
+        min_fields = max_fields = 2;
+        break;
+#if 0 // release no longer used
+    case e_Other:
+        min_fields = 1;
+        max_fields = 3;
+        break;
+#endif
+    default: // text seqid: accession and optional name
+        min_fields = 1;
+        max_fields = 2;
+        break;
+    }
+
+    for (SIZE_TYPE i = 0;  i < max_fields;  ++i) {
+        if (fasta_pieces.empty()) {
+            if (i >= min_fields) {
+                break;
+            } else {
+                NCBI_THROW(CSeqIdException, eFormat,
+                           "Not enough fields for ID of type " + typestr);
+            }
+        } else {
+            // XXX - stop if we have enough fields and the next one looks
+            // like an ID type?
+            fields[i] = fasta_pieces.front();
+            fasta_pieces.pop_front();
+        }
+    }
+    
     int ver = 0;
-
-    if ( ! version.empty() ) {
-        if ( (ver = NStr::StringToNumeric(version) ) < 0) {
-            THROW1_TRACE(invalid_argument,
-                         "Unexpected non-numeric version: " +
-                         version +
-                         "\nthe_id: " + the_id);
-        }
-    }
-    x_Init(the_type, acc_in, name_in, ver, release_in);
-}
-
-
-// acc_in is just first string, as in text seqid, for
-// wierd cases (patents, pdb) not really an acc
-CSeq_id::CSeq_id
-(CSeq_id_Base::E_Choice the_type,
- const string&          acc_in,
- const string&          name_in,
- const string&          version_in,
- const string&          release_in )
-{
-    string version = NStr::TruncateSpaces(version_in, NStr::eTrunc_Both);
-    int ver = 0;
-
-    if ( !version.empty() ) {
-        if ( (ver = NStr::StringToNumeric(version)) < 0 ) {
-            THROW1_TRACE(invalid_argument,
-                         "Unexpected non-numeric version. "
-                         "\nthe_type = " + string(s_TextId[the_type]) +
-                         "\nacc_in = " + acc_in +
-                         "\nname_in = " + name_in +
-                         "\version_in = " + version_in +
-                         "\nrelease_in = " + release_in);
+    if (type == e_Patent) {
+        // actually sequence number within patent, but whatever...
+        ver = NStr::StringToNumeric(fields[2]);
+        if (ver <= 0) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Bad sequence number " + fields[2] + " for " + fields[0]
+                       + " patent " + fields[1]);
         }
     }
 
-    x_Init(the_type, acc_in, name_in, ver, release_in);
+    Set(type, fields[0] /* acc */, fields[1] /* name */, ver,
+        fields[2] /* rel */);
 }
 
 
-static void s_InitThrow
-(const string& message,
- const string& type,
- const string& acc,
- const string& name,
- const string& version,
- const string& release)
+CSeq_id::CSeq_id(E_Choice the_type, int the_id)
 {
-    THROW1_TRACE(invalid_argument,
-                 "CSeq_id:: " + message +
-                 "\ntype      = " + type +
-                 "\naccession = " + acc +
-                 "\nname      = " + name +
-                 "\nversion   = " + version +
-                 "\nrelease   = " + release);
+    Set(the_type, the_id);
 }
 
-
-CSeq_id::CSeq_id
-(const string& the_type_in,
- const string& acc_in,
- const string& name_in,
- const string& version_in,
- const string& release_in)
+CSeq_id& CSeq_id::Set(E_Choice the_type, int the_id)
 {
-    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
-    string version      = NStr::TruncateSpaces(version_in,  NStr::eTrunc_Both);
-    int ver = 0;
-
-    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId(the_type_use.c_str());
-
-    if ( !version.empty() ) {
-        if ( (ver = NStr::StringToNumeric(version)) < 0) {
-            s_InitThrow("Unexpected non-numeric version.",
-                        the_type_in, acc_in, name_in, version_in, release_in);
-        }
+    if (the_id <= 0) {
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Non-positive numeric ID " + NStr::IntToString(the_id));
     }
-
-    x_Init(the_type, acc_in, name_in, ver, release_in);
-}
-
-
-CSeq_id::CSeq_id
-(const string& the_type_in,
- const string& acc_in,
- const string& name_in,
- int           version,
- const string& release_in )
-{
-    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
-    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId (the_type_use.c_str());
-
-    x_Init(the_type, acc_in, name_in, version, release_in);
-}
-
-
-CSeq_id::CSeq_id
-( CSeq_id_Base::E_Choice the_type,
-  const string&          acc_in,
-  const string&          name_in,
-  int                    version,
-  const string&          release_in)
-{
-    x_Init(the_type, acc_in, name_in, version, release_in);
-}
-
-CSeq_id::CSeq_id
-( CSeq_id_Base::E_Choice the_type,
-  int           the_id)
-{
-  if(the_id<=0)
-    THROW1_TRACE(invalid_argument, "Specified Seq-id value is negative");
   
-  switch (the_type) {
-  case CSeq_id::e_Local:
-    SetLocal().SetId(the_id);
-    break;
-  case CSeq_id::e_Gibbsq:
-    SetGibbsq(the_id);
-    break;
-  case CSeq_id::e_Gibbmt:
-    SetGibbmt(the_id);
-    break;
-  case CSeq_id::e_Giim:
-    SetGiim().SetId(the_id);
-    break;
-  case CSeq_id::e_Gi:
-    SetGi(the_id);
-    break;
-  default:
-    THROW1_TRACE(invalid_argument, "Specified Seq-id type is not numeric seq-id");
-  }  
+    switch (the_type) {
+    case e_Local:
+        SetLocal().SetId(the_id);
+        break;
+    case e_Gibbsq:
+        SetGibbsq(the_id);
+        break;
+    case e_Gibbmt:
+        SetGibbmt(the_id);
+        break;
+    case e_Giim:
+    {
+        CGiimport_id& giim = SetGiim();
+        giim.SetId(the_id);
+        giim.ResetDb();
+        giim.ResetRelease();
+        break;
+    }
+    case e_Gi:
+        SetGi(the_id);
+        break;
+    default:
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Invalid numeric ID type" + SelectionName(the_type));
+    }
+    return *this;
+}
+
+
+CSeq_id::CSeq_id(E_Choice      the_type,
+                 const string& acc_in,
+                 const string& name_in,
+                 int           version,
+                 const string& release_in)
+{
+    Set(the_type, acc_in, name_in, version, release_in);
 }
 
 // Karl Sirotkin 7/2001
 
-void
-CSeq_id::x_Init
-( CSeq_id_Base::E_Choice the_type,
-  const string&          acc_in,
-  const string&          name_in,
-  int                    version ,
-  const string&          release_in)
+CSeq_id& CSeq_id::Set(E_Choice      the_type,
+                      const string& acc_in,
+                      const string& name_in,
+                      int           version,
+                      const string& release_in)
 {
-    int the_id;
     string acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
     string name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
     string release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
 
+    int          the_id;
+    CTextseq_id* tsid      = 0;
+    bool         allow_dot = true;
+
     switch (the_type) {
-    case CSeq_id::e_not_set: // Will cause unspecified SeqId to be returned.
+    case e_not_set: // Will cause unspecified SeqId to be returned.
         break;
-    case CSeq_id::e_Local:
+
+    case e_Local:
         {
-            CSeq_id::TLocal & loc = SetLocal();
             string::const_iterator it = acc.begin();
 
             if ( (the_id = NStr::StringToNumeric(acc)) >= 0 && *it != '0' ) {
-                loc.SetId(the_id);
+                SetLocal().SetId(the_id);
             } else { // to cover case where embedded vertical bar in
                 // string, could add code here, to concat a
                 // '|' and name string, if not null/empty
-                loc.SetStr(acc);
+                SetLocal().SetStr(acc);
             }
             break;
         }
-    case CSeq_id::e_Gibbsq:
+
+        // numeric IDs
+    case e_Gibbsq:
+    case e_Gibbmt:
+    case e_Giim:
+    case e_Gi:
         if ( (the_id = NStr::StringToNumeric (acc)) >= 0 ) {
-            SetGibbsq(the_id);
+            return Set(the_type, the_id);
         } else {
-             s_InitThrow("Unexpected non-numeric accession.",
-                         string(s_TextId[the_type]), acc_in, name_in,
-                         NStr::IntToString(version), release_in);
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Negative or non-numeric " + SelectionName(the_type)
+                       + " ID " + acc);
         }
         break;
-    case CSeq_id::e_Gibbmt:
-        if ( (the_id =NStr::StringToNumeric (acc)) >= 0 ) {
-            SetGibbmt(the_id);
-        } else {
-             s_InitThrow("Unexpected non-numeric accession.",
-                         string(s_TextId[the_type]), acc_in, name_in,
-                         NStr::IntToString(version), release_in);
-        }
-        break;
-    case CSeq_id::e_Giim:
-        {
-            CGiimport_id &  giim = SetGiim();
-            if ( (the_id =NStr::StringToNumeric (acc)) >= 0 ) {
-                giim.SetId(the_id);
-            } else {
-                s_InitThrow("Unexpected non-numeric accession.",
-                            string(s_TextId[the_type]), acc_in, name_in,
-                            NStr::IntToString(version), release_in);
-            }
-            break;
-        }
-    case CSeq_id::e_Genbank:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release);
-            SetGenbank(*text );
-            break;
-        }
-    case CSeq_id::e_Embl:
-        {
-            CTextseq_id* text
-               = new CTextseq_id(acc, name, version, release);
-            SetEmbl(*text);
-            break;
-        }
-    case CSeq_id::e_Pir:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release, false);
-            SetPir(*text);
-            break;
-        }
-    case CSeq_id::e_Swissprot:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release, false);
-            SetSwissprot(*text);
-            break;
-        }
-    case CSeq_id::e_Tpg:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release);
-            SetTpg(*text);
-            break;
-        }
-    case CSeq_id::e_Tpe:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release);
-            SetTpe(*text);
-            break;
-        }
-    case CSeq_id::e_Tpd:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc, name, version, release);
-            SetTpd(*text);
-            break;
-        }
-    case CSeq_id::e_Patent:
+
+        // text IDs
+    case e_Genbank:    tsid = &SetGenbank();    break;
+    case e_Embl:       tsid = &SetEmbl();       break;
+    case e_Pir:        tsid = &SetPir();        allow_dot = false;  break;
+    case e_Swissprot:  tsid = &SetSwissprot();  allow_dot = false;  break;
+    case e_Other:      tsid = &SetOther();      break;
+    case e_Ddbj:       tsid = &SetDdbj();       break;
+    case e_Prf:        tsid = &SetPrf();        allow_dot = false;  break;
+    case e_Tpg:        tsid = &SetTpg();        break;
+    case e_Tpe:        tsid = &SetTpe();        break;
+    case e_Tpd:        tsid = &SetTpd();        break;
+    case e_Gpipe:      tsid = &SetGpipe();      break;
+
+    case e_Patent:
         {
             CPatent_seq_id&  pat    = SetPatent();
             CId_pat&         id_pat = pat.SetCit();
             CId_pat::C_Id&   id_pat_id = id_pat.SetId();
             id_pat.SetCountry(acc);
 
+#if 0 // not standard treatment AFAICT; breaks round-tripping
             const char      app_str[] = "App=";
             const SIZE_TYPE app_str_len = sizeof(app_str) - 1;
-            if (name.substr(0, app_str_len) == app_str) {
+            if (NStr::StartsWith(app_str, NStr::eNocase)) {
                 id_pat_id.SetApp_number(name.substr(app_str_len));
             } else {
                 id_pat_id.SetNumber(name);
             }
+#else
+            id_pat_id.SetNumber(name);
+#endif
+            id_pat.ResetDoc_type();
             pat.SetSeqid(version);
             break;
         }
-    case CSeq_id::e_Other: // RefSeq, allow dot version
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc,name,version,release);
-            SetOther(*text);
-            break;
-        }
-    case CSeq_id::e_General:
+
+    case e_General:
         {
             CDbtag& dbt = SetGeneral();
             dbt.SetDb(acc);
@@ -1475,59 +1527,43 @@ CSeq_id::x_Init
             the_id = NStr::StringToNumeric(name);
             if (the_id >= 0  &&  (name.size() == 1 || name[0] != '0')) {
                 oid.SetId(the_id);
-            }else{
+            } else {
                 oid.SetStr(name);
             }
             break;
         }
-    case CSeq_id::e_Gi:
-        the_id = NStr::StringToNumeric(acc);
-        if (the_id >= 0 ) {
-            SetGi(the_id);
-        } else {
-             s_InitThrow("Unexpected non-numeric accession.",
-                         string(s_TextId[the_type]), acc_in, name_in,
-                         NStr::IntToString(version), release_in);
-        }
-        break;
-    case CSeq_id::e_Ddbj:
+
+    case e_Pdb:
         {
-            CTextseq_id* text
-                = new CTextseq_id(acc,name,version,release);
-            SetDdbj(*text);
-            break;
-        }
-    case CSeq_id::e_Prf:
-        {
-            CTextseq_id* text
-                = new CTextseq_id(acc,name,version,release,false);
-            SetPrf(*text);
-            break;
-        }
-    case CSeq_id::e_Pdb:
-        {
-            CPDB_seq_id& pdb     = SetPdb();
-            CPDB_mol_id& pdb_mol = pdb.SetMol();
-            pdb_mol.Set(acc);
+            CPDB_seq_id& pdb = SetPdb();
+            pdb.SetMol().Set(acc);
 
             if (name.empty()) {
                 pdb.SetChain(' ');
-            } else if (name.size() == 1) {
-                pdb.SetChain(static_cast<unsigned char> (name[0]));
-            } else if ( name.compare("VB") == 0) {
+            } else if (name.size() == 1) { // force upper case?
+                pdb.SetChain(static_cast<unsigned char>(name[0]));
+            } else if (NStr::EqualNocase(name, "VB")) {
                 pdb.SetChain('|');
-            } else if (name.size() == 2  &&  name[0] ==  name[1]) {
-                pdb.SetChain( Locase(static_cast<unsigned char> (name[0])) );
+            } else if (name.size() == 2  &&  name[0] == name[1]) {
+                pdb.SetChain(Locase(static_cast<unsigned char>(name[0])));
             } else {
-                s_InitThrow("Unexpected PDB chain id.",
-                            string(s_TextId[the_type]), acc_in, name_in,
-                            NStr::IntToString(version), release_in);
+                NCBI_THROW(CSeqIdException, eFormat,
+                           "Unexpected PDB chain id " + name + " for " + acc);
             }
+            pdb.ResetRel();
             break;
         }
+
     default:
-        THROW1_TRACE(invalid_argument, "Specified Seq-id type not supported");
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Unsupported Seq-id type " + SelectionName(the_type));
     }
+
+    if (tsid) {
+        tsid->Set(acc, name, version, release, allow_dot);
+    }
+
+    return *this;
 }
 
 
@@ -1549,6 +1585,14 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.108  2005/06/29 19:22:20  ucko
+ * Refactor, introducing Set methods that can be called on previously
+ * initialized IDs and a static ParseFastaIDs method.
+ * Make an effort to weed out malformatted IDs in IdentifyAccession.
+ * Also introduce CSeqIdException, and use it consistently.
+ * Fully support gpipe IDs.
+ * Various minor cleanups.
+ *
  * Revision 6.107  2005/06/15 18:23:55  ucko
  * IdentifyAccession: CT has been assigned to eAcc_embl_genome.
  *
