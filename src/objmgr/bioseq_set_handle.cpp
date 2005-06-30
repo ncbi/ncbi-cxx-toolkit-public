@@ -41,6 +41,7 @@
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -413,6 +414,30 @@ void CBioseq_set_EditHandle::SetDescr(TDescr& v) const
 }
 
 
+CBioseq_set_EditHandle::TDescr& CBioseq_set_EditHandle::SetDescr(void) const
+{
+    return x_GetInfo().SetDescr();
+}
+
+
+bool CBioseq_set_EditHandle::AddSeqdesc(CSeqdesc& d) const
+{
+    return x_GetInfo().AddSeqdesc(d);
+}
+
+
+CRef<CSeqdesc> CBioseq_set_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
+{
+    return x_GetInfo().RemoveSeqdesc(d);
+}
+
+
+void CBioseq_set_EditHandle::AddSeq_descr(const TDescr& v) const
+{
+    x_GetInfo().AddSeq_descr(v);
+}
+
+
 CSeq_entry_EditHandle CBioseq_set_EditHandle::AddNewEntry(int index) const
 {
     return AttachEntry(*new CSeq_entry, index);
@@ -498,6 +523,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/06/30 19:38:15  vasilche
+* Renamed to match CBioseq_Handle, and implemented methods modifying descr.
+*
 * Revision 1.17  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

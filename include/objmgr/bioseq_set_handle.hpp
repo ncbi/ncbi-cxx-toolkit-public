@@ -264,9 +264,10 @@ public:
 
     void ResetDescr(void) const;
     void SetDescr(TDescr& v) const;
-    bool AddDesc(CSeqdesc& v) const;
-    CRef<CSeqdesc> RemoveDesc(CSeqdesc& v) const;
-    void AddAllDescr(CSeq_descr& v) const;
+    TDescr& SetDescr(void) const;
+    bool AddSeqdesc(CSeqdesc& d) const;
+    CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d) const;
+    void AddSeq_descr(const TDescr& v) const;
 
     /// Create new empty seq-entry
     ///
@@ -525,6 +526,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/06/30 19:38:15  vasilche
+* Renamed to match CBioseq_Handle, and implemented methods modifying descr.
+*
 * Revision 1.18  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.
