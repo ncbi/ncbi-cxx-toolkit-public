@@ -205,6 +205,10 @@ public:
                        EKeepVersions    keep_last_version = eDropAll);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
+    virtual string GetCacheName(void) const
+        {
+            return m_Conn->GetDatabase();
+        }
 
 private:
 
@@ -294,6 +298,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/06/30 16:54:32  grichenk
+ * Moved cache ownership to GB loader. Improved cache sharing.
+ * Added CGBDataLoader::PurgeCache().
+ *
  * Revision 1.15  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *

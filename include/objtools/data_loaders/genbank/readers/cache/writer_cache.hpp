@@ -32,6 +32,7 @@
 
 #include <objtools/data_loaders/genbank/writer.hpp>
 #include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -71,9 +72,9 @@ public:
 
     void WriteSeq_ids(const string& key, const CLoadLockSeq_ids& ids);
 
-    virtual bool HasCache(void) const { return true; }
-    virtual void InitializeCache(const CReadDispatcher& dispatcher,
+    virtual void InitializeCache(CReaderCacheManager& cache_manager,
                                  const TPluginManagerParamTree* params);
+    virtual void ResetCache(void);
 };
 
 

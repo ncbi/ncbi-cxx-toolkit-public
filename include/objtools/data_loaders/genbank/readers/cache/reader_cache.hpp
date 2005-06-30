@@ -104,26 +104,15 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
 class NCBI_XREADER_CACHE_EXPORT CCacheHolder
 {
 public:
-    enum EOwnership {
-        fOwnNone      = 0,
-        fOwnIdCache   = 1 << 0,    // own the underlying id ICache
-        fOwnBlobCache = 1 << 1,    // own the underlying blob ICache
-        fOwnAll       = fOwnIdCache | fOwnBlobCache
-    };
-    typedef int TOwnership;     // bitwise OR of EOwnership
-
-    CCacheHolder(ICache* blob_cache = 0,
-                 ICache* id_cache = 0,
-                 TOwnership own = fOwnNone);
+    CCacheHolder(void);
     ~CCacheHolder(void);
 
-    void SetBlobCache(ICache* blob_cache, TOwnership = fOwnNone);
-    void SetIdCache(ICache* id_cache, TOwnership = fOwnNone);
+    void SetBlobCache(ICache* blob_cache);
+    void SetIdCache(ICache* id_cache);
 
 protected:
     ICache* m_BlobCache;
     ICache* m_IdCache;
-    TOwnership m_Own;
 
 private:
     // to prevent copying
@@ -137,9 +126,7 @@ class NCBI_XREADER_CACHE_EXPORT CCacheReader : public CReader,
                                                public SCacheInfo
 {
 public:
-    CCacheReader(ICache* blob_cache = 0,
-                 ICache* id_cache = 0,
-                 TOwnership own = fOwnNone);
+    CCacheReader(void);
 
     //////////////////////////////////////////////////////////////////
     // Overloaded loading methods:
@@ -165,10 +152,9 @@ public:
     bool MayBeSkippedOnErrors(void) const;
     int GetMaximumConnectionsLimit(void) const;
 
-    virtual bool HasCache(void) const { return true; }
-
-    ICache* GetIdCache(TParams* params) const;
-    ICache* GetBlobCache(TParams* params) const;
+    virtual void InitializeCache(CReaderCacheManager& cache_manager,
+                                 const TPluginManagerParamTree* params);
+    virtual void ResetCache(void);
 
 protected:
     void x_AddConnectionSlot(TConn conn);

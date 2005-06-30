@@ -31,6 +31,7 @@
 #include <objtools/data_loaders/genbank/writer.hpp>
 #include <objtools/data_loaders/genbank/processor.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/cache_manager.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <util/bytesrc.hpp>
@@ -104,12 +105,6 @@ void CWriter::WriteProcessorTag(CNcbiOstream& stream,
 
 
 CWriter::CBlobStream::~CBlobStream(void)
-{
-}
-
-
-void CWriter::InitializeCache(const CReadDispatcher& dispatcher,
-                              const TPluginManagerParamTree* params)
 {
 }
 

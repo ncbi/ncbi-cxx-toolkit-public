@@ -160,6 +160,17 @@ void CReadDispatcher::CheckReaders(void) const
 }
 
 
+void CReadDispatcher::ResetCaches(void)
+{
+    NON_CONST_ITERATE(TReaders, rd, m_Readers) {
+        rd->second->ResetCache();
+    }
+    NON_CONST_ITERATE(TWriters, wr, m_Writers) {
+        wr->second->ResetCache();
+    }
+}
+
+
 class CReadDispatcherCommand
 {
 public:

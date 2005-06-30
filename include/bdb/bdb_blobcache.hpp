@@ -333,6 +333,10 @@ public:
                   const string&  subkey);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
+    virtual string GetCacheName(void) const
+        {
+            return m_Path + "<" + m_Name + ">";
+        }
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
@@ -560,6 +564,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/06/30 16:54:32  grichenk
+ * Moved cache ownership to GB loader. Improved cache sharing.
+ * Added CGBDataLoader::PurgeCache().
+ *
  * Revision 1.54  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *

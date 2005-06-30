@@ -33,6 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <util/cache/icache.hpp>
 #include <vector>
 #include <list>
 
@@ -48,7 +49,7 @@ class CSeq_id_Handle;
 class CReaderRequestResult;
 class CProcessor;
 class CReadDispatcher;
-
+class CReaderCacheManager;
 
 class NCBI_XREADER_EXPORT CWriter : public CObject
 {
@@ -109,9 +110,9 @@ public:
     static void WriteProcessorTag(CNcbiOstream& stream,
                                   const CProcessor& processor);
 
-    virtual bool HasCache(void) const { return false; }
-    virtual void InitializeCache(const CReadDispatcher& dispatcher,
-                                 const TPluginManagerParamTree* params);
+    virtual void InitializeCache(CReaderCacheManager& cache_manager,
+                                 const TPluginManagerParamTree* params) {}
+    virtual void ResetCache(void) {}
 };
 
 

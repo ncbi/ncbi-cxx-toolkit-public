@@ -120,6 +120,7 @@ public:
 
     void CheckReaders(void) const;
     void Process(CReadDispatcherCommand& command);
+    void ResetCaches(void);
 
 private:
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
@@ -138,8 +139,6 @@ private:
     TReaders    m_Readers;
     TWriters    m_Writers;
     TProcessors m_Processors;
-
-    friend class CCacheWriter;
 };
 
 

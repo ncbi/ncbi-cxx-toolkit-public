@@ -334,6 +334,7 @@ public:
     /// Used to share cache between readers and writers.
     typedef TPluginManagerParamTree TCacheParams;
     virtual bool SameCacheParams(const TCacheParams* params) const = 0;
+    virtual string GetCacheName(void) const = 0;
 };
 
 
@@ -364,6 +365,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/06/30 16:54:34  grichenk
+ * Moved cache ownership to GB loader. Improved cache sharing.
+ * Added CGBDataLoader::PurgeCache().
+ *
  * Revision 1.16  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *

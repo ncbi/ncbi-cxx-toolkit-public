@@ -50,12 +50,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CCacheWriter::CCacheWriter(void)
-    : CCacheHolder(0, 0, fOwnNone)
 {
 }
 
 
-void CCacheWriter::InitializeCache(const CReadDispatcher& dispatcher,
+void CCacheWriter::InitializeCache(CReaderCacheManager& cache_manager,
                                    const TPluginManagerParamTree* params)
 {
     const TPluginManagerParamTree* writer_params = params ?
@@ -77,39 +76,48 @@ void CCacheWriter::InitializeCache(const CReadDispatcher& dispatcher,
     bool share_blob = !share_blob_param  ||
         NStr::StringToBool(share_blob_param->GetValue());
     if (share_id  ||  share_blob) {
-        ITERATE(CReadDispatcher::TReaders, rd, dispatcher.m_Readers) {
-            if ( !rd->second->HasCache() ) {
-                continue;
+        if ( share_id ) {
+            ICache* cache = cache_manager.
+                FindCache(CReaderCacheManager::fCache_Id,
+                          id_params.get());
+            if ( cache ) {
+                _ASSERT(!id_cache);
+                id_cache = cache;
             }
-            const CCacheReader& reader =
-                dynamic_cast<const CCacheReader&>(*rd->second);
-            if ( share_id ) {
-                ICache* cache = reader.GetIdCache(id_params.get());
-                if ( cache ) {
-                    _ASSERT(!id_cache);
-                    id_cache = cache;
-                }
-            }
-            if ( share_blob ) {
-                ICache* cache = reader.GetBlobCache(blob_params.get());
-                if ( cache ) {
-                    _ASSERT(!blob_cache);
-                    blob_cache = cache;
-                }
+        }
+        if ( share_blob ) {
+            ICache* cache = cache_manager.
+                FindCache(CReaderCacheManager::fCache_Blob,
+                          blob_params.get());
+            if ( cache ) {
+                _ASSERT(!blob_cache);
+                blob_cache = cache;
             }
         }
     }
-    TOwnership own = fOwnNone;
     if ( !id_cache ) {
         id_cache = CreateCache(params, eCacheWriter, eIdCache);
-        own |= fOwnIdCache;
+        if ( id_cache ) {
+            cache_manager.RegisterCache(*id_cache,
+                CReaderCacheManager::fCache_Id);
+        }
     }
     if ( !blob_cache ) {
         blob_cache = CreateCache(params, eCacheWriter, eBlobCache);
-        own |= fOwnBlobCache;
+        if ( blob_cache ) {
+            cache_manager.RegisterCache(*blob_cache,
+                CReaderCacheManager::fCache_Blob);
+        }
     }
-    SetIdCache(id_cache, own);
-    SetBlobCache(blob_cache, own);
+    SetIdCache(id_cache);
+    SetBlobCache(blob_cache);
+}
+
+
+void CCacheWriter::ResetCache(void)
+{
+    SetIdCache(0);
+    SetBlobCache(0);
 }
 
 

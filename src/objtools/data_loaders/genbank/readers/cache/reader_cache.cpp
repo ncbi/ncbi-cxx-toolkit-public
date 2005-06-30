@@ -34,6 +34,7 @@
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <corelib/ncbitime.hpp>
 
@@ -127,10 +128,8 @@ string SCacheInfo::GetBlobSubkey(int chunk_id)
 // CCacheHolder
 /////////////////////////////////////////////////////////////////////////////
 
-CCacheHolder::CCacheHolder(ICache* blob_cache,
-                           ICache* id_cache,
-                           TOwnership own)
-    : m_BlobCache(blob_cache), m_IdCache(id_cache), m_Own(own)
+CCacheHolder::CCacheHolder(void)
+    : m_BlobCache(0), m_IdCache(0)
 {
 }
 
@@ -142,37 +141,22 @@ CCacheHolder::~CCacheHolder(void)
 }
 
 
-void CCacheHolder::SetIdCache(ICache* id_cache, TOwnership own)
+void CCacheHolder::SetIdCache(ICache* id_cache)
 {
-    if ( m_Own & fOwnIdCache ) {
-        delete m_IdCache;
-        m_Own &= ~fOwnIdCache;
-    }
-
     m_IdCache = id_cache;
-    m_Own |= (own & fOwnIdCache);
 }
 
 
-void CCacheHolder::SetBlobCache(ICache* blob_cache, TOwnership own)
+void CCacheHolder::SetBlobCache(ICache* blob_cache)
 {
-    if ( m_Own & fOwnBlobCache ) {
-        delete m_BlobCache;
-        m_Own &= ~fOwnBlobCache;
-    }
-
     m_BlobCache = blob_cache;
-    m_Own |= (own & fOwnBlobCache);
 }
 
 
 /////////////////////////////////////////////////////////////////////////
 
 
-CCacheReader::CCacheReader(ICache* blob_cache,
-                           ICache* id_cache,
-                           TOwnership own)
-    : CCacheHolder(blob_cache, id_cache, own)
+CCacheReader::CCacheReader(void)
 {
     SetInitialConnections(1);
 }
@@ -648,23 +632,70 @@ ICache* SCacheInfo::CreateCache(const TParams* params,
 }
 
 
-ICache* CCacheReader::GetIdCache(TParams* params) const
+void CCacheReader::InitializeCache(CReaderCacheManager& cache_manager,
+                                   const TPluginManagerParamTree* params)
 {
-    if (!params  ||  !m_IdCache) {
-        return 0;
+    const TPluginManagerParamTree* reader_params = params ?
+        params->FindNode(NCBI_GBLOADER_READER_CACHE_DRIVER_NAME) : 0;
+    ICache* id_cache = 0;
+    ICache* blob_cache = 0;
+    auto_ptr<TParams> id_params
+        (GetCacheParams(reader_params, eCacheReader, eIdCache));
+    auto_ptr<TParams> blob_params
+        (GetCacheParams(reader_params, eCacheReader, eBlobCache));
+    _ASSERT(id_params.get());
+    _ASSERT(blob_params.get());
+    const TParams* share_id_param =
+        id_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
+    bool share_id = !share_id_param  ||
+        NStr::StringToBool(share_id_param->GetValue());
+    const TParams* share_blob_param =
+        blob_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
+    bool share_blob = !share_blob_param  ||
+        NStr::StringToBool(share_blob_param->GetValue());
+    if (share_id  ||  share_blob) {
+        if ( share_id ) {
+            ICache* cache = cache_manager.
+                FindCache(CReaderCacheManager::fCache_Id,
+                          id_params.get());
+            if ( cache ) {
+                _ASSERT(!id_cache);
+                id_cache = cache;
+            }
+        }
+        if ( share_blob ) {
+            ICache* cache = cache_manager.
+                FindCache(CReaderCacheManager::fCache_Blob,
+                          blob_params.get());
+            if ( cache ) {
+                _ASSERT(!blob_cache);
+                blob_cache = cache;
+            }
+        }
     }
-    SCacheInfo::TParams* driver_params = GetDriverParams(params);
-    return m_IdCache->SameCacheParams(driver_params) ? m_IdCache : 0;
+    if ( !id_cache ) {
+        id_cache = CreateCache(params, eCacheReader, eIdCache);
+        if ( id_cache ) {
+            cache_manager.RegisterCache(*id_cache,
+                CReaderCacheManager::fCache_Id);
+        }
+    }
+    if ( !blob_cache ) {
+        blob_cache = CreateCache(params, eCacheReader, eBlobCache);
+        if ( blob_cache ) {
+            cache_manager.RegisterCache(*blob_cache,
+                CReaderCacheManager::fCache_Blob);
+        }
+    }
+    SetIdCache(id_cache);
+    SetBlobCache(blob_cache);
 }
 
 
-ICache* CCacheReader::GetBlobCache(TParams* params) const
+void CCacheReader::ResetCache(void)
 {
-    if (!params  ||  !m_BlobCache) {
-        return 0;
-    }
-    SCacheInfo::TParams* driver_params = GetDriverParams(params);
-    return m_BlobCache->SameCacheParams(driver_params) ? m_BlobCache : 0;
+    SetIdCache(0);
+    SetBlobCache(0);
 }
 
 
@@ -702,19 +733,7 @@ public:
         if ( !version.Match(NCBI_INTERFACE_VERSION(CReader)) ) {
             return 0;
         }
-        auto_ptr<ICache> id_cache
-            (SCacheInfo::CreateCache(params,
-                                     SCacheInfo::eCacheReader,
-                                     SCacheInfo::eIdCache));
-        auto_ptr<ICache> blob_cache
-            (SCacheInfo::CreateCache(params,
-                                     SCacheInfo::eCacheReader,
-                                     SCacheInfo::eBlobCache));
-        if ( blob_cache.get()  ||  id_cache.get() ) {
-            return new CCacheReader(blob_cache.release(), id_cache.release(),
-                                    CCacheReader::fOwnAll);
-        }
-        return 0;
+        return new CCacheReader;
     }
 };
 

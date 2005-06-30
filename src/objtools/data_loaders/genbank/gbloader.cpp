@@ -206,6 +206,8 @@ CGBDataLoader::CGBDataLoader(const string&     loader_name,
 CGBDataLoader::~CGBDataLoader(void)
 {
     GBLOG_POST( "~CGBDataLoader");
+    // Reset cache for each reader/writer
+    m_Dispatcher->ResetCaches();
 }
 
 
@@ -522,6 +524,7 @@ CReader* CGBDataLoader::x_CreateReader(const string& names,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "no reader available from "+names);
     }
+    ret->InitializeCache(m_CacheManager, params);
     return ret;
 }
 
@@ -536,9 +539,7 @@ CWriter* CGBDataLoader::x_CreateWriter(const string& names,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "no writer available from "+names);
     }
-    if ( ret->HasCache() ) {
-        ret->InitializeCache(*m_Dispatcher, params);
-    }
+    ret->InitializeCache(m_CacheManager, params);
     return ret;
 }
 
@@ -687,6 +688,20 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
                "conflict");
     }
     return best;
+}
+
+
+
+void CGBDataLoader::PurgeCache(TCacheType            cache_type,
+                               time_t                access_timeout,
+                               ICache::EKeepVersions keep_last_ver)
+{
+    typedef CReaderCacheManager::TCaches TCaches;
+    NON_CONST_ITERATE(TCaches, it, m_CacheManager.GetCaches()) {
+        if ((it->m_Type & cache_type) != 0) {
+            it->m_Cache->Purge(access_timeout, keep_last_ver);
+        }
+    }
 }
 
 
@@ -1087,6 +1102,30 @@ string CGBDataLoader::BlobIdToString(const TBlobId& id) const
 CReadDispatcher& CGBDataLoader::GetDispatcher(void)
 {
     return *m_Dispatcher;
+}
+
+
+void CGBReaderCacheManager::RegisterCache(ICache& cache,
+                                          ECacheType cache_type)
+{
+    SReaderCacheInfo info(cache, cache_type);
+    //!!! Make sure the cache is not registered yet!
+    m_Caches.push_back(info);
+}
+
+
+ICache* CGBReaderCacheManager::FindCache(ECacheType cache_type,
+                                         const TCacheParams* params)
+{
+    NON_CONST_ITERATE(TCaches, it, m_Caches) {
+        if ((it->m_Type & cache_type) == 0) {
+            continue;
+        }
+        if ( it->m_Cache->SameCacheParams(params) ) {
+            return it->m_Cache.get();
+        }
+    }
+    return 0;
 }
 
 

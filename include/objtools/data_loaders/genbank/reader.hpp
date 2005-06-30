@@ -31,6 +31,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <util/cache/icache.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -43,6 +44,7 @@ class CSeq_id_Handle;
 class CLoadLockSeq_ids;
 class CLoadLockBlob_ids;
 class CLoadLockBlob;
+class CReaderCacheManager;
 
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
@@ -167,7 +169,9 @@ public:
 
     static int ReadInt(CNcbiIstream& stream);
 
-    virtual bool HasCache(void) const { return false; }
+    virtual void InitializeCache(CReaderCacheManager& cache_manager,
+                                 const TPluginManagerParamTree* params) {}
+    virtual void ResetCache(void) {}
 
 protected:
     CReadDispatcher* m_Dispatcher;

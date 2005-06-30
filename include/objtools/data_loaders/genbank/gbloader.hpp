@@ -50,10 +50,14 @@
 
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <objtools/data_loaders/genbank/gbload_util.hpp>
+#include <objtools/data_loaders/genbank/cache_manager.hpp>
+
+#include <util/cache/icache.hpp>
 
 #define GENBANK_NEW_READER_WRITER
 
 BEGIN_NCBI_SCOPE
+
 BEGIN_SCOPE(objects)
 
 class CReadDispatcher;
@@ -86,6 +90,21 @@ class CLoadInfoBlob;
 //
 
 class CGBReaderRequestResult;
+
+
+class CGBReaderCacheManager : public CReaderCacheManager
+{
+public:
+    CGBReaderCacheManager(void) {}
+
+    virtual void RegisterCache(ICache& cache, ECacheType cache_type);
+    virtual TCaches& GetCaches(void) { return m_Caches; }
+    virtual ICache* FindCache(ECacheType cache_type,
+                              const TCacheParams* params);
+private:
+    TCaches m_Caches;
+};
+
 
 // Parameter names used by loader factory
 
@@ -190,6 +209,17 @@ public:
 
     CReadDispatcher& GetDispatcher(void);
 
+    enum ECacheType {
+        fCache_Id   = CGBReaderCacheManager::fCache_Id,
+        fCache_Blob = CGBReaderCacheManager::fCache_Blob,
+        fCache_Any  = CGBReaderCacheManager::fCache_Any
+    };
+    typedef CGBReaderCacheManager::TCacheType TCacheType;
+    void PurgeCache(TCacheType            cache_type,
+                    time_t                access_timeout = 0,
+                    ICache::EKeepVersions keep_last_ver =
+                    ICache::eDropAll);
+
 protected:
     friend class CGBReaderRequestResult;
 
@@ -232,6 +262,9 @@ private:
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
 
     CTimer                  m_Timer;
+
+    // Information about all available caches
+    CGBReaderCacheManager   m_CacheManager;
 
     //
     // private code
