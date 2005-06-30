@@ -55,6 +55,9 @@ int  GetCDDPssmIdFromSeqId(const CRef< CSeq_id >& id);
 //  Return -1 on failure; was FindMMDBIdInBioseq
 int    GetMMDBId (const CBioseq& bioseq);
 
+//  Return -1 if no tax id was found, or if multiple inconsistent tax ids found.
+int  GetTaxIdInBioseq(const CBioseq& bioseq);
+
 //  Return species description as a string.
 //  Empty string returned on failure; was CCd::GetSpecies(...).
 string GetSpeciesFromBioseq(const CBioseq& bioseq);  
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/06/30 15:38:54  lanczyck
+ * add method GetTaxIdInBioseq
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
