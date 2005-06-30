@@ -325,6 +325,13 @@ public:
     /// @sa SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
 
+    /// Extract the archive to specified directory.
+    ///
+    /// Extract all archive entries which names match pre-set masks.
+    /// Automaticaly call SetBaseDir().
+    /// @sa SetMask, SetBaseDir
+    auto_ptr<TEntries> Extract(const string& dir);
+
     /// Get information about archive entries.
     ///
     /// @return
@@ -519,6 +526,13 @@ auto_ptr<CTar::TEntries> CTar::Update(const string& name)
 }
 
 inline
+auto_ptr<CTar::TEntries> CTar::Extract(const string& dir)
+{
+    SetBaseDir(dir);
+    return Extract();
+}
+
+inline
 auto_ptr<CTar::TEntries> CTar::List(void)
 {
     return x_Open(eList);
@@ -582,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/06/30 11:15:30  ivanov
+ * Restore missed Extract(const string& dir)
+ *
  * Revision 1.16  2005/06/29 19:04:45  lavr
  * Doc'ing
  *
