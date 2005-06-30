@@ -55,7 +55,8 @@ int  GetCDDPssmIdFromSeqId(const CRef< CSeq_id >& id);
 //  Return -1 on failure; was FindMMDBIdInBioseq
 int    GetMMDBId (const CBioseq& bioseq);
 
-//  Return -1 if no tax id was found, or if multiple inconsistent tax ids found.
+//  Consistent w/ CTaxon1 class, return 0 if no tax id was found, 
+//  or -(firstTaxId) if multiple tax ids found.
 int  GetTaxIdInBioseq(const CBioseq& bioseq);
 
 //  Return species description as a string.
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/06/30 17:54:55  lanczyck
+ * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
+ *
  * Revision 1.2  2005/06/30 15:38:54  lanczyck
  * add method GetTaxIdInBioseq
  *

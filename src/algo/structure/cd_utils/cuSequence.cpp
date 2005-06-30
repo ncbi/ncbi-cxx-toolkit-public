@@ -141,7 +141,7 @@ int GetMMDBId(const CBioseq& bioseq) {
 int GetTaxIdInBioseq(const CBioseq& bioseq) {
 
     bool isTaxIdFound = false;
-    int	thisTaxid, taxid =	-1;
+    int	thisTaxid, taxid =	0;
 	list< CRef<	CSeqdesc > >::const_iterator  j, jend;
 
 	if (bioseq.IsSetDescr()) 
@@ -164,12 +164,13 @@ int GetTaxIdInBioseq(const CBioseq& bioseq) {
 						if ((*k)->GetTag().IsId()) {
 							thisTaxid = (*k)->GetTag().GetId();
 
-                            //  Mark the first tax id found; if there are others, 
-                            //  return -1 if they are not all equal.
-                            if (isTaxIdFound && taxid != thisTaxid) {
-                                taxid = -1;
-                            } else if (taxid == -1 && !isTaxIdFound) {
-                                taxid = thisTaxid;
+                            //  Mark the first valid tax id found; if there are others, 
+                            //  return -(firstTaxid) if they are not all equal.  Allow for
+                            //  thisTaxid < 0, which CTaxon1 allows when there are multiple ids.
+                            if (isTaxIdFound && taxid != thisTaxid && taxid != -thisTaxid) {
+                                taxid *= (taxid > 0) ? -1 : 1;
+                            } else if (taxid == 0 && thisTaxid != 0 && !isTaxIdFound) {
+                                taxid = (thisTaxid > 0) ? thisTaxid : -thisTaxid;
                                 isTaxIdFound = true;
                             } 
 //							break;
@@ -366,6 +367,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/06/30 17:54:39  lanczyck
+ * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
+ *
  * Revision 1.3  2005/06/30 15:39:37  lanczyck
  * add method GetTaxIdInBioseq; remove a couple compiler warnings
  *
