@@ -33,6 +33,7 @@ test $? -eq 0 && exit 0
 crontab ${wdir}/crontab
 check_error cannot run crontab
 crontab -l > ${wdir}/crontab
+chmod g+w ${wdir}/crontab
 echo "crontab on "`hostname`" has been updated" >& 2
 
 
