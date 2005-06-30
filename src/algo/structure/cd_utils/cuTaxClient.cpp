@@ -54,7 +54,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-const bool   TaxClient::REFRESH_DEFAULT    = false;
+const bool   TaxClient::REFRESH_DEFAULT               = false;
 
 TaxClient::TaxClient(bool refresh) : m_taxonomyClient(0)
 {
@@ -118,55 +118,55 @@ int TaxClient::GetTaxIDForGI(int gi) {
 }
 
 //  Look through the bioseq for a COrg object, and use it to get taxid.
-//  Use tax server by default, unless lookInBioseq is true.
+//  Use tax server by default, unless server fails and lookInBioseq is true.
 int TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
 
-    int taxid = 0;
-	list< CRef< CSeqdesc > >::const_iterator  j, jend;
+	int	taxid =	0;
+	list< CRef<	CSeqdesc > >::const_iterator  j, jend;
 
-    if (bioseq.IsSetDescr()) 
+	if (bioseq.IsSetDescr()) 
 	{
-        jend = bioseq.GetDescr().Get().end();
+		jend = bioseq.GetDescr().Get().end();
 
-        // look through the sequence descriptions
-        for (j=bioseq.GetDescr().Get().begin(); j!=jend; j++) 
+		// look	through	the	sequence descriptions
+		for	(j=bioseq.GetDescr().Get().begin();	j!=jend; j++) 
 		{
-			const COrg_ref *org = NULL;
+			const COrg_ref *org	= NULL;
 			if ((*j)->IsOrg())
-				org = &((*j)->GetOrg());
-			else if ((*j)->IsSource())
-				org = &((*j)->GetSource().GetOrg());
+				org	= &((*j)->GetOrg());
+			else if	((*j)->IsSource())
+				org	= &((*j)->GetSource().GetOrg());
 			if (org) 
 			{
-                //  Use tax server
+				//	Use	tax	server
 				if (IsAlive()) 
 				{
 						if ((taxid = m_taxonomyClient->GetTaxIdByOrgRef(*org)) != 0) 
 						{
-							if (taxid < 0) 
-							{  //  multiple tax nodes; -taxid is one of them
+							if (taxid <	0) 
+							{  //  multiple	tax	nodes; -taxid is one of	them
 								taxid *= -1;
 							}
 							break;
 						}
 				}
-                //  Use bioseq, which may be obsolete, only when requested and tax server failed.
-                if (taxid == 0 && lookInBioseq) 
-				{   //  is there an ID in the bioseq itself if fails
-                	vector < CRef< CDbtag > >::const_iterator k, kend = org->GetDb().end();
-                    for (k=org->GetDb().begin(); k != kend; ++k) {
+				//	Use	bioseq,	which may be obsolete, only	when requested and tax server failed.
+				if (taxid == 0 && lookInBioseq)	
+				{	//	is there an	ID in the bioseq itself	if fails
+					vector < CRef< CDbtag >	>::const_iterator k, kend =	org->GetDb().end();
+					for	(k=org->GetDb().begin(); k != kend;	++k) {
 						if ((*k)->GetDb() == "taxon") {
 							if ((*k)->GetTag().IsId()) {
-								taxid = (*k)->GetTag().GetId();
-        						break;
+								taxid =	(*k)->GetTag().GetId();
+								break;
 							}
 						}
 					}
-                }
-			} //end if (org)
+				}
+			} //end	if (org)
 		}//end for
 	}
-    return taxid;
+	return taxid;
 }
 
 short TaxClient::GetRankID(int taxId, string& rankName)
@@ -221,9 +221,14 @@ string TaxClient::GetSuperKingdom(int taxid) {
 
 //is taxid2 the descendant of taxid1?
 bool TaxClient::IsTaxDescendant(int taxid1, int taxid2)
-{
-	int ancestor = m_taxonomyClient->Join(taxid1, taxid2);
-	return ancestor == taxid1;
+{   
+    if (IsAlive()) {
+        int ancestor = m_taxonomyClient->Join(taxid1, taxid2);
+        return (ancestor == taxid1); 
+    } else 
+        return false;
+//	int ancestor = m_taxonomyClient->Join(taxid1, taxid2);
+//	return ancestor == taxid1;
 }
 
 END_SCOPE(cd_utils)
@@ -233,6 +238,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/06/30 23:57:02  lanczyck
+ * correct comment; protect against null m_taxonomyClient object
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
