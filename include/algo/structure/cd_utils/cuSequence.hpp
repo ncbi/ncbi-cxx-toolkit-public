@@ -39,10 +39,17 @@
 #include <corelib/ncbiargs.hpp>   
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 BEGIN_SCOPE(cd_utils)
+
+// the taxid for Venter's environmental sequences
+const  int ENVIRONMENTAL_SEQUENCE_TAX_ID = 256318;
 
 CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId);
 
@@ -58,6 +65,8 @@ int    GetMMDBId (const CBioseq& bioseq);
 //  Consistent w/ CTaxon1 class, return 0 if no tax id was found, 
 //  or -(firstTaxId) if multiple tax ids found.
 int  GetTaxIdInBioseq(const CBioseq& bioseq);
+
+bool IsEnvironmentalSeq(const CBioseq& bioseq);
 
 //  Return species description as a string.
 //  Empty string returned on failure; was CCd::GetSpecies(...).
@@ -92,6 +101,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/06/30 23:58:42  lanczyck
+ * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
+ *
  * Revision 1.3  2005/06/30 17:54:55  lanczyck
  * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
  *

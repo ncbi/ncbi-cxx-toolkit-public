@@ -38,7 +38,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -52,9 +51,6 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
-#include <objects/seqloc/Seq_id.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 
 #include <util/sequtil/sequtil_convert.hpp>
@@ -181,6 +177,11 @@ int GetTaxIdInBioseq(const CBioseq& bioseq) {
 		}//end for
 	}
 	return taxid;
+}
+
+bool IsEnvironmentalSeq(const CBioseq& bioseq) {
+	//256318 is the taxid for Venter's infamous environmental sequences
+	return GetTaxIdInBioseq(bioseq) == ENVIRONMENTAL_SEQUENCE_TAX_ID;
 }
 
 //string CCd::GetSpecies(int SeqIndex) {  
@@ -367,6 +368,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/06/30 23:59:00  lanczyck
+ * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
+ *
  * Revision 1.4  2005/06/30 17:54:39  lanczyck
  * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
  *
