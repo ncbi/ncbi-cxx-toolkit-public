@@ -32,6 +32,7 @@
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
+#include <objtools/data_loaders/genbank/cache_manager.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
@@ -476,6 +477,26 @@ int CReader::ReadInt(CNcbiIstream& stream)
     return value;
 }
 
+
+CReaderCacheManager::CReaderCacheManager(void)
+{
+}
+
+
+CReaderCacheManager::~CReaderCacheManager(void)
+{
+}
+
+
+CReaderCacheManager::SReaderCacheInfo::SReaderCacheInfo(ICache& cache, ECacheType cache_type)
+    : m_Cache(&cache),
+      m_Type(cache_type)
+{
+}
+
+CReaderCacheManager::SReaderCacheInfo::~SReaderCacheInfo(void)
+{
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

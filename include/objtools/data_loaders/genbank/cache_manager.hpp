@@ -29,10 +29,10 @@
 *
 */
 
+#include <corelib/ncbistd.hpp>
 #include <util/cache/icache.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects)
 
 
@@ -45,25 +45,29 @@ public:
         fCache_Any  = fCache_Id | fCache_Blob
     };
     typedef int TCacheType;
-    struct SReaderCacheInfo
+    struct NCBI_XREADER_EXPORT SReaderCacheInfo
     {
-        SReaderCacheInfo(ICache& cache, ECacheType cache_type)
-            : m_Cache(&cache),
-              m_Type(cache_type)
-            {}
+        SReaderCacheInfo(ICache& cache, ECacheType cache_type);
+        ~SReaderCacheInfo(void);
+
         AutoPtr<ICache> m_Cache;
         TCacheType      m_Type;
     };
     typedef vector<SReaderCacheInfo> TCaches;
     typedef TPluginManagerParamTree TCacheParams;
 
-    CReaderCacheManager(void) {}
-    virtual ~CReaderCacheManager(void) {}
+    CReaderCacheManager(void);
+    virtual ~CReaderCacheManager(void);
 
     virtual void RegisterCache(ICache& cache, ECacheType cache_type) = 0;
     virtual TCaches& GetCaches(void) = 0;
     virtual ICache* FindCache(ECacheType cache_type,
                               const TCacheParams* params) = 0;
+
+private:
+    // to prevent copying
+    CReaderCacheManager(const CReaderCacheManager&);
+    void operator=(const CReaderCacheManager&);
 };
 
 
