@@ -1292,8 +1292,16 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
     string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
     list<string> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
-    if (fasta_pieces.size() < 2) {
-        NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID list" + ss);
+    if (fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0])) {
+        // NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID list" + ss);
+        CRef<CSeq_id> id(new CSeq_id);
+        try {
+            id->Set(ss);
+        } catch (CSeqIdException&) {
+            id->Set(e_Local, ss);
+        }
+        ids.push_back(id);
+        return 1;
     }
     SIZE_TYPE count = 0;
     while ( !fasta_pieces.empty() ) {
@@ -1585,6 +1593,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.109  2005/06/30 20:06:32  ucko
+ * ParseFastaIds: try to make sense of IDs without vertical bars,
+ * treating them as bare accessions if possible and local IDs otherwise.
+ *
  * Revision 6.108  2005/06/29 19:22:20  ucko
  * Refactor, introducing Set methods that can be called on previously
  * initialized IDs and a static ParseFastaIDs method.
