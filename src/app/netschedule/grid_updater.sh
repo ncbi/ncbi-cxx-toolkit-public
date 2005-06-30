@@ -16,7 +16,7 @@ start_dir=`pwd`
 
 check_error() {
     test $? -eq 0 && return
-    echo "$@"
+    echo "$@" >& 2
     exit 2
 }
 
@@ -45,6 +45,7 @@ for file in ${UPDATE_DIR}/CONTROL_PROGRAMS/* ; do
     diff $file $oldfile >/dev/null 2>&1
     test $? -eq 0 && continue
     cp_file $file $oldfile
+    echo "$oldfile has been updated" >& 2
 done
 
 # update nodes
@@ -67,6 +68,7 @@ for dir in ${UPDATE_DIR}/* ; do
         check_error cannot mkdir $wdir/NEW_VERSION
         mkdir $wdir/BACKUP
         check_error cannot mkdir $wdir/BACKUP
+        echo "New worker node \"$wdir\" has been created" >& 2
     fi
     count=0
     for ddd in $dir/bin $conf_dir ; do
@@ -77,6 +79,7 @@ for dir in ${UPDATE_DIR}/* ; do
             test $? -eq 0 && continue
             cp_file $f $wdir/NEW_VERSION/$fname
             count=`expr $count + 1`
+            echo "$wdir/$fname has been updated" >& 2
         done
     done
 

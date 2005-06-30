@@ -15,7 +15,11 @@ UPDATE_DIR=$1
 test "x$UPDATE_DIR" = "x" && UPDATE_DIR=~/service_update
 
 test ! -d ${UPDATE_DIR} && exit 2
+test -f ${UPDATE_DIR}/running_now && exit 0
+
+touch ${UPDATE_DIR}/running_now
 
 ${script_dir}/grid_updater.sh /export/home/service/grid_nodes ${UPDATE_DIR}/grid
 ${script_dir}/crontab_updater.sh ${UPDATE_DIR}/crontabs
 
+rm -f ${UPDATE_DIR}/running_now

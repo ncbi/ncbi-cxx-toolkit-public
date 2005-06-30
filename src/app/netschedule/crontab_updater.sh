@@ -12,7 +12,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 
 check_error() {
     test $? -eq 0 && return
-    echo "$@"
+    echo "$@" >& 2
     exit 2
 }
 
@@ -27,9 +27,12 @@ test ! -f ${wdir}/crontab && exit 0
 crontab -l > /tmp/crontab_tmp
 check_error cannot run crontab -l
 
-diff ${wdir}/crontab_file >/dev/null 2>&1
+diff ${wdir}/crontab /tmp/crontab_tmp >/dev/null 2>&1
 test $? -eq 0 && exit 0
 
 crontab ${wdir}/crontab
 check_error cannot run crontab
+crontab -l > ${wdir}/crontab
+echo "crontab on "`hostname`" has been updated" >& 2
+
 
