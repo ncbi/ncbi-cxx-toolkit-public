@@ -65,7 +65,7 @@ public:
 	short GetRankID(int taxId, string& rankName);
 
     //  Look through the bioseq for a COrg object, and use it to get taxid.
-    //  Use tax server by default, unless lookInBioseq is true.
+    //  Use tax server by default, unless server fails and lookInBioseq is true.
     int GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
     string GetTaxNameForTaxID(int taxid);
     string GetSuperKingdom(int taxid);
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/06/30 23:54:29  lanczyck
+ * correct comment
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
