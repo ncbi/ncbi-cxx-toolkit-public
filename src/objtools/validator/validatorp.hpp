@@ -196,7 +196,6 @@ enum EErrType {
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG),
-    eErr_SEQ_PKG_BEGIN,
     eErr_SEQ_PKG_NoCdRegionPtr,
     eErr_SEQ_PKG_NucProtProblem,
     eErr_SEQ_PKG_SegSetProblem,
@@ -991,6 +990,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2005/06/30 17:25:34  shomrat
+* Removed wrong enum value
+*
 * Revision 1.79  2005/06/28 17:37:24  shomrat
 * Errors from Seqdesc must contain a context
 *
