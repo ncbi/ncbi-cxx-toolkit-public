@@ -144,13 +144,26 @@ public:
         }
     };
 
+    enum EInvalidFlag {
+        fValid         = 0,
+        fInvalid_Name  = 1<<0,
+        fInvalid_Value = 1<<1,
+        fInvalid_Any   = fInvalid_Name | fInvalid_Value
+    };
+    typedef int TInvalidFlag;
+
+    TInvalidFlag IsInvalid(void) const;
+    void SetInvalid(TInvalidFlag flag);   // Set invalid flag bit
+    void ResetInvalid(TInvalidFlag flag); // Clear invalid flag bit
+
 private:
-    string m_Name;
-    string m_Value;
-    string m_Domain;
-    string m_Path;
-    tm     m_Expires;  // GMT time zone
-    bool   m_Secure;
+    string         m_Name;
+    string         m_Value;
+    string         m_Domain;
+    string         m_Path;
+    tm             m_Expires;  // GMT time zone
+    bool           m_Secure;
+    TInvalidFlag   m_InvalidFlag;
 
     static void x_CheckField(const string& str, const char* banned_symbols);
     static bool x_GetString(string* str, const string& val);
@@ -197,9 +210,11 @@ public:
 
     /// How to handle badly formed cookies
     enum EOnBadCookie {
-        eOnBadCookie_ThrowException,
-        eOnBadCookie_SkipAndError,
-        eOnBadCookie_Skip
+        eOnBadCookie_ThrowException, ///< Throw exception, ignore bad cookie
+        eOnBadCookie_SkipAndError,   ///< Report error, ignore bad cookie
+        eOnBadCookie_Skip,           ///< Silently ignore bad cookie
+        eOnBadCookie_StoreAndError,  ///< Report error, store bad cookie as-is
+        eOnBadCookie_Store           ///< Store bad cookie without URL-decoding
     };
 
     /// Empty set of cookies
@@ -285,9 +300,14 @@ public:
                                = CCgiCookie::eHTTPResponse) const;
 
 private:
-    static bool x_CheckField(const string& str,
-                             const char*   banned_symbols,
-                             EOnBadCookie  on_bad_cookie);
+    enum ECheckResult {
+        eCheck_Valid,         // Cookie is valid
+        eCheck_SkipInvalid,   // Cookie is invalid and should be ignored
+        eCheck_StoreInvalid   // Cookie is invalid but should be stored
+    };
+    static ECheckResult x_CheckField(const string& str,
+                                     const char*   banned_symbols,
+                                     EOnBadCookie  on_bad_cookie);
 
     EUrlEncode m_EncodeFlag;
     TSet       m_Cookies;
@@ -769,6 +789,7 @@ URL_EncodeString(const      string& str,
 
 inline void CCgiCookie::SetValue(const string& str) {
     m_Value = str;
+    m_InvalidFlag &= ~fInvalid_Value;
 }
 inline void CCgiCookie::SetDomain(const string& str) {
     x_CheckField(str, " ;");
@@ -803,6 +824,18 @@ inline bool CCgiCookie::GetSecure(void) const {
     return m_Secure;
 }
 
+inline CCgiCookie::TInvalidFlag CCgiCookie::IsInvalid(void) const
+{
+    return m_InvalidFlag;
+}
+inline void CCgiCookie::SetInvalid(TInvalidFlag flag)
+{
+    m_InvalidFlag |= flag;
+}
+inline void CCgiCookie::ResetInvalid(TInvalidFlag flag)
+{
+    m_InvalidFlag &= ~flag;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -903,6 +936,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.78  2005/06/30 17:14:26  grichenk
+* Added flag to CCgiCookies to allow storing invalid cookies.
+* Added CCgiCookie::IsInvalid(). Throw exception when writing
+* an invalid cookie.
+*
 * Revision 1.77  2005/05/31 13:43:19  didenko
 * Created private methods for Query String and Input Stream processing
 *

@@ -71,7 +71,8 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
     : m_Name(cookie.m_Name),
       m_Value(cookie.m_Value),
       m_Domain(cookie.m_Domain),
-      m_Path(cookie.m_Path)
+      m_Path(cookie.m_Path),
+      m_InvalidFlag(cookie.m_InvalidFlag)
 {
     m_Expires = cookie.m_Expires;
     m_Secure  = cookie.m_Secure;
@@ -80,6 +81,7 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
 
 CCgiCookie::CCgiCookie(const string& name,   const string& value,
                        const string& domain, const string& path)
+    : m_InvalidFlag(fValid)
 {
     if ( name.empty() ) {
         NCBI_THROW2(CCgiCookieException, eValue, "Empty cookie name", 0);
@@ -101,6 +103,7 @@ void CCgiCookie::Reset(void)
     m_Path.erase();
     m_Expires = kZeroTime;
     m_Secure = false;
+    ResetInvalid(fInvalid_Any);
 }
 
 
@@ -110,6 +113,9 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
         return;
 
     m_Value   = cookie.m_Value;
+    ResetInvalid(fInvalid_Value);
+    SetInvalid(cookie.IsInvalid() & fInvalid_Value);
+
     m_Domain  = cookie.m_Domain;
     m_Path    = cookie.m_Path;
     m_Expires = cookie.m_Expires;
@@ -147,6 +153,17 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
                                 EWriteMethod wmethod,
                                 EUrlEncode   flag) const
 {
+    // Check if name and value are valid
+    if ((m_InvalidFlag & fInvalid_Name) != 0) {
+        NCBI_THROW2(CCgiCookieException, eValue,
+                    "Banned symbol in the cookie's name: "
+                    + NStr::PrintableString(m_Name), 0);
+    }
+    if ((m_InvalidFlag & fInvalid_Value) != 0) {
+        NCBI_THROW2(CCgiCookieException, eValue,
+                    "Banned symbol in the cookie's value: "
+                    + NStr::PrintableString(m_Value), 0);
+    }
     if (wmethod == eHTTPResponse) {
         os << "Set-Cookie: ";
 
@@ -269,14 +286,18 @@ CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
             _VERIFY( m_Cookies.insert(ck).second );
         }
     } catch (CCgiCookieException& ex) {
+        // This can only happen if cookie has empty name, ignore
+        // Store/StoreAndError flags in this case.
         switch ( on_bad_cookie ) {
         case eOnBadCookie_ThrowException:
             throw;
+        case eOnBadCookie_StoreAndError:
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
             ERR_POST(cex);
             return NULL;
         }
+        case eOnBadCookie_Store:
         case eOnBadCookie_Skip:
             return NULL;
         default:
@@ -318,9 +339,10 @@ void CCgiCookies::Add(const CCgiCookies& cookies)
 
 
 // Check if the cookie name or value is valid
-bool CCgiCookies::x_CheckField(const string& str,
-                               const char*   banned_symbols,
-                               EOnBadCookie  on_bad_cookie)
+CCgiCookies::ECheckResult
+CCgiCookies::x_CheckField(const string& str,
+                          const char*   banned_symbols,
+                          EOnBadCookie  on_bad_cookie)
 {
     try {
         CCgiCookie::x_CheckField(str, banned_symbols);
@@ -331,15 +353,22 @@ bool CCgiCookies::x_CheckField(const string& str,
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
             ERR_POST(cex);
-            return false;
+            return eCheck_SkipInvalid;
         }
         case eOnBadCookie_Skip:
-            return false;
+            return eCheck_SkipInvalid;
+        case eOnBadCookie_StoreAndError: {
+            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            ERR_POST(cex);
+            return eCheck_StoreInvalid;
+        }
+        case eOnBadCookie_Store:
+            return eCheck_StoreInvalid;
         default:
             _TROUBLE;
         }
     }
-    return true;
+    return eCheck_Valid;
 }
 
 
@@ -354,17 +383,41 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
         if (pos_mid == NPOS) {
             string name = str.substr(pos_beg);
-            if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            case eCheck_Valid:
                 Add(URL_DecodeString(name, m_EncodeFlag),
                     kEmptyStr, on_bad_cookie);
+                break;
+            case eCheck_StoreInvalid:
+                {
+                    CCgiCookie* cookie = Add(name, kEmptyStr, on_bad_cookie);
+                    if ( cookie ) {
+                        cookie->SetInvalid(CCgiCookie::fInvalid_Name);
+                    }
+                    break;
+                }
+            default:
+                break;
             }
             return; // done
         }
         if (str[pos_mid] != '=') {
             string name = str.substr(pos_beg, pos_mid - pos_beg);
-            if ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            case eCheck_Valid:
                 Add(URL_DecodeString(name, m_EncodeFlag),
                     kEmptyStr, on_bad_cookie);
+                break;
+            case eCheck_StoreInvalid:
+                {
+                    CCgiCookie* cookie = Add(name, kEmptyStr, on_bad_cookie);
+                    if ( cookie ) {
+                        cookie->SetInvalid(CCgiCookie::fInvalid_Name);
+                    }
+                    break;
+                }
+            default:
+                break;
             }
             if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
                 return; // done
@@ -384,11 +437,25 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 
         string name = str.substr(pos_beg, pos_mid - pos_beg);
         string val = str.substr(pos_mid + 1, pos_end - pos_mid);
-        if ( x_CheckField(name, " ,;=", on_bad_cookie)  &&
-            x_CheckField(val, " ;", on_bad_cookie)) {
+        ECheckResult valid_name = x_CheckField(name, " ,;=", on_bad_cookie);
+        ECheckResult valid_value = x_CheckField(val, " ;", on_bad_cookie);
+        if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
             Add(URL_DecodeString(name, m_EncodeFlag),
                 URL_DecodeString(val, m_EncodeFlag),
                 on_bad_cookie);
+        }
+        else if ( valid_name != eCheck_SkipInvalid  &&
+            valid_value != eCheck_SkipInvalid ) {
+            // Do not URL-decode bad cookies
+            CCgiCookie* cookie = Add(name, val, on_bad_cookie);
+            if ( cookie ) {
+                if (valid_name == eCheck_StoreInvalid) {
+                    cookie->SetInvalid(CCgiCookie::fInvalid_Name);
+                }
+                if (valid_value == eCheck_StoreInvalid) {
+                    cookie->SetInvalid(CCgiCookie::fInvalid_Value);
+                }
+            }
         }
     }
     // ...never reaches here...
@@ -1565,6 +1632,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.96  2005/06/30 17:14:26  grichenk
+* Added flag to CCgiCookies to allow storing invalid cookies.
+* Added CCgiCookie::IsInvalid(). Throw exception when writing
+* an invalid cookie.
+*
 * Revision 1.95  2005/06/03 16:40:27  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

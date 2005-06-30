@@ -188,6 +188,15 @@ static void TestCgi_Cookies(void)
         URL_DecodeString(enc_val));
 
     NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
+
+    cookies.Add("bad name=good_value; good_name=bad value; bad both=bad both",
+        CCgiCookies::eOnBadCookie_StoreAndError);
+    CCgiCookies::TCRange rg = cookies.GetAll();
+    for (CCgiCookies::TCIter it = rg.first; it != rg.second; it++) {
+        if ( !(*it)->IsInvalid() ) {
+            _ASSERT(cookies.Find((*it)->GetName()));
+        }
+    }
 }
 
 
@@ -627,6 +636,11 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.23  2005/06/30 17:14:26  grichenk
+ * Added flag to CCgiCookies to allow storing invalid cookies.
+ * Added CCgiCookie::IsInvalid(). Throw exception when writing
+ * an invalid cookie.
+ *
  * Revision 1.22  2005/05/18 14:12:45  grichenk
  * URL-encode/decode cookie's name and value
  *
