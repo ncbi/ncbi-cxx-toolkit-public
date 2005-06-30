@@ -490,7 +490,14 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
                                                                  lib_id));
             if (k == GetApp().GetWholeTree().m_Projects.end()) {
-                str_log += " " + lib_id;
+                k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib, lib_id));
+                if (k != tree_src.m_Projects.end()) {
+                    const CProjItem& lib = k->second;
+                    s_AddProjItemToDll(lib, &dll);
+                    is_empty = false;
+                } else {
+                    str_log += " " + lib_id;
+                }
                 continue;
                 //LOG_POST(Error << "DLL " + dll_id + " generation skipped");
                 //complete = false; // do not create incomplete DLLs
@@ -585,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/06/30 20:09:16  gouriano
+ * Corrected search for libs in DLL
+ *
  * Revision 1.30  2005/03/23 13:45:11  gouriano
  * Check if a library is hosted in DLL before adding it to the build tree
  *
