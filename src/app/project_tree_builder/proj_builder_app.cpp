@@ -222,6 +222,8 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
+    SetVersion( CVersionInfo(1,0,0) );
+
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1083,6 +1085,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/06/30 20:08:24  gouriano
+ * Added version info
+ *
  * Revision 1.59  2005/05/13 13:14:43  gouriano
  * Do not filter by tags when scanning the whole tree
  *
