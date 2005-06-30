@@ -29,11 +29,9 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
+#include <util/cache/icache.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class ICache;
 
 BEGIN_SCOPE(objects)
 
