@@ -138,6 +138,49 @@ int GetMMDBId(const CBioseq& bioseq) {
   return(id);
 }
 
+int GetTaxIdInBioseq(const CBioseq& bioseq) {
+
+    bool isTaxIdFound = false;
+    int	thisTaxid, taxid =	-1;
+	list< CRef<	CSeqdesc > >::const_iterator  j, jend;
+
+	if (bioseq.IsSetDescr()) 
+	{
+		jend = bioseq.GetDescr().Get().end();
+
+		// look	through	the	sequence descriptions
+		for	(j=bioseq.GetDescr().Get().begin();	j!=jend; j++) 
+		{
+			const COrg_ref *org	= NULL;
+			if ((*j)->IsOrg())
+				org	= &((*j)->GetOrg());
+			else if	((*j)->IsSource())
+				org	= &((*j)->GetSource().GetOrg());
+			if (org) 
+			{
+				vector < CRef< CDbtag >	>::const_iterator k, kend =	org->GetDb().end();
+				for	(k=org->GetDb().begin(); k != kend;	++k) {
+					if ((*k)->GetDb() == "taxon") {
+						if ((*k)->GetTag().IsId()) {
+							thisTaxid = (*k)->GetTag().GetId();
+
+                            //  Mark the first tax id found; if there are others, 
+                            //  return -1 if they are not all equal.
+                            if (isTaxIdFound && taxid != thisTaxid) {
+                                taxid = -1;
+                            } else if (taxid == -1 && !isTaxIdFound) {
+                                taxid = thisTaxid;
+                                isTaxIdFound = true;
+                            } 
+//							break;
+						}
+					}
+				}
+			} //end	if (org)
+		}//end for
+	}
+	return taxid;
+}
 
 //string CCd::GetSpecies(int SeqIndex) {  
 string GetSpeciesFromBioseq(const CBioseq& bioseq) {  
@@ -289,9 +332,9 @@ char GetResidueAtPosition(const CBioseq& bioseq, int pos, bool zeroBased)
     char residue = 0;
     string str = "";
     if (pos >= 0 && GetNcbieaaString(bioseq, str)) {
-        if (zeroBased && pos < str.size()) {
+        if (zeroBased && pos < (int) str.size()) {
             residue = str[pos];
-        } else if (!zeroBased && pos <= str.size() && pos != 0) {
+        } else if (!zeroBased && pos <= (int) str.size() && pos != 0) {
             residue = str[pos-1];
         }
     }
@@ -323,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/06/30 15:39:37  lanczyck
+ * add method GetTaxIdInBioseq; remove a couple compiler warnings
+ *
  * Revision 1.2  2005/04/19 22:03:35  ucko
  * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
  *
