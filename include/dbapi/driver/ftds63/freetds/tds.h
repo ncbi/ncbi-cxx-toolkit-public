@@ -707,7 +707,7 @@ typedef struct tds_connection
 {
 	/* first part of structure is the same of login one */
 	DSTR server_name; /**< server name (in freetds.conf) */
-	int port;	   /**< port of database service */
+	int port[4];	   /**< port of database service */
 	TDS_TINYINT major_version;
 	TDS_TINYINT minor_version;
 	int block_size;
@@ -730,7 +730,7 @@ typedef struct tds_connection
 	unsigned char capabilities[TDS_MAX_CAPABILITY];
 	DSTR client_charset;
 
-	DSTR ip_addr;	  /**< ip of server */
+	DSTR ip_addr[4];	  /**< ip of server */
 	DSTR database;
 	DSTR dump_file;
 	DSTR default_domain;
