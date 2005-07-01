@@ -143,7 +143,8 @@ CNCBINode* CShowServersCommand::Render(const CHostInfo& info,
             host_hook(new THookCtxHost(info,*this));
 
         page.AddTagMap("queue_href_hook", 
-                       CreateTagMapper(RowHook<THookCtxHost>, host_hook.get()));
+                       CreateTagMapper<CHTMLPage,THookCtxHost*>
+                       (RowHook<THookCtxHost>, host_hook.get()));
 
         m_HostHooks.push_back(host_hook);
 
@@ -173,7 +174,8 @@ CNCBINode* CShowServersCommand::Render(const CServiceInfo& info,
         srv_hook(new THookCtxSrv(info,*this));
 
     page.AddTagMap("srv_table_row_hook", 
-                   CreateTagMapper(RowHook<THookCtxSrv>, srv_hook.get()));
+                   CreateTagMapper<CHTMLPage,THookCtxSrv*>
+                   (RowHook<THookCtxSrv>, srv_hook.get()));
     
     m_SvrHooks.push_back(srv_hook);
     return node.release();
@@ -194,7 +196,8 @@ CNCBINode* CShowServersCommand::CreateView(CCgiContext& ctx)
 
 
     GetPage().AddTagMap("srvs_table_row_hook", 
-                        CreateTagMapper(RowHook<THookCtxSrvs>, m_TableRowHook.get()));
+                        CreateTagMapper<CHTMLPage,THookCtxSrvs*>
+                        (RowHook<THookCtxSrvs>, m_TableRowHook.get()));
 
     /*     
     auto_ptr <CHTML_form> Form(new CHTML_form(ctx.GetSelfURL()));    
@@ -308,7 +311,8 @@ CNCBINode* CShowServerStatCommand::CreateView(CCgiContext& ctx)
         m_TableRowHook.reset(new THookContext(queue_info.release(),*this));
 
         GetPage().AddTagMap("wn_table_row_hook", 
-                            CreateTagMapper(RowHook<THookContext>, m_TableRowHook.get()));
+                            CreateTagMapper<CHTMLPage,THookContext*>
+                            (RowHook<THookContext>, m_TableRowHook.get()));
 
     } catch (...) {
 
@@ -407,6 +411,9 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/01 16:03:46  didenko
+ * Undo previous commit
+ *
  * Revision 1.4  2005/07/01 15:49:50  didenko
  * Got rid of unnecessary template arguments specialization for CreateTagMapper function.
  *
