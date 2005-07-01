@@ -63,9 +63,22 @@ cgi/ncbires.hpp
 
 %%
 
+#ifdef NCBI_OS_UNIX
+// These rely on posix-specific headers
+%{
+#include <cgi/caf_encoded.hpp>
+#include <cgi/caf_plain.hpp>
+%}
+%include cgi/caf_encoded.hpp
+%include cgi/caf_plain.hpp
+#endif
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/01 14:08:02  jcherry
+ * Made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
