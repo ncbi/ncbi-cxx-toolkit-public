@@ -108,9 +108,11 @@ int CGi2TaxIdApp::Run()
             gi = NStr::StringToInt(*iter);
         }
         catch (...) {
-            CSeq_id id(*iter);
-            if ( id.Which() != CSeq_id::e_not_set) {
+            try {
+                CSeq_id id(*iter);
                 gi = id1_client.AskGetgi(id);
+            } catch (CSeqIdException&) {
+                // gi = 0;
             }
         }
 
@@ -142,6 +144,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.2  2004/05/21 21:41:40  gorelenk
  * Added PCH ncbi_pch.hpp
  *

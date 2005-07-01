@@ -84,13 +84,15 @@ CNcbiOstream& operator<< (CNcbiOstream& os, const CSeq_loc &loc)
 // a CSeq_loc, then displays the CSeq_loc
 int GetLoc(const string& acc, const string &pat, CSeq_loc &loc, CScope &scope)
 {
-    CRef<CSeq_id> seq_id(new CSeq_id(acc));
-    if (seq_id->Which() == CSeq_id::e_not_set) {
-        cerr << "Invalid seq-id: '" << acc << "'" << endl;
+    CRef<CSeq_id> seq_id;
+    try {
+        seq_id.Reset(new CSeq_id(acc));
+    } catch (CSeqIdException& e) {
+        cerr << "Invalid seq-id: '" << acc << "': " << e.what() << endl;
         return 1;
     }
     
-     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*seq_id);
+    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*seq_id);
     if (bioseq_handle) {
         CSeqVector sv =
             bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -151,6 +153,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.4  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -194,9 +194,11 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 
             string id_str = feat.GetNamedQual(qual_name);
             if ( !id_str.empty() ) {
-                CRef<CSeq_id> id(new CSeq_id(id_str));
-                if (id->Which() == CSeq_id::e_not_set) {
-                    id.Reset(new CSeq_id("lcl|" + id_str));
+                CRef<CSeq_id> id;
+                try {
+                    id.Reset(new CSeq_id(id_str));
+                } catch (CSeqIdException&) {
+                    id.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
                 }
                 feat.SetProduct().SetWhole(*id);
             }
@@ -1035,12 +1037,11 @@ CRef<CSeq_id> CGFFReader::x_ResolveSeqName(const string& name)
 
 CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 {
-    CRef<CSeq_id> id(new CSeq_id(name));
-    if (id->Which() == CSeq_id::e_not_set) {
-        // unrecognized; treat as local
-        id.Reset(new CSeq_id(CSeq_id::e_Local, name, name));
+    try {
+        return CRef<CSeq_id>(new CSeq_id(name));
+    } catch (CSeqIdException& e) {
+        return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
     }
-    return id;
 }
 
 
@@ -1125,6 +1126,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/07/01 16:40:37  ucko
+* Adjust for CSeq_id's use of CSeqIdException to report bad input.
+*
 * Revision 1.16  2005/05/24 14:55:59  dicuccio
 * Restore setting of frame in x_ParseFeatureInterval()
 *

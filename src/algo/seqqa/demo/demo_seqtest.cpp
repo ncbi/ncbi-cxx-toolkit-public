@@ -111,17 +111,20 @@ int CDemoSeqQaApp::Run()
         NStr::Split(id_str, " ", id_list);
     
         ITERATE (list<string>, it, id_list) {
-            CSeq_id id(*it);
-            if (id.Which() == CSeq_id::e_not_set) {
-                LOG_POST(Fatal << "can't interpret accession: " << *it);
+            CRef<CSeq_id> id;
+            try {
+                id.Reset(new CSeq_id(*it));
+            } catch (CSeqIdException& e) {
+                LOG_POST(Fatal << "can't interpret accession: " << *it << ": "
+                         << e.what());
             }
 
-            CBioseq_Handle handle = scope->GetBioseqHandle(id);
+            CBioseq_Handle handle = scope->GetBioseqHandle(*id);
             if ( !handle ) {
                 LOG_POST(Fatal << "can't retrieve sequence for " << *it);
             }
         
-            CRef<CSeq_test_result_set> results = test_mgr.RunTests(id, &ctx);
+            CRef<CSeq_test_result_set> results = test_mgr.RunTests(*id, &ctx);
 
             ostr << MSerial_AsnText << *results;
         }
@@ -151,6 +154,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.2  2004/12/21 18:40:49  vasilche
  * Added missing include Seq_align.hpp.
  *

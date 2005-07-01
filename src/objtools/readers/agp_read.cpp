@@ -195,8 +195,7 @@ void AgpRead(CNcbiIstream& is,
             if (component_id_rule != eAgpRead_ForceLocalId) {
                 try {
                     comp_id.Reset(new CSeq_id(fields[5]));
-                }
-                catch (invalid_argument&) {
+                } catch (...) {
                     comp_id.Reset(new CSeq_id);
                 }
             } else {
@@ -251,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.15  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.14  2005/04/26 15:55:37  dicuccio
  * Eliminate unused exception argument
  *

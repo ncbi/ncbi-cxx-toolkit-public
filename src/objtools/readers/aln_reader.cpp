@@ -208,11 +208,12 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     TSeqPos aln_stop = m_Seqs[0].size();
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        CRef<CSeq_id> seq_id(new CSeq_id(m_Ids[row_i]));
-        if (seq_id->Which() == CSeq_id::e_not_set) {
-            seq_id->SetLocal().SetStr(m_Ids[row_i]);
+        CBioseq::TId xid;
+        if (CSeq_id::ParseFastaIds(xid, m_Ids[row_i], true) > 0) {
+            ids[row_i] = xid.front();
+        } else {
+            ids[row_i] = new CSeq_id(CSeq_id::e_Local, m_Ids[row_i]);
         }
-        ids[row_i] = seq_id;
     }
 
     m_SeqVec.resize(m_Dim);
@@ -321,16 +322,13 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
 
         CRef<CSeq_entry> seq_entry (new CSeq_entry);
 
-        // seq-id
-        CRef<CSeq_id> seq_id(new CSeq_id(m_Ids[row_i]));
-        seq_entry->SetSeq().SetId().push_back(seq_id);
-        if (seq_id->Which() == CSeq_id::e_not_set) {
-            seq_id->SetLocal().SetStr(m_Ids[row_i]);
-        }
+        // seq-id(s)
+        CBioseq::TId& ids = seq_entry->SetSeq().SetId();
+        CSeq_id::ParseFastaIds(ids, m_Ids[row_i], true);
 
         // mol
         CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
-        CSeq_id::EAccessionInfo ai = seq_id->IdentifyAccession();
+        CSeq_id::EAccessionInfo ai = ids.front()->IdentifyAccession();
         if (ai & CSeq_id::fAcc_nuc) {
             mol = CSeq_inst::eMol_na;
         } else if (ai & CSeq_id::fAcc_prot) {
@@ -378,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.13  2005/04/26 17:28:12  dicuccio
  * Added Fasta + Gap API
  *

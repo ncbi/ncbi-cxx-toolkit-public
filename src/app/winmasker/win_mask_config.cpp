@@ -170,11 +170,13 @@ void CWinMaskConfig::FillIdList( const string & file_name,
             string::size_type stop( line.find_first_of( " \t" ) );
             string::size_type start( line[0] == '>' ? 1 : 0 );
             string id_str = line.substr( start, stop - start );
-            CRef<CSeq_id> id(new CSeq_id(id_str));
-            if (id->Which() == CSeq_id::e_not_set) {
-                LOG_POST(Error << "CWinMaskConfig::FillIdList(): can't understand id: " << id_str << ": ignoring");
-            } else {
+            try {
+                CRef<CSeq_id> id(new CSeq_id(id_str));
                 id_list.insert(CSeq_id_Handle::GetHandle(*id));
+            } catch (CSeqIdException& e) {
+                LOG_POST(Error
+                         << "CWinMaskConfig::FillIdList(): can't understand id: "
+                         << id_str << ": " << e.what() << ": ignoring");
             }
         }
     }
@@ -204,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.8  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

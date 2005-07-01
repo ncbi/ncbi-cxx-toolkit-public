@@ -103,12 +103,15 @@ int CFeatOverlapTester::Run(void)
 
     CScope scope(*objmgr);
     scope.AddDefaults();
-    CSeq_id id(args["id"].AsString());
-    if (id.Which() == CSeq_id::e_not_set) {
-        LOG_POST(Fatal << "can't understand ID: " << args["id"].AsString());
+    CRef<CSeq_id> id;
+    try {
+        id.Reset(new CSeq_id(args["id"].AsString()));
+    } catch (CSeqIdException& e) {
+        LOG_POST(Fatal << "can't understand ID: " << args["id"].AsString()
+                 << ": " << e.what());
     }
 
-    CBioseq_Handle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     if ( !handle ) {
         LOG_POST(Fatal << "can't retrieve sequence: " << args["id"].AsString());
     }
@@ -246,6 +249,9 @@ int main(int argc, const char** argv)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.1  2005/04/11 14:43:27  dicuccio
  * Added test for feature overlap variants
  *

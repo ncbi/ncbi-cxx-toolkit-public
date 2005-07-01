@@ -105,18 +105,17 @@ public:
         if (seq_id_str.empty())
             return;
         {{
-            CSeq_id seq_id_db(seq_id_str);
-            if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                seq_id_db.SetLocal().SetStr(seq_id_str);
-                if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                    return;
-                }
+            CRef<CSeq_id> seq_id_db;
+            try {
+                seq_id_db.Reset(new CSeq_id(seq_id_str));
+            } catch (CSeqIdException&) {
+                seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, seq_id_str));
             }
 
             ITERATE (CHandleRangeMap, it, m_HrMap) {
                 CSeq_id_Handle seq_id_hnd = it->first;
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
-                if (seq_id->Match(seq_id_db)) {
+                if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
                     return;
@@ -147,13 +146,11 @@ public:
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
-            CSeq_id seq_id_db(*it);
-
-            if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                seq_id_db.SetLocal().SetStr(*it);
-                if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                    continue;
-                }
+            CRef<CSeq_id> seq_id_db;
+            try {
+                seq_id_db.Reset(new CSeq_id(seq_id_str));
+            } catch (CSeqIdException&) {
+                seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, seq_id_str));
             }
 
             {{
@@ -162,7 +159,7 @@ public:
                 CSeq_id_Handle seq_id_hnd = it2->first;
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
 
-                if (seq_id->Match(seq_id_db)) {
+                if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
                     return;
@@ -481,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.27  2005/02/02 19:49:55  grichenk
  * Fixed more warnings
  *

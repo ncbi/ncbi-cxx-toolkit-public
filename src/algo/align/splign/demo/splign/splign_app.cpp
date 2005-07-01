@@ -385,16 +385,11 @@ istream* CSplignApp::x_GetPairwiseHitStream (
 
 CRef<CSeq_id> GetSeqId(const string& query)
 {
-    CRef<CSeq_id> seqid_query (new CSeq_id);
+    CRef<CSeq_id> seqid_query;
     try {
         seqid_query.Reset (new CSeq_id (query));
-        if (seqid_query->Which() == CSeq_id::e_not_set) {
-            seqid_query->SetLocal().SetStr(query);
-        }
-    }
-    catch(std::exception&) {
-        // some conventionally-looking non-conventional IDs may throw this
-        seqid_query->SetLocal().SetStr(query);
+    } catch (CSeqIdException&) {
+        seqid_query.Reset(new CSeq_id(CSeq_id::e_Local, query));
     }
     return seqid_query;
 }
@@ -706,6 +701,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.41  2005/06/02 15:13:36  kapustin
  * Call SetScoreMatrix(NULL) after changing diag scores
  *

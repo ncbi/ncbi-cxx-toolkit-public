@@ -66,25 +66,24 @@ public:
 
     bool MatchSeqId(const CSeq_id& seq_id_db, const string& candidate_str)
     {
-        CSeq_id seq_id(candidate_str);
-        if (seq_id.Which() == CSeq_id::e_not_set) {
-            seq_id.SetLocal().SetStr(candidate_str);
-            if (seq_id.Which() == CSeq_id::e_not_set) {
-                return false;
-            }
+        CRef<CSeq_id> seq_id;
+        try {
+            seq_id.Reset(new CSeq_id(candidate_str));
+        } catch (CSeqIdException&) {
+            seq_id.Reset(new CSeq_id(CSeq_id::e_Local, candidate_str));
         }
-        if (seq_id.Match(seq_id_db)) {
+        if (seq_id->Match(seq_id_db)) {
             return true;
         }
-        // Sequence does not match, lets try "force it local" strategy
+        // Sequence does not match, let's try "force it local" strategy
         //
-        if (seq_id.Which() != CSeq_id::e_Local) {
+        if (seq_id->Which() != CSeq_id::e_Local) {
             if (candidate_str.find('|') == NPOS) {
-                seq_id.SetLocal().SetStr(candidate_str);
-                if (seq_id.Which() != CSeq_id::e_Local) {
+                seq_id->SetLocal().SetStr(candidate_str);
+                if ( !seq_id->IsLocal() ) {
                     return false;
                 }
-                if (seq_id.Match(seq_id_db)) {
+                if (seq_id->Match(seq_id_db)) {
                     return true;
                 }
             }
@@ -130,18 +129,17 @@ public:
         if (seq_id_str.empty())
             return;
 
-        CSeq_id seq_id_db(seq_id_str);
-        if (seq_id_db.Which() == CSeq_id::e_not_set) {
-            seq_id_db.SetLocal().SetStr(seq_id_str);
-            if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                return;
-            }
+        CRef<CSeq_id> seq_id_db;
+        try {
+            seq_id_db.Reset(new CSeq_id(seq_id_str));
+        } catch (CSeqIdException&) {
+            seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, seq_id_str));
         }
 
         // Check the seqids vector against the primary seq id
         //
         ITERATE (vector<string>, it, m_SeqIds) {
-            if (MatchSeqId(seq_id_db, *it)) {
+            if (MatchSeqId(*seq_id_db, *it)) {
                 m_ResultSet->insert(tse_id ? tse_id : object_id);
                 return;
             }
@@ -167,17 +165,15 @@ public:
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
-            CSeq_id seq_id_db(*it);
-
-            if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                seq_id_db.SetLocal().SetStr(*it);
-                if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                    continue;
-                }
+            CRef<CSeq_id> seq_id_db;
+            try {
+                seq_id_db.Reset(new CSeq_id(seq_id_str));
+            } catch (CSeqIdException&) {
+                seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, seq_id_str));
             }
 
             ITERATE (vector<string>, it2, m_SeqIds) {
-                if (MatchSeqId(seq_id_db, *it2)) {
+                if (MatchSeqId(*seq_id_db, *it2)) {
                     m_ResultSet->insert(tse_id ? tse_id : object_id);
                     return;
                 }
@@ -213,17 +209,16 @@ public:
 
         const char* str_id = dbf.seq_id;
         
-        CSeq_id seq_id_db(str_id);
-        if (seq_id_db.Which() == CSeq_id::e_not_set) {
-            seq_id_db.SetLocal().SetStr((const char*)dbf.seq_id);
-            if (seq_id_db.Which() == CSeq_id::e_not_set) {
-                return;
-            }
+        CRef<CSeq_id> seq_id_db;
+        try {
+            seq_id_db.Reset(new CSeq_id(str_id));
+        } catch (CSeqIdException&) {
+            seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, str_id));
         }
         int object_id = dbf.object_id;
 
         ITERATE (vector<string>, it, m_SeqIds) {
-            if (MatchSeqId(seq_id_db, *it)) {
+            if (MatchSeqId(*seq_id_db, *it)) {
                 m_ResultSet->insert(object_id);
                 return;
             }
@@ -479,6 +474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.13  2005/01/13 17:38:27  kuznets
  * +GetTopSeqEntry
  *

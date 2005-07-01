@@ -166,10 +166,12 @@ int CSeqVecBench::Run(void)
 {
     CArgs args = GetArgs();
 
-    CSeq_id id(args["id"].AsString());
-    if (id.Which() == CSeq_id::e_not_set) {
+    CRef<CSeq_id> id;
+    try {
+        id.Reset(new CSeq_id(args["id"].AsString()));
+    } catch (CSeqIdException& e) {
         LOG_POST(Fatal << "seq id " << args["id"].AsString()
-                 << " not recognized");
+                 << " not recognized: " << e.what());
     }
 
     // Setup application registry, error log, and MT-lock for CONNECT library
@@ -180,7 +182,7 @@ int CSeqVecBench::Run(void)
     CScope scope(*object_manager);
     scope.AddDefaults();
 
-    CBioseq_Handle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     if ( !handle ) {
         LOG_POST(Fatal << "failed to retrieve sequence "
                  << args["id"].AsString());
@@ -423,6 +425,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.5  2004/09/07 21:22:54  vasilche
  * Fixed for missing min(unsigned, unsigned) on Windows.
  *

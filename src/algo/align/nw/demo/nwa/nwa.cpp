@@ -416,9 +416,11 @@ CRef<CSeq_id> CAppNWA::x_ReadFastaFile (const string& filename,
     string str;
     getline(ifs, str);
 
-    CRef<CSeq_id> seqid (new CSeq_id(str));
-    if(seqid->Which() == CSeq_id::e_not_set) {
-        seqid->SetLocal().SetStr(str);
+    CRef<CSeq_id> seqid;
+    try {
+        seqid.Reset(new CSeq_id(str));
+    } catch (CSeqIdException&) {
+        seqid.Reset(new CSeq_id(CSeq_id::e_Local, str));
     }
 
     // read the sequence
@@ -447,6 +449,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.4  2005/06/02 15:14:58  kapustin
  * Call SetScoreMatrix(NULL) after changing diag scores
  *

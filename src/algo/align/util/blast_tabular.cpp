@@ -74,10 +74,10 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
         string id1 (p0, p - p0);
-        CSeq_id* pseqid = new CSeq_id(id1);
-        m_Id[0].Reset(pseqid);
-        if (m_Id[0]->Which() == CSeq_id::e_not_set) {
-            pseqid->SetLocal().SetStr(id1);
+        try {
+            m_Id[0].Reset(new CSeq_id(id1));
+        } catch (CSeqIdException&) {
+            m_Id[0].Reset(new CSeq_id(CSeq_id::e_Local, id1));
         }
     }
 
@@ -85,10 +85,10 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
         string id2 (p0, p - p0);
-        CSeq_id* pseqid = new CSeq_id(id2);
-        m_Id[1].Reset(pseqid);
-        if (m_Id[1]->Which() == CSeq_id::e_not_set) {
-            pseqid->SetLocal().SetStr(id2);
+        try {
+            m_Id[1].Reset(new CSeq_id(id2));
+        } catch (CSeqIdException&) {
+            m_Id[1].Reset(new CSeq_id(CSeq_id::e_Local, id2));
         }
     }
 

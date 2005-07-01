@@ -164,9 +164,12 @@ CSageDataLoader::CSageDataLoader(const string& loader_name,
     const char** data = NULL;
     const char** cols = NULL;
     while (q->NextRow(count, data, cols)) {
-        CRef<CSeq_id> id(new CSeq_id(data[0]));
-        if (id->Which() == CSeq_id::e_not_set) {
-            LOG_POST(Error << "failed to index id = " << data[0]);
+        CRef<CSeq_id> id;
+        try {
+            id.Reset(new CSeq_id(data[0]));
+        } catch (CSeqIdException& e) {
+            LOG_POST(Error << "failed to index id = " << data[0] << ": "
+                     << e.what());
             continue;
         }
 
@@ -413,6 +416,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/01 16:40:37  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.14  2005/02/02 19:49:55  grichenk
  * Fixed more warnings
  *

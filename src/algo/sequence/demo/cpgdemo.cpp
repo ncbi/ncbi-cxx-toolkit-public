@@ -108,13 +108,15 @@ CNcbiOstream& operator<< (CNcbiOstream& o, SCpGIsland i)
 // to the arguments have been sent to cout
 int ScanForCpGs(const string& acc, CScope &scope, const CArgs& args)
 {
-    CSeq_id seq_id(acc);
-    if (seq_id.Which() == CSeq_id::e_not_set) {
-        cerr << "Invalid seq-id: '" << acc << "'" << endl;
+    CRef<CSeq_id> seq_id;
+    try {
+        seq_id.Reset(new CSeq_id(acc));
+    } catch (CSeqIdException& e) {
+        cerr << "Invalid seq-id: '" << acc << "': " << e.what() << endl;
         return 1;
     }
 
-    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
+    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*seq_id);
 
     if (!bioseq_handle) {
         cerr << "Bioseq load FAILED." << endl;
@@ -251,6 +253,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/07/01 16:40:36  ucko
+ * Adjust for CSeq_id's use of CSeqIdException to report bad input.
+ *
  * Revision 1.7  2004/11/01 16:15:38  kskatz
  * Reflects change in CCpGIslands where arguments percent GC and CpG observed/expected are now unsigned int instead of double
  *
