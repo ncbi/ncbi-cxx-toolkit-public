@@ -30,6 +30,12 @@
  */
 
 
+// CSeqMatch::SMatchNcbi8na, a nested template struct, completely
+// confuses SWIG.  The result is code that g++ can compile but
+// MSVC cannot.  Therefore, don't let SWIG see the contents of
+// algo/sequence/seq_match.hpp.
+#define GUI_CORE_ALGO_BASIC___SEQ_MATCH__HPP
+
 // blast::TSeqLocVector
 %template(vector_SSeqLoc) std::vector<SSeqLoc>;
 // blast::TSeqAlignVector
@@ -257,6 +263,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/01 14:12:58  jcherry
+ * Eliminate the need for dummy headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

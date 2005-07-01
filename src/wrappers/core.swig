@@ -29,6 +29,9 @@
  *
  */
 
+// SWIG hangs on corelib/ncbimtx, so define its #include guard
+#define CORELIB___NCBIMTX__HPP
+
 %template(vector_CSerialAttribInfoItem)
     std::vector<ncbi::CSerialAttribInfoItem>;
 
@@ -293,6 +296,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/01 14:12:58  jcherry
+ * Eliminate the need for dummy headers
+ *
  * Revision 1.6  2005/06/29 18:14:29  jcherry
  * Moved CConstRef (needs to be early)
  *

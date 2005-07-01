@@ -37,6 +37,47 @@
 class CAlnMap_CAlnChunkVec;
 %template() ncbi::CRef<CAlnMap_CAlnChunkVec>;
 
+// Nested classes fixes
+%extend ncbi::objects::CAlnMap_CAlnChunkVec {
+public:
+    CAlnMap_CAlnChunkVec(const ncbi::objects::CAlnMap& aln_map,
+                         ncbi::objects::CAlnMap::TNumrow row) {
+        return new CAlnMap_CAlnChunkVec(aln_map, row);
+    }
+    ncbi::CConstRef<ncbi::objects::CAlnMap::CAlnChunk>
+    operator[] (ncbi::objects::CAlnMap::TNumchunk i) const {
+        return self->operator[](i);
+    }
+    ncbi::objects::CAlnMap::TNumchunk size() const {
+        return self->size();
+    }
+}
+%ignore *::CAlnMap_CAlnChunkVec::CAlnMap_CAlnChunkVec;
+%ignore *::CAlnMap_CAlnChunkVec::operator[];
+%ignore *::CAlnMap_CAlnChunkVec::size;
+
+%extend ncbi::objects::CAlnMap_CAlnChunk {
+public:
+    ncbi::objects::CAlnMap::TSegTypeFlags GetType() const {
+        return self->GetType();
+    }
+    ncbi::objects::CAlnMap::CAlnChunk&
+    SetType(ncbi::objects::CAlnMap::TSegTypeFlags type_flags) {
+        return self->SetType(type_flags);
+    }
+    const ncbi::objects::CAlnMap::TSignedRange& GetRange() const {
+        return self->GetRange();
+    }
+    const ncbi::objects::CAlnMap::TSignedRange& GetAlnRange() const {
+        return self->GetAlnRange();
+    }
+}
+%ignore *::CAlnMap_CAlnChunk::GetType;
+%ignore *::CAlnMap_CAlnChunk::SetType;
+%ignore *::CAlnMap_CAlnChunk::GetRange;
+%ignore *::CAlnMap_CAlnChunk::GetAlnRange;
+
+
 // We don't %include these because they're "private", but
 // we need #include's for at least some of them.
 %{
@@ -238,6 +279,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/01 14:12:58  jcherry
+ * Eliminate the need for dummy headers
+ *
  * Revision 1.3  2005/06/29 18:17:32  jcherry
  * Don't wrap objmgr/impl/*
  *
