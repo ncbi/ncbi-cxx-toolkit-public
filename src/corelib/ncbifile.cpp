@@ -2066,6 +2066,10 @@ bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     CNcbiOfstream os(dst, IOS_BASE::binary | IOS_BASE::out | IOS_BASE::trunc);
 
     if ( !buf_size ) {
+        if (CFile(src).GetLength() == 0) {
+            return true;
+        }
+        // Next operation fails if the source file have zero size
         os << is.rdbuf();
         return os.good() ? true : false;
     }
@@ -3588,6 +3592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2005/07/01 18:29:17  ivanov
+ * s_CopyFile(): fixed copying of zero files
+ *
  * Revision 1.115  2005/06/21 13:39:37  ivanov
  * CDir::TEntries: use list<> instead of vector<> as container class
  * + CDir::GetEntriesPtr()
