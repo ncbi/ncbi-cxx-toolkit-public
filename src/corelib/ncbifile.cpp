@@ -1333,7 +1333,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 
 CDirEntry::EType CDirEntry::GetType(const struct stat& st) const
 {
-    unsigned int mode = st.st_mode & S_IFMT;
+    unsigned int mode = (unsigned int)st.st_mode & S_IFMT;
     switch (mode) {
     case S_IFDIR:
         return eDir;
@@ -1358,7 +1358,7 @@ CDirEntry::EType CDirEntry::GetType(const struct stat& st) const
 #endif
     }
     // Check regular file bit last
-    if ( (st.st_mode & S_IFREG) == S_IFREG ) {
+    if ( (mode & S_IFREG) == S_IFREG ) {
         return eFile;
     }
     return eUnknown;
@@ -1916,9 +1916,13 @@ static bool s_CopyAttrs(const char* from, const char* to,
         tvp[1].tv_sec  = st.orig.st_mtime;
         tvp[1].tv_usec = st.mtime_nsec / 1000;
 #    if defined(HAVE_LUTIMES)
-        return lutimes(to, tvp) == 0;
+        if (lutimes(to, tvp)) {
+            return false;
+        }
 #    else
-        return utimes(to, tvp) == 0;
+        if (utimes(to, tvp)) {
+            return false;
+        }
 #    endif
 # else  // !HAVE_UTIMES
         // utimes() does not exists on current platform,
@@ -1926,7 +1930,9 @@ static bool s_CopyAttrs(const char* from, const char* to,
         struct utimbuf times;
         times.modtime = st.orig.st_mtime;
         times.actime  = st.orig.st_atime;
-        return utime(to, &times) == 0;
+        if (utime(to, &times)) {
+            return false;
+        }
 #  endif // HAVE_UTIMES
     }
 
@@ -1943,7 +1949,8 @@ static bool s_CopyAttrs(const char* from, const char* to,
                 }
             }
 #  endif
-            // We cannot change permissions for sym.links.
+            // We cannot change permissions for sym.links (below),
+            // so just exit from the function.
             return true;
         } else {
             // Changing the ownership will probably fail, unless we're root.
@@ -1957,6 +1964,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
             }
         }
     }
+
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm)  &&
         type != CDirEntry::eLink ) {
@@ -3592,6 +3600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2005/07/01 18:45:49  ivanov
+ * UNIX: s_CopyAttrs() -- fixed prematurely return while copying date/time
+ *
  * Revision 1.116  2005/07/01 18:29:17  ivanov
  * s_CopyFile(): fixed copying of zero files
  *
