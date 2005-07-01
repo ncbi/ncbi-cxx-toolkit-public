@@ -96,14 +96,14 @@ void CCacheWriter::InitializeCache(CReaderCacheManager& cache_manager,
         }
     }
     if ( !id_cache ) {
-        id_cache = CreateCache(params, eCacheWriter, eIdCache);
+        id_cache = CreateCache(writer_params, eCacheWriter, eIdCache);
         if ( id_cache ) {
             cache_manager.RegisterCache(*id_cache,
                 CReaderCacheManager::fCache_Id);
         }
     }
     if ( !blob_cache ) {
-        blob_cache = CreateCache(params, eCacheWriter, eBlobCache);
+        blob_cache = CreateCache(writer_params, eCacheWriter, eBlobCache);
         if ( blob_cache ) {
             cache_manager.RegisterCache(*blob_cache,
                 CReaderCacheManager::fCache_Blob);

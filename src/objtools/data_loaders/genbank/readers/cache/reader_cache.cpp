@@ -674,14 +674,14 @@ void CCacheReader::InitializeCache(CReaderCacheManager& cache_manager,
         }
     }
     if ( !id_cache ) {
-        id_cache = CreateCache(params, eCacheReader, eIdCache);
+        id_cache = CreateCache(reader_params, eCacheReader, eIdCache);
         if ( id_cache ) {
             cache_manager.RegisterCache(*id_cache,
                 CReaderCacheManager::fCache_Id);
         }
     }
     if ( !blob_cache ) {
-        blob_cache = CreateCache(params, eCacheReader, eBlobCache);
+        blob_cache = CreateCache(reader_params, eCacheReader, eBlobCache);
         if ( blob_cache ) {
             cache_manager.RegisterCache(*blob_cache,
                 CReaderCacheManager::fCache_Blob);
