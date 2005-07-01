@@ -52,8 +52,6 @@ html/page.hpp
 html/pager.hpp
 html/selection.hpp
 cgi/caf.hpp
-cgi/caf_encoded.hpp
-cgi/caf_plain.hpp
 cgi/cgi_exception.hpp
 cgi/cgiapp.hpp
 cgi/cgictx.hpp
@@ -76,6 +74,9 @@ cgi/ncbires.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/01 17:18:21  jcherry
+ * Really made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
+ *
  * Revision 1.2  2005/07/01 14:08:02  jcherry
  * Made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
  *
