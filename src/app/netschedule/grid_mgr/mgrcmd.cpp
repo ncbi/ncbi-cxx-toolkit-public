@@ -143,8 +143,7 @@ CNCBINode* CShowServersCommand::Render(const CHostInfo& info,
             host_hook(new THookCtxHost(info,*this));
 
         page.AddTagMap("queue_href_hook", 
-                       CreateTagMapper<CHTMLPage, THookCtxHost*>
-                       (RowHook<THookCtxHost>, host_hook.get()));
+                       CreateTagMapper(RowHook<THookCtxHost>, host_hook.get()));
 
         m_HostHooks.push_back(host_hook);
 
@@ -174,8 +173,7 @@ CNCBINode* CShowServersCommand::Render(const CServiceInfo& info,
         srv_hook(new THookCtxSrv(info,*this));
 
     page.AddTagMap("srv_table_row_hook", 
-                   CreateTagMapper<CHTMLPage, THookCtxSrv*>
-                   (RowHook<THookCtxSrv>, srv_hook.get()));
+                   CreateTagMapper(RowHook<THookCtxSrv>, srv_hook.get()));
     
     m_SvrHooks.push_back(srv_hook);
     return node.release();
@@ -196,8 +194,7 @@ CNCBINode* CShowServersCommand::CreateView(CCgiContext& ctx)
 
 
     GetPage().AddTagMap("srvs_table_row_hook", 
-                        CreateTagMapper<CHTMLPage, THookCtxSrvs*>
-                        (RowHook<THookCtxSrvs>, m_TableRowHook.get()));
+                        CreateTagMapper(RowHook<THookCtxSrvs>, m_TableRowHook.get()));
 
     /*     
     auto_ptr <CHTML_form> Form(new CHTML_form(ctx.GetSelfURL()));    
@@ -311,8 +308,7 @@ CNCBINode* CShowServerStatCommand::CreateView(CCgiContext& ctx)
         m_TableRowHook.reset(new THookContext(queue_info.release(),*this));
 
         GetPage().AddTagMap("wn_table_row_hook", 
-                            CreateTagMapper<CHTMLPage, THookContext*>
-                            (RowHook<THookContext>, m_TableRowHook.get()));
+                            CreateTagMapper(RowHook<THookContext>, m_TableRowHook.get()));
 
     } catch (...) {
 
@@ -411,6 +407,9 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/01 15:49:50  didenko
+ * Got rid of unnecessary template arguments specialization for CreateTagMapper function.
+ *
  * Revision 1.3  2005/06/27 21:57:41  ucko
  * Explicitly parametrize CreateTagMapper for the sake of SGI's MIPSpro compiler.
  *
