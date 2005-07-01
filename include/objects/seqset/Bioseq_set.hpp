@@ -48,6 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CBioseq;
+
 class NCBI_SEQSET_EXPORT CBioseq_set : public CBioseq_set_Base
 {
     typedef CBioseq_set_Base Tparent;
@@ -65,6 +67,12 @@ public:
 
     // Append a label to label based on type or content of CBioseq_set
     void GetLabel(string* label, ELabelType type) const;
+
+    // Class specific methods
+    // methods will throw if called on an object with the wrong TClass value.
+    const CBioseq& GetNucFromNucProtSet(void) const;
+    const CBioseq& GetGenomicFromGenProdSet(void) const;
+    const CBioseq& GetMasterFromSegSet(void) const;
 
     // Basic data cleanup
     void BasicCleanup(void);
@@ -97,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/07/01 15:07:55  shomrat
+ * Added Class specific methods
+ *
  * Revision 1.18  2005/05/20 13:34:53  shomrat
  * Added BasicCleanup()
  *

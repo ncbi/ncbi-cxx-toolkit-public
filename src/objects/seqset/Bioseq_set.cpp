@@ -234,6 +234,74 @@ void CBioseq_set::BasicCleanup(void)
     }
 }
 
+
+const CBioseq& CBioseq_set::GetNucFromNucProtSet(void) const
+{
+    if (GetClass() != eClass_nuc_prot) {
+        NCBI_THROW(CException, eUnknown,
+            "CBioseq_set::GetNucFromNucProtSet() : incompatible class (" +
+            ENUM_METHOD_NAME(EClass)()->FindName(GetClass(), true) + ")");
+    }
+
+    ITERATE (TSeq_set, it, GetSeq_set()) {
+        const CSeq_entry& se = **it;
+        if (se.IsSeq()  &&  se.GetSeq().IsNa()) {
+            return se.GetSeq();
+        } else if (se.IsSet()  &&
+            se.GetSet().GetClass() == CBioseq_set::eClass_segset) {
+            return se.GetSet().GetMasterFromSegSet();
+        }
+    }
+
+    NCBI_THROW(CException, eUnknown, 
+        "CBioseq_set::GetNucFromNucProtSet() : \
+        nuc-prot set doesn't contain the nucleotide bioseq");
+}
+
+
+const CBioseq& CBioseq_set::GetGenomicFromGenProdSet(void) const
+{
+    if (GetClass() != eClass_gen_prod_set) {
+         NCBI_THROW(CException, eUnknown,
+            "CBioseq_set::GetGenomicFromGenProdSet() : incompatible class (" +
+            ENUM_METHOD_NAME(EClass)()->FindName(GetClass(), true) + ")");
+    }
+
+    ITERATE (TSeq_set, it, GetSeq_set()) {
+        if ((*it)->IsSeq()) {
+            const CBioseq& seq = (*it)->GetSeq();
+            if (seq.GetInst().IsSetMol()  &&
+                seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+                return seq;
+            }
+        }
+    }
+
+    NCBI_THROW(CException, eUnknown, 
+        "CBioseq_set::GetGenomicFromGenProdSet() : \
+        gen-prod set doesn't contain the genomic bioseq");
+}
+
+
+const CBioseq& CBioseq_set::GetMasterFromSegSet(void) const
+{
+    if (GetClass() != eClass_segset) {
+         NCBI_THROW(CException, eUnknown,
+            "CBioseq_set::GetMasterFromSegSet() : incompatible class (" +
+            ENUM_METHOD_NAME(EClass)()->FindName(GetClass(), true) + ")");
+    }
+
+    ITERATE (TSeq_set, it, GetSeq_set()) {
+        if ((*it)->IsSeq()) {
+            return (*it)->GetSeq();
+        }
+    }
+
+    NCBI_THROW(CException, eUnknown, 
+        "CBioseq_set::GetMasterFromSegSet() : \
+        segset set doesn't contain the master bioseq");
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -241,6 +309,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/01 15:08:14  shomrat
+ * Added Class specific methods
+ *
  * Revision 1.10  2005/05/20 13:35:14  shomrat
  * Added BasicCleanup()
  *
