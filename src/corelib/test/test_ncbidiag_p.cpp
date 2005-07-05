@@ -86,7 +86,7 @@ void CTest::x_TestBadFormats(void)
         try { 
             tester.Fill(*str);
         }
-        catch(const CException &ex){
+        catch(const CException&){
             failed = true;
         }
         NcbiCout << ( failed ? "PASS" : "FAIL" ) << NcbiEndl;
@@ -334,20 +334,18 @@ void CTest::x_TestSeverity()
     SetDiagPostLevel(eDiag_Info);
     SetDiagFilter(eDiagFilter_All, "[Error]module [Info]!module");
 
-    LOG_POST(Warning << MDiagModule("module") << "Test error 1");
-    LOG_POST(Error << MDiagModule("module") << "Test error 2");
+    LOG_POST(Warning << MDiagModule("module")  << "Test error 1");
+    LOG_POST(Error   << MDiagModule("module")  << "Test error 2");
     LOG_POST(Warning << MDiagModule("module2") << "Test error 3");
-    LOG_POST(Info << MDiagModule("module3") << "Test error 4");
+    LOG_POST(Info    << MDiagModule("module3") << "Test error 4");
 }
 
 int CTest::Run(void)
 {
-/*
     x_TestBadFormats();
     x_TestPathes();
     x_TestFormats();
     x_TestDiagCompileInfo();
-*/
     x_TestSeverity();
 
     NcbiCout << "**********************************************************************" 
@@ -375,6 +373,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/05 18:53:09  ivanov
+ * Enable some tests, seems that it has been accidentally commented out.
+ *
  * Revision 1.4  2005/04/14 20:27:03  ssikorsk
  * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
  *
