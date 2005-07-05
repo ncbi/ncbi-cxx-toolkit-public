@@ -785,7 +785,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl->defline = "Unknown";
         sdl->is_new = false;
         sdl->was_checked = false;
-
+        sdl->linkout = 0;
+        
         if(id.Which() == CSeq_id::e_Gi){
             sdl->gi = id.GetGi();
         } else {            
@@ -812,6 +813,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.14  2005/07/05 16:33:02  jianye
+*initialize linkout to 0 for unknown bisoeq
+*
 *Revision 1.13  2005/06/03 16:58:34  lavr
 *Explicit (unsigned char) casts in ctype routines
 *
