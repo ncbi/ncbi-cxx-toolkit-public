@@ -82,6 +82,14 @@ BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to);
 NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
+/** Converts reverse strand coordinates to forward strand.
+ * @param filter_in BlastSeqLoc to be reversed [in]
+ * @param query_length length of query [in]
+ * @return reversed BlastSeqLoc
+ */
+NCBI_XBLAST_EXPORT
+BlastSeqLoc* BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length);
+
 /** Deallocate memory for a BlastMaskLoc structure
  * as well as the BlastSeqLoc's pointed to.
  * @param mask_loc the object to be deleted [in]
