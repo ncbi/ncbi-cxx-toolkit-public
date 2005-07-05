@@ -134,6 +134,7 @@ public:
 	const string& getConsensus();
 	short getPseudoCount() {return m_pseudoCount;}
 	ConsensusMaker& getConsensusMaker() {return m_conMaker;}
+	void printAlignment(string& fileName)const;
 
 private:
 	ConsensusMaker m_conMaker;
@@ -144,7 +145,7 @@ private:
 	CCdCore* m_cd;
 	PssmMakerOptions m_config;
 	short m_pseudoCount;
-
+	CdPssmInput* m_pssmInput;
 	void modifyQuery(CRef< CSeq_entry > query);
 };
 
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/05 18:59:56  cliu
+ * print alignment
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

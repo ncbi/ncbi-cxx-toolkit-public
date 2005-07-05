@@ -308,7 +308,7 @@ const PSIDiagnosticsRequest* CdPssmInput::GetDiagnosticsRequest()
 //------------------------- PssmMaker ---------------------
 PssmMaker::PssmMaker(CCdCore* cd, bool useConsensus, bool addQueryToPssm) 
 	: m_conMaker(cd), m_useConsensus(useConsensus), m_trunctMaster(),
-	m_masterSeqEntry(), m_addQuery(addQueryToPssm), m_cd(cd)
+	m_masterSeqEntry(), m_addQuery(addQueryToPssm), m_cd(cd), m_pssmInput(0)
 	//m_identityFilterThreshold(0.94)
 {
 	CRef< CSeq_id > seqId;
@@ -334,17 +334,18 @@ void PssmMaker::setOptions(const PssmMakerOptions& option)
 
 PssmMaker::~PssmMaker()
 {
-
+	if (m_pssmInput)
+		delete m_pssmInput;
 }
 
 CRef<CPssmWithParameters> PssmMaker::make()
 {
-	CdPssmInput pssmInput(m_conMaker.getResidueProfiles(), m_config,m_useConsensus);
+	m_pssmInput = new CdPssmInput (m_conMaker.getResidueProfiles(), m_config,m_useConsensus);
 	if (!m_useConsensus)
-		for(int i = 0 ; i < pssmInput.GetQueryLength(); i++)
-			m_trunctMaster.push_back(pssmInput.GetQuery()[i]);
-	CPssmEngine pssmEngine(&pssmInput);
-	m_pseudoCount = pssmInput.GetOptions()->pseudo_count;
+		for(int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
+			m_trunctMaster.push_back(m_pssmInput->GetQuery()[i]);
+	CPssmEngine pssmEngine(m_pssmInput);
+	m_pseudoCount = m_pssmInput->GetOptions()->pseudo_count;
 	/*
 	if (m_identityFilterThreshold > 0)
 		pssmInput.SetOptions()->nsg_identity_threshold = m_identityFilterThreshold;
@@ -460,6 +461,11 @@ bool PssmMaker::getTrunctMaster(CRef< CSeq_entry >& seqEntry)
 	return true;
 }
 
+void PssmMaker::printAlignment(string& fileName)const
+{
+	printMsa(fileName.c_str(), m_pssmInput->GetData());
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -468,6 +474,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/05 18:59:38  cliu
+ * print alignment
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
