@@ -92,7 +92,7 @@ class CLoadInfoBlob;
 class CGBReaderRequestResult;
 
 
-class CGBReaderCacheManager : public CReaderCacheManager
+class NCBI_XLOADER_GENBANK_EXPORT CGBReaderCacheManager : public CReaderCacheManager
 {
 public:
     CGBReaderCacheManager(void) {}
