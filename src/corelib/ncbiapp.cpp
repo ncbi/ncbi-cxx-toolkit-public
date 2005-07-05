@@ -441,8 +441,10 @@ int CNcbiApplication::AppMain
             }
             // Print USAGE
             string str;
-            LOG_POST(m_ArgDesc->PrintUsage(str,
-                e.GetErrCode() == CArgHelpException::eHelpFull));
+            m_ArgDesc->PrintUsage
+                (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+            // LOG_POST(str);
+            cout << str;
             exit_code = 0;
         }
         catch (CArgException& e) {
@@ -1258,6 +1260,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2005/07/05 15:53:30  ucko
+ * If the user explicitly requested help, print it on standard output
+ * rather than logging it (to standard error, typically).
+ *
  * Revision 1.107  2005/05/12 15:15:32  ucko
  * Fix some (meta)registry buglets and add support for reloading.
  *
