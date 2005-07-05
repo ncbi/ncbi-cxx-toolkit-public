@@ -62,7 +62,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.2  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.3  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -114,8 +114,10 @@ public:
             }}
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
-                NCBI_THROW(CNetServiceException, 
-                           eTimeout, "Failed to lock BLOB object");
+                string err_msg("Failed to lock BLOB object ");
+                err_msg.append("timeout=");
+                err_msg.append(NStr::UIntToString(timeout));
+                NCBI_THROW(CNetServiceException, eTimeout, err_msg);
             }
             SleepMilliSec(sleep_ms);
         } // while
@@ -141,8 +143,11 @@ public:
             }}
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
-                NCBI_THROW(CNetServiceException, 
-                           eTimeout, "Failed to lock BLOB object");
+                string err_msg("Failed to lock BLOB object ");
+                err_msg.append("timeout=");
+                err_msg.append(NStr::UIntToString(timeout));
+
+                NCBI_THROW(CNetServiceException, eTimeout, err_msg);
             }
             SleepMilliSec(sleep_ms);
         } // while
@@ -169,7 +174,7 @@ public:
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
                 NCBI_THROW(CNetServiceException, 
-                           eTimeout, "Failed to lock BLOB object");
+                           eTimeout, "Failed to lock new BLOB object");
             }
             SleepMilliSec(sleep_ms);
         } // while
@@ -630,15 +635,16 @@ void CNetCacheServer::Process(SOCK sock)
     } 
     catch (CNetCacheException &ex)
     {
-        ERR_POST("Server error: " << ex.what());
+        ERR_POST("Server error: " << ex.what() << " client=" << auth);
     }
     catch (CNetServiceException& ex)
     {
-        ERR_POST("Server error: " << ex.what());
+        ERR_POST("Server error: " << ex.what() << " client=" << auth);
     }
     catch (exception& ex)
     {
-        ERR_POST("Execution error in command " << request << " " << ex.what());
+        ERR_POST("Execution error in command " << request << " " 
+                 << ex.what() << " client=" << auth);
     }
 }
 
@@ -1509,6 +1515,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/07/05 13:25:22  kuznets
+ * Improved error messaging
+ *
  * Revision 1.57  2005/06/03 16:27:15  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
