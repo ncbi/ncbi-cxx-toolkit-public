@@ -187,7 +187,13 @@ public:
     /// CBioseq will be filtered based on the membership bit.  Zero
     /// for the membership bit means no filtering.  Filtering can also
     /// be done by a GI, in which case, only the defline matching that
-    /// GI will be returned.
+    /// GI will be returned.  The seqdata parameter can be specified
+    /// as false to indicate that sequence data should not be included
+    /// in this object; in this case the CSeq_inst object attached to
+    /// the bioseq will be configured to a "not set" state.  This is
+    /// used to allow Bioseq summary data to be provided without the
+    /// performance penalty of loading (possibly very large) sequence
+    /// data from disk.
     /// 
     /// @param oid
     ///   The OID of the sequence
@@ -199,6 +205,8 @@ public:
     ///   If specified, only deflines containing this GI will be returned
     /// @param tax_info
     ///   The taxonomy database object
+    /// @param seqdata
+    ///   Include sequence data in the returned Bioseq.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return

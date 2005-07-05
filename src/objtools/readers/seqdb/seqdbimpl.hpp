@@ -513,8 +513,8 @@ public:
     /// have one entry in the returned map (and are only parsed once
     /// by SeqDB).
     /// 
-    /// @param alias_files
-    ///   The alias file contents will be returned here.
+    /// @param afv
+    ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
 private:

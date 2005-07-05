@@ -379,13 +379,14 @@ public:
     ///   True if the database scan is required.
     bool NeedTotalsScan(const CSeqDBVolSet & volset) const;
     
-    /// Apply a visitor to each node of the alias node tree
+    /// Apply a simple visitor to each node of the alias node tree
     ///
     /// This iterates this node and possibly subnodes of it.  If the
-    /// alias file provides a value, it will be applied to walker with
-    /// the AddString() method.  If the alias file does not provide
-    /// the value, the walker object will be applied to each subnode
-    /// (by calling WalkNodes), and then to each volume of the tree by
+    /// alias file contains an entry with the key returned by
+    /// walker.GetFileKey(), the string will be sent to walker via the
+    /// AddString() method.  If the alias file does not provide the
+    /// value, the walker object will be applied to each subnode (by
+    /// calling WalkNodes), and then to each volume of the tree by
     /// calling the Accumulate() method on the walker object.  Each
     /// type of summary data has its own properties, so there is a
     /// CSeqDB_AliasWalker derived class for each type of summary data
@@ -399,20 +400,22 @@ public:
     void WalkNodes(CSeqDB_AliasWalker * walker,
                    const CSeqDBVolSet & volset) const;
     
-    /// Apply a visitor to each node of the alias node tree
+    /// Apply a complex visitor to each node of the alias node tree
     ///
-    /// This iterates this node and possibly subnodes of it.  If the
-    /// alias file provides a value, it will be applied to walker with
-    /// the AddString() method.  If the alias file does not provide
-    /// the value, the walker object will be applied to each subnode
-    /// (by calling WalkNodes), and then to each volume of the tree by
-    /// calling the Accumulate() method on the walker object.  Each
-    /// type of summary data has its own properties, so there is a
-    /// CSeqDB_AliasWalker derived class for each type of summary data
-    /// that needs this kind of traversal.  This technique is referred
-    /// to as the "visitor" design pattern.
+    /// This iterates this node and possibly subnodes of it.  At each
+    /// node, the map of keys to values is provided to the explorer
+    /// object via the Explore() method.  If the explorer object
+    /// returns false, this branch of the tree has been pruned and
+    /// traversal will not continue downward.  If it returns true,
+    /// traversal continues down through the tree.  If traversal was
+    /// not pruned, and volumes exist for this node, the Accumulate
+    /// method is called for each volume after traversal through
+    /// subnodes has been done.  Compared to the version that takes a
+    /// CSeqDB_AliasWalker, this version of this method allows more
+    /// flexibility because the explorer object has access to the
+    /// entire map of name/value pairs.
     ///
-    /// @param walker
+    /// @param explorer
     ///   The visitor object to recursively apply to the tree.
     /// @param volset
     ///   The set of database volumes
@@ -454,8 +457,8 @@ public:
     /// have one entry in the returned map (and are only parsed once
     /// by SeqDB).
     /// 
-    /// @param alias_files
-    ///   The alias file contents will be returned here.
+    /// @param afv
+    ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
 private:
@@ -886,8 +889,8 @@ public:
     /// have one entry in the returned map (and are only parsed once
     /// by SeqDB).
     /// 
-    /// @param alias_files
-    ///   The alias file contents will be returned here.
+    /// @param afv
+    ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const
     {
         m_Node.GetAliasFileValues(afv);
