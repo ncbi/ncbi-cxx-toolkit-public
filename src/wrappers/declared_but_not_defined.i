@@ -30,6 +30,8 @@
  *
  */
 
+%ignore ncbi::objects::CConstSageData::GetMethod() const;
+
 %ignore BLAST_RPSSearchEngine;
 
 %ignore ncbi::CAlignSelector::SetPublicOnly;
@@ -40,6 +42,7 @@
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
 
 %ignore ncbi::objects::CFlatCodonQV::CFlatCodonQV(const string&);
+
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
                                  const mapped_type &value);
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
@@ -78,6 +81,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/05 19:46:06  jcherry
+ * Restored %ignore that was accidentally removed
+ *
  * Revision 1.5  2005/07/05 14:54:06  jcherry
  * Removed commented-out %ignore's altogether
  *
