@@ -32,24 +32,12 @@
 
 %ignore BLAST_RPSSearchEngine;
 
-//%ignore ncbi::objects::CScope_Impl::x_GetBioseq_Lock;
-
-//%ignore ncbi::CNlmZipBtRdr::GetCompressedSize;
-//%ignore ncbi::CNlmZipBtRdr::GetDecompressionTime;
-
 %ignore ncbi::CAlignSelector::SetPublicOnly;
 
 %ignore ncbi::CHTML_area::CHTML_area();
 
 // objtools/data_loaders/cdd/cdd.hpp
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
-
-//%ignore ncbi::objects::CScope_Impl::AddAnnot(const CSeq_annot& annot,
-//                                          TPriority pri = kPriority_NotSet);	
-//%ignore ncbi::objects::CTSE_Info::SetUsedMemory(size_t);
-//%ignore ncbi::objects::CCachedId1Reader::LoadBlob
-//	(CID1server_back&, CRef<CID2S_Split_Info>&, CBlob_id const&);
-
 
 %ignore ncbi::objects::CFlatCodonQV::CFlatCodonQV(const string&);
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
@@ -66,43 +54,13 @@
 %ignore ncbi::CIntervalTree::Replace(const interval_type&, const mapped_type&,
                                      nothrow_t const&);
 
-//%ignore ncbi::CMemoryChunk::SetNextChunk(CRef<CMemoryChunk>);
 %ignore ncbi::x_SwapPointers(void* volatile*, void*);
 %ignore ncbi::CPIDGuard::Remove;
-//%ignore ncbi::objects::CPubseqReader::GetConnection(TConn);
-//%ignore ncbi::objects::CSeq_annot_Info::sx_ShallowCopy(TObject&);
-//%ignore ncbi::objects::CSeq_entry_Info::x_Attach(CRef<CBioseq_Info>);
-//%ignore ncbi::objects::CSeq_entry_Info::x_Attach(CRef<CSeq_entry_Info>, int);
-//%ignore ncbi::objects::CSeq_entry_Info::x_Attach;
-//%ignore ncbi::objects::CBioseq_Base_Info::ResetAnnot();
-// inline in .cpp
-//%ignore ncbi::objects::CBioseq_Base_Info::x_IsEndNextDesc(TDesc_CI iter) const;
-//%ignore ncbi::objects::CSeqMap_Delta_seqs::
-//    CSeqMap_Delta_seqs(const TObject& obj,
-//                       CSeqMap_Delta_seqs *parent, size_t index);
-//%ignore ncbi::objects::CSeqMap_CI_SegmentInfo::
-//    CSeqMap_CI_SegmentInfo(const CConstRef< CSeqMap > &seqMap, size_t index);
-//%ignore ncbi::objects::CScope::AddSeq_annot(const CSeq_annot &annot,
-//                                            TPriority pri=kPriority_NotSet);
-//%ignore ncbi::objects::CSeqMap_CI::x_GetSubSeqMap(bool) const;
-//%ignore ncbi::objects::CSeqMap_CI::x_GetSubSeqMap() const;
-%ignore ncbi::objects::CConstSageData::GetMethod() const;
-//%ignore ncbi::objects::CIndexedStrings::StoreTo(CNcbiOstream&) const;
-
-//%ignore ncbi::objects::CBioseq_EditHandle::AddId(CSeq_id_Handle const&) const;
-//%ignore ncbi::objects::CBioseq_EditHandle::ResetId() const;
-//%ignore ncbi::objects::CBioseq_EditHandle::
-//    RemoveId(CSeq_id_Handle const&) const;
-//%ignore ncbi::objects::CBioseq_set_EditHandle::RemoveDesc(CSeqdesc&) const;
-//%ignore ncbi::objects::CBioseq_set_EditHandle::AddAllDescr(CSeq_descr&) const;
-//%ignore ncbi::objects::CBioseq_set_EditHandle::AddDesc(CSeqdesc&) const;
 
 %ignore ncbi::objects::CAlnMap::
     GetNumberOfInsertedSegmentsOnLeft(TNumrow row, TNumseg seg) const;
 %ignore ncbi::objects::CAlnMap::
     GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
-//%ignore ncbi::objects::CSeqMap::ResolveBioseqLength(const CSeq_id& id,
-//                                                    CScope *scope);
 
 %ignore ncbi::CHTML_table::ColumnWidth(CHTML_table *, TIndex, const string &);
 %ignore ncbi::CHTMLHelper::LoadIDList(TIDList& ids,  
@@ -116,22 +74,13 @@
 
 %ignore ncbi::COptionDescription::COptionDescription();
 
-// inline functions defined in .cpp
-//%ignore ncbi::objects::CAnnotObject_Ref::
-//    CAnnotObject_Ref(const CAnnotObject_Info& object);
-//%ignore ncbi::objects::CAnnotObject_Ref::
-//    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot, TSeqPos index);
-//%ignore ncbi::objects::CAnnotObject_Ref::
-//    SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
-
-// sometimes inline in .cpp
-// (depending on preprocessor symbol CHECK_STREAM_INTEGRITY)
-//%ignore ncbi::CObjectOStreamAsnBinary::WriteByte;
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/05 14:54:06  jcherry
+ * Removed commented-out %ignore's altogether
+ *
  * Revision 1.4  2005/06/29 16:12:24  vasilche
  * Commented out fixed %ignore statements.
  *
