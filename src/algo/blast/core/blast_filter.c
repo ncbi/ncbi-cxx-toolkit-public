@@ -927,30 +927,23 @@ BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length
 	return status;
 }
 
-/** Converts the reverse strand mask locations to forward strand coordinates.
- * @param filter_out Mask locations in forward strand coordinates [out]
- * @param filter_in Mask locations in reverse strand coordinates [in]
- * @param query_length Length of the sequence [in]
- */
-static Int2
-s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 query_length)
+BlastSeqLoc*
+BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length)
 {
-   BlastSeqLoc* mask_loc = NULL;
+   BlastSeqLoc* filter_out = NULL;   /* Return variable. */
 
-   ASSERT(filter_out);
-
-   *filter_out = NULL;
-
-   for (mask_loc=filter_in; mask_loc; mask_loc = mask_loc->next) {
+   while (filter_in)
+   {
         Int4 start, stop;
-        SSeqRange* loc = mask_loc->ssr;
+        SSeqRange* loc = filter_in->ssr;
         
         start = query_length - 1 - loc->right;
         stop = query_length - 1 - loc->left;
-        BlastSeqLocNew(filter_out, start, stop);
+        BlastSeqLocNew(&filter_out, start, stop);
+        filter_in = filter_in->next;
    }
 
-   return 0;
+   return filter_out;
 }
 
 static Int2
@@ -979,8 +972,7 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
 
         if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
         {  /* Reverse this as it's on minus strand. */
-              BlastSeqLoc *filter_slp_rev = NULL;     /* reversed SeqLocPtr (used only if minus strand) */
-              s_GetReversedLocation(&filter_slp_rev, filter_slp, query_length);
+              BlastSeqLoc *filter_slp_rev = BlastSeqLocReverse(filter_slp, query_length);
               filter_slp = BlastSeqLocFree(filter_slp);
               filter_slp = filter_slp_rev;
         }
