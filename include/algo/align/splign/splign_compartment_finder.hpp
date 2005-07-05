@@ -71,6 +71,10 @@ public:
         m_min_coverage = mincov;
     }
     
+    void SetMinMatches(size_t min_matches) {
+        m_MinMatches = min_matches;
+    }
+
     static size_t GetDefaultPenalty(void) {
         return 1000;
     }
@@ -102,6 +106,10 @@ public:
     
         void AddMember(const CHit* hit) {
             m_members.push_back(hit);
+        }
+
+        void SetMembers(const THitConstPtrs& hits) {
+            m_members = hits;
         }
     
         void UpdateMinMax(void);
@@ -152,19 +160,21 @@ private:
     size_t              m_intron_max;    // max intron size
     size_t              m_penalty;       // penalty per compartment
     size_t              m_min_coverage;
+    size_t              m_MinMatches;    // min approx matches to report
     
     THitConstPtrs         m_hits;         // input hits
     vector<CCompartment>  m_compartments; // final compartments
     int                   m_iter;         // GetFirst/Next index
 
     // this structure describes the best target reached 
-    // at a given query coordinatea  
+    // at a given query coordinate
     struct SQueryMark {
+
         size_t       m_coord;
-        int          m_score;
+        double       m_score;
         int          m_hit;
         
-        SQueryMark(size_t coord, int score, int hit):
+        SQueryMark(size_t coord, double score, int hit):
             m_coord(coord), m_score(score), m_hit(hit) {}
         
         bool operator < (const SQueryMark& rhs) const {
@@ -201,7 +211,8 @@ public:
     // [start,finish) are assumed to share same query and subj
     CCompartmentAccessor(THits::iterator start, THits::iterator finish,
                          size_t comp_penalty_bps,
-                         size_t min_coverage);
+                         size_t min_coverage,
+                         size_t min_matches);
     
     bool GetFirst(THits& compartment);
     bool GetNext(THits& compartment);
@@ -241,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/05 16:50:31  kapustin
+ * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ *
  * Revision 1.4  2005/03/28 18:26:52  jcherry
  * Added export specifier
  *

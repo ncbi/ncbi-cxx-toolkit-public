@@ -72,10 +72,10 @@ void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-  SetVersion(CVersionInfo(1, 11, 0, "Splign"));  
+  SetVersion(CVersionInfo(1, 14, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.11");
+  string program_name ("Splign v.1.14");
 
 #ifdef GENOME_PIPELINE
   program_name += 'p';
@@ -129,25 +129,37 @@ void CSplignApp::Init()
 
   argdescr->AddDefaultKey
     ("compartment_penalty", "compartment_penalty",
-     "Penalty to open a new compartment.",
+     "Penalty to open a new compartment "
+     "(compartment identification parameter). "
+     "Multiple compartments will only be identified if "
+     "they have at least this level of coverage.",
      CArgDescriptions::eDouble,
-     "0.75");
+     "0.25");
  
  argdescr->AddDefaultKey
     ("min_query_cov", "min_query_cov",
-     "Min query coverage by initial Blast hits. "
-     "Queries with less coverage will not be aligned.",
+     "Minimal Blast query coverage (compartment identification parameter). "
+     "Single compartments must have at least "
+     "this level of coverage to be identified.",
      CArgDescriptions::eDouble, "0.25");
 
   argdescr->AddDefaultKey
-    ("min_idty", "identity",
+    ("min_compartment_idty", "min_compartment_identity",
+     "Minimal overall identity a compartment "
+     "must have in order to be aligned.",
+     CArgDescriptions::eDouble, "0.5");
+
+  argdescr->AddDefaultKey
+    ("min_exon_idty", "identity",
      "Minimal exon identity. Lower identity segments "
      "will be marked as gaps.",
      CArgDescriptions::eDouble, "0.75");
 
 #ifdef GENOME_PIPELINE
 
-  argdescr->AddFlag ("mt", "Use multiple threads (up to CPU count)", true);
+  argdescr->AddFlag ("mt",
+                     "Use multiple threads (up to the number of CPUs)", 
+                     true);
 
   argdescr->AddDefaultKey
     ("quality", "quality", "Genomic sequence quality.",
@@ -207,7 +219,8 @@ void CSplignApp::Init()
   argdescr->SetConstraint("strand", constrain_strand);
 
   CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
-  argdescr->SetConstraint("min_idty", constrain01);
+  argdescr->SetConstraint("min_compartment_idty", constrain01);
+  argdescr->SetConstraint("min_exon_idty", constrain01);
   argdescr->SetConstraint("compartment_penalty", constrain01);
   argdescr->SetConstraint("min_query_cov", constrain01);
     
@@ -441,6 +454,12 @@ int CSplignApp::Run()
                  "When in batch mode, specify both -hits and -index");
   }
   
+  if(args["min_query_cov"].AsDouble() > args["compartment_penalty"].AsDouble()) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "'min_query_cov' is not supposed to be greater than 'compartment_penalty'");
+  }
+
   bool mode_pairwise = is_query;
 
   // open log stream
@@ -508,11 +527,12 @@ int CSplignApp::Run()
 
   CSplign splign;
   splign.SetPolyaDetection(!args["nopolya"]);
-  splign.SetMinExonIdentity(args["min_idty"].AsDouble());
+  splign.SetMinCompartmentIdentity(args["min_compartment_idty"].AsDouble());
+  splign.SetMinExonIdentity(args["min_exon_idty"].AsDouble());
   splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
   splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
   splign.SetEndGapDetection(!(args["noendgaps"]));
-  splign.SetMaxGenomicExtension(75000);
+  splign.SetMaxGenomicExtension(5000);
 
   splign.SetAligner() = aligner;
   splign.SetSeqAccessor() = seq_loader;
@@ -701,6 +721,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/07/05 16:50:47  kapustin
+ * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ *
  * Revision 1.42  2005/07/01 16:40:36  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *

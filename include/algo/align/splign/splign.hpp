@@ -88,6 +88,9 @@ public:
     void   SetCompartmentPenalty(double penalty);
     double GetCompartmentPenalty(void) const;
 
+    void   SetMinCompartmentIdentity(double idty);
+    double GetMinCompartmentIdentity(void) const;
+
     void   SetMinExonIdentity(double idty);
     double GetMinExonIdentity(void) const;
 
@@ -181,7 +184,11 @@ protected:
     vector<size_t> m_pattern;
 
     // min exon idty - others will be marked as gaps
-    double m_minidty;
+    double m_MinExonIdty;
+
+
+    // min compartment idty - others will be skipped
+    double m_MinCompartmentIdty;
 
     // compartment penalty as a per cent of the query (mRna) length
     double m_compartment_penalty;
@@ -234,6 +241,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/07/05 16:50:31  kapustin
+ * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ *
  * Revision 1.22  2005/06/01 18:57:23  kapustin
  * +SAlignedCompartment::GetBox()
  *

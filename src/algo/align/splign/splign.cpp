@@ -66,11 +66,12 @@ static const double kMinTermExonIdty = 0.90;
 CSplign::CSplign( void )
 {
     m_min_query_coverage = 0.25;
-    m_compartment_penalty = 0.75;
-    m_minidty = 0.75;
+    m_compartment_penalty = 0.25;
+    m_MinExonIdty = 0.75;
+    m_MinCompartmentIdty = 0.5;
     m_endgaps = true;
     m_strand = true;
-    m_max_genomic_ext = 75000;
+    m_max_genomic_ext = 5000;
     m_nopolya = false;
     m_model_id = 0;
 }
@@ -123,12 +124,28 @@ void CSplign::SetMinExonIdentity( double idty )
                     g_msg_BadIdentityThreshold );
     }
     else {
-        m_minidty = idty;
+        m_MinExonIdty = idty;
+    }
+}
+
+void CSplign::SetMinCompartmentIdentity( double idty )
+{
+    if(!(0 <= idty && idty <= 1)) {
+        NCBI_THROW( CAlgoAlignException,
+                    eBadParameter,
+                    g_msg_BadIdentityThreshold );
+    }
+    else {
+        m_MinCompartmentIdty = idty;
     }
 }
 
 double CSplign::GetMinExonIdentity( void ) const {
-    return m_minidty;
+    return m_MinExonIdty;
+}
+
+double CSplign::GetMinCompartmentIdentity( void ) const {
+    return m_MinCompartmentIdty;
 }
 
 
@@ -376,10 +393,13 @@ void CSplign::Run( THits* phits )
     const size_t mrna_size = m_mrna.size();
     const size_t min_coverage = size_t(m_min_query_coverage * mrna_size);
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
- 
+    const size_t min_matches = size_t(m_MinCompartmentIdty * mrna_size);
+
     // iterate through compartments
     CCompartmentAccessor comps (hits.begin(), hits.end(),
-                                comp_penalty_bps, min_coverage);
+                                comp_penalty_bps,
+                                min_coverage,
+                                min_matches);
     
     // compartments share the space between them
     size_t smin = 0, smax = kMax_UInt;
@@ -457,10 +477,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                     g_msg_NoHitsAfterFiltering);
     }
     
+    const size_t mrna_size = m_mrna.size();
     const string query ( hits->front().m_Query );
     const string subj  ( hits->front().m_Subj );
     
-    const size_t mrna_size = m_mrna.size();  
     
     if( !m_strand ) {
         
@@ -814,7 +834,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     // First go from the ends and see if we
     // can improve boundary exons
     size_t k0 = 0;
-    const double min_idty = max(m_minidty, kMinTermExonIdty);
+    const double min_idty = max(m_MinExonIdty, kMinTermExonIdty);
     while(k0 < seg_dim) {
         SSegment& s = segments[k0];
         if(s.m_exon) {
@@ -886,7 +906,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     // turn to gaps exons with low identity
     for(size_t k = 0; k < seg_dim; ++k) {
         SSegment& s = segments[k];
-        if(s.m_exon && s.m_idty < m_minidty) {
+        if(s.m_exon && s.m_idty < m_MinExonIdty) {
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
@@ -1548,6 +1568,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/07/05 16:50:47  kapustin
+ * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ *
  * Revision 1.29  2005/06/02 13:30:17  kapustin
  * Adjust GetBox() for different orientations
  *

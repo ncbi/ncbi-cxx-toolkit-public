@@ -37,6 +37,7 @@
 #include <algo/align/splign/splign_compartment_finder.hpp>
 #include <algo/align/nw/align_exception.hpp>
 #include <algorithm>
+#include <numeric>
 
 BEGIN_NCBI_SCOPE
 
@@ -85,6 +86,7 @@ CCompartmentFinder::CCompartmentFinder(THits::const_iterator start,
     m_intron_max(GetDefaultMaxIntron()),
     m_penalty(GetDefaultPenalty()),
     m_min_coverage(GetDefaultMinCoverage()),
+    m_MinMatches(1),
     m_iter(-1)
 {
     const size_t dim = finish - start;
@@ -98,190 +100,45 @@ CCompartmentFinder::CCompartmentFinder(THits::const_iterator start,
 }
 
 
-#ifdef _SPL_CF_V0_
-
-size_t CCompartmentFinder::Run()
+// accumulate matches on query
+class AcmMatches: public binary_function<int, const CHit*, int>
 {
-    m_compartments.clear();
-    const size_t dimhits = m_hits.size();
-    if(dimhits == 0) {
-        return 0;
+public:
+
+    AcmMatches(void): m_nFinish(-1) {
+        m_i1 = 0;
+        m_i2 = 1;
     }
-    
-    // sort here to make sure that later at every step
-    // all potential sources (hits from where to continue)
-    // are visible
-    sort(m_hits.begin(), m_hits.end(), CHit::PSubjLow_QueryLow_ptr);
-    
-    // insert dummy element
-    list<SQueryMark> qmarks; // ordered list of query marks
-    qmarks.clear();
-    qmarks.push_back(SQueryMark(0, 0, -1));
-    const list<SQueryMark>::iterator li_b = qmarks.begin();
-    
-    // *** Generic hit iteration (not yet quite optimized) ***
-    // For every hit:
-    // - find out if its query mark already exists (qm_new)
-    // - for query mark below the current:
-    //   -- check if it could be extended
-    //   -- evaluate extension potential
-    // - for every other qm:
-    //   -- check if its compartment could be terminated
-    //   -- evaluate potential of terminating the compartment
-    //      to open a new one
-    // - select the best potential
-    // - if qm_new, create the new query mark, otherwise
-    //   update the existing one if the new score is higher
-    // - if query mark was created or updated, 
-    //   save the hit's status ( previous hit, extension or opening)
-    //
-    
-    vector<SHitStatus> hitstatus (dimhits);
-    
-    for(size_t i = 0; i < dimhits; ++i) {
-        
-        const list<SQueryMark>::iterator li_e = qmarks.end();
-        
-        const CHit& h = *m_hits[i];
 
-        list<SQueryMark>::iterator li0 = lower_bound(li_b, li_e,
-                                             SQueryMark(h.m_ai[1], 0, -2));
-        bool qm_new = (li0 == li_e)? true: (size_t(h.m_ai[1]) < li0->m_coord);
-
-        int best_ext_score = kMin_Int;
-        list<SQueryMark>::iterator li_best_ext = li_b;
-        int best_open_score = kMin_Int;
-        list<SQueryMark>::iterator li_best_open = li_b;
-        
-        for( list<SQueryMark>::iterator li = li_b; li != li_e; ++li) {
-            
-            const CHit* phc = (li->m_hit == -1)? 0: m_hits[li->m_hit];
-
-            // check if good for extention
-            if(li->m_hit < int(i)) {
-
-                size_t q0 = h.m_ai[0], s0 = h.m_ai[2]; // possible continuation
-                bool good;
-                int intron;
-                if(li->m_hit == -1) {
-                    good = false;
-                }
-                else {
-                    if(phc->m_ai[1] >= h.m_ai[1]) {
-                        good = false;
-                    }
-                    else {
-                        if(phc->m_ai[1] < h.m_ai[0]) {
-                            q0 = h.m_ai[0];
-                            s0 = h.m_ai[2];
-                        }
-                        else {
-                            // find where this point would be on h
-                            q0 = phc->m_ai[1] + 1;
-                            s0 += q0 - h.m_ai[0];
-                        }
-                        intron = int(s0) - phc->m_ai[3] - 1;
-                        good = intron <= int(m_intron_max);
-                    }          
-                }
-                
-                if(good) {
-                    
-                    int intron_penalty = intron > 0?
-                        int(intron*kPenaltyPerIntronBase): 0;
-
-                    int ext_score = li->m_score +
-                        int(0.01 * h.m_Idnty * (h.m_ai[1] - q0 + 1)) +
-                        intron_penalty;
-
-                    if(ext_score > best_ext_score) {
-                        best_ext_score = ext_score;
-                        li_best_ext = li;
-                    }
-                }
-            }
-            
-            // check if good for closing and opening
-            if(li->m_hit == -1 ||  phc->m_ai[3] < h.m_ai[2]) {
-                int score_open = li->m_score - m_penalty +
-                    int(0.01*h.m_Idnty*(h.m_ai[1] - h.m_ai[0] + 1));
-                if(score_open > best_open_score) {
-                    best_open_score = score_open;
-                    li_best_open = li;
-                }
-            }
-        }
-
-        SHitStatus::EType hit_type;
-        int prev_hit;
-        int best_score;
-        if(best_ext_score > best_open_score) {
-            hit_type = SHitStatus::eExtension;
-            prev_hit = li_best_ext->m_hit;
-            best_score = best_ext_score;
-        }
+    double operator() (double iVal, const CHit* ph)
+    {
+        const CHit& h = *ph;
+        if(h.m_ai[m_i1] > m_nFinish)
+            return iVal + 0.01 * h.m_Idnty * 
+                ((m_nFinish = h.m_ai[m_i2]) - h.m_ai[m_i1] + 1);
         else {
-            hit_type = SHitStatus::eOpening;
-            prev_hit = li_best_open->m_hit;
-            best_score = best_open_score;
-        }
-        
-        bool updated = false;
-        if(qm_new) {
-            qmarks.insert(li0, SQueryMark(h.m_ai[1], best_score, i));
-            updated = true;
-        }
-        else {
-            if(best_score >= li0->m_score) {
-                li0->m_score = best_score;
-                li0->m_hit = i;
-                updated = true;
-            }
-        }
-        
-        if(updated) {
-            hitstatus[i].m_type = hit_type;
-            hitstatus[i].m_prev = prev_hit;
+            int nFinish0 = m_nFinish;
+            return (h.m_ai[m_i2] > nFinish0)?
+                (iVal + 0.01 * h.m_Idnty * 
+                 ((m_nFinish = h.m_ai[m_i2]) - nFinish0)): iVal;
         }
     }
-    
-    // *** backtrace ***
-    // - find query mark with the highest score
-    // - trace it back until the dummy
-    list<SQueryMark>::iterator li_best = li_b;
-    ++li_best;
-    int score_best = kMin_Int;
-    for(list<SQueryMark>::iterator li = li_best, li_e = qmarks.end();
-        li != li_e; ++li) {
-        if(li->m_score > score_best) {
-            score_best = li->m_score;
-            li_best = li;
-        }
-    }
-    
-    if( int(score_best + m_penalty) >= int(m_min_coverage) ) {
-        int i = li_best->m_hit;
-        CCompartment* pc = 0;
-        bool new_compartment = true;
-        while(i != -1) {
-            if(new_compartment) {
-                new_compartment = false;
-                m_compartments.push_back(CCompartment());
-                pc = &m_compartments.back();
-            }
-            pc->AddMember(m_hits[i]);
-            
-            if(hitstatus[i].m_type == SHitStatus::eOpening) {
-                new_compartment = true;
-            }
-            i = hitstatus[i].m_prev;
-        }
-    }
-    
-    return m_compartments.size();
+
+private:
+
+    int  m_nFinish;
+    unsigned char m_i1, m_i2;
+};
+
+
+double GetTotalMatches(const CCompartmentFinder::THitConstPtrs& hits0)
+{
+    CCompartmentFinder::THitConstPtrs hits (hits0);   
+    stable_sort(hits.begin(), hits.end(), CHit::PPrecedeQ_ptr);
+    const double rv = accumulate(hits.begin(), hits.end(), 0.0, AcmMatches());
+    return rv;
 }
 
-#else
 
 size_t CCompartmentFinder::Run()
 {
@@ -315,7 +172,7 @@ size_t CCompartmentFinder::Run()
     // - if qm_new, create the new query mark, otherwise
     //   update the existing one if the new score is higher
     // - if query mark was created or updated, 
-    //   save the hit's status ( previous hit, extension or opening)
+    //   save the hit's status (previous hit, extension or opening)
     //
     
     vector<SHitStatus> hitstatus (dimhits);
@@ -330,9 +187,9 @@ size_t CCompartmentFinder::Run()
             = lower_bound(li_b, li_e, SQueryMark(h.m_ai[1], 0, -2));
         bool qm_new = (li0 == li_e)? true: (size_t(h.m_ai[1]) < li0->m_coord);
 
-        int best_ext_score = kMin_Int;
+        double best_ext_score = kMin_Double;
         list<SQueryMark>::iterator li_best_ext = li_b;
-        int best_open_score = kMin_Int;
+        double best_open_score = kMin_Double;
         list<SQueryMark>::iterator li_best_open = li_b;
         
         for( list<SQueryMark>::iterator li = li_b; li != li_e; ++li) {
@@ -375,11 +232,11 @@ size_t CCompartmentFinder::Run()
                 
                 if(good) {
                     
-                    int intron_penalty = intron > 0?
-                        int(intron*kPenaltyPerIntronBase): 0;
+                    double intron_penalty = intron > 0?
+                        intron * kPenaltyPerIntronBase: 0.0;
 
-                    int ext_score = li->m_score +
-                        int(h.m_ai[1] - q0 + 1) +
+                    double ext_score = li->m_score +
+                        0.01 * h.m_Idnty * (h.m_ai[1] - q0 + 1) +
                         intron_penalty;
 
                     if(ext_score > best_ext_score) {
@@ -391,8 +248,9 @@ size_t CCompartmentFinder::Run()
             
             // check if good for closing and opening
             if(li->m_hit == -1 ||  phc->m_ai[3] < h.m_ai[2]) {
-                int score_open = li->m_score - m_penalty +
-                    int(h.m_ai[1] - h.m_ai[0] + 1);
+
+                double score_open = li->m_score - m_penalty +
+                    0.01 * h.m_Idnty * (h.m_ai[1] - h.m_ai[0] + 1);
                 if(score_open > best_open_score) {
                     best_open_score = score_open;
                     li_best_open = li;
@@ -402,13 +260,15 @@ size_t CCompartmentFinder::Run()
 
         SHitStatus::EType hit_type;
         int prev_hit;
-        int best_score;
+        double best_score;
         if(best_ext_score > best_open_score) {
+
             hit_type = SHitStatus::eExtension;
             prev_hit = li_best_ext->m_hit;
             best_score = best_ext_score;
         }
         else {
+
             hit_type = SHitStatus::eOpening;
             prev_hit = li_best_open->m_hit;
             best_score = best_open_score;
@@ -438,7 +298,7 @@ size_t CCompartmentFinder::Run()
     // - trace it back until the dummy
     list<SQueryMark>::iterator li_best = li_b;
     ++li_best;
-    int score_best = kMin_Int;
+    double score_best = kMin_Double;
     for(list<SQueryMark>::iterator li = li_best, li_e = qmarks.end();
         li != li_e; ++li) {
         if(li->m_score > score_best) {
@@ -448,31 +308,36 @@ size_t CCompartmentFinder::Run()
     }
     
     if( int(score_best + m_penalty) >= int(m_min_coverage) ) {
+
         int i = li_best->m_hit;
-        CCompartment* pc = 0;
         bool new_compartment = true;
+        THitConstPtrs hits;
         while(i != -1) {
+
             if(new_compartment) {
+                if(GetTotalMatches(hits) >= m_MinMatches) {
+                    m_compartments.push_back(CCompartment());
+                    m_compartments.back().SetMembers(hits);
+                }
+                hits.resize(0);
                 new_compartment = false;
-                m_compartments.push_back(CCompartment());
-                pc = &m_compartments.back();
             }
-            pc->AddMember(m_hits[i]);
+            hits.push_back(m_hits[i]);
             
             if(hitstatus[i].m_type == SHitStatus::eOpening) {
                 new_compartment = true;
             }
             i = hitstatus[i].m_prev;
         }
+
+        if(GetTotalMatches(hits) >= m_MinMatches) {
+            m_compartments.push_back(CCompartment());
+            m_compartments.back().SetMembers(hits);
+        }
     }
     
     return m_compartments.size();
 }
-
-
-#endif
-
-
 
 
 CCompartmentFinder::CCompartment* CCompartmentFinder::GetFirst()
@@ -514,7 +379,8 @@ CCompartmentFinder::CCompartment* CCompartmentFinder::GetNext()
 CCompartmentAccessor::CCompartmentAccessor(THits::iterator istart,
                                            THits::iterator ifinish,
                                            size_t comp_penalty,
-                                           size_t min_coverage)
+                                           size_t min_coverage,
+                                           size_t min_matches)
 {
     // separate strands for CompartmentFinder
     THits::iterator ib = istart, ie = ifinish, ii = ib, iplus_beg = ie;
@@ -548,6 +414,7 @@ CCompartmentAccessor::CCompartmentAccessor(THits::iterator istart,
         CCompartmentFinder finder (ib, iplus_beg);
         finder.SetMinCoverage(min_coverage);
         finder.SetPenalty(comp_penalty);
+        finder.SetMinMatches(min_matches);
         finder.Run();
         
         // un-flip
@@ -566,6 +433,7 @@ CCompartmentAccessor::CCompartmentAccessor(THits::iterator istart,
         CCompartmentFinder finder (iplus_beg, ie);
         finder.SetMinCoverage(min_coverage);
         finder.SetPenalty(comp_penalty);
+        finder.SetMinMatches(min_matches);
         finder.Run();
         x_Copy2Pending(finder);
     }}
@@ -627,6 +495,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/07/05 16:50:47  kapustin
+ * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ *
  * Revision 1.11  2005/04/07 18:50:06  kapustin
  * Run(): change ordering predicate, use raw query hit length when computing target
  *
