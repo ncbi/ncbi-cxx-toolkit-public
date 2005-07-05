@@ -937,7 +937,7 @@ extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
         s_TraceFilter.Fill(filter_str);
 
     if (what == eDiagFilter_Post  ||  what == eDiagFilter_All) 
-        s_PostFilter .Fill(filter_str);
+        s_PostFilter.Fill(filter_str);
 }
 
 
@@ -1496,6 +1496,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.95  2005/07/05 14:52:28  ivanov
+ * Minor cosmetic
+ *
  * Revision 1.94  2005/05/18 16:00:14  ucko
  * CDiagBuffer: note m_Stream's initial flags, and restore them on every
  * call to Flush to prevent settings from inadvertantly leaking between
