@@ -487,8 +487,8 @@ exit(1)))
 #endif
 
 
-/** On entry, all but the first element of the array heapArray[i]
- * .. heapArray[n] are in valid heap order.  This routine rearranges
+/** On entry, all but the first element of the array heapArray[i] to
+ * heapArray[n] are in valid heap order.  This routine rearranges
  * the elements so that on exit they all are in heap order.
  * @param heapArray holds the heap [in][out]
  * @param i element of heapArray that may be out of order [in]
@@ -523,8 +523,8 @@ SWheapifyDown(SWheapRecord * heapArray,
 }
 
 
-/** On entry, all but the last element of the array heapArray[0]
- * .. heapArray[i] are in valid heap order.  This routine rearranges
+/** On entry, all but the last element of the array heapArray[0] to
+ *  heapArray[i] are in valid heap order.  This routine rearranges
  * the elements so that on exit they all are in heap order.
  *
  * @param heapArray      holds the heap [in][out]

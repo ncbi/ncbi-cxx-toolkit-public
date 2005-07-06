@@ -420,7 +420,7 @@ END_NCBI_SCOPE
   @section _basic_opts_usage Basic usage
   For users who only want to perform a single BLAST searches using default 
   options for a specific task (EProgram) \em without modifying the options, 
-  one can let the @ref blast_search_classes create 
+  one can let the BLAST search classes create 
   and validate the appropriate BLAST options object internally:
   
   @code
@@ -455,10 +455,10 @@ END_NCBI_SCOPE
 
   @section _validating_opts Options validation
   The CBlastOptionsHandle classes offers a <tt>Validate</tt> method in
-  its interface which is called by the @ref blast_search_classes prior to
+  its interface which is called by the BLAST search classes prior to
   performing the actual search, but users of the C++ BLAST options APIs might
-  also want to invoke this method so that any exceptions thrown by the @ref
-  blast_search_classes can be guaranteed not originate from an incorrect
+  also want to invoke this method so that any exceptions thrown by the
+  BLAST search classes can be guaranteed not originate from an incorrect
   setting of BLAST options. Please note that the <tt>Validate</tt> method 
   throws a CBlastException in case of failure.
 
@@ -583,6 +583,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.105  2005/07/06 14:30:29  camacho
+* Doxygen fixes
+*
 * Revision 1.104  2005/06/02 16:18:17  camacho
 * Remove LookupTableOptions::use_pssm
 *
