@@ -50,9 +50,6 @@ BEGIN_SCOPE(blast)
 /** Initialize the sequence source structure.
  * @param seq_vector Vector of sequence locations [in]
  * @param program Type of BLAST to be performed [in]
- * @bug There is no guarantee that error_msg->code maps to a 
- * CBlastException error code, this could be meaningless
- * @sa FIXME usage of calloc
  */
 NCBI_XBLAST_EXPORT BlastSeqSrc* 
 MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, 
@@ -66,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/06 16:10:43  camacho
+ * Remove out-dated comments
+ *
  * Revision 1.14  2005/04/06 21:06:30  dondosha
  * Use EBlastProgramType instead of EProgram in non-user-exposed functions
  *
