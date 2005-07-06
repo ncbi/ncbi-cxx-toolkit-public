@@ -493,14 +493,27 @@ void DataLoaders_Register_BlastDb(void)
 
 const string kDataLoader_BlastDb_DriverName("blastdb");
 
+/// Data Loader Factory for BlastDbDataLoader
+///
+/// This class provides an interface which builds an instance of the
+/// BlastDbDataLoader and registers it with the object manager.
+
 class CBlastDb_DataLoaderCF : public CDataLoaderFactory
 {
 public:
+    /// Constructor
     CBlastDb_DataLoaderCF(void)
         : CDataLoaderFactory(kDataLoader_BlastDb_DriverName) {}
+    
+    /// Destructor
     virtual ~CBlastDb_DataLoaderCF(void) {}
-
+    
 protected:
+    /// Create and register a data loader
+    /// @param om
+    ///   A reference to the object manager
+    /// @param params
+    ///   Arguments for the data loader constructor
     virtual CDataLoader* CreateAndRegister(
         CObjectManager& om,
         const TPluginManagerParamTree* params) const;
@@ -568,6 +581,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.25  2005/07/06 19:01:00  bealer
+ * - Doxygen.
+ *
  * Revision 1.24  2005/07/06 17:21:44  bealer
  * - Sequence splitting capability for BlastDbDataLoader.
  *
