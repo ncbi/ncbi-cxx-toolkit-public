@@ -610,7 +610,7 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	delete seqTree;
 }
 
-int layoutSeqTree(CCdCore* cd, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
+string layoutSeqTree(CCdCore* cd, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
 	MultipleAlignment ma(cd);
 	TreeOptions treeOptions;
@@ -619,7 +619,12 @@ int layoutSeqTree(CCdCore* cd, int maxX, int maxY, int yInt, vector<SeqTreeEdge>
 	SeqTreeRootedLayout treeLayout(yInt);
 	treeLayout.calculateNodePositions(*seqTree, maxX, maxY);
 	treeLayout.getAllEdges(*seqTree, edges);
-	return edges.size();
+	string param = GetTreeAlgorithmName(treeOptions.clusteringMethod);
+	param.append(" / " + DistanceMatrix::GetDistMethodName(treeOptions.distMethod));
+	if (DistanceMatrix::DistMethodUsesScoringMatrix(treeOptions.distMethod) ) {
+		param.append(" / " + GetScoringMatrixName(treeOptions.matrix));
+	}
+	return param;
 }
 
 END_SCOPE(cd_utils)
@@ -629,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/07/06 20:58:06  cliu
+ * return tree parameter string
+ *
  * Revision 1.6  2005/06/21 13:09:43  cliu
  * add tree layout.
  *
