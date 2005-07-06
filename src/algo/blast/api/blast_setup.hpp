@@ -258,6 +258,7 @@ GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding,
  * @return Length of the buffer to allocate to contain original sequence of
  *        length sequence_length for given encoding and parameter constraints.
  *        If the sequence_length is 0, the return value will be 0 too
+ * @throws CBlastException in case of unsupported encoding
  */
 TSeqPos
 CalculateSeqBufferLength(TSeqPos sequence_length, EBlastEncoding encoding,
@@ -281,6 +282,7 @@ SBlastSequence CompressNcbi2na(const SBlastSequence& source);
  * any other values for encoding will cause an exception to be thrown.
  * @param encoding Encoding for which a sentinel byte is needed [in]
  * @return sentinel byte
+ * @throws CBlastException in case of unsupported encoding
  */
 Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException));
 
@@ -344,6 +346,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2005/07/06 17:47:50  camacho
+* Doxygen and other minor fixes
+*
 * Revision 1.48  2005/06/23 16:18:46  camacho
 * Doxygen fixes
 *

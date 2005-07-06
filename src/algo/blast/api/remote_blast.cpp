@@ -154,7 +154,7 @@ void CRemoteBlast::x_CheckConfig(void)
             cfg += " <subject>";
         }
         
-        NCBI_THROW(CBlastException, eInternal, cfg.c_str());
+        NCBI_THROW(CBlastException, eInternal, cfg);
     }
 }
 
@@ -1112,6 +1112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/07/06 17:47:50  camacho
+* Doxygen and other minor fixes
+*
 * Revision 1.26  2005/06/06 23:17:07  bealer
 * - De-confuse doxygen.
 *

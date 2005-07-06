@@ -84,7 +84,7 @@ CBlastOptionsHandle::Validate() const
 }
 
 CBlastOptionsHandle*
-CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CBlastException))
+CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
 {
     CBlastOptionsHandle* retval = NULL;
 
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/07/06 17:47:50  camacho
+ * Doxygen and other minor fixes
+ *
  * Revision 1.12  2005/05/26 14:36:00  dondosha
  * Added cases for PHI BLAST options handles
  *

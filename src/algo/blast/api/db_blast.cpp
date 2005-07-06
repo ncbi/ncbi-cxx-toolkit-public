@@ -556,7 +556,7 @@ void CDbBlast::SetupSearch()
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
             Blast_MessageFree(blast_message);
-            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+            NCBI_THROW(CBlastException, eInternal, msg);
             // FIXME: shouldn't the error/warning also be saved in m_ivErrors?
         } else if (blast_message) {
             // Non-fatal error message; just save it.
@@ -771,6 +771,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2005/07/06 17:47:50  camacho
+ * Doxygen and other minor fixes
+ *
  * Revision 1.77  2005/06/28 20:37:19  camacho
  * Experimental: implemented ctor which uses query retrieval interface
  *
