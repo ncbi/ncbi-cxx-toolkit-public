@@ -11,6 +11,15 @@
 import sys, re, os
 import sppp
 
+# Process command-line arguments.
+# There can be any number of arguments that start with "-D".
+# These specify symbols to define for the pre-preprocessor.
+# There can be any number of other arguments, which specify
+# input files.
+
+defined_symbols = [s[2:] for s in sys.argv[1:] if s.startswith('-D')]
+inames = [s for s in sys.argv[1:] if not s.startswith('-D')]
+
 classes = {}
 classes['list'] = {}
 classes['vector'] = {}
@@ -28,7 +37,7 @@ class_list = {}
 banned = {'int': '', 'double': '', 'bool': '', 'string': '',
           'char': '', 'TSeqPos': '', 'Int8': ''}
 
-for iname in sys.argv[1:]:
+for iname in inames:
     headers = sppp.ProcessFile(iname)
     for header in headers:
         hname = os.environ['NCBI_INCLUDE'] + '/' + header
