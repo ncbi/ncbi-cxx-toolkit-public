@@ -58,6 +58,7 @@ const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
 
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
+    /// The sequence data will sliced into pieces of this size.
     enum { kSequenceSliceSize = 65536 };
     
 public:
@@ -99,16 +100,39 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
     
-    // Unload the TSE, clear chunk mappings
+    /// Unload a TSE, clear chunk mappings
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
     
-    // Load a chunk with splitted data
+    /// Load a description or data chunk.
     virtual void GetChunk(TChunk chunk);
     
+    /// Gets the blob id for a given sequence.
+    ///
+    /// Given a Seq_id_Handle, this method finds the corresponding top
+    /// level Seq-entry (TSE) and returns a blob corresponding to it.
+    /// The BlobId is initialized with a pointer to that CSeq_entry if
+    /// the sequence is known to this data loader, which will be true
+    /// if GetRecords() was called for this sequence.
+    ///
+    /// @param idh
+    ///   Indicates the sequence for which to get a blob id.
+    /// @return
+    ///   A TBlobId corresponding to the provided Seq_id_Handle.
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     
+    /// Returns true to indicate that GetBlobId is implemented.
     virtual bool CanGetBlobById(void) const;
     
+    /// For a given TBlobId, get the TTSE_Lock.
+    ///
+    /// If the provided TBlobId is known to this code, the
+    /// corresponding TTSE_Lock data will be fetched and returned.
+    /// Otherwise, an empty valued TTSE_Lock is returned.
+    ///
+    /// @param blob_id
+    ///   Indicates which data to get.
+    /// @return
+    ///   The returned data.
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
     
 private:
@@ -335,6 +359,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.16  2005/07/06 19:03:26  bealer
+ * - Some doxygen.
+ *
  * Revision 1.15  2005/07/06 17:21:44  bealer
  * - Sequence splitting capability for BlastDbDataLoader.
  *
