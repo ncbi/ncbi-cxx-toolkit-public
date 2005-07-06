@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   A bridge between C and C++ Toolkits
+ *   A bridge between C and C++ Toolkits (C->C++, for use in C only)
  *
  */
 
@@ -61,6 +61,9 @@ void SetupCToolkitErrPost(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/07/06 19:43:08  lavr
+ * Note the file is intended for use in pure C code
+ *
  * Revision 1.4  2003/11/13 15:59:44  lavr
  * Guard macro changed; log moved to end
  *
