@@ -31,20 +31,13 @@
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
-#include <util/rangemap.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
-#include <objmgr/data_loader_factory.hpp>
-#include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/data_source.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <corelib/plugin_manager_impl.hpp>
+#include <objmgr/impl/tse_loadlock.hpp>
+#include <objects/seq/seq__.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <corelib/plugin_manager_store.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 //=======================================================================
 // BlastDbDataLoader Public interface 
@@ -84,89 +77,395 @@ string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 }
 
 
-CBlastDbDataLoader::CBlastDbDataLoader(const string&        loader_name,
-                                       const SBlastDbParam& param)
-    : CDataLoader(loader_name),
-      m_dbname(param.m_DbName),
-      m_dbtype(param.m_DbType)
-     
+CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
+                                       const SBlastDbParam & param)
+    : CDataLoader    (loader_name),
+      m_DBName       (param.m_DbName),
+      m_DBType       (param.m_DbType),
+      m_NextChunkId  (0)
 {
-    CRef<CSeqDB> seq_db(new CSeqDB(param.m_DbName, (param.m_DbType == eProtein
-                                                    ? CSeqDB::eProtein
-                                                    : CSeqDB::eNucleotide)));
-    m_seqdb = seq_db;
+    m_SeqDB.Reset(new CSeqDB(m_DBName, (m_DBType == eProtein
+                                        ? CSeqDB::eProtein
+                                        : CSeqDB::eNucleotide)));
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
 {
-  
 }
 
-
-// TODO Note that the ranges are ignored for right now
-// How to handle other choices?
-CDataLoader::TTSE_LockSet
-CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, 
-        const EChoice choice)
+CBlastDbDataLoader::TTSE_LockSet
+CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 {
+    CTSE_LoadLock lock;
     TTSE_LockSet locks;
-    // only eBioseq and eBioseqCore are supported
-    switch (choice) {
-    case eBlob:
-    case eCore:
-    case eSequence:
-    case eFeatures:
-    case eGraph:
-    case eAll:
-    default:
-        LOG_POST("Invalid choice: " + NStr::IntToString(choice));
-            return locks;
-    case eBioseq:
-    case eBioseqCore:
-        break;
+    
+    if (x_LoadData(idh, lock)) {
+        locks.insert(TTSE_Lock(lock));
     }
     
-    {{
-        int oid = -1;
-        TOid2Bioseq::iterator found;
-        
-        CConstRef<CSeq_id> seq_id = idh.GetSeqId();
-        vector<CSeqDB::TOID> oid_list;
-        m_seqdb->SeqidToOids(*seq_id, oid_list);
-        if(oid_list.empty()){
-            return locks;
-        }
-        // If we've already retrieved this particular ordinal id, ignore it
-        if ( (found = m_cache.find(oid_list[0])) != m_cache.end()){
-            return locks;
-        }
-        CRef<CBioseq> bsr;
-        if(seq_id->Which() == CSeq_id::e_Gi){
-            bsr = m_seqdb->GetBioseq(oid_list[0], seq_id->GetGi());
-        } else {
-            bsr = m_seqdb->GetBioseq(oid_list[0]);
-        }
-        CRef<CSeq_entry> ser(new CSeq_entry());
-        ser->Select(CSeq_entry::e_Seq);
-        ser->SetSeq(*bsr);        
-        locks.insert(GetDataSource()->AddTSE(*ser));
-        m_cache[oid] = bsr;
-        
-    }}
     return locks;
 }
+
+CBlastDbDataLoader::CCachedSeqData::CCachedSeqData(const CSeq_id_Handle & idh,
+                                                   CSeqDB               & db,
+                                                   int                    oid)
+    : m_SIH(idh), m_SeqDB(& db), m_OID(oid)
+{
+    m_TSE.Reset();
+    m_Length = m_SeqDB->GetSeqLength(m_OID);
+    
+    CConstRef<CSeq_id> seq_id = idh.GetSeqId();
+    
+    int gi = ((seq_id->Which() == CSeq_id::e_Gi)
+              ? seq_id->GetGi()
+              : 0);
+    
+    CRef<CBioseq> bioseq(m_SeqDB->GetBioseqNoData(m_OID, gi));
+    
+    bioseq->SetInst().SetMol((m_SeqDB->GetSequenceType() == CSeqDB::eProtein)
+                             ? CSeq_inst::eMol_aa
+                             : CSeq_inst::eMol_na);
+    
+    m_TSE.Reset(new CSeq_entry);
+    m_TSE->SetSeq(*bioseq);
+    
+    // Remove descriptions (annotations and features would be removed
+    // here if SeqDB produced them.)
+    
+    if (bioseq->IsSetDescr()) {
+        m_Descr.Reset(& bioseq->SetDescr());
+        bioseq->ResetDescr();
+    }
+    
+    bioseq->SetInst().ResetSeq_data();
+}
+
+void CBlastDbDataLoader::CCachedSeqData::
+RegisterIds(CBlastDbDataLoader::TIds & idmap, int oid)
+{
+    _ASSERT(m_TSE->IsSeq());
+    
+    CBioseq::TId & ids = m_TSE->SetSeq().SetId();
+    
+    ITERATE(CBioseq::TId, seqid, ids) {
+        idmap[CSeq_id_Handle::GetHandle(**seqid)] = oid;
+    }
+}
+
+void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
+{
+    CRef<CSeq_data> seq_data(new CSeq_data);
+    
+    if (m_SeqDB->GetSequenceType() == CSeqDB::eProtein) {
+        const char * buffer(0);
+        int          length(0);
+        length = m_SeqDB->GetSequence(m_OID, & buffer);
+        
+        _ASSERT((m_End-m_Begin) <= length);
+        
+        seq_data->SetNcbistdaa().Set().assign(buffer + m_Begin, buffer + m_End);
+        
+        m_SeqDB->RetSequence(& buffer);
+    } else {
+        
+        // This code works around the fact that SeqDB currently only
+        // produces 8 bit output -- it builds an array and packs the
+        // output into it in 4 bit format.  SeqDB should probably
+        // provide more formats and combinations so that this code can
+        // disappear.
+        
+        int nucl_code(kSeqDBNuclNcbiNA8);
+        
+        const char * buffer(0);
+        int          length(0);
+        length = m_SeqDB->GetAmbigSeq(m_OID, & buffer, nucl_code, m_Begin, m_End);
+        
+        _ASSERT((m_End-m_Begin) == length);
+        
+        vector<char> v4;
+        v4.reserve((length+1)/2);
+        
+        int length_whole = length & -2;
+        
+        for(int i = 0; i < length_whole; i += 2) {
+            v4.push_back((buffer[i] << 4) | buffer[i+1]);
+        }
+        if (length_whole != length) {
+            _ASSERT((length_whole) == (length-1));
+            v4.push_back(buffer[length_whole] << 4);
+        }
+        
+        seq_data->SetNcbi4na().Set().swap(v4);
+        
+        m_SeqDB->RetSequence(& buffer);
+    }
+    
+    CRef<CSeq_literal> literal(new CSeq_literal);
+    literal->SetLength(m_End - m_Begin);
+    literal->SetSeq_data(*seq_data);
+    
+    m_Literal.Reset(literal);
+}
+
+CBlastDbDataLoader::CSeqChunkData
+CBlastDbDataLoader::CCachedSeqData::BuildDataChunk(int id, int begin, int end)
+{
+    x_AddDelta(begin, end);
+    m_SeqDataIds.push_back(id);
+    return CSeqChunkData(m_SeqDB, m_SIH, m_OID, begin, end);
+}
+
+void CBlastDbDataLoader::CCachedSeqData::x_AddDelta(int begin, int end)
+{
+    CRef<CSeq_literal> segment(new CSeq_literal);
+    segment->SetLength(end - begin);
+    
+    CRef<CDelta_seq> dseq(new CDelta_seq);
+    dseq->SetLiteral(*segment);
+    
+    CDelta_ext & delta = m_TSE->SetSeq().SetInst().SetExt().SetDelta();
+    delta.Set().push_back(dseq);
+}
+
+void CBlastDbDataLoader::x_SplitSeq(TChunks& chunks, CCachedSeqData & seqdata /*, bioseq, int length*/)
+{
+    // Split and remove annots
+    CSeq_id_Handle idh = seqdata.GetSeqIdHandle();
+    
+    // Split and remove descrs
+    x_SplitDescr(chunks, seqdata);
+    
+    // Split and remove data
+    x_SplitSeqData(chunks, seqdata);
+}
+
+void CBlastDbDataLoader::x_SplitSeqData(TChunks        & chunks,
+                                        CCachedSeqData & seqdata)
+{
+    int length = seqdata.GetLength();
+    
+    for(int i = 0; i<length; i += kSequenceSliceSize) {
+        int j = length;
+        
+        if ((j - i) > kSequenceSliceSize) {
+            j = i + kSequenceSliceSize;
+        }
+        
+        x_AddSplitSeqChunk(chunks, seqdata, i, j);
+    }
+}
+
+void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks        & chunks,
+                                            CCachedSeqData & seqdata,
+                                            int              begin,
+                                            int              end)
+{
+    // Create location for the chunk
+    CTSE_Chunk_Info::TLocationSet loc_set;
+    CTSE_Chunk_Info::TLocationRange rg =
+        CTSE_Chunk_Info::TLocationRange(begin, end-1);
+    
+    CTSE_Chunk_Info::TLocation loc(seqdata.GetSeqIdHandle(), rg);
+    loc_set.push_back(loc);
+    
+    // Create new chunk for the data
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(++m_NextChunkId));
+    
+    // Add seq-data
+    chunk->x_AddSeq_data(loc_set);
+    
+    // Prepare and store data locally, remember place and chunk id
+    m_SeqChunks[m_NextChunkId] =
+        seqdata.BuildDataChunk(m_NextChunkId, begin, end);
+    
+    chunks.push_back(chunk);
+}
+
+bool CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & lock)
+{
+    CRef<CCachedSeqData> cached;
+    int oid = -1;
+    
+    {
+        CConstRef<CSeq_id> seq_id(idh.GetSeqId());
+        
+        if (m_Ids.find(idh) != m_Ids.end()) {
+            oid = m_Ids[idh];
+        } else {
+            vector<int> oids;
+            m_SeqDB->SeqidToOids(*seq_id, oids);
+            
+            if (oids.empty()){
+                return false;
+            }
+            
+            oid = oids[0];
+        }
+        
+        cached = m_OidCache[oid];
+    }
+    
+    if (cached.NotEmpty()) {
+        // Already loaded, get and return the lock
+        lock = GetDataSource()->GetTSE_LoadLock(TBlobId(cached->GetTSE()));
+        return true;
+    }
+    
+    cached.Reset(new CCachedSeqData(idh, *m_SeqDB, oid));
+    
+    cached->RegisterIds(m_Ids, oid);
+    
+    TChunks chunks;
+    
+    // Split data
+    
+    x_SplitSeq(chunks, *cached);
+    
+    // Fill TSE info
+    CRef<CSeq_entry> tse(cached->GetTSE());
+    
+    lock = GetDataSource()->GetTSE_LoadLock(TBlobId(tse));
+    
+    CTSE_Info& info = *lock;
+    info.SetSeq_entry(*tse);
+    
+    // Attach all chunks to the TSE info
+    NON_CONST_ITERATE(TChunks, it, chunks) {
+        info.GetSplitInfo().AddChunk(**it);
+    }
+    
+    // Mark TSE info as loaded
+    lock.SetLoaded();
+    return true;
+}
+
+void CBlastDbDataLoader::x_SplitDescr(TChunks        & chunks,
+                                      CCachedSeqData & seqdata)
+{
+    // Create new chunk for each descr
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(++m_NextChunkId));
+    
+    // Add descr info using bioseq id or bioseq-set id
+    // Descr type mask includes everything for simplicity
+    TPlace place(seqdata.GetSeqIdHandle(), 0);
+    
+    if ( place.first ) {
+        chunk->x_AddDescInfo(0xffff, place.first);
+    } else {
+        chunk->x_AddDescInfo(0xffff, place.second);
+    }
+    
+    // Store data locally, remember place and chunk id
+    m_DescrChunks[m_NextChunkId] = seqdata.AddDescr(m_NextChunkId);
+    
+    chunks.push_back(chunk);
+}
+
+void CBlastDbDataLoader::GetChunk(TChunk chunk)
+{
+    // Check if already loaded
+    if ( chunk->IsLoaded() ) {
+        return;
+    }
+    
+    // Find descriptors related to the chunk
+    TDescrChunks::iterator descr = m_DescrChunks.find(chunk->GetChunkId());
+    
+    if (descr != m_DescrChunks.end()) {
+        // Attach related descriptor
+        chunk->x_LoadDescr(TPlace(descr->second.GetSeqIdHandle(), 0),
+                           *descr->second.GetDescr());
+    }
+    
+    // Load sequence data
+    TSeqChunkCache::iterator seq = m_SeqChunks.find(chunk->GetChunkId());
+    
+    if (seq != m_SeqChunks.end()) {
+        // Attach seq-data
+        CTSE_Chunk_Info::TSequence sequence;
+        
+        CSeqChunkData & scd = seq->second;
+        
+        if (! scd.HasLiteral()) {
+            scd.BuildLiteral();
+        }
+        
+        sequence.push_back(scd.GetLiteral());
+        chunk->x_LoadSequence(TPlace(scd.GetSeqIdHandle(), 0),
+                              scd.GetPosition(),
+                              sequence);
+    }
+    
+    // Mark chunk as loaded
+    chunk->SetLoaded();
+}
+
+bool CBlastDbDataLoader::CanGetBlobById(void) const
+{
+    return true;
+}
+
+CBlastDbDataLoader::TBlobId
+CBlastDbDataLoader::GetBlobId(const CSeq_id_Handle& idh)
+{
+    TIds::iterator iditer = m_Ids.find(idh);
+    
+    // Check if the id is known
+    if (iditer != m_Ids.end()) {
+        TOidCache::iterator oiditer = m_OidCache.find(iditer->second);
+        
+        if (oiditer != m_OidCache.end()) {
+            return TBlobId(oiditer->second.GetPointer());
+        }
+    }
+    return TBlobId(0);
+}
+
+CBlastDbDataLoader::TTSE_Lock
+CBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
+{
+    const CSeq_entry * entry =
+        dynamic_cast<const CSeq_entry*>(blob_id.GetPointer());
+    
+    if (entry) {
+        if (entry->IsSeq() && entry->GetSeq().GetFirstId()) {
+            CSeq_id_Handle sih =
+                CSeq_id_Handle::GetHandle(*entry->GetSeq().GetFirstId());
+            
+            CTSE_LoadLock lock;
+            
+            if (x_LoadData(sih, lock)) {
+                return TTSE_Lock(lock);
+            }
+        }
+    }
+    
+    return TTSE_Lock();
+}
+
+void CBlastDbDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
+{
+    const CSeq_id_Handle & sih = tse_info->GetRequestedId();
+    
+    if (m_Ids.find(sih) != m_Ids.end()) {
+        int oid = m_Ids[sih];
+        
+        if (m_OidCache.find(oid) != m_OidCache.end()) {
+            m_OidCache[oid]->FreeChunks(m_DescrChunks, m_SeqChunks);
+            m_OidCache.erase(oid);
+        }
+    }
+}
+
 
 void
 CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     // dummy assignment to eliminate compiler and doxygen warnings
     depth = depth;  
-
-    //LOG_POST("CBlastDbDataLoader::DebugDump\n");
     ddc.SetFrame("CBlastDbDataLoader");
-    // CObject::DebugDump( ddc, depth);
-    DebugDumpValue(ddc,"m_dbname", m_dbname);
-    DebugDumpValue(ddc,"m_dbtype", m_dbtype);
+    DebugDumpValue(ddc,"m_dbname", m_DBName);
+    DebugDumpValue(ddc,"m_dbtype", m_DBType);
    
 }
 
@@ -269,6 +568,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.24  2005/07/06 17:21:44  bealer
+ * - Sequence splitting capability for BlastDbDataLoader.
+ *
  * Revision 1.23  2005/06/23 16:18:46  camacho
  * Doxygen fixes
  *

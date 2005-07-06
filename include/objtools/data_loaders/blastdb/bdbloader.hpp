@@ -34,8 +34,12 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,7 +48,6 @@ BEGIN_SCOPE(objects)
 //
 // CBlastDbDataLoader
 //   Data loader implementation that uses the blast databases.
-//   Note: Only full bioseqs can be requested, not parts of a sequence.
 //
 
 // Parameter names used by loader factory
@@ -55,6 +58,8 @@ const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
 
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
+    enum { kSequenceSliceSize = 65536 };
+    
 public:
 
     /// Describes the type of blast database to use
@@ -83,28 +88,225 @@ public:
     static string GetLoaderNameFromArgs(const SBlastDbParam& param);
     static string GetLoaderNameFromArgs(const string& dbname = "nr",
                                         const EDbType dbtype = eUnknown)
-        {
-            return GetLoaderNameFromArgs(SBlastDbParam(dbname, dbtype));
-        }
-
+    {
+        return GetLoaderNameFromArgs(SBlastDbParam(dbname, dbtype));
+    }
+    
     virtual ~CBlastDbDataLoader(void);
     
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
+    
+    // Unload the TSE, clear chunk mappings
+    virtual void DropTSE(CRef<CTSE_Info> tse_info);
+    
+    // Load a chunk with splitted data
+    virtual void GetChunk(TChunk chunk);
+    
+    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
+    
+    virtual bool CanGetBlobById(void) const;
+    
+    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+    
 private:
+    typedef CTSE_Chunk_Info::TPlace         TPlace;
+    typedef vector< CRef<CTSE_Chunk_Info> > TChunks;
+
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
-
+    
     CBlastDbDataLoader(const string&        loader_name,
                        const SBlastDbParam& param);
+    
+    CBlastDbDataLoader(const CBlastDbDataLoader &);
+    CBlastDbDataLoader & operator=(const CBlastDbDataLoader &);
+    
+    // Per-Sequence Chunk Data
+    class CSeqChunkData {
+    public:
+        CSeqChunkData(CRef<CSeqDB>     seqdb,
+                      CSeq_id_Handle & sih,
+                      int              oid,
+                      int              begin,
+                      int              end)
+            : m_SeqDB(seqdb), m_OID(oid), m_SIH(sih), m_Begin(begin), m_End(end)
+        {
+        }
+        
+        CSeqChunkData()
+            : m_Begin(-1)
+        {
+        }
+        
+        bool HasLiteral()
+        {
+            return m_Literal.NotEmpty();
+        }
+        
+        void BuildLiteral();
+        
+        CRef<CSeq_literal> GetLiteral()
+        {
+            _ASSERT(m_Literal.NotEmpty());
+            return m_Literal;
+        }
+        
+        CSeq_id_Handle GetSeqIdHandle()
+        {
+            return m_SIH;
+        }
+        
+        int GetPosition()
+        {
+            return m_Begin;
+        }
+        
+    private:
+        CRef<CSeqDB>       m_SeqDB;
+        int                m_OID;
+        CSeq_id_Handle     m_SIH;
+        int                m_Begin;
+        int                m_End;
+        CRef<CSeq_literal> m_Literal;
+    };
+    
+    // Description data
+    class CDescrData {
+    public:
+        CDescrData()
+        {
+        }
+        
+        CDescrData(CSeq_id_Handle & sih, CRef<CSeq_descr> descr)
+            : m_SIH(sih), m_Descr(descr)
+        {
+        }
+        
+        CSeq_id_Handle & GetSeqIdHandle()
+        {
+            return m_SIH;
+        }
+        
+        CRef<CSeq_descr> GetDescr()
+        {
+            return m_Descr;
+        }
+        
+    private:
+        CSeq_id_Handle   m_SIH;
+        CRef<CSeq_descr> m_Descr;
+    };
+    
+    typedef map< int, CSeqChunkData >  TSeqChunkCache;
+    typedef map< int, CDescrData >     TDescrChunks;
+    typedef map< CSeq_id_Handle, int > TIds;
+    
+    // Per-OID Data
+    
+    class CCachedSeqData : public CObject {
+    public:
+        CCachedSeqData(const CSeq_id_Handle & sih, CSeqDB & seqdb, int oid);
+        
+        CRef<CSeq_entry> GetTSE()
+        {
+            return m_TSE;
+        }
+        
+        CSeq_id_Handle & GetSeqIdHandle()
+        {
+            return m_SIH;
+        }
+        
+        CRef<CSeq_descr> GetDescr()
+        {
+            return m_Descr;
+        }
+        
+        int GetLength()
+        {
+            return m_Length;
+        }
+        
+        CSeqChunkData BuildDataChunk(int id, int begin, int end);
+        
+        CDescrData AddDescr(int chunknum)
+        {
+            m_DescrIds.push_back(chunknum);
+            return CDescrData(GetSeqIdHandle(), GetDescr());
+        }
+        
+        void FreeChunks(TDescrChunks & descrs, TSeqChunkCache & seqdata)
+        {
+            m_TSE.Reset();
+            
+            ITERATE(vector<int>, diter, m_DescrIds) {
+                descrs.erase(*diter);
+            }
+            m_DescrIds.clear();
+            
+            ITERATE(vector<int>, sditer, m_SeqDataIds) {
+                seqdata.erase(*sditer);
+            }
+            m_SeqDataIds.clear();
+        }
+        
+        void RegisterIds(TIds & idmap, int oid);
+        
+    private:
+        void x_AddDelta(int begin, int end);
+        
+        /// SeqID handle
+        CSeq_id_Handle m_SIH;
+        
+        /// Seq entry
+        CRef<CSeq_entry> m_TSE;
+        
+        /// Sequence length in bases
+        int m_Length;
+        
+        /// Descriptors
+        CRef<CSeq_descr> m_Descr;
+        
+        /// Database reference
+        CRef<CSeqDB> m_SeqDB;
+        
+        /// Database reference
+        int m_OID;
+        
+        /// Associated chunk numbers for descriptions
+        vector<int> m_DescrIds;
+        
+        /// Associated chunk numbers for sequence data
+        vector<int> m_SeqDataIds;
+    };
+    
+    bool x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & lock);
+    
+    void x_SplitDescr(TChunks & chunks, CCachedSeqData & seqdata);
+    
+    void x_SplitSeq(TChunks & chunks, CCachedSeqData & seqdata);
+    
+    void x_SplitSeqData(TChunks & chunks, CCachedSeqData & seqdata);
 
-    const string m_dbname;      ///< blast database name
-    EDbType m_dbtype;           ///< is this database protein or nucleotide?
-    CRef<CSeqDB> m_seqdb;
-    typedef map<int, CRef<CBioseq> > TOid2Bioseq;
-    TOid2Bioseq m_cache;
+    void x_AddSplitSeqChunk(TChunks        & chunks,
+                            CCachedSeqData & seqdata,
+                            int              begin,
+                            int              end);
+    
+    typedef map< int, CRef<CCachedSeqData> > TOidCache;
+    
+    const string    m_DBName;      ///< blast database name
+    EDbType         m_DBType;      ///< is this database protein or nucleotide?
+    CRef<CSeqDB>    m_SeqDB;
+    TOidCache       m_OidCache;
+    TSeqChunkCache  m_SeqChunks;
+    TDescrChunks    m_DescrChunks;
+    TIds            m_Ids;         /// ID to OID translation
+    
+    int m_NextChunkId;
 };
 
 END_SCOPE(objects)
@@ -133,6 +335,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.15  2005/07/06 17:21:44  bealer
+ * - Sequence splitting capability for BlastDbDataLoader.
+ *
  * Revision 1.14  2005/06/23 16:21:15  camacho
  * Doxygen fix
  *
