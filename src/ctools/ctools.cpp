@@ -32,8 +32,72 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>  // C++ Toolkit stuff, must go first!
-#include <ctools/ctools.h>
+#include <ctools/ctools.hpp>
 #include <ncbimsg.h>            // C   Toolkit error and message posting
+
+
+BEGIN_NCBI_SCOPE
+
+
+EDiagSev CTOOLS_CToCxxSeverity(int c_severity)
+{
+    EDiagSev cxx_severity;
+    switch (c_severity) {
+    case SEV_NONE:
+        cxx_severity = eDiag_Trace;
+        break;
+    case SEV_INFO:
+        cxx_severity = eDiag_Info;
+        break;
+    case SEV_WARNING:
+        cxx_severity = eDiag_Warning;
+        break;
+    case SEV_ERROR:
+        cxx_severity = eDiag_Error;
+        break;
+    case SEV_REJECT:
+        cxx_severity = eDiag_Critical;
+        break;
+    case SEV_FATAL:
+        /*fallthru*/
+    default:
+        cxx_severity = eDiag_Fatal;
+        break;
+    }
+    return cxx_severity;
+}
+
+
+int CTOOLS_CxxToCSeverity(EDiagSev cxx_severity)
+{
+    int c_severity;
+    switch (cxx_severity) {
+    case eDiag_Trace:
+        c_severity = SEV_NONE;
+        break;
+    case eDiag_Info:
+        c_severity = SEV_INFO;
+        break;
+    case eDiag_Warning:
+        c_severity = SEV_WARNING;
+        break;
+    case eDiag_Error:
+        c_severity = SEV_ERROR;
+        break;
+    case eDiag_Critical:
+        c_severity = SEV_REJECT;
+        break;
+    case eDiag_Fatal:
+        /*fallthru*/
+    default:
+        c_severity = SEV_FATAL;
+        break;
+    }
+    return c_severity;
+}
+
+
+END_NCBI_SCOPE
 
 
 USING_NCBI_SCOPE;
@@ -41,32 +105,8 @@ USING_NCBI_SCOPE;
 
 static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
 {
-    EDiagSev level;
-    switch (err->severity) {
-    case SEV_NONE:
-        level = eDiag_Trace;
-        break;
-    case SEV_INFO:
-        level = eDiag_Info;
-        break;
-    case SEV_WARNING:
-        level = eDiag_Warning;
-        break;
-    case SEV_ERROR:
-        level = eDiag_Error;
-        break;
-    case SEV_REJECT:
-        level = eDiag_Critical;
-        break;
-    case SEV_FATAL:
-        /*fallthru*/
-    default:
-        level = eDiag_Fatal;
-        break;
-    }
-
     try {
-        CNcbiDiag diag(level, eDPF_Default);
+        CNcbiDiag diag(CTOOLS_CToCxxSeverity(err->severity), eDPF_Default);
         if (*err->srcfile)
             diag.SetFile(err->srcfile);
         if (err->srcline)
@@ -100,6 +140,9 @@ void SetupCToolkitErrPost(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/07/06 19:41:38  lavr
+ * Severity conversion routined added
+ *
  * Revision 1.7  2004/05/17 20:59:00  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
