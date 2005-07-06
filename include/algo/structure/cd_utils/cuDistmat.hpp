@@ -65,7 +65,7 @@ enum EDistMethod {
 	eScoreBlastFoot,
 	eScoreBlastFull
 };
-const EDistMethod GLOBAL_DEFAULT_DIST_METHOD = ePercentIdentity;
+const EDistMethod GLOBAL_DEFAULT_DIST_METHOD = eScoreAligned;
 	
 
 //  Subclass this class inorder to provide a specific distance matrix
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/06 14:33:59  lanczyck
+ * change global default tree parameters to NJ + SAR
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
