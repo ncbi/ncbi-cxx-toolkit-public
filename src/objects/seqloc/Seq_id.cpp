@@ -693,6 +693,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'N': case 'R':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
+            case 'S':                               return eAcc_gb_con;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1593,6 +1594,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.110  2005/07/06 13:54:05  ucko
+ * IdentifyAccession: DS has been assigned to GenBank CON records.
+ *
  * Revision 6.109  2005/06/30 20:06:32  ucko
  * ParseFastaIds: try to make sense of IDs without vertical bars,
  * treating them as bare accessions if possible and local IDs otherwise.
