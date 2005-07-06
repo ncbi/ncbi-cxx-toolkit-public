@@ -140,8 +140,11 @@ void SetupCToolkitErrPost(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/07/06 19:44:07  lavr
+ * Fix previous change log entry
+ *
  * Revision 1.8  2005/07/06 19:41:38  lavr
- * Severity conversion routined added
+ * Severity conversion routines added
  *
  * Revision 1.7  2004/05/17 20:59:00  gorelenk
  * Added include of PCH ncbi_pch.hpp
