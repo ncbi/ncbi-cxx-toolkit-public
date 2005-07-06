@@ -599,8 +599,11 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2005/07/06 18:54:54  lavr
+ * +enum ESERV_SpecialType to hold special server type bits (instead of macros)
+ *
  * Revision 6.63  2005/07/06 18:28:20  lavr
- * Eliminate macro calls -- replaced with real funtion calls
+ * Eliminate macro calls -- replaced with real function calls
  *
  * Revision 6.62  2005/05/04 16:14:48  lavr
  * -SERV_GetConfig()

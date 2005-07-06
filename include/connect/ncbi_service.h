@@ -87,10 +87,14 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 #define SERV_LOCALHOST  ((unsigned int)(~0UL))
 #define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
 
-/* Can be combined in types to get even dead services (not off ones!) */
-#define fSERV_Promiscuous 0x80000000
-/* Do reverse DNS translation of the resulting info */
-#define fSERV_ReverseDns  0x40000000
+
+/* Special "type" bit values that may be combined with server types */
+typedef enum {
+    /* Allows to get even dead services (not off ones!) */
+    fSERV_Promiscuous = 0x80000000,
+    /* Do reverse DNS translation of the resulting info */
+    fSERV_ReverseDns  = 0x40000000
+} ESERV_SpecialType;
 
 
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
@@ -203,6 +207,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2005/07/06 18:54:44  lavr
+ * +enum ESERV_SpecialType to hold special server type bits (instead of macros)
+ *
  * Revision 6.38  2005/07/06 18:27:58  lavr
  * Eliminate macro calls
  *
