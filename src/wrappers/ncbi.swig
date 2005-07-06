@@ -123,6 +123,8 @@ namespace ncbi {
 %include cobject.i        // Typemaps, etc., for CObject
 %include ncbi_cobjects.i  // A macro call for each CObject (auto-generated)
 
+#define ASNCALL  // needed on Windows for serialasndef.hpp
+
 // Kind of funky.  We want our Python proxies for
 // ncbi classes to inherit from a
 // certain class that defines some extensions.  It would
@@ -160,20 +162,20 @@ object = ncbi_object
 %include seq.swig
 %include pub.swig
 %include misc.swig
-%include mmdb.swig
-%include algo_ms.swig
+%ifndef WINDOWS %include mmdb.swig
+%ifndef WINDOWS %include algo_ms.swig
 %include algo.swig
 %include data_loaders.swig
 %include seqext.swig
 
-objtools/blast_format/blastfmtutil.hpp
-objtools/blast_format/showalign.hpp
-objtools/blast_format/showdefline.hpp
-objtools/align/alngraphic.hpp
+%ifndef WINDOWS objtools/blast_format/blastfmtutil.hpp
+%ifndef WINDOWS objtools/blast_format/showalign.hpp
+%ifndef WINDOWS objtools/blast_format/showdefline.hpp
+%ifndef WINDOWS objtools/align/alngraphic.hpp
 
 objtools/simple/simple_om.hpp
 
-%include pub_chem.swig
+%ifndef WINDOWS %include pub_chem.swig
 %include web.swig
 %include sqlite.swig
 %include bdb.swig
@@ -183,7 +185,7 @@ objtools/simple/simple_om.hpp
 %include lds.swig
 %include image.swig
 
-//%include gui.swig
+%ifdef GUI %include gui.swig
 
 %%
 
@@ -197,6 +199,9 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/06 21:58:00  jcherry
+ * Use conditional processing
+ *
  * Revision 1.2  2005/06/29 18:14:29  jcherry
  * Moved CConstRef (needs to be early)
  *

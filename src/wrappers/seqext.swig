@@ -77,6 +77,12 @@ public:
 %ignore *::CAlnMap_CAlnChunk::GetRange;
 %ignore *::CAlnMap_CAlnChunk::GetAlnRange;
 
+// These have no export specifiers.
+// We do not want to wrap them anyway (declared in objmgr/impl).
+%ignore ncbi::objects::SSeq_id_ScopeInfo;
+%ignore ncbi::objects::CTSE_ScopeLocker;
+%ignore ncbi::objects::CTSE_ScopeUserLocker;
+
 %%
 
 // Obsolescent
@@ -269,6 +275,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/06 21:58:00  jcherry
+ * Use conditional processing
+ *
  * Revision 1.5  2005/07/06 16:14:55  jcherry
  * Restore wrapping of objmgr/impl/* (without this we lose some
  * important classes declared elsewhere)

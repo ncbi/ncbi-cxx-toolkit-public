@@ -58,22 +58,19 @@ cgi/cgictx.hpp
 cgi/ncbicgi.hpp
 cgi/ncbicgir.hpp
 cgi/ncbires.hpp
+// These rely on posix-specific headers
+%ifndef WINDOWS cgi/caf_plain.hpp
+%ifndef WINDOWS cgi/caf_encoded.hpp
 
 %%
 
-#ifdef NCBI_OS_UNIX
-// These rely on posix-specific headers
-%{
-#include <cgi/caf_encoded.hpp>
-#include <cgi/caf_plain.hpp>
-%}
-%include cgi/caf_encoded.hpp
-%include cgi/caf_plain.hpp
-#endif
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/06 21:58:00  jcherry
+ * Use conditional processing
+ *
  * Revision 1.3  2005/07/01 17:18:21  jcherry
  * Really made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
  *
