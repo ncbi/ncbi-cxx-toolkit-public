@@ -148,7 +148,8 @@ private:
     
     CBlastDbDataLoader(const CBlastDbDataLoader &);
     CBlastDbDataLoader & operator=(const CBlastDbDataLoader &);
-    
+
+public:    
     // Per-Sequence Chunk Data
     class CSeqChunkData {
     public:
@@ -307,6 +308,7 @@ private:
         /// Associated chunk numbers for sequence data
         vector<int> m_SeqDataIds;
     };
+private:
     
     bool x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & lock);
     
@@ -360,6 +362,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.18  2005/07/06 20:16:17  vasilche
+ * Declare internal classes and typedefs in public section to make WorkShop happy.
+ *
  * Revision 1.17  2005/07/06 20:13:37  ucko
  * Include Seq_entry.hpp to keep references to CRef<CSeq_entry> from
  * breaking (which happens under at least GCC 2.95).
