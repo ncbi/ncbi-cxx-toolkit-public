@@ -14,13 +14,13 @@ CommandLine = \
 		cd %SRC_DIR% \
 \	
 		@echo Extracting templates... \
-		@$(PYTHON_PATH)\\python.exe extract_some_templates.py ncbi.swig \
+		@$(PYTHON_PATH)\\python.exe extract_some_templates.py -DWINDOWS ncbi.swig \
 \	
 		@echo Creating Objects... \
 		@$(PYTHON_PATH)\\python.exe make_cobjects.py ncbi.py \
 \	
 		@echo Generating source code... \
-		@$(PYTHON_PATH)\\python.exe ncbi_swig_python.py ncbi.swig  \
+		@$(PYTHON_PATH)\\python.exe ncbi_swig_python.py -DWINDOWS ncbi.swig  \
 
 Outputs =  ncbi_swig_python.out
  
