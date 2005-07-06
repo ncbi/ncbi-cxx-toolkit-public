@@ -86,7 +86,7 @@ private:
     virtual void Exit(void);
 
     void InitObjMgr(void);
-    CBlastOptionsHandle* ProcessCommandLineArgs()
+    CBlastOptionsHandle* ProcessCommandLineArgs();
 
 #ifndef NDEBUG
     FILE* GetOutputFilePtr(void); // needed for debugging only
