@@ -86,7 +86,7 @@ private:
     virtual void Exit(void);
 
     void InitObjMgr(void);
-    CBlastOptionsHandle* ProcessCommandLineArgs() THROWS((CBlastException));
+    CBlastOptionsHandle* ProcessCommandLineArgs()
 
 #ifndef NDEBUG
     FILE* GetOutputFilePtr(void); // needed for debugging only
@@ -217,7 +217,7 @@ void CBlast2seqApplication::InitObjMgr(void)
 
 /** Use commandline arguments to set CBlastOptions. */
 CBlastOptionsHandle*
-CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
+CBlast2seqApplication::ProcessCommandLineArgs()
 {
     CArgs args = GetArgs();
 
@@ -229,9 +229,7 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
             prog = eDiscMegablast;
     }
     CBlastOptionsHandle* retval = CBlastOptionsFactory::Create(prog);
-    if ( !retval ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "");
-    }
+    ASSERT(retval);
     CBlastOptions& opt = retval->SetOptions();
 
     if (args["strand"].AsInteger()) {
