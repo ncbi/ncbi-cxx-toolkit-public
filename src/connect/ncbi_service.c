@@ -81,15 +81,6 @@ char* SERV_ServiceName(const char* service)
 }
 
 
-SERV_ITER SERV_OpenSimple(const char* service)
-{
-    SConnNetInfo* net_info = ConnNetInfo_Create(service);
-    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, net_info);
-    ConnNetInfo_Destroy(net_info);
-    return iter;
-}
-
-
 static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 {
     if (info->type == fSERV_Firewall) {
@@ -206,6 +197,25 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
 }
 
 
+SERV_ITER SERV_OpenSimple(const char* service)
+{
+    SConnNetInfo* net_info = ConnNetInfo_Create(service);
+    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, net_info);
+    ConnNetInfo_Destroy(net_info);
+    return iter;
+}
+
+
+SERV_ITER SERV_Open(const char* service,
+                    TSERV_Type types, unsigned int preferred_host,
+                    const SConnNetInfo* net_info)
+{
+    return s_Open(service, types, preferred_host, 0.0/*preference*/,
+                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*host_info*/,
+                  0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
+}
+
+
 SERV_ITER SERV_OpenEx(const char* service,
                       TSERV_Type types, unsigned int preferred_host,
                       const SConnNetInfo* net_info,
@@ -244,6 +254,16 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type types,
         info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
     return info;
+}
+
+
+SSERV_Info* SERV_GetInfo(const char* service, TSERV_Type types,
+                         unsigned int preferred_host,
+                         const SConnNetInfo* net_info)
+{
+    return s_GetInfo(service, types, preferred_host, 0.0/*preference*/,
+                     net_info, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
+                     0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
 }
 
 
@@ -293,23 +313,34 @@ static void s_SkipSkip(SERV_ITER iter)
 }
 
 
-const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, HOST_INFO* host_info)
+static const SSERV_Info* s_GetNextInfo(SERV_ITER iter,
+                                       HOST_INFO* host_info)
 {
     SSERV_Info* info = 0;
-
-    if (iter && iter->op) {
-        /* First, remove all outdated entries from our skip list */
-        s_SkipSkip(iter);
-        /* Next, obtain a fresh entry from the actual mapper */
-        if (iter->op->GetNextInfo &&
-            (info = (*iter->op->GetNextInfo)(iter, host_info)) != 0 &&
-            !s_AddSkipInfo(iter, info)) {
-            free(info);
-            info = 0;
-        }
-        iter->last = info;
+    assert(iter && iter->op);
+    /* First, remove all outdated entries from our skip list */
+    s_SkipSkip(iter);
+    /* Next, obtain a fresh entry from the actual mapper */
+    if (iter->op->GetNextInfo &&
+        (info = (*iter->op->GetNextInfo)(iter, host_info)) != 0 &&
+        !s_AddSkipInfo(iter, info)) {
+        free(info);
+        info = 0;
     }
+    iter->last = info;
     return info;
+}
+
+
+const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, HOST_INFO* host_info)
+{
+    return iter && iter->op ? s_GetNextInfo(iter, host_info) : 0;
+}
+
+
+const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
+{
+    return iter && iter->op ? s_GetNextInfo(iter, 0) : 0;
 }
 
 
@@ -568,6 +599,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2005/07/06 18:28:20  lavr
+ * Eliminate macro calls -- replaced with real funtion calls
+ *
  * Revision 6.62  2005/05/04 16:14:48  lavr
  * -SERV_GetConfig()
  *
