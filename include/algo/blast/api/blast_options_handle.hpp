@@ -45,7 +45,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 // forward declarations
-class CBlastException;
 class CBlastOptionsHandle;
 
 /** 
@@ -87,9 +86,10 @@ public:
     /// @param program BLAST program [in]
     /// @param locality Local processing (default) or remote processing.
     /// @return requested options handle with default values set
+    /// @throw CBlastException in case of an unhandled program type
     static CBlastOptionsHandle* 
-        Create(EProgram program, EAPILocality locality = CBlastOptions::eLocal)
-        THROWS((CBlastException));
+        Create(EProgram program, 
+               EAPILocality locality = CBlastOptions::eLocal);
 
 private:
     /// Private c-tor
@@ -279,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/07/06 17:47:07  camacho
+ * Doxygen fixes
+ *
  * Revision 1.22  2005/05/16 12:25:54  madden
  * Remove references to [GS]etPrelimHitlistSize
  *

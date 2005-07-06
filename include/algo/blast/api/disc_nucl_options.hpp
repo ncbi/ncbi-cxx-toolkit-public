@@ -107,7 +107,9 @@ public:
       m_Opts->SetFullByteScan(val);
     }
 
-    /// NOTE: Unavailable for discontiguous megablast, throws a CBlastException
+    /// NOTE: Unavailable for discontiguous megablast
+    /// @throws CBlastException if this is called on an object configured for
+    /// discontiguous megablast
     void SetTraditionalBlastnDefaults();
 
 protected:
@@ -143,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/06 17:47:07  camacho
+ * Doxygen fixes
+ *
  * Revision 1.16  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.
