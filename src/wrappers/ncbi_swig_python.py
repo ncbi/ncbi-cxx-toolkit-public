@@ -35,7 +35,7 @@ swig_input_fname = os.path.splitext(ifname)[0] + '.i' # our output (SWIG input)
 outf = open(swig_input_fname, 'w')
 headers = sppp.ProcessFile(ifname, outf, defined_symbols)
 outf.close()
-sys.exit(0)
+
 # Run swig preprocessor
 cline = '''
 %s -E -python -c++ -modern -importall -ignoremissing \
