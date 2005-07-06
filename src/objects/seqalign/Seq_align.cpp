@@ -97,6 +97,14 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqRange(row);
+    case C_Segs::e_Dendiag:
+        {
+            CRange<TSeqPos> rng;
+            ITERATE (C_Segs::TDendiag, dendiag_i, GetSegs().GetDendiag()) {
+                rng.CombineWith((*dendiag_i)->GetSeqRange(row));
+            }
+            return rng;
+        }
     case C_Segs::e_Std:
         {
             CRange<TSeqPos> rng;
@@ -156,6 +164,7 @@ TSeqPos CSeq_align::GetSeqStart(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStart(row);
+    case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
         return GetSeqRange(row).GetFrom();
     default:
@@ -171,6 +180,7 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStop(row);
+    case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
         return GetSeqRange(row).GetTo();
     default:
@@ -627,6 +637,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/07/06 19:07:21  todorov
+* Added support for Dense-diag in the Get{Start,Stop,Range} methods.
+*
 * Revision 1.17  2004/06/14 22:09:03  johnson
 * Added GetSeqStrand method (analogous to GetSeq_id)
 *
