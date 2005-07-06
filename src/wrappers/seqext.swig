@@ -77,45 +77,6 @@ public:
 %ignore *::CAlnMap_CAlnChunk::GetRange;
 %ignore *::CAlnMap_CAlnChunk::GetAlnRange;
 
-
-// We don't %include these because they're "private", but
-// we need #include's for at least some of them.
-%{
-#include <objmgr/impl/annot_collector.hpp>
-#include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/annot_object_index.hpp>
-#include <objmgr/impl/annot_type_index.hpp>
-#include <objmgr/impl/bioseq_base_info.hpp>
-#include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/impl/bioseq_set_info.hpp>
-#include <objmgr/impl/data_source.hpp>
-#include <objmgr/impl/handle_range.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
-#include <objmgr/impl/prefetch_impl.hpp>
-#include <objmgr/impl/priority.hpp>
-#include <objmgr/impl/scope_impl.hpp>
-#include <objmgr/impl/scope_info.hpp>
-#include <objmgr/impl/seq_align_mapper.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
-#include <objmgr/impl/seq_entry_info.hpp>
-#include <objmgr/impl/seq_loc_cvt.hpp>
-#include <objmgr/impl/seq_vector_cvt.hpp>
-#include <objmgr/impl/seq_vector_cvt_gen.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
-#include <objmgr/impl/synonyms.hpp>
-#include <objmgr/impl/tse_chunk_info.hpp>
-#include <objmgr/impl/tse_info.hpp>
-#include <objmgr/impl/tse_info_object.hpp>
-#include <objmgr/impl/tse_loadlock.hpp>
-#include <objmgr/impl/tse_lock.hpp>
-%}
-
-// Hack involving nested class that is %import'ed but not wrapped
-%{
-#define CInitMutexPool_CPoolMutex CInitMutexPool::CPoolMutex
-%}
-
 %%
 
 // Obsolescent
@@ -141,7 +102,36 @@ objtools/alnmgr/alnexception.hpp
 objtools/alnmgr/alnmap.hpp
 objtools/alnmgr/alnmix.hpp
 objtools/alnmgr/alnvec.hpp
-// Omit objmgr/impl/* (not for public use)
+
+objmgr/impl/annot_collector.hpp
+objmgr/impl/annot_object.hpp
+objmgr/impl/annot_object_index.hpp
+objmgr/impl/annot_type_index.hpp
+objmgr/impl/bioseq_base_info.hpp
+objmgr/impl/bioseq_info.hpp
+objmgr/impl/bioseq_set_info.hpp
+objmgr/impl/data_source.hpp
+objmgr/impl/handle_range.hpp
+objmgr/impl/handle_range_map.hpp
+objmgr/impl/mutex_pool.hpp
+objmgr/impl/prefetch_impl.hpp
+objmgr/impl/priority.hpp
+objmgr/impl/scope_impl.hpp
+objmgr/impl/scope_info.hpp
+objmgr/impl/seq_align_mapper.hpp
+objmgr/impl/seq_annot_info.hpp
+objmgr/impl/seq_entry_info.hpp
+objmgr/impl/seq_loc_cvt.hpp
+objmgr/impl/seq_vector_cvt.hpp
+objmgr/impl/seq_vector_cvt_gen.hpp
+objmgr/impl/snp_annot_info.hpp
+objmgr/impl/synonyms.hpp
+objmgr/impl/tse_chunk_info.hpp
+objmgr/impl/tse_info.hpp
+objmgr/impl/tse_info_object.hpp
+objmgr/impl/tse_loadlock.hpp
+objmgr/impl/tse_lock.hpp
+
 objmgr/prefetch.hpp
 objmgr/align_ci.hpp
 objmgr/annot_ci.hpp
@@ -279,6 +269,10 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/06 16:14:55  jcherry
+ * Restore wrapping of objmgr/impl/* (without this we lose some
+ * important classes declared elsewhere)
+ *
  * Revision 1.4  2005/07/01 14:12:58  jcherry
  * Eliminate the need for dummy headers
  *
