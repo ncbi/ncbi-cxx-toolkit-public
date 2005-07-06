@@ -62,6 +62,7 @@ public:
     bool IsEmpty(void) const;
 
     static bool   IsDefine   (const string& param);
+    static bool   HasDefine   (const string& param);
     static string StripDefine(const string& define);
 
 private:
@@ -83,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/06 19:12:39  gouriano
+ * Recognize and process macros inside a larger string
+ *
  * Revision 1.6  2004/07/20 13:39:29  gouriano
  * Added conditional macro definition
  *

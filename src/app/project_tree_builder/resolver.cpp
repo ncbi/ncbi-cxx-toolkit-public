@@ -79,34 +79,48 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
 {
     resolved_def->clear();
 
-    if ( !IsDefine(define) ) {
+    if ( !HasDefine(define) ) {
 	    resolved_def->push_back(define);
 	    return;
     }
 
-    string str_define = StripDefine(define);
+    string data(define);
+    string::size_type start, end;
+    start = data.find("$(");
+    end = data.find(")", start);
+    if (end == string::npos) {
+        LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+	    resolved_def->push_back(define);
+	    return;
+    }
+    string raw_define = data.substr(start,end-start+1);
+    string str_define = StripDefine( raw_define );
 
     CSimpleMakeFileContents::TContents::const_iterator m =
         m_Cache.find(str_define);
 
     if (m != m_Cache.end()) {
 	    *resolved_def = m->second;
-	    return;
-    }
-	    
-    ITERATE(CSimpleMakeFileContents::TContents, p, m_Data.m_Contents) {
-	    if (p->first == str_define) {
-            ITERATE(list<string>, n, p->second) {
-                list<string> new_resolved_def;
-                Resolve(*n, &new_resolved_def);
-                copy(new_resolved_def.begin(),
-                     new_resolved_def.end(),
-                     back_inserter(*resolved_def));
-            }
-	    }
+    } else {
+        ITERATE(CSimpleMakeFileContents::TContents, p, m_Data.m_Contents) {
+	        if (p->first == str_define) {
+                ITERATE(list<string>, n, p->second) {
+                    list<string> new_resolved_def;
+                    Resolve(*n, &new_resolved_def);
+                    copy(new_resolved_def.begin(),
+                        new_resolved_def.end(),
+                        back_inserter(*resolved_def));
+                }
+	        }
+        }
+        m_Cache[str_define] = *resolved_def;
     }
 
-    m_Cache[str_define] = *resolved_def;
+    if ( !IsDefine(define) && resolved_def->size() == 1 ) {
+        data = NStr::Replace(data, raw_define, resolved_def->front());
+        resolved_def->clear();
+        resolved_def->push_back(data);
+    }
 }
 
 
@@ -126,6 +140,11 @@ CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
 bool CSymResolver::IsDefine(const string& param)
 {
     return NStr::StartsWith(param, "$(")  &&  NStr::EndsWith(param, ")");
+}
+
+bool CSymResolver::HasDefine(const string& param)
+{
+    return (param.find("$(") != string::npos && param.find(")") != string::npos );
 }
 
 
@@ -191,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/06 19:12:20  gouriano
+ * Recognize and process macros inside a larger string
+ *
  * Revision 1.10  2005/06/03 16:27:50  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

@@ -132,6 +132,9 @@ struct SMakeProjectT
 
     static bool   IsConfigurableDefine    (const string& define);
     static string StripConfigurableDefine (const string& define);
+
+    static bool   HasConfigurableDefine    (const string& define);
+    static string ExtractConfigurableDefine (const string& define);
 };
 
 
@@ -339,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/07/06 19:12:39  gouriano
+ * Recognize and process macros inside a larger string
+ *
  * Revision 1.11  2005/02/14 18:09:11  vakatov
  * Get rid of trailing comma in TAsnType definition
  *

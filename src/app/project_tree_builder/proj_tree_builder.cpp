@@ -141,7 +141,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                 NON_CONST_ITERATE(list<string>, k, values) {
                     //iterate all values and try to resolve 
                     const string& val = *k;
-                    if( !CSymResolver::IsDefine(val) ) {
+                    if( !CSymResolver::HasDefine(val) ) {
                         new_vals.push_back(val);
                     } else {
                         list<string> resolved_def;
@@ -180,6 +180,12 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                         new_vals.push_back(define);
                                     }
 
+                                } else if (HasConfigurableDefine(define)) {
+                                    string raw = ExtractConfigurableDefine(define);
+                                    string stripped = StripConfigurableDefine(raw);
+                                    string resolved_def_str = 
+                                        GetApp().GetSite().ResolveDefine(stripped);
+                                    new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
                                 } else {
                                     new_vals.push_back(define);
                                 }
@@ -471,6 +477,22 @@ string SMakeProjectT::StripConfigurableDefine(const string& define)
                 define.substr(1, define.length() - 2): "";
 }
 
+bool   SMakeProjectT::HasConfigurableDefine(const string& define)
+{
+    return define.find("@") != string::npos;
+}
+
+string SMakeProjectT::ExtractConfigurableDefine (const string& define)
+{
+    string::size_type start, end;
+    start = define.find("@");
+    end = define.find("@",start+1);
+    if (end == string::npos) {
+        LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+        return define;
+    }
+    return define.substr(start,end-start+1);
+}
 
 //-----------------------------------------------------------------------------
 void SAppProjectT::CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefile,
@@ -1448,6 +1470,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         LOG_POST(Info << "*** Resolving macrodefinitions in Lib projects ***");
         //Lib
         set<string> keys;
+        keys.insert("LIB");
         keys.insert("LIBS");
         keys.insert("SRC");
         keys.insert("DLL_LIB");
@@ -1550,6 +1573,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/07/06 19:12:20  gouriano
+ * Recognize and process macros inside a larger string
+ *
  * Revision 1.29  2005/06/02 19:27:29  gouriano
  * Added macro substitution in DLL_LIB
  *
