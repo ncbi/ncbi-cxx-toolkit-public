@@ -17,6 +17,10 @@
 #    an %include and an inlined #include are put into the *.i.
 # 2. "%include foo.swig".  foo.swig gets this treatment recursively.
 # 3. A blank line, or one starting with "//".  This is ignored.
+# 4. A line beginning with "%ifdef SYMNAME" or "%ifndef SYMNAME".
+#    Depending upon whether SYMNAME is in the list of defined
+#    symbols, either the rest of the line is processed as above
+#    or nothing happens.
 #
 # Author: Josh Cherry
 
@@ -24,33 +28,42 @@ import re
 
 # Recursive function.
 # Returns (part before %%, header_list, part after %%)
-def RecursiveProcess(ifname):
+def RecursiveProcess(ifname, defined_symbols):
     fid = open(ifname)
     s = fid.read()
     fid.close()
 
     l = re.split('^%%|\n%%', s)
 
-    hdrs = l[1].split('\n')
+    lines = l[1].split('\n')
     headers = []
     before = l[0]
     after = l[2]
-    for header in hdrs:
-        if header.startswith('%include '):
-            included_fname = header[len('%include '):]
-            included_res = RecursiveProcess(included_fname)
+    for line in lines:
+        # Conditional inclusion
+        if line.startswith('%ifdef ') or line.startswith('%ifndef '):
+            (cond, symbol, rest) = line.split(None, 2)
+            if (cond == '%ifdef' and symbol in defined_symbols) \
+               or (cond == '%ifndef' and not symbol in defined_symbols):
+                line = rest
+            else:
+                line = ''
+
+        if line.startswith('%include '):
+            included_fname = line[len('%include '):]
+            included_res = RecursiveProcess(included_fname, defined_symbols)
             before  += included_res[0]
             headers += included_res[1]
             after   += included_res[2]
-        elif header != '' and header[0:2] != '//':
-            headers.append(header)
+        elif line != '' and line[0:2] != '//':
+            headers.append(line)
     return (before, headers, after)
 
 
 # outf is a file object for writing, or None
 # for callers only interested in a list of headers
-def ProcessFile(ifname, outf=None):
-    (before, headers, after) = RecursiveProcess(ifname)
+def ProcessFile(ifname, outf=None, defined_symbols=[]):
+    (before, headers, after) = RecursiveProcess(ifname, defined_symbols)
 
     if outf != None:
         outf.write('%{\n')
