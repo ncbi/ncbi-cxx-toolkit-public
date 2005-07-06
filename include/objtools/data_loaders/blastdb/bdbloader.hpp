@@ -40,6 +40,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -359,6 +360,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.17  2005/07/06 20:13:37  ucko
+ * Include Seq_entry.hpp to keep references to CRef<CSeq_entry> from
+ * breaking (which happens under at least GCC 2.95).
+ *
  * Revision 1.16  2005/07/06 19:03:26  bealer
  * - Some doxygen.
  *
