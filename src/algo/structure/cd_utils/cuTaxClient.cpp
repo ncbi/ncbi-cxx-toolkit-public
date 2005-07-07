@@ -117,6 +117,22 @@ int TaxClient::GetTaxIDForGI(int gi) {
     return taxid;
 }
 
+bool TaxClient::GetOrgRef(int taxId, CRef< COrg_ref >& orgRef) {
+    bool result = false;
+
+    if (IsAlive() && orgRef.NotEmpty() && taxId > 0) {
+        bool is_species, is_uncultured;
+        string blast_name;
+        CConstRef< COrg_ref > constOrgRef = m_taxonomyClient->GetOrgRef(taxId, is_species, is_uncultured, blast_name);
+        orgRef->Assign(*constOrgRef);
+        result = true;
+    } else {
+        orgRef.Reset();
+    }
+    return result;
+}
+
+
 //  Look through the bioseq for a COrg object, and use it to get taxid.
 //  Use tax server by default, unless server fails and lookInBioseq is true.
 int TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
@@ -238,6 +254,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/07 17:27:01  lanczyck
+ * add GetOrgRef method
+ *
  * Revision 1.2  2005/06/30 23:57:02  lanczyck
  * correct comment; protect against null m_taxonomyClient object
  *

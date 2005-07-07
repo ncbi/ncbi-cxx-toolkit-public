@@ -62,6 +62,8 @@ public:
     int GetTaxIDForSeqId(const CRef< CSeq_id >& sid);  // was GetTaxIDForSequence
     int GetTaxIDForGI(int gi);
 
+    bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
+
 	short GetRankID(int taxId, string& rankName);
 
     //  Look through the bioseq for a COrg object, and use it to get taxid.
@@ -91,6 +93,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/07 17:29:54  lanczyck
+ * add GetOrgRef method
+ *
  * Revision 1.2  2005/06/30 23:54:29  lanczyck
  * correct comment
  *
