@@ -6,9 +6,6 @@
  *         it just uses the NCBI C++ Toolkit config file <ncbiconf.h>.
  */
 
-#ifndef DBAPI_DRIVER_FTDS8_FREETDS___NCBI_FTDS_CONFIG__H
-#define DBAPI_DRIVER_FTDS8_FREETDS___NCBI_FTDS_CONFIG__H
-
 #define NCBI_FTDS 8
 #define TDS80     1
 #define VERSION   "0.63"
@@ -95,5 +92,3 @@
 typedef int socklen_t;
 #endif
 
-
-#endif /* DBAPI_DRIVER_FTDS8_FREETDS___NCBI_FTDS_CONFIG__H */
