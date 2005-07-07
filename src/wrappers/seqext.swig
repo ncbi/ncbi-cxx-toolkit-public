@@ -77,11 +77,15 @@ public:
 %ignore *::CAlnMap_CAlnChunk::GetRange;
 %ignore *::CAlnMap_CAlnChunk::GetAlnRange;
 
-// These have no export specifiers.
+// These cause trouble due to lack of export specifiers
+// for themselves or CTSE_Scope*Locker.
 // We do not want to wrap them anyway (declared in objmgr/impl).
 %ignore ncbi::objects::SSeq_id_ScopeInfo;
-%ignore ncbi::objects::CTSE_ScopeLocker;
-%ignore ncbi::objects::CTSE_ScopeUserLocker;
+%ignore ncbi::objects::CPriority_I;
+%ignore ncbi::objects::CScope_Impl;
+%ignore ncbi::objects::CDataSource_ScopeInfo;
+%ignore ncbi::objects::CTSE_ScopeInfo;
+%ignore ncbi::objects::SSeqMatch_Scope;
 
 %%
 
@@ -275,6 +279,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/07 20:32:03  jcherry
+ * Adjusted %ignore's for objmgr/impl/*
+ *
  * Revision 1.6  2005/07/06 21:58:00  jcherry
  * Use conditional processing
  *
