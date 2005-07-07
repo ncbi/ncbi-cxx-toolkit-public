@@ -89,11 +89,10 @@ string GetSeqIdStringForRowFromAU(const AlignmentUtility* au, unsigned int row) 
             return "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
         } else if (id.IsGi()) {
             return "GI " + NStr::IntToString(id.GetGi());
-        } else {
-            return "<Non-GI/PDB Sequence Type at row "
-                + NStr::IntToString(row + 1) + '>';
         }
     }
+
+    return "<Non-GI/PDB Sequence Type at row " + NStr::IntToString(row + 1) + '>';
 }
 
 
@@ -799,6 +798,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/07 22:22:06  lanczyck
+ * return a default return value when sequence is neither gi nor pdb
+ *
  * Revision 1.3  2005/06/29 00:35:07  ucko
  * Fix GCC 2.95 build errors.
  *
