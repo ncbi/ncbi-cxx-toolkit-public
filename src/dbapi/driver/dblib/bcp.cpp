@@ -106,6 +106,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
                 Int8 v8 = val.Value();
+                v->precision= 18;
+                v->scale= 0;
                 if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                     return false;
                 r = bcp_bind(m_Cmd, (BYTE*) v, 0,
@@ -124,6 +126,13 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : -1,
+                             (BYTE*) "", 1, SYBVARCHAR, i + 1);
+            }
+            break;
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                             val.IsNULL() ? 0 : -1,
                              (BYTE*) "", 1, SYBCHAR, i + 1);
             }
             break;
@@ -138,6 +147,13 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : (DBINT) val.Size(),
+                             0, 0, SYBBINARY, i + 1);
+            }
+            break;
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                             val.IsNULL() ? 0 : val.DataSize(),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
@@ -237,6 +253,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = (DBNUMERIC*) pb;
+                v->precision= 18;
+                v->scale= 0;
                 Int8 v8 = val.Value();
                 if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                     return false;
@@ -263,6 +281,14 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
@@ -276,8 +302,15 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
-                    bcp_collen(m_Cmd,
-                               val.IsNULL() ? 0 : (DBINT) val.Size(), i + 1)
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : (DBINT)val.Size(), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.DataSize(), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -410,8 +443,17 @@ bool CDBL_BCPInCmd::Cancel()
 bool CDBL_BCPInCmd::CompleteBatch()
 {
     if(m_WasSent) {
+#ifdef FTDS_IN_USE
+        DBINT outrow = bcp_batch(m_Cmd);
+        if(outrow < 0) {
+            m_HasFailed= true;
+            DATABASE_DRIVER_ERROR( "bcp_batch failed", 223020 );
+        }
+        return outrow > 0;
+#else
     CS_INT outrow = bcp_batch(m_Cmd);
     return outrow != -1;
+#endif
     }
     return false;
 }
@@ -420,9 +462,19 @@ bool CDBL_BCPInCmd::CompleteBatch()
 bool CDBL_BCPInCmd::CompleteBCP()
 {
     if(m_WasSent) {
+#ifdef FTDS_IN_USE
+        DBINT outrow = bcp_done(m_Cmd);
+        if(outrow < 0) {
+            m_HasFailed = true;
+            DATABASE_DRIVER_ERROR( "bcp_done failed", 223020 );
+        }
+        m_WasSent= false;
+        return outrow > 0;
+#else
     DBINT outrow = bcp_done(m_Cmd);
     m_WasSent= false;
     return outrow != -1;
+#endif
     }
     return false;
 }
@@ -456,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/07/07 19:12:54  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.11  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

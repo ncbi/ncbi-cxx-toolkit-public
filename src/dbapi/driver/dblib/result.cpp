@@ -39,7 +39,6 @@
 #endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 
@@ -153,7 +152,9 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
     case eDB_DateTime: {
         DBDATETIME* v = (DBDATETIME*) d_ptr;
         if (item_buff) {
-            CHECK_DRIVER_ERROR( b_type != eDB_DateTime, "wrong type of CDB_Object", 230020 );
+            if (b_type != eDB_DateTime) {
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
+            }
             if (v)
                 ((CDB_DateTime*) item_buff)->Assign(v->dtdays, v->dttime);
             else
@@ -342,6 +343,9 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     switch (dbcoltype(cmd, n)) {
     case SYBBINARY:    return (dbcollen(cmd, n) > 255) ? eDB_LongBinary : 
                                                          eDB_VarBinary;
+#if 0
+    case SYBBITN:
+#endif
     case SYBBIT:       return eDB_Bit;
     case SYBCHAR:      return (dbcollen(cmd, n) > 255) ? eDB_LongChar :
                                                          eDB_VarChar;
@@ -350,6 +354,9 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     case SYBINT1:      return eDB_TinyInt;
     case SYBINT2:      return eDB_SmallInt;
     case SYBINT4:      return eDB_Int;
+#ifdef FTDS_IN_USE
+    case SYBINT8:      return eDB_BigInt;
+#endif
     case SYBDECIMAL:
     case SYBNUMERIC:   break;
     case SYBFLT8:      return eDB_Double;
@@ -476,6 +483,27 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
 
     switch (fmt->data_type) {
     case eDB_BigInt: {
+#ifdef FTDS_IN_USE
+        if(dbcoltype(cmd, item_no) == SYBINT8) {
+          Int8* v= (Int8*) d_ptr;
+          if(item_buff) {
+            if(v) {
+              if(b_type == eDB_BigInt) {
+                *((CDB_BigInt*) item_buff)= *v;
+              }
+              else {
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
+              }
+            }
+            else
+                item_buff->AssignNULL();
+            return item_buff;
+          }
+
+          return v ?
+            new CDB_BigInt(*v) : new CDB_BigInt;
+        }
+#endif
         DBNUMERIC* v = (DBNUMERIC*) d_ptr;
         if (item_buff) {
             if (v) {
@@ -581,9 +609,12 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
 
     if (is_null)
         *is_null = false;
-    if ((size_t) d_len - m_Offset < buffer_size)
-        buffer_size = (size_t) d_len - m_Offset;
-    memcpy(buffer, d_ptr + m_Offset, buffer_size);
+    if ((size_t) (d_len - m_Offset) < buffer_size) {
+        buffer_size = d_len - m_Offset;
+    }
+
+    if (buffer)
+        memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
     if (m_Offset >= (size_t) d_len) {
         m_Offset = 0;
@@ -690,10 +721,13 @@ bool CDBL_BlobResult::Fetch()
             DATABASE_DRIVER_ERROR( "error in fetching row", 280003 );
         }
     }
-    else m_CurrItem = 0;
+    else {
+        m_CurrItem = 0;
+    }
     s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff));
-    if(s == NO_MORE_ROWS) return false;
-    if(s < 0) {
+    if (s == NO_MORE_ROWS)
+        return false;
+    if (s < 0) {
         DATABASE_DRIVER_ERROR( "error in fetching row", 280003 );
     }
     m_BytesInBuffer= s;
@@ -794,7 +828,9 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         break;
     }
 
-    if(is_null) *is_null= (m_BytesInBuffer == 0 && s <= 0);
+    if (is_null) {
+        *is_null = (m_BytesInBuffer == 0  &&  s <= 0);
+    }
     return (size_t) s + l;
 }
 
@@ -813,7 +849,9 @@ bool CDBL_BlobResult::SkipItem()
         return false;
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0);
+    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0)
+        continue;
+
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -905,7 +943,7 @@ bool CDBL_ParamResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
-    m_CurrItem= 0;
+        m_CurrItem= 0;
         return true;
     }
     m_CurrItem= -1;
@@ -949,8 +987,10 @@ size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
 
     if (is_null)
         *is_null = false;
-    if ((size_t) d_len - m_Offset < buffer_size)
-        buffer_size = (size_t) d_len - m_Offset;
+    if ((size_t) (d_len - m_Offset) < buffer_size) {
+        buffer_size = d_len - m_Offset;
+    }
+
     memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
     if (m_Offset >= (size_t) d_len) {
@@ -1055,7 +1095,7 @@ bool CDBL_ComputeResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
-    m_CurrItem= 0;
+        m_CurrItem= 0;
         return true;
     }
 
@@ -1143,8 +1183,9 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
         delete[] m_ColFmt;
         m_ColFmt = 0;
     }
-    while (!m_EOR)
+    while (!m_EOR) {
         Fetch();
+    }
 }
 
 
@@ -1257,6 +1298,7 @@ bool CDBL_StatusResult::SkipItem()
 
 CDBL_StatusResult::~CDBL_StatusResult()
 {
+    return;
 }
 
 
@@ -1278,7 +1320,7 @@ CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) :
             }
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1323,9 +1365,20 @@ bool CDBL_CursorResult::Fetch()
 {
     if (!m_Res)
         return false;
-    if (m_Res->Fetch())
-        return true;
 
+    try {
+        if (m_Res->Fetch())
+            return true;
+    }
+    catch (CDB_ClientEx& ex) {
+        if (ex.GetDBErrCode() == 200003) {
+            m_Res = 0;
+        } else {
+            DATABASE_DRIVER_ERROR( "Failed to fetch the results", 222011 );
+        }
+    }
+
+    // try to get next cursor result
     try {
         // finish this command
         delete m_Res;
@@ -1333,7 +1386,7 @@ bool CDBL_CursorResult::Fetch()
             m_Res = m_Cmd->Result();
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1347,7 +1400,7 @@ bool CDBL_CursorResult::Fetch()
             }
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1397,8 +1450,7 @@ bool CDBL_CursorResult::SkipItem()
 
 CDBL_CursorResult::~CDBL_CursorResult()
 {
-    if (m_Res)
-        delete m_Res;
+    delete m_Res;
 }
 
 
@@ -1410,7 +1462,7 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
-#ifdef MS_DBLIB_IN_USE /*Text,Image*/
+#if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE) /*Text,Image*/
     const char* pColName = dbcolname(dblink,col_num);
 
     CHECK_DRIVER_ERROR( 
@@ -1490,7 +1542,7 @@ CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
 }
 
-#ifndef MS_DBLIB_IN_USE
+#if !defined(MS_DBLIB_IN_USE) && !defined(FTDS_IN_USE)
 bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
@@ -1516,6 +1568,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.23  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

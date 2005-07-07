@@ -48,6 +48,9 @@
 #endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+#ifdef WIN32
+#  include <winsock2.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -110,7 +113,7 @@ extern "C" {
 }
 
 
-CDBLibContext* CDBLibContext::m_pDBLibContext = 0;
+static CDBLibContext* g_pContext = NULL;
 
 
 CDBLibContext::CDBLibContext(DBINT version) :
@@ -120,10 +123,16 @@ CDBLibContext::CDBLibContext(DBINT version) :
     CFastMutexGuard mg(xMutex);
 
     CHECK_DRIVER_ERROR( 
-        m_pDBLibContext != 0,
+        g_pContext != NULL,
         "You cannot use more than one dblib context "
         "concurrently", 
         200000 );
+
+    char hostname[256];
+    if(gethostname(hostname, 256) == 0) {
+        hostname[255]= '\0';
+        m_HostName= hostname;
+    }
 
 #ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
@@ -137,7 +146,7 @@ CDBLibContext::CDBLibContext(DBINT version) :
     dberrhandle(s_DBLIB_err_callback);
     dbmsghandle(s_DBLIB_msg_callback);
 
-    m_pDBLibContext = this;
+    g_pContext = this;
     m_Login = NULL;
     m_Login = dblogin();
     _ASSERT(m_Login);
@@ -167,6 +176,15 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 #endif
 }
 
+void CDBLibContext::SetClientCharset(const char* charset) const
+{
+    _ASSERT( m_Login );
+    _ASSERT( charset );
+
+#ifndef MS_DBLIB_IN_USE
+    DBSETLCHARSET( m_Login, const_cast<char*>(charset) );
+#endif
+}
 
 CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
                                        const string&   user_name,
@@ -223,7 +241,10 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
 
     DBPROCESS* dbcon = x_ConnectToServer(srv_name, user_name, passwd, mode);
 
-    CHECK_DRIVER_ERROR( !dbcon, "Cannot connect to server", 200011 );
+    CHECK_DRIVER_ERROR( 
+        !dbcon,
+        "Cannot connect to server", 
+        200011 );
 
 #ifdef MS_DBLIB_IN_USE
     dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
@@ -279,7 +300,7 @@ CDBLibContext::~CDBLibContext()
 #endif
 
     dbexit();
-    m_pDBLibContext = 0;
+    g_pContext = NULL;
 }
 
 
@@ -317,7 +338,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &m_pDBLibContext->m_CntxHandlers;
+        &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     switch (dberr) {
     case SYBETIME:
@@ -332,6 +353,14 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         }
         return INT_TIMEOUT;
     default:
+        if(dberr == 1205) {
+            CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+                              0,
+                              dberrstr);
+            hs->PostMsg(&dl);
+            return INT_CANCEL;
+        }
+
         break;
     }
 
@@ -400,7 +429,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*>(dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &m_pDBLibContext->m_CntxHandlers;
+        &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
         CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
@@ -474,41 +503,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
 //
-#ifndef MS_DBLIB_IN_USE
-
-I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
-{
-    DBINT version= DBVERSION_46;
-
-    if ( attr ) {
-        string vers;
-        map<string,string>::const_iterator citer = attr->find("version");
-        if ( citer != attr->end() ) {
-            vers = citer->second;
-        }
-        if ( vers.find("46") != string::npos )
-            version= DBVERSION_46;
-        else if ( vers.find("100") != string::npos )
-            version= DBVERSION_100;
-
-    }
-
-    CDBLibContext* cntx= new CDBLibContext(version);
-    if ( cntx && attr ) {
-        string page_size;
-        map<string,string>::const_iterator citer = attr->find("packet");
-        if ( citer != attr->end() ) {
-            page_size = citer->second;
-        }
-        if ( !page_size.empty() ) {
-            int s= atoi(page_size.c_str());
-            cntx->DBLIB_SetPacketSize(s);
-        }
-    }
-    return cntx;
-}
-
-#else
+#if defined(MS_DBLIB_IN_USE)
 
 I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
 {
@@ -517,138 +512,133 @@ I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
     return new CDBLibContext(version);
 }
 
-#endif
+#elif defined(FTDS_IN_USE)
 
-
-///////////////////////////////////////////////////////////////////////////////
-#ifndef MS_DBLIB_IN_USE
-
-const string kDBAPI_DBLIB_DriverName("dblib");
-
-class CDbapiDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 {
-public:
-    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
+    DBINT version= DBVERSION_UNKNOWN;
+    map<string,string>::const_iterator citer;
+    string client_charset;
 
-public:
-    CDbapiDblibCF2(void);
-    ~CDbapiDblibCF2(void);
-
-public:
-    virtual TInterface*
-    CreateInstance(
-        const string& driver  = kEmptyStr,
-        CVersionInfo version =
-        NCBI_INTERFACE_VERSION(I_DriverContext),
-        const TPluginManagerParamTree* params = 0) const;
-
-};
-
-CDbapiDblibCF2::CDbapiDblibCF2(void)
-    : TParent( kDBAPI_DBLIB_DriverName, 0 )
-{
-    return ;
-}
-
-CDbapiDblibCF2::~CDbapiDblibCF2(void)
-{
-    return ;
-}
-
-CDbapiDblibCF2::TInterface*
-CDbapiDblibCF2::CreateInstance(
-    const string& driver,
-    CVersionInfo version,
-    const TPluginManagerParamTree* params) const
-{
-    TImplementation* drv = 0;
-    if ( !driver.empty() && driver != m_DriverName ) {
-        return 0;
-    }
-    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
-                        != CVersionInfo::eNonCompatible) {
-        // Mandatory parameters ....
-        DBINT db_version = DBVERSION_46;
-
-        // Optional parameters ...
-        CS_INT page_size = 0;
-
-        if ( params != NULL ) {
-            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TTreeValueType TValue;
-
-            // Get parameters ...
-            TCIter cit = params->SubNodeBegin();
-            TCIter cend = params->SubNodeEnd();
-
-            for (; cit != cend; ++cit) {
-                const TValue& v = (*cit)->GetValue();
-
-                if ( v.id == "version" ) {
-                    int value = NStr::StringToInt( v.value );
-                    switch ( value ) {
-                    case 46 :
-                        db_version = DBVERSION_46;
-                        break;
-                    case 100 :
-                        db_version = DBVERSION_100;
-                    }
-                } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt( v.value );
-                }
+    if ( attr ) {
+        //
+        citer = attr->find("reuse_context");
+        if ( citer != attr->end() ) {
+            if ( citer->second == "true" && g_pContext ) {
+                return g_pContext;
             }
         }
 
-        // Create a driver ...
-        drv = new CDBLibContext( db_version );
+        //
+        string vers;
+        citer = attr->find("version");
+        if ( citer != attr->end() ) {
+            vers = citer->second;
+        }
+        if ( vers.find("42") != string::npos )
+            version= DBVERSION_42;
+        else if ( vers.find("46") != string::npos )
+            version= DBVERSION_46;
+        else if ( vers.find("70") != string::npos )
+            version= DBVERSION_70;
+        else if ( vers.find("100") != string::npos )
+            version= DBVERSION_100;
 
-        // Set parameters ...
-        if ( page_size ) {
-            drv->DBLIB_SetPacketSize( page_size );
+        //
+        citer = attr->find("client_charset");
+        if ( citer != attr->end() ) {
+            client_charset = citer->second;
+        }
+
+    }
+    CDBLibContext* cntx=  new CDBLibContext(version);
+    if ( cntx && attr ) {
+
+        string page_size;
+        citer = attr->find("packet");
+        if ( citer != attr->end() ) {
+            page_size = citer->second;
+        }
+
+        if ( !page_size.empty() ) {
+            int s= atoi(page_size.c_str());
+            cntx->DBLIB_SetPacketSize(s);
+        }
+
+        // Set client's charset ...
+        if ( !client_charset.empty() ) {
+            cntx->SetClientCharset( client_charset.c_str() );
         }
     }
-    return drv;
+    return cntx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_dblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiDblibCF2>::NCBI_EntryPointImpl( info_list, method );
-}
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-DBAPI_RegisterDriver_DBLIB(void)
-{
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
-    DBAPI_RegisterDriver_DBLIB();
-}
-
-void DBAPI_RegisterDriver_DBLIB_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_DBLIB(mgr);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_dblib()
-    {
-        return (void*)DBAPI_RegisterDriver_DBLIB_old;
-    }
-}
 
 #else
 
+I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
+{
+    DBINT version= DBVERSION_46;
+    string client_charset;
+
+    if ( attr ) {
+        map<string,string>::const_iterator citer;
+
+        //
+        citer = attr->find("reuse_context");
+        if ( citer != attr->end() ) {
+            if ( citer->second == "true" && g_pContext ) {
+                return g_pContext;
+            }
+        }
+
+        //
+        string vers;
+        citer = attr->find("version");
+        if ( citer != attr->end() ) {
+            vers = citer->second;
+        }
+
+        if ( vers.find("46") != string::npos )
+            version= DBVERSION_46;
+        else if ( vers.find("100") != string::npos )
+            version= DBVERSION_100;
+
+
+        //
+        citer = attr->find("client_charset");
+        if ( citer != attr->end() ) {
+            client_charset = citer->second;
+        }
+    }
+
+    CDBLibContext* cntx= new CDBLibContext(version);
+    if ( cntx && attr ) {
+
+        string page_size;
+        map<string,string>::const_iterator citer = attr->find("packet");
+        if ( citer != attr->end() ) {
+            page_size = citer->second;
+        }
+
+        if ( !page_size.empty() ) {
+            int s= atoi(page_size.c_str());
+            cntx->DBLIB_SetPacketSize(s);
+        }
+
+        // Set client's charset ...
+        if ( !client_charset.empty() ) {
+            cntx->SetClientCharset( client_charset.c_str() );
+        }
+    }
+    return cntx;
+}
+
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
+#if defined(MS_DBLIB_IN_USE)
+
 const string kDBAPI_MSDBLIB_DriverName("msdblib");
 
 class CDbapiMSDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
@@ -702,7 +692,6 @@ CDbapiMSDblibCF2::CreateInstance(
     return drv;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_msdblib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
@@ -718,7 +707,6 @@ DBAPI_RegisterDriver_MSDBLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
@@ -739,6 +727,319 @@ extern "C" {
 }
 
 
+#elif defined(FTDS_IN_USE)
+
+#define NCBI_FTDS 8
+
+///////////////////////////////////////////////////////////////////////////////
+// Version-specific driver name and DLL entry point
+#if defined(NCBI_FTDS)
+#  if   NCBI_FTDS == 7
+#    define NCBI_FTDS_DRV_NAME    "ftds7"
+#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds7
+#  elif NCBI_FTDS == 8
+#    define NCBI_FTDS_DRV_NAME    "ftds8"
+#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds8
+#  elif
+#    error "This version of FreeTDS is not supported"
+#  endif
+#endif 
+
+const string kDBAPI_FTDS_DriverName("ftds");
+
+class CDbapiFtdsCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
+
+public:
+    CDbapiFtdsCF2(void);
+    ~CDbapiFtdsCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiFtdsCF2::CDbapiFtdsCF2(void)
+    : TParent( kDBAPI_FTDS_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiFtdsCF2::~CDbapiFtdsCF2(void)
+{
+    return ;
+}
+
+CDbapiFtdsCF2::TInterface*
+CDbapiFtdsCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty() && driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        DBINT db_version = DBVERSION_UNKNOWN;
+
+        // Optional parameters ...
+        CS_INT page_size = 0;
+
+        string client_charset;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "reuse_context" ) {
+                    bool reuse_context = (v.value != "false");
+                    if ( reuse_context && g_pContext ) {
+                        return g_pContext;
+                    }
+                } else if ( v.id == "version" ) {
+                    int value = NStr::StringToInt( v.value );
+
+                    switch ( value ) {
+                    case 42 :
+                        db_version = DBVERSION_42;
+                        break;
+                    case 46 :
+                        db_version = DBVERSION_46;
+                        break;
+                    case 70 :
+                        db_version = DBVERSION_70;
+                        break;
+                    case 100 :
+                        db_version = DBVERSION_100;
+                        break;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                } else if ( v.id == "client_charset" ) {
+                    client_charset = v.value;
+                }
+            }
+        }
+
+        // Create a driver ...
+        drv = new CDBLibContext( db_version );
+
+        // Set parameters ...
+        if ( page_size ) {
+            drv->DBLIB_SetPacketSize( page_size );
+        }
+
+        // Set client's charset ...
+        if ( !client_charset.empty() ) {
+            drv->SetClientCharset( client_charset.c_str() );
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+DBAPI_RegisterDriver_FTDS(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// NOTE:  we define a generic ("ftds") driver name here -- in order to
+//        provide a default, but also to prevent from accidental linking
+//        of more than one version of FreeTDS driver to the same application
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
+    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
+    DBAPI_RegisterDriver_FTDS();
+}
+
+void DBAPI_RegisterDriver_FTDS_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_FTDS(mgr);
+}
+extern "C" {
+    void* NCBI_FTDS_ENTRY_POINT()
+    {
+        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
+        return (void*) DBAPI_RegisterDriver_FTDS_old;
+    }
+
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
+    void* DBAPI_E_ftds()
+    {
+        return NCBI_FTDS_ENTRY_POINT();
+    }
+}
+
+#else
+
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_DBLIB_DriverName("dblib");
+
+class CDbapiDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
+
+public:
+    CDbapiDblibCF2(void);
+    ~CDbapiDblibCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiDblibCF2::CDbapiDblibCF2(void)
+    : TParent( kDBAPI_DBLIB_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiDblibCF2::~CDbapiDblibCF2(void)
+{
+    return ;
+}
+
+CDbapiDblibCF2::TInterface*
+CDbapiDblibCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty() && driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        DBINT db_version = DBVERSION_46;
+
+        // Optional parameters ...
+        CS_INT page_size = 0;
+        string client_charset;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "reuse_context" ) {
+                    bool reuse_context = (v.value != "false");
+                    if ( reuse_context && g_pContext ) {
+                        return g_pContext;
+                    }
+                } else if ( v.id == "version" ) {
+                    int value = NStr::StringToInt( v.value );
+                    switch ( value ) {
+                    case 46 :
+                        db_version = DBVERSION_46;
+                        break;
+                    case 100 :
+                        db_version = DBVERSION_100;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                } else if ( v.id == "client_charset" ) {
+                    client_charset = v.value;
+                }
+            }
+        }
+
+        // Create a driver ...
+        drv = new CDBLibContext( db_version );
+
+        // Set parameters ...
+        if ( page_size ) {
+            drv->DBLIB_SetPacketSize( page_size );
+        }
+
+        // Set client's charset ...
+        if ( !client_charset.empty() ) {
+            drv->SetClientCharset( client_charset.c_str() );
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_dblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiDblibCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+DBAPI_RegisterDriver_DBLIB(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
+    DBAPI_RegisterDriver_DBLIB();
+}
+
+void DBAPI_RegisterDriver_DBLIB_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_DBLIB(mgr);
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
+    void* DBAPI_E_dblib()
+    {
+        return (void*)DBAPI_RegisterDriver_DBLIB_old;
+    }
+}
+
 #endif
 
 END_NCBI_SCOPE
@@ -748,6 +1049,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.40  2005/06/07 16:22:51  ssikorsk
  * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
  *

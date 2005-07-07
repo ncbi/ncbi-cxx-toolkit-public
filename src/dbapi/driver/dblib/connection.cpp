@@ -284,7 +284,6 @@ bool CDBL_Connection::Abort()
     return (fdr >= 0 || fdw >= 0);
 }
 
-
 bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
                                  CDB_Stream& stream, bool log_it)
 {
@@ -381,26 +380,26 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
         DATABASE_DRIVER_ERROR( "Cannot send the language command", 210035 );
     }
 
-    CDB_Result* res;
     I_ITDescriptor* descr= 0;
     bool i;
 
     while(lcmd->HasMoreResults()) {
-    res= lcmd->Result();
-    if(res == 0) continue;
-    if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
-        EDB_Type tt= res->ItemDataType(0);
-        if(tt == eDB_Text || tt == eDB_Image) {
-        while(res->Fetch()) {
-            res->ReadItem(&i, 1);
-        
-            descr= new CDBL_ITDescriptor(m_Link, descr_in);
-            // descr= res->GetImageOrTextDescriptor();
-            if(descr) break;
+        auto_ptr<CDB_Result> res( lcmd->Result() );
+        if(res.get() == 0) continue;
+        if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+            EDB_Type tt= res->ItemDataType(0);
+            if(tt == eDB_Text || tt == eDB_Image) {
+                while(res->Fetch()) {
+                    res->ReadItem(&i, 1);
+                
+                    descr= new CDBL_ITDescriptor(m_Link, descr_in);
+                    // descr= res->GetImageOrTextDescriptor();
+                    if(descr) {
+                        break;
+                    }
+                }
+            }
         }
-        }
-    }
-    delete res;
     }
     delete lcmd;
         
@@ -414,6 +413,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     I_Result* res= 0;
 
     while ((x_Status & 0x1) != 0) {
+#ifndef FTDS_IN_USE
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
@@ -445,14 +445,18 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 m_ResProc->ProcessResult(*dbres);
             }
             else {
-                while(dbres->Fetch());
+                while(dbres->Fetch())
+                    continue;
             }
             delete dbres;
             delete res;
         }
+#endif
         switch (dbresults(pLink)) {
         case SUCCEED:
+#ifndef FTDS_IN_USE
             x_Status |= 0x60;
+#endif
             if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
                 if(!m_ResProc) {
                     while(1) {
@@ -466,7 +470,26 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     }
                     continue;
                 }
-                            
+#ifdef FTDS_IN_USE
+                res = new CTDS_RowResult(pLink, &x_Status);
+                if(res) {
+                    dbres= Create_Result(*res);
+                    m_ResProc->ProcessResult(*dbres);
+                    delete dbres;
+                    delete res;
+                }
+                if ((x_Status & 0x10) != 0) { // we do have a compute result
+                    res = new CTDS_ComputeResult(pLink, &x_Status);
+                    if(res) {
+                        dbres= Create_Result(*res);
+                        m_ResProc->ProcessResult(*dbres);
+                        delete dbres;
+                        delete res;
+                    }
+                }
+            } 
+            continue;
+#else
 // This optimization is currently unavailable for MS dblib...
 #ifndef MS_DBLIB_IN_USE /*Text,Image*/
                 if (dbnumcols(pLink) == 1) {
@@ -475,7 +498,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                         res = new CDBL_BlobResult(pLink);
                     }
                 }
-#endif
+#endif // MS_DBLIB_IN_USE
                 if (!res)
                     res = new CDBL_RowResult(pLink, &x_Status);
                 dbres= Create_Result(*res);
@@ -485,6 +508,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             } else {
                 continue;
             }
+#endif // FTDS_IN_USE
         case NO_MORE_RESULTS:
             x_Status = 2;
             break;
@@ -493,6 +517,37 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         }
         break;
     }
+
+#ifdef FTDS_IN_USE
+    // we've done with the row results at this point
+    // let's look at return parameters and ret status
+    if (m_ResProc && x_Status == 2) {
+        x_Status = 4;
+        int n = dbnumrets(pLink);
+        if (n > 0) {
+            res = new CTDS_ParamResult(pLink, n);
+            if(res) {
+                dbres= Create_Result(*res);
+                m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+            }
+        }
+    }
+    
+    if (m_ResProc && x_Status == 4) {
+        if (dbhasretstat(pLink)) {
+            res = new CTDS_StatusResult(pLink);
+            if(res) {
+                dbres= Create_Result(*res);
+                m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+            }
+        }
+    }
+#endif
+
     return SUCCEED;
 }
 
@@ -570,6 +625,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.14  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

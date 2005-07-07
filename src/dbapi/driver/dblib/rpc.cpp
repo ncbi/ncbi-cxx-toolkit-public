@@ -54,6 +54,7 @@ CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* con, DBPROCESS* cmd,
     m_WasSent(false), m_HasFailed(false), m_Recompile(false), m_Res(0),
     m_RowCount(-1), m_Status(0)
 {
+    return;
 }
 
 
@@ -75,8 +76,23 @@ bool CDBL_RPCCmd::SetParam(const string& param_name,
 
 bool CDBL_RPCCmd::Send()
 {
-    if (m_WasSent)
+    if (m_WasSent) {
         Cancel();
+    } else {
+#if 1 && defined(FTDS_IN_USE)
+        if (m_Res) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*m_Res);
+            }
+            else {
+                while(m_Res->Fetch())
+                    continue;
+            }
+//             while (m_Res->Fetch())
+//                 continue;
+        }
+#endif
+    }
 
     m_HasFailed = false;
 
@@ -112,6 +128,18 @@ bool CDBL_RPCCmd::Cancel()
 {
     if (m_WasSent) {
         if (m_Res) {
+#if 1 && defined(FTDS_IN_USE)
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*m_Res);
+            }
+            else {
+                while(m_Res->Fetch())
+                    continue;
+            }
+//             while (m_Res->Fetch())
+//                 continue;
+#endif
+
             delete m_Res;
             m_Res = 0;
         }
@@ -135,6 +163,20 @@ CDB_Result* CDBL_RPCCmd::Result()
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(m_Cmd);
         }
+
+#ifdef FTDS_IN_USE
+        // This Fetch is required by FreeTDS v063
+        if(m_Connect->m_ResProc) {
+            m_Connect->m_ResProc->ProcessResult(*m_Res);
+        }
+        else {
+            while(m_Res->Fetch())
+                continue;
+        }
+//         while (m_Res->Fetch())
+//             continue;
+#endif
+
         delete m_Res;
         m_Res = 0;
     }
@@ -222,17 +264,16 @@ bool CDBL_RPCCmd::HasMoreResults() const
 
 void CDBL_RPCCmd::DumpResults()
 {
-    CDB_Result* dbres;
     while(m_WasSent) {
-        dbres= Result();
-        if(dbres) {
+        auto_ptr<CDB_Result> dbres( Result() );
+        if( dbres.get() ) {
             if(m_Connect->m_ResProc) {
                 m_Connect->m_ResProc->ProcessResult(*dbres);
             }
             else {
-                while(dbres->Fetch());
+                while(dbres->Fetch())
+                    continue;
             }
-            delete dbres;
         }
     }
 }
@@ -414,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.14  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

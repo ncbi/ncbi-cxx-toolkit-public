@@ -63,7 +63,21 @@ bool CDBL_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
         m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
+#ifdef FTDS_IN_USE
+static bool for_update_of(const string& q)
+{
+    if((q.find("update") == string::npos) && 
+       (q.find("UPDATE") == string::npos))
+        return false;
 
+    if((q.find("for update") != string::npos) || 
+       (q.find("FOR UPDATE") != string::npos)) 
+        return true;
+
+    // TODO: add more logic here to find "for update" clause
+    return false;
+}
+#endif
 CDB_Result* CDBL_CursorCmd::Open()
 {
     if (m_IsOpen) { // need to close it first
@@ -74,23 +88,39 @@ CDB_Result* CDBL_CursorCmd::Open()
 
     // declare the cursor
     m_HasFailed = !x_AssignParams();
-    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign params", 222003 );
+    CHECK_DRIVER_ERROR( 
+        m_HasFailed,
+        "cannot assign params", 
+        222003 );
 
 
     m_LCmd = 0;
+
+#ifdef FTDS_IN_USE
+    // Actually, this code id database-dependet, but not driver dependent.
+    string cur_feat;
+    if(for_update_of(m_Query)) {
+        cur_feat= " cursor FORWARD_ONLY SCROLL_LOCKS for ";
+    }
+    else {
+        cur_feat= " cursor FORWARD_ONLY for ";
+    }
+        
+    string buff = "declare " + m_Name + cur_feat + m_Query;
+#else
     string buff = "declare " + m_Name + " cursor for " + m_Query;
+#endif
 
     try {
         m_LCmd = m_Connect->LangCmd(buff);
         m_LCmd->Send();
         m_LCmd->DumpResults();
 #if 0
-        while (m_LCmd->HasMoreResults()) {
-            CDB_Result* r = m_LCmd->Result();
-            if (r) {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
                 while (r->Fetch())
-                    ;
-                delete r;
+                    continue;
             }
         }
 #endif
@@ -113,12 +143,11 @@ CDB_Result* CDBL_CursorCmd::Open()
         m_LCmd->Send();
         m_LCmd->DumpResults();
 #if 0
-        while (m_LCmd->HasMoreResults()) {
-            CDB_Result* r = m_LCmd->Result();
-            if (r) {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
                 while (r->Fetch())
-                    ;
-                delete r;
+                    continue;
             }
         }
 #endif
@@ -146,27 +175,29 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     if (!m_IsOpen)
         return false;
 
-    CDB_LangCmd* cmd = 0;
-
     try {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
+                while (r->Fetch())
+                    continue;
+            }
+        }
+
         string buff = upd_query + " where current of " + m_Name;
-        cmd = m_Connect->LangCmd(buff);
+        const auto_ptr<CDB_LangCmd> cmd(m_Connect->LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
-        while (cmd->HasMoreResults()) {
-            CDB_Result* r = cmd->Result();
-            if (r) {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
                 while (r->Fetch())
-                    ;
-                delete r;
+                    continue;
             }
         }
 #endif
-        delete cmd;
-    } catch (CDB_Exception& ) {
-        if (cmd)
-            delete cmd;
+    } catch (CDB_Exception&) {
         DATABASE_DRIVER_ERROR( "update failed", 222004 );
     }
 
@@ -190,18 +221,42 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                      bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    C_ITDescriptorGuard g(desc);
-    
-    return (desc) ? m_Connect->x_SendData(*desc, data, log_it) : false;
+    C_ITDescriptorGuard d_guard(desc);
+
+    if(desc) {
+#ifdef FTDS_IN_USE
+        // For some starnge reason this code does not work with Sybase dblib ...
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
+                while (r->Fetch())
+                    continue;
+            }
+        }
+#endif        
+        return m_Connect->x_SendData(*desc, data, log_it);
+    }
+    return false;
 }
 
 CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
                                              bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    C_ITDescriptorGuard g(desc);
-    
-    return (desc) ? m_Connect->SendDataCmd(*desc, size, log_it) : 0;
+    C_ITDescriptorGuard d_guard(desc);
+
+    if(desc) {
+        m_LCmd->DumpResults();
+#if 0
+        while(m_LCmd->HasMoreResults()) {
+            CDB_Result* r= m_LCmd->Result();
+            if(r) delete r;
+        }
+#endif
+        
+        return m_Connect->SendDataCmd(*desc, size, log_it);
+    }
+    return 0;
 }                       
 
 bool CDBL_CursorCmd::Delete(const string& table_name)
@@ -212,17 +267,24 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
     CDB_LangCmd* cmd = 0;
 
     try {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
+                while (r->Fetch())
+                    continue;
+            }
+        }
+
         string buff = "delete " + table_name + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
         cmd->DumpResults();
 #if 0
-        while (cmd->HasMoreResults()) {
-            CDB_Result* r = cmd->Result();
-            if (r) {
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            if (r.get()) {
                 while (r->Fetch())
-                    ;
-                delete r;
+                    continue;
             }
         }
 #endif
@@ -264,12 +326,11 @@ bool CDBL_CursorCmd::Close()
             m_LCmd->Send();
             m_LCmd->DumpResults();
 #if 0
-            while (m_LCmd->HasMoreResults()) {
-                CDB_Result* r = m_LCmd->Result();
-                if (r) {
+            while(m_LCmd->HasMoreResults()) {
+                auto_ptr<CDB_Result> r(m_LCmd->Result());
+                if (r.get()) {
                     while (r->Fetch())
-                        ;
-                    delete r;
+                        continue;
                 }
             }
 #endif
@@ -293,12 +354,11 @@ bool CDBL_CursorCmd::Close()
             m_LCmd->Send();
             m_LCmd->DumpResults();
 #if 0
-            while (m_LCmd->HasMoreResults()) {
-                CDB_Result* r = m_LCmd->Result();
-                if (r) {
+            while(m_LCmd->HasMoreResults()) {
+                auto_ptr<CDB_Result> r(m_LCmd->Result());
+                if (r.get()) {
                     while (r->Fetch())
-                        ;
-                    delete r;
+                        continue;
                 }
             }
 #endif
@@ -348,7 +408,7 @@ bool CDBL_CursorCmd::x_AssignParams()
         if (name.empty())
             continue;
         CDB_Object& param = *m_Params.GetParam(n);
-        char val_buffer[1024];
+        char val_buffer[16*1024];
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
@@ -377,13 +437,13 @@ bool CDBL_CursorCmd::x_AssignParams()
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
                 const char* c = val.Value(); // NB: 255 bytes at most
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
             }
@@ -391,13 +451,28 @@ bool CDBL_CursorCmd::x_AssignParams()
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 const char* c = val.Value(); // NB: 255 bytes at most
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
+                val_buffer[i] = '\0';
+                break;
+            }
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                const char* c = val.Value(); // NB: 255 bytes at most
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c && (i < sizeof(val_buffer) - 2)) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+                if(*c != '\0') return false; 
+                val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
             }
@@ -418,6 +493,20 @@ bool CDBL_CursorCmd::x_AssignParams()
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 const unsigned char* c = (const unsigned char*) val.Value();
                 size_t i = 0, size = val.Size();
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.DataSize();
+                if(size*2 > sizeof(val_buffer) - 4) return false;
                 val_buffer[i++] = '0';
                 val_buffer[i++] = 'x';
                 for (size_t j = 0; j < size; j++) {
@@ -473,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.13  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

@@ -100,10 +100,15 @@ bool CDBL_LangCmd::Send()
         DATABASE_DRIVER_FATAL( "dbcmd failed", 220001 );
     }
 
-    if (dbsqlsend(m_Cmd) != SUCCEED) {
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "dbsqlsend failed", 220005 );
-    }
+  
+    // Timeout is already set by CDBLibContext ...
+    // m_Connect->x_SetTimeout();
+
+    m_HasFailed = dbsqlsend(m_Cmd) != SUCCEED;
+    CHECK_DRIVER_ERROR( 
+        m_HasFailed,
+        "dbsqlsend failed", 
+        220005 );
 
     m_WasSent = true;
     m_Status = 0;
@@ -121,6 +126,10 @@ bool CDBL_LangCmd::Cancel()
 {
     if (m_WasSent) {
         if (m_Res) {
+#if 1 && defined(FTDS_IN_USE)
+            while (m_Res->Fetch())
+                continue;
+#endif
             delete m_Res;
             m_Res = 0;
         }
@@ -146,6 +155,14 @@ CDB_Result* CDBL_LangCmd::Result()
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(m_Cmd);
         }
+
+#ifdef FTDS_IN_USE
+        // This Fetch is required by FreeTDS v063
+        // Useful stuff
+        while (m_Res->Fetch())
+            continue;
+#endif
+
         delete m_Res;
         m_Res = 0;
     }
@@ -168,6 +185,7 @@ CDB_Result* CDBL_LangCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
+#ifndef FTDS_IN_USE
         if ((m_Status & 0x20) != 0) { // check for return parameters from exec
             m_Status ^= 0x20;
             int n;
@@ -186,9 +204,12 @@ CDB_Result* CDBL_LangCmd::Result()
                 return Create_Result(*m_Res);
             }
         }
+#endif
         switch (dbresults(m_Cmd)) {
         case SUCCEED:
+#ifndef FTDS_IN_USE
             m_Status |= 0x60;
+#endif
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we could get rows in result
 
 // This optimization is currently unavailable for MS dblib...
@@ -218,6 +239,29 @@ CDB_Result* CDBL_LangCmd::Result()
         break;
     }
 
+#ifdef FTDS_IN_USE
+    // we've done with the row results at this point
+    // let's look at return parameters and ret status
+    if (m_Status == 2) {
+        m_Status = 4;
+        int n = dbnumrets(m_Cmd);
+        if (n > 0) {
+            m_Res = new CTDS_ParamResult(m_Cmd, n);
+            m_RowCount = 1;
+            return Create_Result(*m_Res);
+        }
+    }
+
+    if (m_Status == 4) {
+        m_Status = 6;
+        if (dbhasretstat(m_Cmd)) {
+            m_Res = new CTDS_StatusResult(m_Cmd);
+            m_RowCount = 1;
+            return Create_Result(*m_Res);
+        }
+    }
+#endif
+
     m_WasSent = false;
     return 0;
 }
@@ -230,17 +274,17 @@ bool CDBL_LangCmd::HasMoreResults() const
 
 void CDBL_LangCmd::DumpResults()
 {
-    CDB_Result* dbres;
     while(m_WasSent) {
-        dbres= Result();
-        if(dbres) {
+        auto_ptr<CDB_Result> dbres( Result() );
+
+        if( dbres.get() ) {
             if(m_Connect->m_ResProc) {
                 m_Connect->m_ResProc->ProcessResult(*dbres);
             }
             else {
-                while(dbres->Fetch());
+                while(dbres->Fetch())
+                    continue;
             }
-            delete dbres;
         }
     }
 }
@@ -286,7 +330,7 @@ bool CDBL_LangCmd::x_AssignParams()
         if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
-        char          val_buffer[1024];
+        char          val_buffer[16*1024];
         const char*   type;
         string        cmd;
 
@@ -310,10 +354,23 @@ bool CDBL_LangCmd::x_AssignParams()
         case eDB_VarChar:
             type = "varchar(255)";
             break;
+        case eDB_LongChar: {
+            CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
+            sprintf(val_buffer, "varchar(%d)", lc.Size());
+            type= val_buffer;
+            break;
+        }
         case eDB_Binary:
         case eDB_VarBinary:
             type = "varbinary(255)";
             break;
+        case eDB_LongBinary: {
+            CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
+            if(lb.DataSize()*2 > (sizeof(val_buffer) - 4)) return false;
+            sprintf(val_buffer, "varbinary(%d)", lb.Size());
+            type= val_buffer;
+            break;
+        }
         case eDB_Float:
             type = "real";
             break;
@@ -358,13 +415,13 @@ bool CDBL_LangCmd::x_AssignParams()
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
                 const char* c = val.Value(); // No more than 255 chars
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
                 break;
@@ -373,15 +430,31 @@ bool CDBL_LangCmd::x_AssignParams()
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 const char* c = val.Value();
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
+                break;
+            }
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                const char* c = val.Value();
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c && (i < (sizeof(val_buffer)-3))) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+                val_buffer[i++] = '\'';
+                val_buffer[i++] = '\n';
+                val_buffer[i] = '\0';
+                if(*c != '\0') return false;
                 break;
             }
             case eDB_Binary: {
@@ -402,6 +475,20 @@ bool CDBL_LangCmd::x_AssignParams()
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 const unsigned char* c = (const unsigned char*) val.Value();
                 size_t i = 0, size = val.Size();
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\n';
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.DataSize();
                 val_buffer[i++] = '0';
                 val_buffer[i++] = 'x';
                 for (size_t j = 0; j < size; j++) {
@@ -457,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/07/07 19:12:55  ssikorsk
+ * Improved to support a ftds driver
+ *
  * Revision 1.15  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
