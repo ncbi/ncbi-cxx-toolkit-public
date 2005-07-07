@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Charlie
+ * Author:  Repackaged by Chris Lanczycki from Charlie Liu's algTaxDataSource
  *
  * File Description:
  *
@@ -46,58 +46,62 @@ BEGIN_SCOPE(cd_utils)
 //extern string launchDirectory;
 const string CJL_LaunchDirectory = "E:\\Users\\lanczyck\\CDTree\\Code\\c++\\compilers\\msvc710_prj\\static\\bin\\debug\\";
 
-const string CPrefTaxNodes::PREF_TAXNODE_FILE  = "data/txnodes.asn";
-//CCdd_pref_nodes CPrefTaxNodes::m_prefNodes;
-TaxidToOrgMap CPrefTaxNodes::m_prefNodesMap;
-TaxidToOrgMap CPrefTaxNodes::m_modelOrgsMap;
-TaxidToOrgMap CPrefTaxNodes::m_optionalNodesMap;
-bool CPrefTaxNodes::m_loaded = false;
+const string CPriorityTaxNodes::PREF_TAXNODE_FILE  = "data/txnodes.asn";
    
-CPrefTaxNodes::CPrefTaxNodes(bool reset)
+CPriorityTaxNodes::CPriorityTaxNodes(TaxNodeInputType inputType) : m_inputType(inputType)
 {
 //    string filename = PREF_TAXNODE_FILE;
     string filename = CJL_LaunchDirectory + PREF_TAXNODE_FILE;
-    LoadFromFile(filename, reset);
+    LoadFromFile(filename, false);
 }
 
-CPrefTaxNodes::CPrefTaxNodes(const string& prefTaxnodeFileName, bool reset)
+CPriorityTaxNodes::CPriorityTaxNodes(const string& prefTaxnodeFileName, TaxNodeInputType inputType) : m_inputType(inputType)
 {
-    LoadFromFile(prefTaxnodeFileName, reset);
+    LoadFromFile(prefTaxnodeFileName, false);
 }
 
-CPrefTaxNodes::CPrefTaxNodes(const CCdd_pref_nodes& prefNodes, bool reset)
+CPriorityTaxNodes::CPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, TaxNodeInputType inputType) : m_inputType(inputType)
 {
-    BuildMaps(prefNodes, reset);
+    BuildMap(prefNodes, false);
     m_loaded = true;
 }
 
 
-CPrefTaxNodes::~CPrefTaxNodes() 
+CPriorityTaxNodes::CPriorityTaxNodes(const vector< int >& taxids, TaxClient& taxClient, TaxNodeInputType inputType) : m_inputType(inputType) 
+{
+    CCdd_org_ref_set cddOrgRefSet;
+    unsigned int nAdded = TaxIdsToCddOrgRefSet(taxids, cddOrgRefSet, taxClient);
+
+    Reset();
+    putIntoMap(cddOrgRefSet);
+    m_loaded = (nAdded == taxids.size());
+}
+
+CPriorityTaxNodes::~CPriorityTaxNodes() 
 {
 }
 
-void CPrefTaxNodes::Reset() {
+void CPriorityTaxNodes::Reset(TaxNodeInputType* inputType, bool forceClearAncestorMap) {
 
 	m_err = "";
     m_loaded = false;
+    m_selectedTaxNodesMap.clear();
 
-//    m_prefNodes.Reset();
-    m_prefNodesMap.clear();
-	m_modelOrgsMap.clear();
-	m_optionalNodesMap.clear();
+    if (forceClearAncestorMap || (inputType && !(m_inputType & *inputType))) {
+        m_ancestralTaxNodeMap.clear();
+    }
+
+    if (inputType) {
+        m_inputType = *inputType;
+    }
 }
 
     
-bool CPrefTaxNodes::LoadFromFile(const string& prefTaxnodeFileName, bool doReset)
+bool CPriorityTaxNodes::LoadFromFile(const string& prefTaxnodeFileName, bool doReset)
 {
     bool result = false;
-    if (doReset) {
-        Reset();
-    }
 
-//    if (!m_loaded)
-//	{
-    if (ReadPreferredTaxnodes(prefTaxnodeFileName)) {
+    if (ReadPreferredTaxnodes(prefTaxnodeFileName, doReset)) {
 		m_loaded = true;
         result = true;
     } else 
@@ -105,46 +109,52 @@ bool CPrefTaxNodes::LoadFromFile(const string& prefTaxnodeFileName, bool doReset
 
     return result;
 }
+
+unsigned int CPriorityTaxNodes::Load(const CCdd_pref_nodes& prefNodes, bool reset) 
+{
+    unsigned int nInit = (reset) ? 0 : m_selectedTaxNodesMap.size();
+    BuildMap(prefNodes, reset);
+    return m_selectedTaxNodesMap.size() - nInit;
+}
    
-bool CPrefTaxNodes::ReadPreferredTaxnodes(const string& filename) 
+bool CPriorityTaxNodes::ReadPreferredTaxnodes(const string& filename, bool reset) 
 {
     CCdd_pref_nodes prefNodes;
-//    if (!ReadASNFromFile(filename.c_str(), &m_prefNodes, false, &m_err))
     if (!ReadASNFromFile(filename.c_str(), &prefNodes, false, &m_err))
 	{
 		return false;
 	}
 
-    BuildMaps(prefNodes);
+    BuildMap(prefNodes, reset);
     return true;
 }
 
-void CPrefTaxNodes::BuildMaps(const CCdd_pref_nodes& prefNodes, bool reset) {
+void CPriorityTaxNodes::BuildMap(const CCdd_pref_nodes& prefNodes, bool reset) {
     if (reset)
         Reset();
 
 	//build a taxId/taxName map
-	if (prefNodes.CanGetPreferred_nodes())
-		putIntoMap(prefNodes.GetPreferred_nodes(), m_prefNodesMap);
-	if (prefNodes.CanGetModel_organisms())
-		putIntoMap(prefNodes.GetModel_organisms(), m_modelOrgsMap);
-	if (prefNodes.CanGetOptional_nodes())
-		putIntoMap(prefNodes.GetOptional_nodes(), m_optionalNodesMap);
+	if ((m_inputType & eCddPrefNodes || m_inputType == eRawTaxIds) && prefNodes.CanGetPreferred_nodes())
+		putIntoMap(prefNodes.GetPreferred_nodes());
+	if ((m_inputType & eCddModelOrgs) && prefNodes.CanGetModel_organisms())
+		putIntoMap(prefNodes.GetModel_organisms());
+	if ((m_inputType & eCddOptional) && prefNodes.CanGetOptional_nodes())
+		putIntoMap(prefNodes.GetOptional_nodes());
 }
 
-void CPrefTaxNodes::putIntoMap(const CCdd_org_ref_set& orgRefs, TaxidToOrgMap& taxidOrgMap)
+void CPriorityTaxNodes::putIntoMap(const CCdd_org_ref_set& orgRefs)
 {
 	const list< CRef< CCdd_org_ref > >& orgList = orgRefs.Get();
 	list< CRef< CCdd_org_ref > >::const_iterator cit = orgList.begin();
-	int i = 0;
+	int i = m_selectedTaxNodesMap.size();
 	for (; cit != orgList.end(); cit++)
 	{
-		taxidOrgMap.insert(TaxidToOrgMap::value_type(getTaxId(*cit), OrgNode(i,*cit)));
+		m_selectedTaxNodesMap.insert(TaxidToOrgMap::value_type(getTaxId(*cit), OrgNode(i,*cit)));
 		i++;
 	}
 }
 
-string CPrefTaxNodes::getTaxName(const CRef< CCdd_org_ref >& orgRef)
+string CPriorityTaxNodes::getTaxName(const CRef< CCdd_org_ref >& orgRef)
 {
 	if (orgRef->CanGetReference())
 	{
@@ -155,7 +165,7 @@ string CPrefTaxNodes::getTaxName(const CRef< CCdd_org_ref >& orgRef)
 		return kEmptyStr;
 }
 
-int CPrefTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
+int CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
 {
 	if (orgRef->CanGetReference())
 	{
@@ -166,69 +176,121 @@ int CPrefTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
 		return 0;
 }
 
-bool CPrefTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
+bool CPriorityTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
 {
 	return orgRef->GetActive();
 }
 
-
-TaxidToOrgMap::iterator  CPrefTaxNodes::findAncestor(TaxidToOrgMap& toMap, int taxid, TaxClient& taxClient)
+unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< int >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<int>* notAddedTaxids) 
 {
-	TaxidToOrgMap::iterator tit = toMap.begin();
-	for(; tit != toMap.end(); tit++)
-	{
-		if (taxClient.IsTaxDescendant(tit->first, taxid))
-			return tit;
-	}
-	return toMap.end();
+
+    unsigned int nAdded = 0, nTaxa = taxids.size();
+    CCdd_org_ref_set::Tdata cddOrgRefList = cddOrgRefSet.Set();
+
+    if (notAddedTaxids) notAddedTaxids->clear();
+
+    for (unsigned int i = 0; i < nTaxa; ++i) {
+        CRef< CCdd_org_ref > cddOrgRef( new CCdd_org_ref );
+        CRef< CCdd_org_ref::TReference > orgRef( &cddOrgRef->SetReference());
+        if (cddOrgRef.NotEmpty() && taxClient.GetOrgRef(taxids[i], orgRef)) {
+            cddOrgRef->SetActive(true);
+            cddOrgRefList.push_back(cddOrgRef);
+            ++nAdded;
+        } else if (notAddedTaxids) {
+            notAddedTaxids->push_back(taxids[i]);
+        }
+    }
+    return nAdded;
 }
 
-bool CPrefTaxNodes::IsModelOrg(int taxid) 
+unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< int >& taxids, vector<int>* notAddedIndices) 
 {
-	TaxidToOrgMap::iterator it = m_modelOrgsMap.find(taxid);	
-    return it != m_modelOrgsMap.end();
+    int taxId;
+    unsigned int taxaIndex = 0, nAdded = 0;
+    const CCdd_org_ref_set::Tdata cddOrgRefList = cddOrgRefSet.Get();
+    CCdd_org_ref_set::Tdata::const_iterator cddOrgRefListCit = cddOrgRefList.begin(), citEnd = cddOrgRefList.end();
+
+    if (notAddedIndices) notAddedIndices->clear();
+
+    for (; cddOrgRefListCit != citEnd; ++cddOrgRefListCit ) {
+        taxId = getTaxId(*cddOrgRefListCit);
+        if (taxId > 0) {
+            taxids.push_back(taxId);
+            ++nAdded;
+        } else if (notAddedIndices) {
+            notAddedIndices->push_back(taxaIndex);
+        }
+        ++taxaIndex;
+    }
+    return nAdded;
 }
 
-//  return index into list; -1 if fails
-int CPrefTaxNodes::GetModelOrg(int taxid, TaxClient& taxClient, string& nodeName) 
+TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(int taxid, TaxClient* taxClient)
 {
-	nodeName.erase();
-	TaxidToOrgMap::iterator it = m_modelOrgsMap.find(taxid);	
-    if (it != m_modelOrgsMap.end())
+	TaxidToOrgMap::iterator titEnd = m_selectedTaxNodesMap.end(), tit = titEnd;
+    TAncestorMap::iterator ancestorIt;
+
+    //  First see if this taxid has been seen before; if so, retrieve iterator from toMap...
+    ancestorIt = m_ancestralTaxNodeMap.find(taxid);
+    if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= 0) {
+        tit = m_selectedTaxNodesMap.find(ancestorIt->second);
+    }
+
+    //  If no ancestralMap, or ancestor not in ancestralMap, use taxClient if present.
+    //  Add ancestral taxid to ancestralMap if found.
+    if (taxClient && tit == titEnd) {
+	    for (tit = m_selectedTaxNodesMap.begin(); tit != titEnd; tit++)
+	    {
+            if (taxClient->IsTaxDescendant(tit->first, taxid)) {
+                m_ancestralTaxNodeMap.insert(TAncestorMap::value_type(taxid, tit->first));
+			    break;
+            }
+	    }
+    }
+
+	return tit;
+}
+
+bool CPriorityTaxNodes::IsPriorityTaxnode(int taxid) 
+{
+	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid);	
+    return it != m_selectedTaxNodesMap.end();
+}
+
+//  return -1 if fails
+int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient) 
+{
+	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid), itEnd = m_selectedTaxNodesMap.end();	
+
+    orgNode = NULL;
+    if (it != itEnd)
 	{
-		nodeName.append(getTaxName(it->second.orgRef));
+		orgNode = &(it->second);
 		return it->second.order;
 	}
 	else // fail to find exact match; try to find ancetral match
 	{
-		it = findAncestor(m_modelOrgsMap, taxid, taxClient);
-		if (it != m_modelOrgsMap.end())
+        it = findAncestor(taxid, taxClient);
+		if (it != itEnd)
 		{
-			nodeName.append(getTaxName(it->second.orgRef));
+    		orgNode = &(it->second);
 			return it->second.order;
 		}
 	}
 	return -1;
 }
-    
-bool CPrefTaxNodes::IsPrefTaxnode(int taxid) 
-{
-	TaxidToOrgMap::iterator it = m_prefNodesMap.find(taxid);	
-    return it != m_prefNodesMap.end();
-}
 
 //  return index into list; -1 if fails
-int  CPrefTaxNodes::GetPrefTaxnode(int taxid, TaxClient& taxClient, string& nodeName) 
+int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, string& nodeName, TaxClient* taxClient) 
 {
-	nodeName.erase();
-    TaxidToOrgMap::iterator it = findAncestor(m_prefNodesMap, taxid, taxClient);
-	if (it != m_prefNodesMap.end())
-	{
-		nodeName.append(getTaxName(it->second.orgRef));
-		return it->second.order;
-	}
-	else
-		return -1;
+    const OrgNode* orgNode = NULL;
+
+    nodeName.erase();
+    if (GetPriorityTaxnode(taxid, orgNode, taxClient) != -1 && orgNode) {
+        nodeName.append(getTaxName(orgNode->orgRef));
+        return orgNode->order;
+    }
+	return -1;
 }
 
 END_SCOPE(cd_utils)
@@ -238,6 +300,10 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/07 17:29:21  lanczyck
+ * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
+ * list of tax nodes is no longer static
+ *
  * Revision 1.1  2005/06/30 23:53:16  lanczyck
  * extract preferred tax nodes/model organism code from CDTree's algTaxDataSource and repackage for use here
  *

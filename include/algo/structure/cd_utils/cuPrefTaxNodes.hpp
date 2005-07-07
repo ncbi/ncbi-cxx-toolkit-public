@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Charlie Liu
+ * Author:  Repackaged by Chris Lanczycki from Charlie Liu's algTaxDataSource
  *
  * File Description:
  *
@@ -38,7 +38,6 @@
 #include <objects/cdd/Cdd_pref_nodes.hpp>
 #include <objects/cdd/Cdd_org_ref.hpp>
 #include <algo/structure/cd_utils/cuTaxClient.hpp>
-//#include "cuCppNCBI.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -49,33 +48,41 @@ struct OrgNode
 	OrgNode(int n, const CRef<CCdd_org_ref>& oref) : order(n), orgRef(oref) {}
 
 	const CRef<CCdd_org_ref> orgRef;
-	int order;
+	int order;   //  an index tracking the order of insertion into a particular TaxidOrgMap
 };
 
 typedef map<int, OrgNode > TaxidToOrgMap;
 
-class CPrefTaxNodes 
+class CPriorityTaxNodes 
 {
     static const string PREF_TAXNODE_FILE;
 public: 
+
+    enum TaxNodeInputType {
+        eCddPrefNodes = 1,      //  take only the 'preferred-nodes' field of Cdd-pref-nodes
+        eCddModelOrgs = 2,      //  take only the 'model-organisms' field of Cdd-pref-nodes
+        eCddOptional  = 4,      //  take only the 'optional-nodes' field of Cdd-pref-nodes
+        eCddPrefNodesAll = 7,   //  treat all entries in Cdd-pref-nodes ASN.1 data structure as one set
+        eRawTaxIds = 8,         //  simply a set of taxonomy ids
+    };
 
     //  All data read via the constructors are added to existing data
     //  unless reset = true, in which case existing data is removed first.
 
     //  Will look for a file under 'data/txnodes.asn' relative to directory of executable.
-	CPrefTaxNodes(bool reset = false);
+	CPriorityTaxNodes(TaxNodeInputType inputType);
 
     //  Pass the full path to the file containing preferred tax node info formatted 
     //  in ASN.1 as per the Cdd-pref-nodes spec.
-    CPrefTaxNodes(const string& prefTaxnodeFileName, bool reset = false);
+    CPriorityTaxNodes(const string& prefTaxnodeFileName, TaxNodeInputType inputType);
 
     //  Use input to set up the internal maps.
-    CPrefTaxNodes(const CCdd_pref_nodes& prefNodes, bool reset = false);
+    CPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, TaxNodeInputType inputType);
 
     //  Given a list of taxids for each of the maps, construct the maps.
-//    CPrefTaxNodes(const vector< int >& prefTaxids, const vector< int >& modelOrgTaxids, const vector< int >& optionalTaxids, bool reset = false);
+    CPriorityTaxNodes(const vector< int >& taxids, TaxClient& taxClient, TaxNodeInputType inputType = eRawTaxIds);
 
-    virtual ~CPrefTaxNodes();
+    virtual ~CPriorityTaxNodes();
 
     //  Contents of file is loaded:  it is added to existing data
     //  unless doReset = true, in which case existing data is erased.
@@ -84,45 +91,69 @@ public:
     //  returned if data already exists and doReset = false).
     bool LoadFromFile(const string& prefTaxnodeFileName, bool doReset = false);
 
-    void Reset();
+    //  Loads nodes from 'prefNodes' using same type as m_inputType.
+    unsigned int Load(const CCdd_pref_nodes& prefNodes, bool doReset = false);
+
+    //  If want to also reset the node input type, pass a valid pointer.
+    //  The selected tax node map is always cleared, but by default the ancestor map
+    //  is not cleared unless a) the input type changes and doesn't include the current
+    //  input type, or b) the 'forceClearAncestorMap' is true.
+    void Reset(TaxNodeInputType* inputType = NULL, bool forceClearAncestorMap = false);
 
     bool   IsLoaded() {return m_loaded;}
-	string GetLastError() {return m_err;};
+	string GetLastError() {return m_err;}
+    TaxNodeInputType GetNodeInputType() const {return m_inputType;}
 
-    //  Looks if taxid is *exactly* one of the model orgs or pref taxnodes.
-    bool IsModelOrg(int taxid);
-    bool IsPrefTaxnode(int taxid);
+    //  Looks if taxid is *exactly* one of the priority tax nodes.
+    bool IsPriorityTaxnode(int taxid);
 
-    //  If not an exact match w/ a model org or pref taxnode, then ascend the
-    //  tax tree to see if one of its ancestors is.  Return the first such tax node's info.
-    //  Return value itself is the 'order'.
-    int GetModelOrg(int taxid, TaxClient& taxClient, string& orgName); 
-    int GetPrefTaxnode(int taxid, TaxClient& taxClient, string& nodeName);
+    //  If not an exact match w/ a priority taxnode, and there is
+    //  not an entry for the taxid in the corresponding ancestral map, use taxClient
+    //  to ascend the tax tree to see if one of its ancestors is a match.  Return the 
+    //  first such tax node's info.
+    //  Return value itself is OrgNode.order, or -1 if fails.
+    int GetPriorityTaxnode(int taxid, string& nodeName, TaxClient* taxClient = NULL);
+    int GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient = NULL);
 
     //  Extract fields from a CCdd_org_ref.
 	static string getTaxName(const CRef< CCdd_org_ref >& orgRef);
 	static int getTaxId(const CRef< CCdd_org_ref >& orgRef);
 	static bool isActive(const CRef< CCdd_org_ref >& orgRef);
-//    Use methods from cuSequence instead...
-//    static int GetTaxIDInBioseq(const CBioseq& bioseq);
-//    static bool isEnvironmentalSeq(const CBioseq& bioseq);
-	//string GetTaxNameInBioseq(const CBioseq& bioseq);
+
+    //  Conversion functions between a collection of taxonomy ids and a CCdd_org_ref_set
+    //  object, which ultimately packages COrg_ref objects.  Return value is the number
+    //  of CCdd_org_ref/int added to the 2nd argument; last argument when present identifies
+    //  those inputs which could not be converted.  In both, no sentinel placeholders
+    //  are left in the output data structure for failures --> output index not guaranteed
+    //  to correspond to input index.
+    //  NOTE:  2nd argument is not cleared/reset before adding new data.
+    static unsigned int CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< int >& taxids, vector<int>* notAddedIndices = NULL);
+    static unsigned int TaxIdsToCddOrgRefSet(const vector< int >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<int>* notAddedTaxids = NULL);
 
 protected:
 	string m_err;
 
 private:
-//	static CCdd_pref_nodes m_prefNodes;
-	static TaxidToOrgMap m_prefNodesMap;
-	static TaxidToOrgMap m_modelOrgsMap;
-	static TaxidToOrgMap m_optionalNodesMap;
-	static bool m_loaded;
+    bool m_loaded;
+    TaxNodeInputType m_inputType;
 
-	TaxidToOrgMap::iterator findAncestor(TaxidToOrgMap& toMap, int taxid, TaxClient& taxClient);
+    //  Map not static so that can have several different collections of tax nodes.
+	TaxidToOrgMap m_selectedTaxNodesMap;
 
-	void putIntoMap(const CCdd_org_ref_set& orgRefs, TaxidToOrgMap& taxidOrgMap);
-    void BuildMaps(const CCdd_pref_nodes& prefNodes, bool reset = false);
-    bool ReadPreferredTaxnodes(const string& fileName);
+    //  Use to map a taxid to the taxid found by findAncestor (mapped value may equal key value),
+    //  which should have an entry in m_selectedTaxNodesMap.
+    //  Maintain these to avoid use of TaxClient when possible.
+    typedef map<int, int>      TAncestorMap;
+    TAncestorMap   m_ancestralTaxNodeMap;
+
+    //  Return m_selectedTaxNodesMap.end() if no ancestor found for taxid.  Use taxClient only if
+    //  non-null and the corresponding ancestral map does not contain taxid as a key,
+    //  or if ancestralMap pointer is NULL (to force use of the TaxClient).
+	TaxidToOrgMap::iterator findAncestor(int taxid, TaxClient* taxClient);
+
+	void putIntoMap(const CCdd_org_ref_set& orgRefs);
+    void BuildMap(const CCdd_pref_nodes& prefNodes, bool reset = false);
+    bool ReadPreferredTaxnodes(const string& fileName, bool reset = false);
 };
 
 END_SCOPE(cd_utils)
@@ -133,6 +164,10 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/07 17:30:31  lanczyck
+ * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
+ * list of tax nodes is no longer static
+ *
  * Revision 1.1  2005/06/30 23:53:42  lanczyck
  * extract preferred tax nodes/model organism code from CDTree's algTaxDataSource and repackage for use here
  *
