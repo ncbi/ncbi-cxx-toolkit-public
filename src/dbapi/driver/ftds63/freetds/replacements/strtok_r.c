@@ -7,9 +7,7 @@
 static char software_version[] = "$Id$";
 static void *no_unused_var_warn[] = { software_version, no_unused_var_warn };
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif /* HAVE_CONFIG_H */
+#include <ncbi_tds_config.h> 
 
 #include <stdio.h>
 
