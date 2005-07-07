@@ -37,6 +37,7 @@
 #define SIZEOF___INT64      8
 #define SIZEOF_CHAR         1
 #define SIZEOF_DOUBLE       8
+#define SIZEOF_FLOAT        4
 #define SIZEOF_INT          4
 #define SIZEOF_LONG         4
 #define SIZEOF_LONG_DOUBLE  8
@@ -66,6 +67,33 @@
 typedef __int64 ssize_t;
 #else
 typedef   int   ssize_t;
+#endif
+
+
+/* FreeTDS v0.63 */
+
+#define HAVE_ATOLL                      1
+#define HAVE_ERRNO_H                    1
+#define HAVE_GETHOSTNAME                1
+#define HAVE_INT64                      1
+#define HAVE_MALLOC_H                   1
+#define HAVE_MEMORY_H                   1
+#define HAVE_SQLGETPRIVATEPROFILESTRING 1
+#define HAVE_STDINT_H                   1
+#define HAVE_STDLIB_H                   1
+#define HAVE_STRING_H                   1
+
+#ifdef __GNUC__
+# define HAVE_SYS_TIME_H                1
+#endif
+
+#define ICONV_CONST                     const
+#define NETDB_REENTRANT                 1
+
+#ifdef __GNUC__
+# define TIME_WITH_SYS_TIME             1
+#else
+# define TIME_WITH_SYS_TIME             0
 #endif
 
 
