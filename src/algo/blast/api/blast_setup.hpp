@@ -78,8 +78,8 @@ struct SBlastSequence {
         : data((Uint1*)calloc(buf_len, sizeof(Uint1))), length(buf_len)
     {
         if ( !data ) {
-            NCBI_THROW(CBlastException, eOutOfMemory, "Failed to allocate " +
-                       NStr::IntToString(buf_len) + " bytes");
+            NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+               "Failed to allocate " + NStr::IntToString(buf_len) + " bytes");
         }
     }
 
@@ -154,7 +154,15 @@ public:
     virtual void SetCoding(objects::CSeq_data::E_Choice coding) = 0;
     /// Returns the length of the sequence data (in the case of nucleotides,
     /// only one strand)
-    virtual TSeqPos size() const = 0;
+    /// @throws CBlastException if the size returned is 0
+    TSeqPos size() const {
+        TSeqPos retval = x_Size();
+        if (retval == 0) {
+            NCBI_THROW(CBlastException, eInvalidArgument, 
+                       "Sequence with 0 length");
+        }
+        return retval;
+    }
     /// Allows index-based access to the sequence data
     virtual Uint1 operator[] (TSeqPos pos) const = 0;
 
@@ -179,6 +187,9 @@ public:
     virtual SBlastSequence GetCompressedPlusStrand() = 0;
 
 protected:
+    /// Method which retrieves the size of the sequence vector, as described in
+    /// the size() method above
+    virtual TSeqPos x_Size() const = 0;
     /// Method which does the work for setting the plus strand of the 
     /// nucleotide sequence data
     virtual void x_SetPlusStrand() = 0;
@@ -346,6 +357,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2005/07/07 16:32:11  camacho
+* Revamping of BLAST exception classes and error codes
+*
 * Revision 1.49  2005/07/06 17:47:50  camacho
 * Doxygen and other minor fixes
 *

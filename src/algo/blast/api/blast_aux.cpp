@@ -444,7 +444,7 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
             }
         }
     } else {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eNotSupported, 
                    "Unsupported CSeq_loc type");
     }
 
@@ -479,9 +479,7 @@ FindGeneticCode(int genetic_code)
 
 EProgram ProgramNameToEnum(const std::string& program_name)
 {
-    if (program_name.empty()) {
-        NCBI_THROW(CBlastException, eBadParameter, "Empty program name");
-    }
+    ASSERT( !program_name.empty() );
 
     string lowercase_program_name(program_name);
     lowercase_program_name = NStr::ToLower(lowercase_program_name);
@@ -527,6 +525,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2005/07/07 16:32:11  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.74  2005/06/06 14:56:35  camacho
  * Remove premature optimizations when using BlastSeqLocNew
  *

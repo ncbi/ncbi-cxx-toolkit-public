@@ -210,85 +210,84 @@ void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo,
                                    CMemoryFile **rps_pssm_mmap,
                                    string dbname)
 {
-   BlastRPSInfo *info = new BlastRPSInfo;
-   if (info == NULL) {
-      NCBI_THROW(CBlastException, eOutOfMemory, 
+   auto_ptr<BlastRPSInfo> info(new BlastRPSInfo);
+   if (info.get() == NULL) {
+      NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                  "RPSInfo allocation failed");
    }
 
    vector<string> dbpath;
-   CSeqDB::FindVolumePaths(dbname, CSeqDB::eProtein, dbpath);
-   if (dbpath.empty()) {
-       NCBI_THROW(CBlastException, eBadParameter,
+   auto_ptr<CMemoryFile> lut_mmap;
+   auto_ptr<CMemoryFile> pssm_mmap;
+
+   try {
+       CSeqDB::FindVolumePaths(dbname, CSeqDB::eProtein, dbpath);
+
+       lut_mmap.reset(new CMemoryFile(dbpath[0] + ".loo"));
+
+       info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
+       if (info->lookup_header->magic_number != RPS_MAGIC_NUM) {
+           NCBI_THROW(CBlastException, eRpsInit,
+                       "RPS BLAST lookup file is either corrupt or "
+                       "constructed for an incompatible architecture");
+       }
+
+       pssm_mmap.reset(new CMemoryFile(dbpath[0] + ".rps"));
+
+       info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
+       if (info->profile_header->magic_number != RPS_MAGIC_NUM) {
+           NCBI_THROW(CBlastException, eRpsInit,
+                       "RPS BLAST profile file is either corrupt or "
+                       "constructed for an incompatible architecture");
+       }
+
+       CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
+       if (auxfile.bad() || auxfile.fail()) {
+           NCBI_THROW(CBlastException, eRpsInit, 
+                       "Cannot open RPS BLAST parameters file");
+       }
+
+       string matrix;
+       auxfile >> matrix;
+       info->aux_info.orig_score_matrix = strdup(matrix.c_str());
+
+       auxfile >> info->aux_info.gap_open_penalty;
+       auxfile >> info->aux_info.gap_extend_penalty;
+       auxfile >> info->aux_info.ungapped_k;
+       auxfile >> info->aux_info.ungapped_h;
+       auxfile >> info->aux_info.max_db_seq_length;
+       auxfile >> info->aux_info.db_length;
+       auxfile >> info->aux_info.scale_factor;
+
+       int num_db_seqs = info->profile_header->num_profiles;
+       info->aux_info.karlin_k = new double[num_db_seqs];
+       if (info->aux_info.karlin_k == NULL) {
+          NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                      "RPS setup: karlin_k array allocation failed");
+       }
+       int i;
+
+       for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
+          int seq_size;
+          auxfile >> seq_size;  // not used
+          auxfile >> info->aux_info.karlin_k[i];
+       }
+
+       if (i < num_db_seqs) {
+           NCBI_THROW(CBlastException, eRpsInit,
+                      "RPS setup: Aux file missing Karlin parameters");
+       }
+   } catch (const CSeqDBException& e) {
+       NCBI_RETHROW(e, CBlastException, eRpsInit,
                    "Cannot retrieve path to RPS database");
+   } catch (const CFileException& e) {
+       NCBI_RETHROW(e, CBlastException, eRpsInit,
+                    "Cannot memory map RPS-BLAST database files");
    }
 
-   CMemoryFile *lut_mmap = new CMemoryFile(dbpath[0] + ".loo");
-   if (lut_mmap == NULL) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "Cannot map RPS BLAST lookup file");
-   }
-
-   info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
-   if (info->lookup_header->magic_number != RPS_MAGIC_NUM) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "RPS BLAST lookup file is either corrupt or "
-                   "constructed for an incompatible architecture");
-   }
-
-   CMemoryFile *pssm_mmap = new CMemoryFile(dbpath[0] + ".rps");
-   if (pssm_mmap == NULL) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "Cannot map RPS BLAST profile file");
-   }
-
-   info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
-   if (info->profile_header->magic_number != RPS_MAGIC_NUM) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "RPS BLAST profile file is either corrupt or "
-                   "constructed for an incompatible architecture");
-   }
-
-   CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
-   if (auxfile.bad() || auxfile.fail()) {
-       NCBI_THROW(CBlastException, eBadParameter, 
-                   "Cannot open RPS BLAST parameters file");
-   }
-
-   string matrix;
-   auxfile >> matrix;
-   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
-
-   auxfile >> info->aux_info.gap_open_penalty;
-   auxfile >> info->aux_info.gap_extend_penalty;
-   auxfile >> info->aux_info.ungapped_k;
-   auxfile >> info->aux_info.ungapped_h;
-   auxfile >> info->aux_info.max_db_seq_length;
-   auxfile >> info->aux_info.db_length;
-   auxfile >> info->aux_info.scale_factor;
-
-   int num_db_seqs = info->profile_header->num_profiles;
-   info->aux_info.karlin_k = new double[num_db_seqs];
-   if (info->aux_info.karlin_k == NULL) {
-      NCBI_THROW(CBlastException, eOutOfMemory, 
-                  "RPS setup: karlin_k array allocation failed");
-   }
-   int i;
-
-   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
-      int seq_size;
-      auxfile >> seq_size;  // not used
-      auxfile >> info->aux_info.karlin_k[i];
-   }
-
-   if (i < num_db_seqs) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                  "RPS setup: Aux file missing Karlin parameters");
-   }
-
-   *ppinfo = info;
-   *rps_mmap = lut_mmap;
-   *rps_pssm_mmap = pssm_mmap;
+   *ppinfo = info.release();
+   *rps_mmap = lut_mmap.release();
+   *rps_pssm_mmap = pssm_mmap.release();
 }
 
 void CDbBlast::x_Blast_RPSInfoFree(BlastRPSInfo **ppinfo, 
@@ -475,19 +474,19 @@ void CDbBlast::SetupSearch()
 
     // Check that query vector is not empty
     if (x_GetNumberOfQueries() == 0) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Nothing to search: no queries provided"); 
     }
     
     // Check that sequence source exists
     if (!m_pSeqSrc) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Subject sequence source (database) not provided"); 
     }
     
     // Check if subject sequence source is of correct molecule type
     if (BlastSeqSrcGetIsProt(m_pSeqSrc) != Blast_SubjectIsProtein(x_eProgram)) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
             "Database molecule does not correspond to BLAST program type");
     }
 
@@ -556,7 +555,7 @@ void CDbBlast::SetupSearch()
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
             Blast_MessageFree(blast_message);
-            NCBI_THROW(CBlastException, eInternal, msg);
+            NCBI_THROW(CBlastException, eCoreBlastError, msg);
             // FIXME: shouldn't the error/warning also be saved in m_ivErrors?
         } else if (blast_message) {
             // Non-fatal error message; just save it.
@@ -597,7 +596,7 @@ void CDbBlast::SetupSearch()
                                  eff_len_params, m_ipScoreBlock, 
                                  m_iclsQueryInfo);
         if (status) {
-            NCBI_THROW(CBlastException, eInternal, 
+            NCBI_THROW(CBlastException, eCoreBlastError, 
                        "BLAST_CalcEffLengths failed");
         }        
 
@@ -672,13 +671,13 @@ void CDbBlast::RunPreliminarySearch()
             }
         }
         if (retval) {
-            NCBI_THROW(CBlastException, eOutOfMemory, 
+            NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                        "One of the threads failed in preliminary search");
         }
     } else {
         CRef<CDbBlastPrelim> prelim_blaster(new CDbBlastPrelim(*this));
         if ((retval = prelim_blaster->Run()) != 0)
-            NCBI_THROW(CBlastException, eOutOfMemory, 
+            NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                        "Preliminary search failed");
     }
 }
@@ -722,7 +721,7 @@ void CDbBlast::x_RunTracebackSearch()
              options.GetDbOpts(), options.GetPSIBlastOpts(), 
              m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, pattern_blk,
              &m_ipResults)) != 0)
-        NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
+        NCBI_THROW(CBlastException, eCoreBlastError, "Traceback failed"); 
 
     return;
 }
@@ -771,6 +770,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/07/07 16:32:12  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.78  2005/07/06 17:47:50  camacho
  * Doxygen and other minor fixes
  *

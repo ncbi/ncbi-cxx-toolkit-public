@@ -194,7 +194,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const CBlastOptionsHandle* opts_
     if (error_str) {
         string msg(error_str);
         sfree(error_str);
-        NCBI_THROW(CBlastException, eSeqSrc, msg);
+        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
     }
 
     // Options for repeat filtering search
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.21  2005/07/07 16:32:12  camacho
+ *  Revamping of BLAST exception classes and error codes
+ *
  *  Revision 1.20  2005/06/06 14:56:35  camacho
  *  Remove premature optimizations when using BlastSeqLocNew
  *

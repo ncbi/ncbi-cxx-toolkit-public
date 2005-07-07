@@ -161,8 +161,6 @@ public:
         m_SeqVector.SetCoding(coding);
     }
 
-    TSeqPos size() const { return m_SeqVector.size(); }
-
     Uint1 operator[] (TSeqPos pos) const { return m_SeqVector[pos]; }
 
     SBlastSequence GetCompressedPlusStrand() {
@@ -178,6 +176,9 @@ public:
     }
 
 protected:
+    TSeqPos x_Size() const { 
+        return m_SeqVector.size(); 
+    }
     void x_SetPlusStrand() {
         x_SetStrand(eNa_strand_plus);
     }
@@ -276,12 +277,10 @@ Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv,
         Uint4 index = 0;
         // Iterate over subjects. It is expected that Seq-aligns for all
         // subjects must be present in the list, albeit some of them might
-        // be empty. Check that the list size is the same as the subjects 
+        // be empty. Verify that the list size is the same as the subjects 
         // vector size.
-        if ((*q_itr)->Get().size() != subjectv.size()) {
-            NCBI_THROW(CBlastException, eInternal, 
-                "List of Seq-aligns does not correspond to subjects vector");
-        }
+        ASSERT(((*q_itr)->Get().size() == subjectv.size()));
+
         ITERATE(list< CRef<CSeq_align> >, s_itr, (*q_itr)->Get()) { 
             // If subject is on a minus strand, we'll need to flip subject 
             // strands and remap subject coordinates on all segments.
@@ -551,6 +550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2005/07/07 16:32:11  camacho
+* Revamping of BLAST exception classes and error codes
+*
 * Revision 1.55  2005/06/23 16:18:46  camacho
 * Doxygen fixes
 *

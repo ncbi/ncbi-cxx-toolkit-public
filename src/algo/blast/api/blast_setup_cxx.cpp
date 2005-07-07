@@ -99,7 +99,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 
     // Allocate and initialize the query info structure
     if ( !(query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query info");
     }
 
     unsigned int nframes = GetNumberOfFrames(prog);
@@ -112,7 +112,8 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                                    sizeof(BlastContextInfo));
     
     if ( !query_info->contexts ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                   "Context offsets array");
     }
     
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
@@ -249,7 +250,8 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
     TAutoUint1Ptr buf((Uint1*) calloc(buflen+1, sizeof(Uint1)));
     
     if ( !buf ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                   "Query sequence buffer");
     }
 
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
@@ -392,7 +394,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
         BlastMaskLocDNAToProtein(mask, qinfo);
 
     if (BlastSeqBlkNew(seqblk) < 0) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence block");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query sequence block");
     }
 
     BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);
@@ -439,7 +441,8 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
                                       eNa_strand_plus, sentinels);
 
         if (BlastSeqBlkNew(&subj) < 0) {
-            NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
+            NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                       "Subject sequence block");
         }
 
         /* Set the lower case mask, if it exists */
@@ -460,9 +463,10 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
                                               eNa_strand_plus, eNoSentinels);
                 BlastSeqBlkSetCompressedSequence(subj, 
                                           compressed_seq.data.release());
-            } catch (const CException& e) {
+            } catch (CException& e) {
                 BlastSequenceBlkFree(subj);
-                NCBI_THROW(CBlastException, eInternal, e.what());
+                NCBI_RETHROW_SAME(e, 
+                      "Failed to get compressed nucleotide sequence");
             }
         } else {
             BlastSeqBlkSetSequence(subj, sequence.data.release(), 
@@ -495,12 +499,10 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
 
     sv.SetCoding(CSeq_data::e_Ncbistdaa);
     buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
-    if (buflen == 0) {
-        NCBI_THROW(CBlastException, eInternal, "Error in GetSequenceProtein");
-    }
+    ASSERT(buflen != 0);
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, 
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                    "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
     }
     safe_buf.reset(buf);
@@ -561,13 +563,10 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
     sv.SetCoding(CSeq_data::e_Ncbi4na);
     buflen = CalculateSeqBufferLength(sv.size(), encoding,
                                       strand, sentinel);
-    if (buflen == 0) {
-        NCBI_THROW(CBlastException, eInternal,
-                   "Error in GetSequenceSingleNucleotideStrand");
-    }
+    ASSERT(buflen != 0);
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, 
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                    "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
     }
     safe_buf.reset(buf);
@@ -612,7 +611,8 @@ GetSequenceNucleotideBothStrands(IBlastSeqVector& sv,
                                               eNa_strand_both, sentinel);
     Uint1* buf_ptr = (Uint1*) malloc(sizeof(Uint1) * buflen);
     if ( !buf_ptr ) {
-        throw bad_alloc();
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                   "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
     }
     SBlastSequence retval(buf_ptr, buflen);
 
@@ -658,7 +658,7 @@ GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding,
         return GetSequenceCompressedNucleotide(sv);
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
+        NCBI_THROW(CBlastException, eNotSupported, "Unsupported encoding");
     }
 }
 
@@ -688,7 +688,7 @@ GetQueryEncoding(EBlastProgramType program)
         break;
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter, "Query Encoding");
+        abort();    // should never happen
     }
 
     return retval;
@@ -716,7 +716,7 @@ GetSubjectEncoding(EBlastProgramType program)
         break;
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter, "Subject Encoding");
+        abort();        // should never happen
     }
 
     return retval;
@@ -811,7 +811,7 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length,
         break;
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter, "Unsupported encoding");
+        NCBI_THROW(CBlastException, eNotSupported, "Unsupported encoding");
     }
 
     return retval;
@@ -828,7 +828,7 @@ Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException))
         return 0xF;
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter, "Unsupported encoding");
+        NCBI_THROW(CBlastException, eNotSupported, "Unsupported encoding");
     }
 }
 
@@ -1059,7 +1059,7 @@ GetNumberOfFrames(EBlastProgramType p)
             int debug_value = static_cast<int>(p);
             string msg = "Cannot get number of frames for invalid program ";
             msg += "type: " + NStr::IntToString(debug_value);
-            NCBI_THROW(CBlastException, eBadParameter, msg);
+            NCBI_THROW(CBlastException, eNotSupported, msg);
         }
     }
 
@@ -1075,6 +1075,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2005/07/07 16:32:12  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.92  2005/06/20 18:55:37  ucko
  * Replace non-portable __func__ with the relevant hardcoded strings.
  *

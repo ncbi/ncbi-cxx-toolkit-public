@@ -43,53 +43,59 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Defines Blast specific exceptional error codes
+/// Defines system exceptions occurred while running BLAST
+class CBlastSystemException : public CException
+{
+public:
+    /// Error types that BLAST can generate
+    enum EErrCode {
+        eOutOfMemory
+    };
+
+    /// Translate from the error code value to its string representation
+    virtual const char* GetErrCodeString(void) const {
+        switch ( GetErrCode() ) {
+        case eOutOfMemory:          return "eOutOfMemory";
+        default:                    return CException::GetErrCodeString();
+        }
+    }
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+    NCBI_EXCEPTION_DEFAULT(CBlastSystemException, CException);
+#endif /* SKIP_DOXYGEN_PROCESSING */
+};
+
+/// Defines BLAST error codes (user errors included)
 class CBlastException : public CException
 {
 public:
+    /// Error types that BLAST can generate
     enum EErrCode {
-        eInternal,
-        eBadParameter,
-        eOutOfMemory,
-        eMemoryLimit,
-        eNotSupported,
-        eInvalidCharacter,
-        eSeqSrc,
-        eMaxErrCode
+        eCoreBlastError,    ///< FIXME: need to interpret CORE errors
+        eInvalidOptions,    ///< Invalid algorithm options
+        eInvalidArgument,   ///< Invalid argument to some function/method
+                            /// (could be programmer error - prefer assertions
+                            /// in those cases unless API needs to be 
+                            /// "bullet-proof")
+        eNotSupported,      ///< Feature not supported
+        eInvalidCharacter,  ///< Invalid character in sequence data
+        eSeqSrcInit,        ///< Initialization error in BlastSeqSrc 
+                            /// implementation
+        eRpsInit            ///< Error while initializing RPS-BLAST
     };
+
+    /// Translate from the error code value to its string representation
     virtual const char* GetErrCodeString(void) const {
-        string err_code_string;
-
         switch ( GetErrCode() ) {
-        case eInternal:
-            err_code_string = "Internal error"; 
-            break;
-        case eBadParameter:
-            err_code_string = "One or more parameters passed are invalid"; 
-            break;
-        case eOutOfMemory:
-            err_code_string = "Out of memory"; 
-            break;
-        case eMemoryLimit:
-            err_code_string = "Memory limit exceeded"; 
-            break;
-        case eInvalidCharacter:
-            err_code_string = "Sequence contains one or more invalid ";
-            err_code_string += "characters"; 
-            break;
-        case eSeqSrc:
-            err_code_string = "Initialization error in BlastSeqSrc ";
-            err_code_string += "implementation";
-        case eNotSupported:
-            err_code_string = "This operation is not supported"; 
-            break;
-        default:
-            break;
-
-            
+        case eCoreBlastError:       return "eCoreBlastError";
+        case eInvalidOptions:       return "eInvalidOptions";
+        case eInvalidArgument:      return "eInvalidArgument";
+        case eNotSupported:         return "eNotSupported";
+        case eInvalidCharacter:     return "eInvalidCharacter";
+        case eSeqSrcInit:           return "eSeqSrcInit";
+        case eRpsInit:              return "eRpsInit";
+        default:                    return CException::GetErrCodeString();
         }
-        err_code_string += ": " + string(CException::GetMsg());
-        return err_code_string.c_str();
     }
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -106,6 +112,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/07/07 16:31:56  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.13  2005/06/23 16:18:45  camacho
  * Doxygen fixes
  *

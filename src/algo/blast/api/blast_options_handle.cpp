@@ -148,8 +148,7 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         break;
 
     default:
-        NCBI_THROW(CBlastException, eBadParameter,
-        "CBlastOptionFactory cannot construct options handle: invalid program");
+        abort();    // should never happen
     }
 
     return retval;
@@ -165,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/07 16:32:11  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.13  2005/07/06 17:47:50  camacho
  * Doxygen and other minor fixes
  *

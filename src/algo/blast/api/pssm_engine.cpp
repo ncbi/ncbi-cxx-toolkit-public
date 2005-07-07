@@ -67,27 +67,27 @@ BEGIN_SCOPE(blast)
 /// This function makes sure that none of the required data is returned as NULL
 /// or "empty"
 /// @param pssm_input_msa interface which provides the data [in]
-/// @throw CBlastException in case of validation failure
+/// @throw CPssmEngineException in case of validation failure
 static void
 s_CheckAgainstNullData(IPssmInputData* pssm_input_msa)
 {
     if ( !pssm_input_msa ) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputData is NULL");
     }
 
     if ( !pssm_input_msa->GetOptions() ) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputData returns NULL PSIBlastOptions");
     }
 
     if ( !pssm_input_msa->GetQuery() ) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputData returns NULL query sequence");
     }
 
     if (pssm_input_msa->GetQueryLength() == 0) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "Query length provided by IPssmInputData is 0");
     }
 }
@@ -95,33 +95,33 @@ s_CheckAgainstNullData(IPssmInputData* pssm_input_msa)
 /// This function makes sure that none of the required data is returned as NULL
 /// or "empty"
 /// @param pssm_input_freqratios interface which provides the data [in]
-/// @throw CBlastException in case of validation failure
+/// @throw CPssmEngineException in case of validation failure
 static void
 s_CheckAgainstNullData(IPssmInputFreqRatios* pssm_input_freqratios)
 {
     if ( !pssm_input_freqratios ) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputFreqRatios is NULL");
     }
 
     if ( !pssm_input_freqratios->GetQuery() ) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputFreqRatiosFreqRatios returns NULL query sequence");
     }
 
     const unsigned int kQueryLength = pssm_input_freqratios->GetQueryLength();
     if (kQueryLength == 0) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eInvalidInputData,
            "Query length provided by IPssmInputFreqRatiosFreqRatios is 0");
     }
 
     if (pssm_input_freqratios->GetData().GetCols() != kQueryLength) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eInvalidInputData,
            "Number of columns returned by IPssmInputFreqRatiosFreqRatios does "
            "not match query length");
     }
     if (pssm_input_freqratios->GetData().GetRows() != BLASTAA_SIZE) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CPssmEngineException, eInvalidInputData,
            "Number of rows returned by IPssmInputFreqRatiosFreqRatios differs "
            "from " + NStr::IntToString(BLASTAA_SIZE));
     }
@@ -129,14 +129,14 @@ s_CheckAgainstNullData(IPssmInputFreqRatios* pssm_input_freqratios)
 
 /// Performs validation on data provided before invoking the CORE PSSM
 /// engine. Should be called after invoking Process() on its argument
-/// @throws CBlastException if validation fails
+/// @throws CPssmEngineException if validation fails
 static void
 s_Validate(IPssmInputData* pssm_input_msa)
 {
     ASSERT(pssm_input_msa);
 
     if ( !pssm_input_msa->GetData() ) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CPssmEngineException, eNullInputData,
            "IPssmInputData returns NULL multiple sequence alignment");
     }
 
@@ -145,13 +145,13 @@ s_Validate(IPssmInputData* pssm_input_msa)
         string msg("IPssmInputData returns invalid PSIBlastOptions: ");
         msg += string(errors->message);
         errors = Blast_MessageFree(errors);
-        NCBI_THROW(CBlastException, eBadParameter, msg);
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
     }
 }
 
 /// Performs validation on data provided before invoking the CORE PSSM
 /// engine. Should be called after invoking Process() on its argument
-/// @throws CBlastException if validation fails
+/// @throws CPssmEngineException if validation fails
 static void
 s_Validate(IPssmInputFreqRatios* pssm_input_fr)
 {
@@ -159,8 +159,8 @@ s_Validate(IPssmInputFreqRatios* pssm_input_fr)
 
     ITERATE(CNcbiMatrix<double>, itr, pssm_input_fr->GetData()) {
         if (*itr < 0.0) {
-            NCBI_THROW(CBlastException, eBadParameter, "PSSM frequency "
-                       "ratios cannot have negative values");
+            NCBI_THROW(CPssmEngineException, eInvalidInputData, 
+                       "PSSM frequency ratios cannot have negative values");
         }
     }
 }
@@ -293,7 +293,7 @@ CPssmEngine::x_CreatePssmFromFreqRatios()
              &pssm);
     if (status != PSI_SUCCESS) {
         string msg = x_ErrorCodeToString(status);
-        NCBI_THROW(CBlastException, eInternal, msg);
+        NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
@@ -323,7 +323,7 @@ CPssmEngine::x_CreatePssmFromMsa()
     if (status != PSI_SUCCESS) {
         // FIXME: need to use core level perror-like facility
         string msg = x_ErrorCodeToString(status);
-        NCBI_THROW(CBlastException, eInternal, msg);
+        NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
@@ -343,7 +343,7 @@ CPssmEngine::x_GuardProteinQuery(const unsigned char* query,
     unsigned char* retval = NULL;
     retval = (unsigned char*) malloc(sizeof(unsigned char)*(query_length + 2));
     if ( !retval ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query with sentinels");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query with sentinels");
     }
 
     retval[0] = retval[query_length+1] = GetSentinelByte(eBlastEncodingProtein);
@@ -358,7 +358,7 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
 
     retval = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
     if ( !retval ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "BlastQueryInfo");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastQueryInfo");
     }
 
     retval->num_queries              = 1;
@@ -392,7 +392,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     CBlastScoringOptions opts;
     status = BlastScoringOptionsNew(kProgramType, &opts);
     if (status != 0) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "BlastScoringOptions");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastScoringOptions");
     }
     BlastScoringOptionsSetMatrix(opts, matrix_name);
     opts->matrix_path = strdup(FindMatrixPath(opts->matrix, true).c_str());
@@ -401,7 +401,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     CBLAST_SequenceBlk query_blk;
     status = BlastSeqBlkNew(&query_blk);
     if (status != 0) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "BLAST_SequenceBlk");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "BLAST_SequenceBlk");
     }
     
     // Populate the sequence block structure, transferring ownership of the
@@ -431,9 +431,9 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         if (errors) {
             string msg(errors->message);
             errors = Blast_MessageFree(errors);
-            NCBI_THROW(CBlastException, eInternal, msg);
+            NCBI_THROW(CBlastException, eCoreBlastError, msg);
         } else {
-            NCBI_THROW(CBlastException, eInternal, 
+            NCBI_THROW(CBlastException, eCoreBlastError, 
                        "Unknown error when setting up BlastScoreBlk");
         }
     }
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2005/07/07 16:32:11  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.40  2005/05/23 15:32:47  camacho
  * doxygen fixes
  *

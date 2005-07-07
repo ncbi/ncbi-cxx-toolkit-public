@@ -154,7 +154,7 @@ void CRemoteBlast::x_CheckConfig(void)
             cfg += " <subject>";
         }
         
-        NCBI_THROW(CBlastException, eInternal, cfg);
+        NCBI_THROW(CRemoteBlastException, eIncompleteConfig, cfg);
     }
 }
 
@@ -181,7 +181,7 @@ CRemoteBlast::x_SendRequest(CRef<objects::CBlast4_request_body> body)
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException&) {
-        NCBI_THROW(CBlastException, eInternal,
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
                    "No response from server, cannot complete request.");
     }
     
@@ -608,14 +608,14 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
 {
     if ((! opts_handle) || program.empty() || service.empty()) {
         if (! opts_handle) {
-            NCBI_THROW(CBlastException, eBadParameter,
+            NCBI_THROW(CBlastException, eInvalidArgument,
                        "NULL argument specified: options handle");
         }
         if (program.empty()) {
-            NCBI_THROW(CBlastException, eBadParameter,
+            NCBI_THROW(CBlastException, eInvalidArgument,
                        "NULL argument specified: program");
         }
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "NULL argument specified: service");
     }
     
@@ -636,7 +636,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
         // This happens if you do not specify eRemote for the
         // CBlastOptions subclass constructor.
         
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "CRemoteBlast: No remote API options.");
     }
 }
@@ -644,7 +644,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
 void CRemoteBlast::x_Init(const string & RID)
 {
     if (RID.empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty RID string specified");
     }
     
@@ -716,7 +716,7 @@ void CRemoteBlast::x_SetOneParam(const char * name,
 void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
 {
     if (bioseqs.Empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty reference for query.");
     }
     
@@ -730,7 +730,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
 void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
 {
     if (seqlocs.empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty list for query.");
     }
     
@@ -744,12 +744,12 @@ void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
 void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
 {
     if (pssm.Empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty reference for query pssm.");
     }
     
     if (! pssm->GetPssm().CanGetQuery()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty reference for pssm component pssm.matrix.query.");
     }
     
@@ -758,12 +758,12 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     string new_service("psi");
     
     if (m_QSR->GetProgram() != psi_program) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eNotSupported,
                    "PSI-Blast is only supported for blastp.");
     }
     
     if (m_QSR->GetService().empty()) {
-        NCBI_THROW(CBlastException, eInternal,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Internal error: service is not set.");
     }
     
@@ -772,7 +772,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
         
         // Allowing "psi" allows the matrix to be set, then replaced.
         
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    string("PSI-Blast cannot also be ") +
                    m_QSR->GetService() + ".");
     }
@@ -789,7 +789,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
 void CRemoteBlast::SetDatabase(const char * x)
 {
     if (!x) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "NULL specified for database.");
     }
         
@@ -850,7 +850,7 @@ CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
         break;
         
     default:
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Unknown nucleotide type specified.");
     }
     
@@ -904,7 +904,7 @@ CRemoteBlast::~CRemoteBlast()
 void CRemoteBlast::SetGIList(list<Int4> & gi_list)
 {
     if (gi_list.empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty gi_list specified.");
     }
     x_SetOneParam("GiList", & gi_list);
@@ -913,7 +913,7 @@ void CRemoteBlast::SetGIList(list<Int4> & gi_list)
 void CRemoteBlast::SetDatabase(const string & x)
 {
     if (x.empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty string specified for database.");
     }
     SetDatabase(x.c_str());
@@ -922,7 +922,7 @@ void CRemoteBlast::SetDatabase(const string & x)
 void CRemoteBlast::SetEntrezQuery(const char * x)
 {
     if (!x) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "NULL specified for entrez query.");
     }
     
@@ -934,7 +934,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
 void CRemoteBlast::SetMatrixTable(CRef<objects::CPssmWithParameters> matrix)
 {
     if (matrix.Empty()) {
-        NCBI_THROW(CBlastException, eBadParameter,
+        NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty reference for matrix.");
     }
     x_SetOneParam("MatrixTable", matrix);
@@ -1095,7 +1095,7 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException &) {
-        NCBI_THROW(CBlastException, eInternal,
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
                    "No response from server, cannot complete request.");
     }
     
@@ -1112,6 +1112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/07/07 16:32:12  camacho
+* Revamping of BLAST exception classes and error codes
+*
 * Revision 1.27  2005/07/06 17:47:50  camacho
 * Doxygen and other minor fixes
 *

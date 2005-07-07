@@ -617,7 +617,7 @@ private:
     
     void x_Throwx(const string& msg) const
     {
-        NCBI_THROW(CBlastException, eInternal, msg);
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
     }
 };
 
@@ -1837,7 +1837,7 @@ BlastMessageToException(Blast_Message** blmsg_ptr, const string& default_msg)
     *blmsg_ptr = Blast_MessageFree(blmsg);
 
     if (msg != NcbiEmptyString)
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
 }
 
 bool
@@ -2029,7 +2029,7 @@ CBlastOptions::operator==(const CBlastOptions& rhs) const
     if (m_Local && rhs.m_Local) {
         return (*m_Local == *rhs.m_Local);
     } else {
-        NCBI_THROW(CBlastException, eInternal, 
+        NCBI_THROW(CBlastException, eNotSupported, 
                    "Equality operator unsupported for arguments");
     }
 }
@@ -3325,7 +3325,7 @@ CBlastOptions::GetEffLenOpts() const
 void
 CBlastOptions::x_Throwx(const string& msg) const
 {
-    NCBI_THROW(CBlastException, eInternal, msg);
+    NCBI_THROW(CBlastException, eInvalidOptions, msg);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
@@ -3339,6 +3339,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2005/07/07 16:32:11  camacho
+* Revamping of BLAST exception classes and error codes
+*
 * Revision 1.67  2005/06/02 16:19:01  camacho
 * Remove LookupTableOptions::use_pssm
 *

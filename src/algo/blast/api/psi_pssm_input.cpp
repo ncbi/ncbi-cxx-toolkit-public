@@ -37,7 +37,6 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <iomanip>
-#include <sstream>
 
 // BLAST includes
 #include <algo/blast/api/psi_pssm_input.hpp>
@@ -105,7 +104,7 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        const PSIDiagnosticsRequest* diags)
 {
     if ( !query ) {
-        NCBI_THROW(CBlastException, eBadParameter, "NULL query");
+        NCBI_THROW(CBlastException, eInvalidArgument, "NULL query");
     }
 
     if ( !sset || sset->Get().front()->GetDim() != 2) {
@@ -152,8 +151,8 @@ CPsiBlastInputData::Process()
     // sequence
     m_Msa = PSIMsaNew(&m_MsaDimensions);
     if ( !m_Msa ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Multiple alignment data "
-                   "structure");
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                   "Multiple alignment data structure");
     }
 
     x_CopyQueryToMsa();
@@ -196,10 +195,8 @@ CPsiBlastInputData::x_CountAndSelectQualifyingAlignments()
 unsigned int
 CPsiBlastInputData::GetNumAlignedSequences() const
 {
-    if (m_MsaDimensions.num_seqs == 0) {
-        NCBI_THROW(CBlastException, eInternal, "Number of aligned sequences"
-                   "not calculated yet");
-    }
+    // Process() should result in this field being assigned a non-zero value
+    ASSERT(m_MsaDimensions.num_seqs != 0);
     return m_MsaDimensions.num_seqs;
 }
 
@@ -501,9 +498,9 @@ s_ExtractSequenceFromSeqVector(const CSeqVector& sv)
     try {
         retval = new Uint1[sv.size()];
     } catch (const std::bad_alloc&) {
-        ostringstream os;
-        os << "Could not allocate " << sv.size() << " bytes";
-        NCBI_THROW(CBlastException, eOutOfMemory, os.str());
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
+                   "Could not allocate " + NStr::IntToString(sv.size()) +
+                   "bytes");
     }
     for (TSeqPos i = 0; i < sv.size(); i++) {
         retval[i] = sv[i];
@@ -521,6 +518,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/07/07 16:32:12  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.12  2005/01/26 14:04:05  camacho
  * Fix compiler warning
  *

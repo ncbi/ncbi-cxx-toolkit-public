@@ -53,7 +53,7 @@ CSeqVecSeqInfoSrc::CSeqVecSeqInfoSrc(const TSeqLocVector& seqv)
     : m_SeqVec(seqv)
 {
     if (seqv.size() == 0) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Empty sequence vector for id and length retrieval");
     }
 }
@@ -65,7 +65,7 @@ CSeqVecSeqInfoSrc::~CSeqVecSeqInfoSrc()
 list< CRef<CSeq_id> > CSeqVecSeqInfoSrc::GetId(Uint4 index) const
 {
     if (index >= m_SeqVec.size()) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Index out of range for id retrieval");
     }
 
@@ -83,7 +83,7 @@ list< CRef<CSeq_id> > CSeqVecSeqInfoSrc::GetId(Uint4 index) const
 Uint4 CSeqVecSeqInfoSrc::GetLength(Uint4 index) const
 {
     if (index >= m_SeqVec.size()) {
-        NCBI_THROW(CBlastException, eBadParameter, 
+        NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Index out of range for length retrieval");
     }
 
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/07/07 16:32:12  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.3  2004/11/02 17:58:27  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *

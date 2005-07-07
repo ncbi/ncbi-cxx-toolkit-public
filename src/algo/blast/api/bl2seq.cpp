@@ -229,7 +229,7 @@ CBl2Seq::SetupSearch()
         if (st != 0) {
             string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
             Blast_MessageFree(blmsg);
-            NCBI_THROW(CBlastException, eInternal, msg);
+            NCBI_THROW(CBlastException, eCoreBlastError, msg);
         }
         Blast_MessageFree(blmsg);
 
@@ -249,7 +249,7 @@ CBl2Seq::SetupSearch()
     if (error_str) {
         string msg(error_str);
         sfree(error_str);
-        NCBI_THROW(CBlastException, eSeqSrc, msg);
+        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
     }
 
     // Set the hitlist size to the total number of subject sequences, to 
@@ -364,6 +364,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2005/07/07 16:32:11  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.77  2005/06/23 16:18:45  camacho
  * Doxygen fixes
  *

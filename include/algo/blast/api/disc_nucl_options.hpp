@@ -89,7 +89,7 @@ public:
         if (ws == 11 || ws == 12) {
             m_Opts->SetWordSize(ws); 
         } else {
-            NCBI_THROW(CBlastException, eBadParameter, 
+            NCBI_THROW(CBlastException, eInvalidOptions, 
                        "Word size must be 11 or 12 only");
         }
     }
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/07/07 16:31:56  camacho
+ * Revamping of BLAST exception classes and error codes
+ *
  * Revision 1.17  2005/07/06 17:47:07  camacho
  * Doxygen fixes
  *
