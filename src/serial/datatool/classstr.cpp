@@ -84,6 +84,12 @@ bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
     return false;
 }
 
+bool CClassTypeStrings::x_IsAnyContentType(TMembers::const_iterator i) const
+{
+    return i->haveFlag ?
+        (dynamic_cast<CAnyContentTypeStrings*>(i->type.get()) != 0) : false;
+}
+
 
 void CClassTypeStrings::AddMember(const string& name,
                                   const AutoPtr<CTypeStrings>& type,
@@ -1227,6 +1233,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if (i->noTag) {
                 methods << "->SetNotag()";
             }
+            if (x_IsAnyContentType(i)) {
+                methods << "->SetAnyContent()";
+            }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";
             }
@@ -1474,6 +1483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2005/07/07 18:20:55  gouriano
+* Corrected generation of AnyContent object code
+*
 * Revision 1.69  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

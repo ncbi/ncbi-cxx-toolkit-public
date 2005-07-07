@@ -151,6 +151,7 @@ protected:
                                    const string& classPrefix) const;
     bool x_IsNullType(TMembers::const_iterator i) const;
     bool x_IsNullWithAttlist(TMembers::const_iterator i) const;
+    bool x_IsAnyContentType(TMembers::const_iterator i) const;
 
 private:
     bool m_IsObject;
@@ -197,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/07/07 18:20:32  gouriano
+* Corrected generation of AnyContent object code
+*
 * Revision 1.24  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
