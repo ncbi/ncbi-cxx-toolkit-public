@@ -130,6 +130,8 @@ public:
                                      const string& procname,
                                      int           line);
 
+    void SetClientCharset(const char* charset) const;
+
 private:
     static CMSDBLibContext* m_pDBLibContext;
     string                m_AppName;
@@ -684,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/07/07 15:43:20  ssikorsk
+ * Integrated interfaces with FreeTDS v0.63
+ *
  * Revision 1.9  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

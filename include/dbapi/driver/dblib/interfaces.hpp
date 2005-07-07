@@ -37,6 +37,24 @@
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
+#ifdef FTDS_IN_USE
+#    include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+#    include <cspublic.h>
+
+#    define CDBLibContext      CTDSContext
+#    define CDBL_Connection    CTDS_Connection
+#    define CDBL_LangCmd       CTDS_LangCmd
+#    define CDBL_RPCCmd        CTDS_RPCCmd
+#    define CDBL_CursorCmd     CTDS_CursorCmd
+#    define CDBL_BCPInCmd      CTDS_BCPInCmd
+#    define CDBL_SendDataCmd   CTDS_SendDataCmd
+#    define CDBL_RowResult     CTDS_RowResult
+#    define CDBL_ParamResult   CTDS_ParamResult
+#    define CDBL_ComputeResult CTDS_ComputeResult
+#    define CDBL_StatusResult  CTDS_StatusResult
+#    define CDBL_CursorResult  CTDS_CursorResult
+#    define CDBL_BlobResult    CTDS_BlobResult
+#endif
 
 #include <sybfront.h>
 #include <sybdb.h>
@@ -106,6 +124,8 @@ public:
     virtual void DBLIB_SetHostName(const string& host_name);
     virtual void DBLIB_SetPacketSize(int p_size);
     virtual bool DBLIB_SetMaxNofConns(int n);
+
+public:
     static  int  DBLIB_dberr_handler(DBPROCESS*    dblink,   int     severity,
                                      int           dberr,    int     oserr,
                                      const string& dberrstr,
@@ -117,12 +137,16 @@ public:
                                      const string& procname,
                                      int           line);
 
+    void SetClientCharset(const char* charset) const;
+    CDBLibContext* GetContext(void) const;
+
 private:
-    static CDBLibContext* m_pDBLibContext;
     string                m_AppName;
     string                m_HostName;
     short                 m_PacketSize;
     LOGINREC*             m_Login;
+    int                   m_TDSVersion;
+
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -326,9 +350,9 @@ protected:
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-				 bool log_it = true);
+                 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-					 bool log_it = true);
+                     bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
     virtual bool Close();
@@ -636,7 +660,9 @@ public:
     virtual ~CDBL_ITDescriptor();
 
 private:
+#ifndef FTDS_IN_USE
     bool x_MakeObjName(DBCOLINFO* col_info);
+#endif
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
@@ -652,6 +678,23 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
+#if defined(FTDS_IN_USE)
+
+extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_FTDS_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C 
+
+#else
+
 extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_DBLIB_DriverName;
 
 extern "C"
@@ -665,6 +708,8 @@ NCBI_EntryPoint_xdbapi_dblib(
 
 } // extern C
 
+#endif
+
 END_NCBI_SCOPE
 
 
@@ -675,6 +720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/07/07 15:43:20  ssikorsk
+ * Integrated interfaces with FreeTDS v0.63
+ *
  * Revision 1.20  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
