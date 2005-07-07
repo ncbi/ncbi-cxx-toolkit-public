@@ -68,7 +68,7 @@ database search programs\", Nucleic Acids Res. 25:3389-3402.",
 Thomas L. Madden, David J. Lipman, Eugene V. Koonin, and Stephen F. \
 Altschul (1998), \"Protein sequence similarity searches using patterns \
 as seeds\", Nucleic Acids Res. 26:3986-3990.",
-    // eMegablast
+    // eMegaBlast
     "Zheng Zhang, Scott Schwartz, Lukas Wagner, and Webb Miller (2000), \
 \"A greedy algorithm for aligning DNA sequences\", \
 J Comput Biol 2000; 7(1-2):203-14.", 
@@ -93,7 +93,7 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9254694&dopt=Citation",
     // ePhiBlast
     "http://www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9705509&dopt=Citation",
-    // eMegablast
+    // eMegaBlast
     "http://www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=10890397&dopt=Citation",
     // eCompBasedStats
