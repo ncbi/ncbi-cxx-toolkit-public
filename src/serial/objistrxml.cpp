@@ -475,7 +475,7 @@ string CObjectIStreamXml::ReadFileHeader(void)
                         if ( c == '>' ) {
                             m_Input.SkipChar();
                             Found_gt();
-                            return typeName;
+                            break;
                         }
                         else if ( c == '"' || c == '\'' ) {
                             SkipAttributeValue(c);
@@ -491,6 +491,7 @@ string CObjectIStreamXml::ReadFileHeader(void)
                         "unknown tag in file header: "+string(tagName));
                 }
             }
+            break;
         default:
             {
                 string typeName = ReadName(m_Input.PeekChar());
@@ -755,12 +756,11 @@ void CObjectIStreamXml::ReadNull(void)
         ThrowError(fFormatError, "empty tag expected");
 }
 
-void CObjectIStreamXml::ReadAnyContentTo(
-    const string& ns_prefix, string& value, const string& tagName)
+bool CObjectIStreamXml::ReadAnyContent(const string& ns_prefix, string& value)
 {
     if (ThisTagIsSelfClosed()) {
         EndSelfClosedTag();
-        return;
+        return false;
     }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
@@ -788,7 +788,9 @@ void CObjectIStreamXml::ReadAnyContentTo(
                 }
             }
             string value2;
-            ReadAnyContentTo(ns_prefix, value2,tagAny);
+            if (ReadAnyContent(ns_prefix, value2)) {
+                CloseTag(tagAny);
+            }
             if (value2.empty()) {
                 value += "/>";
             } else {
@@ -803,20 +805,21 @@ void CObjectIStreamXml::ReadAnyContentTo(
         ReadTagData(data);
         value += data;
     }
-    CloseTag(tagName);
+    return true;
 }
 
 void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
 {
-    BEGIN_OBJECT_FRAME(eFrameOther);
-    CLightString tagName;
-    if (m_RejectedTag.empty()) {
-        tagName = ReadName(BeginOpeningTag());
-    } else {
+    string tagName;
+    if (!m_RejectedTag.empty()) {
         tagName = RejectedName();
+        obj.SetName( tagName);
+    } else if (!StackIsEmpty() && TopFrame().HasMemberId()) {
+        obj.SetName( TopFrame().GetMemberId().GetName());
     }
-    obj.SetName( tagName);
     string ns_prefix(m_CurrNsPrefix);
+
+    BEGIN_OBJECT_FRAME(eFrameOther);
     while (HasAttlist()) {
         string attribName = ReadName(SkipWS());
         if (attribName.empty()) {
@@ -834,7 +837,9 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     obj.SetNamespacePrefix(ns_prefix);
     obj.SetNamespaceName(m_NsPrefixToName[ns_prefix]);
     string value;
-    ReadAnyContentTo(ns_prefix,value,obj.GetName());
+    if (ReadAnyContent(ns_prefix,value) && !tagName.empty()) {
+        CloseTag(tagName);
+    }
     obj.SetValue(value);
     END_OBJECT_FRAME();
 }
@@ -1762,7 +1767,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         mem_info->GetTypeInfo()) == eTypeFamilyPrimitive);
                 }
             } else {
-                needUndo = (type != eTypeFamilyPrimitive);
+                needUndo = (type != eTypeFamilyPrimitive) ||
+                    mem_info->GetId().HasAnyContent();
             }
             if (needUndo) {
                 TopFrame().SetNotag();
@@ -2186,6 +2192,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/07/07 18:23:13  gouriano
+* Optimized reading of AnyContent objects
+*
 * Revision 1.77  2005/06/24 18:25:55  gouriano
 * Corrected and optimized skipping anycontent object
 *

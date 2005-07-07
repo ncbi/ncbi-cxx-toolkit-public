@@ -388,8 +388,12 @@ void CObjectIStreamAsn::ReadNull(void)
 
 void CObjectIStreamAsn::ReadAnyContent(string& value)
 {
+    char buf[128];
+    size_t pos=0;
+    const size_t maxpos=128;
+
     char to = GetChar(true);
-    value += to;
+    buf[pos++] = to;
     if (to == '{') {
         to = '}';
     } else if (to == '\"') {
@@ -401,6 +405,7 @@ void CObjectIStreamAsn::ReadAnyContent(string& value)
     for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
         if (to != '\"') {
             if (to != '}' && c == '\n') {
+                value.append(buf,pos);
                 return;
             }
             if (isspace((unsigned char) c)) {
@@ -414,30 +419,42 @@ void CObjectIStreamAsn::ReadAnyContent(string& value)
                 space = false;;
             }
             if (to != '}' && c == ',') {
+                value.append(buf,pos);
                 return;
             } else if (c == '\"' || c == '{') {
+                value.append(buf,pos);
                 ReadAnyContent(value);
+                pos = 0;
                 continue;
             }
         }
         if (c == to) {
-            value += c;
+            if (pos >= maxpos) {
+                value.append(buf,pos);
+                pos = 0;
+            }
+            buf[pos++] = c;
+            value.append(buf,pos);
             m_Input.SkipChar();
             return;
         }
         if (c == '\"' || c == '{') {
+            value.append(buf,pos);
             ReadAnyContent(value);
+            pos = 0;
             continue;
         }
-        value += c;
+        if (pos >= maxpos) {
+            value.append(buf,pos);
+            pos = 0;
+        }
+        buf[pos++] = c;
         m_Input.SkipChar();
     }
 }
 
 void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
 {
-    CLightString id = ReadMemberId(SkipWhiteSpace());
-    obj.SetName( id);
     string value;
     ReadAnyContent(value);
     obj.SetValue(value);
@@ -1329,6 +1346,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2005/07/07 18:21:56  gouriano
+* Optimized reading of AnyContent objects
+*
 * Revision 1.96  2005/06/24 18:25:55  gouriano
 * Corrected and optimized skipping anycontent object
 *

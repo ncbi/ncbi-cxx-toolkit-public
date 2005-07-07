@@ -86,8 +86,7 @@ protected:
     virtual char* ReadCString(void);
     TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
-    void ReadAnyContentTo(const string& ns_prefix, string& value,
-                          const string& tagName);
+    bool ReadAnyContent(const string& ns_prefix, string& value);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
@@ -258,6 +257,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/07/07 18:23:33  gouriano
+* Optimized reading of AnyContent objects
+*
 * Revision 1.39  2005/06/24 18:25:27  gouriano
 * Corrected and optimized skipping anycontent object
 *
