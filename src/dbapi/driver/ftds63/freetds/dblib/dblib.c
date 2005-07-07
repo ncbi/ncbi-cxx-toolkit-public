@@ -967,6 +967,35 @@ tdsdbopen(LOGINREC * login, char *server, int msdblib)
 		connection->timeout = g_dblib_query_timeout;
 	}
 
+	/* override TDS version if dbsetversion() was called */
+	if ( g_dblib_version != DBVERSION_UNKNOWN ) {
+        switch ( g_dblib_version ) {
+        case DBVERSION_42:
+            connection->major_version = 4;
+            connection->minor_version = 2;
+            break;
+        case DBVERSION_46:
+            connection->major_version = 4;
+            connection->minor_version = 6;
+            break;
+        case DBVERSION_100:
+            connection->major_version = 5;
+            connection->minor_version = 0;
+            break;
+        case DBVERSION_70:
+            connection->major_version = 7;
+            connection->minor_version = 0;
+            break;
+        case DBVERSION_80:
+            connection->major_version = 8;
+            connection->minor_version = 0;
+            break;
+        default:
+            connection->major_version = 0;
+            connection->minor_version = 0;
+        };
+	}
+
 	dbproc->dbchkintr = NULL;
 	dbproc->dbhndlintr = NULL;
 	dbproc->tds_socket->chkintr = dblib_chkintr;
@@ -3716,91 +3745,95 @@ dbsetopt(DBPROCESS * dbproc, int option, const char *char_param, int int_param)
 		_dblib_client_msg(dbproc, SYBEUNOP, EXNONFATAL, "Unknown option passed to dbsetopt().");
 		return FAIL;
 	}
-	dbproc->dbopts[option].optactive = 1;
-	switch (option) {
-	case DBARITHABORT:
-	case DBARITHIGNORE:
-	case DBCHAINXACTS:
-	case DBFIPSFLAG:
-	case DBISOLATION:
-	case DBNOCOUNT:
-	case DBNOEXEC:
-	case DBPARSEONLY:
-	case DBSHOWPLAN:
-	case DBSTORPROCID:
-	case DBQUOTEDIDENT:
-		/* server options (on/off) */
-		if (asprintf(&cmd, "set %s on\n", dbproc->dbopts[option].opttext) < 0) {
-			return FAIL;
-		}
-		rc = dbstring_concat(&(dbproc->dboptcmd), cmd);
-		free(cmd);
-		return rc;
-		break;
-	case DBNATLANG:
-	case DBDATEFIRST:
-	case DBDATEFORMAT:
-		/* server options (char_param) */
-		if (asprintf(&cmd, "set %s %s\n", dbproc->dbopts[option].opttext, char_param) < 0) {
-			return FAIL;
-		}
-		rc = dbstring_concat(&(dbproc->dboptcmd), cmd);
-		free(cmd);
-		return rc;
-		break;
-	case DBOFFSET:
-		/* server option */
-		/* requires param
-		 * "select", "from", "table", "order", "compute",
-		 * "statement", "procedure", "execute", or "param"
-		 */
-		break;
-	case DBROWCOUNT:
-		/* server option */
-		/* requires param "0" to "2147483647" */
-		break;
-	case DBSTAT:
-		/* server option */
-		/* requires param "io" or "time" */
-		break;
-	case DBTEXTLIMIT:
-		/* dblib option */
-		/* requires param "0" to "2147483647" */
-		/* dblib do not return more than this length from text/image */
-		/* TODO required for PHP */
-		break;
-	case DBTEXTSIZE:
-		/* server option */
-		/* requires param "0" to "2147483647" */
-		/* limit text/image from network */
-		break;
-	case DBAUTH:
-		/* ??? */
-		break;
-	case DBNOAUTOFREE:
-		/* dblib option */
-		break;
-	case DBBUFFER:
-		/* dblib option */
-		/* requires param "0" to "2147483647" */
-		/* XXX should be more robust than just a atoi() */
-		buffer_set_buffering(&(dbproc->row_buf), atoi(char_param));
-		return SUCCEED;
-		break;
-	case DBPRCOLSEP:
-	case DBPRLINELEN:
-	case DBPRLINESEP:
-	case DBPRPAD:
-		/* dblib options */
-		rc = dbstring_assign(&(dbproc->dbopts[option].optparam), char_param);
-		/* XXX DBPADON/DBPADOFF */
-		return rc;
-		break;
-	default:
-		break;
-	}
-	tdsdump_log(TDS_DBG_FUNC, "UNIMPLEMENTED dbsetopt(option = %d)\n", option);
-	return FAIL;
+    if (dbproc) {
+        dbproc->dbopts[option].optactive = 1;
+        switch (option) {
+        case DBARITHABORT:
+        case DBARITHIGNORE:
+        case DBCHAINXACTS:
+        case DBFIPSFLAG:
+        case DBISOLATION:
+        case DBNOCOUNT:
+        case DBNOEXEC:
+        case DBPARSEONLY:
+        case DBSHOWPLAN:
+        case DBSTORPROCID:
+        case DBQUOTEDIDENT:
+            /* server options (on/off) */
+            if (asprintf(&cmd, "set %s on\n", dbproc->dbopts[option].opttext) < 0) {
+                return FAIL;
+            }
+            rc = dbstring_concat(&(dbproc->dboptcmd), cmd);
+            free(cmd);
+            return rc;
+            break;
+        case DBNATLANG:
+        case DBDATEFIRST:
+        case DBDATEFORMAT:
+            /* server options (char_param) */
+            if (asprintf(&cmd, "set %s %s\n", dbproc->dbopts[option].opttext, char_param) < 0) {
+                return FAIL;
+            }
+            rc = dbstring_concat(&(dbproc->dboptcmd), cmd);
+            free(cmd);
+            return rc;
+            break;
+        case DBOFFSET:
+            /* server option */
+            /* requires param
+             * "select", "from", "table", "order", "compute",
+             * "statement", "procedure", "execute", or "param"
+             */
+            break;
+        case DBROWCOUNT:
+            /* server option */
+            /* requires param "0" to "2147483647" */
+            break;
+        case DBSTAT:
+            /* server option */
+            /* requires param "io" or "time" */
+            break;
+        case DBTEXTLIMIT:
+            /* dblib option */
+            /* requires param "0" to "2147483647" */
+            /* dblib do not return more than this length from text/image */
+            /* TODO required for PHP */
+            break;
+        case DBTEXTSIZE:
+            /* server option */
+            /* requires param "0" to "2147483647" */
+            /* limit text/image from network */
+            break;
+        case DBAUTH:
+            /* ??? */
+            break;
+        case DBNOAUTOFREE:
+            /* dblib option */
+            break;
+        case DBBUFFER:
+            /* dblib option */
+            /* requires param "0" to "2147483647" */
+            /* XXX should be more robust than just a atoi() */
+            buffer_set_buffering(&(dbproc->row_buf), atoi(char_param));
+            return SUCCEED;
+            break;
+        case DBPRCOLSEP:
+        case DBPRLINELEN:
+        case DBPRLINESEP:
+        case DBPRPAD:
+            /* dblib options */
+            rc = dbstring_assign(&(dbproc->dbopts[option].optparam), char_param);
+            /* XXX DBPADON/DBPADOFF */
+            return rc;
+            break;
+        default:
+            break;
+        }
+        tdsdump_log(TDS_DBG_FUNC, "UNIMPLEMENTED dbsetopt(option = %d)\n", option);
+        return FAIL;
+    }
+    
+    return SUCCEED;
 }
 
 /**

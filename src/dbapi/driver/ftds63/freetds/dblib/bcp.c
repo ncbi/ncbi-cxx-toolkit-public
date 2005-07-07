@@ -1466,9 +1466,10 @@ bcp_sendrow(DBPROCESS * dbproc)
 			tds_put_byte(tds, row_token);   /* 0xd1 */
 			tds_put_n(tds, dbproc->bcpinfo->bindinfo->current_row, record_len);
 		}
+        return SUCCEED;
 	}
 
-	return SUCCEED;
+	return FAIL;
 }
 
 
@@ -2421,7 +2422,6 @@ bcp_bind(DBPROCESS * dbproc, BYTE * varaddr, int prefixlen, DBINT varlen,
 	TDSCOLUMN *colinfo;
 
 	if (dbproc->bcpinfo == NULL) {
-	if (dbproc->bcpinfo == NULL) {
 		_bcp_err_handler(dbproc, SYBEBCPI);
 		return FAIL;
 	}
@@ -2454,7 +2454,7 @@ bcp_bind(DBPROCESS * dbproc, BYTE * varaddr, int prefixlen, DBINT varlen,
 		return FAIL;
 	}
 
-	if (table_column > dbproc->bcpinfo->bindinfo->num_cols)
+	if (table_column > dbproc->bcpinfo->bindinfo->num_cols) {
 		return FAIL;
 	}
 
@@ -2794,7 +2794,7 @@ _bcp_get_col_data(DBPROCESS * dbproc, TDSCOLUMN *bindcol)
 		if ((converted_data_size =
 		     dbconvert(dbproc, bindcol->column_bindtype,
 			       (BYTE *) dataptr, collen,
-			       desttype, bindcol->bcp_column_data->data, bindcol->column_size)) == FAIL) {
+			       desttype, bindcol->bcp_column_data->data, bindcol->column_size)) == -1) {
 			return (FAIL);
 		}
 

@@ -58,7 +58,6 @@
 #endif /* HAVE_ARPA_INET_H */
 
 #include "tds.h"
-#include "tds_configs.h"
 #include "tdsstring.h"
 #include "replacements.h"
 #ifdef DMALLOC
@@ -435,11 +434,11 @@ tds_parse_conf_section(const char *option, const char *value, void *param)
 	} else if (!strcmp(option, TDS_STR_HOST)) {
 		tdsdump_log(TDS_DBG_INFO1, "Found host entry %s.\n", value);
 		tds_lookup_host(value, tmp);
-		tds_dstr_copy(&connection->ip_addr, tmp);
-		tdsdump_log(TDS_DBG_INFO1, "IP addr is %s.\n", tds_dstr_cstr(&connection->ip_addr));
+		tds_dstr_copy(&connection->ip_addr[0], tmp);
+		tdsdump_log(TDS_DBG_INFO1, "IP addr is %s.\n", tds_dstr_cstr(&connection->ip_addr[0]));
 	} else if (!strcmp(option, TDS_STR_PORT)) {
 		if (atoi(value))
-			connection->port = atoi(value);
+			connection->port[0] = atoi(value);
 	} else if (!strcmp(option, TDS_STR_EMUL_LE)) {
 		connection->emul_little_endian = tds_config_boolean(value);
 	} else if (!strcmp(option, TDS_STR_TEXTSZ)) {
@@ -522,8 +521,11 @@ tds_config_login(TDSCONNECTION * connection, TDSLOGIN * login)
 	if (login->block_size) {
 		connection->block_size = login->block_size;
 	}
+    else if(connection->major_version >= 7) {
+        connection->block_size = 6*1024;
+    }
 	if (login->port) {
-		connection->port = login->port;
+		connection->port[0] = login->port;
 	}
 	if (login->connect_timeout)
 		connection->connect_timeout = login->connect_timeout;
@@ -579,7 +581,7 @@ tds_config_env_tdsport(TDSCONNECTION * connection)
 	char *s;
 
 	if ((s = getenv("TDSPORT"))) {
-		connection->port = atoi(s);
+		connection->port[0] = atoi(s);
 		tdsdump_log(TDS_DBG_INFO1, "Setting 'port' to %s from $TDSPORT.\n", s);
 	}
 	return;
@@ -606,7 +608,7 @@ tds_config_env_tdshost(TDSCONNECTION * connection)
 
 	if ((tdshost = getenv("TDSHOST"))) {
 		tds_lookup_host(tdshost, tmp);
-		tds_dstr_copy(&connection->ip_addr, tmp);
+		tds_dstr_copy(&connection->ip_addr[0], tmp);
 		tdsdump_log(TDS_DBG_INFO1, "Setting 'ip_addr' to %s (%s) from $TDSHOST.\n", tmp, tdshost);
 
 	}
@@ -771,9 +773,9 @@ search_interface_file(TDSCONNECTION * connection, const char *dir,	/* (I) Name o
 {
 	char *pathname;
 	char line[255];
-	char tmp_ip[sizeof(line)];
-	char tmp_port[sizeof(line)];
-	char tmp_ver[sizeof(line)];
+	char tmp_ip[sizeof(line)*4];
+	char tmp_port[sizeof(line)*4];
+	char tmp_ver[sizeof(line)*4];
 	FILE *in;
 	char *field;
 	int found = 0;
@@ -837,21 +839,22 @@ search_interface_file(TDSCONNECTION * connection, const char *dir,	/* (I) Name o
 					field = strtok_r(NULL, "\n\t ", &lasts);	/* device */
 					field = strtok_r(NULL, "\n\t ", &lasts);	/* host/port */
 					if (strlen(field) >= 18) {
-						sprintf(tmp_port, "%d", hex2num(&field[6]) * 256 + hex2num(&field[8]));
-						sprintf(tmp_ip, "%d.%d.%d.%d", hex2num(&field[10]),
+						sprintf(tmp_port + (server_found*sizeof(line)), "%d", hex2num(&field[6]) * 256 + hex2num(&field[8]));
+						sprintf(tmp_ip + (server_found*sizeof(line)), "%d.%d.%d.%d", hex2num(&field[10]),
 							hex2num(&field[12]), hex2num(&field[14]), hex2num(&field[16]));
 						tdsdump_log(TDS_DBG_INFO1, "tmp_port = %s. tmp_ip = %s.\n", tmp_port, tmp_ip);
 					}
 				} else {
 					field = strtok_r(NULL, "\n\t ", &lasts);	/* ether */
-					strcpy(tmp_ver, field);
+					strcpy(tmp_ver + (server_found*sizeof(line)), field);
 					field = strtok_r(NULL, "\n\t ", &lasts);	/* host */
-					strcpy(tmp_ip, field);
+					strcpy(tmp_ip + (server_found*sizeof(line)), field);
 					tdsdump_log(TDS_DBG_INFO1, "host field %s.\n", tmp_ip);
 					field = strtok_r(NULL, "\n\t ", &lasts);	/* port */
-					strcpy(tmp_port, field);
+					strcpy(tmp_port + (server_found*sizeof(line)), field);
 				}	/* else */
-				server_found = 1;
+				server_found++;
+                if(server_found > 3) break;
 			}	/* if */
 		}		/* else if */
 	}			/* while */
@@ -862,15 +865,16 @@ search_interface_file(TDSCONNECTION * connection, const char *dir,	/* (I) Name o
 	/*
 	 * Look up the host and service
 	 */
-	if (server_found) {
-		tds_lookup_host(tmp_ip, line);
+	for(found= 0; found < server_found; found++) {
+		tds_lookup_host(tmp_ip + (found*sizeof(line)), line);
 		tdsdump_log(TDS_DBG_INFO1, "Resolved IP as '%s'.\n", line);
-		tds_dstr_copy(&connection->ip_addr, line);
+		tds_dstr_copy(&connection->ip_addr[found], line);
 		if (tmp_port[0])
-			connection->port = tds_lookup_port(tmp_port);
+			connection->port[found] = tds_lookup_port(tmp_port+found*sizeof(line));
 		if (tmp_ver[0])
 			tds_config_verstr(tmp_ver, connection);
 	}
+
 	return server_found;
 }				/* search_interface_file()  */
 
@@ -953,7 +957,7 @@ tds_read_interfaces(const char *server, TDSCONNECTION * connection)
 		 * Make a guess about the port number
 		 */
 
-		if (connection->port == 0) {
+		if (connection->port[0] == 0) {
 			/*
 			 * Not set in the [global] section of the
 			 * configure file, take a guess.
@@ -968,7 +972,7 @@ tds_read_interfaces(const char *server, TDSCONNECTION * connection)
 			 * Preserve setting from the [global] section
 			 * of the configure file.
 			 */
-			ip_port = connection->port;
+			ip_port = connection->port[0];
 		}
 		if ((env_port = getenv("TDSPORT")) != NULL) {
 			ip_port = tds_lookup_port(env_port);
@@ -981,9 +985,9 @@ tds_read_interfaces(const char *server, TDSCONNECTION * connection)
 		 */
 		tds_lookup_host(server, ip_addr);
 		if (ip_addr[0])
-			tds_dstr_copy(&connection->ip_addr, ip_addr);
+			tds_dstr_copy(&connection->ip_addr[0], ip_addr);
 		if (ip_port)
-			connection->port = ip_port;
+			connection->port[0] = ip_port;
 	}
 }
 
@@ -1010,7 +1014,7 @@ parse_server_name_for_port(TDSCONNECTION * connection, TDSLOGIN * login)
 			return 0;	/* FALSE */
 
 		/* modify connection-> && login->server_name & ->port */
-		login->port = connection->port = atoi(pSep + 1);
+		login->port = connection->port[0] = atoi(pSep + 1);
 		*pSep = 0;
 
 		/* connection->ip_addr needed */

@@ -583,6 +583,7 @@ tds_alloc_connection(TDSLOCALE * locale)
 {
 	TDSCONNECTION *connection;
 	char hostname[128];
+    int i;
 
 	TEST_MALLOC(connection, TDSCONNECTION);
 	memset(connection, '\0', sizeof(TDSCONNECTION));
@@ -594,7 +595,8 @@ tds_alloc_connection(TDSLOCALE * locale)
 	tds_dstr_init(&connection->user_name);
 	tds_dstr_init(&connection->password);
 	tds_dstr_init(&connection->library);
-	tds_dstr_init(&connection->ip_addr);
+    for(i= 0; i < 4; i++)
+        tds_dstr_init(&connection->ip_addr[i]);
 	tds_dstr_init(&connection->database);
 	tds_dstr_init(&connection->dump_file);
 	tds_dstr_init(&connection->default_domain);
@@ -605,7 +607,9 @@ tds_alloc_connection(TDSLOCALE * locale)
 		goto Cleanup;
 	connection->major_version = TDS_DEF_MAJOR;
 	connection->minor_version = TDS_DEF_MINOR;
-	connection->port = TDS_DEF_PORT;
+    for(i= 0; i < 4; i++) 
+        connection->port[i] = TDS_DEF_PORT;
+
 	connection->block_size = 0;
 	/* TODO use system default ?? */
 	if (!tds_dstr_copy(&connection->client_charset, "ISO-8859-1"))
@@ -877,11 +881,13 @@ tds_free_locale(TDSLOCALE * locale)
 void
 tds_free_connection(TDSCONNECTION * connection)
 {
+    int i;
 	tds_dstr_free(&connection->server_name);
 	tds_dstr_free(&connection->host_name);
 	tds_dstr_free(&connection->language);
 	tds_dstr_free(&connection->server_charset);
-	tds_dstr_free(&connection->ip_addr);
+    for(i= 0; i < 4; i++)
+        tds_dstr_free(&connection->ip_addr[i]);
 	tds_dstr_free(&connection->database);
 	tds_dstr_free(&connection->dump_file);
 	tds_dstr_free(&connection->default_domain);

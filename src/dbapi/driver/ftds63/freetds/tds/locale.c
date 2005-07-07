@@ -33,7 +33,6 @@
 #endif /* HAVE_STDLIB_H */
 
 #include "tds.h"
-#include "tds_configs.h"
 #ifdef DMALLOC
 #include <dmalloc.h>
 #endif

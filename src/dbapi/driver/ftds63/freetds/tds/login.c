@@ -254,27 +254,6 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 	tds->longquery_param = connection->longquery_param;
 	/* end */
 
-	/* verify that ip_addr is not NULL */
-	if (tds_dstr_isempty(&connection->ip_addr)) {
-		tdsdump_log(TDS_DBG_ERROR, "IP address pointer is NULL\n");
-		if (connection->server_name) {
-			tdsdump_log(TDS_DBG_ERROR, "Server %s not found!\n", tds_dstr_cstr(&connection->server_name));
-		} else {
-			tdsdump_log(TDS_DBG_ERROR, "No server specified!\n");
-		}
-		tds_free_socket(tds);
-		return TDS_FAIL;
-	}
-	sin.sin_addr.s_addr = inet_addr(tds_dstr_cstr(&connection->ip_addr));
-	if (sin.sin_addr.s_addr == INADDR_NONE) {
-		tdsdump_log(TDS_DBG_ERROR, "inet_addr() failed, IP = %s\n", tds_dstr_cstr(&connection->ip_addr));
-		tds_free_socket(tds);
-		return TDS_FAIL;
-	}
-
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(connection->port);
-
 	memcpy(tds->capabilities, connection->capabilities, TDS_MAX_CAPABILITY);
 
 
@@ -282,7 +261,6 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 	if (!retval)
 		version[0] = '\0';
 
-	tdsdump_log(TDS_DBG_INFO1, "Connecting to %s port %d, TDS %s.\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), version);
 	if (TDS_IS_SOCKET_INVALID(tds->s = socket(AF_INET, SOCK_STREAM, 0))) {
 		perror("socket");
 		tds_free_socket(tds);
@@ -302,6 +280,34 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 	setsockopt(tds->s, IPPROTO_TCP, TCP_NODELAY, (const void *) &len, sizeof(len));
 #endif
 #endif
+
+  for(len= 0; len < 4; len++) {
+	/* verify that ip_addr is not NULL */
+	if (tds_dstr_isempty(&connection->ip_addr[len])) {
+		tdsdump_log(TDS_DBG_ERROR, "IP address pointer is NULL\n");
+		if (connection->server_name) {
+			tdsdump_log(TDS_DBG_ERROR, "Server %s not found!\n", tds_dstr_cstr(&connection->server_name));
+		} else {
+			tdsdump_log(TDS_DBG_ERROR, "No server specified!\n");
+		}
+		tds_free_socket(tds);
+		return TDS_FAIL;
+	}
+	sin.sin_addr.s_addr = inet_addr(tds_dstr_cstr(&connection->ip_addr[len]));
+	if (sin.sin_addr.s_addr == INADDR_NONE) {
+		tdsdump_log(TDS_DBG_ERROR, "inet_addr() failed, IP = %s\n", tds_dstr_cstr(&connection->ip_addr[len]));
+        continue;
+#if 0
+		tds_free_socket(tds);
+		return TDS_FAIL;
+#endif
+	}
+
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(connection->port[len]);
+
+
+	tdsdump_log(TDS_DBG_INFO1, "Connecting to %s port %d, TDS %s.\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), version);
 	
 	/* Jeff's hack *** START OF NEW CODE *** */
 	if (connect_timeout) {
@@ -316,8 +322,11 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 			retval = 0;
 		if (retval < 0) {
 			perror("src/tds/login.c: tds_connect (timed)");
+            continue;
+#if 0
 			tds_free_socket(tds);
 			return TDS_FAIL;
+#endif
 		}
 		/* Select on writeability for connect_timeout */
 		now = start;
@@ -332,11 +341,16 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 		}
 
 		if ((now - start) >= connect_timeout) {
+            continue;
+#if 0
 			tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, "Server is unavailable or does not exist.");
 			tds_free_socket(tds);
 			return TDS_FAIL;
+#endif
 		}
 	} else if (connect(tds->s, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
+        continue;
+#if 0
 		char *message;
 
 		if (asprintf(&message, "src/tds/login.c: tds_connect: %s:%d", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port)) >= 0) {
@@ -346,7 +360,17 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 		tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, "Server is unavailable or does not exist.");
 		tds_free_socket(tds);
 		return TDS_FAIL;
+#endif
 	}
+    db_selected= 1;
+    break;
+  }
+  if(!db_selected) {
+      tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, "Server is unavailable or does not exist.");
+      tds_free_socket(tds);
+      return TDS_FAIL;
+  }
+  else db_selected= 0;
 	/* END OF NEW CODE */
 
 	if (IS_TDS7_PLUS(tds)) {
