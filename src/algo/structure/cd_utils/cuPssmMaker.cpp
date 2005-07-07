@@ -57,7 +57,7 @@ printMsa(const char* filename, const PSIMsa* msa, vector<string>& seqIds)
 	//if startRow == 1, this means row 0 is the consensus and should be ignored
 	ASSERT(startRow >= 0);
     for (i = startRow; i < msa->dimensions->num_seqs + 1; i++) {
-        fprintf(fp, "%s\n", seqIds[i-startRow].c_str());
+        fprintf(fp, ">%s\n", seqIds[i-startRow].c_str());
         for (j = 0; j < msa->dimensions->query_length; j++) {
             if (msa->data[i][j].is_aligned) {
 				fprintf(fp, "%c", ColumnResidueProfile::getEaaCode(msa->data[i][j].letter));
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/07/07 20:58:07  cliu
+ * *** empty log message ***
+ *
  * Revision 1.3  2005/07/07 20:29:46  cliu
  * print seqid
  *
