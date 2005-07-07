@@ -309,8 +309,8 @@ bool CZipCompression::CompressBuffer(
     if ( F_ISSET(fWriteGZipFormat) ) {
         header_len = s_WriteGZipHeader(dst_buf, dst_size);
         if (!header_len) {
-            ERR_POST(
-                "CZipCompression::CompressBuffer:  Cannot write gzip header");
+            SetError(Z_STREAM_ERROR, "Cannot write gzip header");
+            ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
             return false;
         }
     }
@@ -366,8 +366,8 @@ bool CZipCompression::CompressBuffer(
         size_t footer_len = s_WriteGZipFooter(
             (char*)dst_buf + *dst_len, dst_size, src_len, crc);
         if ( !footer_len ) {
-            ERR_POST(
-                "CZipCompression::CompressBuffer:  Cannot write gzip footer");
+            SetError(-1, "Cannot write gzip footer");
+            ERR_POST(FormatErrorMessage("CZipCompressor::CompressBuffer"));
             return false;
         }
         *dst_len += footer_len;
@@ -593,6 +593,8 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
     }
     if ( !m_File->good() ) {
         Close();
+        string description = string("Cannot open file '") + file_name + "'";
+        SetError(-1, description.c_str());
         return false;
     }
     // Get file information
@@ -633,6 +635,9 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
     }
     if ( !m_Zip->good() ) {
         Close();
+        if ( !GetErrorCode() ) {
+            SetError(-1, "Cannot create compression stream");
+        }
         return false;
     }
     return true;
@@ -732,7 +737,6 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     m_CRC32 = 0;
     m_NeedWriteHeader = true;
     m_Cache.erase();
-    //!!!m_Cache.reserve(kMaxHeaderSize);
 
     // Initialize the compressor stream structure
     memset(STREAM, 0, sizeof(z_stream));
@@ -743,7 +747,6 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
                                 m_MemLevel, m_Strategy,
                                 ZLIB_VERSION, (int)sizeof(z_stream));
     SetError(errcode, zError(errcode));
-
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
@@ -767,7 +770,8 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     if ( F_ISSET(fWriteGZipFormat)  &&  m_NeedWriteHeader ) {
         header_len = s_WriteGZipHeader(out_buf, out_size, &m_FileInfo);
         if (!header_len) {
-            ERR_POST("CZipCompressor::Process:  Cannot write gzip header");
+            SetError(-1, "Cannot write gzip header");
+            ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
             return eStatus_Error;
         }
         m_NeedWriteHeader = false;
@@ -1072,6 +1076,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/07/07 15:39:30  ivanov
+ * Improved diagnostic. Call SetError() for the file operations also.
+ *
  * Revision 1.22  2005/06/09 11:10:39  ivanov
  * CZipCompression::CompressFile() -- always write .gz file format
  * to support backward compatibility.

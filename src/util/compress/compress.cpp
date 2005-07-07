@@ -68,10 +68,12 @@ bool CCompression::x_CompressFile(const string&     src_file,
                                   size_t            buf_size)
 {
     if ( !buf_size ) {
+        SetError(-1, "Buffer size cannot be zero");
         return false;
     }
     CNcbiIfstream is(src_file.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !is.good() ) {
+        SetError(-1, "Cannot open source file");
         return false;
     }
     AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
@@ -80,6 +82,9 @@ bool CCompression::x_CompressFile(const string&     src_file,
         size_t nread = is.gcount();
         size_t nwritten = dst_file.Write(buf.get(), nread); 
         if ( nwritten != nread ) {
+            if ( !GetErrorCode() ) {
+                SetError(-1, "Error writing to output file");
+            }
             return false;
         }
     }
@@ -92,10 +97,12 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
                                     size_t            buf_size)
 {
     if ( !buf_size ) {
+        SetError(-1, "Buffer size cannot be zero");
         return false;
     }
     CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
+        SetError(-1, "Cannot open source file");
         return false;
     }
     AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
@@ -103,6 +110,9 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
     while ( (nread = src_file.Read(buf.get(), buf_size)) > 0 ) {
         os.write(buf.get(), nread);
         if ( !os.good() ) {
+            if ( !GetErrorCode() ) {
+                SetError(-1, "Error writing to ouput file");
+            }
             return false;
         }
     }
@@ -153,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/07 15:39:30  ivanov
+ * Improved diagnostic. Call SetError() for the file operations also.
+ *
  * Revision 1.10  2005/05/31 17:51:15  ivanov
  * Use AutoPtr's for internal buffers
  *

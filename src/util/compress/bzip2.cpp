@@ -208,15 +208,15 @@ const char* CBZip2Compression::GetBZip2ErrorDescription(int errcode)
 {
     const int kErrorCount = 9;
     static const char* kErrorDesc[kErrorCount] = {
-        "SEQUENCE_ERROR",
-        "PARAM_ERROR",
-        "MEM_ERROR",
-        "DATA_ERROR",
-        "DATA_ERROR_MAGIC",
-        "IO_ERROR",
-        "UNEXPECTED_EOF",
-        "OUTBUFF_FULL",
-        "CONFIG_ERROR"
+        "Incorrect dunction calls sequence",
+        "Incorrect parameter",
+        "Memory allocation failed",
+        "Data integrity error",
+        "'Magic' leading bytes are missed",
+        "I/O error",
+        "Unexpected EOF",
+        "Output buffer overflow",
+        "libbzip2 configuration error"
     };
     // errcode must be negative
     if ( errcode >= 0  ||  errcode < -kErrorCount ) {
@@ -622,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/07 15:39:30  ivanov
+ * Improved diagnostic. Call SetError() for the file operations also.
+ *
  * Revision 1.13  2005/06/06 10:57:54  ivanov
  * [De]CompressFile -- set flags for used CBZip2CompressionFile
  *
