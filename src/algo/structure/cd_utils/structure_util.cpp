@@ -87,7 +87,7 @@ PssmToBLAST_Matrix(const ncbi::objects::CPssmWithParameters& pssm)
     bool valid_data = false;
 
     if ( !pssm.GetPssm().CanGetFinalData()) {
-        NCBI_THROW(ncbi::blast::CBlastException, eBadParameter, 
+        NCBI_THROW(ncbi::blast::CBlastException, eInvalidArgument, 
                    "Final data in PSSM unavailable");
     }
     
@@ -150,7 +150,7 @@ PssmToBLAST_Matrix(const ncbi::objects::CPssmWithParameters& pssm)
     retval->original_matrix = NULL;
 
     if ( !valid_data ) {
-        NCBI_THROW(ncbi::blast::CBlastException, eBadParameter,
+        NCBI_THROW(ncbi::blast::CBlastException, eInvalidArgument,
                    "PSSM is missing frequency ratios or scores");
     }
 
@@ -163,6 +163,9 @@ PssmToBLAST_Matrix(const ncbi::objects::CPssmWithParameters& pssm)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/07 17:57:59  camacho
+ * Fixes for CBlastException changes
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

@@ -522,7 +522,7 @@ int CBlastApplication::Run(void)
     if (error_str) {
         string msg(error_str);
         sfree(error_str);
-        NCBI_THROW(CBlastException, eSeqSrc, msg);
+        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
     }
 
     /* If megablast lookup table is used, change default program to 
@@ -533,9 +533,9 @@ int CBlastApplication::Run(void)
             program = eDiscMegablast;
     }
     if (args["lookup"].AsInteger() != 1 && args["templen"].AsInteger() > 0) {
-        ERR_POST_EX(CBlastException::eBadParameter, 2, 
+        ERR_POST_EX(CBlastException::eInvalidOptions, 2, 
         "\"-lookup 1\" option must be used if \"-templen\" option is not 0");
-        exit(CBlastException::eBadParameter);
+        exit(CBlastException::eInvalidOptions);
     }
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
