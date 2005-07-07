@@ -125,45 +125,6 @@ algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
 
-algo/blast/core/aa_ungapped.h
-algo/blast/core/blast_def.h
-algo/blast/core/blast_diagnostics.h
-algo/blast/core/blast_dust.h
-algo/blast/core/blast_encoding.h
-algo/blast/core/blast_engine.h
-algo/blast/core/blast_export.h
-algo/blast/core/blast_extend.h
-algo/blast/core/blast_filter.h
-algo/blast/core/blast_gapalign.h
-algo/blast/core/blast_hits.h
-algo/blast/core/blast_hspstream.h
-algo/blast/core/blast_kappa.h
-//algo/blast/core/blast_lookup.h
-algo/blast/core/blast_message.h
-algo/blast/core/blast_options.h
-algo/blast/core/blast_parameters.h
-algo/blast/core/blast_psi.h
-algo/blast/core/blast_rps.h
-algo/blast/core/blast_seg.h
-algo/blast/core/blast_seqsrc.h
-algo/blast/core/blast_setup.h
-algo/blast/core/blast_stat.h
-algo/blast/core/blast_toolkit.h
-algo/blast/core/blast_traceback.h
-algo/blast/core/blast_util.h
-algo/blast/core/gapinfo.h
-algo/blast/core/greedy_align.h
-algo/blast/core/hspstream_collector.h
-algo/blast/core/link_hsps.h
-algo/blast/core/lookup_util.h
-//algo/blast/core/lookup_wrap.h
-algo/blast/core/mb_lookup.h
-algo/blast/core/ncbi_math.h
-algo/blast/core/ncbi_std.h
-algo/blast/core/pattern.h
-algo/blast/core/phi_extend.h
-algo/blast/core/phi_lookup.h
-
 algo/gnomon/gnomon.hpp
 algo/gnomon/gnomon_exception.hpp
 // next two trouble for Perl?
@@ -263,6 +224,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/07 20:35:50  jcherry
+ * Don't wrap algo/blast/core/*
+ *
  * Revision 1.2  2005/07/01 14:12:58  jcherry
  * Eliminate the need for dummy headers
  *
