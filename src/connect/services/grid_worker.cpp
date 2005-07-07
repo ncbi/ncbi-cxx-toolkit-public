@@ -507,6 +507,12 @@ bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
     unsigned int ha = CSocketAPI::gethostbyname(host);
     if (m_AdminHosts.find(ha) != m_AdminHosts.end())
         return true;
+    unsigned int ha_lh = CSocketAPI::gethostbyname("");
+    if (ha == ha_lh) {
+        ha = CSocketAPI::gethostbyname("localhost");
+        if (m_AdminHosts.find(ha) != m_AdminHosts.end())
+            return true;
+    }
     return false;
 }
 
@@ -561,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/07/07 15:05:14  didenko
+ * Corrected handling of localhost from the admin_hosts configuration parameter
+ *
  * Revision 1.30  2005/06/20 17:54:16  didenko
  * Fixed exception handling
  *
