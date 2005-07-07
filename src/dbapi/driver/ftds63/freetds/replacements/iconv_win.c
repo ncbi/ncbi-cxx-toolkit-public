@@ -30,9 +30,7 @@
  * out-of-range error.  The caller (tds_iconv) should emit an error message.  
  */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <ncbi_tds_config.h> 
 
 #if ! HAVE_ICONV
 
