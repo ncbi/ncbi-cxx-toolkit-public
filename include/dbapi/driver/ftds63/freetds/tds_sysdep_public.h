@@ -33,6 +33,9 @@ extern "C"
 */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #include <windows.h>
+#ifdef WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#endif
 #define tds_sysdep_int16_type short	/* 16-bit int */
 #define tds_sysdep_int32_type int	/* 32-bit int */
 #define tds_sysdep_int64_type __int64	/* 64-bit int */
