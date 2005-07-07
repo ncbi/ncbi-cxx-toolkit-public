@@ -46,8 +46,8 @@
 BEGIN_NCBI_SCOPE
    
 
-EDiagSev CTOOLS_CToCxxSeverity(int      c_severity);
-int      CTOOLS_CxxToCSeverity(EDiagSev cxx_severity);
+extern EDiagSev CTOOLS_CToCxxSeverity(int      c_severity);
+extern int      CTOOLS_CxxToCSeverity(EDiagSev cxx_severity);
 
 
 END_NCBI_SCOPE
@@ -59,6 +59,9 @@ END_NCBI_SCOPE
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/07/07 14:01:25  lavr
+ * Add "extern" to public API calls
+ *
  * Revision 1.1  2005/07/06 19:41:22  lavr
  * Initial revision
  *
