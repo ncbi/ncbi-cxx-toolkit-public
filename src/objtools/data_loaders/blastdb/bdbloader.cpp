@@ -94,7 +94,7 @@ CBlastDbDataLoader::~CBlastDbDataLoader(void)
 }
 
 CBlastDbDataLoader::TTSE_LockSet
-CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
+CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice /*choice*/)
 {
     CTSE_LoadLock lock;
     TTSE_LockSet locks;
@@ -581,6 +581,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.26  2005/07/07 17:33:52  camacho
+ * fix compiler warning
+ *
  * Revision 1.25  2005/07/06 19:01:00  bealer
  * - Doxygen.
  *
