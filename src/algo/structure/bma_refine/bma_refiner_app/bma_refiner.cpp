@@ -402,7 +402,7 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
         m_loo.nExt = (args["nex"]) ? args["nex"].AsInteger() : args["ex"].AsInteger();
         m_loo.cExt = (args["cex"]) ? args["cex"].AsInteger() : args["ex"].AsInteger();
 
-        m_loo.seed = (args["seed"]) ? args["seed"].AsInteger() + 1 : 0; 
+        m_loo.seed = (args["seed"]) ? args["seed"].AsInteger() : 0; 
         m_loo.sameScoreThreshold      = args["convSameScore"].AsDouble();
 
         m_loo.percentile = args["p"].AsDouble();
@@ -747,6 +747,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/07 22:07:05  lanczyck
+ * do not offset the seed by one
+ *
  * Revision 1.3  2005/06/29 20:44:33  ucko
  * Use string::erase rather than string::clear, which GCC 2.95 lacks.
  *
