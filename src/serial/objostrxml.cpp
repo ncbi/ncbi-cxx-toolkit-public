@@ -535,12 +535,18 @@ void CObjectOStreamXml::WriteNull(void)
 
 void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
 {
-    if (obj.GetName().empty()) {
-        return;
-    }
     string ns_name(obj.GetNamespaceName());
     bool needNs = x_BeginNamespace(ns_name,obj.GetNamespacePrefix());
-    OpenTag(obj.GetName());
+    string obj_name = obj.GetName();
+    if (obj_name.empty()) {
+        if (!StackIsEmpty() && TopFrame().HasMemberId()) {
+            obj_name = TopFrame().GetMemberId().GetName();
+        }
+    }
+    if (obj_name.empty()) {
+        ThrowError(fInvalidData, "AnyContent object must have name");
+    }
+    OpenTag(obj_name);
 
     if (m_UseSchemaRef) {
         OpenTagEndBack();
@@ -643,7 +649,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
         m_EndTag = true;
     }
     m_SkipIndent = !was_close;
-    CloseTag(obj.GetName());
+    CloseTag(obj_name);
     x_EndNamespace(ns_name);
 }
 
@@ -1155,7 +1161,8 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
                                eTypeFamilyPrimitive);
                 }
             } else {
-                needTag = (type == eTypeFamilyPrimitive && !id.HasNotag());
+                needTag = (type == eTypeFamilyPrimitive &&
+                    !id.HasNotag() && !id.HasAnyContent());
             }
             if (needTag) {
                 OpenStackTag(0);
@@ -1367,6 +1374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/07/07 18:22:43  gouriano
+* Optimized writing of AnyContent objects
+*
 * Revision 1.82  2005/06/03 17:44:49  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
