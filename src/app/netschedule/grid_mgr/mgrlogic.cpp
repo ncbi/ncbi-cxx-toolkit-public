@@ -58,6 +58,10 @@ struct ServiceInfoCreator
         
 }
 
+CNSServices::CNSServices()
+{
+}
+
 CNSServices::CNSServices(const string& lbsurl)
 {
     char buf[1024];
@@ -334,6 +338,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/07 19:06:44  didenko
+ * Added errors handling
+ *
  * Revision 1.6  2005/06/28 13:40:22  didenko
  * Got rid of s_GetServerSet function
  *

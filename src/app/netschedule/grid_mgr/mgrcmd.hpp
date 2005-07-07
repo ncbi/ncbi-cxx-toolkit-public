@@ -121,7 +121,7 @@ public:
         { return NcbiEmptyString; }
 
     virtual CNCBINode* CreateView( CCgiContext& ctx ) = 0;
-    virtual void Clean();
+    virtual void Clean();    
 
 protected:
 
@@ -130,6 +130,8 @@ protected:
 
     virtual string GetEntry() const;
     CHTMLPage& GetPage() { _ASSERT(m_Page.get()); return *m_Page; }
+    
+    static CNCBINode* CreateErrorNode();
 
 private:
     auto_ptr<CHTMLPage> m_Page;
@@ -225,6 +227,9 @@ public:
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/07/07 19:06:44  didenko
+* Added errors handling
+*
 * Revision 1.1  2005/06/27 12:52:40  didenko
 * Added grid manager cgi
 *

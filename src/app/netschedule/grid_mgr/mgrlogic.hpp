@@ -48,6 +48,7 @@ public:
     typedef TServiceInfos::const_iterator const_iterator;
     typedef CServiceInfo value_type;
 
+    CNSServices();
     CNSServices(const string& lbsurl);
     ~CNSServices();
 
@@ -200,6 +201,9 @@ inline string GetSPort(const Info& info)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/07 19:06:44  didenko
+ * Added errors handling
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *

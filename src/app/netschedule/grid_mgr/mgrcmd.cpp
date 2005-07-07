@@ -59,19 +59,31 @@ string CGridMgrCommand::GetEntry() const
 
 void CGridMgrCommand::Execute( CCgiContext& ctx )
 {
-    const CNcbiRegistry& reg = ctx.GetConfig();
+    auto_ptr<CNCBINode> node;
+    try{
+
+        const CNcbiRegistry& reg = ctx.GetConfig();
  
-    // load in the html template file
-    string baseFile = reg.Get( "filesystem", "HtmlBaseFile" );
-    m_Page.reset( new CHTMLPage( NcbiEmptyString, baseFile ) );
+        // load in the html template file
+        string baseFile = reg.Get( "filesystem", "HtmlBaseFile" );
+        m_Page.reset( new CHTMLPage( NcbiEmptyString, baseFile ) );
 
-    string incFile = reg.Get( "filesystem", "HtmlIncFile" );
-    m_Page->LoadTemplateLibFile(incFile);
+        string incFile = reg.Get( "filesystem", "HtmlIncFile" );
+        m_Page->LoadTemplateLibFile(incFile);
    
-    // set up to replace <@VIEW@> in template file with html returned
-    // from CreateView
-    m_Page->AddTagMap( "VIEW", CreateView( ctx ) );
+        // set up to replace <@VIEW@> in template file with html returned
+        // from CreateView
+        node.reset(CreateView( ctx ));
 
+    } catch (exception& ex) {
+        node.reset(CreateErrorNode());
+        GetPage().AddTagMap("error", new CHTMLPlainText(ex.what()));
+    } catch (...) {
+        node.reset(CreateErrorNode());
+        GetPage().AddTagMap("error", new CHTMLPlainText("Unknown Error"));
+    }
+
+    m_Page->AddTagMap( "VIEW", node.release() );
     m_Page->AddTagMap("SELF_URL",  new CHTMLText(ctx.GetSelfURL()));
 
     // actual page output
@@ -82,6 +94,13 @@ void CGridMgrCommand::Execute( CCgiContext& ctx )
 void CGridMgrCommand::Clean()
 {
     m_Page.reset();
+}
+
+CNCBINode* CGridMgrCommand::CreateErrorNode()
+{
+    auto_ptr<CNCBINode> node(new CNCBINode);
+    node->AppendChild(new CHTMLTagNode("ERROR_VIEW"));
+    return node.release();
 }
 
 //
@@ -104,8 +123,6 @@ string CShowServersCommand::GetName( void ) const
 {
     return string("showserver"); // set the value of this string in helloapi.cpp
 }
-
-
 
 
 
@@ -191,22 +208,12 @@ CNCBINode* CShowServersCommand::CreateView(CCgiContext& ctx)
     const IRegistry& reg = ctx.GetConfig();
     
     string lbsurl = reg.GetString("urls", "lbsurl", "");
-    CNSServices ssss(lbsurl);
-    m_TableRowHook.reset(new THookCtxSrvs(new CNSServices(lbsurl),*this));
 
+    m_TableRowHook.reset(new THookCtxSrvs(new CNSServices(lbsurl),*this));
 
     GetPage().AddTagMap("srvs_table_row_hook", 
                         CreateTagMapper<CHTMLPage,THookCtxSrvs*>
                         (RowHook<THookCtxSrvs>, m_TableRowHook.get()));
-
-    /*     
-    auto_ptr <CHTML_form> Form(new CHTML_form(ctx.GetSelfURL()));    
-                                 
-    Form->AppendChild(new CHTML_text("input", 40));
-    Form->AddHidden(GetEntry(), "reply");
-    Form->AppendChild(new CHTML_submit("Go","submit"));
-    return Form.release();
-    */
     return node.release();
 }
 
@@ -286,50 +293,34 @@ CNCBINode* CShowServerStatCommand::CreateView(CCgiContext& ctx)
     const TCgiEntries& entries = ctx.GetRequest().GetEntries();
 
     // look for ones where the name is "input" 
-    
     TCgiEntriesCI h_it = entries.find("server");
     TCgiEntriesCI p_it = entries.find("port");
     TCgiEntriesCI q_it = entries.find("queue");
-    try {
-        if( h_it == entries.end() ||  p_it == entries.end() || q_it == entries.end())
-            throw runtime_error("");
+    
+    if( h_it == entries.end() ||  p_it == entries.end() 
+        || q_it == entries.end())
+        throw runtime_error("Server, port or queue is not specified");
         
-        string host = (*h_it).second.GetValue();
-        string sport = (*p_it).second.GetValue();
-        string queue = (*q_it).second.GetValue();
+    string host = (*h_it).second.GetValue();
+    string sport = (*p_it).second.GetValue();
+    string queue = (*q_it).second.GetValue();
 
-        GetPage().AddTagMap("HOST",  new CHTMLText(host));
-        GetPage().AddTagMap("PORT",  new CHTMLText(sport));
-        GetPage().AddTagMap("QUEUE_NAME",  new CHTMLText(queue));
+    GetPage().AddTagMap("HOST",  new CHTMLText(host));
+    GetPage().AddTagMap("PORT",  new CHTMLText(sport));
+    GetPage().AddTagMap("QUEUE_NAME",  new CHTMLText(queue));
 
-        unsigned int port = NStr::StringToUInt(sport);
-        auto_ptr<CQueueInfo> queue_info(new CQueueInfo(queue,host,port));
-        queue_info->CollectInfo();
+    unsigned int port = NStr::StringToUInt(sport);
+    auto_ptr<CQueueInfo> queue_info(new CQueueInfo(queue,host,port));
+    queue_info->CollectInfo();
 
-        GetPage().AddTagMap("INFO",  new CHTMLText(queue_info->GetInfo()));
+    GetPage().AddTagMap("INFO",  new CHTMLText(queue_info->GetInfo()));
 
-        m_TableRowHook.reset(new THookContext(queue_info.release(),*this));
+    m_TableRowHook.reset(new THookContext(queue_info.release(),*this));
 
-        GetPage().AddTagMap("wn_table_row_hook", 
-                            CreateTagMapper<CHTMLPage,THookContext*>
-                            (RowHook<THookContext>, m_TableRowHook.get()));
-
-    } catch (...) {
-
-        node->AppendChild(new CHTMLText("Error"));
-        //        Reply->AppendChild(CShowServersCommand::CreateView(ctx));
-    }
+    GetPage().AddTagMap("wn_table_row_hook", 
+                        CreateTagMapper<CHTMLPage,THookContext*>
+                        (RowHook<THookContext>, m_TableRowHook.get()));
     
-    /*    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range("input");
-    
-    // print the values associated with input to the html page
-    for(TCgiEntriesI i = p.first; i != p.second; ++i) {
-        Reply->AppendChild(new CHTMLText(", "));
-        Reply->AppendChild(new CHTMLPlainText(i->second));
-    }
-    Reply->AppendChild(new CHTML_br);*/
-    //    Reply->AppendChild(CHelloBasicCommand::CreateView(ctx));
-  
     return node.release();
 }
 void CShowServerStatCommand::Clean()
@@ -379,28 +370,21 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
     const TCgiEntries& entries = ctx.GetRequest().GetEntries();
 
     // look for ones where the name is "input" 
-    
     TCgiEntriesCI h_it = entries.find("server");
     TCgiEntriesCI p_it = entries.find("port");
-    try {
-        if( h_it == entries.end() ||  p_it == entries.end())
-            throw runtime_error("");
+
+    if( h_it == entries.end() ||  p_it == entries.end())
+        throw runtime_error("Server or port is not spesified");
         
-        string host = (*h_it).second.GetValue();
-        string sport = (*p_it).second.GetValue();
-        GetPage().AddTagMap("HOST",  new CHTMLText(host));
-        GetPage().AddTagMap("PORT",  new CHTMLText(sport));
+    string host = (*h_it).second.GetValue();
+    string sport = (*p_it).second.GetValue();
+    GetPage().AddTagMap("HOST",  new CHTMLText(host));
+    GetPage().AddTagMap("PORT",  new CHTMLText(sport));
+    
+    unsigned int port = NStr::StringToUInt(sport);
+    CWorkerNodeInfo wn_info(host,port);
 
-        unsigned int port = NStr::StringToUInt(sport);
-        CWorkerNodeInfo wn_info(host,port);
-
-        GetPage().AddTagMap("INFO",  new CHTMLText(wn_info.GetStatistics()));
-
-    } catch (...) {
-
-        node->AppendChild(new CHTMLText("Error"));
-        //        Reply->AppendChild(CShowServersCommand::CreateView(ctx));
-    }
+    GetPage().AddTagMap("INFO",  new CHTMLText(wn_info.GetStatistics()));
 
     return node.release();
 }
@@ -411,6 +395,9 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/07 19:06:44  didenko
+ * Added errors handling
+ *
  * Revision 1.5  2005/07/01 16:03:46  didenko
  * Undo previous commit
  *

@@ -120,3 +120,6 @@ Statistics for worker node @ <@HOST@>:<@PORT@> </br>
 </table>
 </@WORKERNODE_QUEUE_VIEW@>
 
+<@ERROR_VIEW@>
+Error message: <@error@>
+</@ERROR_VIEW@>
