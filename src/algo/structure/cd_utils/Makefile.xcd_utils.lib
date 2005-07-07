@@ -23,13 +23,16 @@ SRC = \
 	cuCdFamily \
 	cuAlignedDM \
 	cuAlignmentCollection \
+	cuBaseClusterer \
 	cuBlockExtender \
 	cuBlockIntersector \
 	cuDistmat \
 	cuDmAlignedOptimalScore \
 	cuDmAlignedscore \
 	cuDmIdentities \
+	cuNRCriteria \
 	cuRowSourceTable \
+	cuPrefTaxNodes \
 	cuScoringMatrix \
 	cuSeqtree \
 	cuSeqTreeAlg \
@@ -39,6 +42,7 @@ SRC = \
 	cuSeqTreeStream \
 	cuSequenceTable \
 	cuTaxClient \
+	cuTaxNRCriteria \
 	cuTaxTree \
 	cuSeqTreeAsnizer \
 	cuSeqTreeRootedLayout
