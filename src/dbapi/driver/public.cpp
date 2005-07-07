@@ -725,7 +725,7 @@ CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
     }
 }
 
-void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
+void CDB_ResultProcessor::ProcessResult(I_Result& res)
 {
     while (res.Fetch());  // fetch and forget
 }
@@ -752,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/07/07 16:52:16  ucko
+ * Replaced ProcessResult(CDB_Result& res) with ProcessResult(I_Result& res)
+ *
  * Revision 1.12  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
