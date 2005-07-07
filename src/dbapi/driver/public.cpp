@@ -727,7 +727,8 @@ CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
 
 void CDB_ResultProcessor::ProcessResult(I_Result& res)
 {
-    while (res.Fetch());  // fetch and forget
+    while (res.Fetch())  // fetch and forget
+        continue;
 }
 
 
@@ -752,6 +753,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/07 19:25:39  ssikorsk
+ * A few changes to support new ftds driver
+ *
  * Revision 1.13  2005/07/07 16:52:16  ucko
  * Replaced ProcessResult(CDB_Result& res) with ProcessResult(I_Result& res)
  *
