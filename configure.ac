@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.381 2005/06/27 17:41:08 ucko Exp $
+#  $Id: configure.ac,v 1.382 2005/07/07 19:13:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2775,34 +2775,51 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-      with_ftds=8
-   fi
-   if test "$with_ftds" = 8 ; then
-      FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
-      if test -f ${real_srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
-         FTDS8_LIB="sybdb_ftds${STATIC} tds_ftds${STATIC}"
-         FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
-         FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
+   ftds_def=8
+   ftds8=ftds8
+   ftds63=ftds63
+   try_local=yes
+   : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+   case "$with_ftds" in
+      8 | yes | '' )
+         with_ftds=8
+         ftds8=ftds
+         ;;
+      63 )
+         ftds63=ftds
+         ;;
+      * )
+         FTDS_PATH=$with_ftds
+         try_local=no
+         ;;
+   esac
+   : ${FTDS_LIBS:="-lsybdb -ltds"}
+   FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
+   FTDS_INCLUDE="-I$FTDS_PATH/include"
+   m4_foreach(V, [8,63],
+      [d="dbapi/driver/[ftds]V/freetds"
+      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
+         test "$with_ftds" = V  &&  FTDS_PATH="<$d>"
+         [FTDS]V[_LIB]="sybdb_${[ftds]V}${STATIC} tds_${[ftds]V}${STATIC}"
+         [FTDS]V[_LIBS]=
+         [FTDS]V[_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
+         freetds=freetds
+      elif test -d "$FTDS_PATH" ; then
+         [FTDS]V[_LIB]=
+         [FTDS]V[_LIBS]=$FTDS_LIBS
+         [FTDS]V[_INCLUDE]=$FTDS_INCLUDE
       fi
-      test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds"
-   else
-      FTDS_PATH="$with_ftds"
-   fi
+   ])
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
+      FTDS_LIBS=
       FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then
           AC_DEFINE(NCBI_FTDS_RENAME_SYBDB, 1,
                     [Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB.])
       fi
-      AC_MSG_NOTICE([Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH])
+      AC_MSG_NOTICE([Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH])
    else
-      FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
-      FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
-      FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
-      FTDS_INCLUDE="-I$FTDS_PATH/include"
-
       AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
          [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
@@ -2821,9 +2838,6 @@ if test "$with_ftds" != "no" ; then
             [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
-      else
-         FTDS8_INCLUDE=$FTDS_INCLUDE
-         FTDS8_LIBS=$FTDS_LIBS
       fi
    fi
 fi
@@ -2835,6 +2849,9 @@ if test "$with_ftds" = "no" ; then
    FTDS8_INCLUDE=
    FTDS8_LIBS=
    FTDS8_LIB=
+   FTDS63_INCLUDE=
+   FTDS63_LIBS=
+   FTDS63_LIB=
    freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
@@ -2845,10 +2862,15 @@ fi
 AC_SUBST(FTDS8_INCLUDE)
 AC_SUBST(FTDS8_LIBS)
 AC_SUBST(FTDS8_LIB)
+AC_SUBST(FTDS63_INCLUDE)
+AC_SUBST(FTDS63_LIBS)
+AC_SUBST(FTDS63_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
 AC_SUBST(freetds)
+AC_SUBST(ftds8)
+AC_SUBST(ftds63)
 
 
 ## MySQL
