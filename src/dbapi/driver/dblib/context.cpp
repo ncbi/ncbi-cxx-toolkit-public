@@ -52,6 +52,8 @@
 #  include <winsock2.h>
 #endif
 
+#include <stdio.h>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -1049,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/07/07 20:34:16  vasilche
+ * Added #include <stdio.h> for sprintf().
+ *
  * Revision 1.41  2005/07/07 19:12:55  ssikorsk
  * Improved to support a ftds driver
  *

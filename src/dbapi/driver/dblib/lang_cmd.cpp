@@ -38,6 +38,7 @@
 #  include <dbapi/driver/msdblib/interfaces_p.hpp>
 #endif
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -544,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/07 20:34:16  vasilche
+ * Added #include <stdio.h> for sprintf().
+ *
  * Revision 1.16  2005/07/07 19:12:55  ssikorsk
  * Improved to support a ftds driver
  *
