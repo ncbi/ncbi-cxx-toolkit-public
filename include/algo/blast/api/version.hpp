@@ -82,7 +82,11 @@ class NCBI_XBLAST_EXPORT CReference
 public:
     /// Enumerates the various BLAST publications
     enum EPublication {
-        eGappedBlast = 0,           ///< Reference for 1997 NAR paper
+        eGappedBlast = 0,           ///< 1997 NAR paper
+        ePhiBlast,                  ///< 1998 NAR paper
+        eMegaBlast,                 ///< 2000 J Compt Biol paper
+        eCompBasedStats,            ///< 2001 NAR paper
+        eCompAdjustedMatrices,      ///< submitted for publication
         eMaxPublications            ///< Used as sentinel value
     };
 

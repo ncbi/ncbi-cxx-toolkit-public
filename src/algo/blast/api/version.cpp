@@ -62,7 +62,26 @@ static const string kReferences[(int)CReference::eMaxPublications+1] = {
     "Altschul, Stephen F., Thomas L. Madden, \
 Alejandro A. Schäffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
 Lipman (1997), \"Gapped BLAST and PSI-BLAST: a new generation of protein \
-database search programs\",  Nucleic Acids Res. 25:3389-3402.",
+database search programs\", Nucleic Acids Res. 25:3389-3402.",
+    // ePhiBlast
+    "Zhang, Zheng, Alejandro A. Schäffer, Webb Miller, \
+Thomas L. Madden, David J. Lipman, Eugene V. Koonin, and Stephen F. \
+Altschul (1998), \"Protein sequence similarity searches using patterns \
+as seeds\", Nucleic Acids Res. 26:3986-3990.",
+    // eMegablast
+    "Zheng Zhang, Scott Schwartz, Lukas Wagner, and Webb Miller (2000), \
+\"A greedy algorithm for aligning DNA sequences\", \
+J Comput Biol 2000; 7(1-2):203-14.", 
+    // eCompBasedStats
+    "Schäffer, Alejandro A., L. Aravind, Thomas L. Madden, Sergei Shavirin, \
+John L. Spouge, Yuri I. Wolf, Eugene V. Koonin, and Stephen F. Altschul \
+(2001), \"Improving the accuracy of PSI-BLAST protein database searches \
+with composition-based statistics and other refinements\", Nucleic Acids \
+Res. 29:2994-3005.",
+    // eCompAdjustedMatrices
+    "John C. Wootton, E. Michael Gertz, Richa Agarwala, Aleksandr Morgulis, \
+Alejandro A. Schäffer, and Yi-Kuo Yu \"Protein database searches using \
+compositionally adjusted substitution matrices\", submitted.",
     // eMaxPublications
     kEmptyStr
 };
@@ -71,6 +90,18 @@ static const string kPubMedUrls[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
     "http://www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9254694&dopt=Citation",
+    // ePhiBlast
+    "http://www.ncbi.nlm.nih.gov/\
+entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9705509&dopt=Citation",
+    // eMegablast
+    "http://www.ncbi.nlm.nih.gov/\
+entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=10890397&dopt=Citation",
+    // eCompBasedStats
+    "http://www.ncbi.nlm.nih.gov/\
+entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=11452024&dopt=Citation",
+    // eCompAdjustedMatrices
+    "http://www.ncbi.nlm.nih.gov/\
+entrez/query.fcgi",
     // eMaxPublications
     kEmptyStr
 };
