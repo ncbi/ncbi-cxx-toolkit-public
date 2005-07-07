@@ -69,7 +69,8 @@ public:
     //  All data read via the constructors are added to existing data
     //  unless reset = true, in which case existing data is removed first.
 
-    //  Will look for a file under 'data/txnodes.asn' relative to directory of executable.
+    //  Will look for a file under 'data/txnodes.asn' relative to current directory.
+    //  Reads in an object of type CCdd_pref_nodes.
 	CPriorityTaxNodes(TaxNodeInputType inputType);
 
     //  Pass the full path to the file containing preferred tax node info formatted 
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/07 19:42:08  lanczyck
+ * modify comment
+ *
  * Revision 1.2  2005/07/07 17:30:31  lanczyck
  * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
  * list of tax nodes is no longer static
