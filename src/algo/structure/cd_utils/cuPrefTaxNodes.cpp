@@ -50,8 +50,8 @@ const string CPriorityTaxNodes::PREF_TAXNODE_FILE  = "data/txnodes.asn";
    
 CPriorityTaxNodes::CPriorityTaxNodes(TaxNodeInputType inputType) : m_inputType(inputType)
 {
-//    string filename = PREF_TAXNODE_FILE;
-    string filename = CJL_LaunchDirectory + PREF_TAXNODE_FILE;
+    string filename = PREF_TAXNODE_FILE;
+//    string filename = CJL_LaunchDirectory + PREF_TAXNODE_FILE;
     LoadFromFile(filename, false);
 }
 
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/07 19:43:42  lanczyck
+ * use implicit 'current' directoyr for txnodes.asn file for one-argument ctor
+ *
  * Revision 1.2  2005/07/07 17:29:21  lanczyck
  * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
  * list of tax nodes is no longer static
