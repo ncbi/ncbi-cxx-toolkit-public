@@ -134,7 +134,7 @@ public:
 	const string& getConsensus();
 	short getPseudoCount() {return m_pseudoCount;}
 	ConsensusMaker& getConsensusMaker() {return m_conMaker;}
-	void printAlignment(string& fileName)const;
+	void printAlignment(string& fileName);
 
 private:
 	ConsensusMaker m_conMaker;
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/07 20:29:56  cliu
+ * print seqid
+ *
  * Revision 1.2  2005/07/05 18:59:56  cliu
  * print alignment
  *

@@ -136,6 +136,7 @@ private:
 	void traverseAlignedColumns(ColumnReader& cr);
 	int getNumRows()const {return m_totalRows;}
 	double calcInformationContent(bool byConsensus=true);
+	const vector< CRef< CSeq_id> > getSeqIdsByRow() const { return m_seqIds;}
 
  private:
 	 
@@ -145,6 +146,7 @@ private:
 	typedef map<ColumnAddress, ColumnResidueProfile> PosProfileMap;
 	PosProfileMap m_profiles;
 	vector<double> m_rowWeights;
+	vector< CRef< CSeq_id> > m_seqIds; 
 
 	//results
 	string m_consensus;
@@ -160,6 +162,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/07 20:29:56  cliu
+ * print seqid
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

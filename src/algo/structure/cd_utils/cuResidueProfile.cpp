@@ -378,6 +378,10 @@ void ResidueProfiles::addOneRow(BlockModelPair& bmp, const string& mSeq, const s
 	int masterRow = 0;
 	const vector<Block>& mBlocks = bmp.getMaster().getBlocks();
 	const vector<Block>& sBlocks = bmp.getSlave().getBlocks();
+	//keep seqIds
+	if (m_seqIds.size() == 0)
+		m_seqIds.push_back(bmp.getMaster().getSeqId());
+	m_seqIds.push_back(bmp.getSlave().getSeqId());
 	for (int bn = 0; bn < mBlocks.size(); bn++)
 	{
 		for (int i = 0; i < mBlocks[bn].getLen(); i++)
@@ -727,6 +731,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/07 20:29:46  cliu
+ * print seqid
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

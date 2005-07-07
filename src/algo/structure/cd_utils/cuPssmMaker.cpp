@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 static void
-printMsa(const char* filename, const PSIMsa* msa)
+printMsa(const char* filename, const PSIMsa* msa, vector<string>& seqIds)
 {
     Uint4 i, j;
     FILE* fp = NULL;
@@ -53,10 +53,11 @@ printMsa(const char* filename, const PSIMsa* msa)
     ASSERT(filename);
 
     fp = fopen(filename, "w");
-	 
-
-    for (i = 0; i < msa->dimensions->num_seqs + 1; i++) {
-        /*fprintf(fp, "%3d\t", i);*/
+	int startRow = msa->dimensions->num_seqs + 1 - seqIds.size();
+	//if startRow == 1, this means row 0 is the consensus and should be ignored
+	ASSERT(startRow >= 0);
+    for (i = startRow; i < msa->dimensions->num_seqs + 1; i++) {
+        fprintf(fp, "%s\n", seqIds[i-startRow].c_str());
         for (j = 0; j < msa->dimensions->query_length; j++) {
             if (msa->data[i][j].is_aligned) {
 				fprintf(fp, "%c", ColumnResidueProfile::getEaaCode(msa->data[i][j].letter));
@@ -141,9 +142,6 @@ void CdPssmInput::read(ColumnResidueProfile& crp)
 {
 	
 	int conIndex = crp.getIndexByConsensus();
-	/*
-	if (m_currentCol == 89)
-				bool check = true;*/
 	int startingRow = 0;
 	if (m_useConsensus)
 		startingRow = 1;
@@ -154,8 +152,6 @@ void CdPssmInput::read(ColumnResidueProfile& crp)
 	for (int row = 0; row < m_profiles.getNumRows(); row++)
 	{
 		m_msa->data[row+startingRow][m_currentCol].letter = residuesOnColumn[row];
-		//m_msa->data[row+startingRow][m_currentCol].is_aligned = crp.isAligned(residuesOnColumn[row], row);
-		//m_msa->data[row+startingRow][m_currentCol].is_aligned = (residuesOnColumn[row] != gap);
 		m_msa->data[row+startingRow][m_currentCol].is_aligned = true;
 	}
 	m_currentCol++;
@@ -461,9 +457,16 @@ bool PssmMaker::getTrunctMaster(CRef< CSeq_entry >& seqEntry)
 	return true;
 }
 
-void PssmMaker::printAlignment(string& fileName)const
+void PssmMaker::printAlignment(string& fileName)
 {
-	printMsa(fileName.c_str(), m_pssmInput->GetData());
+	vector<string> seqIdStr;
+	const vector< CRef< CSeq_id > >& seqIds = m_conMaker.getResidueProfiles().getSeqIdsByRow();
+	for (int i = 0; i < seqIds.size(); i++)
+	{
+		seqIdStr.push_back(seqIds[i]->AsFastaString());
+	}
+
+	printMsa(fileName.c_str(), m_pssmInput->GetData(), seqIdStr);
 }
 
 END_SCOPE(cd_utils)
@@ -474,6 +477,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/07 20:29:46  cliu
+ * print seqid
+ *
  * Revision 1.2  2005/07/05 18:59:38  cliu
  * print alignment
  *
