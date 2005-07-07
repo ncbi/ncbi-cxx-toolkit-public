@@ -63,6 +63,7 @@
 #  define dbaltop NCBI_FTDS_dbaltop
 #  define dbalttype NCBI_FTDS_dbalttype
 #  define dbaltutype NCBI_FTDS_dbaltutype
+#  define dbaltbind NCBI_FTDS_dbaltbind
 #  define dbbind NCBI_FTDS_dbbind
 #  define dbbylist NCBI_FTDS_dbbylist
 #  define dbcancel NCBI_FTDS_dbcancel
@@ -138,6 +139,7 @@
 #  define dbnullbind NCBI_FTDS_dbnullbind
 #  define dbnumalts NCBI_FTDS_dbnumalts
 #  define dbnumcols NCBI_FTDS_dbnumcols
+#  define dbnumcompute NCBI_FTDS_dbnumcompute
 #  define dbnumrets NCBI_FTDS_dbnumrets
 /* #  define dbopen NCBI_FTDS_dbopen */
 #  define dbpoll NCBI_FTDS_dbpoll
