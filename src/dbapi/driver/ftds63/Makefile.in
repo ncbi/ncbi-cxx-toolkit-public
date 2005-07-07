@@ -1,0 +1,11 @@
+# $Id$
+
+USR_PROJ = @freetds@
+POTENTIAL_SUB_PROJ = freetds
+
+LIB_PROJ = dbapi_driver_ftds63 ncbi_xdbapi_ftds63
+
+REQUIRES = FreeTDS
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
