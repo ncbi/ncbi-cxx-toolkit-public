@@ -165,7 +165,7 @@ bool CBMARefinerCycle::IsConverged() const {
     bool result = false;
     bool hasRelevantPhasePending;
     unsigned int nPhases = m_phases.size(), lastPhaseCompleted;
-    unsigned int phaseOfLastChange = kMax_UInt;  // no changes
+    unsigned int phaseIndexOfLastChange = kMax_UInt;  // no changes
 
     //  Must have run two or more phases to be able to test for convergence.
     if (m_nextPhase > 1) {
@@ -174,14 +174,14 @@ bool CBMARefinerCycle::IsConverged() const {
         lastPhaseCompleted = m_nextPhase - 1;
         if (!m_phases[lastPhaseCompleted]->MadeChange()) {
 
-            for (unsigned int i = lastPhaseCompleted - 1; phaseOfLastChange == kMax_UInt && i >= 0; --i) {
-                if (m_phases[i]->MadeChange()) {
-                    phaseOfLastChange = i;
+            for (unsigned int i = lastPhaseCompleted; phaseIndexOfLastChange == kMax_UInt && i > 0; --i) {
+                if (m_phases[i-1]->MadeChange()) {
+                    phaseIndexOfLastChange = i-1;
                 }
             }
 
             //  If there's never been a change, we're converged.
-            if (phaseOfLastChange == kMax_UInt) {
+            if (phaseIndexOfLastChange == kMax_UInt) {
 
                 result = true;
 
@@ -201,7 +201,7 @@ bool CBMARefinerCycle::IsConverged() const {
                             //  Find most recently completed BE phase, if any;
                             //  did it occur after the phase of last change??
                             hasRelevantPhasePending = true;                        
-                            for (unsigned int j = lastPhaseCompleted - 1; j > phaseOfLastChange; --j) {
+                            for (unsigned int j = lastPhaseCompleted - 1; j > phaseIndexOfLastChange; --j) {
                                 if (m_phases[j]->PhaseType() == CBMARefinerPhase::eRefinerPhaseBE) {
                                     hasRelevantPhasePending = false;
                                 }
@@ -222,7 +222,7 @@ bool CBMARefinerCycle::IsConverged() const {
                             //  Find most recently completed LOO phase, if any;
                             //  did it occur after the phase of last change??
                             hasRelevantPhasePending = true;                        
-                            for (unsigned int j = lastPhaseCompleted - 1; j > phaseOfLastChange; --j) {
+                            for (unsigned int j = lastPhaseCompleted - 1; j > phaseIndexOfLastChange; --j) {
                                 if (m_phases[j]->PhaseType() == CBMARefinerPhase::eRefinerPhaseLOO) {
                                     hasRelevantPhasePending = false;
                                 }
@@ -244,6 +244,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/07 22:55:21  lanczyck
+ * fix out-of-range iteration index bug when testing for convergence when there were no changes in any of a cycle's phases
+ *
  * Revision 1.3  2005/06/28 15:59:15  lanczyck
  * extract final score from last phase not skipped vs. last phase
  *
