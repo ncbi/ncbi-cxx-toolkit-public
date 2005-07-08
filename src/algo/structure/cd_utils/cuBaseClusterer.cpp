@@ -44,9 +44,7 @@ const CBaseClusterer::TClusterId CBaseClusterer::INVALID_CLUSTER_ID = 1234567890
 
 //  default implementation of virtual function
 string CBaseClusterer::IdToString(const TId& id) const {
-    char buf[10];
-    sprintf(buf,"ID %d", id);
-    return string(buf);
+    return "ID " + NStr::IntToString(id);
 }
 
 const CBaseClusterer::TCluster& CBaseClusterer::GetCluster(TClusterId clusterId) const {
@@ -105,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/08 01:26:25  ucko
+* Rework to avoid sprintf(), which hasn't necessarily been declared.
+*
 * Revision 1.1  2005/07/07 17:31:41  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *
