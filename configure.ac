@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.382 2005/07/07 19:13:31 ucko Exp $
+#  $Id: configure.ac,v 1.383 2005/07/08 01:34:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -683,6 +683,7 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:GCC )
+   CPPFLAGS="-D_XOPEN_SOURCE=500 $CPPFLAGS"
    STRIP="@:"
    ;;
 
