@@ -17,7 +17,9 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include <ncbi_tds_config.h> 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif /* HAVE_CONFIG_H */
 
 #if HAVE_STDLIB_H
 #include <stdlib.h>

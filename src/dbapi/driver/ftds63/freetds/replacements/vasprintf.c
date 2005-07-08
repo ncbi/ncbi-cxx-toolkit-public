@@ -4,7 +4,9 @@
  * public domain.  no warranty.  use at your own risk.  have a nice day.
  */
 
-#include <ncbi_tds_config.h> 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif /* HAVE_CONFIG_H */
 
 #include <stdio.h>
 
