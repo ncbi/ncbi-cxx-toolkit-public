@@ -29,6 +29,8 @@
  *
  */
 
+%ignore ncbi::CCompartmentFinder_CCompartment::SetMembers;
+
 %ignore ncbi::objects::CSeqVector_CI_CTempValue;
 
 %ignore *::CAlignInfo_CExon::GetGenomicLocation();
@@ -96,6 +98,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/08 16:31:50  jcherry
+ * %ignore ncbi::CCompartmentFinder_CCompartment::SetMembers
+ *
  * Revision 1.1  2005/05/11 22:23:14  jcherry
  * Initial version
  *
