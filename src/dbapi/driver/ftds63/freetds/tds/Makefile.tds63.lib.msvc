@@ -1,0 +1,2 @@
+[AddToProject]
+SourceFiles = ../replacements/asprintf ../replacements/atoll ../replacements/iconv_win ../replacements/strtok_r ../replacements/vasprintf
