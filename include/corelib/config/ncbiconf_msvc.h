@@ -90,13 +90,6 @@ typedef   int   ssize_t;
 #define ICONV_CONST                     const
 #define NETDB_REENTRANT                 1
 
-#ifdef __GNUC__
-# define TIME_WITH_SYS_TIME             1
-#else
-# define TIME_WITH_SYS_TIME             0
-#endif
-
-
 /*
  *  Site localization
  */
