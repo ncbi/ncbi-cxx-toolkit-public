@@ -87,10 +87,9 @@ typedef struct LookupBackboneCell {
                                             cell is HITS_ON_BACKBONE or less,
                                             the hits are all stored directly in
                                             the cell */
-    } payload;  /** UNION that specifies either entries stored right on the backbone
+    } payload;  /**< UNION that specifies either entries stored right on the backbone
                     if fewer than HITS_ON_BACKBONE are present or a pointer to 
                     where the hits are stored (off-backbone). */
-
 } LookupBackboneCell;
     
 /** The basic lookup table structure for blastn
