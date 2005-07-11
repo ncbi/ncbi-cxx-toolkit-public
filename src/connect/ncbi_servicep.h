@@ -72,7 +72,6 @@ struct SSERV_IterTag {
     void*             data;  /* private data field                        */
     unsigned        mask:1;  /* whether name is to be treated as mask     */
     unsigned    external:1;  /* whether this is an external request       */
-    unsigned int    origin;  /* IP of the origin                          */
     const char*        arg;  /* argument to match; original pointer       */
     size_t          arglen;  /* == 0 for NULL pointer above               */
     const char*        val;  /* value to match; original pointer          */
@@ -105,7 +104,6 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  double              preference,    /* [0=min..100=max] preference in %%     */
  int/*bool*/         external,      /* whether mapping is not local to NCBI  */
  SConnNetInfo*       net_info,      /* for connection to dispatcher, m.b. 0  */
- unsigned int        origin,        /* origin IP                             */
  const char*         arg,           /* environment variable name to search   */
  const char*         val            /* environment variable value to match   */
  );
@@ -118,7 +116,6 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
  double              preference,
  int/*bool*/         external,
  SConnNetInfo*       net_info,
- unsigned int        origin,
  const char*         arg,
  const char*         val
  );
@@ -182,6 +179,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2005/07/11 18:49:11  lavr
+ * Hashed preference generation algorithm retired (proven to fail often)
+ *
  * Revision 6.32  2005/07/11 18:15:10  lavr
  * Revised to allow wildcard searches thru service iterator
  *

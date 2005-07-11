@@ -57,7 +57,7 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if ((local &&
          (iter = SERV_OpenP(service, fSERV_Any, SERV_LOCALHOST, 0.0,
-                            0, 0/*net_info*/, 0, 0, 0)) != 0) ||
+                            0, 0/*net_info*/, 0, 0)) != 0) ||
         (!local && (iter = SERV_OpenSimple(service)) != 0)) {
         HOST_INFO hinfo;
         CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
@@ -126,6 +126,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2005/07/11 18:49:15  lavr
+ * Hashed preference generation algorithm retired (proven to fail often)
+ *
  * Revision 6.17  2005/07/11 18:26:05  lavr
  * Allow wildcard in local name searches
  *

@@ -126,7 +126,7 @@ NetCache_ConfigureWithLB(
         fSERV_Any, SERV_LOCALHOST, net_info);
 #else
     SERV_ITER srv_it = SERV_OpenP(service_name.c_str(),
-        fSERV_Any, SERV_LOCALHOST, 90.0, 0, net_info, 0, 0, 0);
+        fSERV_Any, SERV_LOCALHOST, 90.0, 0, net_info, 0, 0);
 #endif
     ConnNetInfo_Destroy(net_info);
 
@@ -454,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/07/11 18:49:14  lavr
+ * Hashed preference generation algorithm retired (proven to fail often)
+ *
  * Revision 1.18  2005/06/08 13:17:57  kuznets
  * Fixed bug with transmission writer (put v.2)
  *
