@@ -252,7 +252,7 @@ static void s_Init(IRWRegistry*      reg = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
 {
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOCK(MT_LOCK_cxx2c(lock,
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2005/07/11 18:12:12  lavr
+ * Fix ADDEND spelling
+ *
  * Revision 6.30  2005/05/03 11:56:39  lavr
  * -<connect/ncbi_socket.h>
  *
