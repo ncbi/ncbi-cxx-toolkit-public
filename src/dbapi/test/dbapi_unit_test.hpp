@@ -155,6 +155,8 @@ public:
     void Test_StatementParameters(void);
     void Test_UserErrorHandler(void);
 
+    void Test_SelectStmt(void);
+
 public:
     void Test_Exception_Safety(void);
     void Test_ES_01(IConnection& conn);
@@ -202,6 +204,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/07/11 11:13:02  ssikorsk
+ * Added a 'TestSelect' test to the test-suite
+ *
  * Revision 1.15  2005/05/12 18:42:57  ssikorsk
  * Improved the "Test_UserErrorHandler" test-case
  *

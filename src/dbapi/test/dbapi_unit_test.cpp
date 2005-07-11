@@ -43,6 +43,8 @@
 
 BEGIN_NCBI_SCOPE
 
+#define CONN_OWNERSHIP  eTakeOwnership
+
 ///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
@@ -88,7 +90,7 @@ protected:
     }
     static IConnection* Init(IDataSource* ds)
     {
-        return ds->CreateConnection();
+        return ds->CreateConnection( CONN_OWNERSHIP );
     }
 };
 
@@ -107,7 +109,7 @@ CDBAPIUnitTest::TestInit(void)
 {
     m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
-    m_Conn.reset( m_DS->CreateConnection() );
+    m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
     m_Conn->Connect( 
         m_args.GetUserName(), 
         m_args.GetUserPassword(), 
@@ -198,6 +200,53 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
     return false;
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void
+CDBAPIUnitTest::Test_SelectStmt(void)
+{
+    // Scenario:
+    // 1) Select recordset with just one record
+    // 2) Retrive only one record.
+    // 3) Select another recordset with just one record
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IResultSet> rs;
+
+        // 1) Select recordset with just one record
+        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
+        BOOST_CHECK( rs.get() != NULL );
+
+        // 2) Retrive only one record.
+        if ( !rs->Next() ) {
+            BOOST_FAIL( "Record is expected"); 
+        }
+
+        // 3) Select another recordset with just one record
+        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
+        BOOST_CHECK( rs.get() != NULL );
+    }
+
+    // Same as before but uses two differenr connections ...
+    if (false) {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IResultSet> rs;
+
+        // 1) Select recordset with just one record
+        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
+        BOOST_CHECK( rs.get() != NULL );
+
+        // 2) Retrive only one record.
+        if ( !rs->Next() ) {
+            BOOST_FAIL( "Record is expected"); 
+        }
+
+        // 3) Select another recordset with just one record
+        auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
+        rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
+        BOOST_CHECK( rs.get() != NULL );
+    }
+}
+
 void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
@@ -211,7 +260,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // to any particular connection) error messages.
     {
         CTestErrHandler* drv_err_handler = new CTestErrHandler();
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         local_conn->Connect( 
             m_args.GetUserName(), 
             m_args.GetUserPassword(), 
@@ -224,7 +273,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Connection process should be affected ...
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
 
             try {
                 conn->Connect( 
@@ -256,7 +305,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // New connection should not be affected ...
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
             conn->Connect( 
                 m_args.GetUserName(), 
                 m_args.GetUserPassword(), 
@@ -295,7 +344,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // after pushing a message handler into another connection
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
             conn->Connect( 
                 m_args.GetUserName(), 
                 m_args.GetUserPassword(), 
@@ -322,7 +371,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // handlers which are inherited by all newly created connections.
     {
         CTestErrHandler* drv_err_handler = new CTestErrHandler();
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         local_conn->Connect( 
             m_args.GetUserName(), 
             m_args.GetUserPassword(), 
@@ -362,7 +411,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
         ////////////////////////////////////////////////////////////////////////
         // Create a new connection.
-        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+        auto_ptr<IConnection> new_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         new_conn->Connect( 
             m_args.GetUserName(), 
             m_args.GetUserPassword(), 
@@ -401,7 +450,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // after pushing a message handler into another connection
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
             conn->Connect( 
                 m_args.GetUserName(), 
                 m_args.GetUserPassword(), 
@@ -1827,9 +1876,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(except_safety_tc);
     add(tc);
 
-//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
-//     tc->depends_on(tc_init);
-//     add(tc);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -1914,8 +1963,12 @@ CTestArguments::SetDatabaseParameters(void)
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "100";
     } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
-        // ftds forks with Sybase databases using protocol v42 only ...
+        // ftds work with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
+    }
+
+    if ( GetDriverName() == "ftds" || GetDriverName() == "dblib" ) {
+        m_DatabaseParameters["client_charset"] = "UTF-8";
     }
 }
 
@@ -1942,6 +1995,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/07/11 11:13:02  ssikorsk
+ * Added a 'TestSelect' test to the test-suite
+ *
  * Revision 1.22  2005/05/16 15:06:20  ssikorsk
  * Add PushCntxMsgHandler + invalid connection check.
  *
