@@ -109,6 +109,7 @@ private:
         eInconsistentOverlap,
         eSecondRowOverlap,
         eSecondRowInconsistency,
+        eTranslocation,
         eIgnoreMatch
     };
     typedef int TSecondRowFits;
@@ -189,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/07/11 13:57:02  todorov
+* + eTranslocation
+*
 * Revision 1.3  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *
