@@ -540,8 +540,6 @@ void CheckDuplicates( const vector< string > & input,
 
     dup_lookup_table table;
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
 
     for( input_iterator i( input.begin() ); i != input.end(); ++i )
     {
@@ -552,19 +550,14 @@ void CheckDuplicates( const vector< string > & input,
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            CSeq_entry_Handle seh;
-            try {
-               seh = scope->GetSeq_entryHandle(*entry);
-            }
-            catch (CException&) {
-                seh = scope->AddTopLevelSeqEntry(*entry);
-            }
+            CScope scope(*om);
+            CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
             CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
             for ( ;  bs_iter;  ++bs_iter) {
                 CBioseq_Handle bsh = *bs_iter;
 
-                if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+                if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
                 {
                     TSeqPos data_len = bsh.GetBioseqLength();
                     if( data_len < MIN_SEQ_LENGTH )
@@ -603,6 +596,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/07/11 14:36:17  morgulis
+ * Fixes for performance problems with large number of short sequences.
+ * Windowmasker is now statically linked against object manager libs.
+ *
  * Revision 1.4  2005/03/24 16:50:21  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

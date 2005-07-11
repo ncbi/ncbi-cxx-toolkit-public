@@ -10,7 +10,7 @@ SRC = main win_mask_app win_mask_config win_mask_dup_table \
 
 LIB = xalgowinmask \
       xblast xnetblastcli xnetblast scoremat seqdb blastdb tables \
-      xobjread xobjutil $(OBJMGR_LIBS)
+      xobjread xobjutil $(OBJMGR_LIBS:%=%$(STATIC)) 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)

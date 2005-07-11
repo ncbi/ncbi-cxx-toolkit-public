@@ -40,18 +40,20 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //------------------------------------------------------------------------------
-bool CWinMaskUtil::consider( CRef< CScope > scope,
-                             const CBioseq_Handle & bsh,
+bool CWinMaskUtil::consider( const CBioseq_Handle & bsh,
                              const set< CSeq_id_Handle > & ids,
                              const set< CSeq_id_Handle > & exclude_ids )
 {
+    if( ids.empty() && exclude_ids.empty() )
+        return true;
+
     bool result = true;
-    vector< CSeq_id_Handle > syns = scope->GetIds( *bsh.GetSeqId() );
+    const CBioseq_Handle::TId& syns = bsh.GetId();
 
     if( !ids.empty() )
     {
         result = false;
-        ITERATE( vector< CSeq_id_Handle >, iter, syns )
+        ITERATE( CBioseq_Handle::TId, iter, syns )
         {
             if( ids.find( *iter ) != ids.end() )
             {
@@ -63,7 +65,7 @@ bool CWinMaskUtil::consider( CRef< CScope > scope,
 
     if( !exclude_ids.empty() )
     {
-        ITERATE( vector< CSeq_id_Handle >, iter, syns )
+        ITERATE( CBioseq_Handle::TId, iter, syns )
         {
             if( exclude_ids.find( *iter ) != ids.end() )
             {
@@ -81,6 +83,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/07/11 14:36:17  morgulis
+ * Fixes for performance problems with large number of short sequences.
+ * Windowmasker is now statically linked against object manager libs.
+ *
  * Revision 1.1  2005/03/24 16:50:22  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

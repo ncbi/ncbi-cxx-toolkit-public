@@ -45,7 +45,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include "win_mask_app.hpp"
@@ -270,11 +270,8 @@ void CWinMaskApplication::Init(void)
 int CWinMaskApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    //CGBDataLoader::RegisterInObjectManager(*om, 0, CObjectManager::eDefault);
     CGBDataLoader::RegisterInObjectManager(
-        *om, new CId1Reader, CObjectManager::eDefault);
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
+        *om, new CId2Reader, CObjectManager::eDefault );
 
 #if 0
     if( GetArgs()["dbg"].AsBoolean() )
@@ -340,16 +337,9 @@ int CWinMaskApplication::Run (void)
 
     while( (aSeqEntry = theReader.GetNextSequence()).NotEmpty() )
     {
-        CSeq_entry_Handle seh;
-        try {
-            seh = scope->GetSeq_entryHandle(*aSeqEntry);
-        }
-        catch (CException&) {
-            seh = scope->AddTopLevelSeqEntry(*aSeqEntry);
-        }
-
+        CScope scope(*om);
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*aSeqEntry);
         Uint4 masked = 0;
-
         CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
         for ( ;  bs_iter;  ++bs_iter) {
             CBioseq_Handle bsh = *bs_iter;
@@ -357,7 +347,7 @@ int CWinMaskApplication::Run (void)
                 continue;
             }
 
-            if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+            if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
             {
                 TSeqPos len = bsh.GetBioseqLength();
                 total += len;
@@ -395,6 +385,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/07/11 14:36:17  morgulis
+ * Fixes for performance problems with large number of short sequences.
+ * Windowmasker is now statically linked against object manager libs.
+ *
  * Revision 1.10  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

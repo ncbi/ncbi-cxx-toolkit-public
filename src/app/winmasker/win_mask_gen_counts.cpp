@@ -111,23 +111,17 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
     Uint8 result = 0;
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
+
     while( (entry = reader.GetNextSequence()).NotEmpty() )
     {
-        CSeq_entry_Handle seh;
-        try {
-            seh = scope->GetSeq_entryHandle(*entry);
-        }
-        catch (CException&) {
-            seh = scope->AddTopLevelSeqEntry(*entry);
-        }
+        CScope scope(*om);
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
         CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
         for ( ;  bs_iter;  ++bs_iter) {
             CBioseq_Handle bsh = *bs_iter;
 
-            if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+            if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
                 result += bs_iter->GetBioseqLength();
         }
     }
@@ -224,6 +218,7 @@ void CWinMaskCountsGenerator::operator()()
             }
 
             cerr << "done." << endl;
+            cerr << total << endl;
             genome_size = total;
         }
 
@@ -383,12 +378,9 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     Uint4 unit_mask( (1<<(2*unit_size)) - 1 );
     Uint4 prefix_mask( ((1<<(2*prefix_size)) - 1)<<(2*suffix_size) );
     Uint4 suffix_mask( (1<<2*suffix_size) - 1 );
-
     prefix <<= (2*suffix_size);
-
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
+
     for( vector< string >::const_iterator it( input_list.begin() );
          it != input_list.end(); ++it )
     {
@@ -398,19 +390,14 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            CSeq_entry_Handle seh;
-            try {
-                seh = scope->GetSeq_entryHandle(*entry);
-            }
-            catch (CException&) {
-                seh = scope->AddTopLevelSeqEntry(*entry);
-            }
+            CScope scope(*om);
+            CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
             CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
             for ( ;  bs_iter;  ++bs_iter) {
                 CBioseq_Handle bsh = *bs_iter;
 
-                if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+                if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
                 {
                     CSeqVector data =
                         bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -491,6 +478,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.14  2005/07/11 14:36:17  morgulis
+ * Fixes for performance problems with large number of short sequences.
+ * Windowmasker is now statically linked against object manager libs.
+ *
  * Revision 1.13  2005/05/02 17:58:01  morgulis
  * Fixed a few warnings for solaris.
  *

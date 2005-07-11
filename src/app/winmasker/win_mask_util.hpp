@@ -47,8 +47,21 @@ class CWinMaskUtil
 {
     public:
 
+        /**
+            \brief Check if the given bioseq should be considered for 
+                   processing.
+
+            ids and exclude_ids should not be simultaneousely non empty.
+
+            \param bsh bioseq handle in question
+            \param ids list of seq ids to consider
+            \param exclude_ids list of seq ids excluded from consideration
+            \return true if ids is not empty and bsh is among ids, or else
+                         if exclude_ids is not empty and bsh is not among
+                            exclude_ids;
+                    false otherwise
+         */
         static bool consider( 
-            CRef< objects::CScope > scope,
             const objects::CBioseq_Handle & bsh,
             const set< objects::CSeq_id_Handle > & ids,
             const set< objects::CSeq_id_Handle > & exclude_ids );
@@ -61,6 +74,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/07/11 14:36:17  morgulis
+ * Fixes for performance problems with large number of short sequences.
+ * Windowmasker is now statically linked against object manager libs.
+ *
  * Revision 1.1  2005/03/24 16:50:22  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *
