@@ -794,15 +794,31 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                     if (match->m_StrandsDiffer) {
                         delta = start1 + len * width1 - seq1_start_it_i->second->first;
                         if (delta > 0) {
-                            // target above
-                            // x----- x-)-)
-                            // (----x (---x
-                            // target below
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
-                                if (len > delta) {
+                                if (delta < len) {
+                                    // target above
+                                    // x----- x-)-)
+                                    // (----x (---x
+                                    // target below
                                     len -= delta;
                                     start2 += delta * width2;
+                                } else if (delta > len) {
+                                    // Translocation
+                                    // below target above
+                                    // x---- x-)--- 
+                                    //       (----x (------x
+                                    //       target below
+                                    if ((delta = 
+                                         (seq1_start_it_i->second->first + 
+                                          starts2_i->second->m_Len - start1) / width1) > 0) {
+                                        if (delta < len) {
+                                            start1 += delta * width1;
+                                            len -= delta;
+                                        } else {
+                                            return eIgnoreMatch;
+                                        }
+                                    }
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -815,16 +831,28 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             + starts2_i->second->m_Len * width1
                             - start1;
                         if (delta > 0) {
-                            // below target
-                            // x---- x-)--)
-                            // x---) x----)
-                            // below target
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
                                 if (len > delta) {
+                                    // below target
+                                    // x---- x-)--)
+                                    // x---) x----)
+                                    // below target
                                     len -= delta;
                                     start1 += delta * width1;
                                     start2 += delta * width2;
+                                } else if (delta > len) {
+                                    // Translocation
+                                    //       target above
+                                    //       x--x-) ----)
+                                    // x---) x----)
+                                    // below target
+                                    if ((delta = (seq1_start_it_i->second->first
+                                         - start1) / width1) < len) {
+                                        if ((len = delta) == 0) {
+                                            return eIgnoreMatch;
+                                        }
+                                    }
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -890,7 +918,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                 }
                                 len = delta;
                             } else {
-                                return eIgnoreMatch;
+                                return eTranslocation;
                             }
                         } else {
                             return eInconsistentOverlap;
@@ -949,29 +977,30 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
         }
 
         // check for inconsistent matches
-        CAlnMixSeq::TStarts::iterator starts1_i;
-        if ((starts1_i = seq1->m_Starts.find(start1)) == seq1->m_Starts.end() ||
+        CAlnMixSeq::TStarts::iterator starts1_i = seq1->m_Starts.find(start1);
+        if (starts1_i == seq1->m_Starts.end() ||
             starts1_i->first != start1) {
             // commenting out for now, since moved the function call ahead            
 //             NCBI_THROW(CAlnException, eMergeFailure,
 //                        "CAlnMixMerger::x_SecondRowFits(): "
 //                        "Internal error: seq1->m_Starts do not match");
         } else {
-            CAlnMixSegment::TStartIterators::iterator it;
+            CAlnMixSegment::TStartIterators::iterator seq2_start_it_i;
             TSeqPos tmp_start =
                 match->m_StrandsDiffer ? start2 + len * width2 : start2;
             while (starts1_i != seq1->m_Starts.end()  &&
                    starts1_i->first < start1 + len * width1) {
 
-                CAlnMixSegment::TStartIterators& its = 
+                CAlnMixSegment::TStartIterators& seg_start_its = 
                     starts1_i->second->m_StartIts;
 
                 if (match->m_StrandsDiffer) {
                     tmp_start -= starts1_i->second->m_Len * width2;
                 }
 
-                if ((it = its.find(seq2)) != its.end()) {
-                    if (it->second->first != tmp_start) {
+                if ((seq2_start_it_i = seg_start_its.find(seq2)) !=
+                    seg_start_its.end()) {
+                    if (seq2_start_it_i->second->first != tmp_start) {
                         // found an inconsistent prev match
                         return eSecondRowInconsistency;
                     }
@@ -1120,6 +1149,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/07/11 13:57:54  todorov
+* Added logic for handling translocations.
+*
 * Revision 1.4  2005/06/23 18:53:32  todorov
 * Renamed iterators to improve readability.
 *
