@@ -45,6 +45,49 @@ extern "C" {
 int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 
 
+/* Constructors for the various types of NCBI server meta-addresses
+ */
+SSERV_Info* SERV_CreateNcbidInfoEx
+(unsigned int   host,           /* network byte order                        */
+ unsigned short port,           /* host byte order                           */
+ const char*    args,
+ size_t         add
+ );
+
+SSERV_Info* SERV_CreateStandaloneInfoEx
+(unsigned int   host,           /* network byte order                        */
+ unsigned short port,           /* host byte order                           */
+ size_t         add
+ );
+
+SSERV_Info* SERV_CreateHttpInfoEx
+(ESERV_Type     type,           /* verified, must be one of fSERV_Http*      */
+ unsigned int   host,           /* network byte order                        */
+ unsigned short port,           /* host byte order                           */
+ const char*    path,
+ const char*    args,
+ size_t         add
+ );
+
+SSERV_Info* SERV_CreateFirewallInfoEx
+(unsigned int   host,           /* original server's host in net byte order  */
+ unsigned short port,           /* original server's port in host byte order */
+ ESERV_Type     type,           /* type of original server, wrapped into     */
+ size_t         add
+ );
+
+SSERV_Info* SERV_CreateDnsInfoEx
+(unsigned int   host,           /* the only parameter                        */
+ size_t         add
+ );
+
+
+SSERV_Info* SERV_ReadInfoEx
+(const char*    info_str,
+ size_t         add
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -53,6 +96,9 @@ int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2005/07/11 18:13:52  lavr
+ * Introduce *Ex constructors to take additinal mem size to allocate at end
+ *
  * Revision 6.4  2002/10/28 20:15:21  lavr
  * +<connect/ncbi_server_info.h>
  *
