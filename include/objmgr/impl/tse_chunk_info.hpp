@@ -113,6 +113,7 @@ public:
     TBlobId GetBlobId(void) const;
     TBlobVersion GetBlobVersion(void) const;
     TChunkId GetChunkId(void) const;
+    const CTSE_Split_Info& GetSplitInfo(void) const;
 
     //////////////////////////////////////////////////////////////////
     // loading control
@@ -252,12 +253,24 @@ bool CTSE_Chunk_Info::IsLoaded(void) const
 }
 
 
+inline
+const CTSE_Split_Info& CTSE_Chunk_Info::GetSplitInfo(void) const
+{
+    _ASSERT(m_SplitInfo);
+    return *m_SplitInfo;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/07/11 15:10:27  grichenk
+* Implemented LoadChunks() to allow loading multiple chunks through
+* a single request.
+*
 * Revision 1.19  2005/06/09 15:17:29  grichenk
 * Added support for split history assembly.
 *

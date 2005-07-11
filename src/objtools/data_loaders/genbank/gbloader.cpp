@@ -972,7 +972,18 @@ void CGBDataLoader::GetChunk(TChunk chunk)
 
 void CGBDataLoader::GetChunks(const TChunkSet& chunks)
 {
-    CDataLoader::GetChunks(chunks);
+    typedef map<TBlobId, CReader::TChunkIds> TChunkIdMap;
+    TChunkIdMap chunk_ids;
+    ITERATE(TChunkSet, it, chunks) {
+        chunk_ids[(*it)->GetBlobId()].push_back(
+            (*it)->GetChunkId());
+    }
+    ITERATE(TChunkIdMap, it, chunk_ids) {
+        CGBReaderRequestResult result(this, CSeq_id_Handle());
+        m_Dispatcher->LoadChunks(result,
+                                 GetBlobId(it->first),
+                                 it->second);
+    }
 }
 
 

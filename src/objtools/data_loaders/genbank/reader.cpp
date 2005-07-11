@@ -294,6 +294,18 @@ bool CReader::LoadChunk(CReaderRequestResult& /*result*/,
 }
 
 
+bool CReader::LoadChunks(CReaderRequestResult& result,
+                         const TBlobId& blob_id,
+                         const TChunkIds& chunk_ids)
+{
+    bool ret = false;
+    ITERATE(TChunkIds, id, chunk_ids) {
+        ret |= LoadChunk(result, blob_id, *id);
+    }
+    return ret;
+}
+
+
 void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TChunkId chunk_id)

@@ -102,6 +102,9 @@ public:
                   const TBlobId& blob_id);
     bool LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
+    bool LoadChunks(CReaderRequestResult& result,
+                    const TBlobId& blob_id,
+                    const TChunkIds& chunk_ids);
 
     static TBlobId GetBlobId(const CID2_Blob_Id& blob_id);
 

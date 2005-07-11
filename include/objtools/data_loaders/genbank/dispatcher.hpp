@@ -63,6 +63,7 @@ public:
     typedef  CReader::TBlobVersion              TBlobVersion;
     typedef  CReader::TBlobId                   TBlobId;
     typedef  CReader::TChunkId                  TChunkId;
+    typedef  CReader::TChunkIds                 TChunkIds;
     typedef  int                                TLevel;
 
     CReadDispatcher(void);
@@ -102,6 +103,9 @@ public:
                   const CBlob_id& blob_id);
     void LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
+    void LoadChunks(CReaderRequestResult& result,
+                    const TBlobId& blob_id,
+                    const TChunkIds& chunk_ids);
 
     void SetAndSaveBlobState(CReaderRequestResult& result,
                              const TBlobId& blob_id,

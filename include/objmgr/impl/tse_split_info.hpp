@@ -95,6 +95,7 @@ public:
     CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
     const CTSE_Chunk_Info& GetChunk(TChunkId chunk_id) const;
     CTSE_Chunk_Info& GetSkeletonChunk(void);
+    void LoadChunks(const TChunkIds& ids) const;
 
     // get attach points from CTSE_Info
     CBioseq_Base_Info& x_GetBase(CTSE_Info& tse, const TPlace& place);

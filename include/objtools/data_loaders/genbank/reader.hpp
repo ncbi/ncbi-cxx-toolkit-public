@@ -59,6 +59,7 @@ public:
     typedef int TBlobSplitVersion;
     typedef int TChunkId;
     typedef int TContentsMask;
+    typedef vector<TChunkId> TChunkIds;
 
     /// All LoadXxx() methods should return false if
     /// there is no requested data in the reader.
@@ -86,6 +87,9 @@ public:
                           const CBlob_id& blob_id) = 0;
     virtual bool LoadChunk(CReaderRequestResult& result,
                            const TBlobId& blob_id, TChunkId chunk_id);
+    virtual bool LoadChunks(CReaderRequestResult& result,
+                            const TBlobId& blob_id,
+                            const TChunkIds& chunk_ids);
 
     void SetAndSaveStringSeq_ids(CReaderRequestResult& result,
                                  const string& seq_id) const;

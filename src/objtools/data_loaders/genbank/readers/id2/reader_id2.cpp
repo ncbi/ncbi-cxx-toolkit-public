@@ -87,6 +87,21 @@ static int GetDebugLevel(void)
 }
 
 
+static int GetMaxChunksRequestSize(void)
+{
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "ID2_MAX_CHUNKS_REQUEST_SIZE", 1);
+        if ( value < 0 ) {
+            value = 1;
+        }
+        s_Value = value;
+    }
+    return value;
+}
+
+
 enum EDebugLevel
 {
     eTraceConn     = 4,
@@ -544,7 +559,8 @@ bool CId2Reader::LoadBlob(CReaderRequestResult& result,
 
 
 bool CId2Reader::LoadChunk(CReaderRequestResult& result,
-                           const CBlob_id& blob_id, int chunk_id)
+                           const CBlob_id& blob_id,
+                           TChunkId chunk_id)
 {
     CLoadLockBlob blob(result, blob_id);
     _ASSERT(blob);
@@ -581,6 +597,106 @@ bool CId2Reader::LoadChunk(CReaderRequestResult& result,
         x_ProcessRequest(result, req);
     }
     //_ASSERT(chunk_info.IsLoaded());
+    return true;
+}
+
+
+void LoadedChunksPacket(CID2_Request_Packet& packet,
+                        vector<CTSE_Chunk_Info*>& chunks,
+                        const CBlob_id& blob_id)
+{
+    NON_CONST_ITERATE(vector<CTSE_Chunk_Info*>, it, chunks) {
+        if ( !(*it)->IsLoaded() ) {
+            ERR_POST("ExtAnnot chunk is not loaded: " << blob_id.ToString());
+            (*it)->SetLoaded();
+        }
+    }
+    packet.Set().clear();
+    chunks.clear();
+}
+
+
+bool CId2Reader::LoadChunks(CReaderRequestResult& result,
+                            const CBlob_id& blob_id,
+                            const TChunkIds& chunk_ids)
+{
+    // Number of chunks allowed in a single request
+    // 0 = do not use packets or get-chunks requests
+    int max_request_size = GetMaxChunksRequestSize();
+    if (max_request_size == 1) {
+        return CReader::LoadChunks(result, blob_id, chunk_ids);
+    }
+    CLoadLockBlob blob(result, blob_id);
+    _ASSERT(blob);
+
+    CID2_Request_Packet packet;
+
+    CRef<CID2_Request> chunks_req(new CID2_Request);
+    CID2S_Request_Get_Chunks& get_chunks =
+        chunks_req->SetRequest().SetGet_chunks();
+
+    x_SetResolve(get_chunks.SetBlob_id(), blob_id);
+    if ( blob->GetBlobVersion() > 0 ) {
+        get_chunks.SetBlob_id().SetVersion(blob->GetBlobVersion());
+    }
+    CID2S_Request_Get_Chunks::TChunks& chunks = get_chunks.SetChunks();
+
+    vector< AutoPtr<CInitGuard> > guards;
+    vector<CTSE_Chunk_Info*> ext_chunks;
+    ITERATE(TChunkIds, id, chunk_ids) {
+        CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(*id);
+        if ( chunk_info.IsLoaded() ) {
+            continue;
+        }
+        if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id, *id) ) {
+            CRef<CID2_Request> ext_req(new CID2_Request);
+            CID2_Request_Get_Blob_Info& ext_req_data =
+                ext_req->SetRequest().SetGet_blob_info();
+            x_SetResolve(ext_req_data.SetBlob_id().SetBlob_id(), blob_id);
+            ext_req_data.SetGet_data();
+            packet.Set().push_back(ext_req);
+            ext_chunks.push_back(&chunk_info);
+            if (max_request_size > 0  &&
+                packet.Get().size() >= max_request_size) {
+                // Request collected chunks
+//LOG_POST("Loading " << packet.Get().size() << " ext annot chunks");
+                x_ProcessPacket(result, packet);
+                LoadedChunksPacket(packet, ext_chunks, blob_id);
+            }
+        }
+        else {
+            AutoPtr<CInitGuard> init(new CInitGuard(chunk_info, result));
+            if ( !init ) {
+                _ASSERT(chunk_info.IsLoaded());
+                continue;
+            }
+            guards.push_back(init);
+            chunks.push_back(CID2S_Chunk_Id(*id));
+            if (max_request_size > 0  &&  chunks.size() >= max_request_size) {
+                // Process collected chunks
+//LOG_POST("Loading " << chunks.size() << " chunks");
+                x_ProcessRequest(result, *chunks_req);
+                guards.clear();
+                chunks.clear();
+            }
+        }
+    }
+    if ( !chunks.empty() ) {
+        if (max_request_size == 0  ||
+            packet.Get().size() + chunks.size() <= max_request_size) {
+            // Use the same packet for all chunks
+            packet.Set().push_back(chunks_req);
+        }
+        else {
+//LOG_POST("Loading " << chunks.size() << " chunks");
+            x_ProcessRequest(result, *chunks_req);
+        }
+    }
+    if ( !packet.Get().empty() ) {
+//LOG_POST("Loading packet of " << packet.Get().size() << " requests");
+        x_ProcessPacket(result, packet);
+        LoadedChunksPacket(packet, ext_chunks, blob_id);
+    }
     return true;
 }
 

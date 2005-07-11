@@ -187,6 +187,12 @@ CTSE_Chunk_Info& CTSE_Split_Info::GetSkeletonChunk(void)
 }
 
 
+void CTSE_Split_Info::LoadChunks(const TChunkIds& ids) const
+{
+    x_LoadChunks(ids);
+}
+
+
 // split info
 void CTSE_Split_Info::x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id)
 {
@@ -276,9 +282,14 @@ void CTSE_Split_Info::x_AddSeq_data(CTSE_Info& tse_info,
                                     const TLocationSet& locations,
                                     CTSE_Chunk_Info& chunk)
 {
+    CBioseq_Info* last_bioseq = 0;
     ITERATE ( TLocationSet, it, locations ) {
         CBioseq_Info& bioseq = x_GetBioseq(tse_info, it->first);
-        bioseq.x_AddSeq_dataChunkId(chunk.GetChunkId());
+        if (&bioseq != last_bioseq) {
+            // Do not add duplicate chunks to the same bioseq
+            bioseq.x_AddSeq_dataChunkId(chunk.GetChunkId());
+        }
+        last_bioseq = &bioseq;
 
         CSeqMap& seq_map = const_cast<CSeqMap&>(bioseq.GetSeqMap());
         seq_map.SetRegionInChunk(chunk,
@@ -365,9 +376,30 @@ void CTSE_Split_Info::x_LoadChunk(TChunkId chunk_id) const
 
 void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
-    ITERATE ( TChunkIds, it, chunk_ids ) {
-        x_LoadChunk(*it);
+    CTSE_Split_Info& info_nc = const_cast<CTSE_Split_Info&>(*this);
+    typedef vector< CRef<CTSE_Chunk_Info> > TChunkRefs;
+    typedef vector< AutoPtr<CInitGuard> >   TInitGuards;
+    TChunkIds sorted_ids = chunk_ids;
+    sort(sorted_ids.begin(), sorted_ids.end());
+    sorted_ids.erase(unique(sorted_ids.begin(), sorted_ids.end()),
+        sorted_ids.end());
+    TChunkRefs chunks;
+    chunks.reserve(sorted_ids.size());
+    TInitGuards guards;
+    guards.reserve(sorted_ids.size());
+    // Collect and lock all chunks to be loaded
+    ITERATE(TChunkIds, id, sorted_ids) {
+        CRef<CTSE_Chunk_Info> chunk(&info_nc.GetChunk(*id));
+        AutoPtr<CInitGuard> guard(
+            new CInitGuard(chunk->m_LoadLock, info_nc.GetMutexPool()));
+        if ( !(*guard.get()) ) {
+            continue;
+        }
+        chunks.push_back(chunk);
+        guards.push_back(guard);
     }
+    // Load chunks
+    info_nc.GetDataLoader().GetChunks(chunks);
 }
 
 
