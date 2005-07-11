@@ -141,14 +141,14 @@ CBlastDbDataLoader::CCachedSeqData::CCachedSeqData(const CSeq_id_Handle & idh,
 }
 
 void CBlastDbDataLoader::CCachedSeqData::
-RegisterIds(CBlastDbDataLoader::TIds & idmap, int oid)
+RegisterIds(CBlastDbDataLoader::TIds & idmap)
 {
     _ASSERT(m_TSE->IsSeq());
     
     CBioseq::TId & ids = m_TSE->SetSeq().SetId();
     
     ITERATE(CBioseq::TId, seqid, ids) {
-        idmap[CSeq_id_Handle::GetHandle(**seqid)] = oid;
+        idmap[CSeq_id_Handle::GetHandle(**seqid)] = m_OID;
     }
 }
 
@@ -313,7 +313,7 @@ bool CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & l
     
     cached.Reset(new CCachedSeqData(idh, *m_SeqDB, oid));
     
-    cached->RegisterIds(m_Ids, oid);
+    cached->RegisterIds(m_Ids);
     
     TChunks chunks;
     
@@ -581,6 +581,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.27  2005/07/11 15:23:07  bealer
+ * - Doxygen
+ * - Remove unnecessary parameter.
+ *
  * Revision 1.26  2005/07/07 17:33:52  camacho
  * fix compiler warning
  *
