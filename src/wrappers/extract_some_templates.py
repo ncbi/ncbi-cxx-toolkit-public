@@ -100,7 +100,7 @@ for ref_type in ['cref', 'cconstref']:
 
 # open some files for output
 files = {}
-for iname in sys.argv[1:]:
+for iname in inames:
     files[iname] = open(os.path.splitext(iname)[0] + '_templates.i', 'w')
     files[iname].write('using namespace ncbi;\n' \
                        'using namespace ncbi::objects;\n' \
@@ -157,7 +157,7 @@ for class_name in classes['vector'].keys():
         
 
 # close the output files
-for iname in sys.argv[1:]:
+for iname in inames:
     files[iname].close()
 
 
