@@ -100,9 +100,9 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
             }
         }
     }
-    if (iter->n_skip == iter->n_max_skip) {
+    if (iter->n_skip == iter->a_skip) {
         SSERV_Info** temp;
-        size_t n = iter->n_max_skip + 10;
+        size_t n = iter->a_skip + 10;
 
         if (iter->skip)
             temp = (SSERV_Info**) realloc(iter->skip, sizeof(*temp) * n);
@@ -112,7 +112,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
             return 0;
 
         iter->skip = temp;
-        iter->n_max_skip = n;
+        iter->a_skip = n;
     }
     iter->skip[iter->n_skip++] = info;
     return 1;
@@ -124,48 +124,50 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
                         const SConnNetInfo* net_info,
                         const SSERV_Info* const skip[], size_t n_skip,
                         SSERV_Info** info, HOST_INFO* host_info,
-                        int/*bool*/ external, unsigned int origin,
-                        const char* arg, const char* val)
+                        unsigned/*bool*/ ismask, unsigned/*bool*/ external,
+                        unsigned int origin, const char* arg, const char* val)
 {
-    const char* s = s_ServiceName(service, 0);
+    const char* s = ismask ? strdup(service) : s_ServiceName(service, 0);
     const SSERV_VTable* op;
     SERV_ITER iter;
     
     if (!s || !*s || !(iter = (SERV_ITER) malloc(sizeof(*iter))))
         return 0;
 
-    iter->service        = s;
-    iter->current        = 0;
-    iter->types          = types;
-    iter->preferred_host = preferred_host == SERV_LOCALHOST
-        ? SOCK_gethostbyname(0) : preferred_host;
-    iter->preference = 0.01*(preference < 0.0   ? 0.0   :
-                             preference > 100.0 ? 100.0 : preference);
-    iter->n_skip         = iter->n_max_skip = 0;
-    iter->skip           = 0;
-    iter->last           = 0;
-    iter->op             = 0;
-    iter->data           = 0;
-    iter->external       = external;
-    iter->origin         = origin;
-    iter->arg            = arg;
-    iter->arglen         = arg ? strlen(arg) : 0;
-    iter->val            = val;
-    iter->vallen         = val ? strlen(val) : 0;
+    iter->name     = s;
+    iter->type     = types;
+    iter->host     = (preferred_host == SERV_LOCALHOST
+                      ? SOCK_gethostbyname(0) : preferred_host);
+    iter->pref     = 0.01*(preference < 0.0   ? 0.0   :
+                           preference > 100.0 ? 100.0 : preference);
+    iter->n_skip   = 0;
+    iter->a_skip   = 0;
+    iter->skip     = 0;
+    iter->last     = 0;
+    iter->op       = 0;
+    iter->data     = 0;
+    iter->mask     = ismask;
+    iter->external = external;
+    iter->origin   = origin;
+    iter->arg      = arg;
+    iter->arglen   = arg ? strlen(arg) : 0;
+    iter->val      = val;
+    iter->vallen   = val ? strlen(val) : 0;
 
     if (n_skip) {
         size_t i;
         for (i = 0; i < n_skip; i++) {
-            size_t   skipinfolen = SERV_SizeOfInfo(skip[i]);
-            SSERV_Info* skipinfo = (SSERV_Info*) malloc(skipinfolen);
-            if (!skipinfo) {
+            size_t skipinfolen = SERV_SizeOfInfo(skip[i]);
+            SSERV_Info*   temp = (SSERV_Info*) malloc(skipinfolen + 1);
+            if (!temp) {
                 SERV_Close(iter);
                 return 0;
             }
-            memcpy(skipinfo, skip[i], skipinfolen);
-            skipinfo->time = (TNCBI_Time)(-1);
-            if (!s_AddSkipInfo(iter, skipinfo)) {
-                free(skipinfo);
+            *((char*) temp + skipinfolen) = '\0';
+            memcpy(temp, skip[i], skipinfolen);
+            temp->time = (TNCBI_Time)(-1);
+            if (!s_AddSkipInfo(iter, temp)) {
+                free(temp);
                 SERV_Close(iter);
             }
         }
@@ -180,9 +182,9 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
         }
     } else {
         if (net_info->stateless)
-            iter->types |= fSERV_StatelessOnly;
+            iter->type |= fSERV_StatelessOnly;
         if (net_info->firewall)
-            iter->types |= fSERV_Firewall;
+            iter->type |= fSERV_Firewall;
         if ((net_info->lb_disable ||
              !(op = SERV_LBSMD_Open(iter, info, host_info))) &&
             !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
@@ -212,7 +214,8 @@ SERV_ITER SERV_Open(const char* service,
 {
     return s_Open(service, types, preferred_host, 0.0/*preference*/,
                   net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*host_info*/,
-                  0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
+                  0/*not mask*/, 0/*not external*/,
+                  0/*origin*/, 0/*arg*/, 0/*val*/);
 }
 
 
@@ -223,7 +226,8 @@ SERV_ITER SERV_OpenEx(const char* service,
 {
     return s_Open(service, types, preferred_host, 0.0/*preference*/,
                   net_info, skip, n_skip, 0/*info*/, 0/*host_info*/,
-                  0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
+                  0/*not mask*/, 0/*not external*/,
+                  0/*origin*/, 0/*arg*/, 0/*val*/);
 }
 
 
@@ -233,8 +237,9 @@ SERV_ITER SERV_OpenP(const char* service, TSERV_Type types,
                      unsigned int origin, const char* arg, const char* val)
 {
     return s_Open(service, types, preferred_host, preference,
-                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*hinfo*/,
-                  external, origin, arg, val);
+                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*host_info*/,
+                  strpbrk(service, "?*") != 0, external,
+                  origin, arg, val);
 }
 
 
@@ -243,13 +248,13 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type types,
                              const SConnNetInfo* net_info,
                              const SSERV_Info* const skip[], size_t n_skip,
                              HOST_INFO* host_info,
-                             int/*bool*/ external, unsigned int origin,
+                             unsigned /*bool*/ external, unsigned int origin,
                              const char* arg, const char* val)
 {
     SSERV_Info* info = 0;
     SERV_ITER iter= s_Open(service, types, preferred_host, preference,
                            net_info, skip, n_skip, &info, host_info,
-                           external, origin, arg, val);
+                           0/*not mask*/, external, origin, arg, val);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
         info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
@@ -350,9 +355,11 @@ const char* SERV_MapperName(SERV_ITER iter)
 }
 
 
-const char* SERV_GetCurrentName(SERV_ITER iter)
+const char* SERV_CurrentName(SERV_ITER iter)
 {
-    return iter->current ? iter->current : iter->service;
+    const char* name =
+        iter->last? (const char*) iter->last + SERV_SizeOfInfo(iter->last) : 0;
+    return name  &&  *name ? name : iter->name;
 }
 
 
@@ -369,10 +376,6 @@ void SERV_Reset(SERV_ITER iter)
     size_t i;
     if (!iter)
         return;
-    if (iter->current) {
-        free((void*) iter->current);
-        iter->current = 0;
-    }
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
@@ -391,8 +394,8 @@ void SERV_Close(SERV_ITER iter)
         (*iter->op->Close)(iter);
     if (iter->skip)
         free(iter->skip);
-    if (iter->service)
-        free((void*) iter->service);
+    if (iter->name)
+        free((void*) iter->name);
     free(iter);
 }
 
@@ -440,14 +443,14 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 }
 
 
-char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
+char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
 {
     static const char referrer_header[] = "Referer: "/*standard misspelling*/;
     static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
     static const char accepted_types[] = "Accepted-Server-Types:";
     static const char server_count[] = "Server-Count: all\r\n";
     char buffer[128], *str;
-    TSERV_Type types, t;
+    TSERV_Type type, t;
     size_t buflen, i;
     BUF buf = 0;
 
@@ -465,7 +468,7 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
             const char* host = referrer->host;
             const char* path = referrer->path;
             const char* args = referrer->args;
-            const char* service = iter->service;
+            const char* name = iter->name;
             char port[8];
             if (referrer->port && referrer->port != DEF_CONN_PORT)
                 sprintf(port, ":%hu", referrer->port);
@@ -477,7 +480,7 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
                 !BUF_Write(&buf, port, strlen(port))                         ||
                 !BUF_Write(&buf, path, strlen(path))                         ||
                 !BUF_Write(&buf, "?service=", 9)                             ||
-                !BUF_Write(&buf, service, strlen(service))                   ||
+                !BUF_Write(&buf, name, strlen(name))                         ||
                 (args[0] && (!BUF_Write(&buf, "&", 1)                        ||
                              !BUF_Write(&buf, args, strlen(args))))          ||
                 !BUF_Write(&buf, "\r\n", 2)) {
@@ -486,12 +489,12 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         } else if (refer && strcasecmp(iter->op->name, "LBSMD") == 0) {
             const char* host = referrer->client_host;
-            const char* service = iter->service;
+            const char* name = iter->name;
             if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
                 !BUF_Write(&buf, "lbsm://", 7)                               ||
                 !BUF_Write(&buf, host, strlen(host))                         ||
                 !BUF_Write(&buf, "/dispatch?service=", 18)                   ||
-                !BUF_Write(&buf, service, strlen(service))                   ||
+                !BUF_Write(&buf, name, strlen(name))                         ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
                 return 0;
@@ -500,9 +503,11 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
         /* Form accepted server types */
         buflen = sizeof(accepted_types) - 1;
         memcpy(buffer, accepted_types, buflen);
-        types = (TSERV_Type) (iter->types & ~fSERV_StatelessOnly);
+        type = (TSERV_Type) (iter->type & ~(fSERV_Promiscuous |
+                                            fSERV_ReverseDns  |
+                                            fSERV_StatelessOnly));
         for (t = 1; t; t <<= 1) {
-            if (types & t) {
+            if (type & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
                 if (!namelen || buflen + 1 + namelen + 2 >= sizeof(buffer))
@@ -521,7 +526,7 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         }
         /* how many for the dispatcher to send to us */
-        if (iter->preference) {
+        if (iter->pref) {
             if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)) {
                 BUF_Destroy(buf);
                 return 0;
@@ -564,15 +569,6 @@ char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
 }
 
 
-#ifdef SERV_Print
-#  undef SERV_Print
-#endif
-char* SERV_Print(SERV_ITER iter)
-{
-    return SERV_PrintEx(iter, 0);
-}
-
-
 /*
  * Note parameters' ranges here:
  * 0.0 <= pref <= 1.0
@@ -599,6 +595,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2005/07/11 18:16:00  lavr
+ * Revised to allow wildcard searches thru service iterator
+ *
  * Revision 6.64  2005/07/06 18:54:54  lavr
  * +enum ESERV_SpecialType to hold special server type bits (instead of macros)
  *
@@ -630,7 +629,7 @@ double SERV_Preference(double pref, double gap, unsigned int n)
  * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
  *
  * Revision 6.54  2004/07/01 16:28:19  lavr
- * +SERV_PrintEx(): "Referer:" tag impelemented
+ * +SERV_Print(): "Referer:" tag impelemented
  *
  * Revision 6.53  2004/06/14 16:37:09  lavr
  * Allow no more than one firewall server info in the skip list
