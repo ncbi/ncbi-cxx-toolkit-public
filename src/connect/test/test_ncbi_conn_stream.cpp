@@ -76,7 +76,7 @@ int main(void)
     size_t i, j, k, l, size;
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     SetDiagTrace(eDT_Enable);
@@ -270,6 +270,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2005/07/11 18:24:22  lavr
+ * Spell ADDEND
+ *
  * Revision 6.42  2005/05/20 11:41:37  lavr
  * Separate control and data FTP connection debugging setting
  *

@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     EIO_Status  status;
     CONN        conn;
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     /* Log and data-log streams */
@@ -218,6 +218,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/07/11 18:24:41  lavr
+ * Spell ADDEND
+ *
  * Revision 1.8  2005/05/20 12:56:35  lavr
  * Added test for multiple commands and '[\r]\n'-terminated input
  *

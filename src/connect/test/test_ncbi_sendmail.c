@@ -83,7 +83,7 @@ int main(int argc, const char* argv[])
     short mx_port;
     FILE* fp;
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
@@ -283,6 +283,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2005/07/11 18:24:51  lavr
+ * Spell ADDEND
+ *
  * Revision 6.15  2005/06/04 00:15:43  lavr
  * Email from file test added
  *

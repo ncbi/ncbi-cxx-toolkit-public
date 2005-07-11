@@ -344,7 +344,7 @@ int main(int argc, const char* argv[])
         return s_Usage(argv[0]);
 
     if (argc <= 4)
-        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     else
         sscanf(argv[4], "%lu", &seed);
     CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
@@ -381,6 +381,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2005/07/11 18:24:36  lavr
+ * Spell ADDEND
+ *
  * Revision 6.16  2005/05/02 16:12:27  lavr
  * Use global random seed
  *

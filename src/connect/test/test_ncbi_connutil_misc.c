@@ -337,7 +337,7 @@ static void TEST_ConnNetInfo(void)
 
 int main(void)
 {
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
@@ -355,6 +355,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2005/07/11 18:24:28  lavr
+ * Spell ADDEND
+ *
  * Revision 6.19  2005/05/02 16:12:16  lavr
  * Use global random seed
  *
