@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/07/11 18:20:37  gouriano
+* Corrected schema module file name
+*
 * Revision 1.40  2005/06/29 15:09:58  gouriano
 * Resolve all module dependencies when generating modular DTD or schema
 *
@@ -451,7 +454,7 @@ void CDataTypeModule::PrintXMLSchemaModular(CNcbiOstream& out) const
     }
     l.sort();
     ITERATE (list<string>, i, l) {
-        out << "<xs:include schemaLocation=\"" << (*i) << ".mod.xsd\"/>\n";
+        out << "<xs:include schemaLocation=\"" << DTDFileNameBase(*i) << ".mod.xsd\"/>\n";
     }
 }
 
