@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/07/11 16:12:27  gouriano
+* Corrected schema for boolean type with default
+*
 * Revision 1.39  2005/02/22 15:07:34  gouriano
 * Corrected writing element's default value when generating XML schema
 *
@@ -275,9 +278,12 @@ void CStaticDataType::PrintXMLSchemaElementWithTag(
     if (!use.empty()) {
         out << " use=\"" << use << "\"";
     } else {
-        const CDataMember* mem = GetDataMember();
-        if (mem && mem->Optional() && mem->GetDefault()) {
-            out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+        const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
+        if (!bt) {
+            const CDataMember* mem = GetDataMember();
+            if (mem && mem->Optional() && mem->GetDefault()) {
+                out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+            }
         }
     }
     if (!contents.empty()) {

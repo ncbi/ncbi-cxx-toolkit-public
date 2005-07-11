@@ -70,7 +70,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,1,0) );
+    SetVersion( CVersionInfo(1,2,0) );
 }
 
 void CDataTool::Init(void)
@@ -625,6 +625,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2005/07/11 16:12:27  gouriano
+* Corrected schema for boolean type with default
+*
 * Revision 1.83  2005/06/29 15:09:58  gouriano
 * Resolve all module dependencies when generating modular DTD or schema
 *
