@@ -461,7 +461,9 @@ void PssmMaker::printAlignment(string& fileName)
 {
 	vector<string> seqIdStr;
 	const vector< CRef< CSeq_id > >& seqIds = m_conMaker.getResidueProfiles().getSeqIdsByRow();
-	for (int i = 0; i < seqIds.size(); i++)
+	if (!IsConsensus(seqIds[0]))
+		seqIdStr.push_back(seqIds[0]->AsFastaString());
+	for (int i = 1; i < seqIds.size(); i++)
 	{
 		seqIdStr.push_back(seqIds[i]->AsFastaString());
 	}
@@ -477,6 +479,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/07/11 17:56:42  cliu
+ * skip consensus
+ *
  * Revision 1.4  2005/07/07 20:58:07  cliu
  * *** empty log message ***
  *
