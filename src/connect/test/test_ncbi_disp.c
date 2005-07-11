@@ -31,7 +31,7 @@
  */
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_service.h>
+#include "../ncbi_servicep.h"
 #include <stdlib.h>
 /* This header must go last */
 #include "test_assert.h"
@@ -56,13 +56,15 @@ int main(int argc, const char* argv[])
                           local ? "locally" : "randomly"));
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if ((local &&
-         (iter = SERV_Open(service, fSERV_Any, SERV_LOCALHOST, 0)) != 0) ||
+         (iter = SERV_OpenP(service, fSERV_Any, SERV_LOCALHOST, 0.0,
+                            0, 0/*net_info*/, 0, 0, 0)) != 0) ||
         (!local && (iter = SERV_OpenSimple(service)) != 0)) {
         HOST_INFO hinfo;
         CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
             char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            CORE_LOGF(eLOG_Note, ("Service `%s' = %s",
+                                  SERV_CurrentName(iter), info_str));
             if (hinfo) {
                 double array[2];
                 const char* e = HINFO_Environment(hinfo);
@@ -124,6 +126,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2005/07/11 18:26:05  lavr
+ * Allow wildcard in local name searches
+ *
  * Revision 6.16  2004/06/21 18:02:45  lavr
  * Test on service "bounce" by default ("io_bounce" is retired now)
  *
