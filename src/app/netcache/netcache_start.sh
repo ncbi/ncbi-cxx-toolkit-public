@@ -30,7 +30,9 @@ Die() {
 Success() {
     echo "$@" >& 2
     echo $nc_pid > netcached.pid    
-    cat netcached.out >& 2
+    if [ -f netcached.out ]; then
+       cat netcached.out >& 2
+    fi
 #    | mail -s "$@" $mail_to    
     cd $start_dir
     exit 0
@@ -74,7 +76,9 @@ if ! $nc_control -retry 7 -v $host $port > /dev/null  2>&1; then
     echo "Service not responding"
     
     echo "Starting the netcached service..."
-    cat netcached.out >> netcached_out.old
+    if [ -f netcached.out ]; then
+       cat netcached.out >> netcached_out.old
+    fi
     $netcached > netcached.out  2>&1 &
     nc_pid=$!
     echo "Waiting for the service to start ($service_wait seconds)..."
