@@ -41,9 +41,9 @@
 
 int main(int argc, const char* argv[])
 {
-    static char obuf[8192 + 2] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
     const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
+    static char obuf[8192 + 2];
     SConnNetInfo* net_info;
     CONNECTOR connector;
     EIO_Status status;
@@ -52,7 +52,7 @@ int main(int argc, const char* argv[])
     CONN conn;
     size_t n;
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDENT;
+    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFormatFlags(fLOG_Full | fLOG_DateTime);
@@ -64,6 +64,7 @@ int main(int argc, const char* argv[])
         strncpy0(obuf, argv[3], sizeof(obuf) - 2);
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
+    } else {
     }
     strcpy(net_info->args, "testarg=testval&service=none");
     timeout = net_info->timeout;
@@ -76,32 +77,32 @@ int main(int argc, const char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-#if 0
-    for (n = 0; n < 10; n++) {
-        int m;
-        for (m = 0; m < sizeof(obuf) - 2; m++)
-            obuf[m] = "01234567890\n"[rand() % 12];
-        obuf[m++] = '\n';
-        obuf[m]   = '\0';
-
-        if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
+    if (argc > 3) {
+        if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
             != eIO_Success) {
-            if (!n) {
-                CONN_Close(conn);
-                CORE_LOG(eLOG_Fatal, "Error writing to connection");
-            } else
-                break;
+            CONN_Close(conn);
+            CORE_LOG(eLOG_Fatal, "Error writing to connection");
         }
-        assert(m == strlen(obuf));
+        assert(n == strlen(obuf));
+    } else {
+        for (n = 0; n < 10; n++) {
+            int m;
+            for (m = 0; m < sizeof(obuf) - 2; m++)
+                obuf[m] = "01234567890\n"[rand() % 12];
+            obuf[m++] = '\n';
+            obuf[m]   = '\0';
+
+            if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
+                != eIO_Success) {
+                if (!n) {
+                    CONN_Close(conn);
+                    CORE_LOG(eLOG_Fatal, "Error writing to connection");
+                } else
+                    break;
+            }
+            assert(m == strlen(obuf));
+        }
     }
-#else
-    if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
-        != eIO_Success) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error writing to connection");
-    }
-    assert(n == strlen(obuf));
-#endif
 
     for (;;) {
        if (CONN_Wait(conn, eIO_Read, timeout) != eIO_Success) {
@@ -166,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2005/07/11 18:25:36  lavr
+ * Spell ADDEND; better testing w/o ugly hardcoded pattern
+ *
  * Revision 6.32  2005/05/02 16:12:43  lavr
  * Use global random seed
  *
