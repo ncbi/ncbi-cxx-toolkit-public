@@ -496,9 +496,48 @@ extern const char* CORE_GetPlatform(void)
 }
 
 
+int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
+{
+    for (;;) {
+        char c = *mask++;
+        char d;
+        switch (c) {
+        case '\0':
+            return !*name;
+        case '?':
+            if (!*name++)
+                return 0/*false*/;
+            break;
+        case '*':
+            c = *mask;
+            while (c == '*')
+                c = *++mask;
+            if (!c)
+                return 1/*true*/;
+            while (*name) {
+                if (UTIL_MatchesMask(name, mask))
+                    return 1/*true*/;
+                name++;
+            }
+            return 0/*false*/;
+        default:
+            d = *name++;
+            if (tolower((unsigned char) c) != tolower((unsigned char) d))
+                return 0/*false*/;
+            break;
+        }
+    }
+    /*NOTREACHED*/
+    return 0/*false - dummy for compiler*/;
+}
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2005/07/11 18:09:33  lavr
+ * +UTIL_MatchesMask()
+ *
  * Revision 6.32  2005/04/20 18:15:42  lavr
  * -"ncbi_config.h"
  *
