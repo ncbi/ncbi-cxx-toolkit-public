@@ -780,6 +780,7 @@ public:
     CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty)
 	  : m_NCBITime(mode) {
         m_Status = 0x1;
+        m_Null= (mode == CTime::eEmpty);
     }
     CDB_SmallDateTime(const CTime& t) {
         m_NCBITime = t;
@@ -851,6 +852,7 @@ public:
     CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty)
 	  : m_NCBITime(mode) {
         m_Status = 0x1;
+        m_Null= (mode == CTime::eEmpty);
     }
     CDB_DateTime(const CTime& t) {
         m_NCBITime = t;
@@ -1045,6 +1047,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/07/12 19:19:13  soussov
+ * fixes bug in CDB_[Small]DateTime constructor
+ *
  * Revision 1.18  2005/05/31 21:01:52  ssikorsk
  * Added GetTypeName method to the CDB_Object class
  *
