@@ -413,8 +413,6 @@ public:
         ///
         /// @param idmap
         ///   A map from CSeq_id_Handle to OID.
-        /// @param oid
-        ///   The oid of this sequence.
         void RegisterIds(TIds & idmap);
         
     private:
@@ -549,6 +547,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.20  2005/07/12 12:53:33  camacho
+ * Doxygen fix
+ *
  * Revision 1.19  2005/07/11 15:23:07  bealer
  * - Doxygen
  * - Remove unnecessary parameter.
