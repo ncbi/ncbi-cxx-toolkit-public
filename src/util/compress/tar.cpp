@@ -1268,7 +1268,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
             // Entry already exists, and cannot be changed
             extract = false;
         } else if ((m_Flags & fUpdate)  &&
-                   dst->IsNewer(info.GetModificationTime())) {
+                   dst->IsNewer(info.GetModificationTime(),
+                                CDirEntry::eIfAbsent_Throw)) {
             extract = false;
         } else if ((m_Flags & fEqualTypes)  &&
                    CDirEntry::EType(type) != dst->GetType()) {
@@ -1553,7 +1554,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
         }
 
         if (found) {
-            if (!entry.IsNewer(x_info->GetModificationTime())) {
+            if (!entry.IsNewer(x_info->GetModificationTime(),
+                               CDirEntry::eIfAbsent_Throw)) {
                 if (type == CDirEntry::eDir) {
                     update = false;
                 } else {
@@ -1653,6 +1655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/07/12 11:19:03  ivanov
+ * Added additional argument to used CDirEntry::Isnewer()
+ *
  * Revision 1.31  2005/06/24 12:54:13  ivanov
  * Heed Workshop compiler warnings
  *
