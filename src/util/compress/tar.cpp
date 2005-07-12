@@ -466,7 +466,7 @@ CTar::~CTar()
 {
     // Close stream(s)
     Close();
-    if ( m_FileStream ) {
+    if (m_FileStream) {
         delete m_FileStream;
         m_FileStream = 0;
     }
@@ -475,7 +475,7 @@ CTar::~CTar()
     UnsetMask();
 
     // Delete buffer
-    if ( m_BufPtr ) {
+    if (m_BufPtr) {
         delete[] m_BufPtr;
         m_BufPtr = 0;
     }
@@ -501,7 +501,7 @@ void CTar::x_Init(void)
 
 void CTar::x_Flush(void)
 {
-    if (!m_Stream  ||  !m_IsModified) {
+    if (!m_Stream  ||  !m_OpenMode  ||  !m_IsModified) {
         return;
     }
     _ASSERT(m_OpenMode == eRW);
@@ -513,7 +513,7 @@ void CTar::x_Flush(void)
     _ASSERT(m_BufferPos == 0);
     if (pad < kBlockSize  ||  pad - (pad % kBlockSize) < (kBlockSize << 1)) {
         // Write EOT (two zero blocks), if have not already done so by padding
-        memset(m_Buffer, 0, m_BufferPos);
+        memset(m_Buffer, 0, m_BufferSize);
         x_WriteArchive(m_BufferSize);
         _ASSERT(m_BufferPos == 0);
         if (m_BufferSize == kBlockSize) {
@@ -530,6 +530,8 @@ void CTar::x_Flush(void)
 
 void CTar::x_Close(void)
 {
+    if (!m_OpenMode)
+        return;
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
         m_Stream = 0;
@@ -545,10 +547,10 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
-    if ( !m_FileStream ) {
+    if (!m_FileStream) {
         if (m_IsModified  &&  action != eAppend) {
-            ERR_POST(Warning << string("Pending changes may be "
-                                       "discarded upon archive reopen"));
+            ERR_POST(Warning << string("Pending changes may be discarded"
+                                       " upon in-stream archive reopen"));
             m_IsModified = false;
             m_BufferPos = 0;
         }
@@ -557,10 +559,10 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             NCBI_THROW(CTarException, eOpen,
                        "Cannot open archive from bad IO stream");
         } else {
-            m_OpenMode = EOpenMode((int)action & eRW);
+            m_OpenMode = EOpenMode((int) action & eRW);
         }
     } else {
-        EOpenMode mode = EOpenMode((int)action & eRW);
+        EOpenMode mode = EOpenMode((int) action & eRW);
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
             x_Flush();
@@ -590,7 +592,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 _TROUBLE;
                 break;
             }
-            if ( !m_FileStream->good() ) {
+            if (!m_FileStream->good()) {
                 NCBI_THROW(CTarException, eOpen,
                            "Cannot open archive '" + m_FileName + '\'');
             }
@@ -1310,7 +1312,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
             // Create file
             ofstream file(dst->GetPath().c_str(),
                           IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
-            if ( !file ) {
+            if (!file) {
                 NCBI_THROW(CTarException, eCreate,
                            "Cannot create file '" + dst->GetPath() + '\'');
             }
@@ -1424,7 +1426,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
 #ifdef NCBI_OS_UNIX
         // We cannot change permissions for sym.links because lchmod()
         // is not portable and is not implemented on majority of platforms.
-        if ( info.GetType() != CTarEntryInfo::eLink ) {
+        if (info.GetType() != CTarEntryInfo::eLink) {
             // Use raw mode here to restore most of bits
             mode_t mode = s_TarToMode(info.m_Stat.st_mode);
             if (chmod(dst->GetPath().c_str(), mode) != 0) {
@@ -1537,7 +1539,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
 
     // Check if we need to update this entry in the archive
     bool update = true;
-    if ( toc ) {
+    if (toc) {
         bool found = false;
         const CTarEntryInfo* x_info;
 
@@ -1614,7 +1616,7 @@ void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
     if (info.GetType() == CTarEntryInfo::eFile) {
         // Open file
         ifs.open(filename.c_str(), IOS_BASE::binary | IOS_BASE::in);
-        if ( !ifs ) {
+        if (!ifs) {
             NCBI_THROW(CTarException, eOpen,
                        "Cannot open file '" + filename + '\'');
         }
@@ -1655,6 +1657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/07/12 18:26:45  lavr
+ * Fix archive flushing bug
+ *
  * Revision 1.32  2005/07/12 11:19:03  ivanov
  * Added additional argument to used CDirEntry::Isnewer()
  *
@@ -1665,7 +1670,8 @@ END_NCBI_SCOPE
  * Heed MSVC warning in x_Backspace()
  *
  * Revision 1.29  2005/06/23 14:57:39  rsmith
- * pos_type must be intialized with a value. (fpos<> does not have a default cnstr).
+ * pos_type must be intialized with a value.
+ * (fpos<> does not have a default ctor).
  *
  * Revision 1.28  2005/06/22 21:10:55  lavr
  * x_RestoreAttrs(): Take advantage of special bits (in file modes)
