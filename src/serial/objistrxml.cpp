@@ -1738,6 +1738,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         return pos;
                     }
                 }
+            } else {
+                return kInvalidMember;
             }
             if (!NextIsTag()) {
                 return kInvalidMember;
@@ -2192,6 +2194,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/07/12 17:44:47  gouriano
+* Corrected reading of containers
+*
 * Revision 1.78  2005/07/07 18:23:13  gouriano
 * Optimized reading of AnyContent objects
 *
