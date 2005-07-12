@@ -351,7 +351,14 @@ static void s_TEST_File(void)
         assert( f.Exists() );
         assert( f.GetLength() == 9);
         f2.Remove();
+        s_CreateTestFile(f2.GetPath());
+        assert( !f.IsNewer(f2.GetPath(), 0) );
+        f2.Remove();
         assert( f2.GetLength() == -1);
+        assert( f.IsNewer(f2.GetPath(), CDirEntry::fHasThisNoPath_Newer) );
+        assert( f2.IsNewer(f.GetPath(), CDirEntry::fNoThisHasPath_Newer) );
+        assert( !f.IsNewer(f2.GetPath(), CDirEntry::fHasThisNoPath_NotNewer) );
+        assert( f3.IsNewer(f2.GetPath(), CDirEntry::fNoThisNoPath_Newer) );
 
         // Copy/rename/backup and other file operations
 
@@ -1004,6 +1011,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/07/12 11:17:11  ivanov
+ * Added some tests for CDirEntry::IsNewer()
+ *
  * Revision 1.51  2005/06/21 13:40:08  ivanov
  * CDir::TEntries: use list<> instead of vector<> as container class
  *
