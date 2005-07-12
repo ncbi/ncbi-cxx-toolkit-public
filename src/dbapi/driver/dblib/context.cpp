@@ -136,6 +136,16 @@ CDBLibContext::CDBLibContext(DBINT version) :
         m_HostName= hostname;
     }
 
+#ifdef WIN32
+        {
+            WSADATA wsaData; 
+            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+            {
+                DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+            }
+        }
+#endif
+
 #ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
 #else
@@ -1051,6 +1061,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/07/12 13:22:59  ssikorsk
+ * Added initialization of winsock
+ *
  * Revision 1.42  2005/07/07 20:34:16  vasilche
  * Added #include <stdio.h> for sprintf().
  *
