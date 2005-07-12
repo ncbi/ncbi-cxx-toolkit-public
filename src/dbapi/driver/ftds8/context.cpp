@@ -102,6 +102,16 @@ CTDSContext::CTDSContext(DBINT version) :
         m_HostName= hostname;
     }
 
+#ifdef WIN32
+        {
+            WSADATA wsaData; 
+            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+            {
+                DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+            }
+        }
+#endif
+
     CHECK_DRIVER_FATAL( 
         dbinit() != SUCCEED,
         "dbinit failed", 
@@ -663,6 +673,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/07/12 13:36:19  ssikorsk
+ * Added winsock initialization
+ *
  * Revision 1.37  2005/06/07 16:22:51  ssikorsk
  * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
  *
