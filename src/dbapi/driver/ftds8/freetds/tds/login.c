@@ -132,7 +132,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     fd_set fds;                                          
     fd_set fds1;                                          
     int retval, n;                                         
-    time_t start, now;
+    // time_t start, now;
     TDSCONFIGINFO *config;
     /* 13 + max string of 32bit int, 30 should cover it */
     char query[30];
@@ -236,21 +236,6 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 
 		tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n", 
 					inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
-
-#ifdef NCBI_FTDS
-#ifdef _WIN32
-        {
-            WSADATA wsaData; 
-            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-            {
-		        perror ("socket");
-			    tds_free_config(config);
-			    tds_free_socket(tds);
-			    return NULL;
-            }
-        }
-#endif
-#endif
 
 		if ((tds->s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
 		    perror ("socket");
