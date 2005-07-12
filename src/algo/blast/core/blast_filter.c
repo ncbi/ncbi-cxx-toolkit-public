@@ -746,7 +746,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
-   BlastQueryInfo* query_info, 
+   const BlastQueryInfo* query_info, 
    BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 context;
@@ -947,7 +947,7 @@ BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length)
 }
 
 static Int2
-s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int4 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
+s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, Int4 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
@@ -1014,7 +1014,7 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
 
 
 Int2
-BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastMaskLoc** filter_maskloc, Blast_Message * *blast_message)
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastMaskLoc** filter_maskloc, Blast_Message * *blast_message)
 {
 
     Int2 status = 0;
@@ -1093,7 +1093,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 }
 
 Int2 
-BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
 {
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */

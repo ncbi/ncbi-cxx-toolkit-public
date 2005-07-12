@@ -2211,7 +2211,7 @@ ErrExit:
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
-                              BlastQueryInfo* query_info)
+                              const BlastQueryInfo* query_info)
 {
    Int4 context; /* loop variable. */
    Boolean query_valid = FALSE;
@@ -3683,6 +3683,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.118  2005/07/12 22:57:03  bealer
+ * - Change "BlastQueryInfo*" to "const BlastQueryInfo*" in several places.
+ *
  * Revision 1.117  2005/06/20 13:09:36  madden
  * Rename BlastSeverity enums in line with C++ tookit convention
  *

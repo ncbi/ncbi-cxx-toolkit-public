@@ -47,7 +47,7 @@ static char const rcsid[] =
 Int2
 Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
-                        EBlastProgramType program, BlastQueryInfo * query_info)
+                        EBlastProgramType program, const BlastQueryInfo * query_info)
 {
     Int2 index = 0;
 
@@ -337,7 +337,7 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
 
 Int2 
 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk, 
-                        BlastQueryInfo* query_info, 
+                        const BlastQueryInfo* query_info, 
                         const BlastScoringOptions* scoring_options, 
                         EBlastProgramType program_number, 
                         BlastScoreBlk* *sbpp, 
@@ -398,7 +398,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     const BlastScoringOptions *scoring_options,
     const BlastHitSavingOptions *hit_options,
     BLAST_SequenceBlk *query_blk,
-    BlastQueryInfo *query_info,
+    const BlastQueryInfo *query_info,
     double scale_factor,
     BlastSeqLoc **lookup_segments, 
     BlastMaskInformation* maskInfo,

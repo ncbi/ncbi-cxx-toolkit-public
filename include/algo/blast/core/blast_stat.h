@@ -208,7 +208,7 @@ Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
-                              BlastQueryInfo* query_info);
+                              const BlastQueryInfo* query_info);
 
 /** This function fills in the BlastScoreBlk structure.  
  * Tasks are:
