@@ -75,7 +75,7 @@ void CSymDustMasker::triplets::print_list( triplet_type t )
 //------------------------------------------------------------------------------
 inline Uint4 CSymDustMasker::triplets::new_k_info()
 {
-    assert( k_info_free_start_ != 0 );
+    _ASSERT( k_info_free_start_ != 0 );
     Uint4 res = k_info_free_start_;
     k_info_free_start_ = k_info_[res - 1].next_;
     return res;
@@ -84,7 +84,7 @@ inline Uint4 CSymDustMasker::triplets::new_k_info()
 //------------------------------------------------------------------------------
 inline void CSymDustMasker::triplets::free_k_info( Uint4 i )
 {
-    assert( i != 0 );
+    _ASSERT( i != 0 );
     k_info_[i - 1].next_ = k_info_free_start_;
     k_info_free_start_ = i;
 }
@@ -92,7 +92,7 @@ inline void CSymDustMasker::triplets::free_k_info( Uint4 i )
 //------------------------------------------------------------------------------
 inline void CSymDustMasker::triplets::rem_k_info( triplet_type t )
 {
-    assert( k_info_heads_[t] != 0 );
+    _ASSERT( k_info_heads_[t] != 0 );
     --inner_counts_[t];
     inner_sum_ -= inner_counts_[t];
     Uint4 ni = k_info_heads_[t];
