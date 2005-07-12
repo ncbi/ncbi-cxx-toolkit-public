@@ -38,79 +38,216 @@ BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
 CSymDustMasker::triplets::triplets( 
-    const sequence_type & seq, size_type window, 
+    triplet_type first, size_type window, Uint1 low_k,
     lcr_list_type & lcr_list, thres_table_type & thresholds )
-    : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), 
-      lcr_list_( lcr_list ), thresholds_( thresholds )
+    : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), low_k_( low_k ),
+      high_beg_( 0 ), lcr_list_( lcr_list ), thresholds_( thresholds ),
+      outer_counts_( 64, 0 ), inner_counts_( 64, 0 ),
+      k_info_( max_size_ ), k_info_heads_( 64, 0 ), k_info_ends_( 64, 0 ),
+      k_info_free_start_( 1 ), outer_sum_( 0 ), inner_sum_( 0 )
 {
-    triplet_type t = ((seq[0]&3)<<4) + ((seq[1]&3)<<2) + (seq[2]&3);
-    triplet_list_.push_back( t );
+    // initializing the free list
+    for( Uint4 i = 0; i < max_size_ - 1; ++i )
+        k_info_[i].next_ = i + 2;
+
+    k_info_[max_size_ - 1].next_ = 0;
+
+    // update the data structures for the first triplet in the window
+    triplet_list_.push_front( first );
+    ++outer_counts_[first];
+    add_k_info( first );
+}
+
+//------------------------------------------------------------------------------
+void CSymDustMasker::triplets::print_list( triplet_type t )
+{
+    Uint1 i = k_info_heads_[t];
+
+    while( i != 0 )
+    {
+        cerr << k_info_[i - 1].pos_ << " ";
+        i = k_info_[i - 1].next_;
+    }
+
+    cerr << endl;
+}
+
+//------------------------------------------------------------------------------
+inline Uint4 CSymDustMasker::triplets::new_k_info()
+{
+    assert( k_info_free_start_ != 0 );
+    Uint4 res = k_info_free_start_;
+    k_info_free_start_ = k_info_[res - 1].next_;
+    return res;
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::free_k_info( Uint4 i )
+{
+    assert( i != 0 );
+    k_info_[i - 1].next_ = k_info_free_start_;
+    k_info_free_start_ = i;
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::rem_k_info( triplet_type t )
+{
+    assert( k_info_heads_[t] != 0 );
+    --inner_counts_[t];
+    inner_sum_ -= inner_counts_[t];
+    Uint4 ni = k_info_heads_[t];
+    k_info_heads_[t] = k_info_[ni - 1].next_;
+    free_k_info( ni );
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
+{
+    // Get and initialize the new element. Update inner_sum and counts.
+    Uint4 ni = new_k_info();
+    k_info_[ni - 1].pos_ = stop_;
+    k_info_[ni - 1].next_ = 0;
+    inner_sum_ += inner_counts_[t];
+    ++inner_counts_[t];
+
+    // append the new element to the corresponding list
+    if( k_info_heads_[t] == 0 )
+        k_info_heads_[t] = ni;
+    else 
+        k_info_[k_info_ends_[t] - 1].next_ = ni;
+
+    k_info_ends_[t] = ni;
+
+    // if we already had low_k elements for this triplet, then remove the
+    //      first one to keep their number at low_k
+    if( inner_counts_[t] > low_k_ )
+        rem_k_info( t );
+
+    // if we just reached low_j_ elements, then update high_beg_ as
+    //      necessary
+    if( inner_counts_[t] == low_k_ )
+    {
+        Uint4 head_pos = k_info_[k_info_heads_[t] - 1].pos_;
+        
+        while( head_pos > high_beg_ )
+        {
+            Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
+
+            // we do not want to remove the triplet info if its value is t
+            if( triplet_list_[off] != t )
+                rem_k_info( triplet_list_[off] );
+
+            ++high_beg_;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::push_triplet( triplet_type t )
+{ 
+    triplet_list_.push_front( t ); 
+    outer_sum_ += outer_counts_[t];
+    ++outer_counts_[t];
+    ++stop_;
+    add_k_info( t );
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::pop_triplet()
+{
+    triplet_type t = triplet_list_.back();
+
+    // remove from the position list only if the suffix spans the whole window
+    if( inner_counts_[t] == outer_counts_[t] )
+        rem_k_info( t );
+
+    // make sure the high_beg_ is within the window
+    if( start_ == high_beg_ )
+        ++high_beg_;
+
+    --outer_counts_[t];
+    outer_sum_ -= outer_counts_[t];
+    triplet_list_.pop_back();
+    ++start_;
 }
 
 //------------------------------------------------------------------------------
 inline bool CSymDustMasker::triplets::add( sequence_type::value_type n )
 {
-    typedef std::vector< Uint1 > counts_type;
     typedef lcr_list_type::iterator lcr_iter_type;
     static counts_type counts( 64 );
 
     bool result = false;
 
-    triplet_list_.push_front( 
-        ((triplet_list_.front()<<2)&TRIPLET_MASK) + (n&3) );
-    ++stop_;
-
-    if( triplet_list_.size() > max_size_ )
+    // shift the left end of the window, if necessary
+    if( triplet_list_.size() >= max_size_ )
     {
-        triplet_list_.pop_back();
-        ++start_;
+        pop_triplet();
         result = true;
     }
 
-    std::fill_n( counts.begin(), 64, 0 );
-    Uint4 score = 0, count = 0;
-    lcr_iter_type lcr_iter = lcr_list_.begin();
-    Uint4 max_lcr_score = 0;
-    size_type max_len = 0;
-    size_type pos = stop_;
+    push_triplet( ((triplet_list_.front()<<2)&TRIPLET_MASK) + (n&3) );
+    Uint4 count = stop_ - high_beg_; // count is the suffix length
 
-    for( impl_citer_type it = triplet_list_.begin(), 
-                         iend = triplet_list_.end();
-         it != iend; ++it, ++count, --pos )
+    // if the condition does not hold then nothing in the window should be masked
+    if( 10*outer_sum_ > thresholds_[count] )
     {
-        Uint1 cnt = counts[*it];
+        // we need a local copy of triplet counts
+        std::copy( inner_counts_.begin(), inner_counts_.end(), counts.begin() );
 
-        if( cnt > 0 )
+        Uint4 score = inner_sum_; // and of the partial sum
+        lcr_iter_type lcr_iter = lcr_list_.begin();
+        Uint4 max_lcr_score = 0;
+        size_type max_len = 0;
+        size_type pos = high_beg_; // skipping the suffix
+        impl_citer_type it = triplet_list_.begin() + count; // skipping the suffix
+        impl_citer_type iend = triplet_list_.end();
+        --counts[*it];
+        score -= counts[*it];
+
+        for( ; it != iend; ++it, ++count, --pos )
         {
-            score += cnt;
+            Uint1 cnt = counts[*it];
 
-            if( score*10 > thresholds_[count] )
+            // If this triplet has not appeared before, then the partial sum
+            //      does not change
+            if( cnt > 0 )
             {
-                while(    lcr_iter != lcr_list_.end() 
-                       && pos <= lcr_iter->bounds_.first )
-                {
-                    if(    max_lcr_score == 0 
-                        || max_len*lcr_iter->score_ 
-                           > max_lcr_score*lcr_iter->len_ )
+                score += cnt;
+
+                if( score*10 > thresholds_[count] )
+                {   // found the candidate for the perfect interval
+                    // get the max score for the existing perfect intervals within
+                    //      current suffix
+                    while(    lcr_iter != lcr_list_.end() 
+                           && pos <= lcr_iter->bounds_.first )
                     {
-                        max_lcr_score = lcr_iter->score_;
-                        max_len = lcr_iter->len_;
+                        if(    max_lcr_score == 0 
+                            || max_len*lcr_iter->score_ 
+                               > max_lcr_score*lcr_iter->len_ )
+                        {
+                            max_lcr_score = lcr_iter->score_;
+                            max_len = lcr_iter->len_;
+                        }
+
+                        ++lcr_iter;
                     }
 
-                    ++lcr_iter;
-                }
-
-                if( max_lcr_score == 0 || score*max_len >= max_lcr_score*count )
-                {
-                    max_lcr_score = score;
-                    max_len = count;
-                    lcr_iter = lcr_list_.insert( 
-                        lcr_iter, lcr( pos, stop_ + 2, max_lcr_score, count ) );
+                    // check if the current suffix score is at least as large
+                    if(    max_lcr_score == 0 
+                        || score*max_len >= max_lcr_score*count )
+                    {
+                        max_lcr_score = score;
+                        max_len = count;
+                        lcr_iter = lcr_list_.insert( 
+                            lcr_iter, lcr( pos, stop_ + 2, 
+                                           max_lcr_score, count ) );
+                    }
                 }
             }
-        }
 
-        ++counts[*it];
+            ++counts[*it];
+        }
     }
 
     return result;
@@ -121,7 +258,8 @@ CSymDustMasker::CSymDustMasker(
     Uint4 level, size_type window, size_type linker )
     : level_( (level >= 2 && level <= 64) ? level : DEFAULT_LEVEL ), 
       window_( (window >= 8 && window <= 64) ? window : DEFAULT_WINDOW ), 
-      linker_( (linker >= 1 && linker <= 32) ? linker : DEFAULT_LINKER )
+      linker_( (linker >= 1 && linker <= 32) ? linker : DEFAULT_LINKER ),
+      low_k_( 1 + level_/5 )
 {
     thresholds_.reserve( window_ - 2 );
     thresholds_.push_back( 1 );
@@ -136,15 +274,22 @@ CSymDustMasker::operator()( const sequence_type & seq )
 {
     std::auto_ptr< TMaskList > res( new TMaskList );
 
-    if( seq.size() > 3 )
+    if( seq.size() > 3 )    // there must be at least one triplet
     {
+        // initializations
         lcr_list_.clear();
-        triplets tris( seq, window_, lcr_list_, thresholds_ );
+        triplet_type first_triplet
+            = (converter_( seq[0] )<<4) 
+            + (converter_( seq[1] )<<2)
+            + (converter_( seq[2] ));
+        triplets tris( first_triplet, window_, low_k_, lcr_list_, thresholds_ );
         seq_citer_type it = seq.begin() + tris.stop() + 3;
         const seq_citer_type seq_end = seq.end();
 
         while( it != seq_end )
         {
+            // append all the perfect intervals outside of the current window
+            //      to the result
             while( !lcr_list_.empty() )
             {
                 TMaskedInterval b = lcr_list_.back().bounds_;
@@ -167,10 +312,12 @@ CSymDustMasker::operator()( const sequence_type & seq )
                 lcr_list_.pop_back();
             }
 
+            // shift the window
             tris.add( converter_( *it ) );
             ++it;
         }
 
+        // append the rest of the perfect intervals to the result
         while( !lcr_list_.empty() )
         {
                 TMaskedInterval b = lcr_list_.back().bounds_;
