@@ -70,6 +70,7 @@ BEGIN_SCOPE(blast)
 // Forward declarations
 class CBlastOptionsLocal;
 class CBlastOptionsRemote;
+class CBlastOptionsMemento;
 
 /// Encapsulates ALL the BLAST algorithm's options.
 /// @note This class provides accessors and mutators for all BLAST options 
@@ -348,6 +349,8 @@ public:
         p = m_ProgramName;
         s = m_ServiceName;
     }
+
+    const CBlastOptionsMemento* CreateSnapshot() const;
     
 private:
     /// Prohibit copy c-tor 
@@ -583,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.106  2005/07/12 21:00:33  camacho
+* Experimental: added CBlastOptionsMemento
+*
 * Revision 1.105  2005/07/06 14:30:29  camacho
 * Doxygen fixes
 *
