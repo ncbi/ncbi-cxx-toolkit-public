@@ -11,16 +11,10 @@ CommandLine = \
 		@set SWIG=$(SWIG_PATH)\\swig.exe -old_repr -D_MSC_VER \
 		@set SWIG_LIB=$(SWIG_PATH)\\Lib \
 		@set SRC_DIR=..\\..\\..\\..\\..\\..\\src\\wrappers \
+		@set PYTHON_EXE=@$(PYTHON_PATH)\\python.exe \
 		cd %SRC_DIR% \
 \	
-		@echo Extracting templates... \
-		@$(PYTHON_PATH)\\python.exe extract_some_templates.py -DWINDOWS ncbi.swig \
-\	
-		@echo Creating Objects... \
-		@$(PYTHON_PATH)\\python.exe make_cobjects.py ncbi.py \
-\	
-		@echo Generating source code... \
-		@$(PYTHON_PATH)\\python.exe ncbi_swig_python.py -DWINDOWS ncbi.swig  \
+		%PYTHON_EXE% generate_code_python.py \
 
 Outputs =  ncbi_swig_python.out
  
