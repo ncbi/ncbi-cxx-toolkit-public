@@ -204,6 +204,8 @@ int main(int argc, char* argv[])
                         case eDB_Image:
                             if(k++) query+= ",";
                             query+= r->ItemName(j);
+                        default:
+                            break;
                         }
                     }
                     while(r->Fetch());
@@ -247,6 +249,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/12 14:29:07  ssikorsk
+ * Get rid of warnings in switch statements
+ *
  * Revision 1.4  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
