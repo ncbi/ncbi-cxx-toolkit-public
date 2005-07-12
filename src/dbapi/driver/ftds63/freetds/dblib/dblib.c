@@ -968,33 +968,50 @@ tdsdbopen(LOGINREC * login, char *server, int msdblib)
 	}
 
 	/* override TDS version if dbsetversion() was called */
-	if ( g_dblib_version != DBVERSION_UNKNOWN ) {
-        switch ( g_dblib_version ) {
-        case DBVERSION_42:
-            connection->major_version = 4;
-            connection->minor_version = 2;
-            break;
-        case DBVERSION_46:
-            connection->major_version = 4;
-            connection->minor_version = 6;
-            break;
-        case DBVERSION_100:
-            connection->major_version = 5;
-            connection->minor_version = 0;
-            break;
-        case DBVERSION_70:
-            connection->major_version = 7;
-            connection->minor_version = 0;
-            break;
-        case DBVERSION_80:
-            connection->major_version = 8;
-            connection->minor_version = 0;
-            break;
-        default:
-            connection->major_version = 0;
-            connection->minor_version = 0;
-        };
-	}
+	if ( g_dblib_version == DBVERSION_UNKNOWN ) {
+        g_dblib_version =
+#ifdef TDS42
+	        DBVERSION_42;
+#endif
+#ifdef TDS50
+            DBVERSION_100;
+#endif
+#ifdef TDS46
+            DBVERSION_46;
+#endif
+#ifdef TDS70
+            DBVERSION_70;
+#endif
+#ifdef TDS80
+            DBVERSION_80;
+#endif
+    }
+
+    switch ( g_dblib_version ) {
+    case DBVERSION_42:
+        connection->major_version = 4;
+        connection->minor_version = 2;
+        break;
+    case DBVERSION_46:
+        connection->major_version = 4;
+        connection->minor_version = 6;
+        break;
+    case DBVERSION_100:
+        connection->major_version = 5;
+        connection->minor_version = 0;
+        break;
+    case DBVERSION_70:
+        connection->major_version = 7;
+        connection->minor_version = 0;
+        break;
+    case DBVERSION_80:
+        connection->major_version = 8;
+        connection->minor_version = 0;
+        break;
+    default:
+        connection->major_version = 0;
+        connection->minor_version = 0;
+    };
 
 	dbproc->dbchkintr = NULL;
 	dbproc->dbhndlintr = NULL;
