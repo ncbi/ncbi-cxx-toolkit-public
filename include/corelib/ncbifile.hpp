@@ -73,7 +73,8 @@ public:
     /// Error types that file operations can generate.
     enum EErrCode {
         eMemoryMap,
-        eRelativePath
+        eRelativePath,
+        eNotExists
     };
 
     /// Translate from an error code value to its string representation.
@@ -82,6 +83,7 @@ public:
         switch (GetErrCode()) {
         case eMemoryMap:    return "eMemoryMap";
         case eRelativePath: return "eRelativePath";
+        case eNotExists:    return "eNotExists";
         default:            return CException::GetErrCodeString();
         }
     }
@@ -625,9 +627,61 @@ public:
                   time_t* creation     = 0,
                   time_t* last_access  = 0) const;
 
+
+    /// What IsNewer() should do if the dir entry does not exist or
+    /// is not accessible.
+    /// @sa IsNewer
+    enum EIfAbsent {
+        eIfAbsent_Throw,    ///< Throw an exception
+        eIfAbsent_Newer,    ///< Deem absent entry to be "newer"
+        eIfAbsent_NotNewer  ///< Deem absent entry to be "older"
+    };
+
+    /// Check if the current entry is newer than a specified date/time.
+    ///
+    /// @param tm
+    ///   Time to compare with the current entry modification time.
+    /// @param if_absent
+    ///   What to do if If the entry does not exist or is not accessible.
+    /// @return
+    ///   TRUE if the entry's modification time is newer than specified time.
+    ///   Return FALSE otherwise.
+    /// @sa
+    ///   GetTime, EIfAbsent
+    bool IsNewer(time_t    tm, 
+                 EIfAbsent if_absent /* = eIfAbsent_Throw*/) const;
+
+    /// Check if the current entry is newer than a specified date/time.
+    ///
+    /// @param tm
+    ///   Time to compare with the current entry modification time.
+    /// @param if_absent
+    ///   What to do if If the entry does not exist or is not accessible.
+    /// @return
+    ///   TRUE if the entry's modification time is newer than specified time.
+    ///   Return FALSE otherwise.
+    /// @sa
+    ///   GetTime, EIfAbsent
+    bool IsNewer(const CTime& tm,
+                 EIfAbsent    if_absent /* = eIfAbsent_Throw*/) const;
+
+    /// What path version of IsNewer() should do if the dir entry or specified
+    /// path does not exist or is not accessible. Default flags (0) mean
+    /// throwing an exceptions if one of dir entries does not exists.
+    /// @sa IsNewer
+    enum EIfAbsent2 {
+        fHasThisNoPath_Newer    = (1 << 0),
+        fHasThisNoPath_NotNewer = (1 << 1),
+        fNoThisHasPath_Newer    = (1 << 2),
+        fNoThisHasPath_NotNewer = (1 << 3),
+        fNoThisNoPath_Newer     = (1 << 4),
+        fNoThisNoPath_NotNewer  = (1 << 5)
+    };
+    typedef int TIfAbsent2;   ///< Binary OR of "EIfAbsent2"
+
     /// Check if the current entry is newer than some other.
     ///
-    /// @param entry_name
+    /// @param path
     ///   An entry name, of which to compare the modification times.
     /// @return
     ///   TRUE if the modification time of the current entry is newer than
@@ -635,29 +689,8 @@ public:
     ///   doesn't exist. Return FALSE otherwise.
     /// @sa
     ///   GetTime
-    bool IsNewer(const string& entry_name) const;
-
-    /// Check if the current entry is newer than a specified date/time.
-    ///
-    /// @param tm
-    ///   Time to compare with the current entry modification time.
-    /// @return
-    ///   TRUE if the modification time of the current entry is newer than
-    ///   the specified time. Return FALSE otherwise.
-    /// @sa
-    ///   GetTime
-    bool IsNewer(time_t tm) const;
-
-    /// Check if the current entry is newer than a specified date/time.
-    ///
-    /// @param tm
-    ///   Time to compare with the current entry modification time.
-    /// @return
-    ///   TRUE if the modification time of the current entry is newer than
-    ///   the specified time. Return FALSE otherwise.
-    /// @sa
-    ///   GetTime
-    bool IsNewer(const CTime& tm) const;
+    bool IsNewer(const string& path,
+                 TIfAbsent2    if_absent /* = 0 throw*/) const;
 
     /// Check if the current entry and the given entry_name are identical.
     ///
@@ -2348,6 +2381,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/07/12 11:16:04  ivanov
+ * CDirEntry::IsNewer() -- added additional argument which specify what
+ * to do if the dir entry does not exist or is not accessible.
+ *
  * Revision 1.62  2005/06/21 13:39:26  ivanov
  * CDir::TEntries: use list<> instead of vector<> as container class
  * + CDir::GetEntriesPtr()

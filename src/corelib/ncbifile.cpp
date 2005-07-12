@@ -1426,7 +1426,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
             return false;
         }
         // Rename only if destination is older, otherwise just remove source
-        if ( F_ISSET(flags, fRF_Update)  &&  !src.IsNewer(dst.GetPath())) {
+        if ( F_ISSET(flags, fRF_Update)  &&  !src.IsNewer(dst.GetPath(), 0)) {
             return src.Remove();
         }
         // Backup destination entry first
@@ -1518,32 +1518,82 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
 }
 
 
-bool CDirEntry::IsNewer(const string& entry_name) const
+bool CDirEntry::IsNewer(const string& entry_name, TIfAbsent2 if_absent) const
 {
     CDirEntry entry(entry_name);
+    CTime this_time;
     CTime entry_time;
-    if ( !entry.GetTime(&entry_time) ) {
-        return true;
+    int v = 0;
+
+    if ( !GetTime(&this_time) ) {
+        v += 1;
     }
-    return IsNewer(entry_time);
+    if ( !entry.GetTime(&entry_time) ) {
+        v += 2;
+    }
+    if ( v == 0 ) {
+        return this_time > entry_time;
+    }
+    if ( if_absent ) {
+        switch(v) {
+            case 1:  // NoThis - HasPath
+                if ( if_absent &
+                     (fNoThisHasPath_Newer | fNoThisHasPath_NotNewer) )
+                    return (if_absent & fNoThisHasPath_Newer) > 0;
+                break;
+            case 2:  // HasThis - NoPath
+                if ( if_absent &
+                     (fHasThisNoPath_Newer | fHasThisNoPath_NotNewer) )
+                    return (if_absent & fHasThisNoPath_Newer) > 0;
+                break;
+            case 3:  // NoThis - NoPath
+                if ( if_absent &
+                     (fNoThisNoPath_Newer | fNoThisNoPath_NotNewer) )
+                    return (if_absent & fNoThisNoPath_Newer) > 0;
+                break;
+        }
+    }
+    // throw an exception by default
+    NCBI_THROW(CFileException, eNotExists, 
+                "IsNewer: dir entry does not exists");
+    // not reached
+    return false;
 }
 
 
-bool CDirEntry::IsNewer(time_t tm) const
+bool CDirEntry::IsNewer(time_t tm, EIfAbsent if_absent) const
 {
     time_t current;
     if ( !GetTimeT(&current) ) {
-        return false;
+        switch(if_absent) {
+            case eIfAbsent_Newer:
+                return true;
+            case eIfAbsent_NotNewer:
+                return false;
+            case eIfAbsent_Throw:
+            default:
+                 NCBI_THROW(CFileException, eNotExists, 
+                            "IsNewer: dir entry does not exists");
+        }
     }
     return current > tm;
 }
 
 
-bool CDirEntry::IsNewer(const CTime& tm) const
+bool CDirEntry::IsNewer(const CTime& tm, EIfAbsent if_absent) const
 {
     CTime current;
     if ( !GetTime(&current) ) {
-        return false;
+        switch(if_absent) {
+            case eIfAbsent_Newer:
+                return true;
+            case eIfAbsent_NotNewer:
+                return false;
+            case eIfAbsent_Throw:
+            default:
+                 NCBI_THROW(CFileException, eNotExists, 
+                            "IsNewer: dir entry does not exists");
+        }
     }
     return current > tm;
 }
@@ -2142,7 +2192,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
             return false;
         }
         // Copy only if destination is older, otherwise just remove source
-        if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath())) {
+        if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath(),0) ) {
             return src.Remove();
         }
         // Backup destination entry first
@@ -2814,7 +2864,8 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
                 return false;
             }
             // Copy only if destination is older, otherwise just remove source
-            if ( F_ISSET(flags, fCF_Update)  && !src.IsNewer(dst.GetPath())) {
+            if ( F_ISSET(flags, fCF_Update)  &&
+                 !src.IsNewer(dst.GetPath(), 0) ) {
                 return src.Remove(eRecursive);
             }
             // Backup destination entry first
@@ -2983,7 +3034,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
             return false;
         }
         // Copy only if destination is older, otherwise just remove source
-        if ( F_ISSET(flags, fCF_Update)  &&  !IsNewer(dst.GetPath())) {
+        if ( F_ISSET(flags, fCF_Update)  &&  !IsNewer(dst.GetPath(), 0)) {
             return Remove();
         }
         // Backup destination entry first
@@ -3600,6 +3651,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.118  2005/07/12 11:16:15  ivanov
+ * CDirEntry::IsNewer() -- added additional argument which specify what
+ * to do if the dir entry does not exist or is not accessible.
+ *
  * Revision 1.117  2005/07/01 18:45:49  ivanov
  * UNIX: s_CopyAttrs() -- fixed prematurely return while copying date/time
  *
