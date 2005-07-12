@@ -48,10 +48,10 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/reader_id1.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 
 #include <algo/dustmask/symdust.hpp>
 #include "dust_mask_app.hpp"
@@ -143,9 +143,7 @@ int CDustMaskApplication::Run (void)
     // Set up the object manager.
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CGBDataLoader::RegisterInObjectManager(
-        *om, new CId1Reader, CObjectManager::eDefault);
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
+        *om, new CId2Reader, CObjectManager::eDefault);
 
     // Set up the duster object.
     typedef CSymDustMasker duster_type;
@@ -159,12 +157,8 @@ int CDustMaskApplication::Run (void)
 
     while( (aSeqEntry = GetNextSequence( input_stream )).NotEmpty() )
     {
-        CSeq_entry_Handle seh;
-
-        try 
-        { seh = scope->GetSeq_entryHandle(*aSeqEntry); }
-        catch (CException&) 
-        { seh = scope->AddTopLevelSeqEntry(*aSeqEntry); }
+        CScope scope( *om );
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *aSeqEntry );
 
         CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
 
@@ -192,6 +186,8 @@ int CDustMaskApplication::Run (void)
                     *output_stream << it->first  << " - " 
                                    << it->second << "\n";
             }
+
+            cerr << "." << flush;
 
             /*
             CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
@@ -229,6 +225,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/07/12 14:16:19  morgulis
+ * Changes to object manager related code to improve performance with large
+ * number of short sequences.
+ *
  * Revision 1.5  2005/06/06 20:33:53  morgulis
  * Small change in usage of linker parameter.
  * Added (commented out) code for testing SeqLoc based interface.
