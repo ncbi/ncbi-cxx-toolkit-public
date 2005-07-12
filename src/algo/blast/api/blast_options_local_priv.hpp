@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_options_priv.hpp
+/** @file blast_options_local_priv.hpp
  * Private header for local representation of BLAST options.
  */
 

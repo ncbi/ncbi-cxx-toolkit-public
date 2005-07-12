@@ -32,8 +32,8 @@ static char const rcsid[] =
  * ===========================================================================
  */
 
-/// @file blast_setup_cxx.cpp
-/// Auxiliary setup functions for Blast objects interface.
+/// @file blast_options_local_priv.cpp
+/// Definition of local representation of BLAST options.
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_exception.hpp>
