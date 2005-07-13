@@ -1751,7 +1751,7 @@ static void scaleMatrix(Int4 **matrix, Int4 **startMatrix,
 
    for (p = 0; p < numPositions; p++) {
      for (c = 0; c < BLASTAA_SIZE; c++) {
-       if (matrix[p][c] == BLAST_SCORE_MIN)
+       if (0 == startFreqRatios[p][c])
          matrix[p][c] = startMatrix[p][c];
        else {
          temp = log(startFreqRatios[p][c]);
