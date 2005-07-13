@@ -593,6 +593,15 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         if (ostr) {
             *ostr << "Found no acceptable dovetail alignments by blast "
                   << blast_params << endl;
+        }
+        if (alns->Get().empty()) {
+            if (ostr) {
+                *ostr << "No alignments found by blast; "
+                    "can't do banded alignment" << endl;
+            }
+            return vector<CRef<CSeq_align> >();
+        }
+        if (ostr) {
             *ostr << "Trying banded global alignment" << endl;
         }
         ENa_strand strand;
@@ -606,19 +615,10 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         if (ostr) {
             *ostr << "Fraction identity: " << frac_ident << endl;
         }
-        if (IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
+        if (IsDovetail(*local_ds, max_end_slop, scope)
             && FracIdent(*local_ds, scope) >= min_ident) {
-            string dovetail_string;
-            if (IsDovetail(*local_ds, max_end_slop, scope)) {
-                dovetail_string = "full dovetail";
-            } else if (IsContained(*local_ds, max_end_slop, scope)) {
-                dovetail_string = "contained";
-            } else {
-                dovetail_string = "half-dovetail";
-            }
             if (ostr) {
-                *ostr << "Alignment acceptable (" << dovetail_string
-                      << ")" << endl;
+                *ostr << "Alignment acceptable (full dovetail)" << endl;
             }
             CRef<CSeq_align> aln(new CSeq_align);
             aln->SetSegs().SetDenseg(*local_ds);
@@ -644,7 +644,36 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                      " acceptable half-dovetail "
                      "or contained alignment(s) by blast" << endl;
              }
-             return good_alns;
+             if (!good_alns.empty()) {
+                 return good_alns;
+             } else {
+                 // Check whether banded alignment is an
+                 // acceptable half-dovetail (including contained)
+                 if (IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
+                     && FracIdent(*local_ds, scope) >= min_ident) {
+                     string dovetail_string;
+                     if (IsContained(*local_ds, max_end_slop, scope)) {
+                         dovetail_string = "contained";
+                     } else {
+                         dovetail_string = "half-dovetail";
+                     }
+                     if (ostr) {
+                         *ostr << "Banded alignment acceptable ("
+                               << dovetail_string << ")" << endl;
+                     }
+                     CRef<CSeq_align> aln(new CSeq_align);
+                     aln->SetSegs().SetDenseg(*local_ds);
+                     aln->SetType(aln->eType_partial);
+                     return vector<CRef<CSeq_align> >(1, aln);
+                     
+                 } else {
+                     if (ostr) {
+                         *ostr << "Banded alignment not an acceptable "
+                             "half-dovetail or contained" << endl;
+                     }
+                     return vector<CRef<CSeq_align> >();
+                 }
+             }
          }
     }
 }
@@ -655,6 +684,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/13 18:01:56  jcherry
+ * When no full dovetails are found, prefer BLAST half-dovetails to
+ * banded alignment half-dovetails (so more than one can be found).
+ * Deal with case where BLAST returns no alignments.
+ *
  * Revision 1.3  2005/06/17 00:38:57  ucko
  * Use string::erase() rather than string::clear() for GCC 2.95 compatibility.
  *
