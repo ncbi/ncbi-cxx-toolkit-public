@@ -350,6 +350,8 @@ public:
         s = m_ServiceName;
     }
 
+    /// Create a snapshot of the state of this object for internal use of its
+    /// data structures (BLAST C++ APIs only)
     const CBlastOptionsMemento* CreateSnapshot() const;
     
 private:
@@ -586,6 +588,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.107  2005/07/13 13:23:45  camacho
+* Doxygen fix
+*
 * Revision 1.106  2005/07/12 21:00:33  camacho
 * Experimental: added CBlastOptionsMemento
 *
