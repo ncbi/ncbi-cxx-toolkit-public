@@ -9,6 +9,8 @@
 NCBI-Mim DEFINITIONS ::=
 BEGIN
 
+Mim-entries ::= SEQUENCE OF Mim-entry
+
 Mim-set ::= SEQUENCE {
 	releaseDate Mim-date ,
 	mimEntries SEQUENCE OF Mim-entry }
@@ -20,7 +22,7 @@ Mim-entry ::= SEQUENCE {
 		star (1) ,
 		caret (2) ,
 		pound (3) ,
-		plus (4) , 
+		plus (4) ,
 		perc (5) } ,
 	title VisibleString ,
 	copyright VisibleString OPTIONAL ,
