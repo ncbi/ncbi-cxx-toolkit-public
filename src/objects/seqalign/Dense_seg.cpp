@@ -248,7 +248,7 @@ void CDense_seg::Compact()
 {
     _ASSERT(GetNumseg() == GetLens().size());
     _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
     _ASSERT(GetDim() == GetIds().size());
     int i;
     int j;
@@ -272,7 +272,8 @@ void CDense_seg::Compact()
             /// between this segment and the next
             if (this_start != -1  &&  next_start != -1) {
                 TSignedSeqPos seg_len = GetLens()[i];
-                if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
+                if (IsSetStrands()  &&
+                    GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
                     seg_len = GetLens()[i + 1];
                     seg_len = -seg_len;
                 }
@@ -285,18 +286,20 @@ void CDense_seg::Compact()
         }
 
         if (can_merge) {
-            for (j = 0;  j < GetDim();  ++j) {
-                if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
-                    SetStarts()[i * GetDim() + j] =
-                        SetStarts()[(i + 1) * GetDim() + j];
-                    SetStrands()[i * GetDim() + j] =
-                        SetStrands()[(i + 1) * GetDim() + j];
+            if (IsSetStrands()) {
+                for (j = 0;  j < GetDim();  ++j) {
+                    if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
+                        SetStarts()[i * GetDim() + j] =
+                            SetStarts()[(i + 1) * GetDim() + j];
+                        SetStrands()[i * GetDim() + j] =
+                            SetStrands()[(i + 1) * GetDim() + j];
+                    }
                 }
+                SetStrands().erase(SetStrands().begin() + (i + 1) * GetDim(),
+                                   SetStrands().begin() + (i + 2) * GetDim());
             }
             SetStarts().erase(SetStarts().begin() + (i + 1) * GetDim(),
                               SetStarts().begin() + (i + 2) * GetDim());
-            SetStrands().erase(SetStrands().begin() + (i + 1) * GetDim(),
-                               SetStrands().begin() + (i + 2) * GetDim());
             if (gap_count != GetDim()) {
                 SetLens()[i] += GetLens()[i + 1];
             }
@@ -310,7 +313,7 @@ void CDense_seg::Compact()
 
     _ASSERT(GetNumseg() == GetLens().size());
     _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
     _ASSERT(GetDim() == GetIds().size());
 }
 
@@ -321,11 +324,13 @@ void CDense_seg::Compact()
 void CDense_seg::Reverse(void)
 {
     //flip strands
-    NON_CONST_ITERATE (CDense_seg::TStrands, i, SetStrands()) {
-        switch (*i) {
-        case eNa_strand_plus:  *i = eNa_strand_minus; break;
-        case eNa_strand_minus: *i = eNa_strand_plus;  break;
-        default:                    break;//do nothing if not + or -
+    if (IsSetStrands()) {
+        NON_CONST_ITERATE (CDense_seg::TStrands, i, SetStrands()) {
+            switch (*i) {
+            case eNa_strand_plus:  *i = eNa_strand_minus; break;
+            case eNa_strand_minus: *i = eNa_strand_plus;  break;
+            default:                    break;//do nothing if not + or -
+            }
         }
     }
 
@@ -374,8 +379,10 @@ void CDense_seg::SwapRows(TDim row1, TDim row2)
     }
 
     //swap strands
-    for(int i = 0; i < idxStop; i += GetDim()) {
-        swap(SetStrands()[i+row1], SetStrands()[i+row2]);
+    if (IsSetStrands()) {
+        for(int i = 0; i < idxStop; i += GetDim()) {
+            swap(SetStrands()[i+row1], SetStrands()[i+row2]);
+        }
     }
 }
 
@@ -487,8 +494,10 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
         ds->SetLens().push_back(len);
 
         //strands
-        for (CDense_seg::TDim dim = 0;  dim < GetDim();  ++dim) {
-            ds->SetStrands().push_back(GetStrands()[seg * GetDim() + dim]);
+        if (IsSetStrands()) {
+            for (CDense_seg::TDim dim = 0;  dim < GetDim();  ++dim) {
+                ds->SetStrands().push_back(GetStrands()[seg * GetDim() + dim]);
+            }
         }
         ++ds->SetNumseg();
     }
@@ -1016,6 +1025,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/07/13 17:39:33  dicuccio
+* Make sure to check to see if strands are set before manipulating them;
+* dense-seg.strand is optional
+*
 * Revision 1.21  2005/06/03 17:44:26  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
