@@ -153,7 +153,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
-   const BlastQueryInfo* query_info, BlastMaskLoc* mask_loc, 
+   const BlastQueryInfo* query_info, const BlastMaskLoc* mask_loc, 
    BlastSeqLoc* *complement_mask);
 
 /** Runs filtering functions, according to the filtering options, returns
@@ -206,7 +206,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, const BlastQueryI
 NCBI_XBLAST_EXPORT
 Int2
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na, 
-    BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset);
+    const BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset);
 
 /** Masks the sequence given a BlastMaskLoc
  * @param query_blk sequence to be filtered [in]
@@ -217,7 +217,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info,
-    BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
+    const BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
 
 /** Produces SBlastFilterOptions from a string that has been traditionally supported
  * in blast.

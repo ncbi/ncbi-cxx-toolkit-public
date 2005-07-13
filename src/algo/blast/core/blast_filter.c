@@ -747,7 +747,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
    const BlastQueryInfo* query_info, 
-   BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
+   const BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 context;
    BlastSeqLoc* loc,* last_loc = NULL,* start_loc = NULL;
@@ -1065,7 +1065,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, const BlastQueryI
 
 Int2
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
-                           BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset)
+                      const BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset)
 {
     SSeqRange *loc = NULL;
     Int2 status = 0;
@@ -1093,7 +1093,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 }
 
 Int2 
-BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, const BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
 {
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */
