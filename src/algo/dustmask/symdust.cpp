@@ -101,7 +101,7 @@ inline void CSymDustMasker::triplets::rem_k_info( triplet_type t )
 }
 
 //------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
+void CSymDustMasker::triplets::add_k_info( triplet_type t )
 {
     // Get and initialize the new element. Update inner_sum and counts.
     Uint4 ni = new_k_info();
