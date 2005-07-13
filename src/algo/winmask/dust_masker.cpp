@@ -89,7 +89,7 @@ CDustMasker::TMaskList * CDustMasker::operator()(
 
     if( e_it != e_end && e_it->first == 0 && e_it->second + 1 > window )
     {
-        current_it = start_it + e_it->second - window + 2;
+        current_it = start_it + TSeqPos(e_it->second - window + 2);
         ++e_it;
     }
 
@@ -102,7 +102,7 @@ CDustMasker::TMaskList * CDustMasker::operator()(
             ++e_it;
 
         end_it = (e_it == e_end) ? data.end() 
-                                   : start_it + e_it->first + window;
+                                 : start_it + TSeqPos(e_it->first + window);
 
         for( ; current_it != end_it; ++current_it )
             data_blastna.push_back( iupacna_to_blastna( *current_it ) );
@@ -126,7 +126,7 @@ CDustMasker::TMaskList * CDustMasker::operator()(
 
         if( e_it != e_end )
         {
-            current_it = start_it + e_it->second - window + 2;
+            current_it = start_it + TSeqPos(e_it->second - window + 2);
             ++e_it;
         }
 
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/07/13 18:28:25  ucko
+ * Explicitly cast CSeqVector_CI increments to TSeqPos.
+ *
  * Revision 1.8  2005/07/13 15:59:56  morgulis
  * Dust only the parts of the sequences not masked by winmask module.
  *
