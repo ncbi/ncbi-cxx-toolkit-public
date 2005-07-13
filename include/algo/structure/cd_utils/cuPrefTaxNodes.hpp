@@ -47,8 +47,8 @@ struct OrgNode
 {
 	OrgNode(int n, const CRef<CCdd_org_ref>& oref) : order(n), orgRef(oref) {}
 
-	const CRef<CCdd_org_ref> orgRef;
 	int order;   //  an index tracking the order of insertion into a particular TaxidOrgMap
+	const CRef<CCdd_org_ref> orgRef;
 };
 
 typedef map<int, OrgNode > TaxidToOrgMap;
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/13 19:47:03  lanczyck
+ * minor mods to remove compiler warnings
+ *
  * Revision 1.3  2005/07/07 19:42:08  lanczyck
  * modify comment
  *

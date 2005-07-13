@@ -201,9 +201,8 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
 
 
 int CTaxNRCriteria::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) const {
-    bool gotAnswer = false;
+
     string nodeName, orgName;
-    CTaxNRItem::TTaxItemId badId = CTaxNRItem::INVALID_TAX_ITEM_ID;
     CTaxNRItem lhsItem(lhs), rhsItem(rhs);
 
     //  If don't have valid field in the passed-in items, fill them in the temporaries.
@@ -228,6 +227,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/13 19:46:32  lanczyck
+* minor mods to remove compiler warnings
+*
 * Revision 1.1  2005/07/07 17:31:41  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *

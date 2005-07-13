@@ -48,7 +48,7 @@ CSimpleNonRedundifier::CSimpleNonRedundifier(CDistBasedClusterer::TDist threshol
 }
 */
 
-CSimpleNonRedundifier::CSimpleNonRedundifier() : m_clusterer(NULL), m_isBusy(false) {
+CSimpleNonRedundifier::CSimpleNonRedundifier() : m_isBusy(false), m_clusterer(NULL) {
     m_id2ItemMapping = new CNRCriteria::TId2Item;
 }
 
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/13 19:46:32  lanczyck
+* minor mods to remove compiler warnings
+*
 * Revision 1.1  2005/07/13 19:04:26  lanczyck
 * classes for building a SLC non-redundifier that does not depend on CCdd-related classes
 *

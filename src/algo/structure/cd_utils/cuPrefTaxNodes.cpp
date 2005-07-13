@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/13 19:46:32  lanczyck
+ * minor mods to remove compiler warnings
+ *
  * Revision 1.3  2005/07/07 19:43:42  lanczyck
  * use implicit 'current' directoyr for txnodes.asn file for one-argument ctor
  *
@@ -312,3 +315,4 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
