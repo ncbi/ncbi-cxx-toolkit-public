@@ -124,14 +124,7 @@ public:
 
     typedef double TDist;
 
-protected:
-    //  Do not allow instances to be created.
-    CDistBasedClusterer(TDist clusteringThreshold = 0) : m_clusteringThreshold(clusteringThreshold) {};
-
-public:
-    virtual ~CDistBasedClusterer() {};
-
-    //  ** Most classes will only need to override one of the two forms below **
+    //  ** Some classes will only need to override one of the two forms below **
 
     //  This version is to support a simpler API for derived classes that already have an
     //  internal representation of the distance matrix, and just need to know the clustering threshold.
@@ -151,6 +144,9 @@ public:
         return 0;
     }
 
+public:
+    virtual ~CDistBasedClusterer() {};
+
     //  Provide a class-specific way to tell if the clusterer is in a usable state.
     virtual bool IsValid() const = 0;
 
@@ -160,6 +156,10 @@ public:
 protected:
 
     TDist           m_clusteringThreshold;
+
+    //  Do not allow instances to be created.
+    CDistBasedClusterer(TDist clusteringThreshold = 0) : m_clusteringThreshold(clusteringThreshold) {};
+
 };
 
 inline
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/13 19:05:35  lanczyck
+* change visibility of CDistBasedClusterer ctor
+*
 * Revision 1.1  2005/07/07 17:31:25  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *
