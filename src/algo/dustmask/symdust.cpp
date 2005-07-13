@@ -270,21 +270,31 @@ CSymDustMasker::CSymDustMasker(
 
 //------------------------------------------------------------------------------
 std::auto_ptr< CSymDustMasker::TMaskList > 
-CSymDustMasker::operator()( const sequence_type & seq )
+CSymDustMasker::operator()( const sequence_type & seq, 
+                            size_type start, size_type stop )
 {
     std::auto_ptr< TMaskList > res( new TMaskList );
 
-    if( seq.size() > 3 )    // there must be at least one triplet
+    if( seq.empty() )
+        return res;
+
+    if( stop >= seq.size() )
+        stop = seq.size() - 1;
+
+    if( start > stop )
+        start = stop;
+
+    if( stop - start > 2 )    // there must be at least one triplet
     {
         // initializations
         lcr_list_.clear();
         triplet_type first_triplet
-            = (converter_( seq[0] )<<4) 
-            + (converter_( seq[1] )<<2)
-            + (converter_( seq[2] ));
+            = (converter_( seq[start] )<<4) 
+            + (converter_( seq[start + 1] )<<2)
+            + (converter_( seq[start + 2] ));
         triplets tris( first_triplet, window_, low_k_, lcr_list_, thresholds_ );
-        seq_citer_type it = seq.begin() + tris.stop() + 3;
-        const seq_citer_type seq_end = seq.end();
+        seq_citer_type it = seq.begin() + start + tris.stop() + 3;
+        const seq_citer_type seq_end = seq.begin() + stop + 1;
 
         while( it != seq_end )
         {
@@ -342,6 +352,11 @@ CSymDustMasker::operator()( const sequence_type & seq )
 }
 
 //------------------------------------------------------------------------------
+std::auto_ptr< CSymDustMasker::TMaskList > 
+CSymDustMasker::operator()( const sequence_type & seq )
+{ return (*this)( seq, 0, seq.size() - 1 ); }
+
+//------------------------------------------------------------------------------
 void CSymDustMasker::GetMaskedLocs( 
     objects::CSeq_id & seq_id,
     const sequence_type & seq, 
@@ -359,3 +374,11 @@ void CSymDustMasker::GetMaskedLocs(
 
 END_NCBI_SCOPE
 
+/*
+ * ========================================================================
+ * $Log$
+ * Revision 1.8  2005/07/13 18:29:50  morgulis
+ * operator() can mask part of the sequence
+ *
+ *
+ */

@@ -154,6 +154,16 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
         std::auto_ptr< TMaskList > operator()( const sequence_type & seq );
 
         /**
+            \brief Mask a part of the sequence.
+            \param seq the sequence to mask
+            \param start beginning position of the subsequence to mask
+            \param stop ending position of the subsequence to mask
+            \return list of masked intervals
+         */
+        std::auto_ptr< TMaskList > operator()( const sequence_type & seq,
+                                               size_type start, size_type stop );
+
+        /**
             \brief Mask a sequence and return result as a sequence of CSeq_loc
                    objects.
             \param seq_id sequence id
@@ -323,3 +333,11 @@ END_NCBI_SCOPE
 
 #endif
 
+/*
+ * ========================================================================
+ * $Log$
+ * Revision 1.9  2005/07/13 18:29:50  morgulis
+ * operator() can mask part of the sequence
+ *
+ *
+ */
