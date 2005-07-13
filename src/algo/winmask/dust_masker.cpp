@@ -74,36 +74,63 @@ CDustMasker::CDustMasker( Uint4 arg_window, Uint4 arg_level, Uint4 arg_linker )
 CDustMasker::~CDustMasker(){}
 
 //------------------------------------------------------------------------------
-CDustMasker::TMaskList * CDustMasker::operator()( const CSeqVector & data )
+CDustMasker::TMaskList * CDustMasker::operator()( 
+    const CSeqVector & data, const TMaskList & exclude_ranges )
 {
     // Transform to BLASTNA.
-    string data_blastna;
-    data_blastna.reserve( data.size() );
-    transform( data.begin(), data.end(), 
-                    back_inserter< string >( data_blastna ), 
-                    iupacna_to_blastna );
-/*
-    ITERATE (CSeqVector, it, data) {
-        data_blastna.push_back(iupacna_to_blastna(*it));
-    }
-*/
-
-    // Now dust.
-    BlastSeqLoc * blast_loc( 0 );
-    SeqBufferDust( reinterpret_cast< Uint1 * >( 
-                                               const_cast< char * >( data_blastna.c_str() ) ), 
-                   data_blastna.length(), 0, 
-                   level, window, linker, &blast_loc );
-
-    // Convert to the output type.
+    vector< Uint1 > data_blastna;
+    data_blastna.reserve( data.size() + 1 );
     TMaskList * result( new TMaskList );
+    TMaskList::const_iterator e_it = exclude_ranges.begin();
+    TMaskList::const_iterator e_end = exclude_ranges.end();
+    CSeqVector::const_iterator start_it = data.begin();
+    CSeqVector::const_iterator current_it = data.begin();
+    CSeqVector::const_iterator end_it = data.end();
 
-    while( blast_loc )
+    if( e_it != e_end && e_it->first == 0 && e_it->second + 1 > window )
     {
-        result->push_back(TMaskedInterval( blast_loc->ssr->left, 
-                                           blast_loc->ssr->right ) );
-        blast_loc = blast_loc->next;
+        current_it = start_it + e_it->second - window + 2;
+        ++e_it;
     }
+
+    do
+    {
+        Uint4 offset = current_it - start_it;
+        data_blastna.clear();
+
+        while( e_it != e_end && e_it->second - e_it->first + 1 <= window )
+            ++e_it;
+
+        end_it = (e_it == e_end) ? data.end() 
+                                   : start_it + e_it->first + window;
+
+        for( ; current_it != end_it; ++current_it )
+            data_blastna.push_back( iupacna_to_blastna( *current_it ) );
+
+        data_blastna.push_back( 0 );
+
+        // Now dust.
+        BlastSeqLoc * blast_loc( 0 );
+        SeqBufferDust( &data_blastna[0],
+                       data_blastna.size(), 0, 
+                       level, window, linker, &blast_loc );
+
+        // Convert to the output type.
+        while( blast_loc )
+        {
+            result->push_back(TMaskedInterval( 
+                blast_loc->ssr->left + offset, 
+                blast_loc->ssr->right + offset ) );
+            blast_loc = blast_loc->next;
+        }
+
+        if( e_it != e_end )
+        {
+            current_it = start_it + e_it->second - window + 2;
+            ++e_it;
+        }
+
+    } while( end_it != data.end() );
 
     // Results are not necessarily sorted, so sort and remove duplicates.
     sort( result->begin(), result->end() );
@@ -119,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/07/13 15:59:56  morgulis
+ * Dust only the parts of the sequences not masked by winmask module.
+ *
  * Revision 1.7  2005/06/22 14:49:53  vasilche
  * CSeqVector_CI now supports its usage in std::transform().
  *

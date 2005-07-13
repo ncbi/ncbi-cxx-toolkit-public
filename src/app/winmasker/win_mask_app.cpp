@@ -358,7 +358,8 @@ int CWinMaskApplication::Run (void)
 
                 if( duster != 0 ) // Dust and merge with mask_info
                 {
-                    auto_ptr< CSeqMasker::TMaskList > dust_info( (*duster)( data ) );
+                    auto_ptr< CSeqMasker::TMaskList > dust_info( 
+                        (*duster)( data, *mask_info.get() ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
@@ -385,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/07/13 15:59:56  morgulis
+ * Dust only the parts of the sequences not masked by winmask module.
+ *
  * Revision 1.11  2005/07/11 14:36:17  morgulis
  * Fixes for performance problems with large number of short sequences.
  * Windowmasker is now statically linked against object manager libs.

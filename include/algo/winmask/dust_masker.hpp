@@ -78,7 +78,8 @@ public:
      **\return pointer to a list of dusted sequences
      **
      **/
-    TMaskList * operator()( const objects::CSeqVector & data );
+    TMaskList * operator()( const objects::CSeqVector & data,
+                            const TMaskList & exclude_ranges );
 
 private:
 
@@ -92,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/07/13 15:59:56  morgulis
+ * Dust only the parts of the sequences not masked by winmask module.
+ *
  * Revision 1.4  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
