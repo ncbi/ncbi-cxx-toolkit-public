@@ -332,6 +332,10 @@ void CDense_seg::Reverse(void)
             default:                    break;//do nothing if not + or -
             }
         }
+    } else {
+        // Interpret unset strands as plus strands.
+        // Since we're reversing, set them all to minus.
+        SetStrands().resize(GetStarts().size(), eNa_strand_minus);
     }
 
     //reverse list o' lengths
@@ -1025,6 +1029,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/07/13 18:57:01  jcherry
+* Fixed behavior of CDense_seg::Reverse when strands are not set
+*
 * Revision 1.22  2005/07/13 17:39:33  dicuccio
 * Make sure to check to see if strands are set before manipulating them;
 * dense-seg.strand is optional
