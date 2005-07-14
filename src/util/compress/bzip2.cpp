@@ -159,7 +159,8 @@ bool CBZip2Compression::CompressFile(const string& src_file,
 {
     CBZip2CompressionFile cf(GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
-    cf.SetFlags(GetFlags());
+    cf.SetFlags(cf.GetFlags() | GetFlags());
+
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
         return false;
     } 
@@ -184,7 +185,8 @@ bool CBZip2Compression::DecompressFile(const string& src_file,
 {
     CBZip2CompressionFile cf(GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
-    cf.SetFlags(GetFlags());
+    cf.SetFlags(cf.GetFlags() | GetFlags());
+
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
         return false;
     } 
@@ -622,6 +624,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/14 17:52:05  ivanov
+ * [De]compressFile() -- combine default CBZip2CompressionFile and
+ * current CBZip2Compression flags.
+ *
  * Revision 1.14  2005/07/07 15:39:30  ivanov
  * Improved diagnostic. Call SetError() for the file operations also.
  *
