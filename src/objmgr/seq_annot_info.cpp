@@ -166,8 +166,11 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
     if ( m_SNP_Info ) {
         m_SNP_Info->x_TSEDetach(tse);
     }
-    x_UnmapAnnotObjects(tse);
-    m_ObjectIndex.Clear();
+    if ( !x_DirtyAnnotIndex() ) {
+        x_UnmapAnnotObjects(tse);
+        m_ObjectIndex.Clear();
+        x_SetDirtyAnnotIndex();
+    }
     TParent::x_TSEDetachContents(tse);
 }
 
@@ -534,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/07/14 16:57:47  vasilche
+ * Do not forget removing from annot index when detached.
+ *
  * Revision 1.31  2005/06/27 18:17:04  vasilche
  * Allow getting CBioseq_set_Handle from CBioseq_set.
  *
