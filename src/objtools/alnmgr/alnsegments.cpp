@@ -133,7 +133,7 @@ CAlnMixSegments::Build(bool gap_join,
                             row->m_StartIt->first <
                             start_its_i->second->first) {
                             string errstr =
-                                string("CAlnMixSegments::x_CreateSegmentsVector():")
+                                string("CAlnMixSegments::Build():")
                                 + " Internal error: Integrity broken" +
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
@@ -159,7 +159,7 @@ CAlnMixSegments::Build(bool gap_join,
 #if _DEBUG
                         if (row == refseq) {
                             string errstr =
-                                string("CAlnMixSegments::x_CreateSegmentsVector():")
+                                string("CAlnMixSegments::Build():")
                                 + " Internal error: Infinite loop detected.";
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
                         }                            
@@ -184,7 +184,7 @@ CAlnMixSegments::Build(bool gap_join,
                             row->m_StartIt->first <
                             start_its_i->second->first) {
                             string errstr =
-                                string("CAlnMixSegments::x_CreateSegmentsVector():")
+                                string("CAlnMixSegments::Build():")
                                 + " Internal error: Integrity broken" +
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
@@ -560,6 +560,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/07/14 16:36:00  todorov
+* x_CreateSegmentsVector -> Build (in the exceptions messages)
+*
 * Revision 1.4  2005/07/12 18:02:27  todorov
 * Fixed the class name in the exception message.
 *
