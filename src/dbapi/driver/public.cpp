@@ -725,7 +725,7 @@ CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
     }
 }
 
-void CDB_ResultProcessor::ProcessResult(I_Result& res)
+void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
 {
     while (res.Fetch())  // fetch and forget
         continue;
@@ -753,6 +753,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/14 19:24:17  ucko
+ * Revert R1.13, as the corresponding header change has been reverted
+ * (with the source again apparently forgotten)
+ *
  * Revision 1.14  2005/07/07 19:25:39  ssikorsk
  * A few changes to support new ftds driver
  *
