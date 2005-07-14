@@ -255,7 +255,7 @@ void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int di
         j = 0;
 
         //  Find minimum distance in active part of the matrix
-        for (k = 0; k < m_dim*(m_dim + 1); ++k) {
+        for (k = 0; k < m_dim*(m_dim + 1)/2; ++k) {
 
             _ASSERT(j < m_dim && i < m_dim);
 
@@ -268,7 +268,7 @@ void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int di
             }
 
             ++j;
-            if (j == m_dim) {
+            if (j == m_dim && i < m_dim - 1) {
                 ++i;
                 j = i;
             }
@@ -1011,6 +1011,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/14 14:43:20  lanczyck
+ * bug fix:  wrong loop termination expression
+ *
  * Revision 1.1  2005/07/13 19:04:26  lanczyck
  * classes for building a SLC non-redundifier that does not depend on CCdd-related classes
  *
