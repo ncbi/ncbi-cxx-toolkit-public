@@ -458,11 +458,11 @@ bool CZipCompression::CompressFile(const string& src_file,
                                    size_t        buf_size)
 {
     CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
-    cf.SetFlags(GetFlags() | fWriteGZipFormat);
+    cf.SetFlags(cf.GetFlags() | GetFlags());
 
     // Collect info about compressed file
     CZipCompression::SFileInfo info;
-/* +++
+
     if ( F_ISSET(fWriteGZipFormat) ) {
         s_CollectFileInfo(src_file, info);
     }
@@ -471,14 +471,6 @@ bool CZipCompression::CompressFile(const string& src_file,
         F_ISSET(fWriteGZipFormat) ? &info : 0) ) {
         return false;
     } 
-*/
-    // To support backward compatibility -- write .gz file format
-    s_CollectFileInfo(src_file, info);
-    // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
-        return false;
-    } 
-/* --- */
     // Make compression
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
         return cf.Close();
@@ -499,7 +491,7 @@ bool CZipCompression::DecompressFile(const string& src_file,
                                      size_t        buf_size)
 {
     CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
-    cf.SetFlags(GetFlags() | fCheckFileHeader);
+    cf.SetFlags(cf.GetFlags() | GetFlags());
 
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
         return false;
@@ -545,6 +537,9 @@ CZipCompressionFile::CZipCompressionFile(
     : CZipCompression(level, window_bits, mem_level, strategy),
       m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
+    // For backward compatibility -- use gzip file format by default
+    SetFlags(GetFlags() | fCheckFileHeader | fWriteGZipFormat);
+
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
@@ -560,6 +555,8 @@ CZipCompressionFile::CZipCompressionFile(
     : CZipCompression(level, window_bits, mem_level, strategy),
       m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
+    // For backward compatibility -- use gzip file format by default
+    SetFlags(GetFlags() | fCheckFileHeader | fWriteGZipFormat);
     return;
 }
 
@@ -1076,6 +1073,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/07/14 17:56:55  ivanov
+ * CZipCompressionFile:: use gzip file format by default.
+ * [De]compressFile() -- combine default CZipCompressionFile and
+ * current CZipCompression flags.
+ *
  * Revision 1.23  2005/07/07 15:39:30  ivanov
  * Improved diagnostic. Call SetError() for the file operations also.
  *
