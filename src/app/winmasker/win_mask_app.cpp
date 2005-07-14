@@ -55,9 +55,10 @@
 #include "win_mask_writer.hpp"
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_util.hpp"
+#include "win_mask_dust_masker.hpp"
+#include "win_mask_sdust_masker.hpp"
 
 #include <algo/winmask/seq_masker.hpp>
-#include <algo/winmask/dust_masker.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -191,6 +192,9 @@ void CWinMaskApplication::Init(void)
 #endif
     arg_desc->AddDefaultKey( "dust", "use_dust",
                              "combine window masking with dusting",
+                             CArgDescriptions::eBoolean, "F" );
+    arg_desc->AddDefaultKey( "sdust", "use_sdust",
+                             "combine window masking with symmetric dusting",
                              CArgDescriptions::eBoolean, "F" );
 #if 0
     arg_desc->AddDefaultKey( "dust_window", "dust_window",
@@ -327,6 +331,7 @@ int CWinMaskApplication::Run (void)
     CRef< CSeq_entry > aSeqEntry( 0 );
     Uint4 total = 0, total_masked = 0;
     CDustMasker * duster( 0 );
+    CSDustMasker * sduster( 0 );
     set< CSeq_id_Handle > ids( aConfig.Ids() );
     set< CSeq_id_Handle > exclude_ids( aConfig.ExcludeIds() );
 
@@ -334,6 +339,10 @@ int CWinMaskApplication::Run (void)
         duster = new CDustMasker( aConfig.DustWindow(),
                                   aConfig.DustLevel(),
                                   aConfig.DustLinker() );
+    else if( aConfig.UseSDust() )
+        sduster = new CSDustMasker( aConfig.DustWindow(),
+                                    aConfig.DustLevel(),
+                                    aConfig.DustLinker() );
 
     while( (aSeqEntry = theReader.GetNextSequence()).NotEmpty() )
     {
@@ -355,11 +364,18 @@ int CWinMaskApplication::Run (void)
                 CSeqVector data =
                     bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                 auto_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
+                CSeqMasker::TMaskList dummy;
 
                 if( duster != 0 ) // Dust and merge with mask_info
                 {
                     auto_ptr< CSeqMasker::TMaskList > dust_info( 
                         (*duster)( data, *mask_info.get() ) );
+                    CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
+                }
+                else if( sduster != 0 )
+                {
+                    auto_ptr< CSeqMasker::TMaskList > dust_info( 
+                        (*sduster)( data, *mask_info.get() ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
@@ -386,6 +402,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2005/07/14 20:42:44  morgulis
+ * support for symmetric DUST
+ *
  * Revision 1.12  2005/07/13 15:59:56  morgulis
  * Dust only the parts of the sequences not masked by winmask module.
  *

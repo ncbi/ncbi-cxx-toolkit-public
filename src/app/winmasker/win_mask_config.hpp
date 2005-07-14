@@ -408,6 +408,15 @@ public:
     bool UseDust() const { return use_dust; }
 
     /**
+     **\brief Apply symmetric dust to the input in addition to window masking.
+     **
+     **\return true if symmetric dusting is requested,
+     **        false otherwise
+     **
+     **/
+    bool UseSDust() const { return use_sdust; }
+
+    /**
      **\brief Dust window.
      **
      **\return dust window
@@ -665,6 +674,7 @@ private:
     string output;                  /**< output file name (may be empty to indicate stdout) */
     string th;                      /**< percetages to compute winmask thresholds */
     bool use_dust;                  /**< perform dusting in addition to the winmasking */
+    bool use_sdust;                 /**< perform symmetric dusting in addition to winmasking */
     Uint4 dust_window;              /**< window size for dusting */
     Uint4 dust_level;               /**< level value for dusting */
     Uint4 dust_linker;              /**< number of bases to use for linking */
@@ -681,6 +691,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/07/14 20:43:21  morgulis
+ * support for symmetric DUST
+ *
  * Revision 1.5  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

@@ -90,6 +90,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       // th( args["th"].AsString() ),
       th( "90,99,99.5,99.8" ),
       use_dust( args["dust"].AsBoolean() ),
+      use_sdust( args["sdust"].AsBoolean() ),
       // dust_window( args["dust_window"].AsInteger() ),
       // dust_level( args["dust_level"].AsInteger() ),
       // dust_linker( args["dust_linker"].AsInteger() ),
@@ -140,6 +141,9 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
                     "only one of -ids or -exclude_ids can be specified" );
     }
+
+    if( use_dust && use_sdust )
+        use_dust = false;
 
     if( !ids_file_name.empty() )
         FillIdList( ids_file_name, ids );
@@ -206,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/07/14 20:43:06  morgulis
+ * support for symmetric DUST
+ *
  * Revision 1.9  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *
