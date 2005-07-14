@@ -1742,7 +1742,7 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
  * @param Lambda A Karlin-Altschul parameter. [in]
  * @param LambdaRatio ratio of correct Lambda to it's original value [in]
 */
-static void scaleMatrix(Int4 **matrix, Int4 **startMatrix,
+static void scaleMatrix(Int4 **matrix,
 			double **startFreqRatios, Int4 numPositions,
 			double Lambda, double LambdaRatio)
 {
@@ -1751,9 +1751,9 @@ static void scaleMatrix(Int4 **matrix, Int4 **startMatrix,
 
    for (p = 0; p < numPositions; p++) {
      for (c = 0; c < BLASTAA_SIZE; c++) {
-       if (0 == startFreqRatios[p][c])
-         matrix[p][c] = startMatrix[p][c];
-       else {
+       if (0.0 == startFreqRatios[p][c]) {
+         matrix[p][c] = BLAST_SCORE_MIN;
+       } else {
          temp = log(startFreqRatios[p][c]);
          temp = temp/Lambda;
          temp = temp * LambdaRatio;
@@ -2236,12 +2236,30 @@ Kappa_SequenceGetWindow(
     Kappa_SequenceGetTranslatedWindow(self, window, seqData);
   } else {
     /* The sequence does not need to be translated. */
+    Int4       idx;
+    Uint1     *origData;  /* the unfiltered data for the sequence */
+
     /* Copy the entire sequence (necessary for SEG filtering.) */
     seqData->buffer  = calloc((self->length + 2), sizeof(Uint1));
+    /* First and last characters of the buffer MUST be '\0', which is
+     * true here because the buffer was allocated using calloc. */
     seqData->data    = seqData->buffer + 1;
     seqData->length  = self->length;
 
-    memcpy(seqData->data, self->seq_arg.seq->sequence, seqData->length);
+    origData = self->seq_arg.seq->sequence;
+    for( idx = 0; idx < seqData->length; idx++ ) {
+      /* Copy the sequence data, replacing occurrences of amino acid
+       * number 24 (Selenocysteine) with number 21 (Undetermined or
+       * atypical). */
+      if(origData[idx] != 24) {
+        seqData->data[idx] = origData[idx];
+      } else {
+        seqData->data[idx] = 21;
+        fprintf(stderr, "Selenocysteine (U) at position %ld"
+                " replaced by X\n",
+                (long) idx + 1);
+      }
+    }
 #ifndef KAPPA_NO_SEG_SEQUENCE
     /*take as input an amino acid  string and its length; compute a filtered
       amino acid string and return the filtered string*/
@@ -2765,7 +2783,7 @@ Kappa_AdjustSearch(
     LambdaRatio = MAX(LambdaRatio, LambdaRatioLowerBound);
 
     if(LambdaRatio > 0) {
-      scaleMatrix(matrix, sp->startMatrix, sp->startFreqRatios, sp->mRows,
+      scaleMatrix(matrix, sp->startFreqRatios, sp->mRows,
                   sp->scaledUngappedLambda, LambdaRatio);
     }
   }
