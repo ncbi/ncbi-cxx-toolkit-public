@@ -132,7 +132,7 @@ int CTestApp::Run(void)
         TEntry entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope1.AddTopLevelSeqEntry(*entry2);
         Scope.AddScope(Scope1);
-        Scope.AddScope(Scope1);
+        //Scope.AddScope(Scope1);
         // retrieve data
         CTestHelper::TestDataRetrieval( Scope, 0, 0);
     }
@@ -266,6 +266,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/07/14 16:54:55  vasilche
+* Remove duplicate scope test because it's incorrect.
+*
 * Revision 1.46  2005/06/22 14:28:30  vasilche
 * Updated to changes in object manager.
 *
