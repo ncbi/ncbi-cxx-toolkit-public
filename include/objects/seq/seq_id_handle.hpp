@@ -80,7 +80,7 @@ public:
     // locking
     void AddLock(void) const
         {
-            _VERIFY(m_LockCounter.Add(1) > 0);
+            m_LockCounter.Add(1);
         }
     void RemoveLock(void) const
         {
@@ -90,9 +90,7 @@ public:
         }
     int GetLockCounter(void) const
         {
-            int counter = m_LockCounter.Get();
-            _ASSERT(counter >= 0);
-            return counter;
+            return m_LockCounter.Get();
         }
 
     CSeq_id::E_Choice GetType(void) const
@@ -275,6 +273,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/07/14 16:48:49  vasilche
+* Removed unnecessary checks.
+*
 * Revision 1.36  2005/06/20 17:28:20  vasilche
 * Use CRef's locker for CSeq_id_Info locking.
 * Removed obsolete registering functions.
