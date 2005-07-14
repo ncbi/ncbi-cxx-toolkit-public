@@ -101,7 +101,7 @@ CAlnMixSegments::Build(bool gap_join,
             }
             break; // from the main loop
         }
-#if _ALNMGR_TRACE
+#if _DEBUG && _ALNMGR_TRACE
         cerr << "refseq is on row " << refseq->m_RowIdx
              << " seq " << refseq->m_SeqIdx << "\n";
 #endif
@@ -109,11 +109,14 @@ CAlnMixSegments::Build(bool gap_join,
         while (refseq->m_StartIt != refseq->m_Starts.end()) {
             stack< CRef<CAlnMixSegment> > seg_stack;
             seg_stack.push(refseq->m_StartIt->second);
-#if _ALNMGR_TRACE
+#if _DEBUG
+            const TSeqPos& refseq_start = refseq->m_StartIt->first;
+#if _DEBUG && _ALNMGR_TRACE
             cerr << "  [row " << refseq->m_RowIdx
                  << " seq " << refseq->m_SeqIdx
-                 << " start " << refseq->m_StartIt->first
+                 << " start " << refseq_start
                  << " was pushed into stack\n";
+#endif
 #endif
             
             while ( !seg_stack.empty() ) {
@@ -127,33 +130,36 @@ CAlnMixSegments::Build(bool gap_join,
 
                     if (row->m_StartIt != start_its_i->second) {
 #if _DEBUG
+                        const TSeqPos& curr_row_start = row->m_StartIt->first;
+                        const TSeqPos& row_start      = start_its_i->second->first;
+
                         if (row->m_PositiveStrand ?
-                            row->m_StartIt->first >
-                            start_its_i->second->first :
-                            row->m_StartIt->first <
-                            start_its_i->second->first) {
+                            curr_row_start >
+                            row_start :
+                            curr_row_start <
+                            row_start) {
                             string errstr =
                                 string("CAlnMixSegments::Build():")
                                 + " Internal error: Integrity broken" +
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
-                                + " row->m_StartIt->first="
-                                + NStr::IntToString(row->m_StartIt->first)
-                                + " start_its_i->second->first=" +
-                                NStr::IntToString(start_its_i->second->first)
-                                + " refseq->m_StartIt->first=" +
-                                NStr::IntToString(refseq->m_StartIt->first)
+                                + " curr_row_start="
+                                + NStr::IntToString(curr_row_start)
+                                + " row_start=" +
+                                NStr::IntToString(row_start)
+                                + " refseq_start=" +
+                                NStr::IntToString(refseq_start)
                                 + " strand=" +
                                 (row->m_PositiveStrand ? "plus" : "minus");
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
                         }
 #endif
                         seg_stack.push(row->m_StartIt->second);
-#if _ALNMGR_TRACE
+#if _DEBUG && _ALNMGR_TRACE
                         cerr << "  [row " << row->m_RowIdx
                              << " seq " << row->m_SeqIdx
-                             << " start " << row->m_StartIt->first
-                             << " (left of start " << start_its_i->second->first << ") "
+                             << " start " << curr_row_start
+                             << " (left of start " << row_start << ") "
                              << "was pushed into stack\n";
 #endif
 #if _DEBUG
@@ -177,23 +183,26 @@ CAlnMixSegments::Build(bool gap_join,
                         CAlnMixSeq * row = start_its_i->first;
 
 #if _DEBUG
+                        const TSeqPos& curr_row_start = row->m_StartIt->first;
+                        const TSeqPos& row_start      = start_its_i->second->first;
+
                         if (row->m_PositiveStrand  &&
-                            row->m_StartIt->first > 
-                            start_its_i->second->first  ||
+                            curr_row_start > 
+                            row_start  ||
                             !row->m_PositiveStrand  &&
-                            row->m_StartIt->first <
-                            start_its_i->second->first) {
+                            curr_row_start <
+                            row_start) {
                             string errstr =
                                 string("CAlnMixSegments::Build():")
                                 + " Internal error: Integrity broken" +
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
-                                + " row->m_StartIt->first="
-                                + NStr::IntToString(row->m_StartIt->first)
-                                + " start_its_i->second->first=" +
-                                NStr::IntToString(start_its_i->second->first)
-                                + " refseq->m_StartIt->first=" +
-                                NStr::IntToString(refseq->m_StartIt->first)
+                                + " curr_row_start="
+                                + NStr::IntToString(curr_row_start)
+                                + " row_start=" +
+                                NStr::IntToString(row_start)
+                                + " refseq_start=" +
+                                NStr::IntToString(refseq_start)
                                 + " strand=" +
                                 (row->m_PositiveStrand ? "plus" : "minus");
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
@@ -215,7 +224,7 @@ CAlnMixSegments::Build(bool gap_join,
                         // add to the gapped segments
                         gapped_segs.push_back(seg_stack.top());
                         seg_stack.pop();
-#if _ALNMGR_TRACE
+#if _DEBUG && _ALNMGR_TRACE
                         cerr << "  seg popped].\n";
 #endif
                     } else {
@@ -245,7 +254,7 @@ CAlnMixSegments::Build(bool gap_join,
                             gapped_segs.push_back(seg_stack.top());
                         }
                         seg_stack.pop();
-#if _ALNMGR_TRACE
+#if _DEBUG && _ALNMGR_TRACE
                         cerr << "  refseq seg popped].\n";
 #endif
                     } // if (seg_stack.size() > 1)
@@ -560,6 +569,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/07/14 23:09:48  todorov
+* Added refernces for easier code reading and debugging.  Added a _DEBUG
+* directive in addition to _ALNMGR_TRACE
+*
 * Revision 1.5  2005/07/14 16:36:00  todorov
 * x_CreateSegmentsVector -> Build (in the exceptions messages)
 *
