@@ -78,6 +78,15 @@ public:
     /// 0 - no pending jobs
     unsigned int GetPendingJob();
 
+    /// Return job id (job is taken out of the regular job matrix)
+    /// 0 - no pending jobs
+    unsigned int BorrowPendingJob();
+
+    /// Return borrowed job to the specified status
+    /// (pending or running)
+    void ReturnBorrowedJob(unsigned int  job_id, 
+                          CNetScheduleClient::EJobStatus status);
+
     /// TRUE if we have pending jobs
     bool AnyPending() const;
 
@@ -160,6 +169,47 @@ private:
 
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
+    TBVector                m_BorrowedIds; ///< Pending Ids extracted out
+};
+
+
+/// @internal
+class CNetSchedule_JS_BorrowGuard
+{
+public:
+    CNetSchedule_JS_BorrowGuard(
+        CNetScheduler_JobStatusTracker& strack,
+        unsigned int                    job_id,
+        CNetScheduleClient::EJobStatus  old_status = CNetScheduleClient::ePending)
+    : m_Tracker(strack),
+      m_OldStatus(old_status),
+       m_JobId(job_id)
+    {
+        _ASSERT(job_id);
+    }
+
+    ~CNetSchedule_JS_BorrowGuard()
+    {
+        if (m_JobId) {
+            m_Tracker.ReturnBorrowedJob(m_JobId, m_OldStatus);
+        }
+    }
+    
+    void ReturnToStatus(CNetScheduleClient::EJobStatus status)
+    {
+        if (m_JobId) {
+            m_Tracker.ReturnBorrowedJob(m_JobId, status);
+            m_JobId = 0;
+        }
+    }
+
+private:
+    CNetSchedule_JS_BorrowGuard(const CNetSchedule_JS_BorrowGuard&);
+    CNetSchedule_JS_BorrowGuard& operator=(const CNetSchedule_JS_BorrowGuard&);
+private:
+    CNetScheduler_JobStatusTracker&  m_Tracker;
+    CNetScheduleClient::EJobStatus   m_OldStatus;
+    unsigned int                     m_JobId;
 };
 
 /// @internal
@@ -209,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/14 13:12:56  kuznets
+ * Added load balancer
+ *
  * Revision 1.6  2005/05/04 19:09:43  kuznets
  * Added queue dumping
  *

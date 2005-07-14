@@ -134,6 +134,9 @@ void CQueueCollection::Close()
     CWriteLockGuard guard(m_Lock);
     NON_CONST_ITERATE(TQueueMap, it, m_QMap) {
         SLockedQueue* q = it->second;
+        if (q->lb_coordinator) {
+            q->lb_coordinator->StopCollectorThread();
+        }
         delete q;
     }
     m_QMap.clear();
@@ -332,6 +335,72 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
         bool dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
         CFastMutexGuard guard(queue.rec_dump_lock);
         queue.rec_dump_flag = dump_db;
+        }}
+
+
+        // re-load load balancing settings
+        {{
+        bool lb_flag = reg.GetBool(sname, "lb", false, 0, IRegistry::eReturn);
+        SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+
+        if (lb_flag != queue.lb_flag) {
+
+        string lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
+        int lb_collect_time =
+            reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
+        int lb__time =
+            reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
+        int lb_exec_delay = 
+            reg.GetInt(sname, "lb_exec_delay", 6, 0, IRegistry::eReturn);
+
+        if (lb_service.empty()) {
+            if (lb_flag) {
+                LOG_POST(Error << "Queue:" << sname 
+                    << "cannot be load balanced. Missing lb_service ini setting");
+            }
+            queue.lb_flag = false;
+        } else {
+//            SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+
+            string lb_unknown_host = 
+                reg.GetString(sname, "lb_unknown_host", kEmptyStr);
+
+            CNSLB_Coordinator::ENonLbHostsPolicy non_lb_hosts = 
+                CNSLB_Coordinator::eNonLB_Allow;
+            if (NStr::CompareNocase(lb_unknown_host, "deny") == 0) {
+                non_lb_hosts = CNSLB_Coordinator::eNonLB_Deny;
+            } else
+            if (NStr::CompareNocase(lb_unknown_host, "allow") == 0) {
+            non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
+            } else
+            if (NStr::CompareNocase(lb_unknown_host, "reserve") == 0) {
+            non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
+            }
+
+            if (queue.lb_flag == false) {
+                LOG_POST(Error << "Queue:" << sname 
+                               << "is be load balanced. " << lb_service);
+
+                if (queue.lb_coordinator == 0) {
+                    queue.lb_exec_delay = lb_exec_delay;
+                    auto_ptr<INSLB_Collector>   
+                        collect(new CNSLB_LBSMD_Collector());
+                    auto_ptr<CNSLB_Coordinator> 
+                        coord(new CNSLB_Coordinator(lb_service,
+                                                    collect.release(),
+                                                    lb_collect_time,
+                                                    non_lb_hosts));
+                    queue.lb_coordinator = coord.release();
+                    queue.lb_flag = true;
+                } else {
+                    queue.lb_exec_delay = lb_exec_delay;
+                    queue.lb_flag = true;
+                }
+            }
+        }
+
+        } // if lb_flag != queue.lb_flag
+
         }}
 
     } // ITERATE
@@ -686,8 +755,8 @@ void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
            new CJobQueueExecutionWatcherThread(*this, run_delay, 2));
        m_ExeWatchThread->Run();
 # else
-        LOG_POST(Warning << 
-                 "Cannot run background thread in non-MT configuration.");
+       LOG_POST(Warning << 
+                "Cannot run background thread in non-MT configuration.");
 # endif
 
 }
@@ -941,6 +1010,7 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 
     db.run_counter = 0;
     db.ret_code = 0;
+    db.time_lb_first_eval = 0;
 
     if (input) {
         db.input = input;
@@ -1385,10 +1455,257 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     }
 }
 
+void CQueueDataBase::CQueue::GetJobLB(unsigned int   worker_node,
+                                      unsigned int*  job_id, 
+                                      char*          input)
+{
+    _ASSERT(worker_node && input);
+    unsigned get_attempts = 0;
+    unsigned fetch_attempts = 0;
+    const unsigned kMaxGetAttempts = 100;
+
+
+    ++get_attempts;
+    if (get_attempts > kMaxGetAttempts) {
+        *job_id = 0;
+        return;
+    }
+
+    *job_id = m_LQueue.status_tracker.BorrowPendingJob();
+
+    if (!*job_id) {
+        return;
+    }
+    CNetSchedule_JS_BorrowGuard bguard(m_LQueue.status_tracker, 
+                                       *job_id,
+                                       CNetScheduleClient::ePending);
+
+    time_t curr = time(0);
+
+fetch_db:
+    ++fetch_attempts;
+    if (fetch_attempts > kMaxGetAttempts) {
+        LOG_POST(Error << "Failed to fetch the job record job_id=" << *job_id);
+        *job_id = 0;
+        return;
+    }
+ 
+
+    try {
+        SQueueDB& db = m_LQueue.db;
+        CBDB_Transaction trans(*db.GetEnv(),
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
+        {{
+        CFastMutexGuard guard(m_LQueue.lock);
+        db.SetTransaction(&trans);
+
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CCursorGuard cg(cur);    
+
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << *job_id;
+        if (cur.Fetch() != eBDB_Ok) {
+            if (fetch_attempts < kMaxGetAttempts) {
+                goto fetch_db;
+            }
+            *job_id = 0;
+            return;
+        }
+        CNetScheduleClient::EJobStatus status = 
+            (CNetScheduleClient::EJobStatus)(int)db.status;
+
+        // internal integrity check
+        if (!(status == CNetScheduleClient::ePending ||
+              status == CNetScheduleClient::eReturned)
+            ) {
+            if (m_LQueue.status_tracker.IsCancelCode(
+                (CNetScheduleClient::EJobStatus) status)) {
+                // this job has been canceled while i'm fetching
+                *job_id = 0;
+                return;
+            }
+                ERR_POST(Error << "GetJobLB()::Status integrity violation " 
+                            << " job = " << *job_id 
+                            << " status = " << status
+                            << " expected status = " 
+                            << (int)CNetScheduleClient::ePending);
+            *job_id = 0;
+            return;
+        }
+
+        const char* fld_str = db.input;
+        ::strcpy(input, fld_str);
+        unsigned run_counter = db.run_counter;
+
+        unsigned time_submit = db.time_submit;
+        unsigned timeout = db.timeout;
+        if (timeout == 0) {
+            timeout = m_LQueue.timeout;
+        }
+
+        _ASSERT(timeout);
+
+        // check if job already expired
+        if (timeout && (time_submit + timeout < (unsigned)curr)) {
+            *job_id = 0; 
+            db.time_run = 0;
+            db.time_done = curr;
+            db.status = (int) CNetScheduleClient::eFailed;
+            db.err_msg = "Job expired and cannot be scheduled.";
+
+            bguard.ReturnToStatus(CNetScheduleClient::eFailed);
+
+            if (m_LQueue.monitor.IsMonitorActive()) {
+                CTime tmp_t(CTime::eCurrent);
+                string msg = tmp_t.AsString();
+                msg += " CQueue::GetJobLB() timeout expired job id=";
+                msg += NStr::IntToString(*job_id);
+                m_LQueue.monitor.SendString(msg);
+            }
+
+            cur.Update();
+            trans.Commit();
+
+            return;
+        } 
+
+        CNSLB_Coordinator::ENonLbHostsPolicy unk_host_policy =
+            m_LQueue.lb_coordinator->GetNonLBPolicy();
+
+        // check if job must be scheduled immediatelly, 
+        // because it's stalled for too long
+        //
+        unsigned time_lb_first_eval = db.time_lb_first_eval;
+        if (time_lb_first_eval) {
+            if (m_LQueue.lb_exec_delay) {
+                unsigned stall_time = curr - time_lb_first_eval;
+                if (stall_time > m_LQueue.lb_exec_delay) {
+                    // stalled for too long! schedule the job
+                    if (unk_host_policy != CNSLB_Coordinator::eNonLB_Deny) {
+                        goto grant_job;
+                    }
+                }
+            } else {
+                // exec delay not set, schedule the job
+                goto grant_job;
+            }
+        } else { // first LB evaluation
+            db.time_lb_first_eval = curr;
+        }
+
+        // job can be scheduled now, if load balancing situation is permitting
+        CNSLB_Coordinator* coordinator = m_LQueue.lb_coordinator;
+        if (coordinator) {
+            CNSLB_Coordinator::EDecision lb_decision = 
+                                    coordinator->Evaluate(worker_node);
+            switch (lb_decision) {
+            case CNSLB_Coordinator::eGrantJob:
+                break;
+            case CNSLB_Coordinator::eDenyJob:
+                *job_id = 0;
+                break;
+            case CNSLB_Coordinator::eHostUnknown:
+                if (unk_host_policy != CNSLB_Coordinator::eNonLB_Allow) {
+                    *job_id = 0;
+                }
+                break;
+            case CNSLB_Coordinator::eNoLBInfo:
+                break;
+            default:
+                _ASSERT(0);
+            } // switch
+        }
+grant_job:
+        // execution granted, update job record information
+        if (*job_id) {
+            db.status = (int) CNetScheduleClient::eRunning;
+            db.time_run = curr;
+            db.run_timeout = 0;
+            db.run_counter = ++run_counter;
+
+            switch (run_counter) {
+            case 1:
+                db.worker_node1 = worker_node;
+                break;
+            case 2:
+                db.worker_node2 = worker_node;
+                break;
+            case 3:
+                db.worker_node3 = worker_node;
+                break;
+            case 4:
+                db.worker_node4 = worker_node;
+                break;
+            case 5:
+                db.worker_node5 = worker_node;
+                break;
+            default:
+
+                bguard.ReturnToStatus(CNetScheduleClient::eFailed);
+                ERR_POST(Error << "Too many run attempts. job=" << *job_id);
+                db.status = (int) CNetScheduleClient::eFailed;
+                db.err_msg = "Too many run attempts.";
+                db.time_done = curr;
+                db.run_counter = --run_counter;
+
+                if (m_LQueue.monitor.IsMonitorActive()) {
+                    CTime tmp_t(CTime::eCurrent);
+                    string msg = tmp_t.AsString();
+                    msg += " CQueue::GetJobLB() Too many run attempts job id=";
+                    msg += NStr::IntToString(*job_id);
+                    m_LQueue.monitor.SendString(msg);
+                }
+
+                *job_id = 0; 
+
+            } // switch
+
+        } // if (*job_id)
+
+        cur.Update();
+
+        }}
+        trans.Commit();
+
+    } 
+    catch (exception&)
+    {
+        *job_id = 0;
+        throw;
+    }
+    bguard.ReturnToStatus(CNetScheduleClient::eRunning);
+
+    if (m_LQueue.monitor.IsMonitorActive() && *job_id) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::GetJobLB() job id=";
+        msg += NStr::IntToString(*job_id);
+        msg += " worker_node=";
+        msg += CSocketAPI::gethostbyaddr(worker_node);
+        m_LQueue.monitor.SendString(msg);
+    }
+
+    // setup the job in the timeline
+    if (*job_id && m_LQueue.run_time_line) {
+        CJobTimeLine& tl = *m_LQueue.run_time_line;
+        time_t projected_time_done = curr + m_LQueue.run_timeout;
+
+        CWriteLockGuard guard(m_LQueue.rtl_lock);
+        tl.AddObject(projected_time_done, *job_id);
+    }
+}
+
+
 void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     unsigned int*  job_id, 
                                     char*          input)
 {
+    if (m_LQueue.lb_flag) {
+        GetJobLB(worker_node, job_id, input);
+        return;
+    }
+
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
     unsigned fetch_attempts = 0;
@@ -1406,7 +1723,6 @@ get_job_id:
     if (!*job_id) {
         return;
     }
-//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, *job_id, 3);
 
     time_t curr = time(0);
 
@@ -1455,7 +1771,7 @@ fetch_db:
                 // this job has been canceled while i'm fetching
                 goto get_job_id;
             }
-            ERR_POST(Error << "Status integrity violation " 
+                ERR_POST(Error << "GetJob::Status integrity violation " 
                             << " job = " << *job_id 
                             << " status = " << status
                             << " expected status = " 
@@ -1480,7 +1796,6 @@ fetch_db:
         }
 
         _ASSERT(timeout);
-
         // check if job already expired
         if (timeout && (time_submit + timeout < (unsigned)curr)) {
             *job_id = 0; 
@@ -1501,6 +1816,7 @@ fetch_db:
             }
 
         } else {
+
 
             switch (run_counter) {
             case 1:
@@ -2071,6 +2387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/07/14 13:12:56  kuznets
+ * Added load balancer
+ *
  * Revision 1.39  2005/06/22 15:36:09  kuznets
  * Minor tweaks in record print formatting
  *

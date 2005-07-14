@@ -61,6 +61,7 @@
 #include "queue_vc.hpp"
 #include "queue_monitor.hpp"
 #include "access_list.hpp"
+#include "nslb.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -91,6 +92,8 @@ struct SQueueDB : public CBDB_File
 
     CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
     CBDB_FieldInt4         ret_code;        ///< Return code
+
+    CBDB_FieldUint4        time_lb_first_eval;  ///< First LB evaluation time
 
     CBDB_FieldString       input;           ///< Input data
     CBDB_FieldString       output;          ///< Result data
@@ -125,8 +128,9 @@ struct SQueueDB : public CBDB_File
         BindData("worker_node4", &worker_node4);
         BindData("worker_node5", &worker_node5);
 
-        BindData("run_counter", &run_counter);
-        BindData("ret_code",    &ret_code);
+        BindData("run_counter",        &run_counter);
+        BindData("ret_code",           &ret_code);
+        BindData("time_lb_first_eval", &time_lb_first_eval);
 
         BindData("input",  &input,  kNetScheduleMaxDataSize);
         BindData("output", &output, kNetScheduleMaxDataSize);
@@ -232,6 +236,10 @@ struct SLockedQueue
     CFastMutex                   rec_dump_lock;
     bool                         rec_dump_flag;
 
+    mutable bool                 lb_flag;
+    CNSLB_Coordinator*           lb_coordinator;
+    unsigned                     lb_exec_delay;  ///< acceptable job delay (seconds)
+
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
@@ -240,7 +248,10 @@ struct SLockedQueue
           run_time_line(0),
 
           rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
-          rec_dump_flag(false)
+          rec_dump_flag(false),
+          lb_flag(false),
+          lb_coordinator(0),
+          lb_exec_delay(6)
     {
         _ASSERT(!queue_name.empty());
         q_notif.append(queue_name);
@@ -253,6 +264,7 @@ struct SLockedQueue
             delete node;
         }
         delete run_time_line;
+        delete lb_coordinator;
     }
 };
 
@@ -362,6 +374,9 @@ public:
         void JobFailed(unsigned int  job_id,
                        const string& err_msg);
 
+        void GetJobLB(unsigned int   worker_node,
+                      unsigned int*  job_id, 
+                      char*          input);
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input);
@@ -554,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/07/14 13:12:56  kuznets
+ * Added load balancer
+ *
  * Revision 1.28  2005/06/21 16:00:22  kuznets
  * Added archival dump of all deleted records
  *

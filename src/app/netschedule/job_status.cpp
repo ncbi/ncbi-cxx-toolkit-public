@@ -37,6 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
+ : m_BorrowedIds(bm::BM_GAP)
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
         bm::bvector<>* bv = new bm::bvector<>();
@@ -69,6 +70,9 @@ CNetScheduler_JobStatusTracker::GetStatusNoLock(unsigned int job_id) const
             return (CNetScheduleClient::EJobStatus)i;
         }
     }
+    if (m_BorrowedIds[job_id]) {
+        return CNetScheduleClient::ePending;
+    }
     return CNetScheduleClient::eJobNotFound;
 }
 
@@ -79,7 +83,12 @@ CNetScheduler_JobStatusTracker::CountStatus(
     CReadLockGuard guard(m_Lock);
 
     const TBVector& bv = *m_StatusStor[(int)status];
-    return bv.count();
+    unsigned cnt = bv.count();
+
+    if (status == CNetScheduleClient::ePending) {
+        cnt += m_BorrowedIds.count();
+    }
+    return cnt;
 }
 
 
@@ -113,6 +122,7 @@ CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id,
         TBVector& bv = *m_StatusStor[i];
         bv.set(job_id, (int)status == (int)i);
     }
+    m_BorrowedIds.set(job_id, false);
 }
 
 void CNetScheduler_JobStatusTracker::ClearAll()
@@ -123,6 +133,7 @@ void CNetScheduler_JobStatusTracker::ClearAll()
         TBVector& bv = *m_StatusStor[i];
         bv.clear(true);
     }
+    m_BorrowedIds.clear(true);
 }
 
 void CNetScheduler_JobStatusTracker::FreeUnusedMem()
@@ -133,6 +144,7 @@ void CNetScheduler_JobStatusTracker::FreeUnusedMem()
         TBVector& bv = *m_StatusStor[i];
         bv.optimize(0, TBVector::opt_free_0);
     }
+    m_BorrowedIds.optimize(0, TBVector::opt_free_0);
 }
 
 void
@@ -280,6 +292,40 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
     return job_id;
 }
 
+unsigned int CNetScheduler_JobStatusTracker::BorrowPendingJob()
+{
+    const TBVector& bv = 
+        *m_StatusStor[(int)CNetScheduleClient::ePending];
+
+    unsigned int job_id = 0;
+    CWriteLockGuard guard(m_Lock);
+
+    for (int i = 0; i < 2; ++i) {
+        if (bv.any()) {
+            job_id = bv.get_first();
+            if (job_id) {
+                m_BorrowedIds.set(job_id, true);
+                return job_id;
+            }
+        }        
+        Return2PendingNoLock();
+    }
+    return job_id;
+}
+
+void CNetScheduler_JobStatusTracker::ReturnBorrowedJob(unsigned int  job_id, 
+                                                       CNetScheduleClient::EJobStatus status)
+{
+    CWriteLockGuard guard(m_Lock);
+    if (!m_BorrowedIds[job_id]) {
+        ReportInvalidStatus(job_id, status, CNetScheduleClient::ePending);
+        return;
+    }
+    m_BorrowedIds.set(job_id, false);
+    SetExactStatusNoLock(job_id, status, true /*set status*/);
+}
+
+
 bool CNetScheduler_JobStatusTracker::AnyPending() const
 {
     const TBVector& bv = 
@@ -388,6 +434,17 @@ CNetScheduler_JobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
         out << "\n\n";
         if (!out.good()) break;
     } // for
+
+    out << "status: Borrowed pending" << "\n\n";
+    TBVector::enumerator en(m_BorrowedIds.first());
+    for (int cnt = 0;en.valid(); ++en, ++cnt) {
+        out << *en << ", ";
+        if (cnt % 10 == 0) {
+            out << "\n";
+        }
+    } // for
+    out << "\n\n";
+    
 }
 
 END_NCBI_SCOPE
@@ -395,6 +452,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/14 13:12:56  kuznets
+ * Added load balancer
+ *
  * Revision 1.13  2005/06/20 15:36:25  kuznets
  * Let job go from pending to done (rescheduling)
  *
