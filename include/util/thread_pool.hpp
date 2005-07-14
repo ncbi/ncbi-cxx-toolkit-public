@@ -592,15 +592,27 @@ template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
-    Init();
 
-    for (;;) {
-        m_Pool->m_Delta.Add(-1);
-        ProcessRequest(m_Pool->m_Queue.Get());
-        if (m_RunMode == eRunOnce) {
-            m_Pool->UnRegister(*this);
-            break;
+    try {
+        Init();
+
+        for (;;) {
+            m_Pool->m_Delta.Add(-1);
+            ProcessRequest(m_Pool->m_Queue.Get());
+            if (m_RunMode == eRunOnce) {
+                m_Pool->UnRegister(*this);
+                break;
+            }
         }
+    } catch (std::exception& e) {
+        ERR_POST("Exception from thread in pool: " << e.what());
+        m_Pool->UnRegister(*this);
+    } catch (...) {
+        // May be CExitThreadException, for which we can't check explicitly
+        // because it's not known outside ncbithr.cpp... :-/
+        // ERR_POST("Thread in pool threw non-standard exception.");
+        m_Pool->UnRegister(*this);
+        throw;
     }
 
     return 0; // Unreachable, but necessary for WorkShop build
@@ -736,6 +748,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/07/14 18:53:21  ucko
+* Keep exceptions thrown by threads in the pool from interfering with
+* proper unregistration.
+*
 * Revision 1.26  2005/05/05 15:12:26  didenko
 * Fixed a bug with fast coming requests when the pool of threads doesn't use the queue.
 *
