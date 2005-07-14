@@ -51,6 +51,7 @@ public:
 
     unsigned int NumClusters(void) const;
 
+    //  A clusterer must have been added to use this form;
     //  return the total number of redundant sequences across all clusters.
     unsigned int ComputeRedundancies();
 
@@ -65,7 +66,7 @@ public:
 //    const CDistBasedClusterer* GetClusterer() const;
 //    bool SetClusterer(CDistBasedClusterer* clusterer);
     const CBaseClusterer* GetClusterer() const;
-    bool SetClusterer(CBaseClusterer* clusterer);
+    bool SetClusterer(CBaseClusterer* clusterer);  //  assumes ownership of clusterer
 
     //  Return 0 if m_clusterer is not a CDistBasedClusterer.  
     CDistBasedClusterer::TDist GetThreshold() const;
@@ -88,7 +89,7 @@ private :
         CriteriaStruct(CNRCriteria* c, bool v = false) : criteria(c), verbose(v) {};
     };
 
-    CBaseClusterer* m_clusterer;
+    CBaseClusterer* m_clusterer;             //  this object owns the clusterer & cleans it up.
 //    CDistBasedClusterer* m_clusterer;        //  method by which to cluster items; holds underlying clusters
 //    CDistBasedClusterer::TDist m_threshold;  //  %identity threshold:  clusters will contain seqs at this or greater sim
 
@@ -130,8 +131,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.1  2005/07/13 19:06:03  lanczyck
-* classes for building a SLC non-redundifier that does not depend on CCdd-related classes
+* Revision 1.2  2005/07/14 14:49:13  lanczyck
+* add comment
 *
 *
 * ===========================================================================
