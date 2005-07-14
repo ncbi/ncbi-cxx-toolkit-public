@@ -690,6 +690,15 @@ CAlnMixMerger::x_Merge()
                         start2_i--;
                         
                         // point this segment's row start iterator
+#if _DEBUG && _ALNMGR_DEBUG                        
+                        if (start_i->second->m_StartIts.find(seq2) !=
+                            start_i->second->m_StartIts.end()) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMixMerger::x_Merge(): "
+                                       "Internal error: "
+                                       "Start iterator already exists for seq2.");
+                        }
+#endif
                         start_i->second->m_StartIts[seq2] = start2_i;
 #if _DEBUG && _ALNMGR_DEBUG                        
                         start_i->second->StartItsConsistencyCheck(*seq2,
@@ -738,13 +747,14 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
     const int&                    width2  = seq2->m_Width;
     CAlnMixSeq::TStarts::iterator starts2_i;
     TSignedSeqPos                 delta, delta1, delta2;
+    TSecondRowFits                result  = eSecondRowFitsOk;
 
     // subject sequences go on separate rows if requested
     if (m_MergeFlags & fQuerySeqMergeOnly) {
         if (seq2->m_DsIdx) {
             if ( !(m_MergeFlags & fTruncateOverlaps) ) {
                 if (seq2->m_DsIdx == match->m_DsIdx) {
-                    return eSecondRowFitsOk;
+                    return result;
                 } else {
                     return eForceSeparateRow;
                 }
@@ -752,7 +762,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
         } else {
             seq2->m_DsIdx = match->m_DsIdx;
             if ( !(m_MergeFlags & fTruncateOverlaps) ) {
-                return eSecondRowFitsOk;
+                return result;
             }
         }
     }
@@ -791,8 +801,9 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                 CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
                     starts2_i->second->m_StartIts.find(seq1);
                 if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
+                    const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                     if (match->m_StrandsDiffer) {
-                        delta = start1 + len * width1 - seq1_start_it_i->second->first;
+                        delta = start1 + len * width1 - existing_start1;
                         if (delta > 0) {
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
@@ -809,9 +820,10 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     // x---- x-)--- 
                                     //       (----x (------x
                                     //       target below
-                                    if ((delta = 
-                                         (seq1_start_it_i->second->first + 
-                                          starts2_i->second->m_Len - start1) / width1) > 0) {
+                                    delta = (existing_start1 + 
+                                             starts2_i->second->m_Len - start1) /
+                                        width1;
+                                    if (delta > 0) {
                                         if (delta < len) {
                                             start1 += delta * width1;
                                             len -= delta;
@@ -819,6 +831,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                             return eIgnoreMatch;
                                         }
                                     }
+                                    result = eTranslocation;
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -827,7 +840,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             }
                         }
                     } else {
-                        delta = seq1_start_it_i->second->first
+                        delta = existing_start1
                             + starts2_i->second->m_Len * width1
                             - start1;
                         if (delta > 0) {
@@ -847,12 +860,14 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     //       x--x-) ----)
                                     // x---) x----)
                                     // below target
-                                    if ((delta = (seq1_start_it_i->second->first
-                                         - start1) / width1) < len) {
-                                        if ((len = delta) == 0) {
+                                    delta = (existing_start1 - start1) / width1;
+                                    if (delta < len) {
+                                        len = delta;
+                                        if ( !len ) {
                                             return eIgnoreMatch;
                                         }
                                     }
+                                    result = eTranslocation;
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -865,8 +880,9 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             }
 
             // check for overlap with the segment below on second row
-            if ((delta = starts2_i->first + starts2_i->second->m_Len * width2
-                 - start2) > 0) {
+            delta = starts2_i->first + starts2_i->second->m_Len * width2
+                - start2;
+            if (delta > 0) {
                 //       target
                 // ----- ------
                 // x---- x-)--)
@@ -897,16 +913,17 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
                     starts2_i->second->m_StartIts.find(seq1);
+                const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                 if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
                         // x---..- x---..--)
                         // (---..- (--x..--x
-                        delta1 = (start1 - seq1_start_it_i->second->first) / width1 +
+                        delta1 = (start1 - existing_start1) / width1 +
                             len - starts2_i->second->m_Len;
                     } else {
                         // x--..- x---...-)
                         // x--..- x---...-)
-                        delta1 = (seq1_start_it_i->second->first - start1) / width1;
+                        delta1 = (existing_start1 - start1) / width1;
                     }
                     delta2 = (starts2_i->first - start2) / width2;
                     if (delta1 != delta2) {
@@ -934,9 +951,10 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator seq1_start_it_i =
                     starts2_i->second->m_StartIts.find(seq1);
+                const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                 if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        delta = seq1_start_it_i->second->first + 
+                        delta = existing_start1 + 
                             starts2_i->second->m_Len * width1 - start1;
                         if (delta > 0) {
                             // below target
@@ -955,7 +973,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             }
                         }
                     } else {
-                        delta = start1 + len * width1 - seq1_start_it_i->second->first;
+                        delta = start1 + len * width1 - existing_start1;
                         if (delta > 0) {
                             // target above
                             // x--x-) ----)
@@ -1017,12 +1035,12 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
     if (m_MergeFlags & fQuerySeqMergeOnly) {
         _ASSERT(m_MergeFlags & fTruncateOverlaps);
         if (seq2->m_DsIdx == match->m_DsIdx) {
-            return eSecondRowFitsOk;
+            return result;
         } else {
             return eForceSeparateRow;
         }
     }
-    return eSecondRowFitsOk;
+    return result;
 }
 
 
@@ -1149,6 +1167,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/07/14 22:59:16  todorov
+* Fixed a bug in x_SecondRowFits: translocations now go on separate
+* rows.
+* Added some references for easier code reading and debugging.
+* Added another conditionally compiled check for integrity.
+*
 * Revision 1.5  2005/07/11 13:57:54  todorov
 * Added logic for handling translocations.
 *
