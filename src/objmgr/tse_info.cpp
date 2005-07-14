@@ -370,34 +370,33 @@ void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
             m_AnnotIdsFlags |= fAnnotIds_Matching;
         }
     }
-    if ( ContainsMatchingBioseq(id) ) {
-        return;
-    }
-    TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
-    if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
-        iter = m_SeqIdToNames.insert(iter,
-                                     TSeqIdToNames::value_type(id, TNames()));
+    TIdAnnotInfoMap::iterator iter = m_IdAnnotInfoMap.lower_bound(id);
+    if ( iter == m_IdAnnotInfoMap.end() || iter->first != id ) {
+        iter = m_IdAnnotInfoMap
+            .insert(iter, TIdAnnotInfoMap::value_type(id, SIdAnnotInfo()));
+        bool orphan = !ContainsMatchingBioseq(id);
+        iter->second.m_Orphan = orphan;
         if ( HasDataSource() ) {
-            GetDataSource().x_IndexAnnotTSE(id, this);
+            GetDataSource().x_IndexAnnotTSE(id, this, orphan);
         }
     }
-    _VERIFY(iter->second.insert(name).second);
+    _VERIFY(iter->second.m_Names.insert(name).second);
 }
 
 
 void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
                                   const CSeq_id_Handle& id)
 {
-    TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
-    if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
+    TIdAnnotInfoMap::iterator iter = m_IdAnnotInfoMap.lower_bound(id);
+    if ( iter == m_IdAnnotInfoMap.end() || iter->first != id ) {
         return;
     }
-    _ASSERT(iter != m_SeqIdToNames.end() && iter->first == id);
-    _VERIFY(iter->second.erase(name) == 1);
-    if ( iter->second.empty() ) {
-        m_SeqIdToNames.erase(iter);
+    _VERIFY(iter->second.m_Names.erase(name) == 1);
+    if ( iter->second.m_Names.empty() ) {
+        bool orphan = iter->second.m_Orphan;
+        m_IdAnnotInfoMap.erase(iter);
         if ( HasDataSource() ) {
-            GetDataSource().x_UnindexAnnotTSE(id, this);
+            GetDataSource().x_UnindexAnnotTSE(id, this, orphan);
         }
     }
 }

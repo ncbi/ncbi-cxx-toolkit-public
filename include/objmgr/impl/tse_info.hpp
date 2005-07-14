@@ -224,7 +224,12 @@ public:
     typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
     typedef map<CAnnotName, TAnnotObjs>                      TNamedAnnotObjs;
     typedef set<CAnnotName>                                  TNames;
-    typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
+    struct SIdAnnotInfo
+    {
+        TNames  m_Names;
+        bool    m_Orphan;
+    };
+    typedef map<CSeq_id_Handle, SIdAnnotInfo>                TIdAnnotInfoMap;
 
     typedef vector<CSeq_id_Handle>                           TBioseqsIds;
 
@@ -418,7 +423,7 @@ private:
 
     // Annot objects maps: ID to annot-selector-map
     TNamedAnnotObjs        m_NamedAnnotObjs;
-    TSeqIdToNames          m_SeqIdToNames;
+    TIdAnnotInfoMap        m_IdAnnotInfoMap;
 
     mutable TAnnotLock     m_AnnotLock;
     mutable CSeq_id_Handle m_RequestedId;
