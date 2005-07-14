@@ -169,10 +169,12 @@ public:
 
     // Remove TSE from the datasource, update indexes
     void DropAllTSEs(void);
+    bool DropStaticTSE(CTSE_Info& info);
     bool DropTSE(CTSE_Info& info);
 
     // Contains (or can load) any entries?
     bool IsEmpty(void) const;
+    const CTSE_LockSet& GetStaticBlobs(void) const;
 
     CDataLoader* GetDataLoader(void) const;
     const CConstRef<CObject>& GetSharedObject(void) const;
@@ -343,8 +345,12 @@ private:
                       const CSeq_id_Handle& id, CTSE_Info* tse_info);
     void x_IndexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
     void x_UnindexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_IndexAnnotTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_UnindexAnnotTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_IndexAnnotTSE(const CSeq_id_Handle& idh,
+                         CTSE_Info* tse_info,
+                         bool orphan);
+    void x_UnindexAnnotTSE(const CSeq_id_Handle& idh,
+                           CTSE_Info* tse_info,
+                           bool orphan);
     void x_IndexAnnotTSEs(CTSE_Info* tse_info);
     void x_UnindexAnnotTSEs(CTSE_Info* tse_info);
 
@@ -393,17 +399,18 @@ private:
 
     CRef<CDataLoader>     m_Loader;
     CConstRef<CObject>    m_SharedObject;
-    TTSE_LockSet          m_StaticBlobs;     // manually added TSEs
+    TTSE_LockSet          m_StaticBlobs;        // manually added TSEs
 
-    TTSE_InfoMap          m_TSE_InfoMap;    // All known TSEs
-    TEntry_InfoMap        m_Entry_InfoMap;  // All known Seq-entries
-    TAnnot_InfoMap        m_Annot_InfoMap;  // All known Seq-annots
-    TBioseq_set_InfoMap   m_Bioseq_set_InfoMap;  // All known Bioseq-sets
-    TBioseq_InfoMap       m_Bioseq_InfoMap; // All known Bioseqs
+    TTSE_InfoMap          m_TSE_InfoMap;        // All known TSEs
+    TEntry_InfoMap        m_Entry_InfoMap;      // All known Seq-entries
+    TAnnot_InfoMap        m_Annot_InfoMap;      // All known Seq-annots
+    TBioseq_set_InfoMap   m_Bioseq_set_InfoMap; // All known Bioseq-sets
+    TBioseq_InfoMap       m_Bioseq_InfoMap;     // All known Bioseqs
 
-    TSeq_id2TSE_Set       m_TSE_seq;        // id -> TSE with bioseq
-    TSeq_id2TSE_Set       m_TSE_annot;      // id -> TSE with external annots
-    TTSE_Set              m_DirtyAnnot_TSEs;// TSE with uninexed annots
+    TSeq_id2TSE_Set       m_TSE_seq;            // id -> TSE with bioseq
+    TSeq_id2TSE_Set       m_TSE_seq_annot;      // id -> TSE with bioseq annots
+    TSeq_id2TSE_Set       m_TSE_orphan_annot;   // id -> TSE with orphan annots
+    TTSE_Set              m_DirtyAnnot_TSEs;    // TSE with uninexed annots
 
     // Default priority for the datasource
     TPriority             m_DefaultPriority;
@@ -464,6 +471,14 @@ bool CDataSource::IsEmpty(void) const
 {
     return m_Loader == 0  &&  m_Blob_Map.empty();
 }
+
+
+inline
+const CTSE_LockSet& CDataSource::GetStaticBlobs(void) const
+{
+    return m_StaticBlobs;
+}
+
 
 inline
 bool CDataSource::IsLive(const CTSE_Info& tse)

@@ -122,7 +122,8 @@ void CDataSource::DropAllTSEs(void)
 
     {{
         TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
-        m_TSE_annot.clear();
+        m_TSE_seq_annot.clear();
+        m_TSE_orphan_annot.clear();
         m_DirtyAnnot_TSEs.clear();
     }}
 
@@ -173,6 +174,7 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
 
 CDataSource::TTSE_Lock CDataSource::AddStaticTSE(CRef<CTSE_Info> info)
 {
+    TMainLock::TWriteLockGuard guard(m_DSMainLock);
     TTSE_Lock lock = AddTSE(info);
     m_StaticBlobs.AddLock(lock);
     return lock;
@@ -205,6 +207,14 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
     x_SetLock(lock, info);
     _ASSERT(info->IsLocked());
     return lock;
+}
+
+
+bool CDataSource::DropStaticTSE(CTSE_Info& info)
+{
+    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    m_StaticBlobs.RemoveLock(&info);
+    return DropTSE(info);
 }
 
 
@@ -680,7 +690,7 @@ void CDataSource::x_AddTSEAnnots(TTSE_LockMatchSet& ret,
                                  const CSeq_id_Handle& id,
                                  const CTSE_Lock& tse_lock)
 {
-    // TSE annot index should be locked from modification by TAnnotLockReadGuard
+    //TSE annot index should be locked from modification by TAnnotLockReadGuard
     const CTSE_Info& tse = *tse_lock;
     if ( tse.HasMatchingAnnotIds() ) {
         // full check
@@ -797,7 +807,47 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
     else {
         // without loader bioseq TSE is the same as manually added TSE
         // and we already have added it
-        _ASSERT(m_StaticBlobs.FindLock(tse));
+        size_t blob_count = m_StaticBlobs.size();
+        if ( blob_count <= 1 ) {
+            _ASSERT(m_StaticBlobs.FindLock(tse));
+        }
+        else {
+            TSeq_idSet ids;
+            ITERATE ( CBioseq_Info::TId, it, bioseq.GetId() ) {
+                if ( it->HaveReverseMatch() ) {
+                    CSeq_id_Handle::TMatches hset;
+                    it->GetReverseMatchingHandles(ids);
+                }
+                else {
+                    ids.insert(*it);
+                }
+            }
+            if ( blob_count <= 10 ) {
+                ITERATE ( TTSE_LockSet, it, m_StaticBlobs ) {
+                    if ( it->second == tse ) {
+                        continue;
+                    }
+                    x_AddTSEOrphanAnnots(ret, ids, it->second);
+                }
+            }
+            else {
+                TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
+                UpdateAnnotIndex();
+                ITERATE ( TSeq_idSet, id_it, ids ) {
+                    TSeq_id2TSE_Set::const_iterator annot_it =
+                        m_TSE_orphan_annot.find(*id_it);
+                    if ( annot_it == m_TSE_orphan_annot.end() ) {
+                        continue;
+                    }
+                    ITERATE ( TTSE_Set, tse_it, annot_it->second ) {
+                        if ( *tse_it == tse ) {
+                            continue;
+                        }
+                        ret[m_StaticBlobs.FindLock(*tse_it)].insert(*id_it);
+                    }
+                }
+            }
+        }
     }
 
     return ret;
@@ -851,26 +901,29 @@ void CDataSource::x_UnindexSeqTSE(const CSeq_id_Handle& id,
 
 
 void CDataSource::x_IndexAnnotTSE(const CSeq_id_Handle& id,
-                                  CTSE_Info* tse_info)
+                                  CTSE_Info* tse_info,
+                                  bool orphan)
 {
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
-    x_IndexTSE(m_TSE_annot, id, tse_info);
+    x_IndexTSE(orphan? m_TSE_orphan_annot: m_TSE_seq_annot, id, tse_info);
 }
 
 
 void CDataSource::x_UnindexAnnotTSE(const CSeq_id_Handle& id,
-                                    CTSE_Info* tse_info)
+                                    CTSE_Info* tse_info,
+                                    bool orphan)
 {
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
-    x_UnindexTSE(m_TSE_annot, id, tse_info);
+    x_UnindexTSE(orphan? m_TSE_orphan_annot: m_TSE_seq_annot, id, tse_info);
 }
 
 
 void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
 {
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
-    ITERATE ( CTSE_Info::TSeqIdToNames, it, tse_info->m_SeqIdToNames ) {
-        x_IndexTSE(m_TSE_annot, it->first, tse_info);
+    ITERATE ( CTSE_Info::TIdAnnotInfoMap, it, tse_info->m_IdAnnotInfoMap ) {
+        x_IndexTSE(it->second.m_Orphan? m_TSE_orphan_annot: m_TSE_seq_annot,
+                   it->first, tse_info);
     }
     if ( tse_info->x_DirtyAnnotIndex() ) {
         _VERIFY(m_DirtyAnnot_TSEs.insert(Ref(tse_info)).second);
@@ -881,8 +934,9 @@ void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
 void CDataSource::x_UnindexAnnotTSEs(CTSE_Info* tse_info)
 {
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
-    ITERATE ( CTSE_Info::TSeqIdToNames, it, tse_info->m_SeqIdToNames ) {
-        x_UnindexTSE(m_TSE_annot, it->first, tse_info);
+    ITERATE ( CTSE_Info::TIdAnnotInfoMap, it, tse_info->m_IdAnnotInfoMap ) {
+        x_UnindexTSE(it->second.m_Orphan? m_TSE_orphan_annot: m_TSE_seq_annot,
+                     it->first, tse_info);
     }
 }
 
@@ -1191,6 +1245,10 @@ static unsigned s_GetCacheSize(void)
 
 void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
 {
+    if ( !m_Loader ) {
+        // keep in cache only when loader is used
+        return;
+    }
     _ASSERT(tse);
     vector<TTSE_Ref> to_delete;
     {{
@@ -1206,7 +1264,7 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
             return;
         }
         _ASSERT(&tse->GetDataSource() == this);
-        
+
         if ( tse->m_CacheState != CTSE_Info::eInCache ) {
             _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) ==
                     m_Blob_Cache.end());
@@ -1216,7 +1274,7 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
         _ASSERT(tse->m_CachePosition ==
                 find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         
-
+        
         unsigned cache_size = s_GetCacheSize();
         while ( m_Blob_Cache.size() > cache_size ) {
             CRef<CTSE_Info> del_tse = m_Blob_Cache.front();
