@@ -303,20 +303,21 @@ CSymDustMasker::operator()( const sequence_type & seq,
             while( !lcr_list_.empty() )
             {
                 TMaskedInterval b = lcr_list_.back().bounds_;
+                TMaskedInterval b1( b.first + start, b.second + start );
 
                 if( b.first >= tris.start() )
                     break;
 
                 if( res->empty() )
-                    res->push_back( b );
+                    res->push_back( TMaskedInterval( b1 ) );
                 else
                 {
                     TMaskedInterval last = res->back();
 
-                    if( last.second + linker_ < b.first )
-                        res->push_back( b );
-                    else if( last.second < b.second )
-                        res->back().second = b.second;
+                    if( last.second + linker_ < b1.first )
+                        res->push_back( b1 );
+                    else if( last.second < b1.second )
+                        res->back().second = b1.second;
                 }
 
                 lcr_list_.pop_back();
@@ -331,17 +332,18 @@ CSymDustMasker::operator()( const sequence_type & seq,
         while( !lcr_list_.empty() )
         {
                 TMaskedInterval b = lcr_list_.back().bounds_;
+                TMaskedInterval b1( b.first + start, b.second + start );
 
                 if( res->empty() )
-                    res->push_back( b );
+                    res->push_back( b1 );
                 else
                 {
                     TMaskedInterval last = res->back();
 
-                    if( last.second < b.first )
-                        res->push_back( b );
-                    else if( last.second < b.second )
-                        res->back().second = b.second;
+                    if( last.second < b1.first )
+                        res->push_back( b1 );
+                    else if( last.second < b1.second )
+                        res->back().second = b1.second;
                 }
 
                 lcr_list_.pop_back();
@@ -377,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/07/14 20:39:39  morgulis
+ * Fixed offsets bug when masking part of the sequence.
+ *
  * Revision 1.8  2005/07/13 18:29:50  morgulis
  * operator() can mask part of the sequence
  *
