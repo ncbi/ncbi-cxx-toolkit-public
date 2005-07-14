@@ -116,7 +116,7 @@ CNSLB_Coordinator::EDecision CNSLB_Coordinator::Evaluate(unsigned host)
     INSLB_Collector::NSLB_ServerInfo best_host;
     INSLB_Collector::NSLB_ServerInfo worst_host;
     best_host.rate = 0.0;
-    worst_host.rate = 9999999999;
+    worst_host.rate = 99999999.999;
 
     const INSLB_Collector::NSLB_ServerInfo* req_host = 0;
 
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/14 13:40:07  kuznets
+ * compilation bug fixes
+ *
  * Revision 1.1  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *

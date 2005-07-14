@@ -61,6 +61,8 @@ struct INSLB_Collector
     };
 
     typedef vector<NSLB_ServerInfo>  TServerList;
+    
+    virtual ~INSLB_Collector() {};
 
     /// Extract load list for servers
     /// All info should be added to the server list
@@ -197,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/14 13:40:07  kuznets
+ * compilation bug fixes
+ *
  * Revision 1.1  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *

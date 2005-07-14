@@ -348,8 +348,6 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
         string lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
         int lb_collect_time =
             reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
-        int lb__time =
-            reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
         int lb_exec_delay = 
             reg.GetInt(sname, "lb_exec_delay", 6, 0, IRegistry::eReturn);
 
@@ -1595,6 +1593,7 @@ fetch_db:
         }
 
         // job can be scheduled now, if load balancing situation is permitting
+        {{
         CNSLB_Coordinator* coordinator = m_LQueue.lb_coordinator;
         if (coordinator) {
             CNSLB_Coordinator::EDecision lb_decision = 
@@ -1616,6 +1615,7 @@ fetch_db:
                 _ASSERT(0);
             } // switch
         }
+        }}
 grant_job:
         // execution granted, update job record information
         if (*job_id) {
@@ -2387,6 +2387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/07/14 13:40:07  kuznets
+ * compilation bug fixes
+ *
  * Revision 1.40  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *
