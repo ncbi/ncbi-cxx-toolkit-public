@@ -138,6 +138,7 @@ unsigned int CSimpleClusterer::MakeClusters() {
     //  so operationally we will look for branches in the tree cut at 1/2 of the true
     //  clustering threshold specified.
     TDist clusteringThreshold = m_clusteringThreshold/2.0;
+    cerr << "Clustering threshold = " << m_clusteringThreshold << endl;
 
     if (m_cuTree) {
         treeIt = m_cuTree->begin_post();
@@ -146,7 +147,7 @@ unsigned int CSimpleClusterer::MakeClusters() {
         while (treeIt != treeItEnd) {
             if (treeIt.number_of_children() == 0) { // a leaf
                 rowId = treeIt->id;
-                assert(m_idToClusterMap.count(rowId) == 0);  //  debugging test
+                _ASSERT(m_idToClusterMap.count(rowId) == 0);  //  debugging test
                 m_idToClusterMap[rowId] = currentCluster;
 
                 //  add leaf to current cluster
@@ -195,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/14 14:43:52  lanczyck
+* use _ASSERT; minor output mods
+*
 * Revision 1.1  2005/07/13 19:04:26  lanczyck
 * classes for building a SLC non-redundifier that does not depend on CCdd-related classes
 *

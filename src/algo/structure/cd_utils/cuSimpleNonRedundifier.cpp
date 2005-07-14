@@ -190,6 +190,7 @@ CNRItem* CSimpleNonRedundifier::GetItemForId(CBaseClusterer::TId itemId) {
             nRedundantTotal += nRedundantForCriteria;
 //            if (nRedundantForCriteria && s.length() > 0) cdLog::Printf(LOG_DEBUG, s.c_str());
             stop.SetCurrent();
+            cerr << "Non-redundifier log:\n\n" << s << endl;
 //            cdLog::Printf(LOG_DEBUG, "\n    Time to apply criteria:  elapsed time (s):  %f\n", stop.DiffNanoSecond(start)/::kNanoSecondsPerSecond);
         }
     }
@@ -284,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/14 14:43:52  lanczyck
+* use _ASSERT; minor output mods
+*
 * Revision 1.2  2005/07/13 19:46:32  lanczyck
 * minor mods to remove compiler warnings
 *
