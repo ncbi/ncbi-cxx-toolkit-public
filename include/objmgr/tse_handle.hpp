@@ -212,15 +212,15 @@ public:
                                         const CObject& info);
     NCBI_XOBJMGR_EXPORT ~CScopeInfo_Base(void);
     
-    bool IsRemoved(void) const
+    bool IsDetached(void) const
         {
-            return !m_TSE_ScopeInfo;
+            return m_TSE_ScopeInfo == 0;
+        }
+    bool IsAttached(void) const
+        {
+            return m_TSE_ScopeInfo != 0;
         }
     bool HasObject(void) const
-        {
-            return m_ObjectInfo.NotNull();
-        }
-    bool IsValid(void) const
         {
             return m_ObjectInfo.NotNull();
         }
@@ -230,6 +230,13 @@ public:
 
     virtual NCBI_XOBJMGR_EXPORT const TIndexIds* GetIndexIds(void) const;
 
+    // Temporary means that this TSE object doesn't have identification,
+    // so we cannot retrieve the same CScopeInfo_Base for the TSE object
+    // after we release TSE object pointer.
+    // As a result, when all handles to this TSE object are removed,
+    // we simply forget this CScopeInfo_Base object.
+    // For non-temporary TSE object we keep CScopeInfo_Base object in
+    // index by its ids, and reuse it when new handle is created.
     bool IsTemporary(void) const
         {
             const TIndexIds* ids = GetIndexIds();
@@ -256,6 +263,93 @@ public:
         }
 
 protected:
+    // CScopeInfo_Base can be in the following states:
+    //
+    // S0. detached, unlocked:
+    //    TSE_ScopeInfo == 0,
+    //    LockCounter == 0,
+    //    TSE_Handle == 0,
+    //    ObjectInfo == 0.
+    //
+    // S1. attached, locked:
+    //    TSE_ScopeInfo != 0,
+    //    LockCounter > 0,
+    //    TSE_Handle != 0,
+    //    ObjectInfo != 0, indexed.
+    //  When unlocked by handles (LockCounter becomes 0):
+    //   1. TSE_Handle is reset,
+    //   New state: S5.
+    //  When removed explicitly:
+    //   1. Do actual remove,
+    //   2. Scan for implicit removals,
+    //   3. Assert that this CScopeInfo_Base is removed (detached),
+    //   New state: S3 (implicitly).
+    //  When removed implicitly (found in ObjectInfo index as being removed):
+    //   1. TSE_Handle is reset,
+    //   2. Removed from index by ObjectInfo,
+    //   3. Detached from TSE,
+    //   New state: S3.
+    //
+    // S5. attached, unlocked, indexed:
+    //    TSE_ScopeInfo != 0,
+    //    LockCounter == 0,
+    //    TSE_Handle == 0,
+    //    ObjectInfo != 0, indexed.
+    //  When relocked:
+    //   1. TSE_Handle is set,
+    //   New state: S1.
+    //  When removed implicitly (found in ObjectInfo index as being removed)
+    //   1. Removing from index by ObjectInfo,
+    //   2. Detached from TSE,
+    //   New state: S3 (or S0).
+    //  When TSE is unlocked completely, temporary:
+    //   1. ObjectInfo is reset, with removing from index by ObjectInfo,
+    //   2. Detached from TSE,
+    //   New state: S0.
+    //  When TSE is unlocked completely, non-temporary:
+    //   1. ObjectInfo is reset, with removing from index by ObjectInfo,
+    //   New state: S2.
+    //
+    // S2. attached, unlocked, non-temporary:
+    //    TSE_ScopeInfo != 0,
+    //    LockCounter == 0,
+    //    TSE_Handle == 0,
+    //    ObjectInfo == 0.
+    //  When relocked:
+    //   1. TSE_Handle is set,
+    //   2. ObjectInfo is set, adding to index by ObjectInfo,
+    //   New state: S1.
+    //  When removed implicitly (is it possible to determine?)
+    //   1. Detached from TSE,
+    //   New state: S0.
+    //
+    // S3. detached, locked:
+    //    TSE_ScopeInfo == 0,
+    //    LockCounter > 0,
+    //    TSE_Handle == 0,
+    //    ObjectInfo != 0, unindexed.
+    //  When unlocked by handles (LockCounter becomes 0):
+    //   1. ObjectInfo is reset,
+    //   New state: S0.
+    //  When added into another place:
+    //   1. attached to TSE,
+    //   2. TSE_Handle is set,
+    //   3. ObjectInfo is set, adding to index by ObjectInfo,
+    //   New state: S1.
+    //
+    // S4. detached, locked, dummy:
+    //    TSE_ScopeInfo == 0,
+    //    LockCounter > 0,
+    //    TSE_Handle == 0,
+    //    ObjectInfo == 0.
+    //  When unlocked by handles (LockCounter becomes 0):
+    //   1. -> S0.
+    
+    // A. TSE_ScopeInfo != 0: attached, means it's used by some TSE_ScopeInfo.
+    // B. LockCounter > 0: locked, means it's used by some handle.
+    // C. TSE_Handle != 0 only when attached and locked.
+    // D. Indexed by ObjectInfo only when attached and ObjectInfo != 0.
+
     friend class CTSE_ScopeInfo;
     friend class CScopeInfoLocker;
 
@@ -327,7 +421,26 @@ public:
 };
 
 
-typedef CRef<CScopeInfo_Base, CScopeInfoLocker> CScopeInfo_RefBase;
+class CScopeInfo_RefBase : public CRef<CScopeInfo_Base, CScopeInfoLocker>
+{
+public:
+    CScopeInfo_RefBase(void)
+        {
+        }
+    explicit CScopeInfo_RefBase(CScopeInfo_Base* info)
+        : CRef<CScopeInfo_Base, CScopeInfoLocker>(info)
+        {
+        }
+
+    bool IsValid(void) const
+        {
+            return NotNull() && GetPointerOrNull()->IsAttached();
+        }
+    bool IsRemoved(void) const
+        {
+            return NotNull() && GetPointerOrNull()->IsDetached();
+        }
+};
 
 
 template<class Info>
@@ -344,16 +457,10 @@ public:
         {
         }
 
-    bool IsValid(void) const
-        {
-            return NotNull() && GetPointerOrNull()->IsValid();
-        }
-
     void Reset(void)
         {
             CScopeInfo_RefBase::Reset();
         }
-
     void Reset(TScopeInfo* info)
         {
             CScopeInfo_RefBase::Reset(toBase(info));

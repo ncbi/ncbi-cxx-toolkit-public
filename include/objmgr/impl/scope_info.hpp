@@ -119,6 +119,16 @@ public:
 
             return ret;
         }
+    void Erase(const key_type& key)
+        {
+            _ASSERT(m_Queue.size() == m_Index.size());
+            TIndexIter iter = m_Index.find(key);
+            if ( iter != m_Index.end() ) {
+                m_Queue.erase(iter->second);
+                m_Index.erase(iter);
+                _ASSERT(m_Queue.size() == m_Index.size());
+            }
+        }
     void Put(const key_type& key, const value_type& value)
         {
             _ASSERT(m_Queue.size() == m_Index.size());
@@ -188,12 +198,13 @@ public:
                           bool shared = true);
     ~CDataSource_ScopeInfo(void);
 
-    void DetachFromOM(CObjectManager& om);
     CScope_Impl& GetScopeImpl(void) const;
+    void DetachScope(void);
 
     bool IsShared(void) const;
 
-    void Reset(void);
+    void ResetDS(void);
+    void ResetHistory(int action_if_locked);//CScope_Impl::EActionIfLocked
 
     typedef CMutex TTSE_InfoMapMutex;
     const TTSE_InfoMap& GetTSE_InfoMap(void) const;
@@ -202,11 +213,14 @@ public:
     typedef CMutex TTSE_LockSetMutex;
     const TTSE_LockSet& GetTSE_LockSet(void) const;
     TTSE_LockSetMutex& GetTSE_LockSetMutex(void) const;
-    void UpdateTSELock(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
+    void UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock);
     void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
     void RemoveFromHistory(CTSE_ScopeInfo& tse);
     bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
+
+    void RemoveTSE_Lock(const CTSE_Lock& lock);
+    void AddTSE_Lock(const CTSE_Lock& lock);
 
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
@@ -255,8 +269,9 @@ private: // members
     mutable TTSE_InfoMapMutex   m_TSE_InfoMapMutex;
     TTSE_BySeqId                m_TSE_BySeqId;
     TTSE_LockSet                m_TSE_LockSet;
-    TTSE_UnlockQueue            m_TSE_UnlockQueue;
     mutable TTSE_LockSetMutex   m_TSE_LockSetMutex;
+    TTSE_UnlockQueue            m_TSE_UnlockQueue;
+    mutable TTSE_LockSetMutex   m_TSE_UnlockQueueMutex;
     CRef<CDataSource_ScopeInfo> m_EditDS;
 
 private: // to prevent copying
@@ -283,9 +298,10 @@ public:
     CScope_Impl& GetScopeImpl(void) const;
     CDataSource_ScopeInfo& GetDSInfo(void) const;
 
-    bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
-
     bool IsAttached(void) const;
+    void RemoveFromHistory(int action_if_locked);//CScope_Impl::EActionIfLocked
+
+    bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
 
     bool CanBeUnloaded(void) const;
     // True if the TSE is referenced
@@ -321,9 +337,18 @@ public:
     TBioseq_Lock GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
                                CConstRef<CBioseq_Info> bioseq);
 
-    void ResetEntry(const CSeq_entry_ScopeInfo& info);
-    void RemoveEntry(const CSeq_entry_ScopeInfo& info);
-    void RemoveAnnot(const CSeq_annot_ScopeInfo& info);
+    void ResetEntry(CSeq_entry_ScopeInfo& info);
+    void RemoveEntry(CSeq_entry_ScopeInfo& info);
+    void RemoveAnnot(CSeq_annot_ScopeInfo& info);
+    void AddEntry(CBioseq_set_ScopeInfo& seqset,
+                  CSeq_entry_ScopeInfo& info,
+                  int index);
+    void AddAnnot(CSeq_entry_ScopeInfo& entry,
+                  CSeq_annot_ScopeInfo& info);
+    void SelectSeq(CSeq_entry_ScopeInfo& entry,
+                   CBioseq_ScopeInfo& info);
+    void SelectSet(CSeq_entry_ScopeInfo& entry,
+                   CBioseq_set_ScopeInfo& info);
 
     void x_CleanRemovedObjects(void);
 
@@ -333,8 +358,17 @@ public:
     void x_InternalUnlockTSE(void);
     void x_UserUnlockTSE(void);
 
+    void ForgetTSE_Lock(void);
+
+    const CTSE_Lock& GetTSE_Lock(void) const;
+    void SetTSE_Lock(const CTSE_Lock& lock);
+    void ResetTSE_Lock(void);
+    void DropTSE_Lock(void);
+
 protected:
-    void x_ForgetLocks(void);
+    void x_SetTSE_Lock(const CTSE_Lock& lock);
+    void x_ResetTSE_Lock(void);
+    void x_DetachDS(void);
 
     // Number of internal locks, not related to handles
     int x_GetDSLocksCount(void) const;
@@ -409,6 +443,10 @@ public:
         {
             return reinterpret_cast<const CBioseq_Info&>(GetObjectInfo_Base());
         }
+    CBioseq_Info& GetNCObjectInfo(void)
+        {
+            return const_cast<CBioseq_Info&>(GetObjectInfo());
+        }
 
     const TIds& GetIds(void) const
         {
@@ -439,6 +477,7 @@ protected: // protected object manager interface
     friend class CSeq_id_ScopeInfo;
 
     //void x_ResetLock(void);
+    void x_AttachTSE(CTSE_ScopeInfo* tse);
     void x_DetachTSE(CTSE_ScopeInfo* tse);
     void x_ForgetTSE(CTSE_ScopeInfo* tse);
 
@@ -562,16 +601,16 @@ CScope_Impl& CTSE_ScopeInfo::GetScopeImpl(void) const
 }
 
 
+inline
+const CTSE_Lock& CTSE_ScopeInfo::GetTSE_Lock(void) const
+{
+    return m_TSE_Lock;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
-
-
-inline
-bool CBioseq_ScopeInfo::HasBioseq(void) const
-{
-    return !IsRemoved();
-}
 
 
 END_SCOPE(objects)
@@ -580,6 +619,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.20  2005/06/27 18:17:03  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

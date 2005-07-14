@@ -274,7 +274,7 @@ void CScope::ResetHistory(void)
 
 void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq)
 {
-    m_Impl->RemoveFromHistory(bioseq);
+    m_Impl->RemoveFromHistory(bioseq.GetTSE_Handle());
 }
 
 
@@ -457,6 +457,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.117  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.116  2005/06/27 18:17:04  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

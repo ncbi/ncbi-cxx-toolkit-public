@@ -334,6 +334,14 @@ CSeq_entry_EditHandle::TakeEntry(const CSeq_entry_EditHandle& entry,
 }
 
 
+CSeq_entry_EditHandle
+CSeq_entry_EditHandle::AttachEntry(const CSeq_entry_EditHandle& entry,
+                                   int index) const
+{
+    return SetSet().AttachEntry(entry, index);
+}
+
+
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
@@ -352,6 +360,13 @@ CSeq_annot_EditHandle
 CSeq_entry_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 {
     return x_GetScopeImpl().TakeAnnot(*this, annot);
+}
+
+
+CSeq_annot_EditHandle
+CSeq_entry_EditHandle::AttachAnnot(const CSeq_annot_EditHandle& annot) const
+{
+    return x_GetScopeImpl().AttachAnnot(*this, annot);
 }
 
 
@@ -412,6 +427,13 @@ CSeq_entry_EditHandle::TakeSet(const CBioseq_set_EditHandle& seqset) const
 }
 
 
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::SelectSet(const CBioseq_set_EditHandle& seqset) const
+{
+    return x_GetScopeImpl().SelectSet(*this, seqset);
+}
+
+
 CBioseq_EditHandle CSeq_entry_EditHandle::SelectSeq(CBioseq& seq) const
 {
     return x_GetScopeImpl().SelectSeq(*this, seq);
@@ -432,6 +454,13 @@ CSeq_entry_EditHandle::TakeSeq(const CBioseq_EditHandle& seq) const
 }
 
 
+CBioseq_EditHandle
+CSeq_entry_EditHandle::SelectSeq(const CBioseq_EditHandle& seq) const
+{
+    return x_GetScopeImpl().SelectSeq(*this, seq);
+}
+
+
 CBioseq_set_EditHandle
 CSeq_entry_EditHandle::ConvertSeqToSet(TClass set_class) const
 {
@@ -440,11 +469,14 @@ CSeq_entry_EditHandle::ConvertSeqToSet(TClass set_class) const
                    "CSeq_entry_EditHandle::ConvertSeqToSet: "
                    "Seq-entry is not in 'seq' state");
     }
-    CRef<CBioseq_Info> seq(&x_GetInfo().SetSeq());
-    SetSeq().Remove();
+    CBioseq_EditHandle seq = SetSeq();
+    SelectNone();
     _ASSERT(Which() == CSeq_entry::e_not_set);
+    _ASSERT(seq.IsRemoved());
+    _ASSERT(!seq);
     CBioseq_set_EditHandle seqset = SelectSet(set_class);
-    x_GetScopeImpl().x_SelectSeq(seqset.AddNewEntry(-1), seq);
+    seqset.AddNewEntry(-1).SelectSeq(seq);
+    _ASSERT(seq);
     return seqset;
 }
 
@@ -460,14 +492,20 @@ void CSeq_entry_EditHandle::CollapseSet(void) const
     entry.AddDescr(*this);
     entry.TakeAllAnnots(*this);
     if ( entry.IsSet() ) {
-        CRef<CBioseq_set_Info> info(&entry.x_GetInfo().SetSet());
+        CBioseq_set_EditHandle seqset = entry.SetSet();
         SelectNone();
-        x_GetScopeImpl().x_SelectSet(*this, info);
+        _ASSERT(seqset.IsRemoved());
+        _ASSERT(!seqset);
+        SelectSet(seqset);
+        _ASSERT(seqset);
     }
     else {
-        CRef<CBioseq_Info> info(&entry.x_GetInfo().SetSeq());
+        CBioseq_EditHandle seq = entry.SetSeq();
         SelectNone();
-        x_GetScopeImpl().x_SelectSeq(*this, info);
+        _ASSERT(seq.IsRemoved());
+        _ASSERT(!seq);
+        SelectSeq(seq);
+        _ASSERT(seq);
     }
 }
 
@@ -482,9 +520,13 @@ CSeq_entry_EditHandle::ConvertSetToSeq(void) const
     }
     entry.AddDescr(*this);
     entry.TakeAllAnnots(*this);
-    CRef<CBioseq_Info> info(&entry.x_GetInfo().SetSeq());
+    CBioseq_EditHandle seq = entry.SetSeq();
     SelectNone();
-    return x_GetScopeImpl().x_SelectSeq(*this, info);
+    _ASSERT(seq.IsRemoved());
+    _ASSERT(!seq);
+    SelectSeq(seq);
+    _ASSERT(seq);
+    return seq;
 }
 
 
@@ -494,6 +536,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.18  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

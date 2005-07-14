@@ -92,17 +92,6 @@ void CBioseq_Handle::Reset(void)
 }
 
 
-CBioseq_Handle& CBioseq_Handle::operator=(const CBioseq_Handle& bh)
-{
-    // order is significant
-    if ( this != &bh ) {
-        m_Info = bh.m_Info;
-        m_Handle_Seq_id = bh.m_Handle_Seq_id;
-    }
-    return *this;
-}
-
-
 CBioseq_Handle::TBioseqStateFlags CBioseq_Handle::GetState(void) const
 {
     TBioseqStateFlags state = x_GetScopeInfo().GetBlobState();
@@ -889,6 +878,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.91  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

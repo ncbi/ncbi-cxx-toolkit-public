@@ -54,6 +54,12 @@ CBioseq_set_Handle::CBioseq_set_Handle(const CBioseq_set_Info& info,
 }
 
 
+CBioseq_set_Handle::CBioseq_set_Handle(const TLock& lock)
+    : m_Info(lock)
+{
+}
+
+
 void CBioseq_set_Handle::Reset(void)
 {
     m_Info.Reset();
@@ -490,6 +496,14 @@ CBioseq_set_EditHandle::TakeEntry(const CSeq_entry_EditHandle& entry,
 }
 
 
+CSeq_entry_EditHandle
+CBioseq_set_EditHandle::AttachEntry(const CSeq_entry_EditHandle& entry,
+                                    int index) const
+{
+    return x_GetScopeImpl().AttachEntry(*this, entry, index);
+}
+
+
 CSeq_annot_EditHandle
 CBioseq_set_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
@@ -523,6 +537,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.18  2005/06/30 19:38:15  vasilche
 * Renamed to match CBioseq_Handle, and implemented methods modifying descr.
 *

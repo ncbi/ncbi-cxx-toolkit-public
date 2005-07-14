@@ -91,9 +91,6 @@ public:
     // Default constructor
     CBioseq_Handle(void);
 
-    // Assignment
-    CBioseq_Handle& operator=(const CBioseq_Handle& bh);
-
     /// Reset handle and make it not to point to any bioseq
     void Reset(void);
 
@@ -353,13 +350,16 @@ public:
     /// For usage in containers
     bool operator<  (const CBioseq_Handle& h) const;
 
-    /// Check if handle points to a bioseq
+    /// Check if handle points to a bioseq and is not removed
     ///
     /// @sa
     ///    operator !()
-    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
+    DECLARE_OPERATOR_BOOL(m_Info.IsValid());
 
-    // Get CTSE_Handle of containing TSE
+    /// Check if handle points to a removed bioseq
+    bool IsRemoved(void) const;
+
+    /// Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
 
 
@@ -664,6 +664,13 @@ const CTSE_Handle& CBioseq_Handle::GetTSE_Handle(void) const
 
 
 inline
+bool CBioseq_Handle::IsRemoved(void) const
+{
+    return m_Info && m_Info.GetPointerOrNull()->IsDetached();
+}
+
+
+inline
 const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 {
     return m_Handle_Seq_id;
@@ -729,6 +736,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.80  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

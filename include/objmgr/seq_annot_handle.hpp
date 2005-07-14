@@ -76,6 +76,10 @@ public:
         {
             return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
         }
+    TObjectInfo& GetNCObjectInfo(void)
+        {
+            return const_cast<TObjectInfo&>(GetObjectInfo());
+        }
 };
 
 
@@ -94,6 +98,8 @@ public:
 
 
     DECLARE_OPERATOR_BOOL(m_Info.IsValid());
+
+    bool IsRemoved(void) const;
 
 
     // Get CTSE_Handle of containing TSE
@@ -257,6 +263,13 @@ const CSeq_annot_ScopeInfo& CSeq_annot_Handle::x_GetScopeInfo(void) const
 
 
 inline
+bool CSeq_annot_Handle::IsRemoved(void) const
+{
+    return m_Info.IsRemoved();
+}
+
+
+inline
 bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& handle) const
 {
     return m_Info == handle.m_Info;
@@ -313,6 +326,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.20  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

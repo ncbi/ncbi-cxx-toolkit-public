@@ -41,9 +41,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 #if 0
-# define _TRACE_TSE_LOCK(x) _TRACE(x)
+# define _TRACE_TSE_LOCK(type)                                          \
+    if ( !m_TSE.GetPointer() )                                          \
+        ;                                                               \
+    else                                                                \
+        _TRACE("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" " type)
 #else
-# define _TRACE_TSE_LOCK(x) ((void)0)
+# define _TRACE_TSE_LOCK(type) ((void)0)
 #endif
 
 #define _CHECK() _ASSERT(!*this || &m_TSE->GetScopeImpl() == m_Scope.GetImpl())
@@ -52,8 +56,7 @@ CTSE_Handle::CTSE_Handle(TObject& object)
     : m_Scope(object.GetScopeImpl().GetScope()),
       m_TSE(&object)
 {
-    if ( m_TSE.GetPointer() )
-        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _TRACE_TSE_LOCK("lock");
     _CHECK();
 }
 
@@ -62,8 +65,7 @@ CTSE_Handle::CTSE_Handle(const CTSE_ScopeUserLock& lock)
     : m_Scope(lock->GetScopeImpl().GetScope()),
       m_TSE(lock)
 {
-    if ( m_TSE.GetPointer() )
-        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _TRACE_TSE_LOCK("lock");
     _CHECK();
 }
 
@@ -72,8 +74,7 @@ CTSE_Handle::CTSE_Handle(const CTSE_Handle& tse)
     : m_Scope(tse.m_Scope),
       m_TSE(tse.m_TSE)
 {
-    if ( m_TSE.GetPointer() )
-        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+    _TRACE_TSE_LOCK("lock");
     _CHECK();
 }
 
@@ -81,8 +82,7 @@ CTSE_Handle::CTSE_Handle(const CTSE_Handle& tse)
 CTSE_Handle::~CTSE_Handle(void)
 {
     _CHECK();
-    if ( m_TSE.GetPointer() )
-        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
+    _TRACE_TSE_LOCK("unlock");
 }
 
 
@@ -90,12 +90,10 @@ CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 {
     _CHECK();
     if ( this != &tse ) {
-        if ( m_TSE.GetPointer() )
-            _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
+        _TRACE_TSE_LOCK("unlock");
         m_TSE = tse.m_TSE;
         m_Scope = tse.m_Scope;
-        if ( m_TSE.GetPointer() )
-            _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" lock");
+        _TRACE_TSE_LOCK("lock");
         _CHECK();
     }
     return *this;
@@ -105,8 +103,7 @@ CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 void CTSE_Handle::Reset(void)
 {
     _CHECK();
-    if ( m_TSE.GetPointer() )
-        _TRACE_TSE_LOCK("CTSE_Handle("<<this<<") "<<m_TSE.GetPointer()<<" unlock");
+    _TRACE_TSE_LOCK("unlock");
     m_TSE.Reset();
     m_Scope.Reset();
     _CHECK();
@@ -211,6 +208,157 @@ bool CTSE_Handle::CanBeEdited(void) const
 ////////////////////////////////////////////////////////////////////////////
 
 
+/*
+*****************************************************************************
+CScopeInfo_Base can be in the following states:
+
+S0. detached, unlocked:
+   TSE_ScopeInfo == 0,
+   LockCounter == 0,
+   TSE_Handle == 0,
+   ObjectInfo == 0.
+    
+S1. attached, locked, indexed:
+   TSE_ScopeInfo != 0,
+   LockCounter > 0,
+   TSE_Handle != 0,
+   ObjectInfo != 0, indexed.
+ When unlocked by handles (LockCounter becomes 0) (A1):
+  1. TSE_Handle is reset,
+  New state: S4.
+ When removed explicitly (A2):
+  1. Do actual remove,
+  2. Scan for implicit removals,
+  3. Assert that this CScopeInfo_Base is removed (detached),
+  New state: S3 (implicitly).
+ When removed implicitly (found in ObjectInfo index as being removed) (A3):
+  1. TSE_Handle is reset,
+  2. Removed from index by ObjectInfo,
+  3. Detached from TSE,
+  New state: S3.
+    
+S2. attached, unlocked, non-temporary:
+   TSE_ScopeInfo != 0,
+   LockCounter == 0,
+   TSE_Handle == 0,
+   ObjectInfo == 0.
+ When relocked (A5):
+  1. TSE_Handle is set,
+  2. ObjectInfo is set, adding to index by ObjectInfo,
+  New state: S1.
+ When removed implicitly (is it possible to determine?) (A3):
+  1. Detached from TSE,
+  New state: S0.
+ When TSE is unlocked completely, non-temporary (A4):
+  Same state: S2.
+  
+S3. detached, locked:
+   TSE_ScopeInfo == 0,
+   LockCounter > 0,
+   TSE_Handle == 0,
+   ObjectInfo != 0, not indexed.
+ When unlocked by handles (LockCounter becomes 0) (A1):
+  1. ObjectInfo is reset,
+  New state: S0.
+ When added into another place (A7):
+  1. attached to TSE,
+  2. TSE_Handle is set,
+  3. ObjectInfo is set, adding to index by ObjectInfo,
+  New state: S1.
+  
+S4. attached, unlocked, indexed:
+   TSE_ScopeInfo != 0,
+   LockCounter == 0,
+   TSE_Handle == 0,
+   ObjectInfo != 0, indexed.
+ When relocked (A5):
+  1. TSE_Handle is set,
+  New state: S1.
+ When removed implicitly (found in ObjectInfo index as being removed) (A3):
+  1. Removing from index by ObjectInfo,
+  2. Detached from TSE,
+  New state: S3.
+ When TSE is unlocked completely, temporary (A4):
+  1. ObjectInfo is reset, with removing from index by ObjectInfo,
+  2. Detached from TSE,
+  New state: S0.
+ When TSE is unlocked completely, non-temporary (A4):
+  1. ObjectInfo is reset, with removing from index by ObjectInfo,
+  New state: S2.
+  
+S5. detached, locked, dummy:
+   TSE_ScopeInfo == 0,
+   LockCounter > 0,
+   TSE_Handle == 0,
+   ObjectInfo == 0.
+ When unlocked by handles (LockCounter becomes 0) (A1):
+  1. -> S0.
+
+*****************************************************************************
+Meaning of members:    
+A. TSE_ScopeInfo != 0: attached, means it's used by some TSE_ScopeInfo.
+     S1,S4,S2.
+
+B. LockCounter > 0: locked, means it's used by some handle.
+     S1,S3,S5.
+
+C. TSE_Handle != 0 only when attached and locked.
+     S1.
+
+D. Indexed by ObjectInfo only when attached and ObjectInfo != 0.
+     S1,S4.
+
+E. Empty, only LockCounter can be set, other members are null.
+   Scope info cannot leave this state.
+     S0,S5.
+
+*****************************************************************************
+Actions:
+A1. Unlocking by handles: when LockCounter goes to zero.
+  Pre: locked (S1,S3,S5).
+  Post: unlocked (S4,S0).
+
+  S1 (attached)    -> S4
+  S3,S5 (detached) -> S0
+
+A2. Explicit removal: when one of Remove/Reset methods is called.
+  Pre: attached, locked (S1).
+  Post: detached, locked (S3).
+
+  Perform implicit removal A3.
+
+A3. Implicit removal: when one of Remove/Reset methods is called.
+  Pre: attached (S1,S4,S2).
+  Post: detached (S3,S0).
+
+  S1 (locked) -> S3. // TSE_Handle.Reset(), unindex.
+  S4 (unlocked, indexed) -> S0.
+  S2 (unlocked, not indexed) -> ???
+
+A4. TSE unlocking: when TSE_Lock is removed from unlock queue.
+  Pre: unlocked, attached (S2,S4).
+  Post: unlocked, unindexed (S2,S0).
+
+  S2 (non-temporary) -> S2.
+  S4 (non-temporary) -> S2.
+  S4 (temporary) -> S0.
+  
+A5. Relocking: when ScopeInfo is requested again.
+  Pre: attached, unlocked (S2,S4).
+  Post: attached, locked (S1).
+  
+  S4 -> S1.
+  S2 -> S1.
+  
+A6. Removing from history.
+  Pre: 
+
+A7. Reattaching in new place.
+  Pre: detached, locked (S3).
+  Post: attached, locked (S1).
+  
+*/
+
 CScopeInfo_Base::CScopeInfo_Base(void)
     : m_TSE_ScopeInfo(0)
 {
@@ -260,8 +408,10 @@ const CScopeInfo_Base::TIndexIds* CScopeInfo_Base::GetIndexIds(void) const
 
 bool CScopeInfo_Base::x_Check(TCheckFlags zero_counter_mode) const
 {
+    return true;
+/*
     if ( IsRemoved() ) {
-        return !m_TSE_Handle && !m_ObjectInfo;
+        return !m_TSE_Handle;
     }
     if ( m_LockCounter.Get() <= 0 ) {
         if ( zero_counter_mode & fForbidZero ) {
@@ -287,6 +437,7 @@ bool CScopeInfo_Base::x_Check(TCheckFlags zero_counter_mode) const
         return m_TSE_Handle && m_ObjectInfo ||
             !m_TSE_Handle && !m_ObjectInfo;
     }
+*/
 }
 
 
@@ -294,7 +445,7 @@ void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
                                 const CObject& info)
 {
     _ASSERT(x_Check(fAllowZero|fAllowInfo));
-    _ASSERT(!IsRemoved());
+    _ASSERT(!IsDetached());
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
     _ASSERT(!m_TSE_Handle || &m_TSE_Handle.x_GetScopeInfo() == &*tse);
@@ -308,20 +459,19 @@ void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
 void CScopeInfo_Base::x_ResetLock(void)
 {
     //_ASSERT(x_Check(fForceZero|fAllowInfo));
-    _ASSERT(!IsRemoved());
+    _ASSERT(!IsDetached());
     m_ObjectInfo.Reset();
     m_TSE_Handle.Reset();
     //_ASSERT(x_Check(fForceZero|fForbidInfo));
 }
 
 
+// Action A1
 void CScopeInfo_Base::x_RemoveLastInfoLock(void)
 {
-    if ( m_TSE_ScopeInfo ) {
-        m_TSE_ScopeInfo->RemoveLastInfoLock(*this);
-    }
-    else {
-        _ASSERT(!m_TSE_Handle && !m_ObjectInfo);
+    CTSE_ScopeInfo* tse = m_TSE_ScopeInfo;
+    if ( tse ) {
+        tse->RemoveLastInfoLock(*this);
     }
 }
 
@@ -330,7 +480,7 @@ void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
 {
     _ASSERT(tse);
     _ASSERT(!m_TSE_ScopeInfo);
-    _ASSERT(IsRemoved());
+    _ASSERT(IsDetached());
     _ASSERT(x_Check(fAllowZero|fForbidInfo));
     m_TSE_ScopeInfo = tse;
     _ASSERT(x_Check(fAllowZero|fForbidInfo));
@@ -340,10 +490,10 @@ void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
 void CScopeInfo_Base::x_DetachTSE(CTSE_ScopeInfo* tse)
 {
     _ASSERT(tse);
-    _ASSERT(!IsRemoved());
+    _ASSERT(!IsDetached());
     _ASSERT(m_TSE_ScopeInfo == tse);
     //_ASSERT(x_Check(fForceZero|fForbidInfo));
-    _ASSERT(!m_ObjectInfo && !m_TSE_Handle);
+    _ASSERT(!m_TSE_Handle);
     m_TSE_ScopeInfo = 0;
     //_ASSERT(x_Check(fForceZero|fForbidInfo));
 }
@@ -352,7 +502,7 @@ void CScopeInfo_Base::x_DetachTSE(CTSE_ScopeInfo* tse)
 void CScopeInfo_Base::x_ForgetTSE(CTSE_ScopeInfo* tse)
 {
     _ASSERT(tse);
-    _ASSERT(!IsRemoved());
+    _ASSERT(!IsDetached());
     _ASSERT(m_TSE_ScopeInfo == tse);
     _ASSERT(x_Check(fAllowZero));
     m_ObjectInfo.Reset();

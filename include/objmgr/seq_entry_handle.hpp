@@ -81,6 +81,10 @@ public:
         {
             return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
         }
+    TObjectInfo& GetNCObjectInfo(void)
+        {
+            return const_cast<TObjectInfo&>(GetObjectInfo());
+        }
 };
 
 
@@ -157,7 +161,9 @@ public:
 
     // Utility methods/operators
 
-    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
+    DECLARE_OPERATOR_BOOL(m_Info.IsValid());
+
+    bool IsRemoved(void) const;
 
 
     // Get CTSE_Handle of containing TSE
@@ -267,8 +273,14 @@ public:
     /// from the argument seqset.
     /// Returns new Bioseq-set handle which could be different 
     /// from the argument is the argument is from another scope.
-    /// Argument seqset will be reset.
     TSet TakeSet(const TSet& seqset) const;
+
+    /// Make the empty Seq-entry be in set state with Bioseq-set object
+    /// from the argument seqset.
+    /// The seqset argument must point to removed Bioseq-set.
+    /// Returns new Bioseq-set handle which could be different 
+    /// from the argument is the argument is from another scope.
+    TSet SelectSet(const TSet& seqset) const;
 
     /// Make the empty Seq-entry be in seq state with specified Bioseq object.
     /// Returns new Bioseq handle.
@@ -280,10 +292,16 @@ public:
 
     /// Make the empty Seq-entry be in seq state with moving bioseq object
     /// from the argument seq.
-    /// Returns new Bioseq handle which could be different from the argument
+    /// Returns Bioseq handle which could be different from the argument
     /// is the argument is from another scope.
-    /// Argument seq will be reset.
     TSeq TakeSeq(const TSeq& seq) const;
+
+    /// Make the empty Seq-entry be in seq state with Bioseq object
+    /// from the argument seqset.
+    /// The seq argument must point to removed Bioseq.
+    /// Returns Bioseq handle which could be different 
+    /// from the argument is the argument is from another scope.
+    TSeq SelectSeq(const TSeq& seq) const;
 
     /// Convert the entry from Bioseq to Bioseq-set.
     /// Old Bioseq will become the only entry of new Bioseq-set.
@@ -338,7 +356,6 @@ public:
     ///
     /// @param annot
     ///  An annotation pointed by this handle will be removed and attached.
-    ///  Argument annot will be reset.
     ///
     /// @return
     ///  Edit handle to the attached annotation
@@ -348,6 +365,20 @@ public:
     ///  CopyAnnot()
     ///  TakeAllAnnots()
     CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
+
+    /// Attach an annotation
+    ///
+    /// @param annot
+    ///  Reference to this annotation will be attached,
+    ///  the annot must be removed.
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  CopyAnnot()
+    ///  TakeAnnot()
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot_EditHandle& annot) const;
 
     /// Remove all the annotation from seq-entry and attach to current one
     ///
@@ -398,7 +429,6 @@ public:
     ///
     /// @param seq
     ///  bioseq pointed by this handle will be removed and attached
-    ///  Argument seq will be reset.
     /// @param index
     ///  Start index is 0 and -1 means end
     ///
@@ -449,7 +479,6 @@ public:
     ///
     /// @param entry
     ///  seq-entry pointed by this handle will be removed and attached
-    ///  Argument entry will be reset.
     /// @param index
     ///  Start index is 0 and -1 means end
     ///
@@ -462,6 +491,23 @@ public:
     ///  CopyEntry()
     CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
                                     int index = -1) const;
+
+    /// Add removed seq-entry
+    ///
+    /// @param entry
+    ///  seq-entry pointed by this handle will be removed and attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  AttachEntry()
+    ///  CopyEntry()
+    CSeq_entry_EditHandle AttachEntry(const CSeq_entry_EditHandle& entry,
+                                      int index = -1) const;
 
     /// Remove this Seq-entry from parent,
     /// or scope if it's top level Seq-entry.
@@ -519,6 +565,13 @@ inline
 const CSeq_entry_ScopeInfo& CSeq_entry_Handle::x_GetScopeInfo(void) const
 {
     return *m_Info;
+}
+
+
+inline
+bool CSeq_entry_Handle::IsRemoved(void) const
+{
+    return m_Info.IsRemoved();
 }
 
 
@@ -599,6 +652,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.20  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

@@ -87,6 +87,10 @@ public:
         {
             return reinterpret_cast<const TObjectInfo&>(GetObjectInfo_Base());
         }
+    TObjectInfo& GetNCObjectInfo(void)
+        {
+            return const_cast<TObjectInfo&>(GetObjectInfo());
+        }
 };
 
 
@@ -170,7 +174,9 @@ public:
     ///
     /// @sa
     ///    operator !()
-    DECLARE_OPERATOR_BOOL(m_Info && m_Info.GetPointerOrNull()->IsValid());
+    DECLARE_OPERATOR_BOOL(m_Info.IsValid());
+
+    bool IsRemoved(void) const;
         
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
@@ -211,18 +217,22 @@ protected:
     friend class CAnnotTypes_CI;
 
     typedef CBioseq_set_ScopeInfo TScopeInfo;
+    typedef CScopeInfo_Ref<TScopeInfo> TLock;
     CBioseq_set_Handle(const CBioseq_set_Info& info, const CTSE_Handle& tse);
+    CBioseq_set_Handle(const TLock& lock);
+
+    CScope_Impl& x_GetScopeImpl(void) const;
+
+    TLock m_Info;
 
     typedef int TComplexityTable[20];
     static const TComplexityTable& sx_GetComplexityTable(void);
 
     static TComplexityTable sm_ComplexityTable;
 
-    CScopeInfo_Ref<TScopeInfo>  m_Info;
-
 public: // non-public section
 
-    CScope_Impl& x_GetScopeImpl(void) const;
+    const TScopeInfo& x_GetScopeInfo(void) const;
     const CBioseq_set_Info& x_GetInfo(void) const;
 };
 
@@ -272,7 +282,7 @@ public:
     /// Create new empty seq-entry
     ///
     /// @param index
-    ///  Start index is 0 and -1 means end
+    ///  Start index is 0, and -1 means end
     /// 
     /// @return 
     ///  Edit handle to the new seq-entry
@@ -421,6 +431,24 @@ public:
     CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
                                     int index = -1) const;
 
+    /// Attach seq-entry previously removed from another place.
+    ///
+    /// @param entry
+    ///  Edit handle to seq-entry to be attached
+    ///  Must be removed.
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  CopyEntry()
+    ///  TakeEntry()
+    CSeq_entry_EditHandle AttachEntry(const CSeq_entry_EditHandle& entry,
+                                      int index = -1) const;
+
     /// Remove current seqset-entry from its location
     void Remove(void) const;
 
@@ -434,6 +462,7 @@ protected:
                            const CTSE_Handle& tse);
 
 public: // non-public section
+    TScopeInfo& x_GetScopeInfo(void) const;
     CBioseq_set_Info& x_GetInfo(void) const;
 };
 
@@ -467,6 +496,20 @@ inline
 CScope_Impl& CBioseq_set_Handle::x_GetScopeImpl(void) const
 {
     return GetTSE_Handle().x_GetScopeImpl();
+}
+
+
+inline
+const CBioseq_set_ScopeInfo& CBioseq_set_Handle::x_GetScopeInfo(void) const
+{
+    return *m_Info;
+}
+
+
+inline
+bool CBioseq_set_Handle::IsRemoved(void) const
+{
+    return m_Info.IsRemoved();
 }
 
 
@@ -517,6 +560,12 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(CBioseq_set_Info& info,
 }
 
 
+inline
+CBioseq_set_ScopeInfo& CBioseq_set_EditHandle::x_GetScopeInfo(void) const
+{
+    return m_Info.GetNCObject();
+}
+
 /* @} */
 
 
@@ -526,6 +575,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/07/14 17:04:14  vasilche
+* Fixed detaching from data loader.
+* Implemented 'Removed' handles.
+* Use 'Removed' handles when transferring object from one place to another.
+* Fixed MT locking when removing/unlocking handles, clearing scope's history.
+*
 * Revision 1.19  2005/06/30 19:38:15  vasilche
 * Renamed to match CBioseq_Handle, and implemented methods modifying descr.
 *
