@@ -121,6 +121,11 @@ public:
     //  in setting up m_id2Tax:  this is assumed to be the same index used in building clusters.
     CTaxNRCriteria(const vector< int >& priorityTaxIds, const vector< int >& taxIdsToBeClustered);
 
+    //  Use an existing set of priority tax nodes.
+    //  The vector index of taxIdsToBeClustered is used as the 'id' associated w/ its entries
+    //  in setting up m_id2Tax:  this is assumed to be the same index used in building clusters.
+    CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered);
+
     //  Pass in the item id <--> tax id mapping and the set of priority tax nodes.
     //  The key in 'id2TaxidMap' is the index used when making clusters.
     //  NOTE:  Ownership is taken of 'priorityTaxNodes'.
@@ -173,6 +178,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/14 14:50:25  lanczyck
+* add new ctor
+*
 * Revision 1.1  2005/07/07 17:31:25  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *

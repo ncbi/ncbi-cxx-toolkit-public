@@ -122,6 +122,15 @@ CTaxNRCriteria::CTaxNRCriteria(const vector< int >& priorityTaxIds, const vector
     }
 }
 
+CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered) {
+    InitializeCriteria();
+    m_priorityTaxNodes = priorityTaxNodes;
+
+    for (CBaseClusterer::TId i = 0; i < taxIdsToBeClustered.size(); ++i) {
+        m_id2Tax.insert(TId2TaxidMap::value_type(i, taxIdsToBeClustered[i]));
+    }
+}
+
 CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const TId2TaxidMap& id2TaxidMap) {
     InitializeCriteria();
     m_priorityTaxNodes = priorityTaxNodes;
@@ -227,6 +236,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/14 14:51:34  lanczyck
+* add new ctor
+*
 * Revision 1.2  2005/07/13 19:46:32  lanczyck
 * minor mods to remove compiler warnings
 *
