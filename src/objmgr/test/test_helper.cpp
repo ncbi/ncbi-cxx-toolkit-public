@@ -867,8 +867,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
     if ( !handle ) {
-        LOG_POST("No seq-id found");
-        return;
+        THROW1_TRACE(runtime_error,
+                     "No seq-id found: "+id.AsFastaString());
     }
     handle.GetTopLevelEntry();
 #if 0 // build order issues
@@ -1399,6 +1399,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         CSeq_entry_EditHandle eeh = eh.GetEditHandle();
         eeh.Remove();
         _ASSERT(!eeh);
+        _ASSERT(eeh.IsRemoved());
         _ASSERT(!handle);
         handle = scope.GetBioseqHandle(id);
         if ( trace && pent ) {
@@ -1411,7 +1412,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             _ASSERT(tseh);
             // Non-TSE
             _ASSERT(tseh.CanBeEdited() == (peh == peh.GetEditHandle()));
-            peh.GetEditHandle().AttachEntry(const_cast<CSeq_entry&>(*ent));
+            peh.GetEditHandle().AttachEntry(eeh);
+            //peh.GetEditHandle().AttachEntry(const_cast<CSeq_entry&>(*ent));
         }
         else {
             _ASSERT(!peh);
@@ -1472,6 +1474,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/07/14 16:54:12  vasilche
+* Check insertion of removed handle.
+*
 * Revision 1.64  2005/06/29 16:09:31  vasilche
 * Added test for CFeat_CI over CBioseq_Handle without explicit Seq-id.
 *
