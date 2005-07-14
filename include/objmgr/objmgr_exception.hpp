@@ -58,6 +58,7 @@ public:
         eAddDataError,    ///< Error while adding new data
         eModifyDataError, ///< Error while modifying data
         eInvalidHandle,   ///< Attempt to use an invalid handle
+        eLockedData,      ///< Attempt to remove locked data
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -227,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/07/14 16:58:26  vasilche
+* Added CObjMgrException::eLockedData.
+*
 * Revision 1.13  2005/01/26 16:25:21  grichenk
 * Added state flags to CBioseq_Handle.
 *
