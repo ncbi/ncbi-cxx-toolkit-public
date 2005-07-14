@@ -472,7 +472,7 @@ public:
 
     // The default implementation just dumps all rows.
     // To get the data you will need to override this method.
-    virtual void ProcessResult(I_Result& res);
+    virtual void ProcessResult(CDB_Result& res);
 
 private:
     // Prohibit default- and copy- constructors, and assignment
@@ -494,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/07/14 19:11:12  ssikorsk
+ * Rolled back previous change because it affected other code
+ *
  * Revision 1.13  2005/07/07 15:41:20  ssikorsk
  * Replaced ProcessResult(CDB_Result& res) with ProcessResult(I_Result& res)
  *
