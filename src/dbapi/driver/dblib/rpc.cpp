@@ -81,6 +81,7 @@ bool CDBL_RPCCmd::Send()
     } else {
 #if 1 && defined(FTDS_IN_USE)
         if (m_Res) {
+        /*
             if(m_Connect->m_ResProc) {
                 m_Connect->m_ResProc->ProcessResult(*m_Res);
             }
@@ -88,8 +89,9 @@ bool CDBL_RPCCmd::Send()
                 while(m_Res->Fetch())
                     continue;
             }
-//             while (m_Res->Fetch())
-//                 continue;
+        */
+            while (m_Res->Fetch())
+                continue;
         }
 #endif
     }
@@ -129,6 +131,7 @@ bool CDBL_RPCCmd::Cancel()
     if (m_WasSent) {
         if (m_Res) {
 #if 1 && defined(FTDS_IN_USE)
+            /*
             if(m_Connect->m_ResProc) {
                 m_Connect->m_ResProc->ProcessResult(*m_Res);
             }
@@ -136,8 +139,9 @@ bool CDBL_RPCCmd::Cancel()
                 while(m_Res->Fetch())
                     continue;
             }
-//             while (m_Res->Fetch())
-//                 continue;
+            */
+            while (m_Res->Fetch())
+                continue;
 #endif
 
             delete m_Res;
@@ -166,6 +170,7 @@ CDB_Result* CDBL_RPCCmd::Result()
 
 #ifdef FTDS_IN_USE
         // This Fetch is required by FreeTDS v063
+        /*
         if(m_Connect->m_ResProc) {
             m_Connect->m_ResProc->ProcessResult(*m_Res);
         }
@@ -173,8 +178,9 @@ CDB_Result* CDBL_RPCCmd::Result()
             while(m_Res->Fetch())
                 continue;
         }
-//         while (m_Res->Fetch())
-//             continue;
+        */
+        while (m_Res->Fetch())
+            continue;
 #endif
 
         delete m_Res;
@@ -455,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/07/14 19:12:36  ssikorsk
+ * Eliminated usage of ProcessResult
+ *
  * Revision 1.15  2005/07/07 19:12:55  ssikorsk
  * Improved to support a ftds driver
  *
