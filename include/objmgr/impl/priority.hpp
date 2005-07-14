@@ -61,11 +61,9 @@ public:
     CPriorityNode(void);
     explicit CPriorityNode(TLeaf& leaf);
     explicit CPriorityNode(const CPriorityTree& tree);
-    CPriorityNode(CScope_Impl& scope, CDataSource& ds);
     CPriorityNode(CScope_Impl& scope, const CPriorityNode& node);
 
     typedef int TPriority;
-    typedef CPriority_I iterator;
     typedef multimap<TPriority, CPriorityNode> TPriorityMap;
 
     // true if the node is a tree, not a leaf
@@ -82,11 +80,8 @@ public:
     // Set node type to "leaf"
     void SetLeaf(TLeaf& leaf);
 
-    //bool Insert(const CPriorityNode& node, TPriority priority);
-    //bool Insert(CDataSource& ds, TPriority priority);
-    bool Erase(const TLeaf& leaf);
-    bool IsEmpty(void) const;
-    bool IsSingle(void) const;
+    size_t Erase(const TLeaf& leaf);
+    bool IsEmpty(void) const; // true if node is null or empty tree
     void Clear(void);
 
 private:
@@ -106,26 +101,19 @@ public:
     ~CPriorityTree(void);
 
     typedef CPriorityNode::TPriority TPriority;
-    typedef CPriority_I iterator;
     typedef multimap<TPriority, CPriorityNode> TPriorityMap;
 
     TPriorityMap& GetTree(void);
     const TPriorityMap& GetTree(void) const;
 
-    bool Insert(const CPriorityNode& node,
-                TPriority priority);
-    bool Insert(const CPriorityTree& tree,
-                TPriority priority);
-    bool Insert(TLeaf& leaf,
-                TPriority priority);
-    bool Insert(CScope_Impl& scope,
-                CDataSource& ds,
-                TPriority priority);
+    bool Insert(const CPriorityNode& node, TPriority priority);
+    bool Insert(const CPriorityTree& tree, TPriority priority);
+    bool Insert(TLeaf& leaf, TPriority priority);
 
-    bool Erase(const TLeaf& leaf);
+    size_t Erase(const TLeaf& leaf);
 
-    bool IsEmpty(void) const;
-    bool IsSingle(void) const;
+    bool IsEmpty(void) const; // true if map is empty
+    bool HasSeveralNodes(void); // true if tree has more than one node
     void Clear(void);
 
 private:
@@ -187,14 +175,6 @@ bool CPriorityTree::IsEmpty(void) const
 }
 
 
-inline
-bool CPriorityTree::IsSingle(void) const
-{
-    return !IsEmpty()  &&
-        m_Map.size() == 1  &&  m_Map.begin()->second.IsSingle();
-}
-
-
 // CPriorityNode inline methods
 
 inline
@@ -244,13 +224,6 @@ bool CPriorityNode::IsEmpty(void) const
 }
 
 
-inline
-bool CPriorityNode::IsSingle(void) const
-{
-    return !IsEmpty()  &&  (IsLeaf()  ||  m_SubTree->IsSingle());
-}
-
-
 // CPriority_I inline methods
 
 inline
@@ -275,6 +248,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/07/14 16:51:14  vasilche
+* Removed obsolete methods.
+* Erase() removes all occurances of leaf in tree.
+* Added Clear().
+*
 * Revision 1.19  2005/06/22 14:12:08  vasilche
 * Allow adding nodes at specific place.
 *

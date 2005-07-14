@@ -55,23 +55,20 @@ CPriorityTree::~CPriorityTree(void)
 CPriorityTree::CPriorityTree(CScope_Impl& scope, const CPriorityTree& tree)
 {
     ITERATE ( TPriorityMap, it, tree.m_Map ) {
-        m_Map.insert(TPriorityMap::value_type(it->first,
-                                              CPriorityNode(scope,
-                                                            it->second)));
+        m_Map.insert(TPriorityMap::value_type(
+                         it->first, CPriorityNode(scope, it->second)));
     }
 }
 
 
-bool CPriorityTree::Insert(const CPriorityNode& node,
-                           TPriority priority)
+bool CPriorityTree::Insert(const CPriorityNode& node, TPriority priority)
 {
     m_Map.insert(TPriorityMap::value_type(priority, node));
     return true;
 }
 
 
-bool CPriorityTree::Insert(const CPriorityTree& tree,
-                           TPriority priority)
+bool CPriorityTree::Insert(const CPriorityTree& tree, TPriority priority)
 {
     return Insert(CPriorityNode(tree), priority);
 }
@@ -91,38 +88,32 @@ bool CPriorityTree::Insert(TLeaf& leaf,
 }
 
 
-bool CPriorityTree::Insert(CScope_Impl& scope,
-                           CDataSource& ds,
-                           TPriority priority)
+size_t CPriorityTree::Erase(const TLeaf& leaf)
 {
-    for ( TPriorityMap::iterator it = m_Map.lower_bound(priority);
-          it != m_Map.end() && it->first == priority; ++it ) {
-        if ( it->second.IsLeaf() &&
-             &it->second.GetLeaf().GetDataSource() == &ds ) {
-            return false;
+    size_t count = 0;
+    for ( TPriorityMap::iterator mit(m_Map.begin()); mit != m_Map.end(); ) {
+        count += mit->second.Erase(leaf);
+        if ( mit->second.IsEmpty() ) {
+            m_Map.erase(mit++);
+        }
+        else {
+            ++mit;
         }
     }
-    return Insert(CPriorityNode(scope, ds), priority);
-}
-
-
-bool CPriorityTree::Erase(const TLeaf& leaf)
-{
-    NON_CONST_ITERATE ( TPriorityMap, mit, m_Map ) {
-        if ( mit->second.Erase(leaf) ) {
-            if ( mit->second.IsEmpty() ) {
-                m_Map.erase(mit);
-            }
-            return true;
-        }
-    }
-    return false;
+    return count;
 }
 
 
 void CPriorityTree::Clear(void)
 {
     m_Map.clear();
+}
+
+
+bool CPriorityTree::HasSeveralNodes(void)
+{
+    CPriority_I iter(*this);
+    return iter && ++iter;
 }
 
 
@@ -140,12 +131,6 @@ CPriorityNode::CPriorityNode(TLeaf& leaf)
 }
 
 
-CPriorityNode::CPriorityNode(CScope_Impl& scope, CDataSource& ds)
-    : m_Leaf(scope.x_GetDSInfo(ds))
-{
-}
-
-
 CPriorityNode::CPriorityNode(const CPriorityTree& tree)
     : m_SubTree(new CPriorityTree(tree))
 {
@@ -158,9 +143,21 @@ CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
         m_SubTree = new CPriorityTree(scope, node.GetTree());
     }
     else if ( node.IsLeaf() ) {
-        CDataSource& ds =
-            const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
-        m_Leaf = scope.x_GetDSInfo(ds);
+        if ( node.GetLeaf().IsShared() ) {
+            CDataSource& ds =
+                const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
+            m_Leaf = scope.x_GetDSInfo(ds);
+        }
+        else {
+            CRef<CDataSource> ds(new CDataSource);
+            const CTSE_LockSet& blobs =
+                node.GetLeaf().GetDataSource().GetStaticBlobs();
+            ITERATE ( CTSE_LockSet, it, blobs ) {
+                CRef<CTSE_Info> new_tse(new CTSE_Info(it->second));
+                ds->AddStaticTSE(new_tse);
+            }
+            m_Leaf = scope.x_GetDSInfo(*ds);
+        }
     }
 }
 
@@ -181,16 +178,16 @@ void CPriorityNode::SetLeaf(TLeaf& leaf)
 }
 
 
-bool CPriorityNode::Erase(const TLeaf& leaf)
+size_t CPriorityNode::Erase(const TLeaf& leaf)
 {
     if ( IsTree() ) {
         return GetTree().Erase(leaf);
     }
     else if (m_Leaf == &leaf) {
         m_Leaf.Reset();
-        return true;
+        return 1;
     }
-    return false;
+    return 0;
 }
 
 
@@ -281,6 +278,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/07/14 16:51:15  vasilche
+* Removed obsolete methods.
+* Erase() removes all occurances of leaf in tree.
+* Added Clear().
+*
 * Revision 1.9  2005/06/22 14:12:08  vasilche
 * Allow adding nodes at specific place.
 *
