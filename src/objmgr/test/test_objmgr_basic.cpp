@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/07/14 16:55:35  vasilche
+* Check unlocking of handles.
+*
 * Revision 1.26  2004/08/06 21:16:50  grichenk
 * Fixed problem with MIPS.
 *
@@ -288,10 +291,11 @@ NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
             // add entry to all scopes
             pScope1->AddTopLevelSeqEntry( *pEntry);
             scope2.AddTopLevelSeqEntry( *pEntry);
-            pScope3->AddTopLevelSeqEntry( *pEntry);
+            CSeq_entry_Handle eh = pScope3->AddTopLevelSeqEntry( *pEntry);
 
             pScope1.Reset();
             pScope3.Reset();
+            eh.Reset();
             //delete pScope3; // data source and seq_entry alive
         }
         // scopes deleted, seq_entry and data source deleted
