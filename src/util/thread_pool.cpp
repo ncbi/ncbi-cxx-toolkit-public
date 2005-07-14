@@ -45,9 +45,10 @@ protected:
 
 void CStdPoolOfThreads::KillAllThreads(bool wait)
 {
-    TACValue n;
+    TACValue n, old_max;
     {{
         CMutexGuard guard(m_Mutex);
+        old_max = m_MaxThreads;
         m_MaxThreads = 0;  // Forbid spawning new threads
         n = m_ThreadCount.Get(); // Capture for use without mutex
     }}
@@ -71,23 +72,31 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
         }
     }
     m_Threads.clear();
+    {{
+        CMutexGuard guard(m_Mutex);
+        m_MaxThreads = old_max;
+    }}
 }
 
 
 void CStdPoolOfThreads::Register(TThread& thread)
 {
     CMutexGuard guard(m_Mutex);
-    m_Threads.push_back(CRef<TThread>(&thread));
+    if (m_MaxThreads > 0) {
+        m_Threads.push_back(CRef<TThread>(&thread));
+    }
 }
 
 void CStdPoolOfThreads::UnRegister(TThread& thread)
 {
     CMutexGuard guard(m_Mutex);
-    TThreads::iterator it = find(m_Threads.begin(), m_Threads.end(),
-                                 CRef<TThread>(&thread));
-    if (it !=  m_Threads.end()) {
-        (*it)->Detach();
-        m_Threads.erase( it );
+    if (m_MaxThreads > 0) {
+        TThreads::iterator it = find(m_Threads.begin(), m_Threads.end(),
+                                     CRef<TThread>(&thread));
+        if (it != m_Threads.end()) {
+            (*it)->Detach();
+            m_Threads.erase(it);
+        }
     }
 }
 
@@ -104,6 +113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/07/14 18:52:48  ucko
+* Don't attempt to (un)register threads while KillAllThreads is running.
+*
 * Revision 1.8  2005/04/07 13:13:26  didenko
 * + destructor to CStdPoolOfThreads call
 *
