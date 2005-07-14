@@ -32,6 +32,7 @@
 #include <serial/objostrasn.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -46,13 +47,16 @@ int main()
     for(int k = 0; k < 10; ++k) {
         cout << "K: " << k << endl;
 
-        CPubseqReader reader;
+        CRef<CReadDispatcher> dispatcher(new CReadDispatcher);
+        CRef<CReader> reader(new CPubseqReader);
+        dispatcher->InsertReader(0, reader);
+
         int gi = 156895+k-1;
 
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CStandaloneRequestResult request(seq_id);
         CLoadLockBlob_ids ids(request, seq_id);
-        reader.CId1ReaderBase::LoadSeq_idSeq_ids(request, seq_id);
+        dispatcher->LoadSeq_idSeq_ids(request, seq_id);
         ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
             const CBlob_id& blob_id = i->first;
             cout << "gi: " << gi <<
@@ -60,7 +64,7 @@ int main()
                 " SatKey=" << blob_id.GetSatKey() << endl;
       
             CLoadLockBlob blob(request, blob_id);
-            reader.LoadBlob(request, blob_id);
+            dispatcher->LoadBlob(request, blob_id);
             if ( !blob.IsLoaded() ) {
                 cout << "blob is not available\n";
                 continue;
@@ -73,6 +77,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.11  2005/07/14 17:05:47  vasilche
+* Fixed for dispatcher.
+*
 * Revision 1.10  2005/03/14 18:17:15  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to
