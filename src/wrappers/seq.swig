@@ -30,6 +30,10 @@
  */
 
 
+// Returned by CGenetic_code_Base::Get/Set
+LIST_CREF(list_CRef_CGenetic_code_Base_C_E,
+          ncbi::objects::CGenetic_code_Base::C_E);
+
 %%
 
 objects/seq/Align_def.hpp
@@ -594,6 +598,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/15 15:27:29  jcherry
+ * Added list<CRef<CGenetic_code_Base::C_E> >
+ *
  * Revision 1.2  2005/05/26 15:22:00  jcherry
  * Added objects/blast/Blast4_get_queries_*.hpp
  *
