@@ -554,7 +554,7 @@ void CGFFFormatter::x_AddFeature
                         + NStr::UIntToString(to + 1) + '\t'
                         + score + '\t'
                         + strand + '\t'
-                        + (frame >= 0 ? char(frame + '0') : '.') + "\t"
+                        + (frame >= 0   &&  frame < 3 ? "021"[frame] : '.') + "\t"
                         + attrs + extra_attrs);
         }
 
@@ -573,6 +573,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/07/15 18:33:39  dicuccio
+* Dump correct frame for GFF files
+*
 * Revision 1.16  2005/02/18 15:09:07  shomrat
 * CSeq_loc interface changes
 *
