@@ -167,8 +167,31 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
         
         m_Atlas.Lock(locked);
         
-        Uint4 begin_data(m_TaxData[new_index  ].GetOffset());
-        Uint4 end_data  (m_TaxData[new_index+1].GetOffset());
+        Uint4 begin_data(m_TaxData[new_index].GetOffset());
+        Uint4 end_data(0);
+        
+        if (new_index == high_index) {
+            // Last index is special...
+            CSeqDBAtlas::TIndx fsize(0);
+            
+            if (! m_Atlas.GetFileSizeL(m_DataFN, fsize)) {
+                // Should not happen.
+                NCBI_THROW(CSeqDBException,
+                           eFileErr,
+                           "Error: Cannot get tax database file length.");
+            }
+            
+            end_data = Uint4(fsize);
+            
+            if (end_data < begin_data) {
+                // Should not happen.
+                NCBI_THROW(CSeqDBException,
+                           eFileErr,
+                           "Error: Offset error at end of taxdb file.");
+            }
+        } else {
+            end_data = (m_TaxData[new_index+1].GetOffset());
+        }
         
         if (! m_Lease.Contains(begin_data, end_data)) {
             m_Atlas.GetRegion(m_Lease, m_DataFN, begin_data, end_data);
