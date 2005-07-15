@@ -831,8 +831,8 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                 }
             }
             else {
-                TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
                 UpdateAnnotIndex();
+                TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
                 ITERATE ( TSeq_idSet, id_it, ids ) {
                     TSeq_id2TSE_Set::const_iterator annot_it =
                         m_TSE_orphan_annot.find(*id_it);
