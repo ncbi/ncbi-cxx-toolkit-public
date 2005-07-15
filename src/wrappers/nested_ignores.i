@@ -29,6 +29,8 @@
  *
  */
 
+%ignore *::CTSE_Info_SIdAnnotInfo;  // in objmgr/impl
+
 %ignore ncbi::CCompartmentFinder_CCompartment::SetMembers;
 
 %ignore ncbi::objects::CSeqVector_CI_CTempValue;
@@ -98,6 +100,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/15 15:25:02  jcherry
+ * %ignore CTSE_Info::SIdAnnotInfo
+ *
  * Revision 1.2  2005/07/08 16:31:50  jcherry
  * %ignore ncbi::CCompartmentFinder_CCompartment::SetMembers
  *
