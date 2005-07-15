@@ -47,6 +47,8 @@
 %ignore ncbi::objects::CSeq_annot_EditHandle::x_GetScopeInfo;
 %ignore *::CSeq_annot_CI::x_GetScopeInfo;
 %ignore *::CAnnot_CI::x_GetScopeInfo;
+%ignore ncbi::objects::CBioseq_set_Handle::x_GetScopeInfo;
+%ignore ncbi::objects::CBioseq_set_EditHandle::x_GetScopeInfo;
 
 // Declared as friend; we don't want to wrap it,
 // plus SWIG tries to wrap it for CRefs too
@@ -217,6 +219,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/15 15:26:00  jcherry
+ * %ignore some x_* methods whose return types are non-public typedefs
+ *
  * Revision 1.2  2005/06/27 17:02:42  jcherry
  * Various new %ignore's
  *
