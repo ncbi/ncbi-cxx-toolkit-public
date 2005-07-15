@@ -60,7 +60,7 @@ public:
      ** interval; A.second is the offset of the end of the interval.
      **
      **/
-    typedef pair< string::size_type, string::size_type > TMaskedInterval;
+    typedef pair< TSeqPos, TSeqPos > TMaskedInterval;
 
     /**
      **\brief A type representing the total of masking information 
@@ -353,6 +353,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/07/15 02:07:18  ucko
+ * Use TSeqPos rather than string::size_type in TMaskedInterval for
+ * consistency with CSeqVector et al.
+ *
  * Revision 1.6  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit
