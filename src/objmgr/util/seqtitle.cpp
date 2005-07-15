@@ -243,8 +243,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         if (genes == 1  &&  cdregions == 1  // &&  prots >= 1
             &&  source->GetOrg().IsSetTaxname()) {
             title = source->GetOrg().GetTaxname() + ' ';
-            feature::GetLabel(*cdregion, &title, feature::eContent,
+            string cds_label;
+            feature::GetLabel(*cdregion, &cds_label, feature::eContent,
                               &scope);
+            title += NStr::Replace(cds_label, "isoform ",
+                                   "transcript variant ");
             title += " (";
             feature::GetLabel(*gene, &title, feature::eContent,
                               &scope);
@@ -865,6 +868,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2005/07/15 18:17:08  ucko
+* Substitute "transcript variant" for "isoform" when describing RefSeq
+* mRNA records, per a recent change to the C Toolkit.
+*
 * Revision 1.50  2005/06/03 16:57:46  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
