@@ -86,7 +86,7 @@ int main(int argc, const char* argv[])
         assert(n == strlen(obuf));
     } else {
         for (n = 0; n < 10; n++) {
-            int m;
+            size_t m;
             for (m = 0; m < sizeof(obuf) - 2; m++)
                 obuf[m] = "01234567890\n"[rand() % 12];
             obuf[m++] = '\n';
@@ -167,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2005/07/15 21:16:03  lavr
+ * Fix int<->size_t mismatch bug causing 64-bit builds to check lamely
+ *
  * Revision 6.33  2005/07/11 18:25:36  lavr
  * Spell ADDEND; better testing w/o ugly hardcoded pattern
  *
