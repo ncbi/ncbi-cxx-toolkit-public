@@ -86,7 +86,8 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     
-    virtual void DropTSE(const CTSE_Info& tse_info);
+    bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
+    string BlobIdToString(const TBlobId& id) const;
 
     void SetDatabase(CLDS_Database& lds_db,
                      const string&  dl_name);
@@ -110,7 +111,6 @@ private:
                     const string& db_path);
 
     CLDS_Database*      m_LDS_db;        // Reference on the LDS database 
-    CLDS_Set            m_LoadedObjects; // Set of already loaded objects
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
 };
 
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/15 19:52:25  vasilche
+ * Use blob_id map from CDataSource.
+ *
  * Revision 1.16  2004/08/10 16:56:10  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

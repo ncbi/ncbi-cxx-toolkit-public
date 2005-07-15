@@ -41,6 +41,7 @@
 #include <objtools/lds/lds.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager.hpp>
@@ -319,18 +320,8 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
     CLDS_FindSeqIdFunc::TDisposition::const_iterator it;
     for (it = disposition.begin(); it != disposition.end(); ++it) {
         const SLDS_ObjectDisposition& obj_disp = *it;
-
-        if (LDS_SetTest(m_LoadedObjects, obj_disp.object_id) ||
-            LDS_SetTest(m_LoadedObjects, obj_disp.parent_id) ||
-            LDS_SetTest(m_LoadedObjects, obj_disp.tse_id)
-           ) {
-            // Object or its parent has already been loaded. Ignore.
-            continue;
-        }
-
         int object_id = 
             obj_disp.tse_id ? obj_disp.tse_id : obj_disp.object_id;
-
 
         // check if we can extract seq-entry out of binary bioseq-set file
         //
@@ -353,35 +344,37 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             }
         }
 
-
-        CRef<CSeq_entry> seq_entry = 
-            LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
-                        object_id, false/*dont trace to top*/);
-
-        if (seq_entry) {
-            CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
-            CRef<CTSE_Info> tse_info(new CTSE_Info(*seq_entry,
-                                                   CBioseq_Handle::fState_none,
-                                                   blob_id));
-            locks.insert(data_source->AddTSE(tse_info));
-            m_LoadedObjects.insert(object_id);
+        CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
+        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
+        if ( !load_lock.IsLoaded() ) {
+            CRef<CSeq_entry> seq_entry = 
+                LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
+                            object_id, false/*dont trace to top*/);
+            if ( !seq_entry ) {
+                NCBI_THROW2(CBlobStateException, eBlobStateError,
+                            "cannot load blob",
+                            CBioseq_Handle::fState_no_data);
+            }
+            load_lock->SetSeq_entry(*seq_entry);
+            load_lock.SetLoaded();
         }
+        locks.insert(load_lock);
     }
     return locks;
 }
 
-void CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
+bool CLDS_DataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 {
-    const CConstRef<CObject>& cobj_ref = tse_info.GetBlobId();
-    const CObject* obj_ptr = cobj_ref.GetPointerOrNull();
-    _ASSERT(obj_ptr);
+    const CLDS_BlobId& bid1 = dynamic_cast<const CLDS_BlobId&>(*id1);
+    const CLDS_BlobId& bid2 = dynamic_cast<const CLDS_BlobId&>(*id2);
+    return bid1.GetRecId() < bid2.GetRecId();
+}
 
-    const CLDS_BlobId* blob_id = 
-        dynamic_cast<const CLDS_BlobId*>(obj_ptr);
-    _ASSERT(blob_id);
-    
-    int object_id = blob_id->GetRecId();
-    m_LoadedObjects.erase(object_id);
+
+string CLDS_DataLoader::BlobIdToString(const TBlobId& id) const
+{
+    const CLDS_BlobId& bid = dynamic_cast<const CLDS_BlobId&>(*id);
+    return NStr::IntToString(bid.GetRecId());
 }
 
 
@@ -478,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/07/15 19:52:25  vasilche
+ * Use blob_id map from CDataSource.
+ *
  * Revision 1.28  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *
