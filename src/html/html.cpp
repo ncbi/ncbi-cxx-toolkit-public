@@ -911,13 +911,15 @@ CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
     if ( mode == ePlainText ) {
-        INIT_STREAM_WRITE;
-        out << CHTMLHelper::GetNL();
-        if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
-            out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
-                << CHTMLHelper::GetNL();
+        if ( m_Parent ) {
+            INIT_STREAM_WRITE;
+            out << CHTMLHelper::GetNL();
+            if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
+                out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
+                    << CHTMLHelper::GetNL();
+            }
+            CHECK_STREAM_WRITE(out);
         }
-        CHECK_STREAM_WRITE(out);
     }
     return out;
 }
@@ -2428,6 +2430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.119  2005/07/18 16:51:07  ivanov
+ * CHTML_tr::PrintEnd() -- fixed using of uninitialized pointer
+ *
  * Revision 1.118  2005/05/12 11:35:42  ivanov
  * Use flag version of NStr::IntToString()
  *
