@@ -488,10 +488,15 @@ public:
         // remove duplicate dirs
         vector<string> x_path_unique;
         x_path_unique.reserve(x_path.size());
+#if defined(NCBI_OS_MSWIN)
+        NStr::ECase use_case = NStr::eNocase;
+#else
+        NStr::ECase use_case = NStr::eCase;
+#endif
         ITERATE(vector<string>, it, x_path) {
             bool found = false;
             ITERATE(vector<string>, i, x_path_unique) {
-                if (*i == *it) {
+                if ( NStr::Compare(*i, *it, use_case) == 0 ) {
                     found = true;
                     break;
                 }
@@ -548,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/07/18 10:53:33  ssikorsk
+ * Case-insensitive comparison of directory names on Windows in FindCandidates.
+ *
  * Revision 1.29  2005/05/09 14:46:08  ivanov
  * Added TFlags type and 2 new constructors.
  *
