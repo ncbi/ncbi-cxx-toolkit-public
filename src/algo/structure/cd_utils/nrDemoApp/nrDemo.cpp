@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objects/cdd/Cdd_pref_nodes.hpp>
 #include <algo/structure/cd_utils/cuTaxNRCriteria.hpp>
 #include "cuSimpleNonRedundifier.hpp"
