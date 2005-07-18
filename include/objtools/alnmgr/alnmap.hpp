@@ -250,6 +250,8 @@ public:
     private:
 #if defined(NCBI_COMPILER_MSVC) ||  defined(NCBI_COMPILER_METROWERKS) // kludge
         friend class CAlnMap;
+#elif defined(NCBI_COMPILER_WORKSHOP)  &&  NCBI_COMPILER_VERSION >= 550
+        friend class CAlnMap;        
 #else
         friend
         CRef<CAlnChunkVec> CAlnMap::GetAlnChunks(TNumrow row,
@@ -718,6 +720,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/07/18 17:49:13  ucko
+* WorkShop 5.5 needs all of CAlnMap to be friends with CAlnChunkVec.
+*
 * Revision 1.43  2005/03/15 22:18:01  todorov
 * + PrintSeqPos
 *
