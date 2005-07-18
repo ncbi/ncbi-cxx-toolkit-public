@@ -169,9 +169,10 @@ unsigned int CSimpleSLCAlgorithm::ij2Index(unsigned int i, unsigned int j, unsig
     unsigned int result = kMax_UInt;
     unsigned int ii = (i >= j) ? i : j;
     unsigned int jj = (i >= j) ? j : i;
-    if (ii < dim && jj << dim) {
+    if (ii < dim && jj < dim) {
         result = (jj*(2*dim - jj - 1))/2 + ii;
     }
+    _ASSERT(result <= dim*(dim+1)/2);
     return result;
 }
 
@@ -180,7 +181,8 @@ unsigned int CSimpleSLCAlgorithm::ij2Index(unsigned int i, unsigned int j, unsig
 void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int dim) {
 
     unsigned int i, j, k, k1, k2;
-    int imin, jmin, idmin, jdmin;
+    unsigned int imin, jmin;
+    int idmin, jdmin;
     CDistBasedClusterer::TDist ilen, jlen; 
 
     CDistBasedClusterer::TDist tmpDist1, tmpDist2, minval;
@@ -260,7 +262,7 @@ void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int di
             _ASSERT(j < m_dim && i < m_dim);
 
             if (indexMap[i] != USED_ROW && indexMap[j] != USED_ROW) {
-                if (m_dm[k] < minval) {
+                if (m_dm[k] < minval && i != j) {  //  don't want to look at the diagonals, which should be zero
                     minval = m_dm[k];
                     imin = i;
                     jmin = j;
@@ -290,12 +292,13 @@ void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int di
             }
         }
 */
+        _ASSERT(imin < m_dim && jmin < m_dim);
         idmin = indexMap[imin];
         jdmin = indexMap[jmin];
 
 //         if (idmin == USED_ROW || jdmin == USED_ROW) {
-//             cerr << "Indexing Error:  " << idmin << " or " << jdmin << " is not a valid row index "
-//                  << " for DM indices " << imin << " and " << jmin << ", respectively.\n\n";
+//             ERR_POST(ncbi::Error << "Indexing Error:  " << idmin << " or " << jdmin << " is not a valid row index "
+//                  << " for DM indices " << imin << " and " << jmin << ", respectively.\n\n");
 //             break;
 //         }
 
@@ -309,11 +312,11 @@ void CSimpleSLCAlgorithm::ComputeTree(CUTree* atree, TSlc_DM dm, unsigned int di
 /*        
 #if _DEBUG
         if (1) {
-            ofs << "\nIteration " << it << ":  min distance = " << minval << endl;
-            ofs << "Rows :    " << imin << "(node " << idmin << "; length= " << ilen
-                 << ") and " << jmin << "(node " << jdmin << "; length= " << jlen << ")." << endl;
-            ofs << " dist corrs:  " << internalDistCorrection[imin] 
-                 << " " << internalDistCorrection[jmin] << endl;
+            ERR_POST(ncbi::Trace << "\nIteration " << it << ":  min distance = " << minval << endl);
+            ERR_POST(ncbi::Trace << "Rows :    " << imin << "(node " << idmin << "; length= " << ilen
+                 << ") and " << jmin << "(node " << jdmin << "; length= " << jlen << ")." << endl);
+            ERR_POST(ncbi::Trace << " dist corrs:  " << internalDistCorrection[imin] 
+                 << " " << internalDistCorrection[jmin] << endl);
         }
 #endif
 */
@@ -366,13 +369,12 @@ void CSimpleSLCAlgorithm::Join(int idmin, int jdmin, CDistBasedClusterer::TDist 
     int maxIndex = 2*m_dim - 2;  //  tot. # nodes (less the hub)
 
     if (idmin == jdmin) {
-//        cerr << "Error:  You cannot join node " << idmin << " to itself.\n";
+        ERR_POST(ncbi::Error << "Error:  You cannot join node " << idmin << " to itself.\n");
         return;
     }
 
     if (idmin < 0 || idmin > maxIndex || jdmin < 0 || jdmin > maxIndex || m_nextNode < 0 || m_nextNode > maxIndex+1) {
-//        cerr << "Error:  Out of range index in Join:  " << idmin << " " 
-//             << jdmin << " " << m_nextNode << "  Max allowed index:  " << maxIndex << endl;
+        ERR_POST(ncbi::Error << "Error:  Out of range index in Join:  " << idmin << " " << jdmin << " " << m_nextNode << "  Max allowed index:  " << maxIndex << ncbi::Endl());
         return;
     }
  
@@ -395,7 +397,7 @@ void CSimpleSLCAlgorithm::Join(int idmin, int jdmin, CDistBasedClusterer::TDist 
                     m_tree->reparent(m_iters[m_nextNode], cit, nexit);  // don't use ++ as it modifies cit                   
                 } else {   //  this case should not occur
                     tmpi = -(idmin+jdmin);
-//                    cerr << "Error:  iterator found (id= " << cit->rowID << ") not attached to hub.\n";
+                    ERR_POST(ncbi::Error << "Error:  iterator found (id= " << cit->id << ") not attached to hub.\n");
                 }
             } else {
                 m_items[tmpi]->distance = tmpd;
@@ -407,7 +409,7 @@ void CSimpleSLCAlgorithm::Join(int idmin, int jdmin, CDistBasedClusterer::TDist 
                     cit->distance = tmpd;
                 } else {   //  this case should not occur
                     tmpi = -(idmin+jdmin);
-//                    cerr << "Error:  iterator found (id= " << cit->rowID << ") not attached to hub for last nodes.\n";
+                    ERR_POST(ncbi::Info << "Error:  iterator found (id= " << cit->id << ") not attached to hub for last nodes.\n");
                 }
             } else {
                 m_items[tmpi]->distance = tmpd;
@@ -621,9 +623,11 @@ bool CSimpleSLCAlgorithm::GetMaxPathCU(const CUTree& atree, CDistBasedClusterer:
 
     result = GetMaxPathCU(tmpRoot, rootDMax, d1, rootEnd1, d2, rootEnd2);
 
-//    std::cout << "longest two branches:\n" << *rootEnd1 << " d1= " << d1 << std::endl;
-//    std::cout << *rootEnd2 << " d2= " << d2 << std::endl;
-//    std::cout << "in GetMaxPathCU:  max distance = " << rootDMax << std::endl;
+/*
+    ERR_POST(ncbi::Trace << "longest two branches:\n" << *rootEnd1 << " d1= " << d1 << std::endl);
+    ERR_POST(ncbi::Trace << *rootEnd2 << " d2= " << d2 << std::endl);
+    ERR_POST(ncbi::Trace << "in GetMaxPathCU:  max distance = " << rootDMax << std::endl);
+*/
 
 //  find nodes in the original tree...
     it = atree.begin();
@@ -1011,6 +1015,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/18 19:09:32  lanczyck
+ * bug fixes; use ERR_POST macros for messages
+ *
  * Revision 1.2  2005/07/14 14:43:20  lanczyck
  * bug fix:  wrong loop termination expression
  *
