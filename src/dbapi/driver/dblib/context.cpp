@@ -721,6 +721,7 @@ DBAPI_RegisterDriver_MSDBLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
 
+NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
@@ -1064,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/07/18 18:11:31  ssikorsk
+ * Export DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
+ *
  * Revision 1.45  2005/07/18 17:50:21  ssikorsk
  * Export DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
  *
