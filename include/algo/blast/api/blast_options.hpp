@@ -353,7 +353,7 @@ public:
 
     /// Create a snapshot of the state of this object for internal use of its
     /// data structures (BLAST C++ APIs only)
-    CBlastOptionsMemento* CreateSnapshot() const;
+    const CBlastOptionsMemento* CreateSnapshot() const;
     
 private:
     /// Prohibit copy c-tor 
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.109  2005/07/18 19:44:35  bealer
+* - Remove accidental delta.
+*
 * Revision 1.108  2005/07/18 19:21:54  bealer
 * - Add friend declaration.
 *
