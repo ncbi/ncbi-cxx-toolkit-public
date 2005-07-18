@@ -1111,7 +1111,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
     }
 
     CT_POS_TYPE pos = m_FileStream->tellg();  // Current read position
-    if (pos == CT_POS_TYPE(-1)) {
+    if (pos == (CT_POS_TYPE)(-1)) {
         NCBI_THROW(CTarException, eRead, "Archive backspace error");
     }
     size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
@@ -1119,13 +1119,13 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
     if (pos > (CT_POS_TYPE)(gap)) {
         // NB: pos > 0 here
-        pos += CT_OFF_TYPE(m_BufferSize - 1);
+        pos += (CT_OFF_TYPE)(m_BufferSize - 1);
         rec  = pos / m_BufferSize;
         rec -= 1;
         if (m_BufferPos < gap) {
             size_t n = gap / m_BufferSize;        // Full records in the gap
             gap %= m_BufferSize;                  // Remaining gap size
-            pos -= CT_OFF_TYPE(n);                // Backup this many records
+            pos -= (CT_OFF_TYPE)(n);              // Backup this many records
             m_FileStream->seekg(rec * m_BufferSize);
             m_BufferPos = 0;
             n = kBlockSize;
@@ -1657,6 +1657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/07/18 17:58:37  lavr
+ * x_Backspace(): use bullet-proof C-style casts with CT_ macros
+ *
  * Revision 1.34  2005/07/18 17:50:14  ucko
  * x_Backspace: cast increments to CT_OFF_TYPE for compatibility with
  * WorkShop 5.5.
