@@ -1035,6 +1035,7 @@ DBAPI_RegisterDriver_DBLIB(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("dblib", DBLIB_CreateContext);
@@ -1063,6 +1064,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/07/18 17:50:21  ssikorsk
+ * Export DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
+ *
  * Revision 1.44  2005/07/18 12:50:28  ssikorsk
  * Changed patch level from 0 to 1;
  * Winsock32 cleanup;
