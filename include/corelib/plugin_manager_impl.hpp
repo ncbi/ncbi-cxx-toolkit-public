@@ -213,6 +213,7 @@ struct CHostEntryPointImpl
                         cf_info_list.begin();
                     typename list<TCFDriverInfo>::const_iterator it_end =
                         cf_info_list.end();
+
                     for (; it != it_end; ++it) {
                         info_list.push_back(TDriverInfo(it->name, it->version));
                     }
@@ -224,18 +225,23 @@ struct CHostEntryPointImpl
                     typename TDriverInfoList::iterator it1 = info_list.begin();
                     typename TDriverInfoList::iterator it1_end = info_list.end();
                     for(; it1 != it1_end; ++it1) {
-                        if (it1->factory) {    // already instantiated
-                            continue;
-                        }
+                        // We do only an exact match here.
+                        // A factory cannot be matched twice.
+                        _ASSERT( it1->factory == NULL );
+
                         typename list<TCFDriverInfo>::iterator it2 =
                             cf_info_list.begin();
                         typename list<TCFDriverInfo>::iterator it2_end =
                             cf_info_list.end();
+
                         for (; it2 != it2_end; ++it2) {
                             if (it1->name == it2->name) {
-                                if (it1->version.Match(it2->version) !=
-                                    CVersionInfo::eNonCompatible)
+                                // We do only an exact match here.
+                                if (it1->version.Match(it2->version) ==
+                                    CVersionInfo::eFullyCompatible)
                                     {
+                                        _ASSERT( it1->factory == NULL );
+
                                         TClassFactory* cg = new TClassFactory();
                                         IClassFactory<TInterface>* icf = cg;
                                         it1->factory = icf;
@@ -263,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/18 11:32:42  ssikorsk
+ * Improved NCBI_EntryPointImpl for multiple versions of same driver configuration.
+ *
  * Revision 1.16  2005/03/02 16:16:26  ssikorsk
  * Fixed GCC compilation issues
  *
