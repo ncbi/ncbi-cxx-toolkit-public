@@ -138,7 +138,7 @@ unsigned int CSimpleClusterer::MakeClusters() {
     //  so operationally we will look for branches in the tree cut at 1/2 of the true
     //  clustering threshold specified.
     TDist clusteringThreshold = m_clusteringThreshold/2.0;
-    cerr << "Clustering threshold = " << m_clusteringThreshold << endl;
+    ERR_POST(ncbi::Info << "Clustering threshold (distance units) = " << m_clusteringThreshold << ncbi::Endl());
 
     if (m_cuTree) {
         treeIt = m_cuTree->begin_post();
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/18 19:09:50  lanczyck
+* use ERR_POST macros for messages
+*
 * Revision 1.2  2005/07/14 14:43:52  lanczyck
 * use _ASSERT; minor output mods
 *
