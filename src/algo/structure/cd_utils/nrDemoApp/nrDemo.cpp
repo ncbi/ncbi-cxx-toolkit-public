@@ -99,7 +99,6 @@ int NRDemo::Run(void)
     double* dm;
 
     string path = CDir::AddTrailingPathSeparator(CDir::GetCwd());
-//    path = "E:\\Users\\lanczyck\\CDTree\\Code\\c++\\compilers\\msvc710_prj\\static\\bin\\debug\\";
     string err, outfile, priorityNodes = path + args["asn"].AsString();
 
     //  Set up output stream
@@ -140,13 +139,11 @@ int NRDemo::Run(void)
     CBaseClusterer::TId i = 0;
     CTaxNRCriteria::TId2TaxidMap id2TaxidMap;
     CNcbiIfstream taxIdStr((path + args["tax"].AsString()).c_str(), IOS_BASE::in);
-//    CNcbiIstream& taxIdStr = args["tax"].AsInputFile();
     while (taxIdStr >> taxId) {        
         id2TaxidMap.insert(CTaxNRCriteria::TId2TaxidMap::value_type(i, taxId));
         ++i;
     }
     taxIdStr.close();
-//    args["tax"].CloseFile();
 
     nTaxidsRead = i;
     if (id2TaxidMap.size() == 0) {
@@ -164,12 +161,10 @@ int NRDemo::Run(void)
     //  Read in the distance matrix; build the clusterer.  (Clusterer can be built
     //  automatically by one form of non redundifier's MakeClusters method.)
     CNcbiIfstream distStr((path + args["dm"].AsString()).c_str(), IOS_BASE::in);
-//    CNcbiIstream& distStr = args["dm"].AsInputFile();
 
     if (distStr >> dim) {
         if (nTaxidsRead > dim) {
             ERR_POST(ncbi::Info << "Distance matrix declared too small (dim = " << dim << ") for the " << nTaxidsRead << " tax ids to non-redundify.\n");
-//            args["dm"].CloseFile();
             distStr.close();
             return 4;
         } else if (nTaxidsRead < dim) {
@@ -204,19 +199,20 @@ int NRDemo::Run(void)
         return 7;
     }
 
-    //  Finally, perform the non-redundification....
-    //  In each cluster, mark items under a pref tax node and but not model orgs.
+    prefNodes->ShouldMatch();     //  keep if node is or is under a pref tax node
+    modelOrgs->ShouldNotMatch();  //  keep if not a model organism
 
+    //  Finally, perform the non-redundification....
+    //  In each cluster, keep those items under a preferred tax node AND not a
+    //  model organism.  All others are marked as redundant.
     CSimpleNonRedundifier simpleNR;
-    prefNodes->ShouldMatch();
     simpleNR.AddCriteria(prefNodes, true);  //  set verbose output; nr owns object
-    modelOrgs->ShouldNotMatch();
     simpleNR.AddCriteria(modelOrgs, true);  //  set verbose output; nr owns object
     simpleNR.SetClusterer(clusterer);       //  nr object assumes ownership
 
     unsigned int nRedundant = simpleNR.ComputeRedundancies();
 
-    //  List of final redundant indices (those not kept by each criteria)
+    //  List of final redundant indices (i.e., those not kept by all criteria)
     CBaseClusterer::TClusterId cid;
     ERR_POST(ncbi::Info << "\n\nFound " << nRedundant << " redundancies.\n\n");
     for (unsigned int i = 0; i < dim; ++i) {
@@ -225,7 +221,7 @@ int NRDemo::Run(void)
         }
     }
 
-    //  Cleaning up (other ptrs declared cleaned up when simpleNR is destroyed)
+    //  Cleaning up (other ptrs declared cleaned up when simpleNR goes out of scope).
 
     delete [] dm;
     if (args["o"]) ((CNcbiOfstream*)outStr)->close();
