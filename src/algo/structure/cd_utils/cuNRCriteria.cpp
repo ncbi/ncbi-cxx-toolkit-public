@@ -60,7 +60,7 @@ bool CNRCriteria::GetItemForId(CBaseClusterer::TId itemId, CNRItem& nrItem) cons
     TId2ItemCit cit;
     if (m_id2ItemMap) {
         cit = m_id2ItemMap->find(itemId);
-        if (cit != m_id2ItemMap->end() && !cit->second) {
+        if (cit != m_id2ItemMap->end() && cit->second) {
             result = true;
             nrItem = *(cit->second);
         }
@@ -72,6 +72,15 @@ bool CNRCriteria::GetItemForId(CBaseClusterer::TId itemId, CNRItem& nrItem) cons
     return result;
 }
 
+bool CNRCriteria::IsItemKept(CBaseClusterer::TId itemId) const {
+    bool result = false;
+    CNRItem nrItem;
+    if (GetItemForId(itemId, nrItem)) {
+        result = nrItem.keep;
+    }
+    return result;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -79,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/18 19:12:26  lanczyck
+* bug fix in GetItemForId; add IsItemKept method
+*
 * Revision 1.1  2005/07/07 17:31:41  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *
