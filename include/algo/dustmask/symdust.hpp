@@ -222,25 +222,12 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                           
             private:
                 
-                /** \internal
-                    \brief Type of position lists elements.
-                 */
-                struct k_info
-                {
-                    Uint4 pos_;     /**<\internal Position of the triplet in the sequence. */
-                    Uint4 next_;    /**<\internal Next element of the position list. */
-                };
-
                 /**\internal Implementation type for triplets list. */
                 typedef std::deque< triplet_type > impl_type;
                 /**\internal Triplets list iterator type. */
                 typedef impl_type::const_iterator impl_citer_type;
                 /**\internal Type for triplet counts tables. */
                 typedef std::vector< Uint1 > counts_type;
-                /**\internal Storage type for position lists. */
-                typedef std::vector< k_info > k_info_list;
-                /**\internal Type of the table containing heads of the position lists. */
-                typedef std::vector< Uint4 > k_info_list_heads;
 
                 /** \internal
                     \brief Add triplet to the triplets list and update
@@ -269,29 +256,6 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                  */
                 void rem_k_info( triplet_type t );
 
-                /** \internal
-                    \brief Get memory for a new position list element from
-                           the free list.
-                    \return new position list element
-                 */
-                Uint4 new_k_info();
-
-                /** \internal
-                    \brief Return memory to the free list.
-                    \param i position list element being freed
-                 */
-                void free_k_info( Uint4 i );
-                
-                /** \internal
-                    \brief Print the position list for a given triplet value
-                           to the console.
-
-                    This function is for debugging purposes only.
-
-                    \param t the triplet value
-                 */
-                void print_list( triplet_type t );
-
                 impl_type triplet_list_;            /**<\internal The triplet list. */
 
                 size_type start_;                   /**<\internal Position of the first triplet in the window. */
@@ -309,10 +273,6 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 
                 counts_type outer_counts_;          /**<\internal Table of triplet counts for the whole window. */
                 counts_type inner_counts_;          /**<\internal Table of triplet counts for the window suffix. */
-                k_info_list k_info_;                /**<\internal Storage for the position lists. */
-                k_info_list_heads k_info_heads_;    /**<\internal Table of pointers to the position lists heads. */
-                k_info_list_heads k_info_ends_;     /**<\internal Table of pointers to the position lists ends. */
-                Uint4 k_info_free_start_;           /**<\internal Free list of position list elements. */
                 Uint4 outer_sum_;                   /**<\internal s_w for the whole window. */
                 Uint4 inner_sum_;                   /**<\internal s_w for the window suffix. */
         };
@@ -336,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/07/18 14:55:59  morgulis
+ * Removed position lists maintanance.
+ *
  * Revision 1.9  2005/07/13 18:29:50  morgulis
  * operator() can mask part of the sequence
  *

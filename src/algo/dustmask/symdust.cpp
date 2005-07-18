@@ -36,6 +36,37 @@
 
 BEGIN_NCBI_SCOPE
 
+// NOTE: this function should be inlined. In majority of cases conditions
+// in both ifs are false, so the execution path is really short.
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
+{
+    inner_sum_ += inner_counts_[t];
+    ++inner_counts_[t];
+
+    // if we already had low_k elements for this triplet, then remove the
+    //      first one to keep their number at low_k
+    if( inner_counts_[t] > low_k_ )
+    {
+        rem_k_info( t );
+        ++high_beg_;
+    }
+
+    // if we just reached low_k_ elements, then update high_beg_ as
+    //      necessary
+    if( inner_counts_[t] == low_k_ )
+    {
+        Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
+
+        while( triplet_list_[off] != t )
+        {
+            rem_k_info( triplet_list_[off] );
+            --off;
+            ++high_beg_;
+        }
+    }
+}
+
 //------------------------------------------------------------------------------
 CSymDustMasker::triplets::triplets( 
     triplet_type first, size_type window, Uint1 low_k,
@@ -43,15 +74,8 @@ CSymDustMasker::triplets::triplets(
     : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), low_k_( low_k ),
       high_beg_( 0 ), lcr_list_( lcr_list ), thresholds_( thresholds ),
       outer_counts_( 64, 0 ), inner_counts_( 64, 0 ),
-      k_info_( max_size_ ), k_info_heads_( 64, 0 ), k_info_ends_( 64, 0 ),
-      k_info_free_start_( 1 ), outer_sum_( 0 ), inner_sum_( 0 )
+      outer_sum_( 0 ), inner_sum_( 0 )
 {
-    // initializing the free list
-    for( Uint4 i = 0; i < max_size_ - 1; ++i )
-        k_info_[i].next_ = i + 2;
-
-    k_info_[max_size_ - 1].next_ = 0;
-
     // update the data structures for the first triplet in the window
     triplet_list_.push_front( first );
     ++outer_counts_[first];
@@ -59,87 +83,10 @@ CSymDustMasker::triplets::triplets(
 }
 
 //------------------------------------------------------------------------------
-void CSymDustMasker::triplets::print_list( triplet_type t )
-{
-    Uint1 i = k_info_heads_[t];
-
-    while( i != 0 )
-    {
-        cerr << k_info_[i - 1].pos_ << " ";
-        i = k_info_[i - 1].next_;
-    }
-
-    cerr << endl;
-}
-
-//------------------------------------------------------------------------------
-inline Uint4 CSymDustMasker::triplets::new_k_info()
-{
-    _ASSERT( k_info_free_start_ != 0 );
-    Uint4 res = k_info_free_start_;
-    k_info_free_start_ = k_info_[res - 1].next_;
-    return res;
-}
-
-//------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::free_k_info( Uint4 i )
-{
-    _ASSERT( i != 0 );
-    k_info_[i - 1].next_ = k_info_free_start_;
-    k_info_free_start_ = i;
-}
-
-//------------------------------------------------------------------------------
 inline void CSymDustMasker::triplets::rem_k_info( triplet_type t )
 {
-    _ASSERT( k_info_heads_[t] != 0 );
     --inner_counts_[t];
     inner_sum_ -= inner_counts_[t];
-    Uint4 ni = k_info_heads_[t];
-    k_info_heads_[t] = k_info_[ni - 1].next_;
-    free_k_info( ni );
-}
-
-//------------------------------------------------------------------------------
-void CSymDustMasker::triplets::add_k_info( triplet_type t )
-{
-    // Get and initialize the new element. Update inner_sum and counts.
-    Uint4 ni = new_k_info();
-    k_info_[ni - 1].pos_ = stop_;
-    k_info_[ni - 1].next_ = 0;
-    inner_sum_ += inner_counts_[t];
-    ++inner_counts_[t];
-
-    // append the new element to the corresponding list
-    if( k_info_heads_[t] == 0 )
-        k_info_heads_[t] = ni;
-    else 
-        k_info_[k_info_ends_[t] - 1].next_ = ni;
-
-    k_info_ends_[t] = ni;
-
-    // if we already had low_k elements for this triplet, then remove the
-    //      first one to keep their number at low_k
-    if( inner_counts_[t] > low_k_ )
-        rem_k_info( t );
-
-    // if we just reached low_j_ elements, then update high_beg_ as
-    //      necessary
-    if( inner_counts_[t] == low_k_ )
-    {
-        Uint4 head_pos = k_info_[k_info_heads_[t] - 1].pos_;
-        
-        while( head_pos > high_beg_ )
-        {
-            Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
-
-            // we do not want to remove the triplet info if its value is t
-            if( triplet_list_[off] != t )
-                rem_k_info( triplet_list_[off] );
-
-            ++high_beg_;
-        }
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -379,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/07/18 14:55:59  morgulis
+ * Removed position lists maintanance.
+ *
  * Revision 1.9  2005/07/14 20:39:39  morgulis
  * Fixed offsets bug when masking part of the sequence.
  *
