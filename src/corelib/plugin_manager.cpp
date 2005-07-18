@@ -70,9 +70,9 @@ CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
 }
 
 CDllResolver& 
-CPluginManager_DllResolver::Resolve(const vector<string>& paths,
-                                    const string&         driver_name,
-                                    const CVersionInfo&   version)
+CPluginManager_DllResolver::ResolveFile(const vector<string>& paths,
+                                    	const string&         driver_name,
+                                    	const CVersionInfo&   version)
 {
     CDllResolver* resolver = GetCreateDllResolver();
     _ASSERT(resolver);
@@ -97,7 +97,7 @@ CDllResolver& CPluginManager_DllResolver::Resolve(const string& path)
     _ASSERT(!path.empty());
     vector<string> paths;
     paths.push_back(path);
-    return Resolve(paths);
+    return ResolveFile(paths);
 }
 
 
@@ -314,6 +314,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/07/18 12:05:02  ssikorsk
+ * Added GetDefaultIfVerInfo to IClassFactory and CPluginManager;
+ * Added WillExtendCapabilities to CPluginManager;
+ * Renamed Resolve with ResolveFile;
+ * Made FindClassFactory a const function;
+ * Added another version of RegisterWithEntryPoint (for a specific driver and version);
+ *
  * Revision 1.18  2005/03/03 19:03:43  ssikorsk
  * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
  *

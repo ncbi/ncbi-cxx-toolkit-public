@@ -174,6 +174,14 @@ class IClassFactory
 public:
     typedef TClass TInterface;
 
+    static const CVersionInfo& GetDefaultIfVerInfo(void)
+    {
+        static const CVersionInfo vi(TIfVer::eMajor, TIfVer::eMinor, 
+                                     TIfVer::ePatchLevel, TIfVer::GetName());
+
+        return vi;
+    }
+
     struct SDriverInfo
     {
         string         name;        ///< Driver name
@@ -206,8 +214,7 @@ public:
     ///  NULL on any error (not found entry point, version mismatch, etc.)
     virtual TClass* CreateInstance
       (const string&  driver  = kEmptyStr,
-       CVersionInfo   version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
-                                             TIfVer::ePatchLevel),
+       CVersionInfo   version = GetDefaultIfVerInfo(),
        const TPluginManagerParamTree* params = 0) const = 0;
 
     /// Versions of the interface exported by the factory
@@ -263,6 +270,8 @@ public:
 ///
 /// Template class is protected by mutex and safe for use from diffrent threads
 
+// class TIfVer is a *default* interface version for all CPluginManager's methods.
+
 template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
 class CPluginManager : public CPluginManagerBase
 {
@@ -270,14 +279,21 @@ public:
     typedef IClassFactory<TClass, TIfVer> TClassFactory;
     typedef TIfVer                        TInterfaceVersion;
 
+    static const CVersionInfo& GetDefaultIfVerInfo(void)
+    {
+        static const CVersionInfo vi(TIfVer::eMajor, TIfVer::eMinor, 
+                                     TIfVer::ePatchLevel, TIfVer::GetName());
+
+        return vi;
+    }
+
     /// Create class instance
     /// @return
     ///  Never returns NULL -- always throw exception on error.
     /// @sa GetFactory()
     TClass* CreateInstance
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
-                                                TIfVer::ePatchLevel),
+     const CVersionInfo& version = GetDefaultIfVerInfo(),
      const TPluginManagerParamTree* params = 0)
     {
         TClassFactory* factory = GetFactory(driver, version);
@@ -289,19 +305,13 @@ public:
     TClass* CreateInstanceFromList
         (const TPluginManagerParamTree* params,
          const string&                  driver_list,
-         CVersionInfo                   version =
-         CVersionInfo(TIfVer::eMajor,
-                      TIfVer::eMinor,
-                      TIfVer::ePatchLevel));
+         CVersionInfo                   version = GetDefaultIfVerInfo());
 
     /// Detect driver from the parameters using the key to get list of drivers.
     TClass* CreateInstanceFromKey
         (const TPluginManagerParamTree* params,
          const string&                  driver_key,
-         CVersionInfo                   version =
-         CVersionInfo(TIfVer::eMajor,
-                      TIfVer::eMinor,
-                      TIfVer::ePatchLevel));
+         CVersionInfo                   version = GetDefaultIfVerInfo());
 
     /// Get class factory
     ///
@@ -318,8 +328,7 @@ public:
     ///  Never return NULL -- always throw exception on error.
     TClassFactory* GetFactory
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
-                                                TIfVer::ePatchLevel));
+     const CVersionInfo& version = GetDefaultIfVerInfo());
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
@@ -345,11 +354,20 @@ public:
     /// @sa FNCBI_EntryPoint
     typedef list<SDriverInfo> TDriverInfoList;
 
-    /// Register factory in the manager.
+    /// Try to register factory in the manager.
     ///
     /// The registered factory will be owned by the manager.
+    /// @return
+    ///  true if a factory was registered.
     /// @sa UnregisterFactory()
-    void RegisterFactory(TClassFactory& factory);
+    bool RegisterFactory(TClassFactory& factory);
+
+    /// Check if a given factory will extend capabilities of the Plugin 
+    /// Manager (add either new drivers or new driver versions to already 
+    /// available). 
+    ///
+    /// @sa RegisterFactory()
+    bool WillExtendCapabilities(TClassFactory& factory) const;
 
     /// Unregister and release (un-own)
     /// @sa RegisterFactory()
@@ -389,8 +407,18 @@ public:
                                      EEntryPointRequest method);
 
     /// Register all factories exported by the plugin entry point.
+    /// @return true if at least one factory was registered.
     /// @sa RegisterFactory()
-    void RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point);
+    bool RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point);
+
+    /// Register all compatible factories for the driver with the particular 
+    /// version exported by the plugin entry point.
+    /// @return true if at least one factory was registered.
+    /// @sa RegisterFactory()
+    bool RegisterWithEntryPoint(FNCBI_EntryPoint    plugin_entry_point,
+                                const string&       driver_name,
+                                const CVersionInfo& driver_version =
+                                    CVersionInfo::kLatest);
 
     /// Attach DLL resolver to plugin manager
     ///
@@ -421,9 +449,9 @@ public:
     void AddDllSearchPath(const string& path);
 
     /// Scan DLLs for specified driver using attached resolvers
-    void Resolve(const string&       driver  = kEmptyStr,
-                 const CVersionInfo& version = CVersionInfo
-                 (TIfVer::eMajor, TIfVer::eMinor, TIfVer::ePatchLevel));
+    // Former "Resolve"
+    void ResolveFile(const string&   driver  = kEmptyStr,
+                 const CVersionInfo& version = GetDefaultIfVerInfo());
 
     /// Disable/enable DLL resolution (search for class factories in DLLs)
     void FreezeResolution(bool value = true) { m_BlockResolution = value; }
@@ -447,7 +475,7 @@ public:
 
 protected:
     TClassFactory* FindClassFactory(const string&  driver,
-                                    const CVersionInfo& version);
+                                    const CVersionInfo& version) const;
 
     /// Protective mutex to syncronize the access to the plugin manager
     /// from different threads
@@ -524,9 +552,12 @@ public:
     ///   Interface version
     /// @return
     ///   Reference on DLL resolver holding all entry points
-    CDllResolver& Resolve(const vector<string>& paths,
-                          const string&         driver_name = kEmptyStr,
-                          const CVersionInfo&   version = CVersionInfo::kAny);
+    // Former "Resolve"
+    CDllResolver& ResolveFile(const vector<string>& paths,
+                              const string&         driver_name 
+                                = kEmptyStr,
+                              const CVersionInfo&   version 
+                                = CVersionInfo::kAny);
 
     /// Search for plugin DLLs, resolve entry points.
     ///
@@ -687,10 +718,15 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
                  m_FreezeResolutionDrivers.find(driver);
 
         if (it == m_FreezeResolutionDrivers.end()) {
-            // Trying to resolve the driver's factory
-            Resolve(driver, version);
+            // Trying to resolve the driver's factory.
+            // 1) Locate and load all appropriate DLLs.
+            // 2) Register all compatible versions of factories. 
+            //    Skip not compatible versions.
+            ResolveFile(driver, version);
 
             // Re-scanning factories...
+            // Trying to find an appropriate factory.
+            // Make a best match.
             cf = FindClassFactory(driver, version);
             if (cf) {
                 return cf;
@@ -708,14 +744,14 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
 template <class TClass, class TIfVer>
 typename CPluginManager<TClass, TIfVer>::TClassFactory*
 CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
-                                                 const CVersionInfo& version)
+                                                 const CVersionInfo& version) const
 {
     TClassFactory* best_factory = 0;
     int best_major = -1;
     int best_minor = -1;
     int best_patch_level = -1;
 
-    NON_CONST_ITERATE(typename TFactories, it, m_Factories) {
+    ITERATE(typename TFactories, it, m_Factories) {
         TClassFactory* cf = *it;
 
         typename TClassFactory::TDriverList drv_list;
@@ -725,8 +761,8 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
 
         cf->GetDriverVersions(drv_list);
 
-        NON_CONST_ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
-             typename TClassFactory::SDriverInfo& drv_info = *it2;
+        ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
+             typename const TClassFactory::SDriverInfo& drv_info = *it2;
              if (!driver.empty()) {
                 if (driver != drv_info.name) {
                     continue;
@@ -746,13 +782,63 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
 
 
 template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
+bool CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
 {
     CMutexGuard guard(m_Mutex);
 
-    m_Factories.insert(&factory);
+    // Because there is no association between the "factory", a driver, and
+    // a driver version within m_Factories right now we would like to check
+    // manually if same capabilities are already present in m_Factories.
+    if ( WillExtendCapabilities(factory) ) {
+        m_Factories.insert(&factory);
+        return true;
+    }
+    return false;
 }
 
+template <class TClass, class TIfVer>
+bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
+(TClassFactory& factory) const
+{
+    typename TClassFactory::TDriverList new_drv_list;
+
+    factory.GetDriverVersions(new_drv_list);
+
+    if ( m_Factories.empty() && !new_drv_list.empty() ) {
+        return true;
+    }
+
+    ITERATE(typename TFactories, it, m_Factories) {
+        TClassFactory* const cf = *it;
+
+        if (!cf)
+            continue;
+
+        typename TClassFactory::TDriverList drv_list;
+        cf->GetDriverVersions(drv_list);
+
+        ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
+            typename const TClassFactory::SDriverInfo& drv_info = *it2;
+
+            ITERATE(typename TClassFactory::TDriverList, new_it2, new_drv_list) {
+                typename const TClassFactory::SDriverInfo& new_drv_info = *new_it2;
+
+                if ( !(new_drv_info.name == drv_info.name &&
+                       new_drv_info.version.Match(drv_info.version) == 
+                            CVersionInfo::eFullyCompatible)
+                    ) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    ERR_POST(Warning << "A duplicate driver factory was found. "
+        "It will be ignored because it won't extend "
+        "Plugin Manager capabilities.");
+
+    return false;
+}
 
 template <class TClass, class TIfVer>
 bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
@@ -769,30 +855,97 @@ bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
 
 
 template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
+bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
 (FNCBI_EntryPoint plugin_entry_point)
 {
     CMutexGuard guard(m_Mutex);
     if ( !m_EntryPoints.insert(plugin_entry_point).second ) {
         // entry point is already registered
-        return;
+        return false;
     }
+
     TDriverInfoList drv_list;
+
+    // Get info about all provided factories.
     plugin_entry_point(drv_list, eGetFactoryInfo);
 
     if ( !drv_list.empty() ) {
+        // Retrieve all factories for all drivers from this entry point.
         plugin_entry_point(drv_list, eInstantiateFactory);
 
-        NON_CONST_ITERATE(typename TDriverInfoList, it, drv_list) {
+        ITERATE(typename TDriverInfoList, it, drv_list) {
             if (it->factory) {
                 RegisterFactory(*(it->factory));
             }
         }
+        return true;
     }
-
+    return false;
 }
 
+template <class TClass, class TIfVer>
+class CInvalidDrvVer 
+    : public unary_function<typename CPluginManager<TClass, TIfVer>::SDriverInfo, bool> 
+{
+public:
+    typedef typename CPluginManager<TClass, TIfVer>::SDriverInfo TValue;
 
+    CInvalidDrvVer(const string& driver_name, const CVersionInfo& vi)
+    : m_DriverName(driver_name)
+    , m_VersionInfo(vi)
+    {
+    }
+
+    bool operator() ( const TValue& val ) 
+    {
+        return m_DriverName != val.name || 
+            m_VersionInfo.Match(val.version) == CVersionInfo::eNonCompatible;
+    }
+
+private:
+    const string       m_DriverName;
+    const CVersionInfo m_VersionInfo;
+};
+
+template <class TClass, class TIfVer>
+bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
+(FNCBI_EntryPoint    plugin_entry_point,
+ const string&       driver_name,
+ const CVersionInfo& driver_version)
+{
+    CMutexGuard guard(m_Mutex);
+    if ( !m_EntryPoints.insert(plugin_entry_point).second ) {
+        // entry point is already registered
+        return false;
+    }
+
+    TDriverInfoList drv_list;
+
+    // Get info about all provided factories.
+    plugin_entry_point(drv_list, eGetFactoryInfo);
+
+    if ( !drv_list.empty() ) {
+        // It is not possible to get a perfect match here.
+        // We can only cut absolutelly wrong versions of.
+        // A perfect match will be found after we load all factories 
+        // from all DLLs.
+
+        drv_list.remove_if( 
+            CInvalidDrvVer<TClass, TIfVer>(driver_name, driver_version) );
+
+        // Instantiate selected factories.
+        plugin_entry_point(drv_list, eInstantiateFactory);
+
+        bool was_registered = false;
+        ITERATE(typename TDriverInfoList, it, drv_list) {
+            if (it->factory) {
+                was_registered |= RegisterFactory(*(it->factory));
+            }
+        }
+        return was_registered;
+    }
+    return false;
+}
 
 template <class TClass, class TIfVer>
 void CPluginManager<TClass, TIfVer>::AddResolver
@@ -834,24 +987,29 @@ void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver,
 }
 
 template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
-                                             const CVersionInfo& version)
+void CPluginManager<TClass, TIfVer>::ResolveFile(const string&       driver,
+                                                 const CVersionInfo& version)
 {
     vector<CDllResolver*> resolvers;
 
     // Run all resolvers to search for driver
     ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
+        // Try to get an exact match.
         CDllResolver* dll_resolver =
-            &(*it)->Resolve(m_DllSearchPaths, driver, version);
-        if ( !version.IsAny()  &&
+            &(*it)->ResolveFile(m_DllSearchPaths, driver, version);
+
+        if ( !version.IsAny() && !version.IsLatest() &&
             dll_resolver->GetResolvedEntries().empty() ) {
-            // Try to ignore version
+
+            // Try to get at least something (ignore version).
             dll_resolver =
-                &(*it)->Resolve(m_DllSearchPaths, driver, CVersionInfo::kAny);
+                &(*it)->ResolveFile(m_DllSearchPaths, driver, CVersionInfo::kAny);
+
             if ( dll_resolver->GetResolvedEntries().empty() ) {
                 dll_resolver = 0;
             }
         }
+
         if ( dll_resolver ) {
             resolvers.push_back(dll_resolver);
         }
@@ -867,18 +1025,26 @@ void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
             if (entry.entry_points.empty()) {
                 continue;
             }
-            CDllResolver::SNamedEntryPoint& epoint = entry.entry_points[0];
-            // TODO:
-            // check if entry point provides the required interface-driver-version
-            // and do not register otherwise...
+
+            // We register factories from one entry point only because others 
+            // are just aliases (point to the same set of factories).
+            CDllResolver::SNamedEntryPoint& epoint = entry.entry_points.front();
+
             if (epoint.entry_point.func) {
                 FNCBI_EntryPoint ep =
                    (FNCBI_EntryPoint)epoint.entry_point.func;
-                RegisterWithEntryPoint(ep);
-                m_RegisteredEntries.push_back(entry);
+
+                if ( RegisterWithEntryPoint(ep, driver, version) ) {
+                    m_RegisteredEntries.push_back(entry);
+                } else {
+                    ERR_POST(Warning << "Couldn't register an entry point "
+                        "within a DLL '" << entry.dll->GetName() << "' "
+                        "because either an entry point with the same name was already "
+                        "registered or it does not provide an appropriate factory.");
+                }
             }
         }
-        entry_points.resize(0);
+        entry_points.clear();
     }
 }
 
@@ -926,6 +1092,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/07/18 12:04:27  ssikorsk
+ * Added GetDefaultIfVerInfo to IClassFactory and CPluginManager;
+ * Added WillExtendCapabilities to CPluginManager;
+ * Renamed Resolve with ResolveFile;
+ * Made FindClassFactory a const function;
+ * Added another version of RegisterWithEntryPoint (for a specific driver and version);
+ *
  * Revision 1.45  2005/03/23 14:38:53  vasilche
  * Keep track of registered entry points.
  *
