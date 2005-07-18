@@ -153,11 +153,13 @@ public:
     //  Returns false if itemId not found in map or mapped item is NULL, in which case
     //  nrItem is rest to have INVALID_ITEM_ID and keep == false.
     virtual bool GetItemForId(CBaseClusterer::TId itemId, CNRItem& nrItem) const;
+    bool IsItemKept(CBaseClusterer::TId itemId) const;
 
     const TId2Item* GetId2ItemMap() const {return m_id2ItemMap;}
     void SetId2ItemMap(TId2Item* id2ItemMap) {
         m_id2ItemMap = id2ItemMap;
     }
+
 
 protected:
 
@@ -172,6 +174,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/18 19:05:07  lanczyck
+* add IsItemKept method
+*
 * Revision 1.1  2005/07/07 17:31:25  lanczyck
 * move refactored classes supporting non-redundification from CDTree to cd_utils
 *
