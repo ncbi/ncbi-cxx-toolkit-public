@@ -213,10 +213,11 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
  * @return Status, 0 on success, -1 on error.
  */
 Int2 
-Blast_SetPHIPatternInfo(EBlastProgramType program, 
-                        SPHIPatternSearchBlk* pattern_blk, 
-                        BLAST_SequenceBlk* query, BlastSeqLoc* lookup_segments,
-                        BlastQueryInfo* query_info);
+Blast_SetPHIPatternInfo(EBlastProgramType            program,
+                        const SPHIPatternSearchBlk * pattern_blk,
+                        const BLAST_SequenceBlk    * query,
+                        const BlastSeqLoc          * lookup_segments,
+                        BlastQueryInfo             * query_info);
 
 /** Calculates pattern space, which is used instead of search space in PHI BLAST
  * e-value calculations. Pattern space is equal to the product of the number of 
@@ -238,6 +239,9 @@ PHIPatternSpaceCalc(BlastQueryInfo* query_info,
 /*
  *
 * $Log$
+* Revision 1.53  2005/07/18 19:38:33  bealer
+* - Apply const in several more places.
+*
 * Revision 1.52  2005/07/12 22:57:03  bealer
 * - Change "BlastQueryInfo*" to "const BlastQueryInfo*" in several places.
 *

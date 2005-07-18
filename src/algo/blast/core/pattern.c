@@ -107,7 +107,7 @@ s_LenOf(Int4 s, Int4 mask)
 
 Int4 
 _PHIBlastFindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-                      SPHIPatternSearchBlk *pattern_blk)
+                      const SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 i; /*loop index on sequence*/
     Int4 prefixMatchedBitPattern = 0; /*indicates where pattern aligns
@@ -118,7 +118,7 @@ _PHIBlastFindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1,
     Int4 mask;  /*mask of input pattern positions after which
                   a match can be declared*/
     Int4 maskShiftPlus1; /*mask shifted left 1 plus 1 */
-    SShortPatternItems* pattern_items = pattern_blk->one_word_items;
+    const SShortPatternItems* pattern_items = pattern_blk->one_word_items;
 
     mask = pattern_items->match_mask; 
     maskShiftPlus1 = (mask << 1) + 1;
@@ -157,7 +157,7 @@ _PHIBlastFindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1,
  */
 static Int4 
 s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
-                   SPHIPatternSearchBlk *pattern_blk)
+                   const SPHIPatternSearchBlk *pattern_blk)
 {
     Uint4 prefixMatchedBitPattern; /*indicates where pattern aligns
                                      with sequence*/
@@ -167,7 +167,7 @@ s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
     Int4 remain; /*0,1,2,3 DNA letters left over*/
     Int4 j; /*index on suffixRemnant*/
     Int4 twiceNumHits = 0; /*twice the number of hits*/
-    SShortPatternItems* pattern_items = pattern_blk->one_word_items;
+    const SShortPatternItems* pattern_items = pattern_blk->one_word_items;
     const Int4 kMatchMask = pattern_items->match_mask;
     /* Mask to match agaist */
     const Uint4 kMask2 = kMatchMask*PHI_BITS_PACKED_PER_WORD+15; 
@@ -230,7 +230,7 @@ s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
  */
 static Int4  
 s_FindHitsShortHead(Int4* hitArray, const Uint1* seq, Int4 start, Int4 len, 
-                Uint1 is_dna, SPHIPatternSearchBlk *pattern_blk)
+                Uint1 is_dna, const SPHIPatternSearchBlk *pattern_blk)
 {
   if (is_dna) 
     return s_FindHitsShortDNA(hitArray, &seq[start/4], start % 4, len, pattern_blk);
@@ -318,7 +318,7 @@ s_LenOfL(Int4 *s, Int4 *mask, Int4 numWords)
  */
 static Int4 
 s_FindHitsLong(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-               SPHIPatternSearchBlk *pattern_blk)
+               const SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 wordIndex; /*index on words in mask*/
     Int4 i; /*loop index on seq */
@@ -371,7 +371,7 @@ s_FindHitsLong(Int4 *hitArray, const Uint1* seq, Int4 len1,
  */
 static Int4 
 s_FindHitsVeryLong(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
-             SPHIPatternSearchBlk *pattern_blk)
+                   const SPHIPatternSearchBlk *pattern_blk)
 {
     Int4 twiceNumHits; /*twice the number of matches*/
     Int4 twiceHitsOneCall; /*twice the number of hits in one call to 
@@ -470,8 +470,8 @@ s_FindHitsVeryLong(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
     return twiceNumHits;
 }
 
-Int4 FindPatternHits(Int4 *hitArray, const Uint1* seq, Int4 len, 
-               Boolean is_dna, SPHIPatternSearchBlk * pattern_blk)
+Int4 FindPatternHits(Int4 * hitArray, const Uint1* seq, Int4 len, 
+               Boolean is_dna, const SPHIPatternSearchBlk * pattern_blk)
 {
     if (pattern_blk->flagPatternLength == eOneWord) 
       return s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, pattern_blk);
@@ -552,11 +552,13 @@ s_PHIBlastAddPatternHit(SPHIQueryInfo* pattern_info,
    return 0;
 }
 
-Int4 PHIGetPatternOccurrences(SPHIPatternSearchBlk* pattern_blk, 
-                              BLAST_SequenceBlk* query, BlastSeqLoc* location, 
-                              Boolean is_dna, SPHIQueryInfo* pattern_info)
+Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk, 
+                              const BLAST_SequenceBlk    * query,
+                              const BlastSeqLoc          * location, 
+                              Boolean                      is_dna,
+                              SPHIQueryInfo              * pattern_info)
 {
-   BlastSeqLoc* loc;
+   const BlastSeqLoc* loc;
    Int4 from, to;
    Int4 loc_length;
    Uint1* sequence;

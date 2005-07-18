@@ -52,7 +52,7 @@ extern "C" {
  */
 Int4 
 _PHIBlastFindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-                       SPHIPatternSearchBlk *pattern_blk);
+                       const SPHIPatternSearchBlk *pattern_blk);
 
 /** Shift each word in the array left by 1 bit and add bit b.
  * If the new values is bigger than an overflow threshold, then subtract the

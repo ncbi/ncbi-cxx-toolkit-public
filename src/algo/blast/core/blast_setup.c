@@ -428,7 +428,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
                                               query_info, 
                                               program_number, 
                                               filter_options ? filter_options : qsup_options->filtering_options, 
-                                              &filter_maskloc, 
+                                              & filter_maskloc, 
                                               blast_message);
 
 
@@ -712,32 +712,33 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to)
 }
 
 Int2 
-Blast_SetPHIPatternInfo(EBlastProgramType program, 
-                        SPHIPatternSearchBlk* pattern_blk, 
-                        BLAST_SequenceBlk* query, BlastSeqLoc* lookup_segments, 
-                        BlastQueryInfo* query_info)
+Blast_SetPHIPatternInfo(EBlastProgramType            program,
+                        const SPHIPatternSearchBlk * pattern_blk,
+                        const BLAST_SequenceBlk    * query,
+                        const BlastSeqLoc          * lookup_segments,
+                        BlastQueryInfo             * query_info)
 {
     const Boolean kIsNa = (program == eBlastTypePhiBlastn);
-
+    
     ASSERT(Blast_ProgramIsPhiBlast(program));
     ASSERT(query_info && pattern_blk);
-
+    
     query_info->pattern_info = SPHIQueryInfoNew();
     
     /* If pattern is not found in query, return failure status. */
     if (!PHIGetPatternOccurrences(pattern_blk, query, lookup_segments, kIsNa,
                                   query_info->pattern_info))
         return -1;
-
+    
     /* Save pattern probability, because it needs to be passed back to
        formatting stage, where lookup table will not be available. */
     query_info->pattern_info->probability = pattern_blk->patternProbability;
-
+    
     /* Save minimal pattern length in the length adjustment field, because 
        that is essentially its meaning. */
     query_info->contexts[0].length_adjustment = 
         pattern_blk->minPatternMatchLength;
-
+    
     return 0;
 }
 
