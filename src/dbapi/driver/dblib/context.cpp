@@ -48,7 +48,7 @@
 #endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
-#ifdef WIN32
+#if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
 #endif
 
@@ -132,28 +132,26 @@ CDBLibContext::CDBLibContext(DBINT version) :
 
     char hostname[256];
     if(gethostname(hostname, 256) == 0) {
-        hostname[255]= '\0';
-        m_HostName= hostname;
+        hostname[255] = '\0';
+        m_HostName = hostname;
     }
 
-#ifdef WIN32
-        {
-            WSADATA wsaData; 
-            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-            {
-                DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
-            }
-        }
+#if defined(NCBI_OS_MSWIN)
+    WSADATA wsaData; 
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+    {
+        DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+    }
 #endif
 
 #ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
 #else
-        if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
+    if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
 #endif
-            {
-                DATABASE_DRIVER_FATAL( "dbinit failed", 200001 );
-            }
+    {
+        DATABASE_DRIVER_FATAL( "dbinit failed", 200001 );
+    }
 
     dberrhandle(s_DBLIB_err_callback);
     dbmsghandle(s_DBLIB_msg_callback);
@@ -313,6 +311,10 @@ CDBLibContext::~CDBLibContext()
 
     dbexit();
     g_pContext = NULL;
+
+#if defined(NCBI_OS_MSWIN)
+    WSACleanup();
+#endif
 }
 
 
@@ -779,7 +781,7 @@ public:
 };
 
 CDbapiFtdsCF2::CDbapiFtdsCF2(void)
-    : TParent( kDBAPI_FTDS_DriverName, 0 )
+    : TParent(kDBAPI_FTDS_DriverName, 1)
 {
     return ;
 }
@@ -1061,6 +1063,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/07/18 12:50:28  ssikorsk
+ * Changed patch level from 0 to 1;
+ * Winsock32 cleanup;
+ * WIN32 -> NCBI_OS_MSWIN;
+ *
  * Revision 1.43  2005/07/12 13:22:59  ssikorsk
  * Added initialization of winsock
  *
