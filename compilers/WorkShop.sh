@@ -47,6 +47,9 @@ case "$CC_version" in
  "CC: Forte Developer 7 C++ 5.4"* )
     NCBI_COMPILER="WorkShop54"
     ;;
+ "CC: Sun C++ 5.5"* )
+    NCBI_COMPILER="WorkShop55"
+    ;;
  * )
     echo "ERROR:  unknown version of WorkShop C++ compiler:"
     echo "  $CXX -V -->  $CC_version"

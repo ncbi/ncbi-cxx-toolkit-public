@@ -3901,6 +3901,10 @@ else
           compiler="WorkShop54"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.4" ;;
+        *Sun*C*5\.5* )
+          compiler="WorkShop55"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.5" ;;
       esac ;;
 
     irix* )
@@ -4323,7 +4327,7 @@ if test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
-    sparc-sun-solaris*:WorkShop5[234] )
+    sparc-sun-solaris*:WorkShop5* )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
@@ -4400,7 +4404,7 @@ echo "$as_me: WARNING: \"Do not know how to compile 32-bit with compiler $CXX $c
       # WorkShop54 -xarch=v8 -mt configuration).
       ARCH_CFLAGS="-xarch=v8plus"
       ;;
-    *solaris*:WorkShop5[234] )
+    *solaris*:WorkShop5* )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.

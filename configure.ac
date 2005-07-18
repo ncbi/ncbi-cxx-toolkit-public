@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.383 2005/07/08 01:34:57 ucko Exp $
+#  $Id: configure.ac,v 1.384 2005/07/18 17:54:44 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -537,6 +537,10 @@ else
           compiler="WorkShop54"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.4" ;;
+        *Sun*C*5\.5* )
+          compiler="WorkShop55"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.5" ;;
       esac ;;
 
     irix* )
@@ -881,7 +885,7 @@ if test "$with_64" = "yes" ; then
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
 changequote(, )dnl
-    sparc-sun-solaris*:WorkShop5[234] )
+    sparc-sun-solaris*:WorkShop5* )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
@@ -957,7 +961,7 @@ else
       ARCH_CFLAGS="-xarch=v8plus"
       ;;
 changequote(, )dnl
-    *solaris*:WorkShop5[234] )
+    *solaris*:WorkShop5* )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
