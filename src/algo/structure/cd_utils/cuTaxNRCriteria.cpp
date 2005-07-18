@@ -141,10 +141,28 @@ CTaxNRCriteria::~CTaxNRCriteria() {
     delete m_priorityTaxNodes;
 }
 
+bool CTaxNRCriteria::GetItemForId(CBaseClusterer::TId id, CTaxNRItem& taxNRItem) const {
+    if (CNRCriteria::GetItemForId(id, taxNRItem)) {
+        TId2ItemCit cit = m_id2ItemMap->find(id);
+        taxNRItem = *((CTaxNRItem*)(cit->second));
+        return true;
+    } else {
+        const CTaxNRItem invalidItem;
+        taxNRItem.Set(invalidItem);
+        return false;
+    }
+}
+
+int CTaxNRCriteria::GetTaxIdForId(const CBaseClusterer::TId& id) const {
+    TId2TaxidMapCIt cit = m_id2Tax.find(id);
+    int result = (cit != m_id2Tax.end()) ? cit->second : -1;
+    return result;
+}
+
 void CTaxNRCriteria::InitializeCriteria() {
 
     m_name = "Taxonomic Non-redundification Criteria";
-
+    m_shouldMatch = true;
 
     if (!m_taxClient) {
         m_taxClient = new TaxClient();
@@ -171,7 +189,7 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
     CTaxNRItem* taxNRItem = NULL;
     CTaxNRItem::TTaxItemId badId = CTaxNRItem::INVALID_TAX_ITEM_ID;
 
-    CBaseClusterer::TId rowId;
+    CBaseClusterer::TId id;
     CBaseClusterer::TClusterIt itemIt = clusterPtr->begin(), itemItEnd = clusterPtr->end();
 
     //  Sort cluster into subclusters based on the priority tax node items are under.
@@ -180,27 +198,30 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
     m_subclusters.clear();
     for (; itemIt != itemItEnd; ++itemIt) {
 
-        rowId = *itemIt;
-        taxId = m_id2Tax[rowId];
+        id = *itemIt;
+        taxId = m_id2Tax[id];
         nodeName.erase();
         priorityNodeId = (taxId > 0 && m_priorityTaxNodes) ? m_priorityTaxNodes->GetPriorityTaxnode(taxId, nodeName, m_taxClient) : badId;
         if (priorityNodeId == -1) priorityNodeId = badId;
 
-        taxNRItem = new CTaxNRItem(rowId, (CTaxNRItem::TTaxItemId)(priorityNodeId), CTaxNRItem::INVALID_TAX_ITEM_ID, taxId, true);
+        taxNRItem = new CTaxNRItem(id, (CTaxNRItem::TTaxItemId)(priorityNodeId), CTaxNRItem::INVALID_TAX_ITEM_ID, taxId, true);
         if (!taxNRItem) {
             continue;
         }
 
-        if (priorityNodeId == badId) {
-//            if (report) report->append(":   REDUNDANT -- node not under a priority node");
+        if ((priorityNodeId == badId && m_shouldMatch) || (priorityNodeId != badId && !m_shouldMatch)) {
+            if (report) report->append("\n    Toss ID " + NStr::UIntToString(id) + "  taxId = " + NStr::IntToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
             taxNRItem->keep = false;
             ++nMarkedRedundant;
         } else {
-            if (report) report->append("\nKeep rowId " + NStr::UIntToString(rowId) + "  taxId = " + NStr::IntToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
+            if (report) report->append("\n    Keep ID " + NStr::UIntToString(id) + "  taxId = " + NStr::IntToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
         }
         if (m_subclusters.count(priorityNodeId) == 0) ++nSubcluster;
-        m_subclusters[priorityNodeId].insert(CBaseClusterer::TClusterVT(rowId));
-        m_id2ItemMap->insert(TId2ItemVT(rowId, taxNRItem));
+
+        _ASSERT(m_id2ItemMap->count(id) == 0);
+
+        m_subclusters[priorityNodeId].insert(CBaseClusterer::TClusterVT(id));
+        m_id2ItemMap->insert(TId2ItemVT(id, taxNRItem));
     }
 
     if (report && report->length() > 0) report->append("\n");
@@ -236,6 +257,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/07/18 19:13:39  lanczyck
+* add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
+* add a pair of convenience methods to extract items & ids;
+* improve messages
+*
 * Revision 1.3  2005/07/14 14:51:34  lanczyck
 * add new ctor
 *
