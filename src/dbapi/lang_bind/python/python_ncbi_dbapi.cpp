@@ -214,7 +214,7 @@ CDataSourcePool::CDataSourcePool(void)
     m_ContextManager.Reset( TContextManagerStore::Get() );
     _ASSERT( m_ContextManager );
 
-#ifdef WIN32
+#if defined(NCBI_OS_MSWIN)
     // Add an additional search path ...
 #endif
 }
@@ -288,7 +288,7 @@ CConnection::CConnection(
 , m_DefTransaction( NULL )
 , m_ConnectionMode( conn_mode )
 {
-#ifdef WIN32
+#if defined(NCBI_OS_MSWIN)
     // Add an additional search path ...
     const DWORD buff_size = 1024;
     DWORD cur_size = 0;
@@ -2555,6 +2555,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/07/18 12:41:26  ssikorsk
+* Replaced WIN32 with NCBI_OS_MSWIN
+*
 * Revision 1.21  2005/06/16 14:53:34  vasilche
 * Fixed incompatibility with gcc 2.95: string::compare -> NStr::Equals()
 *
