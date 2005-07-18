@@ -53,15 +53,20 @@ public:
 
     //  A clusterer must have been added to use this form;
     //  return the total number of redundant sequences across all clusters.
+    //  Clusters must have at least one member not marked redundant.
     unsigned int ComputeRedundancies();
 
     //  Use this form if the clusterer need to be pass a raw distance matrix.
     //  First creates a CSimpleClusterer, deleting any existing clusterer if creation succeeds.  
     //  If creation fails, or invalid input, return kMax_UInt and do nothing.
+    //  Clusters must have at least one member not marked redundant.
     unsigned int ComputeRedundancies(const CDistBasedClusterer::TDist** distances, unsigned int dim, CDistBasedClusterer::TDist clusteringThreshold);
 
     //  If storing TaxNRItems, the optional 'indexInCluster' argument returns it's 'prefTaxNode' element.
-    bool GetItemStatus(CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex  = NULL, unsigned int* indexInCluster = NULL);
+    bool GetItemStatus(unsigned int nrIndex, CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex  = NULL, unsigned int* indexInCluster = NULL);
+
+    //  Return true only if item status is true for each criteria.  Return false otherwise.
+    bool GetItemStatus(CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex  = NULL);
 
 //    const CDistBasedClusterer* GetClusterer() const;
 //    bool SetClusterer(CDistBasedClusterer* clusterer);
@@ -93,10 +98,10 @@ private :
 //    CDistBasedClusterer* m_clusterer;        //  method by which to cluster items; holds underlying clusters
 //    CDistBasedClusterer::TDist m_threshold;  //  %identity threshold:  clusters will contain seqs at this or greater sim
 
-    vector< CriteriaStruct > m_nrCriteria;   //  rules for deciding redundancy; applied in vector's order
-    CNRCriteria::TId2Item* m_id2ItemMapping; //  Common itemId->item mapping to be shared among criteria.
+    vector< CriteriaStruct > m_nrCriteria;           //  rules for deciding redundancy; applied in vector's order
+    vector<CNRCriteria::TId2Item*> m_id2ItemMapping; //  itemId->item mapping for the criteria.
 
-    CNRItem* GetItemForId(CBaseClusterer::TId itemId);
+    CNRItem* GetItemForId(CBaseClusterer::TId itemId, unsigned int nrIndex);
 
 };
 
@@ -131,6 +136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/18 19:07:27  lanczyck
+* use a different id->item mapping for each criteria object
+*
 * Revision 1.2  2005/07/14 14:49:13  lanczyck
 * add comment
 *
