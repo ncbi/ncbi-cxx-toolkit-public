@@ -33,7 +33,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbitime.hpp>
+//#include <corelib/ncbitime.hpp>
 #include <algo/structure/cd_utils/cuTaxNRCriteria.hpp>
 #include <algo/structure/cd_utils/cuSimpleClusterer.hpp>
 #include <algo/structure/cd_utils/cuSimpleNonRedundifier.hpp>
@@ -49,12 +49,14 @@ CSimpleNonRedundifier::CSimpleNonRedundifier(CDistBasedClusterer::TDist threshol
 */
 
 CSimpleNonRedundifier::CSimpleNonRedundifier() : m_isBusy(false), m_clusterer(NULL) {
-    m_id2ItemMapping = new CNRCriteria::TId2Item;
+//    m_id2ItemMapping = new CNRCriteria::TId2Item;
 }
 
 CSimpleNonRedundifier::~CSimpleNonRedundifier() {
     Reset(true, true);
-    delete m_id2ItemMapping;
+    for (unsigned int i = 0; i < m_id2ItemMapping.size(); ++i) {
+        delete m_id2ItemMapping[i];
+    }
 }
 
 bool CSimpleNonRedundifier::SetClusterer(CBaseClusterer* clusterer) {
@@ -86,7 +88,9 @@ bool CSimpleNonRedundifier::SetThreshold(CDistBasedClusterer::TDist threshold) {
 
 void CSimpleNonRedundifier::AddCriteria(CNRCriteria* criteria, bool verbose) {
     if (criteria) {
-        criteria->SetId2ItemMap(m_id2ItemMapping);
+        CNRCriteria::TId2Item* id2item = new CNRCriteria::TId2Item;
+        m_id2ItemMapping.push_back(id2item);
+        criteria->SetId2ItemMap(id2item);
         m_nrCriteria.push_back(CriteriaStruct(criteria, verbose));
     }
 }
@@ -100,18 +104,24 @@ void CSimpleNonRedundifier::Reset(bool deleteClusterer, bool deleteCriteria) {
     if (deleteCriteria) {
         for (unsigned int i = 0; i < m_nrCriteria.size(); ++i) {
             delete m_nrCriteria[i].criteria;
+            m_nrCriteria[i].criteria = NULL;
         }
     }
     m_nrCriteria.clear();
 
-    if (m_id2ItemMapping) m_id2ItemMapping->clear();
+    for (unsigned int i = 0; i < m_id2ItemMapping.size(); ++i) {
+        if (m_id2ItemMapping[i]) m_id2ItemMapping[i]->clear();
+    }
 }
 
-CNRItem* CSimpleNonRedundifier::GetItemForId(CBaseClusterer::TId itemId) {
+CNRItem* CSimpleNonRedundifier::GetItemForId(CBaseClusterer::TId itemId, unsigned int nrIndex) {
+    CNRItem* itemFromCriteria = m_nrCriteria[nrIndex].criteria->GetItemForId(itemId);
+    const CNRCriteria::TId2Item* thismap = m_nrCriteria[nrIndex].criteria->GetId2ItemMap();
+    const CNRCriteria::TId2Item* thatmap = m_id2ItemMapping[nrIndex];
 
-    if (!m_id2ItemMapping) return NULL;
-    CNRCriteria::TId2ItemIt it = m_id2ItemMapping->find(itemId);
-    return (it == m_id2ItemMapping->end()) ? NULL : it->second;
+    if (nrIndex >= m_id2ItemMapping.size() || !m_id2ItemMapping[nrIndex]) return NULL;
+    CNRCriteria::TId2ItemIt it = m_id2ItemMapping[nrIndex]->find(itemId);
+    return (it == m_id2ItemMapping[nrIndex]->end()) ? NULL : it->second;
 
     /*
     //  Don't rely on the criteria having same map as this object:  
@@ -134,15 +144,15 @@ CNRItem* CSimpleNonRedundifier::GetItemForId(CBaseClusterer::TId itemId) {
     unsigned int nRedundant, nRedundantForCriteria, nRedundantTotal = 0;
     string reportFromApply;
     CBaseClusterer::TCluster* clusterPtr;
-    ncbi::CTime start, stop;
+//    ncbi::CTime start, stop;
 
     m_isBusy=true;
     if (m_clusterer) {
-        start.SetCurrent();
+//        start.SetCurrent();
 //        m_clusterer->SetClusteringThreshold(m_threshold);
         nClusters = m_clusterer->MakeClusters();
-        stop.SetCurrent();
-//        cdLog::Printf(LOG_DEBUG, "MakeClusters:  elapsed time (s):  %f\n", stop.DiffNanoSecond(start)/::kNanoSecondsPerSecond);
+//        stop.SetCurrent();
+//        ERR_POST(ncbi::Info << "MakeClusters:  elapsed time (s):  %f" << stop.DiffNanoSecond(start)/::kNanoSecondsPerSecond);
 
         /*
         string giStr;
@@ -165,33 +175,35 @@ CNRItem* CSimpleNonRedundifier::GetItemForId(CBaseClusterer::TId itemId) {
         for (unsigned int j = 0; j < m_nrCriteria.size(); ++j) {
             string s = "\n    Apply  " + m_nrCriteria[j].criteria->GetName();
             nRedundantForCriteria = 0;
-            start.SetCurrent();
+//            start.SetCurrent();
             for (unsigned int i = 0; i < nClusters; ++i) {
-                if (m_clusterer->GetCluster(i, clusterPtr) && clusterPtr != NULL && clusterPtr->size() > 0) {
+                if (m_clusterer->GetCluster(i, clusterPtr) && clusterPtr != NULL) {
                     reportFromApply.clear();
                     nRedundant = m_nrCriteria[j].criteria->Apply(clusterPtr, m_nrCriteria[j].verbose ? &reportFromApply : NULL);
                     nRedundantForCriteria += nRedundant; 
-                    if (nRedundant) {
-                        s.append("\nCluster " + NStr::UIntToString(i) + ";  " + NStr::UIntToString(nRedundant) + " redundant");
-                        if (reportFromApply.size() > 0) s.append("\n" + reportFromApply);
-                        /*
-                        CSeqClusterer::TClusterIt itemIt = clusterPtr->begin(), itemItEnd = clusterPtr->end();
+                    if (nRedundant > 0) {
+                        s.append("\nCluster " + NStr::UIntToString(i) + ";  " + NStr::UIntToString(nRedundant) + " redundant of " + NStr::UIntToString(clusterPtr->size()) + " members.");
+                        if (reportFromApply.size() > 0) s.append("\n" + reportFromApply + "\n");
+/*
+                        CBaseClusterer::TClusterIt itemIt = clusterPtr->begin(), itemItEnd = clusterPtr->end();
+                        s.append("\n    Redundancies found by criteria " + NStr::UIntToString(j) + ":\n");
                         for (; itemIt != itemItEnd; ++itemIt) {
-                            if (!itemIt->second.keep) {
-                                s.append("        row " + NStr::UIntToString(itemIt->first));
-                                s.append("  taxId " + NStr::IntToString(itemIt->second.taxId) + "\n");
+                            if (!m_nrCriteria[j].criteria->IsItemKept(*itemIt)) {
+                                s.append("        id " + NStr::UIntToString(*itemIt));
+                                s.append("  taxId " + NStr::IntToString(((CTaxNRCriteria*) m_nrCriteria[j].criteria)->GetTaxIdForId(*itemIt)) + "\n");
                             }
                         }
-                        */
+*/
                     }
                 }
             }
             // nRedundant counts the number of redundancies the *last* criteria returns
             nRedundantTotal += nRedundantForCriteria;
 //            if (nRedundantForCriteria && s.length() > 0) cdLog::Printf(LOG_DEBUG, s.c_str());
-            stop.SetCurrent();
-            cerr << "Non-redundifier log:\n\n" << s << endl;
-//            cdLog::Printf(LOG_DEBUG, "\n    Time to apply criteria:  elapsed time (s):  %f\n", stop.DiffNanoSecond(start)/::kNanoSecondsPerSecond);
+//            stop.SetCurrent();
+            s.append("\nFound " + NStr::UIntToString(nRedundantForCriteria) + " redundant for criteria " + NStr::UIntToString(j) + ".\n"); 
+            ERR_POST(ncbi::Info << "Non-redundifier log:\n\n" << s << ncbi::Endl());
+//            ERR_POST(ncbi::Info << "\n    Time to apply criteria:  elapsed time (s):  " << stop.DiffNanoSecond(start)/::kNanoSecondsPerSecond);
         }
     }
 
@@ -233,7 +245,7 @@ unsigned int CSimpleNonRedundifier::ComputeRedundancies(const CDistBasedClustere
     return nRedundantTotal;
 }
 
-bool CSimpleNonRedundifier::GetItemStatus(CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex, unsigned int* indexInCluster)
+bool CSimpleNonRedundifier::GetItemStatus(unsigned int nrIndex, CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex, unsigned int* indexInCluster)
 {
 
     bool keepItem = false;
@@ -246,7 +258,7 @@ bool CSimpleNonRedundifier::GetItemStatus(CBaseClusterer::TId itemId, CBaseClust
     //  Note:  This is initialized to be the same as in the criteria, but it could change
     //         if CNRCriteria::SetId2ItemMap(...) gets call afterwards.
     //  
-    CNRItem* nrItem = GetItemForId(itemId);
+    CNRItem* nrItem = GetItemForId(itemId, nrIndex);
 
     if(m_clusterer && nrItem){
 //        clusterId = m_clusterer->GetClusterForItemId(itemId, clusterPtr);
@@ -278,6 +290,16 @@ bool CSimpleNonRedundifier::GetItemStatus(CBaseClusterer::TId itemId, CBaseClust
     return keepItem;
 }
 
+bool CSimpleNonRedundifier::GetItemStatus(CBaseClusterer::TId itemId, CBaseClusterer::TClusterId* clusterIndex)
+{
+    bool keepItem = true;
+    unsigned int nCriteria = m_nrCriteria.size();
+    for (unsigned int nrIndex = 0; keepItem && nrIndex < nCriteria; nrIndex++) {
+        keepItem = GetItemStatus(nrIndex, itemId, clusterIndex);
+    }
+    return keepItem;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -285,6 +307,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/07/18 19:08:36  lanczyck
+* use a different id->item mapping for each criteria object;
+* use ERR_POST macros for messages
+*
 * Revision 1.3  2005/07/14 14:43:52  lanczyck
 * use _ASSERT; minor output mods
 *
