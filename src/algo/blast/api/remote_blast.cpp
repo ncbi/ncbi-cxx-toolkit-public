@@ -324,7 +324,7 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
         const int query_index = 0;
         CConstRef<CSeq_id> this_id( & (*it)->GetSeq_id(query_index) );
         
-        if (current_id.Empty() || (CSeq_id::e_NO == this_id->Compare(*current_id))) {
+        if (current_id.Empty() || (CSeq_id::e_YES != this_id->Compare(*current_id))) {
             if (cur_set.NotEmpty()) {
                 rv.push_back(cur_set);
             }
@@ -1112,6 +1112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/07/18 21:58:38  bealer
+* - Fix test (!= YES instead of == NO).
+*
 * Revision 1.28  2005/07/07 16:32:12  camacho
 * Revamping of BLAST exception classes and error codes
 *
