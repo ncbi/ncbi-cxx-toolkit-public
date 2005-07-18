@@ -66,11 +66,15 @@ public:
 
     const CTaxNRItem& operator=(const CTaxNRItem& rhs) {
         if (&rhs != this) {
-            itemId = rhs.itemId;
-            keep   = rhs.keep;
-            InitTaxItem(rhs.prefTaxnode, rhs.modelOrg, rhs.taxId);
+            Set(rhs);
         }
         return *this;
+    }
+
+    void Set(const CTaxNRItem& rhs) {
+        itemId = rhs.itemId;
+        keep   = rhs.keep;
+        InitTaxItem(rhs.prefTaxnode, rhs.modelOrg, rhs.taxId);
     }
 
     bool operator==(const CTaxNRItem& rhs) const {
@@ -145,10 +149,16 @@ public:
     //  or something we can relate to it:  here, we assume the index in the c-tor is the
     //  TItem in the cluster.
     virtual unsigned int Apply(CBaseClusterer::TCluster*& cluster, string* report = NULL);
+    void ShouldMatch() { m_shouldMatch = true; }
+    void ShouldNotMatch() { m_shouldMatch = false; }
 
     //  Simply compare values of taxId in the two items.
     virtual int CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) const;
 
+    //  If 'id' has not been seen, return an id of -1, or a CTaxNRItem
+    //  with invalid values as created from the default ctor.
+    bool GetItemForId(CBaseClusterer::TId itemId, CTaxNRItem& taxNRItem) const;
+    int  GetTaxIdForId(const CBaseClusterer::TId& id) const;
 
 //    static void SetPriorityTaxNodes(const CCdd_pref_nodes& prefNodes);
 //    static unsigned int AddPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, CPriorityTaxNodes::TaxNodeInputType nodeType = CPriorityTaxNodes::eCddPrefNodesAll);
@@ -160,6 +170,11 @@ protected:
 
     //  Creates tax server, causing the load of pref nodes/model orgs
     void InitializeCriteria();
+
+    //  If true, instructs to look for a 'match' among the priority tax nodes (default).
+    //  If false, instructs to look for lack of a 'match' among the priority tax nodes
+    //  (i.e., in the set of not-priority nodes).
+    bool m_shouldMatch;
 
     bool m_isTaxConnected;
     static TaxClient* m_taxClient;           //  contains a CTaxon1 object
@@ -178,6 +193,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/18 19:06:44  lanczyck
+* add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
+* add a pair of convenience methods to extract items & ids
+*
 * Revision 1.2  2005/07/14 14:50:25  lanczyck
 * add new ctor
 *
