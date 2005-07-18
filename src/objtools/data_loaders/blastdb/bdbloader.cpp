@@ -350,9 +350,9 @@ void CBlastDbDataLoader::x_SplitDescr(TChunks        & chunks,
     TPlace place(seqdata.GetSeqIdHandle(), 0);
     
     if ( place.first ) {
-        chunk->x_AddDescInfo(0xffff, place.first);
+        chunk->x_AddDescInfo(~0u, place.first);
     } else {
-        chunk->x_AddDescInfo(0xffff, place.second);
+        chunk->x_AddDescInfo(~0u, place.second);
     }
     
     // Store data locally, remember place and chunk id
@@ -581,6 +581,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.28  2005/07/18 15:26:02  vasilche
+ * Set ALL bits when adding split description info.
+ *
  * Revision 1.27  2005/07/11 15:23:07  bealer
  * - Doxygen
  * - Remove unnecessary parameter.
