@@ -48,6 +48,7 @@
 // (mostly unit test classes)
 class CBlastTraceBackTest; 
 class CBlastSetupTest;
+class CUniformSearchTest; 
 
 class CBlastTabularFormatThread;
 
@@ -352,7 +353,7 @@ public:
 
     /// Create a snapshot of the state of this object for internal use of its
     /// data structures (BLAST C++ APIs only)
-    const CBlastOptionsMemento* CreateSnapshot() const;
+    CBlastOptionsMemento* CreateSnapshot() const;
     
 private:
     /// Prohibit copy c-tor 
@@ -399,7 +400,9 @@ private:
     friend class CDbBlast;
     friend class CDbBlastTraceback;
     friend class CDbBlastPrelim;
-
+    friend class CBlastTracebackSearch;
+    friend class SPrelimTracebackMemento;
+    
     // Tabular formatting thread needs to calculate parameters structures
     // and hence needs access to individual options structures.
     friend class ::CBlastTabularFormatThread; 
@@ -407,6 +410,7 @@ private:
     /// @todo Strive to remove these classes
     friend class ::CBlastTraceBackTest;    // unit test class
     friend class ::CBlastSetupTest;        // unit test class
+    friend class ::CUniformSearchTest;     // unit test class
 };
 
 //#endif /* SKIP_DOXYGEN_PROCESSING */
@@ -588,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.108  2005/07/18 19:21:54  bealer
+* - Add friend declaration.
+*
 * Revision 1.107  2005/07/13 13:23:45  camacho
 * Doxygen fix
 *
