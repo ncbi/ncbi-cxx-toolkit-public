@@ -762,7 +762,7 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
         cf->GetDriverVersions(drv_list);
 
         ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
-             typename const TClassFactory::SDriverInfo& drv_info = *it2;
+             const typename TClassFactory::SDriverInfo& drv_info = *it2;
              if (!driver.empty()) {
                 if (driver != drv_info.name) {
                     continue;
@@ -818,10 +818,10 @@ bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
         cf->GetDriverVersions(drv_list);
 
         ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
-            typename const TClassFactory::SDriverInfo& drv_info = *it2;
+            const typename TClassFactory::SDriverInfo& drv_info = *it2;
 
             ITERATE(typename TClassFactory::TDriverList, new_it2, new_drv_list) {
-                typename const TClassFactory::SDriverInfo& new_drv_info = *new_it2;
+                const typename TClassFactory::SDriverInfo& new_drv_info = *new_it2;
 
                 if ( !(new_drv_info.name == drv_info.name &&
                        new_drv_info.version.Match(drv_info.version) == 
@@ -1092,6 +1092,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/07/18 12:12:10  ssikorsk
+ * Replaced typename const with const typename for GCC sake
+ *
  * Revision 1.46  2005/07/18 12:04:27  ssikorsk
  * Added GetDefaultIfVerInfo to IClassFactory and CPluginManager;
  * Added WillExtendCapabilities to CPluginManager;
