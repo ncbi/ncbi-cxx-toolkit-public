@@ -19,7 +19,7 @@
 
 //BEGIN_objects_SCOPE // namespace ncbi::objects::
 USING_NCBI_SCOPE;
-USING_SCOPE(cd_utils);
+//USING_SCOPE(cd_utils);
 
 //------------------------------------------------------------------------------------
 // create a new copy of a C++ ASN data object (copied from Paul's asn_converter.hpp)
