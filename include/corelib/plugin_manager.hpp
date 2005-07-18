@@ -930,8 +930,18 @@ bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
         // A perfect match will be found after we load all factories 
         // from all DLLs.
 
-        drv_list.remove_if( 
-            CInvalidDrvVer<TClass, TIfVer>(driver_name, driver_version) );
+        CInvalidDrvVer<TClass, TIfVer> is_invalid(driver_name, driver_version);
+        // drv_list.remove_if(is_invalid);
+        typedef typename TDriverInfoList::iterator TDrilIt;
+        for (TDrilIt it = drv_list.begin();  it != drv_list.end(); ) {
+            if (is_invalid(*it)) {
+                TDrilIt cur = it;
+                ++it;
+                drv_list.erase(cur);
+            } else {
+                ++it;
+            }
+        }
 
         // Instantiate selected factories.
         plugin_entry_point(drv_list, eInstantiateFactory);
@@ -1092,6 +1102,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/07/18 15:53:46  ucko
+ * RegisterWithEntryPoint: don't use remove_if in conjunction with
+ * CInvalidDrvVer, as WorkShop's version only accepts plain functions.
+ *
  * Revision 1.47  2005/07/18 12:12:10  ssikorsk
  * Replaced typename const with const typename for GCC sake
  *
