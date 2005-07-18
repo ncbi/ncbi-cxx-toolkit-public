@@ -43,7 +43,7 @@
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 #ifdef NCBI_FTDS
-#ifdef _WIN32
+#if defined(NCBI_OS_MSWIN)
 #include <winsock2.h>
 #endif
 #endif
@@ -102,14 +102,12 @@ CTDSContext::CTDSContext(DBINT version) :
         m_HostName= hostname;
     }
 
-#ifdef WIN32
-        {
-            WSADATA wsaData; 
-            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-            {
-                DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
-            }
-        }
+#if defined(NCBI_OS_MSWIN)
+    WSADATA wsaData; 
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+    {
+        DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+    }
 #endif
 
     CHECK_DRIVER_FATAL( 
@@ -254,6 +252,10 @@ CTDSContext::~CTDSContext()
     dbloginfree(m_Login);
     dbexit();
     m_pTDSContext = 0;
+
+#if defined(NCBI_OS_MSWIN)
+    WSACleanup();
+#endif
 }
 
 
@@ -673,6 +675,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/07/18 12:47:35  ssikorsk
+ * Winsock32 cleanup;
+ * WIN32 -> NCBI_OS_MSWIN;
+ *
  * Revision 1.38  2005/07/12 13:36:19  ssikorsk
  * Added winsock initialization
  *
