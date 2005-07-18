@@ -1027,6 +1027,7 @@ DBAPI_RegisterDriver_CTLIB(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
@@ -1054,6 +1055,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/07/18 17:01:10  ssikorsk
+ * Export DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
+ *
  * Revision 1.40  2005/06/07 16:22:51  ssikorsk
  * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
  *
