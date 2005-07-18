@@ -335,6 +335,13 @@ CAlnMixMerger::x_Merge()
             hi_start_i = starts.end();
 
 
+            // create a copy of the match,
+            // which we could work with temporarily
+            // without modifying the original
+            CAlnMixMatch tmp_match = *match;
+            match = &tmp_match; // point to the new tmp_match
+
+
             if (seq2) {
                 if (width2 == 3) {
                     // Set the frame if necessary
@@ -359,6 +366,38 @@ CAlnMixMerger::x_Merge()
                     match_list_iter2 = match->m_MatchIter2;
                     curr_len = len = match->m_Len;
                 }}
+                while (second_row_fits == eTranslocation) {
+                    if (!seq2->m_ExtraRow) {
+                        // create an extra row
+                        CRef<CAlnMixSeq> row (new CAlnMixSeq);
+                        row->m_BioseqHandle = seq2->m_BioseqHandle;
+                        row->m_SeqId = seq2->m_SeqId;
+                        row->m_Width = seq2->m_Width;
+                        row->m_Frame = start2 % 3;
+                        row->m_SeqIdx = seq2->m_SeqIdx;
+                        if (m_MergeFlags & fQuerySeqMergeOnly) {
+                            row->m_DsIdx = match->m_DsIdx;
+                        }
+                        m_ExtraRows.push_back(row);
+                        row->m_ExtraRowIdx = seq2->m_ExtraRowIdx + 1;
+                        seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow = row;
+                        break;
+                    }
+                    seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
+
+                    second_row_fits = x_SecondRowFits(match);
+                    {{
+                        // reset the ones below,
+                        // since match may have been modified
+                        seq1 = match->m_AlnSeq1;
+                        start1 = match->m_Start1;
+                        match_list_iter1 = match->m_MatchIter1;
+                        seq2 = match->m_AlnSeq2;
+                        start2 = match->m_Start2;
+                        match_list_iter2 = match->m_MatchIter2;
+                        curr_len = len = match->m_Len;
+                    }}
+                }
             }
 
 
@@ -580,20 +619,7 @@ CAlnMixMerger::x_Merge()
                  
             // try to resolve the second row
             if (seq2) {
-                // create a copy of the match,
-                // which we could work with temporarily
-                // without modifying the original
-                CAlnMixMatch tmp_match = *match;
-                match = &tmp_match; // point to the new tmp_match
 
-                if (second_row_fits == eFirstRowOverlapBelow  ||
-                    second_row_fits == eFirstRowOverlapAbove) {
-                    // try it again, it may fit this time
-                    // since the second row may have been
-                    // cut into smaller segments
-                    // or new frame was set
-                    second_row_fits = x_SecondRowFits(match);
-                }
                 while (second_row_fits != eSecondRowFitsOk  &&
                        second_row_fits != eIgnoreMatch) {
                     if (!seq2->m_ExtraRow) {
@@ -831,7 +857,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                             return eIgnoreMatch;
                                         }
                                     }
-                                    result = eTranslocation;
+                                    return eTranslocation;
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -867,7 +893,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                             return eIgnoreMatch;
                                         }
                                     }
-                                    result = eTranslocation;
+                                    return eTranslocation;
                                 } else {
                                     return eIgnoreMatch;
                                 }
@@ -1167,6 +1193,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/07/18 15:58:28  todorov
+* 1) Adjusted x_SecondRowFits to return immediately in case of
+* translocation.
+* 2) Bug fix: Added a 'while (second_row_fits == eTranslocation)' loop
+* to the preliminary x_SecondRowFits, since translocations are put on
+* separate rows.  This guarantees preliminary truncation.
+*
 * Revision 1.6  2005/07/14 22:59:16  todorov
 * Fixed a bug in x_SecondRowFits: translocations now go on separate
 * rows.
