@@ -2,10 +2,10 @@
 #################################
 
 APP = nrDemo
-SRC = nrDemo \
-        cuSimpleClusterer \
-        cuSimpleSlc \
-        cuSimpleNonRedundifier 
+SRC = cuSimpleClusterer \
+      cuSimpleSlc \
+      cuSimpleNonRedundifier \
+      nrDemo
 
 LIB = xcd_utils \
       cdd cn3d mmdb scoremat seqset seq \
