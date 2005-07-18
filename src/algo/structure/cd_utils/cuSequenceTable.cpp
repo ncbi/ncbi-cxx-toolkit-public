@@ -43,11 +43,26 @@ SequenceTable::SequenceTable()
 {
 }
 
-void SequenceTable::addSequences(vector< CRef< CBioseq > >& bioseqVec)
+void SequenceTable::addSequences(vector< CRef< CBioseq > >& bioseqVec, bool grouped)
 {
-	for (int i = 0; i < bioseqVec.size(); i++)
+	if (!grouped)
 	{
-		addSequence(bioseqVec[i]);
+		for (int i = 0; i < bioseqVec.size(); i++)
+		{
+			addSequence(bioseqVec[i]);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < bioseqVec.size(); i++)
+		{
+			list< CRef< CSeq_id > >& seqIds = bioseqVec[i]->SetId();
+			for (list< CRef< CSeq_id > >::iterator it= seqIds.begin(); it != seqIds.end(); it++)
+			{
+				for (int j = 0; j < bioseqVec.size(); j++)
+					m_table.insert(SeqidToBioseqMap::value_type(*it, bioseqVec[j]));
+			}
+		}
 	}
 }
 
@@ -60,16 +75,50 @@ void SequenceTable::addSequence(CRef< CBioseq > bioseq)
 	}
 }
 
-bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)
+void SequenceTable::addSequences(CSeq_entry& seqEntry)
 {
-	SeqidToBioseqMap::iterator sit = m_table.find(seqId);
-	if (sit == m_table.end())
-		return false;
+	if (seqEntry.IsSet())
+	{
+		list< CRef< CSeq_entry > >& seqSet = seqEntry.SetSet().SetSeq_set();
+		list< CRef< CSeq_entry > >::iterator it = seqSet.begin();
+		for (; it != seqSet.end(); it++)
+			addSequences(*(*it));
+	}
 	else
 	{
-		bioseq = sit->second;
-		return true;
+		CRef< CBioseq > bioseq(&(seqEntry.SetSeq()));
+		addSequence(bioseq);
 	}
+}
+
+unsigned SequenceTable::findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec)
+{
+	bioseqVec.clear();
+	pair<SeqidToBioseqMap::iterator, SeqidToBioseqMap::iterator> range = m_table.equal_range(seqId);
+	for (SeqidToBioseqMap::iterator it = range.first; it!= range.second; it++)
+		bioseqVec.push_back(it->second);
+	return bioseqVec.size();
+}
+
+bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)
+{
+	vector< CRef< CBioseq > > bioseqVec;
+	if (findSequencesInTheGroup(seqId, bioseqVec) == 0)
+		return false;
+	for(int i = 0; i < bioseqVec.size(); i++)
+	{
+		const CBioseq::TId& ids = bioseqVec[i]->GetId();
+		CBioseq::TId::const_iterator it = ids.begin(), itend = ids.end();
+		for (; it != itend; ++it) 
+		{
+			if ((*it)->Match(*seqId)) 
+			{
+				bioseq = bioseqVec[i];
+				return true;
+			}
+	    }
+    }
+	return false;
 }
 
 bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry)
@@ -110,6 +159,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/18 19:43:37  cliu
+ * use multimap
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

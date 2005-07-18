@@ -52,14 +52,18 @@ class SequenceTable
 {
 public:
 	SequenceTable();
-	void addSequences(vector< CRef<CBioseq> > & bioseqVec);
-	void addSequence(CRef< CBioseq > bioseqVec);
+
+	void addSequences(vector< CRef<CBioseq> > & bioseqVec, bool grouped=false);
+	void addSequence(CRef< CBioseq > bioseq);
+	void addSequences(CSeq_entry& seqEntry);
+	unsigned findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec);
 	bool findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq);
 	bool findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry);
 	void dump(string filename); //for debug
 private:
-	typedef map<CRef< CSeq_id >, CRef< CBioseq >, LessBySeqId> SeqidToBioseqMap;
+	typedef multimap<CRef< CSeq_id >, CRef< CBioseq >, LessBySeqId> SeqidToBioseqMap;
 	SeqidToBioseqMap m_table;
+
 };
 
 END_SCOPE(cd_utils)
@@ -71,6 +75,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/18 19:43:19  cliu
+ * use multimap
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
