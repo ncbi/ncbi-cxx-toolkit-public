@@ -1119,13 +1119,13 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
     if (pos > (CT_POS_TYPE)(gap)) {
         // NB: pos > 0 here
-        pos += m_BufferSize - 1;
+        pos += CT_OFF_TYPE(m_BufferSize - 1);
         rec  = pos / m_BufferSize;
         rec -= 1;
         if (m_BufferPos < gap) {
             size_t n = gap / m_BufferSize;        // Full records in the gap
             gap %= m_BufferSize;                  // Remaining gap size
-            pos -= n;                             // Backup this many records
+            pos -= CT_OFF_TYPE(n);                // Backup this many records
             m_FileStream->seekg(rec * m_BufferSize);
             m_BufferPos = 0;
             n = kBlockSize;
@@ -1657,6 +1657,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/07/18 17:50:14  ucko
+ * x_Backspace: cast increments to CT_OFF_TYPE for compatibility with
+ * WorkShop 5.5.
+ *
  * Revision 1.33  2005/07/12 18:26:45  lavr
  * Fix archive flushing bug
  *
