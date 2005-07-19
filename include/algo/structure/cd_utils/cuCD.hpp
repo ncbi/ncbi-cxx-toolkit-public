@@ -127,7 +127,7 @@ struct SeqTreeNode
 };
 typedef pair<SeqTreeNode, SeqTreeNode> SeqTreeEdge;
 
-string layoutSeqTree(CCdCore* pCD, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edgs);
+string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edgs);
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/07/19 15:37:55  cliu
+ * make a tree for family
+ *
  * Revision 1.3  2005/07/06 20:58:19  cliu
  * return tree parameter string
  *

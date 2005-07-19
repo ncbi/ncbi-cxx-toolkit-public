@@ -610,9 +610,13 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	delete seqTree;
 }
 
-string layoutSeqTree(CCdCore* cd, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
+string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
-	MultipleAlignment ma(cd);
+	vector<CDFamily> families;
+	CDFamily::createFamilies(cds, families);
+	if(families.size() != 1 )
+		return string();
+	MultipleAlignment ma(families[0]);
 	TreeOptions treeOptions;
 	SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
 	seqTree->fixRowName(ma, SeqTree::eGI);
@@ -634,6 +638,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2005/07/19 15:37:32  cliu
+ * make a tree for family
+ *
  * Revision 1.7  2005/07/06 20:58:06  cliu
  * return tree parameter string
  *
