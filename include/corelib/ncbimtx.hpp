@@ -754,6 +754,7 @@ private:
 
 // Forward declaration of internal (platform-dependent) RW-lock representation
 class CInternalRWLock;
+class CRWLock;
 //class CReadLockGuard;
 //class CWriteLockGuard;
 
@@ -940,6 +941,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/07/19 20:11:09  ucko
+ * Predeclare CRWLock for the sake of G++ 4.
+ *
  * Revision 1.38  2005/06/17 15:20:59  vasilche
  * Changed Lock::() and Unlock::() to return void because it was not used anyway.
  *
