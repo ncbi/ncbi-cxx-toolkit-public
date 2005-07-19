@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objmgr/impl/scope_info.hpp>
 #include <vector>
 #include <utility>
 
@@ -43,7 +44,6 @@ BEGIN_SCOPE(objects)
 
 class CBioseq_ScopeInfo;
 class CBioseq_Handle;
-struct SSeq_id_ScopeInfo;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -114,6 +114,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/07/19 20:19:52  ucko
+ * Include scope_info.hpp because some compilers (ICC 9, perhaps also G++ 4)
+ * require a full declaration of SSeq_id_ScopeInfo when iterating through
+ * CSynonymSet.
+ *
  * Revision 1.6  2004/07/12 15:05:31  grichenk
  * Moved seq-id mapper from xobjmgr to seq library
  *
