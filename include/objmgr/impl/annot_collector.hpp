@@ -61,6 +61,7 @@ class CSeq_loc_Conversion;
 class CSeq_loc_Conversion_Set;
 class CSeq_feat_Handle;
 class CAnnot_CI;
+class CSeqMap_CI;
 
 class NCBI_XOBJMGR_EXPORT CAnnotMapping_Info
 {
@@ -787,6 +788,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/07/19 20:12:23  ucko
+* Predeclare CSeqMap_CI for the sake of G++ 4.
+*
 * Revision 1.30  2005/06/22 14:07:42  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.
