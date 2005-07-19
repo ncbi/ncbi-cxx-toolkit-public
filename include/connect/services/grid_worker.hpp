@@ -120,6 +120,7 @@ public:
 };
 
 class CGridWorkerNode;
+class CGridThreadContext;
 
 /// Worker Node job context
 ///
@@ -509,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/07/19 20:10:54  ucko
+ * Predeclare CGridThreadContext for the sake of G++ 4.
+ *
  * Revision 1.26  2005/05/27 14:46:06  didenko
  * Fixed a worker node statistics
  *
