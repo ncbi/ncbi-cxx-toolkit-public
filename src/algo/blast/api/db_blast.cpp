@@ -49,6 +49,7 @@
 #include "blast_objmgr_priv.hpp"
 #include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
+#include <algo/blast/api/dust_filter.hpp>
 
 // Core BLAST engine includes
 #include <algo/blast/core/blast_def.h>
@@ -512,6 +513,9 @@ void CDbBlast::SetupSearch()
 
         x_ResetQueryDs();
 
+        if (CBlastNucleotideOptionsHandle *nucl_handle = dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle))
+            Blast_FindDustFilterLoc(m_tQueries, nucl_handle);
+
         EBlastProgramType prog = kOptions.GetProgramType();
         if (m_ipQueryData == NULL) {
             ENa_strand strand_opt = kOptions.GetStrandOption();
@@ -770,6 +774,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/07/19 13:44:08  madden
+ * Add call to Blast_FindDustFilterLoc
+ *
  * Revision 1.79  2005/07/07 16:32:12  camacho
  * Revamping of BLAST exception classes and error codes
  *

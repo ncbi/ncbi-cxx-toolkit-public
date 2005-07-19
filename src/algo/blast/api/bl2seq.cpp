@@ -38,6 +38,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/dust_filter.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/api/seqinfosrc_seqvec.hpp>
 #include "blast_seqalign.hpp"
@@ -51,6 +52,8 @@
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/hspstream_collector.h>
+
+
 
 /** @addtogroup AlgoBlast
  *
@@ -199,6 +202,10 @@ CBl2Seq::SetupSearch()
         EBlastProgramType prog = kOptions.GetProgramType();
         ENa_strand strand_opt = kOptions.GetStrandOption();
         TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
+
+        if (CBlastNucleotideOptionsHandle *nucl_handle = dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle))
+            Blast_FindDustFilterLoc(m_tQueries, nucl_handle);
+        
         SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
                      prog, strand_opt, gc.get(), &mi_clsBlastMessage);
@@ -364,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/07/19 13:44:08  madden
+ * Add call to Blast_FindDustFilterLoc
+ *
  * Revision 1.78  2005/07/07 16:32:11  camacho
  * Revamping of BLAST exception classes and error codes
  *
