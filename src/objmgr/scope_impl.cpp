@@ -1162,9 +1162,14 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
         CRef<CBioseq_ScopeInfo> info;
         TReadLockGuard rguard(m_ConfLock);
         info = x_GetBioseq_Info(id, get_flag, match);
-        if ( info && info->HasBioseq() ) {
+        if ( info ) {
             ret.m_Handle_Seq_id = id;
-            ret.m_Info = info->GetLock(match.m_Bioseq);
+            if ( info->HasBioseq() ) {
+                ret.m_Info = info->GetLock(match.m_Bioseq);
+            }
+            else {
+                ret.m_Info.Reset(info);
+            }
         }
     }
     return ret;
