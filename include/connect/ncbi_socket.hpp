@@ -374,6 +374,9 @@ public:
     static unsigned int   NetToHostLong (unsigned int   value);
     static unsigned short HostToNetShort(unsigned short value);
     static unsigned short NetToHostShort(unsigned short value);
+
+    // Loopback address gets returned in network byte order
+    static unsigned int   GetLoopbackAddress(void);
 };
 
 
@@ -631,6 +634,12 @@ inline unsigned short CSocketAPI::NetToHostShort(unsigned short value)
 }
 
 
+inline unsigned int CSocketAPI::GetLoopbackAddress(void)
+{
+    return SOCK_GetLoopbackAddress();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -640,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2005/07/19 19:55:12  lavr
+ * +CSocketAPI::GetLoopbackAddress()
+ *
  * Revision 6.42  2005/03/09 15:04:16  lavr
  * Remove CDatagramSocket::Send(...unsigned int host = 0...)
  *
