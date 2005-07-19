@@ -198,7 +198,7 @@ property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entr
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
 --property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
-property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
+property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
 property gui_dlg_feat_search : {name:"gui_dlg_feat_search", path:"gui:dialogs:feat_search"}
 property gui_dlg_seq_goto : {name:"gui_dlg_seq_goto", path:"gui:dialogs:seq_goto"}
@@ -302,7 +302,7 @@ property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core g
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank", bundle:true, req:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
 property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", bundle:true, req:true}
-property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache" & FLTK_LIBS, bundle:true, req:true}
+property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache" & FLTK_LIBS, bundle:true, req:true}
 property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext", bundle:true, req:true}
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
@@ -407,6 +407,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/07/19 18:26:21  lebedev
+ * Libraries updated
+ *
  * Revision 1.62  2005/07/13 14:00:44  lebedev
  * libgui_core updated
  *
