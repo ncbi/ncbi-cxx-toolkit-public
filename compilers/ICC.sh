@@ -11,7 +11,10 @@
 
 ## Path to the compiler
 CC="icc"
-CXX="icpc -cxxlib-icc"
+case `uname -m` in
+    x86_64 ) CXX=icpc ;;
+    *      ) CXX="icpc -cxxlib-icc" ;;
+esac
 
 $CXX -V -help >/dev/null 2>&1
 if test "$?" -ne 0 ; then
