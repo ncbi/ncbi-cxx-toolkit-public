@@ -38,6 +38,10 @@
 #include "mgrres.hpp"
 #include "mgrlogic.hpp"
 
+BEGIN_NCBI_SCOPE
+class CHTMLPage;
+END_NCBI_SCOPE
+
 USING_NCBI_SCOPE;
 
 
@@ -227,6 +231,9 @@ public:
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/07/19 20:20:12  ucko
+* Predeclare CHTMLPage for the sake of G++ 4.
+*
 * Revision 1.2  2005/07/07 19:06:44  didenko
 * Added errors handling
 *
