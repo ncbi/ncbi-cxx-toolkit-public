@@ -179,7 +179,9 @@ NCBI_USING_NAMESPACE_STD;
 #endif
 
 #ifdef NCBI_COMPILER_ICC
-#  define NO_STD_IDENTITY
+#  if !defined(__GNUC__)  ||  defined(__INTEL_CXXLIB_ICC)
+#    define NO_STD_IDENTITY
+#  endif
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
 #endif
@@ -459,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/07/19 20:12:08  ucko
+ * Properly handle ICC in -cxxlib-gcc mode.
+ *
  * Revision 1.9  2005/05/24 14:49:24  ucko
  * Don't forget <vector>!
  *

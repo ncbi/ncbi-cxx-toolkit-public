@@ -78,7 +78,12 @@
 #  endif
 #  include <iostream>
 #  include <fstream>
-#  include <strstream>
+#  if defined(NCBI_COMPILER_ICC)  &&  defined(__GNUC__)  &&  !defined(__INTEL_CXXLIB_ICC)
+#    define _BACKWARD_BACKWARD_WARNING_H 1
+#    include <backward/strstream>
+#  else
+#    include <strstream>
+#  endif
 #  include <iomanip>
 #  if defined(HAVE_NO_STD)
 #    define IO_PREFIX
@@ -537,6 +542,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/07/19 20:11:54  ucko
+ * Properly handle ICC in -cxxlib-gcc mode.
+ *
  * Revision 1.43  2005/06/03 16:21:11  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
