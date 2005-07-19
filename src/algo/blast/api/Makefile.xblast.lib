@@ -42,6 +42,8 @@ SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
+DLL_LIB = xalgodustmask
+
 CFLAGS   = $(FAST_CFLAGS)
 # Strict gcc flags
 #CFLAGS  = $(FAST_CFLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
