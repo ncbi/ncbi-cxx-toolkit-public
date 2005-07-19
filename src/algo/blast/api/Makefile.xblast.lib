@@ -35,7 +35,8 @@ repeats_filter_cxx \
 blast_mtlock \
 psi_pssm_input \
 blast_advprot_options \
-version
+version \
+dust_filter
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
