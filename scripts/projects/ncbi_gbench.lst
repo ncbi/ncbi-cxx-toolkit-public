@@ -3,6 +3,7 @@ algo/align/splign$
 algo/align/util$
 algo/blast/api$
 algo/blast/core$
+algo/dustmask$
 algo/gnomon$
 algo/phy_tree
 algo/seqqa$
