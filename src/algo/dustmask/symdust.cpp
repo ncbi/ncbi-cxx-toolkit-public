@@ -44,26 +44,17 @@ inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
     inner_sum_ += inner_counts_[t];
     ++inner_counts_[t];
 
-    // if we already had low_k elements for this triplet, then remove the
-    //      first one to keep their number at low_k
-    if( inner_counts_[t] > low_k_ )
-    {
-        rem_k_info( t );
-        ++high_beg_;
-    }
-
-    // if we just reached low_k_ elements, then update high_beg_ as
-    //      necessary
-    if( inner_counts_[t] == low_k_ )
+    // if we just reached or exceeded low_k_ elements, then update 
+    // high_beg_ as necessary
+    if( inner_counts_[t] >= low_k_ )
     {
         Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
 
-        while( triplet_list_[off] != t )
-        {
+        do{
             rem_k_info( triplet_list_[off] );
             --off;
             ++high_beg_;
-        }
+        }while( triplet_list_[off] != t );
     }
 }
 
@@ -326,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/07/19 18:59:25  morgulis
+ * Simplification of add_k_info().
+ *
  * Revision 1.10  2005/07/18 14:55:59  morgulis
  * Removed position lists maintanance.
  *
