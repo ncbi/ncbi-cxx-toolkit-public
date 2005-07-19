@@ -874,7 +874,7 @@ BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length
 {
 	Int2 seqloc_num=0;
 	Int2 status=0;		/* return value. */
-        BlastSeqLoc* dust_loc = NULL,* seg_loc = NULL;
+        BlastSeqLoc* seg_loc = NULL;
 
         ASSERT(filter_options);
         ASSERT(seqloc_retval);
@@ -904,20 +904,11 @@ BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length
 		sparamsp = NULL;
 		seqloc_num++;
 	}
-	else if (filter_options->dustOptions)
-	{
-              SDustOptions* dust_options = filter_options->dustOptions;
-              SeqBufferDust(sequence, length, offset, dust_options->level, 
-                       dust_options->window, dust_options->linker, &dust_loc);
-			seqloc_num++;
-	}
 
 	if (seqloc_num)
 	{ 
 	      BlastSeqLoc* seqloc_list=NULL;  /* Holds all SeqLoc's for
                                                       return. */
-              if (dust_loc)
-                 seqloc_list = dust_loc;
               if (seg_loc)
                  seqloc_list = seg_loc;
 
