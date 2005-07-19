@@ -4449,9 +4449,18 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 }
 
 
+unsigned int SOCK_GetLoopbackAddress(void)
+{
+    return htonl(INADDR_LOOPBACK);
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.177  2005/07/19 19:55:29  lavr
+ * +SOCK_GetLoopbackAddress()
+ *
  * Revision 6.176  2005/05/23 20:35:30  lavr
  * SOCK_ReadLine():  Remove wrong assert()
  *

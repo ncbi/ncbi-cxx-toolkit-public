@@ -113,6 +113,7 @@
  *  SOCK_NetToHostLong
  *  SOCK_gethostbyname
  *  SOCK_gethostbyaddr
+ *  SOCK_GetLoopbackAddress
  *
  */
 
@@ -1004,6 +1005,11 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
  );
 
 
+/* Return loopback address (in network byte order).
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -1015,6 +1021,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2005/07/19 19:54:56  lavr
+ * +SOCK_GetLoopbackAddress()
+ *
  * Revision 6.55  2005/05/20 11:39:55  lavr
  * Correct documentation on SOCK_ReadLine()
  *
