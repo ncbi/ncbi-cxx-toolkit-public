@@ -94,13 +94,26 @@ CBlastDbDataLoader::~CBlastDbDataLoader(void)
 }
 
 CBlastDbDataLoader::TTSE_LockSet
-CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice /*choice*/)
+CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 {
-    CTSE_LoadLock lock;
     TTSE_LockSet locks;
-    
-    if (x_LoadData(idh, lock)) {
-        locks.insert(TTSE_Lock(lock));
+
+    switch ( choice ) {
+    case eBlob:
+    case eBioseq:
+    case eCore:
+    case eBioseqCore:
+    case eSequence:
+    case eAll:
+        {
+            CTSE_LoadLock lock;
+            if (x_LoadData(idh, lock)) {
+                locks.insert(lock);
+            }
+            break;
+        }
+    default:
+        break;
     }
     
     return locks;
@@ -581,6 +594,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.29  2005/07/20 16:38:26  didenko
+ * Eugene: load blobs only when sequence is requested, excluding any annotations requests.
+ *
  * Revision 1.28  2005/07/18 15:26:02  vasilche
  * Set ALL bits when adding split description info.
  *
