@@ -543,6 +543,25 @@ bool TaxTreeData::write(std::ostream&os, const iterator& cursor)const
 	return true;
 }
 
+TaxTreeIterator TaxTreeData::getParentAtRank(int row, string rankName)
+{
+	short rank = getRankId(rankName);
+	if (rank < 0)
+		return begin();
+	TaxTreeIterator& leaf = m_rowToTaxNode[row];
+	if (leaf->rowId < 0)
+		return begin();
+	TaxTreeIterator parentNode = parent(leaf);
+	while (parentNode != begin())
+	{
+		if (parentNode->rankId == rank)
+			return parentNode;
+		else
+			parentNode = parent(parentNode);
+	}
+	return parentNode;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
         
@@ -552,6 +571,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/20 20:05:08  cliu
+ * redesign SeqTreeAPI
+ *
  * Revision 1.2  2005/04/19 21:59:08  ucko
  * +stdio.h() due to use of sprintf(); don't try to use find() on a
  * tree<>, because it's not 100% STL-compatible.

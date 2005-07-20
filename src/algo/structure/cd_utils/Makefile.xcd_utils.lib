@@ -45,7 +45,8 @@ SRC = \
 	cuTaxNRCriteria \
 	cuTaxTree \
 	cuSeqTreeAsnizer \
-	cuSeqTreeRootedLayout
+	cuSeqTreeRootedLayout \
+	cuSeqTreeAPI
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 			$(NCBI_C_INCLUDE)

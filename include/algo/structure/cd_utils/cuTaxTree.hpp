@@ -103,6 +103,7 @@ public:
 	//bool isPreferredTaxNode(const TaxTreeIterator& taxNode);
 	int getAllLeafNodes(const TaxTreeIterator& taxNode, vector<TaxTreeIterator>& nodes) const;
 	short getRankId(string rankName);
+	TaxTreeIterator getParentAtRank(int row, string rankName);
 	bool isEmpty()const;
 	//bool missLocalTaxFiles()const {return m_missLocalTaxFiles;}
 	~TaxTreeData();
@@ -146,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/20 20:04:32  cliu
+ * redesign SeqTreeAPI
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

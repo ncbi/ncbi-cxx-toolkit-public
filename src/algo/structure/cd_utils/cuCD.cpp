@@ -610,6 +610,7 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	delete seqTree;
 }
 
+/*
 string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
 	vector<CDFamily> families;
@@ -629,7 +630,7 @@ string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector
 		param.append(" / " + GetScoringMatrixName(treeOptions.matrix));
 	}
 	return param;
-}
+}*/
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
@@ -638,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/07/20 20:05:08  cliu
+ * redesign SeqTreeAPI
+ *
  * Revision 1.8  2005/07/19 15:37:32  cliu
  * make a tree for family
  *

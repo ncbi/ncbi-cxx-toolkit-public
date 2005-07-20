@@ -141,53 +141,6 @@ void SeqTreeRootedLayout::getSize(int& x, int& y)
 	y = m_numLeaf * getYInterval();
 }
 
-int SeqTreeRootedLayout::getAllEdges(SeqTree& treeData,vector<SeqTreeEdge>& edges)
-{
-	getEgesFromSubTree(treeData.begin(), edges);
-	return edges.size();
-}
-
-void SeqTreeRootedLayout::getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges)
-{
-    //if cursor is a leaf node, draw its name and return
-    if (cursor.number_of_children() == 0)
-    {
-        return;
-    }
-    //always draw from parent to children
-	SeqTreeNode nodeParent;
-	nodeParent.isLeaf = false;
-	nodeParent.x = cursor->x;
-	nodeParent.y = cursor->y;
-    SeqTree::sibling_iterator sib = cursor.begin();
-    while (sib != cursor.end())
-    {
-		SeqTreeNode nodeChild, nodeTurn;
-		nodeChild.x = sib->x;
-		nodeChild.y = sib->y;
-		nodeTurn.isLeaf = false;
-		nodeTurn.x = nodeParent.x;
-		nodeTurn.y= nodeChild.y;
-		if (sib.number_of_children() == 0)
-		{
-			nodeChild.isLeaf =true;
-			nodeChild.name = sib->name;
-			nodeChild.childAcc = sib->membership;
-		}
-		else
-			nodeChild.isLeaf = false;
-		SeqTreeEdge e1, e2;
-		e1.first = nodeParent;
-		e1.second = nodeTurn;
-		e2.first = nodeTurn;
-		e2.second = nodeChild;
-		edges.push_back(e1);
-		edges.push_back(e2);
-		getEgesFromSubTree(sib, edges);
-        ++sib;
-    }
-}
-
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 

@@ -46,7 +46,7 @@ public:
 	explicit SeqTreeRootedLayout(int yInterval = 0);
 	void calculateNodePositions(SeqTree& treeData, int maxX, int maxY);
 	SeqTree::iterator findEdgeEnd(SeqTree& treeData, int x, int y, int edgeWidth);
-	int getAllEdges(SeqTree& treeData,vector<SeqTreeEdge>& edges);
+//	int getAllEdges(SeqTree& treeData,vector<SeqTreeEdge>& edges);
 	void getSize(int& x, int& y);
 	virtual ~SeqTreeRootedLayout();
 private:
@@ -58,7 +58,7 @@ private:
 
 	void calculateNodePositions(const SeqTree::iterator& cursor);
 	int getYInterval();
-	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
+//	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
 };
 
 END_SCOPE(cd_utils)
