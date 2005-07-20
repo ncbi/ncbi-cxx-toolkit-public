@@ -45,7 +45,7 @@ END_objects_SCOPE
 
 /// This class provides alignment-related functions intended
 /// for finding overlaps for contig assembly.
-class CContigAssembly
+class NCBI_XALGOCONTIG_ASSEMBLY_EXPORT CContigAssembly
 {
 public:
     /// Most users of the class need only to call this function.
@@ -122,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/20 15:28:55  jcherry
+ * Added export specifier for CContigAssembly
+ *
  * Revision 1.1  2005/06/16 17:30:23  jcherry
  * Initial version
  *
