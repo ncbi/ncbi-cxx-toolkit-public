@@ -167,6 +167,7 @@
 #  define NCBI_XALGOSEQQA_EXPORTS
 #  define NCBI_XALGOWINMASK_EXPORTS
 #  define NCBI_XALGODUSTMASK_EXPORTS
+#  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORTS
 #endif
 
 
@@ -706,6 +707,14 @@
 #  define NCBI_XALGOALIGN_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library xalgocontig_assembly
+ */
+#ifdef NCBI_XALGOCONTIG_ASSEMBLY_EXPORTS
+#  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xalgognomon
  */
 #ifdef NCBI_XALGOGNOMON_EXPORTS
@@ -738,7 +747,7 @@
 #  define NCBI_XALGOSEQQA_EXPORT __declspec(dllimport)
 #endif
 
-/* Export specifier for library xalgoseqqa
+/* Export specifier for library xalgowinmask
  */
 #ifdef NCBI_XALGOWINMASK_EXPORTS
 #  define NCBI_XALGOWINMASK_EXPORT __declspec(dllexport)
@@ -1075,6 +1084,7 @@
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
+#  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT
 #  define NCBI_XALGOGNOMON_EXPORT
 #  define NCBI_XALGOPHYTREE_EXPORT
 #  define NCBI_XALGOSEQQA_EXPORT
@@ -1135,6 +1145,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.101  2005/07/20 15:23:55  jcherry
+ * Added NCBI_XALGOCONTIG_ASSEMBLY_EXPORT (under NCBI_XALGO_EXPORTS)
+ *
  * Revision 1.100  2005/06/13 16:20:16  ucko
  * +NCBI_BLASTXML_EXPORT (under NCBI_SEQ_EXPORTS, like NCBI_BLASTDB_EXPORT)
  *
