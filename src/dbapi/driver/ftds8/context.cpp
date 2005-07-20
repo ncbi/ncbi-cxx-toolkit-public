@@ -629,7 +629,7 @@ NCBI_EntryPoint_xdbapi_ftds(
     CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
-NCBI_DBAPIDRIVER_FTDS_EXPORT
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
 DBAPI_RegisterDriver_FTDS(void)
 {
@@ -641,7 +641,7 @@ DBAPI_RegisterDriver_FTDS(void)
 //        provide a default, but also to prevent from accidental linking
 //        of more than one version of FreeTDS driver to the same application
 
-NCBI_DBAPIDRIVER_FTDS_EXPORT
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
@@ -660,7 +660,7 @@ extern "C" {
         return (void*) DBAPI_RegisterDriver_FTDS_old;
     }
 
-    NCBI_DBAPIDRIVER_FTDS_EXPORT
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
     void* DBAPI_E_ftds()
     {
         return NCBI_FTDS_ENTRY_POINT();
@@ -675,6 +675,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/07/20 13:17:39  ssikorsk
+ * NCBI_DBAPIDRIVER_FTDS_EXPORT -> NCBI_DBAPIDRIVER_DBLIB_EXPORT
+ *
  * Revision 1.40  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *
