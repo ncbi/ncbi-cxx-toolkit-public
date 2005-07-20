@@ -344,7 +344,7 @@ on SetProjectData()
 		AddObject("entrezgene")
 		AddObject("featdef")
 		AddObject("gbseq")
-		AddObject("general")
+		AddSimpleProjectListFiles("general", {}, "objects:general", {"general__", "general___", "uoconv", "cleanup_utils"})
 		AddObject("id1")
 		AddSimpleProjectListFiles("id1cli", {}, "objects:id1", {"id1_client", "id1_client_"})
 		AddObject("id2")
@@ -457,9 +457,10 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
-		AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
-		-- AddProject(ProjectData("w_aln_multi", {"fltk"}, {GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
-		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
+		--AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
+		AddProject(ProjectData("w_aln_multi", {"fltk"}, {GuiFileDataExcept("widgets:aln_multiple", {"aln_col_quality.cpp"})}))
+		AddSimpleProjectListFiles("w_aln_data", {"fltk"}, "gui:widgets:aln_data", {"align_ds.cpp", "sparse_alignment.cpp", "sparse_iterator.cpp"})
+		AddSimpleProjectListFiles("seqalign_ext", {"fltk"}, "gui:widgets:aln_data", {"seqalign_ext__.cpp", "seqalign_ext___.cpp"})
 		AddGuiProject("w_flu", {}, "widgets:FLU")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		--AddProject(ProjectData("w_seq_graphic", {"fltk"}, {GuiFileDataExcept("widgets:seq_graphic", {"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"})}))
@@ -515,7 +516,7 @@ on SetProjectData()
 			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_aln_multi", "w_seq_graphic"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls"}, {}))
 		
 		-- PLUGINS --
 		
@@ -555,13 +556,16 @@ on SetProjectData()
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"taxon1", "w_taxtree", "w_seq"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
+		
 		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
 		
+		(*
 		set proteusFiles to {Â
 			mkFileDataListFiles(gSourceDir & "internal:gbench:plugins:proteus:Tree", {"AlignView.cpp", "data_source.cpp", "dll_register.cpp", "InfoTable.cpp", "tax_tree.cpp", "TaxonTree.cpp", "ClusterAlignment.cpp", "ClusterAlignment_1.cpp", "ClusterHandle.cpp", "ClusterHandle_1.cpp", "TaxTreeProteusHandle.cpp", "TaxTreeProteusHandle_1.cpp", "tools.cpp", "LocusTag.cpp"}), Â
 			mkFileDataListFiles(gSourceDir & "internal:gbench:plugins:proteus:Proteus", {"cls_check.cpp", "Handler.cpp", "Table.cpp"})}
 		set ProteusProj to ProjectData("Tree", {"fltk", "plugin"}, proteusFiles)
 		AddProject(DataPlusLibs(ProteusProj, {"taxon1", "dbapi"}, {"gui_core"}))
+*)
 	end if
 	
 end SetProjectData
@@ -1007,7 +1011,10 @@ on SetupTarget(proj, targetIndex)
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
 		my AppendAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
-		
+		if (projName is "xconnserv") then
+			-- append parent directory in this one case.
+			my AppendAccessPath(POSIX file (POSIX path of projPath & "/..") as string, false, true)
+		end if
 		set fileList to group's fileList
 		
 		set filesToAdd to {}
@@ -1135,10 +1142,6 @@ on GetTargetFiles(i)
 			tell application "CodeWarrior IDE"
 				set f to (location of tf)
 			end tell
-			if (exists f of application "Finder") then
-				set f to POSIX path of f
-				set f to POSIX file f
-			end if
 			tell application "Finder"
 				-- convert the file's to strings (colon style paths)
 				try
