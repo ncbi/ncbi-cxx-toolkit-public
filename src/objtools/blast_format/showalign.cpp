@@ -126,16 +126,16 @@ name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
-name=\"%s\"><input type=button value=\"Get selected sequences\" \
-onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s', %d)\"><input \
+name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
 type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
 value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
 type=\"hidden\" name=\"cmd\" value=\"search\"></form>",
                                      
                                      "<FORM  method=\"POST\" \
 action=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi\" \
-name=\"%s\"><input type=button value=\"Get selected sequences\" \
-onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s', %d)\"><input \
+name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
 type=\"hidden\" name=\"val\" value=\"\"><input \
 type=\"hidden\" name=\"cmd\" value=\"retrieve\"></form>"
 };
@@ -382,9 +382,9 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
             "</td><td>" + \
             k_GetSeqSelectForm +\
             "</td></tr></table>";
-        sprintf(buf, template_str.c_str(), form_name, \
-                db_is_na?1:0, query_number, form_name, db_type, query_number, 
-                query_number);      
+        sprintf(buf, template_str.c_str(), form_name, query_number, \
+                db_is_na?1:0, query_number, form_name, query_number, db_type,
+                query_number, query_number);      
         
     }
     return buf;
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.80  2005/07/20 14:40:24  jianye
+*attach query_number to form name
+*
 *Revision 1.79  2005/06/28 16:03:01  camacho
 *Fix msvc warning
 *
