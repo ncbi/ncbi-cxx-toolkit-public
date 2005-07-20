@@ -282,7 +282,7 @@ bool CTDS_LangCmd::x_AssignParams()
         const char*   type;
         string        cmd;
 
-        if (name.length() > kTDSMaxNameLen)
+        if (name.length() > kDBLibMaxNameLen)
             return false;
 
         switch (param.GetType()) {
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.14  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

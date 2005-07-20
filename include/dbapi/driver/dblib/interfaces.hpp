@@ -41,26 +41,118 @@
 #    include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 #    include <cspublic.h>
 
-#    define CDBLibContext      CTDSContext
-#    define CDBL_Connection    CTDS_Connection
-#    define CDBL_LangCmd       CTDS_LangCmd
-#    define CDBL_RPCCmd        CTDS_RPCCmd
-#    define CDBL_CursorCmd     CTDS_CursorCmd
-#    define CDBL_BCPInCmd      CTDS_BCPInCmd
-#    define CDBL_SendDataCmd   CTDS_SendDataCmd
-#    define CDBL_RowResult     CTDS_RowResult
-#    define CDBL_ParamResult   CTDS_ParamResult
-#    define CDBL_ComputeResult CTDS_ComputeResult
-#    define CDBL_StatusResult  CTDS_StatusResult
-#    define CDBL_CursorResult  CTDS_CursorResult
-#    define CDBL_BlobResult    CTDS_BlobResult
-#endif
+#    define CDBLibContext       CTDSContext
+#    define CDBL_Connection     CTDS_Connection
+#    define CDBL_LangCmd        CTDS_LangCmd
+#    define CDBL_RPCCmd         CTDS_RPCCmd
+#    define CDBL_CursorCmd      CTDS_CursorCmd
+#    define CDBL_BCPInCmd       CTDS_BCPInCmd
+#    define CDBL_SendDataCmd    CTDS_SendDataCmd
+#    define CDBL_RowResult      CTDS_RowResult
+#    define CDBL_ParamResult    CTDS_ParamResult
+#    define CDBL_ComputeResult  CTDS_ComputeResult
+#    define CDBL_StatusResult   CTDS_StatusResult
+#    define CDBL_CursorResult   CTDS_CursorResult
+#    define CDBL_BlobResult     CTDS_BlobResult
+#    define CDBL_ITDescriptor   CTDS_ITDescriptor
+#    define SDBL_ColDescr       STDS_ColDescr
+
+#    define DBLIB_dberr_handler TDS_dberr_handler
+#    define DBLIB_dbmsg_handler TDS_dbmsg_handler
+
+#    define DBLIB_SetApplicationName    TDS_SetApplicationName
+#    define DBLIB_SetHostName           TDS_SetHostName
+#    define DBLIB_SetPacketSize         TDS_SetPacketSize
+#    define DBLIB_SetMaxNofConns        TDS_SetMaxNofConns
+
+#endif // FTDS_IN_USE
 
 #include <sybfront.h>
 #include <sybdb.h>
 #include <syberror.h>
 
 BEGIN_NCBI_SCOPE
+
+#ifdef FTDS_IN_USE
+
+// some defines
+#ifndef SYBEFCON
+#  define SYBEFCON        20002   /* SQL Server connection failed. */
+#endif
+#ifndef SYBETIME
+#  define SYBETIME        20003   /* SQL Server connection timed out. */
+#endif
+#ifndef SYBECONN
+#  define SYBECONN        20009   /* Unable to connect socket -- SQL Server is
+                                   * unavailable or does not exist.
+                                   */
+#endif
+#ifndef EXINFO
+#  define EXINFO          1       /* informational, non-error */
+#endif
+#ifndef EXUSER
+#  define EXUSER          2       /* user error */
+#endif
+
+#ifndef EXNONFATAL
+#  define EXNONFATAL      3       /* non-fatal error */
+#endif
+#ifndef EXCONVERSION
+#  define EXCONVERSION    4       /* Error in DB-LIBRARY data conversion. */
+#endif
+#ifndef EXSERVER
+#  define EXSERVER        5       /* The Server has returned an error flag. */
+#endif
+#ifndef EXTIME
+#  define EXTIME          6       /* We have exceeded our timeout period while
+                                   * waiting for a response from the Server -
+                                   * the DBPROCESS is still alive.
+                                   */
+#endif
+#ifndef EXPROGRAM
+#  define EXPROGRAM       7       /* coding error in user program */
+#endif
+#ifndef INT_EXIT
+#  define INT_EXIT        0
+#endif
+#ifndef INT_CONTINUE
+#  define INT_CONTINUE    1
+#endif
+#ifndef INT_CANCEL
+#  define INT_CANCEL      2
+#endif
+#ifndef INT_TIMEOUT
+#  define INT_TIMEOUT     3
+#endif
+
+
+typedef unsigned char CS_BIT;
+#ifndef DBBIT
+#  define DBBIT CS_BIT
+#endif
+
+#if defined(NCBI_FTDS)
+#  if NCBI_FTDS == 7
+extern "C" {
+    BYTE *dbgetuserdata(DBPROCESS *dbproc);
+    RETCODE dbsetuserdata(DBPROCESS *dbproc, BYTE *ptr);
+    RETCODE dbmoretext(DBPROCESS *dbproc, DBINT size, BYTE *text);
+    DBTYPEINFO *dbcoltypeinfo(DBPROCESS *dbproc, int column);
+    int DBCURCMD(DBPROCESS *dbproc);
+    STATUS dbreadtext(DBPROCESS *dbproc, void *buf, DBINT bufsize);
+    int dbrettype(DBPROCESS *dbproc,int retnum);
+}
+#  endif // NCBI_FTDS
+#endif
+
+#endif // FTDS_IN_USE
+
+
+#ifdef FTDS_IN_USE
+#    define DEFAULT_TDS_VERSION DBVERSION_UNKNOWN
+#else
+#    define DEFAULT_TDS_VERSION DBVERSION_46
+#endif // FTDS_IN_USE
 
 class CDBLibContext;
 class CDBL_Connection;
@@ -79,7 +171,6 @@ class CDBL_BlobResult;
 
 const unsigned int kDBLibMaxNameLen = 128 + 4;
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CDBLibContext::
@@ -90,7 +181,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public I_DriverContext
     friend class CDB_Connection;
 
 public:
-    CDBLibContext(DBINT version = DBVERSION_46);
+    CDBLibContext(DBINT version = DEFAULT_TDS_VERSION);
 
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
@@ -126,6 +217,14 @@ public:
     virtual bool DBLIB_SetMaxNofConns(int n);
 
 public:
+#ifdef FTDS_IN_USE
+    // Function name keept same as with ftds.
+    unsigned int TDS_GetTimeout(void) {
+        return m_Timeout;
+    }
+#endif
+
+public:
     static  int  DBLIB_dberr_handler(DBPROCESS*    dblink,   int     severity,
                                      int           dberr,    int     oserr,
                                      const string& dberrstr,
@@ -147,6 +246,10 @@ private:
     LOGINREC*             m_Login;
     int                   m_TDSVersion;
 
+#ifdef FTDS_IN_USE
+    unsigned int          m_LoginTimeout; // inherited from ftds
+    unsigned int          m_Timeout; // inherited from ftds
+#endif    
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -225,6 +328,10 @@ private:
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     RETCODE x_Results(DBPROCESS* pLink);
 
+#ifdef FTDS_IN_USE
+    // Function name keept same as with ftds.
+    void TDS_SetTimeout(void);
+#endif    
 
     DBPROCESS*      m_Link;
     CDBLibContext*  m_Context;
@@ -318,6 +425,12 @@ protected:
 
 private:
     bool x_AssignParams(char* param_buff);
+    
+#ifdef FTDS_IN_USE
+    bool x_AddParamValue(string& cmd, const CDB_Object& param);
+    bool x_AssignOutputParams(void);
+    bool x_AssignParams(void);
+#endif
 
     CDBL_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
@@ -647,7 +760,11 @@ protected:
 //  CDBL_ITDescriptor::
 //
 
-#define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
+#ifdef FTDS_IN_USE
+#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
+#else
+#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
+#endif
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor : public I_ITDescriptor
 {
@@ -720,6 +837,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/07/20 12:33:04  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.21  2005/07/07 15:43:20  ssikorsk
  * Integrated interfaces with FreeTDS v0.63
  *

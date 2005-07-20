@@ -551,6 +551,14 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     return SUCCEED;
 }
 
+#ifdef FTDS_IN_USE
+void CTDS_Connection::TDS_SetTimeout(void)
+{
+    // This is a private function. It is not supposed to be called outside.
+    _ASSERT(false);
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CDBL_SendDataCmd::
@@ -625,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.15  2005/07/07 19:12:55  ssikorsk
  * Improved to support a ftds driver
  *

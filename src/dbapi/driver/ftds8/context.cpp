@@ -82,7 +82,7 @@ extern "C" {
 }
 
 
-CTDSContext* CTDSContext::m_pTDSContext = 0;
+static CTDSContext* g_pTDSContext = NULL;
 
 
 CTDSContext::CTDSContext(DBINT version) :
@@ -92,7 +92,7 @@ CTDSContext::CTDSContext(DBINT version) :
     CFastMutexGuard mg(xMutex);
 
     CHECK_DRIVER_ERROR( 
-        m_pTDSContext != 0, 
+        g_pTDSContext != 0, 
         "You cannot use more than one ftds contexts "
        "concurrently", 200000 );
 
@@ -120,7 +120,7 @@ CTDSContext::CTDSContext(DBINT version) :
     dberrhandle(s_TDS_err_callback);
     dbmsghandle(s_TDS_msg_callback);
 
-    m_pTDSContext = this;
+    g_pTDSContext = this;
     m_Login = dblogin();
 }
 
@@ -251,7 +251,7 @@ CTDSContext::~CTDSContext()
 
     dbloginfree(m_Login);
     dbexit();
-    m_pTDSContext = 0;
+    g_pTDSContext = 0;
 
 #if defined(NCBI_OS_MSWIN)
     WSACleanup();
@@ -291,7 +291,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &m_pTDSContext->m_CntxHandlers;
+        &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
     switch (dberr) {
     case SYBETIME:
@@ -381,7 +381,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*>(dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &m_pTDSContext->m_CntxHandlers;
+        &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
         CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
@@ -468,8 +468,8 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
         citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
             if ( citer->second == "true" &&
-                 CTDSContext::m_pTDSContext ) {
-                return CTDSContext::m_pTDSContext;
+                 g_pTDSContext ) {
+                return g_pTDSContext;
             }
         }
 
@@ -583,8 +583,8 @@ CDbapiFtdsCF2::CreateInstance(
 
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
-                    if ( reuse_context && CTDSContext::m_pTDSContext ) {
-                        return CTDSContext::m_pTDSContext;
+                    if ( reuse_context && g_pTDSContext ) {
+                        return g_pTDSContext;
                     }
                 } else if ( v.id == "version" ) {
                     int value = NStr::StringToInt( v.value );
@@ -675,6 +675,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.39  2005/07/18 12:47:35  ssikorsk
  * Winsock32 cleanup;
  * WIN32 -> NCBI_OS_MSWIN;

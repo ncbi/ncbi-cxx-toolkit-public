@@ -1418,7 +1418,7 @@ CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink,
 
 int CTDS_ITDescriptor::DescriptorType() const
 {
-    return CTDS_ITDESCRIPTOR_TYPE_MAGNUM;
+    return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
 }
 
 
@@ -1435,6 +1435,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.16  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

@@ -454,6 +454,24 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
 }
 
 
+#ifdef FTDS_IN_USE
+bool CDBL_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
+{
+    return false;
+}
+
+bool CDBL_RPCCmd::x_AssignOutputParams(void)
+{
+    return false;
+}
+
+bool CDBL_RPCCmd::x_AssignParams(void)
+{
+    return false;
+}
+
+#endif
+
 END_NCBI_SCOPE
 
 
@@ -461,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.16  2005/07/14 19:12:36  ssikorsk
  * Eliminated usage of ProcessResult
  *

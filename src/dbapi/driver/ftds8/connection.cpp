@@ -112,7 +112,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CTDS_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
         p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
         if(p_desc == 0) return false;
@@ -286,7 +286,7 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CTDS_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
         p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
         if(p_desc == 0) return false;
@@ -474,6 +474,11 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
     return SUCCEED;
 }
 
+void CTDS_Connection::TDS_SetTimeout(void)
+{        
+    m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTDS_SendDataCmd::
@@ -546,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/20 12:33:05  ssikorsk
+ * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.10  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
