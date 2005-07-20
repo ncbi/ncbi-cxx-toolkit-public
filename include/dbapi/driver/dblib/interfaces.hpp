@@ -131,20 +131,6 @@ typedef unsigned char CS_BIT;
 #  define DBBIT CS_BIT
 #endif
 
-#if defined(NCBI_FTDS)
-#  if NCBI_FTDS == 7
-extern "C" {
-    BYTE *dbgetuserdata(DBPROCESS *dbproc);
-    RETCODE dbsetuserdata(DBPROCESS *dbproc, BYTE *ptr);
-    RETCODE dbmoretext(DBPROCESS *dbproc, DBINT size, BYTE *text);
-    DBTYPEINFO *dbcoltypeinfo(DBPROCESS *dbproc, int column);
-    int DBCURCMD(DBPROCESS *dbproc);
-    STATUS dbreadtext(DBPROCESS *dbproc, void *buf, DBINT bufsize);
-    int dbrettype(DBPROCESS *dbproc,int retnum);
-}
-#  endif // NCBI_FTDS
-#endif
-
 #endif // FTDS_IN_USE
 
 
@@ -170,6 +156,10 @@ class CDBL_BlobResult;
 
 
 const unsigned int kDBLibMaxNameLen = 128 + 4;
+
+#ifdef FTDS_IN_USE
+const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -762,6 +752,7 @@ protected:
 
 #ifdef FTDS_IN_USE
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
+#    define CTDS_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
 #endif
@@ -837,6 +828,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/07/20 13:49:19  ssikorsk
+ * Removed ftds7 code. Declared constants and defines from ftds to reach full compatibility.
+ *
  * Revision 1.22  2005/07/20 12:33:04  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *
