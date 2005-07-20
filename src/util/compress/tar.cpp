@@ -1263,35 +1263,50 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
         dst->DereferenceLink();
     }
 
-    // Look if backup is necessary
+    // Look if extract is necessary
     if (dst->Exists()) {
         // Can overwrite it?
         if (!(m_Flags & fOverwrite)) {
             // Entry already exists, and cannot be changed
             extract = false;
-        } else if ((m_Flags & fUpdate)  &&
-                   dst->IsNewer(info.GetModificationTime(),
-                                CDirEntry::eIfAbsent_Throw)) {
-            extract = false;
-        } else if ((m_Flags & fEqualTypes)  &&
-                   CDirEntry::EType(type) != dst->GetType()) {
-            extract = false;
-        } else if (m_Flags & fBackup) {
-            // Backup destination entry
-            try {
-                CDirEntry dst_tmp(*dst);
-                if (!dst_tmp.Backup(kEmptyStr,
-                                    CDirEntry::eBackup_Rename)) {
-                    NCBI_THROW(CTarException, eBackup,
-                               "Cannot backup existing destination '" +
-                               dst->GetPath() + '\'');
-                } else if (m_Flags & fOverwrite) {
-                    dst->Remove();
+        } else { 
+            // The fOverwrite flag is set
+
+            // Can update?
+            if (((m_Flags & fUpdate) == fUpdate)  &&
+                (type != CTarEntryInfo::eDir)) {
+                // Update directories always, because archive can contains
+                // other subtree of existent destination directory.
+                time_t dst_time;
+                // Check that destination is not older that archive entry
+                if (dst->GetTimeT(&dst_time)  &&
+                    dst_time >= info.GetModificationTime()) {
+                    extract = false;
                 }
-            } catch (...) {
+            }
+            // Have equal types?
+            if (extract  &&  (m_Flags & fEqualTypes)  &&
+                CDirEntry::EType(type) != dst->GetType()) {
                 extract = false;
             }
-        }
+            // Need to backup destination entry?
+            if (extract  &&  ((m_Flags & fBackup) == fBackup)) {
+                try {
+                    CDirEntry dst_tmp(*dst);
+                    if (!dst_tmp.Backup(kEmptyStr,
+                                        CDirEntry::eBackup_Rename)) {
+                        NCBI_THROW(CTarException, eBackup,
+                                "Cannot backup existing destination '" +
+                                dst->GetPath() + '\'');
+                    } else {
+                        // The fOverwrite flag is set
+                        dst->Remove();
+                    }
+                } catch (...) {
+                    extract = false;
+                }
+            }
+        } /* check on fOverwrite */
     }
 
     if (!extract) {
@@ -1657,6 +1672,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/07/20 16:18:33  ivanov
+ * CTar::x_ExtractEntry() --
+ * - do not backup entries if only single fOverwrite flag is set;
+ * - allow merging entries from some archives containing the same directory
+ *   structure.
+ *
  * Revision 1.35  2005/07/18 17:58:37  lavr
  * x_Backspace(): use bullet-proof C-style casts with CT_ macros
  *
