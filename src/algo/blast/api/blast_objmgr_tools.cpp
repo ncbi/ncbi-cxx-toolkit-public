@@ -345,7 +345,7 @@ Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv,
 /// BlastHitList to CSeq_align_set
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
-    EBlastProgramType prog, SSeqLoc &query,
+    EBlastProgramType prog, const SSeqLoc &query,
     const IBlastSeqInfoSrc* seqinfo_src, bool is_gapped, bool is_ooframe)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
@@ -392,10 +392,11 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
 }
 
 TSeqAlignVector 
-PHIBlast_Results2CSeqAlign(const BlastHSPResults* results, 
-                           EBlastProgramType prog, TSeqLocVector &query,
-                           const IBlastSeqInfoSrc* seqinfo_src,
-                           const SPHIQueryInfo* pattern_info)
+PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results, 
+                           EBlastProgramType        prog,
+                           const TSeqLocVector    & query,
+                           const IBlastSeqInfoSrc * seqinfo_src,
+                           const SPHIQueryInfo    * pattern_info)
 {
     TSeqAlignVector retval;
     CRef<CSeq_align_set> wrap_list(new CSeq_align_set());
@@ -550,6 +551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2005/07/20 20:43:25  bealer
+* - Minor constness change.
+*
 * Revision 1.56  2005/07/07 16:32:11  camacho
 * Revamping of BLAST exception classes and error codes
 *

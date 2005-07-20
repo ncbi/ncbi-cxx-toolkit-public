@@ -116,10 +116,11 @@ Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv,
 /// @param seqinfo_src Source of subject sequence information [in]
 /// @param pattern_info Information about query pattern occurrences [in]
 TSeqAlignVector 
-PHIBlast_Results2CSeqAlign(const BlastHSPResults* results, 
-                           EBlastProgramType prog, TSeqLocVector &query,
-                           const IBlastSeqInfoSrc* seqinfo_src,
-                           const SPHIQueryInfo* pattern_info);
+PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
+                           EBlastProgramType        prog,
+                           const TSeqLocVector    & query,
+                           const IBlastSeqInfoSrc * seqinfo_src,
+                           const SPHIQueryInfo    * pattern_info);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -130,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/07/20 20:43:25  bealer
+* - Minor constness change.
+*
 * Revision 1.26  2005/05/26 14:36:24  dondosha
 * Added declaration of PHIBlast_Results2CSeqAlign
 *
