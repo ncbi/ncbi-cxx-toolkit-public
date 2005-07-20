@@ -65,6 +65,7 @@ algo/align/splign/splign_formatter.hpp
 // "temporary" code, has problems
 //algo/align/splign/splign_hit.hpp
 algo/align/splign/splign_simple.hpp
+algo/align/contig_assembly/contig_assembly.hpp
 algo/sequence/antigenic.hpp
 algo/sequence/coiled_coil.hpp
 algo/sequence/cpg.hpp
@@ -224,6 +225,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/20 21:20:31  jcherry
+ * Added algo/align/contig_assembly/contig_assembly.hpp
+ *
  * Revision 1.3  2005/07/07 20:35:50  jcherry
  * Don't wrap algo/blast/core/*
  *
