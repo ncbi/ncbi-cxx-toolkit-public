@@ -2047,7 +2047,7 @@ CDisplaySeqalign::DbType CDisplaySeqalign::x_GetDbType(const CSeq_align_set& act
 
 
 CRef<CSeq_align_set> 
-CDisplaySeqalign::PrepareBlastUngappedSeqalign(CSeq_align_set& alnset) 
+CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset) 
 {
     CRef<CSeq_align_set> alnSetRef(new CSeq_align_set);
 
@@ -2422,6 +2422,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.81  2005/07/20 18:18:03  dondosha
+*Added const specifier to argument in PrepareBlastUngappedSeqalign
+*
 *Revision 1.80  2005/07/20 14:40:24  jianye
 *attach query_number to form name
 *
