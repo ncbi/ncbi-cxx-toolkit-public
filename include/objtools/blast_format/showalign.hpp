@@ -304,7 +304,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     ///@return processed alnset
     ///
     static CRef < CSeq_align_set >
-    PrepareBlastUngappedSeqalign(CSeq_align_set & alnset);
+    PrepareBlastUngappedSeqalign(const CSeq_align_set & alnset);
     
 private:
  
@@ -355,7 +355,7 @@ private:
                                     //blast info
     int m_NumAlignToShow;           // number of alignment to display
     SeqLocCharOption m_SeqLocChar;  // character for seqloc display
-    SeqLocColorOption m_SeqLocColor; // clolor for seqloc display
+    SeqLocColorOption m_SeqLocColor; // color for seqloc display
     size_t m_LineLen;                  // number of sequence character per line
     bool m_IsDbNa;
     bool m_CanRetrieveSeq;
@@ -549,8 +549,25 @@ private:
 
 };
 
-
 /***********************Inlines************************/
+
+/// Type definition for a list of mask pointers.
+typedef list<CDisplaySeqalign::SeqlocInfo*> TSeqLocInfo;
+
+/// Class wrapper for a list of mask pointers, needed to avoid memory leaks.
+class CSeqLocInfoVector : public vector<TSeqLocInfo> {
+public:
+    /// Destructor - frees the SeqlocInfo pointers in all mask lists.
+    ~CSeqLocInfoVector()
+    {
+        // Free all masks.
+        for (iterator vec_iter = begin(); vec_iter != end(); ++vec_iter) {
+            ITERATE(TSeqLocInfo, list_iter, *vec_iter) {
+                delete *list_iter;
+            }
+        }
+    }
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -558,6 +575,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.30  2005/07/20 18:16:56  dondosha
+*Additions in API, needed for XML formatting
+*
 *Revision 1.29  2005/05/12 14:46:25  jianye
 *add start field
 *

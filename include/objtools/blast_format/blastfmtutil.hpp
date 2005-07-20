@@ -42,11 +42,12 @@
 #include  <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
+#include <algo/blast/api/version.hpp>
+#include <util/math/matrix.hpp>
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
-
 
 ///blast related url
 ///entrez
@@ -125,21 +126,28 @@ public:
     static void BlastPrintError(list<SBlastError>& error_return, 
                                 bool error_post, CNcbiOstream& out);
     
+    /// Returns the version and release date, e.g. BLASTN 2.2.10 [Oct-19-2004]
+    /// @param program Type of BLAST program [in]
+    static string BlastGetVersion(const string program);
+
     ///Print out blast engine version
     ///@param program: name of blast program such as blastp, blastn
     ///@param html: in html format or not
     ///@param out: stream to ouput
     ///
-    static void BlastPrintVersionInfo(string program, bool html, 
+    static void BlastPrintVersionInfo(const string program, bool html, 
                                       CNcbiOstream& out);
 
     ///Print out blast reference
     ///@param html: in html format or not
     ///@param line_len: length of each line desired
     ///@param out: stream to ouput
+    ///@param publication Which publication to show reference for? [in]
     ///
     static void BlastPrintReference(bool html, size_t line_len, 
-                                    CNcbiOstream& out);
+                                    CNcbiOstream& out, 
+                                    blast::CReference::EPublication publication =
+                                    blast::CReference::eGappedBlast);
 
     ///Print out misc information separated by "~"
     ///@param str:  input information
@@ -169,7 +177,18 @@ public:
     static void PrintKAParameters(float lambda, float k, float h,
                                   size_t line_len, CNcbiOstream& out, 
                                   bool gapped, float c = 0.0);
+
+    /// Returns a full '|'-delimited Seq-id string for a Bioseq.
+    /// @param cbs Bioseq object [in]
+    /// @param believe_local_id Should local ids be parsed? [in]
+    static string 
+    GetSeqIdString(const CBioseq& cbs, bool believe_local_id=true);
     
+    /// Returns a full description for a Bioseq, concatenating all available 
+    /// titles.
+    /// @param cbs Bioseq object [in]
+    static string GetSeqDescrString(const CBioseq& cbs);
+
     ///Print out blast query info
     /// @param cbs bioseq of interest
     /// @param line_len length of each line desired
@@ -256,11 +275,27 @@ public:
     static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 };
 
+/// 256x256 matrix used for calculating positives etc. during formatting.
+/// @todo FIXME Should this be used for non-XML formatting? Currently the 
+/// CDisplaySeqalign code uses a direct 2 dimensional array of integers, which 
+/// is allocated, populated and freed manually inside different CDisplaySeqalign
+/// methods.
+class CBlastFormattingMatrix : public CNcbiMatrix<int> {
+public:
+    /// Constructor - allocates the matrix with appropriate size and populates
+    /// with the values retrieved from a scoring matrix, passed in as a 
+    /// 2-dimensional integer array.
+    CBlastFormattingMatrix(int** data, unsigned int nrows, unsigned int ncols); 
+};
+
 END_NCBI_SCOPE
 
 
 /*===========================================
 $Log$
+Revision 1.15  2005/07/20 18:16:56  dondosha
+Additions in API, needed for XML formatting
+
 Revision 1.14  2005/05/16 18:00:08  dondosha
 Changed total_length type to Int8
 

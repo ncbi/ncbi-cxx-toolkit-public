@@ -65,12 +65,14 @@
 
 #include <algo/blast/api/version.hpp>
 
+#include <objects/seq/seqport_util.hpp>
+
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
-
+USING_SCOPE(blast);
 
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
@@ -174,33 +176,36 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
 
 }
 
-void CBlastFormatUtil::BlastPrintVersionInfo(string program, bool html, 
-                                             CNcbiOstream& out)
+string CBlastFormatUtil::BlastGetVersion(const string program)
 {
-    if (html){
-        out << "<b>" << program << " " << blast::Version.Print() << " " <<"["
-            << blast::Version.GetReleaseDate() << "]</b>\n";
-    } else {
-        out << program << " " << blast::Version.Print() << " " <<"[" << 
-            blast::Version.GetReleaseDate() << "]\n";
-    }
+    string program_uc = program;
+    return NStr::ToUpper(program_uc) + " " + Version.Print() + " [" + 
+        Version.GetReleaseDate() + "]";
 }
 
-void CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
-                                           CNcbiOstream& out) 
+void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html, 
+                                             CNcbiOstream& out)
 {
-    using blast::CReference;
+    if (html)
+        out << "<b>" << BlastGetVersion(program) << "</b>" << endl;
+    else
+        out << BlastGetVersion(program) << endl;
+}
 
+void 
+CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
+                                      CNcbiOstream& out, 
+                                      CReference::EPublication publication) 
+{
     if(html)
         out << "<b><a href=\""
-            << CReference::GetPubmedUrl(CReference::eGappedBlast)
+            << CReference::GetPubmedUrl(publication)
             << "\">Reference</a>:</b>"
             << endl;
     else
         out << "Reference: ";
-    
-    WrapOutputLine(CReference::GetString(CReference::eGappedBlast), line_len, 
-                   out);
+
+    WrapOutputLine(CReference::GetString(publication), line_len, out);
     out << endl;
 }
 
@@ -228,9 +233,10 @@ void CBlastFormatUtil::PrintDbReport(list<SDbInfo>&
         WrapOutputLine(dbinfo->definition, line_length, out);
         out << endl;
         CBlastFormatUtil::AddSpace(out, 11);
-        out << dbinfo->number_seqs << " sequences; " <<
-            NStr::Int8ToString(dbinfo->total_length) << " total letters" << 
-            endl << endl;
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << 
+            " sequences; " <<
+            NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << 
+            " total letters" << endl << endl;
     } else if (dbinfo->subset == false){
         out << "  Database: ";
         WrapOutputLine(dbinfo->definition, line_length, out);
@@ -240,16 +246,16 @@ void CBlastFormatUtil::PrintDbReport(list<SDbInfo>&
         out << dbinfo->date << endl;
 	       
         out << "  Number of letters in database: "; 
-        out << NStr::Int8ToString(dbinfo->total_length) << endl;
+        out << NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << endl;
         out << "  Number of sequences in database:  ";
-        out << dbinfo->number_seqs << endl;
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << endl;
         
     } else {
         out << "  Subset of the database(s) listed below" << endl;
         out << "  Number of letters searched: "; 
-        out << NStr::Int8ToString(dbinfo->total_length) << endl;
+        out << NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << endl;
         out << "  Number of sequences searched:  ";
-        out << dbinfo->number_seqs << endl;
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << endl;
     }
 
 }
@@ -283,25 +289,13 @@ void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h,
     out << endl;
 }
 
-void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs, 
-                                             size_t line_len,
-                                             CNcbiOstream& out,
-                                             bool believe_query,
-                                             bool html, bool tabular) 
+string
+CBlastFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
 {
-
-    if (html) {
-        out << "<b>Query=</b> ";
-    } else if (tabular) {
-        out << "# Query: ";
-    } else {
-        out << "Query= ";
-    }
-    
     const CBioseq::TId& ids = cbs.GetId();
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-    if (wid && (wid->Which()!= CSeq_id::e_Local || believe_query)){
+    if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
         int gi = FindGi(ids);
         if (strncmp(wid->AsFastaString().c_str(), "lcl|", 4) == 0) {
             if(gi == 0){
@@ -318,18 +312,47 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
                     wid->AsFastaString();
             }
         }
-        all_id_str += " ";
-        
     }
+
+    return all_id_str;
+}
+
+string
+CBlastFormatUtil::GetSeqDescrString(const CBioseq& cbs)
+{
+    string all_descr_str = NcbiEmptyString;
+
     if (cbs.IsSetDescr()) {
         const CBioseq::TDescr& descr = cbs.GetDescr();
         const CBioseq::TDescr::Tdata& data = descr.Get();
         ITERATE(CBioseq::TDescr::Tdata, iter, data) {
             if((*iter)->IsTitle()) {
-                all_id_str += (*iter)->GetTitle();
+                all_descr_str += (*iter)->GetTitle();
             }
         }
     }
+    return all_descr_str;
+}
+
+void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs, 
+                                             size_t line_len,
+                                             CNcbiOstream& out,
+                                             bool believe_query,
+                                             bool html, bool tabular) 
+{
+
+    if (html) {
+        out << "<b>Query=</b> ";
+    } else if (tabular) {
+        out << "# Query: ";
+    } else {
+        out << "Query= ";
+    }
+    
+    string all_id_str = GetSeqIdString(cbs, believe_query);
+    all_id_str += " ";
+    all_id_str += GetSeqDescrString(cbs);
+
     // For tabular output, there is no limit on the line length.
     // There is also no extra line with the sequence length.
     if (tabular) {
@@ -614,6 +637,41 @@ CBlastFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln)
     }
     
     return sa;
+}
+
+CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows, 
+                                               unsigned int ncols)
+{
+    const int kAsciiSize = 256;
+    Resize(kAsciiSize, kAsciiSize, INT_MIN);
+    
+    // Create a CSeq_data object from a vector of values from 0 to the size of
+    // the matrix (26).
+    const int kNumValues = max(ncols, nrows);
+    vector<char> ncbistdaa_values(kNumValues);
+    for (int index = 0; index < kNumValues; ++index)
+        ncbistdaa_values[index] = (char) index;
+
+    CSeq_data ncbistdaa_seq(ncbistdaa_values, CSeq_data::e_Ncbistdaa);
+
+    // Convert to IUPACaa using the CSeqportUtil::Convert method.
+    CSeq_data iupacaa_seq;
+    CSeqportUtil::Convert(ncbistdaa_seq, &iupacaa_seq, CSeq_data::e_Iupacaa);
+    
+    // Extract the IUPACaa values
+    char iupacaa_values[kNumValues];
+    for (int index = 0; index < kNumValues; ++index)
+        iupacaa_values[index] = iupacaa_seq.GetIupacaa().Get()[index];
+
+    // Fill the 256x256 output matrix.
+    for (unsigned int row = 0; row < nrows; ++row) {
+        for (unsigned int col = 0; col < ncols; ++col) {
+            if (iupacaa_values[row] >= 0 && iupacaa_values[col] >= 0) {
+                (*this)((int)iupacaa_values[row], (int)iupacaa_values[col]) = 
+                    data[row][col];
+            }
+        }
+    }
 }
 
 END_NCBI_SCOPE
