@@ -362,7 +362,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     if(m_SeqStatus){
         string aln_id_str;
         aln_id.GetLabel(&aln_id_str, CSeq_id::eContent);
-        int seq_status;
+        int seq_status = 0;
         
         map<string, int>::const_iterator iter = m_SeqStatus->find(aln_id_str);
         if ( iter != m_SeqStatus->end() ){
@@ -813,6 +813,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.15  2005/07/20 18:18:43  dondosha
+*Uninitialized variable compiler warning fix
+*
 *Revision 1.14  2005/07/05 16:33:02  jianye
 *initialize linkout to 0 for unknown bisoeq
 *
