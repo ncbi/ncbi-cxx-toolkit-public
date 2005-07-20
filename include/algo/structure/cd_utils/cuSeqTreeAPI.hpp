@@ -37,7 +37,7 @@
 
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuTaxTree.hpp>
-#include <algo/structure/cd_utils/cuSeqTree.hpp>
+#include <algo/structure/cd_utils/cuSeqtree.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/20 20:52:41  ucko
+ * Properly (irregularly) capitalize cuSeqtree.hpp.
+ *
  * Revision 1.1  2005/07/20 20:04:32  cliu
  * redesign SeqTreeAPI
  *
