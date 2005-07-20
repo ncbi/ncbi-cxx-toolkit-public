@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 3));
+    SetVersion(CVersionInfo(1, 0, 4));
 }
 
 
@@ -277,7 +277,7 @@ void COMSSA::Init()
                   CArgDescriptions::eInteger, 
                   "1");
     argDesc->AddDefaultKey("sb1", "searchb1", 
-                   "should b1 product be in search (1 = no)",
+                   "should first forward (b1) product ions be in search (1 = no)",
                    CArgDescriptions::eInteger, 
                    "1");
     argDesc->AddDefaultKey("sct", "searchcterm", 
@@ -589,6 +589,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.38  2005/07/20 20:32:24  lewisg
+  new version
+
   Revision 1.37  2005/06/16 21:22:11  lewisg
   fix n dependence
 
