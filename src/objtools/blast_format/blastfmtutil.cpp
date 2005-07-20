@@ -659,7 +659,7 @@ CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows,
     CSeqportUtil::Convert(ncbistdaa_seq, &iupacaa_seq, CSeq_data::e_Iupacaa);
     
     // Extract the IUPACaa values
-    char iupacaa_values[kNumValues];
+    vector<char> iupacaa_values(kNumValues);
     for (int index = 0; index < kNumValues; ++index)
         iupacaa_values[index] = iupacaa_seq.GetIupacaa().Get()[index];
 
