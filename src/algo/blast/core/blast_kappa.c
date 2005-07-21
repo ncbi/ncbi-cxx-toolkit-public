@@ -1736,7 +1736,6 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
  * matrix have dimensions numPositions X BLASTAA_SIZE
  *
  * @param matrix preallocated matrix to be filled in [out]
- * @param startMatrix matrix to be scaled up [in]
  * @param startFreqRatios frequency ratios of starting matrix [in]
  * @param numPositions length of query [in]
  * @param Lambda A Karlin-Altschul parameter. [in]

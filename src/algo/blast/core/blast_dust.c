@@ -54,12 +54,18 @@ const int kDustLinker = 1;
 
 /* local, file scope, structures and variables */
 
-typedef struct DREGION { /* endpoints */
+/** endpoints
+ * @todo expand documentation
+ */
+typedef struct DREGION { 
 	struct	DREGION*	next;
 	Int4	from, to;
 } DREGION;
 
-typedef struct DCURLOC { /* localcurrents */
+/** localcurrents 
+ * @todo expand documentation
+ */
+typedef struct DCURLOC { 
 	Int4	cursum, curstart, curend;
 	Int2	curlength;
 } DCURLOC;

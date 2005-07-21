@@ -526,7 +526,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 /// @param mask_info List of masking locations. [in]
 /// @param index This query's index [in]
 /// @param stat Search statistics for this query, already filled. [in]
-/// @param ungapped Is this an ungapped search? [in]
+/// @param is_ungapped Is this an ungapped search? [in]
 static void
 s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 

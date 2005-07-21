@@ -195,17 +195,17 @@ void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html,
 void 
 CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
                                       CNcbiOstream& out, 
-                                      CReference::EPublication publication) 
+                                      blast::CReference::EPublication pub) 
 {
     if(html)
         out << "<b><a href=\""
-            << CReference::GetPubmedUrl(publication)
+            << CReference::GetPubmedUrl(pub)
             << "\">Reference</a>:</b>"
             << endl;
     else
         out << "Reference: ";
 
-    WrapOutputLine(CReference::GetString(publication), line_len, out);
+    WrapOutputLine(CReference::GetString(pub), line_len, out);
     out << endl;
 }
 
