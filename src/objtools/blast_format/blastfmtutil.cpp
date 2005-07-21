@@ -72,7 +72,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
-USING_SCOPE(blast);
 
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
@@ -179,8 +178,8 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
 string CBlastFormatUtil::BlastGetVersion(const string program)
 {
     string program_uc = program;
-    return NStr::ToUpper(program_uc) + " " + Version.Print() + " [" + 
-        Version.GetReleaseDate() + "]";
+    return NStr::ToUpper(program_uc) + " " + blast::Version.Print() + " [" + 
+        blast::Version.GetReleaseDate() + "]";
 }
 
 void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html, 
@@ -199,13 +198,13 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
 {
     if(html)
         out << "<b><a href=\""
-            << CReference::GetPubmedUrl(pub)
+            << blast::CReference::GetPubmedUrl(pub)
             << "\">Reference</a>:</b>"
             << endl;
     else
         out << "Reference: ";
 
-    WrapOutputLine(CReference::GetString(pub), line_len, out);
+    WrapOutputLine(blast::CReference::GetString(pub), line_len, out);
     out << endl;
 }
 
