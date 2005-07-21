@@ -108,6 +108,8 @@ void CAgpconvertApplication::Init(void)
                              "Mapping of col. 1 names to chromsome "
                              "names, for use as SubSource",
                              CArgDescriptions::eInputFile);
+    arg_desc->AddFlag("no_testval",
+                      "Do not validate using testval");
     arg_desc->AddExtra
         (1, 100, "AGP files to process",
          CArgDescriptions::eInputFile);
@@ -371,11 +373,15 @@ int CAgpconvertApplication::Run(void)
                 ostr << MSerial_AsnText << new_submit;
             }
 
-            // verify using testval
-            string cmd = "testval " + testval_type_flag
-                + " -q 2 -i \"" + outfname + "\"";
-            cout << cmd << endl;
-            CExec::System(cmd.c_str());
+            if (!args["no_testval"]) {
+                // verify using testval
+                string cmd = "testval " + testval_type_flag
+                    + " -q 2 -i \"" + outfname + "\"";
+                cout << cmd << endl;
+                CExec::SpawnLP(CExec::eWait, "testval",
+                               testval_type_flag.c_str(),
+                               "-q", "2", "-i", outfname.c_str(), 0);
+            }
         }
     }
     return 0;
@@ -406,6 +412,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/21 18:21:12  jcherry
+ * Added -no_testval flag.  Use CExec::SpawnLP rather than CExec::System
+ * for executing testval.
+ *
  * Revision 1.5  2005/06/22 15:38:16  jcherry
  * Support Submit-block + descriptors as a third template option
  *
