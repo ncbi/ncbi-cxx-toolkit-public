@@ -34,30 +34,62 @@
 
 #include <ncbiconf.h>
 
+#ifdef software_version
+#undef software_version
+#endif
+
+#ifdef no_unused_var_warn
+#undef no_unused_var_warn
+#endif
+
 #ifndef HAVE_ASPRINTF
+#define software_version asprintf_software_version
+#define no_unused_var_warn asprintf_no_unused_var_warn
 #include "../replacements/asprintf.c"
+#undef software_version
+#undef no_unused_var_warn
 #endif
 
 #ifndef HAVE_ATOLL
+#define software_version atoll_software_version
+#define no_unused_var_warn atoll_no_unused_var_warn
 #include "../replacements/atoll.c"
+#undef software_version
+#undef no_unused_var_warn
 #endif
 
 #ifndef HAVE_ICONV
+#define software_version iconv_software_version
+#define no_unused_var_warn iconv_no_unused_var_warn
 #include "../replacements/iconv_win.c"
+#undef software_version
+#undef no_unused_var_warn
 #endif
 
 #ifndef HAVE_STRTOK_R
+#define software_version strtok_r_software_version
+#define no_unused_var_warn strtok_r_no_unused_var_warn
 #include "../replacements/strtok_r.c"
+#undef software_version
+#undef no_unused_var_warn
 #endif
 
 #ifndef HAVE_VASPRINTF
+#define software_version vasprintf_software_version
+#define no_unused_var_warn vasprintf_no_unused_var_warn
 #include "../replacements/vasprintf.c"
+#undef software_version
+#undef no_unused_var_warn
 #endif
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/21 00:27:04  ucko
+* Avoid multiple definitions of software_version and no_unused_var_warn
+* via preprocessor tricks.
+*
 * Revision 1.1  2005/07/20 22:42:57  ucko
 * Add a meta-source file including replacements for system functions
 * lacking on some platforms.
