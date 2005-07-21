@@ -1397,6 +1397,33 @@ void CDirEntry::DereferenceLink(void)
     }
 }
 
+bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size)
+{
+    EType type = GetType();
+    switch (type) {
+        case eFile:
+            {
+                CFile entry(GetPath());
+                return entry.Copy(path, flags, buf_size);
+            }
+        case eDir: 
+            {
+                CDir entry(GetPath());
+                return entry.Copy(path, flags, buf_size);
+            }
+        case eLink:
+            {
+                CSymLink entry(GetPath());
+                return entry.Copy(path, flags, buf_size);
+            }
+        default:
+            break;
+    }
+    // We "don't know" how to copy entry of other type, by default.
+    // Use overloaded Copy() method in derived classes.
+    return (flags & fCF_SkipUnsupported) == fCF_SkipUnsupported;
+}
+
 
 bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
 {
@@ -1485,13 +1512,12 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
 
 bool CDirEntry::Remove(EDirRemoveMode mode) const
 {
+    // This is a directory ?
     if ( IsDir(eIgnoreLinks) ) {
-        if ( mode == eOnlyEmpty ) {
-            return rmdir(GetPath().c_str()) == 0;
-        }
         CDir dir(GetPath());
-        return dir.Remove(eRecursive);
+        return dir.Remove(mode);
     }
+    // Other entries
     return remove(GetPath().c_str()) == 0;
 }
 
@@ -2590,13 +2616,47 @@ CDir::~CDir(void)
 }
 
 
-// Helper function for GetEntries(). Add entry to the list.
-static void s_AddDirEntry(CDir::TEntries* contents, const string& path)
+// Helpers functions and macro for GetEntries().
+
+#if defined(NCBI_OS_MSWIN)
+
+// Set errno for failed FindFirstFile/FindNextFile
+void s_SetFindFileError(void)
 {
-    contents->push_back(
-        CDirEntry::CreateObject(CDirEntry(path).GetType(), path)
-    );
+    DWORD err = GetLastError();
+    switch (err) {
+        case ERROR_NO_MORE_FILES:
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_PATH_NOT_FOUND:
+            errno = ENOENT;
+            break;
+        case ERROR_NOT_ENOUGH_MEMORY:
+            errno = ENOMEM;
+            break;
+        default:
+            errno = EINVAL;
+            break;
+    }
 }
+
+#  define IS_RECURSIVE_ENTRY         \
+   ( (mode == eIgnoreRecursive)  &&  \
+     ((::strcmp(entry.cFileName, ".") == 0) || (::strcmp(entry.cFileName, "..") == 0)) )
+
+# define ADD_ENTRY \
+    contents->push_back(new CDirEntry(base_path + entry.cFileName))
+
+#elif defined(NCBI_OS_UNIX)
+
+#  define IS_RECURSIVE_ENTRY         \
+   ( (mode == eIgnoreRecursive)  &&  \
+     ((::strcmp(entry->d_name, ".") == 0) || (::strcmp(entry->d_name, "..") == 0)) )
+
+# define ADD_ENTRY \
+    contents->push_back(new CDirEntry(base_path + entry->d_name))
+
+#endif
+
 
 
 CDir::TEntries CDir::GetEntries(const string&   mask,
@@ -2623,84 +2683,65 @@ CDir::TEntries* CDir::GetEntriesPtr(const string&   mask,
 }
 
 
-CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
-                                EGetEntriesMode        mode,
-                                NStr::ECase            use_case) const
+CDir::TEntries CDir::GetEntries(const vector<string>& masks,
+                                EGetEntriesMode       mode,
+                                NStr::ECase           use_case) const
 {
     auto_ptr<TEntries> contents(GetEntriesPtr(masks, mode, use_case));
     return *contents.get();
 }
 
 
-CDir::TEntries* CDir::GetEntriesPtr(const vector<string>&  masks,
-                                    EGetEntriesMode        mode,
-                                    NStr::ECase            use_case) const
+CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
+                                    EGetEntriesMode       mode,
+                                    NStr::ECase           use_case) const
 {
     if ( masks.empty() ) {
         return GetEntriesPtr("", mode, use_case);
     }
     TEntries* contents = new(TEntries);
-    string path_base = AddTrailingPathSeparator(GetPath());
+    string base_path = AddTrailingPathSeparator(GetPath());
 
 #if defined(NCBI_OS_MSWIN)
 
     // Append to the "path" mask for all files in directory
-    string pattern = path_base + string("*");
+    string pattern = base_path + string("*");
 
-    bool skip_recursive_entry;
+    WIN32_FIND_DATA entry;
+    HANDLE          handle;
 
-    // Open directory stream and try read info about first entry
-    struct _finddata_t entry;
-    long desc = _findfirst(pattern.c_str(), &entry);
-    if ( desc != -1 ) {
-        skip_recursive_entry = (mode == eIgnoreRecursive)  &&
-                                ((::strcmp(entry.name, ".") == 0) ||
-                                    (::strcmp(entry.name, "..") == 0));
-        // check all masks
-        if ( !skip_recursive_entry ) {
-            ITERATE(vector<string>, it, masks) {
-                const string& mask = *it;
-                if ( mask.empty()  ||
-                     MatchesMask(entry.name, mask.c_str(), use_case) ) {
-                    s_AddDirEntry(contents, path_base + entry.name);
-                    break;
-                }                
-            } // ITERATE
-        }
-
-        while ( _findnext(desc, &entry) != -1 ) {
-            if ( (mode == eIgnoreRecursive)  &&
-                 ((::strcmp(entry.name, ".") == 0) ||
-                  (::strcmp(entry.name, "..") == 0)) ) {
-                continue;
-            }
-            ITERATE(vector<string>, it, masks) {
-                const string& mask = *it;
-                if ( mask.empty()  ||
-                     MatchesMask(entry.name, mask.c_str(), use_case) ) {
-                    s_AddDirEntry(contents, path_base + entry.name);
-                    break;
+    handle = FindFirstFile(pattern.c_str(), &entry);
+    if (handle != INVALID_HANDLE_VALUE) {
+        // Check all masks
+        do {
+            if (!IS_RECURSIVE_ENTRY) {
+                ITERATE(vector<string>, it, masks) {
+                    const string& mask = *it;
+                    if ( mask.empty()  ||
+                        MatchesMask(entry.cFileName, mask.c_str(), use_case) ) {
+                        ADD_ENTRY;
+                        break;
+                    }                
                 }
-            } // ITERATE
-        }
-        _findclose(desc);
+            }
+        } while (FindNextFile(handle, &entry));
+        FindClose(handle);
+    } else {
+        s_SetFindFileError();
     }
-
 
 #elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
-            if ( (mode == eIgnoreRecursive) &&
-                 ((::strcmp(entry->d_name, ".") == 0) ||
-                  (::strcmp(entry->d_name, "..") == 0)) ) {
+            if (IS_RECURSIVE_ENTRY) {
                 continue;
             }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
                 if ( mask.empty()  ||
                      MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
-                    s_AddDirEntry(contents, path_base + entry->d_name);
+                    ADD_ENTRY;
                     break;
                 }
             } // ITERATE
@@ -2726,46 +2767,35 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask&    masks,
                                     NStr::ECase     use_case) const
 {
     TEntries* contents = new(TEntries);
-    string path_base = AddTrailingPathSeparator(GetPath());
+    string base_path = AddTrailingPathSeparator(GetPath());
 
 #if defined(NCBI_OS_MSWIN)
     // Append to the "path" mask for all files in directory
-    string pattern = path_base + "*";
+    string pattern = base_path + "*";
 
-    // Open directory stream and try read info about first entry
-    struct _finddata_t entry;
-    long desc = _findfirst(pattern.c_str(), &entry);
-    if ( desc != -1 ) {
-        if ( masks.Match(entry.name, use_case) &&
-             !( (mode == eIgnoreRecursive)  && 
-                ((::strcmp(entry.name, ".") == 0) ||
-                 (::strcmp(entry.name, "..") == 0)) ) ) {
-            s_AddDirEntry(contents, path_base + entry.name);
-        }
-        while ( _findnext(desc, &entry) != -1 ) {
-            if ( masks.Match(entry.name, use_case) ) {
-                if ( (mode == eIgnoreRecursive)  &&
-                     ((::strcmp(entry.name, ".")  == 0) ||
-                      (::strcmp(entry.name, "..") == 0)) ) {
-                      continue;
-                }
-                s_AddDirEntry(contents, path_base + entry.name);
+    WIN32_FIND_DATA entry;
+    HANDLE          handle;
+
+    handle = FindFirstFile(pattern.c_str(), &entry);
+    if (handle != INVALID_HANDLE_VALUE) {
+        do {
+            if ( !IS_RECURSIVE_ENTRY  &&
+                 masks.Match(entry.cFileName, use_case) ) {
+                ADD_ENTRY;
             }
-        }
-        _findclose(desc);
+        } while ( FindNextFile(handle, &entry) );
+        FindClose(handle);
+    } else {
+        s_SetFindFileError();
     }
 
 #elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
-            if ( masks.Match(entry->d_name, use_case) ) {
-                if ( (mode == eIgnoreRecursive)  &&
-                     ((::strcmp(entry->d_name, ".")  == 0) ||
-                      (::strcmp(entry->d_name, "..") == 0)) ) {
-                      continue;
-                }
-                s_AddDirEntry(contents, path_base + entry->d_name);
+            if ( !IS_RECURSIVE_ENTRY  &&
+                 masks.Match(entry->d_name, use_case) ) {
+                ADD_ENTRY;
             }
         }
         closedir(dir);
@@ -2927,7 +2957,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
-        return CParent::Remove(eOnlyEmpty);
+        return rmdir(GetPath().c_str()) == 0;
     }
     // Read all entries in directory
     auto_ptr<TEntries> contents(GetEntriesPtr());
@@ -2958,7 +2988,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
     }
 
     // Remove main directory
-    return CParent::Remove(eOnlyEmpty);
+    return rmdir(GetPath().c_str()) == 0;
 }
 
 
@@ -3651,6 +3681,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.119  2005/07/21 12:03:49  ivanov
+ * CDirEntry::Copy() -- now can copy all supported types.
+ * CDir::GetEntries[Ptr]()
+ *  - returns list of CDirEntries only;
+ *  - added 2 auxiliary macro to simplify code;
+ *  - MS Windows: use SDK API to find entries (FindFirstFile/FindNextFile).
+ *
  * Revision 1.118  2005/07/12 11:16:15  ivanov
  * CDirEntry::IsNewer() -- added additional argument which specify what
  * to do if the dir entry does not exist or is not accessible.
