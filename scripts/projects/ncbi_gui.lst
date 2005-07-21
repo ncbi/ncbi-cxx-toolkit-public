@@ -53,6 +53,5 @@ util/tables$
 util/regexp$
 util/sequtil$
 util/unicode_plans$
--gui/core
 -gui/gbench
 -gui/plugins
