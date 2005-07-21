@@ -207,6 +207,9 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
+    void GetBlobs(TSeqMatchMap& match_map);
+
     bool IsLive(const CTSE_Info& tse);
 
     string GetName(void) const;

@@ -1176,6 +1176,45 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
+CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
+{
+    // Keep locks to prevent cleanup of the loaded TSEs.
+    typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
+    TSeqMatchMap match_map;
+    ITERATE(TIds, id, ids) {
+        match_map[*id];
+    }
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        it->GetBlobs(match_map);
+    }
+    TBioseqHandles ret;
+    ITERATE(TIds, id, ids) {
+        TSeqMatchMap::iterator match = match_map.find(*id);
+        if (match != match_map.end()  &&  match->second) {
+            ret.push_back(GetBioseqHandle(match->first,
+                CScope::eGetBioseq_Loaded));
+        }
+        else {
+            TReadLockGuard rguard(m_ConfLock);
+            TSeq_idMapValue& id_info = x_GetSeq_id_Info(*id);
+            CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool);
+            if ( init ) {
+                _ASSERT(!id_info.second.m_Bioseq_Info);
+                id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(
+                    CBioseq_Handle::fState_no_data |
+                    CBioseq_Handle::fState_not_found));
+            }
+            CBioseq_Handle handle;
+            handle.m_Handle_Seq_id = *id;
+            CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
+            handle.m_Info.Reset(info);
+            ret.push_back(handle);
+        }
+    }
+    return ret;
+}
+
+
 CRef<CDataSource_ScopeInfo>
 CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds)
 {

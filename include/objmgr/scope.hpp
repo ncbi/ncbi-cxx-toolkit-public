@@ -109,6 +109,12 @@ public:
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
                                    EGetBioseqFlag get_flag);
 
+    typedef CBioseq_Handle::TId TIds;
+    typedef vector<CBioseq_Handle> TBioseqHandles;
+    /// Get bioseq handles for all ids. The returned vector contains
+    /// bioseq handles for all requested ids in the same order.
+    TBioseqHandles GetBioseqHandles(const TIds& ids);
+
     // Deprecated interface
     CTSE_Handle GetTSE_Handle(const CSeq_entry& tse);
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
@@ -223,7 +229,6 @@ public:
     /// not found in the scope.
     void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
 
-    typedef CBioseq_Handle::TId TIds;
     /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id&        id );
 
@@ -301,6 +306,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.87  2005/06/27 18:17:03  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

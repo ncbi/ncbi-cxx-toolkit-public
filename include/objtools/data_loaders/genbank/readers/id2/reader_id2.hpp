@@ -105,6 +105,8 @@ public:
     bool LoadChunks(CReaderRequestResult& result,
                     const TBlobId& blob_id,
                     const TChunkIds& chunk_ids);
+    bool LoadBlobSet(CReaderRequestResult& result,
+                     const TSeqIds& seq_ids);
 
     static TBlobId GetBlobId(const CID2_Blob_Id& blob_id);
 
@@ -183,6 +185,8 @@ protected:
     void x_UpdateLoadedSet(CReaderRequestResult& result,
                            const SId2LoadedSet& loaded_set);
 
+    bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
+                                 const TSeqIds& seq_ids);
 private:
     typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections   m_Connections;

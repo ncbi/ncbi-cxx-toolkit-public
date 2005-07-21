@@ -120,6 +120,12 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id,
 }
 
 
+CScope::TBioseqHandles CScope::GetBioseqHandles(const TIds& ids)
+{
+    return m_Impl->GetBioseqHandles(ids);
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
                                        EGetBioseqFlag get_flag)
 {
@@ -457,6 +463,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.118  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.117  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

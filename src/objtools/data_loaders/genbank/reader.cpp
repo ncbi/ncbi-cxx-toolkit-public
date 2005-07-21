@@ -306,6 +306,17 @@ bool CReader::LoadChunks(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadBlobSet(CReaderRequestResult& result,
+                          const TSeqIds& seq_ids)
+{
+    bool ret = false;
+    ITERATE(TSeqIds, id, seq_ids) {
+        ret |= LoadBlobs(result, *id, fBlobHasCore);
+    }
+    return ret;
+}
+
+
 void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TChunkId chunk_id)
@@ -424,6 +435,11 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
         return;
     }
     seq_ids.SetLoaded();
+    if (seq_ids->GetState() & CBioseq_Handle::fState_no_data) {
+        CLoadLockBlob_ids blob_ids(result, seq_id);
+        blob_ids->SetState(seq_ids->GetState());
+        blob_ids.SetLoaded();
+    }
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveSeq_idSeq_ids(result, seq_id);

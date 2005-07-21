@@ -132,6 +132,9 @@ public:
     typedef int                                      TPriority;
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
+    typedef vector<CSeq_id_Handle>                   TIds;
+    typedef vector<CSeq_entry_Handle>                TTSE_Handles;
+    typedef vector<CBioseq_Handle>                   TBioseqHandles;
 
     //////////////////////////////////////////////////////////////////
     // Adding top level objects: DataLoader, Seq-entry, Bioseq, Seq-annot
@@ -239,6 +242,9 @@ public:
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CTSE_Handle& tse);
 
+    // Get a set of bioseq handles
+    TBioseqHandles GetBioseqHandles(const TIds& ids);
+
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
 
@@ -270,7 +276,6 @@ public:
     CScope& GetScope(void);
 
     // Get "native" bioseq ids without filtering and matching.
-    typedef vector<CSeq_id_Handle> TIds;
     TIds GetIds(const CSeq_id_Handle& idh);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
@@ -278,7 +283,6 @@ public:
                                         int get_flag);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
-    typedef vector<CSeq_entry_Handle> TTSE_Handles;
     void GetAllTSEs(TTSE_Handles& tses, int kind);
 
 private:

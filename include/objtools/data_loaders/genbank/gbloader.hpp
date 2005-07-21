@@ -129,6 +129,8 @@ public:
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);
 
+    virtual void GetBlobs(TTSE_LockSets& tse_sets);
+
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
     CBlob_id GetBlobId(const TBlobId& blob_id) const;

@@ -241,6 +241,9 @@ public:
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
 
+    typedef map<CSeq_id_Handle, SSeqMatch_Scope> TSeqMatchMap;
+    void GetBlobs(TSeqMatchMap& match_map);
+
 protected:
     friend class CScope_Impl;
 
@@ -619,6 +622,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.21  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

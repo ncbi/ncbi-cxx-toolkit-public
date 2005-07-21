@@ -621,7 +621,8 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
                             const TChunkIds& chunk_ids)
 {
     // Number of chunks allowed in a single request
-    // 0 = do not use packets or get-chunks requests
+    // 0 = unlimited request size
+    // 1 = do not use packets or get-chunks requests
     int max_request_size = GetMaxChunksRequestSize();
     if (max_request_size == 1) {
         return CReader::LoadChunks(result, blob_id, chunk_ids);
@@ -659,7 +660,6 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             if (max_request_size > 0  &&
                 packet.Get().size() >= max_request_size) {
                 // Request collected chunks
-//LOG_POST("Loading " << packet.Get().size() << " ext annot chunks");
                 x_ProcessPacket(result, packet);
                 LoadedChunksPacket(packet, ext_chunks, blob_id);
             }
@@ -674,7 +674,6 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             chunks.push_back(CID2S_Chunk_Id(*id));
             if (max_request_size > 0  &&  chunks.size() >= max_request_size) {
                 // Process collected chunks
-//LOG_POST("Loading " << chunks.size() << " chunks");
                 x_ProcessRequest(result, *chunks_req);
                 guards.clear();
                 chunks.clear();
@@ -688,15 +687,107 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             packet.Set().push_back(chunks_req);
         }
         else {
-//LOG_POST("Loading " << chunks.size() << " chunks");
             x_ProcessRequest(result, *chunks_req);
         }
     }
     if ( !packet.Get().empty() ) {
-//LOG_POST("Loading packet of " << packet.Get().size() << " requests");
         x_ProcessPacket(result, packet);
         LoadedChunksPacket(packet, ext_chunks, blob_id);
     }
+    return true;
+}
+
+
+bool CId2Reader::x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
+                                         const TSeqIds& seq_ids)
+{
+    CID2_Request_Packet packet;
+    ITERATE(TSeqIds, id, seq_ids) {
+        CLoadLockBlob_ids ids(result, *id);
+        if ( ids.IsLoaded() ) {
+            continue;
+        }
+
+        CRef<CID2_Request> req(new CID2_Request);
+        x_SetResolve(req->SetRequest().SetGet_blob_id(), *id->GetSeqId());
+        packet.Set().push_back(req);
+    }
+    if ( packet.Get().empty() ) {
+        return false;
+    }
+    x_ProcessPacket(result, packet);
+    return true;
+}
+
+
+bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
+                             const TSeqIds& seq_ids)
+{
+    // 0 = unlimited request size
+    // 1 = do not use packets or get-chunks requests
+    int max_request_size = GetMaxChunksRequestSize();
+    if (max_request_size == 1) {
+        return CReader::LoadBlobSet(result, seq_ids);
+    }
+
+    bool loaded_blob_ids = false;
+    if (m_AvoidRequest & fAvoidRequest_nested_get_blob_info) {
+        if ( !x_LoadSeq_idBlob_idsSet(result, seq_ids) ) {
+            return false;
+        }
+        loaded_blob_ids = true;
+    }
+
+    vector<CLoadLockBlob> blob_locks;
+    CID2_Request_Packet packet;
+    ITERATE(TSeqIds, id, seq_ids) {
+        CLoadLockBlob_ids ids(result, *id);
+        if ( ids.IsLoaded() ) {
+            // shortcut - we know Seq-id -> Blob-id resolution
+            ITERATE ( CLoadInfoBlob_ids, it, *ids ) {
+                const CBlob_Info& info = it->second;
+                if ( (info.GetContentsMask() & fBlobHasCore) == 0 ) {
+                    continue; // skip this blob
+                }
+                const CBlob_id& blob_id = it->first;
+                CLoadLockBlob blob(result, blob_id);
+                if ( blob.IsLoaded() ) {
+                    continue;
+                }
+
+                blob_locks.push_back(blob);
+                CRef<CID2_Request> req(new CID2_Request);
+                CID2_Request_Get_Blob_Info& req2 =
+                    req->SetRequest().SetGet_blob_info();
+                x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
+                x_SetDetails(req2.SetGet_data(), fBlobHasCore);
+                packet.Set().push_back(req);
+                if (max_request_size > 0  &&
+                     packet.Get().size() >= max_request_size) {
+                    x_ProcessPacket(result, packet);
+                    packet.Set().clear();
+                }
+            }
+        }
+        else {
+            CRef<CID2_Request> req(new CID2_Request);
+            CID2_Request_Get_Blob_Info& req2 =
+                req->SetRequest().SetGet_blob_info();
+            x_SetResolve(req2.SetBlob_id().SetResolve().SetRequest(),
+                        *id->GetSeqId());
+            x_SetDetails(req2.SetGet_data(), fBlobHasCore);
+            packet.Set().push_back(req);
+        }
+        if (max_request_size > 0  &&
+            packet.Get().size() >= max_request_size) {
+            x_ProcessPacket(result, packet);
+            packet.Set().clear();
+        }
+    }
+    if ( packet.Get().empty() ) {
+        return loaded_blob_ids;
+    }
+    x_ProcessPacket(result, packet);
     return true;
 }
 

@@ -612,6 +612,28 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
 }
 
 
+void CDataSource_ScopeInfo::GetBlobs(TSeqMatchMap& match_map)
+{
+    CDataSource::TSeqMatchMap ds_match_map;
+    ITERATE(TSeqMatchMap, it, match_map) {
+        if ( it->second ) {
+            continue;
+        }
+        ds_match_map.insert(CDataSource::TSeqMatchMap::value_type(
+            it->first, SSeqMatch_DS()));
+    }
+    GetDataSource().GetBlobs(ds_match_map);
+    ITERATE(CDataSource::TSeqMatchMap, ds_match, ds_match_map) {
+        if ( !ds_match->second ) {
+            continue;
+        }
+        SSeqMatch_Scope& scope_match = match_map[ds_match->first];
+        scope_match = x_GetSeqMatch(ds_match->first);
+        x_SetMatch(scope_match, ds_match->second);
+    }
+}
+
+
 bool CDataSource_ScopeInfo::TSEIsInQueue(const CTSE_ScopeInfo& tse) const
 {
     TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_UnlockQueueMutex);
@@ -1631,6 +1653,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.20  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

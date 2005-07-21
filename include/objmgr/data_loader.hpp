@@ -239,6 +239,12 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    // Load multiple seq-ids. Same as GetRecords() for multiple ids
+    // with choise set to eBlob. The map should be initialized with
+    // the id handles to be loaded.
+    typedef map<CSeq_id_Handle, TTSE_LockSet> TTSE_LockSets;
+    virtual void GetBlobs(TTSE_LockSets& tse_sets);
+
     // blob operations
     typedef CConstRef<CObject> TBlobId;
     typedef int TBlobVersion;
@@ -372,6 +378,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.42  2005/03/07 14:43:15  ssikorsk
 * Do not unload PluginManager drivers by default
 *

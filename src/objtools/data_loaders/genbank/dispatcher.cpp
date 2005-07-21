@@ -739,6 +739,54 @@ namespace {
         TChunkIds m_ChunkIds;
         TChunkInfos m_ChunkInfos;
     };
+
+    class CCommandLoadBlobSet : public CReadDispatcherCommand
+    {
+    public:
+        typedef CReadDispatcher::TIds TIds;
+        CCommandLoadBlobSet(CReaderRequestResult& result,
+                            const TIds& seq_ids)
+            : CReadDispatcherCommand(result),
+              m_Ids(seq_ids)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                ITERATE(TIds, id, m_Ids) {
+                    CLoadLockBlob_ids blob_ids(GetResult(), *id);
+                    if ( !blob_ids.IsLoaded() ) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadBlobSet(GetResult(), m_Ids);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadBlobSet(" +
+                    NStr::IntToString(m_Ids.size()) + " ids): "
+                    "data not found";
+            }
+        
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_LoadBlobs;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blobs(" +
+                    NStr::IntToString(m_Ids.size()) + " ids)";
+            }
+#endif
+        
+    private:
+        TIds    m_Ids;
+    };
 }
 
 
@@ -893,6 +941,14 @@ void CReadDispatcher::LoadChunks(CReaderRequestResult& result,
                                  const TChunkIds& chunk_ids)
 {
     CCommandLoadChunks command(result, blob_id, chunk_ids);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadBlobSet(CReaderRequestResult& result,
+                                  const TIds& seq_ids)
+{
+    CCommandLoadBlobSet command(result, seq_ids);
     Process(command);
 }
 

@@ -174,6 +174,14 @@ void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
+void CDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
+{
+    NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {
+        tse_set->second = GetRecords(tse_set->first, eBlob);
+    }
+}
+
+
 CDataLoader::EChoice
 CDataLoader::DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const
 {
@@ -390,6 +398,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/07/21 19:37:17  grichenk
+* Added CScope::GetBioseqHandles() and supporting methods in data source,
+* data loader and readers.
+*
 * Revision 1.23  2004/12/22 15:56:06  vasilche
 * Added possibility to reload TSEs by their BlobId.
 * Added convertion of BlobId to string.

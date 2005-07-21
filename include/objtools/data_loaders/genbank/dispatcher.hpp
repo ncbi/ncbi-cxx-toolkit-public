@@ -65,6 +65,7 @@ public:
     typedef  CReader::TChunkId                  TChunkId;
     typedef  CReader::TChunkIds                 TChunkIds;
     typedef  int                                TLevel;
+    typedef  vector<CSeq_id_Handle>             TIds;
 
     CReadDispatcher(void);
     ~CReadDispatcher(void);
@@ -106,6 +107,8 @@ public:
     void LoadChunks(CReaderRequestResult& result,
                     const TBlobId& blob_id,
                     const TChunkIds& chunk_ids);
+    void LoadBlobSet(CReaderRequestResult& result,
+                     const TIds& seq_ids);
 
     void SetAndSaveBlobState(CReaderRequestResult& result,
                              const TBlobId& blob_id,

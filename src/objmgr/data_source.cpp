@@ -1075,6 +1075,37 @@ void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
+void CDataSource::GetBlobs(TSeqMatchMap& match_map)
+{
+    if ( m_Loader ) {
+        CDataLoader::TTSE_LockSets tse_sets;
+        ITERATE(TSeqMatchMap, match, match_map) {
+            _ASSERT( !match->second );
+            tse_sets.insert(tse_sets.end(),
+                CDataLoader::TTSE_LockSets::value_type(
+                match->first, CDataLoader::TTSE_LockSet()));
+        }
+        m_Loader->GetBlobs(tse_sets);
+        ITERATE(CDataLoader::TTSE_LockSets, tse_set, tse_sets) {
+            TTSE_LockSet locks;
+            ITERATE(CDataLoader::TTSE_LockSet, it, tse_set->second) {
+                locks.AddLock(*it);
+            }
+            TSeqMatchMap::iterator match = match_map.find(tse_set->first);
+            _ASSERT(match != match_map.end()  &&  !match->second);
+            match->second = x_GetSeqMatch(tse_set->first, locks);
+        }
+    }
+    else {
+        NON_CONST_ITERATE(TSeqMatchMap, it, match_map) {
+            if ( !it->second ) {
+                it->second = BestResolve(it->first);
+            }
+        }
+    }
+}
+
+
 string CDataSource::GetName(void) const
 {
     if ( m_Loader )
