@@ -45,7 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Interface to load collector
+/// Interface to load info collector
 ///
 /// @internal
 ///
@@ -54,10 +54,20 @@ struct INSLB_Collector
     /// Server load info
     struct NSLB_ServerInfo
     {
-        unsigned int     host;  ///< host address (netw. bo)
-        double           rate;  ///< load rate (higher is better)
+        unsigned int     host;          ///< host address (netw. bo)
+        double           rate;          ///< load rate (higher is better)
+        unsigned         cpu_count;     ///< Number od CPUs
+        double           cpu_wait_proc; ///< AVG numb. of waiting procs.
+        double           cpu_run_queue; ///< Number of tasks waiting for CPU
 
-        NSLB_ServerInfo(unsigned h=0, double r=0.0) : host(h), rate(r) {}
+        NSLB_ServerInfo(unsigned h=0, 
+                        double   r=0.0,
+                        unsigned cpu = 0,
+                        double   wait_proc = 0.0,
+                        double   run_queue = 0.0) 
+        : host(h), rate(r), 
+          cpu_count(cpu), cpu_wait_proc(wait_proc), cpu_run_queue(run_queue)
+        {}
     };
 
     typedef vector<NSLB_ServerInfo>  TServerList;
@@ -69,6 +79,156 @@ struct INSLB_Collector
     virtual
     void GetServerList(const string& service_name, TServerList* slist) const = 0;
 };
+
+
+/// Threashold is used to decide if host has resources to be granted a job
+/// Curve reflects how threshold changes over time while job sits in the queue
+///
+/// @internal
+///
+class CNSLB_ThreasholdCurve
+{
+public:
+    typedef vector<double> TCurve;
+
+public:
+    virtual ~CNSLB_ThreasholdCurve() {};
+
+    /// Curve generation
+    ///
+    /// @param length
+    ///    
+    virtual void ReGenerateCurve(unsigned length) = 0;
+    const TCurve& GetCurve() const { return m_Curve; }
+protected:
+    TCurve    m_Curve;
+};
+
+
+/// Linear curve
+///  y = ax + b
+///
+/// @internal
+///
+class CNSLB_ThreasholdCurve_Linear : public CNSLB_ThreasholdCurve
+{
+public:
+    /// Construction
+    ///
+    /// @param a
+    ///    a coefficient
+    /// @param b
+    ///    b coefficient (initial threahold)
+    /// @param derive_a
+    ///    flag that a should be derived (recalculated automatically)
+    CNSLB_ThreasholdCurve_Linear(double  a, 
+                                 double  b, 
+                                 bool    derive_a);
+
+    /// Two points curve construction
+    CNSLB_ThreasholdCurve_Linear(double  y0, 
+                                 double  yN);
+
+
+    virtual void ReGenerateCurve(unsigned length);
+private:
+    unsigned m_Constr;
+
+    double m_A;
+    double m_B;
+    bool   m_DeriveA;
+
+    double m_Y0;
+    double m_YN;
+};
+
+
+/// Regression curve
+///  Y(N) = Y(N-1) + [ Y(N-1) * A ]
+///
+/// @internal
+///
+class CNSLB_ThreasholdCurve_Regression : public CNSLB_ThreasholdCurve
+{
+public:
+    /// Construction
+    ///
+    CNSLB_ThreasholdCurve_Regression(double  y0, 
+                                     double  a = -0.2);
+
+    virtual void ReGenerateCurve(unsigned length);
+private:
+    double m_Y0;
+    double m_A;
+};
+
+
+
+
+/// Class making decision to grant job or postpone execution
+///
+/// @internal
+class CNSLB_DecisionModule
+{
+public:
+    /// LB coordinator's decision about petition for a job from a 
+    /// worker node host
+    ///
+    enum EDecision
+    {
+        eGrantJob,        ///< Suggest that job should be given
+        eDenyJob,         ///< Host is overloaded, job should be delayed
+        eHostUnknown,     ///< Host unknown, decision is up to the client
+        eNoLBInfo,        ///< Collector got no info (yet), no decision
+        eInsufficientInfo ///< Not enough information 
+    };
+
+public:
+    virtual ~CNSLB_DecisionModule() {}
+
+public:
+
+    /// Job petition
+    ///
+    struct SPetition
+    {
+        ///< Worker ready for a job
+        unsigned                                 host;
+        ///< Time (in seconds) from the first evaluation
+        unsigned                                 time_eval;
+        ///< Complete LB info (all hosts)
+        INSLB_Collector::TServerList*            lb_host_info;
+        /// Threshold curve vector
+        const CNSLB_ThreasholdCurve::TCurve*     threshold_curve;
+    };
+
+    virtual 
+    EDecision Evaluate(const SPetition& petition) const = 0;
+};
+
+/// Decision module considers best rate hosts as most favorable candidates
+///
+/// @internal
+///
+class CNSLB_DecisionModule_DistributeRate : public CNSLB_DecisionModule
+{
+public:
+    virtual 
+    EDecision Evaluate(const SPetition& petition) const;
+};
+
+
+/// Decision module for CPU availability evaluation
+///
+/// @internal
+///
+class CNSLB_DecisionModule_CPU_Avail : public CNSLB_DecisionModule
+{
+public:
+    virtual 
+    EDecision Evaluate(const SPetition& petition) const;
+};
+
 
 /// LB collector for LBSM
 ///
@@ -114,24 +274,22 @@ public:
     /// @param non_lb_host
     ///   Policy towards non load balanced hosts
     ///
-    CNSLB_Coordinator(const string&     service_name,
-                      INSLB_Collector*  collector, 
-                      unsigned          collect_tm = 3,
-                      ENonLbHostsPolicy non_lb_host = eNonLB_Allow);
+    CNSLB_Coordinator(const string&           service_name,
+                      INSLB_Collector*        collector, 
+                      CNSLB_ThreasholdCurve*  curve,
+                      CNSLB_DecisionModule*   decision_maker,
+                      unsigned                collect_tm = 3,
+                      ENonLbHostsPolicy       non_lb_host = eNonLB_Allow);
     ~CNSLB_Coordinator();
 
-    /// LB coordinator's decision about petition for a job from a 
-    /// worker node host
-    enum EDecision
-    {
-        eGrantJob,    ///< Suggest that job should be given
-        eDenyJob,     ///< Host is overloaded, job should be delayed
-        eHostUnknown, ///< Host unknown, decision is up to the client
-        eNoLBInfo     ///< Collector got no info (yet), no decision
-    };
-
     /// Evaluate if host is good for the job
-    EDecision Evaluate(unsigned host);
+    /// @param host
+    ///    worker node address
+    /// @param time_eval
+    ///    time in seconds from the first evaluation
+    ///
+    CNSLB_DecisionModule::EDecision Evaluate(unsigned host, 
+                                             unsigned time_eval);
 
     ENonLbHostsPolicy GetNonLBPolicy() const { return m_NonLB_Policy; }
 private:
@@ -181,14 +339,14 @@ private:
     CFastMutex                                    m_SrvLstPoolLock;
 
     string                                        m_ServiceName;
-//    auto_ptr<INSLB_Collector>                     m_Collector;
-    INSLB_Collector*                     m_Collector;
+    INSLB_Collector*                              m_Collector;
     unsigned                                      m_CollectTm;
     CRef<CCollectorThread>                        m_CollectorThread;
 
     INSLB_Collector::TServerList*                 m_CurrSrvList;
     CRWLock                                       m_CurrSrvListLock;
-    double                                        m_DenyThreashold;
+    CNSLB_ThreasholdCurve*                        m_Curve;
+    CNSLB_DecisionModule*                         m_DecisionMaker;
     ENonLbHostsPolicy                             m_NonLB_Policy;
 
 };
@@ -199,6 +357,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/21 12:39:27  kuznets
+ * Improved load balancing module
+ *
  * Revision 1.2  2005/07/14 13:40:07  kuznets
  * compilation bug fixes
  *

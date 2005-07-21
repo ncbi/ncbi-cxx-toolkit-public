@@ -38,15 +38,18 @@
 
 BEGIN_NCBI_SCOPE
 
-CNSLB_Coordinator::CNSLB_Coordinator(const string&    service_name,
-                                     INSLB_Collector* collector, 
-                                     unsigned         collect_tm,
-                                     ENonLbHostsPolicy non_lb_host)
+CNSLB_Coordinator::CNSLB_Coordinator(const string&           service_name,
+                                     INSLB_Collector*        collector, 
+                                     CNSLB_ThreasholdCurve*  curve,
+                                     CNSLB_DecisionModule*   decision_maker,
+                                     unsigned                collect_tm,
+                                     ENonLbHostsPolicy       non_lb_host)
  :  m_ServiceName(service_name),
     m_Collector(collector),
     m_CollectTm(collect_tm),
     m_CurrSrvList(0),
-    m_DenyThreashold(0.20),
+    m_Curve(curve),
+    m_DecisionMaker(decision_maker),
     m_NonLB_Policy(non_lb_host)
 {
     RunCollectorThread();
@@ -58,6 +61,7 @@ CNSLB_Coordinator::~CNSLB_Coordinator()
         PutSrvList(m_CurrSrvList);
     }
     delete m_Collector;
+    delete m_Curve;
 }
 
 void CNSLB_Coordinator::RunCollectorThread()
@@ -100,7 +104,9 @@ void CNSLB_Coordinator::PutSrvList(INSLB_Collector::TServerList* srv_lst)
     m_SrvLstPool.Put(srv_lst);
 }
 
-CNSLB_Coordinator::EDecision CNSLB_Coordinator::Evaluate(unsigned host)
+CNSLB_DecisionModule::EDecision 
+CNSLB_Coordinator::Evaluate(unsigned host,
+                            unsigned time_eval)
 {
     // get the updated list from the collector thread, if new list
     // is not available 
@@ -113,6 +119,25 @@ CNSLB_Coordinator::EDecision CNSLB_Coordinator::Evaluate(unsigned host)
         m_CurrSrvList = slist;
     }
 
+    if (m_DecisionMaker == 0) {
+        return CNSLB_DecisionModule::eGrantJob;
+    }
+
+    CReadLockGuard guard(m_CurrSrvListLock);
+    if (m_CurrSrvList == 0 || m_CurrSrvList->size() == 0) {
+        return CNSLB_DecisionModule::eNoLBInfo;
+    }
+
+    
+    CNSLB_DecisionModule::SPetition petition;
+    petition.host = host;
+    petition.time_eval = time_eval;
+    petition.lb_host_info = m_CurrSrvList;
+    petition.threshold_curve = m_Curve ? &m_Curve->GetCurve() : 0;
+
+    return m_DecisionMaker->Evaluate(petition);
+
+/*
     INSLB_Collector::NSLB_ServerInfo best_host;
     INSLB_Collector::NSLB_ServerInfo worst_host;
     best_host.rate = 0.0;
@@ -156,6 +181,7 @@ CNSLB_Coordinator::EDecision CNSLB_Coordinator::Evaluate(unsigned host)
     _ASSERT(rate_interval > 0);
 
     if (rate_interval < 0.01) {
+        // no difference between best-worst
         return eGrantJob;
     }
     double req_interval = best_host.rate - req_host->rate;
@@ -164,6 +190,7 @@ CNSLB_Coordinator::EDecision CNSLB_Coordinator::Evaluate(unsigned host)
         return eGrantJob;
     }
     return eDenyJob;
+*/
 }
 
 
@@ -234,11 +261,31 @@ CNSLB_LBSMD_Collector::GetServerList(const string& service_name,
         return;
     }
     const SSERV_Info* sinfo;
+    HOST_INFO hinfo;
 
-    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
+    while ((sinfo = SERV_GetNextInfoEx(srv_it, &hinfo)) != 0) {
+
         if (!m_Hosts[sinfo->host]) {
             m_Hosts.set(sinfo->host);
-            slist->push_back(NSLB_ServerInfo(sinfo->host, sinfo->rate));
+            if (hinfo) {
+                unsigned cpu_count = HINFO_CpuCount(hinfo);
+                if (cpu_count != 0) {
+                }
+     
+                double array[2];  // 0 load average - is number of waiting processes
+                                  // 1 - momentary run queue 
+                                  // if < than CPU_NUMBER - machine is available
+                                  // (non integer!)
+                if (HINFO_LoadAverage(hinfo, array)) {
+                }
+                free(hinfo);
+
+                slist->push_back(
+                    NSLB_ServerInfo(sinfo->host, sinfo->rate,
+                                    cpu_count, array[0], array[1]));
+            } else {
+                slist->push_back(NSLB_ServerInfo(sinfo->host, sinfo->rate));
+            }
         }
 
     } // while
@@ -247,17 +294,206 @@ CNSLB_LBSMD_Collector::GetServerList(const string& service_name,
 }
 
 
+CNSLB_ThreasholdCurve_Linear::CNSLB_ThreasholdCurve_Linear(double a, 
+                                                           double b,
+                                                           bool   derive_a)
+: m_Constr(0),
+  m_A(a),
+  m_B(b),
+  m_DeriveA(derive_a)
+{
+}
+
+CNSLB_ThreasholdCurve_Linear::CNSLB_ThreasholdCurve_Linear(double  y0, 
+                                                           double  yN)
+ : m_Constr(1),
+   m_Y0(y0),
+   m_YN(yN)
+{
+}
+
+
+void CNSLB_ThreasholdCurve_Linear::ReGenerateCurve(unsigned length)
+{
+    _ASSERT(length);
+
+    if (length == 0) {
+        return;
+    }
+
+    switch (m_Constr) {
+    case 0:
+        if (m_DeriveA) {
+            // assume the last threshold is 0
+            //  y = ax + b
+            //  y = 0
+            //  a = -(b/length)
+            m_A = -(m_B / length);
+        }
+        break;
+    case 1:
+        m_B = m_Y0;
+        m_A = (m_YN - m_B) / length;
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+
+    // compute the curve vector
+    m_Curve.resize(length);
+    for (unsigned x = 0; x < length; ++x) {
+        double y = m_A * double(x) + m_B;
+        if (y > 0.99) {
+            y = 1;
+        }
+        if (y < 0.01) {
+            y = 0.0;
+        }
+        m_Curve[x] = y;
+    } // for
+
+}
+
+CNSLB_ThreasholdCurve_Regression::CNSLB_ThreasholdCurve_Regression(
+                                                                  double  y0,
+                                                                  double  a)
+ : m_Y0(y0),
+   m_A(a)
+{
+}
+
+void CNSLB_ThreasholdCurve_Regression::ReGenerateCurve(unsigned length)
+{
+    _ASSERT(length);
+
+    if (length == 0) {
+        return;
+    }
+    m_Curve.resize(length);
+    m_Curve[0] = m_Y0;
+
+    for (unsigned x = 1; x < length; ++x) {
+        double y = m_Curve[x-1] + (m_A * m_Curve[x-1]);
+        if (y > 0.99) {
+            y = 1;
+        }
+        if (y < 0.01) {
+            y = 0.0;
+        }
+        m_Curve[x] = y;
+    }
+}
+
+
+CNSLB_DecisionModule::EDecision 
+CNSLB_DecisionModule_DistributeRate::Evaluate(const SPetition& petition) const
+{
+    if (petition.lb_host_info == 0) {
+        return eNoLBInfo;
+    }
+
+    INSLB_Collector::NSLB_ServerInfo best_host;
+    INSLB_Collector::NSLB_ServerInfo worst_host;
+    best_host.rate = 0.0;
+    worst_host.rate = 99999999.999;
+
+    const INSLB_Collector::NSLB_ServerInfo* req_host = 0;
+
+
+    // Iterate the available load list, find fittest host, worst host
+
+    ITERATE(INSLB_Collector::TServerList, it, *petition.lb_host_info) {
+        if (it->rate > best_host.rate) {
+            best_host = *it;
+        }
+        if (it->rate < worst_host.rate) {
+            worst_host = *it;
+        }
+        if (it->host == petition.host) {
+            req_host = &*it;
+        }
+    }
+    if (req_host == 0) {
+        return eHostUnknown;
+    }
+    if (req_host->host == best_host.host) {
+        return eGrantJob;
+    }
+
+    // evaluate the persentage between best-current-worst
+
+    double rate_interval = best_host.rate - worst_host.rate;
+    _ASSERT(rate_interval > 0);
+
+    if (rate_interval < 0.01) {
+        // no difference between best-worst
+        return eGrantJob;
+    }
+    double req_interval = best_host.rate - req_host->rate;
+    double ratio = req_interval / rate_interval;
+
+    double deny_threashold = 0.20;
+
+    if (petition.threshold_curve) {
+        if (petition.threshold_curve->size() < petition.time_eval) {
+            return eGrantJob;
+        }
+        deny_threashold = (*petition.threshold_curve)[petition.time_eval];
+        if (deny_threashold > 1) {
+            deny_threashold = 0.99;
+        }
+    }
+
+    if (ratio >= deny_threashold) {
+        return eGrantJob;
+    }
+    return eDenyJob;
+}
+
+
+CNSLB_DecisionModule::EDecision 
+CNSLB_DecisionModule_CPU_Avail::Evaluate(const SPetition& petition) const
+{
+    if (petition.lb_host_info == 0) {
+        return eNoLBInfo;
+    }
+    const INSLB_Collector::NSLB_ServerInfo* req_host = 0;
+
+    ITERATE(INSLB_Collector::TServerList, it, *petition.lb_host_info) {
+        if (it->host == petition.host) {
+            req_host = &*it;
+            break;
+        }
+    }
+
+    if (req_host == 0) {
+        return eHostUnknown;
+    }
+    
+    if (req_host->cpu_count == 0) {
+        return eInsufficientInfo;
+    }
+
+    if (req_host->cpu_run_queue < double(req_host->cpu_count)) {
+        return eGrantJob;
+    }
+    return eDenyJob;
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/21 12:39:27  kuznets
+ * Improved load balancing module
+ *
  * Revision 1.2  2005/07/14 13:40:07  kuznets
  * compilation bug fixes
  *
  * Revision 1.1  2005/07/14 13:12:56  kuznets
  * Added load balancer
- *
  *
  * ===========================================================================
  */

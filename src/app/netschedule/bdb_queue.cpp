@@ -267,6 +267,88 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
     }
 }
 
+static
+CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg, 
+                                        const string&    sname,
+                                        unsigned         exec_delay)
+{
+    auto_ptr<CNSLB_ThreasholdCurve> curve;
+    string lb_curve = 
+        reg.GetString(sname, "lb_curve", kEmptyStr);
+
+    do {
+
+    if (lb_curve.empty() || 
+        NStr::CompareNocase(lb_curve, "linear") == 0) {
+        double y0 = reg.GetDouble(sname, 
+                                  "lb_curve_linear_y0", 
+                                  0.6, 
+                                  0, 
+                                  IRegistry::eReturn);
+        double yN = reg.GetDouble(sname, 
+                                  "lb_curve_linear_yN", 
+                                  0.15, 
+                                  0, 
+                                  IRegistry::eReturn);
+        curve.reset(new CNSLB_ThreasholdCurve_Linear(y0, yN));
+        LOG_POST(Info << sname 
+                      << " initializing linear LB curve"
+                      << " y0=" << y0 
+                      << " yN=" << yN);
+        break;
+    }
+
+    if (NStr::CompareNocase(lb_curve, "regression") == 0) {
+        double y0 = reg.GetDouble(sname, 
+                                  "lb_curve_regression_y0",
+                                  0.85, 
+                                  0, 
+                                  IRegistry::eReturn);
+        double a = reg.GetDouble(sname, 
+                                  "lb_curve_regression_a",
+                                  -0.2, 
+                                  0, 
+                                  IRegistry::eReturn);
+        curve.reset(new CNSLB_ThreasholdCurve_Regression(y0, a));
+        LOG_POST(Info << sname 
+                      << " initializing regression LB curve."
+                      << " y0=" << y0 
+                      << " a="  << a);
+        break;
+    }
+
+    } while(0);
+
+    if (curve.get()) {
+        curve->ReGenerateCurve(exec_delay);
+    }
+    return curve.release();
+}
+
+static
+CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg, 
+                                          const string&    sname)
+{
+    auto_ptr<CNSLB_DecisionModule> decision;
+    string lb_policy = 
+        reg.GetString(sname, "lb_policy", kEmptyStr);
+
+    do {
+    if (lb_policy.empty() ||
+        NStr::CompareNocase(lb_policy, "rate")==0) {
+        decision.reset(new CNSLB_DecisionModule_DistributeRate());
+        break;
+    }
+    if (NStr::CompareNocase(lb_policy, "cpu_avail")==0) {
+        decision.reset(new CNSLB_DecisionModule_CPU_Avail());
+        break;
+    }
+
+    } while(0);
+
+    return decision.release();
+}
+
 void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
 {
     string qname;
@@ -369,25 +451,41 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
                 non_lb_hosts = CNSLB_Coordinator::eNonLB_Deny;
             } else
             if (NStr::CompareNocase(lb_unknown_host, "allow") == 0) {
-            non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
+                non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
             } else
             if (NStr::CompareNocase(lb_unknown_host, "reserve") == 0) {
-            non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
+                non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
             }
+
 
             if (queue.lb_flag == false) {
                 LOG_POST(Error << "Queue:" << sname 
-                               << "is be load balanced. " << lb_service);
+                               << " is load balanced. " << lb_service);
 
                 if (queue.lb_coordinator == 0) {
+                    auto_ptr<CNSLB_ThreasholdCurve>  
+                      deny_curve(s_ConfigureCurve(reg, sname, lb_exec_delay));
+
                     queue.lb_exec_delay = lb_exec_delay;
+
+                    CNSLB_DecisionModule*   decision_maker = 0;
+
+                    auto_ptr<CNSLB_DecisionModule_DistributeRate> 
+                        decision_distr_rate(
+                            new CNSLB_DecisionModule_DistributeRate);
+
                     auto_ptr<INSLB_Collector>   
                         collect(new CNSLB_LBSMD_Collector());
+
                     auto_ptr<CNSLB_Coordinator> 
-                        coord(new CNSLB_Coordinator(lb_service,
-                                                    collect.release(),
-                                                    lb_collect_time,
-                                                    non_lb_hosts));
+                       coord(new CNSLB_Coordinator(
+                                    lb_service,
+                                    collect.release(),
+                                    deny_curve.release(),
+                                    decision_distr_rate.release(),
+                                    lb_collect_time,
+                                    non_lb_hosts));
+
                     queue.lb_coordinator = coord.release();
                     queue.lb_flag = true;
                 } else {
@@ -1575,9 +1673,10 @@ fetch_db:
         // because it's stalled for too long
         //
         unsigned time_lb_first_eval = db.time_lb_first_eval;
+        unsigned stall_time = 0; 
         if (time_lb_first_eval) {
+            stall_time = curr - time_lb_first_eval;
             if (m_LQueue.lb_exec_delay) {
-                unsigned stall_time = curr - time_lb_first_eval;
                 if (stall_time > m_LQueue.lb_exec_delay) {
                     // stalled for too long! schedule the job
                     if (unk_host_policy != CNSLB_Coordinator::eNonLB_Deny) {
@@ -1596,20 +1695,20 @@ fetch_db:
         {{
         CNSLB_Coordinator* coordinator = m_LQueue.lb_coordinator;
         if (coordinator) {
-            CNSLB_Coordinator::EDecision lb_decision = 
-                                    coordinator->Evaluate(worker_node);
+            CNSLB_DecisionModule::EDecision lb_decision = 
+                coordinator->Evaluate(worker_node, stall_time);
             switch (lb_decision) {
-            case CNSLB_Coordinator::eGrantJob:
+            case CNSLB_DecisionModule::eGrantJob:
                 break;
-            case CNSLB_Coordinator::eDenyJob:
+            case CNSLB_DecisionModule::eDenyJob:
                 *job_id = 0;
                 break;
-            case CNSLB_Coordinator::eHostUnknown:
+            case CNSLB_DecisionModule::eHostUnknown:
                 if (unk_host_policy != CNSLB_Coordinator::eNonLB_Allow) {
                     *job_id = 0;
                 }
                 break;
-            case CNSLB_Coordinator::eNoLBInfo:
+            case CNSLB_DecisionModule::eNoLBInfo:
                 break;
             default:
                 _ASSERT(0);
@@ -2387,6 +2486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/07/21 12:39:27  kuznets
+ * Improved load balancing module
+ *
  * Revision 1.41  2005/07/14 13:40:07  kuznets
  * compilation bug fixes
  *
