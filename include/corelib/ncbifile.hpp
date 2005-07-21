@@ -313,7 +313,8 @@ public:
 
     /// Copy the entry to a location specified by "new_path".
     ///
-    /// The Copy() method must be implemented for each entry type separately.
+    /// The Copy() method must be overloaded in derived classes
+    /// that support copy operation.
     /// @param new_path
     ///   New path/name of an entry.
     /// @param flags
@@ -323,8 +324,6 @@ public:
     ///   Zero value means using default buffer size.
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
-    ///   Must be overloaded in derived classes that support copy operation.
-    ///   By default, CDirEntry::Copy() returns FALSE.
     /// @sa
     ///   CFile::Copy, CDir::Copy, CLink::Copy, CopyToDir
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
@@ -1130,12 +1129,11 @@ public:
         eIgnoreRecursive    ///< Supress self recursive elements (like "..")
     };
 
-
     /// Get directory entries based on the specified "mask".
     ///
     /// @param mask
-    ///   Use to select only files that match this mask. Do not use file mask
-    ///   if set to "kEmptyStr".
+    ///   Use to select only entries that match this mask.
+    ///   Do not use file mask if set to "kEmptyStr".
     /// @param mode
     ///   Defines which entries return.
     /// @param use_case
@@ -1143,45 +1141,55 @@ public:
     ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const string&   mask     = kEmptyStr,
-                        EGetEntriesMode mode     = eAllEntries,
-                        NStr::ECase     use_case = NStr::eCase) const;
+    TEntries GetEntries(const string&    mask     = kEmptyStr,
+                        EGetEntriesMode  mode     = eAllEntries,
+                        NStr::ECase      use_case = NStr::eCase) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
     /// @param mask
-    ///   Use to select only files that match this set of masks.
+    ///   Use to select only entries that match this set of masks.
+    /// @param mode
+    ///   Defines which entries return.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
     TEntries GetEntries(const vector<string>& masks,
-                        EGetEntriesMode       mode     = eAllEntries,
-                        NStr::ECase           use_case = NStr::eCase) const;
+                        EGetEntriesMode  mode     = eAllEntries,
+                        NStr::ECase      use_case = NStr::eCase) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
     /// @param mask
-    ///   Use to select only files that match this set of masks.
+    ///   Use to select only entries that match this set of masks.
+    /// @param mode
+    ///   Defines which entries return.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const CMask&    masks,
-                        EGetEntriesMode mode     = eAllEntries,
-                        NStr::ECase     use_case = NStr::eCase) const;
+    TEntries GetEntries(const CMask&     masks,
+                        EGetEntriesMode  mode     = eAllEntries,
+                        NStr::ECase      use_case = NStr::eCase) const;
 
 
     /// Versions of GetEntries() which returns pointer to TEntries.
     /// This methods are faster on big directories than GetEntries().
     /// NOTE: Do not forget to release allocated memory using return pointer.
-    TEntries* GetEntriesPtr(const string&      mask     = kEmptyStr,
-                            EGetEntriesMode    mode     = eAllEntries,
-                            NStr::ECase        use_case = NStr::eCase) const;
+    TEntries* GetEntriesPtr(const string&    mask     = kEmptyStr,
+                            EGetEntriesMode  mode     = eAllEntries,
+                            NStr::ECase      use_case = NStr::eCase) const;
 
     TEntries* GetEntriesPtr(const vector<string>& masks,
-                            EGetEntriesMode    mode     = eAllEntries,
-                            NStr::ECase        use_case = NStr::eCase) const;
+                            EGetEntriesMode  mode     = eAllEntries,
+                            NStr::ECase      use_case = NStr::eCase) const;
 
-    TEntries* GetEntriesPtr(const CMask&       masks,
-                            EGetEntriesMode    mode     = eAllEntries,
-                            NStr::ECase        use_case = NStr::eCase) const;
+    TEntries* GetEntriesPtr(const CMask&     masks,
+                            EGetEntriesMode  mode     = eAllEntries,
+                            NStr::ECase      use_case = NStr::eCase) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -2124,15 +2132,6 @@ bool CDirEntry::MatchesMask(const char* name, const CMask& mask,
 }
 
 inline 
-bool CDirEntry::Copy(const string& /*new_path*/, TCopyFlags flags,
-                     size_t /*buf_size*/)
-{
-    // We "don't know" how to copy entry, by default.
-    // Use overloaded Copy() method in derived classes.
-    return (flags & fCF_SkipUnsupported) == fCF_SkipUnsupported;
-}
-
-inline 
 bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
                           size_t buf_size)
 {
@@ -2381,6 +2380,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/07/21 12:02:53  ivanov
+ * Move CDirEntry::Copy() implementation to .cpp file.
+ * Minor comment changes.
+ *
  * Revision 1.63  2005/07/12 11:16:04  ivanov
  * CDirEntry::IsNewer() -- added additional argument which specify what
  * to do if the dir entry does not exist or is not accessible.
