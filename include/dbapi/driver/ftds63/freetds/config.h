@@ -1,3 +1,6 @@
+#ifndef DBAPI_DRIVER_FTDS63_FREETDS___CONFIG__H
+#define DBAPI_DRIVER_FTDS63_FREETDS___CONFIG__H
+
 /*  $Id$
  *
  *  FreeTDS 0.63 (TDS ver. 8.0) config file.
@@ -92,3 +95,4 @@
 typedef int socklen_t;
 #endif
 
+#endif  /* DBAPI_DRIVER_FTDS63_FREETDS___CONFIG__H */
