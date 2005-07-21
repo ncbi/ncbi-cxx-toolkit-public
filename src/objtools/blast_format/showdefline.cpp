@@ -338,6 +338,112 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
     return linkout_list;
 }
 
+string 
+CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
+                                      bool show_gi)
+{
+    string id_str = NcbiEmptyString;
+
+    ITERATE(list<CRef<CSeq_id> >, itr, id) {
+        if (show_gi || !(*itr)->IsGi())
+            id_str += (*itr)->AsFastaString() + "|";
+    }
+    if (id_str.size() > 0)
+        id_str.erase(id_str.size() - 1);
+
+    return id_str;
+}
+
+void 
+CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
+                                list<CRef<objects::CSeq_id> >& ids)
+{
+    ids.clear();
+
+    // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
+    // created in a BLAST database when it is formatted without indexing.
+    // For such ids, create new fake local Seq-ids, saving the first token of 
+    // the Bioseq's title, if it's available.
+    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+        CRef<CSeq_id> next_seqid(new CSeq_id());
+        string id_token = NcbiEmptyString;
+        
+        if (next_seqid->IsGeneral() &&
+            next_seqid->AsFastaString().find("gnl|BL_ORD_ID") 
+            != string::npos) {
+            vector<string> title_tokens;
+            id_token = 
+                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+        }
+        if (id_token != NcbiEmptyString) {
+            // Create a new local id with a label containing the extracted
+            // token and save it in the next_seqid instead of the original 
+            // id.
+            CObject_id* obj_id = new CObject_id();
+            obj_id->SetStr(id_token);
+            next_seqid->SetLocal(*obj_id);
+        } else {
+                next_seqid->Assign(*itr->GetSeqId());
+        }
+        ids.push_back(next_seqid);
+    }
+}
+
+void
+CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
+                                               list<int>& use_this_gi,
+                                               string& seqid, string& defline, 
+                                               bool show_gi)
+{
+    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
+    // its destruction; then extract the list of CBlast_def_line objects.
+    const CRef<CBlast_def_line_set> bdlRef = 
+        CBlastFormatUtil::GetBlastDefline(handle);
+    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+
+    if (bdl.empty()){
+        list<CRef<objects::CSeq_id> > ids;
+        GetSeqIdList(handle, ids);
+        seqid = GetSeqIdListString(ids, show_gi);
+        defline = GetTitle(handle);
+    } else { 
+        bool is_first = true;
+        ITERATE(list<CRef<CBlast_def_line> >, iter, bdl) {
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            int cur_gi =  FindGi(cur_id);
+            int gi_in_use_this_gi = 0;
+            ITERATE(list<int>, iter_gi, use_this_gi){
+                if(cur_gi == *iter_gi){
+                    gi_in_use_this_gi = *iter_gi;                 
+                    break;
+                }
+            }
+            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+                if (is_first)
+                    seqid = GetSeqIdListString(cur_id, show_gi);
+
+                if((*iter)->IsSetTitle()){
+                    if(is_first){
+                        defline = (*iter)->GetTitle();
+                    } else {
+                        string concat_acc;
+                        FindBestChoice(cur_id, CSeq_id::WorstRank)->
+                            GetLabel(&concat_acc, CSeq_id::eFasta, 0);
+                        if( show_gi && cur_gi > 0){
+                            defline = defline + " >" + "gi|" + 
+                                NStr::IntToString(cur_gi) + "|" + 
+                                concat_acc + " " + (*iter)->GetTitle();
+                        } else {
+                            defline = defline + " >" + concat_acc + " " + 
+                                (*iter)->GetTitle();
+                        }
+                    }
+                    is_first = false;
+                }
+            }
+        }
+    }
+}
 
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            const CSeq_id& aln_id,
@@ -381,27 +487,30 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }
         
     //get id
-    if(use_this_gi.empty() || bdl.empty()){
-     
+    if(bdl.empty()){
         wid = FindBestChoice(ids, CSeq_id::WorstRank);
         sdl->id = wid;
-        sdl->gi = FindGi(ids);      
+        sdl->gi = FindGi(ids);    
     } else {        
         bool found = false;
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
             int cur_gi =  FindGi(cur_id);
-            ITERATE(list<int>, iter_gi, use_this_gi){
-                if(cur_gi == *iter_gi){
-                    wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-                    sdl->id =  wid;
-                    sdl->gi = cur_gi;     
-                    found = true;
-                    break;
+            wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            if (!use_this_gi.empty()) {
+                ITERATE(list<int>, iter_gi, use_this_gi){
+                    if(cur_gi == *iter_gi){
+                        found = true;
+                        break;
+                    }
                 }
+            } else {
+                found = true;
             }
             if(found){
+                sdl->id = wid;
+                sdl->gi = cur_gi;
                 break;
             }
         }
@@ -461,47 +570,14 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                  (m_Option & eNewTargetWindow) ? true : false,
                                  m_Rid, m_QueryNumber);
     }
-    
+
     //get defline
-    if (bdl.empty()){
-        sdl->defline = GetTitle(handle);
-    } else { 
-        bool is_first = true;
-        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);
-            int gi_in_use_this_gi = 0;
-            ITERATE(list<int>, iter_gi, use_this_gi){
-                if(cur_gi == *iter_gi){
-                    gi_in_use_this_gi = *iter_gi;                 
-                    break;
-                }
-            }
-            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
-                
-                if((*iter)->IsSetTitle()){
-                    if(is_first){
-                        sdl->defline = (*iter)->GetTitle();
-                    } else {
-                        string concat_acc;
-                        wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-                        wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
-                        if( (m_Option & eShowGi) && cur_gi > 0){
-                            sdl->defline =  sdl->defline + " >" + "gi|" + 
-                                NStr::IntToString(cur_gi) + "|" + 
-                                concat_acc + " " + (*iter)->GetTitle();
-                        } else {
-                            sdl->defline = sdl->defline + " >" + concat_acc +
-                                " " + 
-                                (*iter)->GetTitle();
-                        }
-                    }
-                    is_first = false;
-                }
-            }
-        }
-    }
+    /// @todo FIXME: the following function finds the full Seq-id string too.
+    /// Should this be used instead of the code embedded in the 
+    /// DisplayBlastDefline method below?
+    string seqid_str; 
+    GetBioseqHandleDeflineAndId(handle, use_this_gi, seqid_str, sdl->defline,
+                                (m_Option & eShowGi));
 }
 
 
@@ -813,6 +889,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.16  2005/07/21 16:27:09  dondosha
+*Added 3 static functions for extraction of defline parts; fixed bug when order of redundant sequences in a Blast-def-line set changes
+*
 *Revision 1.15  2005/07/20 18:18:43  dondosha
 *Uninitialized variable compiler warning fix
 *
