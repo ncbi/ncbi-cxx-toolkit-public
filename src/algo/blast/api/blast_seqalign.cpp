@@ -1182,7 +1182,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
 ///            appended (if not NULL).
 /// @return Resulting Seq-align-set. 
 CSeq_align_set*
-x_CreateEmptySeq_align_set(CSeq_align_set* sas)
+CreateEmptySeq_align_set(CSeq_align_set* sas)
 {
     CSeq_align_set* retval = NULL;
 
@@ -1209,6 +1209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/07/21 17:17:28  bealer
+* - OMF version of seqalign generation.
+*
 * Revision 1.58  2005/06/07 17:41:27  dondosha
 * Tiny doxygen fix
 *

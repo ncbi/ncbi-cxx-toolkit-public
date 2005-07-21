@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 
 #include <serial/iterator.hpp>
+#include "blast_seqalign.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -56,21 +57,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-
-CSeq_align_set*
-x_CreateEmptySeq_align_set(CSeq_align_set* sas);
-
-CRef<CSeq_align>
-BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
-                               const CSeq_id *query_id, 
-                               const CSeq_id *subject_id, Int4 query_length, 
-                               Int4 subject_length);
-
-CRef<CSeq_align>
-BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
-                       const CSeq_id *query_id, const CSeq_id *subject_id,
-                       Int4 query_length, Int4 subject_length,
-                       bool is_ooframe);
 
 CBlastQuerySourceOM::CBlastQuerySourceOM(const TSeqLocVector& v)
     : m_TSeqLocVector(v)
@@ -351,7 +337,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     CSeq_align_set* seq_aligns = new CSeq_align_set();
 
     if (!hit_list) {
-        return x_CreateEmptySeq_align_set(seq_aligns);
+        return CreateEmptySeq_align_set(seq_aligns);
     }
 
     TSeqPos query_length = sequence::GetLength(*query.seqloc, query.scope);
@@ -534,7 +520,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             seq_aligns.Reset(new CSeq_align_set());
             seq_aligns->Set().push_back(hit_align);
         } else {
-            seq_aligns.Reset(x_CreateEmptySeq_align_set(NULL));
+            seq_aligns.Reset(CreateEmptySeq_align_set(NULL));
         }
         retval.push_back(seq_aligns);
     }
@@ -551,6 +537,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/07/21 17:17:28  bealer
+* - OMF version of seqalign generation.
+*
 * Revision 1.57  2005/07/20 20:43:25  bealer
 * - Minor constness change.
 *

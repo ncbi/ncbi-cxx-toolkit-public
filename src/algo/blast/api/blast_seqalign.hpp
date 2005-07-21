@@ -40,6 +40,7 @@
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -48,9 +49,9 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(objects)
-    class CSeq_align_set;
-END_SCOPE(objects)
+USING_SCOPE(objects);
+//     class CSeq_align_set;
+// END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
@@ -122,6 +123,22 @@ PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
                            const IBlastSeqInfoSrc * seqinfo_src,
                            const SPHIQueryInfo    * pattern_info);
 
+CSeq_align_set*
+CreateEmptySeq_align_set(CSeq_align_set* sas);
+
+CRef<CSeq_align>
+BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
+                       const CSeq_id *query_id, const CSeq_id *subject_id,
+                       Int4 query_length, Int4 subject_length,
+                       bool is_ooframe);
+
+CRef<CSeq_align>
+BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
+                               const CSeq_id *query_id, 
+                               const CSeq_id *subject_id, Int4 query_length, 
+                               Int4 subject_length);
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -131,6 +148,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/07/21 17:17:28  bealer
+* - OMF version of seqalign generation.
+*
 * Revision 1.27  2005/07/20 20:43:25  bealer
 * - Minor constness change.
 *
