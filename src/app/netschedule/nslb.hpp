@@ -183,6 +183,8 @@ public:
         eInsufficientInfo ///< Not enough information 
     };
 
+    static string DecisionToStrint(EDecision decision);
+
 public:
     virtual ~CNSLB_DecisionModule() {}
 
@@ -357,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/21 15:41:02  kuznets
+ * Added monitoring for LB info
+ *
  * Revision 1.3  2005/07/21 12:39:27  kuznets
  * Improved load balancing module
  *

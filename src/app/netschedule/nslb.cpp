@@ -385,6 +385,21 @@ void CNSLB_ThreasholdCurve_Regression::ReGenerateCurve(unsigned length)
 }
 
 
+string CNSLB_DecisionModule::DecisionToStrint(EDecision decision)
+{
+    switch (decision) {
+    case eGrantJob:         return "GrantJob";
+    case eDenyJob:          return "DenyJob";
+    case eHostUnknown:      return "HostUnknown";
+    case eNoLBInfo:         return "NoLBInfo";
+    case eInsufficientInfo: return "eInsufficientInfo";
+    default:
+        _ASSERT(0);
+    }
+    return "NoSuchCode";
+}
+
+
 CNSLB_DecisionModule::EDecision 
 CNSLB_DecisionModule_DistributeRate::Evaluate(const SPetition& petition) const
 {
@@ -486,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/21 15:41:02  kuznets
+ * Added monitoring for LB info
+ *
  * Revision 1.3  2005/07/21 12:39:27  kuznets
  * Improved load balancing module
  *

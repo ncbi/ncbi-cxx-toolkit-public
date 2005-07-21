@@ -1710,9 +1710,23 @@ fetch_db:
                 break;
             case CNSLB_DecisionModule::eNoLBInfo:
                 break;
+            case CNSLB_DecisionModule::eInsufficientInfo:
+                break;
             default:
                 _ASSERT(0);
             } // switch
+
+            if (m_LQueue.monitor.IsMonitorActive()) {
+                CTime tmp_t(CTime::eCurrent);
+                string msg = " CQueue::GetJobLB() LB decision = ";
+                msg += CNSLB_DecisionModule::DecisionToStrint(lb_decision);
+                msg += " job id = ";
+                msg += NStr::IntToString(*job_id);
+                msg += " worker_node=";
+                msg += CSocketAPI::gethostbyaddr(worker_node);
+                m_LQueue.monitor.SendString(msg);
+            }
+
         }
         }}
 grant_job:
@@ -2486,6 +2500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/07/21 15:41:02  kuznets
+ * Added monitoring for LB info
+ *
  * Revision 1.42  2005/07/21 12:39:27  kuznets
  * Improved load balancing module
  *
