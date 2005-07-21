@@ -176,6 +176,36 @@ public:
         m_BlastType = type;
     }
 
+    /// Creates a '|' delimited string, corresponding to a list of Seq-ids
+    /// @param id List of Seq-ids [in]
+    /// @param show_gi Should gi ids be shown or skipped?
+    /// @return Corresponding string.
+    static string GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
+                                     bool show_gi);
+
+    /// Converts a Bioseq handle's sequence id type into a list of CSeq_id 
+    /// references, substituting an artificial gnl|BL_ORD_ID identifier by a 
+    /// corresponding first token of the title. 
+    /// @param bh Bioseq handle [in]
+    /// @param ids list of Seq-ids from this Bioseq handle. [out]
+    static void GetSeqIdList(const objects::CBioseq_Handle& bh,
+                             list<CRef<objects::CSeq_id> >& ids);
+
+    /// Returns sequence id and a BLAST defline as strings, given a Bioseq 
+    /// handle and a list of gis. 
+    /// to use. Does not need an object.
+    /// @param handle Bioseq handle to retrieve data from [in]
+    /// @param use_this_gi List of gis to use in the defline. All will be used 
+    ///                    if the list is empty. [in]
+    /// @param seqid Seq-id string, combining all Seq-ids from the first defline.
+    /// @param defline Defline string, combining all deflines in case of 
+    ///                redundant sequences.
+    /// @param show_gi Should gi Seq-ids be included? [in]
+    static void
+    GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
+                                list<int>& use_this_gi, string& seqid, 
+                                string& defline, bool show_gi=true);
+    
     ///Display defline
     ///@param out: stream to output
     ///
@@ -273,6 +303,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.6  2005/07/21 16:24:50  dondosha
+Added 3 static functions for extraction of defline parts
+
 Revision 1.5  2005/02/02 16:31:57  jianye
 int to size_t to get rid of compiler warning
 
