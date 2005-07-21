@@ -446,7 +446,7 @@ int CConfig::GetInt(const string&  driver_name,
     }
 
     try {
-        return NStr::StringToInt(param, 10, NStr::eCheck_Need);
+        return NStr::StringToInt(param);
     }
     catch (CStringException& ex)
     {
@@ -480,7 +480,7 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
     }
 
     try {
-        return NStr::StringToUInt8_DataSize(param, 10, NStr::eCheck_Need);
+        return NStr::StringToUInt8_DataSize(param);
     }
     catch (CStringException& ex)
     {
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/07/21 15:44:05  ivanov
+ * Removed default parameters for NStr::StringTo*
+ *
  * Revision 1.12  2005/03/03 22:46:32  grichenk
  * Added possibility to include sections.
  * Merge subnodes and values having the same id.
