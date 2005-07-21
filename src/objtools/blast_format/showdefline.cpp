@@ -847,7 +847,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl = new SDeflineInfo;
 
         x_FillDeflineAndId(handle, id, use_this_gi, sdl);
-        sdl->sum_n = sum_n;
+        sdl->sum_n = sum_n == -1 ? 1:sum_n ;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
     } catch (CException& ){
@@ -855,7 +855,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
                                        num_ident, use_this_gi);
         CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, bit_score_buf);
-        sdl->sum_n = sum_n;
+        sdl->sum_n = sum_n == -1 ? 1:sum_n;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
         sdl->defline = "Unknown";
@@ -889,6 +889,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.17  2005/07/21 16:55:55  jianye
+*fix showing sum_n
+*
 *Revision 1.16  2005/07/21 16:27:09  dondosha
 *Added 3 static functions for extraction of defline parts; fixed bug when order of redundant sequences in a Blast-def-line set changes
 *
