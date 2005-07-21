@@ -91,11 +91,11 @@ int main(int argc, char* argv[])
     } else {
         *buf = 0;
     }
-    CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s%s@%s%s%s%s%s",
-                          TEST_HOST, buf,
+    CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s%s%s@%s%s%s%s",
                           TEST_USER ? TEST_USER                : "",
                           TEST_PASS ? ":"                      : "",
                           TEST_PASS ? TEST_PASS                : "",
+                          TEST_HOST, buf,
                           !TEST_PATH || *TEST_PATH == '/' ? "" : "/",
                           TEST_PATH ? TEST_PATH                : ""));
     /* Run the tests */
@@ -218,6 +218,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/07/21 17:38:58  lavr
+ * Proper URL printout when connecting
+ *
  * Revision 1.9  2005/07/11 18:24:41  lavr
  * Spell ADDEND
  *
