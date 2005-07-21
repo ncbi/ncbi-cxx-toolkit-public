@@ -237,7 +237,11 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
         string    name  = line.substr(start, space - start), local;
 
         if (flags & fReadFasta_NoParseID) {
+#if 0
             local = name;
+#else
+            space = start - 1;
+#endif
         } else {
             // try to parse out IDs
             SIZE_TYPE pos = 0;
@@ -576,6 +580,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/07/21 19:10:01  ucko
+* s_ParseFastaDefline: make NoParseID act like the corresponding C
+* Toolkit option, which uses the whole defline as the title and just
+* assigns a numeric ID to the sequence.
+*
 * Revision 1.16  2005/06/03 17:01:25  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
