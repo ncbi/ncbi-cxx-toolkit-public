@@ -47,6 +47,7 @@ static char const rcsid[] = "$Id$";
 
 #include <objtools/blast_format/blastxml_format.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
+#include <objtools/blast_format/showdefline.hpp>
 
 #include <algo/blast/api/version.hpp>
 
@@ -323,17 +324,9 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 
         aln_vec->GetWholeAlnSeqString(1, subject_seq);
 
-        if (mask_info) {
-            const CDisplaySeqalign::SeqLocCharOption kMaskCharOpt =
-                (kIsBlastn ? CDisplaySeqalign::eN : CDisplaySeqalign::eX);
-            s_MaskQuerySeq(*aln_vec, query_seq, *mask_info, kMaskCharOpt, 
-                           q_frame);
-        }
-
-        middle_seq = query_seq;
-
         num_ident = 0;
         int num_positives = 0;
+        middle_seq = query_seq;
         // The query and subject sequence strings must be the same size in a 
         // correct alignment, but if alignment extends beyond the end of sequence
         // because of a bug, one of the sequence strings may be truncated, hence 
@@ -358,6 +351,16 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         xhsp->SetIdentity(num_ident);
         xhsp->SetGaps(num_gaps);
         xhsp->SetAlign_len(align_length);
+
+        // Only now, after identities and positives have been computed, it's OK
+        // to mask the filtered locations on the query sequence.
+        if (mask_info) {
+            const CDisplaySeqalign::SeqLocCharOption kMaskCharOpt =
+                (kIsBlastn ? CDisplaySeqalign::eN : CDisplaySeqalign::eX);
+            s_MaskQuerySeq(*aln_vec, query_seq, *mask_info, kMaskCharOpt, 
+                           q_frame);
+        }
+
         xhsp->SetQseq(query_seq);
         xhsp->SetHseq(subject_seq);
         xhsp->SetMidline(middle_seq);
@@ -395,19 +398,22 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
     const CSeq_id& kSeqId = kAlignSet.Get().front()->GetSeq_id(1);
     const CBioseq_Handle& kSubjBioseqHandle = scope->GetBioseqHandle(kSeqId);
 
-    string title = NcbiEmptyString;
-
     try {
-        // Get the full subject Seq-id string.
-        const CBioseq& kSubjectBioseq = *kSubjBioseqHandle.GetBioseqCore();
-        hit->SetId(CBlastFormatUtil::GetSeqIdString(kSubjectBioseq));
-
-        title = sequence::GetTitle(kSubjBioseqHandle);
+        /// @todo FIXME Should this be passed somehow? For now the following
+        /// list is empty.
+        list<int> use_this_gi; 
+        string seqid;
+        string defline;
+        /// @todo FIXME Should the "show gi" option be passed to the XML 
+        /// formatter? At this time gis are shown unconditionally.
+        CShowBlastDefline::GetBioseqHandleDeflineAndId(kSubjBioseqHandle, 
+                                                       use_this_gi, seqid, 
+                                                       defline, true);
+        if (defline == NcbiEmptyString)
+            defline = "No definition line";
         
-        if (title == NcbiEmptyString)
-            title = "No definition line";
-        
-        hit->SetDef(title);
+        hit->SetId(seqid);
+        hit->SetDef(defline);
 
         string accession;
         // Find the "best" Seq-id, and retrieve accession (without version).
