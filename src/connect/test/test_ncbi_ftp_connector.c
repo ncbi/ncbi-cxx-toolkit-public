@@ -106,6 +106,10 @@ int main(int argc, char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create FTP download connection");
 
+    assert(CONN_SetTimeout(conn, eIO_Open,      &timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_ReadWrite, &timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_Close,     &timeout) == eIO_Success);
+
     if (CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain) != eIO_Closed)
         CORE_LOG(eLOG_Fatal, "Test failed in empty READ");
 
@@ -218,6 +222,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2005/07/22 16:09:15  lavr
+ * Implement data xfer timeout
+ *
  * Revision 1.10  2005/07/21 17:38:58  lavr
  * Proper URL printout when connecting
  *

@@ -73,6 +73,7 @@ int main(void)
 {
     USING_NCBI_SCOPE;
     TFCDC_Flags flag = 0;
+    SConnNetInfo* net_info;
     size_t i, j, k, l, size;
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
@@ -88,6 +89,9 @@ int main(void)
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
+    if (!(net_info = ConnNetInfo_Create(0))) {
+        ERR_POST(Fatal << "Cannot create net info");
+    }
     if (env) {
         if (    strcasecmp(env, "1")    == 0  ||
                 strcasecmp(env, "TRUE") == 0  ||
@@ -101,7 +105,8 @@ int main(void)
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "CURRENT/RELEASE_NOTES.html",
                                 "ftp"/*default*/, "none"/*default*/,
-                                "/toolbox/ncbi_tools++", 0, flag);
+                                "/toolbox/ncbi_tools++", 0/*port = default*/,
+                                flag, 0/*offset*/, net_info->timeout);
     for (size = 0; ftp.good(); size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
@@ -114,6 +119,7 @@ int main(void)
     } else {
         LOG_POST(Info << "Test 0 passed");
     }
+    ConnNetInfo_Destroy(net_info);
 
 #if 1
     {{
@@ -270,6 +276,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2005/07/22 16:09:07  lavr
+ * Implement data xfer timeout
+ *
  * Revision 6.43  2005/07/11 18:24:22  lavr
  * Spell ADDEND
  *
