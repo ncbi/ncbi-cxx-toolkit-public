@@ -256,17 +256,17 @@ typedef int TSOCK_Handle;
 
 
 #ifdef sun
-#undef sun
+#  undef sun
 #endif
 
 
-#if defined(HAVE_SOCKLEN_T) || defined (_SOCKLEN_T) || defined(_SYS_SOCKET_H_)
-typedef socklen_t SOCK_socklen_t;
-#elif defined(NCBI_OS_MSWIN)
-typedef int	SOCK_socklen_t;
+#if defined(HAVE_SOCKLEN_T)  ||  defined (_SOCKLEN_T)
+typedef socklen_t  SOCK_socklen_t;
+#elif defined(NCBI_OS_MAC)
+typedef UInt32     SOCK_socklen_t;
 #else
-typedef UInt32 SOCK_socklen_t;
-#endif /*HAVE_SOCKLEN_T*/
+typedef int	       SOCK_socklen_t;
+#endif
 
 
 /* Type of connecting socket (except listening)
@@ -4453,6 +4453,10 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.179  2005/07/22 21:31:39  vakatov
+ * Narrow down the previous commit to MAC.
+ * Also remove somewhat puzzling #ifdef _SYS_SOCKET_H_.
+ *
  * Revision 6.178  2005/07/22 15:04:06  rsmith
  * Somewhat rationalize the use of socklen_t arguments.
  *
