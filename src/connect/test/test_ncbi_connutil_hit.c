@@ -54,6 +54,8 @@ int main(int argc, char** argv)
     EIO_Status status;
     char buffer[10000];
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     fprintf(stderr, "Running...\n"
@@ -167,6 +169,9 @@ int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/07/22 16:09:43  lavr
+ * Add severity and timestamp to log message format
+ *
  * Revision 6.12  2002/08/12 15:10:43  lavr
  * Use persistent SOCK_Write()
  *
