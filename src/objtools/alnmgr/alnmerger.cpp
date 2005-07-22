@@ -840,7 +840,8 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     // target below
                                     len -= delta;
                                     start2 += delta * width2;
-                                } else if (delta > len) {
+                                } else if (delta > len  &&
+                                           m_MergeFlags & fAllowTranslocation) {
                                     // Translocation
                                     // below target above
                                     // x---- x-)--- 
@@ -880,7 +881,8 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     len -= delta;
                                     start1 += delta * width1;
                                     start2 += delta * width2;
-                                } else if (delta > len) {
+                                } else if (delta > len  &&
+                                           m_MergeFlags & fAllowTranslocation) {
                                     // Translocation
                                     //       target above
                                     //       x--x-) ----)
@@ -960,8 +962,10 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     start1 += (len - delta) * width1;
                                 }
                                 len = delta;
-                            } else {
+                            } else if (m_MergeFlags & fAllowTranslocation) {
                                 return eTranslocation;
+                            } else {
+                                return eInconsistentOverlap;
                             }
                         } else {
                             return eInconsistentOverlap;
@@ -1193,6 +1197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/07/22 15:30:23  todorov
+* + fAllowTranslocation as a merge option
+*
 * Revision 1.7  2005/07/18 15:58:28  todorov
 * 1) Adjusted x_SecondRowFits to return immediately in case of
 * translocation.

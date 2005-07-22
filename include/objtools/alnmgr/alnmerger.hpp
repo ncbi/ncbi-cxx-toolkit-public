@@ -80,7 +80,8 @@ public:
         fSortInputByScore     = 0x0080, // Process better scoring input aligments first
         fQuerySeqMergeOnly    = 0x0100, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fFillUnalignedRegions = 0x0200
+        fFillUnalignedRegions = 0x0200,
+        fAllowTranslocation   = 0x0400  // allow translocations when truncating overlaps
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
 
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/07/22 15:30:37  todorov
+* + fAllowTranslocation as a merge option
+*
 * Revision 1.4  2005/07/11 13:57:02  todorov
 * + eTranslocation
 *
