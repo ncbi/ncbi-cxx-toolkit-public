@@ -260,10 +260,12 @@ typedef int TSOCK_Handle;
 #endif
 
 
-#ifdef HAVE_SOCKLEN_T
+#if defined(HAVE_SOCKLEN_T) || defined (_SOCKLEN_T) || defined(_SYS_SOCKET_H_)
 typedef socklen_t SOCK_socklen_t;
+#elif defined(NCBI_OS_MSWIN)
+typedef int	SOCK_socklen_t;
 #else
-typedef int       SOCK_socklen_t;
+typedef UInt32 SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T*/
 
 
@@ -3956,13 +3958,6 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         int                x_errno;
         int                x_read;
         struct sockaddr_in addr;
-#if defined(HAVE_SOCKLEN_T)
-        typedef socklen_t  SOCK_socklen_t;
-#elif defined(NCBI_OS_MAC)
-        typedef UInt32     SOCK_socklen_t;
-#else
-        typedef int        SOCK_socklen_t;
-#endif /*HAVE_SOCKLEN_T*/
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
 #ifdef HAVE_SIN_LEN
         addr.sin_len = addrlen;
@@ -4458,6 +4453,9 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.178  2005/07/22 15:04:06  rsmith
+ * Somewhat rationalize the use of socklen_t arguments.
+ *
  * Revision 6.177  2005/07/19 19:55:29  lavr
  * +SOCK_GetLoopbackAddress()
  *
