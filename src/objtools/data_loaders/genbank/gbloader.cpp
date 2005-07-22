@@ -565,10 +565,6 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
     CGBReaderRequestResult result(this, sih);
     CLoadLockBlob_ids blobs(result, sih);
-    if ( !blobs.IsLoaded() ) {
-        CLoadLockSeq_ids ids(result, sih);
-        _ASSERT( !ids.IsLoaded() );
-    }
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih);
 
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
@@ -915,10 +911,6 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 
     CGBReaderRequestResult result(this, sih);
     CLoadLockBlob_ids blobs(result, sih);
-    if ( !blobs.IsLoaded() ) {
-        CLoadLockSeq_ids ids(result, sih);
-        _ASSERT( !ids.IsLoaded() );
-    }
     m_Dispatcher->LoadBlobs(result, sih, mask);
     _ASSERT(blobs.IsLoaded());
 
