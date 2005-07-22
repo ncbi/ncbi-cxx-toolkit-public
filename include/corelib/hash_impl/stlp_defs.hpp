@@ -179,7 +179,7 @@ NCBI_USING_NAMESPACE_STD;
 #endif
 
 #ifdef NCBI_COMPILER_ICC
-#  if !defined(__GNUC__)  ||  defined(__INTEL_CXXLIB_ICC)
+#  if !defined(__GNUC__)  ||  defined(__INTEL_CXXLIB_ICC)  ||  defined(_YVALS)
 #    define NO_STD_IDENTITY
 #  endif
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
@@ -461,6 +461,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/22 14:13:07  ucko
+ * Fix for ICC 8.0, whose predefined symbols are the same in -cxxlib-gcc
+ * and -cxxlib-icc mode, by adding a check for an include guard from a
+ * header found only in Intel's (really Dinkumware's) version of the library.
+ *
  * Revision 1.10  2005/07/19 20:12:08  ucko
  * Properly handle ICC in -cxxlib-gcc mode.
  *
