@@ -148,7 +148,7 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
                                    buff);
             }
             if (GetWidth(row) == 3) {
-                TranslateNAToAA(buff, buff);
+                TranslateNAToAA(buff, buff, GetGenCode(row));
             }
            buffer += buff;
         } else {
@@ -603,7 +603,8 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 static SNCBIFullScoreMatrix s_FullScoreMatrix;
 
 int CAlnVec::CalculateScore(const string& s1, const string& s2,
-                            bool s1_is_prot, bool s2_is_prot)
+                            bool s1_is_prot, bool s2_is_prot,
+                            int gen_code1, int gen_code2)
 {
     // check the lengths
     if (s1_is_prot == s2_is_prot  &&  s1.length() != s2.length()) {
@@ -649,14 +650,14 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
     } else {
         string t;
         if (s1_is_prot) {
-            TranslateNAToAA(s2, t);
+            TranslateNAToAA(s2, t, gen_code2);
             for ( ;  res1 != end1;  res1++, res2++) {
                 _ASSERT(*res1 < NCBI_FSM_DIM);
                 _ASSERT(*res2 < NCBI_FSM_DIM);
                 score += s_FullScoreMatrix.s[*res1][*res2];
             }
         } else {
-            TranslateNAToAA(s1, t);
+            TranslateNAToAA(s1, t, gen_code1);
             for ( ;  res2 != end2;  res1++, res2++) {
                 _ASSERT(*res1 < NCBI_FSM_DIM);
                 _ASSERT(*res2 < NCBI_FSM_DIM);
@@ -668,7 +669,9 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
 }
 
 
-void CAlnVec::TranslateNAToAA(const string& na, string& aa)
+void CAlnVec::TranslateNAToAA(const string& na,
+                              string& aa,
+                              int gencode)
 {
     if (na.size() % 3) {
         NCBI_THROW(CAlnException, eTranslateFailure,
@@ -676,7 +679,7 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
                    "NA size expected to be divisible by 3");
     }
 
-    const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(gencode);
 
     unsigned int i, j = 0, state = 0;
 
@@ -790,7 +793,7 @@ string& CAlnVec::GetColumnVector(string& buffer,
                     TSeqPos size = seq_vec.size();
                     seq_vec.GetSeqData(size - pos - 3, size - pos, na_buff);
                 }
-                TranslateNAToAA(na_buff, aa_buff);
+                TranslateNAToAA(na_buff, aa_buff, GetGenCode(row));
                 buffer[row] = aa_buff[0];
             } else {
                 buffer[row] = seq_vec[plus ? pos : seq_vec.size() - pos - 1];
@@ -850,6 +853,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/07/25 20:30:05  todorov
+* Pass genetic code to TranslateNAToAA
+*
 * Revision 1.63  2004/12/21 18:09:05  todorov
 * Explicit cast (to avoid warning) + range assertion for residues in CalculateScore
 *
