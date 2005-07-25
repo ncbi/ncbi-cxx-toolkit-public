@@ -132,6 +132,9 @@ int CNetCacheCheck::Run(void)
     //ERW_Result wres = 
         wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
     wrt.reset(0);
+
+    SleepMilliSec(3000);
+
     memset(data_buf, 0xff, sizeof(data_buf));
     reader.reset(cl->GetData(key, &blob_size));
     reader->Read(data_buf, 1024);
@@ -139,7 +142,7 @@ int CNetCacheCheck::Run(void)
     if (res != 0) {
         NcbiCerr << "Incorrect functionality while reading updated data." << NcbiEndl;
         NcbiCerr << "Server returned:" << NcbiEndl << data_buf << NcbiEndl;
-        NcbiCerr << "Expected:" << NcbiEndl << test_data << NcbiEndl;
+        NcbiCerr << "Expected:" << NcbiEndl << test_data2 << NcbiEndl;
         return 1;
     }
 
@@ -157,6 +160,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/25 16:38:14  kuznets
+ * Fixed bug in diagnostic print, added delay to avoid call jitter
+ *
  * Revision 1.5  2005/04/22 13:19:18  kuznets
  * Removed dead code
  *
