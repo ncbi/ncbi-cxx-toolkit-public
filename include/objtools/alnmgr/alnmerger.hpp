@@ -36,7 +36,7 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
-
+#include <objtools/alnmgr/alnmatch.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,10 +56,7 @@ class CAlnMixMerger : public CObject
 {
 public:
     
-    typedef int (*TCalcScoreMethod)(const string& s1,
-                                    const string& s2,
-                                    bool s1_is_prot,
-                                    bool s2_is_prot);
+    typedef CAlnMixMatches::TCalcScoreMethod TCalcScoreMethod;
 
     // Constructor
     CAlnMixMerger(CRef<CAlnMixMatches>& aln_mix_matches,
@@ -191,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/07/25 20:31:53  todorov
+* TCalcScoreMethod now defined in CAlnMixMatches.
+*
 * Revision 1.5  2005/07/22 15:30:37  todorov
 * + fAllowTranslocation as a merge option
 *
