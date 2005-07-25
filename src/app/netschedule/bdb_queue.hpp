@@ -143,6 +143,8 @@ struct SQueueDB : public CBDB_File
     }
 };
 
+/// Types of event notification subscribers
+///
 /// @internal
 enum ENetScheduleListenerType
 {
@@ -182,6 +184,29 @@ struct SQueueListener
       auth(client_auth),
       client_type(ctype)
     {}
+};
+
+/// Runtime queue statistics
+///
+/// @internal
+struct SQueueStatictics
+{
+    double   total_run_time; ///< Accumulated job running time
+    unsigned run_count;      ///< Number of runs
+
+    double   total_turn_around_time; ///< time from subm to completion
+
+    SQueueStatictics() 
+        : total_run_time(0.0), run_count(0), total_turn_around_time(0)
+    {}
+};
+
+
+/// @internal
+enum ENSLB_RunDelayType
+{
+    eNSLB_Constant,   ///< Constant delay
+    eNSLB_RunTimeAvg  ///< Running time based delay (averaged)
 };
 
 /// Mutex protected Queue database with job status FSM
@@ -238,7 +263,14 @@ struct SLockedQueue
 
     mutable bool                 lb_flag;
     CNSLB_Coordinator*           lb_coordinator;
-    unsigned                     lb_exec_delay;  ///< acceptable job delay (seconds)
+
+    ENSLB_RunDelayType           lb_stall_delay_type;
+    unsigned                     lb_stall_time;      ///< job delay (seconds)
+    double                       lb_stall_time_mult; ///< stall coeff
+    CFastMutex                   lb_stall_time_lock;
+
+    SQueueStatictics             qstat;
+    CFastMutex                   qstat_lock;
 
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
@@ -251,7 +283,9 @@ struct SLockedQueue
           rec_dump_flag(false),
           lb_flag(false),
           lb_coordinator(0),
-          lb_exec_delay(6)
+          lb_stall_delay_type(eNSLB_Constant),
+          lb_stall_time(6),
+          lb_stall_time_mult(1.0)
     {
         _ASSERT(!queue_name.empty());
         q_notif.append(queue_name);
@@ -298,7 +332,6 @@ private:
     TQueueMap              m_QMap;
     mutable CRWLock        m_Lock;
 };
-
 
 
 /// Top level queue database.
@@ -569,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/07/25 16:14:31  kuznets
+ * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
+ *
  * Revision 1.29  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *

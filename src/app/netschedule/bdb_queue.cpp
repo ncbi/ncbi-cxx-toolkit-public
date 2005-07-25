@@ -281,12 +281,12 @@ CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg,
     if (lb_curve.empty() || 
         NStr::CompareNocase(lb_curve, "linear") == 0) {
         double y0 = reg.GetDouble(sname, 
-                                  "lb_curve_linear_y0", 
+                                  "lb_curve_high", 
                                   0.6, 
                                   0, 
                                   IRegistry::eReturn);
         double yN = reg.GetDouble(sname, 
-                                  "lb_curve_linear_yN", 
+                                  "lb_curve_linear_low", 
                                   0.15, 
                                   0, 
                                   IRegistry::eReturn);
@@ -300,7 +300,7 @@ CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg,
 
     if (NStr::CompareNocase(lb_curve, "regression") == 0) {
         double y0 = reg.GetDouble(sname, 
-                                  "lb_curve_regression_y0",
+                                  "lb_curve_high",
                                   0.85, 
                                   0, 
                                   IRegistry::eReturn);
@@ -430,8 +430,6 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
         string lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
         int lb_collect_time =
             reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
-        int lb_exec_delay = 
-            reg.GetInt(sname, "lb_exec_delay", 6, 0, IRegistry::eReturn);
 
         if (lb_service.empty()) {
             if (lb_flag) {
@@ -440,10 +438,32 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
             }
             queue.lb_flag = false;
         } else {
-//            SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
-
             string lb_unknown_host = 
                 reg.GetString(sname, "lb_unknown_host", kEmptyStr);
+
+            ENSLB_RunDelayType lb_delay_type = eNSLB_Constant;
+            unsigned lb_stall_time = 6;
+            string lb_exec_delay_str = 
+                        reg.GetString(sname, "lb_exec_delay", kEmptyStr);
+            if (NStr::CompareNocase(lb_exec_delay_str, "run_time")) {
+                lb_delay_type = eNSLB_RunTimeAvg;
+            } else {
+                try {
+                    int stall_time = NStr::StringToInt(lb_exec_delay_str);
+                    if (stall_time > 0) {
+                        lb_stall_time = stall_time;
+                    }
+                } 
+                catch(exception& ex)
+                {
+                    ERR_POST("Invalid value of lb_exec_delay " 
+                             << ex.what()
+                             << " Offending value:"
+                             << lb_exec_delay_str
+                             );
+                }
+            }
+
 
             CNSLB_Coordinator::ENonLbHostsPolicy non_lb_hosts = 
                 CNSLB_Coordinator::eNonLB_Allow;
@@ -458,15 +478,22 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
             }
 
 
-            if (queue.lb_flag == false) {
+
+            double lb_stall_time_mult = 
+                  reg.GetDouble(sname, 
+                                "lb_exec_delay_mult",
+                                0.5, 
+                                0, 
+                                IRegistry::eReturn);
+
+
+            if (queue.lb_flag == false) { // LB is OFF
                 LOG_POST(Error << "Queue:" << sname 
                                << " is load balanced. " << lb_service);
 
                 if (queue.lb_coordinator == 0) {
                     auto_ptr<CNSLB_ThreasholdCurve>  
-                      deny_curve(s_ConfigureCurve(reg, sname, lb_exec_delay));
-
-                    queue.lb_exec_delay = lb_exec_delay;
+                      deny_curve(s_ConfigureCurve(reg, sname, lb_stall_time));
 
                     CNSLB_DecisionModule*   decision_maker = 0;
 
@@ -487,10 +514,19 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
                                     non_lb_hosts));
 
                     queue.lb_coordinator = coord.release();
+                    queue.lb_stall_delay_type = lb_delay_type;
+                    queue.lb_stall_time = lb_stall_time;
+                    queue.lb_stall_time_mult = lb_stall_time_mult;
                     queue.lb_flag = true;
-                } else {
-                    queue.lb_exec_delay = lb_exec_delay;
-                    queue.lb_flag = true;
+
+                } else {  // LB is ON
+                    // reconfigure the LB delay
+                    CFastMutexGuard guard(queue.lb_stall_time_lock);
+                    queue.lb_stall_delay_type = lb_delay_type;
+                    if (lb_delay_type == eNSLB_Constant) {
+                        queue.lb_stall_time = lb_stall_time;
+                    }
+                    queue.lb_stall_time_mult = lb_stall_time_mult;
                 }
             }
         }
@@ -1237,7 +1273,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
 
-    unsigned subm_addr, subm_port, subm_timeout, time_submit;
+    unsigned subm_addr, subm_port, subm_timeout, time_submit, time_run;
     time_t curr = time(0);
 
     {{
@@ -1256,6 +1292,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     }
     
     time_submit = db.time_submit;
+    time_run    = db.time_run;
     subm_addr = db.subm_addr;
     subm_port = db.subm_port;
     subm_timeout = db.subm_timeout;
@@ -1288,6 +1325,17 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
             m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
                                      CSocketAPI::ntoa(subm_addr), subm_port);
     }
+
+    // Update runtime statistics
+
+    unsigned run_elapsed = curr - time_run;
+    unsigned turn_around = curr - time_submit;
+    {{
+    CFastMutexGuard guard(m_LQueue.qstat_lock);
+    m_LQueue.qstat.run_count++;
+    m_LQueue.qstat.total_run_time += run_elapsed;
+    m_LQueue.qstat.total_turn_around_time += turn_around;
+    }}
 
     if (m_LQueue.monitor.IsMonitorActive()) {
         CTime tmp_t(CTime::eCurrent);
@@ -1577,6 +1625,51 @@ void CQueueDataBase::CQueue::GetJobLB(unsigned int   worker_node,
                                        CNetScheduleClient::ePending);
 
     time_t curr = time(0);
+    unsigned lb_stall_time = 0;
+    ENSLB_RunDelayType stall_delay_type;
+
+
+    //
+    // Define current execution delay
+    //
+
+    {{
+    CFastMutexGuard guard(m_LQueue.lb_stall_time_lock);
+    stall_delay_type = m_LQueue.lb_stall_delay_type;
+    lb_stall_time    = m_LQueue.lb_stall_time;
+    }}
+
+    switch (stall_delay_type) {
+    case eNSLB_Constant:
+        break;
+    case eNSLB_RunTimeAvg:
+        {
+            double total_run_time, run_count, lb_stall_time_mult;
+
+            {{
+            CFastMutexGuard guard(m_LQueue.qstat_lock);
+            if (m_LQueue.qstat.run_count) {
+                total_run_time = m_LQueue.qstat.total_run_time;
+                run_count = m_LQueue.qstat.run_count;
+                lb_stall_time_mult = m_LQueue.lb_stall_time_mult;
+            } else {
+                // no statistics yet, nothing to do, take default queue value
+                break;
+            }
+            }}
+
+            double avg_time = total_run_time / run_count;
+            lb_stall_time = avg_time * lb_stall_time_mult;
+        }
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+
+    if (lb_stall_time == 0) {
+        lb_stall_time = 6;
+    }
+
 
 fetch_db:
     ++fetch_attempts;
@@ -1676,8 +1769,8 @@ fetch_db:
         unsigned stall_time = 0; 
         if (time_lb_first_eval) {
             stall_time = curr - time_lb_first_eval;
-            if (m_LQueue.lb_exec_delay) {
-                if (stall_time > m_LQueue.lb_exec_delay) {
+            if (lb_stall_time) {
+                if (stall_time > lb_stall_time) {
                     // stalled for too long! schedule the job
                     if (unk_host_policy != CNSLB_Coordinator::eNonLB_Deny) {
                         goto grant_job;
@@ -2500,6 +2593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/07/25 16:14:31  kuznets
+ * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
+ *
  * Revision 1.43  2005/07/21 15:41:02  kuznets
  * Added monitoring for LB info
  *

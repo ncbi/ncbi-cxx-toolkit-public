@@ -294,6 +294,11 @@ public:
                                              unsigned time_eval);
 
     ENonLbHostsPolicy GetNonLBPolicy() const { return m_NonLB_Policy; }
+
+    /// Regenerate threashold curve 
+    /// @param length
+    ///    Execution delay time (seconds)
+    void ReGenerateCurve(unsigned length);
 private:
 
     INSLB_Collector::TServerList* GetSrvList();
@@ -346,8 +351,9 @@ private:
     CRef<CCollectorThread>                        m_CollectorThread;
 
     INSLB_Collector::TServerList*                 m_CurrSrvList;
-    CRWLock                                       m_CurrSrvListLock;
     CNSLB_ThreasholdCurve*                        m_Curve;
+    CRWLock                                       m_CurrSrvCurveLock;
+
     CNSLB_DecisionModule*                         m_DecisionMaker;
     ENonLbHostsPolicy                             m_NonLB_Policy;
 
@@ -359,6 +365,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/25 16:14:31  kuznets
+ * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
+ *
  * Revision 1.4  2005/07/21 15:41:02  kuznets
  * Added monitoring for LB info
  *

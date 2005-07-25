@@ -112,7 +112,7 @@ CNSLB_Coordinator::Evaluate(unsigned host,
     // is not available 
     INSLB_Collector::TServerList* slist = m_CollectorThread->GetSrvList();
     if (slist != 0) {
-        CWriteLockGuard guard(m_CurrSrvListLock);
+        CWriteLockGuard guard(m_CurrSrvCurveLock);
         if (m_CurrSrvList) {
             PutSrvList(m_CurrSrvList);
         }
@@ -123,7 +123,7 @@ CNSLB_Coordinator::Evaluate(unsigned host,
         return CNSLB_DecisionModule::eGrantJob;
     }
 
-    CReadLockGuard guard(m_CurrSrvListLock);
+    CReadLockGuard guard(m_CurrSrvCurveLock);
     if (m_CurrSrvList == 0 || m_CurrSrvList->size() == 0) {
         return CNSLB_DecisionModule::eNoLBInfo;
     }
@@ -136,64 +136,19 @@ CNSLB_Coordinator::Evaluate(unsigned host,
     petition.threshold_curve = m_Curve ? &m_Curve->GetCurve() : 0;
 
     return m_DecisionMaker->Evaluate(petition);
-
-/*
-    INSLB_Collector::NSLB_ServerInfo best_host;
-    INSLB_Collector::NSLB_ServerInfo worst_host;
-    best_host.rate = 0.0;
-    worst_host.rate = 99999999.999;
-
-    const INSLB_Collector::NSLB_ServerInfo* req_host = 0;
-
-    {{
-    CReadLockGuard guard(m_CurrSrvListLock);
-    if (m_CurrSrvList == 0 || m_CurrSrvList->size() == 0) {
-        return eNoLBInfo;
-    }
-
-    // Iterate the available load list, find fittest host, worst host
-
-    ITERATE(INSLB_Collector::TServerList, it, *m_CurrSrvList) {
-        if (it->rate > best_host.rate) {
-            best_host = *it;
-        }
-        if (it->rate < worst_host.rate) {
-            worst_host = *it;
-        }
-        if (it->host == host) {
-            req_host = &*it;
-        }
-    }
-
-    }}
-
-    if (req_host == 0) {
-        return eHostUnknown;
-    }
-
-    if (req_host->host == best_host.host) {
-        return eGrantJob;
-    }
-
-    // evaluate the persentage between best-current-worst
-
-    double rate_interval = best_host.rate - worst_host.rate;
-    _ASSERT(rate_interval > 0);
-
-    if (rate_interval < 0.01) {
-        // no difference between best-worst
-        return eGrantJob;
-    }
-    double req_interval = best_host.rate - req_host->rate;
-    double ratio = req_interval / rate_interval;
-    if (ratio >= m_DenyThreashold) {
-        return eGrantJob;
-    }
-    return eDenyJob;
-*/
 }
 
+void CNSLB_Coordinator::ReGenerateCurve(unsigned length)
+{
+    _ASSERT(length);
 
+    if (!length || !m_Curve)
+        return;
+
+    CWriteLockGuard guard(m_CurrSrvCurveLock);
+
+    m_Curve->ReGenerateCurve(length);
+}
 
 
 CNSLB_Coordinator::CCollectorThread::CCollectorThread(
@@ -501,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/25 16:14:31  kuznets
+ * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
+ *
  * Revision 1.4  2005/07/21 15:41:02  kuznets
  * Added monitoring for LB info
  *
