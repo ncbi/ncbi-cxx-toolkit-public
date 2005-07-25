@@ -54,7 +54,9 @@ public:
     typedef int (*TCalcScoreMethod)(const string& s1,
                                     const string& s2,
                                     bool s1_is_prot,
-                                    bool s2_is_prot);
+                                    bool s2_is_prot,
+                                    int gene_code1,
+                                    int gene_code2);
 
     typedef vector<CRef<CAlnMixMatch> > TMatches;
 
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/25 20:32:26  todorov
+* Added genetic code params to TCalcScoreMethod
+*
 * Revision 1.2  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *
