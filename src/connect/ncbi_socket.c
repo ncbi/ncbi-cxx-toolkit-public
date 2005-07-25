@@ -262,8 +262,6 @@ typedef int TSOCK_Handle;
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined (_SOCKLEN_T)
 typedef socklen_t  SOCK_socklen_t;
-#elif defined(NCBI_OS_MAC)
-typedef UInt32     SOCK_socklen_t;
 #else
 typedef int	       SOCK_socklen_t;
 #endif
@@ -4453,6 +4451,9 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.180  2005/07/25 15:03:45  rsmith
+ * take out special SOCK_socklen_t case for MAC_OS since changes to mitsock make it unnecessary.
+ *
  * Revision 6.179  2005/07/22 21:31:39  vakatov
  * Narrow down the previous commit to MAC.
  * Also remove somewhat puzzling #ifdef _SYS_SOCKET_H_.
