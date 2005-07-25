@@ -192,7 +192,9 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             match->m_Score = x_CalculateScore(s1,
                                                               s2,
                                                               aln_seq1->m_IsAA,
-                                                              aln_seq2->m_IsAA);
+                                                              aln_seq2->m_IsAA,
+                                                              1,
+                                                              1);
                         } else {
                             match->m_Score = len;
                         }
@@ -273,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/07/25 20:33:06  todorov
+* Passing the default genetic code to x_CalculateScore
+*
 * Revision 1.3  2005/06/23 18:00:50  todorov
 * Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
 *
