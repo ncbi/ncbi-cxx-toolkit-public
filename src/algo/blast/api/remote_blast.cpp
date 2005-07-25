@@ -836,6 +836,11 @@ const vector<string> & CRemoteBlast::GetWarningVector()
     return m_Warn;
 }
 
+const vector<string> & CRemoteBlast::GetErrorVector()
+{
+    return m_Errs;
+}
+
 CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
 {
     string service;
@@ -1112,6 +1117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/07/25 14:45:01  bealer
+* - Vector version of error fetching method for RemoteBlast.
+*
 * Revision 1.29  2005/07/18 21:58:38  bealer
 * - Fix test (!= YES instead of == NO).
 *

@@ -227,6 +227,11 @@ public:
     /// @return Reference to a vector of warnings.
     const vector<string> & GetWarningVector();
     
+    /// This returns any errors encountered as a vector of strings.
+    /// @sa CRemoteBlast::GetErrors
+    /// @return Reference to a vector of errors.
+    const vector<string> & GetErrorVector();
+    
     /* Getting Results */
     
     /// Gets the request id (RID) associated with the search.
@@ -531,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/07/25 14:45:01  bealer
+ * - Vector version of error fetching method for RemoteBlast.
+ *
  * Revision 1.23  2005/07/07 16:31:56  camacho
  * Revamping of BLAST exception classes and error codes
  *
