@@ -37,11 +37,11 @@
 
 // Forward declarations
 
-class CSeq_entry;
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CSeq_entry;
 
 
 enum EPhrapReaderFlags {
@@ -84,6 +84,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/25 20:26:25  grichenk
+* Fixed forward declaration of CSeq_entry
+*
 * Revision 1.1  2005/05/02 13:10:18  grichenk
 * Initial revision
 *
