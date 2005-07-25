@@ -117,6 +117,14 @@ public:
     bool     IsSetEndChar()                const;
     TResidue GetEndChar()                  const;
 
+    // genetic code
+    static const int kDefaultGenCode = 1;
+    void     SetGenCode(int gen_code, 
+                        TNumrow row = -1);
+    void     UnsetGenCode();
+    bool     IsSetGenCode()                const;
+    int      GetGenCode(TNumrow row)       const;
+
     // functions for manipulating the consensus sequence
     CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
 
@@ -125,9 +133,15 @@ public:
     int CalculatePercentIdentity(TSeqPos aln_pos)            const;
 
     // static utilities
-    static void TranslateNAToAA(const string& na, string& aa);
+    static void TranslateNAToAA(const string& na, string& aa,
+                                int gen_code = kDefaultGenCode);
+    //                          gen_code per 
+    //                          http://www.ncbi.nlm.nih.gov/collab/FT/#7.5.5
+
     static int  CalculateScore (const string& s1, const string& s2,
-                                bool s1_is_prot, bool s2_is_prot);
+                                bool s1_is_prot, bool s2_is_prot,
+                                int gen_code1 = kDefaultGenCode,
+                                int gen_code2 = kDefaultGenCode);
     
     // temporaries for conversion (see note below)
     static unsigned char FromIupac(unsigned char c);
@@ -147,10 +161,11 @@ private:
     CAlnVec(const CAlnVec&);
     CAlnVec& operator=(const CAlnVec&);
 
-    TResidue m_GapChar;
-    bool     m_set_GapChar;
-    TResidue m_EndChar;
-    bool     m_set_EndChar;
+    TResidue    m_GapChar;
+    bool        m_set_GapChar;
+    TResidue    m_EndChar;
+    bool        m_set_EndChar;
+    vector<int> m_GenCodes;
 };
 
 
@@ -349,6 +364,44 @@ CSeqVector::TResidue CAlnVec::GetEndChar() const
     }
 }
 
+inline
+void CAlnVec::SetGenCode(int gen_code, TNumrow row)
+{
+    if (row == GetNumRows()) {
+        if (IsSetGenCode()) {
+            UnsetGenCode();
+        }
+        m_GenCodes.resize(GetNumRows(), gen_code);
+    } else {
+        if ( !IsSetGenCode() ) {
+            m_GenCodes.resize(GetNumRows(), kDefaultGenCode);
+        }
+        m_GenCodes[row] = gen_code;
+    }
+}
+
+inline
+void CAlnVec::UnsetGenCode()
+{
+    m_GenCodes.clear();
+}
+
+inline
+bool CAlnVec::IsSetGenCode() const
+{
+    return !m_GenCodes.empty();
+}
+
+inline
+int CAlnVec::GetGenCode(TNumrow row) const
+{
+    if (IsSetGenCode()) {
+        return m_GenCodes[row];
+    } else {
+        return kDefaultGenCode;
+    }
+}
+
 
 //
 // these are a temporary work-around
@@ -402,6 +455,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2005/07/25 20:29:12  todorov
+ * Added ability to set genetic code:
+ *  a) for all and/or individual sequences of the underlying alignment;
+ *  b) for the static methods TranslateNAToAA and CalculateScore
+ *
  * Revision 1.35  2005/03/16 19:31:21  todorov
  * Added independent (from CAlnVec) default end & gap characters for the printers.
  *
