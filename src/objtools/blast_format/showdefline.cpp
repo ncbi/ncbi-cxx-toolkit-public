@@ -427,8 +427,9 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
                         defline = (*iter)->GetTitle();
                     } else {
                         string concat_acc;
-                        FindBestChoice(cur_id, CSeq_id::WorstRank)->
-                            GetLabel(&concat_acc, CSeq_id::eFasta, 0);
+                        CConstRef<CSeq_id> wid = 
+                            FindBestChoice(cur_id, CSeq_id::WorstRank);
+                        wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
                         if( show_gi && cur_gi > 0){
                             defline = defline + " >" + "gi|" + 
                                 NStr::IntToString(cur_gi) + "|" + 
@@ -889,6 +890,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.19  2005/07/26 14:19:40  dondosha
+*Fix for Solaris compiler warning
+*
 *Revision 1.18  2005/07/26 13:59:15  dondosha
 *Fix for MSVC compiler warning
 *
