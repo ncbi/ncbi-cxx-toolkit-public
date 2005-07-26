@@ -367,7 +367,7 @@ CSeqVector::TResidue CAlnVec::GetEndChar() const
 inline
 void CAlnVec::SetGenCode(int gen_code, TNumrow row)
 {
-    if (row == GetNumRows()) {
+    if (row == -1) {
         if (IsSetGenCode()) {
             UnsetGenCode();
         }
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2005/07/26 16:18:33  todorov
+ * Changed the 'invalid' row number from GetNumRows() to -1.
+ *
  * Revision 1.36  2005/07/25 20:29:12  todorov
  * Added ability to set genetic code:
  *  a) for all and/or individual sequences of the underlying alignment;
