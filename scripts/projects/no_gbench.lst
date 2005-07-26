@@ -16,7 +16,6 @@ app
 algo
 check
 gui
--gui/core
 -gui/plugins
 -gui/gbench
 test update-only
