@@ -118,7 +118,9 @@ public:
     TResidue GetEndChar()                  const;
 
     // genetic code
-    static const int kDefaultGenCode = 1;
+    enum EConstants {
+        kDefaultGenCode = 1
+    };
     void     SetGenCode(int gen_code, 
                         TNumrow row = -1);
     void     UnsetGenCode();
@@ -455,6 +457,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2005/07/26 17:56:44  todorov
+ * Using an enum instead of static const int to avoid problems with some compilers.
+ *
  * Revision 1.37  2005/07/26 16:18:33  todorov
  * Changed the 'invalid' row number from GetNumRows() to -1.
  *
