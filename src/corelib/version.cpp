@@ -173,9 +173,14 @@ CVersionInfo::Match(const CVersionInfo& version_info) const
     if (GetMajor() != version_info.GetMajor())
         return eNonCompatible;
 
-    if (GetMinor() != version_info.GetMinor())
+    if (GetMinor() < version_info.GetMinor())
         return eNonCompatible;
 
+    if (GetMinor() > version_info.GetMinor())
+        return eBackwardCompatible;
+
+    // Minor versions are equal.
+    
     if (GetPatchLevel() == version_info.GetPatchLevel()) {
         return eFullyCompatible;
     }
@@ -217,6 +222,8 @@ bool IsBetterVersion(const CVersionInfo& info,
             return true;
         }
     } else { // searching for the specific major version
+        // Do not chose between major versions.
+        // If they are not equal then they are not compatible.
         if (info.GetMajor() != major) {
             return false;
         }
@@ -230,11 +237,18 @@ bool IsBetterVersion(const CVersionInfo& info,
             return true;
         }
     } else { 
-        if (info.GetMinor() != minor) {
+        if (info.GetMinor() > minor) {
             return false;
+        }
+        if (info.GetMinor() < minor) {
+            best_major = major;
+            best_minor = minor;
+            best_patch_level = patch_level;
+            return true;
         }
     }
 
+    // Major and minor versions are equal.
     // always looking for the best patch
     if (patch_level > best_patch_level) {
             best_major = major;
@@ -376,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/07/26 12:12:50  ssikorsk
+ * Fixed Match and IsBetterVersion functions.
+ *
  * Revision 1.17  2005/05/12 15:07:41  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
