@@ -238,6 +238,20 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         m_MidLineStyle = option;
     }
 
+    ///Set genetic code for master sequence
+    ///@param code: the genetic code
+    ///
+    void SetMasterGeneticCode(int code) {
+        m_MasterGeneticCode = code;
+    }
+
+    ///Set Genetic cod for slaves
+    ///@param code: the genetic code
+    ///
+    void SetSlaveGeneticCode(int code) {
+        m_SlaveGeneticCode = code;
+    }
+
     /***The following functions are for blast alignment style display only***/
     
     ///Needed only if you want to display positives and strand 
@@ -372,6 +386,8 @@ private:
     CRef < CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < CScope > m_featScope;        // used for fetching feature
     MiddleLineStyle m_MidLineStyle;
+    int m_MasterGeneticCode;
+    int m_SlaveGeneticCode;
 
     ///Display the current alnvec
     ///@param out: stream for display
@@ -575,6 +591,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.31  2005/07/26 17:35:07  jianye
+*Specify genetic code
+*
 *Revision 1.30  2005/07/20 18:16:56  dondosha
 *Additions in API, needed for XML formatting
 *

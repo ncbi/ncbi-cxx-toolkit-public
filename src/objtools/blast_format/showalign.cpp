@@ -173,7 +173,9 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_MidLineStyle = eBar;
     m_ConfigFile = NULL;
     m_Reg = NULL;
-    m_DynamicFeature = NULL;
+    m_DynamicFeature = NULL;    
+    m_MasterGeneticCode = 1;
+    m_SlaveGeneticCode = 1;
 
     SNCBIFullScoreMatrix blosumMatrix;
     NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
@@ -989,6 +991,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 avRef = new CAlnVec(*ds, m_Scope);
             }        
             if(!(avRef.Empty())){
+                //Note: do not switch the set order per calnvec specs.
+                avRef->SetGenCode(m_SlaveGeneticCode);
+                avRef->SetGenCode(m_MasterGeneticCode, 0);
                 try{
                     const CBioseq_Handle& handle = avRef->GetBioseqHandle(1);
                     if(handle){
@@ -1173,7 +1178,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
             try{
                 CRef<CAlnVec> avRef (new CAlnVec (mix[i]->GetDenseg(), 
                                                   m_Scope));
+                avRef->SetGenCode(m_SlaveGeneticCode);
+                avRef->SetGenCode(m_MasterGeneticCode, 0);
                 m_AV = avRef;
+                
                 if(numDistinctFrames > 1){
                     out << "For reading frame " << k_FrameConversion[i] 
                         << " of query sequence:" << endl << endl;
@@ -2422,6 +2430,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.82  2005/07/26 17:35:13  jianye
+*Specify genetic code
+*
 *Revision 1.81  2005/07/20 18:18:03  dondosha
 *Added const specifier to argument in PrepareBlastUngappedSeqalign
 *
