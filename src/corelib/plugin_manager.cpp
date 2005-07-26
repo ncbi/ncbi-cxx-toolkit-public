@@ -87,8 +87,20 @@ CPluginManager_DllResolver::ResolveFile(const vector<string>& paths,
     string mask = GetDllNameMask(m_InterfaceName, drv, ver);
     masks.push_back(mask);
 
+    if ( version == CVersionInfo::kAny ) {
+        mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kLatest);
+        masks.push_back(mask);
+        
+#if defined(NCBI_OS_UNIX)
+        mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kLatest, 
+                              eAfterSuffix);
+        masks.push_back(mask);
+#endif        
+    }
+    
     resolver->FindCandidates(paths, masks, 
                              CDllResolver::fDefaultDllPath, drv);
+    
     return *resolver;
 }
 
@@ -145,7 +157,8 @@ string
 CPluginManager_DllResolver::GetDllNameMask(
         const string&       interface_name,
         const string&       driver_name,
-        const CVersionInfo& version) const
+        const CVersionInfo& version,
+        EVersionLocation    ver_lct) const
 {
     string name = GetDllNamePrefix();
 
@@ -167,21 +180,26 @@ CPluginManager_DllResolver::GetDllNameMask(
     } 
 
     if (version.IsAny()) {
-#if defined(NCBI_OS_MSWIN)
-        name.append("*" NCBI_PLUGIN_SUFFIX);
-#elif defined(NCBI_OS_UNIX)
-        name.append(NCBI_PLUGIN_SUFFIX "*");
-#endif
+        name.append(NCBI_PLUGIN_SUFFIX);
     } else {
         
+        string delimiter;
+        
 #if defined(NCBI_OS_MSWIN)
-        string delimiter = "_";
+        delimiter = "_";
 
 #elif defined(NCBI_OS_UNIX)
-        string delimiter = ".";
-        name.append(NCBI_PLUGIN_SUFFIX);
+        if ( ver_lct != eAfterSuffix ) {
+            delimiter = "_";
+        } else {
+            delimiter = ".";
+        }
 #endif
 
+        if ( ver_lct == eAfterSuffix ) {
+            name.append(NCBI_PLUGIN_SUFFIX);
+        }
+        
         name.append(delimiter);
         if (version.GetMajor() <= 0) {
             name.append("*");
@@ -200,6 +218,9 @@ CPluginManager_DllResolver::GetDllNameMask(
         name.append(delimiter);
         name.append("*");  // always get the best patch level
         
+        if ( ver_lct != eAfterSuffix ) {
+            name.append(NCBI_PLUGIN_SUFFIX);
+        }
     }
 
     return name;
@@ -314,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/07/26 12:15:19  ssikorsk
+ * Implemented a new algorithm of DLLs name resolving.
+ *
  * Revision 1.19  2005/07/18 12:05:02  ssikorsk
  * Added GetDefaultIfVerInfo to IClassFactory and CPluginManager;
  * Added WillExtendCapabilities to CPluginManager;
