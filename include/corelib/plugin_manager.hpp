@@ -161,6 +161,20 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
 typedef CConfig::TParamTree TPluginManagerParamTree;
 
 
+struct SDriverInfo
+{
+    string         name;        ///< Driver name
+    CVersionInfo   version;     ///< Driver version
+
+    SDriverInfo(const string&       driver_name,
+                const CVersionInfo& driver_version)
+        : name(driver_name),
+          version(driver_version)
+    {}
+};
+
+typedef list<SDriverInfo>  TDriverList;
+
 /// IClassFactory<> --
 ///
 /// Class factory for the given interface.
@@ -173,6 +187,8 @@ class IClassFactory
 {
 public:
     typedef TClass TInterface;
+    typedef ncbi::SDriverInfo SDriverInfo;
+    typedef ncbi::TDriverList TDriverList;
 
     static const CVersionInfo& GetDefaultIfVerInfo(void)
     {
@@ -181,21 +197,6 @@ public:
 
         return vi;
     }
-
-    struct SDriverInfo
-    {
-        string         name;        ///< Driver name
-        CVersionInfo   version;     ///< Driver version
-
-        SDriverInfo(const string&       driver_name,
-                    const CVersionInfo& driver_version)
-            : name(driver_name),
-              version(driver_version)
-        {}
-    };
-
-    typedef list<SDriverInfo>  TDriverList;
-
 
     /// Create driver's instance
     ///
@@ -333,17 +334,14 @@ public:
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
     /// @sa FNCBI_EntryPoint
-    struct SDriverInfo {
-        string         name;        ///< Driver name
-        CVersionInfo   version;     ///< Driver version
+    struct SDriverInfo : public ncbi::SDriverInfo {
         // It's the plugin manager's (and not SDriverInfo) responsibility to
         // keep and then destroy class factories.
         TClassFactory* factory;     ///< Class factory (can be NULL)
 
         SDriverInfo(const string&       driver_name,
-                    const CVersionInfo& driver_version)
-            : name(driver_name),
-              version(driver_version),
+                      const CVersionInfo& driver_version)
+            : ncbi::SDriverInfo(driver_name, driver_version),
               factory(0)
         {}
     };
@@ -586,6 +584,8 @@ public:
                       const CVersionInfo& version      = CVersionInfo::kAny)
         const;
 
+    enum EVersionLocation { eBeforeSuffix, eAfterSuffix };
+    
     /// Return DLL name mask
     ///
     /// DLL name mask is used for DLL file search.
@@ -596,7 +596,8 @@ public:
     virtual
     string GetDllNameMask(const string&       interface_name,
                           const string&       driver_name = kEmptyStr,
-                          const CVersionInfo& version     = CVersionInfo::kAny)
+                          const CVersionInfo& version     = CVersionInfo::kAny,
+                          EVersionLocation    ver_lct     = eBeforeSuffix)
         const;
 
     /// Return DLL entry point name:
@@ -646,6 +647,18 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
+
+inline
+bool operator==(const SDriverInfo& i1, const SDriverInfo& i2)
+{
+    return i1.name == i2.name && i1.version == i2.version;
+}
+
+inline
+bool operator<(const SDriverInfo& i1, const SDriverInfo& i2)
+{
+    return i1.name == i2.name && i1.version < i2.version;
+}
 
 
 template <class TClass, class TIfVer>
@@ -808,6 +821,8 @@ bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
         return true;
     }
 
+    // Build a full list of all drivers from all factories.
+    TDriverList full_drv_list;
     ITERATE(typename TFactories, it, m_Factories) {
         TClassFactory* const cf = *it;
 
@@ -816,26 +831,30 @@ bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
 
         typename TClassFactory::TDriverList drv_list;
         cf->GetDriverVersions(drv_list);
+        full_drv_list.merge(drv_list);
+    }
+    
+    // Remove duplicates.
+    full_drv_list.unique();
+    
+    ITERATE(typename TClassFactory::TDriverList, it2, full_drv_list) {
+        const typename TClassFactory::SDriverInfo& drv_info = *it2;
 
-        ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
-            const typename TClassFactory::SDriverInfo& drv_info = *it2;
+        ITERATE(typename TClassFactory::TDriverList, new_it2, new_drv_list) {
+            const typename TClassFactory::SDriverInfo& new_drv_info = *new_it2;
 
-            ITERATE(typename TClassFactory::TDriverList, new_it2, new_drv_list) {
-                const typename TClassFactory::SDriverInfo& new_drv_info = *new_it2;
-
-                if ( !(new_drv_info.name == drv_info.name &&
-                       new_drv_info.version.Match(drv_info.version) == 
-                            CVersionInfo::eFullyCompatible)
-                    ) {
-                    return true;
-                }
+            if ( !(new_drv_info.name == drv_info.name &&
+                   new_drv_info.version.Match(drv_info.version) == 
+                        CVersionInfo::eFullyCompatible)
+                ) {
+                return true;
             }
         }
     }
-
+    
     ERR_POST(Warning << "A duplicate driver factory was found. "
-        "It will be ignored because it won't extend "
-        "Plugin Manager capabilities.");
+             "It will be ignored because it won't extend "
+             "Plugin Manager capabilities.");
 
     return false;
 }
@@ -1102,6 +1121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/07/26 12:11:24  ssikorsk
+ * Improved the WillExtendCapabilities method.
+ *
  * Revision 1.48  2005/07/18 15:53:46  ucko
  * RegisterWithEntryPoint: don't use remove_if in conjunction with
  * CInvalidDrvVer, as WorkShop's version only accepts plain functions.
