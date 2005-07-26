@@ -108,7 +108,7 @@ int CDbapiTest::Run()
 
         // Register driver explicitly for static linkage if needed
 #ifdef WIN32
-        DBAPI_RegisterDriver_ODBC(dm);
+        DBAPI_RegisterDriver_ODBC();
 #endif
         //DBAPI_RegisterDriver_DBLIB(dm);
 
@@ -780,6 +780,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/07/26 15:02:45  ssikorsk
+* Use new-stile DBAPI_RegisterDriver.
+*
 * Revision 1.16  2005/05/04 14:35:35  kholodov
 * Removed: outdated code
 *
