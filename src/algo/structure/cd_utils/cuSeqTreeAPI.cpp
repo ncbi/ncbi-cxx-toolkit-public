@@ -38,6 +38,7 @@
 #include <algo/structure/cd_utils/cuSeqTreeAPI.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeRootedLayout.hpp>
+#include <algo/structure/cd_utils/cuSeqTreeAsnizer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -93,10 +94,17 @@ string SeqTreeAPI::layoutSeqTree(int maxX, vector<SeqTreeEdge>& edges, int yInt)
 	return layoutSeqTree(maxX, maxY, yInt, edges);
 }
 
-void SeqTreeAPI::makeOrLoadTree()
+bool SeqTreeAPI::makeOrLoadTree()
 {
-	m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
-	m_seqTree->fixRowName(m_ma, SeqTree::eGI);
+	m_seqTree = new SeqTree();
+	if (!loadAndValidateExistingTree(m_ma, &m_treeOptions, m_seqTree))
+	{
+		delete m_seqTree;
+		m_seqTree = 0;
+		m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
+		m_seqTree->fixRowName(m_ma, SeqTree::eGI);
+	}
+	return m_seqTree != 0;
 }
 
 string SeqTreeAPI::layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
@@ -176,6 +184,43 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 	}
 }
 
+bool SeqTreeAPI::loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions, SeqTree* seqTree)
+{
+	CCdCore* cd = ma.getFirstCD();
+	if (!cd->IsSetSeqtree())
+		return false;
+
+	SeqTree* tmpTree = 0;
+	TreeOptions* tmpOptions = 0;
+	bool loaded = false;
+	SeqTree tmpTreeObj;
+	TreeOptions tmpOptionsObj;
+
+	if (seqTree)
+		tmpTree = seqTree;
+	else
+		tmpTree = &tmpTreeObj;
+	if (treeOptions)
+		tmpOptions = treeOptions;
+	else
+		tmpOptions = &tmpOptionsObj;
+
+	SeqLocToSeqItemMap liMap;
+	if (!SeqTreeAsnizer::convertToSeqTree(cd->GetSeqtree(), *tmpTree, liMap))
+		return false;
+	CRef< CAlgorithm_type > algType(const_cast<CAlgorithm_type*> (&(cd->GetSeqtree().GetAlgorithm())));
+	SeqTreeAsnizer::convertToTreeOption(algType, *treeOptions);
+	if(tmpTree->isSequenceCompositionSame(ma))
+		return true;
+	else //if not same, resolve RowID with SeqLoc
+	{
+		if (SeqTreeAsnizer::resolveRowId(ma, liMap))
+			return tmpTree->isSequenceCompositionSame(ma);
+		else
+			return false;
+	}
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -183,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/07/26 20:21:21  cliu
+ * add loading tree.
+ *
  * Revision 1.1  2005/07/20 20:05:08  cliu
  * redesign SeqTreeAPI
  *

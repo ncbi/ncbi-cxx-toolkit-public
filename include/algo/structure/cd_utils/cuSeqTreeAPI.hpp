@@ -76,7 +76,8 @@ public:
 	string layoutSeqTree(int maxX, int maxY, vector<SeqTreeEdge>& edgs);
 	//lay out the tree with a fixed spacing between sequences
 	string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edgs, int yInt = 3);
-
+	
+	static bool loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions=0, SeqTree* seqTree=0);
 private:
 	MultipleAlignment m_ma;
 	SeqTree* m_seqTree;
@@ -85,7 +86,7 @@ private:
 	TaxonomyLevel m_taxLevel;
 	TreeOptions m_treeOptions;
 
-	void makeOrLoadTree();
+	bool makeOrLoadTree();
 	string layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges);
 	int getAllEdges(vector<SeqTreeEdge>& edges);
 	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
@@ -102,6 +103,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/26 20:25:24  cliu
+ * add loading tree.
+ *
  * Revision 1.2  2005/07/20 20:52:41  ucko
  * Properly (irregularly) capitalize cuSeqtree.hpp.
  *
