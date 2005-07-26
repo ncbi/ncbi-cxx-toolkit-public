@@ -4,7 +4,7 @@
 ############################################
 
 LIB_PROJ = xobjread
-SUB_PROJ = seqdb
+SUB_PROJ = seqdb app
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
