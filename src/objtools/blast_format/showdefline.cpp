@@ -577,7 +577,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     /// DisplayBlastDefline method below?
     string seqid_str; 
     GetBioseqHandleDeflineAndId(handle, use_this_gi, seqid_str, sdl->defline,
-                                (m_Option & eShowGi));
+                                (m_Option & eShowGi) ? true : false);
 }
 
 
@@ -889,6 +889,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.18  2005/07/26 13:59:15  dondosha
+*Fix for MSVC compiler warning
+*
 *Revision 1.17  2005/07/21 16:55:55  jianye
 *fix showing sum_n
 *
