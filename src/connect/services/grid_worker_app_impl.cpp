@@ -88,8 +88,28 @@ private:
     CWorkerNodeControlThread& m_ControlThread;
 };
 
+class CSelfRotatingLogStream : public CRotatingLogStream
+{
+public:
+    typedef CRotatingLogStream TParent;
+    CSelfRotatingLogStream(const string&    filename, 
+                           CNcbiStreamoff   limit)
+     : TParent(filename, limit)  {}
+ protected:
+    virtual string x_BackupName(string& name)
+    {
+        return kEmptyStr;
+    }
+};
+ 
+
 /////////////////////////////////////////////////////////////////////////////
 //
+enum ELoggingType {
+    eRotatingLog = 0x0,
+    eSelfRotatingLog,
+    eNonRotatingLog
+};
 
 CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                CNcbiApplication& app,
@@ -165,9 +185,19 @@ int CGridWorkerApp_Impl::Run()
 
     bool server_log = 
         reg.GetBool("server","log",false,0,IRegistry::eReturn);
+    string s_log_type =
+        reg.GetString("server","log_type","self_rotating");
+    ELoggingType log_type = eSelfRotatingLog;
+    if (NStr::CompareNocase(s_log_type, "rotating")==0) 
+        log_type = eRotatingLog;
+    if (NStr::CompareNocase(s_log_type, "non_rotating")==0) 
+        log_type = eNonRotatingLog;
+
+                             
+
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
-    string log_file_name = m_App.GetProgramDisplayName() +"_err.log." 
+    string log_file_name = GetLogName() + "." 
         + NStr::UIntToString(control_port);
 
     unsigned int max_total_jobs = 
@@ -204,6 +234,7 @@ int CGridWorkerApp_Impl::Run()
             debug_context.SetExecuteList(files);
         }
         log_file_name = debug_context.GetLogFileName();
+        log_type = eNonRotatingLog;
         is_daemon = false;
     }
 
@@ -217,7 +248,13 @@ int CGridWorkerApp_Impl::Run()
     }
 #endif
 
-    m_ErrLog.reset(new CRotatingLogStream(log_file_name, log_size));
+    if (log_type == eRotatingLog)
+        m_ErrLog.reset(new CRotatingLogStream(log_file_name, log_size));
+    else if(log_type == eNonRotatingLog)
+        m_ErrLog.reset(new CSelfRotatingLogStream(log_file_name, kMax_Int));
+    else
+        m_ErrLog.reset(new CSelfRotatingLogStream(log_file_name, log_size));
+
     // All errors redirected to rotated log
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
@@ -281,11 +318,34 @@ void CGridWorkerApp_Impl::RequestShutdown()
 }
 
 
+// This hack is needed to get an access to the protected method GetLogFileName
+// maybe this method should be a public one???
+namespace {
+    class AppHack : public CNcbiApplication {
+    public:
+        static const string& GetLogName(const CNcbiApplication& app)
+        {
+            return static_cast<const AppHack&>(app).GetLogFileName();
+        }
+    };
+}
+    
+string CGridWorkerApp_Impl::GetLogName(void) const
+{
+    string log_name = AppHack::GetLogName(m_App);
+    if (log_name.empty())
+        log_name = m_App.GetProgramDisplayName() + ".log";
+    return log_name;
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/07/26 15:25:01  didenko
+ * Added logging type parameter
+ *
  * Revision 6.2  2005/05/26 15:22:42  didenko
  * Cosmetics
  *

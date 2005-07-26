@@ -94,6 +94,8 @@ private:
     auto_ptr<CRotatingLogStream> m_ErrLog;
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
+
+    string GetLogName(void) const;
 };
 
 
@@ -125,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/26 15:25:00  didenko
+ * Added logging type parameter
+ *
  * Revision 1.1  2005/05/25 18:52:37  didenko
  * Moved grid worker node application functionality to the separate class
  *
