@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = ace2asn
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
