@@ -152,7 +152,6 @@ protected:
     const  string m_Name;        ///< Name
 };
 
-
 /// Return true if one version info is matches another better than
 /// the best variant.
 /// When condition satisfies, return true and the former best values 
@@ -174,6 +173,22 @@ bool NCBI_XNCBI_EXPORT IsBetterVersion(const CVersionInfo& info,
                                        int&  best_minor,
                                        int&  best_patch_level);
 
+inline
+bool operator==(const CVersionInfo& v1, const CVersionInfo& v2)
+{
+    
+    return v1.Match(v2) == CVersionInfo::eFullyCompatible;
+}
+
+inline
+bool operator<(const CVersionInfo& v1, const CVersionInfo& v2)
+{
+    int best_major = -1;
+    int best_minor = -1;
+    int best_patch_level = -1;
+    
+    return IsBetterVersion(v1, v2, best_major, best_minor, best_patch_level);
+}
 
 /// Algorithm function to find version in the container
 ///
@@ -253,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/07/26 12:09:22  ssikorsk
+ * Added operators == and < for convenience.
+ *
  * Revision 1.16  2005/04/05 20:52:30  kuznets
  * + IsUpCompatible()
  *
