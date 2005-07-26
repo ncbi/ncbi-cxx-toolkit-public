@@ -66,11 +66,6 @@ public:
 
     virtual size_t GetSpliceTypeCount(void)  = 0;
 
-    // A naive pattern generator-use cautiously.
-    // Do not use on sequences with repeats or error.
-
-    size_t MakePattern(const size_t hit_size = 30);
-
 protected:
 
     CSplicedAligner();
@@ -82,15 +77,6 @@ protected:
 
     virtual TScore* x_GetSpliceScores() = 0;
   
-    // Guides
-    unsigned char   x_CalcFingerPrint64( const char* beg,
-                                         const char* end,
-                                         size_t& err_index );
-    const char*     x_FindFingerPrint64( const char* beg, 
-                                         const char* end,
-                                         unsigned char fingerprint,
-                                         size_t size,
-                                         size_t& err_index );
 };
 
 
@@ -101,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/07/26 16:43:22  kapustin
+ * Move MakePattern() to CNWAligner
+ *
  * Revision 1.11  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *

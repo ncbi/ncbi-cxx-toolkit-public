@@ -1147,6 +1147,182 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
     return maxseg;
 }
 
+/////////////////////////////////////////////////
+/// naive pattern generator (a la Rabin-Karp)
+
+struct nwaln_mrnaseg {
+    nwaln_mrnaseg(size_t i1, size_t i2, unsigned char fp0):
+        a(i1), b(i2), fp(fp0) {}
+    size_t a, b;
+    unsigned char fp;
+};
+
+struct nwaln_mrnaguide {
+    nwaln_mrnaguide(size_t i1, size_t i2, size_t i3, size_t i4):
+        q0(i1), q1(i2), s0(i3), s1(i4) {}
+    size_t q0, q1, s0, s1;
+};
+
+
+unsigned char CNWAligner::x_CalcFingerPrint64(
+    const char* beg, const char* end, size_t& err_index)
+{
+    if(beg >= end) {
+        return 0xFF;
+    }
+
+    unsigned char fp = 0, code;
+    for(const char* p = beg; p < end; ++p) {
+        switch(*p) {
+        case 'A': code = 0;    break;
+        case 'G': code = 0x01; break;
+        case 'T': code = 0x02; break;
+        case 'C': code = 0x03; break;
+        default:  err_index = p - beg; return 0x40; // incorrect char
+        }
+        fp = 0x3F & ((fp << 2) | code);
+    }
+
+    return fp;
+}
+
+
+const char* CNWAligner::x_FindFingerPrint64(
+    const char* beg, const char* end,
+    unsigned char fingerprint, size_t size,
+    size_t& err_index)
+{
+
+    if(beg + size > end) {
+        err_index = 0;
+        return 0;
+    }
+
+    const char* p0 = beg;
+
+    size_t err_idx = 0; --p0;
+    unsigned char fp = 0x40;
+    while(fp == 0x40 && p0 < end) {
+        p0 += err_idx + 1;
+        fp = x_CalcFingerPrint64(p0, p0 + size, err_idx);
+    }
+
+    if(p0 >= end) {
+        return end;  // not found
+    }
+    
+    unsigned char code;
+    while(fp != fingerprint && ++p0 < end) {
+
+        switch(*(p0 + size - 1)) {
+        case 'A': code = 0;    break;
+        case 'G': code = 0x01; break;
+        case 'T': code = 0x02; break;
+        case 'C': code = 0x03; break;
+        default:  err_index = p0 + size - 1 - beg;
+                  return 0;
+        }
+        
+        fp = 0x3F & ((fp << 2) | code );
+    }
+
+    return p0;
+}
+
+
+size_t CNWAligner::MakePattern(const size_t guide_size,
+                               const size_t guide_core)
+{
+    if(guide_core > guide_size) {
+        NCBI_THROW(CAlgoAlignException,
+                   eBadParameter,
+                   g_msg_NullParameter);
+    }
+
+    vector<nwaln_mrnaseg> segs;
+
+    size_t err_idx;
+    for(size_t i = 0; i + guide_size <= m_SeqLen1; ) {
+        const char* beg = m_Seq1 + i;
+        const char* end = m_Seq1 + i + guide_size;
+        unsigned char fp = x_CalcFingerPrint64(beg, end, err_idx);
+        if(fp != 0x40) {
+            segs.push_back(nwaln_mrnaseg(i, i + guide_size - 1, fp));
+            i += guide_size;
+        }
+        else {
+            i += err_idx + 1;
+        }
+    }
+
+    vector<nwaln_mrnaguide> guides;
+    size_t idx = 0;
+    const char* beg = m_Seq2 + idx;
+    const char* end = m_Seq2 + m_SeqLen2;
+    for(size_t i = 0, seg_count = segs.size();
+        beg + guide_size <= end && i < seg_count; ++i) {
+
+        const char* p = 0;
+        const char* beg0 = beg;
+        while( p == 0 && beg + guide_size <= end ) {
+
+            p = x_FindFingerPrint64( beg, end, segs[i].fp,
+                                     guide_size, err_idx );
+            if(p == 0) { // incorrect char
+                beg += err_idx + 1; 
+            }
+            else if (p < end) {// fingerprints match but check actual sequences
+                const char* seq1 = m_Seq1 + segs[i].a;
+                const char* seq2 = p;
+                size_t k;
+                for(k = 0; k < guide_size; ++k) {
+                    if(seq1[k] != seq2[k]) break;
+                }
+                if(k == guide_size) { // real match
+                    size_t i1 = segs[i].a;
+                    size_t i2 = segs[i].b;
+                    size_t i3 = seq2 - m_Seq2;
+                    size_t i4 = i3 + guide_size - 1;
+                    size_t guides_dim = guides.size();
+                    if( guides_dim == 0 ||
+                        i1 - 1 > guides[guides_dim - 1].q1 ||
+                        i3 - 1 > guides[guides_dim - 1].s1    ) {
+                        guides.push_back(nwaln_mrnaguide(i1, i2, i3, i4));
+                    }
+                    else { // expand the last guide
+                        guides[guides_dim - 1].q1 = i2;
+                        guides[guides_dim - 1].s1 = i4;
+                    }
+                    beg0 = p + guide_size;
+                }
+                else {  // spurious match
+                    beg = p + 1;
+                    p = 0;
+                }
+            }
+        }
+        beg = beg0; // restore start pos in genomic sequence
+    }
+
+    // initialize m_guides
+    size_t guides_dim = guides.size();
+    m_guides.clear();
+    m_guides.resize(4*guides_dim);
+    const size_t offs = guide_core/2 - 1;
+    for(size_t k = 0; k < guides_dim; ++k) {
+        size_t q0 = (guides[k].q0 + guides[k].q1) / 2;
+        size_t s0 = (guides[k].s0 + guides[k].s1) / 2;
+        m_guides[4*k]         = q0 - offs;
+        m_guides[4*k + 1]     = q0 + offs;
+        m_guides[4*k + 2]     = s0 - offs;
+        m_guides[4*k + 3]     = s0 + offs;
+    }
+ 
+    return m_guides.size();   
+}
+
+//////////////////////////////////////////////
+/////////////////////////////////////////////
 
 size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
                                size_t* s0, size_t* s1,
@@ -1319,6 +1495,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2005/07/26 16:43:29  kapustin
+ * Move MakePattern() to CNWAligner
+ *
  * Revision 1.68  2005/06/03 16:22:01  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
@@ -1338,7 +1517,9 @@ END_NCBI_SCOPE
  * Allow use of std::string for specifying sequences
  *
  * Revision 1.62  2005/02/23 16:59:38  kapustin
- * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in 
+ * CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of 
+ * alignment's starts and strands.
  *
  * Revision 1.61  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw

@@ -192,6 +192,11 @@ public:
     static string s_RunLengthEncode(const string& in);
     static string s_RunLengthDecode(const string& in);
 
+    // A naive pattern generator-use cautiously.
+    // Do not use on sequences with repeats or error.
+    size_t MakePattern(const size_t hit_size = 100, 
+                       const size_t core_size = 28);
+
 protected:
 
     // Bonuses and penalties
@@ -224,6 +229,16 @@ protected:
     size_t                    m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;
     virtual bool x_CheckMemoryLimit(void);
+
+    // naive pattern generation helpers (Rabin-Karp approach)
+    unsigned char   x_CalcFingerPrint64( const char* beg,
+                                         const char* end,
+                                         size_t& err_index );
+    const char*     x_FindFingerPrint64( const char* beg, 
+                                         const char* end,
+                                         unsigned char fingerprint,
+                                         size_t size,
+                                         size_t& err_index );
 
     // Transcript, score and guiding hits
     TTranscript               m_Transcript;
@@ -306,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/07/26 16:43:21  kapustin
+ * Move MakePattern() to CNWAligner
+ *
  * Revision 1.44  2005/06/02 15:01:39  kapustin
  * Use explicit flag to invalidate score matrix
  *
