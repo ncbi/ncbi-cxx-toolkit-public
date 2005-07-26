@@ -424,6 +424,13 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
 }
 
 
+void CReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                             TLoadedBlob_ids& blob_ids) const
+{
+    return;
+}
+
+
 #if 0
 void CReaderRequestResult::SetTSE_Info(CLoadLockBlob& blob,
                                        const CRef<CTSE_Info>& tse)

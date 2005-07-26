@@ -50,6 +50,7 @@ class CID2_Request_Packet;
 class CID2_Request_Get_Seq_id;
 class CID2_Request_Get_Blob_Id;
 class CID2_Request_Get_Blob;
+class CID2_Request_Get_Blob_Info;
 class CID2_Get_Blob_Details;
 
 class CID2_Error;
@@ -128,6 +129,10 @@ protected:
 
     void x_SetDetails(CID2_Get_Blob_Details& details,
                       TContentsMask mask);
+
+    void x_SetExclude_blobs(CID2_Request_Get_Blob_Info& get_blob_info,
+                            const CSeq_id_Handle& idh,
+                            CReaderRequestResult& result);
 
     void x_ProcessRequest(CReaderRequestResult& result,
                           CID2_Request& req);

@@ -111,6 +111,9 @@ public:
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
     virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const CSeq_id_Handle& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
+    virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                   TLoadedBlob_ids& blob_ids) const;
+
     virtual operator CInitMutexPool&(void) { return GetMutexPool(); }
 
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
@@ -1102,6 +1105,17 @@ CTSE_LoadLock CGBReaderRequestResult::GetTSE_LoadLock(const TKeyBlob& blob_id)
 {
     CConstRef<CObject> id(new TKeyBlob(blob_id));
     return GetLoader().GetDataSource()->GetTSE_LoadLock(id);
+}
+
+
+void CGBReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                               TLoadedBlob_ids& blob_ids) const
+{
+    CDataSource::TLoadedBlob_ids blob_ids2;
+    m_Loader->GetDataSource()->GetLoadedBlob_ids(idh, blob_ids2);
+    ITERATE(CDataSource::TLoadedBlob_ids, id, blob_ids2) {
+        blob_ids.push_back(m_Loader->GetBlobId(*id));
+    }
 }
 
 

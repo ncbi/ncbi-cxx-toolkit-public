@@ -500,6 +500,10 @@ public:
     CTSE_LoadLock GetBlobLoadLock(const TKeyBlob& blob_id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id) = 0;
 
+    typedef vector<CBlob_id> TLoadedBlob_ids;
+    virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                   TLoadedBlob_ids& blob_ids) const;
+
     // load ResultBlob
     //virtual CRef<CTSE_Info> GetTSE_Info(const TLockBlob& blob);
     //CRef<CTSE_Info> GetTSE_Info(const TKeyBlob& blob_id);

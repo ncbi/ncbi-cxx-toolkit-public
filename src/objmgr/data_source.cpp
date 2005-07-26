@@ -463,6 +463,36 @@ CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
 }
 
 
+void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                    TLoadedBlob_ids& blob_ids) const
+{
+    {{
+        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
+        if (tse_set != m_TSE_seq.end()) {
+            ITERATE(TTSE_Set, tse, tse_set->second) {
+                blob_ids.push_back((*tse)->GetBlobId());
+            }
+        }
+    }}
+    {{
+        TMainLock::TReadLockGuard guard(m_DSAnnotLock);
+        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq_annot.find(idh);
+        if (tse_set != m_TSE_seq_annot.end()) {
+            ITERATE(TTSE_Set, tse, tse_set->second) {
+                blob_ids.push_back((*tse)->GetBlobId());
+            }
+        }
+        tse_set = m_TSE_orphan_annot.find(idh);
+        if (tse_set != m_TSE_orphan_annot.end()) {
+            ITERATE(TTSE_Set, tse, tse_set->second) {
+                blob_ids.push_back((*tse)->GetBlobId());
+            }
+        }
+    }}
+}
+
+
 CConstRef<CTSE_Info>
 CDataSource::x_FindTSE_Info(const CSeq_entry& obj) const
 {

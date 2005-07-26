@@ -247,6 +247,10 @@ public:
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq,
                                  const TTSE_LockSet& history) const;
 
+    typedef vector<TBlobId> TLoadedBlob_ids;
+    void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                           TLoadedBlob_ids& blob_ids) const;
+
     virtual void Prefetch(CPrefetchToken_Impl& token);
 
 private:

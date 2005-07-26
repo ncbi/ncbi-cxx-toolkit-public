@@ -366,6 +366,30 @@ void CId2Reader::x_SetDetails(CID2_Get_Blob_Details& /*details*/,
 }
 
 
+void CId2Reader::x_SetExclude_blobs(CID2_Request_Get_Blob_Info& get_blob_info,
+                                    const CSeq_id_Handle& idh,
+                                    CReaderRequestResult& result)
+{
+    if (GetMaxChunksRequestSize() == 1) {
+        // Minimize size of request rather than response
+        return;
+    }
+    CReaderRequestResult::TLoadedBlob_ids loaded_blob_ids;
+    result.GetLoadedBlob_ids(idh, loaded_blob_ids);
+    if ( loaded_blob_ids.empty() ) {
+        return;
+    }
+    CID2_Request_Get_Blob_Info::C_Blob_id::C_Resolve::TExclude_blobs&
+        exclude_blobs =
+        get_blob_info.SetBlob_id().SetResolve().SetExclude_blobs();
+    ITERATE(CReaderRequestResult::TLoadedBlob_ids, id, loaded_blob_ids) {
+        CRef<CID2_Blob_Id> blob_id(new CID2_Blob_Id);
+        x_SetResolve(*blob_id, *id);
+        exclude_blobs.push_back(blob_id);
+    }
+}
+
+
 CId2Reader::TBlobId CId2Reader::GetBlobId(const CID2_Blob_Id& blob_id)
 {
     CBlob_id ret;
@@ -494,6 +518,7 @@ bool CId2Reader::LoadBlobs(CReaderRequestResult& result,
         x_SetResolve(req2.SetBlob_id().SetResolve().SetRequest(),
                      *seq_id.GetSeqId());
         x_SetDetails(req2.SetGet_data(), mask);
+        x_SetExclude_blobs(req2, seq_id, result);
         x_ProcessRequest(result, req);
         return true;
     }
@@ -761,6 +786,7 @@ bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
                     req->SetRequest().SetGet_blob_info();
                 x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
                 x_SetDetails(req2.SetGet_data(), fBlobHasCore);
+                x_SetExclude_blobs(req2, *id, result);
                 packet.Set().push_back(req);
                 if (max_request_size > 0  &&
                      packet.Get().size() >= max_request_size) {
@@ -776,6 +802,7 @@ bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
             x_SetResolve(req2.SetBlob_id().SetResolve().SetRequest(),
                         *id->GetSeqId());
             x_SetDetails(req2.SetGet_data(), fBlobHasCore);
+            x_SetExclude_blobs(req2, *id, result);
             packet.Set().push_back(req);
         }
         if (max_request_size > 0  &&
