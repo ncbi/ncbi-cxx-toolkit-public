@@ -400,6 +400,7 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     //  Deal with final three nodes  (should all be hooked to the hub node)
 
     int finalNodes[3] = {USED_ROW, USED_ROW, USED_ROW};
+    double d0, d1, d2;
     double finalLen[3] = {0.0, 0.0, 0.0};
 
     tmp = 0;
@@ -414,18 +415,23 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
             tmp++;
         }
     }
-    if (tmp == 3) {
-        for (int l=0; l<3; ++l) {
+    if (tmp <= 3) {
+        for (int l=0; l<tmp; ++l) {
             i = finalNodes[l];
-            j = finalNodes[(l+1)%3];
-            k = finalNodes[(l+2)%3];
-            finalLen[l] = 0.5*(ppDists[i][j] + ppDists[i][k] - ppDists[j][k]) - internalDistCorrection[i];
+            j = finalNodes[(l+1)%3];  //  here, '3' is the # of expected final nodes
+            k = finalNodes[(l+2)%3];  //  here, '3' is the # of expected final nodes
+            d0 = (i < m_nseqs && j < m_nseqs && i != USED_ROW && j != USED_ROW) ? ppDists[i][j] - internalDistCorrection[i] : 0;
+            d1 = (i < m_nseqs && k < m_nseqs && i != USED_ROW && k != USED_ROW) ? ppDists[i][k] - internalDistCorrection[i]: 0;
+            d2 = (j < m_nseqs && k < m_nseqs && j != USED_ROW && k != USED_ROW) ? ppDists[j][k] : 0;
+            finalLen[l] = 0.5*(d0 + d1 - d2);
 
-            if (m_seqiters[indexMap[i]].is_valid()) {  //  existing internal node; set dist
-                m_seqiters[indexMap[i]]->distance = finalLen[l];
-            } else {
-                m_items[indexMap[i]]->distance = finalLen[l];
-                m_seqiters[indexMap[i]] = m_tree->append_child(m_seqiters[0], *m_items[indexMap[i]]);
+            if (i < m_nseqs && i != USED_ROW && indexMap[i] < m_seqiters.size()) {
+                if (m_seqiters[indexMap[i]].is_valid()) {  //  existing internal node; set dist
+                    m_seqiters[indexMap[i]]->distance = finalLen[l];
+                } else {
+                    m_items[indexMap[i]]->distance = finalLen[l];
+                    m_seqiters[indexMap[i]] = m_tree->append_child(m_seqiters[0], *m_items[indexMap[i]]);
+                }
             }
         }
 /*#if _DEBUG
@@ -436,10 +442,10 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     } else {
         ofs << "Error:  the wrong number of 'final' nodes (" << tmp << ") found -- expected 3.\n" << i << " " << j << " " << k << endl << endl;
 #endif    
-		*/
-    }    
-	midpointRootIfNeeded();
-    //fillSeqNames(m_tree, m_cdd);
+*/
+    }
+
+	if (m_nseqs > 2) midpointRootIfNeeded();
 /*
 #if _DEBUG
 	ofs.close();
@@ -482,6 +488,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/07/27 14:55:40  lanczyck
+ * fix bug when do NJ with < 3 sequences
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
