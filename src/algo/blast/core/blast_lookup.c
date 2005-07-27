@@ -134,7 +134,6 @@ Int4 RPSLookupTableNew(const BlastRPSInfo *info,
    if (lookup_header->magic_number != RPS_MAGIC_NUM)
       return -1;
 
-   lookup->rps_aux_info = (BlastRPSAuxInfo *)(&info->aux_info);
    lookup->wordsize = BLAST_WORDSIZE_PROT;
    lookup->alphabet_size = BLASTAA_SIZE;
    lookup->charsize = ilog2(lookup->alphabet_size) + 1;

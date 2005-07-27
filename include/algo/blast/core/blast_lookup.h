@@ -324,7 +324,6 @@ typedef struct BlastRPSLookupTable {
     Int4 ** rps_pssm;   /**< Pointer to memory-mapped RPS Blast profile file */
     Int4 * rps_seq_offsets; /**< array of start offsets for each RPS DB seq. */
     Int4 num_profiles; /**< Number of profiles in RPS database. */
-    BlastRPSAuxInfo* rps_aux_info; /**< RPS Blast auxiliary information */
     Int4 * overflow;    /**< the overflow array for the compacted 
                              lookup table */
     Int4  overflow_size;/**< Number of elements in the overflow array */
