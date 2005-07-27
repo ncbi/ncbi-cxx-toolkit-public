@@ -46,7 +46,7 @@ inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
 
     // if we just reached or exceeded low_k_ elements, then update 
     // high_beg_ as necessary
-    if( inner_counts_[t] >= low_k_ )
+    if( inner_counts_[t] > low_k_ )
     {
         Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
 
@@ -54,7 +54,7 @@ inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
             rem_k_info( triplet_list_[off] );
             --off;
             ++high_beg_;
-        }while( triplet_list_[off] != t );
+        }while( triplet_list_[off+1] != t );
     }
 }
 
@@ -125,7 +125,7 @@ inline bool CSymDustMasker::triplets::add( sequence_type::value_type n )
     }
 
     push_triplet( ((triplet_list_.front()<<2)&TRIPLET_MASK) + (n&3) );
-    Uint4 count = stop_ - high_beg_; // count is the suffix length
+    Uint4 count = stop_ - high_beg_ + 1; // count is the suffix length
 
     // if the condition does not hold then nothing in the window should be masked
     if( 10*outer_sum_ > thresholds_[count] )
@@ -137,11 +137,9 @@ inline bool CSymDustMasker::triplets::add( sequence_type::value_type n )
         lcr_iter_type lcr_iter = lcr_list_.begin();
         Uint4 max_lcr_score = 0;
         size_type max_len = 0;
-        size_type pos = high_beg_; // skipping the suffix
+        size_type pos = high_beg_ - 1; // skipping the suffix
         impl_citer_type it = triplet_list_.begin() + count; // skipping the suffix
         impl_citer_type iend = triplet_list_.end();
-        --counts[*it];
-        score -= counts[*it];
 
         for( ; it != iend; ++it, ++count, --pos )
         {
@@ -197,7 +195,7 @@ CSymDustMasker::CSymDustMasker(
     : level_( (level >= 2 && level <= 64) ? level : DEFAULT_LEVEL ), 
       window_( (window >= 8 && window <= 64) ? window : DEFAULT_WINDOW ), 
       linker_( (linker >= 1 && linker <= 32) ? linker : DEFAULT_LINKER ),
-      low_k_( 1 + level_/5 )
+      low_k_( level_/5 )
 {
     thresholds_.reserve( window_ - 2 );
     thresholds_.push_back( 1 );
@@ -317,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/07/27 18:40:49  morgulis
+ * some code simplification
+ *
  * Revision 1.11  2005/07/19 18:59:25  morgulis
  * Simplification of add_k_info().
  *
