@@ -1025,31 +1025,6 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
     PrintServerOut(out);
 }
 
-void CNetScheduleClient::PrintServerOut(CNcbiOstream & out)
-{
-    WaitForServer();
-    while (1) {
-        if (!ReadStr(*m_Sock, &m_Tmp)) {
-            break;
-        }
-        if (m_Tmp.find("OK:") != 0) {
-            if (m_Tmp.find("ERR:") == 0) {
-                string msg = "Server error:";
-                TrimErr(&m_Tmp);
-                msg += m_Tmp;
-                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-        } else {
-            m_Tmp.erase(0, 3); // "OK:"
-        }
-
-        if (m_Tmp == "END")
-            break;
-        out << m_Tmp << "\n";
-    }
-}
-
-
 void CNetScheduleClient::Monitor(CNcbiOstream & out)
 {
     CheckConnect(kEmptyStr);
@@ -1239,6 +1214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/07/27 18:13:37  kuznets
+ * PrintServerOut() moved to base class
+ *
  * Revision 1.34  2005/06/20 13:32:00  kuznets
  * Added access denied error
  *

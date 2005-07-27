@@ -479,8 +479,6 @@ protected:
                           unsigned   wait_time,
                           unsigned short udp_port);
 
-    void PrintServerOut(CNcbiOstream & out);
-
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
@@ -490,9 +488,6 @@ protected:
     bool              m_RequestRateControl;
     CNetSchedule_Key  m_JobKey;
     string            m_ProgramVersion;
-
-private:
-    string         m_Tmp; ///< Temporary string
 };
 
 
@@ -746,6 +741,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/07/27 18:13:32  kuznets
+ * PrintServerOut() moved to base class
+ *
  * Revision 1.37  2005/06/28 01:36:57  ucko
  * Remove trailing comma from CNetScheduleException::EErrCode (led to
  * warnings in WorkShop, and also GCC 4 IIRC).
