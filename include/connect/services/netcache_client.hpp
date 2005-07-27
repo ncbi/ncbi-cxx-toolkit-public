@@ -194,6 +194,9 @@ protected:
     /// Connects to server to make sure it is running.
     bool IsAlive();
 
+    /// Print ini file
+    void PrintConfig(CNcbiOstream & out);
+
 protected:
 
     bool IsError(const char* str);
@@ -437,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/07/27 18:13:59  kuznets
+ * PrintConfig()
+ *
  * Revision 1.33  2005/05/12 18:34:52  vakatov
  * Minor warning heeded
  *

@@ -524,6 +524,18 @@ void CNetCacheClient::ShutdownServer()
     WriteStr(command, sizeof(command));
 }
 
+void CNetCacheClient::PrintConfig(CNcbiOstream & out)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    SendClientName();
+
+    const char command[] = "GETCONF";
+    WriteStr(command, sizeof(command));
+    PrintServerOut(out);    
+}
+
 void CNetCacheClient::Logging(bool on_off)
 {
     CheckConnect(kEmptyStr);
@@ -692,6 +704,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/07/27 18:14:12  kuznets
+ * PrintConfig()
+ *
  * Revision 1.42  2005/06/06 15:32:49  kuznets
  * Use data transfer protocol 2
  *
