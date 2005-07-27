@@ -37,7 +37,7 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -55,7 +55,7 @@ CNcbiOstream& operator << (CNcbiOstream& os,
                            const CAlignShadow<T>& align_shadow);
 
 template<class TId>
-class CAlignShadow
+class CAlignShadow: public CObject
 {
 public:
 
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/07/27 18:52:59  kapustin
+ * Derive from CObject
+ *
  * Revision 1.7  2005/04/18 20:44:39  ucko
  * Add some forward declarations to unconfuse GCC 2.95.
  *
