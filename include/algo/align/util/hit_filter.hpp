@@ -34,28 +34,14 @@
 
 #include <algo/align/util/hit_comparator.hpp>
 
+#include <algorithm>
 #include <numeric>
 
 BEGIN_NCBI_SCOPE
 
 
-template<class THit>
-class CHitFilter: public CObject
-{
-public:
 
-    typedef CRef<THit>              THitRef;
-    typedef vector<THitRef>         THitRefs;
-
-    typedef typename THit::TCoord   TCoord;
-
-    static  TCoord s_GetCoverage(Uint1 where, 
-                                 typename THitRefs::const_iterator from,
-                                 typename THitRefs::const_iterator to);
-};
-
-
-//////////////////////////////////////////////
+/////////////////////////////////////////
 // CHitCoverageAccumulator
 
 template<class THit>
@@ -102,44 +88,50 @@ private:
     Uint1   m_i1, m_i2;
 };
 
-
-
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-
+/////////////////////////////////////////////
+/////////////////////////////////////////////
 
 template<class THit>
-typename CHitFilter<THit>::TCoord 
-CHitFilter<THit>::s_GetCoverage(
-    Uint1 where,
-    typename CHitFilter<THit>::THitRefs::const_iterator from,
-    typename CHitFilter<THit>::THitRefs::const_iterator to )
+class CHitFilter: public CObject
 {
-    // since we need to sort, create and init a local vector
-    THitRefs hitrefs (to - from);
-    typedef typename CHitFilter<THit>::THitRefs::const_iterator TCI; 
-    typedef typename CHitFilter<THit>::THitRefs::iterator TI; 
-    TCI ii = from;
-    TI jj = hitrefs.begin();
-    while(ii != to) {
-        *jj++ = *ii++;
+public:
+
+    typedef CRef<THit>              THitRef;
+    typedef vector<THitRef>         THitRefs;
+
+    typedef typename THit::TCoord   TCoord;
+
+    static  TCoord s_GetCoverage(Uint1 where, 
+                                 typename THitRefs::const_iterator from,
+                                 typename THitRefs::const_iterator to)
+    {
+        // since we need to sort, create and init a local vector
+        THitRefs hitrefs (to - from);
+        typedef typename CHitFilter<THit>::THitRefs::const_iterator TCI; 
+        typedef typename CHitFilter<THit>::THitRefs::iterator TI; 
+        TCI ii = from;
+        TI jj = hitrefs.begin();
+        while(ii != to) {
+            *jj++ = *ii++;
+        }
+        
+        // prepare a sorter object and sort
+        typedef CHitComparator<THit> THitComparator;
+        typename THitComparator::ESortCriterion sort_type (
+            where == 0? 
+            THitComparator::eQueryMin:
+            THitComparator::eSubjMin);
+
+        THitComparator sorter (sort_type);
+        sort(hitrefs.begin(), hitrefs.end(), sorter);
+        
+        // compute coverage
+        return accumulate(hitrefs.begin(), hitrefs.end(), 
+                          TCoord(0), 
+                          CHitCoverageAccumulator<THit>(where));
     }
+};
 
-    // prepare a sorter object and sort
-    typedef CHitComparator<THit> THitComparator;
-    typename THitComparator::ESortCriterion sort_type (
-        where == 0? 
-        THitComparator::eQueryMin:
-        THitComparator::eSubjMin);
-
-    THitComparator sorter (sort_type);
-    sort(hitrefs.begin(), hitrefs.end(), sorter);
-
-    // compute coverage
-    return accumulate(hitrefs.begin(), hitrefs.end(), 
-                      TCoord(0), 
-                      CHitCoverageAccumulator<THit>(where));
-}
 
 END_NCBI_SCOPE
 
@@ -148,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/27 20:45:03  kapustin
+ * Move s_GetCoverage() definition under the class declaration to calm down MSVC
+ *
  * Revision 1.1  2005/07/27 18:53:16  kapustin
  * Initial revision
  *
