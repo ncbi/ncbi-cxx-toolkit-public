@@ -122,6 +122,7 @@ protected:
     void WaitForServer();
     /// Remove "ERR:" prefix 
     void TrimErr(string* err_msg);
+    void PrintServerOut(CNcbiOstream & out);
 
     /// @internal
     class CSockGuard
@@ -140,6 +141,7 @@ protected:
 private:
     CNetServiceClient(const CNetServiceClient&);
     CNetServiceClient& operator=(const CNetServiceClient&);
+
 protected:
     CSocket*       m_Sock;
     string         m_Host;
@@ -148,6 +150,7 @@ protected:
     string         m_ClientName;
     STimeout       m_Timeout;
     string         m_ClientNameComment;
+    string         m_Tmp;                 ///< Temporary string
 };
 
 
@@ -185,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/27 18:12:53  kuznets
+ * Added PrintServerOut()
+ *
  * Revision 1.5  2005/03/28 15:31:37  didenko
  * Made destructors virtual
  *

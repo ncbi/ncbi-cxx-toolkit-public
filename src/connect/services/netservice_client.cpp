@@ -266,11 +266,39 @@ void CNetServiceClient::TrimErr(string* err_msg)
     }
 }
 
+void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
+{
+    WaitForServer();
+    while (1) {
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            break;
+        }
+        if (m_Tmp.find("OK:") != 0) {
+            if (m_Tmp.find("ERR:") == 0) {
+                string msg = "Server error:";
+                TrimErr(&m_Tmp);
+                msg += m_Tmp;
+                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
+        } else {
+            m_Tmp.erase(0, 3); // "OK:"
+        }
+
+        if (m_Tmp == "END")
+            break;
+        out << m_Tmp << "\n";
+    }
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/27 18:13:03  kuznets
+ * Added PrintServerOut()
+ *
  * Revision 1.10  2005/05/02 16:21:52  kuznets
  * CreateSocket() changed to better handle connection failures
  *
