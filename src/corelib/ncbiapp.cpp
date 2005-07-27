@@ -666,9 +666,9 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg,
 }
 
 
-void CNcbiApplication::DisableArgDescriptions(void)
+void CNcbiApplication::DisableArgDescriptions(TDisableArgDesc disable)
 {
-    m_DisableArgDesc = true;
+    m_DisableArgDesc = disable;
 }
 
 void CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)
@@ -1260,6 +1260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2005/07/27 14:25:52  didenko
+ * Changed the signature of DisableArgDescriptions method
+ *
  * Revision 1.108  2005/07/05 15:53:30  ucko
  * If the user explicitly requested help, print it on standard output
  * rather than logging it (to standard error, typically).

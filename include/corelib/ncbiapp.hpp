@@ -293,9 +293,15 @@ public:
 protected:
     /// Disable argument descriptions.
     ///
-    /// Call if you do not want cmd.line args to be parsed at all.
-    /// Note that by default ArgDescriptions are enabled (i.e. required).
-    void DisableArgDescriptions(void);
+    /// Call with a bit flag set for those cmd.line args (std and/or user's)
+    /// which you do not want to be parsed.
+    /// Note that by default all cmd.line args are enabled.
+    enum EDisableArgDesc {
+        fDisableStdArgs     = 0x01   ///<  (-h, -logfile, -conffile, -version)
+        // TODO: fDisableUserArgs    = 0x02   ///<  user-defined cmd.line args
+    };
+    typedef int TDisableArgDesc;  ///< Binary OR of "EDisableArgDesc"
+    void DisableArgDescriptions(TDisableArgDesc disable = fDisableStdArgs);
 
     /// Which standard flag's descriptions should not be displayed in
     /// the usage message.
@@ -481,7 +487,7 @@ private:
     auto_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
     auto_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
     auto_ptr<CArgs>            m_Args;       ///< Parsed cmd.-line args
-    bool                       m_DisableArgDesc;  ///< Arg desc. disabled
+    TDisableArgDesc            m_DisableArgDesc;  ///< Arg desc. disabled
     THideStdArgs               m_HideArgs;   ///< Std cmd.-line flags to hide
     TStdioSetupFlags           m_StdioFlags; ///< Std C++ I/O adjustments
     char*                      m_CinBuffer;  ///< Cin buffer if changed
@@ -569,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/07/27 14:25:52  didenko
+ * Changed the signature of DisableArgDescriptions method
+ *
  * Revision 1.54  2005/06/13 19:16:38  lavr
  * Fix SetArgDescriptions -> SetupArgDescriptions
  *
