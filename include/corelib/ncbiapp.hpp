@@ -122,7 +122,8 @@ enum EAppDiagStream {
     eDS_Disable,     ///< Dont write it anywhere
     eDS_User,        ///< Leave as was previously set (or not set) by user
     eDS_AppSpecific, ///< Depends on the application type
-    eDS_Default      ///< "eDS_User" if set, else "eDS_AppSpecific"
+    eDS_Default,     ///< "eDS_User" if set, else "eDS_AppSpecific"
+    eDS_ToSyslog     ///< To system log daemon
 };
 
 
@@ -575,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/07/27 15:27:44  ucko
+ * New EAppDiagStream option: eDS_ToSyslog
+ *
  * Revision 1.55  2005/07/27 14:25:52  didenko
  * Changed the signature of DisableArgDescriptions method
  *
