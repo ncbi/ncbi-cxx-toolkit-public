@@ -115,10 +115,13 @@ CRemoteCgiApp::CRemoteCgiApp(
     signal(SIGINT,  CgiGridWorker_SignalHandler);
     signal(SIGTERM, CgiGridWorker_SignalHandler);    
 #endif
+    // Enable parsing of std args
+    DisableArgDescriptions(0);
 }
 
 void CRemoteCgiApp::Init(void)
 {
+    //    SetupDiag(eDS_ToStdout);
     CCgiApplication::Init();
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -200,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/27 14:30:52  didenko
+ * Changed the logging system
+ *
  * Revision 1.1  2005/06/07 20:14:16  didenko
  * CGridWorkerCgiApp class renamed to CRemoteCgiApp
  *

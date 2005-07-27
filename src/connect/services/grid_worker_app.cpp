@@ -79,6 +79,7 @@ CGridWorkerApp::~CGridWorkerApp()
 
 void CGridWorkerApp::Init(void)
 {
+    //    SetupDiag(eDS_ToStdout);
     CNcbiApplication::Init();
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -127,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/07/27 14:30:52  didenko
+ * Changed the logging system
+ *
  * Revision 1.28  2005/05/25 18:52:37  didenko
  * Moved grid worker node application functionality to the separate class
  *

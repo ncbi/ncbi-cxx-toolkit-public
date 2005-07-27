@@ -130,7 +130,6 @@ CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 
 void CGridWorkerApp_Impl::Init()
 {
-
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_DateTime);
   
@@ -197,8 +196,7 @@ int CGridWorkerApp_Impl::Run()
 
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
-    string log_file_name = GetLogName() + "." 
-        + NStr::UIntToString(control_port);
+    string log_file_name = GetLogName();
 
     unsigned int max_total_jobs = 
         reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
@@ -343,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/07/27 14:30:52  didenko
+ * Changed the logging system
+ *
  * Revision 6.3  2005/07/26 15:25:01  didenko
  * Added logging type parameter
  *
