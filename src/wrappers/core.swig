@@ -32,6 +32,10 @@
 // SWIG hangs on corelib/ncbimtx, so define its #include guard
 #define CORELIB___NCBIMTX__HPP
 
+// corelib/plugin_manager.hpp is a disaster due to a nested struct
+// inside of a template class that inherits from something.
+#define CORELIB___PLUGIN_MANAGER__HPP
+
 %template(vector_CSerialAttribInfoItem)
     std::vector<ncbi::CSerialAttribInfoItem>;
 
@@ -296,6 +300,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/07/27 13:12:11  jcherry
+ * Hid corelib/plugin_manager.hpp from SWIG
+ *
  * Revision 1.7  2005/07/01 14:12:58  jcherry
  * Eliminate the need for dummy headers
  *
