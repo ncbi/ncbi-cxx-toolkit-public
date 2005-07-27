@@ -109,7 +109,7 @@ void CSysLog::Post(const string& message, EPriority priority, int facility)
         x_Connect();
     }
 #  ifndef LOG_PID
-    if (flags & fIncludePID) {
+    if (m_Flags & fIncludePID) {
         syslog(LOG_MAKEPRI(facility, priority), "[%d] %s",
                getpid(), message.c_str());
     } else
@@ -119,7 +119,7 @@ void CSysLog::Post(const string& message, EPriority priority, int facility)
     }
 #  ifndef LOG_PERROR
     // crudely implement it ourselves...
-    if (flags & fCopyToStderr) {
+    if (m_Flags & fCopyToStderr) {
         clog << message << endl;
     }
 #  endif
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/07/27 20:06:47  ucko
+* Consult m_Flags rather than flags outside the constructor.
+*
 * Revision 1.1  2005/07/27 15:26:58  ucko
 * Add a new diagnostic handler class encapsulating system logging facilities.
 * (Only fully implemented on Unix [including Mac OS X] so far; other
