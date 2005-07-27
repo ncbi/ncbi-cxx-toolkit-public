@@ -53,6 +53,7 @@
 
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
 
@@ -62,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.3  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.4  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -296,19 +297,21 @@ static CNetCacheServer* s_netcache_server = 0;
 class CNetCacheServer : public CThreadedServer
 {
 public:
-    CNetCacheServer(unsigned int port,
-                    ICache*      cache,
-                    unsigned     max_threads,
-                    unsigned     init_threads,
-                    unsigned     network_timeout,
-                    bool         is_log) 
+    CNetCacheServer(unsigned int     port,
+                    ICache*          cache,
+                    unsigned         max_threads,
+                    unsigned         init_threads,
+                    unsigned         network_timeout,
+                    bool             is_log,
+                    const IRegistry& reg) 
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
           m_Shutdown(false),
           m_InactivityTimeout(network_timeout),
           m_LogFlag(is_log),
-          m_TLS_Size(64 * 1024)
+          m_TLS_Size(64 * 1024),
+          m_Reg(reg)
     {
         char hostname[256];
         int status = SOCK_gethostname(hostname, sizeof(hostname));
@@ -344,7 +347,8 @@ public:
         eShutdown,
         eVersion,
         eRemove,
-        eLogging
+        eLogging,
+        eGetConfig
     } ERequestType;
         
     void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
@@ -402,6 +406,9 @@ private:
 
     /// Process "SHUTDOWN" request
     void ProcessShutdown();
+
+    /// Process "GETCONF" request
+    void ProcessGetConfig(CSocket& sock);
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -472,6 +479,8 @@ private:
     STimeout                     m_ThrdSrvAcceptTimeout;
     /// Quick local timer
     CFastLocalTime               m_LocalTimer;
+    /// Configuration
+    const IRegistry&             m_Reg;
 };
 
 /// @internal
@@ -589,6 +598,10 @@ void CNetCacheServer::Process(SOCK sock)
                     stat.req_code = 'S';
                     ProcessShutdown();
                     break;
+                case eGetConfig:
+                    stat.req_code = 'C';
+                    ProcessGetConfig(socket);
+                    break;
                 case eVersion:
                     stat.req_code = 'V';
                     ProcessVersion(socket, req);
@@ -656,6 +669,16 @@ void CNetCacheServer::ProcessShutdown()
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
     WriteMsg(sock, "OK:", NETCACHED_VERSION); 
+}
+
+void CNetCacheServer::ProcessGetConfig(CSocket& sock)
+{
+    SOCK sk = sock.GetSOCK();
+    sock.SetOwnership(eNoOwnership);
+    sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+    CConn_SocketStream ios(sk);
+    m_Reg.Write(ios);
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -1023,6 +1046,12 @@ put_args_parse:
 
         return;
     } // PUT
+
+    if (strncmp(s, "GETCONF", 7) == 0) {
+        req->req_type = eGetConfig;
+        s += 7;
+        return;
+    } // GETCONF
 
     if (strncmp(s, "GET", 3) == 0) {
         req->req_type = eGet;
@@ -1481,7 +1510,8 @@ int CNetCacheDApp::Run(void)
                                 max_threads, 
                                 init_threads,
                                 network_timeout,
-                                is_log));
+                                is_log,
+                                reg));
 
         thr_srv->SetTLS_Size(tls_size);
 
@@ -1515,6 +1545,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/07/27 18:16:18  kuznets
+ * Added GETCONF command
+ *
  * Revision 1.58  2005/07/05 13:25:22  kuznets
  * Improved error messaging
  *
