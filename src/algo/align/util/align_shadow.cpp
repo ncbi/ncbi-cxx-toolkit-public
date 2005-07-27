@@ -57,14 +57,14 @@ CAlignShadow<CConstRef<objects::CSeq_id> >::CAlignShadow(
     const CDense_seg::TStrands& strands = ds.GetStrands();
 
     char query_strand = 0, subj_strand = 0;
-    if(strands[0] == eNa_strand_plus) {
+    if(strands[0] == eNa_strand_plus || strands[0] == eNa_strand_unknown) {
         query_strand = '+';
     }
     else if(strands[0] == eNa_strand_minus) {
         query_strand = '-';
     }
 
-    if(strands[1] == eNa_strand_plus) {
+    if(strands[1] == eNa_strand_plus || strands[1] == eNa_strand_unknown) {
         subj_strand = '+';
     }
     else if(strands[1] == eNa_strand_minus) {
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.9  2005/07/27 18:54:50  kapustin
+ * When constructing from seq-align allow unknown strand (protein hits)
+ *
  * Revision 1.8  2005/04/18 15:24:47  kapustin
  * Split CAlignShadow into core and blast tabular representation
  *
