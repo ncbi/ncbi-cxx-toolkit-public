@@ -34,6 +34,7 @@
 #include "hitfilter_app.hpp"
 
 #include <algo/align/util/blast_tabular.hpp>
+#include <algo/align/util/hit_filter.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -53,13 +54,13 @@ void CAppHitFilter::Init()
 
 int CAppHitFilter::Run()
 { 
-    //typedef CConstRef<CSeq_id>     TId;
-    typedef Uint4     TId;
+    typedef CConstRef<CSeq_id>     TId;
     typedef CBlastTabular<TId>     THit;
-    typedef vector<THit>           THits;
+    typedef CRef<THit>             THitRef;
+    typedef vector<THitRef>        THitRefs;
     
     // read hits from stdin
-    THits hits;
+    THitRefs hitrefs;
     while(cin) {
 
         char line [1024];
@@ -67,17 +68,26 @@ int CAppHitFilter::Run()
         string s (NStr::TruncateSpaces(line));
         if(s.size()) {
 
-            THit hit (s.c_str());
-            hits.push_back(hit);
+            THitRef hit (new THit(s.c_str()));
+            hitrefs.push_back(hit);
         }
     }
 
-    // do something
-    // ... ... ...
+    // compute and print coverages
+    {{
+        typedef CHitFilter<THit> THitFilter;
+        cout << "Query coverage = " 
+             << THitFilter::s_GetCoverage(0, hitrefs.begin(), hitrefs.end()) 
+             << endl;
 
-    // dump the result
-    ITERATE(THits, ii, hits) {
-         cout << *ii << endl;
+        cout << "Subj coverage = " 
+             << THitFilter::s_GetCoverage(1, hitrefs.begin(), hitrefs.end()) 
+             << endl;
+    }}
+
+    // print input hits
+    ITERATE(THitRefs, ii, hitrefs) {
+         cout << **ii << endl;
     }
 
     return 0;
@@ -104,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/07/27 18:55:46  kapustin
+ * Advance the demo to print query and subj coverages
+ *
  * Revision 1.4  2005/04/18 15:24:48  kapustin
  * Split CAlignShadow into core and blast tabular representation
  *
