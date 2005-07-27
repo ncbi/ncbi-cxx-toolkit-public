@@ -36,6 +36,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config_value.hpp>
+#include <corelib/syslog.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -591,6 +592,10 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
         // else eDS_User -- dont change current diag.stream
         break;
     }
+    case eDS_ToSyslog:
+        // program can tune via openlog()
+        SetDiagHandler(new CSysLog);
+        break;
     default: {
         _ASSERT(0);
         break;
@@ -1260,6 +1265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2005/07/27 15:28:08  ucko
+ * New EAppDiagStream option: eDS_ToSyslog (tunable via openlog())
+ *
  * Revision 1.109  2005/07/27 14:25:52  didenko
  * Changed the signature of DisableArgDescriptions method
  *
