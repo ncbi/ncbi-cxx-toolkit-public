@@ -45,7 +45,7 @@ BEGIN_SCOPE(cd_utils)
 
 SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
-	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions()
+	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false)
 {
 	vector<CDFamily> families;
 	CDFamily::createFamilies(cds, families);
@@ -72,7 +72,12 @@ void SeqTreeAPI::annotateTreeByTaxonomy(TaxonomyLevel tax)
 
 int SeqTreeAPI::getNumOfLeaves()
 {
-	return m_ma.GetNumRows();
+	if (m_seqTree == 0)
+		makeOrLoadTree();
+	if (m_seqTree == 0)
+		return 0;
+	else
+		return m_seqTree->getNumLeaf();
 }
 	//return a string of tree method names
 	//lay out the tree to the specified area, .i.e. fit to screen
@@ -96,6 +101,8 @@ string SeqTreeAPI::layoutSeqTree(int maxX, vector<SeqTreeEdge>& edges, int yInt)
 
 bool SeqTreeAPI::makeOrLoadTree()
 {
+	if (m_triedTreeMaking) //if already tried, don't try again
+		return m_seqTree != 0;
 	m_seqTree = new SeqTree();
 	if (!loadAndValidateExistingTree(m_ma, &m_treeOptions, m_seqTree))
 	{
@@ -104,11 +111,14 @@ bool SeqTreeAPI::makeOrLoadTree()
 		m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
 		m_seqTree->fixRowName(m_ma, SeqTree::eGI);
 	}
+	m_triedTreeMaking = true;
 	return m_seqTree != 0;
 }
 
 string SeqTreeAPI::layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
+	if (!m_seqTree)
+		return "";
 	SeqTreeRootedLayout treeLayout(yInt);
 	treeLayout.calculateNodePositions(*m_seqTree, maxX, maxY);
 	getAllEdges(edges);
@@ -228,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/07/27 18:51:54  cliu
+ * guard against failure to make a tree for a CD.
+ *
  * Revision 1.2  2005/07/26 20:21:21  cliu
  * add loading tree.
  *

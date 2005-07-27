@@ -85,6 +85,7 @@ private:
 	bool m_useMembership;
 	TaxonomyLevel m_taxLevel;
 	TreeOptions m_treeOptions;
+	bool m_triedTreeMaking;
 
 	bool makeOrLoadTree();
 	string layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges);
@@ -103,8 +104,8 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
- * Revision 1.3  2005/07/26 20:25:24  cliu
- * add loading tree.
+ * Revision 1.4  2005/07/27 18:52:20  cliu
+ * guard against failure to make a tree for a CD.
  *
  * Revision 1.2  2005/07/20 20:52:41  ucko
  * Properly (irregularly) capitalize cuSeqtree.hpp.
