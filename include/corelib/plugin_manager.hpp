@@ -116,6 +116,7 @@ public:
 
 /// CInterfaceVersion<> --
 ///
+/// Interface version traits
 /// Current interface version.
 ///
 /// It is just a boilerplate, to be hard-coded in the concrete interface header
@@ -157,6 +158,17 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
              ncbi::CInterfaceVersion<iface>::eMinor, \
              ncbi::CInterfaceVersion<iface>::ePatchLevel)
 
+// Driver version traits
+template<class TInterface>
+class CDefaultDriverVersion
+{
+public:
+    enum {
+        eMajor      = ncbi::CInterfaceVersion<TInterface>::eMajor,
+        eMinor      = ncbi::CInterfaceVersion<TInterface>::eMinor,
+        ePatchLevel = ncbi::CInterfaceVersion<TInterface>::ePatchLevel
+    };
+};
 
 typedef CConfig::TParamTree TPluginManagerParamTree;
 
@@ -182,18 +194,20 @@ typedef list<SDriverInfo>  TDriverList;
 /// IClassFactory should be implemented for collection of drivers
 /// and exported by hosts
 
-template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
+template <class TClass>
 class IClassFactory
 {
 public:
-    typedef TClass TInterface;
-    typedef ncbi::SDriverInfo SDriverInfo;
-    typedef ncbi::TDriverList TDriverList;
+    typedef TClass                        TInterface;
+    typedef ncbi::SDriverInfo             SDriverInfo;
+    typedef ncbi::TDriverList             TDriverList;
+    typedef CDefaultDriverVersion<TClass> TDefaultDriverVersion;
 
-    static const CVersionInfo& GetDefaultIfVerInfo(void)
+    static const CVersionInfo& GetDefaultDrvVers(void)
     {
-        static const CVersionInfo vi(TIfVer::eMajor, TIfVer::eMinor, 
-                                     TIfVer::ePatchLevel, TIfVer::GetName());
+        static const CVersionInfo vi(TDefaultDriverVersion::eMajor, 
+                                     TDefaultDriverVersion::eMinor,
+                                     TDefaultDriverVersion::ePatchLevel);
 
         return vi;
     }
@@ -215,7 +229,7 @@ public:
     ///  NULL on any error (not found entry point, version mismatch, etc.)
     virtual TClass* CreateInstance
       (const string&  driver  = kEmptyStr,
-       CVersionInfo   version = GetDefaultIfVerInfo(),
+       CVersionInfo   version = GetDefaultDrvVers(),
        const TPluginManagerParamTree* params = 0) const = 0;
 
     /// Versions of the interface exported by the factory
@@ -273,17 +287,18 @@ public:
 
 // class TIfVer is a *default* interface version for all CPluginManager's methods.
 
-template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
+template <class TClass>
 class CPluginManager : public CPluginManagerBase
 {
 public:
-    typedef IClassFactory<TClass, TIfVer> TClassFactory;
-    typedef TIfVer                        TInterfaceVersion;
+    typedef IClassFactory<TClass>         TClassFactory;
+    typedef CDefaultDriverVersion<TClass> TDefaultDriverVersion;
 
-    static const CVersionInfo& GetDefaultIfVerInfo(void)
+    static const CVersionInfo& GetDefaultDrvVers(void)
     {
-        static const CVersionInfo vi(TIfVer::eMajor, TIfVer::eMinor, 
-                                     TIfVer::ePatchLevel, TIfVer::GetName());
+        static const CVersionInfo vi(TDefaultDriverVersion::eMajor, 
+                                     TDefaultDriverVersion::eMinor,
+                                     TDefaultDriverVersion::ePatchLevel);
 
         return vi;
     }
@@ -294,7 +309,7 @@ public:
     /// @sa GetFactory()
     TClass* CreateInstance
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = GetDefaultIfVerInfo(),
+     const CVersionInfo& version = GetDefaultDrvVers(),
      const TPluginManagerParamTree* params = 0)
     {
         TClassFactory* factory = GetFactory(driver, version);
@@ -306,13 +321,13 @@ public:
     TClass* CreateInstanceFromList
         (const TPluginManagerParamTree* params,
          const string&                  driver_list,
-         CVersionInfo                   version = GetDefaultIfVerInfo());
+         CVersionInfo                   version = GetDefaultDrvVers());
 
     /// Detect driver from the parameters using the key to get list of drivers.
     TClass* CreateInstanceFromKey
         (const TPluginManagerParamTree* params,
          const string&                  driver_key,
-         CVersionInfo                   version = GetDefaultIfVerInfo());
+         CVersionInfo                   version = GetDefaultDrvVers());
 
     /// Get class factory
     ///
@@ -329,7 +344,7 @@ public:
     ///  Never return NULL -- always throw exception on error.
     TClassFactory* GetFactory
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = GetDefaultIfVerInfo());
+     const CVersionInfo& version = GetDefaultDrvVers());
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
@@ -449,7 +464,7 @@ public:
     /// Scan DLLs for specified driver using attached resolvers
     // Former "Resolve"
     void ResolveFile(const string&   driver  = kEmptyStr,
-                 const CVersionInfo& version = GetDefaultIfVerInfo());
+                 const CVersionInfo& version = GetDefaultDrvVers());
 
     /// Disable/enable DLL resolution (search for class factories in DLLs)
     void FreezeResolution(bool value = true) { m_BlockResolution = value; }
@@ -661,8 +676,8 @@ bool operator<(const SDriverInfo& i1, const SDriverInfo& i2)
 }
 
 
-template <class TClass, class TIfVer>
-TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromList(
+template <class TClass>
+TClass* CPluginManager<TClass>::CreateInstanceFromList(
     const TPluginManagerParamTree* params,
     const string&                  driver_list,
     CVersionInfo                   version)
@@ -689,8 +704,8 @@ TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromList(
 }
 
 
-template <class TClass, class TIfVer>
-TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromKey(
+template <class TClass>
+TClass* CPluginManager<TClass>::CreateInstanceFromKey(
     const TPluginManagerParamTree* params,
     const string&                  driver_key,
     CVersionInfo                   version)
@@ -710,9 +725,9 @@ TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromKey(
 }
 
 
-template <class TClass, class TIfVer>
-typename CPluginManager<TClass, TIfVer>::TClassFactory*
-CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
+template <class TClass>
+typename CPluginManager<TClass>::TClassFactory*
+CPluginManager<TClass>::GetFactory(const string&       driver,
                                            const CVersionInfo& version)
 {
     CMutexGuard guard(m_Mutex);
@@ -754,9 +769,9 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
 }
 
 
-template <class TClass, class TIfVer>
-typename CPluginManager<TClass, TIfVer>::TClassFactory*
-CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
+template <class TClass>
+typename CPluginManager<TClass>::TClassFactory*
+CPluginManager<TClass>::FindClassFactory(const string&  driver,
                                                  const CVersionInfo& version) const
 {
     TClassFactory* best_factory = 0;
@@ -794,8 +809,8 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
 }
 
 
-template <class TClass, class TIfVer>
-bool CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
+template <class TClass>
+bool CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
 {
     CMutexGuard guard(m_Mutex);
 
@@ -809,8 +824,8 @@ bool CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
     return false;
 }
 
-template <class TClass, class TIfVer>
-bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
+template <class TClass>
+bool CPluginManager<TClass>::WillExtendCapabilities
 (TClassFactory& factory) const
 {
     typename TClassFactory::TDriverList new_drv_list;
@@ -859,8 +874,8 @@ bool CPluginManager<TClass, TIfVer>::WillExtendCapabilities
     return false;
 }
 
-template <class TClass, class TIfVer>
-bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
+template <class TClass>
+bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 {
     CMutexGuard guard(m_Mutex);
 
@@ -873,8 +888,8 @@ bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
 }
 
 
-template <class TClass, class TIfVer>
-bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
+template <class TClass>
+bool CPluginManager<TClass>::RegisterWithEntryPoint
 (FNCBI_EntryPoint plugin_entry_point)
 {
     CMutexGuard guard(m_Mutex);
@@ -902,12 +917,12 @@ bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
     return false;
 }
 
-template <class TClass, class TIfVer>
+template <class TClass>
 class CInvalidDrvVer 
-    : public unary_function<typename CPluginManager<TClass, TIfVer>::SDriverInfo, bool> 
+    : public unary_function<typename CPluginManager<TClass>::SDriverInfo, bool> 
 {
 public:
-    typedef typename CPluginManager<TClass, TIfVer>::SDriverInfo TValue;
+    typedef typename CPluginManager<TClass>::SDriverInfo TValue;
 
     CInvalidDrvVer(const string& driver_name, const CVersionInfo& vi)
     : m_DriverName(driver_name)
@@ -926,8 +941,8 @@ private:
     const CVersionInfo m_VersionInfo;
 };
 
-template <class TClass, class TIfVer>
-bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
+template <class TClass>
+bool CPluginManager<TClass>::RegisterWithEntryPoint
 (FNCBI_EntryPoint    plugin_entry_point,
  const string&       driver_name,
  const CVersionInfo& driver_version)
@@ -949,7 +964,7 @@ bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
         // A perfect match will be found after we load all factories 
         // from all DLLs.
 
-        CInvalidDrvVer<TClass, TIfVer> is_invalid(driver_name, driver_version);
+        CInvalidDrvVer<TClass> is_invalid(driver_name, driver_version);
         // drv_list.remove_if(is_invalid);
         typedef typename TDriverInfoList::iterator TDrilIt;
         for (TDrilIt it = drv_list.begin();  it != drv_list.end(); ) {
@@ -976,17 +991,17 @@ bool CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
     return false;
 }
 
-template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::AddResolver
+template <class TClass>
+void CPluginManager<TClass>::AddResolver
 (CPluginManager_DllResolver* resolver)
 {
     _ASSERT(resolver);
     m_Resolvers.push_back(resolver);
 }
 
-template <class TClass, class TIfVer>
+template <class TClass>
 CPluginManager_DllResolver*
-CPluginManager<TClass, TIfVer>::DetachResolver(CPluginManager_DllResolver*
+CPluginManager<TClass>::DetachResolver(CPluginManager_DllResolver*
                                                                     resolver)
 {
     NON_CONST_ITERATE(TDllResolvers, it, m_Resolvers) {
@@ -998,14 +1013,14 @@ CPluginManager<TClass, TIfVer>::DetachResolver(CPluginManager_DllResolver*
     return 0;
 }
 
-template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::AddDllSearchPath(const string& path)
+template <class TClass>
+void CPluginManager<TClass>::AddDllSearchPath(const string& path)
 {
     m_DllSearchPaths.push_back(path);
 }
 
-template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver,
+template <class TClass>
+void CPluginManager<TClass>::FreezeResolution(const string& driver,
                                                       bool          value)
 {
     if (value) {
@@ -1015,8 +1030,8 @@ void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver,
     }
 }
 
-template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::ResolveFile(const string&       driver,
+template <class TClass>
+void CPluginManager<TClass>::ResolveFile(const string&       driver,
                                                  const CVersionInfo& version)
 {
     vector<CDllResolver*> resolvers;
@@ -1078,8 +1093,8 @@ void CPluginManager<TClass, TIfVer>::ResolveFile(const string&       driver,
 }
 
 
-template <class TClass, class TIfVer>
-CPluginManager<TClass, TIfVer>::~CPluginManager()
+template <class TClass>
+CPluginManager<TClass>::~CPluginManager()
 {
     ITERATE ( typename TFactories, it, m_Factories ) {
         delete *it;
@@ -1096,9 +1111,9 @@ CPluginManager<TClass, TIfVer>::~CPluginManager()
 
 
 
-template <class TClass, class TIfVer >
+template <class TClass>
 const string&
-IClassFactory<TClass, TIfVer>::GetParam(
+IClassFactory<TClass>::GetParam(
                         const string&                  driver_name,
                         const TPluginManagerParamTree* params,
                         const string&                  param_name,
@@ -1121,6 +1136,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/07/28 11:11:46  ssikorsk
+ * Added driver version traits class CDefaultDriverVersion;
+ * Removed TIfVer template parameter from IClassFactory and CPluginManager;
+ * Added TDefaultDriverVersion typename to IClassFactory and CPluginManager;
+ * Replaced GetDefaultIfVerInfo method name with GetDefaultDrvVers;
+ *
  * Revision 1.49  2005/07/26 12:11:24  ssikorsk
  * Improved the WillExtendCapabilities method.
  *
