@@ -53,7 +53,7 @@ END_SCOPE(objects)
 BEGIN_NCBI_SCOPE
 
 
-class CAlignShadow: public CObject
+class NCBI_XALGOALIGN_EXPORT CAlignShadow: public CObject
 {
 public:
 
@@ -114,7 +114,7 @@ public:
     void   SetSubjStop(TCoord pos);
 
     // tabular serialization
-    friend CNcbiOstream& operator << (CNcbiOstream& os, 
+    friend NCBI_XALGOALIGN_EXPORT CNcbiOstream& operator << (CNcbiOstream& os, 
                                       const CAlignShadow& align_shadow);
 
 protected:
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/07/28 15:17:02  kapustin
+ * Add export specifiers
+ *
  * Revision 1.11  2005/07/28 14:55:25  kapustin
  * Use std::pair instead of array to fix gcc304 complains
  *

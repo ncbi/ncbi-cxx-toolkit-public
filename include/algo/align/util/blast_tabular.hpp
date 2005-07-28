@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CBlastTabular: public CAlignShadow
+class NCBI_XALGOALIGN_EXPORT CBlastTabular: public CAlignShadow
 {
 public:
 
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/28 15:17:02  kapustin
+ * Add export specifiers
+ *
  * Revision 1.3  2005/07/28 12:29:26  kapustin
  * Convert to non-templatized classes where causing compilation incompatibility
  *
