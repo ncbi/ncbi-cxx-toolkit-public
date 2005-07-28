@@ -690,10 +690,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 // no specific assignments for DF-DM yet
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
-            case 'N': case 'R':                     return eAcc_gb_est;
+            case 'N': case 'R': case 'T':           return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
+            case 'U':                               return eAcc_gb_gss;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1594,6 +1595,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.111  2005/07/28 18:28:51  ucko
+ * CSeq_id::IdentifyAccession: DT -> gb_est, DU -> gb_gss.
+ *
  * Revision 6.110  2005/07/06 13:54:05  ucko
  * IdentifyAccession: DS has been assigned to GenBank CON records.
  *
