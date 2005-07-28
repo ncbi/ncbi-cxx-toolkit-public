@@ -493,11 +493,9 @@ void DataLoaders_Register_BlastDb(void)
     // Typedef to silence compiler warning.  A better solution to this
     // problem is probably possible.
     
-    typedef void(*TArgFuncType)(list<CPluginManager< CDataLoader,
-                                CInterfaceVersion<CDataLoader> >
+    typedef void(*TArgFuncType)(list<CPluginManager<CDataLoader>
                                 ::SDriverInfo> &,
-                                CPluginManager<CDataLoader,
-                                CInterfaceVersion<CDataLoader> >
+                                CPluginManager<CDataLoader>
                                 ::EEntryPointRequest);
     
     RegisterEntryPoint<CDataLoader>((TArgFuncType)
@@ -594,6 +592,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.30  2005/07/28 11:29:57  ssikorsk
+ * Removed CInterfaceVersion from CPluginManager template parameters.
+ *
  * Revision 1.29  2005/07/20 16:38:26  didenko
  * Eugene: load blobs only when sequence is requested, excluding any annotations requests.
  *
