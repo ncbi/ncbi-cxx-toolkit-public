@@ -108,7 +108,17 @@ bool SeqTreeAPI::makeOrLoadTree()
 	{
 		delete m_seqTree;
 		m_seqTree = 0;
+		if(!m_ma.isBlockAligned())
+		{
+			ERR_POST("Sequence tree is not made for " <<m_ma.getFirstCD()->GetAccession()
+				<<" because it does not have a consistent block alognment.");
+			return false;;
+		}
+		if ((m_treeOptions.distMethod == eScoreBlastFoot) || (m_treeOptions.distMethod == eScoreBlastFull))
+			m_treeOptions.distMethod = eScoreAligned;
 		m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
+		if(m_seqTree == 0)
+			return false;
 		m_seqTree->fixRowName(m_ma, SeqTree::eGI);
 	}
 	m_triedTreeMaking = true;
@@ -238,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2005/07/28 21:20:27  cliu
+ * deal with saved blast trees
+ *
  * Revision 1.3  2005/07/27 18:51:54  cliu
  * guard against failure to make a tree for a CD.
  *

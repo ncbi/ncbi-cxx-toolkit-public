@@ -69,7 +69,7 @@ SeqTree* TreeFactory::makeTree(AlignmentCollection* alignData, const TreeOptions
 		}
 		if (dmAos)
 		{
-			BlockExtender* blockExtender = new BlockExtender();
+			blockExtender = new BlockExtender();
 			dmAos->setBlockExtender(blockExtender);
 		}
         distMat->ComputeMatrix(dummyMeter);
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/07/28 21:20:27  cliu
+ * deal with saved blast trees
+ *
  * Revision 1.2  2005/05/10 20:11:31  cliu
  * make and save trees
  *
