@@ -75,8 +75,8 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align)
                    "align-shadow from dense-seg");
     }
 
-    m_Id[0].Reset(&seq_align.GetSeq_id(0));
-    m_Id[1].Reset(&seq_align.GetSeq_id(1));
+    m_Id.first.Reset(&seq_align.GetSeq_id(0));
+    m_Id.second.Reset(&seq_align.GetSeq_id(1));
 
     if(query_strand == '+') {
         m_Box[0] = seq_align.GetSeqStart(0);
@@ -127,52 +127,51 @@ CAlignShadow::CAlignShadow(void)
 
 const CAlignShadow::TId& CAlignShadow::GetId(Uint1 where) const
 {
-
-#ifdef _DEBUG
-    if(0 != where && where != 1) {
+    switch(where) {
+    case 0: return m_Id.first;
+    case 1: return m_Id.second;
+    default: {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::GetId() - argument out of range");
     }
-#endif
-
-    return m_Id[where];
+    }
 }
 
 
 const CAlignShadow::TId& CAlignShadow::GetQueryId(void) const
 {
-    return m_Id[0];
+    return m_Id.first;
 }
 
 
 const CAlignShadow::TId& CAlignShadow::GetSubjId(void) const
 {
-    return m_Id[1];
+    return m_Id.second;
 }
 
 
 void CAlignShadow::SetId(Uint1 where, const TId& id)
 {
-#ifdef _DEBUG
-    if(0 != where && where != 1) {
+    switch(where) {
+    case 0: m_Id.first = id; break;
+    case 1: m_Id.second = id; break;
+    default: {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetId() - argument out of range");
     }
-#endif
-
-    m_Id[where] = id;
+    }
 }
 
 
 void CAlignShadow::SetQueryId(const TId& id)
 {
-    m_Id[0] = id;
+    m_Id.first = id;
 }
 
 
 void CAlignShadow::SetSubjId(const TId& id)
 {
-    m_Id[1] = id;
+    m_Id.second = id;
 }
 
 
@@ -509,6 +508,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.11  2005/07/28 14:55:35  kapustin
+ * Use std::pair instead of array to fix gcc304 complains
+ *
  * Revision 1.10  2005/07/28 12:29:35  kapustin
  * Convert to non-templatized classes where causing compilation incompatibility
  *

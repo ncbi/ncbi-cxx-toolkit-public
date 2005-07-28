@@ -83,11 +83,11 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         break;
 
     case eQueryId:
-        rv = lhs->GetQueryId() < rhs->GetQueryId();
+        rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
         break;
 
     case eSubjId:
-        rv = lhs->GetSubjId() < rhs->GetSubjId();
+        rv = *(lhs->GetSubjId()) < *(rhs->GetSubjId());
         break;
 
     default:
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/28 14:55:25  kapustin
+ * Use std::pair instead of array to fix gcc304 complains
+ *
  * Revision 1.2  2005/07/28 12:29:26  kapustin
  * Convert to non-templatized classes where causing compilation incompatibility
  *

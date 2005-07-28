@@ -119,7 +119,7 @@ public:
 
 protected:
     
-    TId     m_Id [2];     // Query and subj IDs
+    std::pair<TId,TId>   m_Id;     // Query and subj IDs
 
     TCoord  m_Box [4];    // [0] = query_start, [1] = query_stop
                           // [2] = subj_start,[3] = subj_stop, all zero-based;
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/07/28 14:55:25  kapustin
+ * Use std::pair instead of array to fix gcc304 complains
+ *
  * Revision 1.10  2005/07/28 12:29:26  kapustin
  * Convert to non-templatized classes where causing compilation incompatibility
  *

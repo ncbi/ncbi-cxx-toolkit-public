@@ -75,9 +75,9 @@ CBlastTabular::CBlastTabular(const char* m8)
     if(*p) {
         string id1 (p0, p - p0);
         try {
-            m_Id[0].Reset(new CSeq_id(id1));
+            m_Id.first.Reset(new CSeq_id(id1));
         } catch (CSeqIdException&) {
-            m_Id[0].Reset(new CSeq_id(CSeq_id::e_Local, id1));
+            m_Id.first.Reset(new CSeq_id(CSeq_id::e_Local, id1));
         }
     }
 
@@ -86,9 +86,9 @@ CBlastTabular::CBlastTabular(const char* m8)
     if(*p) {
         string id2 (p0, p - p0);
         try {
-            m_Id[1].Reset(new CSeq_id(id2));
+            m_Id.second.Reset(new CSeq_id(id2));
         } catch (CSeqIdException&) {
-            m_Id[1].Reset(new CSeq_id(CSeq_id::e_Local, id2));
+            m_Id.second.Reset(new CSeq_id(CSeq_id::e_Local, id2));
         }
     }
 
