@@ -60,6 +60,10 @@ public:
     {
         CNetCacheClient::CheckConnect(key);
     }
+    void PrintConfig(CNcbiOstream & out)
+    {
+        CNetCacheClient::PrintConfig(out);
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -96,6 +100,7 @@ void CNetCacheControl::Init(void)
 
     arg_desc->AddFlag("s", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
+    arg_desc->AddFlag("c", "Server config");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -144,6 +149,11 @@ int CNetCacheControl::Run(void)
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
 
+    if (args["c"]) {  // config
+        nc_client.PrintConfig(NcbiCout);
+        return 0;
+    }
+
     if (args["s"]) {  // shutdown
         nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
@@ -170,6 +180,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/07/28 14:58:10  kuznets
+ * Added PrintConfig()
+ *
  * Revision 1.6  2005/05/02 16:47:18  kuznets
  * + -retry cmd arg
  *
