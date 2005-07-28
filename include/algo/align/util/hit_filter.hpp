@@ -124,7 +124,7 @@ public:
             THitComparator::eSubjMin);
 
         THitComparator sorter (sort_type);
-        sort(hitrefs.begin(), hitrefs.end(), sorter);
+        stable_sort(hitrefs.begin(), hitrefs.end(), sorter);
         
         // compute coverage
         return accumulate(hitrefs.begin(), hitrefs.end(), 
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/07/28 16:43:35  kapustin
+ * sort => stable_sort
+ *
  * Revision 1.3  2005/07/28 02:16:46  ucko
  * s_GetCoverage: remove redundant class specifier that made GCC 2.95 choke.
  *
