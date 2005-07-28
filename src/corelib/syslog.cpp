@@ -105,7 +105,7 @@ void CSysLog::Post(const string& message, EPriority priority, int facility)
 {
 #ifdef NCBI_OS_UNIX
     CMutexGuard GUARD(sm_Mutex);
-    if (sm_Current != this  &&  m_DefaultFacility != 0) {
+    if (sm_Current != this  &&  !(m_Flags & fNoOverride)) {
         x_Connect();
     }
 #  ifndef LOG_PID
@@ -237,6 +237,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/07/28 17:25:23  ucko
+* Post: check for fNoOverride rather than default m_Priority when
+* deciding whether to reconnect.
+*
 * Revision 1.2  2005/07/27 20:06:47  ucko
 * Consult m_Flags rather than flags outside the constructor.
 *
