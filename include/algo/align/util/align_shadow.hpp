@@ -55,7 +55,7 @@ CNcbiOstream& operator << (CNcbiOstream& os,
                            const CAlignShadow<T>& align_shadow);
 
 template<class TId>
-class CAlignShadow: public CObject
+class CAlignShadow /* : public CObject */
 {
 public:
 
@@ -605,6 +605,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/07/28 02:15:57  ucko
+ * Comment out inheritance from CObject until we can find a way to do so
+ * without crashing GCC 3.0.4's optimizer. :-/
+ *
  * Revision 1.8  2005/07/27 18:52:59  kapustin
  * Derive from CObject
  *
