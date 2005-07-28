@@ -1430,10 +1430,8 @@ int CNetCacheDApp::Run(void)
                 ic = 
                     pm_cache.CreateInstance(
                         kBDBCacheDriverName,
-                        CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
-                                     TCachePM::TInterfaceVersion::eMinor,
-                                     TCachePM::TInterfaceVersion::ePatchLevel), 
-                                     bdb_tree);
+                        TCachePM::GetDefaultDrvVers(),
+                        bdb_tree);
             } 
             catch (CBDB_Exception& ex)
             {
@@ -1450,10 +1448,8 @@ int CNetCacheDApp::Run(void)
                     ic = 
                       pm_cache.CreateInstance(
                         kBDBCacheDriverName,
-                        CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
-                                     TCachePM::TInterfaceVersion::eMinor,
-                                     TCachePM::TInterfaceVersion::ePatchLevel), 
-                                     bdb_tree);
+                        TCachePM::GetDefaultDrvVers(),
+                        bdb_tree);
 
                 } else {
                     throw;
@@ -1545,6 +1541,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/07/28 12:53:35  ssikorsk
+ * Replaced TInterfaceVersion traits with GetDefaultDrvVers() method call.
+ *
  * Revision 1.59  2005/07/27 18:16:18  kuznets
  * Added GETCONF command
  *
