@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -107,8 +108,8 @@ public:
     {
         // since we need to sort, create and init a local vector
         THitRefs hitrefs (to - from);
-        typedef typename CHitFilter<THit>::THitRefs::const_iterator TCI; 
-        typedef typename CHitFilter<THit>::THitRefs::iterator TI; 
+        typedef typename THitRefs::const_iterator TCI; 
+        typedef typename THitRefs::iterator TI; 
         TCI ii = from;
         TI jj = hitrefs.begin();
         while(ii != to) {
@@ -140,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/28 02:16:46  ucko
+ * s_GetCoverage: remove redundant class specifier that made GCC 2.95 choke.
+ *
  * Revision 1.2  2005/07/27 20:45:03  kapustin
  * Move s_GetCoverage() definition under the class declaration to calm down MSVC
  *
