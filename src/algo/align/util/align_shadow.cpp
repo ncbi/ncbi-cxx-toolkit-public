@@ -37,9 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-template<>
-CAlignShadow<CConstRef<objects::CSeq_id> >::CAlignShadow(
-    const objects::CSeq_align& seq_align)
+CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align)
 {
     USING_SCOPE(objects);
 
@@ -100,29 +98,420 @@ CAlignShadow<CConstRef<objects::CSeq_id> >::CAlignShadow(
 }
 
 
-
-template<>
-CNcbiOstream& operator << (
-    CNcbiOstream& os,
-    const CAlignShadow<CConstRef<objects::CSeq_id> >& align_shadow )
+CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
 {
     USING_SCOPE(objects);
-
+    
     os  << align_shadow.GetId(0)->GetSeqIdString(true) << '\t'
         << align_shadow.GetId(1)->GetSeqIdString(true) << '\t';
-
+    
     align_shadow.x_PartialSerialize(os);
-
+    
     return os;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// ctors/initializers
+
+CAlignShadow::CAlignShadow(void)
+{
+    m_Box[0] = m_Box[1] = m_Box[2] = m_Box[3] = TCoord(-1);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// getters and  setters
+
+
+const CAlignShadow::TId& CAlignShadow::GetId(Uint1 where) const
+{
+
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetId() - argument out of range");
+    }
+#endif
+
+    return m_Id[where];
+}
+
+
+const CAlignShadow::TId& CAlignShadow::GetQueryId(void) const
+{
+    return m_Id[0];
+}
+
+
+const CAlignShadow::TId& CAlignShadow::GetSubjId(void) const
+{
+    return m_Id[1];
+}
+
+
+void CAlignShadow::SetId(Uint1 where, const TId& id)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetId() - argument out of range");
+    }
+#endif
+
+    m_Id[where] = id;
+}
+
+
+void CAlignShadow::SetQueryId(const TId& id)
+{
+    m_Id[0] = id;
+}
+
+
+void CAlignShadow::SetSubjId(const TId& id)
+{
+    m_Id[1] = id;
+}
+
+
+bool CAlignShadow::GetStrand(Uint1 where) const
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetStrand() - argument out of range");
+    }
+#endif
+
+    return where == 0? m_Box[0] <= m_Box[1]: m_Box[2] <= m_Box[3];
+}
+
+
+bool CAlignShadow::GetQueryStrand(void) const
+{
+    return m_Box[0] <= m_Box[1];
+}
+
+
+
+bool CAlignShadow::GetSubjStrand(void) const
+{
+    return m_Box[2] <= m_Box[3];
+}
+
+
+void CAlignShadow::SetStrand(Uint1 where, bool strand)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetStrand() - argument out of range");
+    }
+#endif
+
+    const TCoord undef_coord = TCoord(-1);
+    const Uint1 i1 = where << 1, i2 = i1 + 1;
+
+    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetStrand() -start and/or stop not yet set");
+    }
+
+    bool cur_strand = GetStrand(where);
+    if(strand != cur_strand) {
+        swap(m_Box[i1], m_Box[i2]);
+    }
+}
+
+
+void CAlignShadow::SetQueryStrand(bool strand)
+{
+    SetStrand(0, strand);
+}
+
+
+void CAlignShadow::SetSubjStrand(bool strand)
+{
+    SetStrand(1, strand);
+}
+
+
+const  CAlignShadow::TCoord* CAlignShadow::GetBox(void) const
+{
+    return m_Box;
+}
+ 
+
+void CAlignShadow::SetBox(const TCoord box [4])
+{
+    copy(box, box + 4, m_Box);
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetStart(Uint1 where) const
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetStart() - argument out of range");
+    }
+#endif
+
+    return m_Box[where << 1];
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetStop(Uint1 where) const
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetStop() - argument out of range");
+    }
+#endif
+
+    return m_Box[(where << 1) | 1];
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetQueryStart(void) const
+{
+    return m_Box[0];
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetQueryStop(void) const
+{
+    return m_Box[1];
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetSubjStart(void) const
+{
+    return m_Box[2];
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetSubjStop(void) const
+{
+    return m_Box[3];
+}
+
+
+void CAlignShadow::SetStart(Uint1 where, TCoord val)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetStart() - argument out of range");
+    }
+#endif
+
+    m_Box[(where << 1) | 1] = val;
+}
+
+
+void CAlignShadow::SetStop(Uint1 where, TCoord val)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetStop() - argument out of range");
+    }
+#endif
+
+    m_Box[where << 1] = val;
+}
+
+
+void CAlignShadow::SetQueryStart(TCoord val)
+{
+    m_Box[0] = val;
+}
+
+
+void CAlignShadow::SetQueryStop(TCoord val)
+{
+     m_Box[1] = val;
+}
+
+
+void CAlignShadow::SetSubjStart(TCoord val)
+{
+    m_Box[2] = val;
+}
+
+
+void CAlignShadow::SetSubjStop(TCoord val)
+{
+    m_Box[3] = val;
+}
+
+
+// // // // 
+
+
+CAlignShadow::TCoord CAlignShadow::GetMin(Uint1 where) const
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetMin() - argument out of range");
+    }
+#endif
+
+    Uint1 i1 = where << 1, i2 = i1 + 1;
+    return min(m_Box[i1], m_Box[i2]);
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetMax(Uint1 where) const
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::GetMax() - argument out of range");
+    }
+#endif
+
+    Uint1 i1 = where << 1, i2 = i1 + 1;
+    return max(m_Box[i1], m_Box[i2]);
+}
+
+
+void CAlignShadow::SetMin(Uint1 where, TCoord val)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetMin() - argument out of range");
+    }
+#endif
+
+    Uint1 i1 = where << 1, i2 = i1 + 1;
+
+    const TCoord undef_coord = TCoord(-1);
+    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetMin() - start and/or stop not yet set");
+    }
+    else {
+
+        if(m_Box[i1] <= m_Box[i2] && val <= m_Box[i2]) {
+            m_Box[i1] = val;
+        }
+        else if(val <= m_Box[i1]) {
+            m_Box[i2] = val;
+        }
+        else {
+            NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                       "CAlignShadow::SetMin() - new position is invalid");
+        }
+    }
+}
+
+
+
+void CAlignShadow::SetMax(Uint1 where, TCoord val)
+{
+#ifdef _DEBUG
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetMax() - argument out of range");
+    }
+#endif
+
+    Uint1 i1 = where << 1, i2 = i1 + 1;
+
+    const TCoord undef_coord = TCoord(-1);
+    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::SetMax() - start and/or stop not yet set");
+    }
+    else {
+
+        if(m_Box[i1] <= m_Box[i2] && val >= m_Box[i1]) {
+            m_Box[i2] = val;
+        }
+        else if(val >= m_Box[i2]) {
+            m_Box[i1] = val;
+        }
+        else {
+            NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                       "CAlignShadow::SetMax() - new position is invalid");
+        }
+    }
+}
+
+
+void CAlignShadow::SetQueryMax(TCoord val)
+{
+    SetMax(0, val);
+}
+
+
+void CAlignShadow::SetSubjMax(TCoord val)
+{
+    SetMax(1, val);
+}
+
+
+void CAlignShadow::SetQueryMin(TCoord val)
+{
+    SetMin(0, val);
+}
+
+
+void CAlignShadow::SetSubjMin(TCoord val)
+{
+    SetMin(1, val);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// partial serialization
+
+void CAlignShadow::x_PartialSerialize(CNcbiOstream& os) const
+{
+    os << GetQueryStart() + 1 << '\t' << GetQueryStop() + 1 << '\t'
+       << GetSubjStart() + 1 << '\t' << GetSubjStop() + 1;
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetQueryMin() const
+{
+    return min(m_Box[0], m_Box[1]);
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetSubjMin() const
+{
+    return min(m_Box[2], m_Box[3]);
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetQueryMax() const
+{
+    return max(m_Box[0], m_Box[1]);
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetSubjMax() const
+{
+    return max(m_Box[2], m_Box[3]);
 }
 
 
 END_NCBI_SCOPE
 
 
-
 /* 
  * $Log$
+ * Revision 1.10  2005/07/28 12:29:35  kapustin
+ * Convert to non-templatized classes where causing compilation incompatibility
+ *
  * Revision 1.9  2005/07/27 18:54:50  kapustin
  * When constructing from seq-align allow unknown strand (protein hits)
  *

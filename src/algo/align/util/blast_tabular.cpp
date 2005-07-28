@@ -43,8 +43,8 @@ USING_SCOPE(objects);
 //////////////////////////////////////////////////////////////////////////////
 // explicit specializations
 
-template<>
-CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const CSeq_align& seq_align):
+
+CBlastTabular::CBlastTabular(const CSeq_align& seq_align):
     TParent(seq_align)
 {
     const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
@@ -66,8 +66,8 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const CSeq_align& seq_align):
 }
 
 
-template<>
-CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
+
+CBlastTabular::CBlastTabular(const char* m8)
 {
     const char* p0 = m8, *p = p0;
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
@@ -95,6 +95,137 @@ CBlastTabular<CConstRef<CSeq_id> >::CBlastTabular(const char* m8)
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
 
     x_PartialDeserialize(p);
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// getters and  setters
+
+
+void CBlastTabular::SetLength(TCoord length)
+{
+    m_Length = length;
+}
+
+
+
+CBlastTabular::TCoord CBlastTabular::GetLength(void) const
+{
+    return m_Length;
+}
+
+
+
+void CBlastTabular::SetMismatches(TCoord mismatches)
+{
+    m_Mismatches = mismatches;
+}
+
+
+
+CBlastTabular::TCoord CBlastTabular::GetMismatches(void) const
+{
+    return m_Mismatches;
+}
+
+
+
+void CBlastTabular::SetGaps(TCoord gaps)
+{
+    m_Gaps = gaps;
+}
+
+
+
+CBlastTabular::TCoord CBlastTabular::GetGaps(void) const
+{
+    return m_Gaps;
+}
+
+
+
+void CBlastTabular::SetEValue(double EValue)
+{
+    m_EValue = EValue;
+}
+
+
+
+double CBlastTabular::GetEValue(void) const
+{
+    return m_EValue;
+}
+
+
+
+void CBlastTabular::SetScore(float score)
+{
+    m_Score = score;
+}
+
+
+
+float CBlastTabular::GetScore(void) const
+{
+    return m_Score;
+}
+
+
+void CBlastTabular::SetIdentity(float identity)
+{
+    m_Identity = identity;
+}
+
+
+
+float CBlastTabular::GetIdentity(void) const
+{
+    return m_Identity;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// tabular serialization / deserialization
+
+
+void CBlastTabular::x_PartialSerialize(CNcbiOstream& os) const
+{
+    os << 100.0 * GetIdentity() << '\t' << GetLength() << '\t'
+       << GetMismatches() << '\t' << GetGaps() << '\t'
+       << TParent::GetQueryStart() + 1 << '\t' 
+       << TParent::GetQueryStop() + 1 << '\t'
+       << TParent::GetSubjStart() + 1 << '\t' 
+       << TParent::GetSubjStop() + 1 << '\t'
+       << GetEValue() << '\t' << GetScore();
+}
+
+
+
+void CBlastTabular::x_PartialDeserialize(const char* m8)
+{
+    CNcbiIstrstream iss (m8);
+    double identity100, evalue, score;
+    TCoord a, b, c, d;
+    iss >> identity100 >> m_Length >> m_Mismatches >> m_Gaps
+        >> a >> b >> c >> d >> evalue >> score;
+    
+    if(iss.fail() == false) {
+
+        m_Identity = float(identity100 / 100.0);
+        m_EValue = evalue;
+        m_Score = float(score);
+
+        SetQueryStart(a - 1);
+        SetQueryStop(b - 1);
+        SetSubjStart(c - 1);
+        SetSubjStop(d - 1);
+    }
+    else {
+        
+        NCBI_THROW(CAlgoAlignUtilException, eFormat,
+                   "Failed to init from m8 string");
+    }
 }
 
 

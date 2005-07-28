@@ -39,13 +39,12 @@
 BEGIN_NCBI_SCOPE
 
 
-template<class TId>
-class CBlastTabular: public CAlignShadow<TId>
+class CBlastTabular: public CAlignShadow
 {
 public:
 
-    typedef CAlignShadow<TId> TParent;
-    typedef typename TParent::TCoord TCoord;
+    typedef CAlignShadow TParent;
+    typedef TParent::TCoord TCoord;
 
     // c'tors
     CBlastTabular(void) {};
@@ -88,192 +87,6 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-
-//////////////////////////////////////////////////////////////////////////////
-// getters and  setters
-
-template<class TId>
-void CBlastTabular<TId>::SetLength(TCoord length)
-{
-    m_Length = length;
-}
-
-
-template<class TId>
-typename CBlastTabular<TId>::TCoord CBlastTabular<TId>::GetLength(void) const
-{
-    return m_Length;
-}
-
-
-template<class TId>
-void CBlastTabular<TId>::SetMismatches(TCoord mismatches)
-{
-    m_Mismatches = mismatches;
-}
-
-
-template<class TId>
-typename CBlastTabular<TId>::TCoord CBlastTabular<TId>::GetMismatches(void) 
-const
-{
-    return m_Mismatches;
-}
-
-
-template<class TId>
-void CBlastTabular<TId>::SetGaps(TCoord gaps)
-{
-    m_Gaps = gaps;
-}
-
-
-template<class TId>
-typename CBlastTabular<TId>::TCoord CBlastTabular<TId>::GetGaps(void) const
-{
-    return m_Gaps;
-}
-
-
-template<class TId>
-void CBlastTabular<TId>::SetEValue(double EValue)
-{
-    m_EValue = EValue;
-}
-
-
-template<class TId>
-double CBlastTabular<TId>::GetEValue(void) const
-{
-    return m_EValue;
-}
-
-
-template<class TId>
-void CBlastTabular<TId>::SetScore(float score)
-{
-    m_Score = score;
-}
-
-
-template<class TId>
-float CBlastTabular<TId>::GetScore(void) const
-{
-    return m_Score;
-}
-
-template<class TId>
-void CBlastTabular<TId>::SetIdentity(float identity)
-{
-    m_Identity = identity;
-}
-
-
-template<class TId>
-float CBlastTabular<TId>::GetIdentity(void) const
-{
-    return m_Identity;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// tabular serialization / deserialization
-
-template<class TId>
-void CBlastTabular<TId>::x_PartialSerialize(CNcbiOstream& os) const
-{
-    os << 100.0 * GetIdentity() << '\t' << GetLength() << '\t'
-       << GetMismatches() << '\t' << GetGaps() << '\t'
-       << TParent::GetQueryStart() + 1 << '\t' 
-       << TParent::GetQueryStop() + 1 << '\t'
-       << TParent::GetSubjStart() + 1 << '\t' 
-       << TParent::GetSubjStop() + 1 << '\t'
-       << GetEValue() << '\t' << GetScore();
-}
-
-
-
-template<class TId>
-void CBlastTabular<TId>::x_PartialDeserialize(const char* m8)
-{
-    CNcbiIstrstream iss (m8);
-    double identity100, evalue, score;
-    TCoord a, b, c, d;
-    iss >> identity100 >> m_Length >> m_Mismatches >> m_Gaps
-        >> a >> b >> c >> d >> evalue >> score;
-    
-    if(iss.fail() == false) {
-
-        m_Identity = float(identity100 / 100.0);
-        m_EValue = evalue;
-        m_Score = float(score);
-
-        SetQueryStart(a - 1);
-        SetQueryStop(b - 1);
-        SetSubjStart(c - 1);
-        SetSubjStop(d - 1);
-    }
-    else {
-        
-        NCBI_THROW(CAlgoAlignUtilException, eFormat,
-                   "Failed to init from m8 string");
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// c'tors
-
-
-// prohibited when TId is not CConstRef<CSeq_id>
-template<class TId>
-CBlastTabular<TId>::CBlastTabular(const objects::CSeq_align& seq_align)
-{
-    NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-               "CBlastTabular: Invoked with improper template argument");
-}
-
-
-template<>
-NCBI_XALGOALIGN_EXPORT
-CBlastTabular<CConstRef<objects::CSeq_id> >::CBlastTabular(
-    const objects::CSeq_align& seq_align);
-
-
-// generic version; explicit specialization provided 
-// for TID == CConstRef<CSeq_id>
-template<class TId>
-CBlastTabular<TId>::CBlastTabular(const char* m8)
-{
-    const char* p = m8;
-    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
-    const char* p0 = p;
-    for(; *p && !isspace((unsigned char)(*p)); ++p); // get first id
-    CNcbiIstrstream iss1 (p0);
-    iss1 >> TParent::m_Id[0]; 
-    
-    for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
-    p0 = p;
-    for(; *p && !isspace((unsigned char)(*p)); ++p); // get second id
-    CNcbiIstrstream iss2 (p0);
-    iss2 >> TParent::m_Id[1];
-    
-    for(; *p && isspace((unsigned char)(*p)); ++p); // skip trailing spaces
-
-    if(iss1.fail() || iss2.fail()) {
-        NCBI_THROW(CAlgoAlignUtilException, eFormat, 
-                   "CBlastTabular: Failed to init from string");
-    }
-
-    x_PartialDeserialize(p);
-}
-
-
-template<>
-NCBI_XALGOALIGN_EXPORT
-CBlastTabular<CConstRef<objects::CSeq_id> >::CBlastTabular(const char* m8);
-
-
 END_NCBI_SCOPE
 
 
@@ -281,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/07/28 12:29:26  kapustin
+ * Convert to non-templatized classes where causing compilation incompatibility
+ *
  * Revision 1.2  2005/06/03 16:20:21  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

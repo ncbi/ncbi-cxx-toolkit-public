@@ -48,7 +48,9 @@ public:
     // sorting criteria
     enum ESortCriterion {
         eQueryMin,
-        eSubjMin
+        eSubjMin,
+        eQueryId,
+        eSubjId
     };
 
     CHitComparator(ESortCriterion sort_type): m_SortType (sort_type) {}
@@ -80,6 +82,14 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         rv = lhs->GetSubjMin() <= rhs->GetSubjMin();
         break;
 
+    case eQueryId:
+        rv = lhs->GetQueryId() < rhs->GetQueryId();
+        break;
+
+    case eSubjId:
+        rv = lhs->GetSubjId() < rhs->GetSubjId();
+        break;
+
     default:
         NCBI_THROW(CAlgoAlignUtilException, eInternal, 
                    "CHitComparator: Sorting criterion not supported.");
@@ -95,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/28 12:29:26  kapustin
+ * Convert to non-templatized classes where causing compilation incompatibility
+ *
  * Revision 1.1  2005/07/27 18:53:16  kapustin
  * Initial revision
  *

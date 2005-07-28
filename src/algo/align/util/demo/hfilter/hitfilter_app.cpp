@@ -55,7 +55,7 @@ void CAppHitFilter::Init()
 int CAppHitFilter::Run()
 { 
     typedef CConstRef<CSeq_id>     TId;
-    typedef CBlastTabular<TId>     THit;
+    typedef CBlastTabular          THit;
     typedef CRef<THit>             THitRef;
     typedef vector<THitRef>        THitRefs;
     
@@ -114,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/07/28 12:29:35  kapustin
+ * Convert to non-templatized classes where causing compilation incompatibility
+ *
  * Revision 1.5  2005/07/27 18:55:46  kapustin
  * Advance the demo to print query and subj coverages
  *
