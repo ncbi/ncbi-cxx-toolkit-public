@@ -70,11 +70,9 @@ CNetScheduleStorageFactory_NetCache::CreateInstance(void)
         nc_client.reset( 
             m_PM_NetCache.CreateInstance(
                     kNetCacheDriverName,
-                    CVersionInfo(TPMNetCache::TInterfaceVersion::eMajor,
-                                 TPMNetCache::TInterfaceVersion::eMinor,
-                                 TPMNetCache::TInterfaceVersion::ePatchLevel), 
-                                 netcache_tree)
-                       );
+                    TPMNetCache::GetDefaultDrvVers(),
+                    netcache_tree)
+            );
     }
     if (!nc_client.get())
         NCBI_THROW(CGridFactoriesException,
@@ -111,11 +109,9 @@ CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
         ret.reset( 
             m_PM_NetSchedule.CreateInstance(
                     kNetScheduleDriverName,
-                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
-                                 TPMNetSchedule::TInterfaceVersion::eMinor,
-                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
-                                 netschedule_tree)
-                                 );
+                    TPMNetSchedule::GetDefaultDrvVers(),
+                    netschedule_tree)
+            );
         ret->ActivateRequestRateControl(false);
     }
     if (!ret.get())
@@ -133,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/07/28 11:27:20  ssikorsk
+ * Replaced using of TInterfaceVersion traits with GetDefaultDrvVers() method call.
+ *
  * Revision 6.1  2005/05/10 15:15:14  didenko
  * Added clean up procedure
  *
