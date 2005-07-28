@@ -88,7 +88,7 @@ public:
     /// Create instance of TDriver
     virtual TInterface*
     CreateInstance(const string& driver  = kEmptyStr,
-                   CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
+                   CVersionInfo version = TParent::GetDefaultDrvVers(),
                    const TPluginManagerParamTree* /*params*/ = 0) const
     {
         TDriver* drv = 0;
@@ -269,6 +269,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/07/28 11:23:50  ssikorsk
+ * Replaced NCBI_INTERFACE_VERSION(IFace) macro with GetDefaultDrvVers() method
+ * call.
+ *
  * Revision 1.17  2005/07/18 11:32:42  ssikorsk
  * Improved NCBI_EntryPointImpl for multiple versions of same driver configuration.
  *
