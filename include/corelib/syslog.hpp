@@ -49,13 +49,13 @@ BEGIN_NCBI_SCOPE
 class CSysLog : public CDiagHandler {
 public:
     enum EFlags {
-        fNoOverride        = 0x80000000, ///< never call openlog() ourselves
-        fCopyToStderr      = 0x40000000, ///< maps to LOG_PERROR if available
-        fFallBackToConsole = 0x20000000, ///< LOG_CONS
-        fIncludePID        = 0x10000000, ///< LOG_PID
-        fConnectNow        = 0x08000000, ///< LOG_NDELAY
-        fNoChildWait       = 0x04000000, ///< LOG_NOWAIT
-        fAllFlags          = 0xfc000000
+        fNoOverride        = 0x40000000, ///< never call openlog() ourselves
+        fCopyToStderr      = 0x20000000, ///< maps to LOG_PERROR if available
+        fFallBackToConsole = 0x10000000, ///< LOG_CONS
+        fIncludePID        = 0x08000000, ///< LOG_PID
+        fConnectNow        = 0x04000000, ///< LOG_NDELAY
+        fNoChildWait       = 0x02000000, ///< LOG_NOWAIT
+        fAllFlags          = 0x7e000000
     };
     typedef int TFlags; // binary OR of EFlags
 
@@ -126,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/28 17:24:14  ucko
+ * Shift flags down one place to stay clear of the sign bit.
+ *
  * Revision 1.1  2005/07/27 15:25:36  ucko
  * Add a new diagnostic handler class encapsulating system logging facilities.
  *
