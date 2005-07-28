@@ -583,6 +583,7 @@ size_t CVariant::GetBlobSize() const
     default:
         x_Inapplicable_Method("GetBlobSize()");
     }
+    return 0;
 }
 
 void CVariant::Truncate(size_t len)
@@ -821,6 +822,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.38  2005/07/28 20:50:35  vakatov
+* Heed a compilation warning
+*
 * Revision 1.37  2005/06/01 16:28:42  kholodov
 * Added: more detailed diagnostics
 *
