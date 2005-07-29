@@ -241,7 +241,7 @@ CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
                 TSeqPos size = seq_vec.size();
                 seq_vec.GetSeqData(size - pos - 3, size - pos, na_buff);
             }
-            TranslateNAToAA(na_buff, aa_buff);
+            TranslateNAToAA(na_buff, aa_buff, GetGenCode(row));
             return aa_buff[0];
         } else {
             return seq_vec[IsPositiveStrand(row) ?
@@ -272,7 +272,7 @@ string& CAlnVec::GetSeqString(string& buffer,
             TSeqPos size = seq_vec.size();
             seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buff);
         }
-        TranslateNAToAA(buff, buffer);
+        TranslateNAToAA(buff, buffer, GetGenCode(row));
     } else {
         if (IsPositiveStrand(row)) {
             x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
@@ -457,6 +457,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2005/07/29 15:59:00  todorov
+ * Pass genetic code to TranslateNAToAA
+ *
  * Revision 1.38  2005/07/26 17:56:44  todorov
  * Using an enum instead of static const int to avoid problems with some compilers.
  *
