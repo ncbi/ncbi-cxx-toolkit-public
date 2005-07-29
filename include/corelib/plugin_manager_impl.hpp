@@ -76,10 +76,10 @@ public:
     ///   By default corresponds to interface patch level.
     CSimpleClassFactoryImpl(const string& driver_name, int patch_level = -1)
         : m_DriverVersionInfo
-        (ncbi::CInterfaceVersion<IFace>::eMajor,
-         ncbi::CInterfaceVersion<IFace>::eMinor,
+        (TParent::GetDefaultDrvVers().GetMajor(),
+         TParent::GetDefaultDrvVers().GetMinor(),
          patch_level >= 0 ?
-            patch_level : ncbi::CInterfaceVersion<IFace>::ePatchLevel),
+            patch_level : TParent::GetDefaultDrvVers().GetPatchLevel()),
           m_DriverName(driver_name)
     {
         _ASSERT(!m_DriverName.empty());
@@ -269,6 +269,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/07/29 10:55:01  ssikorsk
+ * Use a default driver version instead of an interface version in
+ * CSimpleClassFactoryImpl constructor.
+ *
  * Revision 1.18  2005/07/28 11:23:50  ssikorsk
  * Replaced NCBI_INTERFACE_VERSION(IFace) macro with GetDefaultDrvVers() method
  * call.
