@@ -104,21 +104,11 @@ objects/pcsubstance/PC_Urn_.hpp
 objects/pcsubstance/PC_XRefData.hpp
 objects/pcsubstance/PC_XRefData_.hpp
 
-objects/pcassay/PC_ActElement.hpp
-objects/pcassay/PC_ActElement_.hpp
-objects/pcassay/PC_ActOperator.hpp
-objects/pcassay/PC_ActOperator_.hpp
-objects/pcassay/PC_ActStatement.hpp
-objects/pcassay/PC_ActStatement_.hpp
-objects/pcassay/PC_ActSummary.hpp
-objects/pcassay/PC_ActSummary_.hpp
-objects/pcassay/PC_ActValue.hpp
-objects/pcassay/PC_ActValue_.hpp
+objects/pcassay/PC_AnnotatedXRef.hpp
+objects/pcassay/PC_AnnotatedXRef_.hpp
 objects/pcassay/PC_AssayContainer.hpp
 objects/pcassay/PC_AssayContainer_.hpp
 objects/pcassay/PC_AssayData.hpp
-objects/pcassay/PC_AssayDataSession.hpp
-objects/pcassay/PC_AssayDataSession_.hpp
 objects/pcassay/PC_AssayData_.hpp
 objects/pcassay/PC_AssayDescription.hpp
 objects/pcassay/PC_AssayDescription_.hpp
@@ -126,6 +116,10 @@ objects/pcassay/PC_AssayResults.hpp
 objects/pcassay/PC_AssayResults_.hpp
 objects/pcassay/PC_AssaySubmit.hpp
 objects/pcassay/PC_AssaySubmit_.hpp
+objects/pcassay/PC_IntegerMinMax.hpp
+objects/pcassay/PC_IntegerMinMax_.hpp
+objects/pcassay/PC_RealMinMax.hpp
+objects/pcassay/PC_RealMinMax_.hpp
 objects/pcassay/PC_ResultType.hpp
 objects/pcassay/PC_ResultType_.hpp
 
@@ -134,6 +128,9 @@ objects/pcassay/PC_ResultType_.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/07/29 14:36:47  jcherry
+ * Reflect new pcassay spec
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
