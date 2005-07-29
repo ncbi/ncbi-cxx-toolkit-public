@@ -40,9 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 
-#if defined(NCBI_USE_OLD_IOSTREAM)  ||  defined(NCBI_OS_DARWIN)
-static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
-                                   char delim, char delim2)
+CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {
     CT_INT_TYPE ch;
     char        buf[1024];
@@ -71,7 +69,7 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
     for (ch = is.rdbuf()->sbumpc();  !CT_EQ_INT_TYPE(ch, CT_EOF);
          ch = is.rdbuf()->sbumpc()) {
         i++;
-        if (CT_TO_CHAR_TYPE(ch) == delim  ||  CT_TO_CHAR_TYPE(ch) == delim2)
+        if (delims.find(CT_TO_CHAR_TYPE(ch)) != NPOS)
             break;
         if (i == end) {
             is.clear(NcbiFailbit | is.rdstate());      
@@ -97,7 +95,6 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
     is.flags(f);
     return is;
 }
-#endif  /* NCBI_USE_OLD_IOSTREAM || NCBI_OS_DARWIN */
 
 #ifdef NCBI_COMPILER_GCC
 #  if NCBI_COMPILER_VERSION < 300
@@ -108,7 +105,7 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
 #if defined(NCBI_USE_OLD_IOSTREAM)
-    return s_NcbiGetline(is, str, delim, delim);
+    return NcbiGetline(is, str, string(1, delim));
 #elif defined(NCBI_COMPILER_GCC29x)
     // The code below is normally somewhat faster than this call,
     // which typically appends one character at a time to str;
@@ -159,7 +156,7 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
     if (!str.empty()  &&  str[str.length()-1] == '\r')
         str.resize(str.length() - 1);
 #elif defined(NCBI_OS_DARWIN)
-    s_NcbiGetline(is, str, '\r', '\n');
+    NcbiGetline(is, str, "\r\n");
 #else /* assume UNIX-like EOLs */
     NcbiGetline(is, str, '\n');
 #endif
@@ -378,6 +375,11 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/07/29 14:13:34  ucko
+ * Expose a more general version of NcbiGetline (the old s_NcbiGetline,
+ * with a small interface tweak) that can be used when unsure what ending
+ * to expect.
+ *
  * Revision 1.37  2005/06/13 18:23:59  lavr
  * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
  *
