@@ -317,16 +317,21 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 
 
 
-// Platform-specific EndOfLine
+/// Platform-specific EndOfLine
 NCBI_XNCBI_EXPORT
 extern const char* Endl(void);
 
-// Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
+/// Read from "is" to "str" up to the delimiter symbol "delim" (or EOF)
 NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
-// Read from "is" to "str" the next line 
-// (taking into account platform specifics of End-of-Line)
+/// Read from "is" to "str" up to any symbol contained within "delims" (or EOF)
+NCBI_XNCBI_EXPORT
+extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str,
+                                 const string& delims);
+
+/// Read from "is" to "str" the next line 
+/// (taking into account platform specifics of End-of-Line)
 NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 
@@ -542,6 +547,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/07/29 14:12:52  ucko
+ * Expose a more general version of NcbiGetline that can be used when
+ * unsure what ending to expect.
+ *
  * Revision 1.44  2005/07/19 20:11:54  ucko
  * Properly handle ICC in -cxxlib-gcc mode.
  *
