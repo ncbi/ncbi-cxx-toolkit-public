@@ -656,7 +656,8 @@ void CDBAPI_Cache::Store(const string&  key,
                          const string&  subkey,
                          const void*    data,
                          size_t         size,
-                         unsigned int   /*time_to_live*/)
+                         unsigned int   /*time_to_live*/,
+                         const string&  /*owner = kEmptyStr*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -850,7 +851,8 @@ void CDBAPI_Cache::GetBlobAccess(const string&     /* key */,
 IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
                                       int              version,
                                       const string&    subkey,
-                                      unsigned int    /*time_to_live*/)
+                                      unsigned int    /*time_to_live*/,
+                                      const string&   /*owner*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -1246,6 +1248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/08/01 16:50:56  kuznets
+ * Added BLOB's owner
+ *
  * Revision 1.18  2005/06/23 16:39:54  kuznets
  * Changed IWriter implementation class name
  *

@@ -152,7 +152,8 @@ public:
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       unsigned int   time_to_live = 0);
+                       unsigned int   time_to_live = 0,
+                       const string&  owner = kEmptyStr);
     virtual size_t GetSize(const string&  key,
                            int            version,
                            const string&  subkey);
@@ -184,7 +185,8 @@ public:
     virtual IWriter* GetWriteStream(const string&   key,
                                     int             version,
                                     const string&   subkey,
-                                    unsigned int    time_to_live = 0);
+                                    unsigned int    time_to_live = 0,
+                                    const string&   owner = kEmptyStr);
 
     virtual void Remove(const string& key);
 
@@ -298,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/01 16:50:40  kuznets
+ * Added BLOB's owner
+ *
  * Revision 1.16  2005/06/30 16:54:32  grichenk
  * Moved cache ownership to GB loader. Improved cache sharing.
  * Added CGBDataLoader::PurgeCache().
