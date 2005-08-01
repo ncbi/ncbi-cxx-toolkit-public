@@ -42,6 +42,8 @@
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
 
+#include <queue>
+
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup BDB_BLOB_Cache
@@ -66,7 +68,7 @@ struct NCBI_BDB_CACHE_EXPORT SCacheDB : public CBDB_BLobFile
     }
 };
 
-
+/// BLOB attributes DB
 struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
 {
     CBDB_FieldString       key;
@@ -74,8 +76,11 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldString       subkey;
     CBDB_FieldUint4        time_stamp;
     CBDB_FieldInt4         overflow;
-    CBDB_FieldUint4        ttl;       ///< time-to-live
-    CBDB_FieldUint4        max_time;  ///< max ttl limit for BLOB
+    CBDB_FieldUint4        ttl;         ///< time-to-live
+    CBDB_FieldUint4        max_time;    ///< max ttl limit for BLOB
+    CBDB_FieldUint4        upd_count;   ///< update counter
+    CBDB_FieldUint4        read_count;  ///< read counter
+    CBDB_FieldString       owner_name;  ///< owner's name
 
     SCache_AttrDB()
     {
@@ -89,11 +94,60 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
         BindData("overflow",   &overflow);
         BindData("ttl",        &ttl);
         BindData("max_time",   &max_time);
+
+        BindData("upd_count",  &upd_count);
+        BindData("read_count", &read_count);
+
+        BindData("owner_name", &owner_name, 512);
     }
 };
 
 class CPIDGuard;
 class CCacheCleanerThread;
+
+
+/// BDB cache statistics
+///
+struct SBDB_CacheStatistics
+{
+    /// Blob size to number of blobs
+    typedef map<unsigned, unsigned>     TBlobSizeHistogram;
+    /// Blob histogram history
+    typedef queue<TBlobSizeHistogram>   TBlobHistogramHistory;
+
+
+    unsigned  blobs_stored_total;       ///< Total number of blobs
+    unsigned  blobs_overflow_total;     ///< number of overflow blobs
+    unsigned  blobs_updated_total;      ///< How many were updated
+    unsigned  blobs_never_read_total;   ///< BLOBs never read before
+    unsigned  blobs_read_total;         ///< Number of reads
+    unsigned  blobs_expl_deleted_total; ///< BLOBs explicitly removed
+    double    blobs_size_total;         ///< Size of BLOBs total
+    unsigned  blob_size_max_total;      ///< Largest BLOB ever
+
+    unsigned  blobs_db;                 ///< Current database number of records
+    double    blobs_size_db;            ///< Current size of all BLOBs
+
+    TBlobSizeHistogram  blob_size_hist; ///< Blob size historgam
+
+public:
+    SBDB_CacheStatistics();
+
+    void AddStore(unsigned store, 
+                  unsigned update, 
+                  unsigned blob_size, 
+                  unsigned overflow);
+
+    void AddRead() { ++blobs_read_total; }
+    void AddExplDelete() { ++blobs_expl_deleted_total; }
+    void AddNeverRead() { ++blobs_never_read_total; }
+
+    static
+    void AddToHistogram(TBlobSizeHistogram* hist, unsigned size);
+
+private:
+    void InitHistorgam(TBlobSizeHistogram* hist);
+};
 
 
 /// BDB cache implementation.
@@ -265,6 +319,16 @@ public:
     /// Get max limit for read update
     unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
 
+    /// Get cache operations statistics
+    const SBDB_CacheStatistics& GetStatistics() const
+    {
+        return m_Statistics;
+    }
+
+    /// Get cache operations statistics.
+    /// Thread safe (syncronized) operation
+    void GetStatistics(SBDB_CacheStatistics* cache_stat) const;
+
 
 
     // ICache interface
@@ -283,7 +347,8 @@ public:
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       unsigned int   time_to_live = 0);
+                       unsigned int   time_to_live = 0,
+                       const string&  owner = kEmptyStr);
 
     virtual size_t GetSize(const string&  key,
                            int            version,
@@ -306,7 +371,8 @@ public:
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    unsigned int     time_to_live = 0);
+                                    unsigned int     time_to_live = 0,
+                                    const string&    owner = kEmptyStr);
     virtual bool HasBlobs(const string&  key,
                           const string&  subkey);
 
@@ -328,15 +394,21 @@ public:
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
 
+    /// Delete BLOB
+    /// @param for_update
+    ///    When TRUE blob statistics record will not be deleted
+    ///    (since it's going to be recreated immediately)
+    ///
     void DropBlob(const string&  key,
                   int            version,
-                  const string&  subkey);
+                  const string&  subkey,
+                  bool           for_update);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const
-        {
-            return m_Path + "<" + m_Name + ">";
-        }
+    {
+        return m_Path + "<" + m_Name + ">";
+    }
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
@@ -351,25 +423,36 @@ private:
                                  time_t         curr);
 
 
+    /// access type for "UpdateAccessTime" methods
+    enum EBlobAccessType
+    {
+        eBlobStore,
+        eBlobUpdate,
+        eBlobRead
+    };
+
     void x_UpdateReadAccessTime(const string&  key,
                                 int            version,
                                 const string&  subkey);
 
 	/// Transactional update of access time attributes
-    void x_UpdateAccessTime(const string&  key,
-                            int            version,
-                            const string&  subkey);
-
-	/// Non transactional update of access time
-    void x_UpdateAccessTime_NonTrans(const string&  key,
-                                     int            version,
-                                     const string&  subkey);
+    void x_UpdateAccessTime(const string&   key,
+                            int             version,
+                            const string&   subkey,
+                            EBlobAccessType access_type);
 
 	/// Non transactional update of access time
     void x_UpdateAccessTime_NonTrans(const string&  key,
                                      int            version,
                                      const string&  subkey,
-                                     unsigned       timeout);
+                                     EBlobAccessType access_type);
+
+	/// Non transactional update of access time
+    void x_UpdateAccessTime_NonTrans(const string&  key,
+                                     int            version,
+                                     const string&  subkey,
+                                     unsigned       timeout,
+                                     EBlobAccessType access_type);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
 	/// 2. If required retrive empty subkey attribute record
@@ -416,7 +499,7 @@ private:
         CCacheTransaction(CBDB_Cache& cache)
             : CBDB_Transaction(*(cache.m_Env),
               cache.GetWriteSync() == eWriteSync ?
-                    CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
+                 CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
         {
             cache.m_CacheDB->SetTransaction(this);
             cache.m_CacheAttrDB->SetTransaction(this);
@@ -441,15 +524,20 @@ public:
 private:
     friend class CCacheTransaction;
     friend class CBDB_CacheIWriter;
+    friend class CBDB_CacheIReader;
 
 private:
     string                  m_Path;         ///< Path to storage
     string                  m_Name;         ///< Cache name
     CPIDGuard*              m_PidGuard;     ///< Cache lock
     bool                    m_ReadOnly;     ///< read-only flag
+
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
+    mutable CFastMutex      m_DB_Lock;      ///< Database lock
+
+
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
     unsigned                m_Timeout;      ///< Timeout expiration policy
     unsigned                m_MaxTimeout;   ///< Maximum time to live
@@ -486,6 +574,9 @@ private:
     unsigned                   m_OverflowLimit;
     /// Number of m_MaxTimeout values object lives (read-prolongation)
     unsigned                   m_MaxTTL_prolong;
+
+    /// Stat counters
+    SBDB_CacheStatistics       m_Statistics;
 };
 
 
@@ -564,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/08/01 16:51:37  kuznets
+ * Added BDB cache statistics
+ *
  * Revision 1.55  2005/06/30 16:54:32  grichenk
  * Moved cache ownership to GB loader. Improved cache sharing.
  * Added CGBDataLoader::PurgeCache().
