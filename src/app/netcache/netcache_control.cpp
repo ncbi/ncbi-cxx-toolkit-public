@@ -64,6 +64,10 @@ public:
     {
         CNetCacheClient::PrintConfig(out);
     }
+    void PrintStat(CNcbiOstream & out)
+    {
+        CNetCacheClient::PrintStat(out);
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -101,6 +105,7 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("s", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
     arg_desc->AddFlag("c", "Server config");
+    arg_desc->AddFlag("t", "Server statistics");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -151,7 +156,10 @@ int CNetCacheControl::Run(void)
 
     if (args["c"]) {  // config
         nc_client.PrintConfig(NcbiCout);
-        return 0;
+    }
+
+    if (args["t"]) {  // statistics
+        nc_client.PrintStat(NcbiCout);
     }
 
     if (args["s"]) {  // shutdown
@@ -180,6 +188,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/01 16:53:45  kuznets
+ * Added -t key for statistics
+ *
  * Revision 1.7  2005/07/28 14:58:10  kuznets
  * Added PrintConfig()
  *
