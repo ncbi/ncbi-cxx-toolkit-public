@@ -345,8 +345,14 @@ CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
     string id_str = NcbiEmptyString;
 
     ITERATE(list<CRef<CSeq_id> >, itr, id) {
-        if (show_gi || !(*itr)->IsGi())
-            id_str += (*itr)->AsFastaString() + "|";
+        string id_token;
+        // For local ids, make sure the "lcl|" part is not printed
+        if ((*itr)->IsLocal())
+            (*itr)->GetLabel(&id_token, CSeq_id::eContent, 0);
+        else if (show_gi || !(*itr)->IsGi())
+            id_token = (*itr)->AsFastaString();
+        if (id_token != NcbiEmptyString)
+            id_str += id_token + "|";
     }
     if (id_str.size() > 0)
         id_str.erase(id_str.size() - 1);
@@ -890,6 +896,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.20  2005/08/01 15:03:27  dondosha
+*For local seqids, do not print the lcl| part
+*
 *Revision 1.19  2005/07/26 14:19:40  dondosha
 *Fix for Solaris compiler warning
 *
