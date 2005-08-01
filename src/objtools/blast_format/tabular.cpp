@@ -41,9 +41,15 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/blast_format/tabular.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
+#include <objtools/blast_format/showdefline.hpp>
 #include <serial/iterator.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <objects/blastdb/Blast_def_line.hpp>
+#include <objects/blastdb/Blast_def_line_set.hpp>
+
+#include <map>
 
 /** @addtogroup BlastFormat
  *
@@ -53,9 +59,71 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr)
+void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
+{
+    m_FieldMap["qseqid"] = eQuerySeqId;
+    m_FieldMap["qgi"] = eQueryGi;
+    m_FieldMap["qacc"] = eQueryAccession;
+    m_FieldMap["sseqid"] = eSubjectSeqId;
+    m_FieldMap["sallseqid"] = eSubjectAllSeqIds;
+    m_FieldMap["sgi"] = eSubjectGi;
+    m_FieldMap["sallgi"] = eSubjectAllGis;
+    m_FieldMap["sacc"] = eSubjectAccession;
+    m_FieldMap["sallacc"] = eSubjectAllAccessions;
+    m_FieldMap["qstart"] = eQueryStart;
+    m_FieldMap["qend"] = eQueryEnd;
+    m_FieldMap["sstart"] = eSubjectStart;
+    m_FieldMap["send"] = eSubjectEnd;
+    m_FieldMap["qseq"] = eQuerySeq;
+    m_FieldMap["sseq"] = eSubjectSeq;
+    m_FieldMap["evalue"] = eEvalue;
+    m_FieldMap["bitscore"] = eBitScore;
+    m_FieldMap["score"] = eScore;
+    m_FieldMap["length"] = eAlignmentLength;
+    m_FieldMap["pident"] = ePercentIdentical;
+    m_FieldMap["nident"] = eNumIdentical;
+    m_FieldMap["mismatch"] = eMismatches;
+    m_FieldMap["positive"] = ePositives;
+    m_FieldMap["gapopen"] = eGapOpenings;
+    m_FieldMap["gaps"] = eGaps;
+    
+    vector<string> format_tokens;
+
+    NStr::Tokenize(format, " ", format_tokens);
+
+    if (format_tokens.empty())
+        x_AddDefaultFieldsToShow();
+
+    ITERATE (vector<string>, iter, format_tokens) {
+        if (*iter == "std")
+            x_AddDefaultFieldsToShow();
+        else if ((*iter)[0] == '-') {
+            string field = (*iter).substr(1);
+            if (m_FieldMap.count(field) > 0) 
+                x_DeleteFieldToShow(m_FieldMap[field]);
+        } else {
+            if (m_FieldMap.count(*iter) > 0)
+                x_AddFieldToShow(m_FieldMap[*iter]);
+        }
+    }
+}
+
+void CBlastTabularInfo::x_ResetFields()
+{
+    m_Score = m_AlignLength = m_NumGaps = m_NumGapOpens = m_NumIdent =
+        m_NumPositives = m_QueryStart = m_QueryEnd = m_SubjectStart = 
+        m_SubjectEnd = 0; 
+    m_BitScore = NcbiEmptyString;
+    m_Evalue = NcbiEmptyString;
+    m_QuerySeq = NcbiEmptyString;
+    m_SubjectSeq = NcbiEmptyString;
+}
+
+CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format)
     : m_Ostream(ostr) 
 {
+    x_SetFieldsToShow(format);
+    x_ResetFields();
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()
@@ -63,27 +131,106 @@ CBlastTabularInfo::~CBlastTabularInfo()
     m_Ostream.flush();
 }
 
-void CBlastTabularInfo::SetQueryId(list<CRef<objects::CSeq_id> >& id)
+static string 
+s_GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id, 
+                     CBlastTabularInfo::ESeqIdType id_type)
 {
-    m_QueryId = NcbiEmptyString;
-    ITERATE(list<CRef<CSeq_id> >, itr, id) {
-        m_QueryId += (*itr)->AsFastaString() + "|";
+    string id_str = NcbiEmptyString;
+
+    switch (id_type) {
+    case CBlastTabularInfo::eFullId:
+        id_str = CShowBlastDefline::GetSeqIdListString(id, true);
+        break;
+    case CBlastTabularInfo::eAccession:
+        FindBestChoice(id, CSeq_id::Score)->
+            GetLabel(&id_str, CSeq_id::eContent, 0);
+        break;
+    case CBlastTabularInfo::eGi:
+        id_str = NStr::IntToString(FindGi(id));
+        break;
+    default: break;
     }
-    if (m_QueryId.size() > 0)
-        m_QueryId.erase(m_QueryId.size() - 1);
+
+    if (id_str == NcbiEmptyString)
+        id_str = "Unknown";
+
+    return id_str;
+}
+
+void CBlastTabularInfo::x_PrintQuerySeqId()
+{
+    m_Ostream << s_GetSeqIdListString(m_QueryId, eFullId);
+}
+
+void CBlastTabularInfo::x_PrintQueryGi()
+{
+    m_Ostream << s_GetSeqIdListString(m_QueryId, eGi);
+}
+
+void CBlastTabularInfo::x_PrintQueryAccession()
+{
+    m_Ostream << s_GetSeqIdListString(m_QueryId, eAccession);
+}
+
+void CBlastTabularInfo::x_PrintSubjectSeqId()
+{
+    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eFullId);
+}
+
+void CBlastTabularInfo::x_PrintSubjectAllSeqIds(void)
+{
+    ITERATE(vector<list<CRef<CSeq_id> > >, iter, m_SubjectIds) {
+        if (iter != m_SubjectIds.begin())
+            m_Ostream << ";";
+        m_Ostream << s_GetSeqIdListString(*iter, eFullId); 
+    }
+}
+
+void CBlastTabularInfo::x_PrintSubjectGi(void)
+{
+    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eGi);
+}
+
+void CBlastTabularInfo::x_PrintSubjectAllGis(void)
+{
+    ITERATE(vector<list<CRef<CSeq_id> > >, iter, m_SubjectIds) {
+        if (iter != m_SubjectIds.begin())
+            m_Ostream << ";";
+        m_Ostream << s_GetSeqIdListString(*iter, eGi); 
+    }
+}
+
+void CBlastTabularInfo::x_PrintSubjectAccession(void)
+{
+    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eAccession);
+}
+
+void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
+{
+    ITERATE(vector<list<CRef<CSeq_id> > >, iter, m_SubjectIds) {
+        if (iter != m_SubjectIds.begin())
+            m_Ostream << ";";
+        m_Ostream << s_GetSeqIdListString(*iter, eAccession); 
+    }
 }
 
 void CBlastTabularInfo::SetQueryId(const objects::CBioseq_Handle& bh)
 {
-    m_QueryId = NcbiEmptyString;
+    m_QueryId.clear();
+
+    // Create a new list of Seq-ids, substitute any local ids by new fake local 
+    // ids, with label set to the first token of this Bioseq's title.
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+        CRef<CSeq_id> next_id(new CSeq_id());
+
         string id_token;
         // Local ids are usually fake. If a title exists, use the first token
         // of the title instead of the local id. If no title, use the local
         // id, but without the "lcl|" prefix.
         if (itr->GetSeqId()->IsLocal()) {
             vector<string> title_tokens;
-            title_tokens = NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens);
+            title_tokens = 
+                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens);
             if(title_tokens.empty()){
                 id_token = NcbiEmptyString;
             } else {
@@ -97,50 +244,45 @@ void CBlastTabularInfo::SetQueryId(const objects::CBioseq_Handle& bh)
                 else 
                     id_token = NStr::IntToString(obj_id.GetId());
             }
+            CObject_id* obj_id = new CObject_id();
+            obj_id->SetStr(id_token);
+            next_id->SetLocal(*obj_id);
         } else {
-            id_token = itr->AsString();
+            next_id->Assign(*itr->GetSeqId());
         }
-        m_QueryId += id_token + "|";
+        m_QueryId.push_back(next_id);
     }
-    if (m_QueryId.size() > 0)
-        m_QueryId.erase(m_QueryId.size() - 1);
-}
-
-void CBlastTabularInfo::SetSubjectId(list<CRef<objects::CSeq_id> >& id)
-{
-    m_SubjectId = NcbiEmptyString;
-    ITERATE(list<CRef<CSeq_id> >, itr, id) {
-        m_SubjectId += (*itr)->AsFastaString() + "|";
-    }
-    if (m_SubjectId.size() > 0)
-        m_SubjectId.erase(m_SubjectId.size() - 1);
 }
 
 void CBlastTabularInfo::SetSubjectId(const objects::CBioseq_Handle& bh)
 {
-    m_SubjectId = NcbiEmptyString;
-    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-        string id_token = NcbiEmptyString;
-        // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
-        // created in a BLAST database when it is formatted without indexing.
-        // For such ids, use first token of the title, if it's available.
-        if (itr->GetSeqId()->IsGeneral() &&
-            itr->GetSeqId()->AsFastaString().find("gnl|BL_ORD_ID") != 
-            string::npos) {
-            vector<string> title_tokens;
-            id_token = 
-                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+    m_SubjectIds.clear();
+
+    // Check if this Bioseq handle contains a Blast-def-line-set object.
+    // If it does, retrieve Seq-ids from all redundant sequences, and 
+    // print them separated by commas.
+    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
+    // its destruction; then extract the list of CBlast_def_line objects.
+    const CRef<CBlast_def_line_set> bdlRef = 
+        CBlastFormatUtil::GetBlastDefline(bh);
+    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+    
+    if (!bdl.empty()) {
+        ITERATE(list<CRef<CBlast_def_line> >, defl_iter, bdl) {
+            m_SubjectIds.push_back((*defl_iter)->GetSeqid());
         }
-        if (id_token == NcbiEmptyString) 
-            id_token = itr->AsString();
-        m_SubjectId += id_token + "|";
+    } else {
+        // Blast-def-line is not filled, hence retrieve all Seq-ids directly 
+        // from the Bioseq handle's Seq-id.
+        list<CRef<CSeq_id> > next_seqid_list;
+        CShowBlastDefline::GetSeqIdList(bh, next_seqid_list);
+        m_SubjectIds.push_back(next_seqid_list);
     }
-    if (m_SubjectId.size() > 0)
-        m_SubjectId.erase(m_SubjectId.size() - 1);
 }
 
 int CBlastTabularInfo::SetFields(const objects::CSeq_align& align, 
-                                 objects::CScope& scope)
+                                 objects::CScope& scope, 
+                                 CBlastFormattingMatrix* matrix)
 {
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
@@ -150,27 +292,52 @@ int CBlastTabularInfo::SetFields(const objects::CSeq_align& align,
     double evalue;
     int sum_n;
     list<int> use_this_gi;
+    
+    // First reset all fields.
+    x_ResetFields();
+
+    CBlastFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
+                                   num_ident, use_this_gi);
+    SetScores(score, bit_score, evalue);
 
     bool query_is_na, subject_is_na;
-    // Extract the full list of subject ids
+    bool bioseqs_found = true;
+    // Extract the full query id from the correspondintg Bioseq handle.
     try {
         const CBioseq_Handle& query_bh = 
             scope.GetBioseqHandle(align.GetSeq_id(0));
         SetQueryId(query_bh);
         query_is_na = query_bh.IsNa();
+    } catch (const CException&) {
+        list<CRef<CSeq_id> > query_ids;
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(align.GetSeq_id(0));
+        query_ids.push_back(id);
+        SetQueryId(query_ids);
+        bioseqs_found = false;
+    }
+
+    // Extract the full list of subject ids
+    try {
         const CBioseq_Handle& subject_bh = 
             scope.GetBioseqHandle(align.GetSeq_id(1));
         SetSubjectId(subject_bh);
         subject_is_na = subject_bh.IsNa();
     } catch (const CException&) {
-        // Either query or subject sequence not found - skip the remainder of 
-        // the set up, and return error status.
-        return -1;
+        list<CRef<CSeq_id> > subject_ids;
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(align.GetSeq_id(1));
+        subject_ids.push_back(id);
+        SetSubjectId(subject_ids);
+        bioseqs_found = false;
     }
 
-    CBlastFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
-                                   num_ident, use_this_gi);
-    SetScores(score, bit_score, evalue);
+    // If Bioseq has not been found for one or both of the sequences, all
+    // subsequent computations cannot proceed. Hence don't set any of the other 
+    // fields.
+    if (!bioseqs_found)
+        return -1;
+
     CRef<CSeq_align> finalAln(0);
    
     // Convert Std-seg and Dense-diag alignments to Dense-seg.
@@ -207,7 +374,10 @@ int CBlastTabularInfo::SetFields(const objects::CSeq_align& align,
     alnVec.GetWholeAlnSeqString(0, m_QuerySeq);
     alnVec.GetWholeAlnSeqString(1, m_SubjectSeq);
 
+    // Do not trust the number of identities saved in the Seq-align.
+    // Recalculate it again.
     num_ident = 0;
+    int num_positives = 0;
     // The query and subject sequence strings must be the same size in a correct
     // alignment, but if alignment extends beyond the end of sequence because of
     // a bug, one of the sequence strings may be truncated, hence it is 
@@ -215,11 +385,16 @@ int CBlastTabularInfo::SetFields(const objects::CSeq_align& align,
     /// @todo FIXME: Should an exception be thrown instead? 
     for (unsigned int i = 0; i < min(m_QuerySeq.size(), m_SubjectSeq.size()); 
          ++i) {
-        if (m_QuerySeq[i] == m_SubjectSeq[i])
+        if (m_QuerySeq[i] == m_SubjectSeq[i]) {
             ++num_ident;
+            ++num_positives;
+        } else if (matrix && 
+                   (*matrix)(m_QuerySeq[i], m_SubjectSeq[i]) > 0) {
+            ++num_positives;
+        }
     }
 
-    SetCounts(num_ident, align_length, num_gaps, num_gap_opens);
+    SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives);
 
     int q_start, q_end, s_start, s_end;
 
@@ -250,42 +425,89 @@ int CBlastTabularInfo::SetFields(const objects::CSeq_align& align,
     return 0;
 }
 
-
-void CBlastTabularInfo::Print(ETabularOption opt) 
+void CBlastTabularInfo::Print() 
 {
-    string evalue_str;
-    string bit_score_str;
+    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
+        // Add tab in front of field, except for the first field.
+        if (iter != m_FieldsToShow.begin())
+            m_Ostream << "\t";
+        x_PrintField(*iter);
+    }
+    m_Ostream << endl;
+}
 
-    CBlastFormatUtil::GetScoreString(m_Evalue, m_BitScore, 
-                                     evalue_str, bit_score_str);
-         
-    /* Calculate percentage of identities */
-    double perc_ident = ((double)m_NumIdent)/m_AlignLength * 100;
-    Int4 num_mismatches = m_AlignLength - m_NumIdent - m_NumGaps;
-    
-    m_Ostream << m_QueryId << "\t" << m_SubjectId << "\t" <<
-        NStr::DoubleToString(perc_ident, 2) << 
-        "\t" << m_AlignLength << "\t" << num_mismatches << "\t" << 
-        m_NumGapOpens << "\t" << m_QueryStart << "\t" << m_QueryEnd << "\t" << 
-        m_SubjectStart << "\t" << m_SubjectEnd << "\t" << evalue_str << "\t" <<
-        bit_score_str;
+void CBlastTabularInfo::x_PrintFieldNames()
+{
+    m_Ostream << "# Fields: ";
 
-    if (opt & eAddSeqs) {
-        m_Ostream << "\t" << m_QuerySeq << "\t" << m_SubjectSeq;
+    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
+        if (iter != m_FieldsToShow.begin())
+            m_Ostream << ", ";
+
+        switch (*iter) {
+        case eQuerySeqId:
+            m_Ostream << "query id"; break;
+        case eQueryGi:
+            m_Ostream << "query gi"; break;
+        case eQueryAccession:
+            m_Ostream << "query acc."; break;
+        case eSubjectSeqId:
+            m_Ostream << "subject id"; break;
+        case eSubjectAllSeqIds:
+            m_Ostream << "subject ids"; break;
+        case eSubjectGi:
+            m_Ostream << "subject gi"; break;
+        case eSubjectAllGis:
+            m_Ostream << "subject gis"; break;
+        case eSubjectAccession:
+            m_Ostream << "subject acc."; break;
+        case eSubjectAllAccessions:
+            m_Ostream << "subject accs."; break;
+        case eQueryStart:
+            m_Ostream << "q. start"; break;
+        case eQueryEnd:
+            m_Ostream << "q. end"; break;
+        case eSubjectStart:
+            m_Ostream << "s. start"; break;
+        case eSubjectEnd:
+            m_Ostream << "s. end"; break;
+        case eQuerySeq:
+            m_Ostream << "query seq"; break;
+        case eSubjectSeq:
+            m_Ostream << "subject seq"; break;
+        case eEvalue:
+            m_Ostream << "evalue"; break;
+        case eBitScore:
+            m_Ostream << "bit score"; break;
+        case eScore:
+            m_Ostream << "score"; break;
+        case eAlignmentLength:
+            m_Ostream << "alignment length"; break;
+        case ePercentIdentical:
+            m_Ostream << "% identity"; break;
+        case eNumIdentical:
+            m_Ostream << "identical"; break;
+        case eMismatches:
+            m_Ostream << "mismatches"; break;
+        case ePositives:
+            m_Ostream << "positives"; break;
+        case eGapOpenings:
+            m_Ostream << "gap opens"; break;
+        case eGaps:
+            m_Ostream << "gaps"; break;
+        default:
+            break;
+        }
     }
 
-    if (opt & eAddRawScore)
-        m_Ostream << "\t" << m_Score;
-    if (opt & eAddGapCount)
-        m_Ostream << "\t" << m_NumGaps;
     m_Ostream << endl;
 }
 
 void 
 CBlastTabularInfo::PrintHeader(const string& program_in, 
                                const objects::CBioseq& bioseq, 
-                               const string& dbname, int iteration, 
-                               ETabularOption opt)
+                               const string& dbname, int iteration,
+                               const CSeq_align_set* align_set)
 {
     m_Ostream << "# ";
     string program(program_in);
@@ -301,17 +523,12 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
                                             true);
     
     m_Ostream << endl << "# Database: " << dbname << endl;
-    m_Ostream << "# Fields: Query id, Subject id, % identity, alignment length,"
-        " mismatches, gap openings, q. start, q. end, s. start, s. end, "
-        "e-value, bit score";
-    if (opt & eAddSeqs)
-        m_Ostream << ", query seq., subject seq.";
-    if (opt & eAddRawScore)
-        m_Ostream << ", score";
-    if (opt & eAddGapCount)
-        m_Ostream << ", total gaps";
-    m_Ostream << endl;
+
+    x_PrintFieldNames();
     
+    // Print number of alignments found, but only if it has been set.
+    int num_hits = (align_set ? align_set->Get().size() : 0);
+    m_Ostream << "# " << num_hits << " hits found" << endl;
 }
 
 
@@ -323,6 +540,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/08/01 14:58:41  dondosha
+* Added API for choosing an arbitrary list of fields to show, and to show all redundant seqids
+*
 * Revision 1.7  2005/06/23 16:18:46  camacho
 * Doxygen fixes
 *
