@@ -38,8 +38,8 @@ Blocks with sub-template definitions should start from the beginning of line.
 
 
 
-// Include some sub-template libraries
-// Included file can containt relative or absolute path
+// Include some sub-template libraries.
+// Included files can contains relative or absolute path
 // in OS dependent format. 
 
 #include "demo_html_template_phone.inc"
