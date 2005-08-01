@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.5 2005/07/28 17:05:20 bolton Exp $
+-- $Id: pcassay.asn,v 1.6 2005/08/01 14:17:57 ywang Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -65,11 +65,10 @@ PC-AssayResults ::= SEQUENCE {
     sid-source        PC-Source                  OPTIONAL, -- External Identifier for this Substance
                                                            --   Note: May be used in-lieu of "sid"
                                                            --   Note: This is non-optional if "sid" is "0"
-    version           INTEGER,                             -- Version identifier for this AID-SID Result
+    version           INTEGER                    OPTIONAL, -- Version identifier for this AID-SID Result
                                                            --   Note: Incoming data should set this to be "0"
 
     -- Data Annotation/Qualifier and URL to further Depositor Information
-    url               VisibleString              OPTIONAL, -- Depositor provided URL for this Result
     comment           VisibleString              OPTIONAL, -- Annotation or qualifier for this Result
 
     -- Assay Result Data for this Sample
@@ -83,6 +82,7 @@ PC-AssayResults ::= SEQUENCE {
     rank              INTEGER                   DEFAULT 0, -- Numeric Rank of Assay Outcome (for result ordering)
                                                            --   Note: Larger numbers are more active
     data              SEQUENCE OF PC-AssayData             -- Assay Data Reported for this SID (vector)
+    url               VisibleString              OPTIONAL, -- Depositor provided URL for this Result
 }
 
 
@@ -235,6 +235,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.6  2005/08/01 14:17:57  ywang
+-- make PC-AssayResults version OPTIONAL and put url at the end
+--
 -- Revision 1.5  2005/07/28 17:05:20  bolton
 -- Major update to the Assay specification streamlining (by elimination) unused
 -- features, eliminating the assay deposition block, and to add new "revoke"
