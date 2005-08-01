@@ -933,7 +933,7 @@ public:
     bool operator() ( const TValue& val ) 
     {
         return m_DriverName != val.name || 
-            m_VersionInfo.Match(val.version) == CVersionInfo::eNonCompatible;
+            val.version.Match(m_VersionInfo) == CVersionInfo::eNonCompatible;
     }
 
 private:
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/08/01 14:40:18  ssikorsk
+ * Fixed compatibility checking logic in CInvalidDrvVer
+ *
  * Revision 1.50  2005/07/28 11:11:46  ssikorsk
  * Added driver version traits class CDefaultDriverVersion;
  * Removed TIfVer template parameter from IClassFactory and CPluginManager;
