@@ -101,6 +101,7 @@ class CPhrap_Seq : public CObject
 {
 public:
     CPhrap_Seq(TPhrapReaderFlags flags);
+    CPhrap_Seq(const string& name, TPhrapReaderFlags flags);
     void Read(CNcbiIstream& in);
     void ReadData(CNcbiIstream& in);
     virtual void ReadTag(CNcbiIstream& in, char tag) = 0;
@@ -139,7 +140,6 @@ public:
 
 protected:
     void CreatePadsFeat(CRef<CSeq_annot>& annot) const;
-    void CopyFrom(const CPhrap_Seq& seq);
 
 private:
     void x_FillSeqData(CSeq_data& data) const;
@@ -168,21 +168,23 @@ CPhrap_Seq::CPhrap_Seq(TPhrapReaderFlags flags)
 }
 
 
-void CPhrap_Seq::CopyFrom(const CPhrap_Seq& seq)
+CPhrap_Seq::CPhrap_Seq(const string& name, TPhrapReaderFlags flags)
+    : m_Name(name),
+      m_Flags(flags),
+      m_PaddedLength(0),
+      m_UnpaddedLength(0),
+      m_Complemented(false)
 {
-    m_Name = seq.m_Name;
-    m_PaddedLength = seq.m_PaddedLength;
 }
 
 
 void CPhrap_Seq::Read(CNcbiIstream& in)
 {
-    if ( !m_Name.empty() ) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "ReadPhrap: redefinition of " + m_Name + ".",
-                    in.tellg() - CT_POS_TYPE(0));
+    if ( m_Name.empty() ) {
+        in >> m_Name;
+        CheckStreamState(in, "sequence header.");
     }
-    in >> m_Name >> m_PaddedLength;
+    in >> m_PaddedLength;
     CheckStreamState(in, "sequence header.");
 }
 
@@ -329,7 +331,7 @@ class CPhrap_Read : public CPhrap_Seq
 public:
     typedef map<string, CRef<CPhrap_Read> > TReads;
 
-    CPhrap_Read(TPhrapReaderFlags flags);
+    CPhrap_Read(const string& name, TPhrapReaderFlags flags);
     ~CPhrap_Read(void);
 
     void Read(CNcbiIstream& in);
@@ -367,8 +369,6 @@ public:
 
     CRef<CSeq_entry> CreateRead(void) const;
 
-    void CopyFrom(const CPhrap_Read& read);
-
 private:
     void x_CreateFeat(CBioseq& bioseq) const;
     void x_CreateDesc(CBioseq& bioseq) const;
@@ -385,8 +385,8 @@ private:
 };
 
 
-CPhrap_Read::CPhrap_Read(TPhrapReaderFlags flags)
-    : CPhrap_Seq(flags),
+CPhrap_Read::CPhrap_Read(const string& name, TPhrapReaderFlags flags)
+    : CPhrap_Seq(name, flags),
       m_NumInfoItems(0),
       m_NumReadTags(0),
       m_HiQualRange(TRange::GetEmpty()),
@@ -401,14 +401,6 @@ CPhrap_Read::~CPhrap_Read(void)
     if ( m_DS ) {
         delete m_DS;
     }
-}
-
-
-void CPhrap_Read::CopyFrom(const CPhrap_Read& read)
-{
-    CPhrap_Seq::CopyFrom(read);
-    m_NumInfoItems = read.m_NumInfoItems;
-    m_NumReadTags = read.m_NumReadTags;
 }
 
 
@@ -723,7 +715,7 @@ public:
 
     CRef<CSeq_entry> CreateContig(int level) const;
 
-    CRef<CPhrap_Read>& SetRead(const CPhrap_Read& read);
+    CRef<CPhrap_Read>& SetRead(const string& read_name);
 
 private:
     void x_CreateAlign(CBioseq_set& bioseq_set) const;
@@ -814,7 +806,7 @@ void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in)
     start--;
     CRef<CPhrap_Read>& read = m_Reads[name];
     if ( !read ) {
-        read.Reset(new CPhrap_Read(GetFlags()));
+        read.Reset(new CPhrap_Read(name, GetFlags()));
     }
     read->AddReadLoc(start, c == 'C'); 
     if (start < 0) {
@@ -917,13 +909,12 @@ void CPhrap_Contig::ReadTag(CNcbiIstream& in, char tag)
 }
 
 
-CRef<CPhrap_Read>& CPhrap_Contig::SetRead(const CPhrap_Read& read)
+CRef<CPhrap_Read>& CPhrap_Contig::SetRead(const string& read_name)
 {
-    CRef<CPhrap_Read>& ret = m_Reads[read.GetName()];
+    CRef<CPhrap_Read>& ret = m_Reads[read_name];
     if ( !ret ) {
-        ret.Reset(new CPhrap_Read(GetFlags()));
+        ret.Reset(new CPhrap_Read(read_name, GetFlags()));
     }
-    ret->CopyFrom(read);
     return ret;
 }
 
@@ -1730,9 +1721,10 @@ void CPhrapReader::x_ReadContig(void)
 
 void CPhrapReader::x_ReadRead(CPhrap_Contig& contig)
 {
-    CPhrap_Read tmp_read(m_Flags);
-    tmp_read.Read(m_Stream);
-    CRef<CPhrap_Read> read = contig.SetRead(tmp_read);
+    string read_name;
+    m_Stream >> read_name;
+    CRef<CPhrap_Read> read = contig.SetRead(read_name);
+    read->Read(m_Stream);
     read->ReadData(m_Stream);
     m_Seqs[read->GetName()] = read;
     for (EPhrapTag tag = x_GetTag(); tag != ePhrap_eof; tag = x_GetTag()) {
@@ -1792,6 +1784,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/08/01 18:18:41  grichenk
+* Optimized reading of sequence name.
+*
 * Revision 1.5  2005/06/03 17:01:32  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
