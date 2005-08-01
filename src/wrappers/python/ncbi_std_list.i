@@ -74,7 +74,7 @@ namespace std {
         }
         %typemap(in) const list<T>* (std::list<T>* vec, std::list<T> tmp),
                      const list<T>& (std::list<T>* vec, std::list<T> tmp) {
-            if (SWIG_ConvertPtr($input, (void**) &vec, $&1_descriptor, 0)
+            if (SWIG_ConvertPtr($input, (void**) &vec, $1_descriptor, 0)
                 != -1
                 && vec) {
                 $1 = vec;
@@ -217,7 +217,7 @@ namespace std {
         }
         %typemap(in) const list<T >* (std::list<T >* vec, std::list<T > tmp),
                      const list<T >& (std::list<T >* vec, std::list<T > tmp) {
-            if (SWIG_ConvertPtr($input, (void**) &vec, $&1_descriptor, 0)
+            if (SWIG_ConvertPtr($input, (void**) &vec, $1_descriptor, 0)
                 != -1
                 && vec) {
                 $1 = vec;
@@ -366,6 +366,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/01 17:24:05  jcherry
+ * Fixed handling of pass by const & and const *
+ *
  * Revision 1.1  2005/05/11 21:30:44  jcherry
  * Initial version
  *
