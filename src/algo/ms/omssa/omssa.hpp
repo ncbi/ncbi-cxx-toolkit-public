@@ -197,7 +197,7 @@ public:
 	///
 	///  Makes a string hashed out of the sequence plus mods
 	///
-	void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
+	static void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet);
@@ -316,6 +316,12 @@ private:
      */
     int MaxModPerPep;
 
+    /**
+     * maximum m/z value of all spectra precursors
+     * used to bound non-specific cleavage searches
+     */
+    int MaxMZ;
+
 };
 
 ///////////////////  CSearch inline methods
@@ -394,29 +400,41 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
     const char *TopSite;
     int j, OldIndex;
 
+    // start at the lowest non fixed index to see if it can be moved
     for (j = NumFixed; j <= iMod + NumFixed; j++) {
         OldIndex = ModIndex[j];
         if (j == iMod + NumFixed) TopSite = 0;
         else TopSite = Site[ModIndex[j+1]];
 
+        // move the low index. keep incrementing if pointing at fixed site
         do {
             ModIndex[j]++;
-        } while (IsFixed[ModIndex[j]] ==1);
+        } while (IsFixed[ModIndex[j]] == 1);
 
+        // if the low index doesn't point to the top site and it isn't too big
+        // allow the move
         if (ModIndex[j] < NumMod && Site[ModIndex[j]] != TopSite) {
             {
+                // now push all of the indices lower than the low index to
+                // their lowest possible value
                 int i, Low(0);
                 const char *OldSite(0);
-                for (i= 0; i < j; i++) {
-                    while (IsFixed[Low] ==1 || OldSite == Site[Low])
+                for (i = NumFixed; i < j; i++) {
+
+                    // increment low until it doesn't point at the same site
+                    // or a fixed site
+                    while(IsFixed[ModIndex[Low]] == 1 || 
+                          OldSite == Site[ModIndex[Low]])
                         Low++;
+
                     ModIndex[i] = Low;
-                    OldSite = Site[Low];
+                    OldSite = Site[ModIndex[Low]];
                     Low++;
                 }
             }
             return true;
         }
+        // otherwise, restore the low index and look at the next highest index
         ModIndex[j] = OldIndex;
     }
     return false;
@@ -482,6 +500,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.30  2005/08/01 13:44:18  lewisg
+  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
   Revision 1.29  2005/05/23 19:07:34  lewisg
   improve perf of ladder calculation
 

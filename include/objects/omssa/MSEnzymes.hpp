@@ -68,7 +68,10 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "Asp-N",
     "Glu-C",
     "Asp-N+Glu-C",
-    "Top-Down"
+    "Top-Down",
+    "Semi-Tryptic",
+    "No Enzyme",
+    "Chymotrypsin, no P rule"
 };
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -80,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/08/01 13:44:18  lewisg
+* redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+*
 * Revision 1.3  2005/05/19 16:59:17  lewisg
 * add top-down searching, fix variable mod bugs
 *

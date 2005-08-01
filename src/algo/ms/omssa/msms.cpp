@@ -170,7 +170,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
     
     	// check for cleavage point
-    	if(CheckCleave(SeqChar, *PepStart)) { 
+    	if(CheckCleave(*PepStart)) { 
             // check c term peptide mods
             CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
     				 DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
@@ -205,18 +205,11 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 CTrypsin::CTrypsin(void)
 {
     CleaveAt = "\x0a\x10";
+    CleaveOffset = "\x00\x00";
+    CheckProline = true;
     kCleave = 2;
     TopDown = false;
-}
-
-bool CTrypsin::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1] ) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -227,17 +220,11 @@ bool CTrypsin::CheckCleave(char SeqChar, const char *iPepStart)
 CCNBr::CCNBr(void) 
 {
     CleaveAt = "\x0c";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 1;
     TopDown = false;
-}
-
-bool CCNBr::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0]) { 
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -248,17 +235,11 @@ bool CCNBr::CheckCleave(char SeqChar, const char *iPepStart)
 CFormicAcid::CFormicAcid(void)
 {
     CleaveAt = "\x04";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 1;
     TopDown = false;
-}
-
-bool CFormicAcid::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0]) { 
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -269,18 +250,11 @@ bool CFormicAcid::CheckCleave(char SeqChar, const char *iPepStart)
 CArgC::CArgC(void)
 {
     CleaveAt = "\x010";
+    CleaveOffset = "\x01";
+    CheckProline = true;
     kCleave = 1;
     TopDown = false;
-}
-
-bool CArgC::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -291,21 +265,11 @@ bool CArgC::CheckCleave(char SeqChar, const char *iPepStart)
 CChymotrypsin::CChymotrypsin(void)
 {
     CleaveAt = "\x06\x16\x14\x0b";
+    CleaveOffset = "\x00\x00\x00\x00";
+    CheckProline = true;
     kCleave = 4;
     TopDown = false;
-}
-
-bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ||
-       SeqChar == CleaveAt[1] ||
-       SeqChar == CleaveAt[2] ||
-       SeqChar == CleaveAt[3]  ) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -316,18 +280,11 @@ bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
 CLysC::CLysC(void)
 {
     CleaveAt = "\x0a";
+    CleaveOffset = "\x00";
+    CheckProline = true;
     kCleave = 1;
     TopDown = false;
-}
-
-bool CLysC::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -338,17 +295,11 @@ bool CLysC::CheckCleave(char SeqChar, const char *iPepStart)
 CLysCP::CLysCP(void)
 {
     CleaveAt = "\x0a";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 1;
     TopDown = false;
-}
-
-bool CLysCP::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0]) { 
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -359,17 +310,11 @@ bool CLysCP::CheckCleave(char SeqChar, const char *iPepStart)
 CPepsinA::CPepsinA(void)
 {
     CleaveAt = "\x06\x0b";
+    CleaveOffset = "\x00\x00";
+    CheckProline = false;
     kCleave = 2;
     TopDown = false;
-}
-
-bool CPepsinA::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1]) { 
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -380,20 +325,11 @@ bool CPepsinA::CheckCleave(char SeqChar, const char *iPepStart)
 CTrypCNBr::CTrypCNBr(void)
 {
     CleaveAt = "\x0a\x10\x0c";
+    CleaveOffset = "\x00\x00\x00";
+    CheckProline = true;
     kCleave = 3;
     TopDown = false;
-}
-
-bool CTrypCNBr::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ||
-       SeqChar == CleaveAt[1] ||
-       SeqChar == CleaveAt[2]) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -404,23 +340,11 @@ bool CTrypCNBr::CheckCleave(char SeqChar, const char *iPepStart)
 CTrypChymo::CTrypChymo(void)
 {
     CleaveAt = "\x06\x16\x14\x0b\x0a\x10";
+    CleaveOffset = "\x00\x00\x00\x00\x00\x00";
+    CheckProline = true;
     kCleave = 6;
     TopDown = false;
-}
-
-bool CTrypChymo::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ||
-       SeqChar == CleaveAt[1] ||
-       SeqChar == CleaveAt[2] ||
-       SeqChar == CleaveAt[3] ||
-       SeqChar == CleaveAt[4] ||
-       SeqChar == CleaveAt[5]) { 
-        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -431,17 +355,11 @@ bool CTrypChymo::CheckCleave(char SeqChar, const char *iPepStart)
 CTrypsinP::CTrypsinP(void)
 {
     CleaveAt = "\x0a\x10";
+    CleaveOffset = "\x00\x00";
+    CheckProline = false;
     kCleave = 2;
     TopDown = false;
-}
-
-bool CTrypsinP::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1] ) { 
-        return true;
-    }
-    return false;
+    NonSpecific = false;
 }
 
 
@@ -450,68 +368,53 @@ bool CTrypsinP::CheckCleave(char SeqChar, const char *iPepStart)
 CWholeProtein::CWholeProtein(void)
 {
     CleaveAt = "\x00";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 0;
+    // this is *not* top down as we want to match the precursor m/z
     TopDown = false;
+    NonSpecific = false;
 }
 
-bool CWholeProtein::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    return false;
-}
 
 //!  CAspN
 
 CAspN::CAspN(void)
 {
     CleaveAt = "\x04";
+    CleaveOffset = "\x01";
+    CheckProline = false;
     kCleave = 1;
     TopDown = false;
+    NonSpecific = false;
 }
 
-bool CAspN::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(*(iPepStart+1) ==  CleaveAt[0]) { 
-        return true;
-    }
-    return false;
-}
 
 //!  CGluC
 
 CGluC::CGluC(void)
 {
     CleaveAt = "\x05";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 1;
     TopDown = false;
+    NonSpecific = false;
 }
 
-bool CGluC::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] ) { 
-        return true;
-    }
-    return false;
-}
 
 //!  GluCAspN
 
 CGluCAspN::CGluCAspN(void)
 {
     CleaveAt = "\x05\x04";
+    CleaveOffset = "\x00\x01";
+    CheckProline = false;
     kCleave = 2;
     TopDown = false;
+    NonSpecific = false;
 }
 
-bool CGluCAspN::CheckCleave(char SeqChar, const char *iPepStart)
-{
-    // check for cleavage point
-    if(SeqChar == CleaveAt[0] || *(iPepStart+1) == CleaveAt[1] ) { 
-        return true;
-    }
-    return false;
-}
 
 /**
  *   Top-down, whole protein search
@@ -520,14 +423,58 @@ bool CGluCAspN::CheckCleave(char SeqChar, const char *iPepStart)
 CTopDown::CTopDown(void)
 {
     CleaveAt = "\x00";
+    CleaveOffset = "\x00";
+    CheckProline = false;
     kCleave = 0;
     TopDown = true;
+    NonSpecific = false;
 }
 
-bool CTopDown::CheckCleave(char SeqChar, const char *iPepStart)
+
+/**
+ *   SemiTryptic
+ */
+
+CSemiTryptic::CSemiTryptic(void)
 {
-    return false;
+    CleaveAt = "\x0a\x10";
+    CleaveOffset = "\x00\x00";
+    CheckProline = true;
+    kCleave = 2;
+    TopDown = false;
+    NonSpecific = true;
 }
+
+
+/**
+ *   NoEnzyme
+ */
+
+CNoEnzyme::CNoEnzyme(void)
+{
+    CleaveAt = "\x00";
+    CleaveOffset = "\x00";
+    CheckProline = false;
+    kCleave = 0;
+    TopDown = false;
+    NonSpecific = true;
+}
+
+
+/**
+ *  Chymotrypsin without proline rule
+ */
+
+CChymoP::CChymoP(void)
+{
+    CleaveAt = "\x06\x16\x14\x0b";
+    CleaveOffset = "\x00\x00\x00\x00";
+    CheckProline = false;
+    kCleave = 4;
+    TopDown = false;
+    NonSpecific = false;
+}
+
 
 ///
 /// Simple minded factory to return back object for enzyme
@@ -583,8 +530,17 @@ CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
         return new CGluCAspN;
         break;
     case eMSEnzymes_top_down:
-         return new CTopDown;
-         break;
+        return new CTopDown;
+        break;
+    case eMSEnzymes_semi_tryptic:
+        return new CSemiTryptic;
+        break;
+    case eMSEnzymes_no_enzyme:
+    return new CNoEnzyme;
+    break;
+    case eMSEnzymes_chymotrypsin_p:
+    return new CChymoP;
+    break;
     default:
         return 0;
         break;
@@ -656,6 +612,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.22  2005/08/01 13:44:18  lewisg
+  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
   Revision 1.21  2005/05/19 16:59:17  lewisg
   add top-down searching, fix variable mod bugs
 

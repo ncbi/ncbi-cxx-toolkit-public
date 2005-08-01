@@ -926,16 +926,18 @@ public:
 
     void AddPeak(CMSPeak *PeakIn);
 
-    //! put the pointers into an array sorted by mass
-    /*!
-    \param Peptol the precursor mass tolerance
-    \param Zdep should the tolerance be charge dependent?
-    */
-    void SortPeaks(
-		   int Peptol,
-           int Zdep
-		   );
-
+    /**
+     *  put the pointers into an array sorted by mass
+     *
+     * @param Peptol the precursor mass tolerance
+     * @param Zdep should the tolerance be charge dependent?
+     * @return maximum m/z value
+     */
+    int SortPeaks(
+        int Peptol,
+        int Zdep
+        );
+    
     TPeakSet& GetPeaks(void);
     CIntervalTree& SetIntervalTree(void);
 
@@ -976,6 +978,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.28  2005/08/01 13:44:18  lewisg
+  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
   Revision 1.27  2005/05/13 17:57:17  lewisg
   one mod per site and bug fixes
 

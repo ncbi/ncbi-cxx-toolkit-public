@@ -284,7 +284,7 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 	PeakSet.AddPeak(Peaks);
 		
     }
-    PeakSet.SortPeaks(static_cast <int> (MyRequest->GetSettings().GetPeptol()*MSSCALE),
+    MaxMZ = PeakSet.SortPeaks(static_cast <int> (MyRequest->GetSettings().GetPeptol()*MSSCALE),
                       MyRequest->GetSettings().GetZdep());
 	
 }
@@ -605,7 +605,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     LadderCalc.reset(new Int1[MaxModPerPep]);
 	CAA AA;
 		
-	int Missed = MyRequest->GetSettings().GetMissedcleave()+1;  // number of missed cleaves allowed + 1
+	int Missed;  // number of missed cleaves allowed + 1
+    if(enzyme->GetNonSpecific()) Missed = 1;
+    else Missed = MyRequest->GetSettings().GetMissedcleave()+1;
+
 	int iMissed; // iterate thru missed cleavages
     
 	int iSearch, hits;
@@ -663,6 +666,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	CMSPeakSet PeakSet;
 	const TMassPeak *MassPeak; // peak currently in consideration
 	CMSPeak* Peaks;
+    CIntervalTree::const_iterator im; // iterates over interval tree
 	
 	Spectrum2Peak(PeakSet);
 
@@ -728,9 +732,15 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		Site[iMissed][0] = (const char *)-1;
 	    }
 	    PepStart[Missed - 1] = (const char *)Sequence;
-		
+
+        // if non-specific enzyme, set stop point
+        if(enzyme->GetNonSpecific()) {
+            enzyme->SetStop() = (const char *)Sequence + MyRequest->GetSettings().GetMinnoenzyme();
+        }
+
 	    // iterate thru the sequence by digesting it
 	    while(!SequenceDone) {
+
 			
 		// zero out no missed cleavage peptide mass and mods
 		// note that Masses and EndMass are separate to reuse
@@ -797,7 +807,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 		int OldMass;  // keeps the old peptide mass for comparison
 		bool NoMassMatch;  // was there a match to the old mass?
-        CIntervalTree::const_iterator im; // iterates over interval tree
 
 		for(iMissed = 0; iMissed < Missed; iMissed++) {	    
 		    if(PepStart[iMissed] == (const char *)-1) continue;  // skip start
@@ -953,54 +962,88 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 			} // MassPeak
 		    } //iMod
 		} // iMissed
-		if(!SequenceDone) {
-            int NumModCount;
-            const char *OldSite;
-            int NumModSitesCount;
-		    // get rid of longest peptide and move the other peptides down the line
-		    for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
-    			// move masses to next missed cleavage
-    			Masses[iMissed] = Masses[iMissed + 1];
-    			// don't move EndMasses as they are recalculated
-    
-    			// move the modification data
-                NumModCount = 0;
-                OldSite = 0;
-                NumModSitesCount = 0;
-    			for(iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
-                    // throw away the c term peptide mods as we have a new c terminus
-                    if(Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcp  && 
-                       Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcpaa) {
-        			    DeltaMass[iMissed][NumModCount] = 
-        				DeltaMass[iMissed + 1][iMod];
-        			    Site[iMissed][NumModCount] = 
-        				Site[iMissed + 1][iMod];
-        			    ModEnum[iMissed][NumModCount] = 
-        				ModEnum[iMissed + 1][iMod];
-        			    IsFixed[iMissed][NumModCount] = 
-        				IsFixed[iMissed + 1][iMod];
-                        NumModCount++;
-                        // increment mod site count if new site and not fixed mod
-                        if(OldSite != Site[iMissed + 1][iMod] &&
-                            IsFixed[iMissed + 1][iMod] != 1) {
-                            NumModSitesCount++;
-                            OldSite = Site[iMissed + 1][iMod];
+        if (enzyme->GetNonSpecific()) {
+            PartialLoop:
+
+                // check that stop is within bounds
+                // upper bound is max precursor mass divided by lightest AA
+                if(enzyme->GetStop() - PepStart[0] < MaxMZ/MonoMass[7]/MSSCALE &&
+                   enzyme->GetStop() < (const char *)Sequence + length) {
+                    enzyme->SetStop()++;
+                }
+                else if ( PepStart[0] < (const char *)Sequence + length - MyRequest->GetSettings().GetMinnoenzyme()) {
+                    PepStart[0]++;
+                    enzyme->SetStop() = PepStart[0] + MyRequest->GetSettings().GetMinnoenzyme();
+                }
+                else SequenceDone = true;
+                
+                // todo: is the stop inclusive or exclusive
+                // if this is partial tryptic, loop back if one end or the other is not tryptic
+                // for start, need to check sequence before (check for start of seq)
+                // for end, need to deal with end of protein case
+                if(!SequenceDone && enzyme->GetCleaveNum() > 0 &&
+                   PepStart[0] != (const char *)Sequence &&
+                   enzyme->GetStop() != (const char *)Sequence + length ) {
+                    if (!enzyme->CheckCleaveChar(PepStart[0]-1) &&
+                        !enzyme->CheckCleaveChar(enzyme->GetStop())) 
+                        goto PartialLoop;
+                }
+                
+                PepEnd[0] = PepStart[0];
+        }
+        else {
+            if (!SequenceDone) {                
+                int NumModCount;
+                const char *OldSite;
+                int NumModSitesCount;
+                // get rid of longest peptide and move the other peptides down the line
+                for (iMissed = 0; iMissed < Missed - 1; iMissed++) {
+                    // move masses to next missed cleavage
+                    Masses[iMissed] = Masses[iMissed + 1];
+                    // don't move EndMasses as they are recalculated
+                    
+                    // move the modification data
+                    NumModCount = 0;
+                    OldSite = 0;
+                    NumModSitesCount = 0;
+                    for (iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
+                        // throw away the c term peptide mods as we have a new c terminus
+                        if (Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcp  && 
+                            Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcpaa) {
+                            DeltaMass[iMissed][NumModCount] = 
+                                DeltaMass[iMissed + 1][iMod];
+                            Site[iMissed][NumModCount] = 
+                                Site[iMissed + 1][iMod];
+                            ModEnum[iMissed][NumModCount] = 
+                                ModEnum[iMissed + 1][iMod];
+                            IsFixed[iMissed][NumModCount] = 
+                                IsFixed[iMissed + 1][iMod];
+                            NumModCount++;
+                            // increment mod site count if new site and not fixed mod
+                            if (OldSite != Site[iMissed + 1][iMod] &&
+                                IsFixed[iMissed + 1][iMod] != 1) {
+                                NumModSitesCount++;
+                                OldSite = Site[iMissed + 1][iMod];
+                            }
                         }
                     }
-    			}
-    			NumMod[iMissed] = NumModCount;
-                NumModSites[iMissed] = NumModSitesCount;
-    
-    			// copy starts to next missed cleavage
-    			PepStart[iMissed] = PepStart[iMissed + 1];
-		    }
-			
-		    // init new start from old stop
-		    PepEnd[Missed-1] += 1;
-		    PepStart[Missed-1] = PepEnd[Missed-1];
-		    // PepStart = PepEnd + 1;
-            } 
-	    }
+                    NumMod[iMissed] = NumModCount;
+                    NumModSites[iMissed] = NumModSitesCount;
+                    
+                    // copy starts to next missed cleavage
+                    PepStart[iMissed] = PepStart[iMissed + 1];
+                }
+                
+                // init new start from old stop
+                PepEnd[Missed-1] += 1;
+                PepStart[Missed-1] = PepEnd[Missed-1];
+                // PepStart = PepEnd + 1;
+            }
+        }
+
+    }
+
+
 	}
 	
 	// read out hits
@@ -1169,6 +1212,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
 TaxContinue2:
 		string seqstring, modseqstring;
 		string deflinestring(blastdefline);
+        string tempstartstop;
 		int iseq;
 		length = readdb_get_sequence(rdfp, MSHit->GetSeqIndex(),
 					     &Sequence);
@@ -1185,6 +1229,21 @@ TaxContinue2:
 		else {
 		    Hit = new CMSHits;
 		    Hit->SetPepstring(seqstring);
+
+            // set the start AA, if there is one
+            if(MSHit->GetStart() > 0) {
+                tempstartstop = UniqueAA[Sequence[MSHit->GetStart()-1]];
+                Hit->SetPepstart(tempstartstop);
+            }
+            else Hit->SetPepstart("");
+
+            // set the end AA, if there is one
+            if(MSHit->GetStop() < length - 1) {
+                tempstartstop = UniqueAA[Sequence[MSHit->GetStop()+1]];
+                Hit->SetPepstop(tempstartstop);
+            }
+            else Hit->SetPepstop("");
+
             if(isnan(Score)) {
                 ERR_POST(Info << "Not a number in hitset " << 
                         HitSet->GetNumber() <<
@@ -1486,6 +1545,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.52  2005/08/01 13:44:18  lewisg
+redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
 Revision 1.51  2005/06/16 21:22:11  lewisg
 fix n dependence
 

@@ -57,6 +57,18 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
+// getline that ignores extra eol char for windows
+static CNcbiIstream& MyGetline(CNcbiIstream& is, string& str)
+{
+    // mac is \x0d
+    // win is \x0d\x0a
+    // unix is \x0a
+    NcbiGetline(is, str, "\x0d\x0a");
+    if (is.peek() == '\x0a') is.get();
+    return is;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSpectrumSet::
@@ -67,7 +79,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 /// wrapper for various file loaders
 ///
 
-int CSpectrumSet::LoadFile(EFileType FileType, std::istream& DTA, int Max)
+int CSpectrumSet::LoadFile(EFileType FileType, CNcbiIstream& DTA, int Max)
 {
     switch (FileType) {
     case eDTA:
@@ -98,7 +110,7 @@ int CSpectrumSet::LoadFile(EFileType FileType, std::istream& DTA, int Max)
 ///
 /// load multiple dta's in xml-like format
 ///
-int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
+int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
 {   
     int iIndex(-1); // the spectrum index
     int Count(0);  // total number of spectra
@@ -110,7 +122,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
         do {
 
             do {
-                getline(DTA, Line);
+                MyGetline(DTA, Line);
             } while (NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
             if (!DTA || DTA.eof()) {
                 if (GotOne) {
@@ -147,7 +159,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
             }
             {
                 do {
-                    getline(DTA, Line);
+                    MyGetline(DTA, Line);
                 } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
                 
                 CNcbiIstrstream istr(Line.c_str());
@@ -157,7 +169,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                     return 1;
                 }
             }
-            getline(DTA, Line);
+            MyGetline(DTA, Line);
             TInputPeaks InputPeaks;
 
             while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
@@ -165,7 +177,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
-                getline(DTA, Line);
+                MyGetline(DTA, Line);
             } 
             if(GotOne) {
                 Peaks2Spectrum(InputPeaks, MySpectrum);
@@ -191,7 +203,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 ///
 /// load multiple dta's separated by a blank line
 ///
-int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
+int CSpectrumSet::LoadMultBlankLineDTA(CNcbiIstream& DTA, int Max, bool isPKL)
 {   
     int iIndex(0); // the spectrum index
     int Count(0);  // total number of spectra
@@ -210,7 +222,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
             iIndex++;
             {
                 do {
-                    getline(DTA, Line);
+                    MyGetline(DTA, Line);
                 } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
                 
                 CNcbiIstrstream istr(Line.c_str());
@@ -221,7 +233,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
                     else
                         return 1;
             }
-            getline(DTA, Line);
+            MyGetline(DTA, Line);
 
             if (!DTA || DTA.eof()) {
                 if (GotOne) 
@@ -238,7 +250,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
                     break;
                 GotOne = true;
                 GotThisOne = true;
-                getline(DTA, Line);
+                MyGetline(DTA, Line);
             } 
             if(GotThisOne) {
                 Peaks2Spectrum(InputPeaks, MySpectrum);
@@ -264,7 +276,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
 ///
 ///  Read in the header of a DTA file
 ///
-bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum,
+bool CSpectrumSet::GetDTAHeader(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum,
                                 bool isPKL)
 {
     double dummy(0.0L);
@@ -336,7 +348,7 @@ bool CSpectrumSet::Peaks2Spectrum(const TInputPeaks& InputPeaks, CRef <CMSSpectr
 ///
 /// Read in the body of a dta file
 ///
-bool CSpectrumSet::GetDTABody(std::istream& DTA, TInputPeaks& InputPeaks)
+bool CSpectrumSet::GetDTABody(CNcbiIstream& DTA, TInputPeaks& InputPeaks)
 {
     float dummy(0.0);
     TInputPeak InputPeak;
@@ -358,7 +370,7 @@ bool CSpectrumSet::GetDTABody(std::istream& DTA, TInputPeaks& InputPeaks)
 ///
 /// load in a single dta file
 ///
-int CSpectrumSet::LoadDTA(std::istream& DTA)
+int CSpectrumSet::LoadDTA(CNcbiIstream& DTA)
 {   
     CRef <CMSSpectrum> MySpectrum;
     bool GotOne(false);  // has a spectrum been read?
@@ -372,7 +384,7 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 
         {
             do {
-                getline(DTA, Line);
+                MyGetline(DTA, Line);
             } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
             
             CNcbiIstrstream istr(Line.c_str());
@@ -381,7 +393,7 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 
         TInputPeaks InputPeaks;
         while (DTA) {
-            getline(DTA, Line);
+            MyGetline(DTA, Line);
             CNcbiIstrstream istr(Line.c_str());
             if (!GetDTABody(istr, InputPeaks)) break;
             GotOne = true;
@@ -408,7 +420,7 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 /// load mgf
 ///
 
-int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
+int CSpectrumSet::LoadMGF(CNcbiIstream& DTA, int Max)
 {
     int iIndex(0); // the spectrum index
     int Count(0);  // total number of spectra
@@ -456,7 +468,7 @@ int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
 ///
 /// Read in an ms/ms block in an mgf file
 ///
-int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
 {
     string Line;
     bool GotMass(false);
@@ -465,14 +477,14 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
 
     // find the start of the block
     do {
-        getline(DTA, Line);
+        MyGetline(DTA, Line);
         if(!DTA || DTA.eof()) 
             return -1;
     } while (NStr::CompareNocase(Line, 0, 10, "BEGIN IONS") != 0);
 
     // scan in headers
     do {
-        getline(DTA, Line);
+        MyGetline(DTA, Line);
         if(!DTA || DTA.eof()) 
             return 1;
         if (NStr::CompareNocase(Line, 0, 6, "TITLE=") == 0) {
@@ -516,7 +528,7 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
 
         if(!GetDTABody(istr, InputPeaks)) return 1;
 skipone:
-        getline(DTA, Line);
+        MyGetline(DTA, Line);
     } 
     Peaks2Spectrum(InputPeaks, MySpectrum);
 
@@ -532,6 +544,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/08/01 13:44:18  lewisg
+ * redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+ *
  * Revision 1.22  2005/06/17 18:11:55  lewisg
  * allow blank lines
  *

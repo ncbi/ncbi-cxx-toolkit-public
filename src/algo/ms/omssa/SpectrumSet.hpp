@@ -44,6 +44,8 @@
 #include <iostream>
 #include <deque>
 
+#include <corelib/ncbistr.hpp>
+
 // generated classes
 BEGIN_NCBI_SCOPE
 
@@ -84,13 +86,13 @@ public:
     ///
     /// wrapper for various file loaders
     ///
-    int LoadFile(EFileType FileType, std::istream& DTA, int Max = 0);
+    int LoadFile(EFileType FileType, CNcbiIstream& DTA, int Max = 0);
 
     ///
     /// load in a single dta file
     ///
     int LoadDTA(
-		std::istream& DTA  // stream containing dta
+		CNcbiIstream& DTA  // stream containing dta
 		);
 
     ///
@@ -98,7 +100,7 @@ public:
     ///
     /// returns -1 if more than Max spectra read
     int LoadMultDTA(
-		    std::istream& DTA,  // stream containing tag delimited dtas
+		    CNcbiIstream& DTA,  // stream containing tag delimited dtas
             int Max = 0   // maximum number of dtas to read in, 0= no limit
 		    );
 
@@ -107,7 +109,7 @@ public:
     ///
     /// returns -1 if more than Max spectra read
     int LoadMultBlankLineDTA(
-			     std::istream& DTA,  // stream containing blank delimited dtas
+			     CNcbiIstream& DTA,  // stream containing blank delimited dtas
                  int Max = 0,   // maximum number of dtas to read in, 0= no limit
                  bool isPKL = false     // pkl formatted?
 			     );
@@ -117,7 +119,7 @@ public:
     ///
     /// returns -1 if more than Max spectra read
     int LoadMGF(
-			     std::istream& DTA,  // stream containing mgf file
+			     CNcbiIstream& DTA,  // stream containing mgf file
                  int Max = 0   // maximum number of dtas to read in, 0= no limit
 			     );
 
@@ -127,7 +129,7 @@ protected:
     ///  Read in the header of a DTA file
     ///
     bool GetDTAHeader(
-		      std::istream& DTA,  // input stream
+		      CNcbiIstream& DTA,  // input stream
 		      CRef <CMSSpectrum>& MySpectrum,   // asn.1 container for spectra
               bool isPKL = false     // pkl formatted?
 		      );
@@ -147,14 +149,14 @@ protected:
     \return success
     */
     bool GetDTABody(
-				  std::istream& DTA,   // input stream
+				  CNcbiIstream& DTA,   // input stream
 				  TInputPeaks& InputPeaks   // asn.1 container for spectra
 				  );
 
     ///
     /// Read in an ms/ms block in an mgf file
     ///
-    int GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum); 
+    int GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum); 
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -188,6 +190,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/08/01 13:44:18  lewisg
+ * redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+ *
  * Revision 1.8  2005/01/31 17:30:57  lewisg
  * adjustable intensity, z dpendence of precursor mass tolerance
  *

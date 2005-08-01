@@ -1043,12 +1043,14 @@ CMSPeakSet::~CMSPeakSet()
 }
 
 
-//! put the pointers into an array sorted by mass
-/*!
-\param Peptol the precursor mass tolerance
-\param Zdep should the tolerance be charge dependent?
-*/
-void CMSPeakSet::SortPeaks(int Peptol, int Zdep)
+/**
+ *  put the pointers into an array sorted by mass
+ *
+ * @param Peptol the precursor mass tolerance
+ * @param Zdep should the tolerance be charge dependent?
+ * @return maximum m/z value
+ */
+int CMSPeakSet::SortPeaks(int Peptol, int Zdep)
 {
     int iCharges;
     CMSPeak* Peaks;
@@ -1056,6 +1058,7 @@ void CMSPeakSet::SortPeaks(int Peptol, int Zdep)
     int CalcMass; // the calculated mass
     TMassPeak *temp;
     int ptol; // charge corrected mass tolerance
+    int MaxMZ(0);
 
     MassIntervals.Clear();
 
@@ -1084,9 +1087,12 @@ void CMSPeakSet::SortPeaks(int Peptol, int Zdep)
             const ncbi::CConstRef<ncbi::CObject> myobject(static_cast <CObject *> (temp));   
             MassIntervals.Insert(myrange,
                                          myobject);
+            // keep track of maximum m/z
+            if(temp->Mass + temp->Peptol > MaxMZ)
+                MaxMZ = temp->Mass + temp->Peptol;
     	}
     } 
 
-
+    return MaxMZ;
 }
 

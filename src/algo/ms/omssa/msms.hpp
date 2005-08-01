@@ -219,12 +219,24 @@ public:
                     );
 
 
-    ///
-    ///  Check to see if we are at a cleavage point
-    ///  Used by CalcAndCut
-    ///
+    /**
+     *  Check to see if we are at a cleavage point
+     *  Used by CalcAndCut
+     * 
+     * @param iPepStart pointer to location of sequence cursor
+     */
 
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart) = 0;
+    bool CheckCleave(const char *iPepStart);
+
+
+    /**
+     * is the character given one of the cleavage chars?
+     * 
+     * @param iPepStart position in the sequence
+     * 
+     */
+    bool CheckCleaveChar(const char *iPepStart) const;
+
 
     void CalcMass(char SeqChar,
 		  int *Masses,
@@ -285,25 +297,115 @@ public:
      */
     bool GetTopDown(void) const;
 
+    /**
+     * Get the enzyme stop value
+     */
+    const char * GetStop(void) const;
+    
+    /**
+     * Set the enzyme stop value
+     */
+    const char * & SetStop(void);
+
+    /**
+     * Is this a non-specific search?
+     */
+    bool GetNonSpecific(void) const;
+
+    /**
+      * Get the number of cleavage chars
+      */
+    int GetCleaveNum(void) const;
+
 protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
     CAA ReverseAA;
     char *Reverse;
 
-    // where to cleave.  last two letters are in readdb format, assuming 
-    // it uses the UniqueAA alphabet
+    /**
+     *  where to cleave.  last two letters are in readdb format, assuming 
+     * it uses the UniqueAA alphabet
+     */
     char *CleaveAt;
+
+    /**
+     *  what is the cleavage offset
+     */
+    char *CleaveOffset;
+
+    /**
+     *  How many cleavage characters
+     */
     int kCleave;
+
     /**
      * TopDown
      * does this signify a top-down search
      */
     bool TopDown;
-};
+
+    /**
+     * Stop
+     * Stop position for no-enzyme and semi-tryptic searches
+     */
+    const char *Stop;
+
+    /**
+     * Is this a non-specific search?
+     */
+    bool NonSpecific;
+
+    /**
+     * Should we apply the proline rule (no cleavage before proline)
+     */
+    bool CheckProline;
+};    
 
 
 ///////////////////    CCleave inline methods
+
+/**
+ * is the character given one of the cleavage chars?
+ * 
+ * @param iPepStart position in the sequence
+ * 
+ */
+inline
+bool CCleave::CheckCleaveChar(const char *iPepStart) const
+{
+    int j;
+    for(j = 0; j < kCleave; j++) 
+        if(*(iPepStart + CleaveOffset[j]) == CleaveAt[j]) return true;
+    return false;
+}
+
+
+/**
+ *  Check to see if we are at a cleavage point
+ *  Used by CalcAndCut
+ * 
+ * @param iPepStart pointer to location of sequence cursor
+ */
+inline
+bool CCleave::CheckCleave(const char *iPepStart)
+{
+    if(TopDown) return false; // todo: methionine cleavage allowed
+
+    if(NonSpecific) {
+        if(iPepStart == GetStop()) return true;
+        return false; // todo: methionine cleavage allowed
+    }
+
+    // check specific cleave amino acids
+    if(CheckCleaveChar(iPepStart)) {
+        if(CheckProline && *(iPepStart+1) == '\x0e' )  
+            return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
 
 inline
 void CCleave::CalcMass(char SeqChar,
@@ -406,6 +508,42 @@ bool CCleave::GetTopDown(void) const
     return TopDown;
 }
 
+/**
+ * Is this a non-specific search?
+ */
+inline
+bool CCleave::GetNonSpecific(void) const
+{
+    return NonSpecific;
+}
+
+/**
+ * Get the enzyme stop value
+ */
+inline
+const char * CCleave::GetStop(void) const
+{
+    return Stop;
+}
+
+/**
+ * Set the enzyme stop value
+ */
+inline
+const char * & CCleave::SetStop(void)
+{
+    return Stop;
+}
+
+
+/**
+  * Get the number of cleavage chars
+  */
+inline
+int CCleave::GetCleaveNum(void) const
+{
+    return kCleave;
+}
 
 /////////////////// end of CCleave inline methods
 
@@ -414,88 +552,66 @@ bool CCleave::GetTopDown(void) const
 class NCBI_XOMSSA_EXPORT CCNBr: public CCleave {
 public:
     CCNBr(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CFormicAcid: public CCleave {
 public:
     CFormicAcid(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CTrypsin: public CCleave {
 public:
     CTrypsin(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CArgC: public CCleave {
 public:
     CArgC(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CChymotrypsin: public CCleave {
 public:
     CChymotrypsin(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CLysC: public CCleave {
 public:
     CLysC(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CLysCP: public CCleave {
 public:
     CLysCP(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CPepsinA: public CCleave {
 public:
     CPepsinA(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CTrypCNBr: public CCleave {
 public:
     CTrypCNBr(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CTrypChymo: public CCleave {
 public:
     CTrypChymo(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
 class NCBI_XOMSSA_EXPORT CTrypsinP: public CCleave {
 public:
     CTrypsinP(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
@@ -503,8 +619,6 @@ public:
 class NCBI_XOMSSA_EXPORT CWholeProtein: public CCleave {
 public:
     CWholeProtein(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
@@ -512,8 +626,6 @@ public:
 class NCBI_XOMSSA_EXPORT CAspN: public CCleave {
 public:
     CAspN(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 
@@ -521,16 +633,12 @@ public:
 class NCBI_XOMSSA_EXPORT CGluC: public CCleave {
 public:
     CGluC(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
 //! Glu-C and Asp-N
 class NCBI_XOMSSA_EXPORT CGluCAspN: public CCleave {
 public:
     CGluCAspN(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
  
@@ -543,9 +651,44 @@ public:
 class NCBI_XOMSSA_EXPORT CTopDown: public CCleave {
 public:
     CTopDown(void);
-
-    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
+
+
+/**
+ * eMSEnzymes_semi_tryptic
+ * semi tryptic search (one end of peptide has to be tryptic)
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CSemiTryptic: public CCleave {
+public:
+    CSemiTryptic(void);
+};
+
+
+/**
+ * eMSEnzymes_no_enzyme
+ * search without enzyme (precursor mass only)
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CNoEnzyme: public CCleave {
+public:
+    CNoEnzyme(void);
+};
+
+
+/**
+ * eMSEnzymes_chymotrypsin_p
+ * chymotrypsin without proline rule
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CChymoP: public CCleave {
+public:
+    CChymoP(void);
+};
+
 
 ///
 /// factory to return back object for enzyme
@@ -577,6 +720,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.23  2005/08/01 13:44:18  lewisg
+  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
   Revision 1.22  2005/05/19 16:59:17  lewisg
   add top-down searching, fix variable mod bugs
 

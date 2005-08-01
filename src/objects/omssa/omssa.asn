@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.23 2005/05/19 16:59:17 lewisg Exp $
+-- $Id: omssa.asn,v 1.24 2005/08/01 13:44:18 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -60,7 +60,10 @@ MSEnzymes ::= INTEGER {
 	gluc (13),
 	aspngluc (14),
 	top-down (15),
-        max(16),
+	semi-tryptic (16),
+	no-enzyme (17),
+	chymotrypsin-p (18),
+        max(19),
 	none (255)
 	}
 
@@ -317,9 +320,10 @@ MSSearchSettings ::= SEQUENCE {
 	chargehandling MSChargeHandle OPTIONAL,  -- how to deal with charges
 	usermods MSModSpecSet OPTIONAL,  -- user defined modifications
 	pseudocount INTEGER DEFAULT 1, -- min number of counts per precursor bin
-	searchb1 INTEGER DEFAULT 0,    -- should b1 product be in search (1 = no)
-	searchctermproduct INTEGER DEFAULT 0, -- should c terminus ion be searched (1=no)
-	maxproductions INTEGER DEFAULT 0      -- max number of ions in each series (0=all)
+	searchb1 INTEGER DEFAULT 0,    -- should b1 product be in search (1=no, 0=yes)
+	searchctermproduct INTEGER DEFAULT 0, -- should c terminus ion be searched (1=no, 0=yes)
+	maxproductions INTEGER DEFAULT 0,     -- max number of ions in each series (0=all)
+	minnoenzyme INTEGER DEFAULT 4         -- min number of AA in peptide for noenzyme search
 }
 
 
@@ -384,7 +388,9 @@ MSHits ::= SEQUENCE {
 	mzhits SEQUENCE OF MSMZHit OPTIONAL,  -- ions hit
 	pepstring VisibleString OPTIONAL,  -- the peptide sequence
         mass INTEGER OPTIONAL,  -- scaled mass of peptide in Da
-	mods SEQUENCE OF MSModHit OPTIONAL  -- modifications to sequence
+	mods SEQUENCE OF MSModHit OPTIONAL,  -- modifications to sequence
+	pepstart VisibleString OPTIONAL,  -- AA before the peptide
+        pepstop VisibleString OPTIONAL    -- AA after the peptide
 	}
 
 

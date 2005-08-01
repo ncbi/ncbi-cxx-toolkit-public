@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 4));
+    SetVersion(CVersionInfo(1, 0, 5));
 }
 
 
@@ -288,6 +288,10 @@ void COMSSA::Init()
                     "max number of ions in each series being searched (0=all)",
                     CArgDescriptions::eInteger, 
                     "100");
+    argDesc->AddDefaultKey("no", "minno", 
+                     "minimum size of peptides for no-enzyme and semi-tryptic searches",
+                     CArgDescriptions::eInteger, 
+                     "4");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -383,7 +387,7 @@ int COMSSA::Run()
 
     int FileRetVal(1);
 	if(args["fx"].AsString().size() != 0) {
-	    ifstream PeakFile(args["fx"].AsString().c_str());
+	    CNcbiIfstream PeakFile(args["fx"].AsString().c_str());
 	    if(!PeakFile) {
 		ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
 			 args["fx"].AsString());
@@ -392,7 +396,7 @@ int COMSSA::Run()
 	    FileRetVal = Spectrumset->LoadFile(eDTAXML, PeakFile);
 	}
 	else if(args["f"].AsString().size() != 0) {
-	    ifstream PeakFile(args["f"].AsString().c_str());
+	    CNcbiIfstream PeakFile(args["f"].AsString().c_str());
 	    if(!PeakFile) {
 		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
 			 args["f"].AsString());
@@ -401,7 +405,7 @@ int COMSSA::Run()
 	    FileRetVal = Spectrumset->LoadFile(eDTA, PeakFile);
 	}
 	else if(args["fb"].AsString().size() != 0) {
-	    ifstream PeakFile(args["fb"].AsString().c_str());
+	    CNcbiIfstream PeakFile(args["fb"].AsString().c_str());
 	    if(!PeakFile) {
 		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
 			 args["fb"].AsString());
@@ -410,7 +414,7 @@ int COMSSA::Run()
 	    FileRetVal = Spectrumset->LoadFile(eDTABlank, PeakFile);
 	}
 	else if(args["fp"].AsString().size() != 0) {
-	    ifstream PeakFile(args["fp"].AsString().c_str());
+	    CNcbiIfstream PeakFile(args["fp"].AsString().c_str());
 	    if(!PeakFile) {
 		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
 			 args["fp"].AsString());
@@ -419,7 +423,7 @@ int COMSSA::Run()
 	    FileRetVal = Spectrumset->LoadFile(ePKL, PeakFile);
 	}
     else if(args["fm"].AsString().size() != 0) {
-         ifstream PeakFile(args["fm"].AsString().c_str());
+         CNcbiIfstream PeakFile(args["fm"].AsString().c_str());
          if(!PeakFile) {
          ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
               args["fm"].AsString());
@@ -472,6 +476,7 @@ int COMSSA::Run()
     Request->SetSettings().SetSearchb1(args["sb1"].AsInteger());
     Request->SetSettings().SetSearchctermproduct(args["sct"].AsInteger());
     Request->SetSettings().SetMaxproductions(args["sp"].AsInteger());
+    Request->SetSettings().SetMinnoenzyme(args["no"].AsInteger());
 
 	if(args["x"].AsString() != "0") {
 	    InsertList(args["x"].AsString(), Request->SetSettings().SetTaxids(), "unknown tax id");
@@ -589,6 +594,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.39  2005/08/01 13:44:18  lewisg
+  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
+
   Revision 1.38  2005/07/20 20:32:24  lewisg
   new version
 
