@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.6 2005/08/01 14:17:57 ywang Exp $
+-- $Id: pcassay.asn,v 1.7 2005/08/01 14:43:30 ucko Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -81,8 +81,8 @@ PC-AssayResults ::= SEQUENCE {
                       }               DEFAULT unspecified,
     rank              INTEGER                   DEFAULT 0, -- Numeric Rank of Assay Outcome (for result ordering)
                                                            --   Note: Larger numbers are more active
-    data              SEQUENCE OF PC-AssayData             -- Assay Data Reported for this SID (vector)
-    url               VisibleString              OPTIONAL, -- Depositor provided URL for this Result
+    data              SEQUENCE OF PC-AssayData,            -- Assay Data Reported for this SID (vector)
+    url               VisibleString              OPTIONAL -- Depositor provided URL for this Result
 }
 
 
@@ -235,6 +235,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.7  2005/08/01 14:43:30  ucko
+-- Fix comma-misplacement typo in previous revision.
+--
 -- Revision 1.6  2005/08/01 14:17:57  ywang
 -- make PC-AssayResults version OPTIONAL and put url at the end
 --
