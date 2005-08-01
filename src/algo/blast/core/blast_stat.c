@@ -85,8 +85,11 @@ of K, so high accuracy is generally unwarranted.
 
 #define BLAST_KARLIN_K_ITER_MAX 100 /**< upper limit on iterations for BlastKarlinLHtoK */
 
+/** Number of statistical parameters in each row of the precomputed tables. */
+#define BLAST_NUM_STAT_VALUES 8
 
-typedef double array_of_8[8]; /**< Holds values (gap-opening, extension, etc.) for a matrix. */
+/** Holds values (gap-opening, extension, etc.) for a matrix. */
+typedef double array_of_8[BLAST_NUM_STAT_VALUES];
 
 /** Used to temporarily store matrix values for retrieval. */
 typedef struct MatrixInfo {
@@ -147,7 +150,7 @@ if 14 values were to be allowed.
 
 2.) add a two-dimensional array to contain the statistical parameters:
 
-static double testmatrix_values[TESTMATRIX_VALUES_MAX][8] ={ ...
+static array_of_8 testmatrix_values[TESTMATRIX_VALUES_MAX] ={ ...
 
 3.) add a "prefs" array that should hint about the "optimal" 
 gap existence and extension penalties:
@@ -172,7 +175,7 @@ add two lines before the return at the end of the function:
    
 
 #define BLOSUM45_VALUES_MAX 14 /**< Number of different combinations supported for BLOSUM45. */
-static double  blosum45_values[BLOSUM45_VALUES_MAX][8] = {
+static array_of_8 blosum45_values[BLOSUM45_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7},
     {13, 3, (double) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22},
     {12, 3, (double) INT2_MAX, 0.199, 0.039, 0.11, 1.8, -34},
@@ -208,7 +211,7 @@ BLAST_MATRIX_NOMINAL
 
 
 #define BLOSUM50_VALUES_MAX 16 /**< Number of different combinations supported for BLOSUM50. */
-static double  blosum50_values[BLOSUM50_VALUES_MAX][8] = {
+static array_of_8 blosum50_values[BLOSUM50_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0},
     {13, 3, (double) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16},
     {12, 3, (double) INT2_MAX, 0.206, 0.055, 0.17, 1.2, -18},
@@ -247,7 +250,7 @@ BLAST_MATRIX_NOMINAL
 };  /**< Quality values for BLOSUM50 matrix, each element corresponds to same element number in array blosum50_values */
 
 #define BLOSUM62_VALUES_MAX 12 /**< Number of different combinations supported for BLOSUM62. */
-static double  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
+static array_of_8 blosum62_values[BLOSUM62_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2},
     {11, 2, (double) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10},
     {10, 2, (double) INT2_MAX, 0.291, 0.075, 0.23, 1.3, -15},
@@ -279,7 +282,7 @@ static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
 
 
 #define BLOSUM80_VALUES_MAX 10 /**< Number of different combinations supported for BLOSUM80. */
-static double  blosum80_values[BLOSUM80_VALUES_MAX][8] = {
+static array_of_8 blosum80_values[BLOSUM80_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6},
     {25, 2, (double) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6},
     {13, 2, (double) INT2_MAX, 0.336, 0.15, 0.57, 0.59, -3},
@@ -305,7 +308,7 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
 };  /**< Quality values for BLOSUM80 matrix, each element corresponds to same element number in array blosum80_values */
 
 #define BLOSUM90_VALUES_MAX 8 /**< Number of different combinations supported for BLOSUM90. */
-static double  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
+static array_of_8 blosum90_values[BLOSUM90_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4},
     {9, 2, (double) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6},
     {8, 2, (double) INT2_MAX, 0.300, 0.099, 0.39, 0.76, -7},
@@ -328,7 +331,7 @@ static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 };  /**< Quality values for BLOSUM90 matrix, each element corresponds to same element number in array blosum90_values */
 
 #define PAM250_VALUES_MAX 16 /**< Number of different combinations supported for PAM250. */
-static double  pam250_values[PAM250_VALUES_MAX][8] = {
+static array_of_8 pam250_values[PAM250_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0},
     {15, 3, (double) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23},
     {14, 3, (double) INT2_MAX, 0.200, 0.043, 0.12, 1.7, -26},
@@ -367,7 +370,7 @@ BLAST_MATRIX_NOMINAL
 };  /**< Quality values for PAM250 matrix, each element corresponds to same element number in array pam250_values */
 
 #define PAM30_VALUES_MAX 7 /**< Number of different combinations supported for PAM30. */
-static double  pam30_values[PAM30_VALUES_MAX][8] = {
+static array_of_8 pam30_values[PAM30_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3},
     {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3},
     {6, 2, (double) INT2_MAX, 0.287, 0.11, 0.68, 0.42, -4},
@@ -389,7 +392,7 @@ BLAST_MATRIX_NOMINAL,
 
 
 #define PAM70_VALUES_MAX 7 /**< Number of different combinations supported for PAM70. */
-static double  pam70_values[PAM70_VALUES_MAX][8] = {
+static array_of_8 pam70_values[PAM70_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7},
     {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5},
     {7, 2, (double) INT2_MAX, 0.286, 0.093, 0.43, 0.67, -7},
@@ -412,7 +415,7 @@ BLAST_MATRIX_NOMINAL
 
 
 #define BLOSUM62_20_VALUES_MAX 65 /**< Number of different combinations supported for BLOSUM62 with 1/20 bit scaling. */
-static double  blosum62_20_values[BLOSUM62_20_VALUES_MAX][8] = {
+static array_of_8 blosum62_20_values[BLOSUM62_20_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
     {100, 12, (double) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15},
     {95, 12, (double) INT2_MAX, 0.0291, 0.047, 0.18, 0.16, -20},
@@ -547,6 +550,59 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };  /**< Quality values for BLOSUM62_20 matrix, each element corresponds to same element number in array blosum62_20_values */
+
+/** Supported substitution and gap costs with corresponding quality values
+ * for nucleotide sequence comparisons.
+ * 
+ * The fields are:
+ * 
+ * 1. Gap opening cost,
+ * 2. Gap extension cost,
+ * 3. Lambda,
+ * 4. K,
+ * 5. H,
+ * 6. Alpha,
+ * 7. Beta,
+ * 8. Theta
+ */
+
+/** Karlin-Altschul parameter values for substitution scores 1 and -4. */
+static const array_of_8 blastn_values_1_4[] = {
+    { 1, 2, 1.36, 0.67, 1.2,  1.1,  0, 98.3 }, 
+    { 0, 2, 1.26, 0.43, 0.90, 1.4, -1, 91.1 },
+    { 2, 1, 1.35, 0.61, 1.1,  1.2, -1, 97.6 },
+    { 1, 1, 1.22, 0.35, 0.72, 1.7, -3, 88.2 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 1 and -3. */
+static const array_of_8 blastn_values_1_3[] = {
+    { 2, 2, 1.37, 0.70, 1.2,  1.1,  0, 99.7 },
+    { 1, 2, 1.35, 0.64, 1.1,  1.2, -1, 98.3 },
+    { 0, 2, 1.25, 0.42, 0.83, 1.5, -2, 91.0 },
+    { 2, 1, 1.34, 0.60, 1.1,  1.2, -1, 97.5 },
+    { 1, 1, 1.21, 0.34, 0.71, 1.7, -2, 88.1 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 1 and -2. */
+static const array_of_8 blastn_values_1_2[] = {
+    { 2, 2, 1.33, 0.62, 1.1,  1.2,  0, 99.8 },
+    { 1, 2, 1.30, 0.52, 0.93, 1.4, -2, 97.5 }, 
+    { 0, 2, 1.19, 0.34, 0.66, 1.8, -3, 89.3 },
+    { 3, 1, 1.32, 0.57, 1.0,  1.3, -1, 99.0 }, 
+    { 2, 1, 1.29, 0.49, 0.92, 1.4, -1, 96.8 }, 
+    { 1, 1, 1.14, 0.26, 0.52, 2.2, -5, 85.5 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 1 and -1. */
+static const array_of_8 blastn_values_1_1[] = {
+    { 3,  2, 1.09, 0.31,  0.55, 2.0, -2,  99.2 },
+    { 2,  2, 1.07, 0.27,  0.49, 2.2, -3,  97.4 }, 
+    { 1,  2, 1.02, 0.21,  0.36, 2.8, -6,  92.8 }, 
+    { 0,  2, 0.80, 0.064, 0.17, 4.8, -16, 72.8 },
+    { 4,  1, 1.08, 0.28,  0.54, 2.0, -2,  98.3 }, 
+    { 3,  1, 1.06, 0.25,  0.46, 2.3, -4,  96.5 }, 
+    { 2,  1, 0.99, 0.17,  0.30, 3.3, -10, 90.1 }
+};
 
 /** Deallocates SBlastScoreMatrix structure
  * @param matrix structure to deallocate [in]
@@ -2841,7 +2897,179 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 
    return buffer;
 }
+
+/** Returns the array of values corresponding to the given match/mismatch
+ * scores, the number of supported gap cost combinations and thresholds for 
+ * the gap costs, beyond which the ungapped statistics can be applied.
+ * @param reward Match reward score [in]
+ * @param penalty Mismatch penalty score [in]
+ * @param array_size Number of supported combinations for this match/mismatch
+ *                   pair [out]
+ * @param gap_open_max Gap opening cost threshold for infinite gap costs [in]
+ * @param gap_extend_max Gap extension cost threshold for infinite gap costs [in]
+ * @param error_return Pointer to error message [in] [out]
+ * @return Corresponding array of values.
+ */
+static const array_of_8 *
+s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
+                     Int4* gap_open_max, Int4* gap_extend_max,
+                     Blast_Message** error_return)
+{
+    const array_of_8 * kValues;
+
+    if (reward == 1 && penalty == -4) {
+        kValues = blastn_values_1_4;
+        *array_size = sizeof(blastn_values_1_4)/sizeof(array_of_8);
+        *gap_open_max = 2;
+        *gap_extend_max = 2;
+    } else if (reward == 1 && penalty == -3) { 
+        kValues = blastn_values_1_3;
+        *array_size = sizeof(blastn_values_1_3)/sizeof(array_of_8);
+        *gap_open_max = 2;
+        *gap_extend_max = 2;
+    } else if (reward == 1 && penalty == -2) {
+        kValues = blastn_values_1_2;
+        *array_size = sizeof(blastn_values_1_2)/sizeof(array_of_8);
+        *gap_open_max = 3;
+        *gap_extend_max = 2;
+    } else if (reward == 1 && penalty == -1) {
+        kValues = blastn_values_1_1;
+        *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 2;
+    } else if (error_return) {
+        char buffer[256];
+        /* Unsupported reward-penalty */
+        sprintf(buffer, "Substitution scores %d and %d are not supported", 
+                reward, penalty);
+        Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+    }
+
+    return kValues;
+}
    
+Int2
+Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
+                              Int4 gap_extend, Int4 reward, Int4 penalty,
+                              Blast_KarlinBlk* kbp_ungap,
+                              Blast_Message** error_return)
+{
+    const int kGapOpenIndex = 0;
+    const int kGapExtIndex = 1;
+    const int kLambdaIndex = 2;
+    const int kKIndex = 3;
+    const int kHIndex = 4;
+    int num_combinations = 0;
+    int index;
+    int gap_open_max, gap_extend_max;
+    const array_of_8 *kValues = 
+        s_GetNuclValuesArray(reward, penalty, &num_combinations, 
+                             &gap_open_max, &gap_extend_max, error_return);
+
+    ASSERT(kbp && kbp_ungap);
+
+    if (!kValues)
+#if 1 /* Remove these lines when all supported scoring systems get data in
+         tables. */
+    {
+        Blast_KarlinBlkCopy(kbp, kbp_ungap);
+        return 0;
+    }
+#else
+        return 1;
+#endif
+
+    /* The first entry in the kValues array is always for the "infinite" costs.
+       It will be applied if our gap costs are >= than the largest of the 
+       costs available in the table. */
+    for (index = 0; index < num_combinations; ++index) {
+        if (kValues[index][kGapOpenIndex] == gap_open &&
+            kValues[index][kGapExtIndex] == gap_extend) {
+            kbp->Lambda = kValues[index][kLambdaIndex];
+            kbp->K = kValues[index][kKIndex];
+            kbp->logK = log(kbp->K);
+            kbp->H = kValues[index][kHIndex];
+            break;
+        }
+    }
+    
+    if (index == num_combinations) {
+        /* If gap costs are larger than maximal provided in tables, copy
+           the values from the ungapped Karlin block. */
+        if (gap_open >= gap_open_max && gap_extend >= gap_extend_max) {
+            Blast_KarlinBlkCopy(kbp, kbp_ungap);
+        } else if (error_return) {
+            char buffer[256];
+            /* Unsupported gap costs combination. */
+            sprintf(buffer, "Gap existence and extension values %d and %d "
+                    "are not supported for substitution scores %d and %d", 
+                    gap_open, gap_extend, reward, penalty);
+            Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+#if 1 /* Remove this line when all supported scoring systems get data in
+         tables. */
+            Blast_KarlinBlkCopy(kbp, kbp_ungap);
+#else
+            return 1;
+#endif
+        }
+    }
+
+    return 0;
+}
+
+/** Returns the beta statistical parameter value, given the nucleotide 
+ * substitution scores.
+ * @param reward Match reward score [in]
+ * @param penalty Mismatch penalty score [in]
+ * @return The value of the beta parameter.
+ */
+static double s_GetUngappedBeta(Int4 reward, Int4 penalty)
+{
+    double beta = 0;
+    if (reward == 1 && penalty == -1)
+        beta = -2;
+    
+    return beta;
+}
+
+Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
+                            Int4 gap_extend, Blast_KarlinBlk* kbp,
+                            double *alpha, double *beta)
+{
+    const int kGapOpenIndex = 0;
+    const int kGapExtIndex = 1;
+    const int kAlphaIndex = 5;
+    const int kBetaIndex = 6;
+    Int4 num_combinations = 0;
+    Int4 gap_open_max = 0, gap_extend_max = 0;
+    const array_of_8 *kValues = 
+        s_GetNuclValuesArray(reward, penalty, &num_combinations, 
+                             &gap_open_max, &gap_extend_max, NULL);
+    Int4 index = 0;
+
+    ASSERT(alpha && beta && kbp);
+
+    *alpha = *beta = 0;
+
+    if (kValues) {
+        for (index = 0; index < num_combinations; ++index) {
+            if (kValues[index][kGapOpenIndex] == gap_open && 
+                kValues[index][kGapExtIndex] == gap_extend) {
+                *alpha = kValues[index][kAlphaIndex];
+                *beta = kValues[index][kBetaIndex];
+                break;
+            }
+        }
+    }
+
+    /* If input values not found in tables, assume that this is an ungapped
+       search, and return ungapped values of alpha and beta. */
+    if (!kValues || index == num_combinations) {
+        *alpha = kbp->Lambda/kbp->H;
+        *beta = s_GetUngappedBeta(reward, penalty);
+    }
+    return 0;
+}
 
 /** Calculates score from expect value and search space.
  * @param E expect value [in]
@@ -3683,6 +3911,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.119  2005/08/01 17:30:31  dondosha
+ * Added functions to return Lambda, K, alpha, beta for nucleotide search, given substitution and gap scores
+ *
  * Revision 1.118  2005/07/12 22:57:03  bealer
  * - Change "BlastQueryInfo*" to "const BlastQueryInfo*" in several places.
  *

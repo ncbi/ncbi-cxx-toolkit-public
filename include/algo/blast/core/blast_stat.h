@@ -253,6 +253,25 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
         Int4 gap_extend, Int4 decline_align, const char* matrix_name, 
         Blast_Message** error_return);
 
+/** Retrieves Karlin-Altschul parameters from precomputed tables, given the
+ * substitution and gap scores. Gap cost values greater than any of those 
+ * listed in the tables ("greater" meaning that both values are greater than or
+ * equal, and at least one is strictly greater), are treated as infinite, and 
+ * parameters values are copied from the ungapped Karlin block.
+ * @param kbp Allocated Karlin block to fill [in] [out]
+ * @param gap_open Gap openening (existence) cost [in]
+ * @param gap_extend Gap extension cost [in]
+ * @param reward Match reward score [in]
+ * @param penalty Mismatch penalty score [in]
+ * @param kbp_ungap Karlin block with ungapped Karlin-Altschul parameters [in]
+ * @param error_return Pointer to error message. [in] [out]
+ */
+Int2
+Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
+                              Int4 gap_extend, Int4 reward, Int4 penalty,
+                              Blast_KarlinBlk* kbp_ungap,
+                              Blast_Message** error_return);
+
 
 /** Calculates the Karlin-Altschul parameters assuming standard residue
  * compositions for the query and subject sequences. It populates the kbp_ideal
@@ -411,6 +430,22 @@ double BLAST_LargeGapSumE (Int2 num,  double xsum,
 void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
                     double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
+/** Extract the alpha and beta settings for these substitution and gap scores. 
+ * If substitution or gap costs are not found in the tables, assume an ungapped
+ * search. Then alpha is computed using the formula Alpha = Lambda/H, and beta
+ * is equal to 0 except for some special cases.
+ * @param reward Match reward score [in]
+ * @param penalty Mismatch penalty score [in]
+ * @param gap_open Gap opening (existence) cost [in]
+ * @param gap_extend Gap extension cost [in]
+ * @param kbp Karlin block containing already computed Lambda, K and H 
+ *            parameters.
+ * @param alpha Alpha parameter for this scoring system [out]
+ * @param beta Beta parameter for this scoring system [out]
+ */
+Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
+                            Int4 gap_extend, Blast_KarlinBlk* kbp,
+                            double *alpha, double *beta);
 
 /** Rescale the PSSM, using composition-based statistics, for use
  *  with RPS BLAST. This function produces a PSSM for a single RPS DB
