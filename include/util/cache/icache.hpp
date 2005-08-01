@@ -171,7 +171,8 @@ public:
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       unsigned int   time_to_live = 0) = 0;
+                       unsigned int   time_to_live = 0,
+                       const string&  owner = kEmptyStr) = 0;
 
     /// Check if BLOB exists, return BLOB size.
     ///
@@ -259,7 +260,8 @@ public:
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    unsigned int     time_to_live = 0) = 0;
+                                    unsigned int     time_to_live = 0,
+                                    const string&    owner = kEmptyStr) = 0;
 
     /// Remove all versions of the specified BLOB
     ///
@@ -338,7 +340,7 @@ public:
 };
 
 
-NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 3, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 4, 0, 0);
 
 template<>
 class CDllResolver_Getter<ICache>
@@ -365,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/01 16:50:09  kuznets
+ * Added BLOB's owner to interface spec
+ *
  * Revision 1.17  2005/06/30 16:54:34  grichenk
  * Moved cache ownership to GB loader. Improved cache sharing.
  * Added CGBDataLoader::PurgeCache().
