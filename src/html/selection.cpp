@@ -56,7 +56,7 @@ CSelection::CSelection(const CCgiRequest& request,
     if ( found != values.end() ) {
         for ( TCgiEntriesCI i = values.lower_bound(checkboxName),
               end = values.upper_bound(checkboxName); i != end; ++i ) {
-            AddID(NStr::StringToInt(i->second));
+            AddID(NStr::StringToInt(string(i->second)));
         }
     }
 }
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/01 15:54:56  ivanov
+ * Explicitly convert StringTo*() parameter to string
+ *
  * Revision 1.7  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -93,7 +93,7 @@ CPager::CPager(const CCgiRequest& request,
         i = entries.find(KParam_InputPage);
         if (i != entries.end()) {
             try {
-                m_DisplayPage = NStr::StringToInt(i->second) - 1;
+                m_DisplayPage = NStr::StringToInt(string(i->second)) - 1;
                 m_DisplayPage = max(m_DisplayPage, 0);
                 m_PageChanged = true;
             } catch (exception& _DEBUG_ARG(e)) {
@@ -109,7 +109,8 @@ CPager::CPager(const CCgiRequest& request,
             if( !page || oldPageSize == entries.end() )
                 throw runtime_error("Error getting page params");
             //number of the first element in old pagination
-            int oldFirstItem = page * NStr::StringToInt( oldPageSize->second );
+            int oldFirstItem = page * 
+                               NStr::StringToInt(string(oldPageSize->second));
             m_DisplayPage = oldFirstItem / m_PageSize;
         } catch(exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::CPager: " << e.what() );
@@ -172,7 +173,7 @@ int CPager::GetDisplayedPage(const CCgiRequest& request)
 
     if (entry != entries.end()) {
         try {
-            int displayPage = NStr::StringToInt(entry->second);
+            int displayPage = NStr::StringToInt(string(entry->second));
             if ( displayPage >= 0 )
                 return displayPage;
             _TRACE( "Negative page start in CPager::GetDisplayedPage: " <<
@@ -517,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/08/01 15:54:56  ivanov
+ * Explicitly convert StringTo*() parameter to string
+ *
  * Revision 1.46  2005/06/21 21:48:46  yasmax
  * id is added
  *
