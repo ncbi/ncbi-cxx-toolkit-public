@@ -165,38 +165,17 @@ public:
     /******************* Gapped extension options *******************/
     /// Returns GapExtnAlgorithm
     EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
+
     /// Sets GapExtnAlgorithm
     /// @param algo GapExtnAlgorithm [in]
-    void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) 
-    {
-        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
-            if (algo != GetGapExtnAlgorithm() ) {
-                if (algo == eGreedyExt || algo == eGreedyWithTracebackExt) {
-                    SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
-                    SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
-                } else {
-                    SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
-                    SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
-                }
-            }
-        }
-        m_Opts->SetGapExtnAlgorithm(algo); 
-    }
+    void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) {m_Opts->SetGapExtnAlgorithm(algo);}
 
     /// Returns GapTracebackAlgorithm
     EBlastTbackExt GetGapTracebackAlgorithm() const { return m_Opts->GetGapTracebackAlgorithm(); }
+
     /// Sets GapTracebackAlgorithm
     /// @param algo GapTracebackAlgorithm [in]
-    void SetGapTracebackAlgorithm(EBlastTbackExt algo) 
-    {
-        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
-            if (algo != GetGapTracebackAlgorithm() && algo != eGreedyTbck) {
-                SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
-                SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
-            }
-        }
-        m_Opts->SetGapTracebackAlgorithm(algo); 
-    }
+    void SetGapTracebackAlgorithm(EBlastTbackExt algo) {m_Opts->SetGapTracebackAlgorithm(algo); }
 
     /************************ Scoring options ************************/
     /// Returns MatchReward
@@ -296,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/08/01 12:55:01  madden
+ * Change SetGapExtnAlgorithm and SetGapTracebackAlgorithm so they do not change gap costs
+ *
  * Revision 1.26  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.
