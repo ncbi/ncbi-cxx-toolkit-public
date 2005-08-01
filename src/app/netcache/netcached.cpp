@@ -348,7 +348,8 @@ public:
         eVersion,
         eRemove,
         eLogging,
-        eGetConfig
+        eGetConfig,
+        eGetStat,
     } ERequestType;
         
     void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
@@ -409,6 +410,9 @@ private:
 
     /// Process "GETCONF" request
     void ProcessGetConfig(CSocket& sock);
+
+    /// Process "GETSTAT" request
+    void ProcessGetStat(CSocket& sock, const Request& req);
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -602,6 +606,10 @@ void CNetCacheServer::Process(SOCK sock)
                     stat.req_code = 'C';
                     ProcessGetConfig(socket);
                     break;
+                case eGetStat:
+                    stat.req_code = 'T';
+                    ProcessGetStat(socket, req);
+                    break;
                 case eVersion:
                     stat.req_code = 'V';
                     ProcessVersion(socket, req);
@@ -680,6 +688,63 @@ void CNetCacheServer::ProcessGetConfig(CSocket& sock)
     CConn_SocketStream ios(sk);
     m_Reg.Write(ios);
 }
+
+void CNetCacheServer::ProcessGetStat(CSocket& sock, const Request& req)
+{
+    SOCK sk = sock.GetSOCK();
+    sock.SetOwnership(eNoOwnership);
+    sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+    CConn_SocketStream ios(sk);
+
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+
+    SBDB_CacheStatistics cs;
+    bdb_cache->GetStatistics(&cs);
+
+    // print statistics
+
+    ios << "[bdb_stat]" << "\n\n";
+
+    ios << "blobs_stored_total = "   << cs.blobs_stored_total   << "\n";
+    ios << "blobs_overflow_total = " << cs.blobs_overflow_total << "\n";
+    ios << "blobs_updates_total = " << cs.blobs_updated_total << "\n";
+    ios << "blobs_never_read_total = " << cs.blobs_never_read_total << "\n";
+    ios << "blobs_read_total = " << cs.blobs_read_total << "\n";
+    ios << "blobs_expl_deleted_total = " << cs.blobs_expl_deleted_total << "\n";
+    ios << "blobs_size_total = " << unsigned(cs.blobs_size_total) << "\n";
+    ios << "blob_size_max_total = " << cs.blob_size_max_total << "\n";
+    ios << "blobs_db = " << cs.blobs_db << "\n";
+    ios << "blobs_size_db = " << unsigned(cs.blobs_size_db) << "\n";
+
+    ios << "\n" << "[bdb_stat_hist]" << "\n\n";
+
+    // find the histogram's end
+
+    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator hist_end = 
+        cs.blob_size_hist.end();
+
+    ITERATE(SBDB_CacheStatistics::TBlobSizeHistogram, it, cs.blob_size_hist) {
+        if (it->second > 0) {
+            hist_end = it;
+        }
+    }
+
+    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator it =
+        cs.blob_size_hist.begin();
+
+    for (; it != cs.blob_size_hist.end(); ++it) {
+        ios << "size  = " << it->first  << "\n";
+        ios << "count = " << it->second << "\n";
+        if (it == hist_end) {
+            break;
+        }
+    }
+}
+
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
 {
@@ -1052,6 +1117,13 @@ put_args_parse:
         s += 7;
         return;
     } // GETCONF
+
+    if (strncmp(s, "GETSTAT", 7) == 0) {
+        req->req_type = eGetStat;
+        s += 7;
+        return;
+    } // GETCONF
+
 
     if (strncmp(s, "GET", 3) == 0) {
         req->req_type = eGet;
@@ -1541,6 +1613,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/08/01 16:53:10  kuznets
+ * Added BDB statistics
+ *
  * Revision 1.60  2005/07/28 12:53:35  ssikorsk
  * Replaced TInterfaceVersion traits with GetDefaultDrvVers() method call.
  *
