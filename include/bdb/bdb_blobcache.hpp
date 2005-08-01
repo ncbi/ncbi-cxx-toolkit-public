@@ -108,7 +108,7 @@ class CCacheCleanerThread;
 
 /// BDB cache statistics
 ///
-struct SBDB_CacheStatistics
+struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
 {
     /// Blob size to number of blobs
     typedef map<unsigned, unsigned>     TBlobSizeHistogram;
@@ -655,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/08/01 19:43:59  vakatov
+ * NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
+ *
  * Revision 1.56  2005/08/01 16:51:37  kuznets
  * Added BDB cache statistics
  *
