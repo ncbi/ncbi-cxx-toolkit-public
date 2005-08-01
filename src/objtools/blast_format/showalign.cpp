@@ -1201,10 +1201,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
 }
 
 
-const void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
-                                                const string& sequence , 
-                                                int& match, int& positive, 
-                                                string& middle_line) 
+void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
+                                          const string& sequence , 
+                                          int& match, int& positive, 
+                                          string& middle_line) 
 {
     match = 0;
     positive = 0;
@@ -1241,7 +1241,7 @@ const void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 }
 
 
-const void 
+void 
 CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                  list<int>& use_this_gi, 
                                  CNcbiOstream& out) const
@@ -1353,11 +1353,11 @@ HSP\"></a>";
 }
 
 
-const void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id, 
-                                         int start, int len, int frame, int row,
-                                         bool color_mismatch, 
-                                         list<SAlnSeqlocInfo*> loc_list, 
-                                         CNcbiOstream& out) const 
+void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id, 
+                                   int start, int len, int frame, int row,
+                                   bool color_mismatch, 
+                                   list<SAlnSeqlocInfo*> loc_list, 
+                                   CNcbiOstream& out) const 
 {
     _ASSERT((int)sequence.size() > start);
     list<CRange<int> > actualSeqloc;
@@ -2430,6 +2430,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.83  2005/08/01 14:45:27  dondosha
+*Removed meaningless const return types, fixing icc compiler warning
+*
 *Revision 1.82  2005/07/26 17:35:13  jianye
 *Specify genetic code
 *

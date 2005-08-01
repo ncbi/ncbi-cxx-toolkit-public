@@ -399,7 +399,7 @@ private:
     ///@param use_this_gi: display this gi instead
     ///@param out: output stream
     ///
-    const void x_PrintDefLine(const CBioseq_Handle& bsp_handle, 
+    void x_PrintDefLine(const CBioseq_Handle& bsp_handle, 
                               list<int>& use_this_gi,
                               CNcbiOstream& out) const;
 
@@ -414,10 +414,10 @@ private:
     ///@param loc_list: seqlocs to be shown as specified in constructor
     ///@param out: output stream
     ///
-    const void x_OutputSeq(string& sequence, const CSeq_id& id, int start, 
-                           int len, int frame, int row, bool color_mismatch, 
-                           list<SAlnSeqlocInfo*> loc_list, 
-                           CNcbiOstream& out) const;
+    void x_OutputSeq(string& sequence, const CSeq_id& id, int start, 
+                     int len, int frame, int row, bool color_mismatch, 
+                     list<SAlnSeqlocInfo*> loc_list, 
+                     CNcbiOstream& out) const;
     
     /// Count number of total gaps
     ///@return: number of toal gaps for the current alnvec
@@ -498,9 +498,9 @@ private:
     ///@param positive: number of positive match
     ///@param middle_line: the middle line to be filled
     ///
-    const void x_FillIdentityInfo(const string& sequence_standard,
-                                  const string& sequence, int& match,
-                                  int& positive, string& middle_line);
+    void x_FillIdentityInfo(const string& sequence_standard,
+                            const string& sequence, int& match,
+                            int& positive, string& middle_line);
 
     ///set feature info
     ///@param feat_info: feature to fill in
@@ -591,6 +591,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.32  2005/08/01 14:45:24  dondosha
+*Removed meaningless const return types, fixing icc compiler warning
+*
 *Revision 1.31  2005/07/26 17:35:07  jianye
 *Specify genetic code
 *
