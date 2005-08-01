@@ -19,7 +19,6 @@ Blocks with sub-template definitions should start from the beginning of line.
     </h3>
 </@HEADER@>
 
-
 // Page view.
 
 <@VIEW@>
@@ -38,36 +37,10 @@ Blocks with sub-template definitions should start from the beginning of line.
 <@TITLE@>Default page title if the TITLE tag is not mapped</@TITLE@>
 
 
-// Table definition.
-// Tag "table_row_hook" will be replaced with some "table_row_template"
-// See s_TableRowHook() function in the source code.
 
-<@table@>
-<table border="1" width="600" cellspacing="0" cellpadding="2">
-  <tr class="row_header"> 
-    <th width="40%"> Name  </th>
-    <th width="*">   Phone </th>
-    <th width="40%"> Email </th>
-  </tr>
-  <@table_row_hook@>
-</table>
-</@table@>
+// Include some sub-template libraries
+// Included file can containt relative or absolute path
+// in OS dependent format. 
 
-
-// Table row template definition
-
-<@table_row_template@>
-  <tr class="row_<@class@>"> 
-    <td><@name@></td>
-    <td><@phone@></td>
-    <td><@email@></td>
-  </tr>
-</@table_row_template@>
-
-// Sub-templates for the numeric adder example
-<@ADDER@>
-<p>
-<@num_add@>
-<b>Sum = <@num_sum@><b>
-</p>
-</@ADDER@>
+#include "demo_html_template_phone.inc"
+#include "demo_html_template_adder.inc"
