@@ -216,6 +216,13 @@ private:
     CNCBINode* x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                 TMode mode);
 
+    // Allow/disable processing of #include directives for template libraries.
+    // eAllowIncludes used by default for LoadTemplateLibFile().
+    enum ETemplateIncludes{
+        eAllowIncludes,  // process #include's
+        eSkipIncludes    // do not process #include's
+    };
+
     /// Load template library.
     ///
     /// This is an internal version that works only with streams.
@@ -223,10 +230,18 @@ private:
     ///   Menu type to enable
     /// @param size
     ///   Size of input, if known (0 otherwise).
+    /// @param includes
+    ///   Defines to process or not #include directives.
+    ///   Used only for loading template libraries from files
+    /// @param file_name
+    ///   Name of the template library file.
+    ///   Used only in LoadTemplateLibFile() for error reporting.
     /// @sa
     ///   LoadTemplateLibFile(), LoadTemplateLibString(),
     ///   LoadTemplateLibBuffer(), LoadTemplateLibStream()
-    void x_LoadTemplateLib(CNcbiIstream& is, size_t size = 0);
+    void x_LoadTemplateLib(CNcbiIstream& is, size_t size = 0,
+                           ETemplateIncludes includes  = eSkipIncludes,
+                           const string&     file_name = kEmptyStr);
 
 private:
     /// Generate page internal name on the base of template source.
@@ -373,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/08/01 16:00:42  ivanov
+ * Added support #include command for template libraries
+ *
  * Revision 1.35  2004/02/04 17:15:10  ivanov
  * Added debug function GeneratePageInternalName()
  *

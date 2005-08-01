@@ -429,22 +429,6 @@ void CHTMLPage::SetTemplateFile(const string& template_file)
 }
 
 
-void CHTMLPage::LoadTemplateLibFile(const string& template_file)
-{
-    Int8 size = CFile(template_file).GetLength();
-
-    if (size <= 0) {
-        return;
-    } else if (size >= numeric_limits<size_t>::max()) {
-        NCBI_THROW(CHTMLException, eTemplateTooBig,
-                   "CHTMLPage: input template " + template_file
-                   + " too big to handle");
-    }
-    CNcbiIfstream is(template_file.c_str());
-    x_LoadTemplateLib(is, (SIZE_TYPE)size);
-}
-
-
 static SIZE_TYPE s_Find(const string& s, const char* target,
                         SIZE_TYPE start = 0)
 {
@@ -460,7 +444,9 @@ static SIZE_TYPE s_Find(const string& s, const char* target,
 }
 
 
-void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size)
+void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size,
+                                  ETemplateIncludes includes, 
+                                  const string& file_name /* = kEmptyStr */)
 {
     string str("\n");
     char   buf[kBufferSize];
@@ -470,16 +456,63 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size)
     if ( size ) {
         str.reserve(size);
     }
-    while (is) {
-        is.read(buf, sizeof(buf));
-        if (size == 0  &&  is.gcount() > 0
-            &&  str.size() == str.capacity()) {
-            // We don't know how big str will need to be, so we grow it
-            // exponentially.
-            str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
-                        str.size() / 2));
+    if (includes == eAllowIncludes) {
+        // Read line by line and parse it for #includes
+        string s;
+        static const char* kInclude = "#include ";
+        static const int   kIncludeLen = strlen(kInclude);
+
+        for (int i = 1;  NcbiGetline(is, s, "\r\n");  ++i) {
+
+            if ( NStr::StartsWith(s, kInclude) ) {
+                SIZE_TYPE pos = kIncludeLen;
+                SIZE_TYPE len = s.length();
+                while (pos < len  &&  isspace((unsigned char)s[pos])) {
+                    pos++;
+                }
+                bool error = false;
+                if (pos < len  &&  s[pos] == '\"') {
+                    pos++;
+                    SIZE_TYPE pos_end = s.find("\"", pos);
+                    if (pos_end == NPOS) {
+                        error = true;
+                    } else {
+                        string file_name = s.substr(pos, pos_end - pos);
+                        LoadTemplateLibFile(file_name);
+                    }
+                } else {
+                    error = true;
+                }
+                if ( error ) {
+                    NCBI_THROW(CHTMLException, eTemplateAccess,
+                               "CHTMLPage::x_LoadTemplate(): " \
+                               "incorrect #include syntax, file '" +
+                               file_name + "', line " + NStr::IntToString(i));
+                }
+
+            } else {  // General line
+
+                if (str.size() == str.capacity()  &&  s.length() > 0) {
+                    // We don't know how big str will need to be,
+                    // so we grow it exponentially.
+                    str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
+                                str.size() / 2));
+                }
+                str.append(s + "\n");
+            }
         }
-        str.append(buf, is.gcount());
+    } else {
+        // Use faster block read
+        while (is) {
+            is.read(buf, sizeof(buf));
+            if (str.size() == str.capacity()  &&  is.gcount() > 0) {
+                // We don't know how big str will need to be,
+                // so we grow it exponentially.
+                str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
+                            str.size() / 2));
+            }
+            str.append(buf, is.gcount());
+        }
     }
     if ( !is.eof() ) {
         NCBI_THROW(CHTMLException, eTemplateAccess,
@@ -554,6 +587,26 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size)
     }
 }
 
+
+void CHTMLPage::LoadTemplateLibFile(const string& template_file)
+{
+    Int8 size = CFile(template_file).GetLength();
+
+    if (size == 0) {
+        return;
+    } else if (size < 0) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::LoadTemplateLibFile(): failed to open " \
+                   "template file '" + template_file  + "'");
+    } else if (size >= numeric_limits<size_t>::max()) {
+        NCBI_THROW(CHTMLException, eTemplateTooBig,
+                   "CHTMLPage::LoadTemplateLibFile(): template file '" +
+                   template_file + "' is too big to handle");
+    }
+    CNcbiIfstream is(template_file.c_str());
+    x_LoadTemplateLib(is, (SIZE_TYPE)size, eAllowIncludes, template_file);
+}
+
     
 END_NCBI_SCOPE
 
@@ -561,6 +614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/08/01 16:00:54  ivanov
+ * Added support #include command for template libraries
+ *
  * Revision 1.44  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
