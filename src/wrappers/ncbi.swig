@@ -142,9 +142,9 @@ object = ncbi_object
 
 %include serial_manip.i        // MSerial_AsnText, etc.
 
+%include basic_containers.i    // vectors and lists of builtins and strings
 %import corelib/ncbiobj.hpp    // Need CConstRef before ncbi_templates.i
 %include ncbi_templates.i      // Some auto-generated %templates
-%include basic_containers.i    // vectors and lists of builtins and strings
 
 
 // operator[] for read access
@@ -199,6 +199,10 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/01 17:23:22  jcherry
+ * Made %include basic_containers.i come earlier (NStr was coming before
+ * vector<string> and list<string>)
+ *
  * Revision 1.3  2005/07/06 21:58:00  jcherry
  * Use conditional processing
  *
