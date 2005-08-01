@@ -204,20 +204,6 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         ++index;
         bool query_is_na, subject_is_na;
         int query_length, subject_length;
-        // Extract the full list of subject ids
-        try {
-            const CBioseq_Handle& kQueryBioseqHandle = 
-                scope->GetBioseqHandle(kAlign.GetSeq_id(0));
-            query_is_na = kQueryBioseqHandle.IsNa();
-            query_length = kQueryBioseqHandle.GetBioseqLength();
-            const CBioseq_Handle& kSubjBioseqHandle = 
-                scope->GetBioseqHandle(kAlign.GetSeq_id(1));
-            subject_is_na = kSubjBioseqHandle.IsNa();
-            subject_length = kSubjBioseqHandle.GetBioseqLength();
-        } catch (const CException&) {
-            // Either query or subject sequence not found - skip this alignment.
-            continue;
-        }
 
         int score, num_ident;
         double bit_score;
@@ -229,6 +215,32 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         xhsp->SetBit_score(bit_score);
         xhsp->SetScore(score);
         xhsp->SetEvalue(evalue);
+
+        // Extract the full list of subject ids
+        try {
+            const CBioseq_Handle& kQueryBioseqHandle = 
+                scope->GetBioseqHandle(kAlign.GetSeq_id(0));
+            query_is_na = kQueryBioseqHandle.IsNa();
+            query_length = kQueryBioseqHandle.GetBioseqLength();
+            const CBioseq_Handle& kSubjBioseqHandle = 
+                scope->GetBioseqHandle(kAlign.GetSeq_id(1));
+            subject_is_na = kSubjBioseqHandle.IsNa();
+            subject_length = kSubjBioseqHandle.GetBioseqLength();
+        } catch (const CException&) {
+            // Either query or subject sequence not found - the remaining 
+            // information cannot be correctly filled. Add this HSP as is
+            // and continue.
+            xhsp->SetQuery_from(0);
+            xhsp->SetQuery_to(0);
+            xhsp->SetHit_from(0);
+            xhsp->SetHit_to(0);
+            xhsp->SetIdentity(num_ident); // This may be inaccurate when 
+                                          // alignment contains filtered regions.
+            xhsp->SetQseq(NcbiEmptyString);
+            xhsp->SetHseq(NcbiEmptyString);
+            xhsp_list.push_back(xhsp);
+            continue;
+        }
 
         CRef<CSeq_align> final_aln(0);
    
@@ -396,9 +408,9 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
     hit.Reset(new CHit());
 
     const CSeq_id& kSeqId = kAlignSet.Get().front()->GetSeq_id(1);
-    const CBioseq_Handle& kSubjBioseqHandle = scope->GetBioseqHandle(kSeqId);
 
     try {
+        const CBioseq_Handle& kSubjBioseqHandle = scope->GetBioseqHandle(kSeqId);
         /// @todo FIXME Should this be passed somehow? For now the following
         /// list is empty.
         list<int> use_this_gi; 
@@ -427,8 +439,11 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
     } catch (const CException&) {
         // If Bioseq handle didn't return some of the information, and not all
         // mandatory couldn't be filled, skip this hit completely.
-        hit.Reset(NULL);
-        return;
+        //hit.Reset(NULL);
+        hit->SetId(kSeqId.AsFastaString());
+        hit->SetDef("Unknown");
+        hit->SetAccession("Unknown");
+        hit->SetLen(0);
     };
         
     // For ungapped search, multiple HSPs, possibly from different strands,
