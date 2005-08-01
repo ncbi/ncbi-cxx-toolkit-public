@@ -195,7 +195,10 @@ protected:
     bool IsAlive();
 
     /// Print ini file
-    void PrintConfig(CNcbiOstream & out);
+    void PrintConfig(CNcbiOstream& out);
+
+    /// Print server statistics
+    void PrintStat(CNcbiOstream& out);
 
 protected:
 
@@ -440,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/08/01 16:52:26  kuznets
+ * +PrintStat()
+ *
  * Revision 1.34  2005/07/27 18:13:59  kuznets
  * PrintConfig()
  *

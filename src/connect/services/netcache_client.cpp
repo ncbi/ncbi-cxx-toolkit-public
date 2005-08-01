@@ -536,6 +536,19 @@ void CNetCacheClient::PrintConfig(CNcbiOstream & out)
     PrintServerOut(out);    
 }
 
+void CNetCacheClient::PrintStat(CNcbiOstream& out)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    SendClientName();
+
+    const char command[] = "GETSTAT";
+    WriteStr(command, sizeof(command));
+    PrintServerOut(out);
+}
+
+
 void CNetCacheClient::Logging(bool on_off)
 {
     CheckConnect(kEmptyStr);
@@ -704,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/08/01 16:52:38  kuznets
+ * +PrintStat()
+ *
  * Revision 1.43  2005/07/27 18:14:12  kuznets
  * PrintConfig()
  *
