@@ -328,8 +328,11 @@ Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup)
  lookup->longest_chain = longest_chain;
 
  /* allocate the overflow array */
- lookup->overflow = (Int4*) calloc( overflow_cells_needed, sizeof(Int4) );
- ASSERT(lookup->overflow != NULL);
+ if (overflow_cells_needed > 0)
+   {
+   lookup->overflow = (Int4*) calloc( overflow_cells_needed, sizeof(Int4) );
+   ASSERT(lookup->overflow != NULL);
+   }
 
 /* for each position in the lookup table backbone, */
 for(i=0;i<lookup->backbone_size;i++)
