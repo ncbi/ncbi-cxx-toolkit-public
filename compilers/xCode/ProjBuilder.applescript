@@ -389,7 +389,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -399,11 +399,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -537,7 +537,10 @@ script ProjBuilder
 			if asnName is "gui_project" or asnName is "plugin" or asnName is "seqalign_ext" then -- Should use sed properly here (but how?)
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9_]*\\)/\\1.asn/g')\"" & ret
 			else
-				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
+				set theScript to theScript & "  M=\"\"" & ret
+				set theScript to theScript & "  if test -e $m.module; then" & ret
+				set theScript to theScript & "    M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
+				set theScript to theScript & "  fi" & ret
 			end if
 			
 			set theScript to theScript & "  " & TheOUTPath & "/bin/$CONFIGURATION/datatool -oR " & TheNCBIPath
@@ -613,6 +616,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/08/02 14:02:24  lebedev
+ * Added check for module files in ASN build phase
+ *
  * Revision 1.32  2005/06/29 12:09:49  lebedev
  * Do not prebind libraries with Xcode 2.1 (per Apple recommendation)
  *
