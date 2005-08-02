@@ -232,6 +232,7 @@ protected:
     size_t x_TestPolyA(void);
     void   x_SetPattern(THits* hits);
     void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
+    Uint4  x_GetGenomicExtent(const Uint4 query_extent) const;
 };
 
 
@@ -241,6 +242,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/08/02 15:55:48  kapustin
+ * +x_GetGenomicExtent()
+ *
  * Revision 1.23  2005/07/05 16:50:31  kapustin
  * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
  *

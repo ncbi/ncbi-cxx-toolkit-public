@@ -51,11 +51,10 @@ BEGIN_NCBI_SCOPE
 
 // (1) - pre-processing
 // For non-covered ends longer than kNonCoveredEndThreshold use
-// m_max_genomic_ext. For shorter ends use kSubjPerQuery * length of
-// the non-covered end.
+// m_max_genomic_ext. For shorter ends use k * query_len^(1/kPower)
 
-static const size_t kNonCoveredEndThreshold = 55;
-static const size_t kSubjPerQuery = 300;
+static const Uint4 kNonCoveredEndThreshold = 55;
+static const Uint1 kPower = 3;
 
 // (2) - post-processing
 // exons shorter than kMinTermExonSize with identity lower than
@@ -71,7 +70,7 @@ CSplign::CSplign( void )
     m_MinCompartmentIdty = 0.5;
     m_endgaps = true;
     m_strand = true;
-    m_max_genomic_ext = 5000;
+    m_max_genomic_ext = 5500;
     m_nopolya = false;
     m_model_id = 0;
 }
@@ -513,11 +512,12 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     --qmin; --qmax; --smin; --smax;
     
     // select terminal genomic extents based on uncovered end sizes
-    size_t extent_left = (qmin >= kNonCoveredEndThreshold)? m_max_genomic_ext:
-        (kSubjPerQuery + 1)* qmin;
+    size_t extent_left = x_GetGenomicExtent(qmin);
+    // (qmin >= kNonCoveredEndThreshold)? m_max_genomic_ext: (kSubjPerQuery + 1)* qmin;
+
     size_t qspace = m_mrna.size() - qmax + 1;
-    size_t extent_right = (qspace >= kNonCoveredEndThreshold)?
-        m_max_genomic_ext: (kSubjPerQuery + 1)* qspace;
+    size_t extent_right = x_GetGenomicExtent(qspace);
+    // (qspace >= kNonCoveredEndThreshold)? m_max_genomic_ext: (kSubjPerQuery + 1)* qspace;
 
     if((*hits)[0].IsStraight()) {
         smin = max(0, int(smin - extent_left));
@@ -1373,7 +1373,8 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
                 term_segs[1]->m_box[3];
 
             const size_t intron_len = b - a;
-            const size_t max_intron_len = exon_size * kSubjPerQuery;
+            const size_t max_intron_len = x_GetGenomicExtent(exon_size); 
+            // = exon_size * kSubjPerQuery;
             if(intron_len > max_intron_len) {
                 turn2gap = true;
             }
@@ -1391,6 +1392,15 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
             s.m_score = 0;
         }
     }
+}
+
+
+Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len) const 
+{
+    const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) * m_max_genomic_ext;
+    const double rv = k * pow(query_len, 1. / kPower);
+
+    return Uint4(rv);
 }
 
 
@@ -1568,6 +1578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/08/02 15:55:36  kapustin
+ * +x_GetGenomicExtent()
+ *
  * Revision 1.30  2005/07/05 16:50:47  kapustin
  * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
  *
