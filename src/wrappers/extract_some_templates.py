@@ -77,7 +77,7 @@ for iname in inames:
             # all CConstRefs
             for cconstref in re.findall('CConstRef *< *([^ ]+) *>', h):
                 # get rid of qualifiers
-                cref = cref.split('::')[-1]
+                cconstref = cconstref.split('::')[-1]
                 classes['cconstref'][cconstref] = ''
 
     # find all classes defined by this module
