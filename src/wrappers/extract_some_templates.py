@@ -34,8 +34,9 @@ skipped = {}
 # keys = classes, values = module they're found in
 class_list = {}
 
-banned = {'int': '', 'double': '', 'bool': '', 'string': '',
-          'char': '', 'TSeqPos': '', 'Int8': ''}
+banned = ['int', 'double', 'bool', 'string',
+          'char', 'TSeqPos', 'Int8']
+banned_vectors = ['CHit'] # ncbi::CHit vs. ncbi::objects::CHit
 
 for iname in inames:
     headers = sppp.ProcessFile(iname)
@@ -60,8 +61,10 @@ for iname in inames:
                     # a container of non-CRef's
                     contained = contained.split('::')[-1]
                     if re.match('.*<.*', contained) \
-                           or banned.has_key(contained)\
-                           or (contained[0] != 'C' and contained[0] != 'S'):
+                           or contained in banned \
+                           or (contained[0] != 'C' and contained[0] != 'S') \
+                           or (container == 'vector' and
+                               contained in banned_vectors):
                         # a template of templates or a "banned" type; skip it
                         skipped['%s %s' % template] = ''
                         continue
