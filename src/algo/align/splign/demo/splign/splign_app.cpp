@@ -72,10 +72,10 @@ void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-  SetVersion(CVersionInfo(1, 14, 0, "Splign"));  
+  SetVersion(CVersionInfo(1, 15, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.14");
+  string program_name ("Splign v.1.15");
 
 #ifdef GENOME_PIPELINE
   program_name += 'p';
@@ -532,7 +532,7 @@ int CSplignApp::Run()
   splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
   splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
   splign.SetEndGapDetection(!(args["noendgaps"]));
-  splign.SetMaxGenomicExtension(5000);
+  splign.SetMaxGenomicExtension(5500);
 
   splign.SetAligner() = aligner;
   splign.SetSeqAccessor() = seq_loader;
@@ -721,6 +721,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/08/02 15:57:13  kapustin
+ * Adjust max genomic extent
+ *
  * Revision 1.43  2005/07/05 16:50:47  kapustin
  * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
  *
