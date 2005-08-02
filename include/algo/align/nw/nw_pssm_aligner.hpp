@@ -95,12 +95,30 @@ public:
 
     void SetFreqScale(const int scale) {m_FreqScale = scale;}
 
+    void SetWg  (TScore value)   // gap opening
+    { 
+        m_StartWg = m_Wg  = m_EndWg = value; 
+    }
+    void SetWs  (TScore value)   // gap extension
+    { 
+        m_StartWs = m_Ws  = m_EndWs = value; 
+    }
+    void SetStartWg(TScore value)  { m_StartWg = value; }   // gap opening
+    void SetStartWs(TScore value)  { m_StartWs = value; }   // gap extension
+    void SetEndWg(TScore value)    { m_EndWg = value; }   // gap opening
+    void SetEndWs(TScore value)    { m_EndWs = value; }   // gap extension
+
     // Getters
     const CNWAligner::TScore** GetPssm1() const {return m_Pssm1;}
     const char* GetSeq1() const                 {return m_Seq1;}
     const double** GetFreq1() const             {return m_Freq1;}
     const double** GetFreq2() const             {return m_Freq2;}
     int GetFreqScale() const                    {return m_FreqScale;}
+
+    TScore GetStartWg (void) const { return m_StartWg; }
+    TScore GetStartWs (void) const { return m_StartWs; }
+    TScore GetEndWg (void) const   { return m_EndWg; }
+    TScore GetEndWs (void) const   { return m_EndWs; }
 
     virtual TScore ScoreFromTranscript(const TTranscript& transcript,
                                        size_t start1 = 0,
@@ -109,18 +127,23 @@ public:
 protected:
 
     // Source sequences
-    const CNWAligner::TScore** m_Pssm1;
-    const double**             m_Freq1;
+    const TScore** m_Pssm1;
+    const double** m_Freq1;
 
-    const char*                m_Seq2;
-    const double**             m_Freq2;
+    const char*    m_Seq2;
+    const double** m_Freq2;
 
     // scale factor for position frequencies
     int                        m_FreqScale;
 
+    TScore   m_StartWg;// gap opening penalty for initial gaps
+    TScore   m_StartWs;// gap extension penalty for initial gaps
+    TScore   m_EndWg;  // gap opening penalty for terminal gaps
+    TScore   m_EndWs;  // gap extension penalty for terminal gaps
+
     // core dynamic programming
-    virtual CNWAligner::TScore x_Align (SAlignInOut* data);
-    CNWAligner::TScore x_AlignProfile (SAlignInOut* data);
+    virtual TScore x_Align (SAlignInOut* data);
+    TScore x_AlignProfile (SAlignInOut* data);
 
     // retrieve transcript symbol for a one-character diag
     virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
@@ -136,6 +159,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/02 17:34:28  papadopo
+ * 1. Add separate open and extend penalties for start and end gaps
+ * 2. Minor cleanup
+ *
  * Revision 1.5  2005/04/04 16:32:23  kapustin
  * Distinguish matches from mismatches in raw transcripts
  *
