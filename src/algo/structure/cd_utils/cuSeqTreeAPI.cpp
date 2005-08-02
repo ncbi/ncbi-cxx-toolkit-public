@@ -67,7 +67,8 @@ void SeqTreeAPI::annotateTreeByMembership()
 
 void SeqTreeAPI::annotateTreeByTaxonomy(TaxonomyLevel tax)
 {
-	m_taxLevel = tax;	
+	m_taxLevel = tax;
+	m_useMembership = false;
 }
 
 int SeqTreeAPI::getNumOfLeaves()
@@ -248,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/08/02 20:39:06  cliu
+ * no message
+ *
  * Revision 1.4  2005/07/28 21:20:27  cliu
  * deal with saved blast trees
  *
