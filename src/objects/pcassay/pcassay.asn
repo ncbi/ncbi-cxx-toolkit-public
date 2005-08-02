@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.7 2005/08/01 14:43:30 ucko Exp $
+-- $Id: pcassay.asn,v 1.8 2005/08/02 18:48:08 ywang Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -230,11 +230,17 @@ PC-RealMinMax ::= SEQUENCE {
     max               REAL                                 -- Maximum Value Allowed
 }
 
+---Add Assay Results Set as a wrapper to read and write sequence of PC-AssayResuls
+
+PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
 
 END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.8  2005/08/02 18:48:08  ywang
+-- add PC-AssayResultsSet to ease spec mapping
+--
 -- Revision 1.7  2005/08/01 14:43:30  ucko
 -- Fix comma-misplacement typo in previous revision.
 --
