@@ -1707,8 +1707,14 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             }
             if (m_Attlist && !SelfClosedTag()) {
                 m_Attlist = false;
+                TMemberIndex ind = first+1;
+                if (classType->GetMemberInfo(ind)->GetId().HasNotag()) {
+                    TopFrame().SetNotag();
+                    return ind;
+                }
                 if ( NextTagIsClosing() )
                     return kInvalidMember;
+/*
                 if (!NextIsTag()) {
                     TMemberIndex ind = first+1;
                     if (classType->GetMemberInfo(ind)->GetId().HasNotag()) {
@@ -1716,6 +1722,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         return ind;
                     }
                 }
+*/
             }
             if ( SelfClosedTag()) {
                 TMemberIndex last = classType->GetMembers().LastIndex();
@@ -2194,6 +2201,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/08/02 16:14:17  gouriano
+* Corrected reading of elements with attributes and leading white spaces in data
+*
 * Revision 1.79  2005/07/12 17:44:47  gouriano
 * Corrected reading of containers
 *
