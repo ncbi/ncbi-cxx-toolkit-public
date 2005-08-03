@@ -117,6 +117,7 @@ objects/seq/Seq_literal_.hpp
 objects/seq/Seqdesc.hpp
 objects/seq/Seqdesc_.hpp
 objects/seq/seqport_util.hpp
+
 objects/seqalign/Dense_diag.hpp
 objects/seqalign/Dense_diag_.hpp
 objects/seqalign/Dense_seg.hpp
@@ -133,6 +134,8 @@ objects/seqalign/Seq_align_set.hpp
 objects/seqalign/Seq_align_set_.hpp
 objects/seqalign/Std_seg.hpp
 objects/seqalign/Std_seg_.hpp
+objects/seqalign/seqalign_exception.hpp
+
 objects/seqblock/EMBL_block.hpp
 objects/seqblock/EMBL_block_.hpp
 objects/seqblock/EMBL_dbname.hpp
@@ -153,6 +156,7 @@ objects/seqblock/PRF_ExtraSrc.hpp
 objects/seqblock/PRF_ExtraSrc_.hpp
 objects/seqblock/SP_block.hpp
 objects/seqblock/SP_block_.hpp
+
 objects/seqcode/Seq_code_set.hpp
 objects/seqcode/Seq_code_set_.hpp
 objects/seqcode/Seq_code_table.hpp
@@ -161,6 +165,7 @@ objects/seqcode/Seq_code_type.hpp
 objects/seqcode/Seq_code_type_.hpp
 objects/seqcode/Seq_map_table.hpp
 objects/seqcode/Seq_map_table_.hpp
+
 objects/seqfeat/BinomialOrgName.hpp
 objects/seqfeat/BinomialOrgName_.hpp
 objects/seqfeat/BioSource.hpp
@@ -213,6 +218,7 @@ objects/seqfeat/Tx_evidence.hpp
 objects/seqfeat/Tx_evidence_.hpp
 objects/seqfeat/Txinit.hpp
 objects/seqfeat/Txinit_.hpp
+
 objects/seqloc/Giimport_id.hpp
 objects/seqloc/Giimport_id_.hpp
 objects/seqloc/Na_strand.hpp
@@ -243,6 +249,7 @@ objects/seqloc/Seq_point.hpp
 objects/seqloc/Seq_point_.hpp
 objects/seqloc/Textseq_id.hpp
 objects/seqloc/Textseq_id_.hpp
+
 objects/seqres/Byte_graph.hpp
 objects/seqres/Byte_graph_.hpp
 objects/seqres/Int_graph.hpp
@@ -369,6 +376,19 @@ objects/blast/Blast_finish_params_reques_.hpp
 objects/blast/blastclient.hpp
 objects/blast/blastclient_.hpp
 
+objects/blastxml/BlastOutput.hpp
+objects/blastxml/BlastOutput_.hpp
+objects/blastxml/Hit.hpp
+objects/blastxml/Hit_.hpp
+objects/blastxml/Hsp.hpp
+objects/blastxml/Hsp_.hpp
+objects/blastxml/Iteration.hpp
+objects/blastxml/Iteration_.hpp
+objects/blastxml/Parameters.hpp
+objects/blastxml/Parameters_.hpp
+objects/blastxml/Statistics.hpp
+objects/blastxml/Statistics_.hpp
+
 objects/id1/Entry_complexities.hpp
 objects/id1/Entry_complexities_.hpp
 objects/id1/id1_client.hpp
@@ -390,6 +410,8 @@ objects/id1/ID1server_request_.hpp
 
 objects/id2/id2_client.hpp
 objects/id2/id2_client_.hpp
+objects/id2/ID2_Blob_State.hpp
+objects/id2/ID2_Blob_State_.hpp
 objects/id2/ID2_Error.hpp
 objects/id2/ID2_Error_.hpp
 // objects/seqsplit/ID2_Id_Range.hpp
@@ -558,6 +580,7 @@ objects/taxon1/Taxon1_resp.hpp
 objects/taxon1/Taxon1_resp_.hpp
 objects/taxon1/Taxon2_data.hpp
 objects/taxon1/Taxon2_data_.hpp
+
 objects/blastdb/Blast_def_line.hpp
 objects/blastdb/Blast_def_line_.hpp
 objects/blastdb/Blast_def_line_set.hpp
@@ -598,6 +621,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.3  2005/07/15 15:27:29  jcherry
  * Added list<CRef<CGenetic_code_Base::C_E> >
  *

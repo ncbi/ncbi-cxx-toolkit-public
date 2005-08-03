@@ -102,6 +102,7 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 %%
 
 corelib/ddumpable.hpp
+corelib/env_reg.hpp
 corelib/metareg.hpp
 corelib/ncbi_bswap.hpp
 corelib/ncbi_limits.hpp
@@ -121,6 +122,7 @@ corelib/ncbienv.hpp
 corelib/ncbiexec.hpp
 corelib/ncbiexpt.hpp
 corelib/ncbifile.hpp
+corelib/ncbimempool.hpp
 corelib/ncbimisc.hpp
 corelib/ncbimtx.hpp
 corelib/ncbiobj.hpp
@@ -262,6 +264,17 @@ serial/typemapimpl.hpp
 serial/typeref.hpp
 serial/variant.hpp
 
+// No export specifiers
+%ifndef WINDOWS serial/soap/soap_client.hpp
+%ifndef WINDOWS serial/soap/soap_code.hpp
+%ifndef WINDOWS serial/soap/soap_detail.hpp
+%ifndef WINDOWS serial/soap/soap_fault.hpp
+%ifndef WINDOWS serial/soap/soap_message.hpp
+%ifndef WINDOWS serial/soap/soap_reason.hpp
+%ifndef WINDOWS serial/soap/soap_server.hpp
+%ifndef WINDOWS serial/soap/soap_subcode.hpp
+%ifndef WINDOWS serial/soap/soap_text.hpp
+
 %%
 
 %template(CNcbiMatrix_double) ncbi::CNcbiMatrix<double>;
@@ -300,6 +313,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.8  2005/07/27 13:12:11  jcherry
  * Hid corelib/plugin_manager.hpp from SWIG
  *

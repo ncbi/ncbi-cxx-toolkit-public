@@ -49,6 +49,9 @@ VECTOR_CREF(vector_CRef_CSeq_align_set, ncbi::objects::CSeq_align_set);
 %newobject ncbi::CDistMethods::NjTree;
 %newobject ncbi::ReadNewickTree;
 
+// SWIG thinks this is a function
+%ignore ncbi::blast::Version;
+
 %%
 
 algo/align/nw/align_exception.hpp
@@ -59,6 +62,7 @@ algo/align/nw/nw_spliced_aligner.hpp
 algo/align/nw/nw_spliced_aligner16.hpp
 algo/align/nw/nw_spliced_aligner32.hpp
 algo/align/nw/nw_band_aligner.hpp
+algo/align/nw/nw_pssm_aligner.hpp
 algo/align/splign/splign.hpp
 algo/align/splign/splign_compartment_finder.hpp
 algo/align/splign/splign_formatter.hpp
@@ -66,10 +70,16 @@ algo/align/splign/splign_formatter.hpp
 //algo/align/splign/splign_hit.hpp
 algo/align/splign/splign_simple.hpp
 algo/align/contig_assembly/contig_assembly.hpp
+algo/align/util/algo_align_util_exceptions.hpp
+algo/align/util/align_shadow.hpp
+algo/align/util/blast_tabular.hpp
+algo/align/util/hit_comparator.hpp
+algo/align/util/hit_filter.hpp
 algo/sequence/antigenic.hpp
 algo/sequence/coiled_coil.hpp
 algo/sequence/cpg.hpp
 algo/sequence/find_pattern.hpp
+algo/sequence/gene_model.hpp
 algo/sequence/make_cdr_prods.hpp
 algo/sequence/nuc_prop.hpp
 algo/sequence/orf.hpp
@@ -78,26 +88,9 @@ algo/sequence/regexp_loc.hpp
 algo/sequence/restriction.hpp
 algo/sequence/seq_match.hpp
 algo/sequence/signal_seq.hpp
-algo/blast/api/bl2seq.hpp
-algo/blast/api/blast_aux.hpp
-algo/blast/api/blast_exception.hpp
-algo/blast/api/blast_nucl_options.hpp
-algo/blast/api/blast_options.hpp
-algo/blast/api/blast_options_handle.hpp
-algo/blast/api/blast_prot_options.hpp
-algo/blast/api/blast_rps_options.hpp
-algo/blast/api/blast_types.hpp
-algo/blast/api/blastx_options.hpp
-algo/blast/api/db_blast.hpp
-algo/blast/api/disc_nucl_options.hpp
-algo/blast/api/seqsrc_multiseq.hpp
-algo/blast/api/remote_blast.hpp
-algo/blast/api/seqsrc_seqdb.hpp
-algo/blast/api/rpstblastn_options.hpp
-algo/blast/api/tblastn_options.hpp
-algo/blast/api/tblastx_options.hpp
 
 algo/blast/api/bl2seq.hpp
+algo/blast/api/blast_advprot_options.hpp
 algo/blast/api/blast_aux.hpp
 algo/blast/api/blast_exception.hpp
 algo/blast/api/blast_mtlock.hpp
@@ -112,7 +105,10 @@ algo/blast/api/blast_types.hpp
 algo/blast/api/blastx_options.hpp
 algo/blast/api/db_blast.hpp
 algo/blast/api/disc_nucl_options.hpp
+algo/blast/api/dust_filter.hpp
 algo/blast/api/hspstream_queue.hpp
+algo/blast/api/phiblast_nucl_options.hpp
+algo/blast/api/phiblast_prot_options.hpp
 algo/blast/api/psi_pssm_input.hpp
 algo/blast/api/psiblast_options.hpp
 algo/blast/api/pssm_input.hpp
@@ -125,7 +121,9 @@ algo/blast/api/seqsrc_multiseq.hpp
 algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
+algo/blast/api/version.hpp
 
+algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
 algo/gnomon/gnomon_exception.hpp
 // next two trouble for Perl?
@@ -134,6 +132,33 @@ algo/gnomon/gnomon_exception.hpp
 algo/phy_tree/dist_methods.hpp
 algo/phy_tree/phy_node.hpp
 algo/phy_tree/phy_tree_serial.hpp
+
+algo/winmask/seq_masker.hpp
+algo/winmask/seq_masker_istat.hpp
+algo/winmask/seq_masker_istat_ascii.hpp
+algo/winmask/seq_masker_istat_bin.hpp
+algo/winmask/seq_masker_istat_factory.hpp
+algo/winmask/seq_masker_istat_oascii.hpp
+algo/winmask/seq_masker_istat_obinary.hpp
+algo/winmask/seq_masker_ostat.hpp
+algo/winmask/seq_masker_ostat_ascii.hpp
+algo/winmask/seq_masker_ostat_bin.hpp
+algo/winmask/seq_masker_ostat_factory.hpp
+algo/winmask/seq_masker_ostat_opt.hpp
+algo/winmask/seq_masker_ostat_opt_ascii.hpp
+algo/winmask/seq_masker_ostat_opt_bin.hpp
+algo/winmask/seq_masker_score.hpp
+algo/winmask/seq_masker_score_mean.hpp
+algo/winmask/seq_masker_score_mean_glob.hpp
+algo/winmask/seq_masker_score_min.hpp
+algo/winmask/seq_masker_uset_array.hpp
+algo/winmask/seq_masker_uset_hash.hpp
+algo/winmask/seq_masker_uset_simple.hpp
+algo/winmask/seq_masker_util.hpp
+algo/winmask/seq_masker_window.hpp
+algo/winmask/seq_masker_window_ambig.hpp
+algo/winmask/seq_masker_window_pattern.hpp
+algo/winmask/seq_masker_window_pattern_ambig.hpp
 
 // If these come too early, Seq-align stuff
 // not %included.  Perhaps related to
@@ -225,6 +250,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.4  2005/07/20 21:20:31  jcherry
  * Added algo/align/contig_assembly/contig_assembly.hpp
  *

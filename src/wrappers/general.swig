@@ -49,12 +49,17 @@ objects/general/User_field.hpp
 objects/general/User_field_.hpp
 objects/general/User_object.hpp
 objects/general/User_object_.hpp
+objects/general/cleanup_utils.hpp
+objects/general/uoconv.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

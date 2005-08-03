@@ -31,40 +31,54 @@
 
 %%
 
+objects/omssa/MSCalcCharge.hpp
+objects/omssa/MSCalcCharge_.hpp
+objects/omssa/MSCalcPlusOne.hpp
+objects/omssa/MSCalcPlusOne_.hpp
 objects/omssa/MSChargeHandle.hpp
 objects/omssa/MSChargeHandle_.hpp
 objects/omssa/MSEnzymes.hpp
 objects/omssa/MSEnzymes_.hpp
 objects/omssa/MSHitError.hpp
 objects/omssa/MSHitError_.hpp
-objects/omssa/MSHits.hpp
-objects/omssa/MSHits_.hpp
 objects/omssa/MSHitSet.hpp
 objects/omssa/MSHitSet_.hpp
+objects/omssa/MSHits.hpp
+objects/omssa/MSHits_.hpp
 objects/omssa/MSIonType.hpp
 objects/omssa/MSIonType_.hpp
-objects/omssa/MSMod.hpp
-objects/omssa/MSMod_.hpp
-objects/omssa/MSModHit.hpp
-objects/omssa/MSModHit_.hpp
 objects/omssa/MSMZHit.hpp
 objects/omssa/MSMZHit_.hpp
+objects/omssa/MSMod.hpp
+objects/omssa/MSModHit.hpp
+objects/omssa/MSModHit_.hpp
+objects/omssa/MSModSpec.hpp
+objects/omssa/MSModSpecSet.hpp
+objects/omssa/MSModSpecSet_.hpp
+objects/omssa/MSModSpec_.hpp
+objects/omssa/MSModType.hpp
+objects/omssa/MSModType_.hpp
+objects/omssa/MSMod_.hpp
 objects/omssa/MSPepHit.hpp
 objects/omssa/MSPepHit_.hpp
 objects/omssa/MSRequest.hpp
 objects/omssa/MSRequest_.hpp
 objects/omssa/MSResponse.hpp
-objects/omssa/MSResponse_.hpp
 objects/omssa/MSResponseError.hpp
 objects/omssa/MSResponseError_.hpp
+objects/omssa/MSResponse_.hpp
 objects/omssa/MSSearch.hpp
-objects/omssa/MSSearch_.hpp
 objects/omssa/MSSearchSettings.hpp
 objects/omssa/MSSearchSettings_.hpp
+objects/omssa/MSSearchType.hpp
+objects/omssa/MSSearchType_.hpp
+objects/omssa/MSSearch_.hpp
 objects/omssa/MSSpectrum.hpp
 objects/omssa/MSSpectrum_.hpp
 objects/omssa/MSSpectrumset.hpp
 objects/omssa/MSSpectrumset_.hpp
+objects/omssa/MSZdependence.hpp
+objects/omssa/MSZdependence_.hpp
 objects/omssa/NameValue.hpp
 objects/omssa/NameValue_.hpp
 
@@ -73,6 +87,9 @@ objects/omssa/NameValue_.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

@@ -30,6 +30,11 @@
  */
 
 
+// sequence_type type is a public typedef, but it's typedef'ed to
+// a private typedef (seq_t).
+%ignore ncbi::CSymDustMasker::operator();
+%ignore ncbi::CSymDustMasker::GetMaskedLocs;
+
 // "stat" is both a struct and a function; SWIG-generated code won't compile
 %ignore ncbi::CDirEntry::GetType(const struct stat &st) const;
 
@@ -219,6 +224,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.3  2005/07/15 15:26:00  jcherry
  * %ignore some x_* methods whose return types are non-public typedefs
  *

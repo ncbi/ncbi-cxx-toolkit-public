@@ -51,16 +51,22 @@ html/nodemap.hpp
 html/page.hpp
 html/pager.hpp
 html/selection.hpp
+html/writer_htmlenc.hpp
+
 cgi/caf.hpp
 cgi/cgi_exception.hpp
+cgi/cgi_serial.hpp
 cgi/cgiapp.hpp
 cgi/cgictx.hpp
 cgi/ncbicgi.hpp
 cgi/ncbicgir.hpp
 cgi/ncbires.hpp
+cgi/ref_args.hpp
 // These rely on posix-specific headers
 %ifndef WINDOWS cgi/caf_plain.hpp
 %ifndef WINDOWS cgi/caf_encoded.hpp
+
+misc/cgi_redirect/redirect.hpp
 
 %%
 
@@ -68,6 +74,9 @@ cgi/ncbires.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.4  2005/07/06 21:58:00  jcherry
  * Use conditional processing
  *

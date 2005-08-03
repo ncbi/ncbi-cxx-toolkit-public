@@ -38,6 +38,8 @@ bdb/bdb_env.hpp
 bdb/bdb_expt.hpp
 bdb/bdb_file.hpp
 bdb/bdb_filedump.hpp
+// declares db_map_base, a template class with nested classes
+// bdb/bdb_map.hpp
 bdb/bdb_query.hpp
 bdb/bdb_query_parser.hpp
 bdb/bdb_trans.hpp
@@ -49,6 +51,9 @@ bdb/bdb_util.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

@@ -29,6 +29,23 @@
  *
  */
 
+// Copy ctors cause trouble
+%ignore *::CSeqMasker_CSeqMaskerException;
+%ignore *::CSeqMaskerUsetSimple_Exception;
+%ignore *::CSeqMaskerIstatAscii_Exception;
+%ignore *::CSeqMaskerUsetArray_Exception;
+%ignore *::CSeqMaskerIstatBin_Exception;
+%ignore *::CSeqMaskerIstatFactory_Exception;
+%ignore *::CSeqMaskerUsetHash_Exception;
+%ignore *::CSeqMaskerIstatOAscii_Exception;
+%ignore *::CSeqMaskerIstatOBinary_Exception;
+%ignore *::CSeqMaskerOstat_CSeqMaskerOstatException;
+%ignore *::CSeqMaskerOstatAscii_CSeqMaskerOstatAsciiException;
+%ignore *::CSeqMaskerOstatFactory_CSeqMaskerOstatFactoryException;
+%ignore *::CSeqMaskerOstatOpt_Exception;
+
+%ignore *::CSymDustMasker_lcr;  // shouldn't be public anyway
+
 %ignore *::CTSE_Info_SIdAnnotInfo;  // in objmgr/impl
 
 %ignore ncbi::CCompartmentFinder_CCompartment::SetMembers;
@@ -100,6 +117,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.3  2005/07/15 15:25:02  jcherry
  * %ignore CTSE_Info::SIdAnnotInfo
  *

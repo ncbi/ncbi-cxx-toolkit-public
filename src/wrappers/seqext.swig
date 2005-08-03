@@ -112,6 +112,11 @@ objtools/alnmgr/alnexception.hpp
 objtools/alnmgr/alnmap.hpp
 objtools/alnmgr/alnmix.hpp
 objtools/alnmgr/alnvec.hpp
+objtools/alnmgr/alnmatch.hpp
+objtools/alnmgr/alnmerger.hpp
+objtools/alnmgr/alnpos_ci.hpp
+objtools/alnmgr/alnsegments.hpp
+objtools/alnmgr/alnseq.hpp
 
 objmgr/impl/annot_collector.hpp
 objmgr/impl/annot_object.hpp
@@ -145,6 +150,7 @@ objmgr/impl/tse_lock.hpp
 objmgr/prefetch.hpp
 objmgr/align_ci.hpp
 objmgr/annot_ci.hpp
+objmgr/annot_name.hpp
 objmgr/annot_selector.hpp
 objmgr/annot_type_selector.hpp
 objmgr/annot_types_ci.hpp
@@ -157,12 +163,16 @@ objmgr/feat_ci.hpp
 objmgr/graph_ci.hpp
 objmgr/object_manager.hpp
 objmgr/objmgr_exception.hpp
+objmgr/objmgr_version.hpp
 objmgr/scope.hpp
+objmgr/seq_align_handle.hpp
 objmgr/seq_annot_ci.hpp
 objmgr/seq_annot_handle.hpp
 objmgr/seq_descr_ci.hpp
 objmgr/seq_entry_ci.hpp
 objmgr/seq_entry_handle.hpp
+objmgr/seq_feat_handle.hpp
+objmgr/seq_graph_handle.hpp
 objects/seq/seq_id_handle.hpp
 objects/seq/seq_id_mapper.hpp
 objmgr/seq_loc_mapper.hpp
@@ -181,10 +191,19 @@ objmgr/util/obj_sniff.hpp
 objmgr/util/sequence.hpp
 objmgr/util/weight.hpp
 objmgr/util/seq_loc_util.hpp
+
+objtools/edit/edit_exception.hpp
+objtools/edit/promote.hpp
+objtools/edit/seq_entry_edit.hpp
+
 objtools/readers/agp_read.hpp
 objtools/readers/aln_reader.hpp
+objtools/readers/cigar.hpp
 objtools/readers/fasta.hpp
+objtools/readers/featuredump.hpp
+objtools/readers/getfeature.hpp
 objtools/readers/gff_reader.hpp
+objtools/readers/phrap.hpp
 objtools/readers/reader_exception.hpp
 objtools/readers/readfeat.hpp
 objtools/readers/seqdb/seqdb.hpp
@@ -279,6 +298,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.7  2005/07/07 20:32:03  jcherry
  * Adjusted %ignore's for objmgr/impl/*
  *

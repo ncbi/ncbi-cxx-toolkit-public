@@ -201,6 +201,8 @@ objects/mim/Mim_date.hpp
 objects/mim/Mim_date_.hpp
 objects/mim/Mim_edit_item.hpp
 objects/mim/Mim_edit_item_.hpp
+objects/mim/Mim_entries.hpp
+objects/mim/Mim_entries_.hpp
 objects/mim/Mim_entry.hpp
 objects/mim/Mim_entry_.hpp
 objects/mim/Mim_index_term.hpp
@@ -262,6 +264,8 @@ objects/remap/remap_client_.hpp
 
 objects/entrezgene/Entrezgene.hpp
 objects/entrezgene/Entrezgene_.hpp
+objects/entrezgene/Entrezgene_Set.hpp
+objects/entrezgene/Entrezgene_Set_.hpp
 objects/entrezgene/Gene_commentary.hpp
 objects/entrezgene/Gene_commentary_.hpp
 objects/entrezgene/Gene_source.hpp
@@ -333,6 +337,9 @@ objects/insdseq/INSDSet_.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 14:57:10  jcherry
+ * Added headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
