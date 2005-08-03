@@ -44,10 +44,6 @@
  * @{
  */
 
-/** @addtogroup AlgoBlast
- *
- * @{
- */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -132,6 +128,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/08/03 11:36:20  kuznets
+ * Removed double @addtogroup (doxygen)
+ *
  * Revision 1.11  2005/05/20 18:28:33  camacho
  * + IPssmInputFreqRatios and default implementation
  *
