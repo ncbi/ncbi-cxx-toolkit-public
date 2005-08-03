@@ -1211,7 +1211,9 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             }
 TaxContinue2:
 		string seqstring, modseqstring;
-		string deflinestring(blastdefline);
+		string deflinestring;
+        if(blastdefline) deflinestring = blastdefline;
+
         string tempstartstop;
 		int iseq;
 		length = readdb_get_sequence(rdfp, MSHit->GetSeqIndex(),
@@ -1545,6 +1547,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.53  2005/08/03 17:59:29  lewisg
+*** empty log message ***
+
 Revision 1.52  2005/08/01 13:44:18  lewisg
 redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 

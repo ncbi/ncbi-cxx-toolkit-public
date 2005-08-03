@@ -160,11 +160,9 @@ bool CCleave::CalcAndCut(const char *SeqStart,
         if(!GetTopDown()  ||
            (GetTopDown() && ( *PepStart - SeqStart < Maxproductions ||
            SeqEnd - *PepStart < Maxproductions))) {
-            // check for mods that are type AA only
+            // check for mods that are type AA only, variable only
             CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
                         DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
-            //    	CheckAAMods(eMSModType_modaa, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-            //    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
         }
     
     	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
@@ -183,7 +181,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
     CalcMass(**PepStart, Masses, PrecursorIntCalcMass);
 
-    // check for mods that are type AA only
+    // check for mods that are type AA only, variable only
     CheckAAMods(eMSModType_modaa, VariableMods, NumMod, **PepStart, MaxNumMod, Site,
             DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
     // check c term peptide mods
@@ -612,6 +610,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.23  2005/08/03 17:59:29  lewisg
+  *** empty log message ***
+
   Revision 1.22  2005/08/01 13:44:18  lewisg
   redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 

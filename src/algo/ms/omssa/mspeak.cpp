@@ -108,9 +108,12 @@ int CMSHit::CountMods(unsigned ModMask, int NumMod)
 }
 
 
-///
-///  Record the modifications used in the hit
-///
+/**
+ * Record the modifications used in the hit
+ * Note that fixed aa modifications are *not* recorded
+ * as these are dealt with by modifying the aa mass
+ * and the positions are not recorded anywhere
+ */
 
 void CMSHit::RecordModInfo(unsigned ModMask,
 						   const char **Site,

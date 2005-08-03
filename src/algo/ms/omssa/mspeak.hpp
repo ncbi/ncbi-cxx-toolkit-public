@@ -243,11 +243,12 @@ public:
 	int CountMods(unsigned ModMask, int NumMod);
 
 
-	///
-	///  Record the modifications used in the hit
-	///
-
-
+    /**
+     * Record the modifications used in the hit
+     * Note that fixed aa modifications are *not* recorded
+     * as these are dealt with by modifying the aa mass
+     * and the positions are not recorded anywhere
+     */
 	void RecordModInfo(unsigned ModMask,
 							   const char **Site,
 							   int *DeltaMass,
@@ -978,6 +979,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.29  2005/08/03 17:59:29  lewisg
+  *** empty log message ***
+
   Revision 1.28  2005/08/01 13:44:18  lewisg
   redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 
