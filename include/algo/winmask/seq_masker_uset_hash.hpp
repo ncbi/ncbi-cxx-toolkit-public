@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
  **\brief This class encapsulates the implementation of the hash
  **       based container for unit counts.
  **/
-class CSeqMaskerUsetHash
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerUsetHash
 {
     public:
         
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 18:07:02  jcherry
+ * Added export specifiers
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

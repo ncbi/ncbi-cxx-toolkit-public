@@ -41,7 +41,8 @@ BEGIN_NCBI_SCOPE
  **\brief This class is responsible for saving optimized unit counts
  **       in binary format.
  **/
-class CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
+class NCBI_XALGOWINMASK_EXPORT
+CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
 {
     public:
 
@@ -87,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/03 18:07:02  jcherry
+ * Added export specifiers
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *
