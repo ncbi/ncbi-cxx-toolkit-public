@@ -135,16 +135,16 @@ static void s_SingleBounceCheck
     /* WRITE to the connection:  "0\n12\n345\n6789\n01234\n........"
      */
     {{
-        size_t k = 0;
-        size_t i, j=0;
+        size_t k = 0, j = 0;
+        size_t i;
         for (i = 0;  k != sizeof(buf);  i++) {
             /* prepare output data */
             size_t n_write, n_written;
             for (n_write = 0;  n_write < i;  n_write++, k++) {
-                assert(k != sizeof(buf));
+                assert(k < sizeof(buf));
                 buf[n_write] = sym[j++ % sizeof(sym)];
             }
-            assert(k != sizeof(buf));
+            assert(k < sizeof(buf));
             if ( n_write ) {
                 buf[n_write++] = '\n';  k++;
             }
@@ -252,8 +252,8 @@ static void s_SingleBounceCheck
      */
     {{
         const char* x_buf = buf;
+        size_t k = 0, j = 0;
         size_t i;
-        size_t k=0, j=0;
         for (i = 1;  k != sizeof(buf);  i++) {
             size_t n;
             for (n = 0;  n < i;  n++, k++) {
@@ -352,6 +352,9 @@ extern void CONN_TestConnector
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/08/03 20:15:25  lavr
+ * Better asserts
+ *
  * Revision 6.9  2004/02/23 15:23:42  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
