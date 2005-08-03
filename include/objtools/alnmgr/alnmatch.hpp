@@ -46,7 +46,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CAlnMixMatch;
 
 
-class CAlnMixMatches : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixMatches : public CObject
 {
 public:
 
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/08/03 18:18:44  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2005/07/25 20:32:26  todorov
 * Added genetic code params to TCalcScoreMethod
 *

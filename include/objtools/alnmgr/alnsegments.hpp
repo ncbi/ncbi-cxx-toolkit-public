@@ -51,7 +51,7 @@ class CAlnMixSequences;
 class CAlnMixSegment;
 
 
-class CAlnMixSegments : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixSegments : public CObject
 {
 public:
     
@@ -88,7 +88,7 @@ private:
 
 
 
-class CAlnMixSegment : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixSegment : public CObject
 {
 public:
     // TStarts really belongs in CAlnMixSeq, but had to move here as
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/08/03 18:18:44  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes
 *

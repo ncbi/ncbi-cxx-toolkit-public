@@ -54,7 +54,7 @@ class CScope;
 class CDense_seg;
 
 
-class CAlnMixSequences : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixSequences : public CObject
 {
 public:
     
@@ -136,7 +136,7 @@ private:
 
 
 
-class CAlnMixSeq : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixSeq : public CObject
 {
 public:
     CAlnMixSeq(void) 
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/08/03 18:18:44  jcherry
+* Added export specifiers
+*
 * Revision 1.4  2005/06/23 18:00:50  todorov
 * Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
 *

@@ -52,7 +52,7 @@ class CAlnMixSeq;
 
 
 
-class CAlnMixMerger : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixMerger : public CObject
 {
 public:
     
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/08/03 18:18:44  jcherry
+* Added export specifiers
+*
 * Revision 1.6  2005/07/25 20:31:53  todorov
 * TCalcScoreMethod now defined in CAlnMixMatches.
 *
