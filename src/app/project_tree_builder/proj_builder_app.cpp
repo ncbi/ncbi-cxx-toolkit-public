@@ -283,7 +283,8 @@ void CProjBulderApp::Init(void)
 
 
 static 
-void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
+void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
+    CProjectItemsTree::TProjects& tree)
 {
     const CMsvcDllsInfo& dlls = GetApp().GetDllsInfo();
     bool reported = false;
@@ -315,6 +316,19 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
         }
         LOG_POST(Error << str_chain);
         reported = true;
+        CCyclicDepends::TDependsChain::const_iterator i = cycle.end();
+        const CProjKey& last = *(--i);
+        const CProjKey& prev = *(--i);
+        if (last.Type() == CProjKey::eLib && prev.Type() == CProjKey::eLib) {
+            CProjectItemsTree::TProjects::const_iterator t = tree.find(prev);
+            if (t != tree.end()) {
+                CProjItem item = t->second;
+                item.m_Depends.remove(last);
+                tree[prev] = item;
+                LOG_POST(Error << "Removing LIB dependency: "
+                               << prev.Id() << " - " << last.Id());
+            }
+        }
     }
     if (!reported) {
         LOG_POST(Info << "No dependency cycles found.");
@@ -357,7 +371,7 @@ int CProjBulderApp::Run(void)
     LOG_POST(Info << "*** Checking projects inter-dependencies ***");
     CCyclicDepends::TDependsCycles cycles;
     CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
-    s_ReportDependenciesStatus(cycles);
+    s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
 
     // MSVC specific part:
@@ -1085,6 +1099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/08/03 13:53:20  gouriano
+ * Remove circular dependencies between static libraries
+ *
  * Revision 1.60  2005/06/30 20:08:24  gouriano
  * Added version info
  *
