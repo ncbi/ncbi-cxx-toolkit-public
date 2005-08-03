@@ -38,6 +38,7 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
+#include <algo/blast/api/dust_filter.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -128,6 +129,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.2  2005/08/03 18:55:21  jcherry
+ *  #include dust_filter.hpp (needed for export specifier to work)
+ *
  *  Revision 1.1  2005/07/19 13:46:17  madden
  *  Wrapper for calls to symmetric dust lib
  *
