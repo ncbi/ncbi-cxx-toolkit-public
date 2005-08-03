@@ -55,14 +55,6 @@ void ColumnResidueProfile::addOccurence(char residue, int row, bool aligned)
 	//this deals with columns on the master which can be added more than once
 	 if (hasRow(row))
 	 {
-		 /*if (aligned)
-		 {
-			ResidueRowsMap::iterator rit = findRow(row);
-			if (rit != m_residueRowsMap.end())
-			{
-				rit->second.second = aligned;
-			}
-		 }*/
 		 return;
 	 }
 	 if (m_residueRowsMap.count(residue) == 0) //first time to see this residue
@@ -475,8 +467,6 @@ void ResidueProfiles::calculateRowWeights()
 	for (; cit != m_profiles.end(); cit++)
 	{
 		const ColumnResidueProfile& colProfile = cit->second;
-		if(cit->first.mPos == 1498)
-			bool gotit = true;
 		if (!countGap)
 		{
 			//only use columns that has all rows to calculate the row weight
@@ -723,6 +713,63 @@ double ResidueProfiles::calcInformationContent(bool byConsensus)
 	return info;
 }
 
+string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned)
+{
+	UnalignedConsensusReader ucr;
+	traverseColumnsOnConsensus(ucr);
+	int start, end;
+	ucr.getLongestSeg(start, end);
+	totalUnaligned = ucr.getTotalUnaligned();
+	if (start >= 0 && end >= start)
+		return m_consensus.substr(start, end-start+1);
+	else
+		return "";
+}
+
+
+UnalignedConsensusReader::UnalignedConsensusReader()
+	: m_startOfMaxSeg(-1), m_endOfMaxSeg(-1),
+	m_start(-1), m_end(-1), m_totalUnaligned(0)
+{
+}
+
+void UnalignedConsensusReader::read(ColumnResidueProfile& crp)
+{
+	if (crp.isAllRowsAligned()) //aligned
+	{
+		if (m_start >= 0) //was in a unaligned region
+		{
+			m_totalUnaligned += m_end - m_start + 1;
+			if ( (m_end - m_start) > (m_endOfMaxSeg - m_startOfMaxSeg))
+			{
+				m_endOfMaxSeg = m_end;
+				m_startOfMaxSeg = m_start;
+			}
+		}
+		//-1 to indicate " in aligned region
+		m_start = -1;
+		m_end = -1;
+	}
+	else //unaligned
+	{
+		if (m_start < 0) //see a new unaligned seg
+		{
+			m_start = crp.getIndexByConsensus();
+			m_end = m_start;
+		}
+		else //continue an existing unaligned seg
+		{
+			m_end++;
+		}
+	}
+}
+
+void UnalignedConsensusReader::getLongestSeg(int& start, int& end)
+{
+	start = m_startOfMaxSeg;
+	end = m_endOfMaxSeg;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -731,6 +778,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/08/03 19:59:45  cliu
+ * count unaligned consensus
+ *
  * Revision 1.2  2005/07/07 20:29:46  cliu
  * print seqid
  *
