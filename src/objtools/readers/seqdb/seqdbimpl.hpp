@@ -517,6 +517,11 @@ public:
     ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
+    void Verify()
+    {
+        m_Atlas.Verify();
+    }
+    
 private:
     CLASS_MARKER_FIELD("IMPL")
     

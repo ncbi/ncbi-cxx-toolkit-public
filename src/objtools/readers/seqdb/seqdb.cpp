@@ -135,6 +135,8 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
                          0,
                          true,
                          gi_list);
+    
+    m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -150,21 +152,35 @@ CSeqDB::CSeqDB(const string & dbname,
                          oid_end,
                          use_mmap,
                          gi_list);
+    
+    m_Impl->Verify();
 }
 
 int CSeqDB::GetSeqLength(int oid) const
 {
-    return m_Impl->GetSeqLength(oid);
+    m_Impl->Verify();
+    int length = m_Impl->GetSeqLength(oid);
+    m_Impl->Verify();
+    
+    return length;
 }
 
 int CSeqDB::GetSeqLengthApprox(int oid) const
 {
-    return m_Impl->GetSeqLengthApprox(oid);
+    m_Impl->Verify();
+    int length = m_Impl->GetSeqLengthApprox(oid);
+    m_Impl->Verify();
+    
+    return length;
 }
 
 CRef<CBlast_def_line_set> CSeqDB::GetHdr(int oid) const
 {
-    return m_Impl->GetHdr(oid);
+    m_Impl->Verify();
+    CRef<CBlast_def_line_set> rv =m_Impl->GetHdr(oid);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 CSeqDB::ESeqType CSeqDB::GetSequenceType() const
@@ -184,52 +200,78 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid) const
 {
-    return m_Impl->GetBioseq(oid, 0, true);
+    m_Impl->Verify();
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, 0, true);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 CRef<CBioseq>
 CSeqDB::GetBioseqNoData(int oid, int target_gi) const
 {
-    return m_Impl->GetBioseq(oid, target_gi, false);
+    m_Impl->Verify();
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, false);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 void CSeqDB::GetTaxIDs(int             oid,
                        map<int, int> & gi_to_taxid,
                        bool            persist) const
 {
+    m_Impl->Verify();
     m_Impl->GetTaxIDs(oid, gi_to_taxid, persist);
+    m_Impl->Verify();
 }
 
 void CSeqDB::GetTaxIDs(int           oid,
                        vector<int> & taxids,
                        bool          persist) const
 {
+    m_Impl->Verify();
     m_Impl->GetTaxIDs(oid, taxids, persist);
+    m_Impl->Verify();
 }
 
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, int target_gi) const
 {
-    return m_Impl->GetBioseq(oid, target_gi, true);
+    m_Impl->Verify();
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, true);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 void CSeqDB::RetSequence(const char ** buffer) const
 {
+    m_Impl->Verify();
     m_Impl->RetSequence(buffer);
+    m_Impl->Verify();
 }
 
 int CSeqDB::GetSequence(int oid, const char ** buffer) const
 {
-    return m_Impl->GetSequence(oid, buffer);
+    m_Impl->Verify();
+    int rv = m_Impl->GetSequence(oid, buffer);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
 {
-    return m_Impl->GetAmbigSeq(oid,
-                               (char **)buffer,
-                               nucl_code,
-                               0,
-                               (ESeqDBAllocType) 0);
+    m_Impl->Verify();
+    int rv = m_Impl->GetAmbigSeq(oid,
+                                 (char **)buffer,
+                                 nucl_code,
+                                 0,
+                                 (ESeqDBAllocType) 0);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 int CSeqDB::GetAmbigSeq(int           oid,
@@ -238,13 +280,18 @@ int CSeqDB::GetAmbigSeq(int           oid,
                         int           begin_offset,
                         int           end_offset) const
 {
+    m_Impl->Verify();
+    
     SSeqDBSlice region(begin_offset, end_offset);
     
-    return m_Impl->GetAmbigSeq(oid,
-                               (char **)buffer,
-                               nucl_code,
-                               & region,
-                               (ESeqDBAllocType) 0);
+    int rv = m_Impl->GetAmbigSeq(oid,
+                                 (char **)buffer,
+                                 nucl_code,
+                                 & region,
+                                 (ESeqDBAllocType) 0);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 int CSeqDB::GetAmbigSeqAlloc(int             oid,
@@ -252,13 +299,19 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
                              int             nucl_code,
                              ESeqDBAllocType strategy) const
 {
+    m_Impl->Verify();
+    
     if ((strategy != eMalloc) && (strategy != eNew)) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Invalid allocation strategy specified.");
     }
     
-    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy);
+    int rv = m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy);
+    
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 string CSeqDB::GetTitle() const
@@ -298,6 +351,8 @@ int CSeqDB::GetMaxLength() const
 
 CSeqDB::~CSeqDB()
 {
+    m_Impl->Verify();
+    
     if (m_Impl)
         delete m_Impl;
 }
@@ -309,8 +364,13 @@ CSeqDBIter CSeqDB::Begin() const
 
 bool CSeqDB::CheckOrFindOID(int & oid) const
 {
-    return m_Impl->CheckOrFindOID(oid);
+    m_Impl->Verify();
+    bool rv = m_Impl->CheckOrFindOID(oid);
+    m_Impl->Verify();
+    
+    return rv;
 }
+
 
 CSeqDB::EOidListType
 CSeqDB::GetNextOIDChunk(int         & begin,
@@ -318,7 +378,14 @@ CSeqDB::GetNextOIDChunk(int         & begin,
                         vector<int> & lst,
                         int         * state)
 {
-    return m_Impl->GetNextOIDChunk(begin, end, lst, state);
+    m_Impl->Verify();
+    
+    CSeqDB::EOidListType rv =
+        m_Impl->GetNextOIDChunk(begin, end, lst, state);
+    
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 const string & CSeqDB::GetDBNameList() const
@@ -328,74 +395,114 @@ const string & CSeqDB::GetDBNameList() const
 
 list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
 {
-    return m_Impl->GetSeqIDs(oid);
+    m_Impl->Verify();
+    
+    list< CRef<CSeq_id> > rv = m_Impl->GetSeqIDs(oid);
+    
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 bool CSeqDB::PigToOid(int pig, int & oid) const
 {
-    return m_Impl->PigToOid(pig, oid);
+    m_Impl->Verify();
+    bool rv = m_Impl->PigToOid(pig, oid);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 bool CSeqDB::OidToPig(int oid, int & pig) const
 {
-    return m_Impl->OidToPig(oid, pig);
+    m_Impl->Verify();
+    bool rv = m_Impl->OidToPig(oid, pig);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 bool CSeqDB::GiToOid(int gi, int & oid) const
 {
-    return m_Impl->GiToOid(gi, oid);
+    m_Impl->Verify();
+    bool rv = m_Impl->GiToOid(gi, oid);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 bool CSeqDB::OidToGi(int oid, int & gi) const
 {
-    return m_Impl->OidToGi(oid, gi);
+    m_Impl->Verify();
+    bool rv = m_Impl->OidToGi(oid, gi);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 bool CSeqDB::PigToGi(int pig, int & gi) const
 {
+    m_Impl->Verify();
+    bool rv = false;
+    
     int oid(0);
     
     if (m_Impl->PigToOid(pig, oid)) {
-        return m_Impl->OidToGi(oid, gi);
+        rv = m_Impl->OidToGi(oid, gi);
     }
+    m_Impl->Verify();
     
-    return false;
+    return rv;
 }
 
 bool CSeqDB::GiToPig(int gi, int & pig) const
 {
+    m_Impl->Verify();
+    bool rv = false;
+    
     int oid(0);
     
     if (m_Impl->GiToOid(gi, oid)) {
-        return m_Impl->OidToPig(oid, pig);
+        rv = m_Impl->OidToPig(oid, pig);
     }
     
-    return false;
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 {
+    m_Impl->Verify();
     m_Impl->AccessionToOids(acc, oids);
+    m_Impl->Verify();
 }
 
 void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const
 {
+    m_Impl->Verify();
     m_Impl->SeqidToOids(seqid, oids, true);
+    m_Impl->Verify();
 }
 
 bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
 {
+    m_Impl->Verify();
+    bool rv = false;
+    
     oid = -1;
     
     vector<int> oids;
     m_Impl->SeqidToOids(seqid, oids, false);
     
-    if (oids.empty()) {
-        return false;
+    if (! oids.empty()) {
+        rv = true;
+        oid = oids[0];
     }
     
-    oid = oids[0];
-    return true;
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
@@ -405,7 +512,11 @@ void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
 
 int CSeqDB::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
-    return m_Impl->GetOidAtOffset(first_seq, residue);
+    m_Impl->Verify();
+    int rv = m_Impl->GetOidAtOffset(first_seq, residue);
+    m_Impl->Verify();
+    
+    return rv;
 }
 
 CSeqDBIter::CSeqDBIter(const CSeqDB * db, int oid)
@@ -465,12 +576,16 @@ CSeqDBIter & CSeqDBIter::operator++()
 CRef<CBioseq>
 CSeqDB::GiToBioseq(int gi) const
 {
-    int oid(0);
+    m_Impl->Verify();
+    
     CRef<CBioseq> bs;
+    int oid(0);
     
     if (m_Impl->GiToOid(gi, oid)) {
         bs = m_Impl->GetBioseq(oid, 0, true);
     }
+    
+    m_Impl->Verify();
     
     return bs;
 }
@@ -478,6 +593,8 @@ CSeqDB::GiToBioseq(int gi) const
 CRef<CBioseq>
 CSeqDB::PigToBioseq(int pig) const
 {
+    m_Impl->Verify();
+    
     int oid(0);
     CRef<CBioseq> bs;
     
@@ -485,12 +602,16 @@ CSeqDB::PigToBioseq(int pig) const
         bs = m_Impl->GetBioseq(oid, 0, true);
     }
     
+    m_Impl->Verify();
+    
     return bs;
 }
 
 CRef<CBioseq>
 CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 {
+    m_Impl->Verify();
+    
     vector<int> oids;
     CRef<CBioseq> bs;
     
@@ -499,6 +620,8 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     if (! oids.empty()) {
         bs = m_Impl->GetBioseq(oids[0], 0, true);
     }
+    
+    m_Impl->Verify();
     
     return bs;
 }
@@ -532,12 +655,16 @@ CSeqDB::FindVolumePaths(const string   & dbname,
 void
 CSeqDB::FindVolumePaths(vector<string> & paths) const
 {
+    m_Impl->Verify();
     m_Impl->FindVolumePaths(paths);
+    m_Impl->Verify();
 }
 
 void
 CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
 {
+    m_Impl->Verify();
+    
     // This could be done a little faster at a lower level, but not
     // necessarily by too much.  If this operation is important to
     // performance, that decision can be revisited.
@@ -553,6 +680,8 @@ CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
             gis.push_back((**seqid).GetGi());
         }
     }
+    
+    m_Impl->Verify();
 }
 
 void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
@@ -562,7 +691,9 @@ void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
 
 void CSeqDB::GetAliasFileValues(TAliasFileValues & afv) const
 {
+    m_Impl->Verify();
     m_Impl->GetAliasFileValues(afv);
+    m_Impl->Verify();
 }
 
 END_NCBI_SCOPE
