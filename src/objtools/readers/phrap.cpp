@@ -97,11 +97,22 @@ void CheckStreamState(CNcbiIstream& in,
 }
 
 
+inline bool IsOldComplementedName(const string& name)
+{
+    // In old ACE complemented reads have names ending with  '.comp'
+    const string kOldNameCompFlag = ".comp";
+    return NStr::Find(name, kOldNameCompFlag, NStr::eLast) ==
+        name.size() - kOldNameCompFlag.size();
+}
+
+
 class CPhrap_Seq : public CObject
 {
 public:
     CPhrap_Seq(TPhrapReaderFlags flags);
     CPhrap_Seq(const string& name, TPhrapReaderFlags flags);
+    virtual ~CPhrap_Seq(void) {}
+
     void Read(CNcbiIstream& in);
     void ReadData(CNcbiIstream& in);
     virtual void ReadTag(CNcbiIstream& in, char tag) = 0;
@@ -144,6 +155,9 @@ protected:
 private:
     void x_FillSeqData(CSeq_data& data) const;
 
+    friend class CPhrap_Sequence;
+    void CopyFrom(CPhrap_Seq& seq);
+
     TPhrapReaderFlags m_Flags;
 
     string          m_Name;
@@ -169,12 +183,27 @@ CPhrap_Seq::CPhrap_Seq(TPhrapReaderFlags flags)
 
 
 CPhrap_Seq::CPhrap_Seq(const string& name, TPhrapReaderFlags flags)
-    : m_Name(name),
-      m_Flags(flags),
+    : m_Flags(flags),
+      m_Name(name),
       m_PaddedLength(0),
       m_UnpaddedLength(0),
       m_Complemented(false)
 {
+}
+
+
+void CPhrap_Seq::CopyFrom(CPhrap_Seq& seq)
+{
+    m_Flags = seq.m_Flags;
+    m_Name = seq.m_Name;
+    m_PaddedLength = seq.m_PaddedLength;
+    m_UnpaddedLength = seq.m_UnpaddedLength;
+    _ASSERT(m_Data.empty());
+    m_Data.swap(seq.m_Data);
+    _ASSERT(m_PadMap.empty());
+    m_PadMap.swap(seq.m_PadMap);
+    m_Complemented = seq.m_Complemented;
+    m_Id = seq.m_Id;
 }
 
 
@@ -194,10 +223,22 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
     _ASSERT(m_Data.empty());
     string line;
     TSeqPos cnt = 0;
+    if ((m_Flags & fPhrap_OldVersion) != 0) {
+        // Prepare to read as many bases as possible
+        m_PaddedLength = kInvalidSeqPos;
+    }
     while (!in.eof()  &&  cnt < m_PaddedLength) {
-        in >> line;
+        // in >> line;
+        line = ReadLine(in);
+        char c = in.peek();
         m_Data += NStr::ToUpper(line);
         cnt += line.size();
+        if ((m_Flags & fPhrap_OldVersion) != 0  &&  isspace(c)) {
+            break;
+        }
+    }
+    if ((m_Flags & fPhrap_OldVersion) != 0) {
+        m_PaddedLength = cnt;
     }
     char next = in.eof() ? ' ' : in.peek();
     if ( m_Data.size() != m_PaddedLength  || !isspace((unsigned char) next) ) {
@@ -332,7 +373,7 @@ public:
     typedef map<string, CRef<CPhrap_Read> > TReads;
 
     CPhrap_Read(const string& name, TPhrapReaderFlags flags);
-    ~CPhrap_Read(void);
+    virtual ~CPhrap_Read(void);
 
     void Read(CNcbiIstream& in);
 
@@ -419,6 +460,9 @@ void CPhrap_Read::ReadQuality(CNcbiIstream& in)
     CheckStreamState(in, "QA data.");
     if (start > 0  &&  stop > 0) {
         m_HiQualRange.Set(start - 1, stop - 1);
+    }
+    if ((GetFlags() & fPhrap_OldVersion) != 0) {
+        return;
     }
     in >> start >> stop;
     CheckStreamState(in, "QA data.");
@@ -709,13 +753,12 @@ public:
     const TBaseQuals& GetBaseQualities(void) const { return m_BaseQuals; }
 
     void ReadBaseQualities(CNcbiIstream& in); // BQ
-    void ReadReadLocation(CNcbiIstream& in);  // AF
+    typedef map<string, CRef<CPhrap_Seq> >  TSeqs;
+    void ReadReadLocation(CNcbiIstream& in, TSeqs& seqs);  // AF
     void ReadBaseSegment(CNcbiIstream& in);   // BS
     virtual void ReadTag(CNcbiIstream& in, char tag); // CT{}
 
     CRef<CSeq_entry> CreateContig(int level) const;
-
-    CRef<CPhrap_Read>& SetRead(const string& read_name);
 
 private:
     void x_CreateAlign(CBioseq_set& bioseq_set) const;
@@ -790,29 +833,51 @@ void CPhrap_Contig::ReadBaseQualities(CNcbiIstream& in)
     for (size_t i = 0; i < GetUnpaddedLength(); i++) {
         in >> bq;
         m_BaseQuals.push_back(bq);
+        bq = i;
     }
     CheckStreamState(in, "BQ data.");
     _ASSERT( isspace((unsigned char) in.peek()) );
 }
 
 
-void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in)
+void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in, TSeqs& seqs)
 {
     string name;
-    char c;
+    bool complemented = false;
     TSignedSeqPos start;
-    in >> name >> c >> start;
-    CheckStreamState(in, "AF data.");
+    if ((GetFlags() & fPhrap_OldVersion) == 0) {
+        char c;
+        in >> name >> c >> start;
+        CheckStreamState(in, "AF data.");
+        complemented = (c == 'C');
+    }
+    else {
+        TSignedSeqPos stop;
+        in >> name >> start >> stop;
+        CheckStreamState(in, "Assembled_from data.");
+    }
     start--;
     CRef<CPhrap_Read>& read = m_Reads[name];
     if ( !read ) {
-        read.Reset(new CPhrap_Read(name, GetFlags()));
+        CRef<CPhrap_Seq>& seq = seqs[name];
+        if ( seq ) {
+            read.Reset(dynamic_cast<CPhrap_Read*>(seq.GetPointer()));
+            if ( !read ) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "ReadPhrap: invalid sequence type (" + GetName() + ").",
+                            in.tellg() - CT_POS_TYPE(0));
+            }
+        }
+        else {
+            read.Reset(new CPhrap_Read(name, GetFlags()));
+            seq = CRef<CPhrap_Seq>(read.GetPointer());
+        }
     }
-    read->AddReadLoc(start, c == 'C'); 
+    read->AddReadLoc(start, complemented); 
     if (start < 0) {
         // Add second location
         start += GetPaddedLength();
-        read->AddReadLoc(start, c == 'C');
+        read->AddReadLoc(start, complemented);
         // Mark the contig as circular
         m_Circular = true;
     }
@@ -824,7 +889,10 @@ void CPhrap_Contig::ReadBaseSegment(CNcbiIstream& in)
     SBaseSeg seg;
     string name;
     in >> seg.m_Start >> seg.m_End >> name;
-    CheckStreamState(in, "BS data.");
+    if ((GetFlags() & fPhrap_OldVersion) != 0) {
+        ReadLine(in);
+    }
+    CheckStreamState(in, "Base segment data.");
     seg.m_Start--;
     seg.m_End--;
     m_BaseSegMap[name].push_back(seg);
@@ -906,16 +974,6 @@ void CPhrap_Contig::ReadTag(CNcbiIstream& in, char tag)
         ct.m_Comments.push_back(c);
     }
     m_Tags.push_back(ct);
-}
-
-
-CRef<CPhrap_Read>& CPhrap_Contig::SetRead(const string& read_name)
-{
-    CRef<CPhrap_Read>& ret = m_Reads[read_name];
-    if ( !ret ) {
-        ret.Reset(new CPhrap_Read(read_name, GetFlags()));
-    }
-    return ret;
 }
 
 
@@ -1407,6 +1465,91 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
 }
 
 
+class CPhrap_Sequence : public CPhrap_Seq
+{
+public:
+    CPhrap_Sequence(const string& name, TPhrapReaderFlags flags);
+    virtual void ReadTag(CNcbiIstream& in, char tag);
+
+    // Convert to contig or read depending on the loaded data
+    bool IsContig(void) const;
+    CRef<CPhrap_Contig> GetContig(void);
+
+    bool IsRead(void) const;
+    CRef<CPhrap_Read> GetRead(void);
+    void SetRead(CPhrap_Read& read);
+
+private:
+    mutable CRef<CPhrap_Seq> m_Seq;
+};
+
+
+CPhrap_Sequence::CPhrap_Sequence(const string& name, TPhrapReaderFlags flags)
+    : CPhrap_Seq(name, flags),
+      m_Seq(0)
+{
+    // Check if name ends with '.comp'
+    SetComplemented(IsOldComplementedName(name));
+    return;
+}
+
+
+void CPhrap_Sequence::ReadTag(CNcbiIstream& in, char tag)
+{
+    NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: unexpected tag.",
+                in.tellg() - CT_POS_TYPE(0));
+}
+
+
+bool CPhrap_Sequence::IsContig(void) const
+{
+    return m_Seq  &&
+        dynamic_cast<const CPhrap_Contig*>(m_Seq.GetPointer()) != 0;
+}
+
+
+CRef<CPhrap_Contig> CPhrap_Sequence::GetContig(void)
+{
+    if ( !m_Seq ) {
+        m_Seq.Reset(new CPhrap_Contig(GetFlags()));
+        // Copy existing data into the contig
+        m_Seq->CopyFrom(*this);
+    }
+    _ASSERT( IsContig() );
+    return Ref(&dynamic_cast<CPhrap_Contig&>(*m_Seq));
+}
+
+
+bool CPhrap_Sequence::IsRead(void) const
+{
+    return m_Seq  &&
+        dynamic_cast<const CPhrap_Read*>(m_Seq.GetPointer()) != 0;
+}
+
+
+CRef<CPhrap_Read> CPhrap_Sequence::GetRead(void)
+{
+    if ( !m_Seq ) {
+        m_Seq.Reset(new CPhrap_Read(GetName(), GetFlags()));
+        // Copy existing data into the read
+        m_Seq->CopyFrom(*this);
+    }
+    _ASSERT( IsRead() );
+    return Ref(&dynamic_cast<CPhrap_Read&>(*m_Seq));
+}
+
+
+void CPhrap_Sequence::SetRead(CPhrap_Read& read)
+{
+    _ASSERT( !m_Seq );
+    m_Seq.Reset(CRef<CPhrap_Seq>(&read));
+    _ASSERT(GetName() == read.GetName());
+    // Copy sequence data, length, pad map etc.
+    read.CopyFrom(*this);
+}
+
+
 class CPhrapReader
 {
 public:
@@ -1432,7 +1575,18 @@ private:
         ePhrap_DS, // Original data
         ePhrap_RT, // {...}
         ePhrap_CT, // {...}
-        ePhrap_WA  // {...}
+        ePhrap_WA, // {...}
+
+        // Old format tags
+        ePhrap_DNA,
+        ePhrap_Sequence,
+        ePhrap_BaseQuality,
+        ePhrap_Assembled_from,
+        ePhrap_Assembled_from_Pad,
+        ePhrap_Base_segment,
+        ePhrap_Base_segment_Pad,
+        ePhrap_Clipping,
+        ePhrap_Clipping_Pad
     };
 
     struct SAssmTag
@@ -1444,12 +1598,21 @@ private:
     };
     typedef vector<SAssmTag> TAssmTags;
 
-    void x_ReadContig();
-    void x_ReadRead(CPhrap_Contig& contig);
+    void x_ReadContig(void);
+    void x_ReadRead(void);
     void x_ReadTag(string tag); // CT{} and RT{}
     void x_ReadWA(void);        // WA{}
 
+    void x_ReadOldFormatData(void); // Read old ACE format data
+    void x_ReadOldSequence(CPhrap_Sequence& seq);
+    CRef<CPhrap_Contig> x_AddContig(CPhrap_Sequence& seq);
+    CRef<CPhrap_Read> x_AddRead(CPhrap_Sequence& seq);
+
+    void x_DetectFormatVersion(void);
     EPhrapTag x_GetTag(void);
+    EPhrapTag x_GetNewTag(void); // read new ACE tag (AS, CO etc.)
+    EPhrapTag x_GetOldTag(void); // read old ACE tag (Sequence, DNA etc.)
+
     void x_UngetTag(EPhrapTag tag);
 
     CPhrap_Seq& x_FindSeq(const string& name);
@@ -1489,22 +1652,32 @@ CRef<CSeq_entry> CPhrapReader::Read(void)
                     "ReadPhrap: input stream no longer valid",
                     m_Stream.tellg() - CT_POS_TYPE(0));
     }
+    x_DetectFormatVersion();
     EPhrapTag tag = x_GetTag();
-    if (tag != ePhrap_AS) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "ReadPhrap: invalid data, AS tag expected.",
-                    m_Stream.tellg() - CT_POS_TYPE(0));
-    }
+    if ((m_Flags & fPhrap_OldVersion) == 0) {
+        // Read new ACE format
+        if (tag != ePhrap_AS) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "ReadPhrap: invalid data, AS tag expected.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
+        }
+        m_Stream >> m_NumContigs >> m_NumReads;
+        CheckStreamState(m_Stream, "invalid data in AS tag.");
+        for (size_t i = 0; i < m_NumContigs; i++) {
+            x_ReadContig();
+        }
+        _ASSERT(m_Contigs.size() == m_NumContigs);
 
-    for (size_t i = 0; i < m_NumContigs; i++) {
-        x_ReadContig();
+        if (x_GetTag() != ePhrap_eof) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "ReadPhrap: unrecognized extra-data, EOF expected.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
+        }
     }
-    _ASSERT(m_Contigs.size() == m_NumContigs);
-
-    if (x_GetTag() != ePhrap_eof) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "ReadPhrap: unrecognized extra-data, EOF expected.",
-                    m_Stream.tellg() - CT_POS_TYPE(0));
+    else {
+        // Read old ACE format
+        x_UngetTag(tag);
+        x_ReadOldFormatData();
     }
 
     if (m_Contigs.size() == 1) {
@@ -1534,6 +1707,46 @@ void CPhrapReader::x_UngetTag(EPhrapTag tag)
 }
 
 
+void CPhrapReader::x_DetectFormatVersion(void)
+{
+    _ASSERT(m_LastTag == ePhrap_not_set);
+    if ((m_Flags & fPhrap_AutoVersion) == 0) {
+        return;
+    }
+    m_Flags &= ~fPhrap_AutoVersion;
+    m_Stream >> ws;
+    if ( m_Stream.eof() ) {
+        return;
+    }
+    EPhrapTag tag = ePhrap_not_set;
+    string str_tag;
+    m_Stream >> str_tag;
+    if (str_tag == "AS") {
+        tag = ePhrap_AS;
+    }
+    else if (str_tag == "DNA") {
+        tag = ePhrap_DNA;
+    }
+    else if (str_tag == "Sequence") {
+        tag = ePhrap_Sequence;
+    }
+    else if (str_tag == "BaseQuality") {
+        tag = ePhrap_BaseQuality;
+    }
+    if (tag != ePhrap_not_set) {
+        x_UngetTag(tag);
+        if (tag == ePhrap_AS) {
+            return;
+        }
+        m_Flags |= fPhrap_OldVersion;
+        return;
+    }
+    NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: Can not autodetect ACE format version.",
+                m_Stream.tellg() - CT_POS_TYPE(0));
+}
+
+
 CPhrapReader::EPhrapTag CPhrapReader::x_GetTag(void)
 {
     if (m_LastTag != ePhrap_not_set) {
@@ -1545,6 +1758,13 @@ CPhrapReader::EPhrapTag CPhrapReader::x_GetTag(void)
     if ( m_Stream.eof() ) {
         return ePhrap_eof;
     }
+    return ((m_Flags & fPhrap_OldVersion) != 0) ?
+        x_GetOldTag() : x_GetNewTag();
+}
+
+
+CPhrapReader::EPhrapTag CPhrapReader::x_GetNewTag(void)
+{
     switch (m_Stream.get()) {
     case 'A': // AS, AF
         switch (m_Stream.get()) {
@@ -1557,8 +1777,6 @@ CPhrapReader::EPhrapTag CPhrapReader::x_GetTag(void)
                             "ReadPhrap: duplicate AS tag.",
                             m_Stream.tellg() - CT_POS_TYPE(0));
             }
-            m_Stream >> m_NumContigs >> m_NumReads;
-            CheckStreamState(m_Stream, "invalid data in AS tag.");
             return ePhrap_AS;
         }
         break;
@@ -1603,11 +1821,57 @@ CPhrapReader::EPhrapTag CPhrapReader::x_GetTag(void)
         break;
     }
     CheckStreamState(m_Stream, "tag.");
+    m_Stream >> ws;
     NCBI_THROW2(CObjReaderParseException, eFormat,
                 "ReadPhrap: unknown tag.",
                 m_Stream.tellg() - CT_POS_TYPE(0));
     return ePhrap_unknown;
 }
+
+
+
+CPhrapReader::EPhrapTag CPhrapReader::x_GetOldTag(void)
+{
+    EPhrapTag tag;
+    string str_tag;
+    m_Stream >> str_tag;
+    if (str_tag == "DNA") {
+        tag = ePhrap_DNA;
+    }
+    else if (str_tag == "Sequence") {
+        tag = ePhrap_Sequence;
+    }
+    else if (str_tag == "BaseQuality") {
+        tag = ePhrap_BaseQuality;
+    }
+    else if (str_tag == "Assembled_from") {
+        tag = ePhrap_Assembled_from;
+    }
+    else if (str_tag == "Assembled_from*") {
+        tag = ePhrap_Assembled_from_Pad;
+    }
+    else if (str_tag == "Base_segment") {
+        tag = ePhrap_Base_segment;
+    }
+    else if (str_tag == "Base_segment*") {
+        tag = ePhrap_Base_segment_Pad;
+    }
+    else if (str_tag == "Clipping") {
+        tag = ePhrap_Clipping;
+    }
+    else if (str_tag == "Clipping*") {
+        tag = ePhrap_Clipping_Pad;
+    }
+    else {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "ReadPhrap: unknown tag.",
+                    m_Stream.tellg() - CT_POS_TYPE(0));
+    }
+    CheckStreamState(m_Stream, "tag.");
+    m_Stream >> ws;
+    return tag;
+}
+
 
 
 inline
@@ -1682,7 +1946,7 @@ void CPhrapReader::x_ReadContig(void)
             contig->ReadBaseQualities(m_Stream);
             continue;
         case ePhrap_AF:
-            contig->ReadReadLocation(m_Stream);
+            contig->ReadReadLocation(m_Stream, m_Seqs);
             continue;
         case ePhrap_BS:
             contig->ReadBaseSegment(m_Stream);
@@ -1698,7 +1962,7 @@ void CPhrapReader::x_ReadContig(void)
     while ((tag = x_GetTag()) != ePhrap_eof) {
         switch ( tag ) {
         case ePhrap_RD:
-            x_ReadRead(*contig);
+            x_ReadRead();
             continue;
         case ePhrap_RT:
             x_ReadTag("RT");
@@ -1719,11 +1983,22 @@ void CPhrapReader::x_ReadContig(void)
 }
 
 
-void CPhrapReader::x_ReadRead(CPhrap_Contig& contig)
+void CPhrapReader::x_ReadRead(void)
 {
     string read_name;
     m_Stream >> read_name;
-    CRef<CPhrap_Read> read = contig.SetRead(read_name);
+    CRef<CPhrap_Read> read;
+    {{
+        CRef<CPhrap_Seq> seq = m_Seqs[read_name];
+        if ( !seq ) {
+            read.Reset(new CPhrap_Read(read_name, m_Flags));
+            m_Seqs[read_name].Reset(read.GetPointer());
+        }
+        else {
+            read.Reset(dynamic_cast<CPhrap_Read*>(seq.GetPointer()));
+        }
+    }}
+    _ASSERT( read );
     read->Read(m_Stream);
     read->ReadData(m_Stream);
     m_Seqs[read->GetName()] = read;
@@ -1740,6 +2015,165 @@ void CPhrapReader::x_ReadRead(CPhrap_Contig& contig)
         default:
             x_UngetTag(tag);
             return;
+        }
+    }
+}
+
+
+CRef<CPhrap_Contig> CPhrapReader::x_AddContig(CPhrap_Sequence& seq)
+{
+    if ( seq.IsRead() ) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "ReadPhrap: sequence type redifinition for " +
+                    seq.GetName() + " - was 'read'.",
+                    m_Stream.tellg() - CT_POS_TYPE(0));
+    }
+    // Contig can not be already registered
+    CRef<CPhrap_Contig> contig = seq.GetContig();
+    m_Contigs.push_back(contig);
+    m_Seqs[contig->GetName()] = CRef<CPhrap_Seq>(contig.GetPointer());
+    _ASSERT(contig);
+    return contig;
+}
+
+
+CRef<CPhrap_Read> CPhrapReader::x_AddRead(CPhrap_Sequence& seq)
+{
+    if ( seq.IsContig() ) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "ReadPhrap: sequence type redifinition for " +
+                    seq.GetName() + " - was 'contig'.",
+                    m_Stream.tellg() - CT_POS_TYPE(0));
+    }
+    CRef<CPhrap_Read> read;
+    TSeqs::iterator it = m_Seqs.find(seq.GetName());
+    if ( it != m_Seqs.end() ) {
+        // Read is already registered
+        read.Reset(dynamic_cast<CPhrap_Read*>(it->second.GetPointer()));
+        if ( !read ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "ReadPhrap: sequence type redifinition for " +
+                        seq.GetName() + " - was 'contig'.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
+        }
+        seq.SetRead(*read);
+    }
+    else {
+        read = seq.GetRead();
+        m_Seqs[read->GetName()] = CRef<CPhrap_Seq>(read.GetPointer());
+    }
+    _ASSERT(read);
+    return read;
+}
+
+
+void CPhrapReader::x_ReadOldFormatData(void)
+{
+    typedef map<string, CRef<CPhrap_Sequence> > TSequences;
+    TSequences seqs;
+    CRef<CPhrap_Sequence> seq;
+    for (EPhrapTag tag = x_GetTag(); tag != ePhrap_eof; tag = x_GetTag()) {
+        string seq_name;
+        m_Stream >> seq_name;
+        // Check if we have a new sequence
+        if ( !seq  ||  seq->GetName() != seq_name ) {
+            TSequences::iterator seq_it = seqs.find(seq_name);
+            if (seq_it != seqs.end()) {
+                seq = seq_it->second;
+            }
+            else {
+                seq.Reset(new CPhrap_Sequence(seq_name, m_Flags));
+                seqs[seq_name] = seq;
+            }
+        }
+        switch ( tag ) {
+        case ePhrap_DNA:
+            seq->ReadData(m_Stream);
+            break;
+        case ePhrap_Sequence:
+            x_ReadOldSequence(*seq);
+            break;
+        case ePhrap_BaseQuality:
+            // BaseQuality tag is defined only for contigs
+            x_AddContig(*seq)->ReadBaseQualities(m_Stream);
+            break;
+        case ePhrap_eof:
+            continue;
+        default:
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: unexpected tag.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
+        }
+    }
+    ITERATE(TSequences, it, seqs) {
+        if ( it->second->IsContig() ) {
+        }
+        else if ( it->second->IsRead() ) {
+        }
+        else {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: incomplete sequence data " + it->first + ".",
+                        CT_POS_TYPE(-1));
+        }
+    }
+}
+
+
+void CPhrapReader::x_ReadOldSequence(CPhrap_Sequence& seq)
+{
+    CRef<CPhrap_Contig> contig;
+    if ( seq.IsContig() ) {
+        contig = seq.GetContig();
+    }
+    CRef<CPhrap_Read> read;
+    if ( seq.IsRead() ) {
+        read = seq.GetRead();
+    }
+    for (EPhrapTag tag = x_GetTag(); tag != ePhrap_eof; tag = x_GetTag()) {
+        // Assembled_from[*] name start stop
+        // Base_segment[*] c_start c_stop name r_start r_stop
+        // Clipping[*] start stop
+        switch ( tag ) {
+        case ePhrap_Assembled_from:
+        case ePhrap_Base_segment:
+        case ePhrap_Clipping:
+            // Ignore unpadded coordinates, use only padded versions
+            ReadLine(m_Stream);
+            continue;
+        case ePhrap_Assembled_from_Pad:
+            if ( !contig ) {
+                contig = x_AddContig(seq);
+            }
+            contig->ReadReadLocation(m_Stream, m_Seqs);
+            break;
+        case ePhrap_Base_segment_Pad:
+            if ( !contig ) {
+                contig = x_AddContig(seq);
+            }
+            contig->ReadBaseSegment(m_Stream);
+            break;
+        case ePhrap_Clipping_Pad:
+            if ( !read ) {
+                read = x_AddRead(seq);
+            }
+            read->ReadQuality(m_Stream);
+            break;
+        case ePhrap_DNA:
+        case ePhrap_Sequence:
+        case ePhrap_BaseQuality:
+            // Unget tag and return
+            x_UngetTag(tag);
+        case ePhrap_eof:
+            return;
+        default:
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: unexpected tag.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
+        }
+        if ( read  &&  contig ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                "ReadPhrap: sequence type redifinition.",
+                        m_Stream.tellg() - CT_POS_TYPE(0));
         }
     }
 }
@@ -1784,6 +2218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/08/04 18:11:27  grichenk
+* Optimized loading. Added support for the old ACE format.
+*
 * Revision 1.6  2005/08/01 18:18:41  grichenk
 * Optimized reading of sequence name.
 *

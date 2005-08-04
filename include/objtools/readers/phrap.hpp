@@ -59,6 +59,8 @@ enum EPhrapReaderFlags {
     fPhrap_AlignPairs     = 0x0200, ///< separate alignment for each trace
     fPhrap_AlignOptimized = 0x0300, ///< split global alignment into parts
     fPhrap_Align          = 0x0300, ///< mask for alignment flags, not a value
+    fPhrap_OldVersion     = 0x1000, ///< force old ACE format
+    fPhrap_AutoVersion    = 0x2000, ///< autodetect ACE format version
 
     fPhrap_Default = fPhrap_PackSeqData
                    | fPhrap_FeatGaps
@@ -67,6 +69,7 @@ enum EPhrapReaderFlags {
                    | fPhrap_FeatQuality
                    | fPhrap_Descr
                    | fPhrap_AlignOptimized
+                   | fPhrap_AutoVersion
 };
 
 typedef int TPhrapReaderFlags;
@@ -84,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/08/04 18:11:27  grichenk
+* Optimized loading. Added support for the old ACE format.
+*
 * Revision 1.2  2005/07/25 20:26:25  grichenk
 * Fixed forward declaration of CSeq_entry
 *
