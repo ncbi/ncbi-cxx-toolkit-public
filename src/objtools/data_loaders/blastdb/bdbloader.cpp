@@ -305,14 +305,9 @@ bool CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & l
         if (m_Ids.find(idh) != m_Ids.end()) {
             oid = m_Ids[idh];
         } else {
-            vector<int> oids;
-            m_SeqDB->SeqidToOids(*seq_id, oids);
-            
-            if (oids.empty()){
+            if (! m_SeqDB->SeqidToOid(*seq_id, oid)) {
                 return false;
             }
-            
-            oid = oids[0];
         }
         
         cached = m_OidCache[oid];
@@ -592,6 +587,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.31  2005/08/04 17:39:47  bealer
+ * - Use single-oid interface for blastdb data loader.
+ *
  * Revision 1.30  2005/07/28 11:29:57  ssikorsk
  * Removed CInterfaceVersion from CPluginManager template parameters.
  *
