@@ -751,7 +751,12 @@ void UnalignedConsensusReader::read(ColumnResidueProfile& crp)
 		if (m_start >= 0) //was in a unaligned region
 		{
 			m_totalUnaligned += m_end - m_start + 1;
-			if ( (m_end - m_start) > (m_endOfMaxSeg - m_startOfMaxSeg))
+			if (m_startOfMaxSeg < 0)
+			{
+				m_endOfMaxSeg = m_end;
+				m_startOfMaxSeg = m_start;
+			}
+			else if ( (m_end - m_start) > (m_endOfMaxSeg - m_startOfMaxSeg))
 			{
 				m_endOfMaxSeg = m_end;
 				m_startOfMaxSeg = m_start;
@@ -790,6 +795,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/08/04 16:35:26  cliu
+ * work with longest loop of 1.
+ *
  * Revision 1.4  2005/08/04 16:03:54  cliu
  * count unaligned consensus with an existing consensus
  *
