@@ -15,6 +15,7 @@ BufferSecurityCheck=TRUE
 RuntimeTypeInfo=TRUE
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
+AdditionalOptions=
 
 
 [Compiler.debug]
@@ -31,7 +32,7 @@ EnableFunctionLevelLinking=FALSE
 
 [Compiler.release]
 DebugInformationFormat=0
-Optimization=2
+Optimization=0
 MinimalRebuild=FALSE
 GlobalOptimizations=TRUE
 InlineFunctionExpansion=1
