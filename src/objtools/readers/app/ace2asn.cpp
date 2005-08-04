@@ -71,33 +71,61 @@ void CAce2AsnApp::Init(void)
                              CArgDescriptions::eOutputFile);
     arg_desc->AddOptionalKey("asnb", "AsnBinFile",
                              "Output ASN.1 binary file",
-                             CArgDescriptions::eOutputFile);
+                             CArgDescriptions::eOutputFile,
+                             CArgDescriptions::fBinary);
 
-    arg_desc->AddFlag("default_flags",
-                      "Use default reader flags");
-    arg_desc->AddFlag("no_complement",
-                      "Ignore 'complemented' flags of traces");
-    arg_desc->AddFlag("pack_data",
-                      "Use best coding to pack sequence data");
-    arg_desc->AddFlag("gaps",
-                      "Add features with list of gaps");
-    arg_desc->AddFlag("base_segs",
-                      "Add features with base segments");
-    arg_desc->AddFlag("read_locs",
-                      "Add features with padded read starts");
-    arg_desc->AddFlag("tags",
-                      "Convert CT and RT tags to features");
-    arg_desc->AddFlag("quality",
-                      "Add quality/alignment features");
-    arg_desc->AddFlag("descr",
-                      "Add descriptors (DS and WA tags)");
-
+    arg_desc->AddDefaultKey("no_complement",
+                            "fPhrap_NoComplement",
+                            "Ignore 'complemented' flags of traces",
+                            CArgDescriptions::eBoolean,
+                            "f");
+    arg_desc->AddDefaultKey("pack_data",
+                            "fPhrap_PackSeqData",
+                            "Use best coding to pack sequence data",
+                            CArgDescriptions::eBoolean,
+                            "t");
+    arg_desc->AddDefaultKey("gaps",
+                            "fPhrap_FeatGaps",
+                            "Add features with list of gaps",
+                            CArgDescriptions::eBoolean,
+                            "t");
+    arg_desc->AddDefaultKey("base_segs",
+                            "fPhrap_FeatBaseSegs",
+                            "Add features with base segments",
+                            CArgDescriptions::eBoolean,
+                            "t");
+    arg_desc->AddDefaultKey("read_locs",
+                            "fPhrap_FeatReadLocs",
+                            "Add features with padded read starts",
+                            CArgDescriptions::eBoolean,
+                            "f");
+    arg_desc->AddDefaultKey("tags",
+                            "fPhrap_FeatTags",
+                            "Convert CT and RT tags to features",
+                            CArgDescriptions::eBoolean,
+                            "t");
+    arg_desc->AddDefaultKey("quality",
+                            "fPhrap_FeatQuality",
+                            "Add quality/alignment features",
+                            CArgDescriptions::eBoolean,
+                            "t");
+    arg_desc->AddDefaultKey("descr",
+                            "fPhrap_Descr",
+                            "Add descriptors (DS and WA tags)",
+                            CArgDescriptions::eBoolean,
+                            "t");
     arg_desc->AddDefaultKey("align", "AlignType",
                             "Alignment type",
-                            CArgDescriptions::eString, "none");
+                            CArgDescriptions::eString, "optimized");
     arg_desc->SetConstraint("align",
                             &(*new CArgAllow_Strings,
                             "none", "optimized", "all", "pairs"));
+    arg_desc->AddDefaultKey("ace_version", "AceVersion",
+                            "ACE format version",
+                            CArgDescriptions::eString, "auto");
+    arg_desc->SetConstraint("ace_version",
+                            &(*new CArgAllow_Strings,
+                            "auto", "old", "new"));
 
     string prog_description = "ACE to ASN.1 converter\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -112,41 +140,49 @@ int CAce2AsnApp::Run(void)
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
 
-    TPhrapReaderFlags flags = args["default_flags"] ? fPhrap_Default : 0;
+    TPhrapReaderFlags flags = 0;
 
-    if (args["no_complement"]) {
+
+    if ( args["no_complement"].AsBoolean() ) {
         flags |= fPhrap_NoComplement;
     };
-    if (args["pack_data"]) {
+    if ( args["pack_data"].AsBoolean() ) {
         flags |= fPhrap_PackSeqData;
     }
-    if (args["gaps"]) {
+    if ( args["gaps"].AsBoolean() ) {
         flags |= fPhrap_FeatGaps;
     }
-    if (args["base_segs"]) {
+    if ( args["base_segs"].AsBoolean() ) {
         flags |= fPhrap_FeatBaseSegs;
     }
-    if (args["read_locs"]) {
+    if ( args["read_locs"].AsBoolean() ) {
         flags |= fPhrap_FeatReadLocs;
     }
-    if (args["tags"]) {
+    if ( args["tags"].AsBoolean() ) {
         flags |= fPhrap_FeatTags;
     }
-    if (args["quality"]) {
+    if ( args["quality"].AsBoolean() ) {
         flags |= fPhrap_FeatQuality;
     }
-    if (args["descr"]) {
+    if ( args["descr"].AsBoolean() ) {
         flags |= fPhrap_Descr;
     }
 
     if (args["align"].AsString() == "optimized") {
-        flags |= (flags & (~fPhrap_Align)) | fPhrap_AlignOptimized;
+        flags |= fPhrap_AlignOptimized;
     }
     else if (args["align"].AsString() == "all") {
-        flags |= (flags & (~fPhrap_Align)) | fPhrap_AlignAll;
+        flags |= fPhrap_AlignAll;
     }
     else if (args["align"].AsString() == "pairs") {
-        flags |= (flags & (~fPhrap_Align)) | fPhrap_AlignPairs;
+        flags |= fPhrap_AlignPairs;
+    }
+
+    if (args["ace_version"].AsString() == "auto") {
+        flags |= fPhrap_AutoVersion;
+    }
+    else if (args["ace_version"].AsString() == "old") {
+        flags |= fPhrap_OldVersion;
     }
 
     NcbiCout << "Reading ACE file..." << NcbiEndl;
@@ -185,6 +221,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/08/04 18:12:17  grichenk
+ * Changed command line arguments from flags to bool keys.
+ *
  * Revision 1.1  2005/07/26 15:38:59  grichenk
  * Initial revision
  *
