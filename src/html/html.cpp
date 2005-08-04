@@ -2257,7 +2257,7 @@ CHTML_font* CHTML_font::SetTypeFace(const string& typeface)
 CHTML_font* CHTML_font::SetRelativeSize(int size)
 {
     if ( size != 0 )
-        SetAttribute("size", NStr::IntToString(size, NStr::fSign));
+        SetAttribute("size", NStr::IntToString(size, NStr::fWithSign));
     return this;
 }
 
@@ -2430,6 +2430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.120  2005/08/04 11:14:05  ivanov
+ * NStr::fSign -> NStr::fWithSign
+ *
  * Revision 1.119  2005/07/18 16:51:07  ivanov
  * CHTML_tr::PrintEnd() -- fixed using of uninitialized pointer
  *
