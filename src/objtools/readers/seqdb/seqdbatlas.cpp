@@ -106,12 +106,12 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
     for(int i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
     }
-    Verify();
+    Verify(true);
 }
 
 CSeqDBAtlas::~CSeqDBAtlas()
 {
-    Verify();
+    Verify(true);
     x_GarbageCollect(0);
     
     // Clear mapped file regions
@@ -141,14 +141,14 @@ CSeqDBAtlas::~CSeqDBAtlas()
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
 {
-    Verify();
+    Verify(locked);
     TIndx length(0);
     return GetFileSize(fname, length, locked);
 }
 
 const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked)
 {
-    Verify();
+    Verify(locked);
     if (! GetFileSize(fname, length, locked)) {
         SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
     }
@@ -213,7 +213,8 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
     }
     
     Lock(locked);
-    Verify();
+    Verify(true);
+    
     GetRegion(lease, fname, 0, length);
 }
 
@@ -222,14 +223,15 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
                               CSeqDBLockHold & locked)
 {
     Lock(locked);
-    Verify();
+    Verify(true);
+    
     return GetFileSizeL(fname, length);
 }
 
 bool CSeqDBAtlas::GetFileSizeL(const string & fname,
                                TIndx        & length)
 {
-    Verify();
+    Verify(true);
     // Fields: file-exists, file-length
     pair<bool, TIndx> data;
     
@@ -252,7 +254,7 @@ bool CSeqDBAtlas::GetFileSizeL(const string & fname,
     } else {
         data = (*i).second;
     }
-    Verify();
+    Verify(true);
     
     length = data.second;
     return data.first;
@@ -266,7 +268,7 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
 
 void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 {
-    Verify();
+    Verify(true);
     if (Uint8(m_CurAlloc) <= reduce_to) {
         return;
     }
@@ -304,7 +306,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
                        : max_distinct_clock); //min
     }
     
-    Verify();
+    Verify(true);
     while(num_gcs >= 0) {
         num_gcs --;
         
@@ -338,7 +340,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
             }
         }
     }
-    Verify();
+    Verify(true);
 }
 
 
@@ -501,7 +503,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
                                        const char ** start,
                                        CRegionMap ** region)
 {
-    Verify();
+    Verify(true);
     
     // Try recent matches first.
     
@@ -562,7 +564,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
             return retval;
         }
     }
-    Verify();
+    Verify(true);
     
     return 0;
 }
@@ -571,7 +573,8 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
 
 void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
 {
-    Verify();
+    Verify(true);
+    
     if ((int) m_Regions.size() >= m_OpenRegionsTrigger) {
         // If we are collecting because of the number of open regions,
         // we use zero as the size.  This kind of flush is probably
@@ -612,7 +615,8 @@ void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
             x_GarbageCollect(m_MemoryBound - space_needed);
         }
     }
-    Verify();
+    
+    Verify(true);
 }
 
 
@@ -623,7 +627,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
                          const char    ** start,
                          CRegionMap    ** rmap)
 {
-    Verify();
+    Verify(true);
     
     const char * dummy = 0;
     
@@ -702,7 +706,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         SeqDB_ThrowException(CSeqDBException::eMemErr,
                              "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
-    Verify();
+    Verify(true);
     
     return retval;
 }
@@ -713,7 +717,7 @@ const char * CSeqDBAtlas::GetRegion(const string   & fname,
                                     CSeqDBLockHold & locked)
 {
     Lock(locked);
-    Verify();
+    Verify(true);
     
     return x_GetRegion(fname, begin, end, 0, 0);
 }
@@ -724,7 +728,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
                             TIndx            begin,
                             TIndx            end)
 {
-    Verify();
+    Verify(true);
     RetRegion(lease);
     
     const char * start(0);
@@ -744,7 +748,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
         
         lease.x_SetRegion(begin, end, start, rmap);
     }
-    Verify();
+    Verify(true);
 }
 
 // Assumes lock is held
@@ -752,7 +756,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
 /// Releases a hold on a partial mapping of the file.
 void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
 {
-    Verify();
+    Verify(true);
     if (ml.m_Data) {
 #ifdef _DEBUG
         const char * datap = ml.m_Data;
@@ -775,13 +779,13 @@ void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
         ml.m_Begin = 0;
         ml.m_End   = 0;
     }
-    Verify();
+    Verify(true);
 }
 
 /// Releases a hold on a partial mapping of the file.
 void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
 {
-    Verify();
+    Verify(true);
     CSeqDBAtlas::TAddressTable::iterator iter = m_AddressLookup.upper_bound(datap);
     
     if (iter != m_AddressLookup.begin()) {
@@ -802,7 +806,7 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
     if (! worked) {
         cerr << "Address leak in CSeqDBAtlas::RetRegion" << endl;
     }
-    Verify();
+    Verify(true);
 }
 
 void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
@@ -1163,7 +1167,7 @@ const char * CRegionMap::Data(TIndx begin, TIndx end)
 int CSeqDBAtlas::x_LookupFile(const string  & fname,
                               const string ** map_fname_ptr)
 {
-    Verify();
+    Verify(true);
     map<string, int>::iterator i = m_FileIDs.find(fname);
     
     if (i == m_FileIDs.end()) {
@@ -1175,14 +1179,18 @@ int CSeqDBAtlas::x_LookupFile(const string  & fname,
     // Get address of string in string->fid table.
     
     *map_fname_ptr = & (*i).first;
-    Verify();
+    Verify(true);
     
     return (*i).second;
 }
 
 void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
 {
-    Verify();
+    CSeqDBLockHold locked(*this);
+    Lock(locked);
+    
+    Verify(true);
+    
     SeqDB_CheckLength<Uint8,size_t>(mb);
     SeqDB_CheckLength<Uint8,size_t>(ss);
     
@@ -1200,6 +1208,8 @@ void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
     
     m_MemoryBound = mb;
     m_SliceSize   = ss;
+    
+    Verify(true);
 }
 
 void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,

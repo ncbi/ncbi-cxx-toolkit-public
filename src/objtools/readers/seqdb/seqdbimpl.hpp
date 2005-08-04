@@ -519,7 +519,7 @@ public:
     
     void Verify()
     {
-        m_Atlas.Verify();
+        m_Atlas.Verify(false);
     }
     
 private:

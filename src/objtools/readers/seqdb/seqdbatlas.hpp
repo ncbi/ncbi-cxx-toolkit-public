@@ -1042,7 +1042,8 @@ public:
     /// 
     /// This method releases holds kept by CSeqDBMemLease objects.  It
     /// release the reference count and resets the lease to an
-    /// inactive state.  The atlas lock is assumed to be held.
+    /// inactive state.  The atlas lock is assumed to be held.  This
+    /// method assumes the lock is held.
     /// 
     /// @param ml
     ///   The memory lease object holding the reference.
@@ -1055,13 +1056,14 @@ public:
     /// and by the Alloc() method.  Each call to a hold-getting method
     /// should be paired with a call to a hold-releasing method.  With
     /// data known to have originated in Alloc(), it is faster to call
-    /// the Free() method.
+    /// the Free() method.  This method assumes the lock is held.
     /// 
     /// @param datap
     ///   Pointer to the data to release or deallocate.
     void RetRegion(const char * datap)
     {
-        Verify();
+        Verify(true);
+        
         for(int i = 0; i<eNumRecent; i++) {
             CRegionMap * rec_map = m_Recent[i];
             
@@ -1080,7 +1082,8 @@ public:
         }
         
         x_RetRegionNonRecent(datap);
-        Verify();
+        
+        Verify(true);
     }
     
     /// Clean up unreferenced objects
@@ -1300,12 +1303,28 @@ public:
         return m_CurAlloc;
     }
     
-    void Verify()
+    void Verify(CSeqDBLockHold & locked)
+    {
+        Lock(locked);
+        Verify(true);
+    }
+    
+    void Verify(bool already_locked)
     {
 #ifdef _DEBUG
+        CSeqDBLockHold locked(*this);
+        
+        if (! already_locked) {
+            Lock(locked);
+        }
+        
         ITERATE(TNameOffsetTable, iter, m_NameOffsetLookup) {
             CRegionMap & rmp = **iter;
             rmp.Verify();
+        }
+        
+        if (! already_locked) {
+            Unlock(locked);
         }
 #endif
     }
@@ -1427,7 +1446,7 @@ private:
     /// is split into a fast inlined part and a slow non-inlined part.
     /// This is the non-inlined part.  It searches for the region or
     /// allocated block that owns the specified address, and releases
-    /// it, if found.
+    /// it, if found.  This method assumes the lock is held.
     /// 
     /// @param datap
     ///   Pointer to the area to delete or release a hold on.
