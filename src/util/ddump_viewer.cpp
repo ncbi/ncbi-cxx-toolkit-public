@@ -63,7 +63,7 @@ bool CDebugDumpViewer::x_GetInput(string& input)
 const void* CDebugDumpViewer::x_StrToPtr(const string& str)
 {
     void* addr = 0;
-    addr = reinterpret_cast<void*>(NStr::StringToULong(str,16));
+    addr = reinterpret_cast<void*>(NStr::StringToULong(str, NStr::fStringToNumDefault, 16));
     return addr;
 }
 
@@ -231,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/04 11:23:29  ivanov
+ * Use "flag" version of NStr::StringToULong()
+ *
  * Revision 1.5  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *
