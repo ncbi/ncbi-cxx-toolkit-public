@@ -448,7 +448,7 @@ BEGIN_TEST_FUNCTION(FullBlobs)
         if (line.empty()  ||  !isdigit((unsigned char) line[0]) ) {
             continue;
         }
-        int gi = NStr::StringToInt(line, 10, NStr::eCheck_Skip);
+        int gi = NStr::StringToInt(line, NStr::fAllowTrailingSymbols);
         if (gi <= 0) {
             continue;
         }
@@ -671,6 +671,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/08/04 12:32:45  ivanov
+* Use 'flag' version of NStr::StringToInt()
+*
 * Revision 1.25  2005/06/03 16:57:57  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
