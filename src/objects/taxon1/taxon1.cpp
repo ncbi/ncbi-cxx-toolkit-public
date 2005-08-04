@@ -616,8 +616,8 @@ CTaxon1::PopulateReplaced( COrg_ref& org, COrgName::TMod& lMods  )
                                 srchMod->SetSubtype
                                     ( COrgMod::TSubtype
                                       (NStr::StringToInt
-                                       (sAttrib.substr(1, pos-1), 10,
-                                        NStr::eCheck_Skip) ) );
+                                       (sAttrib.substr(1, pos-1),
+                                        NStr::fAllowTrailingSymbols) ) );
                                 PFindMod mf;
                                 mf.SetModToMatch( srchMod );
                                 if( find_if( mods.begin(), mods.end(),
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.30  2005/08/04 11:58:14  ivanov
+ * Use 'flag' version of NStr::StringToInt()
+ *
  * Revision 6.29  2005/06/06 15:30:15  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
