@@ -384,7 +384,7 @@ static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
     // numbers come first
     if (isdigit((unsigned char) pages[0])) {
         first_digits = true;
-        dig = NStr::StringToUInt(pages, 10, NStr::eCheck_Skip);
+        dig = NStr::StringToUInt(pages, NStr::fAllowTrailingSymbols);
         SIZE_TYPE i = pages.find_first_not_of(kDigits);
         if (i != NPOS) {
             let = pages.substr(i);
@@ -396,7 +396,7 @@ static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
             let = pages;
         } else {
             let = pages.substr(0, i);
-            dig = NStr::StringToUInt(pages.substr(i), 10, NStr::eCheck_Skip);
+            dig = NStr::StringToUInt(pages.substr(i), NStr::fAllowTrailingSymbols);
         }
     }
 
@@ -1226,6 +1226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/08/04 12:37:53  ivanov
+* Use 'flag' version of NStr::StringToInt()
+*
 * Revision 1.26  2005/06/03 17:00:30  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
