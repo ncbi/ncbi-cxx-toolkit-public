@@ -176,7 +176,8 @@ bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
         NStr::Tokenize(m, " ", sdoubles);
         for (size_t i = 0; i < sdoubles.size(); ++i) {
             try {
-                double d = NStr::StringToDouble(sdoubles[i],NStr::eCheck_Skip);
+                double d = NStr::StringToDouble(sdoubles[i],
+                                                NStr::fAllowTrailingSymbols);
                 m_Doubles.push_back(d);
             }
             catch(...) {}
@@ -373,6 +374,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/08/04 12:57:04  ivanov
+ * Use 'flag' version of NStr::StringTo*()
+ *
  * Revision 1.12  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

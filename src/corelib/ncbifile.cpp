@@ -1030,17 +1030,17 @@ bool CDirEntry::GetTime(CTime* modification,
 
     if ( modification ) {
         modification->SetTimeT(st.orig.st_mtime);
-	    if ( st.mtime_nsec )
+        if ( st.mtime_nsec )
             modification->SetNanoSecond(st.mtime_nsec);
     }
     if ( creation ) {
         creation->SetTimeT(st.orig.st_ctime);
-	    if ( st.ctime_nsec )
+        if ( st.ctime_nsec )
             creation->SetNanoSecond(st.ctime_nsec);
     }
     if ( last_access ) {
         last_access->SetTimeT(st.orig.st_atime);
-    	if ( st.atime_nsec )
+        if ( st.atime_nsec )
             last_access->SetNanoSecond(st.atime_nsec);
     }
     return true;
@@ -1099,7 +1099,7 @@ bool CDirEntry::SetTime(CTime* modification,
     CTime x_modification, x_lastaccess;
     GetTime(modification ? &x_modification : 0,
             0 /* creation */,
-	    last_access  ? &x_lastaccess : 0);
+        last_access  ? &x_lastaccess : 0);
 
     if ( !modification ) {
         modification = &x_modification;
@@ -1267,7 +1267,7 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 
 #  if defined(NCBI_OS_SOLARIS)
 #    if !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE) || \
-	 defined(__EXTENSIONS__)
+     defined(__EXTENSIONS__)
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
     buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
@@ -1922,9 +1922,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     if ( !owner.empty() ) {
         struct passwd *pw = getpwnam(owner.c_str());
         if ( !pw ) {
-            uid = (uid_t) NStr::StringToUInt(owner.c_str(), 0,
-                                             NStr::eCheck_Need,
-                                             NStr::eConvErr_NoThrow);
+            uid = (uid_t) NStr::StringToUInt(owner.c_str(),
+                                             NStr::fConvErr_NoThrow, 0);
             if (errno)
                 return false;
         } else {
@@ -1934,9 +1933,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     if ( !group.empty() ) {
         struct group *gr = getgrnam(group.c_str());
         if ( !gr ) {
-            gid = (gid_t) NStr::StringToUInt(group.c_str(), 0,
-                                             NStr::eCheck_Need,
-                                             NStr::eConvErr_NoThrow);
+            gid = (gid_t) NStr::StringToUInt(group.c_str(),
+                                             NStr::fConvErr_NoThrow, 0);
             if (errno)
                 return false;
         } else {
@@ -3681,6 +3679,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.120  2005/08/04 12:54:56  ivanov
+ * Use 'flag' version of NStr::StringTo*()
+ *
  * Revision 1.119  2005/07/21 12:03:49  ivanov
  * CDirEntry::Copy() -- now can copy all supported types.
  * CDir::GetEntries[Ptr]()
