@@ -130,7 +130,7 @@ private:
 	const BlockModelPair& getGuideAlignment() const;
 	BlockModelPair& getGuideAlignment();
 	int countColumnsOnMaster(string& seq);
-	string getLongestUnalignedConsensusSegment(int& totalUnaligned);
+	string getLongestUnalignedConsensusSegment(int& totalUnaligned, int& total);
 	void traverseAllColumns(ColumnReader& cr);
 	void traverseColumnsOnMaster(ColumnReader& cr);
 	void traverseColumnsOnConsensus(ColumnReader& cr);
@@ -161,12 +161,14 @@ public:
 	void read(ColumnResidueProfile& crp);
 	void getLongestSeg(int& start, int& end); 
 	int getTotalUnaligned() {return m_totalUnaligned;}
+	int getTotal() {return m_pos;}
 private:
 	int m_startOfMaxSeg;
 	int m_endOfMaxSeg;
 	int m_start;
 	int m_end;
 	int m_totalUnaligned;
+	int m_pos;
 };
 
 END_SCOPE(cd_utils)
@@ -178,6 +180,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/08/04 16:04:08  cliu
+ * count unaligned consensus with an existing consensus
+ *
  * Revision 1.3  2005/08/03 19:59:32  cliu
  * count unaligned consensus
  *

@@ -713,15 +713,26 @@ double ResidueProfiles::calcInformationContent(bool byConsensus)
 	return info;
 }
 
-string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned)
+string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned, int& total)
 {
 	UnalignedConsensusReader ucr;
-	traverseColumnsOnConsensus(ucr);
+	string consensus;
+	if (m_consensus.size() == 0) //master is the consensus
+	{
+		traverseColumnsOnMaster(ucr);
+		countColumnsOnMaster(consensus);
+	}
+	else
+	{
+		traverseColumnsOnConsensus(ucr);
+		consensus = m_consensus;
+	}
 	int start, end;
 	ucr.getLongestSeg(start, end);
 	totalUnaligned = ucr.getTotalUnaligned();
+	total = ucr.getTotal();
 	if (start >= 0 && end >= start)
-		return m_consensus.substr(start, end-start+1);
+		return consensus.substr(start, end-start+1);
 	else
 		return "";
 }
@@ -729,7 +740,7 @@ string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned)
 
 UnalignedConsensusReader::UnalignedConsensusReader()
 	: m_startOfMaxSeg(-1), m_endOfMaxSeg(-1),
-	m_start(-1), m_end(-1), m_totalUnaligned(0)
+	m_start(-1), m_end(-1), m_totalUnaligned(0), m_pos(0)
 {
 }
 
@@ -754,7 +765,7 @@ void UnalignedConsensusReader::read(ColumnResidueProfile& crp)
 	{
 		if (m_start < 0) //see a new unaligned seg
 		{
-			m_start = crp.getIndexByConsensus();
+			m_start = m_pos;
 			m_end = m_start;
 		}
 		else //continue an existing unaligned seg
@@ -762,6 +773,7 @@ void UnalignedConsensusReader::read(ColumnResidueProfile& crp)
 			m_end++;
 		}
 	}
+	m_pos++;
 }
 
 void UnalignedConsensusReader::getLongestSeg(int& start, int& end)
@@ -778,6 +790,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/08/04 16:03:54  cliu
+ * count unaligned consensus with an existing consensus
+ *
  * Revision 1.3  2005/08/03 19:59:45  cliu
  * count unaligned consensus
  *
