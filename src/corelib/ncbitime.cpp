@@ -373,7 +373,8 @@ void CTime::x_Init(const string& str, const string& fmt)
                         *s++ = *sss++;
                     }
                     *s = '\0';
-                    x_min = NStr::StringToLong(value_str,10,NStr::eCheck_Skip);
+                    x_min = NStr::StringToLong(value_str,
+                                               NStr::fAllowTrailingSymbols);
                 }
             }
             catch (CStringException) {
@@ -823,7 +824,8 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'D': s_AddZeroPadInt(str, t->Day());           break;
         case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
         case 'h': s_AddZeroPadInt(str, t->Hour());          break;
-        case 'H': s_AddZeroPadInt(str, (t->Hour()+11) % 12+1);     break;
+        case 'H': s_AddZeroPadInt(str, (t->Hour()+11) % 12+1);
+                  break;
         case 'm': s_AddZeroPadInt(str, t->Minute());        break;
         case 's': s_AddZeroPadInt(str, t->Second());        break;
         case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
@@ -831,8 +833,8 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
                   break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
-        case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ; break;
-        case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ; break;
+        case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
+        case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
                       ERR_POST("Format symbol 'z' is not supported on "
@@ -965,7 +967,7 @@ TDBTimeI CTime::GetTimeDBI(void) const
 
     dbt.days = (Int4)(curr - first);
     dbt.time = (Int4)((t.Hour() * 3600 + t.Minute() * 60 + t.Second()) * 300) +
-        (Int4)((double)t.NanoSecond() * 300 / kNanoSecondsPerSecond);
+               (Int4)((double)t.NanoSecond() * 300 / kNanoSecondsPerSecond);
     return dbt;
 }
 
@@ -1026,7 +1028,7 @@ CTime& CTime::x_SetTime(const time_t* value)
         _ftime(&timebuffer);
         timer = timebuffer.time;
         ns = (long) timebuffer.millitm *
-            (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
     }
 #elif defined(NCBI_OS_UNIX)
 
@@ -2080,13 +2082,15 @@ void TuneupFastLocalTime(void)
 
 
 
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/08/04 11:09:50  ivanov
+ * Use flags instead of enums for NStr::StringToLong
+ *
  * Revision 1.63  2005/05/12 15:07:33  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
