@@ -79,7 +79,8 @@ static string& s_URLDecode(const string& s, string& out) {
             pos = pos2 + 1;
         } else if (s[pos2] == '%') {
             try {
-                out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2), 16);
+                out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2),
+                                               NStr::fStringToNumDefault, 16);
                 pos = pos2 + 3;
             } catch (CStringException&) {
                 // some sources neglect to encode % (!)
@@ -1126,6 +1127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/08/04 12:19:17  ivanov
+* Use 'flag' version of NStr::StringToInt()
+*
 * Revision 1.17  2005/07/01 16:40:37  ucko
 * Adjust for CSeq_id's use of CSeqIdException to report bad input.
 *
