@@ -232,9 +232,9 @@ void CBlastFormatUtil::PrintDbReport(list<SDbInfo>&
         WrapOutputLine(dbinfo->definition, line_length, out);
         out << endl;
         CBlastFormatUtil::AddSpace(out, 11);
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << 
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << 
             " sequences; " <<
-            NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << 
+            NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << 
             " total letters" << endl << endl;
     } else if (dbinfo->subset == false){
         out << "  Database: ";
@@ -245,16 +245,16 @@ void CBlastFormatUtil::PrintDbReport(list<SDbInfo>&
         out << dbinfo->date << endl;
 	       
         out << "  Number of letters in database: "; 
-        out << NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << endl;
+        out << NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << endl;
         out << "  Number of sequences in database:  ";
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << endl;
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << endl;
         
     } else {
         out << "  Subset of the database(s) listed below" << endl;
         out << "  Number of letters searched: "; 
-        out << NStr::Int8ToString(dbinfo->total_length, NStr::fCommas) << endl;
+        out << NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << endl;
         out << "  Number of sequences searched:  ";
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fCommas) << endl;
+        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << endl;
     }
 
 }
