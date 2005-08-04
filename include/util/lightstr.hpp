@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/08/04 18:02:39  ivanov
+* Added operator CTempString() and constructor from CTempString
+*
 * Revision 1.5  2003/04/17 17:50:18  siyan
 * Added doxygen support
 *
@@ -53,6 +56,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 #include <string.h>
 
 
@@ -83,6 +87,10 @@ public:
         : m_String(str.data()), m_Length(str.size())
         {
         }
+    CLightString(const CTempString& str)
+        : m_String(str.data()), m_Length(str.length())
+        {
+        }
 
 
     const char* GetString(void) const
@@ -103,6 +111,11 @@ public:
     operator string(void) const
         {
             return string(GetString(), GetLength());
+        }
+
+    operator CTempString(void) const
+        {
+            return CTempString(GetString(), GetLength());
         }
 
     bool operator<(const CLightString& cmp) const
