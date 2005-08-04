@@ -308,10 +308,9 @@ CRef<CBioseq> CPhrap_Seq::CreateBioseq(void) const
     CRef<CBioseq> seq(new CBioseq);
     seq->SetId().push_back(GetId());
     CSeq_inst& inst = seq->SetInst();
-    inst.SetMol(CSeq_inst::eMol_dna);                                          // ???
+    inst.SetMol(CSeq_inst::eMol_dna);
     inst.SetLength(m_UnpaddedLength);
 
-    // char case, pads, coding ???
     x_FillSeqData(inst.SetSeq_data());
 
     return seq;
@@ -337,8 +336,8 @@ void CPhrap_Seq::CreatePadsFeat(CRef<CSeq_annot>& annot) const
         return;
     }
     CRef<CSeq_feat> feat(new CSeq_feat);
-    feat->SetData().SetImp().SetKey("gap_set");                                // ???
-    feat->SetComment("Gap set for " + m_Name);                                 // ???
+    feat->SetData().SetImp().SetKey("gap_set");
+    feat->SetComment("Gap set for " + m_Name);
     CPacked_seqpnt& pnts = feat->SetLocation().SetPacked_pnt();
     pnts.SetId(*GetId());
 
@@ -571,7 +570,7 @@ void CPhrap_Read::x_AddTagFeats(CRef<CSeq_annot>& annot) const
         const SReadTag& tag = *tag_it;
         CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetTitle("created " + tag.m_Date + " by " + tag.m_Program);
-        feat->SetData().SetImp().SetKey(tag.m_Type);                           // ???
+        feat->SetData().SetImp().SetKey(tag.m_Type);
         CSeq_loc& loc = feat->SetLocation();
         loc.SetInt().SetId(*GetId());
         if ( IsComplemented() ) {
@@ -601,7 +600,7 @@ void CPhrap_Read::x_AddQualityFeat(CRef<CSeq_annot>& annot) const
     }
     if ( !m_HiQualRange.Empty() ) {
         CRef<CSeq_feat> feat(new CSeq_feat);
-        feat->SetData().SetImp().SetKey("high_quality_segment");               // ???
+        feat->SetData().SetImp().SetKey("high_quality_segment");
         CSeq_loc& loc = feat->SetLocation();
         loc.SetInt().SetId(*GetId());
         TSeqPos start = GetUnpaddedPos(m_HiQualRange.GetFrom());
@@ -619,7 +618,7 @@ void CPhrap_Read::x_AddQualityFeat(CRef<CSeq_annot>& annot) const
     }
     if ( !m_AlignedRange.Empty() ) {
         CRef<CSeq_feat> feat(new CSeq_feat);
-        feat->SetData().SetImp().SetKey("aligned_segment");                    // ???
+        feat->SetData().SetImp().SetKey("aligned_segment");
         CSeq_loc& loc = feat->SetLocation();
         loc.SetInt().SetId(*GetId());
         TSeqPos start = GetUnpaddedPos(m_AlignedRange.GetFrom());
@@ -702,13 +701,13 @@ CRef<CSeq_entry> CPhrap_Read::CreateRead(void) const
     CRef<CSeq_entry> entry(new CSeq_entry);
     CRef<CBioseq> bioseq = CreateBioseq();
     _ASSERT(bioseq);
-    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);                                        // ???
+    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
 
     x_CreateDesc(*bioseq);
     x_CreateFeat(*bioseq);
 
     entry->SetSeq(*bioseq);
-    // Base qualities???
+
     return entry;
 }
 
@@ -1077,7 +1076,7 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
         return CRef<CSeq_align>(0);
     }
     CRef<CSeq_align> align(new CSeq_align);
-    align->SetType(CSeq_align::eType_partial); // ???
+    align->SetType(CSeq_align::eType_partial);
     align->SetDim(dim); // contig + one reads
     CDense_seg& dseg = align->SetSegs().SetDenseg();
     dseg.SetDim(dim);
@@ -1310,7 +1309,7 @@ void CPhrap_Contig::x_AddBaseSegFeats(CRef<CSeq_annot>& annot) const
             _ASSERT(start != kInvalidSeqPos);
             _ASSERT(stop != kInvalidSeqPos);
             CRef<CSeq_feat> bs_feat(new CSeq_feat);
-            bs_feat->SetData().SetImp().SetKey("base_segment");                // ???
+            bs_feat->SetData().SetImp().SetKey("base_segment");
             CSeq_loc& loc = bs_feat->SetLocation();
             loc.SetInt().SetId(*read->GetId());
             if ( read->IsComplemented() ) {
@@ -1355,7 +1354,7 @@ void CPhrap_Contig::x_AddReadLocFeats(CRef<CSeq_annot>& annot) const
             loc_feat->SetExcept(true);
             loc_feat->SetExcept_text(
                 "Coordinates are specified for padded read and contig");
-            loc_feat->SetData().SetImp().SetKey("read_start");                           // ???
+            loc_feat->SetData().SetImp().SetKey("read_start");
             CSeq_loc& loc = loc_feat->SetLocation();
             loc.SetPnt().SetId(*read->second->GetId());
             if ( read->second->IsComplemented() ) {
@@ -1397,7 +1396,7 @@ void CPhrap_Contig::x_AddTagFeats(CRef<CSeq_annot>& annot) const
         if ( !comment.empty() ) {
             feat->SetComment(comment);
         }
-        feat->SetData().SetImp().SetKey(tag.m_Type);                           // ???
+        feat->SetData().SetImp().SetKey(tag.m_Type);
         if ( !tag.m_Oligo.m_Name.empty() ) {
             feat->SetData().SetImp().SetDescr(
                 tag.m_Oligo.m_Name + " " +
@@ -1441,7 +1440,7 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
     CRef<CSeq_entry> cont_entry(new CSeq_entry);
     CRef<CBioseq> bioseq = CreateBioseq();
     _ASSERT(bioseq);
-    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_consen);                        // ???
+    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_consen);
     if ( m_Circular ) {
         bioseq->SetInst().SetTopology(CSeq_inst::eTopology_circular);
     }
@@ -1454,7 +1453,7 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
     CRef<CSeq_entry> set_entry(new CSeq_entry);
     CBioseq_set& bioseq_set = set_entry->SetSet();
     bioseq_set.SetLevel(level);
-    bioseq_set.SetClass(CBioseq_set::eClass_conset);                           // ???
+    bioseq_set.SetClass(CBioseq_set::eClass_conset);
     bioseq_set.SetSeq_set().push_back(cont_entry);
     x_CreateAlign(bioseq_set);
     ITERATE(TReads, it, m_Reads) {
@@ -2218,6 +2217,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/08/04 20:15:45  grichenk
+* Removed obsolete comments
+*
 * Revision 1.7  2005/08/04 18:11:27  grichenk
 * Optimized loading. Added support for the old ACE format.
 *
