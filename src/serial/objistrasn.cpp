@@ -334,7 +334,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
     TMemberIndex idx;
     if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = classType->GetMembers().Find
-            (CMemberId::TTag(NStr::StringToInt((string)id)));
+            (CMemberId::TTag(NStr::StringToInt(id)));
     }
     else {
         idx = classType->GetMembers().Find(id);
@@ -350,7 +350,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
     TMemberIndex idx;
     if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = classType->GetMembers().Find
-            (CMemberId::TTag(NStr::StringToInt((string)id)), pos);
+            (CMemberId::TTag(NStr::StringToInt(id)), pos);
     }
     else {
         idx = classType->GetMembers().Find(id, pos);
@@ -365,7 +365,7 @@ TMemberIndex CObjectIStreamAsn::GetChoiceIndex
     TMemberIndex idx;
     if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
         idx = choiceType->GetVariants().Find
-            (CMemberId::TTag(NStr::StringToInt((string)id)));
+            (CMemberId::TTag(NStr::StringToInt(id)));
     }
     else {
         idx = choiceType->GetVariants().Find(id);
@@ -1346,6 +1346,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2005/08/04 18:04:12  ivanov
+* Rolback to R1.97 -- added CLightString::operator CTempString()
+*
 * Revision 1.98  2005/08/04 11:17:10  ivanov
 * Use explicit conversion CLightString to string for NStr::StringTo*()
 *
