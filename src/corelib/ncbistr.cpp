@@ -31,8 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_limits.h>
 #include <memory>
 #include <algorithm>
@@ -41,6 +40,16 @@
 
 
 BEGIN_NCBI_SCOPE
+
+NStr::TStringToNumFlags NStr::fConvErr_NoThrow      (1 <<  9, 0);
+NStr::TStringToNumFlags NStr::fMandatorySign        (1 << 10, 0);
+NStr::TStringToNumFlags NStr::fAllowCommas          (1 << 11, 0);
+NStr::TStringToNumFlags NStr::fAllowLeadingSpaces   (1 << 12, 0);
+NStr::TStringToNumFlags NStr::fAllowLeadingSymbols  ((1 << 13) | (1 << 12), 0);
+NStr::TStringToNumFlags NStr::fAllowTrailingSpaces  (1 << 14, 0);
+NStr::TStringToNumFlags NStr::fAllowTrailingSymbols ((1 << 15) | (1 << 14), 0);
+NStr::TStringToNumFlags NStr::fAllStringToNumFlags  (0x7F00, 0);
+NStr::TStringToNumFlags NStr::fStringToNumDefault   (0, 0);
 
 
 inline
@@ -116,7 +125,8 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 
     const char* s = str.data() + pos;
     while (n  &&  *pattern  &&
-           tolower((unsigned char)(*s)) == tolower((unsigned char)(*pattern))) {
+           tolower((unsigned char)(*s)) == 
+           tolower((unsigned char)(*pattern))) {
         s++;  pattern++;  n--;
     }
 
@@ -134,7 +144,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
     }
-    if ( pattern.empty() ) {
+    if (pattern.empty()) {
         return 1;
     }
 
@@ -168,7 +178,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
     }
-    if ( pattern.empty() ) {
+    if (pattern.empty()) {
         return 1;
     }
 
@@ -182,7 +192,8 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  tolower((unsigned char)(*s)) == tolower((unsigned char)(*p))) {
+    while (n_cmp  &&  
+           tolower((unsigned char)(*s)) == tolower((unsigned char)(*p))) {
         s++;  p++;  n_cmp--;
     }
 
@@ -211,7 +222,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
             return *str == '\0';
 
         case '?':
-            if ( *str == '\0' ) {
+            if (*str == '\0') {
                 return false;
             }
             ++str;
@@ -228,7 +239,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
             }
             // General case, use recursion
             while ( *str ) {
-                if ( MatchesMask(str, mask, use_case) ) {
+                if (MatchesMask(str, mask, use_case)) {
                     return true;
                 }
                 ++str;
@@ -238,23 +249,17 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
         default:
             // Compare nonpattern character in mask and name
             char s = *str++;
-            if ( use_case == eNocase ) {
+            if (use_case == eNocase) {
                 c = tolower((unsigned char) c);
                 s = tolower((unsigned char) s);
             }
-            if ( c != s ) {
+            if (c != s) {
                 return false;
             }
             break;
         }
     }
     return false;
-}
-
-
-bool NStr::MatchesMask(const string& str, const string& mask, ECase use_case)
-{
-    return MatchesMask(str.c_str(), mask.c_str(), use_case);
 }
 
 
@@ -298,7 +303,8 @@ string& NStr::ToUpper(string& str)
 
 int NStr::StringToNumeric(const string& str)
 {
-    if (str.empty()  ||  !isdigit((unsigned char)(*str.begin()))) {
+    if ( str.empty()  ||
+         (!isdigit((unsigned char)(*str.begin())) &  (*str.begin() != '+')) ) {
         errno = EINVAL;
         return -1;
     }
@@ -306,8 +312,8 @@ int NStr::StringToNumeric(const string& str)
     const char* begptr = str.c_str();
     errno = 0;
     unsigned long value = strtoul(begptr, &endptr, 10);
-    if (errno  ||  !endptr  ||  endptr == begptr  ||
-        value > (unsigned long) kMax_Int  ||  *endptr) {
+    if ( errno  ||  !endptr  ||  endptr == begptr  ||
+        value > (unsigned long) kMax_Int  ||  *endptr ) {
         if ( !errno ) {
             errno = !endptr || endptr == begptr || *endptr ? EINVAL : ERANGE;
         }
@@ -316,149 +322,118 @@ int NStr::StringToNumeric(const string& str)
     return (int) value;
 }
 
+#define S2N_CONVERT_ERROR(conv, errcode, force_errno, delta)                \
+        if (flags & NStr::fConvErr_NoThrow)  {                              \
+            if ( force_errno )                                              \
+                errno = 0;                                                  \
+            if ( !errno )                                                   \
+                errno = errcode;                                            \
+            /* ignore previosly converted value -- always return zero */    \
+            return 0;                                                       \
+        } else {                                                            \
+            NCBI_THROW2(CStringException, eConvert,                         \
+                        "Cannot convert string to " #conv                   \
+                        " - invalid characters", delta);                    \
+        }                                                                   \
 
-# define CHECK_ENDPTR(conv)                                                  \
-    if (check_endptr == eCheck_Need  &&  *endptr) {                          \
-        if ( on_error == eConvErr_Throw ) {                                  \
-            NCBI_THROW2(CStringException, eBadArgs,                          \
-                        "Cannot convert string to " conv                     \
-                        " - invalid characters", s_DiffPtr(endptr, begptr)); \
-        }                                                                    \
-        errno = EINVAL;                                                      \
-        return 0;                                                            \
+# define CHECK_ENDPTR(conv)                                                 \
+    if ( str[pos] ) {                                                       \
+        S2N_CONVERT_ERROR(conv, EINVAL, true, pos);                         \
     }
 
-int NStr::StringToInt(const string&  str,
-                      int            base          /* = 10 */,
-                      ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                      EConvErrAction on_error      /* = eConvErr_Throw */)
+# define CHECK_ENDPTR_(conv)                                                \
+    if ( *endptr ) {                                                        \
+        S2N_CONVERT_ERROR(conv, EINVAL, true, s_DiffPtr(endptr, begptr));   \
+    }
+
+# define CHECK_RANGE(nmin, nmax, conv)                                      \
+    if ( errno  ||  value < nmin  ||  value > nmax ) {                      \
+        S2N_CONVERT_ERROR(conv, ERANGE, false, 0);                          \
+    }
+
+# define CHECK_COMMAS                                                       \
+        /* Check on possible commas */                                      \
+        if (flags & NStr::fAllowCommas) {                                   \
+            if (ch == ',') {                                                \
+                if ((numpos == pos)  ||                                     \
+                    ((comma >= 0)  &&  (comma != 3)) ) {                    \
+                    /* Not first comma, sitting on incorrect place */       \
+                    break;                                                  \
+                }                                                           \
+                /* Skip it */                                               \
+                comma = 0;                                                  \
+                pos++;                                                      \
+                continue;                                                   \
+            } else {                                                        \
+                if (comma >= 0) {                                           \
+                    /* Count symbols between commas */                      \
+                    comma++;                                                \
+                }                                                           \
+            }                                                               \
+        }
+
+
+
+int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
 {
-    char* endptr = 0;
-    const char* begptr = str.c_str();
     errno = 0;
-    long value = strtol(begptr, &endptr, base);
-    if (errno || !endptr || endptr ==  begptr ||
-        value < kMin_Int || value > kMax_Int) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to int",
-                        s_DiffPtr(endptr, begptr));
-        }
-        if ( !errno ) {
-            errno = !endptr  ||  endptr == begptr  ?  EINVAL  :  ERANGE;
-        }
-        return 0;
-    }
-    CHECK_ENDPTR("int");
-    return (int) value;
+    Int8 value = StringToInt8(str, flags, base);
+    CHECK_RANGE(kMin_Int, kMax_Int, int);
+    return (int)value;
 }
 
 
 unsigned int
-NStr::StringToUInt(const string&  str, 
-                   int            base          /* = 10 */,
-                   ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                   EConvErrAction on_error      /* = eConvErr_Throw */)
+NStr::StringToUInt(const CTempString& str, TStringToNumFlags flags, int base)
 {
-    char* endptr = 0;
-    const char* begptr = str.c_str();
     errno = 0;
-    unsigned long value = strtoul(begptr, &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == begptr  ||  value > kMax_UInt) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted unsigned int",
-                        s_DiffPtr(endptr, begptr));
-        }
-        if ( !errno ) {
-            errno = !endptr  ||  endptr == begptr  ?  EINVAL  :  ERANGE;
-        }
-        return 0;
-    }
-    CHECK_ENDPTR("unsigned int");
-    return (unsigned int) value;
+    Uint8 value = StringToUInt8(str, flags, base);
+    CHECK_RANGE(0, kMax_UInt, unsigned int);
+    return (unsigned int)value;
 }
 
 
-long NStr::StringToLong(const string&  str, 
-                        int            base           /* = 10 */,
-                        ECheckEndPtr   check_endptr   /* = eCheck_Need */,
-                        EConvErrAction on_error       /* = eConvErr_Throw */)
+long NStr::StringToLong(const CTempString& str, TStringToNumFlags flags,
+                        int base)
 {
-    char* endptr = 0;
-    const char* begptr = str.c_str();
     errno = 0;
-    long value = strtol(begptr, &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == begptr) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to long",
-                        s_DiffPtr(endptr, begptr));
-        }
-        if ( !errno ) {
-            errno = EINVAL;
-        }
-        return 0;
-    }
-    CHECK_ENDPTR("long");
-    return value;
+    Int8 value = StringToInt8(str, flags, base);
+    CHECK_RANGE(kMin_Long, kMax_Long, long);
+    return (long)value;
 }
 
 
-unsigned
-long NStr::StringToULong(const string&  str, 
-                         int            base          /* = 10 */,
-                         ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                         EConvErrAction on_error      /* = eConvErr_Throw */)
+unsigned long
+NStr::StringToULong(const CTempString& str, TStringToNumFlags flags, int base)
 {
-    char* endptr = 0;
-    const char* begptr = str.c_str();
     errno = 0;
-    unsigned long value = strtoul(begptr, &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to unsigned long",
-                        s_DiffPtr(endptr, begptr));
-        }
-        if ( !errno ) {
-            errno = EINVAL;
-        }
-        return 0;
-    }
-    CHECK_ENDPTR("unsigned long");
-    return value;
+    Uint8 value = StringToUInt8(str, flags, base);
+    CHECK_RANGE(0, kMax_ULong, long);
+    return (unsigned long)value;
 }
 
 
 double
-NStr::StringToDouble(const string&  str,
-                     ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                     EConvErrAction on_error      /* = eConvErr_Throw */)
+NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
 {
+    string s = str;
     char* endptr = 0;
-    const char* begptr = str.c_str();
+    const char* begptr = s.c_str();
+
     errno = 0;
-    double value = strtod(begptr, &endptr);
-    if (errno  ||  !endptr  ||  endptr == begptr) {
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to double",
-                        s_DiffPtr(endptr, begptr));
-        }
-        if ( !errno ) {
-            errno = EINVAL;
-        }
-        return 0.0;
+    double n = strtod(begptr, &endptr);
+
+    if ( errno  ||  !endptr  ||  endptr == begptr ) {
+        S2N_CONVERT_ERROR(double, EINVAL, false, s_DiffPtr(endptr, begptr));
     }
-    if (*(endptr - 1) != '.'  &&  *endptr == '.') {
+    if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
         // Only a single dot at the end of line is allowed
-        if ( endptr == strchr(begptr, '.') ) {
+        if (endptr == strchr(begptr, '.')) {
             endptr++;
         }
     }
-    CHECK_ENDPTR("double");
-    return value;
+    CHECK_ENDPTR_(double);
+    return n;
 }
 
 
@@ -477,224 +452,461 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
         ch = tolower((unsigned char) ch);
         delta = ch - 'a' + 10;
     }
-    if (value) {
+    if ( value ) {
         *value = delta;
     }
     return delta < base;
  }
 
 
-Int8 NStr::StringToInt8(const string&  str,
-                        int            base          /* = 10 */,
-                        ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                        EConvErrAction on_error      /* = eConvErr_Throw */)
+
+// Skip all allowed chars (all except used for digit composition). 
+// Update 'ptr' to current position in the string.
+
+enum ESkipMode {
+    eSkipAllAllowed,
+    eSkipSpacesOnly
+};
+
+void s_SkipAllowedSymbols(const CTempString& str, size_t& pos,
+                          ESkipMode skip_mode)
 {
-    const char* begptr = str.c_str();
-    const char* endptr = begptr;
-
-    Int8 n = 0;
-    Int8 limdiv = kMax_I8 / base;
-    Int8 limoff = kMax_I8 % base;
-
-    errno = 0;
-    bool sign = false;
-    switch (*endptr) {
-    case '-':
-        sign = true;
-        limoff++;
-        /*FALLTHRU*/
-    case '+':
-        endptr++;
-        /*FALLTHRU*/
-    default:
-        break;
-    }
-
-    while (*endptr) {
-        int ch = *endptr;
-        int delta;          // corresponding numeric value of 'ch'
-
-        // Do a sanity check
-        if (!s_IsGoodCharForRadix(ch, base, &delta)) {
+    unsigned char ch = str[pos];
+    while ( ch ) {
+        if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  ch == '.' ) {
             break;
         }
-
-        // Overflow checking
-        if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
-            if ( on_error == eConvErr_Throw ) {
-                NCBI_THROW2(CStringException, eConvert,
-                            "String cannot be converted to Int8 - overflow",
-                            s_DiffPtr(endptr, begptr));
-            }
-            errno = ERANGE;
-            return 0;
+        if ( (skip_mode == eSkipSpacesOnly)  &&  !isspace(ch) ) {
+            break;
         }
-        n *= base;
-        n += delta;
-        endptr++;
+        ch = str[++pos];
     }
-    if ( endptr == begptr ) { 
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to Int8",
-                        s_DiffPtr(endptr, begptr));
-        }
-        errno = EINVAL;
-        return 0;
-    }
-    CHECK_ENDPTR("Int8");
-    return sign ? -n : n;
 }
 
 
-Uint8 NStr::StringToUInt8(const string&  str,
-                          int            base          /* = 10 */,
-                          ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                          EConvErrAction on_error      /* = eConvErr_Throw */)
+// Check radix base. If it is zero, determine base using first chars
+// of the string. Update 'base' value.
+// Update 'ptr' to current position in the string.
+
+bool s_CheckRadix(const CTempString& str, size_t& pos, int& base)
 {
-    const char* begptr = str.c_str();
-    const char* endptr = begptr;
-    if (*endptr == '+') {
-        endptr++;
+    // Check base
+    if ( base < 0  ||  base == 1  ||  base > 36 ) {
+        return false;
     }
+    // Try to determine base using first chars of the string
+    unsigned char ch   = str[pos];
+    unsigned char next = str[pos+1];
+    if ( base == 0 ) {
+        if ( ch != '0' ) {
+            base = 10;
+        } else if (next == 'x' || next == 'X') {
+            base = 16;
+        } else {
+            base = 8;
+        }
+    }
+    // Remove leading '0x' for hex numbers
+    if ( base == 16 ) {
+        if (ch == '0'  &&  (next == 'x' || next == 'X')) {
+            pos += 2;
+        }
+    }
+    return true;
+}
+
+
+Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
+                        int base)
+{
+    _ASSERT(flags == 0  ||  flags > 32);
+
+    // Current position in the string
+    size_t pos = 0;
+
+    // Skip allowed leading symbols
+    if (flags & fAllowLeadingSymbols) {
+        bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
+        s_SkipAllowedSymbols(str, pos,
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    // Determine sign
+    bool sign = false;
+    switch (str[pos]) {
+    case '-':
+        sign = true;
+        /*FALLTHRU*/
+    case '+':
+        pos++;
+        break;
+    default:
+        if (flags & fMandatorySign) {
+            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+        }
+        break;
+    }
+    // Check radix base
+    if ( !s_CheckRadix(str, pos, base) ) {
+        string msg = "Int8 - bad numeric base '" +
+                     NStr::IntToString(base) + "'";
+        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+    }
+
+    // Begin conversion
+    Int8 n = 0;
+    Int8 limdiv = kMax_I8 / base;
+    Int8 limoff = kMax_I8 % base + (sign ? 1 : 0);
+
+    // Number of symbols between two commas. '-1' means -- no comma yet.
+    int    comma  = -1;  
+    size_t numpos = pos;
+
+    errno = 0;
+    while (str[pos]) {
+        char ch = str[pos];
+        int  delta;   // corresponding numeric value of 'ch'
+
+        // Check on possible commas
+        CHECK_COMMAS;
+        // Sanity check
+        if ( !s_IsGoodCharForRadix(ch, base, &delta) ) {
+            break;
+        }
+        // Overflow check
+        if ( n > limdiv  ||  (n == limdiv  &&  delta > limoff) ) {
+            S2N_CONVERT_ERROR(Int8, ERANGE, true, pos);
+        }
+        n *= base;
+        n += delta;
+        pos++;
+    }
+
+    // Last checks
+    if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
+        S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+    }
+    // Skip allowed trailing symbols
+    if (flags & fAllowTrailingSymbols) {
+        bool spaces = ((flags & fAllowTrailingSymbols) ==
+                       fAllowTrailingSpaces);
+        s_SkipAllowedSymbols(str, pos, 
+                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    // Assign sign before the end pointer check
+    n = sign ? -n : n;
+    CHECK_ENDPTR(Int8);
+    return n;
+}
+
+
+Uint8
+NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
+{
+    _ASSERT(flags == 0  ||  flags > 32);
+
+    // Current position in the string
+    size_t pos = 0;
+
+    // Skip allowed leading symbols
+    if (flags & fAllowLeadingSymbols) {
+        bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
+        s_SkipAllowedSymbols(str, pos,
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    // Determine sign
+    if (str[pos] == '+') {
+        pos++;
+    } else {
+        if (flags & fMandatorySign) {
+            S2N_CONVERT_ERROR(Uint8, EINVAL, true, pos);
+        }
+    }
+    // Check radix base
+    if ( !s_CheckRadix(str, pos, base) ) {
+        string msg = "Uint8 - bad numeric base '" +
+                     NStr::IntToString(base) + "'";
+        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+    }
+
+    // Begin conversion
     Uint8 n = 0;
     Uint8 limdiv = kMax_UI8 / base;
     int   limoff = int(kMax_UI8 % base);
 
-    errno = 0;
-    while(*endptr) {
-        int ch = *endptr;
-        int delta;          // corresponding numeric value of 'ch'
+    // Number of symbols between two commas. '-1' means -- no comma yet.
+    int    comma  = -1;  
+    size_t numpos = pos;
 
-        // Do a sanity check
-        if (!s_IsGoodCharForRadix(ch, base, &delta)) {
+    errno = 0;
+    while (str[pos]) {
+        char ch = str[pos];
+        int  delta;         // corresponding numeric value of 'ch'
+
+        // Check on possible commas
+        CHECK_COMMAS;
+        // Sanity check
+        if ( !s_IsGoodCharForRadix(ch, base, &delta) ) {
             break;
         }
-
-        // Overflow checking
+        // Overflow check
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
-            if ( on_error == eConvErr_Throw ) {
-                NCBI_THROW2(CStringException, eConvert,
-                            "String cannot be converted to Uint8 - overflow",
-                            s_DiffPtr(endptr, begptr));
-            }
-            errno = ERANGE;
-            return 0;
+            S2N_CONVERT_ERROR(Uint8, ERANGE, true, pos);
         }
         n *= base;
         n += delta;
-        endptr++;
+        pos++;
     }
-    if ( endptr == begptr ) { 
-        if ( on_error == eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to Uint8",
-                        s_DiffPtr(endptr, begptr));
-        }
-        errno = EINVAL;
-        return 0;
+
+    // Last checks
+    if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
+        S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
     }
-    CHECK_ENDPTR("Uint8");
+    // Skip allowed trailing symbols
+    if (flags & fAllowTrailingSymbols) {
+        bool spaces = ((flags & fAllowTrailingSymbols) ==
+                       fAllowTrailingSpaces);
+        s_SkipAllowedSymbols(str, pos,
+                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    CHECK_ENDPTR(Uint8);
     return n;
 }
 
 
 /// @internal
-static Uint8 s_DataSizeConvertQual(const char*&         qual, 
-                                   Uint8                value,
-                                   NStr::ECheckEndPtr   /* check_endptr */,
-                                   NStr::EConvErrAction on_error)
+static Uint8 s_DataSizeConvertQual(const CTempString&      str,
+                                   size_t&                 pos, 
+                                   Uint8                   value,
+                                   NStr::TStringToNumFlags flags)
 {
-    if (!qual  ||  !*qual) {
+    unsigned char ch = str[pos];
+    if ( !ch ) {
         return value;
     }
-    Uint8 v = value;
-    bool throw_err = false;
 
-    if (toupper((unsigned char)(*qual)) == 'K') {
-        ++qual;
-        if ( (kMax_UI8 / 1024) < v ) {
-            throw_err = true;
+    ch = toupper(ch);
+    Uint8 v   = value;
+    bool  err = false;
+
+    switch(ch) {
+    case 'K':
+        pos++;
+        if ((kMax_UI8 / 1024) < v) {
+            err = true;
         }
         v *= 1024;
-    } else if (toupper((unsigned char)(*qual)) == 'M') {
-        ++qual;
-        if ( (kMax_UI8 / 1024 / 1024) < v ) {
-            throw_err = true;
+        break;
+    case 'M':
+        pos++;
+        if ((kMax_UI8 / 1024 / 1024) < v) {
+            err = true;
         }
         v *= 1024 * 1024;
-    } else if (toupper((unsigned char)(*qual)) == 'G') {
-        ++qual;
-        if ( (kMax_UI8 / 1024 / 1024 / 1024) < v ) {
-            throw_err = true;
+        break;
+    case 'G':
+        pos++;
+        if ((kMax_UI8 / 1024 / 1024 / 1024) < v) {
+            err = true;
         }
         v *= 1024 * 1024 * 1024;
-    } else {
+        break;
+    default:
         // error -- the "qual" points to the last unprocessed symbol
-        if ( on_error == NStr::eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to DataSize - bad suffix",
-                        0);
-        }
-        errno = EINVAL;
-        return 0;
+        string msg = "DataSize - bad suffix";
+        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
     }
-    if ( throw_err ) {
-        if ( on_error == NStr::eConvErr_Throw ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to DataSize - overflow",0);
-        }
-        errno = ERANGE;
-        return 0;
+    if ( err ) {
+        string msg = "DataSize - overflow";
+        S2N_CONVERT_ERROR(msg, ERANGE, true, pos);
     }
-    if (*qual  &&  toupper((unsigned char)(*qual)) == 'B') {
-        ++qual;
+
+    ch = str[pos];
+    if ( ch  &&  toupper(ch) == 'B' ) {
+        pos++;
     }
     return v;
 }
 
 
-Uint8
-NStr::StringToUInt8_DataSize(const string&  str, 
-                             int            base         /* = 10 */,
-                             ECheckEndPtr   check_endptr /* = eCheck_Need */,
-                             EConvErrAction on_error     /* =eConvErr_Throw*/)
+Uint8 NStr::StringToUInt8_DataSize(const CTempString& str, 
+                                   TStringToNumFlags  flags, 
+                                   int                base)
 {
-    // Find end ptr
-    const char* begptr = str.c_str();
-    const char* endptr = begptr;
-    if (*endptr == '+') {
-        endptr++;
-    }
-    while (*endptr) {
-        if (!s_IsGoodCharForRadix(*endptr, base)) {
+    // We have a limited base range here
+    _ASSERT(flags == 0  ||  flags > 20);
+
+    // Current position in the string
+    size_t pos = 0;
+
+    // Find end of number representation
+    {{
+        // Skip allowed leading symbols
+        if (flags & fAllowLeadingSymbols) {
+            bool spaces = ((flags & fAllowLeadingSymbols) ==
+                           fAllowLeadingSpaces);
+            s_SkipAllowedSymbols(str, pos,
+                           spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+        }
+        // Determine sign
+        if (str[pos] == '+') {
+            pos++;
+            // strip fMandatorySign flag
+//+++ FIX ME: -- after transition to bit-values flags
+//          flags &= ~fMandatorySign;
+            flags = TStringToNumFlags((int)flags & ~fMandatorySign,0);
+        } else {
+            if (flags & fMandatorySign) {
+                S2N_CONVERT_ERROR(DataSize, EINVAL, true, pos);
+            }
+        }
+        // Check radix base
+        if ( !s_CheckRadix(str, pos, base) ) {
+            string msg = "DataSize - bad numeric base '" +
+                         NStr::IntToString(base) + "'";
+            S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+        }
+    }}
+
+    size_t numpos = pos;
+    char ch = str[pos];
+    while (ch) {
+        if ( !s_IsGoodCharForRadix(ch, base)  &&
+             ((ch != ',')  ||  !(flags & fAllowCommas)) ) {
             break;
         }
-        endptr++;
+        ch = str[++pos];
     }
-    Uint8 value = StringToUInt8(string(begptr, (size_t)(endptr - begptr)),
-                                base, eCheck_Need/*assert ok*/, on_error);
-    if (errno) {
+    // Convert to number
+    Uint8 n = StringToUInt8(CTempString(str.data(), numpos, pos-numpos),
+                            flags, base);
+    if ( errno ) {
+        // If exceptions enabled by flags that it has been already thrown.
+        // errno is also set, so return a zero.
         return 0;
     }
-    // Some trailer (KB, MB, ...) ?
-    if ( *endptr ) {
-        value = s_DataSizeConvertQual(endptr, value, check_endptr, on_error);
+    // Check trailer (KB, MB, ...)
+    if ( ch ) {
+        n = s_DataSizeConvertQual(str, pos, n, flags);
     }
-    CHECK_ENDPTR("DataSize");
-    return value;
+    // Skip allowed trailing symbols
+    if (flags & fAllowTrailingSymbols) {
+        bool spaces = ((flags & fAllowTrailingSymbols) ==
+                       fAllowTrailingSpaces);
+        s_SkipAllowedSymbols(str, pos,
+                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    CHECK_ENDPTR(DataSize);
+    return n;
 }
 
 
-string NStr::IntToString(long svalue, TIntToStringFlags fmt)
+////////////////////////////////////////////
+//
+//
+// OBSOLETE methods; will be removed soon
+//
+//
+///////////////////////////////////////////
+
+
+#define OBSOLETE_FLAGS \
+    ERR_POST(Warning << "Obsolete method! Will be removed soon. " << \
+             "Please use version of this function with flags.");     \
+    TStringToNumFlags flags = fStringToNumDefault;  \
+    if ( check == eCheck_Skip )                     \
+        flags |= fAllowTrailingSymbols;             \
+    if ( on_error == eConvErr_NoThrow )             \
+        flags |= fConvErr_NoThrow
+
+
+int NStr::StringToInt(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
 {
-    string ret;
-    IntToString(ret, svalue, fmt);
-    return ret;
+    OBSOLETE_FLAGS;
+    return StringToInt(str, flags, base);
+}
+
+unsigned int NStr::StringToUInt(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToUInt(str, flags, base);
 }
 
 
-void NStr::IntToString(string& out_str, long svalue, TIntToStringFlags fmt)
+long NStr::StringToLong(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToLong(str, flags, base);
+
+}
+
+unsigned long NStr::StringToULong(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToULong(str, flags, base);
+
+}
+
+double NStr::StringToDouble(
+                        const string&  str,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToDouble(str, flags);
+}
+
+Int8 NStr::StringToInt8(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToInt8(str, flags, base);
+}
+
+Uint8 NStr::StringToUInt8(
+                        const string&  str,
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToUInt8(str, flags, base);
+}
+
+Uint8 NStr::StringToUInt8_DataSize(
+                        const string&  str, 
+                        int            base,
+                        ECheckEndPtr   check,
+                        EConvErrAction on_error)
+{
+    OBSOLETE_FLAGS;
+    return StringToUInt8_DataSize(str, flags, base);
+}
+
+//
+// end of OBSOLETE
+///////////////////////////////////////////
+
+
+void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
 {
     unsigned long value =
         static_cast<unsigned long>(svalue<0?-svalue:svalue);
@@ -703,8 +915,8 @@ void NStr::IntToString(string& out_str, long svalue, TIntToStringFlags fmt)
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
-    if ( fmt & NStr::fCommas ) {
-        int   cnt = -1;
+    if (flags & NStr::fWithCommas) {
+        int cnt = -1;
         do {
             if (++cnt == 3) {
                 *--pos = ',';
@@ -721,44 +933,25 @@ void NStr::IntToString(string& out_str, long svalue, TIntToStringFlags fmt)
         } while ( value );
     }
     
-    if ( svalue < 0 )
+    if (svalue < 0)
         *--pos = '-';
-    else if (fmt & NStr::fSign)
+    else if (flags & NStr::fWithSign)
         *--pos = '+';
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
-// OBSOLETED
-string NStr::IntToString(long value, bool sign)
-{
-    return IntToString(value, sign? fSign: 0);
-}
 
-
-// OBSOLETED
-void NStr::IntToString(string& out_str, long value, bool sign)
-{
-    IntToString(out_str, value, sign? fSign: 0);
-}
-
-
-string NStr::UIntToString(unsigned long value, TIntToStringFlags fmt)
-{
-    string ret;
-    UIntToString(ret, value, fmt);
-    return ret;
-}
-
-
-void NStr::UIntToString(string& out_str, unsigned long value, TIntToStringFlags fmt)
+void NStr::UIntToString(string&           out_str,
+                        unsigned long     value,
+                        TNumToStringFlags flags)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
-    if ( fmt & NStr::fCommas ) {
-        int   cnt = -1;
+    if (flags & NStr::fWithCommas) {
+        int cnt = -1;
         do {
             if (++cnt == 3) {
                 *--pos = ',';
@@ -775,17 +968,17 @@ void NStr::UIntToString(string& out_str, unsigned long value, TIntToStringFlags 
         } while ( value );
     }
     
-    if (fmt & NStr::fSign)
+    if (flags & NStr::fWithSign)
         *--pos = '+';
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 
-string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
+string NStr::Int8ToString(Int8 value, TNumToStringFlags flags)
 {
     string ret;
-    NStr::Int8ToString(ret, value, fmt);
+    NStr::Int8ToString(ret, value, flags);
     return ret;
 }
 
@@ -797,9 +990,11 @@ string NStr::Int8ToString(Int8 value, TIntToStringFlags fmt)
 #define PRINT_INT8_CHUNK_SIZE 9
 
 /// @internal
-static char* s_PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
+static char* s_PrintUint8(char*                   pos,
+                          Uint8                   value,
+                          NStr::TNumToStringFlags flags)
 {
-    if ( fmt & NStr::fCommas ) {
+    if (flags & NStr::fWithCommas) {
         int cnt = -1;
 #ifdef PRINT_INT8_CHUNK
         for ( ;; ) {
@@ -868,52 +1063,39 @@ static char* s_PrintUint8(char* pos, Uint8 value, NStr::TIntToStringFlags fmt)
 }
 
 
-void NStr::Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt)
+void NStr::Int8ToString(string& out_str, Int8 value, TNumToStringFlags flags)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
     char* pos = s_PrintUint8(buffer + kBufSize,
-                             value < 0 ? -value : value, fmt);
+                             value < 0 ? -value : value, flags);
 
-    if ( value < 0 )
+    if (value < 0)
         *--pos = '-';
-    else if (fmt & fSign)
+    else if (flags & fWithSign)
         *--pos = '+';
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
 
-// OBSOLETED
-string NStr::Int8ToString(Int8 value, bool sign)
-{
-    return Int8ToString(value, sign? fSign: 0);
-}
-
-// OBSOLETED
-void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
-{
-    Int8ToString(out_str, value, sign? fSign: 0);
-}
-
-
-string NStr::UInt8ToString(Uint8 value, TIntToStringFlags fmt)
+string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags)
 {
     string ret;
-    NStr::UInt8ToString(ret, value, fmt);
+    NStr::UInt8ToString(ret, value, flags);
     return ret;
 }
 
 
-void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
+void NStr::UInt8ToString(string& out_str, Uint8 value, TNumToStringFlags flags)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
-    char* pos = s_PrintUint8(buffer + kBufSize, value, fmt);
+    char* pos = s_PrintUint8(buffer + kBufSize, value, flags);
 
-    if (fmt & fSign)
+    if (flags & fWithSign)
         *--pos = '+';
 
     out_str.assign(pos, buffer + kBufSize - pos);
@@ -922,49 +1104,75 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TIntToStringFlags fmt)
 
 // A maximal double precision used in the double to string conversion
 #if defined(NCBI_OS_MSWIN)
-const unsigned int kMaxDoublePrecision = 200;
+    const int kMaxDoublePrecision = 200;
 #else
-const unsigned int kMaxDoublePrecision = 308;
+    const int kMaxDoublePrecision = 308;
 #endif
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
-const unsigned int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
+const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 
 
-string NStr::DoubleToString(double value)
+string NStr::DoubleToString(double value, int precision,
+                            TNumToStringFlags flags)
 {
-    char buffer[kMaxDoubleStringSize];
-    ::sprintf(buffer, "%g", value);
-    return buffer;
+    string str;
+    DoubleToString(str, value, precision, flags);
+    return str;
 }
 
 
-void NStr::DoubleToString(string& out_str, double value)
+void NStr::DoubleToString(string& out_str, double value,
+                          int precision, TNumToStringFlags flags)
 {
     char buffer[kMaxDoubleStringSize];
-    ::sprintf(buffer, "%g", value);
+    if (precision >= 0) {
+        SIZE_TYPE n = DoubleToString(value, precision, buffer,
+                                     kMaxDoubleStringSize, flags);
+        buffer[n] = '\0';
+    } else {
+        const char* format;
+        switch (flags & fDoubleGeneral) {
+            case fDoubleFixed:
+                format = "%f";
+                break;
+            case fDoubleScientific:
+                format = "%e";
+                break;
+            case fDoubleGeneral: // default
+            default: 
+                format = "%g";
+                break;
+        }
+        ::sprintf(buffer, format, value);
+    }
     out_str = buffer;
 }
 
 
-string NStr::DoubleToString(double value, unsigned int precision)
-{
-    char buffer[kMaxDoubleStringSize];
-    SIZE_TYPE n = DoubleToString(value, precision, buffer,
-                                 kMaxDoubleStringSize);
-    buffer[n] = '\0';
-    return buffer;
-}
-
 
 SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
-                               char* buf, SIZE_TYPE buf_size)
+                               char* buf, SIZE_TYPE buf_size,
+                               TNumToStringFlags flags)
 {
     char buffer[kMaxDoubleStringSize];
-    if (precision > kMaxDoublePrecision) {
-        precision = kMaxDoublePrecision;
+    if (precision > (unsigned int)kMaxDoublePrecision) {
+        precision = (unsigned int)kMaxDoublePrecision;
     }
-    int n = ::sprintf(buffer, "%.*f", (int) precision, value);
+    const char* format;
+    switch (flags & fDoubleGeneral) {
+        case fDoubleScientific:
+            format = "%.*e";
+            break;
+        case fDoubleGeneral:
+            format = "%.*g";
+            break;
+        case fDoubleFixed: // default
+        default:
+            format = "%.*f";
+            break;
+    }
+    int n = ::sprintf(buffer, format, (int)precision, value);
     SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;
@@ -1042,10 +1250,12 @@ string NStr::FormatVarargs(const char* format, va_list args)
     } else {
         return kEmptyStr;
     }
+
 #elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
     CNcbiOstrstream oss;
     oss.vform(format, args);
     return CNcbiOstrstreamToString(oss);
+
 #elif defined(HAVE_VSNPRINTF)
     // deal with implementation quirks
     size_t size = 1024;
@@ -1062,6 +1272,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
         n = vsnprintf(buf.get(), size, format, args);
     }
     return (n > 0) ? string(buf.get(), n) : kEmptyStr;
+
 #elif defined(HAVE_VPRINTF)
     char buf[1024];
     buf[sizeof(buf) - 1] = 0;
@@ -1070,6 +1281,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
         ERR_POST(Warning << "Buffer overrun by vsprintf");
     }
     return buf;
+
 #else
 #  error Please port this code to your system.
 #endif
@@ -1110,20 +1322,20 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 string NStr::TruncateSpaces(const string& str, ETrunc where)
 {
     SIZE_TYPE length = str.length();
-    if ( length == 0 ) {
+    if (length == 0) {
         return kEmptyStr;
     }
     SIZE_TYPE beg = 0;
     if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
         _ASSERT(beg < length);
         while ( isspace((unsigned char) str[beg]) ) {
-            if ( ++beg == length ) {
+            if (++beg == length) {
                 return kEmptyStr;
             }
         }
     }
     SIZE_TYPE end = length;
-    if (where == eTrunc_End  ||  where == eTrunc_Both) {
+    if ( where == eTrunc_End  ||  where == eTrunc_Both ) {
         _ASSERT(end > beg);
         do {
             --end;
@@ -1144,16 +1356,16 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 {
     SIZE_TYPE length = str.length();
-    if ( length == 0 ) {
+    if (length == 0) {
         return;
     }
     SIZE_TYPE beg = 0;
-    if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
+    if ( where == eTrunc_Begin  ||  where == eTrunc_Both ) {
         // It's better to use str.data()[] to check string characters
-        // to avoid implicit modification of the string by non-const operator[].
+        // to avoid implicit modification of the string by non-const operator[]
         _ASSERT(beg < length);
         while ( isspace((unsigned char) str.data()[beg]) ) {
-            if ( ++beg == length ) {
+            if (++beg == length) {
                 str.erase();
                 return;
             }
@@ -1161,9 +1373,9 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
     }
 
     SIZE_TYPE end = length;
-    if (where == eTrunc_End  ||  where == eTrunc_Both) {
+    if ( where == eTrunc_End  ||  where == eTrunc_Both ) {
         // It's better to use str.data()[] to check string characters
-        // to avoid implicit modification of the string by non-const operator[].
+        // to avoid implicit modification of the string by non-const operator[]
         _ASSERT(end > beg);
         while (isspace((unsigned char) str.data()[--end])) {
             if (end == beg) {
@@ -1193,15 +1405,15 @@ string& NStr::Replace(const string& src,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
     // source and destination should not be the same
-    if ( &src == &dst ) {
+    if (&src == &dst) {
         NCBI_THROW2(CStringException, eBadArgs,
-                    "String replace called with source == destination", 0);
+                    "NStr::Replace():  source and destination are the same",0);
     }
 
     dst = src;
 
     if ( start_pos + search.size() > src.size() ||
-         search == replace)
+         search == replace )
         return dst;
 
     for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
@@ -1229,9 +1441,9 @@ list<string>& NStr::Split(const string& str, const string& delim,
                           list<string>& arr, EMergeDelims merge)
 {
     // Special cases
-    if ( str.empty() ) {
+    if (str.empty()) {
         return arr;
-    } else if ( delim.empty() ) {
+    } else if (delim.empty()) {
         arr.push_back(str);
         return arr;
     }
@@ -1260,9 +1472,9 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
                                vector<string>& arr, EMergeDelims merge)
 {
     // Special cases
-    if ( str.empty() ) {
+    if (str.empty()) {
         return arr;
-    } else if ( delim.empty() ) {
+    } else if (delim.empty()) {
         arr.push_back(str);
         return arr;
     }
@@ -1282,14 +1494,14 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
     arr.reserve(arr.size() + tokens + 1);
 
     // Tokenization
-    for (pos = 0; ; ) {
+    for (pos = 0;;) {
         prev_pos = (merge == eMergeDelims ? str.find_first_not_of(delim, pos)
                     : pos);
-        if ( prev_pos == NPOS ) {
+        if (prev_pos == NPOS) {
             break;
         }
         pos = str.find_first_of(delim, prev_pos);
-        if ( pos == NPOS ) {
+        if (pos == NPOS) {
             arr.push_back(str.substr(prev_pos));
             break;
         } else {
@@ -1306,9 +1518,9 @@ vector<string>& NStr::TokenizePattern(const string& str,
                                       vector<string>& arr, EMergeDelims merge)
 {
     // Special cases
-    if ( str.empty() ) {
+    if (str.empty()) {
         return arr;
-    } else if ( pattern.empty() ) {
+    } else if (pattern.empty()) {
         arr.push_back(str);
         return arr;
     }
@@ -1343,7 +1555,7 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
                       string& str1, string& str2)
 {
     SIZE_TYPE delim_pos = str.find_first_of(delim);
-    if ( NPOS == delim_pos ) {   // only one piece.
+    if (NPOS == delim_pos) {   // only one piece.
         str1 = str;
         str2 = kEmptyStr;
         return false;
@@ -1358,7 +1570,7 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
 template <typename T>
 string s_NStr_Join(const T& arr, const string& delim)
 {
-    if ( arr.empty() ) {
+    if (arr.empty()) {
         return kEmptyStr;
     }
 
@@ -1403,7 +1615,7 @@ string NStr::PrintableString(const string&      str,
             out.write(str.data(), it-str.begin());
             // convert all other characters one by one
             do {
-                if ( isprint((unsigned char)(*it)) ) {
+                if (isprint((unsigned char)(*it))) {
                     // escape '"' and '\\' anyway
                     if ( *it == '"' || *it == '\\' )
                         out.put('\\');
@@ -1476,7 +1688,8 @@ string NStr::ParseEscapes(const string& str)
             }
             if (pos2 >= pos) {
                 out += static_cast<char>
-                    (StringToUInt(str.substr(pos, pos2 - pos + 1), 16));
+                    (StringToUInt(str.substr(pos, pos2 - pos + 1),
+                     fStringToNumDefault, 16));
             } else {
                 NCBI_THROW2(CStringException, eFormat,
                             "\\x used with no following digits", pos);
@@ -1687,10 +1900,10 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             }
         }
 
-        if (best_score != eNewline  &&  column <= width) {
+        if ( best_score != eNewline  &&  column <= width ) {
             // If the whole remaining text can fit, don't split it...
             best_pos = len;
-        } else if (best_score == eForced  &&  (flags & fWrap_Hyphenate)) {
+        } else if ( best_score == eForced  &&  (flags & fWrap_Hyphenate) ) {
             hyphen = true;
             --best_pos;
         }
@@ -1699,8 +1912,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             string::const_iterator begin = str.begin() + pos;
             string::const_iterator end = str.begin() + best_pos;
             string::const_iterator bs; // position of next backspace
-            while ( (bs = find(begin, end, '\b')) != end ) {
-                if ( bs != begin ) {
+            while ((bs = find(begin, end, '\b')) != end) {
+                if (bs != begin) {
                     // add all except the last one
                     arr.back().append(begin, bs - 1);
                 }
@@ -1708,25 +1921,25 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                     // The backspace is at the beginning of next substring,
                     // so we should remove previously added symbol if any.
                     SIZE_TYPE size = arr.back().size();
-                    if ( size > pfx->size() ) { // current size > prefix size
+                    if (size > pfx->size()) { // current size > prefix size
                         arr.back().resize(size - 1);
                     }
                 }
                 // skip over backspace
                 begin = bs + 1;
             }
-            if ( begin != end ) {
+            if (begin != end) {
                 // add remaining characters
                 arr.back().append(begin, end);
             }
         }}
-        if (hyphen) {
+        if ( hyphen ) {
             arr.back() += '-';
         }
         pos = best_pos;
         pfx = prefix;
 
-        if (best_score == eSpace  ||  best_score == eNewline) {
+        if ( best_score == eSpace  ||  best_score == eNewline ) {
             ++pos;
         }
         while (pos < len  &&  str[pos] == '\b') {
@@ -1756,7 +1969,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 
     ITERATE (list<string>, it, l) {
         SIZE_TYPE term_width = s_VisibleWidth(*it, is_html);
-        if (at_start) {
+        if ( at_start ) {
             if (column + term_width <= width) {
                 s += *it;
                 column += term_width;
@@ -1889,7 +2102,7 @@ string CStringUTF8::AsAscii(void) const
             ++needed;
         } else if ((ch & 0xE0) == 0xC0) {
             enough = (ch & 0x1F) <= 0x03;
-            if (enough) {
+            if ( enough ) {
                 ++needed;
                 ch = *(++srcBuf);
                 bad = (ch & 0xC0) != 0x80;
@@ -1899,12 +2112,12 @@ string CStringUTF8::AsAscii(void) const
         } else {
             bad = true;
         }
-        if (!enough) {
+        if ( !enough ) {
             NCBI_THROW2(CStringException, eConvert,
                         "Cannot convert UTF8 string to single-byte string",
                         s_DiffPtr(srcBuf,c_str()));
         }
-        if (bad) {
+        if ( bad ) {
             NCBI_THROW2(CStringException, eFormat,
                         "Wrong UTF8 format",
                         s_DiffPtr(srcBuf,c_str()));
@@ -1952,14 +2165,14 @@ wstring CStringUTF8::AsUnicode(void) const
             ++needed;
             ch = *(++srcBuf);
             bad = (ch & 0xC0) != 0x80;
-            if (!bad) {
+            if ( !bad ) {
                 ch = *(++srcBuf);
                 bad = (ch & 0xC0) != 0x80;
             }
         } else {
             bad = true;
         }
-        if (bad) {
+        if ( bad ) {
             NCBI_THROW2(CStringException, eFormat,
                         "Wrong UTF8 format",
                         s_DiffPtr(srcBuf,c_str()));
@@ -1997,6 +2210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.159  2005/08/04 11:08:59  ivanov
+ * Revamp of NStr::StringTo*() functions
+ *
  * Revision 1.158  2005/06/13 18:23:58  lavr
  * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
  *

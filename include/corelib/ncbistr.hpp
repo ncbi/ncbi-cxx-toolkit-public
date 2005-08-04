@@ -38,6 +38,7 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbistl.hpp>
 #include <string.h>
 #ifdef NCBI_OS_OSF1
@@ -107,6 +108,38 @@ static const SIZE_TYPE NPOS = NCBI_NS_STD::string::npos;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CTempString --
+///
+/// Class to store pointer to string
+
+class CTempString
+{
+public:
+    CTempString(void);
+    CTempString(const char* str);
+    CTempString(const char* str, size_t length);
+    CTempString(const char* str, size_t pos, size_t length);
+
+    CTempString(const string& str);
+    CTempString(const string& str, size_t length);
+    CTempString(const string& str, size_t pos, size_t length);
+
+    const char* data(void)   const;
+    size_t      length(void) const;
+    bool        empty(void)  const;
+
+    char operator[] (size_t pos) const;
+    operator string(void) const;
+
+private:
+    const char* m_String;  ///< Stored pointer to string
+    size_t      m_Length;  ///< Length of string
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// NStr --
 ///
 /// Encapuslates class-wide string processing functions.
@@ -126,89 +159,122 @@ public:
     static int StringToNumeric(const string& str);
 
 
-    /// Whether to prohibit trailing symbols (any symbol but '\0')
-    /// in the StringToXxx() conversion functions below.
-    enum ECheckEndPtr {
-        eCheck_Need,      ///< Check is necessary
-        eCheck_Skip       ///< Skip this check
+    /// Number to string conversion flags.
+    enum ENumToStringFlags {
+        fWithSign         = (1 << 0), ///< Prefix the output value with a sign
+        fWithCommas       = (1 << 1), ///< Use commas as thousands separator
+        fDoubleFixed      = (1 << 2), ///< Use n.nnnn format for double
+        fDoubleScientific = (1 << 3), ///< Use scientific format for double
+        fDoubleGeneral    = fDoubleFixed | fDoubleScientific
     };
+    typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
-    /// Whether to throw an exception if there is a conversion error in
-    /// the StringToXxx() function.
-    enum EConvErrAction {
-        eConvErr_Throw,   ///< Throw an exception on error
-        eConvErr_NoThrow  ///< Return "natural null" value on error
+/*--------------
+// Temporary commented out.
+// See class TStringToNumFlags below...
+
+    /// String to number conversion flags.
+    enum EStringToNumFlags {
+        fConvErr_NoThrow      = (1 <<  9),   ///< Return "natural null"
+        // value on error, instead of throwing (by default) an exception
+        
+        fMandatorySign        = (1 << 10),   ///< See 'fWithSign'
+        fAllowCommas          = (1 << 11),   ///< See 'fWithCommas'
+        fAllowLeadingSpaces   = (1 << 12),   ///< Can have leading spaces
+        fAllowLeadingSymbols  = (1 << 13) | fAllowLeadingSpaces,
+                                             ///< Can have leading non-nums
+        fAllowTrailingSpaces  = (1 << 14),   ///< Can have trailing spaces
+        fAllowTrailingSymbols = (1 << 15) | fAllowTrailingSpaces,
+                                             ///< Can have leading non-nums
+        fAllStringToNumFlags  = 0x7F00
     };
+    typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
+----------------*/
+
+    // Temporary class to keep a "string to number" conversion flags.
+    // Will be replaces to int-bit based flags, commented above
+    // after transition to flags versions of StringTo*().
+    class TStringToNumFlags
+    {
+        public:
+        TStringToNumFlags(int v, 
+                          int /*to prevent construction from int*/)
+            { m_Value = v; }
+        TStringToNumFlags& operator=(const TStringToNumFlags& other)
+            { m_Value = other.m_Value; return *this; }
+        TStringToNumFlags operator|(const TStringToNumFlags& other)
+            { TStringToNumFlags f(m_Value | (int)other, 0); return f; }
+        TStringToNumFlags operator&(const TStringToNumFlags& other)
+            { TStringToNumFlags f(m_Value & (int)other, 0); return f; }
+        TStringToNumFlags& operator|=(const TStringToNumFlags& other)
+            { m_Value |= (int)other; return *this; }
+        operator int(void) const
+            { return m_Value; }
+        int m_Value;
+    };
+    static TStringToNumFlags fConvErr_NoThrow;
+    static TStringToNumFlags fMandatorySign;
+    static TStringToNumFlags fAllowCommas;
+    static TStringToNumFlags fAllowLeadingSpaces;
+    static TStringToNumFlags fAllowLeadingSymbols;
+    static TStringToNumFlags fAllowTrailingSpaces;
+    static TStringToNumFlags fAllowTrailingSymbols;
+    static TStringToNumFlags fAllStringToNumFlags;
+    // do not use this flag directly, it will be removed after transition.
+    // int-bit based value for it is 0.
+    static TStringToNumFlags fStringToNumDefault;
+
 
     /// Convert string to int.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   - Convert "str" to "int" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number that does not fit into "int".
-    static int StringToInt(const string&  str,
-                           int            base     = 10,
-                           ECheckEndPtr   check    = eCheck_Need,
-                           EConvErrAction on_error = eConvErr_Throw);
-
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static int StringToInt(const CTempString& str,
+                           TStringToNumFlags  flags = fStringToNumDefault,
+                           int                base  = 10);
 
     /// Convert string to unsigned int.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   - Convert "str" to "unsigned int" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number that does not fit into "unsigned int".
-    static unsigned int StringToUInt(const string&  str,
-                                     int            base     = 10,
-                                     ECheckEndPtr   check    = eCheck_Need,
-                                     EConvErrAction on_error = eConvErr_Throw);
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static unsigned int StringToUInt(const CTempString& str,
+                                     TStringToNumFlags  flags = fStringToNumDefault,
+                                     int                base  = 10);
 
     /// Convert string to long.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   - Convert "str" to "long" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number that does not fit into "long".
-    static long StringToLong(const string&  str,
-                             int            base     = 10,
-                             ECheckEndPtr   check    = eCheck_Need,
-                             EConvErrAction on_error = eConvErr_Throw);
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static long StringToLong(const CTempString& str,
+                             TStringToNumFlags  flags = fStringToNumDefault,
+                             int                base  = 10);
 
     /// Convert string to unsigned long.
     ///
@@ -216,84 +282,64 @@ public:
     ///   String to be converted.
     /// @param base
     ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   - Convert "str" to "unsigned long" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number that does not fit into "unsigned long".
-    static unsigned long StringToULong(const string&  str,
-                                       int            base     = 10,
-                                       ECheckEndPtr   check    = eCheck_Need,
-                                       EConvErrAction on_error = eConvErr_Throw);
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static unsigned long StringToULong(const CTempString& str,
+                                       TStringToNumFlags  flags = fStringToNumDefault,
+                                       int                base  = 10);
 
     /// Convert string to double.
     ///
     /// @param str
     ///   String to be converted.
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
     ///   - Convert "str" to "double" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number that does not fit into "double".
-    static double StringToDouble(const string&  str,
-                                 ECheckEndPtr   check    = eCheck_Need,
-                                 EConvErrAction on_error = eConvErr_Throw);
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static double StringToDouble(const CTempString& str,
+                                 TStringToNumFlags  flags = fStringToNumDefault);
 
     /// Convert string to Int8.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Radix base. Default is 10. Other values can be 2, 8, and 16.
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
-    ///   Converted Int8 value.
-    static Int8 StringToInt8(const string&  str,
-                             int            base     = 10,
-                             ECheckEndPtr   check    = eCheck_Need,
-                             EConvErrAction on_error = eConvErr_Throw);
+    ///   - Convert "str" to "Int8" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static Int8 StringToInt8(const CTempString& str,
+                             TStringToNumFlags  flags = fStringToNumDefault,
+                             int                base  = 10);
 
     /// Convert string to Uint8.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @param flags
+    ///   How to convert string to value.
     /// @return
-    ///   Converted UInt8 value.
-    static Uint8 StringToUInt8(const string&  str,
-                               int            base     = 10,
-                               ECheckEndPtr   check    = eCheck_Need,
-                               EConvErrAction on_error = eConvErr_Throw);
+    ///   - Convert "str" to "UInt8" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static Uint8 StringToUInt8(const CTempString& str,
+                               TStringToNumFlags  flags = fStringToNumDefault,
+                               int                base  = 10);
 
     /// Convert string to number of bytes. 
     ///
@@ -304,26 +350,19 @@ public:
     ///
     /// @param str
     ///   String to be converted.
+    /// @param flags
+    ///   How to convert string to value.
     /// @param base
-    ///   Numeric base of the number [before the qualifier] (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
+    ///   Numeric base of the number (before the qualifier).
+    ///   Default is 10. Allowed values are 0, 2..20.
     /// @return
-    ///   - Convert "str" to "Uint8" value of bytes presented by string
-    ///     and return it. 
-    ///   - 0 if "str" contains illegal symbols, or if it represents
-    ///     a number of bytes that does not fit into "Uint8".
-    static 
-    Uint8 StringToUInt8_DataSize(const string&  str, 
-                                 int            base     = 10,
-                                 ECheckEndPtr   check    = eCheck_Need,
-                                 EConvErrAction on_error = eConvErr_Throw);
+    ///   - Convert "str" to "Uint8" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static Uint8 StringToUInt8_DataSize(const CTempString& str,
+                                        TStringToNumFlags  flags = fStringToNumDefault,
+                                        int                base  = 10);
 
     /// Convert string to pointer.
     ///
@@ -333,26 +372,15 @@ public:
     ///   Pointer value corresponding to its string representation.
     static const void* StringToPtr(const string& str);
 
-
-    /// Integer to string conversion flags.
-    enum EIntToStringFlags {
-        fSign   = (1 << 0),  ///< Prefix the output value with a sign (+ or -)
-        fCommas = (1 << 1)   ///< Use commas as thousands separator
-    };
-    typedef int TIntToStringFlags;  ///< Binary OR of "EIntToStringFlags"
-
     /// Convert Int to String.
     ///
     /// @param value
     ///   Integer value (long) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string IntToString(long value, TIntToStringFlags fmt);
-    static string IntToString(long value) {
-        return IntToString(value, TIntToStringFlags(0));
-    };
+    static string IntToString(long value, TNumToStringFlags flags = 0);
 
     /// Convert Int to String.
     ///
@@ -360,23 +388,21 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (long) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
-    static void IntToString(string& out_str, long value, TIntToStringFlags fmt);
-    static void IntToString(string& out_str, long value) {
-        IntToString(out_str, value, TIntToStringFlags(0));
-    };
-
+    static void IntToString(string& out_str, long value, 
+                            TNumToStringFlags flags = 0);
 
     /// Convert UInt to string.
     ///
     /// @param value
     ///   Integer value (unsigned long) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string UIntToString(unsigned long value, TIntToStringFlags fmt =0);
+    static string UIntToString(unsigned long value,
+                               TNumToStringFlags flags = 0);
 
     /// Convert UInt to string.
     ///
@@ -384,24 +410,21 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (unsigned long) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     static void UIntToString(string& out_str, unsigned long value,
-                             TIntToStringFlags fmt = 0);
+                             TNumToStringFlags flags = 0);
 
     /// Convert Int8 to string.
     ///
     /// @param value
     ///   Integer value (Int8) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string Int8ToString(Int8 value, TIntToStringFlags fmt);
-    static string Int8ToString(Int8 value) {
-        return Int8ToString(value, TIntToStringFlags(0));
-    };
-
+    static string Int8ToString(Int8 value,
+                               TNumToStringFlags flags = 0);
 
     /// Convert Int8 to string.
     ///
@@ -409,22 +432,21 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (Int8) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
-    static void Int8ToString(string& out_str, Int8 value, TIntToStringFlags fmt);
-    static void Int8ToString(string& out_str, Int8 value) {
-        Int8ToString(out_str, value, TIntToStringFlags(0));
-    };
+    static void Int8ToString(string& out_str, Int8 value,
+                             TNumToStringFlags flags = 0);
 
     /// Convert UInt8 to string.
     ///
     /// @param value
     ///   Integer value (UInt8) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     /// @return
     ///   Converted string value.
-    static string UInt8ToString(Uint8 value, TIntToStringFlags fmt = 0);
+    static string UInt8ToString(Uint8 value,
+                                TNumToStringFlags flags = 0);
 
     /// Convert UInt8 to string.
     ///
@@ -432,46 +454,51 @@ public:
     ///   Output string variable
     /// @param value
     ///   Integer value (UInt8) to be converted.
-    /// @param fmt
+    /// @param flags
     ///   How to convert value to string.
     static void UInt8ToString(string& out_str, Uint8 value,
-                              TIntToStringFlags fmt = 0);
-
-private:
-    /// Obsolete methods; will be removed soon!
-    /// Use one of *Int*ToString() with the flag parameter.
-    static string IntToString (long value, bool sign);
-    static void   IntToString (string& out_str, long value, bool sign);
-    static string Int8ToString(Int8 value, bool sign);
-    static void   Int8ToString(string& out_str, Int8 value, bool sign);
-
-public:
-    /// Convert double to string.
-    ///
-    /// @param value
-    ///   Double value to be converted.
-    /// @return
-    ///   Converted string value.
-    static string DoubleToString(double value);
+                              TNumToStringFlags flags = 0);
 
     /// Convert double to string.
-    ///
-    /// @param out_str
-    ///   Output string variable
-    /// @param value
-    ///   Double value to be converted.
-    static void DoubleToString(string& out_str, double value);
-
-    /// Convert double to string with specified precision.
     ///
     /// @param value
     ///   Double value to be converted.
     /// @param precision
     ///   Precision value for conversion. If precision is more that maximum
     ///   for current platform, then it will be truncated to this maximum.
+    //    If it is negative, that double will be converted to number in
+    ///   scientific notation.
+    /// @param flags
+    ///   How to convert value to string.
+    ///   If double format flags are not specified, that next output format
+    ///   will be used by default:
+    ///     - fDoubleFixed,   if 'precision' >= 0.
+    ///     - fDoubleGeneral, if 'precision' < 0.
     /// @return
     ///   Converted string value.
-    static string DoubleToString(double value, unsigned int precision);
+    static string DoubleToString(double value, int precision = -1,
+                                 TNumToStringFlags flags = 0);
+
+    /// Convert double to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Double value to be converted.
+    /// @param precision
+    ///   Precision value for conversion. If precision is more that maximum
+    ///   for current platform, then it will be truncated to this maximum.
+    //    If it is negative, that double will be converted to number in
+    ///   scientific notation.
+    /// @param flags
+    ///   How to convert value to string.
+    ///   If double format flags are not specified, that next output format
+    ///   will be used by default:
+    ///     - fDoubleFixed,   if 'precision' >= 0.
+    ///     - fDoubleGeneral, if 'precision' < 0.
+    static void DoubleToString(string& out_str, double value,
+                               int precision = -1,
+                               TNumToStringFlags flags = 0);
 
     /// Convert double to string with specified precision and place the result
     /// in the specified buffer.
@@ -485,11 +512,76 @@ public:
     ///   Put result of the conversion into this buffer.
     /// @param buf_size
     ///   Size of buffer, "buf".
+    /// @param flags
+    ///   How to convert value to string.
+    ///   Default output format is fDoubleFixed.
     /// @return
     ///   The number of bytes stored in "buf", not counting the
     ///   terminating '\0'.
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
-                                    char* buf, SIZE_TYPE buf_size);
+                                    char* buf, SIZE_TYPE buf_size,
+                                    TNumToStringFlags flags = 0);
+
+public:
+    /// Obsolete methods; will be removed soon!
+    /// Use one of the StringTo*() with flag parameter.
+
+    enum ECheckEndPtr {
+        eCheck_Need,
+        eCheck_Skip
+    };
+    enum EConvErrAction {
+        eConvErr_Throw,
+        eConvErr_NoThrow
+    };
+    static int StringToInt( const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static unsigned int StringToUInt(
+                            const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static long StringToLong(
+                            const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static unsigned long StringToULong(
+                            const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static double StringToDouble(
+                            const string&  str,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static Int8 StringToInt8(
+                            const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static Uint8 StringToUInt8(
+                            const string&  str,
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+    static 
+    Uint8 StringToUInt8_DataSize(
+                            const string&  str, 
+                            int            base,
+                            ECheckEndPtr   check    /* = eCheck_Skip */,
+                            EConvErrAction on_error /* = eConvErr_Throw*/);
+
+public:
 
     /// Convert pointer to string.
     ///
@@ -888,7 +980,7 @@ public:
     /// @param pattern
     ///   String pattern (char*) to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).   
+    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
@@ -907,7 +999,7 @@ public:
     /// @param pattern
     ///   String pattern (string&) to be compared with substring.
     /// @return
-    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).   
+    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
@@ -1471,8 +1563,8 @@ public:
     ///   to the list "arr" and also returned by the function. 
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
-    ///   eNoMergeDelims means that delimiters that immediately follow each other
-    ///   are treated as separate delimiters.
+    ///   eNoMergeDelims means that delimiters that immediately follow each
+    ///    other are treated as separate delimiters.
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
@@ -1494,16 +1586,17 @@ public:
     ///   to the list "arr" and also returned by the function. 
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
-    ///   eNoMergeDelims means that delimiters that immediately follow each other
-    ///   are treated as separate delimiters.
+    ///   eNoMergeDelims means that delimiters that immediately follow each
+    ///   other are treated as separate delimiters.
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
     ///   Split, Tokenize
-    static vector<string>& TokenizePattern(const string&   str,
-                                           const string&   delim,
-                                           vector<string>& arr,
-                                           EMergeDelims    merge = eNoMergeDelims);
+    static
+    vector<string>& TokenizePattern(const string&   str,
+                                    const string&   delim,
+                                    vector<string>& arr,
+                                    EMergeDelims    merge = eNoMergeDelims);
 
     /// Split a string into two pieces using the specified delimiters
     ///
@@ -2008,7 +2101,8 @@ public:
             message), m_Pos(pos)
     {
         this->x_Init(info,
-                     string("{") + NStr::UIntToString((unsigned long)m_Pos) + "} " + message,
+                     string("{") + NStr::UIntToString((unsigned long)m_Pos) +
+                     "} " + message,
                      prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
@@ -2226,10 +2320,11 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 /* @} */
 
 
-/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
+//
 //  IMPLEMENTATION of INLINE functions
+//
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -2248,9 +2343,119 @@ const string& CNcbiEmptyString::Get(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CTempString::
+//
+
+inline
+CTempString::CTempString(void)
+    : m_String(""), m_Length(0)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str)
+    : m_String(str), m_Length(strlen(str))
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str, size_t length)
+    : m_String(str), m_Length(length)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str, size_t pos, size_t length)
+    : m_String(str+pos), m_Length(length)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str)
+    : m_String(str.data()), m_Length(str.size())
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str, size_t length)
+    : m_String(str.data()), m_Length(length)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str, size_t pos, size_t length)
+    : m_String(str.data() + pos), m_Length(length)
+{
+    return;
+}
+
+inline
+const char* CTempString::data(void) const
+{
+    _ASSERT(m_String);
+    return m_String;
+}
+
+inline
+size_t CTempString::length(void) const
+{
+    return m_Length;
+}
+
+inline
+bool CTempString::empty(void) const
+{
+    return m_Length == 0;
+}
+
+inline
+char CTempString::operator[] (size_t pos) const
+{
+    if ( pos < m_Length ) {
+        return m_String[pos];
+    }
+    return '\0';
+}
+
+inline
+CTempString::operator string(void) const
+{
+    return string(data(), length());
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  NStr::
 //
 
+inline
+string NStr::IntToString(long value, TNumToStringFlags flags)
+{
+    string ret;
+    IntToString(ret, value, flags);
+    return ret;
+}
+
+inline
+string NStr::UIntToString(unsigned long value, TNumToStringFlags flags)
+{
+    string ret;
+    UIntToString(ret, value, flags);
+    return ret;
+}
+
+inline
+bool NStr::MatchesMask(const string& str, const string& mask, ECase use_case)
+{
+    return MatchesMask(str.c_str(), mask.c_str(), use_case);
+}
 
 inline
 int NStr::strcmp(const char* s1, const char* s2)
@@ -2495,7 +2700,8 @@ bool NStr::StartsWith(const string& str, char start, ECase use_case)
 {
     return !str.empty()  &&
         ((use_case == eCase) ? (str[0] == start) :
-         (toupper((unsigned char) str[0]) == start  ||  tolower((unsigned char) str[0])));
+         (toupper((unsigned char) str[0]) == start  ||
+          tolower((unsigned char) str[0])));
 }
 
 inline
@@ -2511,7 +2717,8 @@ bool NStr::EndsWith(const string& str, char end, ECase use_case)
     if (!str.empty()) {
         char last = str[str.length() - 1];
         return (use_case == eCase) ? (last == end) :
-               (toupper((unsigned char) last) == end  ||  tolower((unsigned char) last) == end);
+               (toupper((unsigned char) last) == end  ||
+                tolower((unsigned char) last) == end);
     }
     return false;
 }
@@ -2693,6 +2900,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2005/08/04 11:08:43  ivanov
+ * Revamp of NStr::StringTo*() functions
+ *
  * Revision 1.90  2005/06/10 20:46:07  lavr
  * #include <corelib/ncbimisc.h> instead of <ctype.h>
  *
