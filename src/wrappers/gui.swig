@@ -1,0 +1,327 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Josh Cherry
+ *
+ * File Description:  SWIG interface file for gui
+ *
+ */
+
+// SWIG chokes on corelib/hash_impl/stlp_defs.hpp for reasons unknown
+#define STLP_DEFS__HPP
+
+// nested classes that cause problems
+%ignore *::CConvertCache_SCacheKeySort;
+%ignore *::CRegularGridGen_const_iterator;
+%ignore *::CGuiRegistry_CReadView;
+%ignore *::CGuiRegistry_CReadWriteView;
+%ignore *::CPluginTask_STaskInfo::job_id;
+%ignore *::CPluginTask_STaskInfo::status;
+%ignore *::CGuiDiagHandler_CDiagEvent;
+
+// nested classes problem (CGuiRegistry::CReadView)
+%ignore ncbi::CSettings::LoadPluginConfig;
+%ignore ncbi::CPluginDlg::LoadSettings;
+%ignore ncbi::CPluginDlg::SaveSettings;
+
+// declared but not defined
+%ignore ncbi::CFeatConfigFactoryDefaults::kNotDefined;
+%ignore ncbi::CSettings::GetBuiltInPluginConfig();
+%ignore ncbi::CSettings::ReadPluginConfig(const string& pcfile,
+                                          CGuiRegistry& pcc);
+%ignore ncbi::CEvent::GetRefs;
+%ignore ncbi::CEvent::AddRef;
+%ignore ncbi::CBookmark::SetRange;
+
+// SWIG problem with non-member operators
+%ignore *::operator<<(CNcbiOstream& strm, TFileType& ftype);  // app_popup.hpp
+%ignore ncbi::operator<(const CPluginHandle&, const CPluginHandle&);
+%ignore ncbi::operator<(CLayoutObject const &, CLayoutObject const &);
+
+// Nested classes trouble with gui/objutils/registry.hpp
+#define GUI_OBJUTILS___REGISTRY__HPP
+
+%%
+
+gui/fltk.hpp
+gui/gui.hpp
+gui/types.hpp
+
+// For CMultiColDlg; this needs to be early
+gui/utils/dialog.hpp
+
+gui/config/feat_config_inherited.hpp
+gui/config/feat_config_list.hpp
+gui/config/feat_show.hpp
+gui/config/settings.hpp
+gui/config/settings_set.hpp
+gui/config/theme_set.hpp
+
+gui/core/AbstractProjectItem.hpp
+gui/core/AbstractProjectItem_.hpp
+gui/core/FolderInfo.hpp
+gui/core/FolderInfo_.hpp
+gui/core/GBProject.hpp
+gui/core/GBProjectHandle.hpp
+gui/core/GBProjectHandle_.hpp
+gui/core/GBProject_.hpp
+gui/core/GBWorkspace.hpp
+gui/core/GBWorkspace_.hpp
+gui/core/MRUCache.hpp
+gui/core/MRUCache_.hpp
+gui/core/MessageHistoryInfo.hpp
+gui/core/MessageHistoryInfo_.hpp
+gui/core/MessageStatus.hpp
+gui/core/MessageStatus_.hpp
+gui/core/PluginArg.hpp
+gui/core/PluginArgSet.hpp
+gui/core/PluginArgSet_.hpp
+gui/core/PluginArg_.hpp
+gui/core/PluginCache.hpp
+gui/core/PluginCache_.hpp
+gui/core/PluginCommand.hpp
+gui/core/PluginCommand_.hpp
+gui/core/PluginInfo.hpp
+gui/core/PluginInfoSet.hpp
+gui/core/PluginInfoSet_.hpp
+gui/core/PluginInfo_.hpp
+gui/core/PluginLibInfo.hpp
+gui/core/PluginLibInfo_.hpp
+gui/core/PluginMRUEntry.hpp
+gui/core/PluginMRUEntry_.hpp
+gui/core/PluginMessage.hpp
+gui/core/PluginMessageChain.hpp
+gui/core/PluginMessageChain_.hpp
+gui/core/PluginMessage_.hpp
+gui/core/PluginObject.hpp
+gui/core/PluginObject_.hpp
+gui/core/PluginReply.hpp
+gui/core/PluginReplyAction.hpp
+gui/core/PluginReplyAction_.hpp
+gui/core/PluginReply_.hpp
+gui/core/PluginRequest.hpp
+gui/core/PluginRequest_.hpp
+gui/core/PluginValue.hpp
+gui/core/PluginValueConstraint.hpp
+gui/core/PluginValueConstraint_.hpp
+gui/core/PluginValueRangeConstraint.hpp
+gui/core/PluginValueRangeConstraint_.hpp
+gui/core/PluginValue_.hpp
+gui/core/ProjectAnnot.hpp
+gui/core/ProjectAnnot_.hpp
+gui/core/ProjectDescr.hpp
+gui/core/ProjectDescr_.hpp
+gui/core/ProjectFolder.hpp
+gui/core/ProjectFolder_.hpp
+gui/core/ProjectHistoryItem.hpp
+gui/core/ProjectHistoryItem_.hpp
+gui/core/ProjectItem.hpp
+gui/core/ProjectItem_.hpp
+gui/core/ViewDesc.hpp
+gui/core/ViewDesc_.hpp
+gui/core/WorkspaceFolder.hpp
+gui/core/WorkspaceFolder_.hpp
+gui/core/algo_factory.hpp
+gui/core/algo_plugin.hpp
+gui/core/data_factory.hpp
+gui/core/data_plugin.hpp
+gui/core/data_store.hpp
+gui/core/doc_exception.hpp
+gui/core/doc_manager.hpp
+gui/core/docmgr_view.hpp
+gui/core/document.hpp
+gui/core/idocument.hpp
+gui/core/iservice.hpp
+gui/core/iview.hpp
+gui/core/iview_composite.hpp
+// Seems to be dead
+//gui/core/message_history.hpp
+gui/core/obj_convert.hpp
+gui/core/plugin.hpp
+gui/core/plugin_arg_dialog.hpp
+gui/core/plugin_arg_dialog_.hpp
+gui/core/plugin_dlg.hpp
+gui/core/plugin_dlg_.hpp
+gui/core/plugin_exception.hpp
+gui/core/plugin_factory.hpp
+gui/core/plugin_handle.hpp
+gui/core/plugin_registry.hpp
+gui/core/plugin_thread.hpp
+gui/core/plugin_utils.hpp
+gui/core/project_manager.hpp
+// Seems to be dead
+//gui/core/registry.hpp
+gui/core/task_manager.hpp
+gui/core/task_queue.hpp
+gui/core/version.hpp
+gui/core/view.hpp
+gui/core/view_composite.hpp
+gui/core/view_composite_plugin.hpp
+gui/core/view_exception.hpp
+gui/core/view_factory.hpp
+gui/core/view_link.hpp
+gui/core/view_plugin.hpp
+
+gui/graph/axis.hpp
+gui/graph/combo_chart.hpp
+gui/graph/graph_panel.hpp
+gui/graph/igraph.hpp
+gui/graph/igraph_data.hpp
+gui/graph/igraph_utils.hpp
+gui/graph/legend.hpp
+gui/graph/pie_graph.hpp
+gui/graph/regular_grid.hpp
+gui/graph/scatter_graph.hpp
+
+gui/math/bbox.hpp
+gui/math/curve.hpp
+gui/math/curve_bezier.hpp
+gui/math/curve_cubic.hpp
+gui/math/globals.hpp
+gui/math/intersect.hpp
+gui/math/math.hpp
+gui/math/matrix3.hpp
+gui/math/matrix4.hpp
+gui/math/promote.hpp
+gui/math/quat.hpp
+gui/math/vect2.hpp
+gui/math/vect3.hpp
+gui/math/vect4.hpp
+
+gui/objutils/alignment.hpp
+gui/objutils/alignment_smear.hpp
+gui/objutils/alignment_smear_layout.hpp
+gui/objutils/bookmark.hpp
+gui/objutils/comment.hpp
+gui/objutils/density_map.hpp
+gui/objutils/edit.hpp
+gui/objutils/edit_event.hpp
+gui/objutils/feat_label.hpp
+gui/objutils/feat_pack.hpp
+gui/objutils/feature.hpp
+gui/objutils/feature_conf_params.hpp
+gui/objutils/feature_edit.hpp
+gui/objutils/filter.hpp
+gui/objutils/graph.hpp
+gui/objutils/histogram.hpp
+gui/objutils/iselection.hpp
+gui/objutils/label.hpp
+gui/objutils/layout.hpp
+gui/objutils/mate_pair.hpp
+gui/objutils/obj_clipboard.hpp
+gui/objutils/obj_event.hpp
+gui/objutils/object_index.hpp
+gui/objutils/objects.hpp
+gui/objutils/prot_product.hpp
+gui/objutils/pw_alignment.hpp
+gui/objutils/reg_file.hpp
+gui/objutils/registry.hpp
+gui/objutils/seq_map.hpp
+gui/objutils/seqid_dictionary.hpp
+gui/objutils/sequence.hpp
+gui/objutils/used.hpp
+gui/objutils/utils.hpp
+gui/objutils/vis_range.hpp
+
+gui/utils/accel_table.hpp
+gui/utils/app_popup.hpp
+gui/utils/browser_utils.hpp
+gui/utils/button.hpp
+gui/utils/clipboard.hpp
+gui/utils/color_dialog.hpp
+gui/utils/command.hpp
+gui/utils/diag_handler.hpp
+// this is first in the list
+//gui/utils/dialog.hpp
+gui/utils/event.hpp
+gui/utils/event_handler.hpp
+gui/utils/exec.hpp
+gui/utils/fetch_url.hpp
+gui/utils/file_browser.hpp
+gui/utils/fltk_utils.hpp
+gui/utils/function.hpp
+gui/utils/gui_event.hpp
+gui/utils/id_generator.hpp
+gui/utils/ihelp_handler.hpp
+gui/utils/message_box.hpp
+gui/utils/mru_list.hpp
+gui/utils/reporter.hpp
+gui/utils/rgba_color.hpp
+gui/utils/system_path.hpp
+gui/utils/table_names.hpp
+//gui/utils/utils_macosx_.hpp
+gui/utils/utils_platform.hpp
+//gui/utils/utils_win32_.hpp
+gui/utils/view_event.hpp
+gui/utils/worker_thread.hpp
+
+%%
+
+// Need this for return value of __Make*
+%template(CRef_CPluginInfoSet) ncbi::CRef<ncbi::objects::CPluginInfoSet>;
+%inline %{
+// for creating scripting language objects from C++
+inline
+ncbi::CRef<ncbi::objects::CPluginMessage> __MakeCPluginMessage(unsigned long ptr)
+{
+    ncbi::CRef<ncbi::objects::CPluginMessage> rv;
+    rv = (ncbi::objects::CPluginMessage *) ptr;
+    return rv;
+}
+inline
+ncbi::CRef<ncbi::objects::CPluginInfoSet> __MakeCPluginInfoSet(unsigned long ptr)
+{
+    ncbi::CRef<ncbi::objects::CPluginInfoSet> rv;
+    rv = (ncbi::objects::CPluginInfoSet *) ptr;
+    return rv;
+}
+%}
+
+// GetArgValue is critical for gbench plugins, but it's
+// template hell.  Provide the generic CObject version
+// and associated template classes;
+// downcasting can happen in the scripting laguage.
+
+%template(pair_CConstRef_IDocument_CConstRef_CObject)
+std::pair<ncbi::CConstRef<ncbi::IDocument>, ncbi::CConstRef<ncbi::CObject> >;
+
+%template(list_pair_CConstRef_IDocument_CConstRef_CObject)
+std::list<std::pair<ncbi::CConstRef<ncbi::IDocument>, ncbi::CConstRef<ncbi::CObject> > >;
+
+%template(__GetArgValue) ncbi::GetArgValue<ncbi::CObject>;
+
+
+%template() ncbi::CRef<ncbi::CLayoutFeat>;
+VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2005/08/04 21:13:02  jcherry
+ * Initial version
+ *
+ * ===========================================================================
+ */
