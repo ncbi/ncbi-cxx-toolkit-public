@@ -74,13 +74,19 @@ public:
                        "CSplignObjMgrAccessor::Load");
         }
 
-        CSeq_id seqId(id);
+        CRef<CSeq_id> seqId;
+        try {
+            seqId.Reset(new CSeq_id(id));
+        }
+        catch(CSeqIdException&) {
+            seqId.Reset(new CSeq_id(CSeq_id::e_Local, id));
+        }
 
         CSeqVector *sv = NULL;
-        if (m_Handle1.IsSynonym(seqId)  ||
+        if (m_Handle1.IsSynonym(*seqId)  ||
             m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector1;
-        } else if (m_Handle2.IsSynonym(seqId)  ||
+        } else if (m_Handle2.IsSynonym(*seqId)  ||
                    m_Handle2.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector2;
         } else {
@@ -214,6 +220,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.14  2005/08/04 19:24:44  kapustin
+* Adjust seq-id handling with changes in the toolkit
+*
 * Revision 1.13  2005/01/07 19:28:05  dicuccio
 * Bug fix: don't try to retrieve sequence from CSeqvector beyond CSeqVector's
 * length.
