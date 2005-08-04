@@ -76,6 +76,7 @@ public:
 	string layoutSeqTree(int maxX, int maxY, vector<SeqTreeEdge>& edgs);
 	//lay out the tree with a fixed spacing between sequences
 	string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edgs, int yInt = 3);
+	CCdCore* getRootCD(){return m_ma.getFirstCD();}
 	
 	static bool loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions=0, SeqTree* seqTree=0);
 private:
@@ -104,6 +105,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/08/04 21:33:23  cliu
+ * annotate with Tax work
+ *
  * Revision 1.4  2005/07/27 18:52:20  cliu
  * guard against failure to make a tree for a CD.
  *

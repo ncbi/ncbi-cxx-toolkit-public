@@ -197,9 +197,9 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 	{
 		if (!m_taxTree)
 			m_taxTree = new TaxTreeData(m_ma);
-		string rankName = "Superkingdom";
+		string rankName = "superkingdom";
 		if(m_taxLevel == ByKingdom)
-			rankName = "Kingdom";
+			rankName = "kingdom";
 		TaxTreeIterator taxNode = m_taxTree->getParentAtRank(nodeData.rowID, rankName);
 		node.annotation = taxNode->orgName;
 	}
@@ -249,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2005/08/04 21:33:40  cliu
+ * annotate with Tax work
+ *
  * Revision 1.5  2005/08/02 20:39:06  cliu
  * no message
  *
