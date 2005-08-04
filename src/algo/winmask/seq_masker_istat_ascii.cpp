@@ -98,19 +98,23 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
 
             if( name == "t_threshold" && get_threshold() == 0 )
                 set_threshold( 
-                    NStr::StringToUInt( line.substr( val_start, NPOS ), 0 ) );
+                    NStr::StringToUInt(line.substr(val_start, NPOS), 
+                                       NStr::fStringToNumDefault, 0));
 
             if( name == "t_extend" && get_textend() == 0 )
                 set_textend(
-                    NStr::StringToUInt( line.substr( val_start, NPOS ), 0 ) );
+                    NStr::StringToUInt(line.substr(val_start, NPOS),
+                                       NStr::fStringToNumDefault, 0));
 
             if( name == "t_low" && get_min_count() == 0 )
                 set_min_count(
-                    NStr::StringToUInt( line.substr( val_start, NPOS ), 0 ) );
+                    NStr::StringToUInt(line.substr(val_start, NPOS),
+                                       NStr::fStringToNumDefault, 0));
 
             if( name == "t_high" && get_max_count() == 0 )
                 set_max_count(
-                    NStr::StringToUInt( line.substr( val_start, NPOS ), 0 ) );
+                    NStr::StringToUInt(line.substr(val_start, NPOS),
+                                       NStr::fStringToNumDefault, 0));
 
             continue;
         }
@@ -135,13 +139,12 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
             NCBI_THROW( Exception, eSyntax, msg );
         }
 
-        Uint4 unit = NStr::StringToUInt( line.substr( unit_start, 
-                                                      unit_end - unit_start ),
-                                         16 );
-        Uint4 cnt = NStr::StringToUInt( line.substr( cnt_start ) );
+        Uint4 unit = NStr::StringToUInt(line.substr(unit_start, 
+                                                    unit_end - unit_start),
+                                        NStr::fStringToNumDefault, 16);
+        Uint4 cnt = NStr::StringToUInt(line.substr(cnt_start));
 
-        if( cnt < ambig_len )
-        {
+        if( cnt < ambig_len ) {
             ambig_len = cnt;
             set_ambig_unit( unit );
         }
@@ -190,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/04 13:10:52  ivanov
+ * Use 'flag' version of NStr::StringTo*()
+ *
  * Revision 1.1  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit
