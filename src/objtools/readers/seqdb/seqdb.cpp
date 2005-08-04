@@ -380,7 +380,22 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 
 void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const
 {
-    m_Impl->SeqidToOids(seqid, oids);
+    m_Impl->SeqidToOids(seqid, oids, true);
+}
+
+bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
+{
+    oid = -1;
+    
+    vector<int> oids;
+    m_Impl->SeqidToOids(seqid, oids, false);
+    
+    if (oids.empty()) {
+        return false;
+    }
+    
+    oid = oids[0];
+    return true;
 }
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
@@ -479,7 +494,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     vector<int> oids;
     CRef<CBioseq> bs;
     
-    m_Impl->SeqidToOids(seqid, oids);
+    m_Impl->SeqidToOids(seqid, oids, false);
     
     if (! oids.empty()) {
         bs = m_Impl->GetBioseq(oids[0], 0, true);

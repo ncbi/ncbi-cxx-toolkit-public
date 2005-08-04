@@ -467,9 +467,9 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
+    CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
     if (! m_OidListSetup) {
@@ -772,7 +772,7 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<int> & oids) const
     }
 }
 
-void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids) const
+void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids, bool multi) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -808,6 +808,10 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<int> & oids) const
             
             if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
                 oids.push_back(oid1);
+                
+                if (! multi) {
+                    return;
+                }
             }
         }
         

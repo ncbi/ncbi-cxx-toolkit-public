@@ -444,7 +444,7 @@ public:
     void AccessionToOids(const string & acc, vector<int> & oids) const;
     
     /// Translate a CSeq-id to a list of OIDs.
-    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
+    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids, bool multi) const;
     
     /// Find the OID corresponding to the offset given in residues,
     /// into the database as a whole.

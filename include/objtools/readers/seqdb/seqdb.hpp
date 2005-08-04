@@ -595,6 +595,9 @@ public:
     /// Translate a Seq-id to a list of OIDs.
     void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
     
+    /// Translate a Seq-id to any matching OID.
+    bool SeqidToOid(const CSeq_id & seqid, int & oid) const;
+    
     /// Find the sequence closest to the given offset into the database.
     /// 
     /// The database volumes can be viewed as a single array of
