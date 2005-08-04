@@ -453,6 +453,8 @@ public:
 
     operator const string&() const     { return GetValue(); }
     operator       string&()           { return SetValue(); }
+    operator const CTempString() const { return CTempString(GetValue()); }
+
     /// commonly-requested string:: operations...
     SIZE_TYPE size() const             { return GetValue().size(); }
     bool empty() const                 { return GetValue().empty(); }
@@ -936,6 +938,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.79  2005/08/04 11:12:49  ivanov
+* Added CCgiEntry::operator CTempString
+*
 * Revision 1.78  2005/06/30 17:14:26  grichenk
 * Added flag to CCgiCookies to allow storing invalid cookies.
 * Added CCgiCookie::IsInvalid(). Throw exception when writing
