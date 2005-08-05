@@ -538,8 +538,7 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
     }}
     CRef<CSeq_entry> seq_entry = GetSeq_entry(result, blob_id, blob, reply);
     if ( seq_entry ) {
-        CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
-        blob->SetSeq_entry(*seq_entry, snps);
+        blob->SetSeq_entry(*seq_entry);
     }
     SetLoaded(result, blob_id, chunk_id, blob);
 }
@@ -845,8 +844,7 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         }
     }}
 
-    CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
-    blob->SetSeq_entry(*seq_entry, snps);
+    blob->SetSeq_entry(*seq_entry);
     SetLoaded(result, blob_id, chunk_id, blob);
 }
 
