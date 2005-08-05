@@ -1322,7 +1322,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         }
         else {
             m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-            ERR_POST("CId2Reader: ID2-Reply-Get-Blob: "
+            ERR_POST(Warning << "CId2Reader: ID2-Reply-Get-Blob: "
                      "blob already loaded: " << blob_id.ToString());
             return;
         }
