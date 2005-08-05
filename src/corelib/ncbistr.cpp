@@ -809,9 +809,11 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 ///////////////////////////////////////////
 
 
-#define OBSOLETE_FLAGS \
-    ERR_POST(Warning << "Obsolete method! Will be removed soon. " << \
-             "Please use version of this function with flags.");     \
+#define OBSOLETE_FLAGS(func) \
+    ERR_POST_ONCE(Warning << \
+                  "This version of function" #func "is obsolete and will " \
+                  "be removed soon! " \
+                  "Please use version of this function with flags.");     \
     TStringToNumFlags flags = fStringToNumDefault;  \
     if ( check == eCheck_Skip )                     \
         flags |= fAllowTrailingSymbols;             \
@@ -825,7 +827,7 @@ int NStr::StringToInt(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToInt);
     return StringToInt(str, flags, base);
 }
 
@@ -835,7 +837,7 @@ unsigned int NStr::StringToUInt(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToUInt);
     return StringToUInt(str, flags, base);
 }
 
@@ -846,7 +848,7 @@ long NStr::StringToLong(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToLong);
     return StringToLong(str, flags, base);
 
 }
@@ -857,7 +859,7 @@ unsigned long NStr::StringToULong(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToULong);
     return StringToULong(str, flags, base);
 
 }
@@ -867,7 +869,7 @@ double NStr::StringToDouble(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToDouble);
     return StringToDouble(str, flags);
 }
 
@@ -877,7 +879,7 @@ Int8 NStr::StringToInt8(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToInt8);
     return StringToInt8(str, flags, base);
 }
 
@@ -887,7 +889,7 @@ Uint8 NStr::StringToUInt8(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToUInt8);
     return StringToUInt8(str, flags, base);
 }
 
@@ -897,13 +899,14 @@ Uint8 NStr::StringToUInt8_DataSize(
                         ECheckEndPtr   check,
                         EConvErrAction on_error)
 {
-    OBSOLETE_FLAGS;
+    OBSOLETE_FLAGS(NStr::StringToUInt8_DataSize);
     return StringToUInt8_DataSize(str, flags, base);
 }
 
 //
 // end of OBSOLETE
 ///////////////////////////////////////////
+
 
 
 void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
@@ -2210,6 +2213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.160  2005/08/05 21:26:24  vakatov
+ * OBSOLETE_FLAGS() -- report only once, and with the function name
+ *
  * Revision 1.159  2005/08/04 11:08:59  ivanov
  * Revamp of NStr::StringTo*() functions
  *
