@@ -1389,7 +1389,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         _ASSERT(eh != peh);
         _ASSERT(ent != pent);
-        _ASSERT(tseh.CanBeEdited() == (eh == eh.GetEditHandle()));
+        _ASSERT(eh == eh.GetEditHandle());
         if ( trace && pent ) {
             NcbiCout << "Removing " <<
                 MSerial_AsnText << *ent <<
@@ -1474,6 +1474,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/08/05 15:44:54  vasilche
+* Now edit handle always the same as original.
+*
 * Revision 1.65  2005/07/14 16:54:12  vasilche
 * Check insertion of removed handle.
 *
