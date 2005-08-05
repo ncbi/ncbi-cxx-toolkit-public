@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
 
 
 void CGFF3_Formatter::Start(IFlatTextOStream& text_os)
@@ -103,6 +104,33 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     }
 }
 
+
+static const string& s_GetMatchType(const CSeq_id& ref_id)
+{
+    static const string kMatch     = "match";  // generic match
+    static const string kEST       = "EST_match";
+    static const string kcDNA      = "cDNA_match";
+    static const string kTransNuc  = "translated_nucleotide_match";
+    static const string kNucToProt = "nucleotide_to_protein_match";
+    
+    
+    if ((ref_id.IdentifyAccession() & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+        return kEST;
+    }
+    return kcDNA;
+}
+
+
+static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
+{
+    try {
+	return *(sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId());
+    } catch (CException& e) {
+    }
+    return id;
+}
+
+
 void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      IFlatTextOStream& text_os,
                                      const CDense_seg& ds)
@@ -116,9 +144,11 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     string          source  = x_GetSourceName(*ctx);
     CAlnMap         alnmap(ds);
     TNumrow         ref_row = -1;
+    CScope&         scope = ctx->GetScope();
+    
     for (TNumrow row = 0;  row < alnmap.GetNumRows();  ++row) {
         if (sequence::IsSameBioseq(alnmap.GetSeqId(row), *ctx->GetPrimaryId(),
-                                   &ctx->GetScope())) {
+                                   &scope)) {
             ref_row = row;
             break;
         }
@@ -146,8 +176,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
                                   CAlnMap::fAddUnalignedChunks);
         for (TNumchunk i0 = 0;  i0 < chunks->size();  ++i0) {
-            TNumchunk i = (tgt_sign > 0) ? i0 : (chunks->size() - i0 - 1);
-            CConstRef<CAlnMap::CAlnChunk> chunk     = (*chunks)[i];
+            CConstRef<CAlnMap::CAlnChunk> chunk     = (*chunks)[i0];
             TRange                        ref_piece = chunk->GetAlnRange();
             TRange                        tgt_piece = chunk->GetRange();
             char                          type;
@@ -155,8 +184,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
             ref_piece.SetFrom(ref_piece.GetFrom() + ref_start);
             ref_piece.SetTo  (ref_piece.GetTo()   + ref_start);
-            if (flags & CAlnMap::fNotAlignedToSeqOnAnchor) {
-                _ASSERT(flags & CAlnMap::fSeq);
+            if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
                 type       = 'I';
                 count      = tgt_piece.GetLength() / tgt_width;
                 tgt_range += tgt_piece;
@@ -184,26 +212,37 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // We can't use x_FormatAttr because we seem to need literal
         // pluses, which we otherwise avoid due to ambiguity. :-/
         CNcbiOstrstream attrs;
+        const CSeq_id& tgt_id = s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
         attrs << "Target=";
-        x_AppendEncoded(attrs,
-                        ctx->GetPreferredSynonym(alnmap.GetSeqId(tgt_row))
-                        .GetSeqIdString(true));
+        x_AppendEncoded(attrs, tgt_id.GetSeqIdString(true));
         attrs << '+' << (tgt_range.GetFrom() + 1) << '+'
               << (tgt_range.GetTo() + 1);
+
+        ///
+        /// HACK HACK HACK
+        /// optional strand on the end
+        if (tgt_sign == 1) {
+            attrs << "++";
+        } else {
+            attrs << "+-";
+        }
+
         if ( !trivial  ||  last_type != 'M' ) {
             cigar << last_type << last_count;
             string cigar_string = CNcbiOstrstreamToString(cigar);
             attrs << ";Gap=" << cigar_string;
         }
+
         // XXX - should supply appropriate score, if any
         CSeq_loc loc(*ctx->GetPrimaryId(), ref_range.GetFrom(),
                      ref_range.GetTo(),
-                     (ref_sign == tgt_sign ? eNa_strand_plus
+                     (ref_sign == 1 ? eNa_strand_plus
                       : eNa_strand_minus));
         string attr_string = CNcbiOstrstreamToString(attrs);
-        x_AddFeature(l, loc, source, "match", "." /*score*/, -1 /*frame*/,
+        x_AddFeature(l, loc, source, s_GetMatchType(*ctx->GetPrimaryId()), "." /*score*/, -1 /*frame*/,
                      attr_string, false /*gtf*/, *ctx);
     }
+
     text_os.AddParagraph(l, &ds);
 }
 
@@ -285,6 +324,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/08/05 20:21:41  dicuccio
+* Updated GFF3 output: Fixed representation of strand; include optional target
+* strand always; adjusted tags used for matches.
+*
 * Revision 1.3  2005/04/14 14:38:22  shomrat
 * Changed CAlnMap flag
 *
