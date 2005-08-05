@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/08/05 15:50:10  vasilche
+* Reordered calls to make error messages more informative.
+*
 * Revision 1.12  2005/06/22 14:35:47  vasilche
 * Added test of non-location feature iterators.
 * Added test of CAnnot_CI.
@@ -341,13 +344,13 @@ bool CTestOM::Thread_Run(int idx)
             try {
                 // load sequence
                 CBioseq_Handle handle = scope.GetBioseqHandle(sih);
-                SetValue(m_BlobIdMap, key, handle.GetTSE_Handle().GetBlobId());
                 if (!handle) {
                     LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                              ": INVALID HANDLE");
                     SetValue(m_DescMap, key, -1);
                     continue;
                 }
+                SetValue(m_BlobIdMap, key, handle.GetTSE_Handle().GetBlobId());
 
                 if ( !m_load_only ) {
                     // check CSeqMap_CI
