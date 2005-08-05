@@ -186,6 +186,7 @@ CAlnMixMerger::x_Merge()
         // reached the end?
         if (first_refseq ?
             match_i == m_Matches.end()  &&  m_Matches.size() :
+            refseq->m_MatchList.empty()  ||  
             match_list_i == refseq->m_MatchList.end()) {
 
             // move on to the next refseq
@@ -219,9 +220,22 @@ CAlnMixMerger::x_Merge()
             continue;
         } else {
             // iterate
-            match = first_refseq ? *(match_i++) : *(match_list_i++);
+            if (first_refseq) {
+                match = *match_i;
+                ++match_i;
+            } else {
+                match = *match_list_i;
+                ++match_list_i;
+                if (refseq == match->m_AlnSeq2  &&  refseq == match->m_AlnSeq1) {
+                    // This is the rare case of a match b/n a seq and
+                    // itself.  We need one more incrementation since
+                    // the match would be recorded twice
+                    _ASSERT(refseq->m_MatchList.size() >= 2);
+                    ++match_list_i;
+                }
+            }
         }
-
+        
         curr_len = len = match->m_Len;
 
         // is it a match with this refseq?
@@ -288,8 +302,8 @@ CAlnMixMerger::x_Merge()
 
             // this match is used, erase from seq1 list
             if ( !first_refseq ) {
-                if ( !refseq->m_MatchList.empty() ) {
-                    refseq->m_MatchList.erase(match_list_iter1);
+                if ( !seq1->m_MatchList.empty() ) {
+                    seq1->m_MatchList.erase(match_list_iter1);
                 }
             }
 
@@ -1197,6 +1211,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/08/05 01:18:49  todorov
+* Fixed the rare case when a secondary sequence is aligned to itself
+* without being align to the master (a repeated insert).  There was a
+* conflict with the m_MatchList iterators.
+*
 * Revision 1.8  2005/07/22 15:30:23  todorov
 * + fAllowTranslocation as a merge option
 *
