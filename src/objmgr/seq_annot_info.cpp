@@ -44,6 +44,7 @@
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 
@@ -234,11 +235,51 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
 }
 
 
+namespace {
+    CRef<CSeq_annot> sx_ShallowCopy(const CSeq_annot& src)
+    {
+        CRef<CSeq_annot> obj(new CSeq_annot);
+        if ( src.IsSetId() ) {
+            obj->SetId() = src.GetId();
+        }
+        if ( src.IsSetDb() ) {
+            obj->SetDb(src.GetDb());
+        }
+        if ( src.IsSetName() ) {
+            obj->SetName(src.GetName());
+        }
+        if ( src.IsSetDesc() ) {
+            obj->SetDesc().Set() = src.GetDesc().Get();
+        }
+        switch ( src.GetData().Which() ) {
+        case CSeq_annot::C_Data::e_Ftable:
+            obj->SetData().SetFtable() = src.GetData().GetFtable();
+            break;
+        case CSeq_annot::C_Data::e_Graph:
+            obj->SetData().SetGraph() = src.GetData().GetGraph();
+            break;
+        case CSeq_annot::C_Data::e_Align:
+            obj->SetData().SetAlign() = src.GetData().GetAlign();
+            break;
+        case CSeq_annot::C_Data::e_Ids:
+            obj->SetData().SetIds() = src.GetData().GetIds();
+            break;
+        case CSeq_annot::C_Data::e_Locs:
+            obj->SetData().SetLocs() = src.GetData().GetLocs();
+            break;
+        default:
+            break;
+        }
+        return obj;
+    }
+}
+
+
 void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info,
                                   TObjectCopyMap* copy_map)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
-    m_Object = info.m_Object;
+    m_Object = sx_ShallowCopy(info.x_GetObject());
     if ( HasDataSource() ) {
         x_DSMapObject(m_Object, GetDataSource());
     }
@@ -537,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/08/05 15:41:30  vasilche
+ * Copy Seq-annot object when detaching from data loader.
+ *
  * Revision 1.32  2005/07/14 16:57:47  vasilche
  * Do not forget removing from annot index when detached.
  *
