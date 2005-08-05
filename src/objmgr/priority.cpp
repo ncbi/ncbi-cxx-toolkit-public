@@ -143,12 +143,12 @@ CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
         m_SubTree = new CPriorityTree(scope, node.GetTree());
     }
     else if ( node.IsLeaf() ) {
-        if ( node.GetLeaf().IsShared() ) {
+        if ( !node.GetLeaf().CanBeEdited() ) { // shared -> use original DS
             CDataSource& ds =
                 const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
             m_Leaf = scope.x_GetDSInfo(ds);
         }
-        else {
+        else { // private -> copy DS content
             CRef<CDataSource> ds(new CDataSource);
             const CTSE_LockSet& blobs =
                 node.GetLeaf().GetDataSource().GetStaticBlobs();
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/08/05 15:40:04  vasilche
+* IsShared() was replaced by CanBeEdited().
+*
 * Revision 1.10  2005/07/14 16:51:15  vasilche
 * Removed obsolete methods.
 * Erase() removes all occurances of leaf in tree.

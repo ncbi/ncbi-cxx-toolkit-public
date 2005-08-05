@@ -373,8 +373,7 @@ public:
     TTSE_Lock x_GetTSE_Lock(const CTSE_Lock& lock, CDataSource_ScopeInfo& ds);
     TTSE_Lock x_GetTSE_Lock(const CTSE_ScopeInfo& tse);
 
-    CRef<CDataSource_ScopeInfo> x_GetDSInfo(CDataSource& ds,
-                                            bool shared = true);
+    CRef<CDataSource_ScopeInfo> x_GetDSInfo(CDataSource& ds);
     CRef<CDataSource_ScopeInfo> AddDS(CRef<CDataSource> ds,
                                       TPriority priority);
     CRef<CDataSource_ScopeInfo> GetNonSharedDS(TPriority priority);

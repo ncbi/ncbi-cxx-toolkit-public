@@ -179,6 +179,7 @@ public:
     CDataLoader* GetDataLoader(void) const;
     const CConstRef<CObject>& GetSharedObject(void) const;
     TTSE_Lock GetSharedTSE(void) const;
+    bool CanBeEdited(void) const;
 
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
@@ -464,14 +465,23 @@ private:
 inline
 CDataLoader* CDataSource::GetDataLoader(void) const
 {
-    return const_cast<CDataLoader*>(m_Loader.GetPointerOrNull());
+    return m_Loader.GetNCPointerOrNull();
 }
+
 
 inline
 const CConstRef<CObject>& CDataSource::GetSharedObject(void) const
 {
     return m_SharedObject;
 }
+
+
+inline
+bool CDataSource::CanBeEdited(void) const
+{
+    return !m_Loader && !m_SharedObject;
+}
+
 
 inline
 bool CDataSource::IsEmpty(void) const
@@ -493,11 +503,13 @@ bool CDataSource::IsLive(const CTSE_Info& tse)
     return !tse.IsDead();
 }
 
+
 inline
 CDataSource::TPriority CDataSource::GetDefaultPriority(void) const
 {
     return m_DefaultPriority;
 }
+
 
 inline
 void CDataSource::SetDefaultPriority(TPriority priority)

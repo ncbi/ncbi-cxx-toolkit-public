@@ -121,7 +121,11 @@ CBlobIdKey CTSE_Handle::GetBlobId(void) const
     CBlobIdKey ret;
     if ( *this ) {
         const CTSE_Info& tse = x_GetTSE_Info();
-        ret = CBlobIdKey(tse.GetDataSource().GetDataLoader(), tse.GetBlobId());
+        CTSE_Info::TBlobId blob_id = tse.GetBlobId();
+        if ( !blob_id ) {
+            blob_id = &tse;
+        }
+        ret = CBlobIdKey(tse.GetDataSource().GetDataLoader(), blob_id);
     }
     return ret;
 }
@@ -198,8 +202,7 @@ bool CTSE_Handle::AddUsedTSE(const CTSE_Handle& tse) const
 
 bool CTSE_Handle::CanBeEdited(void) const
 {
-    CDataSource& ds = x_GetTSE_Info().GetDataSource();
-    return !ds.GetDataLoader() && !ds.GetSharedObject();
+    return x_GetScopeInfo().CanBeEdited();
 }
 
 
