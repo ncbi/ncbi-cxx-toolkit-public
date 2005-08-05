@@ -90,6 +90,9 @@ test2 refseq_swap "" "the common sequence (refseq) comes second"
 test2 best_reciprocal_hits "-queryseqmergeonly t -truncateoverlaps t -noobjmgr t" "best reciprocal hits"
 
 
+test1 slave_repeated_insert "-noobjmgr t" "slave repeated insert"
+
+
 # clean
 rm $tmp_out
 
