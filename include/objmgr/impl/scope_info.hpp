@@ -194,14 +194,11 @@ public:
     typedef CDeleteQueue<const CTSE_ScopeInfo*,
                          CTSE_ScopeInternalLock>        TTSE_UnlockQueue;
 
-    CDataSource_ScopeInfo(CScope_Impl& scope, CDataSource& ds,
-                          bool shared = true);
+    CDataSource_ScopeInfo(CScope_Impl& scope, CDataSource& ds);
     ~CDataSource_ScopeInfo(void);
 
     CScope_Impl& GetScopeImpl(void) const;
     void DetachScope(void);
-
-    bool IsShared(void) const;
 
     void ResetDS(void);
     void ResetHistory(int action_if_locked);//CScope_Impl::EActionIfLocked
@@ -225,6 +222,7 @@ public:
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
     CDataLoader* GetDataLoader(void);
+    bool CanBeEdited(void) const;
 
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
@@ -240,6 +238,8 @@ public:
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq);
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
+
+    void AttachTSE(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
 
     typedef map<CSeq_id_Handle, SSeqMatch_Scope> TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
@@ -266,7 +266,6 @@ private: // members
     CScope_Impl*                m_Scope;
     TDataSourceLock             m_DataSource;
     bool                        m_CanBeUnloaded;
-    bool                        m_Shared;
     int                         m_NextTSEIndex;
     TTSE_InfoMap                m_TSE_InfoMap;
     mutable TTSE_InfoMapMutex   m_TSE_InfoMapMutex;
@@ -307,6 +306,8 @@ public:
     bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
 
     bool CanBeUnloaded(void) const;
+    bool CanBeEdited(void) const;
+
     // True if the TSE is referenced
     bool IsLocked(void) const;
     // True if the TSE is referenced by more than one handle
@@ -323,6 +324,11 @@ public:
     const TBioseqsIds& GetBioseqsIds(void) const;
 
     bool AddUsedTSE(const CTSE_ScopeUserLock& lock) const;
+    
+    typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
+    void SetEditTSE(const CTSE_Lock& new_tse_lock,
+                    CDataSource_ScopeInfo& new_ds,
+                    const TEditInfoMap& edit_map);
 
     // gets locked CScopeInfo_Base object
     typedef CScopeInfo_Ref<CSeq_entry_ScopeInfo> TSeq_entry_Lock;
@@ -542,13 +548,6 @@ const CDataSource& CDataSource_ScopeInfo::GetDataSource(void) const
 
 
 inline
-bool CDataSource_ScopeInfo::IsShared(void) const
-{
-    return m_Shared;
-}
-
-
-inline
 CDataSource_ScopeInfo::TTSE_InfoMapMutex&
 CDataSource_ScopeInfo::GetTSE_InfoMapMutex(void) const
 {
@@ -598,6 +597,13 @@ CDataSource_ScopeInfo& CTSE_ScopeInfo::GetDSInfo(void) const
 
 
 inline
+bool CTSE_ScopeInfo::CanBeEdited(void) const
+{
+    return GetDSInfo().CanBeEdited();
+}
+
+
+inline
 CScope_Impl& CTSE_ScopeInfo::GetScopeImpl(void) const
 {
     return GetDSInfo().GetScopeImpl();
@@ -622,6 +628,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/08/05 15:42:30  vasilche
+* Redirect all open handles to new TSE when detaching from data loader.
+*
 * Revision 1.22  2005/07/21 19:37:17  grichenk
 * Added CScope::GetBioseqHandles() and supporting methods in data source,
 * data loader and readers.

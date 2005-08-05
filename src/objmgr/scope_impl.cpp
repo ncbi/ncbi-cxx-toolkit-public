@@ -306,14 +306,14 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
     tse_info->RemoveFromHistory(eRemoveIfLocked);
     _ASSERT(!tse_info->IsAttached());
     _ASSERT(!tse);
-    if ( ds_info->IsShared() ) {
+    if ( !ds_info->CanBeEdited() ) { // shared -> remove whole DS
         CRef<CDataSource> ds(&ds_info->GetDataSource());
         _VERIFY(m_setDataSrc.Erase(*ds_info));
         _VERIFY(m_DSMap.erase(ds));
         ds.Reset();
         ds_info->DetachScope();
     }
-    else {
+    else { // private -> remove TSE only
         ds_info->GetDataSource().DropStaticTSE
             (const_cast<CTSE_Info&>(*tse_lock));
         x_ClearCacheOnRemoveData();
@@ -823,13 +823,15 @@ CScope_Impl::GetNonSharedDS(TPriority priority)
     TMap& pmap = m_setDataSrc.GetTree();
     TMap::iterator iter = pmap.lower_bound(priority);
     while ( iter != pmap.end() && iter->first == priority ) {
-        if ( iter->second.IsLeaf() && !iter->second.GetLeaf().IsShared() ) {
+        if ( iter->second.IsLeaf() && iter->second.GetLeaf().CanBeEdited() ) {
             return Ref(&iter->second.GetLeaf());
         }
         ++iter;
     }
     CRef<CDataSource> ds(new CDataSource);
-    CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds, false);
+    _ASSERT(ds->CanBeEdited());
+    CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
+    _ASSERT(ds_info->CanBeEdited());
     pmap.insert(iter, TMap::value_type(priority, CPriorityNode(*ds_info)));
     return ds_info;
 }
@@ -840,7 +842,7 @@ CScope_Impl::AddDSBefore(CRef<CDataSource> ds,
                          CRef<CDataSource_ScopeInfo> ds2)
 {
     TWriteLockGuard guard(m_ConfLock);
-    CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds, false);
+    CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( &*it == ds2 ) {
             it.InsertBefore(*ds_info);
@@ -853,14 +855,12 @@ CScope_Impl::AddDSBefore(CRef<CDataSource> ds,
 }
 
 
-CRef<CDataSource_ScopeInfo> CScope_Impl::x_GetDSInfo(CDataSource& ds,
-                                                     bool shared)
+CRef<CDataSource_ScopeInfo> CScope_Impl::x_GetDSInfo(CDataSource& ds)
 {
     CRef<CDataSource_ScopeInfo>& slot = m_DSMap[Ref(&ds)];
     if ( !slot ) {
-        slot = new CDataSource_ScopeInfo(*this, ds, shared);
+        slot = new CDataSource_ScopeInfo(*this, ds);
     }
-    _ASSERT(slot->IsShared() == shared);
     return slot;
 }
 
@@ -1222,31 +1222,37 @@ CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds)
         TWriteLockGuard guard(m_ConfLock);
         if ( !src_ds.m_EditDS ) {
             CRef<CDataSource> ds(new CDataSource);
+            _ASSERT(ds->CanBeEdited());
             src_ds.m_EditDS = AddDSBefore(ds, Ref(&src_ds));
             _ASSERT(src_ds.m_EditDS);
+            _ASSERT(src_ds.m_EditDS->CanBeEdited());
         }
     }
     return src_ds.m_EditDS;
 }
 
 
-CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& src_tse)
+#define EDITHANDLE_IS_NEW 0
+
+CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
 {
-    _ASSERT(src_tse && !src_tse.CanBeEdited());
-    CTSE_ScopeInfo& scope_info = src_tse.x_GetScopeInfo();
-    if ( scope_info.m_EditLock ) {
-        return *scope_info.m_EditLock;
+    _ASSERT(handle);
+#if EDITHANDLE_IS_NEW
+
+    _ASSERT(!handle.CanBeEdited());
+    CTSE_ScopeInfo& src_scope_info = handle.x_GetScopeInfo();
+    if ( src_scope_info.m_EditLock ) {
+        return *src_scope_info.m_EditLock;
     }
     TWriteLockGuard guard(m_ConfLock);
-    if ( scope_info.m_EditLock ) {
-        return *scope_info.m_EditLock;
+    if ( src_scope_info.m_EditLock ) {
+        return *src_scope_info.m_EditLock;
     }
+    CDataSource_ScopeInfo& src_ds = src_scope_info.GetDSInfo();
+    CRef<CDataSource_ScopeInfo> edit_ds = GetEditDataSource(src_ds);
     // load all missing information if split
-    src_tse.x_GetTSE_Info().GetCompleteSeq_entry();
-    CRef<CDataSource_ScopeInfo> edit_ds =
-        GetEditDataSource(scope_info.GetDSInfo());
-    CRef<CTSE_Info> new_tse
-        (new CTSE_Info(src_tse.x_GetScopeInfo().m_TSE_Lock));
+    src_scope_info.m_TSE_Lock->GetCompleteSeq_entry();
+    CRef<CTSE_Info> new_tse(new CTSE_Info(src_scope_info.m_TSE_Lock));
 #if 0 && defined(_DEBUG)
     LOG_POST("CTSE_Info is copied, map.size()="<<
              new_tse->m_BaseTSE->m_ObjectCopyMap.size());
@@ -1264,15 +1270,53 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& src_tse)
     }
 #endif
     CTSE_Lock edit_tse_lock = edit_ds->GetDataSource().AddStaticTSE(new_tse);
-    scope_info.m_EditLock = edit_ds->GetTSE_Lock(edit_tse_lock);
-    x_ClearCacheOnNewData(&scope_info);
-    return *scope_info.m_EditLock;
+    src_scope_info.m_EditLock = edit_ds->GetTSE_Lock(edit_tse_lock);
+    x_ClearCacheOnNewData(&src_scope_info);
+    return *src_scope_info.m_EditLock;
+
+#else
+
+    if ( handle.CanBeEdited() ) {
+        return handle;
+    }
+    TWriteLockGuard guard(m_ConfLock);
+    if ( handle.CanBeEdited() ) {
+        return handle;
+    }
+    CTSE_ScopeInfo& scope_info = handle.x_GetScopeInfo();
+    CRef<CDataSource_ScopeInfo> old_ds(&scope_info.GetDSInfo());
+    CRef<CDataSource_ScopeInfo> new_ds = GetEditDataSource(*old_ds);
+    // load all missing information if split
+    scope_info.m_TSE_Lock->GetCompleteSeq_entry();
+    CRef<CTSE_Info> new_tse(new CTSE_Info(scope_info.m_TSE_Lock));
+    CTSE_Lock new_tse_lock = new_ds->GetDataSource().AddStaticTSE(new_tse);
+    scope_info.SetEditTSE(new_tse_lock, *new_ds,
+                          new_tse_lock->m_BaseTSE->m_ObjectCopyMap);
+    const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE.reset();
+    _ASSERT(handle.CanBeEdited());
+    _ASSERT(!old_ds->CanBeEdited());
+
+    CRef<CDataSource> ds(&old_ds->GetDataSource());
+    if ( ds->GetSharedObject() ) {
+        // remove old shared object
+        _ASSERT(!ds->GetDataLoader());
+        _VERIFY(m_setDataSrc.Erase(*old_ds));
+        _VERIFY(m_DSMap.erase(ds));
+        ds.Reset();
+        old_ds->DetachScope();
+    }
+    return handle;
+
+#endif
 }
 
 
 CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
+
+#if EDITHANDLE_IS_NEW
+
     if ( h.GetTSE_Handle().CanBeEdited() ) {
         // use original TSE
         return CBioseq_EditHandle(h);
@@ -1303,12 +1347,23 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
     ret.m_Info = edit_tse.x_GetScopeInfo().GetBioseqLock(null, edit_info);
     x_UpdateHandleSeq_id(ret);
     return ret;
+
+#else
+    
+    _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
+    _ASSERT(h.GetTSE_Handle().CanBeEdited());
+    return CBioseq_EditHandle(h);
+
+#endif
 }
 
 
 CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
+
+#if EDITHANDLE_IS_NEW
+
     if ( h.GetTSE_Handle().CanBeEdited() ) {
         // use original TSE
         return CSeq_entry_EditHandle(h);
@@ -1335,12 +1390,23 @@ CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
     }
     
     return CSeq_entry_EditHandle(*edit_info, edit_tse);
+
+#else
+    
+    _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
+    _ASSERT(h.GetTSE_Handle().CanBeEdited());
+    return CSeq_entry_EditHandle(h);
+
+#endif
 }
 
 
 CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
+
+#if EDITHANDLE_IS_NEW
+
     if ( h.GetTSE_Handle().CanBeEdited() ) {
         // use original TSE
         return CSeq_annot_EditHandle(h);
@@ -1367,12 +1433,23 @@ CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
     }
     
     return CSeq_annot_EditHandle(*edit_info, edit_tse);
+
+#else
+    
+    _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
+    _ASSERT(h.GetTSE_Handle().CanBeEdited());
+    return CSeq_annot_EditHandle(h);
+
+#endif
 }
 
 
 CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
+
+#if EDITHANDLE_IS_NEW
+
     if ( h.GetTSE_Handle().CanBeEdited() ) {
         // use original TSE
         return CBioseq_set_EditHandle(h);
@@ -1399,6 +1476,14 @@ CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
     }
     
     return CBioseq_set_EditHandle(*edit_info, edit_tse);
+
+#else
+    
+    _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
+    _ASSERT(h.GetTSE_Handle().CanBeEdited());
+    return CBioseq_set_EditHandle(h);
+
+#endif
 }
 
 
