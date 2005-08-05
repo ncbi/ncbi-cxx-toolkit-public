@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.5  2000/08/25 15:58:45  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -87,6 +90,7 @@ public:
     AutoPtr<CTypeStrings> GetRefCType(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 END_NCBI_SCOPE

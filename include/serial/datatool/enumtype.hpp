@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.13  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -139,6 +142,7 @@ public:
     CEnumDataType(void);
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual string GetXMLContents(void) const;
 
     TValue& AddValue(const string& name, TEnumValueType value);
@@ -189,12 +193,14 @@ class CIntEnumDataType : public CEnumDataType {
 public:
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 class CBigIntEnumDataType : public CIntEnumDataType {
     typedef CIntEnumDataType CParent;
 public:
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 END_NCBI_SCOPE

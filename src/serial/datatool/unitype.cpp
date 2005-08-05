@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.35  2005/02/09 14:35:50  gouriano
 * Corrected formatting when writing DTD
 *
@@ -185,6 +188,11 @@ CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 const char* CUniSequenceDataType::GetASNKeyword(void) const
 {
     return "SEQUENCE";
+}
+
+const char* CUniSequenceDataType::GetDEFKeyword(void) const
+{
+    return "_SEQUENCE_OF_";
 }
 
 void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
@@ -403,6 +411,11 @@ CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
 const char* CUniSetDataType::GetASNKeyword(void) const
 {
     return "SET";
+}
+
+const char* CUniSetDataType::GetDEFKeyword(void) const
+{
+    return "_SET_OF_";
 }
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)

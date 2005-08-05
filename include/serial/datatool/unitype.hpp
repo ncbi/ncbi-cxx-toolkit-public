@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.10  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -115,6 +118,7 @@ public:
     
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 
     bool IsNonEmpty(void) const
         {
@@ -148,6 +152,7 @@ public:
     
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 END_NCBI_SCOPE

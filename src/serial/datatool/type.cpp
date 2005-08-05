@@ -259,7 +259,12 @@ const string CDataType::GetVar(const string& varName) const
         return GetModule()->GetVar(m_MemberName, varName);
     }
     else {
-        return parent->GetVar(m_MemberName + '.' + varName);
+        string s = parent->GetVar(m_MemberName + '.' + varName);
+        if (!s.empty()) {
+            return s;
+        }
+        s = string(GetDEFKeyword()) + '.' + varName;
+        return parent->GetVar(s);
     }
 }
 
@@ -698,12 +703,20 @@ void CDataType::x_AddSavedName(const string& name)
     }
 }
 
+const char* CDataType::GetDEFKeyword(void) const
+{
+    return "-";
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.82  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

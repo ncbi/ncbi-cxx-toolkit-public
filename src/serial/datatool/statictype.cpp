@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.40  2005/07/11 16:12:27  gouriano
 * Corrected schema for boolean type with default
 *
@@ -306,6 +309,11 @@ const char* CNullDataType::GetASNKeyword(void) const
     return "NULL";
 }
 
+const char* CNullDataType::GetDEFKeyword(void) const
+{
+    return "_NULL_";
+}
+
 const char* CNullDataType::GetXMLContents(void) const
 {
     return "EMPTY";
@@ -349,6 +357,11 @@ const char* CNullDataType::GetDefaultCType(void) const
 const char* CBoolDataType::GetASNKeyword(void) const
 {
     return "BOOLEAN";
+}
+
+const char* CBoolDataType::GetDEFKeyword(void) const
+{
+    return "_BOOLEAN_";
 }
 
 const char* CBoolDataType::GetXMLContents(void) const
@@ -438,6 +451,11 @@ const char* CRealDataType::GetASNKeyword(void) const
     return "REAL";
 }
 
+const char* CRealDataType::GetDEFKeyword(void) const
+{
+    return "_REAL_";
+}
+
 const char* CRealDataType::GetXMLContents(void) const
 {
     return "%REAL;";
@@ -511,6 +529,14 @@ const char* CStringDataType::GetASNKeyword(void) const
         return "UTF8String";
     }
     return "VisibleString";
+}
+
+const char* CStringDataType::GetDEFKeyword(void) const
+{
+    if (m_Type == eStringTypeUTF8) {
+        return "_UTF8String_";
+    }
+    return "_VisibleString_";
 }
 
 const char* CStringDataType::GetXMLContents(void) const
@@ -601,6 +627,11 @@ const char* CStringStoreDataType::GetASNKeyword(void) const
     return "StringStore";
 }
 
+const char* CStringStoreDataType::GetDEFKeyword(void) const
+{
+    return "_StringStore_";
+}
+
 TTypeInfo CStringStoreDataType::GetRealTypeInfo(void)
 {
     return CStdTypeInfo<string>::GetTypeInfoStringStore();
@@ -624,6 +655,11 @@ const char* CBitStringDataType::GetASNKeyword(void) const
     return "BIT STRING";
 }
 
+const char* CBitStringDataType::GetDEFKeyword(void) const
+{
+    return "_BIT_STRING_";
+}
+
 bool CBitStringDataType::CheckValue(const CDataValue& value) const
 {
     CheckValueType(value, CBitStringDataValue, "BIT STRING");
@@ -644,6 +680,11 @@ void CBitStringDataType::GetXMLSchemaContents(string& type, string& contents) co
 const char* COctetStringDataType::GetASNKeyword(void) const
 {
     return "OCTET STRING";
+}
+
+const char* COctetStringDataType::GetDEFKeyword(void) const
+{
+    return "_OCTET_STRING_";
 }
 
 const char* COctetStringDataType::GetDefaultCType(void) const
@@ -698,6 +739,11 @@ const char* CIntDataType::GetASNKeyword(void) const
     return "INTEGER";
 }
 
+const char* CIntDataType::GetDEFKeyword(void) const
+{
+    return "_INTEGER_";
+}
+
 const char* CIntDataType::GetXMLContents(void) const
 {
     return "%INTEGER;";
@@ -740,6 +786,11 @@ const char* CIntDataType::GetDefaultCType(void) const
 const char* CBigIntDataType::GetASNKeyword(void) const
 {
     return "BigInt";
+}
+
+const char* CBigIntDataType::GetDEFKeyword(void) const
+{
+    return "_BigInt_";
 }
 
 const char* CBigIntDataType::GetXMLContents(void) const
@@ -839,6 +890,11 @@ const char* CAnyContentDataType::GetASNKeyword(void) const
 // not exactly, but...
 // (ASN.1 does not seem to suppport this type of data)
     return "VisibleString";
+}
+
+const char* CAnyContentDataType::GetDEFKeyword(void) const
+{
+    return "_AnyContent_";
 }
 
 const char* CAnyContentDataType::GetXMLContents(void) const

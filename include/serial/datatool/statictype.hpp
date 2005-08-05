@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.16  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -146,6 +149,7 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -160,6 +164,7 @@ public:
     CTypeRef GetTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 
@@ -177,6 +182,7 @@ public:
     const CTypeInfo* GetRealTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -200,6 +206,7 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 protected:
@@ -215,6 +222,7 @@ public:
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 class COctetStringDataType : public CStaticDataType {
@@ -226,6 +234,7 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -235,6 +244,7 @@ class CBitStringDataType : public COctetStringDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -250,6 +260,7 @@ public:
     CTypeRef GetTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -264,6 +275,7 @@ public:
     CTypeRef GetTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
@@ -280,6 +292,7 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };

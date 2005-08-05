@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.25  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -369,6 +372,8 @@ public:
     static bool GetEnforcedStdXml(void) {
         return sm_EnforcedStdXml;
     }
+
+    virtual const char* GetDEFKeyword(void) const;
 
 protected:
     static bool x_IsSavedName(const string& name);

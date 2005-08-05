@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.14  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -236,6 +239,7 @@ public:
     bool CheckValue(const CDataValue& value) const;
 
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 
 protected:
     CClassTypeInfo* CreateClassInfo(void);
@@ -247,6 +251,7 @@ public:
     bool CheckValue(const CDataValue& value) const;
 
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
 };
 
 END_NCBI_SCOPE

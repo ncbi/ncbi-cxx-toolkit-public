@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.31  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -213,6 +216,11 @@ void ResetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
 const char* CChoiceDataType::GetASNKeyword(void) const
 {
     return "CHOICE";
+}
+
+const char* CChoiceDataType::GetDEFKeyword(void) const
+{
+    return "_CHOICE_";
 }
 
 void CChoiceDataType::FixTypeTree(void) const

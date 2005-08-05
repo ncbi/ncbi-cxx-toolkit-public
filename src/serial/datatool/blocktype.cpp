@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.59  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -832,6 +835,11 @@ const char* CDataSetType::GetASNKeyword(void) const
     return "SET";
 }
 
+const char* CDataSetType::GetDEFKeyword(void) const
+{
+    return "_SET_";
+}
+
 bool CDataSetType::CheckValue(const CDataValue& value) const
 {
     const CBlockDataValue* block =
@@ -884,6 +892,11 @@ CClassTypeInfo* CDataSetType::CreateClassInfo(void)
 const char* CDataSequenceType::GetASNKeyword(void) const
 {
     return "SEQUENCE";
+}
+
+const char* CDataSequenceType::GetDEFKeyword(void) const
+{
+    return "_SEQUENCE_";
 }
 
 bool CDataSequenceType::CheckValue(const CDataValue& value) const

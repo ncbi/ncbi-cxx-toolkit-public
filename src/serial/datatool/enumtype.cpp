@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
 * Revision 1.32  2005/06/20 18:46:56  gouriano
 * Corrected generation of schema for enum
 *
@@ -166,6 +169,11 @@ CEnumDataType::CEnumDataType(void)
 const char* CEnumDataType::GetASNKeyword(void) const
 {
     return "ENUMERATED";
+}
+
+const char* CEnumDataType::GetDEFKeyword(void) const
+{
+    return "_ENUMERATED_";
 }
 
 string CEnumDataType::GetXMLContents(void) const
@@ -494,6 +502,11 @@ const char* CIntEnumDataType::GetASNKeyword(void) const
     return "INTEGER";
 }
 
+const char* CIntEnumDataType::GetDEFKeyword(void) const
+{
+    return "_INTEGER_ENUM_";
+}
+
 bool CIntEnumDataType::IsInteger(void) const
 {
     return true;
@@ -502,6 +515,11 @@ bool CIntEnumDataType::IsInteger(void) const
 const char* CBigIntEnumDataType::GetASNKeyword(void) const
 {
     return "BigInt";
+}
+
+const char* CBigIntEnumDataType::GetDEFKeyword(void) const
+{
+    return "_BigInt_ENUM_";
 }
 
 END_NCBI_SCOPE
