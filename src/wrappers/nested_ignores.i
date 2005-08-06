@@ -29,6 +29,9 @@
  *
  */
 
+// Temporary class
+%ignore ncbi::NStr_TStringToNumFlags;
+
 // Copy ctors cause trouble
 %ignore *::CSeqMasker_CSeqMaskerException;
 %ignore *::CSeqMaskerUsetSimple_Exception;
@@ -117,6 +120,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/06 15:00:34  jcherry
+ * %ignore temporary class NStr::TStringToNumFlags
+ *
  * Revision 1.4  2005/08/03 14:57:10  jcherry
  * Added headers
  *
