@@ -63,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.4  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.5  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -220,6 +220,7 @@ struct NetCache_RequestStat
     double       elapsed;      ///< total time in seconds to process request
     double       comm_elapsed; ///< time spent reading/sending data
     string       peer_address; ///< Client's IP address
+    unsigned     io_blocks;    ///< Number of IO blocks translated
 };
 
 /// @internal
@@ -587,21 +588,20 @@ void CNetCacheServer::Process(SOCK sock)
 {
     SNC_ThreadData* tdata = x_GetThreadData();
     ENC_RequestType req_type = eError;
+    NetCache_RequestStat    stat;
+    stat.blob_size = stat.io_blocks = 0;
+
+    CSocket socket;
+    socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
     try {
-
         tdata->auth.erase();
         
-        NetCache_RequestStat    stat;
         CStopWatch              sw(false); // OFF by default
         bool is_log = IsLog();
 
-        CSocket socket;
-        socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-
         if (is_log) {
             stat.conn_time = m_LocalTimer.GetLocalTime();
-            stat.blob_size = 0;
             stat.comm_elapsed = 0;
             stat.peer_address = socket.GetPeerAddress();
                        
@@ -705,21 +705,33 @@ void CNetCacheServer::Process(SOCK sock)
     {
         ERR_POST("NC Server error: " << ex.what() 
                  << " client="       << tdata->auth
-                 << " request='"     << tdata->request << "'");
+                 << " request='"     << tdata->request << "'"
+                 << " peer="         << socket.GetPeerAddress()
+                 << " blobsize="     << stat.blob_size
+                 << " io blocks="    << stat.io_blocks
+                 );
         x_RegisterException(req_type, tdata->auth, ex);
     }
     catch (CNetServiceException& ex)
     {
         ERR_POST("Server error: " << ex.what() 
                  << " client="    << tdata->auth
-                 << " request='"  << tdata->request << "'");
+                 << " request='"  << tdata->request << "'"
+                 << " peer="      << socket.GetPeerAddress()
+                 << " blobsize="     << stat.blob_size
+                 << " io blocks="    << stat.io_blocks
+                 );
         x_RegisterException(req_type, tdata->auth, ex);
     }
     catch (exception& ex)
     {
         ERR_POST("Execution error in command "
                  << ex.what() << " client=" << tdata->auth
-                 << " request='" << tdata->request << "'");
+                 << " request='" << tdata->request << "'"
+                 << " peer="     << socket.GetPeerAddress()
+                 << " blobsize="     << stat.blob_size
+                 << " io blocks="    << stat.io_blocks
+                 );
         x_RegisterInternalErr(req_type, tdata->auth);
     }
 }
@@ -884,12 +896,52 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
         case eIO_Success:
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetServiceException, 
-                       eTimeout, "Communication timeout error");
+            {
+            string msg = "Communication timeout error (cannot send)";
+            msg.append(" IO block size=");
+            msg.append(NStr::UIntToString(bytes));
+            
+            NCBI_THROW(CNetServiceException, eTimeout, msg);
+            }
+            break;
+        case eIO_Closed:
+            {
+            string msg = 
+                "Communication error: peer closed connection (cannot send)";
+            msg.append(" IO block size=");
+            msg.append(NStr::UIntToString(bytes));
+            
+            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
+            break;
+        case eIO_Interrupt:
+            {
+            string msg = 
+                "Communication error: interrupt signal (cannot send)";
+            msg.append(" IO block size=");
+            msg.append(NStr::UIntToString(bytes));
+            
+            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
+            break;
+        case eIO_InvalidArg:
+            {
+            string msg = 
+                "Communication error: invalid argument (cannot send)";
+            msg.append(" IO block size=");
+            msg.append(NStr::UIntToString(bytes));
+            
+            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
             break;
         default:
-            NCBI_THROW(CNetServiceException, 
-              eCommunicationError, "Communication error (cannot send data)");
+            {
+            string msg = "Communication error (cannot send)";
+            msg.append(" IO block size=");
+            msg.append(NStr::UIntToString(bytes));
+            
+            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
             break;
         } // switch
         bytes -= n_written;
@@ -955,6 +1007,7 @@ blob_not_found:
         x_WriteBuf(sock, buf, ba_descr.blob_size);
 
         stat.comm_elapsed += sw.Elapsed();
+        ++stat.io_blocks;
 
         return;
 
@@ -992,6 +1045,7 @@ blob_not_found:
             x_WriteBuf(sock, buf, bytes_read);
 
             stat.comm_elapsed += sw.Elapsed();
+            ++stat.io_blocks;
 
         } else {
             break;
@@ -1833,6 +1887,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/08/08 17:45:13  kuznets
+ * Improved error logging
+ *
  * Revision 1.62  2005/08/08 14:55:34  kuznets
  * Improved statistics and logging
  *
