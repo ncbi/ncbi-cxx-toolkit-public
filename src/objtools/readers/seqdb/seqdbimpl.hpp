@@ -534,7 +534,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    void GetTaxInfo(int taxid, SSeqDbTaxInfo & info);
+    void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
     
 private:
     CLASS_MARKER_FIELD("IMPL")

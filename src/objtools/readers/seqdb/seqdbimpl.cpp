@@ -921,7 +921,7 @@ void CSeqDBImpl::x_ScanTotals()
     m_NumSeqs = oid_count;
 }
 
-void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDbTaxInfo & info)
+void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);

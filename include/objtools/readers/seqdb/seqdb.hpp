@@ -730,7 +730,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    void GetTaxInfo(int taxid, SSeqDbTaxInfo & info) const;
+    void GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

@@ -388,7 +388,7 @@ int test1(int argc, char ** argv)
                     if (seen_ids.find(taxid) == seen_ids.end()) {
                         seen_ids.insert(taxid);
                         
-                        SSeqDbTaxInfo taxinfo;
+                        SSeqDBTaxInfo taxinfo;
                         db.GetTaxInfo(taxid, taxinfo);
                         
                         sci_names.insert(taxinfo.scientific_name);

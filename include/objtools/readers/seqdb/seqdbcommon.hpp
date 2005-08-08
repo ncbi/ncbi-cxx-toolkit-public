@@ -232,13 +232,13 @@ public:
 typedef map< string, vector< map<string, string> > > TSeqDBAliasFileValues;
 
 
-/// SSeqDbTaxInfo
+/// SSeqDBTaxInfo
 ///
 /// This structure contains the taxonomy information for a single
 /// given taxid.
 
-struct SSeqDbTaxInfo {
-    SSeqDbTaxInfo()
+struct SSeqDBTaxInfo {
+    SSeqDBTaxInfo()
         : taxid(0)
     {
     }
