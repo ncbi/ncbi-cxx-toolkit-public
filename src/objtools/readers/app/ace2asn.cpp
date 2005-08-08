@@ -178,10 +178,10 @@ int CAce2AsnApp::Run(void)
         flags |= fPhrap_AlignPairs;
     }
 
-    if (args["ace_version"].AsString() == "auto") {
-        flags |= fPhrap_AutoVersion;
+    if (args["ace_version"].AsString() == "new") {
+        flags |= fPhrap_NewVersion;
     }
-    else if (args["ace_version"].AsString() == "old") {
+    if (args["ace_version"].AsString() == "old") {
         flags |= fPhrap_OldVersion;
     }
 
@@ -221,6 +221,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/08/08 14:58:04  grichenk
+ * Adjusted version flags to autodetect ACE version by default.
+ *
  * Revision 1.2  2005/08/04 18:12:17  grichenk
  * Changed command line arguments from flags to bool keys.
  *

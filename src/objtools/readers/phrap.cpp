@@ -1709,10 +1709,12 @@ void CPhrapReader::x_UngetTag(EPhrapTag tag)
 void CPhrapReader::x_DetectFormatVersion(void)
 {
     _ASSERT(m_LastTag == ePhrap_not_set);
-    if ((m_Flags & fPhrap_AutoVersion) == 0) {
+    if ((m_Flags & fPhrap_Version) == fPhrap_OldVersion  ||
+        (m_Flags & fPhrap_Version) == fPhrap_NewVersion) {
+        // Version is forced
         return;
     }
-    m_Flags &= ~fPhrap_AutoVersion;
+    m_Flags &= ~fPhrap_Version;
     m_Stream >> ws;
     if ( m_Stream.eof() ) {
         return;
@@ -1734,10 +1736,7 @@ void CPhrapReader::x_DetectFormatVersion(void)
     }
     if (tag != ePhrap_not_set) {
         x_UngetTag(tag);
-        if (tag == ePhrap_AS) {
-            return;
-        }
-        m_Flags |= fPhrap_OldVersion;
+        m_Flags |= (tag == ePhrap_AS) ? fPhrap_NewVersion : fPhrap_OldVersion;
         return;
     }
     NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -2217,6 +2216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/08/08 14:58:04  grichenk
+* Adjusted version flags to autodetect ACE version by default.
+*
 * Revision 1.8  2005/08/04 20:15:45  grichenk
 * Removed obsolete comments
 *
