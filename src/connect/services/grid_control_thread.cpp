@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <connect/services/grid_worker.hpp>
 #include <connect/services/grid_control_thread.hpp>
 
@@ -97,9 +98,13 @@ public:
     virtual void Process(const string& request,
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
-    {
-        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl
-           << "Started: " << node.GetStartTime().AsString() << endl;
+    {       
+        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl;
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app)
+            os << "Executable path: " << app->GetProgramExecutablePath() << endl;
+
+        os << "Started: " << node.GetStartTime().AsString() << endl;
         if (node.GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
@@ -276,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2005/08/08 16:41:00  didenko
+ * Added executable path to the statistics of a worker node
+ *
  * Revision 6.11  2005/05/27 14:46:06  didenko
  * Fixed a worker node statistics
  *
