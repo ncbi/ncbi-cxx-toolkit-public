@@ -285,8 +285,8 @@ bool read_arguments(vector<string>   & arglist,
 
 void stress_test_seqdb(const list<string> & args_list)
 {
-    int num_threads = 20;
-    int max_iter    = 20000;
+    int num_threads = 5;
+    int max_iter    = 1000;
     int oid_range   = 1000000;
     
     string dbname("nr");
