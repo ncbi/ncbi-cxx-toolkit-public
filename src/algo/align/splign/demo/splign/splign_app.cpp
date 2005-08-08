@@ -321,11 +321,10 @@ void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
 
 istream* CSplignApp::x_GetPairwiseHitStream (
     CSeqLoaderPairwise& seq_loader,
-    bool cross_species_mode ) const
+    bool cross_species_mode,
+    string* strbuffer) const
 {
-
     USING_SCOPE(blast);
-
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CSeq_loc> seqloc_query;
@@ -386,8 +385,8 @@ istream* CSplignApp::x_GetPairwiseHitStream (
             CHit hit (**sa_iter);
             oss << hit << endl;
         }
-        string str = CNcbiOstrstreamToString(oss);
-        CNcbiIstrstream* iss = new CNcbiIstrstream (str.c_str());
+        *strbuffer = CNcbiOstrstreamToString(oss);
+        CNcbiIstrstream* iss = new CNcbiIstrstream (strbuffer->c_str());
         return iss;        
     }
     else {
@@ -545,10 +544,13 @@ int CSplignApp::Run()
   // prepare input hit stream
 
   auto_ptr<istream> hit_stream;
+  string stream_buf;
   if(mode_pairwise) {
+
       CSeqLoaderPairwise* pseq_loader_pw = 
           static_cast<CSeqLoaderPairwise*>(seq_loader.GetNonNullPointer());
-      hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw, is_cross));
+      hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw, is_cross,
+                                              &stream_buf));
       if(hit_stream.get() == 0) {
           NCBI_THROW(CSplignAppException,
                      eNoHits,
@@ -721,6 +723,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/08/08 17:43:15  kapustin
+ * Bug fix: keep external stream buf as long as the stream
+ *
  * Revision 1.44  2005/08/02 15:57:13  kapustin
  * Adjust max genomic extent
  *

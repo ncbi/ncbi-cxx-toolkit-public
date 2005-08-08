@@ -57,7 +57,8 @@ protected:
                           size_t range_left, size_t range_right);
     bool      x_GetNextPair(istream* ifs, vector<CHit>* hits);
     istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw,
-                                     bool cross_species_mode) const;
+                                     bool cross_species_mode,
+                                     string* strbuf) const;
 
     // status log
     ofstream m_logstream;
@@ -88,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/08 17:43:15  kapustin
+ * Bug fix: keep external stream buf as long as the stream
+ *
  * Revision 1.11  2005/04/28 19:17:13  kapustin
  * Add cross-species mode flag
  *
