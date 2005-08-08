@@ -264,7 +264,7 @@ on SetProjectData()
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "gbseq", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "xformat", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"} & CompressLibs
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "gbseq", "submit", "entrezgene", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "xformat", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"} & CompressLibs
 		
 		-- datatool
 		set myName to "datatool"
@@ -289,7 +289,7 @@ on SetProjectData()
 	AddProject(datatoolData)
 	
 	---------- GENOME WORK BENCH ----------
-	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"w_workspace", "w_controls"}, {"gui_core"})
+	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"w_workspace"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
@@ -306,13 +306,17 @@ on SetProjectData()
 	if pBuildDemos then
 		---- DEMO ---
 		
+		AddAppProjectList("demo_color_calc", {"fltk", "cmdline"}, "gui:widgets:fl:demo", {"demo_color_calc.cpp", "demo_color_calc_ui.cpp"}, {"gui_utils", "w_fltk", "fltk", "xncbi", "tables"}, {})
+		
+		AddAppProjectList("demo_controls", {"fltk", "images", "cmdline"}, "gui:widgets:controls:demo", {"scroll_test.cpp", "map_control_test.cpp", "table_test.cpp", "demo_controls.cpp"}, {"w_workspace", "w_controls", "w_fltk", "gui_utils", "ximage", "xconnect", "xregexp", "xutil", "xncbi", "fltk"} & CompressLibs, {})
+		
 		AddAppProject("test_scoremat", {"cmdline", "C++"}, "util:tables:test", {"tables", "xncbi"}, {})
 		
 		AddAppProjectList("glsysinfo", {"fltk", "images", "cmdline"}, "gui:widgets:fl:demo", {"system_test.cpp"}, {"w_fltk", "gui_opengl", "gui_print", "gui_utils", "gui_math", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
 		
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
-		AddAppProjectList("demo_multialign", {"fltk", "libdl", "images"}, "gui:widgets:aln_multiple:demo", {"multi_demo.cpp", "multi_demo_ui.cpp"}, {"w_aln_multi", "w_aln_data", "w_gl", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "biotree", "ximage", "xformat", "gbseq", "xalnmgr", "tables", "xobjutils"} & objMgrLibs, {})
+		AddAppProjectList("demo_multialign", {"fltk", "libdl", "images"}, "gui:widgets:aln_multiple:demo", {"multi_demo.cpp", "multi_demo_ui.cpp"}, {"w_aln_multi", "w_aln_data", "w_gl", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "biotree", "ximage", "xformat", "gbseq", "xalnmgr", "tables", "xobjutils", "seqalign_ext"} & objMgrLibs, {})
 		
 		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
@@ -322,7 +326,7 @@ on SetProjectData()
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
-		AddAppProjectList("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
+		AddAppProjectList("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage", "xalnmgr", "tables"} & objMgrLibs, {})
 		
 		AddAppProjectList("demo_timer", {"fltk", "images"}, "gui:widgets:fl:demo", {"timer_demo.cpp", "timer_demo_ui.cpp"}, {"gui_opengl", "gui_print", "w_fltk", "fltk", "gui_utils", "ximage", "xconnect", "xutil", "xncbi"} & CompressLibs, {})
 		
@@ -681,11 +685,11 @@ on SetupTarget(proj, targetIndex)
 			my AppendAccessPath(gFLTKRootFolder, false, false)
 		end if
 		if projFeatures contains "bdblib" then
-			my AppendAccessPath(gDistribRoot & "include:", false, true)
+			my AppendAccessPath(gIncludeDir, false, true)
 			my AppendAccessPath(gBdbRootFolder, true, true)
 		end if
 		if projFeatures contains "bdb" then
-			my PushAccessPath(gDistribRoot & "include:", false, false)
+			my PushAccessPath(gIncludeDir, false, false)
 		end if
 		
 		-- Are we assuming a .c or a .cpp extension?
@@ -729,7 +733,9 @@ on SetupTarget(proj, targetIndex)
 		end tell
 	end repeat
 	
-	my AppendAccessPath(gDistribRoot & "include:", true, false)
+	if projFeatures does not contain "fltklib" then
+		my PushAccessPath(gIncludeDir, true, false)
+	end if
 	my AppendAccessPath(gRsrcsDir, false, true)
 	my AppendAccessPath(gLibsDir, false, true)
 	
@@ -762,7 +768,11 @@ on SetupTarget(proj, targetIndex)
 		
 		if projFeatures contains "images" then
 			my PushAccessPath(pImageLibsFolder & "lib", false, false)
+			my AppendAccessPath("usr:lib:gcc:darwin:3.3:", false, true)
+			copy "/usr/lib/gcc/darwin/3.3/libgcc.a" to end of filesToAdd
 			copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+			copy "/usr/lib/libstdc++.6.dylib" to end of filesToAdd
+			copy "/usr/lib/libSystemStubs.a" to end of filesToAdd
 			copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
 			copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
 			copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
@@ -1165,6 +1175,9 @@ end BuildProject
 on GetStationeryName(proj)
 	set stationeryDir to gProjectsDir & pStationeryName & ":"
 	set stationeryName to pStationeryName & pProjectFileExt
+	try
+		tell application "Finder" to delete folder stationeryDir
+	end try
 	
 	CreateFolder(stationeryDir)
 	tell application "Finder"

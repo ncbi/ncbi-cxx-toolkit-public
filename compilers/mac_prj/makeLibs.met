@@ -413,6 +413,7 @@ on SetProjectData()
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 		
 		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
+		AddSimpleProject("xalgodustmask", {}, "algo:dustmask")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
 		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
@@ -434,6 +435,7 @@ on SetProjectData()
 	if pCreateGuiLibs then
 		-- GuiProject's automatically have 'fltk' feature.
 		
+		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
@@ -447,7 +449,7 @@ on SetProjectData()
 		AddGuiProject("gui_dlg_seq_goto", {}, "dialogs:seq_goto")
 		
 		AddProject(ProjectData("gui_dlg_seq_feat_edit", {"fltk"}, Â
-			{GuiFileDataList("dialogs:edit:feature", {"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"})}))
+			{GuiFileDataList("dialogs:edit:feature", {"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp"})}))
 		AddGuiProject("gui_opengl", {}, "opengl")
 		AddGuiProject("gui_graph", {}, "graph")
 		AddGuiProject("gui_print", {}, "print")
@@ -474,7 +476,6 @@ on SetProjectData()
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
 		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
-		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
 		
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		AddGuiProject("w_controls", {}, "widgets:controls")
@@ -500,7 +501,7 @@ on SetProjectData()
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit"}
-		set SomeObjects to {"biblio", "general", "medline", "pub", "gbseq", "entrez2", "entrez2cli"}
+		set SomeObjects to {"biblio", "general", "medline", "pub", "pubmed", "gbseq", "entrez2", "entrez2cli", "entrezgene", "entrezgene"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
 		set ObjTools to {"xncbi", "xconnect", "xthrserv", "xconnserv", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables", "xformat"}
@@ -513,10 +514,10 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
-		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
+		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "xalgodustmask"}, {}))
 		
 		-- PLUGINS --
 		
@@ -543,7 +544,7 @@ on SetProjectData()
 		
 		-- Document plugins
 		--  
-		AddPlugin("gui_doc_table", {"sqlitelib"}, "plugins:doc:table", Â
+		AddPlugin("gui_doc_table", {}, "plugins:doc:table", Â
 			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
 		
 		-- View plugins
@@ -982,11 +983,11 @@ on SetupTarget(proj, targetIndex)
 			my AppendAccessPath(gFLTKRootFolder, false, false)
 		end if
 		if projFeatures contains "bdblib" then
-			my AppendAccessPath(gDistribRoot & "include:", false, true)
+			my AppendAccessPath(gIncludeDir, false, true)
 			my AppendAccessPath(gBdbRootFolder, true, true)
 		end if
 		if projFeatures contains "bdb" then
-			my PushAccessPath(gDistribRoot & "include:", false, false)
+			my PushAccessPath(gIncludeDir, false, false)
 		end if
 		if projFeatures contains "sqlitelib" then
 			my AppendAccessPath(gSqliteRootFolder & "lib:", false, false)
@@ -1043,7 +1044,7 @@ on SetupTarget(proj, targetIndex)
 	end repeat
 	
 	if projFeatures does not contain "fltklib" then
-		my AppendAccessPath(gDistribRoot & "include:", true, false)
+		my PushAccessPath(gIncludeDir, true, false)
 	end if
 	
 	tell application "CodeWarrior IDE"
@@ -1082,7 +1083,11 @@ on SetupTarget(proj, targetIndex)
 		if projFeatures contains "images" then
 			if projFeatures contains "DLL" or projFeatures contains "plugin" then
 				my PushAccessPath(pImageLibsFolder & "lib", false, false)
+				my AppendAccessPath("usr:lib:gcc:darwin:3.3:", false, true)
+				copy "/usr/lib/gcc/darwin/3.3/libgcc.a" to end of filesToAdd
 				copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+				copy "/usr/lib/libstdc++.6.dylib" to end of filesToAdd
+				copy "/usr/lib/libSystemStubs.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
@@ -1103,7 +1108,10 @@ on SetupTarget(proj, targetIndex)
 	if projFeatures contains "sqlitelib" and Â
 		projFeatures contains "DLL" or projFeatures contains "plugin" then
 		set filesToAdd to {}
-		copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+		my AppendAccessPath("usr:lib:gcc:darwin:3.3:", false, true)
+		copy "/usr/lib/gcc/darwin/3.3/libgcc.a" to end of filesToAdd
+		copy "/usr/lib/libgcc_s.1.dylib" to end of filesToAdd
+		copy "/usr/lib/libSystemStubs.a" to end of filesToAdd
 		copy gSqliteRootFolder & "lib:libsqlite.a" to end of filesToAdd
 		-- display dialog filesToAdd
 		tell application "CodeWarrior IDE"
@@ -1330,14 +1338,20 @@ on CreateProject(proj)
 			end repeat
 		else if pUpdateExistingProjects then
 			-- project already exists. Make sure it has all right files.
-			open (projPathname)
-			set openedProject to true
-			if the name of window 1 is "Project Messages" then
-				close first window -- "close window 1" becomes "Close Window 1" (different event)
-			end if
-			repeat with i from 1 to (count targets of project document 1)
-				my UpdateTarget(proj, i)
-			end repeat
+			
+			-- "w_phylo_tree" has a file name that is too long for out update mechanism. 
+			-- So just skip it.It is pretty stable. Shouldn't be any new source files.
+			if proj's name is not "w_phylo_tree" then
+				
+				open (projPathname)
+				set openedProject to true
+				if the name of window 1 is "Project Messages" then
+					close first window -- "close window 1" becomes "Close Window 1" (different event)
+				end if
+				repeat with i from 1 to (count targets of project document 1)
+					my UpdateTarget(proj, i)
+				end repeat
+			end if -- "skip w_phylo_tree"
 		end if
 		if openedProject then
 			set openedProject to false
@@ -1499,6 +1513,9 @@ on GetStationeryName(proj)
 		set stationeryDir to gProjectsDir & pStationeryName & ":"
 		set stationeryName to pStationeryName & pProjectFileExt
 	end if
+	try
+		tell application "Finder" to delete folder stationeryDir
+	end try
 	
 	CreateFolder(stationeryDir)
 	tell application "Finder"
