@@ -1,7 +1,7 @@
 # $Id$
 
 APP = test_pin
-SRC = test_pin
+SRC = test_pin stress
 LIB = seqdb xobjutil blastdb $(OBJMGR_LIBS)
 
 CPPFLAGS      = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)

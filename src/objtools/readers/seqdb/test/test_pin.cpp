@@ -41,6 +41,7 @@
 #include <serial/objostr.hpp>
 #include <iostream>
 #include <string>
+#include <list>
 #include <sstream>
 #include <algorithm>
 #include <corelib/ncbimtx.hpp>
@@ -60,6 +61,8 @@
 volatile int gnum = 0;
 
 USING_NCBI_SCOPE;
+
+void stress_test_seqdb(const list<string> & args);
 
 static void
 s_TokenizeKeepDelims(const string   & input,
@@ -329,11 +332,14 @@ int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
     
+    list<string> orig_args;
     list<string> args;
     
     while(argc > 1) {
         args.push_front(string(argv[--argc]));
     }
+    
+    orig_args = args;
     
     bool  use_mm        = true;
     bool  deletions     = true;
@@ -360,6 +366,11 @@ int test1(int argc, char ** argv)
         
         string s = args.front();
         args.pop_front();
+        
+        if (s == "-stress") {
+            stress_test_seqdb(orig_args);
+            return 0;
+        }
         
         if (s == "-mutexes") {
             /*Uint4 z = 0;*/
