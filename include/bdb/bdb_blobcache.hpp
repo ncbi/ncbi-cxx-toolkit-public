@@ -118,7 +118,7 @@ struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
 
     unsigned  blobs_stored_total;       ///< Total number of blobs
     unsigned  blobs_overflow_total;     ///< number of overflow blobs
-    unsigned  blobs_updated_total;      ///< How many were updated
+    unsigned  blobs_updates_total;      ///< How many updates registered
     unsigned  blobs_never_read_total;   ///< BLOBs never read before
     unsigned  blobs_read_total;         ///< Number of reads
     unsigned  blobs_expl_deleted_total; ///< BLOBs explicitly removed
@@ -127,6 +127,13 @@ struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
 
     unsigned  blobs_db;                 ///< Current database number of records
     double    blobs_size_db;            ///< Current size of all BLOBs
+
+    unsigned  err_protocol;             ///< Protocol errors
+    unsigned  err_communication;        ///< Communication error
+    unsigned  err_internal;             ///< Internal errors of all sorts
+    unsigned  err_no_blob;              ///< BLOB not found errors    
+    unsigned  err_blob_get;             ///< retrive errors
+    unsigned  err_blob_put;             ///< store errors
 
     TBlobSizeHistogram  blob_size_hist; ///< Blob size historgam
 
@@ -142,12 +149,27 @@ public:
     void AddExplDelete() { ++blobs_expl_deleted_total; }
     void AddNeverRead() { ++blobs_never_read_total; }
 
+    /// Put/Get errors
+    enum EErrGetPut {
+        eErr_Unknown,   ///< no info on operation 
+        eErr_Put,       ///< Put error
+        eErr_Get,       ///< Get error
+    };
+
+    void AddInternalError(EErrGetPut operation);
+    void AddProtocolError(EErrGetPut operation);
+    void AddNoBlobError(EErrGetPut operation);
+    void AddCommError(EErrGetPut operation);
+
+
     static
     void AddToHistogram(TBlobSizeHistogram* hist, unsigned size);
 
 private:
     void InitHistorgam(TBlobSizeHistogram* hist);
+    void x_AddErrGetPut(EErrGetPut operation);
 };
+
 
 
 /// BDB cache implementation.
@@ -157,6 +179,10 @@ private:
 ///
 class NCBI_BDB_CACHE_EXPORT CBDB_Cache : public ICache
 {
+public:
+    /// Statistics of cache access by client
+    typedef map<string, SBDB_CacheStatistics> TOwnerStatistics;
+
 public:
     CBDB_Cache();
     virtual ~CBDB_Cache();
@@ -319,6 +345,9 @@ public:
     /// Get max limit for read update
     unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
 
+    /// Turn ON/OFF statistics by BLOB owners
+    void SetOwnerStat(bool on_off);
+
     /// Get cache operations statistics
     const SBDB_CacheStatistics& GetStatistics() const
     {
@@ -329,6 +358,34 @@ public:
     /// Thread safe (syncronized) operation
     void GetStatistics(SBDB_CacheStatistics* cache_stat) const;
 
+
+    /// Lock cache access
+    void Lock();
+
+    /// Unlock cache access
+    void Unlock();
+
+    /// Return TRUE if owner statistics is collected
+    /// (Non-syncronized)
+    bool IsOwnerStatistics() const;
+
+    /// Get owner statistics
+    const TOwnerStatistics& GetOwnerStatistics() const;
+
+
+    // Error logging functions
+
+    void RegisterInternalError(SBDB_CacheStatistics::EErrGetPut operation, 
+                               const string&                    owner);
+
+    void RegisterProtocolError(SBDB_CacheStatistics::EErrGetPut operation, 
+                               const string&                    owner);
+
+    void RegisterNoBlobError(SBDB_CacheStatistics::EErrGetPut operation, 
+                             const string&                    owner);
+
+    void RegisterCommError(SBDB_CacheStatistics::EErrGetPut operation, 
+                           const string&                    owner);
 
 
     // ICache interface
@@ -413,14 +470,9 @@ public:
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     /// prerequisite: attributes record fetched to memory
-    bool x_CheckTimestampExpired(const string&  key,
-                                 int            version,
-                                 const string&  subkey);
+    bool x_CheckTimestampExpired();
 
-    bool x_CheckTimestampExpired(const string&  key,
-                                 int            version,
-                                 const string&  subkey,
-                                 time_t         curr);
+    bool x_CheckTimestampExpired(time_t         curr);
 
 
     /// access type for "UpdateAccessTime" methods
@@ -483,6 +535,14 @@ private:
                                     int            version,
                                     const string&  subkey,
                                     size_t&        file_length);
+
+    /// update BLOB owners' statistics on BLOB delete
+    void x_UpdateOwnerStatOnDelete(bool expl_delete);
+
+    /// Determines BLOB size (requires fetched attribute record)
+    size_t x_GetBlobSize(const char* key,
+                         int         version,
+                         const char* subkey);
 
 private:
     CBDB_Cache(const CBDB_Cache&);
@@ -577,6 +637,12 @@ private:
 
     /// Stat counters
     SBDB_CacheStatistics       m_Statistics;
+    /// Statistics by BLOB owners
+    TOwnerStatistics           m_OwnerStatistics;
+    /// Flag to collect owner statistics
+    bool                       m_CollectOwnerStat;
+    /// used by x_UpdateOwnerStatOnDelete
+    string                     m_TmpOwnerName;
 };
 
 
@@ -655,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/08/08 14:49:06  kuznets
+ * Improved logging
+ *
  * Revision 1.57  2005/08/01 19:43:59  vakatov
  * NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
  *
