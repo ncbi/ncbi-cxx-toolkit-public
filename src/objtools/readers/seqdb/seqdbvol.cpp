@@ -109,11 +109,12 @@ char CSeqDBVol::x_GetSeqType() const
     return m_Idx.GetSeqType();
 }
 
-int CSeqDBVol::GetSeqLengthProt(int oid) const
+int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
+    m_Atlas.Lock(locked);
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT('p' == m_Idx.GetSeqType());
@@ -125,11 +126,12 @@ int CSeqDBVol::GetSeqLengthProt(int oid) const
 
 // Assumes locked.
 
-int CSeqDBVol::GetSeqLengthExact(int oid) const
+int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
+    m_Atlas.Lock(locked);
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(m_Idx.GetSeqType() == 'n');
@@ -149,11 +151,12 @@ int CSeqDBVol::GetSeqLengthExact(int oid) const
 }
 
 
-int CSeqDBVol::GetSeqLengthApprox(int oid) const
+int CSeqDBVol::GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
+    m_Atlas.Lock(locked);
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(m_Idx.GetSeqType() == 'n');
@@ -1439,6 +1442,8 @@ int CSeqDBVol::x_GetSequence(int              oid,
     
     int length = -1;
     
+    m_Atlas.Lock(locked);
+    
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     char seqtype = m_Idx.GetSeqType();
@@ -1607,6 +1612,8 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     TIndx hdr_start = 0;
     TIndx hdr_end   = 0;
     
+    m_Atlas.Lock(locked);
+    
     m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end);
     
     const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
@@ -1668,6 +1675,8 @@ void CSeqDBVol::x_GetAmbChar(int oid,
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
+    
+    m_Atlas.Lock(locked);
     
     bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
     
@@ -1935,6 +1944,8 @@ void CSeqDBVol::UnLease()
 
 int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
+    CSeqDBLockHold locked(m_Atlas);
+    
     // This method compensates for representation in two ways.
     //
     // 1. For protein, we subtract the oid to compensate for
@@ -1962,7 +1973,7 @@ int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
         // Input range is from 0 .. total_length
         // Require range from  0 .. byte_length
         
-        Uint8 end_of_bytes = x_GetSeqResidueOffset(vol_cnt);
+        Uint8 end_of_bytes = x_GetSeqResidueOffset(vol_cnt, locked);
         
         double dresidue = (double(residue) * end_of_bytes) / vol_len;
         
@@ -1988,7 +1999,7 @@ int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
     int oid_mid = (oid_beg + oid_end)/2;
     
     while(oid_beg < oid_end) {
-        Uint8 offset = x_GetSeqResidueOffset(oid_mid);
+        Uint8 offset = x_GetSeqResidueOffset(oid_mid, locked);
         
         if ('p' == m_Idx.GetSeqType()) {
             offset -= oid_mid;
@@ -2006,8 +2017,10 @@ int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
     return oid_mid;
 }
 
-Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid) const
+Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const
 {
+    m_Atlas.Lock(locked);
+    
     TIndx start_offset = 0;
     m_Idx.GetSeqStart(oid, start_offset);
     return start_offset;

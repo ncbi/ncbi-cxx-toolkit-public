@@ -94,8 +94,8 @@ void * CStressTestThread::Main(void)
             
         case 1:
             // GetBioseq()
-            //keep_i = keep_i ? (keep_i-1) : 9;
-            //keepers[keep_i] = m_Db->GetBioseq(rand() % m_OidRange);
+            keep_i = keep_i ? (keep_i-1) : 9;
+            keepers[keep_i] = m_Db->GetBioseq(rand() % m_OidRange);
             break;
             
         case 2:
@@ -119,11 +119,11 @@ void * CStressTestThread::Main(void)
                 
                 if (m_Db->OidToGi(oid1, gi)) {
                     string ident = string("gi|") + NStr::IntToString(gi);
-                    
+                   
                     CSeq_id seqid(ident);
-                    
+                   
                     int oid2(-1);
-                    
+                   
                     if (m_Db->SeqidToOid(seqid, oid2)) {
                         if (oid1 != oid2) {
                             cout << "Error: oid #" << oid1 << ", gi " << gi

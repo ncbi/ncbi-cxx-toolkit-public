@@ -278,15 +278,13 @@ int CSeqDBImpl::GetSeqLength(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
-    m_Atlas.Lock(locked);
-    
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthProt(vol_oid);
+            return vol->GetSeqLengthProt(vol_oid, locked);
         }
     } else {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthExact(vol_oid);
+            return vol->GetSeqLengthExact(vol_oid, locked);
         }
     }
     
@@ -301,15 +299,13 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
     
-    m_Atlas.Lock(locked);
-    
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthProt(vol_oid);
+            return vol->GetSeqLengthProt(vol_oid, locked);
         }
     } else {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthApprox(vol_oid);
+            return vol->GetSeqLengthApprox(vol_oid, locked);
         }
     }
     
@@ -915,9 +911,9 @@ void CSeqDBImpl::x_ScanTotals()
         _ASSERT(volp);
         
         if ('p' == m_SeqType) {
-            base_count += volp->GetSeqLengthProt(vol_oid);
+            base_count += volp->GetSeqLengthProt(vol_oid, locked);
         } else {
-            base_count += volp->GetSeqLengthApprox(vol_oid);
+            base_count += volp->GetSeqLengthApprox(vol_oid, locked);
         }
     }
     

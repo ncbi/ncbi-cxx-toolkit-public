@@ -97,9 +97,11 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence
+    /// @param locked
+    ///     The lock holder object for this thread
     /// @return
     ///   The length in bases of the sequence
-    int GetSeqLengthProt(int oid) const;
+    int GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const;
     
     /// Approximate sequence length for nucleotide databases
     /// 
@@ -112,9 +114,11 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence
+    /// @param locked
+    ///     The lock holder object for this thread
     /// @return
     ///   The approximate length in bases of the sequence
-    int GetSeqLengthApprox(int oid) const;
+    int GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const;
     
     /// Exact sequence length for nucleotide databases
     /// 
@@ -125,9 +129,11 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence
+    /// @param locked
+    ///     The lock holder object for this thread
     /// @return
     ///   The length in bases of the sequence
-    int GetSeqLengthExact(int oid) const;
+    int GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const;
     
     /// Get sequence header information
     /// 
@@ -806,9 +812,11 @@ private:
     ///
     /// @param oid
     ///     The sequence of which to get the starting offset
+    /// @param locked
+    ///     The lock holder object for this thread
     /// @return
     ///     The offset in the volume of that sequence in bytes
-    Uint8 x_GetSeqResidueOffset(int oid) const;
+    Uint8 x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const;
     
     /// The memory management layer
     CSeqDBAtlas & m_Atlas;
