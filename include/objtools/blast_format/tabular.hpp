@@ -60,23 +60,51 @@ public:
         eGi          ///< Show only gi
     };
 
+    /// What delimiter to use between fields in each row of the tabular output.
+    enum EFieldDelimiter {
+        eTab = 0, ///< Tab
+        eSpace,   ///< Space
+        eComma    ///< Comma
+    };
+
     /// Constructor
-    CBlastTabularInfo(CNcbiOstream& ostr, const string& format=NcbiEmptyString);
+    /// @param ostr Stream to write output to [in]
+    /// @param format Output format - what fields to include in the output [in]
+    /// @param delim Delimiter to use between tabular fields [in]
+    CBlastTabularInfo(CNcbiOstream& ostr, const string& format=NcbiEmptyString,
+                      EFieldDelimiter delim=eTab);
     /// Destructor
     ~CBlastTabularInfo();
     /// Set query id from a CSeq_id
+    /// @param id List of Seq-ids to use [in]
     void SetQueryId(list<CRef<CSeq_id> >& id);
     /// Set query id from a Bioseq handle
+    /// @param bh Bioseq handle to get Seq-ids from
     void SetQueryId(const CBioseq_Handle& bh);
     /// Set subject id from a CSeq_id
+    /// @param id List of Seq-ids to use [in]
     void SetSubjectId(list<CRef<CSeq_id> >& id);
     /// Set subject id from a Bioseq handle
+    /// @param bh Bioseq handle to get Seq-ids from
     void SetSubjectId(const CBioseq_Handle& bh);
     /// Set the HSP scores
+    /// @param score Raw score [in]
+    /// @param bit_score Bit score [in]
+    /// @param evalue Expect value [in]
     void SetScores(int score, double bit_score, double evalue);
-    /// Set the HSP endpoints
+    /// Set the HSP endpoints. Note that if alignment is on opposite strands,
+    /// the subject offsets must be reversed.
+    /// @param q_start Starting offset in query [in]
+    /// @param q_end Ending offset in query [in]
+    /// @param s_start Starting offset in subject [in]
+    /// @param s_end Ending offset in subject [in]
     void SetEndpoints(int q_start, int q_end, int s_start, int s_end);
     /// Set various counts/lengths
+    /// @param num_ident Number of identities [in]
+    /// @param length Alignment length [in]
+    /// @param gaps Total number of gaps [in]
+    /// @param gap_opens Number of gap openings [in]
+    /// @param positives Number of positives [in]
     void SetCounts(int num_ident, int length, int gaps, int gap_opens, 
                    int positives=0);
     /// Set all member fields, given a Seq-align
@@ -91,76 +119,121 @@ public:
     /// Print one line of tabular output
     virtual void Print(void);
     /// Print the tabular output header
+    /// @param program Program name to show in the header [in]
+    /// @param bioseq Query Bioseq [in]
+    /// @param dbname Search database name [in]
+    /// @param iteration Iteration number (for PSI-BLAST) [in]
+    /// @param align_set All alignments for this query [in]
     virtual void PrintHeader(const string& program, 
                              const CBioseq& bioseq, 
                              const string& dbname, int iteration,
                              const CSeq_align_set* align_set=0); 
     /// Enumeration for all fields that are supported in the tabular output
     enum ETabularField {
-        eQuerySeqId = 0,
-        eQueryGi,
-        eQueryAccession,
-        eSubjectSeqId,
-        eSubjectAllSeqIds,
-        eSubjectGi,
-        eSubjectAllGis,
-        eSubjectAccession,
-        eSubjectAllAccessions,
-        eQueryStart,
-        eQueryEnd,
-        eSubjectStart,
-        eSubjectEnd,
-        eQuerySeq,
-        eSubjectSeq,
-        eEvalue,
-        eBitScore,
-        eScore,
-        eAlignmentLength,
-        ePercentIdentical,
-        eNumIdentical,
-        eMismatches,
-        ePositives,
-        eGapOpenings,
-        eGaps,
-        eMaxTabularField
+        eQuerySeqId = 0,       ///< Query Seq-id(s)
+        eQueryGi,              ///< Query gi
+        eQueryAccession,       ///< Query accession
+        eSubjectSeqId,         ///< Subject Seq-id(s)
+        eSubjectAllSeqIds,     ///< If multiple redundant sequences, all sets
+                               /// of subject Seq-ids, separated by ';'
+        eSubjectGi,            ///< Subject gi
+        eSubjectAllGis,        ///< All subject gis
+        eSubjectAccession,     ///< Subject accession 
+        eSubjectAllAccessions, ///< All subject accessions, separated by ';'
+        eQueryStart,           ///< Start of alignment in query
+        eQueryEnd,             ///< End of alignment in query
+        eSubjectStart,         ///< Start of alignment in subject
+        eSubjectEnd,           ///< End of alignment in subject
+        eQuerySeq,             ///< Aligned part of query sequence
+        eSubjectSeq,           ///< Aligned part of subject sequence
+        eEvalue,               ///< Expect value
+        eBitScore,             ///< Bit score
+        eScore,                ///< Raw score
+        eAlignmentLength,      ///< Alignment length
+        ePercentIdentical,     ///< Percent of identical matches
+        eNumIdentical,         ///< Number of identical matches
+        eMismatches,           ///< Number of mismatches
+        ePositives,            ///< Number of positive-scoring matches
+        eGapOpenings,          ///< Number of gap openings
+        eGaps,                 ///< Total number of gaps
+        eMaxTabularField       ///< Sentinel value
     };
 
     /// Return all field names supported in the format string.
     list<string> GetAllFieldNames(void);
 
 protected:
+    /// Add a field to the list of fields to show, if it is not yet present in
+    /// the list of fields.
+    /// @param field Which field to add? [in]
     void x_AddFieldToShow(ETabularField field);
+    /// Delete a field from the list of fields to show
+    /// @param field Which field to delete? [in]
     void x_DeleteFieldToShow(ETabularField field);
+    /// Add a default set of fields to show.
     void x_AddDefaultFieldsToShow(void);
+    /// Set fields to show, given an output format string
+    /// @param format Output format [in]
     void x_SetFieldsToShow(const string& format);
+    /// Reset values of all fields.
     void x_ResetFields(void);
-
+    /// Set the tabular fields delimiter.
+    /// @param delim Which delimiter to use
+    void x_SetFieldDelimiter(EFieldDelimiter delim);
+    /// Print the names of all supported fields
     void x_PrintFieldNames(void);
+    /// Print the value of a given field
+    /// @param field Which field to show? [in]
     void x_PrintField(ETabularField field);
+    /// Print query Seq-id
     void x_PrintQuerySeqId(void);
+    /// Print query gi
     void x_PrintQueryGi(void);
+    /// Print query accession
     void x_PrintQueryAccession(void);
+    /// Print subject Seq-id
     void x_PrintSubjectSeqId(void);
+    /// Print all Seq-ids associated with this subject, separated by ';'
     void x_PrintSubjectAllSeqIds(void);
+    /// Print subject gi
     void x_PrintSubjectGi(void);
+    /// Print all gis associated with this subject, separated by ';'
     void x_PrintSubjectAllGis(void);
+    /// Print subject accessions
     void x_PrintSubjectAccession(void);
+    /// Print all accessions associated with this subject, separated by ';'
     void x_PrintSubjectAllAccessions(void);
+    /// Print aligned part of query sequence
     void x_PrintQuerySeq(void);
+    /// Print aligned part of subject sequence
     void x_PrintSubjectSeq(void);
+    /// Print query start
     void x_PrintQueryStart(void);
+    /// Print query end
     void x_PrintQueryEnd(void);
+    /// Print subject start
     void x_PrintSubjectStart(void);
+    /// Print subject end
     void x_PrintSubjectEnd(void);
+    /// Print e-value
     void x_PrintEvalue(void);
+    /// Print bit score
     void x_PrintBitScore(void);
+    /// Print raw score
     void x_PrintScore(void);
+    /// Print alignment length
     void x_PrintAlignmentLength(void);
+    /// Print percent of identical matches
     void x_PrintPercentIdentical(void);
+    /// Print number of identical matches
     void x_PrintNumIdentical(void);
+    /// Print number of mismatches
     void x_PrintMismatches(void);
+    /// Print number of positive matches
     void x_PrintNumPositives(void);
+    /// Print number of gap openings
     void x_PrintGapOpenings(void);
+    /// Print total number of gaps
     void x_PrintGaps(void);
 
 private:
@@ -183,15 +256,12 @@ private:
     int m_SubjectEnd;        ///< Ending offset in subject 
     string m_QuerySeq;       ///< Aligned part of the query sequence
     string m_SubjectSeq;     ///< Aligned part of the subject sequence
-
-    map<string, ETabularField> m_FieldMap;
+    /// Map of field enum values to field names.
+    map<string, ETabularField> m_FieldMap; 
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
+    char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
 };
 
-/// Set the HSP scores
-/// @param score Raw score [in]
-/// @param bit_score Bit score [in]
-/// @param evalue E-value [in]
 inline void 
 CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
 {
@@ -200,12 +270,6 @@ CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
                                      m_BitScore);
 }
 
-/// Set HSP endpoints. Note that if alignment is on opposite strands, the 
-/// subject offsets must be reversed.
-/// @param q_start Query starting offset [in]
-/// @param q_end Query ending offset [in]
-/// @param s_start Subject starting offset [in]
-/// @param s_end Subject ending offset [in]
 inline void 
 CBlastTabularInfo::SetEndpoints(int q_start, int q_end, int s_start, int s_end)
 {
@@ -215,12 +279,6 @@ CBlastTabularInfo::SetEndpoints(int q_start, int q_end, int s_start, int s_end)
     m_SubjectEnd = s_end;    
 }
 
-/// Set various counts/lengths
-/// @param num_ident Number of identities [in]
-/// @param length Alignment length [in]
-/// @param gaps Total number of gaps [in]
-/// @param gap_opens Number of gap openings [in]
-/// @param positives Number of positive scoring residue matches [in]
 inline void 
 CBlastTabularInfo::SetCounts(int num_ident, int length, int gaps, int gap_opens,
                              int positives)
@@ -238,14 +296,12 @@ CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
     m_QueryId = id;
 }
 
-/// Set subject id
 inline void 
 CBlastTabularInfo::SetSubjectId(list<CRef<CSeq_id> >& id)
 {
     m_SubjectIds.push_back(id);
 }
 
-/// Return all field names supported in the format string.
 inline list<string> 
 CBlastTabularInfo::GetAllFieldNames(void)
 {
@@ -258,7 +314,6 @@ CBlastTabularInfo::GetAllFieldNames(void)
     return field_names;
 }
 
-/// Add a field to show, if it is not yet present in the list of fields.
 inline void 
 CBlastTabularInfo::x_AddFieldToShow(ETabularField field)
 {
@@ -445,6 +500,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/08/08 18:23:45  dondosha
+* Added option to use different separators between fields; added doxygen comments
+*
 * Revision 1.6  2005/08/01 14:57:51  dondosha
 * Added API for choosing an arbitrary list of fields to show
 *
