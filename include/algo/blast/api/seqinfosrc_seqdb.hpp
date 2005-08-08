@@ -56,6 +56,11 @@ public:
     /// @param dbname Name of the BLAST database [in]
     /// @param is_protein Is this a protein or nucleotide database? [in]
     CSeqDbSeqInfoSrc(const string& dbname, bool is_protein);
+
+    /// Constructor from an already existing CSeqDB object.
+    /// @param seqdb Pointer to the CSeqDB object to use.
+    CSeqDbSeqInfoSrc(CSeqDB* seqdb);
+
     virtual ~CSeqDbSeqInfoSrc();
     /// Retrieve a sequence identifier given its ordinal number.
     list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
@@ -74,6 +79,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/08/08 16:29:16  dondosha
+ * Added constructor from a CSeqDB instance
+ *
  * Revision 1.6  2005/03/31 16:17:26  dondosha
  * Some doxygen fixes
  *

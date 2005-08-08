@@ -54,6 +54,11 @@ CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(const string& dbname, bool is_protein)
                                        : CSeqDB::eNucleotide)));
 }
 
+CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(CSeqDB* seqdb)
+{
+    m_iSeqDb.Reset(seqdb);
+}
+
 CSeqDbSeqInfoSrc::~CSeqDbSeqInfoSrc()
 {
 }
@@ -77,6 +82,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/08/08 16:29:36  dondosha
+ * Added constructor from a CSeqDB instance
+ *
  * Revision 1.3  2005/04/18 15:38:31  bealer
  * - Remove usage of deprecated SeqDB parts.
  *
