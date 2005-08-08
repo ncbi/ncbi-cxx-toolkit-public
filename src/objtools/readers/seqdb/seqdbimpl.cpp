@@ -940,6 +940,7 @@ void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
                    "Specified taxid was not found.");
     }
     
+    info.taxid           = taxid;
     info.scientific_name = tnames.GetSciName();
     info.common_name     = tnames.GetCommonName();
     info.blast_name      = tnames.GetBlastName();
