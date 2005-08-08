@@ -6411,6 +6411,9 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
+test -d "${build_root}"  ||  { { echo "$as_me:$LINENO: error: \"Couldn't create ${build_root}\"" >&5
+echo "$as_me: error: \"Couldn't create ${build_root}\"" >&2;}
+   { (exit 1); exit 1; }; }
 
 #### Try to find a version of pwd that yields /net paths.
 # Extract the first word of "amq", so it can be a program name with args.

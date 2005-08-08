@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.384 2005/07/18 17:54:44 ucko Exp $
+#  $Id: configure.ac,v 1.385 2005/08/08 13:58:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1510,6 +1510,7 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
+test -d "${build_root}"  ||  AC_MSG_ERROR(["Couldn't create ${build_root}"])
 
 #### Try to find a version of pwd that yields /net paths.
 AC_PATH_PROG(AMQ, amq, [], $PATH:/usr/sbin:/sbin)
