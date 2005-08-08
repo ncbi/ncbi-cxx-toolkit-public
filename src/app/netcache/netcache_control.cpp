@@ -160,6 +160,7 @@ int CNetCacheControl::Run(void)
 
     if (args["t"]) {  // statistics
         nc_client.PrintStat(NcbiCout);
+        return 0;
     }
 
     if (args["s"]) {  // shutdown
@@ -188,6 +189,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/08 14:55:05  kuznets
+ * Minor tweak
+ *
  * Revision 1.8  2005/08/01 16:53:45  kuznets
  * Added -t key for statistics
  *
