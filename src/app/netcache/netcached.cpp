@@ -290,6 +290,70 @@ class CNetCacheServer;
 
 static CNetCacheServer* s_netcache_server = 0;
 
+/// NC requests
+///
+/// @internal
+typedef enum {
+    eError,
+    ePut,
+    ePut2,   ///< PUT v.2 transmission protocol
+    eGet,
+    eShutdown,
+    eVersion,
+    eRemove,
+    eLogging,
+    eGetConfig,
+    eGetStat,
+} ENC_RequestType;
+
+
+/// Request context
+///
+/// @internal
+struct SNC_Request
+{
+    ENC_RequestType req_type;
+    unsigned int    timeout;
+    string          req_id;
+    string          err_msg;      
+
+    void Init() 
+    {
+        req_type = eError;
+        timeout = 0;
+        req_id.erase(); err_msg.erase();
+    }
+};
+
+
+/// Thread specific data for threaded server
+///
+/// @internal
+///
+struct SNC_ThreadData
+{
+    string      request;                        ///< request string
+    string      auth;                           ///< Authentication string
+    SNC_Request req;                            ///< parsed request
+    AutoPtr<char, ArrayDeleter<char> >  buffer; ///< operation buffer
+
+    SNC_ThreadData(unsigned int size)
+        : buffer(new char[size + 256]) 
+    {}
+};
+
+
+///@internal
+static
+void TlsCleanup(SNC_ThreadData* p_value, void* /* data */ )
+{
+    delete p_value;
+}
+
+/// @internal
+static
+CRef< CTls<SNC_ThreadData> > s_tls(new CTls<SNC_ThreadData>);
+
 
 /// Netcache threaded server
 ///
@@ -339,18 +403,6 @@ public:
     virtual void  Process(SOCK sock);
     virtual bool ShutdownRequested(void) { return m_Shutdown; }
 
-    typedef enum {
-        eError,
-        ePut,
-        ePut2,   ///< PUT v.2 transmission protocol
-        eGet,
-        eShutdown,
-        eVersion,
-        eRemove,
-        eLogging,
-        eGetConfig,
-        eGetStat,
-    } ERequestType;
         
     void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
     
@@ -373,37 +425,33 @@ protected:
     }
 
 private:
-    struct Request
-    {
-        ERequestType    req_type;
-        unsigned int    timeout;
-        string          req_id;
-        string          err_msg;      
-    };
 
     /// Process "PUT" request
     void ProcessPut(CSocket&              sock, 
-                    Request&              req,
+                    SNC_Request&          req,
+                    SNC_ThreadData&       tdata,
                     NetCache_RequestStat& stat);
 
     /// Process "PUT2" request
     void ProcessPut2(CSocket&              sock, 
-                    Request&              req,
-                    NetCache_RequestStat& stat);
+                     SNC_Request&          req,
+                     SNC_ThreadData&       tdata,
+                     NetCache_RequestStat& stat);
 
     /// Process "GET" request
     void ProcessGet(CSocket&              sock, 
-                    const Request&        req,
+                    const SNC_Request&    req,
+                    SNC_ThreadData&       tdata,
                     NetCache_RequestStat& stat);
 
     /// Process "VERSION" request
-    void ProcessVersion(CSocket& sock, const Request& req);
+    void ProcessVersion(CSocket& sock, const SNC_Request& req);
 
     /// Process "LOG" request
-    void ProcessLog(CSocket& sock, const Request& req);
+    void ProcessLog(CSocket& sock, const SNC_Request& req);
 
     /// Process "REMOVE" request
-    void ProcessRemove(CSocket& sock, const Request& req);
+    void ProcessRemove(CSocket& sock, const SNC_Request& req);
 
     /// Process "SHUTDOWN" request
     void ProcessShutdown();
@@ -412,7 +460,7 @@ private:
     void ProcessGetConfig(CSocket& sock);
 
     /// Process "GETSTAT" request
-    void ProcessGetStat(CSocket& sock, const Request& req);
+    void ProcessGetStat(CSocket& sock, const SNC_Request& req);
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -433,16 +481,16 @@ private:
                     size_t   buf_size,
                     size_t*  read_length);
 
-    void ParseRequest(const string& reqstr, Request* req);
+    void ParseRequest(const string& reqstr, SNC_Request* req);
 
     /// Reply to the client
     void WriteMsg(CSocket& sock, 
                   const string& prefix, const string& msg);
 
     /// Generate unique system-wide request id
-    void GenerateRequestId(const Request& req, 
-                           string*        id_str,
-                           unsigned int*  transaction_id);
+    void GenerateRequestId(const SNC_Request& req, 
+                           string*            id_str,
+                           unsigned int*      transaction_id);
 
 
     /// Get logger instance
@@ -460,6 +508,33 @@ private:
                     size_t   bytes);
 
     void x_CreateLog();
+
+    void x_PrintStatistics(CNcbiOstream& ios, const SBDB_CacheStatistics& cs);
+    void x_PrintStatisticsHistogram(
+                          CNcbiOstream&                                   ios, 
+                          const SBDB_CacheStatistics::TBlobSizeHistogram& hist);
+
+    /// Check if we have active thread data for this thread.
+    /// Setup thread data if we don't.
+    SNC_ThreadData* x_GetThreadData(); 
+
+    /// Register protocol error (statistics)
+    void x_RegisterProtocolErr(ENC_RequestType   req_type,
+                               const string&     auth);
+    void x_RegisterInternalErr(ENC_RequestType   req_type,
+                               const string&     auth);
+    void x_RegisterNoBlobErr(ENC_RequestType   req_type,
+                               const string&     auth);
+
+    /// Register exception error (statistics)
+    void x_RegisterException(ENC_RequestType           req_type,
+                             const string&             auth,
+                             const CNetCacheException& ex);
+
+    /// Register exception error (statistics)
+    void x_RegisterException(ENC_RequestType           req_type,
+                             const string&             auth,
+                             const CNetServiceException& ex);
 
 private:
     /// Host name where server runs
@@ -507,33 +582,15 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
     return false;
 }        
 
-/// Thread specific data for threaded server
-///
-/// @internal
-///
-struct ThreadData
-{
-    ThreadData(unsigned int size) 
-        : buffer(new char[size + 256]) {}
-    AutoPtr<char, ArrayDeleter<char> >  buffer;
-};
-
-///@internal
-static
-void TlsCleanup(ThreadData* p_value, void* /* data */ )
-{
-    delete p_value;
-}
-
-static
-CRef< CTls<ThreadData> > s_tls(new CTls<ThreadData>);
-
 
 void CNetCacheServer::Process(SOCK sock)
 {
-    string auth, request;
+    SNC_ThreadData* tdata = x_GetThreadData();
+    ENC_RequestType req_type = eError;
 
     try {
+
+        tdata->auth.erase();
         
         NetCache_RequestStat    stat;
         CStopWatch              sw(false); // OFF by default
@@ -564,39 +621,28 @@ void CNetCacheServer::Process(SOCK sock)
         STimeout to = {m_InactivityTimeout, 0};
         socket.SetTimeout(eIO_ReadWrite , &to);
 
-        // Set thread local data (buffers, etc.)
-
-        ThreadData* tdata = s_tls->GetValue();
-        if (tdata) {
-        } else {
-            tdata = new ThreadData(GetTLS_Size());
-            s_tls->SetValue(tdata, TlsCleanup);
-        }
-
-        // Process request
-        Request req;
-
+        tdata->req.Init();
         s_WaitForReadSocket(socket, m_InactivityTimeout);
 
-        if (ReadStr(socket, &auth)) {
+        if (ReadStr(socket, &(tdata->auth))) {
             
             s_WaitForReadSocket(socket, m_InactivityTimeout);
 
-            if (ReadStr(socket, &request)) {                
-                ParseRequest(request, &req);
+            if (ReadStr(socket, &(tdata->request))) {                
+                ParseRequest(tdata->request, &(tdata->req));
 
-                switch (req.req_type) {
+                switch ((req_type = tdata->req.req_type)) {
                 case ePut:
                     stat.req_code = 'P';
-                    ProcessPut(socket, req, stat);
+                    ProcessPut(socket, tdata->req, *tdata, stat);
                     break;
                 case ePut2:
                     stat.req_code = 'P';
-                    ProcessPut2(socket, req, stat);
+                    ProcessPut2(socket, tdata->req, *tdata, stat);
                     break;
                 case eGet:
                     stat.req_code = 'G';
-                    ProcessGet(socket, req, stat);
+                    ProcessGet(socket, tdata->req, *tdata, stat);
                     break;
                 case eShutdown:
                     stat.req_code = 'S';
@@ -608,22 +654,23 @@ void CNetCacheServer::Process(SOCK sock)
                     break;
                 case eGetStat:
                     stat.req_code = 'T';
-                    ProcessGetStat(socket, req);
+                    ProcessGetStat(socket, tdata->req);
                     break;
                 case eVersion:
                     stat.req_code = 'V';
-                    ProcessVersion(socket, req);
+                    ProcessVersion(socket, tdata->req);
                     break;
                 case eRemove:
                     stat.req_code = 'R';
-                    ProcessRemove(socket, req);
+                    ProcessRemove(socket, tdata->req);
                     break;
                 case eLogging:
                     stat.req_code = 'L';
-                    ProcessLog(socket, req);
+                    ProcessLog(socket, tdata->req);
                     break;
                 case eError:
-                    WriteMsg(socket, "ERR:", req.err_msg);
+                    WriteMsg(socket, "ERR:", tdata->req.err_msg);
+                    x_RegisterProtocolErr(eError, tdata->auth);
                     break;
                 default:
                     _ASSERT(0);
@@ -651,21 +698,29 @@ void CNetCacheServer::Process(SOCK sock)
             stat.elapsed = sw.Elapsed();
             CNetCache_Logger* lg = GetLogger();
             _ASSERT(lg);
-            lg->Put(auth, stat, req.req_id);
+            lg->Put(tdata->auth, stat, tdata->req.req_id);
         }
     } 
     catch (CNetCacheException &ex)
     {
-        ERR_POST("Server error: " << ex.what() << " client=" << auth);
+        ERR_POST("NC Server error: " << ex.what() 
+                 << " client="       << tdata->auth
+                 << " request='"     << tdata->request << "'");
+        x_RegisterException(req_type, tdata->auth, ex);
     }
     catch (CNetServiceException& ex)
     {
-        ERR_POST("Server error: " << ex.what() << " client=" << auth);
+        ERR_POST("Server error: " << ex.what() 
+                 << " client="    << tdata->auth
+                 << " request='"  << tdata->request << "'");
+        x_RegisterException(req_type, tdata->auth, ex);
     }
     catch (exception& ex)
     {
-        ERR_POST("Execution error in command " << request << " " 
-                 << ex.what() << " client=" << auth);
+        ERR_POST("Execution error in command "
+                 << ex.what() << " client=" << tdata->auth
+                 << " request='" << tdata->request << "'");
+        x_RegisterInternalErr(req_type, tdata->auth);
     }
 }
 
@@ -674,7 +729,7 @@ void CNetCacheServer::ProcessShutdown()
     SetShutdownFlag();
 }
 
-void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
+void CNetCacheServer::ProcessVersion(CSocket& sock, const SNC_Request& req)
 {
     WriteMsg(sock, "OK:", NETCACHED_VERSION); 
 }
@@ -689,7 +744,7 @@ void CNetCacheServer::ProcessGetConfig(CSocket& sock)
     m_Reg.Write(ios);
 }
 
-void CNetCacheServer::ProcessGetStat(CSocket& sock, const Request& req)
+void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
 {
     SOCK sk = sock.GetSOCK();
     sock.SetOwnership(eNoOwnership);
@@ -701,17 +756,60 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const Request& req)
     if (!bdb_cache) {
         return;
     }
+    bdb_cache->Lock();
 
-    SBDB_CacheStatistics cs;
-    bdb_cache->GetStatistics(&cs);
+    try {
+    const SBDB_CacheStatistics& cs = bdb_cache->GetStatistics();
 
     // print statistics
 
     ios << "[bdb_stat]" << "\n\n";
 
+    x_PrintStatistics(ios, cs);
+
+    ios << "\n" << "[bdb_stat_hist]" << "\n\n";
+
+    x_PrintStatisticsHistogram(ios, cs.blob_size_hist);
+
+    ios << "\n\n";
+
+
+    bool owner_stat = bdb_cache->IsOwnerStatistics();
+
+    if (owner_stat) {
+        const CBDB_Cache::TOwnerStatistics& ost = 
+            bdb_cache->GetOwnerStatistics();
+
+        ITERATE(CBDB_Cache::TOwnerStatistics, it, ost) {
+            const string& oname = it->first;
+            ios << "[bdb_stat_" 
+                << (oname.empty() ? "noname" : oname) << "]" << "\n\n";
+            x_PrintStatistics(ios, it->second);
+
+            ios << "\n\n";
+
+            ios << "[bdb_stat_" 
+                << (oname.empty() ? "noname" : oname) << "_hist]" << "\n\n";
+
+            x_PrintStatisticsHistogram(ios, it->second.blob_size_hist);
+        }
+    }
+
+
+    } catch(...) {
+        bdb_cache->Unlock();
+        throw;
+    }
+    bdb_cache->Unlock();
+}
+
+
+void CNetCacheServer::x_PrintStatistics(CNcbiOstream&               ios, 
+                                        const SBDB_CacheStatistics& cs)
+{
     ios << "blobs_stored_total = "   << cs.blobs_stored_total   << "\n";
     ios << "blobs_overflow_total = " << cs.blobs_overflow_total << "\n";
-    ios << "blobs_updates_total = " << cs.blobs_updated_total << "\n";
+    ios << "blobs_updates_total = " << cs.blobs_updates_total << "\n";
     ios << "blobs_never_read_total = " << cs.blobs_never_read_total << "\n";
     ios << "blobs_read_total = " << cs.blobs_read_total << "\n";
     ios << "blobs_expl_deleted_total = " << cs.blobs_expl_deleted_total << "\n";
@@ -719,24 +817,33 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const Request& req)
     ios << "blob_size_max_total = " << cs.blob_size_max_total << "\n";
     ios << "blobs_db = " << cs.blobs_db << "\n";
     ios << "blobs_size_db = " << unsigned(cs.blobs_size_db) << "\n";
+    ios << "err_protocol = " << cs.err_protocol << "\n";
+    ios << "err_communication = " << cs.err_communication << "\n";
+    ios << "err_internal = " << cs.err_internal << "\n";
+    ios << "err_no_blob = " << cs.err_no_blob << "\n";
+    ios << "err_blob_get = " << cs.err_blob_get << "\n";
+    ios << "err_blob_put = " << cs.err_blob_put << "\n";
+}
 
-    ios << "\n" << "[bdb_stat_hist]" << "\n\n";
-
+void CNetCacheServer::x_PrintStatisticsHistogram(
+                        CNcbiOstream&                                   ios, 
+                        const SBDB_CacheStatistics::TBlobSizeHistogram& hist)
+{
     // find the histogram's end
 
     SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator hist_end = 
-        cs.blob_size_hist.end();
+        hist.end();
 
-    ITERATE(SBDB_CacheStatistics::TBlobSizeHistogram, it, cs.blob_size_hist) {
+    ITERATE(SBDB_CacheStatistics::TBlobSizeHistogram, it, hist) {
         if (it->second > 0) {
             hist_end = it;
         }
     }
 
-    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator it =
-        cs.blob_size_hist.begin();
+    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator it = 
+        hist.begin();
 
-    for (; it != cs.blob_size_hist.end(); ++it) {
+    for (; it != hist.end(); ++it) {
         ios << "size  = " << it->first  << "\n";
         ios << "count = " << it->second << "\n";
         if (it == hist_end) {
@@ -746,7 +853,8 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const Request& req)
 }
 
 
-void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
+
+void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
 {
     const string& req_id = req.req_id;
 
@@ -791,22 +899,21 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
 
 
 void CNetCacheServer::ProcessGet(CSocket&               sock, 
-                                 const Request&         req,
+                                 const SNC_Request&     req,
+                                 SNC_ThreadData&        tdata,
                                  NetCache_RequestStat&  stat)
 {
     const string& req_id = req.req_id;
 
     if (req_id.empty()) {
         WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        x_RegisterProtocolErr(req.req_type, tdata.auth);
         return;
     }
 
     CIdBusyGuard guard(&m_UsedIds);
     guard.Lock(req_id, m_InactivityTimeout);
-
-    ThreadData* tdata = s_tls->GetValue();
-    _ASSERT(tdata);
-    char* buf = tdata->buffer.get();
+    char* buf = tdata.buffer.get();
 
     ICache::BlobAccessDescr ba_descr;
     buf += 100;
@@ -818,11 +925,11 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
         if (ba_descr.reader == 0) {
 blob_not_found:
             WriteMsg(sock, "ERR:", "BLOB not found.");
-            return;
         } else {
             WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
-            return;
         }
+        x_RegisterNoBlobErr(req.req_type, tdata.auth);
+        return;
     }
 
     stat.blob_size = ba_descr.blob_size;
@@ -864,7 +971,7 @@ blob_not_found:
 
     bool read_flag = false;
     
-    buf = tdata->buffer.get();
+    buf = tdata.buffer.get();
 
     size_t bytes_read;
     do {
@@ -897,7 +1004,8 @@ blob_not_found:
 }
 
 void CNetCacheServer::ProcessPut(CSocket&              sock, 
-                                 Request&              req,
+                                 SNC_Request&          req,
+                                 SNC_ThreadData&       tdata,
                                  NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
@@ -924,10 +1032,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     STimeout to;
     to.sec = to.usec = 0;
     sock.SetTimeout(eIO_Read, &to);
-
-    ThreadData* tdata = s_tls->GetValue();
-    _ASSERT(tdata);
-    char* buf = tdata->buffer.get();
+    char* buf = tdata.buffer.get();
     size_t buf_size = GetTLS_Size();
 
     bool not_eof;
@@ -941,7 +1046,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
         if (nn_read == 0 && !not_eof) {
             m_Cache->Store(rid, 0, kEmptyStr, 
-                            buf, nn_read, req.timeout);
+                           buf, nn_read, req.timeout, tdata.auth);
             break;
         }
 
@@ -953,18 +1058,20 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
                 if (not_eof == false) { // complete read
                     m_Cache->Store(rid, 0, kEmptyStr, 
-                                   buf, nn_read, req.timeout);
+                                   buf, nn_read, req.timeout, tdata.auth);
                     return;
                 }
 
                 iwrt.reset(
-                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
+                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, 
+                                            req.timeout, tdata.auth));
             }
             size_t bytes_written;
             ERW_Result res = 
                 iwrt->Write(buf, nn_read, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "ERR:", "Server I/O error");
+                x_RegisterInternalErr(req.req_type, tdata.auth);
                 return;
             }
         } // if (nn_read)
@@ -979,7 +1086,8 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
 
 void CNetCacheServer::ProcessPut2(CSocket&              sock, 
-                                  Request&              req,
+                                  SNC_Request&          req,
+                                  SNC_ThreadData&       tdata,
                                   NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
@@ -999,10 +1107,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
 
     auto_ptr<IWriter> iwrt;
-
-    ThreadData* tdata = s_tls->GetValue();
-    _ASSERT(tdata);
-    char* buf = tdata->buffer.get();
+    char* buf = tdata.buffer.get();
     size_t buf_size = GetTLS_Size();
 
     bool not_eof;
@@ -1023,7 +1128,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
         if (nn_read == 0 && !not_eof) {
             m_Cache->Store(rid, 0, kEmptyStr, 
-                            buf, nn_read, req.timeout);
+                            buf, nn_read, req.timeout, tdata.auth);
             break;
         }
 
@@ -1032,18 +1137,20 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
                 if (not_eof == false) { // complete read
                     m_Cache->Store(rid, 0, kEmptyStr, 
-                                   buf, nn_read, req.timeout);
+                                   buf, nn_read, req.timeout, tdata.auth);
                     break;
                 }
 
                 iwrt.reset(
-                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
+                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, 
+                                            req.timeout, tdata.auth));
             }
             size_t bytes_written;
             ERW_Result res = 
                 iwrt->Write(buf, nn_read, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "Err:", "Server I/O error");
+                x_RegisterInternalErr(req.req_type, tdata.auth);
                 return;
             }
         } // if (nn_read)
@@ -1070,7 +1177,7 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
         sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
 }
 
-void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
+void CNetCacheServer::ParseRequest(const string& reqstr, SNC_Request* req)
 {
     const char* s = reqstr.c_str();
 
@@ -1306,9 +1413,9 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
 }
 
 
-void CNetCacheServer::GenerateRequestId(const Request& req, 
-                                        string*        id_str,
-                                        unsigned int*  transaction_id)
+void CNetCacheServer::GenerateRequestId(const SNC_Request& req, 
+                                        string*            id_str,
+                                        unsigned int*      transaction_id)
 {
     long id;
     {{
@@ -1343,7 +1450,7 @@ bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
     return true;
 }
 
-void CNetCacheServer::ProcessLog(CSocket&  sock, const Request&  req)
+void CNetCacheServer::ProcessLog(CSocket&  sock, const SNC_Request&  req)
 {
     const char* str = req.req_id.c_str();
     if (NStr::strcasecmp(str, "ON")==0) {
@@ -1383,6 +1490,119 @@ void CNetCacheServer::x_CreateLog()
     m_Logger.reset(
         new CNetCache_Logger("netcached.log", 100 * 1024 * 1024));
 }
+
+SNC_ThreadData* CNetCacheServer::x_GetThreadData()
+{
+    SNC_ThreadData* tdata = s_tls->GetValue();
+    if (tdata) {
+    } else {
+        tdata = new SNC_ThreadData(GetTLS_Size());
+        s_tls->SetValue(tdata, TlsCleanup);
+    }
+    return tdata;
+}
+
+static
+SBDB_CacheStatistics::EErrGetPut s_GetStatType(ENC_RequestType   req_type)
+{
+    SBDB_CacheStatistics::EErrGetPut op;
+    switch (req_type) {
+    case ePut:
+    case ePut2:
+        op = SBDB_CacheStatistics::eErr_Put;
+        break;
+    case eGet:
+        op = SBDB_CacheStatistics::eErr_Get;
+        break;
+    default:
+        op = SBDB_CacheStatistics::eErr_Unknown;
+        break;
+    }
+    return op;
+}
+
+void CNetCacheServer::x_RegisterProtocolErr(
+                               ENC_RequestType   req_type,
+                               const string&     auth)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    bdb_cache->RegisterProtocolError(op, auth);
+}
+
+void CNetCacheServer::x_RegisterInternalErr(
+                               ENC_RequestType   req_type,
+                               const string&     auth)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    bdb_cache->RegisterInternalError(op, auth);
+}
+
+void CNetCacheServer::x_RegisterNoBlobErr(ENC_RequestType   req_type,
+                                          const string&     auth)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    bdb_cache->RegisterNoBlobError(op, auth);
+}
+
+void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
+                                          const string&             auth,
+                                          const CNetServiceException& ex)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    switch (ex.GetErrCode()) {
+    case CNetServiceException::eTimeout:
+    case CNetServiceException::eCommunicationError:
+        bdb_cache->RegisterCommError(op, auth);
+        break;
+    default:
+        ERR_POST("Unknown err code in CNetCacheServer::x_RegisterException");
+        bdb_cache->RegisterInternalError(op, auth);
+        break;
+    } // switch
+}
+
+
+void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
+                                          const string&             auth,
+                                          const CNetCacheException& ex)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+
+    switch (ex.GetErrCode()) {
+    case CNetCacheException::eAuthenticationError:
+    case CNetCacheException::eKeyFormatError:
+        bdb_cache->RegisterProtocolError(op, auth);
+        break;
+    case CNetCacheException::eServerError:
+        bdb_cache->RegisterInternalError(op, auth);
+        break;
+    default:
+        ERR_POST("Unknown err code in CNetCacheServer::x_RegisterException");
+        bdb_cache->RegisterInternalError(op, auth);
+        break;
+    } // switch
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1613,6 +1833,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/08/08 14:55:34  kuznets
+ * Improved statistics and logging
+ *
  * Revision 1.61  2005/08/01 16:53:10  kuznets
  * Added BDB statistics
  *
