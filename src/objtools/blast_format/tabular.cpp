@@ -119,11 +119,22 @@ void CBlastTabularInfo::x_ResetFields()
     m_SubjectSeq = NcbiEmptyString;
 }
 
-CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format)
+void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
+{
+    switch (delim) {
+    case eSpace: m_FieldDelimiter = ' '; break;
+    case eComma: m_FieldDelimiter = ','; break;
+    default: m_FieldDelimiter = '\t'; break; // eTab or unsupported value
+    }
+}
+
+CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
+                                     EFieldDelimiter delim)
     : m_Ostream(ostr) 
 {
     x_SetFieldsToShow(format);
     x_ResetFields();
+    x_SetFieldDelimiter(delim);
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()
@@ -540,6 +551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/08/08 18:23:55  dondosha
+* Added option to use different separators between fields
+*
 * Revision 1.8  2005/08/01 14:58:41  dondosha
 * Added API for choosing an arbitrary list of fields to show, and to show all redundant seqids
 *
