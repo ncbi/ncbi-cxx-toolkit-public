@@ -372,6 +372,37 @@ int test1(int argc, char ** argv)
             return 0;
         }
         
+        if (s == "-taxnames") {
+            CSeqDB db(dbname, seqtype);
+            
+            set<int>    seen_ids;
+            set<string> sci_names;
+            vector<int> taxids;
+            
+            for(int oid = 0; oid < 10000; oid++) {
+                db.GetTaxIDs(oid, taxids);
+                
+                for(size_t j = 0; j<taxids.size(); j++) {
+                    int taxid = taxids[j];
+                    
+                    if (seen_ids.find(taxid) == seen_ids.end()) {
+                        seen_ids.insert(taxid);
+                        
+                        SSeqDbTaxInfo taxinfo;
+                        db.GetTaxInfo(taxid, taxinfo);
+                        
+                        sci_names.insert(taxinfo.scientific_name);
+                    }
+                }
+            }
+            
+            ITERATE(set<string>, iter, sci_names) {
+                cout << "tax name: " << *iter << endl;
+            }
+            
+            return 0;
+        }
+        
         if (s == "-mutexes") {
             /*Uint4 z = 0;*/
             

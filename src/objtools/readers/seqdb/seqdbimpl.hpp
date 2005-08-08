@@ -517,10 +517,24 @@ public:
     ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
+    /// Verify consistency of the memory management (atlas) layer.
     void Verify()
     {
         m_Atlas.Verify(false);
     }
+    
+    /// Get taxonomy information
+    /// 
+    /// This method returns the taxonomy information for a single
+    /// given taxid.  This information does not vary with sequence
+    /// type (protein vs. nucleotide) and should be the same,
+    /// regardless of which blast database is loaded.
+    /// 
+    /// @param taxid
+    ///   An integer identifying the taxid to fetch.
+    /// @param info
+    ///   A structure containing taxonomic description strings.
+    void GetTaxInfo(int taxid, SSeqDbTaxInfo & info);
     
 private:
     CLASS_MARKER_FIELD("IMPL")

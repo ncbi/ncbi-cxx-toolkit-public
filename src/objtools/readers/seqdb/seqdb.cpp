@@ -696,5 +696,12 @@ void CSeqDB::GetAliasFileValues(TAliasFileValues & afv) const
     m_Impl->Verify();
 }
 
+void CSeqDB::GetTaxInfo(int taxid, SSeqDbTaxInfo & info) const
+{
+    m_Impl->Verify();
+    m_Impl->GetTaxInfo(taxid, info);
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

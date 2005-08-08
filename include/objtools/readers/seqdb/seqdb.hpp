@@ -718,6 +718,20 @@ public:
     ///   The alias file contents will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
+    /// Get taxonomy information
+    /// 
+    /// This method returns taxonomy information for a single taxid.
+    /// This information does not vary with sequence type (protein
+    /// vs. nucleotide) and is the same for all blast databases.  If
+    /// the taxonomy database is not available or the taxid is not
+    /// found, this method will throw an exception.
+    /// 
+    /// @param taxid
+    ///   An integer identifying the taxid to fetch.
+    /// @param info
+    ///   A structure containing taxonomic description strings.
+    void GetTaxInfo(int taxid, SSeqDbTaxInfo & info) const;
+    
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;

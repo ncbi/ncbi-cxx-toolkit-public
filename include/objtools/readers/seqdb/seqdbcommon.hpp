@@ -231,8 +231,26 @@ public:
 /// Alias file contents will be returned in this type of container.
 typedef map< string, vector< map<string, string> > > TSeqDBAliasFileValues;
 
+
+/// SSeqDbTaxInfo
+///
+/// This structure contains the taxonomy information for a single
+/// given taxid.
+
+struct SSeqDbTaxInfo {
+    SSeqDbTaxInfo()
+        : taxid(0)
+    {
+    }
+    
+    int    taxid;
+    string scientific_name;
+    string common_name;
+    string blast_name;
+    string s_kingdom;
+};
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBCOMMON_HPP
-
 

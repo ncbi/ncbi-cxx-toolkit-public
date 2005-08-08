@@ -921,5 +921,30 @@ void CSeqDBImpl::x_ScanTotals()
     m_NumSeqs = oid_count;
 }
 
+void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDbTaxInfo & info)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    
+    if (m_TaxInfo.Empty()) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Taxonomic database was not found.");
+    }
+    
+    CSeqDBTaxNames tnames;
+    
+    if (! m_TaxInfo->GetTaxNames(taxid, tnames, locked)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Specified taxid was not found.");
+    }
+    
+    info.scientific_name = tnames.GetSciName();
+    info.common_name     = tnames.GetCommonName();
+    info.blast_name      = tnames.GetBlastName();
+    info.s_kingdom       = tnames.GetSKing();
+}
+
 END_NCBI_SCOPE
 
