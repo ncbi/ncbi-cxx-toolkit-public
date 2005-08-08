@@ -179,6 +179,9 @@ Maximum size of transaction log file
 Optional
 =========================================================================
 
+owner_stat : [true] | [false]
+Statistics collection by BLOB owners. OFF by default.
+Statistics is accumulated in memory, can be a problem for some applications.
 
 
 
