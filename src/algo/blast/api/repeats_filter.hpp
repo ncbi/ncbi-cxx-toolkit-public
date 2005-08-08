@@ -38,7 +38,6 @@
 #ifndef ALGO_BLAST_API___REPEATS_FILTER_HPP 
 #define ALGO_BLAST_API___REPEATS_FILTER_HPP 
 
-#include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/blast_types.hpp>
 
 /** @addtogroup AlgoBlast
@@ -71,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/08/08 16:28:17  dondosha
+* Removed unused header
+*
 * Revision 1.7  2005/05/24 12:56:57  camacho
 * Doxygen fixes
 *
