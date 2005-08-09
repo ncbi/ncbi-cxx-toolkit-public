@@ -444,7 +444,9 @@ public:
     ///   The position to find relative to the total length
     /// @return
     ///   The OID of the sequence nearest the specified residue
-    int GetOidAtOffset(int first_seq, Uint8 residue) const;
+    int GetOidAtOffset(int              first_seq,
+                       Uint8            residue,
+                       CSeqDBLockHold & locked) const;
     
     /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
     ///

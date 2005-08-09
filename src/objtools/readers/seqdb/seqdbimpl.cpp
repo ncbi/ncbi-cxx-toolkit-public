@@ -844,7 +844,7 @@ int CSeqDBImpl::GetOidAtOffset(int first_seq, Uint8 residue) const
         // Both limits fit this volume, delegate to volume code.
         
         if ((first_seq < vol_cnt) && (residue < vol_len)) {
-            return vol_start + volp->GetOidAtOffset(first_seq, residue);
+            return vol_start + volp->GetOidAtOffset(first_seq, residue, locked);
         }
         
         // Adjust each limit.

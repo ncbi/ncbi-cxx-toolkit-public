@@ -1942,10 +1942,10 @@ void CSeqDBVol::UnLease()
     }
 }
 
-int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
+int CSeqDBVol::GetOidAtOffset(int              first_seq,
+                              Uint8            residue,
+                              CSeqDBLockHold & locked) const
 {
-    CSeqDBLockHold locked(m_Atlas);
-    
     // This method compensates for representation in two ways.
     //
     // 1. For protein, we subtract the oid to compensate for
