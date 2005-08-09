@@ -3212,6 +3212,10 @@ BLAST_KarlinStoE_simple(Int4 S,
 }
 
 /** BlastKarlinPtoE -- convert a P-value to an Expect value
+ * When using BlastKarlinPtoE in the context of a database search,
+ * the returned E-value should be multiplied by the effective
+ * length of the database and divided by the effective lnegth of
+ * the subject.
  * @param p the P-value to be converted [in]
  * @return the corresponding expect value.
 */
@@ -3911,6 +3915,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.120  2005/08/09 14:16:03  dondosha
+ * From A. Schaffer: added comments to clarify usage of BlastKarlinPtoE
+ *
  * Revision 1.119  2005/08/01 17:30:31  dondosha
  * Added functions to return Lambda, K, alpha, beta for nucleotide search, given substitution and gap scores
  *
