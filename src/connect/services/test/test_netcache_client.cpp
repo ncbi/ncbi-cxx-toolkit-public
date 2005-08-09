@@ -101,15 +101,29 @@ bool s_CheckExists(const string&  /* host */,
     }
 
     try {
+        /*
         CNetCacheClient::EReadResult rres = 
             nc_client.GetData(key, buf, buf_size);
 
         if (rres == CNetCacheClient::eNotFound)
             return false;
+        */
+        CNetCacheClient::SBlobData bdata;
+        CNetCacheClient::EReadResult rres = 
+            nc_client.GetData(key, bdata);
+        if (rres == CNetCacheClient::eNotFound)
+            return false;
+
 
         info.transaction_time = sw.Elapsed();
         if (log) {
             log->push_back(info);
+        }
+
+        if (buf_size < bdata.blob_size) {
+            ERR_POST("Blob too big");
+        } else {
+            memcpy(buf, bdata.blob.get(), bdata.blob_size);
         }
     } 
     catch (CNetCacheException& ex)
@@ -691,6 +705,15 @@ return 1;
 
     return 0;
 */
+
+    s_StressTest(host, port, 921600, 50, &log, &log_read, &rep_keys, 30);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl;
+
+
     unsigned repeats = 5000;
 
     s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
@@ -755,6 +778,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/08/09 16:01:21  kuznets
+ * Minor tweak
+ *
  * Revision 1.34  2005/04/19 14:18:19  kuznets
  * More test cases
  *
