@@ -552,14 +552,19 @@ TaxTreeIterator TaxTreeData::getParentAtRank(int row, string rankName)
 	if (leaf->rowId < 0)
 		return begin();
 	TaxTreeIterator parentNode = parent(leaf);
+	TaxTreeIterator oneBeforeParentNode = leaf;
 	while (parentNode != begin())
 	{
 		if (parentNode->rankId == rank)
 			return parentNode;
 		else
+		{
+			oneBeforeParentNode = parentNode;
 			parentNode = parent(parentNode);
+		}
 	}
-	return parentNode;
+	//can't find the specified rank, return the one node beneath the root
+	return oneBeforeParentNode;
 }
 
 END_SCOPE(cd_utils)
@@ -571,6 +576,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/08/09 20:58:22  cliu
+ * take care of no rank viruses.
+ *
  * Revision 1.3  2005/07/20 20:05:08  cliu
  * redesign SeqTreeAPI
  *
