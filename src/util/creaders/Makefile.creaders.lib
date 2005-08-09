@@ -1,4 +1,4 @@
 # $Id$
 
 LIB = creaders
-SRC = alnread alignment_file
+SRC = alnread
