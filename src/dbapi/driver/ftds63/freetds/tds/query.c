@@ -1486,6 +1486,29 @@ tds_submit_rpc(TDSSOCKET * tds, const char *rpc_name, TDSPARAMINFO * params)
 	}
 
 	/* TODO continue, support for TDS4?? */
+
+    /* Implemented by Sergey Sikorskiy */
+    if (IS_TDS42(tds) || IS_TDS46(tds)) {
+		tds->out_flag = 3;	/* RPC */
+
+		tds_put_byte(tds, rpc_name_len);
+		tds_put_n(tds, rpc_name, rpc_name_len);
+        /* Metadata */
+		tds_put_smallint(tds, 0);
+
+        /* tds_put_params may not be used here because it implements protocol v5 */
+        /* Parameter passing seems to be the same as in v7. */
+		for (i = 0; i < num_params; i++) {
+			param = params->columns[i];
+			/* TODO check error */
+			tds_put_data_info(tds, param, TDS_PUT_DATA_USE_NAME);
+			tds_put_data(tds, param, params->current_row, i);
+		}
+
+		/* send it */
+		return tds_flush_packet(tds);
+    }
+
 	return TDS_FAIL;
 }
 
