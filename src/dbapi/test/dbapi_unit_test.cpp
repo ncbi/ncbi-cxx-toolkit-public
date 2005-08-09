@@ -225,7 +225,7 @@ CDBAPIUnitTest::Test_Cursor(void)
         // variant.Append(" ", 1);
 
         for (long i = 0; i < rec_num; ++i) {
-            auto_stmt->SetParam( CVariant(i), "@id" );
+            auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
             // Execute a statement with parameters ...
             auto_stmt->ExecuteUpdate( sql );
         }
@@ -2186,6 +2186,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/08/09 16:13:18  ssikorsk
+ * Fixed GCC compilation problem
+ *
  * Revision 1.25  2005/08/09 16:09:40  ssikorsk
  * Added the 'Test_Cursor' test to the test-suite
  *
