@@ -156,6 +156,7 @@ public:
     void Test_UserErrorHandler(void);
 
     void Test_SelectStmt(void);
+    void Test_Procedure(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -165,7 +166,6 @@ public:
     // Not implemented yet ...
     void Test_Bind(void);
     void Test_Execute(void);
-    void Test_Procedure(void);
 
     void Test_Exception(void);
 
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/08/09 13:14:42  ssikorsk
+ * Added a 'Test_Procedure' test to the test-suite
+ *
  * Revision 1.16  2005/07/11 11:13:02  ssikorsk
  * Added a 'TestSelect' test to the test-suite
  *

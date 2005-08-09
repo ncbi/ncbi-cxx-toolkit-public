@@ -117,7 +117,7 @@ CDBAPIUnitTest::TestInit(void)
         m_args.GetDatabaseName() 
         );
 
-    auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
     // Create a test table ...
     string sql;
@@ -127,7 +127,7 @@ CDBAPIUnitTest::TestInit(void)
     sql += " )";
 
     // Create the table
-    stmt->ExecuteUpdate(sql);
+    auto_stmt->ExecuteUpdate(sql);
 }
 
 class CTestErrHandler : public CDB_UserHandler
@@ -145,7 +145,7 @@ public:
     // Get current global "last-resort" error handler.
     // If not set, then the default will be "CDB_UserHandler_Default".
     // This handler is guaranteed to be valid up to the program termination,
-    // and it will call the user-defined handler last set by SetDefault().
+    // and it will call the user-defined hs_Procandler last set by SetDefault().
     // NOTE:  never pass it to SetDefault, like:  "SetDefault(&GetDefault())"!
     static CDB_UserHandler& GetDefault(void);
 
@@ -472,35 +472,140 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 void
 CDBAPIUnitTest::Test_Procedure(void)
 {
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    // Test a regular IStatement with "exec"
+    // Parameters are not allowed with this construction.
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        
+        // Execute it first time ...
+        // auto_stmt->Execute( "exec sp_databases" );
+        auto_stmt->Execute( "SELECT name FROM sysobjects" );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+                
+                switch ( rs->GetResultType() ) {
+                case eDB_RowResult:
+                    while( rs->Next() ) { 
+                        // int col1 = rs->GetVariant(1).GetInt4(); 
+                    } 
+                    break;
+                case eDB_ParamResult:
+                    while( rs->Next() ) { 
+                        // int col1 = rs->GetVariant(1).GetInt4(); 
+                    } 
+                    break;
+                case eDB_StatusResult:
+                    while( rs->Next() ) { 
+                        int status = rs->GetVariant(1).GetInt4(); 
+                        status = status;
+                    } 
+                    break;
+                case eDB_ComputeResult:
+                case eDB_CursorResult:
+                    break;
+                }
+            } 
+        }
+        
+        // Execute it second time ...
+        // auto_stmt->Execute( "exec sp_databases" );
+        auto_stmt->Execute( "SELECT name FROM sysobjects" );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+                
+                switch ( rs->GetResultType() ) {
+                case eDB_RowResult:
+                    while( rs->Next() ) { 
+                        // int col1 = rs->GetVariant(1).GetInt4(); 
+                    } 
+                    break;
+                case eDB_ParamResult:
+                    while( rs->Next() ) { 
+                        // int col1 = rs->GetVariant(1).GetInt4(); 
+                    } 
+                    break;
+                case eDB_StatusResult:
+                    while( rs->Next() ) { 
+                        int status = rs->GetVariant(1).GetInt4(); 
+                        status = status;
+                    } 
+                    break;
+                case eDB_ComputeResult:
+                case eDB_CursorResult:
+                    break;
+                }
+            } 
+        }
+        
+        // Same as before but do not retrieve data ...
+        auto_stmt->Execute( "exec sp_databases" );
+        auto_stmt->Execute( "exec sp_databases" );
+    }
 
-    auto_stmt->Execute( "exec ol_ends_upd_very_slow" );
-    while( auto_stmt->HasMoreResults() ) { 
-        if( auto_stmt->HasRows() ) { 
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
-            
-            switch ( rs->GetResultType() ) {
-            case eDB_RowResult:
-                while( rs->Next() ) { 
-                    // int col1 = rs->GetVariant(1).GetInt4(); 
+    // Test ICallableStatement
+    // No parameters at this time.
+    {
+        // Execute it first time ...
+        auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_databases") );
+        auto_stmt->Execute();
+        while(auto_stmt->HasMoreResults()) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                switch( rs->GetResultType() ) { 
+                case eDB_RowResult: 
+                    while(rs->Next()) { 
+                        // retrieve row results 
+                    } 
+                    break; 
+                case eDB_ParamResult: 
+                    while(rs->Next()) { 
+                        // Retrieve parameter row 
+                    } 
+                    break; 
+                default:
+                    break;
                 } 
-                break;
-            case eDB_ParamResult:
-                while( rs->Next() ) { 
-                    // int col1 = rs->GetVariant(1).GetInt4(); 
-                } 
-                break;
-            case eDB_StatusResult:
-                while( rs->Next() ) { 
-                    int status = rs->GetVariant(1).GetInt4(); 
-                    status = status;
-                } 
-                break;
-            case eDB_ComputeResult:
-            case eDB_CursorResult:
-                break;
-            }
+            } 
         } 
+        // Get status 
+        int status = auto_stmt->GetReturnStatus();
+
+
+        // Execute it second time ...
+        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+        auto_stmt->Execute();
+        while(auto_stmt->HasMoreResults()) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                switch( rs->GetResultType() ) { 
+                case eDB_RowResult: 
+                    while(rs->Next()) { 
+                        // retrieve row results 
+                    } 
+                    break; 
+                case eDB_ParamResult: 
+                    while(rs->Next()) { 
+                        // Retrieve parameter row 
+                    } 
+                    break; 
+                default:
+                    break;
+                } 
+            } 
+        } 
+        // Get status 
+        status = auto_stmt->GetReturnStatus();
+
+
+        // Same as before but do not retrieve data ...
+        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+        auto_stmt->Execute();
+        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+        auto_stmt->Execute();
     }
 }
 
@@ -1857,7 +1962,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
     add(tc_init);
-
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -1866,7 +1970,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    boost::unit_test::test_case* except_safety_tc = 
+    boost::unit_test::test_case* except_safety_tc =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
     except_safety_tc->depends_on(tc_init);
     add(except_safety_tc);
@@ -1877,6 +1981,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 }
@@ -1995,6 +2103,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/08/09 13:14:41  ssikorsk
+ * Added a 'Test_Procedure' test to the test-suite
+ *
  * Revision 1.23  2005/07/11 11:13:02  ssikorsk
  * Added a 'TestSelect' test to the test-suite
  *
