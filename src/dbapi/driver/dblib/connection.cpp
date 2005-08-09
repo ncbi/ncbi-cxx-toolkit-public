@@ -413,7 +413,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     I_Result* res= 0;
 
     while ((x_Status & 0x1) != 0) {
-#ifndef FTDS_IN_USE
+#if !defined(FTDS_LOGIC)
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
@@ -454,7 +454,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 #endif
         switch (dbresults(pLink)) {
         case SUCCEED:
-#ifndef FTDS_IN_USE
+#if !defined(FTDS_LOGIC)
             x_Status |= 0x60;
 #endif
             if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
@@ -470,7 +470,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     }
                     continue;
                 }
-#ifdef FTDS_IN_USE
+
+#if defined(FTDS_LOGIC)
                 res = new CTDS_RowResult(pLink, &x_Status);
                 if(res) {
                     dbres= Create_Result(*res);
@@ -518,7 +519,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         break;
     }
 
-#ifdef FTDS_IN_USE
+#if defined(FTDS_LOGIC)
     // we've done with the row results at this point
     // let's look at return parameters and ret status
     if (m_ResProc && x_Status == 2) {
@@ -633,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/09 14:54:37  ssikorsk
+ * Stylistic changes.
+ *
  * Revision 1.16  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *

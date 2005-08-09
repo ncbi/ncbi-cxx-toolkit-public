@@ -129,7 +129,7 @@ bool CDBL_LangCmd::Cancel()
         if (m_Res) {
 #if 1 && defined(FTDS_IN_USE)
             while (m_Res->Fetch())
-                continue;
+               continue;
 #endif
             delete m_Res;
             m_Res = 0;
@@ -157,7 +157,7 @@ CDB_Result* CDBL_LangCmd::Result()
             m_RowCount = DBCOUNT(m_Cmd);
         }
 
-#ifdef FTDS_IN_USE
+#if 1 && defined(FTDS_IN_USE)
         // This Fetch is required by FreeTDS v063
         // Useful stuff
         while (m_Res->Fetch())
@@ -186,7 +186,7 @@ CDB_Result* CDBL_LangCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-#ifndef FTDS_IN_USE
+#if !defined(FTDS_LOGIC)
         if ((m_Status & 0x20) != 0) { // check for return parameters from exec
             m_Status ^= 0x20;
             int n;
@@ -208,7 +208,7 @@ CDB_Result* CDBL_LangCmd::Result()
 #endif
         switch (dbresults(m_Cmd)) {
         case SUCCEED:
-#ifndef FTDS_IN_USE
+#if !defined(FTDS_LOGIC)
             m_Status |= 0x60;
 #endif
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we could get rows in result
@@ -240,7 +240,7 @@ CDB_Result* CDBL_LangCmd::Result()
         break;
     }
 
-#ifdef FTDS_IN_USE
+#if defined(FTDS_LOGIC)
     // we've done with the row results at this point
     // let's look at return parameters and ret status
     if (m_Status == 2) {
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/09 14:54:37  ssikorsk
+ * Stylistic changes.
+ *
  * Revision 1.17  2005/07/07 20:34:16  vasilche
  * Added #include <stdio.h> for sprintf().
  *
