@@ -507,12 +507,24 @@ void CTSE_Chunk_Info::x_LoadAssembly(const TPlace& place,
 }
 
 
+void CTSE_Chunk_Info::x_LoadSeq_entry(CSeq_entry& entry,
+                                      CTSE_SNP_InfoMap* snps)
+{
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadSeq_entry(entry, snps);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/08/09 15:38:20  vasilche
+* Store parsed SNP tables in separate class to simplify forward declarations.
+* Added x_LoadSeq_entry() to chunk and split infos.
+*
 * Revision 1.23  2005/06/09 15:56:19  ucko
 * Tweak x_AddAssemblyInfo to avoid confusing some parsers (including GCC 3.3's).
 *

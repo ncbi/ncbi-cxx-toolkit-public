@@ -125,6 +125,16 @@ struct SSeqMatch_TSE
 };
 
 
+class NCBI_XOBJMGR_EXPORT CTSE_SNP_InfoMap : public CObject
+{
+public:
+    typedef CConstRef<CSeq_annot> TSNP_InfoKey;
+    typedef map<TSNP_InfoKey, CRef<CSeq_annot_SNP_Info> > TSNP_InfoMap;
+
+    TSNP_InfoMap m_SNP_InfoMap;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
     typedef CSeq_entry_Info TParent;
@@ -193,11 +203,8 @@ public:
 
     const CAnnotName& GetName(void) const;
     void SetName(const CAnnotName& name);
-    void SetSeq_entry(CSeq_entry& entry);
 
-    typedef CConstRef<CSeq_annot> TSNP_InfoKey;
-    typedef map<TSNP_InfoKey, CRef<CSeq_annot_SNP_Info> > TSNP_InfoMap;
-    void SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps);
+    void SetSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
 
     size_t GetUsedMemory(void) const;
     void SetUsedMemory(size_t size);
@@ -318,7 +325,7 @@ private:
     SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
                                  const CSeq_id_Handle& idh);
 
-    CRef<CSeq_annot_SNP_Info> x_GetSNP_Info(const TSNP_InfoKey& annot);
+    CRef<CSeq_annot_SNP_Info> x_GetSNP_Info(const CConstRef<CSeq_annot>& annot);
 
     void x_MapSNP_Table(const CAnnotName& name,
                         const CSeq_id_Handle& key,
@@ -419,7 +426,7 @@ private:
     CRef<CTSE_Split_Info>  m_Split;
 
     // SNP info set: temporarily used in SetSeq_entry()
-    TSNP_InfoMap           m_SNP_InfoMap;
+    CRef<CTSE_SNP_InfoMap> m_SNP_InfoMap;
 
     // Annot objects maps: ID to annot-selector-map
     TNamedAnnotObjs        m_NamedAnnotObjs;

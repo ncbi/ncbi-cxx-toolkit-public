@@ -49,25 +49,24 @@ class CSeq_entry;
 class CSeq_annot;
 class CSeq_feat;
 class CSeq_annot_SNP_Info;
+class CTSE_SNP_InfoMap;
 
 class NCBI_XREADER_EXPORT CSeq_annot_SNP_Info_Reader
 {
 public:
     // parse ASN converting SNP features to packed table.
-    typedef CConstRef<CSeq_annot> TAnnotRef;
-    typedef CRef<CSeq_annot_SNP_Info> TAnnotSNPRef;
-    typedef map<TAnnotRef, TAnnotSNPRef> TSNP_InfoMap;
     typedef Uint4 TAnnotIndex;
+    typedef CConstRef<CSeq_annot> TAnnotRef;
     typedef map<TAnnotRef, TAnnotIndex> TAnnotToIndex;
     typedef vector<TAnnotRef> TIndexToAnnot;
 
-    static TAnnotSNPRef ParseAnnot(CObjectIStream& in);
+    static CRef<CSeq_annot_SNP_Info> ParseAnnot(CObjectIStream& in);
     static void Parse(CObjectIStream& in,
                       CSeq_entry& tse,
-                      TSNP_InfoMap& snps);
+                      CTSE_SNP_InfoMap& snps);
     static void Parse(CObjectIStream& in,
                       const CObjectInfo& object,
-                      TSNP_InfoMap& snps);
+                      CTSE_SNP_InfoMap& snps);
 
     // store table in platform specific format
     static void Write(CNcbiOstream& stream,
@@ -79,12 +78,12 @@ public:
     // store tables in platform specific format
     static void Write(CNcbiOstream& stream,
                       const CConstObjectInfo& root,
-                      const TSNP_InfoMap& snps);
+                      const CTSE_SNP_InfoMap& snps);
 
     // load tables in platform specific format
     static void Read(CNcbiIstream& stream,
                      const CObjectInfo& root,
-                     TSNP_InfoMap& snps);
+                     CTSE_SNP_InfoMap& snps);
 
 
     // store table only in platform specific format
@@ -100,6 +99,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2005/08/09 15:39:24  vasilche
+* Store parsed SNP tables in separate class to simplify forward declarations.
+* Added x_LoadSeq_entry() to chunk and split infos.
+*
 * Revision 1.3  2004/08/12 14:19:30  vasilche
 * Allow SNP Seq-entry in addition to SNP Seq-annot.
 *

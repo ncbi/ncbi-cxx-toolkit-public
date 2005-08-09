@@ -52,6 +52,7 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
@@ -112,16 +113,16 @@ public:
 class CSNP_Ftable_hook : public CReadChoiceVariantHook
 {
 public:
-    CSNP_Ftable_hook(void)
-        : m_Seq_annot_hook(new CSeq_annot_hook)
+    CSNP_Ftable_hook(CTSE_SNP_InfoMap& snps)
+        : m_SNP_InfoMap(&snps),
+          m_Seq_annot_hook(new CSeq_annot_hook)
         {
         }
 
     void ReadChoiceVariant(CObjectIStream& in,
                            const CObjectInfoCV& variant);
 
-    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
-    TSNP_InfoMap                    m_SNP_InfoMap;
+    CRef<CTSE_SNP_InfoMap>          m_SNP_InfoMap;
     CRef<CSeq_annot_hook>           m_Seq_annot_hook;
 };
 
@@ -160,7 +161,7 @@ void CSNP_Ftable_hook::ReadChoiceVariant(CObjectIStream& in,
     }}
     snp_info->x_FinishParsing();
     if ( !snp_info->empty() ) {
-        m_SNP_InfoMap[m_Seq_annot_hook->m_Seq_annot] = snp_info;
+        m_SNP_InfoMap->m_SNP_InfoMap[m_Seq_annot_hook->m_Seq_annot] = snp_info;
     }
 }
 
@@ -252,23 +253,15 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
 
 void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
                                        const CObjectInfo& object,
-                                       TSNP_InfoMap& snps)
+                                       CTSE_SNP_InfoMap& snps)
 {
     CProcessor::SetSNPReadHooks(in);
     
     if ( CProcessor::TrySNPTable() ) { // set SNP hook
-        CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook);
-
-        CObjectTypeInfo seq_annot_type = CType<CSeq_annot>();
-        seq_annot_type.SetLocalReadHook(in, hook->m_Seq_annot_hook);
-
-        CObjectTypeInfo seq_annot_data_type = CType<CSeq_annot::TData>();
-        CObjectTypeInfoVI ftable = seq_annot_data_type.FindVariant("ftable");
-        ftable.SetLocalReadHook(in, hook);
-
+        CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook(snps));
+        CObjectHookGuard<CSeq_annot> guard(*hook->m_Seq_annot_hook, &in);
+        CObjectHookGuard<CSeq_annot::TData> guard2("ftable", *hook, &in);
         in.Read(object);
-
-        snps.swap(hook->m_SNP_InfoMap);
     }
     else {
         in.Read(object);
@@ -282,12 +275,12 @@ CSeq_annot_SNP_Info_Reader::ParseAnnot(CObjectIStream& in)
     CRef<CSeq_annot_SNP_Info> ret;
 
     CRef<CSeq_annot> annot(new CSeq_annot);
-    TSNP_InfoMap snps;
+    CTSE_SNP_InfoMap snps;
     Parse(in, Begin(*annot), snps);
-    if ( !snps.empty() ) {
-        _ASSERT(snps.size() == 1);
-        _ASSERT(snps.begin()->first == annot);
-        ret = snps.begin()->second;
+    if ( !snps.m_SNP_InfoMap.empty() ) {
+        _ASSERT(snps.m_SNP_InfoMap.size() == 1);
+        _ASSERT(snps.m_SNP_InfoMap.begin()->first == annot);
+        ret = snps.m_SNP_InfoMap.begin()->second;
     }
     else {
         ret = new CSeq_annot_SNP_Info(*annot);
@@ -299,7 +292,7 @@ CSeq_annot_SNP_Info_Reader::ParseAnnot(CObjectIStream& in)
 
 void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
                                        CSeq_entry& tse,
-                                       TSNP_InfoMap& snps)
+                                       CTSE_SNP_InfoMap& snps)
 {
     Parse(in, Begin(tse), snps);
 }
@@ -433,7 +426,7 @@ static const unsigned MAGIC = 0x12340003;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
-                                       const TSNP_InfoMap& snps)
+                                       const CTSE_SNP_InfoMap& snps)
 {
     write_unsigned(stream, MAGIC);
 
@@ -441,13 +434,12 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
     {{
         CObjectOStreamAsnBinary obj_stream(stream);
         obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
-        CObjectTypeInfo type = CType<CSeq_annot>();
-        type.SetLocalWriteHook(obj_stream, hook);
+        CObjectHookGuard<CSeq_annot> guard(*hook, &obj_stream);
         obj_stream.Write(object);
     }}
 
-    write_unsigned(stream, snps.size());
-    ITERATE ( TSNP_InfoMap, it, snps ) {
+    write_unsigned(stream, snps.m_SNP_InfoMap.size());
+    ITERATE ( CTSE_SNP_InfoMap::TSNP_InfoMap, it, snps.m_SNP_InfoMap ) {
         TAnnotToIndex::const_iterator iter = hook->m_Index.find(it->first);
         if ( iter == hook->m_Index.end() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -461,7 +453,7 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
 
 void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
                                       const CObjectInfo& object,
-                                      TSNP_InfoMap& snps)
+                                      CTSE_SNP_InfoMap& snps)
 {
     unsigned magic = read_unsigned(stream);
     if ( !stream || magic != MAGIC ) {
@@ -472,9 +464,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
     CRef<CSeq_annot_ReadHook> hook(new CSeq_annot_ReadHook);
     {{
         CObjectIStreamAsnBinary obj_stream(stream);
-        CObjectTypeInfo type = CType<CSeq_annot>();
-        type.SetLocalReadHook(obj_stream, hook);
-        //CProcessor::SetSNPReadHooks(obj_stream);
+        CObjectHookGuard<CSeq_annot> guard(*hook, &obj_stream);
         obj_stream.Read(object);
     }}
 
@@ -487,7 +477,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         }
         TAnnotRef annot = hook->m_Index[index];
         _ASSERT(annot);
-        TAnnotSNPRef& snp_info = snps[annot];
+        CRef<CSeq_annot_SNP_Info>& snp_info = snps.m_SNP_InfoMap[annot];
         if ( snp_info ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Duplicate CSeq_annot_SNP_Info");
@@ -607,6 +597,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.22  2005/08/09 15:39:24  vasilche
+ * Store parsed SNP tables in separate class to simplify forward declarations.
+ * Added x_LoadSeq_entry() to chunk and split infos.
+ *
  * Revision 1.21  2005/05/17 17:54:06  grichenk
  * Removed StoreTo() and LoadFrom() from members of CIndexedStrings
  *

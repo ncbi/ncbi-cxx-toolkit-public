@@ -218,8 +218,10 @@ void CTSE_Info::SetUsedMemory(size_t size)
 }
 
 
-void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
+void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps)
 {
+    m_SNP_InfoMap = snps;
+
     entry.Parentize();
 
     if ( Which() != CSeq_entry::e_not_set ) {
@@ -243,27 +245,28 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
     else {
         x_SetObject(entry);
     }
-}
 
-
-void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
-{
-    m_SNP_InfoMap = snps;
-    SetSeq_entry(entry);
-    if ( !m_SNP_InfoMap.empty() ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "Unknown SNP annots");
+    if ( m_SNP_InfoMap ) {
+        if ( !m_SNP_InfoMap->m_SNP_InfoMap.empty() ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Unknown SNP annots");
+        }
+        m_SNP_InfoMap = null;
     }
 }
 
 
-CRef<CSeq_annot_SNP_Info> CTSE_Info::x_GetSNP_Info(const TSNP_InfoKey& annot)
+CRef<CSeq_annot_SNP_Info>
+CTSE_Info::x_GetSNP_Info(const CConstRef<CSeq_annot>& annot)
 {
     CRef<CSeq_annot_SNP_Info> ret;
-    TSNP_InfoMap::iterator iter = m_SNP_InfoMap.find(annot);
-    if ( iter != m_SNP_InfoMap.end() ) {
-        ret = iter->second;
-        m_SNP_InfoMap.erase(iter);
+    if ( m_SNP_InfoMap ) {
+        CTSE_SNP_InfoMap::TSNP_InfoMap::iterator iter =
+            m_SNP_InfoMap->m_SNP_InfoMap.find(annot);
+        if ( iter != m_SNP_InfoMap->m_SNP_InfoMap.end() ) {
+            ret = iter->second;
+            m_SNP_InfoMap->m_SNP_InfoMap.erase(iter);
+        }
     }
     return ret;
 }

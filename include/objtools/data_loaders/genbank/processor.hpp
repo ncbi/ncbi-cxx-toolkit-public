@@ -33,6 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
+#include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -47,6 +48,7 @@ class CReadDispatcher;
 class CWriter;
 class CID2_Reply_Data;
 class CLoadLockBlob;
+class CTSE_SNP_InfoMap;
 struct STimeSizeStatistics;
 
 class NCBI_XREADER_EXPORT CProcessor : public CObject 
@@ -113,6 +115,13 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
+
+    static void SetSeq_entry(CReaderRequestResult& /*result*/,
+                             const TBlobId& /*blob_id*/,
+                             TChunkId chunk_id,
+                             CLoadLockBlob& blob,
+                             CRef<CSeq_entry> entry,
+                             CTSE_SNP_InfoMap* snps = 0);
 
 protected:
     CProcessor(CReadDispatcher& dispatcher);

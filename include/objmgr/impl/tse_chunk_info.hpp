@@ -59,6 +59,7 @@ class CBioseq_Base_Info;
 class CBioseq_Info;
 class CBioseq_set_Info;
 class CDataLoader;
+class CTSE_SNP_InfoMap;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
@@ -177,6 +178,8 @@ public:
                         const TSequence& seq);
     void x_LoadAssembly(const TPlace& place, const TAssembly& assembly);
 
+    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
+
 protected:
     //////////////////////////////////////////////////////////////////
     // interaction with CTSE_Info
@@ -267,6 +270,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/08/09 15:38:20  vasilche
+* Store parsed SNP tables in separate class to simplify forward declarations.
+* Added x_LoadSeq_entry() to chunk and split infos.
+*
 * Revision 1.20  2005/07/11 15:10:27  grichenk
 * Implemented LoadChunks() to allow loading multiple chunks through
 * a single request.

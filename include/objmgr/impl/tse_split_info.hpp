@@ -53,6 +53,7 @@ class CBioseq_Info;
 class CSeq_entry_Info;
 class CDataSource;
 class CDataLoader;
+class CTSE_SNP_InfoMap;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Split_Info : public CObject
 {
@@ -161,6 +162,10 @@ public:
     void x_LoadAssembly(CTSE_Info& tse_info,
                         const TPlace& place,
                         const TAssembly& assembly);
+
+    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
+    void x_LoadSeq_entry(CTSE_Info& tse_info,
+                         CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
 
 protected:
     TSeqIdToChunks::const_iterator x_FindChunk(const CSeq_id_Handle& id) const;

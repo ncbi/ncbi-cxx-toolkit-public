@@ -199,15 +199,13 @@ public:
                        TChunkId chunk_id,
                        CNcbiIstream& stream) const;
 
-    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
-
     void SaveSNPBlob(CReaderRequestResult& result,
                      const TBlobId& blob_id,
                      TChunkId chunk_id,
                      const CLoadLockBlob& blob,
                      CWriter* writer,
                      const CSeq_entry& seq_entry,
-                     const TSNP_InfoMap& snps) const;
+                     const CTSE_SNP_InfoMap& snps) const;
 };
 
 

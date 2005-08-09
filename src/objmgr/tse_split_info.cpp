@@ -534,6 +534,32 @@ void CTSE_Split_Info::x_LoadAssembly(CTSE_Info& tse_info,
 }
 
 
+void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
+                                      CTSE_SNP_InfoMap* snps)
+{
+    CRef<CSeq_entry> add;
+    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        if ( !add ) {
+            add = &entry;
+        }
+        else {
+            add = new CSeq_entry;
+            add->Assign(entry);
+            snps = 0;
+        }
+        x_LoadSeq_entry(**it, *add, snps);
+    }
+}
+
+
+void CTSE_Split_Info::x_LoadSeq_entry(CTSE_Info& tse_info,
+                                      CSeq_entry& entry,
+                                      CTSE_SNP_InfoMap* snps)
+{
+    tse_info.SetSeq_entry(entry, snps);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // get attach points
 CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
