@@ -420,6 +420,12 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
     if (res) {
         if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
             string msg = "Server error:";
+            if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0) {
+                answer.erase(0, 4);
+            }
+            if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
+                return NULL;
+            }
             msg += answer;
             NCBI_THROW(CNetCacheException, eServerError, msg);
         }
@@ -438,6 +444,46 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
     IReader* reader = new CNetCacheSock_RW(m_Sock);
     return reader;
 }
+
+CNetCacheClient::EReadResult 
+CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
+{
+    size_t blob_size;
+    blob_to_read.blob_size = 0;
+    auto_ptr<IReader> reader(GetData(key, &blob_size));
+    if (reader.get() == 0)
+        return eNotFound;
+    
+    // allocate
+
+    blob_to_read.blob.reset(new unsigned char[blob_size + 1]);
+
+    unsigned char* ptr = blob_to_read.blob.get();
+    size_t to_read = blob_size;
+    
+    while(1) {
+        size_t bytes_read;
+        ERW_Result res = reader->Read(ptr, to_read, &bytes_read);
+        switch (res) {
+        case eRW_Success:
+            to_read -= bytes_read;
+            if (to_read == 0) {
+                goto ret;
+            }
+            ptr += bytes_read;
+            break;
+        case eRW_Eof:
+            goto ret;
+        default:
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                       "Error while reading BLOB");
+        } // switch
+    } // while
+ret:
+    blob_to_read.blob_size = blob_size;
+    return eReadComplete;
+}
+
 
 
 CNetCacheClient::EReadResult
@@ -717,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/08/09 16:00:56  kuznets
+ * Added GetData(), allocating memory for BLOB (C++ style)
+ *
  * Revision 1.44  2005/08/01 16:52:38  kuznets
  * +PrintStat()
  *

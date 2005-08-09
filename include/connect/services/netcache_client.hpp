@@ -43,6 +43,7 @@
 #include <connect/services/netservice_client.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <util/reader_writer.hpp>
 
 
@@ -153,10 +154,6 @@ public:
     IReader* GetData(const string& key, 
                      size_t*       blob_size = 0);
 
-    /// Remove BLOB by key
-    virtual 
-    void Remove(const string& key);
-
     /// Status of GetData() call
     /// @sa GetData
     enum EReadResult {
@@ -164,6 +161,34 @@ public:
         eNotFound,     ///< BLOB not found or error
         eReadPart      ///< Read part of the BLOB (buffer capacity)
     };
+
+    /// Structure to read BLOB in memory
+    struct SBlobData
+    {
+        AutoPtr<unsigned char, 
+                ArrayDeleter<unsigned char> >  blob;      ///< blob data
+        size_t                                 blob_size; ///< blob size
+
+        SBlobData() : blob_size(0) {}
+    };
+
+    /// Retrieve BLOB from server by key
+    /// This method retrives BLOB size, allocates memory and gets all
+    /// the data from the server.
+    ///
+    /// Blob size and binary data is placed into blob_to_read structure.
+    /// Do not use this method if you are not sure you have memory 
+    /// to load the whole BLOB.
+    /// 
+    /// @return
+    ///    eReadComplete if BLOB found (eNotFound otherwise)
+    virtual
+    EReadResult GetData(const string& key, SBlobData& blob_to_read);
+
+    /// Remove BLOB by key
+    virtual 
+    void Remove(const string& key);
+
 
     /// Retrieve BLOB from server by key
     ///
@@ -320,6 +345,8 @@ public:
                         size_t         buf_size, 
                         size_t*        n_read    = 0,
                         size_t*        blob_size = 0);
+    virtual
+    EReadResult GetData(const string& key, SBlobData& blob_to_read);
 
 protected:
     virtual 
@@ -443,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/08/09 16:00:47  kuznets
+ * Added GetData(), allocating memory for BLOB (C++ style)
+ *
  * Revision 1.35  2005/08/01 16:52:26  kuznets
  * +PrintStat()
  *

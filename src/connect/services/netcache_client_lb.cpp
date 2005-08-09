@@ -369,6 +369,13 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
     return rd;
 }
 
+CNetCacheClient::EReadResult 
+CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
+{
+    return TParent::GetData(key, blob_to_read);
+}
+
+
 void CNetCacheClient_LB::Remove(const string& key)
 {
     CNetCache_Key blob_key;
@@ -454,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/08/09 16:01:07  kuznets
+ * Added GetData(), allocating memory for BLOB (C++ style)
+ *
  * Revision 1.19  2005/07/11 18:49:14  lavr
  * Hashed preference generation algorithm retired (proven to fail often)
  *
