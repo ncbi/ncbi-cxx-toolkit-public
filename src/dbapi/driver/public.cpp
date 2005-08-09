@@ -58,16 +58,6 @@ bool CDB_Connection::IsAlive()
 #define CHECK_CONNECTION( conn ) \
     CHECK_DRIVER_WARNING( !conn, "Connection has been closed", 200002 )
     
-// inline void s_CheckConnection(I_Connection* conn, const char* method_name)
-// {
-//     if ( !conn ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200002,
-// //                            "CDB_Connection::" + string(method_name),
-// //                            "Connection has been closed");
-//         DATABASE_DRIVER_WARNING( "Connection has been closed", 200002 );
-//     }
-// }
-
 CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query,
                                      unsigned int  nof_params)
 {
@@ -215,18 +205,8 @@ CDB_Result::CDB_Result(I_Result* r)
 
 #define CHECK_RESULT( res ) \
     CHECK_DRIVER_WARNING( !res, "This result is not available anymore", 200003 )
+
     
-// inline void s_CheckResult(I_Result* res, const char* method_name)
-// {
-//     if ( !res ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200003,
-// //                            "CDB_Result::" + string(method_name),
-// //                            "This result is not available anymore");
-//         DATABASE_DRIVER_WARNING( "This result is not available anymore", 200003 );
-//     }
-// }
-
-
 EDB_ResType CDB_Result::ResultType() const
 {
     CHECK_RESULT(m_Res);
@@ -319,16 +299,6 @@ CDB_LangCmd::CDB_LangCmd(I_LangCmd* c)
 #define CHECK_COMMAND( cmd ) \
     CHECK_DRIVER_WARNING( !cmd, "This command cannot be used anymore", 200005 )
     
-// inline void s_CheckLangCmd(I_LangCmd* cmd, const char* method_name)
-// {
-//     if ( !cmd ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200005,
-// //                            "CDB_LangCmd::" + string(method_name),
-// //                            "This command can not be used anymore");
-//         DATABASE_DRIVER_WARNING( "This command cannot be used anymore", 200005 );
-//     }
-// }
-
 
 bool CDB_LangCmd::More(const string& query_text)
 {
@@ -421,17 +391,6 @@ CDB_RPCCmd::CDB_RPCCmd(I_RPCCmd* c)
     m_Cmd = c;
     m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
 }
-
-
-// inline void s_CheckRPCCmd(I_RPCCmd* cmd, const char* method_name)
-// {
-//     if ( !cmd ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200005,
-// //                            "CDB_RPCCmd::" + string(method_name),
-// //                            "This command can not be used anymore");
-//         DATABASE_DRIVER_WARNING( "This command cannot be used anymore", 200005 );
-//     }
-// }
 
 
 bool CDB_RPCCmd::BindParam(const string& param_name, CDB_Object* pVal,
@@ -531,17 +490,6 @@ CDB_BCPInCmd::CDB_BCPInCmd(I_BCPInCmd* c)
 }
 
 
-// inline void s_CheckBCPInCmd(I_BCPInCmd* cmd, const char* method_name)
-// {
-//     if ( !cmd ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200005,
-// //                            "CDB_BCPInCmd::" + string(method_name),
-// //                            "This command can not be used anymore");
-//         DATABASE_DRIVER_WARNING( "This command cannot be used anymore", 200005 );
-//     }
-// }
-
-
 bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
     CHECK_COMMAND( m_Cmd );
@@ -592,17 +540,6 @@ CDB_CursorCmd::CDB_CursorCmd(I_CursorCmd* c)
     m_Cmd = c;
     m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
 }
-
-
-// inline void s_CheckCursorCmd(I_CursorCmd* cmd, const char* method_name)
-// {
-//     if ( !cmd ) {
-// //         throw CDB_ClientEx(eDiag_Warning, 200005,
-// //                            "CDB_CursorCmd::" + string(method_name),
-// //                            "This command can not be used anymore");
-//         DATABASE_DRIVER_WARNING( "This command cannot be used anymore", 200005 );
-//     }
-// }
 
 
 bool CDB_CursorCmd::BindParam(const string& param_name, CDB_Object* pVal)
@@ -753,6 +690,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/09 13:15:45  ssikorsk
+ * Removed redudant comments
+ *
  * Revision 1.15  2005/07/14 19:24:17  ucko
  * Revert R1.13, as the corresponding header change has been reverted
  * (with the source again apparently forgotten)
