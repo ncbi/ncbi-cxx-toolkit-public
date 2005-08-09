@@ -44,14 +44,15 @@
 BEGIN_NCBI_SCOPE
 
 #define CONN_OWNERSHIP  eTakeOwnership
+static const char* msg_record_expected = "Record is expected";
 
-///////////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // Patterns to test:
 //      I) Statement:
 //          1) New/dedicated statement for each test
 //          2) Reusable statement for all tests
 
-///////////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 CTestTransaction::CTestTransaction(
     IConnection& conn,
     ETransBehavior tb
@@ -80,7 +81,8 @@ CTestTransaction::~CTestTransaction(void)
         // Just ignore ...
     }
 }
-///////////////////////////////////////////////////////////////////////////////
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 class CIConnectionIFPolicy
 {
 protected:
@@ -94,7 +96,7 @@ protected:
     }
 };
 
-///////////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
     : m_args(args)
     , m_DM( CDriverManager::GetInstance() )
@@ -123,7 +125,8 @@ CDBAPIUnitTest::TestInit(void)
     string sql;
 
     sql  = " CREATE TABLE " + m_TableName + "( \n";
-    sql += "    int_val INT NOT NULL \n";
+    sql += "    int_val INT NOT NULL, \n";
+    sql += "    text_val TEXT NULL \n";
     sql += " )";
 
     // Create the table
@@ -201,6 +204,70 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 }
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
+CDBAPIUnitTest::Test_Cursor(void)
+{
+    const long rec_num = 2;
+    string sql;
+
+    // Initialize a test table ...
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Drop all records ...
+        sql  = " DELETE FROM " + m_TableName;
+        auto_stmt->ExecuteUpdate(sql);
+
+        // Insert new LOB records ...
+        sql  = " INSERT INTO " + m_TableName + "(int_val, text_val) VALUES(@id, '') \n";
+
+        // CVariant variant(eDB_Text);
+        // variant.Append(" ", 1);
+
+        for (long i = 0; i < rec_num; ++i) {
+            auto_stmt->SetParam( CVariant(i), "@id" );
+            // Execute a statement with parameters ...
+            auto_stmt->ExecuteUpdate( sql );
+        }
+    }
+
+    // Test CLOB field update ...
+    {
+        const char* clob = "abc";
+
+        sql = "select text_val from " + m_TableName + " for update of text_val \n";
+        auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+
+        {
+            // blobRs should be destroyed before auto_cursor ...
+            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            while(blobRs->Next()) {
+                ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+                out.write(clob, sizeof(clob) - 1);
+                out.flush();
+            }
+            blobRs.release();
+        }
+
+        // Another cursor ...
+        sql  = " select text_val from " + m_TableName;
+        sql += " where int_val = 1 for update of text_val";
+
+        auto_cursor.reset(m_Conn->GetCursor("test02", sql));
+        {
+            // blobRs should be destroyed before auto_cursor ...
+            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            if ( !blobRs->Next() ) {
+                BOOST_FAIL( msg_record_expected ); 
+            }
+            ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+            out.write(clob, sizeof(clob) - 1);
+            out.flush();
+        }
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_SelectStmt(void)
 {
@@ -218,7 +285,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
         // 2) Retrive only one record.
         if ( !rs->Next() ) {
-            BOOST_FAIL( "Record is expected"); 
+            BOOST_FAIL( msg_record_expected ); 
         }
 
         // 3) Select another recordset with just one record
@@ -237,7 +304,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
         // 2) Retrive only one record.
         if ( !rs->Next() ) {
-            BOOST_FAIL( "Record is expected"); 
+            BOOST_FAIL( msg_record_expected ); 
         }
 
         // 3) Select another recordset with just one record
@@ -247,6 +314,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
@@ -469,6 +537,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_Procedure(void)
 {
@@ -609,6 +678,7 @@ CDBAPIUnitTest::Test_Procedure(void)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
@@ -617,6 +687,7 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     BOOST_CHECK_THROW( Test_ES_01(*m_Conn), CDB_Exception );
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // Throw CDB_Exception ...
 void 
 CDBAPIUnitTest::Test_ES_01(IConnection& conn)
@@ -635,6 +706,7 @@ CDBAPIUnitTest::Test_ES_01(IConnection& conn)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
 CDBAPIUnitTest::Test_StatementParameters(void)
 {
@@ -659,6 +731,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::TestGetRowCount()
 {
@@ -698,6 +771,7 @@ CDBAPIUnitTest::TestGetRowCount()
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::CheckGetRowCount(
     int row_count, 
@@ -823,6 +897,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::CheckGetRowCount2(
     int row_count, 
@@ -1000,6 +1075,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_Variant(void)
 {
@@ -1884,6 +1960,7 @@ CDBAPIUnitTest::Test_Variant(void)
     }
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_Bind(void)
 {
@@ -1950,14 +2027,15 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 }
 
 
-///////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;
-    boost::unit_test::test_case* tc_init = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
+    boost::unit_test::test_case* tc_init = 
+        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
@@ -1966,9 +2044,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    boost::unit_test::test_case* tc_parameters = 
+        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
+    tc_parameters->depends_on(tc_init);
+    add(tc_parameters);
 
     boost::unit_test::test_case* except_safety_tc =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
@@ -1987,6 +2066,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
+    tc->depends_on(tc_parameters);
+    add(tc);
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -1994,7 +2077,7 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 CTestArguments::CTestArguments(int argc, char * argv[])
 {
     CNcbiArguments arguments(argc, argv);
@@ -2084,7 +2167,7 @@ CTestArguments::SetDatabaseParameters(void)
 END_NCBI_SCOPE
 
 
-///////////////////////////////////////////////////////////////////////////
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 test_suite*
 init_unit_test_suite( int argc, char * argv[] )
 {
@@ -2103,6 +2186,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/08/09 16:09:40  ssikorsk
+ * Added the 'Test_Cursor' test to the test-suite
+ *
  * Revision 1.24  2005/08/09 13:14:41  ssikorsk
  * Added a 'Test_Procedure' test to the test-suite
  *

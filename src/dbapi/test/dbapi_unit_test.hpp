@@ -156,6 +156,7 @@ public:
     void Test_UserErrorHandler(void);
 
     void Test_SelectStmt(void);
+    void Test_Cursor(void);
     void Test_Procedure(void);
 
 public:
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/08/09 16:09:40  ssikorsk
+ * Added the 'Test_Cursor' test to the test-suite
+ *
  * Revision 1.17  2005/08/09 13:14:42  ssikorsk
  * Added a 'Test_Procedure' test to the test-suite
  *
