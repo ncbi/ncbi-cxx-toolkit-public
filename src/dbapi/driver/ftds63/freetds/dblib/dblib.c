@@ -4094,6 +4094,7 @@ dbsqlok(DBPROCESS * dbproc)
 				break;
 			case TDS_DONE_RESULT:
 			case TDS_DONEPROC_RESULT:
+            case TDS_DONEINPROC_RESULT:
 				if (done_flags & TDS_DONE_ERROR) {
 					tdsdump_log(TDS_DBG_FUNC, "dbsqlok() end status was error\n");
 
