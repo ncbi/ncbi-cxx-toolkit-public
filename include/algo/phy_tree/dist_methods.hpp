@@ -34,7 +34,6 @@
 
 
 #include <objtools/alnmgr/alnvec.hpp>
-#include <util/creaders/alignment_file.hpp>
 #include <util/math/matrix.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
@@ -79,7 +78,6 @@ public:
     /// Calculate pairwise fractions of non-identity
     static double Divergence(const string& seq1, const string& seq2);
     static void Divergence(const objects::CAlnVec& avec_in, TMatrix& result);
-    //static void Divergence(const CAlignment& aln, TMatrix& result);
 
     /// Compute a tree by neighbor joining; 
     /// as per Hillis et al. (Ed.), Molecular Systematics, pg. 488-489.
@@ -108,6 +106,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/09 19:32:21  jcherry
+ * Removed pointless #include of alignment_file.hpp, along with corresponding
+ * commented-out method
+ *
  * Revision 1.8  2005/02/16 15:42:55  jcherry
  * Made tree-building methods throw if distance matrix contains
  * NaNs or Infs.  Added CDistMethods::AllFinite to check this.
