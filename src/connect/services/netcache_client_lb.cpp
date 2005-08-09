@@ -270,6 +270,7 @@ string CNetCacheClient_LB::PutData(const string& key,
         } else {
             // go to an alternative service
             CNetCacheClient cl(m_ClientName);
+            cl.SetClientNameComment(m_ClientNameComment);
             return cl.PutData(key, buf, size, time_to_live);
         }
     }
@@ -298,6 +299,8 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
         } else {
             // go to an alternative service
             CNetCacheClient cl(m_ClientName);
+            cl.SetClientNameComment(m_ClientNameComment);
+
             IWriter* wrt = cl.PutData(key, time_to_live);
             cl.DetachSocket();
 
@@ -358,6 +361,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
     }
 
     CNetCacheClient cl(m_ClientName);
+    cl.SetClientNameComment(m_ClientNameComment);
     IReader* rd = cl.GetData(key, blob_size);
     cl.DetachSocket();
     CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(rd);
@@ -391,6 +395,7 @@ void CNetCacheClient_LB::Remove(const string& key)
         }
     }
     CNetCacheClient cl(m_ClientName);
+    cl.SetClientNameComment(m_ClientNameComment);
     cl.Remove(key);
 }
 
@@ -420,6 +425,7 @@ CNetCacheClient_LB::GetData(const string&  key,
         }
     }
     CNetCacheClient cl(m_ClientName);
+    cl.SetClientNameComment(m_ClientNameComment);
     return cl.GetData(key, buf, buf_size, n_read, blob_size);
 }
 
@@ -461,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/08/09 18:32:16  kuznets
+ * Fixed a bug when service name not always sent to server
+ *
  * Revision 1.20  2005/08/09 16:01:07  kuznets
  * Added GetData(), allocating memory for BLOB (C++ style)
  *
