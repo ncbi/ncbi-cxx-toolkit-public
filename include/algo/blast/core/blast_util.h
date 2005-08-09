@@ -55,7 +55,7 @@ extern "C" {
 
 /** Deallocate memory only for the sequence in the sequence block */
 NCBI_XBLAST_EXPORT
-Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
+void BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
    
 /** Deallocate memory for a sequence block */
 NCBI_XBLAST_EXPORT

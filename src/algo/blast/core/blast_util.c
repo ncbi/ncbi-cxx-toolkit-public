@@ -113,10 +113,10 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
     return 0;
 }
 
-Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
+void BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
 {
    if (!seq_blk)
-       return 1;
+       return;
 
    if (seq_blk->sequence_allocated) {
        sfree(seq_blk->sequence);
@@ -131,7 +131,7 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
        seq_blk->oof_sequence_allocated = FALSE;
    }
 
-   return 0;
+   return;
 }
 
 BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
