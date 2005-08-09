@@ -2067,9 +2067,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
-    tc->depends_on(tc_parameters);
-    add(tc);
+//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
+//     tc->depends_on(tc_parameters);
+//     add(tc);
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -2186,6 +2186,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/08/09 16:37:58  ssikorsk
+ * Disabled Test_Cursor
+ *
  * Revision 1.26  2005/08/09 16:13:18  ssikorsk
  * Fixed GCC compilation problem
  *
