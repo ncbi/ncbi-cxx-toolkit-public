@@ -128,10 +128,17 @@ struct SSeqMatch_TSE
 class NCBI_XOBJMGR_EXPORT CTSE_SNP_InfoMap : public CObject
 {
 public:
+    CTSE_SNP_InfoMap(void);
+    ~CTSE_SNP_InfoMap(void);
+
     typedef CConstRef<CSeq_annot> TSNP_InfoKey;
     typedef map<TSNP_InfoKey, CRef<CSeq_annot_SNP_Info> > TSNP_InfoMap;
 
     TSNP_InfoMap m_SNP_InfoMap;
+
+private:
+    CTSE_SNP_InfoMap(const CTSE_SNP_InfoMap&);
+    void operator=(const CTSE_SNP_InfoMap&);
 };
 
 

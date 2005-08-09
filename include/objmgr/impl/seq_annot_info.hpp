@@ -130,8 +130,6 @@ protected:
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
-    CSeq_annot_Info& operator=(const CSeq_annot_Info&);
-
     // Seq-annot object
     CConstRef<TObject>      m_Object;
 
@@ -143,6 +141,10 @@ protected:
 
     // SNP annotation table
     CRef<CSeq_annot_SNP_Info> m_SNP_Info;
+
+private:
+    CSeq_annot_Info(const CSeq_annot_Info&);
+    CSeq_annot_Info& operator=(const CSeq_annot_Info&);
 };
 
 
@@ -196,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/08/09 17:38:19  vasilche
+* Define constructors/destructors in *.cpp file to allow Windows DLL compilation.
+*
 * Revision 1.24  2005/06/29 16:10:10  vasilche
 * Removed declarations of obsolete methods.
 *

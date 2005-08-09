@@ -959,5 +959,16 @@ CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 }
 
 
+CTSE_SNP_InfoMap::CTSE_SNP_InfoMap(void)
+{
+}
+
+
+CTSE_SNP_InfoMap::~CTSE_SNP_InfoMap(void)
+{
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
