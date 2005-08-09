@@ -788,6 +788,9 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 #if defined(FTDS_IN_USE)
 
+// Uncomment a line below if you want to simulate a previous ftds driver logic.
+// #define FTDS_LOGIC 
+
 extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_FTDS_DriverName;
 
 extern "C"
@@ -828,6 +831,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/08/09 14:57:26  ssikorsk
+ * Added the FTDS_LOGIC define to be able to turn on an old ftds driver logic
+ *
  * Revision 1.23  2005/07/20 13:49:19  ssikorsk
  * Removed ftds7 code. Declared constants and defines from ftds to reach full compatibility.
  *
