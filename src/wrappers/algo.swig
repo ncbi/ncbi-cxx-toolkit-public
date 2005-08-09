@@ -131,7 +131,6 @@ algo/gnomon/gnomon_exception.hpp
 //algo/phy_tree/bio_tree_conv.hpp
 algo/phy_tree/dist_methods.hpp
 algo/phy_tree/phy_node.hpp
-algo/phy_tree/phy_tree_serial.hpp
 
 algo/winmask/seq_masker.hpp
 algo/winmask/seq_masker_istat.hpp
@@ -250,6 +249,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/09 18:48:38  jcherry
+ * Removed phy_tree_serial.hpp
+ *
  * Revision 1.5  2005/08/03 14:57:10  jcherry
  * Added headers
  *
