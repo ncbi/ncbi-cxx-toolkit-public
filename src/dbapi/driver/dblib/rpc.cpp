@@ -81,15 +81,6 @@ bool CDBL_RPCCmd::Send()
     } else {
 #if 1 && defined(FTDS_IN_USE)
         if (m_Res) {
-        /*
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*m_Res);
-            }
-            else {
-                while(m_Res->Fetch())
-                    continue;
-            }
-        */
             while (m_Res->Fetch())
                 continue;
         }
@@ -131,15 +122,6 @@ bool CDBL_RPCCmd::Cancel()
     if (m_WasSent) {
         if (m_Res) {
 #if 1 && defined(FTDS_IN_USE)
-            /*
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*m_Res);
-            }
-            else {
-                while(m_Res->Fetch())
-                    continue;
-            }
-            */
             while (m_Res->Fetch())
                 continue;
 #endif
@@ -168,17 +150,7 @@ CDB_Result* CDBL_RPCCmd::Result()
             m_RowCount = DBCOUNT(m_Cmd);
         }
 
-#ifdef FTDS_IN_USE
-        // This Fetch is required by FreeTDS v063
-        /*
-        if(m_Connect->m_ResProc) {
-            m_Connect->m_ResProc->ProcessResult(*m_Res);
-        }
-        else {
-            while(m_Res->Fetch())
-                continue;
-        }
-        */
+#if 1 && defined(FTDS_IN_USE)
         while (m_Res->Fetch())
             continue;
 #endif
@@ -479,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/09 14:54:10  ssikorsk
+ * Removed redudant comments. Stylistic changes.
+ *
  * Revision 1.17  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *
