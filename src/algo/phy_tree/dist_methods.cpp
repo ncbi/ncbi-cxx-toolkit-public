@@ -350,23 +350,6 @@ void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
 }
 
 
-#if 0
-void CDistMethods::Divergence(const CAlignment& aln, TMatrix& result)
-{
-    int nseqs = aln.GetSeqs().size();
-    result.Resize(nseqs, nseqs);
-
-    for (int i = 0;  i < nseqs;  ++i) {
-        result(i, i) = 0;  // 0 difference from itself
-        for (int j = i + 1;  j < nseqs;  ++j) {
-            result(i, j) = result(j, i) = 
-                CDistMethods::Divergence(aln.GetSeqs()[i], aln.GetSeqs()[j]);
-        }
-    }
-}
-#endif
-
-
 /// Recursive function for adding TPhyTreeNodes to BioTreeContainer
 static void s_AddNodeToBtc(CRef<CBioTreeContainer> btc,
                            const TPhyTreeNode* ptn,
@@ -449,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/08/09 20:07:05  jcherry
+ * Removed dead code
+ *
  * Revision 1.14  2005/03/15 15:20:49  vasilche
  * Precalculate sequences for speed.
  *
