@@ -74,7 +74,7 @@ CPythonDBAPITest::MakeTestPreparation(void)
 
         ExecuteStr("cursor_simple = conn_simple.cursor() \n");
         ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
-        // ExecuteStr("cursor_simple.execute('CREATE TABLE #t2 ( int_val int null, text_val text null)') \n");
+        
         ExecuteStr("cursor_simple.execute("
             "'CREATE TABLE #t2 ( "
             "   int_val int null, "
@@ -299,6 +299,12 @@ void
 CPythonDBAPITest::Test_callproc(void)
 {
     try {
+        // Prepare ...
+        {
+            // ExecuteStr("cursor = connection.cursor()\n");
+            ExecuteStr("cursor = conn_simple.cursor()\n");
+        }
+
         // CALL stored procedure ...
         ExecuteStr("cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW( 
@@ -330,6 +336,12 @@ void
 CPythonDBAPITest::TestExecuteStoredProc(void)
 {
     try {
+        // Prepare ...
+        {
+            // ExecuteStr("cursor = connection.cursor()\n");
+            ExecuteStr("cursor = conn_simple.cursor()\n");
+        }
+
         // EXECUTE stored procedure without parameters ...
         ExecuteStr("cursor.execute('execute sp_databases')\n");
         ExecuteStr("cursor.fetchall()\n");
@@ -542,6 +554,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/08/09 14:55:54  ssikorsk
+* Added explicit cursor creation.
+*
 * Revision 1.14  2005/06/02 22:12:20  ssikorsk
 * Added new tests. Simplified the code.
 *
