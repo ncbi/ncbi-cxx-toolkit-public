@@ -26,8 +26,10 @@ LIBS="
  tiff-3.7.1*ftp://ftp.remotesensing.org/libtiff/old
  sqlite-2.8.16*http://www.sqlite.org
  db-4.3.27.NC*http://downloads.sleepycat.com
- fltk-1.1.6-source*http://cogent.dl.sourceforge.net/sourceforge/fltk"
-
+ fltk-1.1.6-source*http://cogent.dl.sourceforge.net/sourceforge/fltk""
+ 
+ 
+ttt="fltk-2.0.x-r4393*http://ftp.easysw.com/pub/fltk/snapshots"
 
 cd $TEMP
 if [ "$4" = "download" ]; then
