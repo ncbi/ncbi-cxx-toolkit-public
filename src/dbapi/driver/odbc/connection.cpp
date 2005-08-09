@@ -335,6 +335,7 @@ void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
 
 bool CODBC_Connection::Abort()
 {
+    SQLDisconnect(m_Link);
     return false;
 }
 
@@ -594,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/09 20:41:28  soussov
+ * adds SQLDisconnect to Abort
+ *
  * Revision 1.8  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
