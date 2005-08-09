@@ -120,6 +120,7 @@ elif test -r "$install_dir" ; then
    if test "`ls -a $install_dir/ | wc -w`" != "2" ; then
       # Test if it matches C++ Toolkit dir structure
       test ! -f "$install_dir/include/corelib/ncbistd.hpp"  &&  \
+       test ! -d "$install_dir/C_TOOLKIT"  &&  \
         Usage "Non-empty dir $install_dir does not have C++ Toolkit structure"
 
       # Delete previous sources' installation
@@ -127,6 +128,9 @@ elif test -r "$install_dir" ; then
          test ! -r "$install_dir/$d"  ||  rm -r "$install_dir/$d"  ||  \
             Usage "Cannot delete $install_dir/$d"
       done
+
+      # Remove any non-directories
+      rm -f $install_dir/* $install_dir/.??*
    fi
 else
    # Create new install dir
