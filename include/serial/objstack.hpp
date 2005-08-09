@@ -171,7 +171,7 @@ private:
         throw; \
     } catch (CException& expt) { \
         std::string msg((Stream).TopFrame().GetFrameInfo()); \
-        (Stream).PopErrorFrame(); \
+        (Stream).PopFrame(); \
         NCBI_RETHROW_SAME(expt,msg); \
     } \
     (Stream).PopFrame()
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/08/09 16:31:51  gouriano
+* Corrected behavior when catching CException
+*
 * Revision 1.23  2004/01/05 14:24:09  gouriano
 * Added possibility to set serialization hooks by stack path
 *
