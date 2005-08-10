@@ -35,7 +35,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/alnmgr/alndiag.hpp>
-
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/08/10 20:20:51  vasilche
+* Include <algorithm> for lower_bound().
+*
 * Revision 1.1  2005/08/10 19:35:49  todorov
 * Preliminary revision.
 *
