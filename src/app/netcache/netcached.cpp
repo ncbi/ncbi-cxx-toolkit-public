@@ -410,8 +410,8 @@ public:
     /// Override some parent parameters
     virtual void SetParams()
     {
-        m_ThrdSrvAcceptTimeout.sec = 0;
-        m_ThrdSrvAcceptTimeout.usec = 500;
+        m_ThrdSrvAcceptTimeout.sec = 1;
+        m_ThrdSrvAcceptTimeout.usec = 0;
     }
 
 protected:
@@ -1887,6 +1887,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/08/10 19:19:14  kuznets
+ * Set accept timeout 1sec
+ *
  * Revision 1.63  2005/08/08 17:45:13  kuznets
  * Improved error logging
  *
