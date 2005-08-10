@@ -372,6 +372,10 @@ void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
     TTSEs tses;
     tses.reserve(m_TSE_InfoMap.size());
     ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+        
+        it->second.GetNCObject().m_UsedByTSE = 0;
+        it->second.GetNCObject().m_UsedTSE_Set.clear();
+
         tses.push_back(it->second);
     }
     ITERATE ( TTSEs, it, tses ) {
@@ -1007,6 +1011,9 @@ void CTSE_ScopeInfo::x_DetachDS(void)
     }
     m_ScopeInfoMap.clear();
     m_TSE_Lock.Reset();
+    while ( !m_BioseqById.empty() ) {
+        m_BioseqById.begin()->second->x_DetachTSE(this);
+    }
     m_DS_Info = 0;
 }
 
@@ -1708,6 +1715,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/08/10 17:36:40  vasilche
+* Fixed memory leak from CRef circular references.
+*
 * Revision 1.22  2005/08/05 15:42:30  vasilche
 * Redirect all open handles to new TSE when detaching from data loader.
 *
