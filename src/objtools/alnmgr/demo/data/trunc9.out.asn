@@ -9,14 +9,14 @@ Dense-seg ::= {
   starts {
     0,
     0,
-    100,
-    11,
+    -1,
+    10,
     -1,
     95
   },
   lens {
     10,
-    5
+    6
   },
   strands {
     plus,
