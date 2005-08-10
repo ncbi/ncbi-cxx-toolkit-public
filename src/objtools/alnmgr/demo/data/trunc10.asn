@@ -1,0 +1,126 @@
+Seq-align-set ::= {
+  {
+    type not-set,
+    dim 2,
+    segs denseg {
+      numseg 1,
+      ids {
+	genbank {
+	  accession "L09137",
+	  version 1
+	},
+	genbank {
+	  accession "L09137",
+	  version 2
+	}
+      },
+      starts {
+	0,
+	0
+      },
+      lens {
+	10
+      },
+      strands {
+	plus,
+	minus
+      }
+    }
+  }, {
+    type not-set,
+    dim 2,
+    segs denseg {
+      numseg 1,
+      ids {
+	genbank {
+	  accession "L09137",
+	  version 1
+	},
+	genbank {
+	  accession "L09137",
+	  version 2
+	}
+      },
+      starts {
+	30,
+	20
+      },
+      lens {
+	10
+      },
+      strands {
+	plus,
+	minus
+      }
+    }
+  }, {
+    type not-set,
+    dim 2,
+    segs denseg {
+      numseg 1,
+      ids {
+	genbank {
+	  accession "L09137",
+	  version 1
+	},
+	genbank {
+	  accession "L09137",
+	  version 2
+	}
+      },
+      starts {
+	10,
+	10
+      },
+      lens {
+	10
+      }
+    }
+  }, {
+    type not-set,
+    dim 2,
+    segs denseg {
+      numseg 1,
+      ids {
+	genbank {
+	  accession "L09137",
+	  version 1
+	},
+	genbank {
+	  accession "L09137",
+	  version 2
+	}
+      },
+      starts {
+	20,
+	30
+      },
+      lens {
+	10
+      }
+    }
+  }, {
+    type not-set,
+    dim 2,
+    segs denseg {
+      numseg 1,
+      ids {
+	genbank {
+	  accession "L09137",
+	  version 1
+	},
+	genbank {
+	  accession "L09137",
+	  version 2
+	}
+      },
+      starts {
+	40,
+	40
+      },
+      lens {
+	10
+      }
+    }
+  }
+}

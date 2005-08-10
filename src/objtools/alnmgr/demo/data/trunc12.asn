@@ -1,0 +1,48 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+	local id 0,
+	local id 1
+      },
+      starts {
+	0,
+	100
+      },
+      lens {
+	10
+      },
+      strands {
+	plus,
+	minus
+      }
+    }
+  } , {
+    type partial,
+    dim 2,
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+	local id 0,
+	local id 1
+      },
+      starts {
+	10,
+	95
+      },
+      lens {
+	6
+      },
+      strands {
+	plus,
+	minus
+      }
+    }
+  }
+}	  
+    

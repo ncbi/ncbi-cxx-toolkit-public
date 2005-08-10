@@ -1,0 +1,45 @@
+Dense-seg ::= {
+  dim 3,
+  numseg 3,
+  ids {
+    genbank {
+      accession "L09137",
+      version 1
+    },
+    genbank {
+      accession "L09137",
+      version 2
+    },
+    genbank {
+      accession "L09137",
+      version 2
+    }
+  },
+  starts {
+    0,
+    15,
+    -1,
+    15,
+    -1,
+    10,
+    20,
+    -1,
+    0
+  },
+  lens {
+    10,
+    5,
+    10
+  },
+  strands {
+    plus,
+    plus,
+    minus,
+    plus,
+    plus,
+    minus,
+    plus,
+    plus,
+    minus
+  }
+}
