@@ -279,6 +279,38 @@ CAlnMixMerger::x_Merge()
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
 
+            if (m_MergeFlags & fTruncateOverlaps  &&  seq2) {
+                CDiagRangeCollection::TAlnRng rng(match->m_Start1,
+                                                  match->m_Start2,
+                                                  match->m_Len,
+                                                  !match->m_StrandsDiffer);
+                CDiagRangeCollection::TAlnRngColl substrahend, diff;
+                substrahend.insert(rng);
+                CDiagRangeCollection* plane;
+                TPlanes::iterator plane_it;
+                if ((plane_it = m_Planes.find(make_pair(seq1, seq2))) !=
+                    m_Planes.end()) {
+                    plane = &(plane_it->second);
+                } else {
+                    CDiagRangeCollection new_plane(match->m_AlnSeq1->m_Width,
+                                                   match->m_AlnSeq2->m_Width);
+                    plane = &(m_Planes[make_pair(seq1, seq2)] = new_plane);
+                }
+                plane->Diff(substrahend, diff);
+
+                if (diff.empty()) {
+                    continue;
+                }
+                rng = *diff.begin();
+                plane->insert(rng);
+
+                // reset the ones below,
+                // since match may have been modified
+                start1 = match->m_Start1 = rng.GetFirstFrom();
+                start2 = match->m_Start2 = rng.GetSecondFrom();
+                curr_len = len = match->m_Len = rng.GetLength();
+            }
+
             width1 = seq1->m_Width;
             if (seq2) {
                 width2 = seq2->m_Width;
@@ -1211,6 +1243,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/08/10 19:47:16  todorov
+* Delegated truncation to CDiagRangeCollection.
+*
 * Revision 1.9  2005/08/05 01:18:49  todorov
 * Fixed the rare case when a secondary sequence is aligned to itself
 * without being align to the master (a repeated insert).  There was a

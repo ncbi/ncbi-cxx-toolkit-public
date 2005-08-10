@@ -37,6 +37,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/alnmatch.hpp>
+#include <objtools/alnmgr/alndiag.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +50,6 @@ class CAlnMixMatch;
 class CAlnMixSegments;
 class CAlnMixSequences;
 class CAlnMixSeq;
-
 
 
 class NCBI_XALNMGR_EXPORT CAlnMixMerger : public CObject
@@ -117,6 +117,8 @@ private:
 
     typedef vector<CRef<CAlnMixMatch> > TMatches;
     typedef vector<CRef<CAlnMixSeq> >   TSeqs;
+    typedef map<pair<CAlnMixSeq*, CAlnMixSeq*>,
+                CDiagRangeCollection>   TPlanes;
 
     const size_t&               m_DsCnt;
 
@@ -141,6 +143,8 @@ private:
     bool                        m_IndependentDSs;
 
     TCalcScoreMethod            x_CalculateScore;
+
+    TPlanes                     m_Planes;
 };
 
 
@@ -188,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/08/10 19:49:46  todorov
+* Delegated truncation to CDiagRangeCollection.
+*
 * Revision 1.7  2005/08/03 18:18:44  jcherry
 * Added export specifiers
 *
