@@ -228,6 +228,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
             CNetScheduleClient::EJobStatus status;
             status = job_status.GetStatus();
+            grid_ctx.SetJobInput(job_status.GetJobInput());
+            grid_ctx.SetJobOutput(job_status.GetJobOutput());
         
             bool remove_cookie = false;
             switch (status) {
@@ -381,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/10 15:54:21  didenko
+ * Added and access to a job's input and output strings
+ *
  * Revision 1.22  2005/06/07 20:15:27  didenko
  * Improved exceptions handling
  *

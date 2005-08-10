@@ -97,6 +97,9 @@ public:
 
     string GetHiddenFields() const;
 
+    const string& GetJobInput() const { return m_JobInput; }
+    const string& GetJobOutput() const { return m_JobOutput; }
+
 private:
 
     /// Remove all persisted entries from cookie and self url.
@@ -109,6 +112,8 @@ private:
     void SetJobKey(const string& job_key);
     void SetJobProgressMessage(const string& msg)
     { m_ProgressMsg = msg; }
+    void SetJobInput(const string& input) { m_JobInput = input; }
+    void SetJobOutput(const string& output) { m_JobOutput = output; }
 
 
     CHTMLPage&                    m_Page;
@@ -116,6 +121,8 @@ private:
     TCgiEntries                   m_ParsedQueryString;
     TPersistedEntries             m_PersistedEntries;
     string                        m_ProgressMsg;
+    string                        m_JobInput;
+    string                        m_JobOutput;
     
     /// A copy constructor and an assignemt operator
     /// are prohibited
@@ -268,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/10 15:54:21  didenko
+ * Added and access to a job's input and output strings
+ *
  * Revision 1.17  2005/06/06 15:32:10  didenko
  * Added GetHiddenFields method
  *
