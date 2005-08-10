@@ -215,8 +215,8 @@ public:
     /// Override some parent parameters
     virtual void SetParams()
     {
-        m_ThrdSrvAcceptTimeout.sec = 0;
-        m_ThrdSrvAcceptTimeout.usec = 500;
+        m_ThrdSrvAcceptTimeout.sec = 1;
+        m_ThrdSrvAcceptTimeout.usec = 0;
     }
 
     void ProcessSubmit(CSocket&                sock,
@@ -2071,6 +2071,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/08/10 19:20:46  kuznets
+ * Set connection accept timeout 1sec
+ *
  * Revision 1.47  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *
