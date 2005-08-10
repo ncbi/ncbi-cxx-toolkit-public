@@ -143,7 +143,7 @@ CBlastTabularInfo::~CBlastTabularInfo()
 }
 
 static string 
-s_GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id, 
+s_GetSeqIdListString(const list<CRef<CSeq_id> >& id, 
                      CBlastTabularInfo::ESeqIdType id_type)
 {
     string id_str = NcbiEmptyString;
@@ -153,9 +153,11 @@ s_GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
         id_str = CShowBlastDefline::GetSeqIdListString(id, true);
         break;
     case CBlastTabularInfo::eAccession:
-        FindBestChoice(id, CSeq_id::Score)->
-            GetLabel(&id_str, CSeq_id::eContent, 0);
+    {
+        CConstRef<CSeq_id> accid = FindBestChoice(id, CSeq_id::Score);
+        accid->GetLabel(&id_str, CSeq_id::eContent, 0);
         break;
+    }
     case CBlastTabularInfo::eGi:
         id_str = NStr::IntToString(FindGi(id));
         break;
@@ -225,7 +227,7 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
     }
 }
 
-void CBlastTabularInfo::SetQueryId(const objects::CBioseq_Handle& bh)
+void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
 {
     m_QueryId.clear();
 
@@ -265,7 +267,7 @@ void CBlastTabularInfo::SetQueryId(const objects::CBioseq_Handle& bh)
     }
 }
 
-void CBlastTabularInfo::SetSubjectId(const objects::CBioseq_Handle& bh)
+void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 {
     m_SubjectIds.clear();
 
@@ -291,8 +293,8 @@ void CBlastTabularInfo::SetSubjectId(const objects::CBioseq_Handle& bh)
     }
 }
 
-int CBlastTabularInfo::SetFields(const objects::CSeq_align& align, 
-                                 objects::CScope& scope, 
+int CBlastTabularInfo::SetFields(const CSeq_align& align, 
+                                 CScope& scope, 
                                  CBlastFormattingMatrix* matrix)
 {
     const int kQueryRow = 0;
@@ -516,7 +518,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
 
 void 
 CBlastTabularInfo::PrintHeader(const string& program_in, 
-                               const objects::CBioseq& bioseq, 
+                               const CBioseq& bioseq, 
                                const string& dbname, int iteration,
                                const CSeq_align_set* align_set)
 {
@@ -551,6 +553,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/08/10 17:13:24  dondosha
+* Minor Solaris compiler warning and doxygen fixes
+*
 * Revision 1.9  2005/08/08 18:23:55  dondosha
 * Added option to use different separators between fields
 *
