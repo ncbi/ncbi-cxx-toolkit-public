@@ -252,6 +252,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
             ERR_POST("Failed to report an unknown exception : " << ex.what());
         }
     }
+    thr_context.CloseStreams();
     thr_context.Reset();
 
 }
@@ -567,6 +568,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/08/10 15:51:22  didenko
+ * Don't forget to close thread's streams then an execption is thrown from a job
+ *
  * Revision 1.31  2005/07/07 15:05:14  didenko
  * Corrected handling of localhost from the admin_hosts configuration parameter
  *
