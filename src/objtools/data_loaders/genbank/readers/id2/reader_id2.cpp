@@ -87,7 +87,10 @@ static int GetDebugLevel(void)
 }
 
 
-static int GetMaxChunksRequestSize(void)
+// Number of chunks allowed in a single request
+// 0 = unlimited request size
+// 1 = do not use packets or get-chunks requests
+static size_t GetMaxChunksRequestSize(void)
 {
     static int s_Value = -1;
     int value = s_Value;
@@ -99,6 +102,22 @@ static int GetMaxChunksRequestSize(void)
         s_Value = value;
     }
     return value;
+}
+
+
+static inline
+bool
+SeparateChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
+{
+    return max_request_size == 1;
+}
+
+
+static inline
+bool
+LimitChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
+{
+    return max_request_size > 0;
 }
 
 
@@ -370,7 +389,7 @@ void CId2Reader::x_SetExclude_blobs(CID2_Request_Get_Blob_Info& get_blob_info,
                                     const CSeq_id_Handle& idh,
                                     CReaderRequestResult& result)
 {
-    if (GetMaxChunksRequestSize() == 1) {
+    if ( SeparateChunksRequests() ) {
         // Minimize size of request rather than response
         return;
     }
@@ -537,8 +556,17 @@ bool CId2Reader::LoadBlobs(CReaderRequestResult& result,
             continue; // skip this blob
         }
         const CBlob_id& blob_id = it->first;
+        const TChunkId chunk_id = CProcessor::kMain_ChunkId;
         CLoadLockBlob blob(result, blob_id);
-        if ( blob.IsLoaded() ) {
+        if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
+            continue;
+        }
+        
+        if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+            dynamic_cast<const CProcessor_ExtAnnot&>
+                (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
+                .Process(result, blob_id, chunk_id);
+            _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
             continue;
         }
 
@@ -645,11 +673,8 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
                             const CBlob_id& blob_id,
                             const TChunkIds& chunk_ids)
 {
-    // Number of chunks allowed in a single request
-    // 0 = unlimited request size
-    // 1 = do not use packets or get-chunks requests
-    int max_request_size = GetMaxChunksRequestSize();
-    if (max_request_size == 1) {
+    size_t max_request_size = GetMaxChunksRequestSize();
+    if ( SeparateChunksRequests(max_request_size) ) {
         return CReader::LoadChunks(result, blob_id, chunk_ids);
     }
     CLoadLockBlob blob(result, blob_id);
@@ -682,8 +707,8 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             ext_req_data.SetGet_data();
             packet.Set().push_back(ext_req);
             ext_chunks.push_back(&chunk_info);
-            if (max_request_size > 0  &&
-                packet.Get().size() >= max_request_size) {
+            if ( LimitChunksRequests(max_request_size) &&
+                 packet.Get().size() >= max_request_size ) {
                 // Request collected chunks
                 x_ProcessPacket(result, packet);
                 LoadedChunksPacket(packet, ext_chunks, blob_id);
@@ -697,7 +722,8 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             }
             guards.push_back(init);
             chunks.push_back(CID2S_Chunk_Id(*id));
-            if (max_request_size > 0  &&  chunks.size() >= max_request_size) {
+            if ( LimitChunksRequests(max_request_size) &&
+                 chunks.size() >= max_request_size ) {
                 // Process collected chunks
                 x_ProcessRequest(result, *chunks_req);
                 guards.clear();
@@ -706,13 +732,14 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
         }
     }
     if ( !chunks.empty() ) {
-        if (max_request_size == 0  ||
-            packet.Get().size() + chunks.size() <= max_request_size) {
-            // Use the same packet for all chunks
-            packet.Set().push_back(chunks_req);
+        if ( LimitChunksRequests(max_request_size) &&
+             packet.Get().size() + chunks.size() > max_request_size ) {
+            // process chunks separately from packet
+            x_ProcessRequest(result, *chunks_req);
         }
         else {
-            x_ProcessRequest(result, *chunks_req);
+            // Use the same packet for chunks
+            packet.Set().push_back(chunks_req);
         }
     }
     if ( !packet.Get().empty() ) {
@@ -748,10 +775,8 @@ bool CId2Reader::x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
 bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
                              const TSeqIds& seq_ids)
 {
-    // 0 = unlimited request size
-    // 1 = do not use packets or get-chunks requests
-    int max_request_size = GetMaxChunksRequestSize();
-    if (max_request_size == 1) {
+    size_t max_request_size = GetMaxChunksRequestSize();
+    if ( SeparateChunksRequests(max_request_size) ) {
         return CReader::LoadBlobSet(result, seq_ids);
     }
 
@@ -788,8 +813,8 @@ bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
                 x_SetDetails(req2.SetGet_data(), fBlobHasCore);
                 x_SetExclude_blobs(req2, *id, result);
                 packet.Set().push_back(req);
-                if (max_request_size > 0  &&
-                     packet.Get().size() >= max_request_size) {
+                if ( LimitChunksRequests(max_request_size) &&
+                     packet.Get().size() >= max_request_size ) {
                     x_ProcessPacket(result, packet);
                     packet.Set().clear();
                 }
@@ -805,8 +830,8 @@ bool CId2Reader::LoadBlobSet(CReaderRequestResult& result,
             x_SetExclude_blobs(req2, *id, result);
             packet.Set().push_back(req);
         }
-        if (max_request_size > 0  &&
-            packet.Get().size() >= max_request_size) {
+        if ( LimitChunksRequests(max_request_size) &&
+             packet.Get().size() >= max_request_size ) {
             x_ProcessPacket(result, packet);
             packet.Set().clear();
         }
