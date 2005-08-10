@@ -139,6 +139,7 @@ public:
 
     // Testing Approach for value wrappers
     void Test_Variant(void);
+    void Test_Variant2(void);
 
     // Testing Approach for Members
     // Test particular methods.
@@ -182,6 +183,12 @@ public:
     void Error_Conditions(void);
     void Transactional_Behavior(void);
 
+protected:
+    const string& GetTableName(void) const
+    {
+        return m_TableName;
+    }
+    
 private:
     const CTestArguments m_args;
     CDriverManager& m_DM;
@@ -205,6 +212,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/08/10 16:56:50  ssikorsk
+ * Added Test_Variant2 to the test-suite
+ *
  * Revision 1.18  2005/08/09 16:09:40  ssikorsk
  * Added the 'Test_Cursor' test to the test-suite
  *
