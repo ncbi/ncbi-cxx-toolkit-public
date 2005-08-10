@@ -1583,6 +1583,15 @@ void CBDB_Cache::Remove(const string& key)
         int overflow = m_CacheAttrDB->overflow;
 
         cache_elements.push_back(SCacheDescr(key, version, subkey, overflow));
+
+        unsigned read_count = m_CacheAttrDB->read_count;
+        if (0 == read_count) {
+            m_Statistics.AddNeverRead();
+        }
+        m_Statistics.AddExplDelete();
+        if (m_CollectOwnerStat) {
+            x_UpdateOwnerStatOnDelete(true/*expl-delete*/);
+        }
     }
 
     }}
@@ -1628,7 +1637,6 @@ void CBDB_Cache::Remove(const string& key)
                    it->version,
                    it->subkey.c_str(),
                    it->overflow);
-        ++m_Statistics.blobs_expl_deleted_total;
     }
 
     trans.Commit();
@@ -1662,6 +1670,10 @@ void CBDB_Cache::Remove(const string&    key,
         if (0 == read_count) {
             m_Statistics.AddNeverRead();
         }
+        if (m_CollectOwnerStat) {
+            x_UpdateOwnerStatOnDelete(true/*expl-delete*/);
+        }
+        m_Statistics.AddExplDelete();
     }
 
     }}
@@ -1677,7 +1689,6 @@ void CBDB_Cache::Remove(const string&    key,
                    it->version,
                    it->subkey.c_str(),
                    it->overflow);
-        m_Statistics.AddExplDelete();
     }
 
 	trans.Commit();
@@ -1840,7 +1851,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                         m_Statistics.AddNeverRead();
                     }
                     if (m_CollectOwnerStat) {
-                        x_UpdateOwnerStatOnDelete(false/*auto-delete*/);
+                        x_UpdateOwnerStatOnDelete(false/*non-expl-delete*/);
                     }
 
                     cache_entries.push_back(
@@ -2806,6 +2817,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.120  2005/08/10 15:08:27  kuznets
+ * Fixed bug in statistics counting on explicit delete
+ *
  * Revision 1.119  2005/08/08 14:49:17  kuznets
  * Improved logging
  *
