@@ -104,6 +104,17 @@ void CWriter::WriteProcessorTag(CNcbiOstream& stream,
 }
 
 
+void CWriter::InitializeCache(CReaderCacheManager& /*cache_manager*/,
+                              const TPluginManagerParamTree* /*params*/)
+{
+}
+
+
+void CWriter::ResetCache(void)
+{
+}
+
+
 CWriter::CBlobStream::~CBlobStream(void)
 {
 }

@@ -177,8 +177,8 @@ public:
     static int ReadInt(CNcbiIstream& stream);
 
     virtual void InitializeCache(CReaderCacheManager& cache_manager,
-                                 const TPluginManagerParamTree* params) {}
-    virtual void ResetCache(void) {}
+                                 const TPluginManagerParamTree* params);
+    virtual void ResetCache(void);
 
 protected:
     CReadDispatcher* m_Dispatcher;

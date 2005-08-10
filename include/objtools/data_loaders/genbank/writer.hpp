@@ -111,8 +111,8 @@ public:
                                   const CProcessor& processor);
 
     virtual void InitializeCache(CReaderCacheManager& cache_manager,
-                                 const TPluginManagerParamTree* params) {}
-    virtual void ResetCache(void) {}
+                                 const TPluginManagerParamTree* params);
+    virtual void ResetCache(void);
 };
 
 

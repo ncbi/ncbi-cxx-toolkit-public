@@ -131,7 +131,7 @@ void CReader::x_RemoveConnection(void)
 {
     TConn conn = x_AllocConnection(true);
     CMutexGuard guard(m_ConnectionsMutex);
-    _VERIFY(m_NumConnections.Add(-1) >= 0);
+    _VERIFY(m_NumConnections.Add(-1) != TNCBIAtomicValue(-1));
     x_RemoveConnectionSlot(conn);
 }
 
@@ -188,7 +188,7 @@ void CReader::x_AbortConnection(TConn conn)
         catch ( ... ) {
             // ignore
         }
-        _VERIFY(m_NumConnections.Add(-1) >= 0);
+        _VERIFY(m_NumConnections.Add(-1) != TNCBIAtomicValue(-1));
         x_AddConnection();
         return;
     }
@@ -503,6 +503,17 @@ int CReader::ReadInt(CNcbiIstream& stream)
                    "cannot read value");
     }
     return value;
+}
+
+
+void CReader::InitializeCache(CReaderCacheManager& /*cache_manager*/,
+                              const TPluginManagerParamTree* /*params*/)
+{
+}
+
+
+void CReader::ResetCache(void)
+{
 }
 
 
