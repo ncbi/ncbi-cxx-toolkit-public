@@ -945,6 +945,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                             found |= x_SearchTSE(tse,
                                                  syns->GetSeq_id_Handle(syn_it),
                                                  master_range, 0);
+                            if ( x_NoMoreObjects() ) {
+                                break;
+                            }
                         }
                     }
                     else {
@@ -954,6 +957,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                             if ( !only_gi || syn_it->IsGi() ) {
                                 found |= x_SearchTSE(tse, *syn_it,
                                                      master_range, 0);
+                                if ( x_NoMoreObjects() ) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -966,6 +972,12 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                         ITERATE(CScope_Impl::TSeq_idSet, id_it, tse_it->second){
                             found |= x_SearchTSE(tse_it->first, *id_it,
                                                  master_range, 0);
+                            if ( x_NoMoreObjects() ) {
+                                break;
+                            }
+                        }
+                        if ( x_NoMoreObjects() ) {
+                            break;
                         }
                     }
                 }
@@ -991,6 +1003,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                 found |= x_SearchTSE(tse_it->second,
                                                      syns->GetSeq_id_Handle(syn_it),
                                                      master_range, 0);
+                                if ( x_NoMoreObjects() ) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -1001,13 +1016,20 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                             if ( !only_gi || syn_it->IsGi() ) {
                                 found |= x_SearchTSE(tse_it->second, *syn_it,
                                                      master_range, 0);
+                                if ( x_NoMoreObjects() ) {
+                                    break;
+                                }
                             }
                         }
+                    }
+                    if ( x_NoMoreObjects() ) {
+                        break;
                     }
                 }
             }
         }}
-        bool deeper = !(found && m_Selector->m_AdaptiveDepth) &&
+        bool deeper = !x_NoMoreObjects() &&
+            !(found && m_Selector->m_AdaptiveDepth) &&
             m_Selector->m_ResolveMethod != SAnnotSelector::eResolve_None  &&
             m_Selector->m_ResolveDepth > 0 &&
             bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
@@ -1037,6 +1059,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                        *master_loc_empty,
                                        master_id,
                                        master_range);
+                if ( x_NoMoreObjects() ) {
+                    break;
+                }
                 deeper = !(found && m_Selector->m_AdaptiveDepth);
                 try {
                     smit.Next(deeper);
@@ -1078,7 +1103,8 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         }
 
         bool found = x_SearchLoc(master_loc, 0, 0, true);
-        bool deeper = !(found && m_Selector->m_AdaptiveDepth) &&
+        bool deeper = !x_NoMoreObjects() &&
+            !(found && m_Selector->m_AdaptiveDepth) &&
             m_Selector->m_ResolveMethod != SAnnotSelector::eResolve_None  &&
             m_Selector->m_ResolveDepth > 0;
         if ( deeper ) {
@@ -1128,6 +1154,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                            *master_loc_empty,
                                            idit->first,
                                            idit->second);
+                    if ( x_NoMoreObjects() ) {
+                        break;
+                    }
                     deeper = !(found && m_Selector->m_AdaptiveDepth);
                     try {
                         smit.Next(deeper);
@@ -1143,6 +1172,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                             throw;
                         }
                     }
+                }
+                if ( x_NoMoreObjects() ) {
+                    break;
                 }
             }
         }
@@ -1508,6 +1540,9 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
             const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
             if ( objs ) {
                 x_SearchObjects(tseh, objs, guard, *iter, id, hr, cvt);
+                if ( x_NoMoreObjects() ) {
+                    return found;
+                }
             }
         }
     }
@@ -1520,6 +1555,9 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
             const SIdAnnotObjs* objs = tse.x_GetIdObjects(iter->second, id);
             if ( objs ) {
                 x_SearchObjects(tseh, objs, guard, iter->first, id, hr, cvt);
+                if ( x_NoMoreObjects() ) {
+                    return found;
+                }
             }
         }
     }
@@ -1562,6 +1600,9 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
         if ( range.first < range.second ) {
             x_SearchRange(tseh, objs, guard, annot_name, id, hr, cvt,
                           range.first, range.second);
+            if ( x_NoMoreObjects() ) {
+                return;
+            }
         }
     }
     else {
@@ -1579,6 +1620,9 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                 range.second = idx;
                 x_SearchRange(tseh, objs, guard, annot_name, id, hr, cvt,
                               range.first, range.second);
+                if ( x_NoMoreObjects() ) {
+                    return;
+                }
             }
             last_bit = cur_bit;
         }
@@ -1586,6 +1630,9 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
             // search to the end of annot set
             x_SearchRange(tseh, objs, guard, annot_name, id, hr, cvt,
                           range.first, objs->x_GetRangeMapCount());
+            if ( x_NoMoreObjects() ) {
+                return;
+            }
         }
     }
 
@@ -1642,14 +1689,21 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
     x_AddTSE(tseh);
 
+    bool enough = false;
+
     typedef map<const CTSE_Split_Info*, CTSE_Split_Info::TChunkIds> TStubMap;
     TStubMap stubs;
     do {
         if ( !stubs.empty() ) {
+            _ASSERT(!enough);
             CAnnotName name(annot_name);
             // Release lock for tse update:
             guard.Release();
             ITERATE(TStubMap, it, stubs) {
+                if ( m_Selector->m_MaxSize != kMax_UInt ) {
+                    it->first->GetChunk(*it->second.begin()).Load();
+                    break;
+                }
                 it->first->LoadChunks(it->second);
             }
             stubs.clear();
@@ -1674,8 +1728,6 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             ITERATE(CHandleRange, rg_it, hr) {
                 CHandleRange::TRange range = rg_it->first;
                 
-                bool enough = false;
-
                 for ( CTSE_Info::TRangeMap::const_iterator
                     aoit(rmap.begin(range));
                     aoit; ++aoit ) {
@@ -1701,6 +1753,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             push_back(chunk.GetChunkId());
                     }
                     if ( !stubs.empty() ) {
+                        _ASSERT(!enough);
                         continue;
                     }
 
@@ -1780,6 +1833,11 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             }
                             x_SearchLoc(ref_rmap, &*locs_cvt, &tseh);
                         }
+                        if ( x_NoMoreObjects() ) {
+                            _ASSERT(stubs.empty());
+                            enough = true;
+                            break;
+                        }
                         continue;
                     }
 
@@ -1801,10 +1859,6 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                         // Create self-conversion, add to conversion set
                         x_AddObjectMapping(annot_ref, 0,
                                         aoit->second.m_AnnotLocationIndex);
-                        if ( x_NoMoreObjects() ) {
-                            enough = true;
-                            break;
-                        }
                     }
                     else {
                         if (cvt  &&  !annot_ref.IsAlign() ) {
@@ -1828,20 +1882,24 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                         }
                         x_AddObject(annot_ref, cvt,
                                     aoit->second.m_AnnotLocationIndex);
-                        if ( x_NoMoreObjects() ) {
-                            enough = true;
-                            break;
-                        }
+                    }
+                    if ( x_NoMoreObjects() ) {
+                        _ASSERT(stubs.empty());
+                        enough = true;
+                        break;
                     }
                 }
                 if ( enough ) {
+                    _ASSERT(stubs.empty());
                     break;
                 }
                 if ( !stubs.empty() ) {
+                    _ASSERT(!enough);
                     continue;
                 }
             }
             if ( !stubs.empty() ) {
+                _ASSERT(!enough);
                 continue;
             }
             if ( need_unique  ||  hr.end() - hr.begin() > 1 ) {
@@ -1850,6 +1908,14 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                 m_AnnotSet.erase(unique(first_added, m_AnnotSet.end()),
                                 m_AnnotSet.end());
             }
+            if ( enough ) {
+                _ASSERT(stubs.empty());
+                break;
+            }
+        }
+        if ( enough ) {
+            _ASSERT(stubs.empty());
+            break;
         }
     } while ( !stubs.empty() );
 }
@@ -1903,6 +1969,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                         found |= x_SearchTSE(*tse,
                                              syns->GetSeq_id_Handle(syn_it),
                                              idit->second, cvt);
+                        if ( x_NoMoreObjects() ) {
+                            break;
+                        }
                     }
                 }
                 else {
@@ -1912,6 +1981,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(*tse, *syn_it,
                                                  idit->second, cvt);
+                            if ( x_NoMoreObjects() ) {
+                                break;
+                            }
                         }
                     }
                 }
@@ -1926,6 +1998,12 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     ITERATE( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
                         found |= x_SearchTSE(tse_it->first, *id_it,
                                              idit->second, cvt);
+                        if ( x_NoMoreObjects() ) {
+                            break;
+                        }
+                    }
+                    if ( x_NoMoreObjects() ) {
+                        break;
                     }
                 }
             }
@@ -1952,6 +2030,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                             found |= x_SearchTSE(tse_it->second,
                                                  syns->GetSeq_id_Handle(syn_it),
                                                  idit->second, cvt);
+                            if ( x_NoMoreObjects() ) {
+                                break;
+                            }
                         }
                     }
                 }
@@ -1963,10 +2044,19 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(tse_it->second, *syn_it,
                                                  idit->second, cvt);
+                            if ( x_NoMoreObjects() ) {
+                                break;
+                            }
                         }
                     }
                 }
+                if ( x_NoMoreObjects() ) {
+                    break;
+                }
             }
+        }
+        if ( x_NoMoreObjects() ) {
+            break;
         }
     }
     return found;
@@ -2122,6 +2212,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2005/08/10 20:40:00  vasilche
+* BUGZID:147 Fixed by exiting from all collecting methods when done.
+*
 * Revision 1.62  2005/07/11 15:11:25  grichenk
 * Use LoadChunks to load stubs. Skip annotations while collecting
 * stubs.
