@@ -125,6 +125,7 @@ private:
 
     string m_Title;
     string m_Input;
+    string m_UserBlobId;
     int    m_FallBackDelay;
     int    m_CancelGoBackDelay;
     string m_DateFormat;
@@ -268,19 +269,26 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
 }
 
 
+const string kUserBlobIdLable = "NC_BLOBID:";
 bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 {
     // You can catch CArgException& here to process argument errors,
     // or you can handle it in OnException()
-    const CArgs& args = GetArgs();
+    //    const CArgs& args = GetArgs();
 
     // "args" now contains both command line arguments and the arguments 
     // extracted from the HTTP request
+    ctx.PersistEntry(kInputParamName);
 
-    if (args[kInputParamName]) {
-        m_Input = args[kInputParamName].AsString();
+    //    if (args[kInputParamName]) {
+    //        m_Input = args[kInputParamName].AsString();
+    m_Input = ctx.GetEntryValue(kInputParamName);
+    if( !m_Input.empty() ) {
         if (m_Input == "CTG_CGIENTRIES")
             m_CgiContext = &ctx.GetCGIContext();
+        else if (NStr::StartsWith(m_Input, kUserBlobIdLable)) {
+            m_UserBlobId = m_Input.substr(kUserBlobIdLable.length());
+        }
         return true;
     }
 
@@ -290,6 +298,10 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
 {   
+    if ( !m_UserBlobId.empty() ) {
+        submiter.SetJobInput(m_UserBlobId);
+        return;
+    }
     CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
     if (m_CgiContext) {
@@ -359,7 +371,9 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
     string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
 
-    CHTMLPlainText* err = new CHTMLPlainText(msg);
+    string err_msg = msg + " Job input: " + ctx.GetJobInput() 
+        + " ; Job output: " + ctx.GetJobOutput();
+    CHTMLPlainText* err = new CHTMLPlainText(err_msg);
     ctx.GetHTMLPage().AddTagMap("MSG",err);
 }
 
@@ -484,6 +498,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/10 15:58:08  didenko
+ * Added posibility to send an id of a blob which a worker node will use as an input stream
+ *
  * Revision 1.22  2005/06/06 15:34:57  didenko
  * Changed <@VIEW@> meta-tag to <@STAT_VIEW@>
  *
