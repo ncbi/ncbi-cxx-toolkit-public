@@ -74,6 +74,10 @@ test2 trunc7 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 7"
 test2 trunc8 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 8"
 test2 framed_refseq "" "query sequence is on diff frames w/ overlaps on subject"
 test2 trunc9 "-truncateoverlaps t -noobjmgr t" "truncation with mixed strands on subject"
+test2 trunc10 "-truncateoverlaps t" "truncation of overlaps 10"
+test2 trunc11 "-truncateoverlaps t" "truncation of overlaps 11"
+test2 trunc12 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 12"
+test2 trunc13 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 13"
 
 # test preservation of rows
 test1 preserve_rows "-preserverows t" "preservation of rows"
