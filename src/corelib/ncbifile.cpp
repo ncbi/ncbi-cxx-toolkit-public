@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Vladimir Ivanov
+ * Author:  Vladimir Ivanov
  *
  * File Description:   Files and directories accessory functions
  *
@@ -1331,7 +1331,7 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 }
 
 
-CDirEntry::EType CDirEntry::GetType(const struct stat& st) const
+CDirEntry::EType CDirEntry::GetType(const struct stat& st)
 {
     unsigned int mode = (unsigned int)st.st_mode & S_IFMT;
     switch (mode) {
@@ -2637,68 +2637,96 @@ void s_SetFindFileError(void)
     }
 }
 
-#  define IS_RECURSIVE_ENTRY         \
-   ( (mode == eIgnoreRecursive)  &&  \
-     ((::strcmp(entry.cFileName, ".") == 0) || (::strcmp(entry.cFileName, "..") == 0)) )
+#  define IS_RECURSIVE_ENTRY                     \
+    ( (flags & CDir::fIgnoreRecursive)  &&       \
+      ((::strcmp(entry.cFileName, ".")  == 0) || \
+       (::strcmp(entry.cFileName, "..") == 0)) )
 
-# define ADD_ENTRY \
-    contents->push_back(new CDirEntry(base_path + entry.cFileName))
+void s_AddEntry(CDir::TEntries* contents, const string& base_path,
+                const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)
+{
+    const string path = base_path + entry.cFileName;
+    if (flags & CDir::fCreateObjects) {
+        CDirEntry::EType type = (entry.dwFileAttributes &
+                                 FILE_ATTRIBUTE_DIRECTORY) 
+                                 ? CDirEntry::eDir : CDirEntry::eFile;
+        contents->push_back(CDirEntry::CreateObject(type, path));
+    } else {
+        contents->push_back(new CDirEntry(path));
+    }
+}
 
 #elif defined(NCBI_OS_UNIX)
 
-#  define IS_RECURSIVE_ENTRY         \
-   ( (mode == eIgnoreRecursive)  &&  \
-     ((::strcmp(entry->d_name, ".") == 0) || (::strcmp(entry->d_name, "..") == 0)) )
+#  define IS_RECURSIVE_ENTRY                   \
+    ( (flags & CDir::fIgnoreRecursive)  &&     \
+      ((::strcmp(entry->d_name, ".")  == 0) || \
+       (::strcmp(entry->d_name, "..") == 0)) )
 
-# define ADD_ENTRY \
-    contents->push_back(new CDirEntry(base_path + entry->d_name))
+void s_AddEntry(CDir::TEntries* contents, const string& base_path,
+                const struct dirent* entry, CDir::TGetEntriesFlags flags)
+{
+    const string path = base_path + entry->d_name;
+    if (flags & CDir::fCreateObjects) {
+        CDirEntry::EType type = CDir::eUnknown;
+#  if defined(_DIRENT_HAVE_D_TYPE)
+        struct stat st;
+        st.st_mode = DTTOIF(entry->d_type);
+        type = CDirEntry::GetType(st);
+#  else                                 
+        type = CDirEntry(path).GetType();
+#  endif                                 
+        contents->push_back(CDirEntry::CreateObject(type, path));
+    } else {
+        contents->push_back(new CDirEntry(path));
+    }
+}
 
 #endif
 
+# define ADD_ENTRY \
+    s_AddEntry(contents, base_path, entry, flags)
 
 
-CDir::TEntries CDir::GetEntries(const string&   mask,
-                                EGetEntriesMode mode,
-                                NStr::ECase     use_case) const
+CDir::TEntries CDir::GetEntries(const string& mask,
+                                TGetEntriesFlags flags) const
 {
     CMaskFileName masks;
     if ( !mask.empty() ) {
         masks.Add(mask);
     }
-    return GetEntries(masks, mode, use_case);
+    return GetEntries(masks, flags);
 }
 
 
-CDir::TEntries* CDir::GetEntriesPtr(const string&   mask,
-                                    EGetEntriesMode mode,
-                                    NStr::ECase     use_case) const
+CDir::TEntries* CDir::GetEntriesPtr(const string& mask,
+                                   TGetEntriesFlags flags) const
 {
     CMaskFileName masks;
     if ( !mask.empty() ) {
         masks.Add(mask);
     }
-    return GetEntriesPtr(masks, mode, use_case);
+    return GetEntriesPtr(masks, flags);
 }
 
 
 CDir::TEntries CDir::GetEntries(const vector<string>& masks,
-                                EGetEntriesMode       mode,
-                                NStr::ECase           use_case) const
+                                TGetEntriesFlags flags) const
 {
-    auto_ptr<TEntries> contents(GetEntriesPtr(masks, mode, use_case));
+    auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
     return *contents.get();
 }
 
 
 CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
-                                    EGetEntriesMode       mode,
-                                    NStr::ECase           use_case) const
+                                    TGetEntriesFlags flags) const
 {
     if ( masks.empty() ) {
-        return GetEntriesPtr("", mode, use_case);
+        return GetEntriesPtr("", flags);
     }
     TEntries* contents = new(TEntries);
     string base_path = AddTrailingPathSeparator(GetPath());
+    NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -2716,7 +2744,8 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                 ITERATE(vector<string>, it, masks) {
                     const string& mask = *it;
                     if ( mask.empty()  ||
-                        MatchesMask(entry.cFileName, mask.c_str(), use_case) ) {
+                        MatchesMask(entry.cFileName, mask.c_str(),
+                                    use_case) ) {
                         ADD_ENTRY;
                         break;
                     }                
@@ -2751,21 +2780,20 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
 }
 
 
-CDir::TEntries CDir::GetEntries(const CMask&    masks,
-                                EGetEntriesMode mode,
-                                NStr::ECase     use_case) const
+CDir::TEntries CDir::GetEntries(const CMask& masks,
+                                TGetEntriesFlags flags) const
 {
-    auto_ptr<TEntries> contents(GetEntriesPtr(masks, mode, use_case));
+    auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
     return *contents.get();
 }
 
 
-CDir::TEntries* CDir::GetEntriesPtr(const CMask&    masks,
-                                    EGetEntriesMode mode,
-                                    NStr::ECase     use_case) const
+CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
+                                    TGetEntriesFlags flags) const
 {
     TEntries* contents = new(TEntries);
     string base_path = AddTrailingPathSeparator(GetPath());
+    NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
     // Append to the "path" mask for all files in directory
@@ -2921,7 +2949,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
     }
 
     // Read all entries in source directory
-    auto_ptr<TEntries> contents(src.GetEntriesPtr("*", eIgnoreRecursive));
+    auto_ptr<TEntries> contents(src.GetEntriesPtr("*", fIgnoreRecursive));
 
     // And copy each of them to target directory
     ITERATE(TEntries, e, *contents.get()) {
@@ -3679,6 +3707,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.121  2005/08/11 11:17:50  ivanov
+ * Added CDirEntry::EGetEntriesFlags type and 'flag' versions of
+ * CDirEntry::GetEntries[Ptr]().
+ *
  * Revision 1.120  2005/08/04 12:54:56  ivanov
  * Use 'flag' version of NStr::StringTo*()
  *
