@@ -473,11 +473,10 @@ public:
     /// Get a type of constructed object.
     ///
     /// @return
-    ///   Return one of the values in EType. Return real entry type
-    ///   for CDirEntry, or an object type for derived classes.
+    ///   Return one of the values in EType. Return "eUnknown" for CDirEntry.
     /// @sa
     ///   CreateObject, GetType
-    virtual EType GetObjectType(void) const { return GetType(); };
+    virtual EType GetObjectType(void) const { return eUnknown; };
 
     /// Alternate stat structure for use instead of the standard struct stat.
     /// The alternate stat can have useful, but non-posix fields, which
@@ -2480,6 +2479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/08/11 11:27:17  ivanov
+ * CDirEntry::GetObjectType -- return "eUnknown" for CDirEntry
+ *
  * Revision 1.65  2005/08/11 11:17:27  ivanov
  * Added method GetObjectType() to all CDirEntry based classes.
  * Made CDirEntry::GetType() static.
