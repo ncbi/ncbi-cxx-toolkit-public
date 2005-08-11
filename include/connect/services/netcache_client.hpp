@@ -45,6 +45,7 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <util/reader_writer.hpp>
+#include <util/transmissionrw.hpp>
 
 
 
@@ -434,8 +435,9 @@ void CNetCache_GenerateBlobKey(string*        key,
                                unsigned short port);
 
 
+
+
 /// IReader/IWriter implementation 
-/// returned by CNetCacheClient::GetData(), CNetCacheClient::PutData()
 ///
 /// @internal
 ///
@@ -447,7 +449,35 @@ public:
 
     /// Take socket ownership
     void OwnSocket();
+
+    /// Access to CSocketReaderWriter::m_Sock
+    CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
 };
+
+/// IWriter with error checking
+///
+/// @internal
+class CNetCache_WriterErrCheck : public CTransmissionWriter
+{
+public:
+    typedef CTransmissionWriter TParent;
+public:
+    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, EOwnership own_writer);
+    virtual ~CNetCache_WriterErrCheck();
+
+    virtual 
+    ERW_Result Write(const void* buf,
+                     size_t      count,
+                     size_t*     bytes_written = 0);
+
+    virtual 
+    ERW_Result Flush(void);
+protected:
+    void CheckInputMessage();
+protected:
+    CNetCacheSock_RW*  m_RW;
+};
+
 
 extern NCBI_XCONNECT_EXPORT const char* kNetCacheDriverName;
 
@@ -470,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/08/11 17:51:02  kuznets
+ * Added IWriter implementation with transmission checking
+ *
  * Revision 1.36  2005/08/09 16:00:47  kuznets
  * Added GetData(), allocating memory for BLOB (C++ style)
  *

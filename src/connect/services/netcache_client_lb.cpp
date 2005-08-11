@@ -314,7 +314,9 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
                 } else {
                     _ASSERT(0);
                 }
-            } else {  // for protocol ver 1 (0)
+            } else {  
+                                
+                // for protocol ver 1 (0)
                 CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(wrt);
                 if (rw) {
                     rw->OwnSocket();
@@ -467,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/08/11 17:51:24  kuznets
+ * Added IWriter implementation with transmission checking
+ *
  * Revision 1.21  2005/08/09 18:32:16  kuznets
  * Fixed a bug when service name not always sent to server
  *

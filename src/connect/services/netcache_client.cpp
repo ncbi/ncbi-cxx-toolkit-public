@@ -170,6 +170,7 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 
 
+
 CNetCacheClient::CNetCacheClient(const string&  client_name)
     : CNetServiceClient(client_name),
       m_PutVersion(2)
@@ -181,7 +182,7 @@ CNetCacheClient::CNetCacheClient(const string&  host,
                                  unsigned short port,
                                  const string&  client_name)
     : CNetServiceClient(host, port, client_name),
-      m_PutVersion(0)
+      m_PutVersion(2)
 {
 }
 
@@ -189,7 +190,7 @@ CNetCacheClient::CNetCacheClient(const string&  host,
 CNetCacheClient::CNetCacheClient(CSocket*      sock, 
                                  const string& client_name)
     : CNetServiceClient(sock, client_name),
-      m_PutVersion(0)
+      m_PutVersion(2)
 {
 }
 
@@ -312,11 +313,16 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
 
     m_Sock->DisableOSSendDelay(false);
 
-    IWriter* writer = new CNetCacheSock_RW(m_Sock);
+    CNetCacheSock_RW* writer = new CNetCacheSock_RW(m_Sock);
     if (m_PutVersion == 2) {
+
+        CNetCache_WriterErrCheck* err_writer =
+            new CNetCache_WriterErrCheck(writer, eTakeOwnership);
+/*
         CTransmissionWriter* twriter = 
             new CTransmissionWriter(writer, eTakeOwnership);
-        return twriter;
+*/
+        return err_writer;
     }
     return writer;
 }
@@ -624,23 +630,28 @@ void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
 {
     _ASSERT(m_Sock);
 
+    CNetCacheSock_RW   wrt(m_Sock);
+    CNetCache_WriterErrCheck err_wrt(&wrt, eNoOwnership);
+/*
     CSocketReaderWriter  wrt(m_Sock, eNoOwnership);
     CTransmissionWriter twrt(&wrt, eNoOwnership);
-
+*/
     const char* buf_ptr = buf;
     size_t size_to_write = len;
     while (size_to_write) {
         size_t n_written;
         ERW_Result io_res =
-            twrt.Write(buf_ptr, size_to_write, &n_written);
+            err_wrt.Write(buf_ptr, size_to_write, &n_written);
         NCBI_IO_CHECK_RW(io_res);
 
         size_to_write -= n_written;
         buf_ptr       += n_written;
     } // while
+    err_wrt.Flush();
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 
 CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
 : CSocketReaderWriter(sock) 
@@ -654,6 +665,59 @@ CNetCacheSock_RW::~CNetCacheSock_RW()
 void CNetCacheSock_RW::OwnSocket() 
 { 
     m_IsOwned = eTakeOwnership; 
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+CNetCache_WriterErrCheck::CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
+                                                   EOwnership        own_writer)
+: CTransmissionWriter(wrt, own_writer),
+  m_RW(wrt)
+{
+}
+
+CNetCache_WriterErrCheck::~CNetCache_WriterErrCheck()
+{
+}
+
+ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
+                                           size_t      count,
+                                           size_t*     bytes_written)
+{
+    ERW_Result res = TParent::Write(buf, count, bytes_written);
+    if (res == eRW_Success) {
+        CheckInputMessage();
+    }
+    return res;
+}
+
+ERW_Result CNetCache_WriterErrCheck::Flush(void)
+{
+    ERW_Result res = TParent::Flush();
+    if (res == eRW_Success) {
+        CheckInputMessage();
+    }
+    return res;
+}
+
+void CNetCache_WriterErrCheck::CheckInputMessage()
+{
+    CSocket& sock = m_RW->GetSocket();
+    STimeout to = {0, 0};
+    EIO_Status io_st = sock.Wait(eIO_Read, &to);
+    switch (io_st) {
+    case eIO_Success:
+        // TODO: Error message? read and throw an exception
+        break;
+    case eIO_Closed:
+        NCBI_THROW(CNetServiceException, 
+                   eCommunicationError, 
+                   "Server closed communication channel (timeout?)");
+    default:
+        break;
+    }
 }
 
 
@@ -763,6 +827,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/08/11 17:51:24  kuznets
+ * Added IWriter implementation with transmission checking
+ *
  * Revision 1.45  2005/08/09 16:00:56  kuznets
  * Added GetData(), allocating memory for BLOB (C++ style)
  *
