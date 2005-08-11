@@ -43,6 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
+enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
 static const char* msg_record_expected = "Record is expected";
 
@@ -1252,7 +1253,7 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( value_variant.IsNull() );
         }
         {
-            CVariant value_variant( eDB_Char );
+            CVariant value_variant( eDB_Char, max_text_size );
 
             BOOST_CHECK_EQUAL( eDB_Char, value_variant.GetType() );
             BOOST_CHECK( value_variant.IsNull() );
@@ -1264,7 +1265,7 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( value_variant.IsNull() );
         }
         {
-            CVariant value_variant( eDB_Binary );
+            CVariant value_variant( eDB_Binary, max_text_size );
 
             BOOST_CHECK_EQUAL( eDB_Binary, value_variant.GetType() );
             BOOST_CHECK( value_variant.IsNull() );
@@ -1318,13 +1319,13 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( value_variant.IsNull() );
         }
         {
-            CVariant value_variant( eDB_LongChar );
+            CVariant value_variant( eDB_LongChar, max_text_size );
 
             BOOST_CHECK_EQUAL( eDB_LongChar, value_variant.GetType() );
             BOOST_CHECK( value_variant.IsNull() );
         }
         {
-            CVariant value_variant( eDB_LongBinary );
+            CVariant value_variant( eDB_LongBinary, max_text_size );
 
             BOOST_CHECK_EQUAL( eDB_LongBinary, value_variant.GetType() );
             BOOST_CHECK( value_variant.IsNull() );
@@ -2258,6 +2259,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/08/11 18:23:35  ssikorsk
+ * Explicitly set maximal value size for data types with variable data size.
+ *
  * Revision 1.28  2005/08/10 16:56:50  ssikorsk
  * Added Test_Variant2 to the test-suite
  *
