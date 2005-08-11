@@ -58,6 +58,14 @@ z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 const string kTraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces\
 /trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
+///genome button
+const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
+<tr valign=\"top\"><td><a href=\
+\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?taxid=%d&RID=%s&CLIENT=\
+%s&QUERY_NUMBER=%d\"><img border=0 src=\"html/GenomeView.gif\"></a></td>\
+<td>Show positions of the BLAST hits in the %s genome \
+using the Entrez Genomes MapViewer</td></tr></table><p>";
+
 ///unigene
 const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entr\
 ez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 h\
@@ -273,6 +281,12 @@ public:
     ///@param aln: the input densediag seqalign
     ///@return: the new denseseg seqalign
     static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
+
+    ///return the tax id for a seqid
+    ///@param id: seq id
+    ///@param scope: scope to fetch this sequence
+    ///
+    static int GetTaxidForSeqid(const CSeq_id& id, CScope& scope);
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -293,6 +307,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.16  2005/08/11 15:27:42  jianye
+add gettaxidforseqid
+
 Revision 1.15  2005/07/20 18:16:56  dondosha
 Additions in API, needed for XML formatting
 

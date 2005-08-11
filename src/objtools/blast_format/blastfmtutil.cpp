@@ -66,6 +66,8 @@
 #include <algo/blast/api/version.hpp>
 
 #include <objects/seq/seqport_util.hpp>
+#include <objects/blastdb/Blast_def_line.hpp>
+#include <objects/blastdb/Blast_def_line_set.hpp>
 
 #include <stdio.h>
 
@@ -636,6 +638,29 @@ CBlastFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln)
     }
     
     return sa;
+}
+
+int CBlastFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
+{
+    int taxid = 0;
+    try{
+        const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+        const CRef<CBlast_def_line_set> bdlRef = 
+            CBlastFormatUtil::GetBlastDefline(handle);
+        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+        ITERATE(list<CRef<CBlast_def_line> >, iter_bdl, bdl) {
+            CConstRef<CSeq_id> bdl_id = 
+                GetSeq_idByType((*iter_bdl)->GetSeqid(), id.Which());
+            if(bdl_id && bdl_id->Match(id) && 
+               (*iter_bdl)->IsSetTaxid() && (*iter_bdl)->CanGetTaxid()){
+                taxid = (*iter_bdl)->GetTaxid();
+                break;
+            }
+        }
+    } catch (CException&) {
+        
+    }
+    return taxid;
 }
 
 CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows, 
