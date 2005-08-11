@@ -160,21 +160,37 @@ CVariant::CVariant(EDB_Type type, size_t size)
         m_data = new CDB_BigInt();
         return;  
     case eDB_LongChar:
+        if( size == 0 )
+        {
+            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGCHAR should not be 0");
+        }
         m_data = new CDB_LongChar(size);
         return;  
     case eDB_VarChar:
         m_data = new CDB_VarChar();
         return;  
     case eDB_Char:
+        if( size == 0 )
+        {
+            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of CHAR should not be 0");
+        }
         m_data = new CDB_Char(size);
         return;  
     case eDB_LongBinary:
+        if( size == 0 )
+        {
+            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGBINARY should not be 0");
+        }
         m_data = new CDB_LongBinary(size);
         return;  
     case eDB_VarBinary:
         m_data = new CDB_VarBinary();
         return;  
     case eDB_Binary:
+        if( size == 0 )
+        {
+            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of BINARY should not be 0");
+        }
         m_data = new CDB_Binary(size);
         return;  
     case eDB_Float:
@@ -204,7 +220,7 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_UnsupportedType:
         break;
     }
-    NCBI_THROW(CVariantException, eVariant, "CVariant::ctor():  unsupported type");
+    NCBI_THROW(CVariantException, eVariant, "Unsupported type");
 }
 
 
@@ -822,6 +838,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.39  2005/08/11 16:25:49  kholodov
+* Modified: illegal size argument in CVariant::ctor() throws an exception
+*
 * Revision 1.38  2005/07/28 20:50:35  vakatov
 * Heed a compilation warning
 *
