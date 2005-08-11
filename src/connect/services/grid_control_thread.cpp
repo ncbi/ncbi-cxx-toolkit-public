@@ -198,8 +198,8 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(
 {
     m_InitThreads = 1;
     m_MaxThreads = 3;
-    m_ThrdSrvAcceptTimeout.sec = 0;
-    m_ThrdSrvAcceptTimeout.usec = 500;
+    m_ThrdSrvAcceptTimeout.sec = 1;
+    m_ThrdSrvAcceptTimeout.usec = 0;
     m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
 
     m_Processors[VERSION_CMD] = new CGetVersionProcessor;
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2005/08/11 16:14:59  didenko
+ * Changed AcceptTimeout parameter to 1 sec
+ *
  * Revision 6.12  2005/08/08 16:41:00  didenko
  * Added executable path to the statistics of a worker node
  *
