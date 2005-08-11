@@ -69,7 +69,10 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
 
     Int4 cnt = (Int4)count;
     res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
-    if (res != eRW_Success) return res;
+    if (res != eRW_Success) { 
+        if (bytes_written) *bytes_written = 0;
+        return res;
+    }
     if (written != sizeof(cnt)) {
         return eRW_Error;
     }
@@ -79,7 +82,8 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
         count -= written;
         wrt_count += written;
         if (res != eRW_Success) {
-	    return res;
+            if (bytes_written) *bytes_written = 0;
+	        return res;
         }
     }
     if (bytes_written) {
@@ -211,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/11 18:57:43  kuznets
+ * Fixed bug in IWriter protocol implementation
+ *
  * Revision 1.6  2005/05/05 13:14:37  ivanov
  * Fixed warning on 64bit Workshop. Some cosmetics.
  *
