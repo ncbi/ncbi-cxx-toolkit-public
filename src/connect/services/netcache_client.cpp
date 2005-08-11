@@ -709,15 +709,24 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
     switch (io_st) {
     case eIO_Success:
-        // TODO: Error message? read and throw an exception
+        {
+            string msg;
+            io_st = sock.ReadLine(msg);
+            if (io_st == eIO_Closed) {
+                goto closed_err;
+            }
+        }
         break;
     case eIO_Closed:
-        NCBI_THROW(CNetServiceException, 
-                   eCommunicationError, 
-                   "Server closed communication channel (timeout?)");
+        goto closed_err;
     default:
         break;
     }
+    return;
+    closed_err:
+    NCBI_THROW(CNetServiceException, 
+                eCommunicationError, 
+                "Server closed communication channel (timeout?)");
 }
 
 
@@ -827,6 +836,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/08/11 18:19:04  kuznets
+ * Improved error checking
+ *
  * Revision 1.46  2005/08/11 17:51:24  kuznets
  * Added IWriter implementation with transmission checking
  *
