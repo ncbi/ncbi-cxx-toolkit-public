@@ -43,20 +43,27 @@
 #include <serial/serial.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Request.hpp>
 #include <objects/id2/ID2_Request_Get_Blob_Id.hpp>
+#include <objects/id2/ID2_Request_Get_Blob_Info.hpp>
 #include <objects/id2/ID2_Request_Get_Seq_id.hpp>
+#include <objects/id2/ID2_Get_Blob_Details.hpp>
 #include <objects/id2/ID2_Seq_id.hpp>
 #include <objects/id2/ID2_Reply.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
-#include <memory>
-
+#include <util/compress/reader_zlib.hpp>
+#include <util/compress/zlib.hpp>
+#include <util/rwstream.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -80,9 +87,11 @@ private:
     void x_ReadReply(CID2_Reply& reply);
     void x_ProcessRequest(CID2_Request& request);
     void x_ProcessRequest(CID2_Request_Packet& packet);
+    void x_ProcessData(const CID2_Reply_Data& data, CNcbiOstrstream& out);
 
     auto_ptr<CConn_ServiceStream> m_Server;
-    CNcbiOstream*                 m_DataFile;
+    CNcbiOstream*                 m_OutFile;  // ID2 reply output
+    CNcbiOstream*                 m_DataFile; // ID2 data output
     ESerialDataFormat             m_Format;
     bool                          m_SkipData;
 };
@@ -124,16 +133,22 @@ void CId2FetchApp::Init(void)
     // Output format
     arg_desc->AddDefaultKey
         ("fmt", "OutputFormat",
-         "Format to dump the resulting data in",
+         "Format to dump server reply in",
          CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint("fmt", &(*new CArgAllow_Strings,
                                      "asn", "asnb", "xml"));
 
-    // Output datafile
+    // Output file
     arg_desc->AddDefaultKey
         ("out", "ResultFile",
          "File to dump the resulting data to",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fBinary);
+
+    // ID2 data file
+    arg_desc->AddOptionalKey
+        ("data", "DataFile",
+         "File to save blob data to",
+         CArgDescriptions::eOutputFile, CArgDescriptions::fBinary);
 
     // Log file
     arg_desc->AddOptionalKey
@@ -243,28 +258,114 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet)
     size_t request_count = packet.Set().size();
     size_t remaining_count = request_count;
 
-    _ASSERT(m_DataFile);
+    _ASSERT(m_OutFile);
     CID2_Reply reply;
+    auto_ptr<CNcbiOstrstream> data_out;
     while ( remaining_count > 0 ) {
         x_ReadReply(reply);
-        if ( m_SkipData ) {
+        if ( m_SkipData  ||  m_DataFile ) {
             CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
             if ( iter && iter->IsSetData() ) {
-                //CID2_Reply_Data::TData save;
-                //save.swap(iter->SetData());
-                iter->SetData().clear();
+                if ( m_DataFile ) {
+                    if ( !data_out.get() ) {
+                        data_out.reset(new CNcbiOstrstream);
+                    }
+                    x_ProcessData(*iter, *data_out);
+                }
+                if ( m_SkipData ) {
+                    iter->SetData().clear();
+                }
             }
         }
         auto_ptr<CObjectOStream> id2_client_output
-            (CObjectOStream::Open(m_Format, *m_DataFile));
+            (CObjectOStream::Open(m_Format, *m_OutFile));
 
         *id2_client_output << reply;
         if (m_Format == eSerial_AsnText  ||  m_Format == eSerial_Xml) {
-            *m_DataFile << NcbiEndl;
+            *m_OutFile << NcbiEndl;
+        }
+        if ( data_out.get() ) {
+            *m_DataFile << data_out->rdbuf();
         }
         if ( reply.IsSetEnd_of_reply() ) {
             --remaining_count;
         }
+    }
+}
+
+
+void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data,
+                                 CNcbiOstrstream& out)
+{
+    _ASSERT( data.IsSetData() );
+    _ASSERT( m_DataFile );
+
+    TTypeInfo obj_type = 0;
+    switch ( data.GetData_type() ) {
+    case CID2_Reply_Data::eData_type_seq_entry:
+        obj_type = CSeq_entry::GetTypeInfo();
+        break;
+    case CID2_Reply_Data::eData_type_seq_annot:
+        obj_type = CSeq_annot::GetTypeInfo();
+        break;
+    case CID2_Reply_Data::eData_type_id2s_split_info:
+        obj_type = CID2S_Split_Info::GetTypeInfo();
+        break;
+    case CID2_Reply_Data::eData_type_id2s_chunk:
+        obj_type = CID2S_Chunk::GetTypeInfo();
+        break;
+    default:
+        ERR_POST(Fatal << "Unknown data type in ID2_Reply_Data");
+    }
+
+    ESerialDataFormat format;
+    switch ( data.GetData_format() ) {
+    case CID2_Reply_Data::eData_format_asn_binary:
+        format = eSerial_AsnBinary;
+        break;
+    case CID2_Reply_Data::eData_format_asn_text:
+        format = eSerial_AsnText;
+        break;
+    case CID2_Reply_Data::eData_format_xml:
+        format = eSerial_Xml;
+        break;
+    default:
+        ERR_POST(Fatal << "Unknown data format in ID2_Reply_Data");
+    }
+
+    vector<char> buf;
+    ITERATE(CID2_Reply_Data::TData, it, data.GetData()) {
+        buf.insert(buf.end(), (*it)->begin(), (*it)->end());
+    }
+
+    CNcbiIstrstream stream(&buf[0], buf.size());
+    auto_ptr<CObjectIStream> obj_stream;
+    
+    switch ( data.GetData_compression() ) {
+    case CID2_Reply_Data::eData_compression_none:
+    {
+        obj_stream.reset(CObjectIStream::Open(format, stream));
+        break;
+    }
+    case CID2_Reply_Data::eData_compression_gzip:
+    {
+        obj_stream.reset(CObjectIStream::Open(format,
+            *(new CCompressionIStream(stream,
+            new CZipStreamDecompressor,
+            CCompressionIStream::fOwnProcessor)),
+            true));
+        break;
+    }
+    default:
+        ERR_POST(Fatal << "Unknown data compression in ID2_Reply_Data");
+    }
+    _ASSERT( obj_stream.get() );
+    auto_ptr<CObjectOStream> out_stream(
+        CObjectOStream::Open(m_Format, out));
+    CObjectStreamCopier copier(*obj_stream, *out_stream);
+    copier.Copy(obj_type);
+    if ( m_Format != eSerial_AsnBinary) {
+        out << NcbiEndl;
     }
 }
 
@@ -287,7 +388,8 @@ int CId2FetchApp::Run(void)
     // Setup application registry, error log, and MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
     
-    m_DataFile = &args["out"].AsOutputFile();
+    m_OutFile = &args["out"].AsOutputFile();
+    m_DataFile = args["data"] ? &args["data"].AsOutputFile() : 0;
     const string& fmt = args["fmt"].AsString();
     if        (fmt == "asn") {
         m_Format = eSerial_AsnText;
@@ -303,8 +405,9 @@ int CId2FetchApp::Run(void)
     if ( args["gi"] ) {
         int gi = args["gi"].AsInteger();
         CID2_Request id2_request;
-        id2_request.SetRequest().SetGet_blob_id().
-            SetSeq_id().SetSeq_id().SetSeq_id().SetGi(gi);
+        id2_request.SetRequest().SetGet_blob_info().SetBlob_id().SetResolve().
+            SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().SetGi(gi);
+        id2_request.SetRequest().SetGet_blob_info().SetGet_data();
         x_ProcessRequest(id2_request);
     }
     else if ( args["req"] ) {
@@ -390,6 +493,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/08/11 15:42:29  grichenk
+ * Decode and dump ID2-Reply-Data. Get complete data for gi.
+ *
  * Revision 1.1  2005/08/10 18:42:51  grichenk
  * Initial revision
  *
