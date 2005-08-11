@@ -698,6 +698,7 @@ ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
                                            size_t*     bytes_written)
 {
     if (!m_RW) {  // error detected! block transmission
+        if (bytes_written) *bytes_written = 0;
         return eRW_Error;
     }
 
@@ -725,15 +726,21 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
     _ASSERT(m_RW);
 
     CSocket& sock = m_RW->GetSocket();
+
+    string msg;
+
     STimeout to = {0, 0};
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
     switch (io_st) {
     case eIO_Success:
         {
-            string msg;
             io_st = sock.ReadLine(msg);
             if (io_st == eIO_Closed) {
                 goto closed_err;
+            }
+            if (!msg.empty()) {
+                m_NC_Client.TrimErr(&msg);
+                goto throw_err_msg;
             }
         }
         break;
@@ -743,8 +750,10 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
         break;
     }
     return;
-    closed_err:
-    string msg("Server closed communication channel (timeout?)");
+closed_err:
+    msg = "Server closed communication channel (timeout?)";
+
+throw_err_msg:
     m_NC_Client.SetCommErrMsg(msg);
     m_RW = 0;
     NCBI_THROW(CNetServiceException, eCommunicationError, msg);
@@ -857,6 +866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/08/11 20:45:05  kuznets
+ * Improved error processing
+ *
  * Revision 1.48  2005/08/11 19:33:16  kuznets
  * Added communication error from IWriter
  *
