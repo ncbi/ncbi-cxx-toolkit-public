@@ -47,9 +47,9 @@ USING_NCBI_SCOPE;
 static void s_CreateTestFile(const string& file)
 {
     CNcbiOfstream fs(file.c_str(), ios::out | ios::trunc | ios::binary);
-    assert(fs.good());
+    assert( fs.good() );
     fs << "test data";
-    assert(fs.good());
+    assert( fs.good() );
     fs.close();
 }
 
@@ -341,7 +341,7 @@ static void s_TEST_File(void)
     {{
         // Create test file 
         s_CreateTestFile("file1");
-	
+    
         CFile f("file1");
         CFile f1 = f;
         CFile f2("file2");
@@ -564,7 +564,7 @@ static void s_TEST_Dir(void)
     // Current directory list
     {{
         cout << endl;
-        CDir::TEntries contents = dir.GetEntries("*", CDir::eIgnoreRecursive);
+        CDir::TEntries contents = dir.GetEntries("*", CDir::fIgnoreRecursive);
         ITERATE(CDir::TEntries, i, contents) {
             string entry = (*i)->GetPath();
             cout << entry << endl;
@@ -574,7 +574,7 @@ static void s_TEST_Dir(void)
         // The same but using vector of masks
         vector<string> masks;
         masks.push_back("*");
-        CDir::TEntries contents2 = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+        CDir::TEntries contents2 = dir.GetEntries(masks, CDir::fIgnoreRecursive);
         assert(contents.size() == contents2.size());
 
         vector<string> files;
@@ -584,7 +584,7 @@ static void s_TEST_Dir(void)
         FindFiles(files, paths.begin(), paths.end(), 
                          masks.begin(), masks.end());
         assert(contents.size() == contents2.size());
-        assert(files.size() == contents2.size());
+        assert( files.size() == contents2.size() );
         for (unsigned int i = 0; i < files.size(); ++i) {
             const CDirEntry& entry1 = *contents.front();
             const CDirEntry& entry2 = *contents2.front();
@@ -615,7 +615,7 @@ static void s_TEST_Dir(void)
         
         s_CreateTestFile("dir3/file");
         s_CreateTestFile("dir3/subdir1/file");
-	
+    
         // Delete dir
         dir.Reset("dir3");
         assert( !dir.Remove(CDir::eOnlyEmpty) );
@@ -759,7 +759,7 @@ static void s_TEST_MemoryFile(void)
     // Create test file 
     {{
         CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
-        assert(fs.good());
+        assert( fs.good() );
         fs.close();
         // Check if the file exists now and it size is 0
         assert( f.Exists() );
@@ -785,11 +785,11 @@ static void s_TEST_MemoryFile(void)
     {{
         CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
         fs.write(s_Data, s_DataLen);
-        assert(fs.good());
+        assert( fs.good() );
         fs.close();
         // Check if the file exists now
         assert( f.Exists() );
-        assert( f.GetLength() == s_DataLen );
+        assert( f.GetLength() == (Int8)s_DataLen );
     }}
 
     // eMMP_Read [+ eMMS_Private]
@@ -869,7 +869,7 @@ static void s_TEST_MemoryFile(void)
         // Map file into memory
         CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
                        CMemoryFile::eMMS_Shared, 2, 3);
-        assert( m1.GetFileSize() == s_DataLen );
+        assert( m1.GetFileSize() == (Int8)s_DataLen );
         assert( m1.GetSize() == 3 );
         assert( m1.GetOffset() == 2 );
 
@@ -911,9 +911,9 @@ static void s_TEST_MemoryFile(void)
 
         CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
         fs.write(buf, s_BufLen);
-        assert(fs.good());
+        assert( fs.good() );
         fs.close();
-        assert(f.GetLength() == s_BufLen);
+        assert( f.GetLength() == (Int8)s_BufLen );
 
         // Map some segments of the file
         CMemoryFileMap m(s_FileName, CMemoryFile::eMMP_ReadWrite,
@@ -1011,6 +1011,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/08/11 11:20:19  ivanov
+ * eIgnoreRecursive -> fIgnoreRecursive
+ * Fixed warnings on 64-bit compilers.
+ *
  * Revision 1.52  2005/07/12 11:17:11  ivanov
  * Added some tests for CDirEntry::IsNewer()
  *
