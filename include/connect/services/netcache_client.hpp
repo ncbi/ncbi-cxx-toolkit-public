@@ -191,6 +191,17 @@ public:
     void Remove(const string& key);
 
 
+    /// Returns communication error message or empty string.
+    /// This method is used to deliver error message from
+    /// IReader/IWriter because they sometimes cannot throw exceptions
+    /// (intercepted by C++ stream library)
+    ///
+    /// This method can be called once to get error, repeated call 
+    /// returns empty string
+    virtual
+    string GetCommErrMsg();
+
+
     /// Retrieve BLOB from server by key
     ///
     /// @note
@@ -228,6 +239,10 @@ protected:
 
 protected:
 
+    /// Set communication error message
+    virtual
+    void SetCommErrMsg(const string& msg);
+
     bool IsError(const char* str);
 
     void SendClientName();
@@ -249,12 +264,15 @@ protected:
 
     void TransmitBuffer(const char* buf, size_t len);
 
+    friend class CNetCache_WriterErrCheck;
+
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
 protected:
     string    m_Tmp;
     unsigned  m_PutVersion;
+    string    m_CommErrMsg;  ///< communication err message
 };
 
 
@@ -462,7 +480,9 @@ class CNetCache_WriterErrCheck : public CTransmissionWriter
 public:
     typedef CTransmissionWriter TParent;
 public:
-    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, EOwnership own_writer);
+    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
+                             EOwnership        own_writer,
+                             CNetCacheClient&  parent);
     virtual ~CNetCache_WriterErrCheck();
 
     virtual 
@@ -476,6 +496,7 @@ protected:
     void CheckInputMessage();
 protected:
     CNetCacheSock_RW*  m_RW;
+    CNetCacheClient&   m_NC_Client;
 };
 
 
@@ -500,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/08/11 19:32:56  kuznets
+ * Added communication error from IWriter
+ *
  * Revision 1.37  2005/08/11 17:51:02  kuznets
  * Added IWriter implementation with transmission checking
  *

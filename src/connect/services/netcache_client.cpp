@@ -317,7 +317,7 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
     if (m_PutVersion == 2) {
 
         CNetCache_WriterErrCheck* err_writer =
-            new CNetCache_WriterErrCheck(writer, eTakeOwnership);
+            new CNetCache_WriterErrCheck(writer, eTakeOwnership, *this);
 /*
         CTransmissionWriter* twriter = 
             new CTransmissionWriter(writer, eTakeOwnership);
@@ -362,7 +362,17 @@ string CNetCacheClient::ServerVersion()
     return version;
 }
 
+string CNetCacheClient::GetCommErrMsg()
+{
+    string ret(m_CommErrMsg);
+    m_CommErrMsg.erase();
+    return ret;
+}
 
+void CNetCacheClient::SetCommErrMsg(const string& msg)
+{
+    m_CommErrMsg = msg;
+}
 
 void CNetCacheClient::SendClientName()
 {
@@ -631,11 +641,8 @@ void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
     _ASSERT(m_Sock);
 
     CNetCacheSock_RW   wrt(m_Sock);
-    CNetCache_WriterErrCheck err_wrt(&wrt, eNoOwnership);
-/*
-    CSocketReaderWriter  wrt(m_Sock, eNoOwnership);
-    CTransmissionWriter twrt(&wrt, eNoOwnership);
-*/
+    CNetCache_WriterErrCheck err_wrt(&wrt, eNoOwnership, *this);
+
     const char* buf_ptr = buf;
     size_t size_to_write = len;
     while (size_to_write) {
@@ -671,11 +678,15 @@ void CNetCacheSock_RW::OwnSocket()
 ///////////////////////////////////////////////////////////////////////////////
 
 
-CNetCache_WriterErrCheck::CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
-                                                   EOwnership        own_writer)
+CNetCache_WriterErrCheck::CNetCache_WriterErrCheck
+                                        (CNetCacheSock_RW* wrt, 
+                                         EOwnership        own_writer,
+                                         CNetCacheClient&  parent)
 : CTransmissionWriter(wrt, own_writer),
-  m_RW(wrt)
+  m_RW(wrt),
+  m_NC_Client(parent)
 {
+    _ASSERT(wrt);
 }
 
 CNetCache_WriterErrCheck::~CNetCache_WriterErrCheck()
@@ -686,6 +697,10 @@ ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
                                            size_t      count,
                                            size_t*     bytes_written)
 {
+    if (!m_RW) {  // error detected! block transmission
+        return eRW_Error;
+    }
+
     ERW_Result res = TParent::Write(buf, count, bytes_written);
     if (res == eRW_Success) {
         CheckInputMessage();
@@ -695,6 +710,9 @@ ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
 
 ERW_Result CNetCache_WriterErrCheck::Flush(void)
 {
+    if (!m_RW) {
+        return eRW_Error;
+    }
     ERW_Result res = TParent::Flush();
     if (res == eRW_Success) {
         CheckInputMessage();
@@ -704,6 +722,8 @@ ERW_Result CNetCache_WriterErrCheck::Flush(void)
 
 void CNetCache_WriterErrCheck::CheckInputMessage()
 {
+    _ASSERT(m_RW);
+
     CSocket& sock = m_RW->GetSocket();
     STimeout to = {0, 0};
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
@@ -724,9 +744,10 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
     }
     return;
     closed_err:
-    NCBI_THROW(CNetServiceException, 
-                eCommunicationError, 
-                "Server closed communication channel (timeout?)");
+    string msg("Server closed communication channel (timeout?)");
+    m_NC_Client.SetCommErrMsg(msg);
+    m_RW = 0;
+    NCBI_THROW(CNetServiceException, eCommunicationError, msg);
 }
 
 
@@ -836,6 +857,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/08/11 19:33:16  kuznets
+ * Added communication error from IWriter
+ *
  * Revision 1.47  2005/08/11 18:19:04  kuznets
  * Improved error checking
  *
