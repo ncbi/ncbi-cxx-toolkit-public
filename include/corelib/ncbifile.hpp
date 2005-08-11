@@ -470,6 +470,15 @@ public:
     ///   CFile, CDir, CSymLink
     static CDirEntry* CreateObject(EType type, const string& path = kEmptyStr);
 
+    /// Get a type of constructed object.
+    ///
+    /// @return
+    ///   Return one of the values in EType. Return real entry type
+    ///   for CDirEntry, or an object type for derived classes.
+    /// @sa
+    ///   CreateObject, GetType
+    virtual EType GetObjectType(void) const { return GetType(); };
+
     /// Alternate stat structure for use instead of the standard struct stat.
     /// The alternate stat can have useful, but non-posix fields, which
     /// are usually highly platform-dependent, and named differently
@@ -513,7 +522,7 @@ public:
     ///   not exist, return "eUnknown".
     /// @sa
     ///   IsFile, IsDir, IsLink
-    EType GetType(const struct stat& st) const;
+    static EType GetType(const struct stat& st);
 
     /// Check whether a directory entry is a file.
     /// @sa
@@ -916,6 +925,9 @@ public:
     /// Destructor.
     virtual ~CFile(void);
 
+    /// Get a type of constructed object.
+    virtual EType GetObjectType(void) const { return eFile; };
+
     /// Check existence of file.
     virtual bool Exists(void) const;
 
@@ -1107,6 +1119,9 @@ public:
     /// Destructor.
     virtual ~CDir(void);
 
+    /// Get a type of constructed object.
+    virtual EType GetObjectType(void) const { return eDir; };
+
     /// Check if directory "dirname" exists.
     virtual bool Exists(void) const;
 
@@ -1122,12 +1137,20 @@ public:
     /// Define a list of pointers to directory entries.
     typedef list< AutoPtr<CDirEntry> > TEntries;
 
-    /// Modes for GetEntries
-    /// @sa GetEntries
-    enum EGetEntriesMode {
-        eAllEntries,        ///< All included
-        eIgnoreRecursive    ///< Supress self recursive elements (like "..")
+    /// Flags for GetEntries()
+    /// @sa GetEntries, GetEntriesPtr
+    enum EGetEntriesFlags {
+        fIgnoreRecursive = (1<<1), ///< Supress self recursive elements ("..")
+        fCreateObjects   = (1<<2), ///< Get objects accordingly to entry type
+                                   ///< (CFile,CDir,...), not just a CDirEntry
+        fNoCase          = (1<<3), ///< Use case insensitive compare by mask
+        // These flags added for backward compatibility and will be removed
+        // in the future, so don't use it.
+        eAllEntries       = 0,
+        eIgnoreRecursive  = fIgnoreRecursive
+
     };
+    typedef int TGetEntriesFlags; ///< Binary OR of "EGetEntriesFlags"
 
     /// Get directory entries based on the specified "mask".
     ///
@@ -1141,9 +1164,8 @@ public:
     ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const string&    mask     = kEmptyStr,
-                        EGetEntriesMode  mode     = eAllEntries,
-                        NStr::ECase      use_case = NStr::eCase) const;
+    TEntries GetEntries(const string&    mask  = kEmptyStr,
+                        TGetEntriesFlags flags = 0) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
@@ -1157,8 +1179,7 @@ public:
     /// @return
     ///   An array containing all directory entries.
     TEntries GetEntries(const vector<string>& masks,
-                        EGetEntriesMode  mode     = eAllEntries,
-                        NStr::ECase      use_case = NStr::eCase) const;
+                        TGetEntriesFlags flags = 0) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
@@ -1171,25 +1192,43 @@ public:
     ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const CMask&     masks,
-                        EGetEntriesMode  mode     = eAllEntries,
-                        NStr::ECase      use_case = NStr::eCase) const;
+    TEntries GetEntries(const CMask&     masks, 
+                        TGetEntriesFlags flags = 0) const;
 
 
     /// Versions of GetEntries() which returns pointer to TEntries.
     /// This methods are faster on big directories than GetEntries().
     /// NOTE: Do not forget to release allocated memory using return pointer.
-    TEntries* GetEntriesPtr(const string&    mask     = kEmptyStr,
-                            EGetEntriesMode  mode     = eAllEntries,
-                            NStr::ECase      use_case = NStr::eCase) const;
+    TEntries* GetEntriesPtr(const string&    mask  = kEmptyStr,
+                            TGetEntriesFlags flags = 0) const;
 
     TEntries* GetEntriesPtr(const vector<string>& masks,
-                            EGetEntriesMode  mode     = eAllEntries,
-                            NStr::ECase      use_case = NStr::eCase) const;
+                            TGetEntriesFlags flags = 0) const;
 
     TEntries* GetEntriesPtr(const CMask&     masks,
-                            EGetEntriesMode  mode     = eAllEntries,
-                            NStr::ECase      use_case = NStr::eCase) const;
+                            TGetEntriesFlags flags = 0) const;
+
+    // OBSOLETE functions. Will be deleted soon.
+    // Please use versions of GetEntries*() listed above.
+    typedef TGetEntriesFlags EGetEntriesMode;
+    TEntries GetEntries    (const string&    mask,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
+    TEntries GetEntries    (const vector<string>& masks,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
+    TEntries GetEntries    (const CMask&     masks,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
+    TEntries* GetEntriesPtr(const string&    mask,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
+    TEntries* GetEntriesPtr(const vector<string>& masks,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
+    TEntries* GetEntriesPtr(const CMask&     masks,
+                            EGetEntriesMode  mode,
+                            NStr::ECase      use_case) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -1261,6 +1300,9 @@ public:
 
     /// Destructor.
     virtual ~CSymLink(void);
+
+    /// Get a type of constructed object.
+    virtual EType GetObjectType(void) const { return eLink; };
 
     /// Check existence of link.
     virtual bool Exists(void) const;
@@ -1369,9 +1411,11 @@ TFindFunc FindFilesInDir(const CDir&            dir,
                          TFindFunc              find_func,
                          TFindFiles             flags = fFF_Default)
 {
-    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
-    CDir::TEntries contents =
-        dir.GetEntries(masks, CDir::eIgnoreRecursive, use_case);
+    CDir::TGetEntriesFlags ge_flags = CDir::fIgnoreRecursive;
+    if (flags & fFF_Nocase) {
+        ge_flags |= CDir::fNoCase;
+    }
+    CDir::TEntries contents = dir.GetEntries(masks, ge_flags);
 
     ITERATE(CDir::TEntries, it, contents) {
         const CDirEntry& dir_entry = **it;
@@ -1401,9 +1445,11 @@ TFindFunc FindFilesInDir(const CDir&   dir,
                          TFindFunc     find_func,
                          TFindFiles    flags = fFF_Default)
 {
-    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
-    CDir::TEntries contents =
-        dir.GetEntries(masks, CDir::eIgnoreRecursive, use_case);
+    CDir::TGetEntriesFlags ge_flags = CDir::fIgnoreRecursive;
+    if (flags & fFF_Nocase) {
+        ge_flags |= CDir::fNoCase;
+    }
+    CDir::TEntries contents = dir.GetEntries(masks, ge_flags);
 
     ITERATE(CDir::TEntries, it, contents) {
         const CDirEntry& dir_entry = **it;
@@ -2206,6 +2252,60 @@ bool CDir::Exists(void) const
     return IsDir();
 }
 
+inline CDir::TEntries 
+CDir::GetEntries(const string&    mask,
+                 EGetEntriesMode  mode,
+                 NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntries(mask, mode);
+}
+
+inline CDir::TEntries
+CDir::GetEntries(const vector<string>& masks,
+                 EGetEntriesMode  mode,
+                 NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntries(masks, mode);
+}
+
+inline CDir::TEntries
+CDir::GetEntries(const CMask&     masks,
+                 EGetEntriesMode  mode,
+                 NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntries(masks, mode);
+}
+
+inline CDir::TEntries*
+CDir::GetEntriesPtr(const string&    mask,
+                    EGetEntriesMode  mode,
+                    NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntriesPtr(mask, mode);
+}
+
+inline CDir::TEntries*
+CDir::GetEntriesPtr(const vector<string>& masks,
+                    EGetEntriesMode  mode,
+                    NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntriesPtr(masks, mode);
+}
+
+inline CDir::TEntries*
+CDir::GetEntriesPtr(const CMask&     masks,
+                    EGetEntriesMode  mode,
+                    NStr::ECase      use_case) const
+{
+    if (use_case == NStr::eNocase) mode |= fNoCase;
+    return GetEntriesPtr(masks, mode);
+}
+
 
 // CSymLink
 
@@ -2380,6 +2480,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/08/11 11:17:27  ivanov
+ * Added method GetObjectType() to all CDirEntry based classes.
+ * Made CDirEntry::GetType() static.
+ * Added CDirEntry::EGetEntriesFlags type and 'flag' versions of
+ * CDirEntry::GetEntries[Ptr](). Marked 'enum' versions as obsolete.
+ *
  * Revision 1.64  2005/07/21 12:02:53  ivanov
  * Move CDirEntry::Copy() implementation to .cpp file.
  * Minor comment changes.
