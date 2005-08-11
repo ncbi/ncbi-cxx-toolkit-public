@@ -438,16 +438,19 @@ private:
     ///@param ids: id list
     ///@param gi: gi or 0 if no gi
     ///@param row: the current row
+    ///@param taxid: taxid
     ///
-    string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi, int row) const;
+    string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi,
+                    int row, int taxid) const;
 
     ///get dumpgnl url to sequence record 
     ///@param ids: id list
     ///@param row: the current row
     ///@param alternative_url: user specified url or empty string
+     ///@param taxid: taxid
     ///
     string x_GetDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
-                            const string & alternative_url) const;
+                            const string & alternative_url, int taxid) const;
     
     ///get feature info
     ///@param feature: where feature info to be filled
@@ -591,6 +594,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.33  2005/08/11 15:31:59  jianye
+*add taxid to user url
+*
 *Revision 1.32  2005/08/01 14:45:24  dondosha
 *Removed meaningless const return types, fixing icc compiler warning
 *

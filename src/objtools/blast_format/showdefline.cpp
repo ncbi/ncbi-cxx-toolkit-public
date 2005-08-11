@@ -126,7 +126,7 @@ ecked_GI\" VALUE=\"%d\">  ";
 ///
 static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
                          bool is_db_na, string& db_name, bool open_new_window, 
-                         string& rid, int query_number)
+                         string& rid, int query_number, int taxid)
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
@@ -245,6 +245,10 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         if (gi > 0){
             url_link += "&";
             url_link += "gi=" + NStr::IntToString(gi);
+        }
+        if(taxid > 0){
+            url_link += "&";
+            url_link += "taxid=" + NStr::IntToString(taxid);
         }
         if (rid != NcbiEmptyString){
             url_link += "&";
@@ -572,10 +576,17 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         sdl->score_url += ">";
 
         string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
+        int taxid = 0;
+        if((NStr::ToLower(m_BlastType)).find("mapview") != string::npos || 
+           (NStr::ToLower(m_BlastType)).find("gsfasta") != string::npos){
+            taxid = 
+                CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
+        }
+           
         sdl->id_url = s_GetIdUrl(ids, FindGi(ids), user_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber);
+                                 m_Rid, m_QueryNumber, taxid);
     }
 
     //get defline
@@ -885,7 +896,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
             sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
                                      (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber);
+                                     true : false, m_Rid, m_QueryNumber, 0);
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -896,6 +907,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.21  2005/08/11 15:30:26  jianye
+*add taxid to user url
+*
 *Revision 1.20  2005/08/01 15:03:27  dondosha
 *For local seqids, do not print the lcl| part
 *

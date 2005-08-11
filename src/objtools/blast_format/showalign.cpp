@@ -481,7 +481,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
 
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
-                                  int row) const
+                                  int row, int taxid) const
 {
     string urlLink = NcbiEmptyString;
     
@@ -521,7 +521,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
         }
     } else { //need to use url in configuration file
         string altUrl = NcbiEmptyString;
-        urlLink = x_GetDumpgnlLink(ids, row, altUrl);
+        urlLink = x_GetDumpgnlLink(ids, row, altUrl, taxid);
     }
     return urlLink;
 }
@@ -590,6 +590,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     string middleLine;
     CAlnMap::TSignedRange* rowRng = new CAlnMap::TSignedRange[rowNum];
     int* frame = new int[rowNum];
+    int* taxid = new int[rowNum];
+
     //Add external query feature info such as phi blast pattern
     list<SAlnFeatureInfo*>* bioseqFeature= x_GetQueryFeatureList(rowNum,
                                                                 (int)aln_stop);
@@ -598,6 +600,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     x_FillLocList(alnLocList);    
     //prepare data for each row
     for (int row=0; row<rowNum; row++) {
+        string type_temp = NStr::ToLower(m_BlastType);
+        if(type_temp.find("mapview") != string::npos || 
+           type_temp.find("gsfasta") != string::npos){
+            taxid[row] = CBlastFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
+                                                            m_Scope);
+        } else {
+            taxid[row] = 0;
+        }
         rowRng[row] = m_AV->GetSeqAlnRange(row);
         frame[row] = (m_AV->GetWidth(row) == 3 ? 
                       s_GetFrame(m_AV->IsPositiveStrand(row) ? 
@@ -714,7 +724,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         out << checkBoxBuf;        
                     }
                     urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).\
-                                       GetBioseqCore()->GetId(), gi, row);     
+                                       GetBioseqCore()->GetId(), gi, 
+                                       row, taxid[row]);     
                     out << urlLink;                    
                 }
                 
@@ -885,6 +896,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     delete [] insertStart;
     delete [] insertAlnStart;
     delete [] insertLength;
+    delete [] taxid;
 }
 
 
@@ -1301,9 +1313,18 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     }
                 
                     if(m_AlignOption&eHtml){
-                    
+                        int taxid = 0;
+                        string type_temp = m_BlastType;
+                        if(NStr::ToLower(type_temp).find("mapview") 
+                           != string::npos || 
+                           NStr::ToLower(type_temp).find("gsfasta") != 
+                           string::npos && 
+                           (*iter)->IsSetTaxid() && 
+                           (*iter)->CanGetTaxid()){
+                            taxid = (*iter)->GetTaxid();
+                        }
                         urlLink = x_GetUrl((*iter)->GetSeqid(), 
-                                           gi_in_use_this_gi, 1);    
+                                           gi_in_use_this_gi, 1, taxid);    
                         out<<urlLink;
                     }
                 
@@ -1331,7 +1352,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                > k_GetSubseqThreshhold){
                                 string dumpGnlUrl
                                     = x_GetDumpgnlLink((*iter)->GetSeqid(), 1, 
-                                                       k_DumpGnlUrl);
+                                                       k_DumpGnlUrl, 0);
                                 out<<dumpGnlUrl
                                    <<"<img border=0 height=16 width=16\
  src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the \
@@ -1915,8 +1936,9 @@ static string s_MakeURLSafe(char* src){
 
 
 string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids, 
-                                          int row, 
-                                          const string& alternative_url)const
+                                          int row,
+                                          const string& alternative_url,
+                                          int taxid) const
 {
     string link = NcbiEmptyString;  
     string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
@@ -2012,6 +2034,9 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     }
     if (gi > 0){
         link += "gi=" + NStr::IntToString(gi) + "&";
+    }
+    if(taxid > 0){
+        link += "taxid=" + NStr::IntToString(taxid) +"&";
     }
     if (m_Rid != NcbiEmptyString){
         link += "RID=" + m_Rid +"&";
@@ -2430,6 +2455,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.84  2005/08/11 15:30:26  jianye
+*add taxid to user url
+*
 *Revision 1.83  2005/08/01 14:45:27  dondosha
 *Removed meaningless const return types, fixing icc compiler warning
 *
