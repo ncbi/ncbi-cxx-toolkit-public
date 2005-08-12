@@ -54,6 +54,9 @@ CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
 
 CNetCacheNSStorage::~CNetCacheNSStorage() 
 {
+    try {
+        Reset();
+    } catch (...) {}
 }
 
 void CNetCacheNSStorage::x_Check()
@@ -199,49 +202,56 @@ void CNetCacheNSStorage::DeleteBlob(const string& data_id)
 void CNetCacheNSStorage::Reset()
 {
     m_IStream.reset();
-    if (m_OutputCached && m_OStream.get()) {
-        auto_ptr<IWriter> writer;
-        int try_count = 0;
-        while(1) {
-            try {
-                writer.reset(m_NCClient->PutData(m_CreatedBlobId));
-                break;
+    try {
+        if (m_OutputCached && m_OStream.get()) {
+            auto_ptr<IWriter> writer;
+            int try_count = 0;
+            while(1) {
+                try {
+                    writer.reset(m_NCClient->PutData(m_CreatedBlobId));
+                    break;
+                }
+                catch (CNetServiceException& ex) {
+                    if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                        throw;
+                    ERR_POST("Communication Error : " << ex.what());
+                    if (++try_count >= 2)
+                        throw;
+                    SleepMilliSec(1000 + try_count*2000);
+                }
             }
-            catch (CNetServiceException& ex) {
-                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
-                    throw;
-                ERR_POST("Communication Error : " << ex.what());
-                if (++try_count >= 2)
-                    throw;
-                SleepMilliSec(1000 + try_count*2000);
+            if (!writer.get()) {
+                NCBI_THROW(CNetScheduleStorageException,
+                           eWriter, "Writer couldn't be created.");
+            }
+            fstream* fstr = dynamic_cast<fstream*>(m_OStream.get());
+            if (fstr) {
+                fstr->flush();
+                fstr->seekg(0);
+                char buf[1024];
+                while( !fstr->eof() ) {
+                    fstr->read(buf, sizeof(buf));
+                    if( writer->Write(buf, fstr->gcount()) != eRW_Success)
+                        NCBI_THROW(CNetScheduleStorageException,
+                                   eWriter, "Couldn't write to Writer.");
+                }
+            } else {
+                NCBI_THROW(CNetScheduleStorageException,
+                           eWriter, "Wrong cast.");
+            }
+            m_CreatedBlobId = NULL;
+            
+        }
+        if (m_OStream.get() && !m_OutputCached) {
+            m_OStream->flush();
+            if (!m_OStream->good()) {
+                NCBI_THROW(CNetScheduleStorageException,
+                           eWriter, m_NCClient->GetCommErrMsg());
             }
         }
-        if (!writer.get()) {
-            NCBI_THROW(CNetScheduleStorageException,
-                       eWriter, "Writer couldn't be created.");
-        }
-        fstream* fstr = dynamic_cast<fstream*>(m_OStream.get());
-        if (fstr) {
-            fstr->flush();
-            fstr->seekg(0);
-            char buf[1024];
-            while( !fstr->eof() ) {
-                fstr->read(buf, sizeof(buf));
-                if( writer->Write(buf, fstr->gcount()) != eRW_Success)
-                    NCBI_THROW(CNetScheduleStorageException,
-                               eWriter, "Couldn't write to Writer.");
-            }
-        } else {
-            NCBI_THROW(CNetScheduleStorageException,
-                       eWriter, "Wrong cast.");
-        }
-        m_CreatedBlobId = NULL;
-        
-    }
-    if (m_OStream.get() && !m_OutputCached) {
-        m_OStream->flush();
-        if (!m_OStream->good())
-            ERR_POST("Something bad has happened during Output stream closing.");
+    }catch (...) {
+        m_OStream.reset();
+        throw;
     }
     m_OStream.reset();
 }
@@ -251,6 +261,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/12 13:32:16  didenko
+ * Added call to Reset method form destructor
+ * Improved error handling
+ *
  * Revision 1.11  2005/06/08 16:21:58  didenko
  * Fixed the wrong error message
  *
