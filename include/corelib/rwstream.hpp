@@ -56,8 +56,9 @@ BEGIN_NCBI_SCOPE
 ///     may specify the buffer location (if 0, an internal storage gets
 ///     allocated and later freed upon stream destruction).
 ///
-/// @param own
-///     controls whether IReader is destroyed upon stream destruction.
+/// @param flags
+///     controls whether IReader is destroyed upon stream destruction,
+///     and whether excpetions cause logging (or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 
@@ -145,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/12 18:46:32  lavr
+ * Fix ctor's parameter description
+ *
  * Revision 1.9  2005/08/12 16:10:48  lavr
  * [TE]Ownership -> [TE]Flags
  *
