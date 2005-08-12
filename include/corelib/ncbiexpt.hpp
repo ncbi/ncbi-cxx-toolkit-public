@@ -393,20 +393,23 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 
 /// Standard handling of "exception"-derived exceptions.
-#define STD_CATCH(message) \
-catch (NCBI_NS_STD::exception& e) { \
-      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error \
-           << "[" << message << "]" << "Exception: " << e.what(); \
+#define STD_CATCH(message)                                   \
+catch (NCBI_NS_NCBI::CException& e) {                        \
+      NCBI_REPORT_EXCEPTION(message, e);                     \
+}                                                            \
+catch (NCBI_NS_STD::exception& e) {                          \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error       \
+           << "[" << message << "] Exception: " << e.what(); \
 }
 
 
 /// Standard handling of "exception"-derived exceptions; catches non-standard
 /// exceptiuons and generates "unknown exception" for all other exceptions.
-#define STD_CATCH_ALL(message) \
-STD_CATCH(message) \
-    catch (...) { \
-      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error \
-           << "[" << message << "]" << "Unknown exception"; \
+#define STD_CATCH_ALL(message)                               \
+STD_CATCH(message)                                           \
+    catch (...) {                                            \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error       \
+           << "[" << message << "] Unknown exception";       \
 }
 
 
@@ -1053,6 +1056,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/08/12 16:09:56  lavr
+ * STD_CATCH() to catch and report CExceptions, too
+ *
  * Revision 1.59  2005/05/16 10:55:24  ssikorsk
  * Added m_Severity to the CException class
  *
