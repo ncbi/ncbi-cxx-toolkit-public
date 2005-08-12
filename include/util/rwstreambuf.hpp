@@ -61,23 +61,24 @@ public:
     /// deleted on this object's destruction.
     /// NOTE:  if the reader and writer are in fact the same object, it will
     ///        not be deleted twice.
-    enum EOwnership {
-        fOwnReader = 1 << 1,    // own the underlying reader
-        fOwnWriter = 1 << 2,    // own the underlying writer
-        fOwnAll    = fOwnReader + fOwnWriter
+    enum EFlags {
+        fOwnReader     = 1 << 1,    // own the underlying reader
+        fOwnWriter     = 1 << 2,    // own the underlying writer
+        fOwnAll        = fOwnReader + fOwnWriter,
+        fLogExceptions = 1 << 8
     };
-    typedef int TOwnership;     // bitwise OR of EOwnership
+    typedef int TFlags;     // bitwise OR of EOwnership
 
 
     CRWStreambuf(IReaderWriter* rw = 0,
                  streamsize     buf_size = 0,
-                 CT_CHAR_TYPE*  buf = 0,
-                 TOwnership     own = 0);
+                 CT_CHAR_TYPE*  buf      = 0,
+                 TFlags         flags    = 0);
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
                  streamsize     buf_size = 0,
-                 CT_CHAR_TYPE*  buf = 0,
-                 TOwnership     own = 0);
+                 CT_CHAR_TYPE*  buf      = 0,
+                 TFlags         flags    = 0);
     virtual ~CRWStreambuf();
 
 protected:
@@ -92,7 +93,7 @@ protected:
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 protected:
-    TOwnership     m_OwnRW;
+    TFlags         m_Flags;
 
     IReader*       m_Reader;
     IWriter*       m_Writer;
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/12 16:10:35  lavr
+ * [TE]Ownership -> [TE]Flags, +fLogExceptions
+ *
  * Revision 1.8  2005/05/05 13:19:46  lavr
  * -<corelib/ncbistre.hpp>
  *
