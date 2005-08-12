@@ -87,6 +87,19 @@ public:
 %ignore ncbi::objects::CTSE_ScopeInfo;
 %ignore ncbi::objects::SSeqMatch_Scope;
 
+// Flat file stream inserter
+%ignore *::operator<<(CFlatItemOStream& os, const IFlatItem* item);
+%extend ncbi::objects::CFlatItemOStream {
+    ncbi::objects::CFlatItemOStream&
+    __lshift__(CFlatItemOStream& os, const IFlatItem* item) {
+        return os << item;
+    }
+};
+
+// Protected typedef (TStyle)
+%ignore *::CFlatStringQVal::CFlatStringQVal;
+%ignore *::CFlatStringListQVal::CFlatStringListQVal;
+
 %%
 
 // Obsolescent
@@ -211,52 +224,54 @@ objtools/readers/seqdb/seqdbcommon.hpp
 objtools/writers/agp_write.hpp
 objtools/manip/sage_manip.hpp
 
-// objtools/format/items/accession_item.hpp
-// objtools/format/items/basecount_item.hpp
-// objtools/format/items/comment_item.hpp
-// objtools/format/items/contig_item.hpp
-// objtools/format/items/ctrl_items.hpp
-// objtools/format/items/date_item.hpp
-// objtools/format/items/dbsource_item.hpp
-// objtools/format/items/defline_item.hpp
-// objtools/format/items/endsection_item.hpp
-// objtools/format/items/feature_item.hpp
-// objtools/format/items/flat_qual_slots.hpp
-// objtools/format/items/flat_seqloc.hpp
-// objtools/format/items/genome_item.hpp
-// objtools/format/items/item.hpp
-// objtools/format/items/item_base.hpp
-// objtools/format/items/keywords_item.hpp
-// objtools/format/items/locus_item.hpp
-// objtools/format/items/origin_item.hpp
-// objtools/format/items/primary_item.hpp
-// objtools/format/items/qualifiers.hpp
-// objtools/format/items/reference_item.hpp
-// objtools/format/items/segment_item.hpp
-// objtools/format/items/sequence_item.hpp
-// objtools/format/items/source_item.hpp
-// objtools/format/items/version_item.hpp
-// objtools/format/items/wgs_item.hpp
-// objtools/format/context.hpp
-// objtools/format/embl_formatter.hpp
-// objtools/format/embl_gather.hpp
-// objtools/format/flat_expt.hpp
-// objtools/format/flat_file_config.hpp
-// objtools/format/flat_file_generator.hpp
-// objtools/format/format_item_ostream.hpp
-// objtools/format/formatter.hpp
-// objtools/format/gather_items.hpp
-// objtools/format/gbseq_formatter.hpp
-// objtools/format/genbank_formatter.hpp
-// objtools/format/genbank_gather.hpp
-// objtools/format/gff_formatter.hpp
-// objtools/format/gff_gather.hpp
-// objtools/format/item_formatter.hpp
-// objtools/format/item_ostream.hpp
-// objtools/format/ostream_text_ostream.hpp
-// objtools/format/text_ostream.hpp
-// objtools/format/ftable_formatter.hpp
-// objtools/format/ftable_gather.hpp
+objtools/format/context.hpp
+objtools/format/embl_formatter.hpp
+objtools/format/embl_gather.hpp
+objtools/format/flat_expt.hpp
+objtools/format/flat_file_config.hpp
+objtools/format/flat_file_generator.hpp
+objtools/format/format_item_ostream.hpp
+objtools/format/formatter.hpp
+objtools/format/ftable_formatter.hpp
+objtools/format/ftable_gather.hpp
+objtools/format/gather_items.hpp
+objtools/format/gbseq_formatter.hpp
+objtools/format/genbank_formatter.hpp
+objtools/format/genbank_gather.hpp
+objtools/format/gff3_formatter.hpp
+objtools/format/gff_formatter.hpp
+objtools/format/gff_gather.hpp
+objtools/format/item_formatter.hpp
+objtools/format/item_ostream.hpp
+objtools/format/ostream_text_ostream.hpp
+objtools/format/text_ostream.hpp
+objtools/format/items/accession_item.hpp
+objtools/format/items/alignment_item.hpp
+objtools/format/items/basecount_item.hpp
+objtools/format/items/comment_item.hpp
+objtools/format/items/contig_item.hpp
+objtools/format/items/ctrl_items.hpp
+objtools/format/items/date_item.hpp
+objtools/format/items/dbsource_item.hpp
+objtools/format/items/defline_item.hpp
+objtools/format/items/feature_item.hpp
+objtools/format/items/flat_qual_slots.hpp
+objtools/format/items/flat_seqloc.hpp
+objtools/format/items/gap_item.hpp
+objtools/format/items/genome_item.hpp
+objtools/format/items/item.hpp
+objtools/format/items/item_base.hpp
+objtools/format/items/keywords_item.hpp
+objtools/format/items/locus_item.hpp
+objtools/format/items/origin_item.hpp
+objtools/format/items/primary_item.hpp
+objtools/format/items/qualifiers.hpp
+objtools/format/items/reference_item.hpp
+objtools/format/items/segment_item.hpp
+objtools/format/items/sequence_item.hpp
+objtools/format/items/source_item.hpp
+objtools/format/items/version_item.hpp
+objtools/format/items/wgs_item.hpp
 
 %%
 
@@ -298,6 +313,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/12 20:26:53  jcherry
+ * Added objtools/format
+ *
  * Revision 1.8  2005/08/03 14:57:10  jcherry
  * Added headers
  *

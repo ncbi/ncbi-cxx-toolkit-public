@@ -41,6 +41,7 @@
 // objtools/data_loaders/cdd/cdd.hpp
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
 
+%ignore ncbi::objects::CFlatCodonQVal::CFlatCodonQVal(const string&);
 %ignore ncbi::objects::CFlatCodonQV::CFlatCodonQV(const string&);
 
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
@@ -81,6 +82,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/12 20:26:53  jcherry
+ * Added objtools/format
+ *
  * Revision 1.6  2005/07/05 19:46:06  jcherry
  * Restored %ignore that was accidentally removed
  *
