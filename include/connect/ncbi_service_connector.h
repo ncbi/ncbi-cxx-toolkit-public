@@ -36,6 +36,7 @@
  *
  */
 
+#include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service.h>
 
 
@@ -52,13 +53,15 @@ extern "C" {
 
 typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(SERV_ITER iter, void* data);
 typedef void              (*FSERVICE_CleanupData)(void* data);
-typedef void              (*FSERVICE_ResetData)(void* data);
+typedef void              (*FSERVICE_ResetData)  (void* data);
+
 
 typedef struct {
     void*                data;
-    FSERVICE_ResetData   reset;         /* called at each close     */
-    FSERVICE_CleanupData cleanup;       /* called at destruction    */
-    FSERVICE_GetNextInfo get_next_info; /* called to get conn point */
+    FSERVICE_ResetData   reset;         /* called at each close           */
+    FSERVICE_CleanupData cleanup;       /* called at destruction          */
+    FSERVICE_GetNextInfo get_next_info; /* called to get conn point       */
+    THCC_Flags           flags;         /* only fHCC_Flushable is honored */
 } SSERVICE_Extra;
 
 
@@ -84,6 +87,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2005/08/12 19:20:06  lavr
+ * +SSERVICE_Extra::flags (for fHCC_Flushable)
+ *
  * Revision 6.10  2003/04/09 19:05:52  siyan
  * Added doxygen support
  *
