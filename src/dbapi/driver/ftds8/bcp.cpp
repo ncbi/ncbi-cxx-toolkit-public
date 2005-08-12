@@ -59,6 +59,7 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* con,
 
 bool CTDS_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
+    m_WasBound = false;
     return m_Params.BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
@@ -120,7 +121,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : -1,
-                             (BYTE*) "", 1, SYBCHAR, i + 1);
+                             (BYTE*) "", 1, SYBVARCHAR, i + 1);
             }
             break;
             case eDB_LongChar: {
@@ -141,7 +142,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : val.Size(),
-                             0, 0, SYBBINARY, i + 1);
+                             0, 0, SYBVARBINARY, i + 1);
             }
             break;
             case eDB_LongBinary: {
@@ -491,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/12 15:44:56  ssikorsk
+ * Fixed bind data types for variable-sized data types
+ *
  * Revision 1.7  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
