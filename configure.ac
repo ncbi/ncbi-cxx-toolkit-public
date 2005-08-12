@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.385 2005/08/08 13:58:24 ucko Exp $
+#  $Id: configure.ac,v 1.386 2005/08/12 14:58:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2442,6 +2442,9 @@ orig_CPPFLAGS="$CPPFLAGS"
 orig_LDFLAGS="$LDFLAGS"
 orig_LIBS="$LIBS"
 
+
+### Check for math functions that aren't always available
+AC_CHECK_FUNCS(erf)
 
 NCBI_CHECK_LIBS(KSTAT, kstat, kstat_open)
 NCBI_CHECK_LIBS(RPCSVC, rpcsvc, rstat)
