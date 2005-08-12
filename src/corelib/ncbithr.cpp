@@ -357,13 +357,13 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     catch (CExitThreadException& e) {
         e.EnterWrapper();
     }
-    STD_CATCH_ALL("CThread::Wrapper: CThread::Main() failed");
+    NCBI_CATCH_ALL("CThread::Wrapper: CThread::Main() failed");
 
     // Call user-provided OnExit()
     try {
         thread_obj->OnExit();
     }
-    STD_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
+    NCBI_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
 
     // Cleanup local storages used by this thread
     {{
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/08/12 19:22:39  lavr
+ * Use NCBI_CATCH_ALL() instead of STD_CATCH_ALL()
+ *
  * Revision 1.32  2005/05/17 17:52:56  grichenk
  * Added flag to run threads with low priority (MS-Win only)
  *
