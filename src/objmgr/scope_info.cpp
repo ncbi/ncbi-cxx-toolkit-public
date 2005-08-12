@@ -1012,7 +1012,9 @@ void CTSE_ScopeInfo::x_DetachDS(void)
     m_ScopeInfoMap.clear();
     m_TSE_Lock.Reset();
     while ( !m_BioseqById.empty() ) {
-        m_BioseqById.begin()->second->x_DetachTSE(this);
+        CRef<CBioseq_ScopeInfo> bioseq = m_BioseqById.begin()->second;
+        bioseq->x_DetachTSE(this);
+        _ASSERT(m_BioseqById.empty()||m_BioseqById.begin()->second != bioseq);
     }
     m_DS_Info = 0;
 }
@@ -1528,16 +1530,23 @@ void CTSE_ScopeInfo::SelectSeq(CSeq_entry_ScopeInfo& parent,
 // CBioseq_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
 
+//#define BIOSEQ_TRACE(x) ERR_POST(x)
+#ifndef BIOSEQ_TRACE
+# define BIOSEQ_TRACE(x)
+#endif
+
 
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(TBlobStateFlags flags)
     : m_BlobState(flags)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
 }
 
 
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(CTSE_ScopeInfo& tse)
     : m_BlobState(CBioseq_Handle::fState_none)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
     x_AttachTSE(&tse);
 }
 
@@ -1547,12 +1556,21 @@ CBioseq_ScopeInfo::CBioseq_ScopeInfo(CTSE_ScopeInfo& tse,
     : m_Ids(ids),
       m_BlobState(CBioseq_Handle::fState_none)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
     x_AttachTSE(&tse);
 }
 
 
 CBioseq_ScopeInfo::~CBioseq_ScopeInfo(void)
 {
+    if ( IsAttached() ) {
+        BIOSEQ_TRACE("~CBioseq_ScopeInfo: "<<this<<
+                     " TSE "<<&x_GetTSE_ScopeInfo());
+    }
+    else {
+        BIOSEQ_TRACE("~CBioseq_ScopeInfo: "<<this);
+    }
+    _ASSERT(!IsAttached());
 }
 
 
@@ -1578,6 +1596,7 @@ CBioseq_ScopeInfo::GetLock(CConstRef<CBioseq_Info> bioseq)
 
 void CBioseq_ScopeInfo::x_AttachTSE(CTSE_ScopeInfo* tse)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_AttachTSE "<<tse);
     CScopeInfo_Base::x_AttachTSE(tse);
     ITERATE ( TIds, it, GetIds() ) {
         tse->x_IndexBioseq(*it, this);
@@ -1586,20 +1605,24 @@ void CBioseq_ScopeInfo::x_AttachTSE(CTSE_ScopeInfo* tse)
 
 void CBioseq_ScopeInfo::x_DetachTSE(CTSE_ScopeInfo* tse)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_DetachTSE "<<tse);
     m_SynCache.Reset();
     m_BioseqAnnotRef_Info.Reset();
     ITERATE ( TIds, it, GetIds() ) {
         tse->x_UnindexBioseq(*it, this);
     }
     CScopeInfo_Base::x_DetachTSE(tse);
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_DetachTSE "<<tse<<" DONE");
 }
 
 
 void CBioseq_ScopeInfo::x_ForgetTSE(CTSE_ScopeInfo* tse)
 {
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_ForgetTSE "<<tse);
     m_SynCache.Reset();
     m_BioseqAnnotRef_Info.Reset();
     CScopeInfo_Base::x_ForgetTSE(tse);
+    BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_ForgetTSE "<<tse<<" DONE");
 }
 
 
@@ -1715,6 +1738,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/08/12 16:14:40  vasilche
+* Fixed premature deletion of CBioseq_ScopeInfo.
+*
 * Revision 1.23  2005/08/10 17:36:40  vasilche
 * Fixed memory leak from CRef circular references.
 *
