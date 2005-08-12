@@ -85,8 +85,8 @@ private:
     void x_InitConnection(const string& server_name, bool show_init);
     void x_SendRequestPacket(CID2_Request_Packet& packet);
     void x_ReadReply(CID2_Reply& reply);
-    void x_ProcessRequest(CID2_Request& request);
-    void x_ProcessRequest(CID2_Request_Packet& packet);
+    void x_ProcessRequest(CID2_Request& request, bool dump = true);
+    void x_ProcessRequest(CID2_Request_Packet& packet, bool dump = true);
     void x_ProcessData(const CID2_Reply_Data& data, CNcbiOstrstream& out);
 
     auto_ptr<CConn_ServiceStream> m_Server;
@@ -94,6 +94,7 @@ private:
     CNcbiOstream*                 m_DataFile; // ID2 data output
     ESerialDataFormat             m_Format;
     bool                          m_SkipData;
+    int                           m_SerialNumber;
 };
 
 
@@ -181,46 +182,19 @@ void CId2FetchApp::x_InitConnection(const string& server_name,
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;
     m_Server.reset(new CConn_ServiceStream
         (server_name, fSERV_Any, 0, 0, &tmout));
+    m_SerialNumber = 0;
 
     CID2_Request req;
     req.SetRequest().SetInit();
     CID2_Request_Packet packet;
     packet.Set().push_back(Ref(&req));
 
-    if ( show_init ) {
-        x_ProcessRequest(packet);
-        return;
-    }
-
-    x_SendRequestPacket(packet);
-
-    CID2_Reply reply;
-    x_ReadReply(reply);
-    // check init reply
-    if ( reply.IsSetDiscard() ) {
-        ERR_POST(Fatal << "Bad init reply: 'discard' is set");
-    }
-    if ( reply.IsSetError() ) {
-        ERR_POST(Fatal << "Bad init reply: 'error' is set");
-    }
-    if ( !reply.IsSetEnd_of_reply() ) {
-        ERR_POST(Fatal << "Bad init reply: 'end-of-reply' is not set");
-    }
-    if ( reply.GetReply().Which() != CID2_Reply::TReply::e_Init ) {
-        ERR_POST(Fatal << "Bad init reply: 'reply' is not 'init'");
-    }
+    x_ProcessRequest(packet, show_init);
 }
 
 
 void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
 {
-    int ser_num = 0;
-    NON_CONST_ITERATE(CID2_Request_Packet::Tdata, it, packet.Set()) {
-        CID2_Request& req = **it;
-        if ( !req.IsSetSerial_number() ) {
-            req.SetSerial_number(ser_num++);
-        }
-    }
     // Open connection to ID1 server
     CObjectOStreamAsnBinary id2_server_output(*m_Server, false);
     // Send request packet to the server
@@ -237,26 +211,32 @@ void CId2FetchApp::x_ReadReply(CID2_Reply& reply)
 }
 
 
-void CId2FetchApp::x_ProcessRequest(CID2_Request& request)
+void CId2FetchApp::x_ProcessRequest(CID2_Request& request, bool dump)
 {
     CID2_Request_Packet packet;
     packet.Set().push_back(Ref(&request));
-    x_ProcessRequest(packet);
+    x_ProcessRequest(packet, dump);
 }
 
 
-void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet)
+void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
 {
-    {{
+    NON_CONST_ITERATE(CID2_Request_Packet::Tdata, it, packet.Set()) {
+        CID2_Request& req = **it;
+        if ( !req.IsSetSerial_number() ) {
+            req.SetSerial_number(m_SerialNumber++);
+        }
+    }
+
+    if ( dump ) {
         CNcbiOstrstream ostr;
         ostr << MSerial_AsnText << packet;
         LOG_POST("\nProcessing request:\n" << ostr.rdbuf());
-    }}
+    }
 
     x_SendRequestPacket(packet);
 
-    size_t request_count = packet.Set().size();
-    size_t remaining_count = request_count;
+    size_t remaining_count = packet.Set().size();
 
     _ASSERT(m_OutFile);
     CID2_Reply reply;
@@ -277,15 +257,17 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet)
                 }
             }
         }
-        auto_ptr<CObjectOStream> id2_client_output
-            (CObjectOStream::Open(m_Format, *m_OutFile));
+        if ( dump ) {
+            auto_ptr<CObjectOStream> id2_client_output
+                (CObjectOStream::Open(m_Format, *m_OutFile));
 
-        *id2_client_output << reply;
-        if (m_Format == eSerial_AsnText  ||  m_Format == eSerial_Xml) {
-            *m_OutFile << NcbiEndl;
-        }
-        if ( data_out.get() ) {
-            *m_DataFile << data_out->rdbuf();
+            *id2_client_output << reply;
+            if (m_Format == eSerial_AsnText  ||  m_Format == eSerial_Xml) {
+                *m_OutFile << NcbiEndl;
+            }
+            if ( data_out.get() ) {
+                *m_DataFile << data_out->rdbuf();
+            }
         }
         if ( reply.IsSetEnd_of_reply() ) {
             --remaining_count;
@@ -493,6 +475,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/08/12 14:11:55  grichenk
+ * Use unique serial numbers for requests
+ *
  * Revision 1.2  2005/08/11 15:42:29  grichenk
  * Decode and dump ID2-Reply-Data. Get complete data for gi.
  *
