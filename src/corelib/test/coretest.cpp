@@ -638,13 +638,13 @@ static void TestException_Std(void)
     }
 
     try { TE_runtime(); }
-    STD_CATCH ("STD_CATCH" << ' ' << "TE_runtime ");
+    STD_CATCH ("STD_CATCH TE_runtime ");
 
     try { TE_runtime(); }
     catch (logic_error& e) {
         NcbiCerr << "CATCH TE_runtime::logic_error " << e.what() << NcbiEndl;
         _TROUBLE; }
-    STD_CATCH_ALL ("STD_CATCH_ALL" << " " << "TE_runtime");
+    STD_CATCH_ALL ("STD_CATCH_ALL TE_runtime");
 
     TE_none();
 
@@ -951,6 +951,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2005/08/12 17:56:46  ucko
+ * Adjust usage of STD_CATCH[_ALL], whose argument must now be a single string.
+ *
  * Revision 1.95  2005/06/17 15:30:06  vasilche
  * Added test of compiler support for empty base optimization.
  *
