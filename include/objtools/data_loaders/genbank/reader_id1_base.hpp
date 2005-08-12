@@ -89,7 +89,8 @@ public:
         eSubSat_SNP  = 1<<0,
         eSubSat_SNP_graph = 1<<2,
         eSubSat_CDD  = 1<<3,
-        eSubSat_MGC  = 1<<4
+        eSubSat_MGC  = 1<<4,
+        eSubSat_tRNA = 1<<7
     };
 };
 

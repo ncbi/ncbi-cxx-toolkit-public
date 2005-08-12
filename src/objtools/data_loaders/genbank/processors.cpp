@@ -1683,7 +1683,8 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
         (blob_id.GetSubSat() == eSubSat_SNP ||
          blob_id.GetSubSat() == eSubSat_CDD ||
          blob_id.GetSubSat() == eSubSat_SNP_graph ||
-         blob_id.GetSubSat() == eSubSat_MGC);
+         blob_id.GetSubSat() == eSubSat_MGC ||
+         blob_id.GetSubSat() == eSubSat_tRNA);
 }
 
 
@@ -1749,6 +1750,11 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     else if ( blob_id.GetSubSat() == eSubSat_MGC ) {
         type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
         db_name = "Annot:MGC";
+    }
+    else if ( blob_id.GetSubSat() == eSubSat_tRNA ) {
+        name.SetNamed("tRNA");
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_tRNA);
+        db_name = "Annot:tRNA";
     }
     _ASSERT(!db_name.empty());
 
