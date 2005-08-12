@@ -2460,6 +2460,10 @@ fstream* CFile::CreateTmpFile(const string& filename,
     fstream* stream = new CTmpStream(tmpname.c_str(), mode);
 #endif
 
+    if ( !stream->good() ) {
+        delete stream;
+        return 0;
+    }
     return stream;
 }
 
@@ -3707,6 +3711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.122  2005/08/12 14:52:28  ivanov
+ * CFile::CreateTmpFile() -- return 0 also if created stream is not "good"
+ *
  * Revision 1.121  2005/08/11 11:17:50  ivanov
  * Added CDirEntry::EGetEntriesFlags type and 'flag' versions of
  * CDirEntry::GetEntries[Ptr]().
