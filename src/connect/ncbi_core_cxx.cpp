@@ -62,10 +62,7 @@ static void s_REG_Get(void* user_data,
         if ( !result.empty() )
             strncpy0(value, result.c_str(), value_size - 1);
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_REG_Get() failed", e);
-    }
-    STD_CATCH_ALL("s_REG_Get() failed");
+    NCBI_CATCH_ALL("s_REG_Get() failed");
 }
 
 
@@ -79,10 +76,7 @@ static void s_REG_Set(void* user_data,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_REG_Set() failed", e);
-    }
-    STD_CATCH_ALL("s_REG_Set() failed");
+    NCBI_CATCH_ALL("s_REG_Set() failed");
 }
 
 
@@ -91,10 +85,7 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
     try {
         static_cast<IRegistry*> (user_data)->RemoveReference();
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_REG_Cleanup() failed", e);
-    }
-    STD_CATCH_ALL("s_REG_Cleanup() failed");
+    NCBI_CATCH_ALL("s_REG_Cleanup() failed");
 }
 
 
@@ -163,10 +154,7 @@ static void s_LOG_Handler(void*         /*user_data*/,
                 "\n#################### [END] Raw Data";
         }
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_LOG_Handler() failed", e);
-    }
-    STD_CATCH_ALL("s_LOG_Handler() failed");
+    NCBI_CATCH_ALL("s_LOG_Handler() failed");
 }
 
 
@@ -204,10 +192,7 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
         return 1/*true*/;
 
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_LOCK_Handler() failed", e);
-    }
-    STD_CATCH_ALL("s_LOCK_Handler() failed");
+    NCBI_CATCH_ALL("s_LOCK_Handler() failed");
     return 0/*false*/;
 }
 
@@ -217,10 +202,7 @@ static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
     try {
         delete static_cast<CRWLock*> (user_data);
     }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("s_LOCK_Cleanup() failed", e);
-    }
-    STD_CATCH_ALL("s_LOCK_Cleanup() failed");
+    NCBI_CATCH_ALL("s_LOCK_Cleanup() failed");
 }
 
 
@@ -272,7 +254,7 @@ extern void CONNECT_Init(IRWRegistry*      reg,
     try {
         s_Init(reg, lock, flags, eConnectInit_Explicit);
     }
-    STD_CATCH_ALL("CONNECT_Init() failed");
+    NCBI_CATCH_ALL("CONNECT_Init() failed");
 }
 
 
@@ -287,7 +269,7 @@ extern void CONNECT_InitInternal(void)
                 s_Init(theApp ? &theApp->GetConfig() : 0);
             }
         }
-        STD_CATCH_ALL("CONNECT_InitInternal() failed");
+        NCBI_CATCH_ALL("CONNECT_InitInternal() failed");
     } else {
         s_ConnectInit = eConnectInit_Explicit;
     }
@@ -300,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2005/08/12 19:21:20  lavr
+ * Take advantage of new NCBI_CATCH_ALL() [replaces STD_CATCH_ALL()]
+ *
  * Revision 6.31  2005/07/11 18:12:12  lavr
  * Fix ADDEND spelling
  *
