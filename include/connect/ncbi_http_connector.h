@@ -57,7 +57,8 @@ extern "C" {
  *
  * In order to workaround some HTTP communication features, this code does:
  *  1) Accumulate all output data in an internal memory buffer until the
- *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted.
+ *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted
+ *     (also see fHCC_Flushable flag below).
  *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read), compose
  *     and send the whole HTTP request as:
  *        {POST|GET} <info->path>?<info->args> HTTP/1.0\r\n
@@ -71,6 +72,9 @@ extern "C" {
  *       - it must be terminated by a single '\r\n';
  *       - it gets inserted to the HTTP header "as is", without any
  *         automatic checking or encoding.
+ *     NOTE:
+ *       Data may depart to server side earlier if Flush()'ed in
+ *       fHCC_Flushable connector, see below in "flags".
  *     After the request has been sent, reply data from the peer
  *     CGI program are then can be actually read out.
  *  4) On any "Write" operation. which follows data reading, the connection
@@ -109,6 +113,12 @@ extern "C" {
  *       data to CGI program; by default any send operation tries to
  *       extract data(if any) coming back from the CGI program in order to
  *       prevent connection blocking
+ *  fHCC_Flushable --
+ *       usually all data written to the connection are kept until
+ *       read begins (even though Flush() might have been called in between
+ *       the writes).  With this flag set, Flush() will result the data
+ *       to be actually sent to server side, so the following write will form
+ *       new request, and not get added to the previous one.
  *
  * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "info->args")
  *       is performed by URL_Encode() and URL_Decode() -- "ncbi_connutil.[ch]".
@@ -123,7 +133,8 @@ typedef enum {
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
     fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
-    fHCC_NoUpread         = 0x80  /* do not use SOCK_ReadWhileWrite() at all */
+    fHCC_NoUpread         = 0x80, /* do not use SOCK_ReadWhileWrite() at all */
+    fHCC_Flushable        = 0x100 /* connector will really flush on Flush()  */
 } EHCC_Flags;
 typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 
@@ -184,6 +195,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2005/08/12 16:09:32  lavr
+ * +fHCC_Flushable
+ *
  * Revision 6.13  2003/05/29 20:13:15  lavr
  * -#include <connect/ncbi_connector.h>
  *
