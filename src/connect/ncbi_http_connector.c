@@ -796,6 +796,7 @@ static EIO_Status s_VT_Flush
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
+    const STimeout zero = {0, 0};
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
     /* The real flush will be performed on the first "READ" (or "CLOSE"),
@@ -807,7 +808,10 @@ static EIO_Status s_VT_Flush
     } else
         uuu->w_timeout  = timeout;
 
-    return eIO_Success;
+    assert(connector->meta);
+    return (!(uuu->flags & fHCC_Flushable)  ||  !connector->meta->wait
+            ? eIO_Success
+            : connector->meta->wait(connector->meta->c_wait, eIO_Read, &zero));
 }
 
 
@@ -975,6 +979,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.66  2005/08/12 16:11:21  lavr
+ * Implement fHCC_Flushable
+ *
  * Revision 6.65  2005/03/08 16:23:13  lavr
  * Replace an assert() with verify() to remove release-mode unused var
  *
