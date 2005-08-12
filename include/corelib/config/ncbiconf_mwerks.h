@@ -21,6 +21,7 @@
 #  define _MT           1
    /* fix for /usr/include/ctype.h */
 #  define _USE_CTYPE_INLINE_ 1
+#  define HAVE_ERF 1
 #else
 #  define NCBI_OS_MAC  1
 #  define NCBI_OS      "MAC"
