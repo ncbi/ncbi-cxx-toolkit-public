@@ -32,32 +32,63 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbiexpt.hpp>
 #include <util/rwstreambuf.hpp>
 
 
+#define RWSTREAMBUF_CATCH_ALL(message, action)                                \
+catch (CException& e) {                                                       \
+    if (m_Flags & fLogExceptions) {                                           \
+        try {                                                                 \
+            NCBI_REPORT_EXCEPTION(message, e);                                \
+        } catch (...) {                                                       \
+        }                                                                     \
+    }                                                                         \
+    action;                                                                   \
+}                                                                             \
+catch (exception& e) {                                                        \
+    if (m_Flags & fLogExceptions) {                                           \
+        try {                                                                 \
+            ERR_POST(Error << "[" << message << "] Exception: " << e.what()); \
+        } catch (...) {                                                       \
+        }                                                                     \
+    }                                                                         \
+    action;                                                                   \
+}                                                                             \
+catch (...) {                                                                 \
+    if (m_Flags & fLogExceptions) {                                           \
+        try {                                                                 \
+            ERR_POST(Error << "[" << message << "] Unknown exception");       \
+        } catch (...) {                                                       \
+        }                                                                     \
+    }                                                                         \
+    action;                                                                   \
+}
+
+
 BEGIN_NCBI_SCOPE
-
-
+             
+             
 static const streamsize kDefaultBufferSize = 4096;
 
 
-CRWStreambuf::CRWStreambuf(IReaderWriter*           rw,
-                           streamsize               n,
-                           CT_CHAR_TYPE*            s,
-                           CRWStreambuf::TOwnership o)
-    : m_OwnRW(o), m_Reader(rw), m_Writer(rw),
+CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
+                           streamsize           n,
+                           CT_CHAR_TYPE*        s,
+                           CRWStreambuf::TFlags f)
+    : m_Flags(f), m_Reader(rw), m_Writer(rw),
       m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
 }
 
 
-CRWStreambuf::CRWStreambuf(IReader*                 r,
-                           IWriter*                 w,
-                           streamsize               n,
-                           CT_CHAR_TYPE*            s,
-                           CRWStreambuf::TOwnership o)
-    : m_OwnRW(o), m_Reader(r), m_Writer(w),
+CRWStreambuf::CRWStreambuf(IReader*             r,
+                           IWriter*             w,
+                           streamsize           n,
+                           CT_CHAR_TYPE*        s,
+                           CRWStreambuf::TFlags f)
+    : m_Flags(f), m_Reader(r), m_Writer(w),
       m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
@@ -73,14 +104,14 @@ CRWStreambuf::~CRWStreambuf()
     IReaderWriter* r = dynamic_cast<IReaderWriter*> (m_Reader);
     IReaderWriter* w = dynamic_cast<IReaderWriter*> (m_Writer);
 
-    if ((m_OwnRW & fOwnAll) && r != w) {
+    if ((m_Flags & fOwnAll) && r != w) {
         delete m_Writer;
         delete m_Reader;
-    } else if (m_OwnRW & fOwnWriter) {
+    } else if (m_Flags & fOwnWriter) {
         if (!r || r != w) {
             delete m_Writer;
         }
-    } else if (m_OwnRW & fOwnReader) {
+    } else if (m_Flags & fOwnReader) {
         if (!w || w != r) {
             delete m_Reader;
         }
@@ -132,7 +163,11 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         if ( n_write ) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
-            m_Writer->Write(m_WriteBuf, n_write, &n_written);
+            try {
+                m_Writer->Write(m_WriteBuf, n_write, &n_written);
+            }
+            RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Write()",
+                                  n_written = 0);
             if ( !n_written )
                 return CT_EOF;
             n_written /= sizeof(CT_CHAR_TYPE);
@@ -156,15 +191,18 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
     }
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
-    switch ( m_Writer->Flush() ) {
-    case eRW_Error:
-    case eRW_Eof:
-        return CT_EOF;
-    default:
-        break;
+    try {
+        switch ( m_Writer->Flush() ) {
+        case eRW_Error:
+        case eRW_Eof:
+            break;
+        default:
+            return CT_NOT_EOF(CT_EOF);
+        }
     }
-
-    return CT_NOT_EOF(CT_EOF);
+    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Flush()",
+                          (void) 0);
+    return CT_EOF;
 }
 
 
@@ -183,7 +221,11 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 
     // read
     size_t n_read;
-    m_Reader->Read(m_ReadBuf, m_BufSize*sizeof(CT_CHAR_TYPE), &n_read);
+    try {
+        m_Reader->Read(m_ReadBuf, m_BufSize*sizeof(CT_CHAR_TYPE), &n_read);
+    }
+    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::underflow(): IReader::Read()",
+                          n_read = 0);
     if ( !n_read )
         return CT_EOF;
 
@@ -221,10 +263,14 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     do {
         size_t       x_read = n < (size_t) m_BufSize? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize? m_ReadBuf : buf;
-        // read directly from device
-        ERW_Result   result = m_Reader->Read(x_buf,
-                                             x_read*sizeof(CT_CHAR_TYPE),
-                                             &x_read);
+        ERW_Result   result = eRW_Success;
+
+        try {
+            // read directly from device
+            result = m_Reader->Read(x_buf,x_read*sizeof(CT_CHAR_TYPE),&x_read);
+        }
+        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsgetn(): IReader::Read()",
+                              x_read = 0);
         if (!(x_read /= sizeof(CT_CHAR_TYPE)))
             break;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
@@ -255,15 +301,19 @@ streamsize CRWStreambuf::showmanyc(void)
     if ( !m_Reader )
         return -1;
 
-    size_t count;
-    switch ( m_Reader->PendingCount(&count) ) {
-    case eRW_NotImplemented:
-        return 0;
-    case eRW_Success:
-        return count;
-    default:
-        break;
+    try {
+        size_t count;
+        switch ( m_Reader->PendingCount(&count) ) {
+        case eRW_NotImplemented:
+            return 0;
+        case eRW_Success:
+            return count;
+        default:
+            break;
+        }
     }
+    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::showmanyc(): IReader::PendingCount()",
+                          (void) 0);
     return -1;
 }
 
@@ -284,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2005/08/12 16:11:55  lavr
+ * Catch (and optionally report) all exceptions from I{Reader|Writer}
+ *
  * Revision 1.12  2005/03/24 19:53:06  lavr
  * CRWStreambuf's dtor: flush only if data pending
  *
