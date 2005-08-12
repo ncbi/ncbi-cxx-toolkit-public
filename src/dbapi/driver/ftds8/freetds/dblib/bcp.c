@@ -2387,14 +2387,13 @@ RETCODE _bcp_get_prog_data(DBPROCESS *dbproc)
     int data_is_null;
     int bytes_read;
     int converted_data_size;
-    const int coldata_size = 8192;
 
     BYTE *dataptr;
 
     /* for each host file column defined by calls to bcp_colfmt */
 
     for (i = 0; i < dbproc->host_colcount; i++) {
-        BYTE coldata[coldata_size];
+        BYTE coldata[8192];
 
         hostcol = dbproc->host_columns[i];
 #ifdef NCBI_FTDS
@@ -2480,7 +2479,7 @@ RETCODE _bcp_get_prog_data(DBPROCESS *dbproc)
         memset(coldata, '\0', sizeof(coldata));
 
         if (hostcol->term_len > 0) {
-            bytes_read = _bcp_get_term_var(dataptr, hostcol->terminator, hostcol->term_len, coldata, coldata_size);
+            bytes_read = _bcp_get_term_var(dataptr, hostcol->terminator, hostcol->term_len, coldata, sizeof(coldata));
 
             if (bytes_read == -1)
                 return FAIL;
@@ -2514,7 +2513,7 @@ RETCODE _bcp_get_prog_data(DBPROCESS *dbproc)
         }
         else {
             if (collen) {
-                if (collen > coldata_size) {
+                if (collen > sizeof(coldata)) {
                     return (FAIL);
                 }
                 memcpy(coldata, dataptr, collen);
