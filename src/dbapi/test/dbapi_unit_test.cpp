@@ -102,17 +102,22 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
     : m_args(args)
     , m_DM( CDriverManager::GetInstance() )
     , m_DS( NULL )
-    , m_TableName( "#dbapi_unit_test" )
+    , m_TableName( "#dbapi_unit_table" )
 {
     SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
 }
 
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
 CDBAPIUnitTest::TestInit(void)
 {
     m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
     m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+    BOOST_CHECK( m_Conn.get() != NULL );
+    
+    m_Conn->SetMode(IConnection::eBulkInsert);
+    
     m_Conn->Connect( 
         m_args.GetUserName(), 
         m_args.GetUserPassword(), 
@@ -127,11 +132,11 @@ CDBAPIUnitTest::TestInit(void)
 
     sql  = " CREATE TABLE " + GetTableName() + "( \n";
     sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-    sql += "    int_val INT NOT NULL, \n";
+    sql += "    int_field INT NOT NULL, \n";
     if ( m_args.GetServerName() != "MOZART" ) {
-        sql += "    varchar1000_val VARCHAR(1000) NULL, \n";
+        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
     }
-    sql += "    text_val TEXT NULL \n";
+    sql += "    text_field TEXT NULL \n";
     sql += " )";
 
     // Create the table
@@ -140,6 +145,18 @@ CDBAPIUnitTest::TestInit(void)
     sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
     // Create an index
     auto_stmt->ExecuteUpdate( sql );
+    
+    // Table for bulk insert ...
+    if ( m_args.GetServerName() != "MOZART" ) {
+        sql  = " CREATE TABLE #bulk_insert_table( \n";
+        // sql += "    id NUMERIC(18, 0) IDENTITY PRIMARY KEY, \n";
+        sql += "    id INT PRIMARY KEY, \n";
+        sql += "    vc8000_field VARCHAR(8000) NOT NULL \n";
+        sql += " )";
+
+        // Create the table
+        auto_stmt->ExecuteUpdate(sql);
+    }
 }
 
 class CTestErrHandler : public CDB_UserHandler
@@ -213,6 +230,114 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 }
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
+BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
+{
+    string msg(8000, 'A');
+    CVariant col2(col);
+    
+    bi->Bind(2, &col2);
+    col2 = msg;
+    bi->AddRow();
+}
+
+
+void
+CDBAPIUnitTest::Bulk_Writing(void)
+{
+    string sql;
+    
+    // Very first test ...
+    {
+        enum { num_of_tests = 7 };
+        
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 2) );
+
+            CVariant col1 = CVariant(eDB_Int);
+            CVariant col2(eDB_Int);
+
+            bi->Bind(1, &col1);
+
+            for(int i = 0; i < num_of_tests; ++i ) {
+                col1 = i;
+                switch (i) {
+                case 0:
+                    BulkAddRow(bi, CVariant(eDB_VarChar));
+                    break;
+                case 1:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 8000));
+                    break;
+                case 2:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 1024));
+                    break;
+                case 3:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 4112));
+                    break;
+                case 4:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 4113));
+                    break;
+                case 5:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 4138));
+                    break;
+                case 6:
+                    BulkAddRow(bi, CVariant(eDB_LongChar, 4139));
+                    break;
+                };
+
+            }
+            bi->Complete();
+        }
+        
+        // Retrieve data ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
+            sql += " ORDER BY id";
+
+            auto_stmt->Execute( sql );
+            while( auto_stmt->HasMoreResults() ) { 
+                if( auto_stmt->HasRows() ) { 
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+
+                    // Retrieve results, if any 
+                    while( rs->Next() ) { 
+                        Int4 i = rs->GetVariant(1).GetInt4();
+                        string col1 = rs->GetVariant(2).GetString(); 
+                        
+                        switch (i) {
+                        case 0:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(255));
+                            break;
+                        case 1:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(8000));
+                            break;
+                        case 2:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(1024));
+                            break;
+                        case 3:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4112));
+                            break;
+                        case 4:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4113));
+                            break;
+                        case 5:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4138));
+                            break;
+                        case 6:
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4139));
+                            break;
+                        };
+                    } 
+                } 
+            }
+        }
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
 CDBAPIUnitTest::Test_Variant2(void)
 {
@@ -228,9 +353,9 @@ CDBAPIUnitTest::Test_Variant2(void)
         sql  = " DELETE FROM " + GetTableName();
         auto_stmt->ExecuteUpdate(sql);
 
-        // Insert new varchar1000_val records ...
+        // Insert new vc1000_field records ...
         sql  = " INSERT INTO " + GetTableName();
-        sql += "(int_val, varchar1000_val) VALUES(@id, @val) \n";
+        sql += "(int_field, vc1000_field) VALUES(@id, @val) \n";
 
         string::size_type str_size(10);
         char char_val('1');
@@ -250,8 +375,8 @@ CDBAPIUnitTest::Test_Variant2(void)
     {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
         
-        sql  = "SELECT varchar1000_val FROM " + GetTableName();
-        sql += " ORDER BY int_val";
+        sql  = "SELECT vc1000_field FROM " + GetTableName();
+        sql += " ORDER BY int_field";
         
         string::size_type str_size(10);
         auto_stmt->Execute( sql );
@@ -286,7 +411,7 @@ CDBAPIUnitTest::Test_Cursor(void)
         auto_stmt->ExecuteUpdate(sql);
 
         // Insert new LOB records ...
-        sql  = " INSERT INTO " + GetTableName() + "(int_val, text_val) VALUES(@id, '') \n";
+        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field) VALUES(@id, '') \n";
 
         // CVariant variant(eDB_Text);
         // variant.Append(" ", 1);
@@ -302,7 +427,7 @@ CDBAPIUnitTest::Test_Cursor(void)
     {
         const char* clob = "abc";
 
-        sql = "select text_val from " + GetTableName() + " for update of text_val \n";
+        sql = "select text_field from " + GetTableName() + " for update of text_field \n";
         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
 
         {
@@ -317,8 +442,8 @@ CDBAPIUnitTest::Test_Cursor(void)
         }
 
         // Another cursor ...
-        sql  = " select text_val from " + GetTableName();
-        sql += " where int_val = 1 for update of text_val";
+        sql  = " select text_field from " + GetTableName();
+        sql += " where int_field = 1 for update of text_field";
 
         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
         {
@@ -780,7 +905,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
     // Very first test ...
     {
         string sql;
-        sql  = " INSERT INTO " + GetTableName() + "(int_val) VALUES( @value ) \n";
+        sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( @value ) \n";
 
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
@@ -792,7 +917,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
         // Workaround for the ctlib driver ...
         auto_stmt->ClearParamList();
 
-        sql  = " SELECT int_val, int_val FROM " + GetTableName() + " ORDER BY int_val";
+        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
         // Execute a statement without parameters ...
         auto_stmt->ExecuteUpdate( sql );
     }
@@ -849,7 +974,7 @@ CDBAPIUnitTest::CheckGetRowCount(
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
     string sql;
-    sql  = " INSERT INTO " + GetTableName() + "(int_val) VALUES( 1 ) \n";
+    sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( 1 ) \n";
 
     // Insert row_count records into the table ...
     for ( int i = 0; i < row_count; ++i ) {
@@ -897,7 +1022,7 @@ CDBAPIUnitTest::CheckGetRowCount(
             curr_stmt = stmt;
         }
 
-        sql  = " UPDATE " + GetTableName() + " SET int_val = 0 ";
+        sql  = " UPDATE " + GetTableName() + " SET int_field = 0 ";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -916,7 +1041,7 @@ CDBAPIUnitTest::CheckGetRowCount(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT * FROM " + GetTableName() + " WHERE int_val = 0";
+        sql  = " SELECT * FROM " + GetTableName() + " WHERE int_field = 0";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -977,7 +1102,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
     // auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
     // _ASSERT(curr_stmt->get());
     string sql;
-    sql  = " INSERT INTO " + GetTableName() + "(int_val) VALUES( @value ) \n";
+    sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( @value ) \n";
 
     // Insert row_count records into the table ...
     for ( Int4 i = 0; i < row_count; ++i ) {
@@ -1025,7 +1150,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_val, int_val FROM " + GetTableName() + " ORDER BY int_val";
+        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -1046,7 +1171,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " UPDATE " + GetTableName() + " SET int_val = 0 ";
+        sql  = " UPDATE " + GetTableName() + " SET int_field = 0 ";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -1067,7 +1192,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_val, int_val FROM " + GetTableName() + " WHERE int_val = 0";
+        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " WHERE int_field = 0";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -1130,7 +1255,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_val, int_val FROM " + GetTableName() + " ORDER BY int_val";
+        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -2059,11 +2184,6 @@ CDBAPIUnitTest::Single_Value_Writing(void)
 }
 
 void
-CDBAPIUnitTest::Bulk_Writing(void)
-{
-}
-
-void
 CDBAPIUnitTest::Single_Value_Reading(void)
 {
 }
@@ -2140,6 +2260,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
+    if ( args.GetDriverName() == "ftds" && args.GetServerType() != 
+         CTestArguments::eMsSql ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Bulk_Writing, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
 //     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
 //     tc->depends_on(tc_parameters);
 //     add(tc);
@@ -2259,6 +2386,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/08/12 15:46:43  ssikorsk
+ * Added an initial bulk test to the test suite.
+ *
  * Revision 1.29  2005/08/11 18:23:35  ssikorsk
  * Explicitly set maximal value size for data types with variable data size.
  *

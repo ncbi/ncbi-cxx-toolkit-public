@@ -108,10 +108,10 @@ public:
     {
         return m_DatabaseName;
     }
+    EServerType GetServerType(void) const;
     
     
 private:
-    EServerType GetServerType(void) const;
     void SetDatabaseParameters(void);
 
 private:
@@ -159,6 +159,7 @@ public:
     void Test_SelectStmt(void);
     void Test_Cursor(void);
     void Test_Procedure(void);
+    void Bulk_Writing(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -175,7 +176,6 @@ public:
     void Create_Destroy(void);
     void Repeated_Usage(void);
     void Single_Value_Writing(void);
-    void Bulk_Writing(void);
     void Single_Value_Reading(void);
     void Bulk_Reading(void);
     void Multiple_Resultset(void);
@@ -212,6 +212,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/08/12 15:46:43  ssikorsk
+ * Added an initial bulk test to the test suite.
+ *
  * Revision 1.19  2005/08/10 16:56:50  ssikorsk
  * Added Test_Variant2 to the test-suite
  *
