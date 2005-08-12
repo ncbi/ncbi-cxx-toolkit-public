@@ -64,11 +64,11 @@ BEGIN_NCBI_SCOPE
 class CRStream : public CNcbiIstream
 {
 public:
-    CRStream(IReader*                 r,
-             streamsize               buf_size = 0,
-             CT_CHAR_TYPE*            buf = 0,
-             CRWStreambuf::TOwnership own = 0) :
-        CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, own)
+    CRStream(IReader*             r,
+             streamsize           buf_size = 0,
+             CT_CHAR_TYPE*        buf      = 0,
+             CRWStreambuf::TFlags flags    = 0) :
+        CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
@@ -91,11 +91,11 @@ private:
 class CWStream : public CNcbiOstream
 {
 public:
-    CWStream(IWriter*                 w,
-             streamsize               buf_size = 0,
-             CT_CHAR_TYPE*            buf = 0,
-             CRWStreambuf::TOwnership own = 0) :
-        CNcbiOstream(0), m_Sb(0, w, buf_size, buf, own)
+    CWStream(IWriter*             w,
+             streamsize           buf_size = 0,
+             CT_CHAR_TYPE*        buf      = 0,
+             CRWStreambuf::TFlags flags    = 0) :
+        CNcbiOstream(0), m_Sb(0, w, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
@@ -118,11 +118,11 @@ private:
 class CRWStream : public CNcbiIostream
 {
 public:
-    CRWStream(IReaderWriter*           rw,
-              streamsize               buf_size = 0,
-              CT_CHAR_TYPE*            buf = 0,
-              CRWStreambuf::TOwnership own = 0) :
-        CNcbiIostream(0), m_Sb(rw, buf_size, buf, own)
+    CRWStream(IReaderWriter*       rw,
+              streamsize           buf_size = 0,
+              CT_CHAR_TYPE*        buf      = 0,
+              CRWStreambuf::TFlags flags    = 0) :
+        CNcbiIostream(0), m_Sb(rw, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/12 16:10:48  lavr
+ * [TE]Ownership -> [TE]Flags
+ *
  * Revision 1.8  2005/03/17 19:06:10  lavr
  * Document parameters
  *
