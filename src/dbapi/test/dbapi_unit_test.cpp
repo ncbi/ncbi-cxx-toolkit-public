@@ -2260,7 +2260,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
-    if ( args.GetDriverName() == "ftds" && args.GetServerType() != 
+    if ( args.GetDriverName() == "ftds" && args.GetServerType() == 
          CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -2386,6 +2386,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2005/08/12 16:01:02  ssikorsk
+ * Set server type for the bulk-test to MS SQL only.
+ *
  * Revision 1.30  2005/08/12 15:46:43  ssikorsk
  * Added an initial bulk test to the test suite.
  *
