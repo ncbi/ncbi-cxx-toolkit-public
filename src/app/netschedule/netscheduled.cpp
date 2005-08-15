@@ -141,12 +141,13 @@ const unsigned kMaxMessageSize = kNetScheduleMaxErrSize * 4;
 ///
 struct SThreadData
 {
-    string      request;
+    char      request[kNetScheduleMaxErrSize * 4 + 1];
 
     string            auth;
     string            auth_prog;  // prog='...' from auth string
     CQueueClientInfo  auth_prog_info;    
 
+    
     string      queue;
     string      answer;
 
@@ -316,7 +317,7 @@ protected:
 
 private:
 
-    void ParseRequest(const string& reqstr, SJS_Request* req);
+    void ParseRequest(const char* reqstr, SJS_Request* req);
 
     void WriteMsg(CSocket&      sock, 
                   const char*   prefix, 
@@ -476,6 +477,7 @@ void CNetScheduleServer::Process(SOCK sock)
 
         tdata->auth.erase();
         s_WaitForReadSocket(socket, m_InactivityTimeout);
+
         io_st = socket.ReadLine(tdata->auth);
         JS_CHECK_IO_STATUS(io_st)
         io_st = socket.ReadLine(tdata->queue);
@@ -483,7 +485,10 @@ void CNetScheduleServer::Process(SOCK sock)
 
         while (1) {
 
-            io_st = socket.ReadLine(tdata->request);
+            size_t n_read;
+            io_st = socket.ReadLine(tdata->request,
+                                    sizeof(tdata->request),
+                                    &n_read);
             JS_CHECK_IO_STATUS(io_st)
 
 
@@ -849,13 +854,16 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                                             SThreadData&            tdata,
                                             CQueueDataBase::CQueue& queue)
 {
+    char    buf[kNetScheduleMaxDataSize * 4 + 1];
+    size_t  n_read;
+
     WriteMsg(sock, "OK:", "Batch submit ready");
 
     unsigned client_address = 0;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
 
     s_WaitForReadSocket(sock, m_InactivityTimeout);
-    SJS_Request& req = tdata.req;
+    //SJS_Request& req = tdata.req;
     EIO_Status io_st;
 
     while (1) {
@@ -864,10 +872,10 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
         // BTCH batch_size
         //
         {{
-            io_st = sock.ReadLine(tdata.answer);
+            io_st = sock.ReadLine(buf, sizeof(buf), &n_read);
             JS_CHECK_IO_STATUS(io_st)
 
-            const char* s = tdata.answer.c_str();
+            const char* s = buf;
             if (strncmp(s, "BTCH", 4) != 0) {
                 if (strncmp(s, "ENDS", 4) == 0) {
                     break;
@@ -891,17 +899,19 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
 
         for (unsigned i = 0; i < batch_size; ++i) {
             s_WaitForReadSocket(sock, m_InactivityTimeout);
+            
+      
 
-            io_st = sock.ReadLine(tdata.answer);
+            io_st = sock.ReadLine(buf, sizeof(buf)-1, &n_read);
             JS_CHECK_IO_STATUS(io_st)
 
-            if (tdata.answer.empty()) {  // something is wrong
+            if (*buf == 0) {  // something is wrong
                 WriteMsg(sock, "ERR:", 
                         "Batch submit error: empty string");
                 return;
             }
 
-            const char* s = tdata.answer.c_str();
+            const char* s = buf;
             if (*s !='"') {
                 WriteMsg(sock, "ERR:", 
                         "Invalid batch submission, syntax error");
@@ -924,17 +934,17 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
 
         s_WaitForReadSocket(sock, m_InactivityTimeout);
 
-        io_st = sock.ReadLine(tdata.answer);
+        io_st = sock.ReadLine(buf, sizeof(buf), &n_read);
         JS_CHECK_IO_STATUS(io_st)
 
 
-        const char* s = tdata.answer.c_str();
+        const char* s = buf;
         if (strncmp(s, "ENDB", 4) != 0) {
             WriteMsg(sock, "ERR:",
                         "Batch submit error: unexpected end of batch");
         }
 
-        double comm_elapsed = sw1.Elapsed();
+//        double comm_elapsed = sw1.Elapsed();
 
         // we have our batch now
 
@@ -945,7 +955,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                               client_address, 
                               0, 0, 0);
 
-        double db_elapsed = sw2.Elapsed();
+//        double db_elapsed = sw2.Elapsed();
 //NcbiCerr.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
 //NcbiCerr << "comm=" << comm_elapsed << " db=" << db_elapsed << endl;
         {{
@@ -1472,7 +1482,7 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 
 
 
-void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
+void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 {
     // Request formats and types:
     //
@@ -1500,7 +1510,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 22.QLST
     // 23.BSUB
 
-    const char* s = reqstr.c_str();
+    const char* s = reqstr;
 
     if (strncmp(s, "STATUS", 6) == 0) {
         req->req_type = eStatusJob;
@@ -2224,6 +2234,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/08/15 17:39:48  kuznets
+ * Use C-style ReadLine for better performance
+ *
  * Revision 1.49  2005/08/15 13:29:46  kuznets
  * Implemented batch job submission
  *
