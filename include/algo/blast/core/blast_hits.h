@@ -517,6 +517,15 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
 NCBI_XBLAST_EXPORT
 void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
 
+/** For nucleotide BLAST, if the match reward score is equal to 2, 
+ * random alignments are dominated by runs of exact matches, which all have even
+ * scores. This makes it impossible to estimate statistical parameters correctly
+ * for odd scores. Hence the raw score formula is adjusted - all scores are
+ * rounded down to the nearest even value.
+ * @param hsp_list HSP list structure to adjust scores for. [in] [out]
+ */
+void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list);
+
 /** Check if HSP list is sorted by score.
  * @param hsp_list The list to check [in]
  * @return TRUE if sorted, FALSE if not.
