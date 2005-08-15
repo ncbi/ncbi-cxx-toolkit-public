@@ -161,7 +161,8 @@ class CNetServiceException : public CException
 public:
     enum EErrCode {
         eTimeout,
-        eCommunicationError
+        eCommunicationError,
+        eProtocolError
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -170,6 +171,7 @@ public:
         {
         case eTimeout:            return "eTimeout";
         case eCommunicationError: return "eCommunicationError";
+        case eProtocolError:      return "eProtocolError";
         default:                  return CException::GetErrCodeString();
         }
     }
@@ -188,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/15 13:28:05  kuznets
+ * Added protocol error
+ *
  * Revision 1.6  2005/07/27 18:12:53  kuznets
  * Added PrintServerOut()
  *
