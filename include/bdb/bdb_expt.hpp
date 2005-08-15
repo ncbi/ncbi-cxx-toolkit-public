@@ -166,14 +166,14 @@ public:
           (message), errnum)
 
 
-#define BDB_CHECK(errnum, dbfile) \
+#define BDB_CHECK(errnum, x_db_object__) \
     do { \
         if ( errnum ) { \
             std::string message = "BerkeleyDB error:"; \
             message.append(CBDB_StrErrAdapt::strerror(errnum)); \
-            if (dbfile) { \
-                message.append(" File:'"); \
-                message.append(dbfile); \
+            if (x_db_object__) { \
+                message.append(" Object:'"); \
+                message.append(x_db_object__); \
                 message.append("'"); \
             } \
             BDB_ERRNO_THROW(errnum, message); \
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/15 11:32:56  kuznets
+ * Corrected error message(minor)
+ *
  * Revision 1.15  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
