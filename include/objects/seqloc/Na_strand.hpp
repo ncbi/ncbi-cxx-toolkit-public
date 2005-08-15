@@ -53,8 +53,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 /// @sa
 ///   CSeq_loc::GetStart(), CSeq_loc::GetStop()
 enum ESeqLocExtremes {
-    eExtreme_Biological,   /// 5' and 3'
-    eExtreme_Positional    /// numerical value
+    eExtreme_Biological,   ///< 5' and 3'
+    eExtreme_Positional    ///< numerical value
 };
 
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/08/15 16:24:18  vakatov
+* DOXY fix
+*
 * Revision 1.7  2005/08/15 16:02:48  shomrat
 * Added explanation for ESeqLocExtremes
 *
