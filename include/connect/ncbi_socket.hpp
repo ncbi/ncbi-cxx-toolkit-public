@@ -147,6 +147,7 @@ public:
                     EIO_ReadMethod how = eIO_ReadPlain);
     // Read up to '\r\n', '\n' or '\0', discarding any of the EOLs
     EIO_Status ReadLine(string& str);
+    EIO_Status ReadLine(char* buf, size_t size, size_t* n_read = 0);
 
     EIO_Status PushBack(const void* buf, size_t size);
 
@@ -407,6 +408,12 @@ inline EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
 }
 
 
+inline EIO_Status CSocket::ReadLine(char* buf, size_t size, size_t* n_read)
+{
+    return m_Socket ? SOCK_ReadLine(m_Socket, buf, size, n_read) : eIO_Closed;
+}
+
+
 inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
 {
     return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
@@ -649,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2005/08/15 15:07:58  lavr
+ * +CSocket::ReadLine() in C-style (see ncbi_socket.h)
+ *
  * Revision 6.43  2005/07/19 19:55:12  lavr
  * +CSocketAPI::GetLoopbackAddress()
  *
