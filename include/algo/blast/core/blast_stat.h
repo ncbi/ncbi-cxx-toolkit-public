@@ -426,9 +426,11 @@ double BLAST_LargeGapSumE (Int2 num,  double xsum,
  * @param gapped TRUE if a gapped search [in]
  * @param gap_open existence cost of a gap [in]
  * @param gap_extend extension cost of a gap [in]
+ * @param kbp_ungapped Karlin block with ungapped values of the parameters [in]
 */
 void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
-                    double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
+                         double *beta, Boolean gapped, Int4 gap_open, 
+                         Int4 gap_extend, const Blast_KarlinBlk* kbp_ungapped);
 
 /** Extract the alpha and beta settings for these substitution and gap scores. 
  * If substitution or gap costs are not found in the tables, assume an ungapped
@@ -440,11 +442,13 @@ void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
  * @param gap_extend Gap extension cost [in]
  * @param kbp Karlin block containing already computed Lambda, K and H 
  *            parameters.
+ * @param gapped_calculation Is this a gapped search? [in]
  * @param alpha Alpha parameter for this scoring system [out]
  * @param beta Beta parameter for this scoring system [out]
  */
 Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
                             Int4 gap_extend, Blast_KarlinBlk* kbp,
+                            Boolean gapped_calculation,
                             double *alpha, double *beta);
 
 /** Rescale the PSSM, using composition-based statistics, for use
