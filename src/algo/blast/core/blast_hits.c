@@ -2440,6 +2440,21 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
    }
 }
 
+void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list)
+{
+    int index;
+    
+    if (!hsp_list || hsp_list->hspcnt == 0)
+        return;
+    
+    for (index = 0; index < hsp_list->hspcnt; ++index) {
+        hsp_list->hsp_array[index]->score -= 
+            (hsp_list->hsp_array[index]->score & 1);
+    }
+    /* Sort the HSPs again, since the order may have to be different now. */
+    Blast_HSPListSortByScore(hsp_list);
+}
+
 /** Callback for sorting hsp lists by their best evalue/score;
  * Evalues are compared only up to a relative error of 
  * FUZZY_EVALUE_COMPARE_FACTOR. 

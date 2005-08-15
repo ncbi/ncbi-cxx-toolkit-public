@@ -383,6 +383,13 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             /* Removes redundant HSPs. */
              Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
 
+             /* For nucleotide search, if match score is = 2, the odd scores
+                are rounded down to the nearest even number. */
+             if (program_number == eBlastTypeBlastn && 
+                 score_params->options->reward == 2) {
+                 Blast_HSPListAdjustOddBlastnScores(hsp_list);
+             }
+
              Blast_HSPListSortByScore(hsp_list);
 
             if (score_options->is_ooframe && kTranslatedSubject)

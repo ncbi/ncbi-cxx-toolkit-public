@@ -163,11 +163,8 @@ s_HSPListRescaleScores(BlastHSPList* hsp_list, double scale_factor)
    Blast_HSPListSortByScore(hsp_list);
 }
 
-/** Simple macro to swap two numbers. */
-#define SWAP(a, b) {tmp = (a); (a) = (b); (b) = tmp; }
-
-/** Swaps query and subject information in an HSP structure for RPS BLAST 
- * search. This is necessary because query and subject are switched during the 
+/** Swaps insertions and deletions in an edit script for RPS BLAST search. 
+ * This is necessary because query and subject are switched during the 
  * traceback alignment, and must be switched back.
  * @param hsp HSP structure to fix. [in] [out]
  */
@@ -210,23 +207,20 @@ s_BlastHSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
    hsp = hsplist->hsp_array;
    for (i = 0; i < hsplist->hspcnt; i++) {
 
-      /* switch query and subject offsets (which are
-         already in local coordinates) */
-
+      /* switch query and subject (which are already in local coordinates) */
       tmp = hsp[i]->query;
       hsp[i]->query = hsp[i]->subject;
       hsp[i]->subject = tmp;
 
-      /* Change the traceback information to reflect the
-         query and subject sequences getting switched */
-
+      /* Change the traceback information to reflect the query and subject 
+         sequences getting switched */
       s_BlastHSPRPSUpdate(hsp[i]);
 
       /* If query was nucleotide, set context, because it is needed in order 
-	 to pick correct Karlin block for calculating bit scores. There are 
+         to pick correct Karlin block for calculating bit scores. There are 
          6 contexts corresponding to each nucleotide query sequence. */
       if (program == eBlastTypeRpsTblastn) {
-	 hsp[i]->context = FrameToContext(hsp[i]->query.frame);
+          hsp[i]->context = FrameToContext(hsp[i]->query.frame);
       }
    }
    Blast_HSPListSortByScore(hsplist);
@@ -272,6 +266,14 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
       double scale_factor = 
          (Blast_ProgramIsRpsBlast(program_number) ?
          score_params->scale_factor : 1.0);
+
+      /* For nucleotide search, if match score is = 2, the odd scores
+         are rounded down to the nearest even number. */
+      if (program_number == eBlastTypeBlastn && 
+          score_params->options->reward == 2) {
+          Blast_HSPListAdjustOddBlastnScores(hsp_list);
+      }
+
       Blast_HSPListGetEvalues(query_info, hsp_list, kGapped, sbp, 0,
                               scale_factor);
    }
