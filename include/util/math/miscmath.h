@@ -34,6 +34,12 @@
  * Miscellaneous math functions that might not be part of the
  * system's standard libraries. */
 
+#include <corelib/mswin_export.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Miscellaneous
  *
  * @{
@@ -41,18 +47,26 @@
 
 /** The error function of x: the integral from 0 to x of e(-t*t) dt,
  *  scaled by 2/sqrt(pi) to fall within the range (-1,1). */
+NCBI_XUTIL_EXPORT
 double NCBI_Erf(double x);
 
 /** The complementary error function of x: 1 - erf(x), but calculated
  *  more accurately for large x (where erf(x) approaches unity). */
+NCBI_XUTIL_EXPORT
 double NCBI_ErfC(double x);
 
 /* @} */
 
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/15 19:10:02  ucko
+ * Take care to ensure proper linkage in all cases.
+ *
  * Revision 1.1  2005/08/12 14:58:33  ucko
  * Ensure that implementations of erf and erfc are always available.
  *
