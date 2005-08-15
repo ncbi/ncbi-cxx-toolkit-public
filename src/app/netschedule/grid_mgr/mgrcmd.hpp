@@ -227,10 +227,32 @@ public:
 
 };
 
+//
+// CTestRWNCCommand
+//
+
+class CTestRWNCCommand : public CGridMgrCommand
+{
+public:
+
+    CTestRWNCCommand( CGridMgrResource& resource );
+    virtual ~CTestRWNCCommand( void );
+
+    virtual CNcbiCommand* Clone( void ) const;
+    virtual string GetName( void ) const;
+
+    virtual CNCBINode* CreateView( CCgiContext& ctx );
+
+};
+
+
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/08/15 19:06:04  didenko
+* Added test command
+*
 * Revision 1.3  2005/07/19 20:20:12  ucko
 * Predeclare CHTMLPage for the sake of G++ 4.
 *

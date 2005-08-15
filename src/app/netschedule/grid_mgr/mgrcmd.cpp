@@ -38,6 +38,9 @@
 #include <html/page.hpp>
 #include <html/html.hpp>
 
+#include <connect/services/netcache_nsstorage_imp.hpp>
+#include <connect/services/netcache_client.hpp>
+
 #include <memory>
 #include <list>
 
@@ -389,12 +392,111 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
     return node.release();
 }
 
+
+//
+// CTestRWNCCommand
+//
+
+CTestRWNCCommand::CTestRWNCCommand( CGridMgrResource& resource )
+  : CGridMgrCommand( resource )
+{}
+
+CTestRWNCCommand::~CTestRWNCCommand()
+{}
+
+CNcbiCommand* CTestRWNCCommand::Clone( void ) const
+{
+    return new CTestRWNCCommand( GetGridMgrResource() );
+}
+
+//
+// GetName() returns the string used to match the value in a cgi request.
+// e.g. for "?cmd=search", GetName() should return "search"
+//
+
+string CTestRWNCCommand::GetName( void ) const
+{
+    return string("nc_rw_test"); // set the value of this string in helloapi.cpp
+}
+
+//
+//  CreateView() is the function that creates the html to replace
+//  the <@VIEW@> tag in the HtmlBaseFile
+//
+
+CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
+{
+    auto_ptr <CNCBINode> node(CreateErrorNode());
+
+    const TCgiEntries& entries = ctx.GetRequest().GetEntries();
+
+    TCgiEntriesCI it = entries.find("cache");
+    string cache_val = "false";
+    CNetCacheNSStorage::TCacheFlags flags = 0;
+    if( it != entries.end() ) {
+        cache_val = (*it).second.GetValue();
+        if (cache_val == "true")
+            flags = CNetCacheNSStorage::eCacheBoth;
+    }
+
+    it = entries.find("type");
+    string type = "write";
+    if( it != entries.end() )
+        type = (*it).second.GetValue();
+        
+    string blob_id, msg;
+    string temp_dir = "/tmp";
+    it = entries.find("temp_dir");
+    if( it != entries.end() )
+        temp_dir = (*it).second.GetValue();
+    
+    
+    CNetCacheNSStorage storage( new CNetCacheClient_LB("TestDmaxCl", "NC_test"), 
+                                flags,
+                                temp_dir);
+
+    if (type == "write") {
+        CNcbiOstream& os = storage.CreateOStream(blob_id);
+        os << "Test blob";
+        storage.Reset();
+        
+        msg = "<br/><a href=\"<@SELF_UTL@>?cmd=nc_rw_test&type=read&cache=" + cache_val + 
+            "&blob_id=" + blob_id +"\">" 
+            + blob_id + "</a><br/>cache is ";
+        msg +=  flags ? "on" : "off";
+    }
+    else {
+        TCgiEntriesCI it = entries.find("blob_id");
+        if( it == entries.end() ) {
+            msg = "blob_id is empty";
+        }
+        else {
+            blob_id = (*it).second.GetValue();
+        
+            msg = "<br/>blob_id: " + blob_id + "<br/>cache is ";
+            msg +=  flags ? "on<br/>" : "off<br/>";
+            CNcbiIstream& is = storage.GetIStream(blob_id);
+            char buf[1024];
+            while ( !is.eof() ) {
+                    is.read(buf,sizeof(buf));
+                    msg.append(buf, is.gcount());
+            }
+        }
+    }
+    GetPage().AddTagMap("error", new CHTMLText(msg));
+ 
+    return node.release();
+}
+
 //END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/15 19:06:04  didenko
+ * Added test command
+ *
  * Revision 1.6  2005/07/07 19:06:44  didenko
  * Added errors handling
  *

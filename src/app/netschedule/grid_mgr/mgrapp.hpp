@@ -32,6 +32,7 @@
  */
 
 #include <cgi/cgiapp.hpp>
+#include <html/commentdiag.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -43,6 +44,14 @@ BEGIN_NCBI_SCOPE
 class CGridMgrApp : public CCgiApplication
 {
 public:
+
+    virtual void Init(void) {
+
+        CCgiApplication::Init();
+        //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
+        RegisterDiagFactory("comments", new CCommentDiagFactory);
+
+    }
 
     virtual CNcbiResource* LoadResource(void);
 
@@ -57,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/15 19:06:04  didenko
+ * Added test command
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *

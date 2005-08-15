@@ -58,6 +58,7 @@ CNcbiResource* CGridMgrApp::LoadResource(void)
     resource->AddCommand( new CShowServersCommand(*resource) );
     resource->AddCommand( new CShowServerStatCommand(*resource) );
     resource->AddCommand( new CShowWNStatCommand(*resource) );
+    resource->AddCommand( new CTestRWNCCommand(*resource) );
     return resource.release();
 }
 
@@ -75,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/15 19:06:04  didenko
+ * Added test command
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *
