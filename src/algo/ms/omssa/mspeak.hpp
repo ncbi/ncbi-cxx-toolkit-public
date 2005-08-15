@@ -196,6 +196,21 @@ public:
 	const int GetNumModInfo(void) const;
 	CMSModInfo& SetModInfo(int n);
 
+    /**
+     * Return the Sum of ranks
+     */
+    const int GetSum(void) const; 
+
+    /**
+     * Return the number of matched peaks
+     */
+    const int GetM(void) const;
+
+    /**
+     * Return the number of experimental peaks
+     */
+    const int GetN(void) const;
+
     // return number of hits above threshold
     int GetHits(double Threshold, int MaxI);
 
@@ -289,6 +304,12 @@ private:
     THitInfo HitInfo;
 	TModInfo ModInfo;
 	int NumModInfo;
+    /** Sum of Ranks */
+    int Sum;
+    /** Number of matched peaks */
+    int M;
+    /** Number of exp peaks */
+    int N;
 };
 
 
@@ -435,6 +456,24 @@ CMSHit& CMSHit::operator= (CMSHit& in)
     return *this;
 }
 
+inline
+const int CMSHit::GetSum(void) const 
+{
+    return Sum;
+} 
+
+inline
+const int CMSHit::GetM(void) const 
+{
+    return M;
+}
+
+inline
+const int CMSHit::GetN(void) const 
+{
+    return N;
+}
+
 /////////////////// end of CMSHit inline methods
 
 
@@ -451,6 +490,8 @@ class NCBI_XOMSSA_EXPORT CMZI {
 public:
     int MZ;
     unsigned Intensity;
+    /** The intensity rank of the peak. 1 = most intense */
+    unsigned Rank;
     CMZI(void);
     CMZI(int MZIn, unsigned IntensityIn);
     CMZI(double MZIn, double IntensityIn);
@@ -525,6 +566,8 @@ enum EChargeState {
 // typedef for holding intensity
 typedef AutoPtr <unsigned, ArrayDeleter<unsigned> > TIntensity;
 
+// for statistical modelling
+// #define MSSTATRUN
 
 // class to hold experimental data and manipulate
 
@@ -532,6 +575,20 @@ class NCBI_XOMSSA_EXPORT CMSPeak {
 public:
     CMSPeak(void);
     CMSPeak(int HitListSize);
+
+#ifdef MSSTATRUN
+    void CompareSortedAvg(CLadder& Ladder, int Which,
+                          double& avgMZI, double& avgLadder, int& n,
+                          bool CountExperimental);
+
+    void CompareSortedPearsons(CLadder& Ladder, int Which,
+                               double avgMZI, double avgLadder,
+                               double& numerator,
+                               double& normLadder,
+                               double& normMZI,
+                               bool CountExperimental);
+#endif
+
 private:
     // c'tor helper
     void xCMSPeak(void);
@@ -542,7 +599,31 @@ public:
     ~CMSPeak(void);
 	
     void Sort(int Which = MSORIGINAL);
-	
+
+    /**
+     * Compare the ladder and peaks and return back rank statistics
+     * @param Ladder the ladder to compare
+     * @param Which which exp spectrum to use
+     * @param Intensity keep a record of the intensities
+     * @param Sum the sum of ranks
+     * @param M the number of matched peaks
+     *
+     */
+    int CompareSortedRank(CLadder& Ladder,
+                          int Which, 
+                          TIntensity* Intensity, 
+                          int& Sum, 
+                          int& M);
+
+    /**
+     * Rank the given spectrum by intensity.
+     * assumes the spectrum is sorted by intensity.
+     * highest intensity is given rank 1.
+     * @param Which which experimental spectrum to use
+     * 
+     */
+    void Rank(int Which);
+
     //! Read a spectrum set into a CMSPeak
     int Read(CMSSpectrum& Spectrum, //!< the spectrum itself
 			 double MSMSTolerance, //!< product mass tolerance, unscaled
@@ -979,6 +1060,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.30  2005/08/15 14:24:56  lewisg
+  new mod, enzyme; stat test
+
   Revision 1.29  2005/08/03 17:59:29  lewisg
   *** empty log message ***
 

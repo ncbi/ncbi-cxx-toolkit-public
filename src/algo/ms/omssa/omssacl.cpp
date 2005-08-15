@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 5));
+    SetVersion(CVersionInfo(1, 0, 6));
 }
 
 
@@ -292,6 +292,7 @@ void COMSSA::Init()
                      "minimum size of peptides for no-enzyme and semi-tryptic searches",
                      CArgDescriptions::eInteger, 
                      "4");
+    argDesc->AddFlag("ns", "test");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -312,7 +313,11 @@ int main(int argc, const char* argv[])
 int COMSSA::ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset)
 {  
     CDirEntry DirEntry(GetProgramExecutablePath());
-    string ModFileName = DirEntry.GetDir() + args["mx"].AsString();
+    string ModFileName;
+    if(args["mx"].AsString() == "")
+        ERR_POST(Critical << "modification filename is blank!");
+    if(!CDirEntry::IsAbsolutePath(args["mx"].AsString()))
+        ModFileName = DirEntry.GetDir() + args["mx"].AsString();
     auto_ptr<CObjectIStream> 
     modsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
     if(modsin->fail()) {	    
@@ -326,7 +331,8 @@ int COMSSA::ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset)
     // read in user mod file, if any
     if(args["mux"].AsString() != "") {
         CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
-        ModFileName = DirEntry.GetDir() + args["mux"].AsString();
+        if(!CDirEntry::IsAbsolutePath(args["mux"].AsString()))
+            ModFileName = DirEntry.GetDir() + args["mux"].AsString();
         auto_ptr<CObjectIStream> 
          usermodsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
         usermodsin->Open(ModFileName.c_str(), eSerial_Xml);
@@ -376,6 +382,10 @@ int COMSSA::Run()
 
 	_TRACE("omssa: initializing score");
 	CSearch Search;
+
+    // set up rank scoring
+    if(args["ns"]) Search.SetRankScore() = true;
+
 	int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
 	if(retval) {
 	    ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " 
@@ -594,6 +604,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.40  2005/08/15 14:24:56  lewisg
+  new mod, enzyme; stat test
+
   Revision 1.39  2005/08/01 13:44:18  lewisg
   redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 

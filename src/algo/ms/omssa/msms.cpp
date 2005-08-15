@@ -567,21 +567,21 @@ void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = AverageMass[i];
 	    IntCalcMass[i] = static_cast <int> 
-		(AverageMass[i]*MSSCALE);
+		(AverageMass[i]*MSSCALE + 0.5);
 	}
     }
     else if(SearchType == eMSSearchType_monoisotopic) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = MonoMass[i];
 	    IntCalcMass[i] = static_cast <int>
-		(MonoMass[i]*MSSCALE);
+		(MonoMass[i]*MSSCALE + 0.5);
 	}
     }
     else if(SearchType == eMSSearchType_monon15) {
      for(i = 0; i < kNumUniqueAA; i++ ) {
          CalcMass[i] = MonoN15Mass[i];
          IntCalcMass[i] = static_cast <int>
-         (MonoN15Mass[i]*MSSCALE);
+         (MonoN15Mass[i]*MSSCALE + 0.5);
      }
      }
 }
@@ -610,6 +610,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.24  2005/08/15 14:24:56  lewisg
+  new mod, enzyme; stat test
+
   Revision 1.23  2005/08/03 17:59:29  lewisg
   *** empty log message ***
 

@@ -37,6 +37,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include <algorithm>
+#include <math.h>
 
 #include "mspeak.hpp"
 
@@ -70,9 +71,11 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
 {
     try {
 	TIntensity Intensity(new unsigned [Ladder.size()]);
-	Peaks->CompareSorted(Ladder, Which, &Intensity);
 
-	// examine hits array
+	Peaks->CompareSortedRank(Ladder, Which, &Intensity, Sum, M);
+	// Peaks->CompareSorted(Ladder, Which, &Intensity);
+
+    // examine hits array
 	unsigned i;
 	for(i = 0; i < Ladder.size(); i++) {
 	    // if hit, add to hitlist
@@ -179,17 +182,23 @@ void CMSHit::RecordMatches(CLadder& BLadder,
     int iHitInfo(0); 
     int Which = Peaks->GetWhich(Charge);
 
+    M = 0;
+    Sum = 0;
     // scan thru each ladder
     if(Charge >= Peaks->GetConsiderMult()) {
 		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
 		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which, Searchctermproduct);
+        N = Peaks->GetNum(MSCULLED2);
     }
     else {
 		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
+        N = Peaks->GetNum(MSCULLED1);
     }
+
+
 
 	// need to make function to save the info in ModInfo
 	RecordModInfo(ModMask,
@@ -411,6 +420,7 @@ int CMSPeak::CompareSorted(CLadder& Ladder, int Which, TIntensity* Intensity)
 	    continue;
 	}
 	else {
+        // avoid double count
 	    if(Used[Which][j] == 0) {
 		Used[Which][j] = 1;
 		Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
@@ -428,6 +438,147 @@ int CMSPeak::CompareSorted(CLadder& Ladder, int Which, TIntensity* Intensity)
     } while(true);
     return retval;
 }
+
+#ifdef MSSTATRUN
+void CMSPeak::CompareSortedAvg(CLadder& Ladder, int Which,
+                               double& avgMZI, double& avgLadder, int& n,
+                               bool CountExperimental)
+{
+    if(Ladder.size() == 0 ||  Num[Which] == 0) return;
+    unsigned i(0), j(0);
+
+#if 0
+    // first find average
+    for(i = 0; i < Ladder.size(); i++)
+        avgLadder += 1.0;
+    nLadder += Ladder.size();
+    for(j = 0; j < Num[Which]; j++)
+        avgMZI += MZI[Which][j].Intensity;
+    nMZI += Num[Which];
+#endif
+
+
+    do {
+        if (MZI[Which][j].MZ < Ladder[i] - tol) {
+            // increment experimental values
+            if(CountExperimental) {
+                avgMZI += MZI[Which][j].Intensity;
+                n++;
+            }
+            j++;
+            if(j >= Num[Which]) break;
+            continue;
+        }
+        else if(MZI[Which][j].MZ > Ladder[i] + tol) {
+            // increment theoretical values
+            // note: overcounts values shared with other ladders
+//            avgLadder += 1.0;
+//           n++;
+            i++;
+            if(i >= Ladder.size()) break;
+            continue;
+        }
+        else {
+            // increment matched experimental and theoretical values
+            if(CountExperimental) {
+                avgMZI += MZI[Which][j].Intensity;
+            }
+                n++;
+                avgLadder += 1.0;
+            j++;
+            if(j >= Num[Which]) break;
+            i++;
+            if(i >= Ladder.size()) break;
+        }
+    } while(true);
+
+}
+
+void CMSPeak::CompareSortedPearsons(CLadder& Ladder, int Which,
+                                    double avgMZI, double avgLadder,
+                                    double& numerator,
+                                    double& normLadder,
+                                    double& normMZI,
+                                    bool CountExperimental)
+{
+    unsigned i(0), j(0);
+    if(Ladder.size() == 0 ||  Num[Which] == 0) return;
+
+    do {
+        if (MZI[Which][j].MZ < Ladder[i] - tol) {
+            if(CountExperimental) {
+                numerator += (MZI[Which][j].Intensity - avgMZI) * (0.0 - avgLadder);
+                normMZI += pow(MZI[Which][j].Intensity - avgMZI, 2.0);
+                normLadder += pow(0.0 - avgLadder, 2.0);
+            }
+            j++;
+            if(j >= Num[Which]) break;
+            continue;
+        }
+        else if(MZI[Which][j].MZ > Ladder[i] + tol) {
+//            numerator += (0.0 - avgMZI) * (1.0 - avgLadder);
+//            normMZI += pow(0.0 - avgMZI, 2.0);
+//            normLadder += pow(1.0 - avgLadder, 2.0);
+            i++;
+            if(i >= Ladder.size()) break;
+            continue;
+        }
+        else {
+            numerator += (MZI[Which][j].Intensity - avgMZI) * (1.0 - avgLadder);
+            normLadder += pow(1.0 - avgLadder, 2.0);
+            if(CountExperimental) {
+                normMZI += pow(MZI[Which][j].Intensity - avgMZI, 2.0);
+            }
+            j++;
+            if(j >= Num[Which]) break;
+            i++;
+            if(i >= Ladder.size()) break;
+        }
+    } while(true);
+
+    return;
+}
+#endif
+
+int CMSPeak::CompareSortedRank(CLadder& Ladder, int Which, TIntensity* Intensity, int& Sum, int& M)
+{
+
+    unsigned i(0), j(0);
+    int retval(0);
+    if (Ladder.size() == 0 ||  Num[Which] == 0) return 0;
+
+    do {
+        if (MZI[Which][j].MZ < Ladder[i] - tol) {
+            j++;
+            if (j >= Num[Which]) break;
+            continue;
+        } else if (MZI[Which][j].MZ > Ladder[i] + tol) {
+            i++;
+            if (i >= Ladder.size()) break;
+            continue;
+        } else {
+            // avoid double count
+            if (Used[Which][j] == 0) {
+                Used[Which][j] = 1;
+                Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
+                // sum up the ranks
+                Sum += MZI[Which][j].Rank;
+                M++;
+            }
+            retval++;
+            // record the intensity if requested, used for auto adjust
+            if (Intensity) {
+                *(Intensity->get() + i) = MZI[Which][j].Intensity;
+            }
+            j++;
+            if (j >= Num[Which]) break;
+            i++;
+            if (i >= Ladder.size()) break;
+        }
+    } while (true);
+    return retval;
+}
+
 
 int CMSPeak::Compare(CLadder& Ladder, int Which)
 {
@@ -768,11 +919,20 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
     Used[Which] = new char [TempLen];
     ClearUsed(Which);
     copy(Temp, Temp+TempLen, MZI[Which]);
+	sort(MZI[Which], MZI[Which]+ Num[Which], CMZICompareIntensity());
+    Rank(Which);
     Sort(Which);
 
     delete [] Temp;
 }
 
+
+void CMSPeak::Rank(int Which)
+{
+    int i;
+    for(i = 1; i <= Num[Which]; i++)
+        MZI[Which][i-1].Rank = i;
+}
 
 // use smartcull on all charges
 void CMSPeak::CullAll(double Threshold, int SingleWindow,

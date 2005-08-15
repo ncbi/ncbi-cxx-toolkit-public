@@ -39,6 +39,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbifloat.h>
+#include <util/math/miscmath.h>
 
 #include <fstream>
 #include <string>
@@ -64,7 +65,7 @@ USING_SCOPE(omssa);
 //
 
 
-CSearch::CSearch(void): rdfp(0)
+CSearch::CSearch(void): rdfp(0), UseRankScore(false)
 {
 }
 
@@ -201,6 +202,67 @@ int CSearch::CompareLadders(int iMod,
     return 0;
 }
 
+
+#ifdef MSSTATRUN
+// compare ladders to experiment
+double CSearch::CompareLaddersPearson(int iMod,
+                            CMSPeak *Peaks,
+                            const TMassPeak *MassPeak)
+{
+    double avgMZI(0.0), avgLadder(0.0);
+    int n(0);
+    double numerator(0.0), normLadder(0.0), normMZI(0.0);
+    double retval(0.0);
+    if(MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
+        Peaks->CompareSortedAvg(*(BLadder[iMod]), MSCULLED2, avgMZI, avgLadder, n, true);
+        Peaks->CompareSortedAvg(*(YLadder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
+        Peaks->CompareSortedAvg(*(B2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
+        Peaks->CompareSortedAvg(*(Y2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
+        avgLadder /= n;
+        avgMZI /= n;
+
+        Peaks->CompareSortedPearsons(*(BLadder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, true);
+        Peaks->CompareSortedPearsons(*(YLadder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
+        Peaks->CompareSortedPearsons(*(B2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
+        Peaks->CompareSortedPearsons(*(Y2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
+    }
+    else {
+        Peaks->CompareSortedAvg(*(BLadder[iMod]), MSCULLED1, avgMZI, avgLadder, n, true);
+        Peaks->CompareSortedAvg(*(YLadder[iMod]), MSCULLED1, avgMZI, avgLadder, n, false);
+        avgLadder /= n;
+        avgMZI /= n;
+
+        Peaks->CompareSortedPearsons(*(BLadder[iMod]), MSCULLED1, avgMZI, avgLadder, numerator, normLadder, normMZI, true);
+        Peaks->CompareSortedPearsons(*(YLadder[iMod]), MSCULLED1, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
+    }
+    retval = numerator / (sqrt(normLadder) * sqrt(normMZI));
+    return retval;
+}
+#endif
+
+
+void CSearch::CompareLaddersRank(int iMod,
+                                   CMSPeak *Peaks,
+                                   const TMassPeak *MassPeak,
+                                   int& N,
+                                   int& M,
+                                   int& Sum)
+{
+    if(MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
+        Peaks->CompareSortedRank(*(BLadder[iMod]), MSCULLED2, 0, Sum, M);
+        Peaks->CompareSortedRank(*(YLadder[iMod]), MSCULLED2, 0, Sum, M);
+        Peaks->CompareSortedRank(*(B2Ladder[iMod]), MSCULLED2, 0, Sum, M);
+        Peaks->CompareSortedRank(*(Y2Ladder[iMod]), MSCULLED2, 0, Sum, M);
+        N = Peaks->GetNum(MSCULLED2);
+    }
+    else {
+        Peaks->CompareSortedRank(*(BLadder[iMod]), MSCULLED1, 0, Sum, M);
+        Peaks->CompareSortedRank(*(YLadder[iMod]), MSCULLED1, 0, Sum, M);
+        N = Peaks->GetNum(MSCULLED1);
+    }
+}
+
+
 // compare ladders to experiment
 bool CSearch::CompareLaddersTop(int iMod,
                                 CMSPeak *Peaks,
@@ -220,7 +282,7 @@ bool CSearch::CompareLaddersTop(int iMod,
 }
 
 #ifdef _DEBUG
-#define CHECKGI
+// #define CHECKGI
 #endif
 #ifdef CHECKGI
 bool CheckGi(int gi)
@@ -507,7 +569,6 @@ printf("\n");
     } // iMissed
 }
 
-//#define MSSTATRUN
 
 // set up the ions to search
 void CSearch::SetIons(int& ForwardIon, int& BackwardIon)
@@ -671,9 +732,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	Spectrum2Peak(PeakSet);
 
 #ifdef MSSTATRUN
-	ofstream charge1("charge1.txt");
-	ofstream charge2("charge2.txt");
-	ofstream charge3("charge3.txt");
+	ofstream histos("histo.txt");
 #endif
 
 	// iterate through sequences
@@ -887,19 +946,17 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     				B2Ladder[iMod]->ClearHits();
     				Y2Ladder[iMod]->ClearHits();
 			    }
-				
-			    if(
-#ifdef MSSTATRUN
-			       true
-#else
-			       CompareLaddersTop(iMod, 
-                                     Peaks,
-                                     MassPeak)
-#endif
-			       ) {
-				// end of new addition
 
 				Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+				
+			    if(/*UseRankScore || */
+                   CompareLaddersTop(iMod, 
+                                     Peaks,
+                                     MassPeak)
+                   ) {
+				// end of new addition
+
+//				Peaks->SetPeptidesExamined(MassPeak->Charge)++;
 #ifdef CHECKGI
 				/*if(Peaks->GetNumber() == 245)*/
 				//			    cout << testgi << " " << position << " " << endposition << endl;
@@ -914,20 +971,20 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 				    B2Ladder[iMod]->HitCount() +
 				    Y2Ladder[iMod]->HitCount();
 #ifdef MSSTATRUN
-				switch (MassPeak->Charge)
-				    {
-				    case 1:
-					charge1 << hits << endl;
-					break;
-				    case 2:
-					charge2 << hits << endl;
-					break;
-				    case 3:
-					charge3 << hits << endl;
-					break;
-				    default:
-					break;
-				    }
+//                histos << CompareLaddersPearson(iMod, Peaks, MassPeak) << endl;
+                {
+                int N(0), M(0), Sum(0);
+                double Average, StdDev;
+				Peaks->ClearUsedAll();
+
+                CompareLaddersRank(iMod, Peaks, MassPeak, N,
+                                   M,
+                                   Sum);
+                Average = ( M *(N+1))/2.0;
+                StdDev = sqrt(Average * (N - M) / 6.0);
+                histos << "N=" << N << " M=" << M << " Sum=" << Sum << " Ave=" << Average << " SD=" << StdDev << " erf=" << 0.5*(1.0 + erf((Sum - Average)/(StdDev*sqrt(2.0)))) << endl;
+                }
+
 #endif
 				if(hits >= MyRequest->GetSettings().GetMinhit()) {
 				    // need to save mods.  bool map?
@@ -1156,28 +1213,28 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
 	}
 		
 	double Threshold, MinThreshold(ThreshStart), MinEval(1000000.0L);
-	// now calculate scores and sort
-	for(Threshold = ThreshStart; Threshold <= ThreshEnd; 
-	    Threshold += ThreshInc) {
-	    CalcNSort(ScoreList, Threshold, Peaks, false);
-	    if(!ScoreList.empty()) {
-		_TRACE("Threshold = " << Threshold <<
-		       "EVal = " << ScoreList.begin()->first);
-	    }
-	    if(!ScoreList.empty() && ScoreList.begin()->first < MinEval) {
-            MinEval = ScoreList.begin()->first;
-            MinThreshold = Threshold;
-	    }
-	    ScoreList.clear();
-	}
-	_TRACE("Min Threshold = " << MinThreshold);
-	CalcNSort(ScoreList,
-#ifdef MSSTATRUN
- ThreshStart
-#else
- MinThreshold
-#endif
-, Peaks , true );
+    if(!UseRankScore)
+        {
+            	// now calculate scores and sort
+    	for(Threshold = ThreshStart; Threshold <= ThreshEnd; 
+    	    Threshold += ThreshInc) {
+    	    CalcNSort(ScoreList, Threshold, Peaks, false);
+    	    if(!ScoreList.empty()) {
+    		_TRACE("Threshold = " << Threshold <<
+    		       "EVal = " << ScoreList.begin()->first);
+    	    }
+    	    if(!ScoreList.empty() && ScoreList.begin()->first < MinEval) {
+                MinEval = ScoreList.begin()->first;
+                MinThreshold = Threshold;
+    	    }
+    	    ScoreList.clear();
+    	}
+    }
+    _TRACE("Min Threshold = " << MinThreshold);
+    CalcNSort(ScoreList,
+              MinThreshold,
+              Peaks,
+              !UseRankScore );
 		
 	int taxid;
 	const CMSSearchSettings::TTaxids& Tax = MyRequest->GetSettings().GetTaxids();
@@ -1231,7 +1288,7 @@ TaxContinue2:
 		else {
 		    Hit = new CMSHits;
 		    Hit->SetPepstring(seqstring);
-
+            Hit->SetProtlength(length);
             // set the start AA, if there is one
             if(MSHit->GetStart() > 0) {
                 tempstartstop = UniqueAA[Sequence[MSHit->GetStart()-1]];
@@ -1352,12 +1409,22 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             // threshold probably too high
             continue;
         }
-        if(a < 0 || isnan(a) || !finite(a)) {
-            ERR_POST(Info << "poisson mean is < 0 or is NaN or is infinite");
+        if(a < 0 ) {
+            _TRACE("poisson mean is < 0");
             continue;
         }
+        else if(isnan(a) || !finite(a)) {
+             ERR_POST(Info << "poisson mean is NaN or is infinite");
+             continue;
+        }
 	    if(HitList[iHitList].GetHits() < a) continue;
-	    double pval;
+
+	    double pval; // statistical p-value
+        int N; // number of peptides
+        N = Peaks->GetPeptidesExamined(Charge) + 
+            (MyRequest->GetSettings().GetZdep() * (Charge - 1) + 1) *
+             MyRequest->GetSettings().GetPseudocount();
+
 	    if(NewScore) {
 		int High, Low, NumPeaks, NumLo, NumHi;
 		Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
@@ -1369,11 +1436,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 		int numhits = HitList[iHitList].GetHits(Threshold, Peaks->GetMaxI(Which));
   // for poisson test
 		//		int numhits = HitList[iHitList].GetHits(Threshold, Peaks->GetMaxI(Which), tempMass);
-        int N;
         // need to modify to turn off charge dependence when selected off
-        N = Peaks->GetPeptidesExamined(Charge) + 
-            (MyRequest->GetSettings().GetZdep() * (Charge - 1) + 1) *
-             MyRequest->GetSettings().GetPseudocount();
 
 		pval = CalcPvalueTopHit(a, 
                                 numhits,
@@ -1383,18 +1446,31 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                                 );       
 
 
-#ifdef MSSTATRUN
-		cout << pval << " " << a << " " << Charge << endl;
-		//		cerr << "pval = " << pval << " Normal = " << Normal << endl;
-#endif
 	    }
 	    else {
-		pval =
-		    CalcPvalue(a, HitList[iHitList].
-			       GetHits(Threshold, Peaks->GetMaxI(Which)),
-			       Peaks->GetPeptidesExamined(Charge));
+
+            pval = CalcPvalue(a, HitList[iHitList].
+                           GetHits(Threshold, Peaks->GetMaxI(Which)),
+                           Peaks->GetPeptidesExamined(Charge));
 	    }
-	    double eval = 1e5 * pval * Peaks->GetPeptidesExamined(Charge);
+    if(UseRankScore) {
+            if(HitList[iHitList].GetM() != 0.0) {
+                double Average, StdDev, Perf;
+                Average = ( HitList[iHitList].GetM() *(HitList[iHitList].GetN()+1))/2.0;
+                StdDev = sqrt(Average * (HitList[iHitList].GetN() - HitList[iHitList].GetM()) / 6.0);
+#ifdef HAVE_ERF
+                Perf = 0.5*(1.0 + erf((HitList[iHitList].GetSum() - Average)/(StdDev*sqrt(2.0))));
+#else
+                Perf = 0.5*(1.0 + NCBI_Erf((HitList[iHitList].GetSum() - Average)/(StdDev*sqrt(2.0))));
+#endif
+                _TRACE( "N=" << HitList[iHitList].GetN() << " M=" << HitList[iHitList].GetM() <<
+                     " Sum=" << HitList[iHitList].GetSum() << " Ave=" << Average << " SD=" << StdDev <<
+                     " erf=" << Perf );
+                pval *= Perf;
+            }
+            else ERR_POST(Info << "M is zero");
+    }
+	    double eval = /*2e5*/ 1e5 * pval * N;
 	    ScoreList.insert(pair<const double, CMSHit *> 
 			     (eval, &(HitList[iHitList])));
 	}   
@@ -1547,6 +1623,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.54  2005/08/15 14:24:56  lewisg
+new mod, enzyme; stat test
+
 Revision 1.53  2005/08/03 17:59:29  lewisg
 *** empty log message ***
 

@@ -1916,4 +1916,19 @@
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
     </MSModSpec_residues>
   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="camthiopropanoylk">131</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>CAMthiopropanoyl K</MSModSpec_name>
+     <MSModSpec_monomass>146.027574</MSModSpec_monomass>
+     <MSModSpec_averagemass>146.1875</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>K</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
 </MSModSpecSet>

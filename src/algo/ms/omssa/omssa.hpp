@@ -93,6 +93,30 @@ public:
     CSearch(void);
     ~CSearch(void);
 
+#ifdef MSSTATRUN
+    double CompareLaddersPearson(int iMod,
+                            CMSPeak *Peaks,
+                            const TMassPeak *MassPeak);
+#endif
+
+    /** 
+     * compare ladders to experiment
+     * 
+     * @param iMod ladder to examine
+     * @param Peaks the experimental values
+     * @param MassPeak
+     * @param N the number of experimental peaks
+     * @param M the number of matched peaks
+     * @param Sum the sum of the ranks of the matched peaks
+     * 
+     */
+    void CompareLaddersRank(int iMod,
+                            CMSPeak *Peaks,
+                            const TMassPeak *MassPeak,
+                            int& N,
+                            int& M,
+                            int& Sum);
+    
     // init blast databases.  stream thru db if InitDB true
     int InitBlast(const char *blastdb, bool InitDb);
 
@@ -242,6 +266,13 @@ public:
      */
     void InitLadders(void);
 
+
+    /** 
+     * Sets the scoring to use rank statistics
+     */
+    bool& SetRankScore();
+
+
 protected:
 
     /**
@@ -272,7 +303,6 @@ protected:
      * @param j the index for modification combinations 
      */
     TMassMask& SetMassAndMask(int i, int j);
-
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -321,6 +351,11 @@ private:
      * used to bound non-specific cleavage searches
      */
     int MaxMZ;
+
+    /**
+     * temporary boolean to turn on rank scoring
+     */
+    bool UseRankScore;
 
 };
 
@@ -489,6 +524,15 @@ TMassMask& CSearch::SetMassAndMask(int i, int j)
 }
 
 
+/**
+ * temporary boolean to turn on rank scoring
+ */
+inline
+bool& CSearch::SetRankScore(void)
+{
+    return UseRankScore;
+}
+
 /////////////////// end of CSearch inline methods
 
 
@@ -500,6 +544,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.31  2005/08/15 14:24:56  lewisg
+  new mod, enzyme; stat test
+
   Revision 1.30  2005/08/01 13:44:18  lewisg
   redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 
