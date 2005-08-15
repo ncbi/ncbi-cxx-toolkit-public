@@ -79,7 +79,8 @@ for x_arg in "$@" ; do
     --without-doc )  with_doc="no"    ;;
     --with-purge  )  with_purge="yes" ;;
     --with-cvs    )  with_cvs="yes"   ;;
-    * )  Usage "Unknown argument \"$x_arg\""
+    "" )                              ;; # Work around a bug in OSF/1's shell.
+    * )  Usage "Unknown argument \"$x_arg\"" ;;
   esac
 done
 
