@@ -55,7 +55,7 @@ dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
 	if test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" ; then \
-          find build/*/ -name SunWS_cache -prune -o \
+          find */. -name SunWS_cache -prune -o \
 	    \( -type f -size +64 ! -name '*.o' -print \) | xargs rm -f ; \
 	else \
 	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check ; \
