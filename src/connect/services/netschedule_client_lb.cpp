@@ -286,6 +286,13 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
     return kEmptyStr;
 }
 
+void CNetScheduleClient_LB::SubmitJobBatch(SJobBatch& subm)
+{
+    ++m_Requests;
+    TParent::SubmitJobBatch(subm);
+}
+
+
 bool CNetScheduleClient_LB::GetJob(string* job_key, 
                                    string* input, 
                                    unsigned short udp_port)
@@ -658,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/08/15 13:28:33  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.14  2005/05/16 14:00:29  didenko
  * Added CetConnectionInfo() virtual method
  *

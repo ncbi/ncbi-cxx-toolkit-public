@@ -269,6 +269,17 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
     return old_status;
 }
 
+void 
+CNetScheduler_JobStatusTracker::AddPendingBatch(
+                                    unsigned job_id_from, unsigned job_id_to)
+{
+    CWriteLockGuard guard(m_Lock);
+
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+
+    bv.set_range(job_id_from, job_id_to);
+}
+
 unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
 {
     const TBVector& bv = 
@@ -452,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/08/15 13:29:46  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.14  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *

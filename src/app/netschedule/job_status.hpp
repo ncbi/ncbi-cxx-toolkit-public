@@ -74,6 +74,9 @@ public:
     ChangeStatus(unsigned int                   job_id, 
                  CNetScheduleClient::EJobStatus status);
 
+    /// Add closed interval of ids to pending status
+    void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
+
     /// Return job id (job is moved from pending to running)
     /// 0 - no pending jobs
     unsigned int GetPendingJob();
@@ -259,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/15 13:29:50  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.7  2005/07/14 13:12:56  kuznets
  * Added load balancer
  *

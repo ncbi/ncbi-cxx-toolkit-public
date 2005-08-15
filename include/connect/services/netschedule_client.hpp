@@ -173,6 +173,44 @@ public:
     string SubmitJob(const string& input, 
                      const string& progress_msg = kEmptyStr);
 
+
+    /// Job description for batch submission
+    ///
+    struct SBatchSubm
+    {
+        string     input;   ///< job input
+        unsigned   job_id;  ///< integer job id (assigned after submission)
+
+        SBatchSubm() : job_id(0) {}
+        SBatchSubm(const string& inp) : input(inp), job_id(0) {}
+    };
+
+    /// Job vector for batch submission
+    typedef vector<SBatchSubm>  TBatchSubmitJobList;
+
+    /// Job batch.
+    /// SubmitJobBatch fills host address, port and submission list (job ids)
+    /// 
+    struct SJobBatch
+    {
+        string               host;
+        unsigned short       port;
+        TBatchSubmitJobList  job_list;
+    };
+
+    /// Submit job batch.
+    /// Method automatically splits the submission into reasonable sized
+    /// transactions, so there is no limit on the input batch size.
+    ///
+    /// Every job in the job list receives job id, which can be 
+    /// converted into a valid job key using MakeJobKey
+    ///
+    /// SJobBatch::host and SJobBatch::port are assigned by the SubmitJobBatch
+    ///
+    virtual
+    void SubmitJobBatch(SJobBatch& subm);
+
+
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
     /// infrastructure is capable of finishing job in the specified 
@@ -416,6 +454,20 @@ public:
     ///
     virtual string GetConnectionInfo() const; 
 
+
+    /// Make job key string out of job id and server address
+    ///
+    /// @param job_key  Job key string (output)
+    /// @param job_id   Job id
+    /// @param host     Host name (where NetSchedule is running)
+    /// @param port     NetSchedule port
+    ///
+    static
+    void MakeJobKey(string*       job_key, 
+                    unsigned      job_id, 
+                    const string& host,
+                    unsigned      port);
+
 protected:
 
     /// Shutdown the server daemon.
@@ -567,6 +619,9 @@ public:
     virtual
     string SubmitJob(const string& input, 
                      const string& progress_msg = kEmptyStr);
+
+    virtual
+    void SubmitJobBatch(SJobBatch& subm);
 
 
     virtual
@@ -741,6 +796,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/08/15 13:27:40  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.38  2005/07/27 18:13:32  kuznets
  * PrintServerOut() moved to base class
  *

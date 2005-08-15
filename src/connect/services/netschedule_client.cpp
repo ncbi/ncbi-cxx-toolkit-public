@@ -234,6 +234,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
+
     MakeCommandPacket(&m_Tmp, "SUBMIT \"");
     m_Tmp.append(input);
     m_Tmp.append("\"");
@@ -259,6 +260,141 @@ string CNetScheduleClient::SubmitJob(const string& input,
 
     return m_Tmp;
 }
+
+void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
+{
+    subm.host.erase();
+    subm.port = 0;
+
+    // veryfy the input data
+    ITERATE(TBatchSubmitJobList, it, subm.job_list) {
+        const string& input = it->input;
+
+        if (input.length() > kNetScheduleMaxDataSize) {
+            NCBI_THROW(CNetScheduleException, eDataTooLong, 
+                "Input data too long.");
+        }
+    }
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    m_Sock->DisableOSSendDelay(true);
+
+    // batch command
+    MakeCommandPacket(&m_Tmp, "BSUB");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    // check if server is ready for the batch submit
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+
+    m_Sock->DisableOSSendDelay(false);
+
+    for (unsigned i = 0; i < subm.job_list.size(); ) {
+
+        const unsigned kMax_Batch = 50000;
+
+        unsigned batch_size = subm.job_list.size() - i;
+        if (batch_size > kMax_Batch) {
+            batch_size = kMax_Batch;
+        }
+
+        char buf[kNetScheduleMaxDataSize * 4];
+        sprintf(buf, "BTCH %u", batch_size);
+
+        WriteStr(buf, strlen(buf)+1);
+
+        unsigned batch_start = i;
+        for (unsigned j = 0; j < batch_size; ++j,++i) {
+            const string& input = subm.job_list[i].input;
+            sprintf(buf, "\"%s\"", input.c_str());
+            WriteStr(buf, strlen(buf)+1);
+        }
+
+        WriteStr("ENDB", 5);
+
+        WaitForServer();
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                    "Communication error");
+        }
+        TrimPrefix(&m_Tmp);
+
+        if (m_Tmp.empty()) {
+            NCBI_THROW(CNetServiceException, eProtocolError, 
+                    "Invalid server response. Empty key.");
+        }
+
+        // parse the batch answer
+        // FORMAT:
+        //  first_job_id host port
+
+        {{
+        const char* s = m_Tmp.c_str();
+        unsigned first_job_id = ::atoi(s);
+
+        if (subm.host.empty()) {
+            for (; *s != ' '; ++s) {
+                if (*s == 0) {
+                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                            "Invalid server response. Batch answer format.");
+                }
+            }
+            ++s;
+            if (*s == 0) {
+                NCBI_THROW(CNetServiceException, eProtocolError, 
+                        "Invalid server response. Batch answer format.");
+            }
+            for (; *s != ' '; ++s) {
+                if (*s == 0) {
+                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                            "Invalid server response. Batch answer format.");
+                }
+                subm.host.push_back(*s);
+            }
+            ++s;
+            if (*s == 0) {
+                NCBI_THROW(CNetServiceException, eProtocolError, 
+                        "Invalid server response. Batch answer format.");
+            }
+
+            subm.port = atoi(s); 
+            if (subm.port == 0) {
+                NCBI_THROW(CNetServiceException, eProtocolError, 
+                        "Invalid server response. Port=0.");
+            }
+        }
+
+        // assign job ids, protocol guarantees all jobs in batch will
+        // receive sequential numbers, so server sends only first job id
+        //
+        for (unsigned j = 0; j < batch_size; ++j) {
+            subm.job_list[batch_start].job_id = first_job_id;
+            ++first_job_id;
+            ++batch_start;
+        }
+        
+
+        }}
+
+
+    } // for
+
+    m_Sock->DisableOSSendDelay(true);
+
+
+    WriteStr("ENDS", 5);
+
+}
+
 
 CNetScheduleClient::EJobStatus 
 CNetScheduleClient::SubmitJobAndWait(const string&  input,
@@ -1209,11 +1345,27 @@ bool CNetScheduleClient::IsError(const char* str)
 }
 
 
+void CNetScheduleClient::MakeJobKey(string*       job_key, 
+                                    unsigned      job_id, 
+                                    const string& host,
+                                    unsigned      port)
+{
+    _ASSERT(job_key);
+    char buf[2048];
+    sprintf(buf, NETSCHEDULE_JOBMASK,
+            job_id, host.c_str(), port);
+    *job_key = buf;
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/08/15 13:28:33  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.35  2005/07/27 18:13:37  kuznets
  * PrintServerOut() moved to base class
  *

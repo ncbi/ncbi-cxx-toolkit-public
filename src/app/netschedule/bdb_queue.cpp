@@ -196,7 +196,10 @@ CQueueDataBase::~CQueueDataBase()
     {}
 }
 
-void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
+void CQueueDataBase::Open(const string& path, 
+                          unsigned      cache_ram_size,
+                          unsigned      max_locks,
+                          unsigned      log_mem_size)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
@@ -214,7 +217,15 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
     m_Name = "jsqueue";
     string err_file = m_Path + "err" + string(m_Name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
-    m_Env->SetLogFileMax(200 * 1024 * 1024);
+
+    if (log_mem_size) {
+        m_Env->SetLogInMemory(true);
+        m_Env->SetLogBSize(log_mem_size);
+    } else {
+        m_Env->SetLogFileMax(200 * 1024 * 1024);
+        m_Env->SetLogAutoRemove(true);
+    }
+    
 
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
@@ -224,6 +235,12 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
+        unsigned max_locks = m_Env->GetMaxLocks();
+        if (max_locks) {
+            m_Env->SetMaxLocks(max_locks);
+            m_Env->SetMaxLockObjects(max_locks);
+        }
+
         m_Env->OpenWithTrans(path.c_str(), CBDB_Env::eThreaded);
     } else {
         if (cache_ram_size) {
@@ -558,6 +575,8 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     auto_ptr<SLockedQueue> q(new SLockedQueue(queue_name));
     q->db.SetEnv(*m_Env);
     string fname = string("jsq_") + queue_name + string(".db");
+
+    q->db.SetPageSize(8 * 1024);
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
     q->timeout = timeout;
@@ -665,6 +684,22 @@ unsigned int CQueueDataBase::GetNextId()
     }
 
     return id;
+}
+
+unsigned int CQueueDataBase::GetNextIdBatch(unsigned count)
+{
+    if (m_IdCounter.Get() >= kMax_I4) {
+        m_IdCounter.Set(0);
+    }
+    unsigned int id = (unsigned) m_IdCounter.Add(count);
+    id = id - count + 1;
+    return id;
+}
+
+void CQueueDataBase::TransactionCheckPoint()
+{
+    m_Env->TransactionCheckpoint();
+    m_Env->CleanLog();
 }
 
 void CQueueDataBase::NotifyListeners()
@@ -1107,8 +1142,6 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 {
     unsigned int job_id = m_Db.GetNextId();
 
-//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
-
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
@@ -1120,6 +1153,65 @@ CQueueDataBase::CQueue::Submit(const char*   input,
     {{
     CFastMutexGuard guard(m_LQueue.lock);
 	db.SetTransaction(&trans);
+
+    x_AssignSubmitRec(
+        job_id, input, host_addr, port, wait_timeout, progress_msg);
+
+    db.Insert();
+    }}
+
+    trans.Commit();
+
+    js_guard.Release();
+
+    return job_id;
+}
+
+unsigned int 
+CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
+                                    unsigned      host_addr,
+                                    unsigned      port,
+                                    unsigned      wait_timeout,
+                                    const char*   progress_msg)
+{
+    unsigned job_id = m_Db.GetNextIdBatch(batch.size());
+
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+	db.SetTransaction(&trans);
+
+    unsigned job_id_cnt = job_id;
+    ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+        x_AssignSubmitRec(
+            job_id_cnt, 
+            it->input, host_addr, port, wait_timeout, 0/*progress_msg*/);
+        ++job_id_cnt;
+        db.Insert();
+    } // ITERATE
+
+    }}
+    trans.Commit();
+
+    m_LQueue.status_tracker.AddPendingBatch(job_id, 
+                                            job_id + batch.size() - 1);
+
+    return job_id;
+}
+
+
+void 
+CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
+                                          const char*   input,
+                                          unsigned      host_addr,
+                                          unsigned      port,
+                                          unsigned      wait_timeout,
+                                          const char*   progress_msg)
+{
+    SQueueDB& db = m_LQueue.db;
 
     db.id = job_id;
     db.status = (int) CNetScheduleClient::ePending;
@@ -1158,15 +1250,8 @@ CQueueDataBase::CQueue::Submit(const char*   input,
         db.progress_msg = progress_msg;
     }
 
-    db.Insert();
-    }}
-
-    trans.Commit();
-
-    js_guard.Release();
-
-    return job_id;
 }
+
 
 unsigned 
 CQueueDataBase::CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
@@ -1659,7 +1744,7 @@ void CQueueDataBase::CQueue::GetJobLB(unsigned int   worker_node,
             }}
 
             double avg_time = total_run_time / run_count;
-            lb_stall_time = avg_time * lb_stall_time_mult;
+            lb_stall_time = (unsigned)(avg_time * lb_stall_time_mult);
         }
         break;
     default:
@@ -2593,6 +2678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/08/15 13:29:46  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.44  2005/07/25 16:14:31  kuznets
  * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
  *

@@ -201,6 +201,15 @@ struct SQueueStatictics
     {}
 };
 
+/// Batch submit record
+///
+/// @internal
+struct SNS_BatchSubmitRec
+{
+    char input[kNetScheduleMaxDataSize];
+};
+
+
 
 /// @internal
 enum ENSLB_RunDelayType
@@ -345,7 +354,20 @@ public:
     CQueueDataBase();
     ~CQueueDataBase();
 
-    void Open(const string& path, unsigned cache_ram_size);
+    /// @param path
+    ///    Path to the database
+    /// @param cache_ram_size
+    ///    Size of database cache
+    /// @param max_locks
+    ///    Number of locks and lock objects
+    /// @param log_mem_size
+    ///    Size of in-memory LOG (when 0 log is put to disk)
+    ///    In memory LOG is not durable, put it to memory
+    ///    only if you need better performance 
+    void Open(const string& path, 
+              unsigned      cache_ram_size,
+              unsigned      max_locks,
+              unsigned      log_mem_size);
 
     void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
 
@@ -395,6 +417,15 @@ public:
                             unsigned      port = 0,
                             unsigned      wait_timeout = 0,
                             const char*   progress_msg = 0);
+
+        /// Submit job batch
+        /// @return 
+        ///    ID of the first job, second is first_id+1
+        unsigned int SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
+                                 unsigned      host_addr = 0,
+                                 unsigned      port = 0,
+                                 unsigned      wait_timeout = 0,
+                                 const char*   progress_msg = 0);
 
         void Cancel(unsigned int job_id);
         void PutResult(unsigned int  job_id,
@@ -549,6 +580,12 @@ public:
         void x_DeleteDBRec(SQueueDB&  db, 
                            CBDB_FileCursor& cur);
 
+        void x_AssignSubmitRec(unsigned      job_id,
+                               const char*   input,
+                               unsigned      host_addr,
+                               unsigned      port,
+                               unsigned      wait_timeout,
+                               const char*   progress_msg);
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -564,10 +601,16 @@ public:
         return m_QueueCollection; 
     }
 
+    /// Force transaction checkpoint
+    void TransactionCheckPoint();
+
 
 protected:
     /// get next job id (counter increment)
     unsigned int GetNextId();
+
+    /// Returns first id for the batch
+    unsigned int GetNextIdBatch(unsigned count);
 
     friend class CQueue;
 private:
@@ -602,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/08/15 13:29:50  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.30  2005/07/25 16:14:31  kuznets
  * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
  *

@@ -70,7 +70,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.5.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.6.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -79,6 +79,7 @@ static CNetScheduleServer* s_netschedule_server = 0;
 /// @internal
 typedef enum {
     eSubmitJob,
+    eSubmitBatch,
     eCancelJob,
     eStatusJob,
     eGetJob,
@@ -154,6 +155,8 @@ struct SThreadData
     string      lmsg; /// < LOG message
 
     SJS_Request req;
+
+    vector<SNS_BatchSubmitRec>  batch_subm_vec;
 };
 
 ///@internal
@@ -222,6 +225,10 @@ public:
     void ProcessSubmit(CSocket&                sock,
                        SThreadData&            tdata,
                        CQueueDataBase::CQueue& queue);
+
+    void ProcessSubmitBatch(CSocket&                sock,
+                            SThreadData&            tdata,
+                            CQueueDataBase::CQueue& queue);
 
     void ProcessCancel(CSocket&                sock,
                        SThreadData&            tdata,
@@ -386,6 +393,23 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 
 
 
+
+#define NS_RETURN_ERROR(err) \
+    { req->req_type = eError; req->err_msg = err; return; }
+#define NS_SKIPSPACE(x)  \
+    while (*x && (*x == ' ' || *x == '\t')) { ++x; }
+#define NS_CHECKEND(x, msg) \
+    if (!*s) { req->req_type = eError; req->err_msg = msg; return; }
+#define NS_CHECKSIZE(size, max_size) \
+    if (unsigned(size) >= unsigned(max_size)) \
+        { req->req_type = eError; req->err_msg = "Message too long"; return; }
+#define NS_GETSTRING(x, str) \
+    for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
+
+
+
+
+
 CNetScheduleServer::CNetScheduleServer(unsigned int    port,
                                        CQueueDataBase* qdb,
                                        unsigned        max_threads,
@@ -416,6 +440,8 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
 
     if (is_log) {
         m_LogFlag.Set(1);
+    } else {
+        m_LogFlag.Set(0);
     }
 }
 
@@ -553,6 +579,13 @@ end_version_control:
                     break;
                 }
                 ProcessSubmit(socket, *tdata, queue);
+                break;
+            case eSubmitBatch:
+                if (!queue.IsSubmitAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
+                ProcessSubmitBatch(socket, *tdata, queue);
                 break;
             case eCancelJob:
                 if (!queue.IsSubmitAllowed()) {
@@ -810,6 +843,122 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
         monitor->SendString(msg);
     }
 
+}
+
+void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
+                                            SThreadData&            tdata,
+                                            CQueueDataBase::CQueue& queue)
+{
+    WriteMsg(sock, "OK:", "Batch submit ready");
+
+    unsigned client_address = 0;
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+
+    s_WaitForReadSocket(sock, m_InactivityTimeout);
+    SJS_Request& req = tdata.req;
+    EIO_Status io_st;
+
+    while (1) {
+        unsigned batch_size = 0;
+
+        // BTCH batch_size
+        //
+        {{
+            io_st = sock.ReadLine(tdata.answer);
+            JS_CHECK_IO_STATUS(io_st)
+
+            const char* s = tdata.answer.c_str();
+            if (strncmp(s, "BTCH", 4) != 0) {
+                if (strncmp(s, "ENDS", 4) == 0) {
+                    break;
+                }
+                WriteMsg(sock, "ERR:", 
+                        "Batch submit error: BATCH expected");
+                return;
+            }
+            s+=5;
+            NS_SKIPSPACE(s)
+
+            batch_size = atoi(s);
+        }}
+
+        // read the batch body
+        //
+
+        CStopWatch sw1(true);
+
+        tdata.batch_subm_vec.resize(batch_size);
+
+        for (unsigned i = 0; i < batch_size; ++i) {
+            s_WaitForReadSocket(sock, m_InactivityTimeout);
+
+            io_st = sock.ReadLine(tdata.answer);
+            JS_CHECK_IO_STATUS(io_st)
+
+            if (tdata.answer.empty()) {  // something is wrong
+                WriteMsg(sock, "ERR:", 
+                        "Batch submit error: empty string");
+                return;
+            }
+
+            const char* s = tdata.answer.c_str();
+            if (*s !='"') {
+                WriteMsg(sock, "ERR:", 
+                        "Invalid batch submission, syntax error");
+                return;
+            }
+
+            SNS_BatchSubmitRec& rec = tdata.batch_subm_vec[i];
+            char *ptr = rec.input;
+            for (++s; *s != '"'; ++s) {
+                if (*s == 0) {
+                    WriteMsg(sock, "ERR:",
+                             "Batch submit error: unexpected end of string");
+                    return;
+                }
+                *ptr++ = *s;
+            } // for
+            
+            *ptr = 0;
+        } // for batch_size
+
+        s_WaitForReadSocket(sock, m_InactivityTimeout);
+
+        io_st = sock.ReadLine(tdata.answer);
+        JS_CHECK_IO_STATUS(io_st)
+
+
+        const char* s = tdata.answer.c_str();
+        if (strncmp(s, "ENDB", 4) != 0) {
+            WriteMsg(sock, "ERR:",
+                        "Batch submit error: unexpected end of batch");
+        }
+
+        double comm_elapsed = sw1.Elapsed();
+
+        // we have our batch now
+
+        CStopWatch sw2(true);
+
+        unsigned job_id =
+            queue.SubmitBatch(tdata.batch_subm_vec, 
+                              client_address, 
+                              0, 0, 0);
+
+        double db_elapsed = sw2.Elapsed();
+//NcbiCerr.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+//NcbiCerr << "comm=" << comm_elapsed << " db=" << db_elapsed << endl;
+        {{
+        char buf[1024];
+        sprintf(buf, "%u %s %u", 
+                    job_id, m_Host.c_str(), unsigned(GetPort()));
+
+        WriteMsg(sock, "OK:", buf);
+        }}
+
+    } // while
+
+    m_QueueDB->TransactionCheckPoint();
 }
 
 void CNetScheduleServer::ProcessCancel(CSocket&                sock, 
@@ -1321,17 +1470,6 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 
 
 
-#define NS_RETURN_ERROR(err) \
-    { req->req_type = eError; req->err_msg = err; return; }
-#define NS_SKIPSPACE(x)  \
-    while (*x && (*x == ' ' || *x == '\t')) { ++x; }
-#define NS_CHECKEND(x, msg) \
-    if (!*s) { req->req_type = eError; req->err_msg = msg; return; }
-#define NS_CHECKSIZE(size, max_size) \
-    if (unsigned(size) >= unsigned(max_size)) \
-        { req->req_type = eError; req->err_msg = "Message too long"; return; }
-#define NS_GETSTRING(x, str) \
-    for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
 
 
 void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
@@ -1360,6 +1498,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 20.DUMP [JSID_01_1]
     // 21.RECO
     // 22.QLST
+    // 23.BSUB
 
     const char* s = reqstr.c_str();
 
@@ -1703,6 +1842,14 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         return;
     }
 
+    if (strncmp(s, "BSUB", 4) == 0) {
+        req->req_type = eSubmitBatch;
+        s += 4;
+
+        return;
+    }
+
+
     if (strncmp(s, "SHUTDOWN", 8) == 0) {
         req->req_type = eShutdown;
         return;
@@ -1951,11 +2098,17 @@ int CNetScheduleDApp::Run(void)
         unsigned mem_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "mem_size", 
                                  CConfig::eErr_NoThrow, 0);
+        int max_locks = 
+            bdb_conf.GetInt("netschedule", "max_locks", 
+                                 CConfig::eErr_NoThrow, 0);
 
+        unsigned log_mem_size = (unsigned)
+            bdb_conf.GetDataSize("netschedule", "log_mem_size", 
+                                 CConfig::eErr_NoThrow, 0);
         LOG_POST(Info << "Mounting database at: " << db_path);
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
-        qdb->Open(db_path, mem_size);
+        qdb->Open(db_path, mem_size, max_locks, log_mem_size);
 
 
         int port = 
@@ -2071,6 +2224,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/08/15 13:29:46  kuznets
+ * Implemented batch job submission
+ *
  * Revision 1.48  2005/08/10 19:20:46  kuznets
  * Set connection accept timeout 1sec
  *
