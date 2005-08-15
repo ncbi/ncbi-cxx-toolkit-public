@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.13 2005/04/11 14:54:12 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.14 2005/08/15 15:24:42 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -129,7 +129,9 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         nucleotide-gi    INTEGER,                 -- GenBank General ID for a Nucleotide
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        taxonomy         INTEGER                  -- Taxonomy ID for an Organism
+        taxonomy         INTEGER,                 -- Taxonomy ID for an Organism
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        aid              INTEGER                  -- PubChem BioAssay ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
@@ -648,6 +650,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.14  2005/08/15 15:24:42  bolton
+-- Added AID Xref in the PC-Xref object container.
+--
 -- Revision 1.13  2005/04/11 14:54:12  bolton
 -- Added ability to use Date object in PC-InfoData.
 --
