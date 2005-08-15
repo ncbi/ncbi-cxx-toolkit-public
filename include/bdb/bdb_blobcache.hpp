@@ -122,6 +122,7 @@ struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
     unsigned  blobs_never_read_total;   ///< BLOBs never read before
     unsigned  blobs_read_total;         ///< Number of reads
     unsigned  blobs_expl_deleted_total; ///< BLOBs explicitly removed
+    unsigned  blobs_purge_deleted_total;///< BLOBs garbage collected
     double    blobs_size_total;         ///< Size of BLOBs total
     unsigned  blob_size_max_total;      ///< Largest BLOB ever
 
@@ -147,6 +148,7 @@ public:
 
     void AddRead() { ++blobs_read_total; }
     void AddExplDelete() { ++blobs_expl_deleted_total; }
+    void AddPurgeDelete() { ++blobs_purge_deleted_total; }
     void AddNeverRead() { ++blobs_never_read_total; }
 
     /// Put/Get errors
@@ -721,6 +723,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/08/15 11:33:54  kuznets
+ * Statistics: Added total number of BLOBs deleted by GC
+ *
  * Revision 1.58  2005/08/08 14:49:06  kuznets
  * Improved logging
  *

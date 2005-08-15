@@ -530,7 +530,8 @@ private:
 SBDB_CacheStatistics::SBDB_CacheStatistics()
 {
     blobs_stored_total = blobs_updates_total = 
-        blobs_never_read_total = blobs_expl_deleted_total = blobs_db =
+        blobs_never_read_total = blobs_expl_deleted_total = 
+        blobs_purge_deleted_total = blobs_db =
         blobs_overflow_total = blobs_read_total = 0;
 
     err_protocol = err_internal = err_communication =
@@ -1065,16 +1066,18 @@ void CBDB_Cache::DropBlob(const string&  key,
         if (cur.Fetch() == eBDB_Ok) {
             overflow = m_CacheAttrDB->overflow;
 
-            if (!for_update) {
+            if (!for_update) {   // permanent BLOB removal
                 cur.Delete();
-            } else {
+
                 unsigned read_count = m_CacheAttrDB->read_count;
+                m_Statistics.AddExplDelete();
                 if (0 == read_count) {
                     m_Statistics.AddNeverRead();
                 }
                 if (m_CollectOwnerStat) {
                     x_UpdateOwnerStatOnDelete(true/*explicit delete*/);
                 }
+
             }
 
             if (!overflow) {
@@ -1853,6 +1856,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                     if (m_CollectOwnerStat) {
                         x_UpdateOwnerStatOnDelete(false/*non-expl-delete*/);
                     }
+                    m_Statistics.AddPurgeDelete();
 
                     cache_entries.push_back(
                          SCacheDescr(key, version, subkey, overflow));
@@ -2038,6 +2042,7 @@ void CBDB_Cache::Purge(const string&    key,
             if (m_CollectOwnerStat) {
                 x_UpdateOwnerStatOnDelete(false/*auto-delete*/);
             }
+            m_Statistics.AddPurgeDelete();
 
             continue;
         }
@@ -2429,6 +2434,9 @@ void CBDB_Cache::x_UpdateOwnerStatOnDelete(bool expl_delete)
     }
     st.blobs_read_total += read_count;
     st.blobs_expl_deleted_total += expl_delete;
+    if (!expl_delete) {
+        st.AddPurgeDelete();
+    }
     st.blobs_size_total += blob_size;
     if (blob_size > st.blob_size_max_total) {
         st.blob_size_max_total = blob_size;
@@ -2817,6 +2825,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.121  2005/08/15 11:34:19  kuznets
+ * Statistics: Added total number of BLOBs deleted by GC
+ *
  * Revision 1.120  2005/08/10 15:08:27  kuznets
  * Fixed bug in statistics counting on explicit delete
  *
