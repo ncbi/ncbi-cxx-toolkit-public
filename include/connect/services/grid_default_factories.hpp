@@ -49,19 +49,21 @@ class NCBI_XCONNECT_EXPORT CNetScheduleStorageFactory_NetCache
     : public INetScheduleStorageFactory
 {
 public:
+    
     CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                        bool             cache_input = false,
-                                        bool             cache_output = false);
+                                        CNetCacheNSStorage::TCacheFlags = 0x0,
+                                        const string& temp_dir = ".");
+
     virtual ~CNetScheduleStorageFactory_NetCache() {}
 
     virtual INetScheduleStorage* CreateInstance(void);
 
 private:
     typedef CPluginManager<CNetCacheClient> TPMNetCache;
-    TPMNetCache               m_PM_NetCache;
-    const IRegistry&          m_Registry;
-    bool                      m_CacheInput;
-    bool                      m_CacheOutput;
+    TPMNetCache                      m_PM_NetCache;
+    const IRegistry&                 m_Registry;
+    CNetCacheNSStorage::TCacheFlags  m_CacheFlags;  
+    string                           m_TempDir;
 };
 
 
@@ -115,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/15 19:08:43  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 1.7  2005/05/12 14:01:04  didenko
  * Made input/output caching turned off by default
  *

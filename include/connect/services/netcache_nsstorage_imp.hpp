@@ -47,9 +47,18 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
 {
 public:
+    
+    enum ECacheFlags {
+        eCacheInput = 0x1,
+        eCacheOutput = 0x2,
+        eCacheBoth = eCacheInput | eCacheOutput
+    };
+    typedef unsigned int TCacheFlags;
+
     CNetCacheNSStorage(CNetCacheClient* nc_client, 
-                       bool cache_input = false,
-                       bool cache_output = false);
+                       TCacheFlags flags = 0x0,
+                       const string& temp_dir = ".");
+
     virtual ~CNetCacheNSStorage(); 
 
     virtual string        GetBlobAsString(const string& data_id);
@@ -75,9 +84,9 @@ private:
                                   size_t& blob_size);
     void x_Check();
 
-    bool     m_InputCached;
-    bool     m_OutputCached;
+    TCacheFlags m_CacheFlags;
     string*  m_CreatedBlobId;
+    string   m_TempDir;
 };
 
 class CNetCacheNSStorageException : public CNetScheduleStorageException
@@ -108,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/08/15 19:08:43  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 1.10  2005/05/10 15:15:14  didenko
  * Added clean up procedure
  *

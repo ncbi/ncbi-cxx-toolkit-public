@@ -143,11 +143,13 @@ void CGridWorkerApp_Impl::Init()
         reg.GetBool("netcache_client", "cache_output", false, 
                     0, CNcbiRegistry::eReturn);
 
+    CNetCacheNSStorage::TCacheFlags flags = 0;
+    if (cache_input) flags |= CNetCacheNSStorage::eCacheInput;
+    if (cache_output) flags |= CNetCacheNSStorage::eCacheOutput;
+
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(
-            new CNetScheduleStorageFactory_NetCache(reg, 
-                                                    cache_input,
-                                                    cache_output)
+                   new CNetScheduleStorageFactory_NetCache(reg, flags)
                               );
     if (!m_ClientFactory.get()) 
         m_ClientFactory.reset(
@@ -341,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2005/08/15 19:08:43  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 6.4  2005/07/27 14:30:52  didenko
  * Changed the logging system
  *

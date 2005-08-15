@@ -43,11 +43,12 @@ const string CNetCacheNSStorage::sm_OutputBlobCachePrefix = ".nc_cache_output.";
 
 
 CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
-                                       bool cache_input,
-                                       bool cache_output)
+                                       TCacheFlags flags,
+                                       const string&  temp_dir)
     : m_NCClient(nc_client), 
-      m_InputCached(cache_input), m_OutputCached(cache_output),
-      m_CreatedBlobId(NULL)
+      m_CacheFlags(flags),
+      m_CreatedBlobId(NULL),
+      m_TempDir(temp_dir)
 {
 }
 
@@ -61,8 +62,8 @@ CNetCacheNSStorage::~CNetCacheNSStorage()
 
 void CNetCacheNSStorage::x_Check()
 {
-    if ( (m_IStream.get() && !m_InputCached) || 
-         (m_OStream.get() || m_OutputCached && m_CreatedBlobId) )
+    if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
+         (m_OStream.get() || (m_CacheFlags & eCacheOutput) && m_CreatedBlobId) )
         NCBI_THROW(CNetCacheNSStorageException,
                    eBusy, "Communication channel is already in use.");
 }
@@ -111,8 +112,14 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     }
 
     if (blob_size) *blob_size = b_size;
-    if (m_InputCached) {
-        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(".",sm_InputBlobCachePrefix));
+    if (m_CacheFlags & eCacheInput) {
+        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(m_TempDir,sm_InputBlobCachePrefix));
+        if( !fstr.get() || !fstr->good()) {
+            fstr.reset();
+            NCBI_THROW(CNetScheduleStorageException,
+                       eReader, "Reader couldn't create a temporary file.");
+        }
+
         char buf[1024];
         size_t bytes_read = 0;
         while( reader->Read(buf, sizeof(buf), &bytes_read) == eRW_Success ) {
@@ -124,6 +131,12 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     } else {    
         m_IStream.reset(new CRStream(reader.release(), 0,0, 
                                      CRWStreambuf::fOwnReader));
+        if( !m_IStream.get() || !m_IStream->good()) {
+            m_IStream.reset();
+            NCBI_THROW(CNetScheduleStorageException,
+                       eReader, "Reader couldn't create a input stream.");
+        }
+
     }
     return *m_IStream;
 }
@@ -153,7 +166,7 @@ string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
 CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
 {
     x_Check();
-    if (!m_OutputCached) {
+    if (!(m_CacheFlags & eCacheOutput)) {
         auto_ptr<IWriter> writer;
         int try_count = 0;
         while(1) {
@@ -177,9 +190,20 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
         }
         m_OStream.reset( new CWStream(writer.release(), 0,0, 
                                       CRWStreambuf::fOwnWriter));
+        if( !m_OStream.get() || !m_OStream->good()) {
+            m_OStream.reset();
+            NCBI_THROW(CNetScheduleStorageException,
+                       eWriter, "Writer couldn't create an ouput stream.");
+        }
+
     } else {
         m_CreatedBlobId = &key;
-        m_OStream.reset(CFile::CreateTmpFileEx(".",sm_OutputBlobCachePrefix));        
+        m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));        
+        if( !m_OStream.get() || !m_OStream->good()) {
+            m_OStream.reset();
+            NCBI_THROW(CNetScheduleStorageException,
+                       eWriter, "Writer couldn't create a temporary file.");
+        }
     }
     return *m_OStream;
 }
@@ -203,7 +227,7 @@ void CNetCacheNSStorage::Reset()
 {
     m_IStream.reset();
     try {
-        if (m_OutputCached && m_OStream.get()) {
+        if ((m_CacheFlags & eCacheOutput) && m_OStream.get()) {
             auto_ptr<IWriter> writer;
             int try_count = 0;
             while(1) {
@@ -242,7 +266,7 @@ void CNetCacheNSStorage::Reset()
             m_CreatedBlobId = NULL;
             
         }
-        if (m_OStream.get() && !m_OutputCached) {
+        if (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) {
             m_OStream->flush();
             if (!m_OStream->good()) {
                 NCBI_THROW(CNetScheduleStorageException,
@@ -261,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/08/15 19:08:44  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 1.12  2005/08/12 13:32:16  didenko
  * Added call to Reset method form destructor
  * Improved error handling

@@ -57,7 +57,7 @@ void CGridClientApp::Init(void)
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CNetScheduleStorageFactory_NetCache cf(GetConfig(),false, false);
+        CNetScheduleStorageFactory_NetCache cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/15 19:08:43  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 1.4  2005/05/10 14:14:33  didenko
  * Added blob caching
  *

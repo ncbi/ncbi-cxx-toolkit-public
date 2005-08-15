@@ -40,16 +40,17 @@ BEGIN_NCBI_SCOPE
 
 CNetScheduleStorageFactory_NetCache::
         CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                            bool             cache_input,
-                                            bool             cache_output)
-            : m_Registry(reg), m_CacheInput(cache_input), 
-              m_CacheOutput(cache_output)
+                                            CNetCacheNSStorage::TCacheFlags flags,
+                                            const string& temp_dir)
+
+            : m_Registry(reg), m_CacheFlags(flags), 
+              m_TempDir(temp_dir)
 {
     m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
     vector<string> masks;
     masks.push_back( CNetCacheNSStorage::sm_InputBlobCachePrefix + "*" );
     masks.push_back( CNetCacheNSStorage::sm_OutputBlobCachePrefix + "*" );
-    CDir curr_dir(".");
+    CDir curr_dir(m_TempDir);
     CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
                                                      CDir::eIgnoreRecursive);
     ITERATE( CDir::TEntries, it, dir_entries) {
@@ -81,8 +82,8 @@ CNetScheduleStorageFactory_NetCache::CreateInstance(void)
                    "Check registry.");
 
     return new CNetCacheNSStorage(nc_client.release(),
-                                  m_CacheInput, 
-                                  m_CacheOutput);
+                                  m_CacheFlags, 
+                                  m_TempDir);
 }
 
 
@@ -129,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/08/15 19:08:43  didenko
+ * Changed NetScheduler Storage parameters
+ *
  * Revision 6.2  2005/07/28 11:27:20  ssikorsk
  * Replaced using of TInterfaceVersion traits with GetDefaultDrvVers() method call.
  *
