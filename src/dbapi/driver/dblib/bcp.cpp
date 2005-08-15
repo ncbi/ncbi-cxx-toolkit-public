@@ -65,6 +65,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* con,
 
 bool CDBL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
+    m_WasBound = false;
     return m_Params.BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
@@ -508,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/08/15 18:46:03  ssikorsk
+ * Rebind variables after each call of Bind.
+ *
  * Revision 1.12  2005/07/07 19:12:54  ssikorsk
  * Improved to support a ftds driver
  *
