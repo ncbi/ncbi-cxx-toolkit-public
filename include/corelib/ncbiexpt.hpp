@@ -410,7 +410,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
            << "[" << message << "] Unknown exception";        \
     }
 
-/// Catch CExpections as well
+/// Catch CExceptions as well
 #define NCBI_CATCH_ALL(message)                               \
     catch (NCBI_NS_NCBI::CException& e) {                     \
         NCBI_REPORT_EXCEPTION(message, e);                    \
@@ -1061,6 +1061,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/08/15 15:08:11  lavr
+ * Typo in comment
+ *
  * Revision 1.61  2005/08/12 19:20:39  lavr
  * Decouple STD_CATCH() from CException; introduce new NCBI_CATCH_ALL()
  *
