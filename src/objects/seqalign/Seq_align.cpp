@@ -361,6 +361,9 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
 
     CRef<CSeq_align> sa(new CSeq_align);
     sa->SetType(eType_not_set);
+    if (IsSetScore()) {
+        sa->SetScore() = GetScore();
+    }
     CDense_seg& ds = sa->SetSegs().SetDenseg();
 
     typedef CDense_seg::TDim    TNumrow;
@@ -637,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/08/15 18:22:42  todorov
+* CreateDensegFromStdseg now copies the Seq-align's scores too.
+*
 * Revision 1.18  2005/07/06 19:07:21  todorov
 * Added support for Dense-diag in the Get{Start,Stop,Range} methods.
 *
