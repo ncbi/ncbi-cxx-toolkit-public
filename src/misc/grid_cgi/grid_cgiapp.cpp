@@ -174,7 +174,7 @@ void CGridCgiApplication::InitGridClient()
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CNetScheduleStorageFactory_NetCache cf(GetConfig(),false, false);
+        CNetScheduleStorageFactory_NetCache cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -383,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/08/15 21:05:50  ucko
+ * Adjust for CNetScheduleStorageFactory_NetCache API changes.
+ *
  * Revision 1.23  2005/08/10 15:54:21  didenko
  * Added and access to a job's input and output strings
  *

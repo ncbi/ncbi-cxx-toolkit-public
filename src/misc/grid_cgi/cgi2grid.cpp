@@ -85,7 +85,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     ns_client.reset(cfc.CreateInstance());
     ns_client->SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
-    CNetScheduleStorageFactory_NetCache cfs(app.GetConfig(),false, false);
+    CNetScheduleStorageFactory_NetCache cfs(app.GetConfig());
     ns_storage.reset(cfs.CreateInstance());
     grid_client.reset(new CGridClient(*ns_client, *ns_storage,
                                       CGridClient::eManualCleanup,
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/15 21:05:50  ucko
+ * Adjust for CNetScheduleStorageFactory_NetCache API changes.
+ *
  * Revision 1.1  2005/05/25 14:09:39  didenko
  * Added helper function for redirecting cgi's to cgi_tunnel2grid.cgi
  *
