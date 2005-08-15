@@ -198,6 +198,38 @@ void TestNetscheduleLB(const string&  queue)
     NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
 }
 
+void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
+{
+    CNetScheduleClient cl(host, port, "stress_test", queue_name);
+    cl.SetProgramVersion("test 1.0.0");
+    
+    CNetScheduleClient::SJobBatch jobs;
+
+    for (int i = 0; i < 1000000; ++i) {
+        jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
+    }
+    
+    {{
+    NcbiCout << "Submit " << jobs.job_list.size() << " jobs..." << NcbiEndl;
+
+    CStopWatch sw(true);
+    cl.SubmitJobBatch(jobs);
+
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    double elapsed = sw.Elapsed();
+    double rate = jobs.job_list.size() / elapsed;
+
+    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+    NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
+    NcbiCout << "Rate: "     << rate    << " jobs/sec." << NcbiEndl;
+    }}
+
+    ITERATE(CNetScheduleClient::TBatchSubmitJobList, it, jobs.job_list) {
+        _ASSERT(it->job_id);
+    }
+
+}
+
 
 int CTestNetScheduleStress::Run(void)
 {
@@ -210,6 +242,9 @@ int CTestNetScheduleStress::Run(void)
 
 //    TestRunTimeout(host, port, queue_name);
 //    TestNetscheduleLB(queue_name);
+//    TestBatchSubmit(host, port, queue_name);
+
+
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
@@ -441,6 +476,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/08/15 13:30:57  kuznets
+ * + test for batch submission
+ *
  * Revision 1.13  2005/04/21 01:12:42  ucko
  * Use _ASSERT, not assert.
  *
