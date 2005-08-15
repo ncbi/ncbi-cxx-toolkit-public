@@ -152,6 +152,20 @@ public:
     /// Set the size of the in-memory log buffer, in bytes.
     void SetLogBSize(unsigned lg_bsize);
 
+    /// Configure environment for non-durable in-memory logging
+    void SetLogInMemory(bool on_off);
+
+    /// Set max number of locks in the database
+    ///
+    /// see DB_ENV->set_lk_max_locks for more details
+    void SetMaxLocks(unsigned locks);
+
+    /// Get max locks
+    unsigned GetMaxLocks();
+
+    /// see DB_ENV->set_lk_max_objects for more details
+    void SetMaxLockObjects(unsigned lock_obj_max);
+
     /// Remove all non-active log files
     void CleanLog();
 
@@ -200,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/08/15 11:36:03  kuznets
+ * + methods to set allowed locks and place trans.log in memory
+ *
  * Revision 1.21  2005/03/28 12:58:41  kuznets
  * + SetLogAutoRemove() SetLogBSize()
  *

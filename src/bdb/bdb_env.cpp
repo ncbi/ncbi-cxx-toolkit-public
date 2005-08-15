@@ -335,6 +335,34 @@ void CBDB_Env::SetLogFileMax(unsigned int lg_max)
     BDB_CHECK(ret, "DB_ENV::set_lg_max");
 }
 
+void CBDB_Env::SetMaxLocks(unsigned locks)
+{
+    _ASSERT(locks);
+    int ret = m_Env->set_lk_max_locks(m_Env, locks);
+    BDB_CHECK(ret, "DB_ENV::set_lk_max_locks");
+}
+
+unsigned CBDB_Env::GetMaxLocks()
+{
+    u_int32_t lk_max;
+    int ret = m_Env->get_lk_max_locks(m_Env, &lk_max);
+    BDB_CHECK(ret, "DB_ENV::get_lk_max_locks");
+    return lk_max;
+}
+
+void CBDB_Env::SetMaxLockObjects(unsigned lock_obj_max)
+{
+    _ASSERT(lock_obj_max);
+    int ret = m_Env->set_lk_max_objects(m_Env, lock_obj_max);
+    BDB_CHECK(ret, "DB_ENV::set_lk_max_objects");
+}
+
+void CBDB_Env::SetLogInMemory(bool on_off)
+{
+    int ret = m_Env->set_flags(m_Env, DB_LOG_INMEMORY, on_off);
+    BDB_CHECK(ret, "DB_ENV::set_flags");
+}
+
 void CBDB_Env::OpenErrFile(const char* file_name)
 {
     if (m_ErrFile) {
@@ -425,6 +453,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/08/15 11:36:08  kuznets
+ * + methods to set allowed locks and place trans.log in memory
+ *
  * Revision 1.30  2005/03/28 12:58:51  kuznets
  * + SetLogAutoRemove() SetLogBSize()
  *
