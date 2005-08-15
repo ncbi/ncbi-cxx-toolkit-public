@@ -47,9 +47,14 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+/// Used to determine the meaning of a location's Start/Stop positions.
+/// On the minus strand the numerical values are different than the 
+/// biological ones.
+/// @sa
+///   CSeq_loc::GetStart(), CSeq_loc::GetStop()
 enum ESeqLocExtremes {
-    eExtreme_Biological,
-    eExtreme_Positional
+    eExtreme_Biological,   /// 5' and 3'
+    eExtreme_Positional    /// numerical value
 };
 
 
@@ -103,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/08/15 16:02:48  shomrat
+* Added explanation for ESeqLocExtremes
+*
 * Revision 1.6  2005/02/18 14:58:34  shomrat
 * + ESeqLocExtremes
 *
