@@ -38,6 +38,7 @@
 #include <connect/services/netschedule_client.hpp>
 #include <util/request_control.hpp>
 #include <memory>
+#include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -1363,6 +1364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/08/15 17:25:11  ucko
+ * +<stdio.h> for sprintf()
+ *
  * Revision 1.36  2005/08/15 13:28:33  kuznets
  * Implemented batch job submission
  *
