@@ -141,7 +141,6 @@ public:
 
     void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
     void x_AddAnnotChunkId(TChunkId chunk_id);
-    void x_AddAssemblyChunkId(TChunkId chunk_id);
 
     virtual TObjAnnot& x_SetObjAnnot(void) = 0;
     virtual void x_ResetObjAnnot(void) = 0;
@@ -160,7 +159,6 @@ private:
     TObjAnnot*          m_ObjAnnot;
 
     TChunkIds           m_DescrChunks;
-    TChunkIds           m_AssemblyChunks;
     typedef vector<TDescTypeMask> TDescTypeMasks;
     TDescTypeMasks      m_DescrTypeMasks;
     TChunkIds           m_AnnotChunks;
@@ -217,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2005/08/15 15:45:37  grichenk
+ * Removed split assembly from bioseq-set.
+ *
  * Revision 1.10  2005/06/29 16:05:58  vasilche
  * Moved internally used inline method to private section.
  *

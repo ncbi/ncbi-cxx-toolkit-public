@@ -223,7 +223,7 @@ void CTSE_Split_Info::x_AddAssemblyInfo(CTSE_Info& tse_info,
                                         const TAssemblyInfo& info,
                                         TChunkId chunk_id)
 {
-    x_GetBase(tse_info, info).x_AddAssemblyChunkId(chunk_id);
+    x_GetBioseq(tse_info, info).x_AddAssemblyChunkId(chunk_id);
 }
 
 
@@ -517,20 +517,20 @@ void CTSE_Split_Info::x_LoadSequence(CTSE_Info& tse_info,
 }
 
 
-void CTSE_Split_Info::x_LoadAssembly(const TPlace& place,
+void CTSE_Split_Info::x_LoadAssembly(const TBioseqId& seq_id,
                                      const TAssembly& assembly)
 {
     ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_LoadAssembly(**it, place, assembly);
+        x_LoadAssembly(**it, seq_id, assembly);
     }
 }
 
 
 void CTSE_Split_Info::x_LoadAssembly(CTSE_Info& tse_info,
-                                     const TPlace& place,
+                                     const TBioseqId& seq_id,
                                      const TAssembly& assembly)
 {
-    x_GetBioseq(tse_info, place).SetInst_Hist_Assembly(assembly);
+    x_GetBioseq(tse_info, seq_id).SetInst_Hist_Assembly(assembly);
 }
 
 

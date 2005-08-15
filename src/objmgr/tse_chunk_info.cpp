@@ -257,21 +257,9 @@ void CTSE_Chunk_Info::x_AddDescInfo(const TDescInfo& info)
 
 void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseqId& id)
 {
-    TAssemblyInfo info(id, 0);
-    m_AssemblyInfos.push_back(info);
+    m_AssemblyInfos.push_back(id);
     if ( m_SplitInfo ) {
-        m_SplitInfo->x_AddAssemblyInfo(info, GetChunkId());
-    }
-}
-
-
-void CTSE_Chunk_Info::x_AddAssemblyInfo(const TBioseq_setId& id)
-{
-    CSeq_id_Handle h;
-    TAssemblyInfo info(h, id);
-    m_AssemblyInfos.push_back(info);
-    if ( m_SplitInfo ) {
-        m_SplitInfo->x_AddAssemblyInfo(info, GetChunkId());
+        m_SplitInfo->x_AddAssemblyInfo(id, GetChunkId());
     }
 }
 
@@ -499,11 +487,11 @@ void CTSE_Chunk_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
 }
 
 
-void CTSE_Chunk_Info::x_LoadAssembly(const TPlace& place,
+void CTSE_Chunk_Info::x_LoadAssembly(const TBioseqId& seq_id,
                                      const TAssembly& assembly)
 {
     _ASSERT(x_Attached());
-    m_SplitInfo->x_LoadAssembly(place, assembly);
+    m_SplitInfo->x_LoadAssembly(seq_id, assembly);
 }
 
 
@@ -521,6 +509,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/08/15 15:45:37  grichenk
+* Removed split assembly from bioseq-set.
+*
 * Revision 1.24  2005/08/09 15:38:20  vasilche
 * Store parsed SNP tables in separate class to simplify forward declarations.
 * Added x_LoadSeq_entry() to chunk and split infos.

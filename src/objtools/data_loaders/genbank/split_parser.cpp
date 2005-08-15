@@ -196,10 +196,6 @@ namespace {
             {
                 m_Chunk.x_AddAssemblyInfo(id);
             }
-        void operator()(int id) const
-            {
-                m_Chunk.x_AddAssemblyInfo(id);
-            }
         CTSE_Chunk_Info& m_Chunk;
     };
 }
@@ -426,7 +422,11 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         }
 
         if ( data.IsSetAssembly() ) {
-            chunk.x_LoadAssembly(place, data.GetAssembly());
+            if ( !place.first ) {
+                NCBI_THROW(CLoaderException, eOtherError,
+                        "assembly not allowed in bioseq-sets");
+            }
+            chunk.x_LoadAssembly(place.first, data.GetAssembly());
         }
 
         ITERATE ( CID2S_Chunk_Data::TSeq_map, it, data.GetSeq_map() ) {
@@ -452,6 +452,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.17  2005/08/15 15:45:37  grichenk
+ * Removed split assembly from bioseq-set.
+ *
  * Revision 1.16  2005/06/09 15:17:29  grichenk
  * Added support for split history assembly.
  *

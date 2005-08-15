@@ -179,13 +179,6 @@ void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
 }
 
 
-void CBioseq_Base_Info::x_AddAssemblyChunkId(TChunkId id)
-{
-    m_AssemblyChunks.push_back(id);
-    x_SetNeedUpdate(fNeedUpdate_assembly);
-}
-
-
 void CBioseq_Base_Info::x_AddAnnotChunkId(TChunkId id)
 {
     m_AnnotChunks.push_back(id);
@@ -197,9 +190,6 @@ void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & fNeedUpdate_descr ) {
         x_LoadChunks(m_DescrChunks);
-    }
-    if ( flags & fNeedUpdate_assembly ) {
-        x_LoadChunks(m_AssemblyChunks);
     }
     if ( flags & (fNeedUpdate_annot|fNeedUpdate_children) ) {
         x_LoadChunks(m_AnnotChunks);
@@ -473,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/08/15 15:45:37  grichenk
+* Removed split assembly from bioseq-set.
+*
 * Revision 1.11  2005/06/29 16:06:19  vasilche
 * Implemented ResetAnnot() method.
 *

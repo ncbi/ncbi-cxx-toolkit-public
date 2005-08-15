@@ -148,7 +148,7 @@ public:
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& sequence);
-    void x_LoadAssembly(const TPlace& place,
+    void x_LoadAssembly(const TBioseqId& seq_id,
                         const TAssembly& assembly);
     void x_LoadDescr(CTSE_Info& tse_info,
                      const TPlace& place, const CSeq_descr& descr);
@@ -160,7 +160,7 @@ public:
                         const TPlace& place, TSeqPos pos,
                         const TSequence& sequence);
     void x_LoadAssembly(CTSE_Info& tse_info,
-                        const TPlace& place,
+                        const TBioseqId& seq_id,
                         const TAssembly& assembly);
 
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);

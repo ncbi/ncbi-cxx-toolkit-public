@@ -83,7 +83,7 @@ public:
     typedef vector<TDescInfo> TDescInfos;
     typedef vector<TBioseq_setId> TBioseqPlaces;
     typedef vector<TBioseqId> TBioseqIds;
-    typedef TPlace TAssemblyInfo;
+    typedef TBioseqId TAssemblyInfo;
     typedef vector<TAssemblyInfo> TAssemblyInfos;
 
     // annot contents identification
@@ -132,7 +132,6 @@ public:
     void x_AddDescInfo(const TDescInfo& info);
 
     void x_AddAssemblyInfo(const TBioseqId& id);
-    void x_AddAssemblyInfo(const TBioseq_setId& id);
 
     void x_AddAnnotPlace(const TBioseqId& id);
     void x_AddAnnotPlace(TBioseq_setId id);
@@ -176,7 +175,7 @@ public:
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& seq);
-    void x_LoadAssembly(const TPlace& place, const TAssembly& assembly);
+    void x_LoadAssembly(const TBioseqId& seq_id, const TAssembly& assembly);
 
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
 
@@ -270,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/08/15 15:45:37  grichenk
+* Removed split assembly from bioseq-set.
+*
 * Revision 1.21  2005/08/09 15:38:20  vasilche
 * Store parsed SNP tables in separate class to simplify forward declarations.
 * Added x_LoadSeq_entry() to chunk and split infos.
