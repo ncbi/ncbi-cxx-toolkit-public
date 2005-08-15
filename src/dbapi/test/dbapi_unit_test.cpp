@@ -508,6 +508,29 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void
+CDBAPIUnitTest::Test_SelectStmtXML(void)
+{
+    // SQL + XML
+    {
+        string sql;
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IResultSet> rs;
+
+        sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
+        rs.reset( auto_stmt->ExecuteQuery( sql ) );
+        BOOST_CHECK( rs.get() != NULL );
+
+        if ( !rs->Next() ) {
+            BOOST_FAIL( msg_record_expected ); 
+        }
+
+        // Same but call Execute instead of ExecuteQuery.
+        auto_stmt->Execute( sql );
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
     // Set up an user-defined error handler ..
@@ -2267,6 +2290,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if ( args.GetServerType() == CTestArguments::eMsSql ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
 //     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
 //     tc->depends_on(tc_parameters);
 //     add(tc);
@@ -2386,6 +2415,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2005/08/15 18:56:56  ssikorsk
+ * Added Test_SelectStmtXML to the test-suite
+ *
  * Revision 1.31  2005/08/12 16:01:02  ssikorsk
  * Set server type for the bulk-test to MS SQL only.
  *

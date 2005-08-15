@@ -157,6 +157,7 @@ public:
     void Test_UserErrorHandler(void);
 
     void Test_SelectStmt(void);
+    void Test_SelectStmtXML(void);
     void Test_Cursor(void);
     void Test_Procedure(void);
     void Bulk_Writing(void);
@@ -212,6 +213,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2005/08/15 18:56:56  ssikorsk
+ * Added Test_SelectStmtXML to the test-suite
+ *
  * Revision 1.20  2005/08/12 15:46:43  ssikorsk
  * Added an initial bulk test to the test suite.
  *
