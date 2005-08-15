@@ -80,12 +80,15 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
  * @param scoring_options Scoring_options [in]
  * @param program Used to set fields on sbp [in]
  * @param query_info Query information containing context information [in]
- *
-*/
+ * @param error_return Pointer to structure for returning errors. [in][out]
+ * @return Status.
+ */
 NCBI_XBLAST_EXPORT
 Int2 Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
-    const BlastScoringOptions * scoring_options,
-    EBlastProgramType program, const BlastQueryInfo * query_info);
+                                 const BlastScoringOptions * scoring_options,
+                                 EBlastProgramType program, 
+                                 const BlastQueryInfo * query_info,
+                                 Blast_Message** error_return);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
@@ -239,6 +242,9 @@ PHIPatternSpaceCalc(BlastQueryInfo* query_info,
 /*
  *
 * $Log$
+* Revision 1.54  2005/08/15 16:10:21  dondosha
+* Added error return argument to Blast_ScoreBlkKbpGappedCalc
+*
 * Revision 1.53  2005/07/18 19:38:33  bealer
 * - Apply const in several more places.
 *
