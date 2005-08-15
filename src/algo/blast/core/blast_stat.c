@@ -3053,11 +3053,17 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     int num_combinations = 0;
     int index;
     int gap_open_max, gap_extend_max;
+
     const array_of_8 *kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
                              &gap_open_max, &gap_extend_max, error_return);
 
     ASSERT(kbp && kbp_ungap);
+
+#ifndef NEW_BLASTN_STAT
+    Blast_KarlinBlkCopy(kbp, kbp_ungap);
+    return 0;
+#endif
 
     if (!kValues)
         return 1;
@@ -3128,6 +3134,12 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
                              &gap_open_max, &gap_extend_max, NULL);;
     
     ASSERT(alpha && beta && kbp);
+
+#ifndef NEW_BLASTN_STAT    
+    *alpha = kbp->Lambda/kbp->H;
+    *beta = 0;
+    return 0;
+#endif
 
     /* For ungapped search return ungapped values of alpha and beta. */
     if (gapped_calculation && kValues) {
@@ -3993,6 +4005,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.122  2005/08/15 20:41:44  dondosha
+ * New blastn statistics can be enabled with a -DNEW_BLASTN_STAT only with a compilation flag
+ *
  * Revision 1.121  2005/08/15 16:11:43  dondosha
  * Use precomputed statistical parameters for blastn
  *
