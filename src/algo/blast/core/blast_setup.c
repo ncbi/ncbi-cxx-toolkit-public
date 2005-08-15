@@ -46,51 +46,43 @@ static char const rcsid[] =
 /* See description in blast_setup.h */
 Int2
 Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
-                        const BlastScoringOptions * scoring_options,
-                        EBlastProgramType program, const BlastQueryInfo * query_info)
+                            const BlastScoringOptions * scoring_options,
+                            EBlastProgramType program, 
+                            const BlastQueryInfo * query_info,
+                            Blast_Message** error_return)
 {
     Int2 index = 0;
 
     if (sbp == NULL || scoring_options == NULL)
         return 1;
 
-    /* At this stage query sequences are nucleotide only for blastn */
+    /* Allocate and fill values for a gapped Karlin block, given the scoring
+       options, then copy it for all the query contexts. */
+    for (index = query_info->first_context;
+         index <= query_info->last_context; index++) {
+        Int2 retval = 0;
+        sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
 
-    if (program == eBlastTypeBlastn) {
-
-        /* for blastn, duplicate the ungapped Karlin 
-           structures for use in gapped alignments */
-
-        for (index = query_info->first_context;
-             index <= query_info->last_context; index++) {
-            if (sbp->kbp_std[index] != NULL) {
-                sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
-                Blast_KarlinBlkCopy(sbp->kbp_gap_std[index],
-                                    sbp->kbp_std[index]);
-            }
+        /* At this stage query sequences are nucleotide only for blastn */
+        if (program == eBlastTypeBlastn) {
+            retval = 
+                Blast_KarlinBlkNuclGappedCalc(sbp->kbp_gap_std[index],
+                    scoring_options->gap_open, scoring_options->gap_extend, 
+                    scoring_options->reward, scoring_options->penalty, 
+                    sbp->kbp_std[index], error_return);
+        } else {
+            retval = 
+                Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
+                    scoring_options->gap_open, scoring_options->gap_extend,
+                    scoring_options->decline_align, sbp->name, error_return);
         }
+        if (retval)
+            return retval;
 
-    } else {
-        for (index = query_info->first_context;
-             index <= query_info->last_context; index++) {
-            Int2 retval = 0;
-            sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
-            retval = Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
-                                               scoring_options->gap_open,
-                                               scoring_options->gap_extend,
-                                               scoring_options->decline_align,
-                                               sbp->name, NULL);
-            /* FIXME: retval is not expressive enough and the Blast_Message is
-             * being passed NULL, so it's not possible to pass a meaningful
-             * error code to the calling context! */
-            if (retval != 0) {
-                return retval;
-            }
-
-            /* For right now, copy the contents from kbp_gap_std to 
-             * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
+        /* For right now, copy the contents from kbp_gap_std to 
+         * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
+        if (program != eBlastTypeBlastn) {
             sbp->kbp_gap_psi[index] = Blast_KarlinBlkNew();
-            
             Blast_KarlinBlkCopy(sbp->kbp_gap_psi[index], 
                                 sbp->kbp_gap_std[index]);
         }
@@ -381,12 +373,9 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
        }
 
        if (scoring_options->gapped_calculation) {
-          status = Blast_ScoreBlkKbpGappedCalc(sbp, scoring_options, 
-                                           program_number, query_info);
-          if (status) {
-             Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
-                                "Unable to initialize scoring block");
-          }
+          status = 
+              Blast_ScoreBlkKbpGappedCalc(sbp, scoring_options, program_number,
+                                          query_info, blast_message);
        }
     }
 
@@ -534,13 +523,6 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    else
       db_num_seqs = eff_len_params->real_num_seqs;
    
-   if (program_number != eBlastTypeBlastn) {
-      if (scoring_options->gapped_calculation) {
-         BLAST_GetAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
-            scoring_options->gap_open, scoring_options->gap_extend);
-      }
-   }
-   
    /* N.B.: the old code used kbp_gap_std instead of the kbp_gap alias (which
     * could be kbp_gap_psi), hence we duplicate that behavior here */
    kbp_ptr = (scoring_options->gapped_calculation ? sbp->kbp_gap_std : sbp->kbp);
@@ -561,17 +543,26 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
           * blocks are allocated for each sequence (one per strand), but we
           * only need one of them.
           */
-         if (program_number != eBlastTypeBlastn &&
-             scoring_options->gapped_calculation) {
-            BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
-                                          alpha/kbp->Lambda, beta,
-                                          query_length, db_length,
-                                          db_num_seqs, &length_adjustment);
+         if (program_number == eBlastTypeBlastn) {
+             Blast_GetNuclAlphaBeta(scoring_options->reward, 
+                                    scoring_options->penalty, 
+                                    scoring_options->gap_open, 
+                                    scoring_options->gap_extend, 
+                                    sbp->kbp_std[index], 
+                                    scoring_options->gapped_calculation,
+                                    &alpha, &beta);
          } else {
-            BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK, 1/kbp->H, 0,
-                                          query_length, db_length,
-                                          db_num_seqs, &length_adjustment);
-         }        
+             BLAST_GetAlphaBeta(sbp->name, &alpha, &beta,
+                                scoring_options->gapped_calculation, 
+                                scoring_options->gap_open, 
+                                scoring_options->gap_extend, 
+                                sbp->kbp_std[index]);
+         }
+         BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
+                                       alpha/kbp->Lambda, beta,
+                                       query_length, db_length,
+                                       db_num_seqs, &length_adjustment);
+
          if (eff_len_options->searchsp_eff)
             effective_search_space = eff_len_options->searchsp_eff;
          else

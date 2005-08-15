@@ -553,6 +553,10 @@ BLAST_MATRIX_NOMINAL
 
 /** Supported substitution and gap costs with corresponding quality values
  * for nucleotide sequence comparisons.
+ * NB: the values 0 and 0 for the gap costs are treated as the defaults used for
+ * the greedy gapped extension, i.e. 
+ * gap opening = 0, 
+ * gap extension = 1/2 match - mismatch.
  * 
  * The fields are:
  * 
@@ -568,40 +572,98 @@ BLAST_MATRIX_NOMINAL
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -4. */
 static const array_of_8 blastn_values_1_4[] = {
-    { 1, 2, 1.36, 0.67, 1.2,  1.1,  0, 98.3 }, 
-    { 0, 2, 1.26, 0.43, 0.90, 1.4, -1, 91.1 },
-    { 2, 1, 1.35, 0.61, 1.1,  1.2, -1, 97.6 },
-    { 1, 1, 1.22, 0.35, 0.72, 1.7, -3, 88.2 }
+    { 0, 0, 1.383, 0.738, 1.36, 1.02,  0, 100 },
+    { 1, 2,  1.36,  0.67,  1.2,  1.1,  0,  98 }, 
+    { 0, 2,  1.26,  0.43, 0.90,  1.4, -1,  91 },
+    { 2, 1,  1.35,  0.61,  1.1,  1.2, -1,  98 },
+    { 1, 1,  1.22,  0.35, 0.72,  1.7, -3,  88 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 2 and -7. 
+ * These parameters can only be applied to even scores. Any odd score must be
+ * rounded down to the nearest even number before calculating the e-value.
+ */
+static const array_of_8 blastn_values_2_7[] = {
+    { 0, 0,  0.69, 0.73, 1.34, 0.515,  0, 100 },
+    { 2, 4,  0.68, 0.67,  1.2,  0.55,  0,  99 }, 
+    { 0, 4,  0.63, 0.43, 0.90,   0.7, -1,  91 },
+    { 4, 2, 0.675, 0.62,  1.1,   0.6, -1,  98 },
+    { 2, 2,  0.61, 0.35, 0.72,   1.7, -3,  88 }
 };
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -3. */
 static const array_of_8 blastn_values_1_3[] = {
-    { 2, 2, 1.37, 0.70, 1.2,  1.1,  0, 99.7 },
-    { 1, 2, 1.35, 0.64, 1.1,  1.2, -1, 98.3 },
-    { 0, 2, 1.25, 0.42, 0.83, 1.5, -2, 91.0 },
-    { 2, 1, 1.34, 0.60, 1.1,  1.2, -1, 97.5 },
-    { 1, 1, 1.21, 0.34, 0.71, 1.7, -2, 88.1 }
+    { 0, 0, 1.374, 0.711, 1.31, 1.05,  0, 100 },
+    { 2, 2,  1.37,  0.70,  1.2,  1.1,  0,  99 },
+    { 1, 2,  1.35,  0.64,  1.1,  1.2, -1,  98 },
+    { 0, 2,  1.25,  0.42, 0.83,  1.5, -2,  91 },
+    { 2, 1,  1.34,  0.60,  1.1,  1.2, -1,  97 },
+    { 1, 1,  1.21,  0.34, 0.71,  1.7, -2,  88 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 2 and -5.
+ * These parameters can only be applied to even scores. Any odd score must be
+ * rounded down to the nearest even number before calculating the e-value.
+ */
+static const array_of_8 blastn_values_2_5[] = {
+    { 0, 0, 0.675, 0.65,  1.1,  0.6, -1, 99 },
+    { 2, 4,  0.67, 0.59,  1.1,  0.6, -1, 98 },
+    { 0, 4,  0.62, 0.39, 0.78,  0.8, -2, 91 },
+    { 4, 2,  0.67, 0.61,  1.0, 0.65, -2, 98 },
+    { 2, 2,  0.56, 0.32, 0.59, 0.95, -4, 82 }
 };
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -2. */
 static const array_of_8 blastn_values_1_2[] = {
-    { 2, 2, 1.33, 0.62, 1.1,  1.2,  0, 99.8 },
-    { 1, 2, 1.30, 0.52, 0.93, 1.4, -2, 97.5 }, 
-    { 0, 2, 1.19, 0.34, 0.66, 1.8, -3, 89.3 },
-    { 3, 1, 1.32, 0.57, 1.0,  1.3, -1, 99.0 }, 
-    { 2, 1, 1.29, 0.49, 0.92, 1.4, -1, 96.8 }, 
-    { 1, 1, 1.14, 0.26, 0.52, 2.2, -5, 85.5 }
+    { 0, 0, 1.28, 0.46, 0.85, 1.5, -2, 96 },
+    { 2, 2, 1.33, 0.62,  1.1, 1.2,  0, 99 },
+    { 1, 2, 1.30, 0.52, 0.93, 1.4, -2, 97 }, 
+    { 0, 2, 1.19, 0.34, 0.66, 1.8, -3, 89 },
+    { 3, 1, 1.32, 0.57,  1.0, 1.3, -1, 99 }, 
+    { 2, 1, 1.29, 0.49, 0.92, 1.4, -1, 96 }, 
+    { 1, 1, 1.14, 0.26, 0.52, 2.2, -5, 85 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 2 and -3.
+ * These parameters can only be applied to even scores. Any odd score must be
+ * rounded down to the nearest even number before calculating the e-value.
+ */
+static const array_of_8 blastn_values_2_3[] = {
+    { 0, 0,  0.55, 0.21, 0.46,  1.2, -5, 87 },
+    { 4, 4,  0.63, 0.42, 0.84, 0.75, -2, 99 },
+    { 2, 4, 0.615, 0.37, 0.72, 0.85, -3, 97 },
+    { 0, 4,  0.55, 0.21, 0.46,  1.2, -5, 87 },
+    { 3, 3, 0.615, 0.37, 0.68,  0.9, -3, 97 },
+    { 6, 2,  0.63, 0.42, 0.84, 0.75, -2, 99 },
+    { 5, 2, 0.625, 0.41, 0.78,  0.8, -2, 99 },
+    { 4, 2,  0.61, 0.35, 0.68,  0.9, -3, 96 },
+    { 2, 2, 0.515, 0.14, 0.33, 1.55, -9, 81 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 4 and -5. */
+static const array_of_8 blastn_values_4_5[] = {
+    { 0, 0, 0.22, 0.061, 0.22, 1.0, -15, 74 },
+    { 6, 5, 0.28,  0.21, 0.47, 0.6 , -7, 93 },
+    { 5, 5, 0.27,  0.17, 0.39, 0.7,  -9, 90 },
+    { 4, 5, 0.25,  0.10, 0.31, 0.8, -10, 83 },
+    { 3, 5, 0.23, 0.065, 0.25, 0.9, -11, 76 }
 };
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -1. */
 static const array_of_8 blastn_values_1_1[] = {
-    { 3,  2, 1.09, 0.31,  0.55, 2.0, -2,  99.2 },
-    { 2,  2, 1.07, 0.27,  0.49, 2.2, -3,  97.4 }, 
-    { 1,  2, 1.02, 0.21,  0.36, 2.8, -6,  92.8 }, 
-    { 0,  2, 0.80, 0.064, 0.17, 4.8, -16, 72.8 },
-    { 4,  1, 1.08, 0.28,  0.54, 2.0, -2,  98.3 }, 
-    { 3,  1, 1.06, 0.25,  0.46, 2.3, -4,  96.5 }, 
-    { 2,  1, 0.99, 0.17,  0.30, 3.3, -10, 90.1 }
+    { 3,  2, 1.09,  0.31, 0.55, 2.0,  -2, 99 },
+    { 2,  2, 1.07,  0.27, 0.49, 2.2,  -3, 97 }, 
+    { 1,  2, 1.02,  0.21, 0.36, 2.8,  -6, 92 }, 
+    { 0,  2, 0.80, 0.064, 0.17, 4.8, -16, 72 },
+    { 4,  1, 1.08,  0.28, 0.54, 2.0,  -2, 98 }, 
+    { 3,  1, 1.06,  0.25, 0.46, 2.3,  -4, 96 }, 
+    { 2,  1, 0.99,  0.17, 0.30, 3.3, -10, 90 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 5 and -4. */
+static const array_of_8 blastn_values_5_4[] = {
+    { 10, 6, 0.163, 0.068, 0.16, 1.0, -19, 85 },
+    {  8, 6, 0.146, 0.039, 0.11, 1.3, -29, 76 }
 };
 
 /** Deallocates SBlastScoreMatrix structure
@@ -2595,7 +2657,8 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, Int4** 
 /*Extract the alpha and beta settings for this matrixName, and these
   gap open and gap extension costs*/
 void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
-double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
+                        double *beta, Boolean gapped, Int4 gap_open, 
+                        Int4 gap_extend, const Blast_KarlinBlk* kbp_ungapped)
 {
    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
    double* alpha_arr,* beta_arr;
@@ -2630,6 +2693,9 @@ double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
    else if (num_values > 0) {
      (*alpha) = alpha_arr[0];
      (*beta) = beta_arr[0];
+   } else {
+       *alpha = kbp_ungapped->Lambda / kbp_ungapped->H;
+       *beta = 0;
    }
 
    sfree(gapOpen_arr);
@@ -2922,21 +2988,46 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         *array_size = sizeof(blastn_values_1_4)/sizeof(array_of_8);
         *gap_open_max = 2;
         *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -7) {
+        kValues = blastn_values_2_7;
+        *array_size = sizeof(blastn_values_2_7)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 4;
     } else if (reward == 1 && penalty == -3) { 
         kValues = blastn_values_1_3;
         *array_size = sizeof(blastn_values_1_3)/sizeof(array_of_8);
         *gap_open_max = 2;
         *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -5) {
+        kValues = blastn_values_2_5;
+        *array_size = sizeof(blastn_values_2_5)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 4;
     } else if (reward == 1 && penalty == -2) {
         kValues = blastn_values_1_2;
         *array_size = sizeof(blastn_values_1_2)/sizeof(array_of_8);
-        *gap_open_max = 3;
+        *gap_open_max = 2;
         *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -3) {
+        kValues = blastn_values_2_3;
+        *array_size = sizeof(blastn_values_2_3)/sizeof(array_of_8);
+        *gap_open_max = 6;
+        *gap_extend_max = 4;
     } else if (reward == 1 && penalty == -1) {
         kValues = blastn_values_1_1;
         *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
         *gap_open_max = 4;
         *gap_extend_max = 2;
+    } else if (reward == 4 && penalty == -5) {
+        kValues = blastn_values_4_5;
+        *array_size = sizeof(blastn_values_4_5)/sizeof(array_of_8);
+        *gap_open_max = 12;
+        *gap_extend_max = 8;
+    } else if (reward == 5 && penalty == -4) {
+        kValues = blastn_values_5_4;
+        *array_size = sizeof(blastn_values_5_4)/sizeof(array_of_8);
+        *gap_open_max = 25;
+        *gap_extend_max = 10;
     } else if (error_return) {
         char buffer[256];
         /* Unsupported reward-penalty */
@@ -2969,19 +3060,9 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     ASSERT(kbp && kbp_ungap);
 
     if (!kValues)
-#if 1 /* Remove these lines when all supported scoring systems get data in
-         tables. */
-    {
-        Blast_KarlinBlkCopy(kbp, kbp_ungap);
-        return 0;
-    }
-#else
         return 1;
-#endif
 
-    /* The first entry in the kValues array is always for the "infinite" costs.
-       It will be applied if our gap costs are >= than the largest of the 
-       costs available in the table. */
+    /* Try to find the table entry corresponding to input gap costs. */
     for (index = 0; index < num_combinations; ++index) {
         if (kValues[index][kGapOpenIndex] == gap_open &&
             kValues[index][kGapExtIndex] == gap_extend) {
@@ -2993,6 +3074,8 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
         }
     }
     
+    /* If gap costs are not found in the table, check if they belong to the
+       infinite domain, where ungapped values of the parameters can be used. */
     if (index == num_combinations) {
         /* If gap costs are larger than maximal provided in tables, copy
            the values from the ungapped Karlin block. */
@@ -3005,12 +3088,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                     "are not supported for substitution scores %d and %d", 
                     gap_open, gap_extend, reward, penalty);
             Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
-#if 1 /* Remove this line when all supported scoring systems get data in
-         tables. */
-            Blast_KarlinBlkCopy(kbp, kbp_ungap);
-#else
             return 1;
-#endif
         }
     }
 
@@ -3026,7 +3104,8 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
 static double s_GetUngappedBeta(Int4 reward, Int4 penalty)
 {
     double beta = 0;
-    if (reward == 1 && penalty == -1)
+    if ((reward == 1 && penalty == -1) || 
+        (reward == 2 && penalty == -3))
         beta = -2;
     
     return beta;
@@ -3034,6 +3113,7 @@ static double s_GetUngappedBeta(Int4 reward, Int4 penalty)
 
 Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
                             Int4 gap_extend, Blast_KarlinBlk* kbp,
+                            Boolean gapped_calculation,
                             double *alpha, double *beta)
 {
     const int kGapOpenIndex = 0;
@@ -3042,32 +3122,30 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     const int kBetaIndex = 6;
     Int4 num_combinations = 0;
     Int4 gap_open_max = 0, gap_extend_max = 0;
+    Int4 index = 0;
     const array_of_8 *kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
-                             &gap_open_max, &gap_extend_max, NULL);
-    Int4 index = 0;
-
+                             &gap_open_max, &gap_extend_max, NULL);;
+    
     ASSERT(alpha && beta && kbp);
 
-    *alpha = *beta = 0;
-
-    if (kValues) {
+    /* For ungapped search return ungapped values of alpha and beta. */
+    if (gapped_calculation && kValues) {
         for (index = 0; index < num_combinations; ++index) {
             if (kValues[index][kGapOpenIndex] == gap_open && 
                 kValues[index][kGapExtIndex] == gap_extend) {
                 *alpha = kValues[index][kAlphaIndex];
                 *beta = kValues[index][kBetaIndex];
-                break;
+                return 0;
             }
         }
     }
 
-    /* If input values not found in tables, assume that this is an ungapped
-       search, and return ungapped values of alpha and beta. */
-    if (!kValues || index == num_combinations) {
-        *alpha = kbp->Lambda/kbp->H;
-        *beta = s_GetUngappedBeta(reward, penalty);
-    }
+    /* If input values not found in tables, or if this is an ungapped search,
+       return the ungapped values of alpha and beta. */
+    *alpha = kbp->Lambda/kbp->H;
+    *beta = s_GetUngappedBeta(reward, penalty);
+
     return 0;
 }
 
@@ -3915,6 +3993,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.121  2005/08/15 16:11:43  dondosha
+ * Use precomputed statistical parameters for blastn
+ *
  * Revision 1.120  2005/08/09 14:16:03  dondosha
  * From A. Schaffer: added comments to clarify usage of BlastKarlinPtoE
  *
