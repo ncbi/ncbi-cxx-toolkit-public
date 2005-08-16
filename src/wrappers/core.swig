@@ -36,6 +36,10 @@
 // inside of a template class that inherits from something.
 #define CORELIB___PLUGIN_MANAGER__HPP
 
+// util/align_range_coll.hpp confuses SWIG
+// It thinks that ncbi::CAlignRangeCollection::CAlignRangeCollException exists.
+#define UTIL___ALIGN_RANGE_COLL__HPP
+
 %template(vector_CSerialAttribInfoItem)
     std::vector<ncbi::CSerialAttribInfoItem>;
 
@@ -313,6 +317,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/16 15:18:46  jcherry
+ * Hide util/align_range_coll.hpp from SWIG
+ *
  * Revision 1.9  2005/08/03 14:57:10  jcherry
  * Added headers
  *
