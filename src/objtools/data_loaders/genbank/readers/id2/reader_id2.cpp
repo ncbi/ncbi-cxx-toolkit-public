@@ -656,7 +656,8 @@ bool CId2Reader::LoadChunk(CReaderRequestResult& result,
 
 void LoadedChunksPacket(CID2_Request_Packet& packet,
                         vector<CTSE_Chunk_Info*>& chunks,
-                        const CBlob_id& blob_id)
+                        const CBlob_id& blob_id,
+                        vector< AutoPtr<CInitGuard> >& guards)
 {
     NON_CONST_ITERATE(vector<CTSE_Chunk_Info*>, it, chunks) {
         if ( !(*it)->IsLoaded() ) {
@@ -666,6 +667,7 @@ void LoadedChunksPacket(CID2_Request_Packet& packet,
     }
     packet.Set().clear();
     chunks.clear();
+    guards.clear();
 }
 
 
@@ -693,6 +695,7 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
     CID2S_Request_Get_Chunks::TChunks& chunks = get_chunks.SetChunks();
 
     vector< AutoPtr<CInitGuard> > guards;
+    vector< AutoPtr<CInitGuard> > ext_guards;
     vector<CTSE_Chunk_Info*> ext_chunks;
     ITERATE(TChunkIds, id, chunk_ids) {
         CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(*id);
@@ -700,6 +703,12 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
             continue;
         }
         if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id, *id) ) {
+            AutoPtr<CInitGuard> init(new CInitGuard(chunk_info, result));
+            if ( !init ) {
+                _ASSERT(chunk_info.IsLoaded());
+                continue;
+            }
+            ext_guards.push_back(init);
             CRef<CID2_Request> ext_req(new CID2_Request);
             CID2_Request_Get_Blob_Info& ext_req_data =
                 ext_req->SetRequest().SetGet_blob_info();
@@ -711,7 +720,7 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
                  packet.Get().size() >= max_request_size ) {
                 // Request collected chunks
                 x_ProcessPacket(result, packet);
-                LoadedChunksPacket(packet, ext_chunks, blob_id);
+                LoadedChunksPacket(packet, ext_chunks, blob_id, ext_guards);
             }
         }
         else {
@@ -744,7 +753,7 @@ bool CId2Reader::LoadChunks(CReaderRequestResult& result,
     }
     if ( !packet.Get().empty() ) {
         x_ProcessPacket(result, packet);
-        LoadedChunksPacket(packet, ext_chunks, blob_id);
+        LoadedChunksPacket(packet, ext_chunks, blob_id, ext_guards);
     }
     return true;
 }
