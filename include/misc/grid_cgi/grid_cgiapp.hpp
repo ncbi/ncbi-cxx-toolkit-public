@@ -259,7 +259,9 @@ protected:
                               int delay);
 private:
     int m_RefreshDelay;
+    int m_FirstDelay;
     bool x_JobStopRequested(const CGridCgiContext&) const;
+    bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
     auto_ptr<CNetScheduleClient> m_NSClient;
     auto_ptr<INetScheduleStorage> m_NSStorage;
@@ -275,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/08/16 16:18:21  didenko
+ * Added new expect_complete parameter
+ *
  * Revision 1.18  2005/08/10 15:54:21  didenko
  * Added and access to a job's input and output strings
  *

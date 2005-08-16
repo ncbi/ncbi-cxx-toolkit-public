@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/services/grid_default_factories.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
@@ -163,6 +164,11 @@ void CGridCgiApplication::InitGridClient()
 {
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
+    m_FirstDelay = 
+        GetConfig().GetInt("grid_cgi", "expect_complete", 5, IRegistry::eReturn);
+    if (m_FirstDelay > 10 ) m_FirstDelay = 10;
+    if (m_FirstDelay < 0) m_FirstDelay = 0;
+
     bool automatic_cleanup = 
         GetConfig().GetBool("grid_cgi", "automatic_cleanup", true, IRegistry::eReturn);
     bool use_progress = 
@@ -224,63 +230,15 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         OnBeginProcessRequest(grid_ctx);
 
         if (!job_key.empty()) {
-            CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
-
-            CNetScheduleClient::EJobStatus status;
-            status = job_status.GetStatus();
-            grid_ctx.SetJobInput(job_status.GetJobInput());
-            grid_ctx.SetJobOutput(job_status.GetJobOutput());
         
-            bool remove_cookie = false;
-            switch (status) {
-            case CNetScheduleClient::eDone:
-                // a job is done
-                OnJobDone(job_status, grid_ctx);
-                remove_cookie = true;
-                break;
-            case CNetScheduleClient::eFailed:
-                // a job has failed
-                OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
-                remove_cookie = true;
-                break;
-
-            case CNetScheduleClient::eCanceled :
-                // A job has been canceled
-                OnJobCanceled(grid_ctx);
-                remove_cookie = true;
-                break;
-            
-            case CNetScheduleClient::eJobNotFound:
-                // A lost job
-                OnJobFailed("Job is not found.", grid_ctx);
-                remove_cookie = true;
-                break;
-                
-            case CNetScheduleClient::ePending :
-            case CNetScheduleClient::eReturned:
-                // A job is in the Netscheduler's Queue
-                OnJobPending(grid_ctx);
-                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
-                break;
-
-            case CNetScheduleClient::eRunning:
-                // A job is being processed by a worker node
-                grid_ctx.SetJobProgressMessage(
-                                     job_status.GetProgressMessage());
-                OnJobRunning(grid_ctx);
-                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
-                break;
-
-            default:
-                _ASSERT(0);
-                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
-            }
-
+            bool finished = x_CheckJobStatus(grid_ctx);
             if (x_JobStopRequested(grid_ctx)) 
                 GetGridClient().CancelJob(job_key);
 
-            if (remove_cookie) 
+            if (finished) 
                 grid_ctx.Clear();
+            else
+                RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
         }        
         else {
             if (CollectParams(grid_ctx)) {
@@ -291,9 +249,22 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                     PrepareJobData(job_submiter);
                     string job_key = job_submiter.Submit();
                     grid_ctx.SetJobKey(job_key);
-                    OnJobSubmitted(grid_ctx);
-                    
-                    RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
+
+                    unsigned long sleep_time = m_FirstDelay*1000;
+                    const unsigned long interval = 500;
+                    long count = sleep_time / interval;
+                    bool finished = false;
+                    finished = x_CheckJobStatus(grid_ctx);
+                    for(; count > 0; --count) {
+                        if (finished)
+                            break;
+                        SleepMilliSec(interval);
+                        finished = x_CheckJobStatus(grid_ctx);
+                    }
+                    if( !finished ) {
+                        OnJobSubmitted(grid_ctx);
+                        RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
+                    }
         
                 } 
                 catch (CNetScheduleException& ex) {
@@ -374,6 +345,61 @@ void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
 }
 
 
+bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
+{
+    string job_key = grid_ctx.GetEntryValue("job_key");
+    CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+
+    CNetScheduleClient::EJobStatus status;
+    status = job_status.GetStatus();
+    grid_ctx.SetJobInput(job_status.GetJobInput());
+    grid_ctx.SetJobOutput(job_status.GetJobOutput());
+            
+    bool finished = false;
+    switch (status) {
+    case CNetScheduleClient::eDone:
+        // a job is done
+        OnJobDone(job_status, grid_ctx);
+        finished = true;
+        break;
+    case CNetScheduleClient::eFailed:
+        // a job has failed
+        OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
+        finished = true;
+        break;
+
+    case CNetScheduleClient::eCanceled :
+        // A job has been canceled
+        OnJobCanceled(grid_ctx);
+        finished = true;
+        break;
+            
+    case CNetScheduleClient::eJobNotFound:
+        // A lost job
+        OnJobFailed("Job is not found.", grid_ctx);
+        finished = true;
+        break;
+                
+    case CNetScheduleClient::ePending :
+    case CNetScheduleClient::eReturned:
+        // A job is in the Netscheduler's Queue
+        OnJobPending(grid_ctx);
+        break;
+        
+    case CNetScheduleClient::eRunning:
+        // A job is being processed by a worker node
+        grid_ctx.SetJobProgressMessage(
+                                       job_status.GetProgressMessage());
+        OnJobRunning(grid_ctx);
+        break;
+        
+    default:
+        _ASSERT(0);
+    }
+    return finished;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -383,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/08/16 16:18:21  didenko
+ * Added new expect_complete parameter
+ *
  * Revision 1.24  2005/08/15 21:05:50  ucko
  * Adjust for CNetScheduleStorageFactory_NetCache API changes.
  *
