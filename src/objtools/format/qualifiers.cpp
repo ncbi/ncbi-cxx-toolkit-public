@@ -66,9 +66,9 @@ const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
 
-static bool s_IsNote(IFlatQVal::TFlags flags)
+static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 {
-    return (flags & IFlatQVal::fIsNote);
+    return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
 }
 
 
@@ -283,7 +283,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_newline : eTilde_space);
     ExpandTildes(m_Value, tilde_style);
                 
-    TFlatQual qual = x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
+    TFlatQual qual = x_AddFQ(q, (s_IsNote(flags, ctx) ? "note" : name), m_Value, m_Style);
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
     }
@@ -327,10 +327,10 @@ void CFlatBondQVal::Format
  TFlags flags) const
 {
     string value = m_Value;
-    if (s_IsNote(flags)) {
+    if (s_IsNote(flags, ctx)) {
         value += " bond";
     }
-    x_AddFQ(quals, (s_IsNote(flags) ? "note" : name), value, m_Style);
+    x_AddFQ(quals, (s_IsNote(flags, ctx) ? "note" : name), value, m_Style);
 }
 
 
@@ -357,7 +357,7 @@ void CFlatSiteQVal::Format
  CBioseqContext& ctx,
  TFlags flags) const
 {
-    if (s_IsNote(flags)) {
+    if (s_IsNote(flags, ctx)) {
         m_Value += " site";
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
@@ -377,12 +377,12 @@ void CFlatStringListQVal::Format
         return;
     }
 
-    if ( s_IsNote(flags) ) {
+    if ( s_IsNote(flags, ctx) ) {
         m_Suffix = &kSemicolon;
     }
 
     x_AddFQ(q, 
-            (s_IsNote(flags) ? "note" : name),
+            (s_IsNote(flags, ctx) ? "note" : name),
             JoinNoRedund(m_Value, "; "),
             m_Style);
 }
@@ -553,7 +553,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
     }
     ConvertQuotes(subname);
     
-    if (s_IsNote(flags)) {
+    if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);
         if (!subname.empty()) {
             bool is_src_orgmod_note = 
@@ -673,7 +673,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
         s_ConvertGtLt(subname);
     }
 
-    if ( s_IsNote(flags) ) {
+    if ( s_IsNote(flags, ctx) ) {
         bool add_period = RemovePeriodFromEnd(subname, true);
         if (!subname.empty()) {
             bool is_subsource_note =
@@ -699,6 +699,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
              subtype == CSubSource::eSubtype_environmental_sample ) {
             x_AddFQ(q, name, kEmptyStr, CFormatQual::eEmpty);
         } else if (!subname.empty()) {
+            ExpandTildes(subname, eTilde_space);
             x_AddFQ(q, name, subname);
         }
     }
@@ -720,7 +721,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         }
 
         if (ctx.Config().DropBadDbxref()) {
-            if (!dbt.IsApproved()) {
+            if (!dbt.IsApproved(ctx.IsRefSeq())) {
                 continue;
             }
         }
@@ -798,55 +799,79 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
 }
 
 
+static size_t s_CountAccessions(const CUser_field& field)
+{
+    size_t count = 0;
+
+    if (!field.IsSetData()  ||  !field.GetData().IsFields()) {
+        return 0;
+    }
+    ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
+        const CUser_field& uf = **it;
+        if (uf.IsSetLabel()  &&  uf.GetLabel().IsStr()  &&
+            uf.GetLabel().GetStr() == "accession") {
+            ++count;
+        }
+    }
+    return count;
+}
+
+
 void CFlatModelEvQVal::Format
 (TFlatQuals& q,
  const string& name,
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
+    size_t num_mrna = 0, num_prot = 0, num_est = 0;
     const string* method = 0;
-    if ( m_Value->HasField("Method") ) {
-        const CUser_field& uf = m_Value->GetField("Method");
-        if ( uf.GetData().IsStr() ) {
-            method = &uf.GetData().GetStr();
-        }
-    }
 
-    size_t nm = 0;
-    if ( m_Value->HasField("mRNA") ) {
-        const CUser_field& field = m_Value->GetField("mRNA");
-        if ( field.GetData().IsFields() ) {
-            ITERATE (CUser_field::C_Data::TFields, it1, field.GetData().GetFields()) {
-                const CUser_field& uf = **it1;
-                if ( !uf.CanGetData()  ||  !uf.GetData().IsFields() ) {
-                    continue;
-                }
-                ITERATE (CUser_field::C_Data::TFields, it2, uf.GetData().GetFields()) {
-                    if ( !(*it2)->CanGetLabel() ) {
-                        continue;
-                    }
-                    const CObject_id& oid = (*it2)->GetLabel();
-                    if ( oid.IsStr() ) {
-                        if ( oid.GetStr() == "accession" ) {
-                            ++nm;
-                        }
-                    }
-                }
-            }
+    ITERATE (CUser_object::TData, it, m_Value->GetData()) {
+        const CUser_field& field = **it;
+        if (!field.IsSetLabel()  &&  field.GetLabel().IsStr()) {
+            continue;
+        }
+        const string& label = field.GetLabel().GetStr();
+        if (label == "Method") {
+            method = &label;
+        } else if (label == "mRNA") {
+            num_mrna = s_CountAccessions(field);
+        } else if (label == "EST") {
+            num_est  = s_CountAccessions(field);
+        } else if (label == "Protein") {
+            num_prot = s_CountAccessions(field);
         }
     }
 
     CNcbiOstrstream text;
     text << "Derived by automated computational analysis";
-    if ( method != 0  &&  !method->empty() ) {
+    if (method != NULL  &&  !NStr::IsBlank(*method)) {
          text << " using gene prediction method: " << *method;
     }
     text << ".";
 
-    if ( nm > 0 ) {
-        text << " Supporting evidence includes similarity to: " << nm << " mRNA";
-        if ( nm > 1 ) {
-            text << "s";
+    if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0) {
+        text << " Supporting evidence includes similarity to:";
+    }
+    string prefix = " ";
+    if (num_mrna > 0) {
+        text << prefix << num_mrna << " mRNA";
+        if (num_mrna > 1) {
+            text << 's';
+        }
+        prefix = ", ";
+    }
+    if (num_est > 0) {
+        text << prefix << num_est << " EST";
+        if (num_mrna > 1) {
+            text << 's';
+        }
+        prefix = ", ";
+    }
+    if (num_prot > 0) {
+        text << prefix << num_prot << " Protein";
+        if (num_mrna > 1) {
+            text << 's';
         }
     }
 
@@ -863,7 +888,7 @@ void CFlatGoQVal::Format
     _ASSERT(m_Value->GetData().IsFields());
     bool is_ftable = ctx.Config().IsFormatFTable();
 
-    if ( s_IsNote(flags) ) {
+    if ( s_IsNote(flags, ctx) ) {
         static const string sfx = ";";
         m_Prefix = &kEOL;
         m_Suffix = &sfx;
@@ -923,17 +948,25 @@ void CFlatTrnaCodonsQVal::Format
 }
 
 
-void CFlatProductQVal::Format
-(TFlatQuals& q,
- const string& n,
+void CFlatProductNamesQVal::Format
+(TFlatQuals& quals,
+ const string& name,
  CBioseqContext& ctx,
- TFlags) const
+ TFlags flags) const
 {
-    // !!!
-    /*
-    if ( ctx.DropIllegalQuals() ) {
-        if ( !s_LegalQualForFeature(eFQ_product, m_Subtype)
-    */
+    if (m_Value.size() < 2) {
+        return;
+    }
+    bool note = s_IsNote(flags, ctx);
+    
+    CProt_ref::TName::const_iterator it = m_Value.begin();
+    ++it;  // first is used for /product
+    while (it != m_Value.end()  &&  !NStr::IsBlank(*it)) {
+        if (*it != m_Gene) {
+            x_AddFQ(quals, (note ? "note" : name), *it);
+        }
+        ++it;
+    }
 }
 
 
@@ -944,6 +977,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/08/16 16:50:06  shomrat
+* Do not convert quals to note in dump mode; Chages to ModelEv and ProductNames
+*
 * Revision 1.30  2005/06/03 17:00:44  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
