@@ -49,6 +49,11 @@ CFlatFileConfig::CFlatFileConfig
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(flags), m_RefSeqConventions(false)
 {
+    // GFF/GFF3 and FTable always require master style
+    if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
+        m_Format == eFormat_FTable) {
+        m_Style = eStyle_Master;
+    }
 }
 
 // -- destructor
@@ -147,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/08/16 15:45:02  shomrat
+* GFF/GFF3 and FTable require master style
+*
 * Revision 1.4  2005/04/27 17:11:37  shomrat
 * Modify for RefSeq
 *
