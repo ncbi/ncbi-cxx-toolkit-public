@@ -38,8 +38,10 @@
 #include <objtools/format/text_ostream.hpp>
 
 #include <serial/iterator.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 
@@ -105,7 +107,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
 }
 
 
-static const string& s_GetMatchType(const CSeq_id& ref_id)
+static const string& s_GetMatchType(const CSeq_id& ref_id, const CSeq_id& tgt_id)
 {
     static const string kMatch     = "match";  // generic match
     static const string kEST       = "EST_match";
@@ -113,10 +115,15 @@ static const string& s_GetMatchType(const CSeq_id& ref_id)
     static const string kTransNuc  = "translated_nucleotide_match";
     static const string kNucToProt = "nucleotide_to_protein_match";
     
-    
-    if ((ref_id.IdentifyAccession() & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+    CSeq_id::EAccessionInfo ref_info = ref_id.IdentifyAccession();
+    CSeq_id::EAccessionInfo tgt_info = tgt_id.IdentifyAccession();
+    if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
+        return kNucToProt;
+    } else if ((ref_info & CSeq_id::eAcc_est) ||  (tgt_info & CSeq_id::eAcc_est)) {
         return kEST;
     }
+    // HACK HACK HACK
+    // we should provide a check for cDNA and retuen kMatch as the default.
     return kcDNA;
 }
 
@@ -145,10 +152,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     CAlnMap         alnmap(ds);
     TNumrow         ref_row = -1;
     CScope&         scope = ctx->GetScope();
-    
+
+    const CSeq_id& ref_id = *ctx->GetPrimaryId();
     for (TNumrow row = 0;  row < alnmap.GetNumRows();  ++row) {
-        if (sequence::IsSameBioseq(alnmap.GetSeqId(row), *ctx->GetPrimaryId(),
-                                   &scope)) {
+        if (sequence::IsSameBioseq(alnmap.GetSeqId(row), ref_id, &scope)) {
             ref_row = row;
             break;
         }
@@ -222,9 +229,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         /// HACK HACK HACK
         /// optional strand on the end
         if (tgt_sign == 1) {
-            attrs << "++";
+            attrs << "+%2B";
         } else {
-            attrs << "+-";
+            attrs << "+%2D";
         }
 
         if ( !trivial  ||  last_type != 'M' ) {
@@ -238,8 +245,25 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                      ref_range.GetTo(),
                      (ref_sign == 1 ? eNa_strand_plus
                       : eNa_strand_minus));
+        
+
+        // HACK HACK HACK
+        // add score attributes
+        ITERATE (CDense_seg::TScores, score_it, aln.GetAlign().GetScore()) {
+            const CScore& score = **score_it;
+            if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
+                attrs << ';'  << score.GetId().GetStr() << '=';
+                if (score.GetValue().IsInt()) {
+                    attrs << score.GetValue().GetInt();
+                } else {
+                    attrs << score.GetValue().GetReal();
+                }
+            }
+        }
+
         string attr_string = CNcbiOstrstreamToString(attrs);
-        x_AddFeature(l, loc, source, s_GetMatchType(*ctx->GetPrimaryId()), "." /*score*/, -1 /*frame*/,
+        
+        x_AddFeature(l, loc, source, s_GetMatchType(ref_id, tgt_id), "." /*score*/, -1 /*frame*/,
                      attr_string, false /*gtf*/, *ctx);
     }
 
@@ -324,6 +348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/08/16 15:09:46  shomrat
+* Added scores; Match type based on both reference and target sequences
+*
 * Revision 1.4  2005/08/05 20:21:41  dicuccio
 * Updated GFF3 output: Fixed representation of strand; include optional target
 * strand always; adjusted tags used for matches.
