@@ -42,7 +42,7 @@ int main()
     try {
         CTLibContext my_context;
 
-        CDB_Connection* con= my_context.Connect("BARTOK", "anyone", "allowed", 0);
+        CDB_Connection* con= my_context.Connect("SCHUMANN", "anyone", "allowed", 0);
 
         CDB_LangCmd* lcmd= con->LangCmd("select name, crdate from sysdatabases");
         lcmd->Send();
@@ -86,6 +86,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/16 11:13:27  ssikorsk
+ * Use SCHUMANN instead of BARTOK as a Sybase server.
+ *
  * Revision 1.7  2004/09/01 21:31:29  vakatov
  * Use BARTOK instead of MOZART as the test Sybase-11.0.3 SQL server
  *
