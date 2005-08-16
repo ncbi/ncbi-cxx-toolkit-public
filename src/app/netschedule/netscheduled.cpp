@@ -944,7 +944,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                         "Batch submit error: unexpected end of batch");
         }
 
-//        double comm_elapsed = sw1.Elapsed();
+        double comm_elapsed = sw1.Elapsed();
 
         // we have our batch now
 
@@ -955,9 +955,27 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                               client_address, 
                               0, 0, 0);
 
-//        double db_elapsed = sw2.Elapsed();
-//NcbiCerr.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-//NcbiCerr << "comm=" << comm_elapsed << " db=" << db_elapsed << endl;
+        double db_elapsed = sw2.Elapsed();
+
+        CNetScheduleMonitor* monitor = queue.GetMonitor();
+        if (monitor->IsMonitorActive()) {
+            string msg = "::ProcessSubmitBatch ";
+            msg += m_LocalTimer.GetLocalTime().AsString();
+            msg += buf;
+            msg += " ==> ";
+            msg += sock.GetPeerAddress();
+            msg += " ";
+            msg += tdata.auth;
+            msg += " batch block size=";
+            msg += NStr::UIntToString(batch_size);
+            msg += " comm.time=";
+            msg += NStr::DoubleToString(comm_elapsed, 4, NStr::fDoubleFixed);
+            msg += " trans.time=";
+            msg += NStr::DoubleToString(db_elapsed, 4, NStr::fDoubleFixed);
+
+            monitor->SendString(msg);
+        }
+
         {{
         char buf[1024];
         sprintf(buf, "%u %s %u", 
@@ -2234,6 +2252,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/08/16 13:45:26  kuznets
+ * Added monitoring for batch submissions
+ *
  * Revision 1.50  2005/08/15 17:39:48  kuznets
  * Use C-style ReadLine for better performance
  *
