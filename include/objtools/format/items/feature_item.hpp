@@ -236,6 +236,7 @@ private:
     mutable TQuals                 m_Quals;
     mutable TQualVec               m_FTableQuals;
     EMapped                        m_Mapped;
+    mutable string                         m_Gene;
 };
 
 
@@ -259,6 +260,8 @@ public:
     bool IsFocus    (void) const { return m_IsFocus;     }
     bool IsSynthetic(void) const { return m_IsSynthetic; }
     void Subtract(const CSourceFeatureItem& other, CScope& scope);
+
+    void SetLoc(const CSeq_loc& loc);
 
 private:
     typedef CQualContainer<ESourceQualifier> TQuals;
@@ -302,6 +305,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/08/16 16:43:44  shomrat
+* Added SetLoc() to CSourceFeatureItem
+*
 * Revision 1.25  2005/04/05 14:40:54  vasilche
 * Use const char* for qualifier names.
 *
