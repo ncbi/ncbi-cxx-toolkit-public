@@ -92,7 +92,8 @@ static bool s_ValidId(const CSeq_id& id)
 {
     return id.IsGenbank()  ||  id.IsEmbl()    ||  id.IsDdbj()  ||
            id.IsOther()    ||  id.IsPatent()  ||  
-           id.IsTpg()      ||  id.IsTpe()     ||  id.IsTpd();
+           id.IsTpg()      ||  id.IsTpe()     ||  id.IsTpd()   ||
+           id.IsGpipe();
 }
 
 
@@ -314,6 +315,32 @@ static bool s_CheckMandatoryQuals(const CSeq_feat& feat, const CSeq_loc& loc, CB
 }
 
 
+static bool s_SuppressCommentFeature
+(const CSeq_feat& feat,
+ const CSeq_loc& loc,
+ CBioseqContext& ctx)
+{
+    _ASSERT(feat.GetData().IsComment());
+
+    ECompare comp = Compare(ctx.GetLocation(), loc, &ctx.GetScope());
+    if (comp == eContained  ||  comp == eSame) {
+        return true;
+    }
+
+    const CSeq_loc& orig_loc = feat.GetLocation();
+    if (orig_loc.IsWhole()) {
+        return true;
+    }
+
+    CBioseq_Handle feat_seq = ctx.GetScope().GetBioseqHandle(orig_loc);
+    if (orig_loc.GetStart(eExtreme_Positional) == 0  &&
+        orig_loc.GetStop(eExtreme_Positional) == feat_seq.GetInst_Length() - 1) {
+        return true;
+    }
+    return false;
+}
+
+
 static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
     CSeqFeatData::E_Choice type    = feat.GetData().Which();
@@ -371,9 +398,11 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
     }
 
     // supress full length comment features
+    // NB: the test is performed on the bioseq the feature is
+    // annotated on even in master style. full length features are
+    // analogous to descriptors and those aren't propagated.
     if ( type == CSeqFeatData::e_Comment ) {
-        ECompare comp = Compare(ctx.GetLocation(), feat.GetLocation(), &ctx.GetScope());
-        if ( comp == eContained  ||  comp == eSame ) {
+        if (s_SuppressCommentFeature(feat, loc, ctx)) {
             return true;
         }
     }
@@ -1036,16 +1065,13 @@ void CFeatureItem::x_AddCdregionQuals
             CBioseq_Handle prot;
             if (prot_id) {
                 if (!cfg.AlwaysTranslateCDS()) {
-                    // by default only show /translation if product bioseq is within
-                    // entity, but flag can override and force far /translation
-                    if (cfg.ShowFarTranslations()) {
-                        prot =  scope.GetBioseqHandle(*prot_id);
-                    } else {
-                        prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+                    CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
+                    if (cfg.ShowFarTranslations()  ||  ctx.IsGED()) {
+                        get_flag = CScope::eGetBioseq_All;
                     }
+                    prot =  scope.GetBioseqHandle(*prot_id, get_flag);
                 }
             }
-
             
             if (prot) {
                 // get the "best" id for the protein
@@ -1101,8 +1127,7 @@ void CFeatureItem::x_AddCdregionQuals
                 x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
                 CProt_ref::TName::const_iterator rest = names.begin();
                 if ( ++rest != names.end() ) {
-                    x_AddQual(eFQ_prot_names,
-                              new CFlatStringListQVal(rest, names.end()));
+                    x_AddQual(eFQ_prot_names, new CFlatProductNamesQVal(names, m_Gene));
                 }
             }
             if ( pref->CanGetDesc() ) {
@@ -1395,6 +1420,7 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
+        case CSeq_id::e_Gpipe:
             // these are the only types we allow as product ids
             break;
         default:
@@ -1416,7 +1442,8 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
             choice != CSeq_id::e_General  &&
             choice != CSeq_id::e_Tpg  &&
             choice != CSeq_id::e_Tpe  &&
-            choice != CSeq_id::e_Tpd ) {
+            choice != CSeq_id::e_Tpd  &&
+            choice != CSeq_id::e_Gpipe) {
             continue;
         }
         if (*it == best) {
@@ -1578,7 +1605,8 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
 
     if (!from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region) {
         if (locus != NULL) {
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(*locus));
+            m_Gene = *locus;
+            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             if (locus_tag != NULL) {
                 x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
             }
@@ -1597,14 +1625,16 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
                 x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (desc != NULL) {
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(*desc));
+            m_Gene = *desc;
+            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             if (gene_feat  &&  syn != NULL) {
                 x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (syn != NULL) {
             // add the first as the gene name ...
             CGene_ref::TSyn syns = *syn;
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(syns.front()));
+            m_Gene = syns.front();
+            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             syns.pop_front();
             // ... and the rest as synonyms
             if (gene_feat  &&  !syns.empty() ) {
@@ -1729,11 +1759,10 @@ void CFeatureItem::x_AddProtQuals
 
     if ( ctx.IsNuc()  ||  (ctx.IsProt()  &&  !IsMappedFromProt()) ) {
         if ( pref.IsSetName()  &&  !pref.GetName().empty() ) {
-            CProt_ref::TName names = pref.GetName();
+            const CProt_ref::TName& names = pref.GetName();
             x_AddQual(eFQ_product, new CFlatStringQVal(names.front()));
-            names.pop_front();
-            if ( !names.empty() ) {
-                x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
+            if (names.size() > 1) {
+                x_AddQual(eFQ_prot_names, new CFlatProductNamesQVal(names, m_Gene));
             }
         }
         if ( pref.CanGetDesc()  &&  !pref.GetDesc().empty() ) {
@@ -2331,6 +2360,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         if (add_period  &&  !NStr::EndsWith(notestr, '.') ) {
             AddPeriod(notestr);
         }
+        ExpandTildes(notestr, eTilde_newline);
         CRef<CFormatQual> note(new CFormatQual("note", notestr));
         ff.SetQuals().push_back(note);
     }
@@ -3662,7 +3692,13 @@ void CSourceFeatureItem::x_FormatQual
 
 void CSourceFeatureItem::Subtract(const CSourceFeatureItem& other, CScope &scope)
 {
-    m_Loc = Seq_loc_Subtract(GetLoc(), other.GetLoc(), 0, &scope);;
+    m_Loc = Seq_loc_Subtract(GetLoc(), other.GetLoc(), 0, &scope);
+}
+
+
+void CSourceFeatureItem::SetLoc(const CSeq_loc& loc)
+{
+    m_Loc.Reset(&loc);
 }
 
 
@@ -3673,6 +3709,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2005/08/16 16:52:36  shomrat
+* Suppress comment features when covering whole part
+*
 * Revision 1.55  2005/06/03 16:59:43  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
