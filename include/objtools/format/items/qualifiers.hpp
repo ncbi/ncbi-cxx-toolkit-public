@@ -562,17 +562,19 @@ private:
 };
 
 
-class CFlatProductQVal : public CFlatStringQVal
+class CFlatProductNamesQVal : public IFlatQVal
 {
 public:
-    typedef CSeqFeatData::ESubtype  TSubtype;
-    CFlatProductQVal(const string& value, TSubtype subtype) :
-        CFlatStringQVal(value), m_Subtype(subtype)
+    CFlatProductNamesQVal(const CProt_ref::TName& value, const string& gene) : 
+        IFlatQVal(&kSpace, &kSemicolon), m_Value(value), m_Gene(gene)
     {}
-    void Format(TFlatQuals& q, const string& n, CBioseqContext& ctx,
-                TFlags) const;
+        
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
+
 private:
-    TSubtype m_Subtype;
+    const CProt_ref::TName& m_Value;
+    const string&           m_Gene; 
 };
 
 // ...
@@ -584,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/08/16 16:46:10  shomrat
+* Changed CFlatProductQVal, now CFlatProductNamesQVal
+*
 * Revision 1.22  2005/04/27 17:06:55  shomrat
 * Changed constructor for CFlatTRnaCodonsQVal
 *
