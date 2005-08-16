@@ -947,7 +947,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     				Y2Ladder[iMod]->ClearHits();
 			    }
 
-				Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+                            if(UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
 				
 			    if(/*UseRankScore || */
                    CompareLaddersTop(iMod, 
@@ -956,7 +956,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                    ) {
 				// end of new addition
 
-//				Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+                                if(!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
 #ifdef CHECKGI
 				/*if(Peaks->GetNumber() == 245)*/
 				//			    cout << testgi << " " << position << " " << endposition << endl;
@@ -1623,6 +1623,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.55  2005/08/16 02:52:51  lewisg
+adjust n dependence
+
 Revision 1.54  2005/08/15 14:24:56  lewisg
 new mod, enzyme; stat test
 
