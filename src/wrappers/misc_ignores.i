@@ -36,7 +36,7 @@
 %ignore ncbi::CSymDustMasker::GetMaskedLocs;
 
 // "stat" is both a struct and a function; SWIG-generated code won't compile
-%ignore ncbi::CDirEntry::GetType(const struct stat &st) const;
+%ignore ncbi::CDirEntry::GetType(const struct stat &st);
 
 // auto_ptr trouble
 %ignore ncbi::CTar::Append;
@@ -224,6 +224,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/16 15:19:39  jcherry
+ * CDirEntry::GetType(const struct stat &st) is now static, and hence
+ * not const
+ *
  * Revision 1.4  2005/08/03 14:57:10  jcherry
  * Added headers
  *
