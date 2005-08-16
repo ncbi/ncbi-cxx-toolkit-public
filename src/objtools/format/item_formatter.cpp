@@ -434,7 +434,16 @@ static void s_FixPages(string& pages)
 {
     static const string kRomans  = "IVXLCDM-";
 
-    NStr::TruncateSpacesInPlace(pages);
+    // remove all spaces
+    size_t next = 0;
+    NON_CONST_ITERATE(string, it, pages) {
+        if (!isspace(*it)) {
+            pages[next++] = *it;
+        }
+    }
+    if (next < pages.length()) {
+        pages.resize(next);
+    }
     if (pages.empty()) {
         return;
     }
@@ -662,7 +671,11 @@ static void s_FormatCitGen
             if (cfg.DropBadCitGens()) {
                 string year;
                 if (gen.IsSetDate()) {
-                    gen.GetDate().GetDate(&year, "(%Y)");
+                    const CDate& date = gen.GetDate();
+                    if (date.IsStr()  ||
+                        date.IsStd()  &&  date.GetStd().IsSetYear()  &&  date.GetStd().GetYear() != 0) {
+                        gen.GetDate().GetDate(&year, "(%Y)");
+                    }
                 }
                 journal += "Unpublished";
                 if (!NStr::IsBlank(year)) {
@@ -1226,6 +1239,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/08/16 15:53:26  shomrat
+* Remove all spaces from pages; Fixed Cit-gen formatting
+*
 * Revision 1.27  2005/08/04 12:37:53  ivanov
 * Use 'flag' version of NStr::StringToInt()
 *
