@@ -652,7 +652,6 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
                 string str = 
                     CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format);
                 if ( !str.empty() ) {
-
                     x_AddComment(new CCommentItem(str, ctx, &uo));
                     did_ref_track = true;
                 }
@@ -1022,7 +1021,10 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     if ( srcs.empty() ) {
         return;
     }
-    x_MergeEqualBioSources(srcs);
+
+    if (!m_Current->Config().IsModeDump()) {
+        x_MergeEqualBioSources(srcs);
+    }
     
     // sort by type (descriptor / feature) and location
     sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
@@ -1052,9 +1054,29 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
         return;
     }
 
-    // !!! To Do:
-    // !!! * sort based on biosource
-    // !!! * merge equal biosources (merge locations)
+    // merge equal sources
+    TSourceFeatSet::iterator it = srcs.begin();
+    while (it != srcs.end()) {
+        TSourceFeatSet::iterator it2 = it++;
+        const CSeq_feat& f2 = (*it2)->GetFeat();
+        const string& c2 = f2.IsSetComment() ? f2.GetComment() : kEmptyStr;
+        while (it != srcs.end()) {
+            const CSeq_feat& f = (*it)->GetFeat();
+            const string& c = f.IsSetComment() ? f.GetComment() : kEmptyStr;
+            if (NStr::EqualNocase(c2, c)  &&
+                (*it2)->GetSource().Equals((*it)->GetSource())) {
+                CRef<CSeq_loc> merged_loc = 
+                    Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
+                                CSeq_loc::fSort | CSeq_loc::fMerge_All,
+                                &m_Current->GetScope());
+                (*it2)->SetLoc(*merged_loc);
+                it = srcs.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        it = ++it2;
+    }
 }
 
 
@@ -1216,7 +1238,6 @@ static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Ha
     _ASSERT(f1  &&  f2);
 
     return f1.GetFeatSubtype() == f2.GetFeatSubtype()  &&
-           f1.GetAnnot() == f2.GetAnnot()              &&
            f1.GetLocation().Equals(f2.GetLocation())   &&
            f1.GetSeq_feat()->Equals(*f2.GetSeq_feat());
 }
@@ -1602,6 +1623,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2005/08/16 15:50:42  shomrat
+* Merge equal BioSources
+*
 * Revision 1.48  2005/06/22 14:33:21  vasilche
 * Use more efficient CFeat_CI constructor.
 * Use GetRangeSeq_lock() instead of possibly null GetSeqId().
