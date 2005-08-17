@@ -132,7 +132,7 @@ protected:
         CSockGuard(CSocket* sock) : m_Sock(sock) {}
         ~CSockGuard() { if (m_Sock) m_Sock->Close(); }
         /// Dismiss the guard (no disconnect)
-        void Forget() { m_Sock = 0; }
+        void Release() { m_Sock = 0; }
     private:
         CSockGuard(const CSockGuard&);
         CSockGuard& operator=(const CSockGuard&);
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/17 15:14:39  kuznets
+ * Forget() to Release()
+ *
  * Revision 1.8  2005/08/17 14:25:47  kuznets
  * CSockGuard added Forget()
  *
