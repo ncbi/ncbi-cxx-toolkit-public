@@ -59,9 +59,9 @@ public:
     using CNetScheduleClient::ReloadServerConfig;
     using CNetScheduleClient::GetQueueList;
     // using CNetScheduleClient::CheckConnect;
-    virtual void CheckConnect(const string& key)
+    virtual bool CheckConnect(const string& key)
     {
-        CNetScheduleClient::CheckConnect(key);
+        return CNetScheduleClient::CheckConnect(key);
     }
 };
 
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/17 14:39:10  kuznets
+ * Reflected change in CheckConnect proto
+ *
  * Revision 1.4  2005/05/16 16:21:26  kuznets
  * Added available queues listing
  *
