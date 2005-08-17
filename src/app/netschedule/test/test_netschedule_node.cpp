@@ -196,7 +196,7 @@ int CTestNetScheduleNode::Run(void)
             }
 
             // do no job here, just delay for a little while
-            //SleepMilliSec(50);
+            SleepMilliSec(50);
             string out = "DONE " + queue_name;
             cl.PutResult(job_key, 0, out);
 
@@ -240,6 +240,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/17 14:32:36  kuznets
+ * Uncommented sleep
+ *
  * Revision 1.9  2005/08/17 14:29:25  kuznets
  * +Option for permanent connection
  *
