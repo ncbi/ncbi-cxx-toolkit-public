@@ -253,6 +253,7 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
         }
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
+        out.SetFlag(CFastaOstream::eAssembleParts);
         for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
             out.Write(m_Scope->GetBioseqHandle(*it));
         }
@@ -297,6 +298,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/08/17 18:47:26  ucko
+* When producing FASTA output, set the AssembleParts flag to avoid
+* discriminating against delta-seqs.
+*
 * Revision 1.9  2005/05/04 19:05:00  ucko
 * Take advantage of PNoase_CStr when comparing C strings.
 *
