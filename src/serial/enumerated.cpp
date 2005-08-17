@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.30  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -399,7 +403,7 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        in.ThrowError(in.fFormatError,"invalid enum value");
+        in.ThrowError(in.fInvalidData,"invalid enum value");
     }
 }
 
@@ -433,7 +437,7 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        copier.ThrowError(CObjectIStream::fFormatError,"invalid enum value");
+        copier.ThrowError(CObjectIStream::fInvalidData,"invalid enum value");
     }
 }
 
@@ -449,7 +453,7 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        in.ThrowError(in.fFormatError,"invalid enum value");
+        in.ThrowError(in.fInvalidData,"invalid enum value");
     }
 }
 

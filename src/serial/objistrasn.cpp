@@ -73,6 +73,19 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
     Open(in, deleteIn);
 }
 
+bool CObjectIStreamAsn::EndOfData(void)
+{
+    if (CObjectIStream::EndOfData()) {
+        return true;
+    }
+    try {
+        SkipWhiteSpace();
+    } catch (...) {
+        return true;
+    }
+    return false;
+}
+
 string CObjectIStreamAsn::GetPosition(void) const
 {
     return "line "+NStr::UIntToString(m_Input.GetLine());
@@ -594,7 +607,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     size_t mantissaLength = mantissaStr.GetLength();
     char buffer[128];
     if ( mantissaLength >= sizeof(buffer) - 1 )
-        ThrowError(fFormatError, "buffer overflow");
+        ThrowError(fOverflow, "buffer overflow");
     memcpy(buffer, mantissaStr.GetString(), mantissaLength);
     buffer[mantissaLength] = '\0';
     char* endptr;
@@ -1049,6 +1062,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             SkipAnyContent();
             return BeginClassMember(classType);
         } else {
@@ -1069,6 +1083,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             SkipAnyContent();
             return BeginClassMember(classType, pos);
         } else {
@@ -1346,6 +1361,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.99  2005/08/04 18:04:12  ivanov
 * Rolback to R1.97 -- added CLightString::operator CTempString()
 *

@@ -254,16 +254,27 @@ public:
 
     // low level readers:
     enum EFailFlags {
+        /// No error
         fNoError       = 0,             eNoError     = fNoError,
-        fEOF           = 1 << 0,        eEOF         = fEOF,
+//        fEOF           = 1 << 0,        eEOF         = fEOF,
+        /// An unknown error when writing into output file
         fWriteError    = 1 << 1,        eWriteError  = fWriteError,
-        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+//        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        /// Internal buffer overflow
         fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        /// Output data is incorrect
         fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        /// Illegal in a given context function call
         fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        /// Internal error, the real reason is unclear
         fFail          = 1 << 6,        eFail        = fFail,
+        /// No output file
         fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
-        fUnassigned    = 1 << 8,        eUnassigned  = fUnassigned
+        /// Method is not implemented
+        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
+        /// Mandatory object member is unassigned
+        /// Normally this results in throwing CUnassignedMember exception
+        fUnassigned    = 1 << 9,        eUnassigned  = fUnassigned
     };
     typedef int TFailFlags;
     bool fail(void) const;
@@ -529,6 +540,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2005/08/17 18:17:03  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.90  2005/02/23 21:07:44  vasilche
 * Allow to skip underlying stream flush.
 *

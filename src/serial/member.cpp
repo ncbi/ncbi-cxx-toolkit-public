@@ -707,14 +707,14 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     catch (CSerialException& e) {
         if (e.GetErrCode() == CSerialException::eMissingValue) {
             if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
-                in.SetFailFlags(CObjectIStream::fNoError,0);
+                in.SetFailFlags(CObjectIStream::fNoError);
                 if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
                     memberInfo->GetTypeInfo()->SetDefault(
                         memberInfo->GetItemPtr(classPtr));
                 }
             } else {
                 NCBI_RETHROW(e, CSerialException, eFormatError,
-                    "error while reading " + memberInfo->GetId().GetName());
+                    "missing value " + memberInfo->GetId().GetName());
             }
         } else {
             NCBI_RETHROW_SAME(e,
@@ -1162,6 +1162,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.41  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.40  2004/09/09 19:18:24  vasilche
 * Some object streams require class/choice to be in stack.
 *

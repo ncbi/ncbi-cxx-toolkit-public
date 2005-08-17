@@ -655,7 +655,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
 
 void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& /* in */)
 {
-    NCBI_THROW(CSerialException,eNotImplemented,"not yet");
+    ThrowError(fNotImplemented,"not yet");
 }
 
 void CObjectOStreamXml::WriteCString(const char* str)
@@ -1374,6 +1374,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.83  2005/07/07 18:22:43  gouriano
 * Optimized writing of AnyContent objects
 *

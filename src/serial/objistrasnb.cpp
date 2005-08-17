@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.76  2005/06/14 13:12:13  gouriano
 * Renamed  ReadAnyContent to SkipAnyContent
 *
@@ -539,7 +543,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
     // indefinite length allowed only for constructed tags
     if ( !GetTagConstructed(m_Input.PeekChar()) )
-        ThrowError(fFormatError, "illegal ExpectIndefiniteLength call");
+        ThrowError(fIllegalCall, "illegal ExpectIndefiniteLength call");
     if ( FlushTag() != eIndefiniteLengthByte ) {
         ThrowError(fFormatError, "indefinite length is expected");
     }
@@ -634,7 +638,7 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
     if ( m_CurrentTagState != eTagStart || m_CurrentTagLength != 0 )
-        ThrowError(fFormatError, "illegal ExpectEndOfContent call");
+        ThrowError(fIllegalCall, "illegal ExpectEndOfContent call");
     if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
                                     char(eZeroLengthByte)) ) {
         ThrowError(eFormatError, "end of content expected");
@@ -1138,6 +1142,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             SkipAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType);
@@ -1162,6 +1167,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             SkipAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType, pos);
@@ -1338,7 +1344,7 @@ void CObjectIStreamAsnBinary::ReadNull(void)
 
 void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
+    ThrowError(fNotImplemented,
         "CObjectIStreamAsnBinary::ReadAnyContentObject: "
         "unable to read AnyContent object in ASN binary");
 }

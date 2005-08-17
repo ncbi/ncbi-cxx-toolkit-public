@@ -66,6 +66,19 @@ CObjectIStreamXml::EEncoding CObjectIStreamXml::GetEncoding(void) const
     return m_Encoding;
 }
 
+bool CObjectIStreamXml::EndOfData(void)
+{
+    if (CObjectIStream::EndOfData()) {
+        return true;
+    }
+    try {
+        SkipWSAndComments();
+    } catch (...) {
+        return true;
+    }
+    return false;
+}
+
 string CObjectIStreamXml::GetPosition(void) const
 {
     return "line "+NStr::UIntToString(m_Input.GetLine());
@@ -987,7 +1000,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                     // read integer value
                     SkipWSAndComments();
                     if ( value != m_Input.GetInt4() )
-                        ThrowError(fFormatError,
+                        ThrowError(fInvalidData,
                                    "incompatible name and value of named integer");
                 }
             }
@@ -1018,7 +1031,7 @@ CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 
 CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
 {
-    ThrowError(fIllegalCall, "unimplemented");
+    ThrowError(fNotImplemented, "unimplemented");
     return 0;
 /*
     CLightString attr = ReadAttributeName();
@@ -1033,7 +1046,7 @@ CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
 
 string CObjectIStreamXml::ReadOtherPointer(void)
 {
-    ThrowError(fIllegalCall, "unimplemented");
+    ThrowError(fNotImplemented, "unimplemented");
     return NcbiEmptyString;
 }
 
@@ -1650,6 +1663,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             string tag(tagName);
             if (SkipAnyContent()) {
                 CloseTag(tag);
@@ -1794,6 +1808,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
         }
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes &&
             pos <= classType->GetMembers().LastIndex()) {
+            SetFailFlags(fUnknownValue);
             string tag(RejectedName());
             if (SkipAnyContent()) {
                 CloseTag(tag);
@@ -1806,6 +1821,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember ) {
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
             string tag(tagName);
             if (SkipAnyContent()) {
                 CloseTag(tag);
@@ -2201,6 +2217,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.80  2005/08/02 16:14:17  gouriano
 * Corrected reading of elements with attributes and leading white spaces in data
 *

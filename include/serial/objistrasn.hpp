@@ -55,6 +55,7 @@ public:
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default);
 
+    virtual bool EndOfData(void);
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
@@ -218,6 +219,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2005/08/17 18:17:03  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.62  2005/06/24 18:25:27  gouriano
 * Corrected and optimized skipping anycontent object
 *

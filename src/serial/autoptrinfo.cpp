@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.19  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -171,7 +175,7 @@ void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
 
     TTypeInfo dataType = autoPtrType->GetPointedType();
     if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
-        out.ThrowError(out.fIllegalCall,"auto pointer have different type");
+        out.ThrowError(out.fIllegalCall,"auto pointers have different type");
     out.WriteObject(dataPtr, dataType);
 }
 
@@ -188,7 +192,7 @@ void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
         autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
     }
     else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
-        in.ThrowError(in.fIllegalCall,"auto pointer have different type");
+        in.ThrowError(in.fIllegalCall,"auto pointers have different type");
     }
     in.ReadObject(dataPtr, dataType);
 }

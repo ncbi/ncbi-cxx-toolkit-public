@@ -89,12 +89,12 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                           IOS_BASE::out | IOS_BASE::binary);
             break;
         default:
-            NCBI_THROW(CSerialException,eFail,
+            NCBI_THROW(CSerialException,eNotImplemented,
                        "CObjectOStream::Open: unsupported format");
         }
         if ( !*outStream ) {
             delete outStream;
-            NCBI_THROW(CSerialException,eFail, "cannot open file");
+            NCBI_THROW(CSerialException,eNotOpen, "cannot open file");
         }
         deleteStream = true;
     }
@@ -116,7 +116,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
     default:
         break;
     }
-    NCBI_THROW(CSerialException,eFail,
+    NCBI_THROW(CSerialException,eNotImplemented,
                "CObjectOStream::Open: unsupported format");
 }
 
@@ -393,15 +393,16 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNoError:
         CNcbiDiag(diag_info, eDiag_Trace) << message;
         return;
-    case fEOF:         err = CSerialException::eEOF;         break;
+//    case fEOF:         err = CSerialException::eEOF;         break;
     default:
-    case fWriteError:  err = CSerialException::eIoError;     break;
-    case fFormatError: err = CSerialException::eFormatError; break;
-    case fOverflow:    err = CSerialException::eOverflow;    break;
-    case fInvalidData: err = CSerialException::eInvalidData; break;
-    case fIllegalCall: err = CSerialException::eIllegalCall; break;
-    case fFail:        err = CSerialException::eFail;        break;
-    case fNotOpen:     err = CSerialException::eNotOpen;     break;
+    case fWriteError:     err = CSerialException::eIoError;        break;
+//    case fFormatError: err = CSerialException::eFormatError; break;
+    case fOverflow:       err = CSerialException::eOverflow;       break;
+    case fInvalidData:    err = CSerialException::eInvalidData;    break;
+    case fIllegalCall:    err = CSerialException::eIllegalCall;    break;
+    case fFail:           err = CSerialException::eFail;           break;
+    case fNotOpen:        err = CSerialException::eNotOpen;        break;
+    case fNotImplemented: err = CSerialException::eNotImplemented; break;
     case fUnassigned:
         throw CUnassignedMember(diag_info,0,CUnassignedMember::eWrite,
                                 GetPosition()+": "+message);
@@ -1013,6 +1014,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.100  2005/04/27 16:52:56  vasilche
 * Use vector<Uint1> instead of inefficient vector<bool>.
 * Fixed warning on Sun WorkShop.

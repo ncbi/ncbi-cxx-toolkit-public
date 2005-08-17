@@ -337,24 +337,45 @@ public:
 
     // low level readers:
     enum EFailFlags {
+        /// No error
         fNoError       = 0,             eNoError     = fNoError,
+        /// End of file in the middle of reading an object
         fEOF           = 1 << 0,        eEOF         = fEOF,
+        /// An unknown error when reading the input file
         fReadError     = 1 << 1,        eReadError   = fReadError,
+        /// Input file formatting does not conform with specification
         fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        /// Data read is beyond the allowed limits
         fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        /// Input data is incorrect (e.g. invalid enum)
         fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        /// Illegal in a given context function call
         fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        /// Internal error, the real reason is unclear
         fFail          = 1 << 6,        eFail        = fFail,
+        /// No input file
         fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
-        fMissingValue  = 1 << 8,        eMissingValue= fMissingValue
+        /// Method is not implemented
+        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
+        /// Mandatory value was missing in the input.
+        /// This is the variant of fFormatError.
+        /// Normally stream throws an exception, but client can request
+        /// not to throw one; in this case this flag is set instead.
+        fMissingValue  = 1 << 9,        eMissingValue= fMissingValue,
+        /// Unknown value was present in the input.
+        /// This is the variant of fFormatError.
+        /// Normally stream throws an exception, but client can request
+        /// not to throw one; in this case this flag is set instead.
+        fUnknownValue  = 1 << 10,       eUnknownValue= fUnknownValue
     };
     typedef int TFailFlags;
 
     bool fail(void) const;
     TFailFlags GetFailFlags(void) const;
-    TFailFlags SetFailFlags(TFailFlags flags, const char* message);
+    TFailFlags SetFailFlags(TFailFlags flags, const char* message=0);
     TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
+    virtual bool EndOfData(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
     CNcbiStreamoff GetStreamOffset(void) const;
@@ -695,6 +716,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2005/08/17 18:17:03  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.109  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

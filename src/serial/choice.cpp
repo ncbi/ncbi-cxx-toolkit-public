@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.38  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -483,7 +487,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
 
     index = choiceType->GetIndex(objectPtr);
     if ( index == kInvalidMember )
-        out.ThrowError(out.fIllegalCall, "cannot write empty choice");
+        out.ThrowError(out.fInvalidData, "cannot write empty choice");
 
     variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());

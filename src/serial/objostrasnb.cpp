@@ -170,7 +170,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
         break;
     case eLengthValueFirst:
         if ( byte == 0 )
-            ThrowError(fFormatError, "first byte of length is zero");
+            ThrowError(fInvalidData, "first byte of length is zero");
         if ( --m_CurrentTagLengthSize == 0 ) {
             SetTagLength(byte);
         }
@@ -205,10 +205,10 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 #if CHECK_STREAM_INTEGRITY
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
-        ThrowError(fFormatError, "WriteBytes only allowed in DATA");
+        ThrowError(fIllegalCall, "WriteBytes only allowed in DATA");
     CNcbiStreamoff new_pos = m_CurrentPosition + size;
     if ( new_pos < m_CurrentPosition || new_pos > m_CurrentTagLimit )
-        ThrowError(fFormatError, "tag DATA overflow");
+        ThrowError(fOverflow, "tag DATA overflow");
     m_CurrentPosition = new_pos;
     if ( new_pos == m_CurrentTagLimit )
         EndTag();
@@ -245,7 +245,7 @@ void CObjectOStreamAsnBinary::WriteLongTag(ETagClass tag_class,
                                            TLongTag tag_value)
 {
     if ( tag_value <= 0 )
-        ThrowError(fFormatError, "negative tag number");
+        ThrowError(fInvalidData, "negative tag number");
     
     // long form
     WriteShortTag(tag_class, tag_constructed, eLongTag);
@@ -281,7 +281,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
 {
     const string& tag = typeInfo->GetName();
     if ( tag.empty() )
-        ThrowError(fFormatError, "empty tag string");
+        ThrowError(fInvalidData, "empty tag string");
 
     _ASSERT( tag[0] > eLongTag );
 
@@ -357,14 +357,14 @@ void CObjectOStreamAsnBinary::WriteNull(void)
 
 void CObjectOStreamAsnBinary::WriteAnyContentObject(const CAnyContentObject& )
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
+    ThrowError(fNotImplemented,
         "CObjectOStreamAsnBinary::WriteAnyContentObject: "
         "unable to write AnyContent object in ASN");
 }
 
 void CObjectOStreamAsnBinary::CopyAnyContentObject(CObjectIStream& )
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
+    ThrowError(fNotImplemented,
         "CObjectOStreamAsnBinary::CopyAnyContentObject: "
         "unable to copy AnyContent object in ASN");
 }
@@ -1120,6 +1120,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.96  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.95  2005/06/29 16:03:00  vasilche
 * WriteByte() becomes private as it's used only internally.
 * WriteBytesOf() made as member template to be able to access private methods.

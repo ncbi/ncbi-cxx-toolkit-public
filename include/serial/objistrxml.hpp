@@ -53,6 +53,7 @@ public:
     CObjectIStreamXml(void);
     ~CObjectIStreamXml(void);
 
+    virtual bool EndOfData(void);
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
@@ -257,6 +258,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/08/17 18:17:03  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.40  2005/07/07 18:23:33  gouriano
 * Optimized reading of AnyContent objects
 *

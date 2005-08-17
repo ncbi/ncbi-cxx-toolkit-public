@@ -92,7 +92,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
             binary = true;
             break;
         default:
-            NCBI_THROW(CSerialException,eFail,
+            NCBI_THROW(CSerialException,eNotImplemented,
                        "CObjectIStream::Open: unsupported format");
         }
         
@@ -130,7 +130,7 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
     default:
         break;
     }
-    NCBI_THROW(CSerialException,eFail,
+    NCBI_THROW(CSerialException,eNotImplemented,
                "CObjectIStream::Open: unsupported format");
 }
 
@@ -395,6 +395,22 @@ bool CObjectIStream::InGoodState(void)
     }
 }
 
+bool CObjectIStream::EndOfData(void)
+{
+    const TFailFlags failure =
+        fEOF | fReadError | fFormatError | fOverflow | fInvalidData |
+        fIllegalCall | fFail | fNotOpen | fNotImplemented;
+    if (GetFailFlags() & failure || m_Input.EndOfData()) {
+        return true;
+    }
+    try {
+        m_Input.PeekChar();
+    } catch (...) {
+        return true;
+    }
+    return false;
+}
+
 void CObjectIStream::Unended(const string& msg)
 {
     if ( InGoodState() )
@@ -566,16 +582,17 @@ void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNoError:
         CNcbiDiag(diag_info, eDiag_Trace) << message;
         return;
-    case fEOF:          err = CSerialException::eEOF;          break;
+    case fEOF:            err = CSerialException::eEOF;            break;
     default:
-    case fReadError:    err = CSerialException::eIoError;      break;
-    case fFormatError:  err = CSerialException::eFormatError;  break;
-    case fOverflow:     err = CSerialException::eOverflow;     break;
-    case fInvalidData:  err = CSerialException::eInvalidData;  break;
-    case fIllegalCall:  err = CSerialException::eIllegalCall;  break;
-    case fFail:         err = CSerialException::eFail;         break;
-    case fNotOpen:      err = CSerialException::eNotOpen;      break;
-    case fMissingValue: err = CSerialException::eMissingValue; break;
+    case fReadError:      err = CSerialException::eIoError;        break;
+    case fFormatError:    err = CSerialException::eFormatError;    break;
+    case fOverflow:       err = CSerialException::eOverflow;       break;
+    case fInvalidData:    err = CSerialException::eInvalidData;    break;
+    case fIllegalCall:    err = CSerialException::eIllegalCall;    break;
+    case fFail:           err = CSerialException::eFail;           break;
+    case fNotOpen:        err = CSerialException::eNotOpen;        break;
+    case fMissingValue:   err = CSerialException::eMissingValue;   break;
+    case fNotImplemented: err = CSerialException::eNotImplemented; break;
     }
     throw CSerialException(diag_info,0,err,GetPosition()+": "+message);
 }
@@ -726,6 +743,7 @@ void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
         ThrowError(fFormatError,
                    "member "+memberInfo->GetId().ToString()+" expected");
     } else {
+        SetFailFlags(fMissingValue);
         ERR_POST("member "+memberInfo->GetId().ToString()+" is missing");
     }
 }
@@ -733,7 +751,7 @@ void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
 void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
 {
     ThrowError(fFormatError,
-               "duplicated member: "+memberInfo->GetId().ToString());
+               "duplicate member: "+memberInfo->GetId().ToString());
 }
 
 void CObjectIStream::ReadSeparateObject(const CObjectInfo& object)
@@ -1541,6 +1559,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.137  2005/08/17 18:16:22  gouriano
+* Documented and classified FailFlags;
+* Added EndOfData method
+*
 * Revision 1.136  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

@@ -184,7 +184,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     int exp;
     // calculate exponent
     if ( sscanf(ePos + 1, "%d", &exp) != 1 )
-        ThrowError(fFail, "double value conversion error");
+        ThrowError(fInvalidData, "double value conversion error");
 
     // remove trailing zeroes
     int fractDigits = int(ePos - dotPos - 1);
@@ -221,14 +221,14 @@ void CObjectOStreamAsn::WriteNull(void)
 
 void CObjectOStreamAsn::WriteAnyContentObject(const CAnyContentObject& )
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
+    ThrowError(fNotImplemented,
         "CObjectOStreamAsn::WriteAnyContentObject: "
         "unable to write AnyContent object in ASN");
 }
 
 void CObjectOStreamAsn::CopyAnyContentObject(CObjectIStream& )
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
+    ThrowError(fNotImplemented,
         "CObjectOStreamAsn::CopyAnyContentObject: "
         "unable to copy AnyContent object in ASN");
 }
