@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/08/17 18:05:05  gouriano
+* Added EndOfData method
+*
 * Revision 1.35  2005/06/10 19:45:52  gouriano
 * Give access to SubSourceCollector
 *
@@ -273,6 +276,10 @@ public:
     CRef<CSubSourceCollector>& GetSubSourceCollector(void)
     {
         return m_Collector;
+    }
+    bool EndOfData(void) const
+    {
+        return m_Input->EndOfData();
     }
 
 protected:
