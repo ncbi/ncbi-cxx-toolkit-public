@@ -174,6 +174,10 @@ public:
     {
         return x_Intersects(r).second;
     }
+    bool  Contains (const TRange& r) const
+    {
+        return x_Contains(r).second;
+    }
     TThisType&  CombineWith (const TRange& r)
     {
         x_CombineWith(r);
@@ -250,6 +254,17 @@ protected:
         iterator it = lower_bound(begin_nc(), end_nc(), r.GetFrom(), p);
         bool b_intersects = it != end_nc()  &&  it->GetFrom() < r.GetToOpen();
         return make_pair(it, b_intersects);
+    }
+    pair<const_iterator, bool>    x_Contains(const TRange& r) const
+    {
+        PRangeLessPos<TRange, position_type>    p;
+        const_iterator it = lower_bound(begin(), end(), r.GetFrom(), p);
+        bool contains = false;
+        if (it != end()) {
+            contains = (it->GetFrom() <= r.GetFrom()  &&
+                        it->GetTo()   >= r.GetTo());
+        }
+        return make_pair(it, contains);
     }
    
     void    x_IntersectWith(const TRange& r)
@@ -369,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/17 15:28:23  dicuccio
+ * Added Contains()
+ *
  * Revision 1.7  2005/05/04 13:44:23  grichenk
  * Fixed problems with unsigned ranges starting at zero and special values.
  *
