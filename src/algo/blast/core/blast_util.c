@@ -785,7 +785,7 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding,
 Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
                             const BlastQueryInfo* query_info)
 {
-   Uint1* buffer,* seq,* tmp_seq;
+   Uint1* buffer,* seq = NULL,* tmp_seq;
    Int4 total_length, index, offset, i, context;
    Int4 length[CODON_LENGTH];
    

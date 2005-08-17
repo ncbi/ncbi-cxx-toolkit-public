@@ -126,7 +126,7 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 {
    BlastSeqLoc* loc;
    EDiscTemplateType template_type;
-   EDiscTemplateType second_template_type;
+   EDiscTemplateType second_template_type = eDiscTemplateContiguous;
    const Uint1 kNucMask = 0xfc;
    const Boolean kTwoTemplates = 
       (lookup_options->mb_template_type == eMBWordTwoTemplates);

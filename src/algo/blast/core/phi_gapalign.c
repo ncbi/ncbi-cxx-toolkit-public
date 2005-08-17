@@ -383,7 +383,7 @@ s_PHIGetLongPattern(Uint1 *seq, Int4 len, Int4 *start, Int4 *end,
     Int4 wordIndex; /*index over words in pattern*/
     Int4  i;  /*index over seq*/
     Int4 rightMaskOnly; /*rightmost bit that is 1 in the mask only*/
-    Int4 j; /*index over bits in a word*/
+    Int4 j = 0; /*index over bits in a word*/
     Boolean found = FALSE;  /*found match position yet*/
     SLongPatternItems* multiword_items = pattern_blk->multi_word_items;
     Int4 num_words = multiword_items->numWords;
@@ -445,7 +445,7 @@ s_PHIGetExtraLongPattern(Uint1 *seq, Int4 len, Int4 *hitArray,
     Int4  twiceHitsOneWord; /*Twice the number of hits against one
                               word of the pattern*/
     Int4  hitIndex; /*index over hits against one word*/
-    Int4 pos; /*keeps track of how many intermediate hits*/
+    Int4 pos = 0; /*keeps track of how many intermediate hits*/
     Int4 hitArray1[PHI_MAX_HIT];
     Int4 oneWordHitArray[MAX_HITS_IN_WORD]; /*hits for one word of 
                                             pattern representation*/
