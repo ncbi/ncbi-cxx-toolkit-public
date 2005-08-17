@@ -209,6 +209,8 @@ void CNetServiceClient::CreateSocket(const string& hostname,
         io_st = m_Sock->Connect(hostname, port, &m_Timeout, eOn);
         if (io_st != eIO_Success) {
             if (io_st == eIO_Unknown) {
+
+                m_Sock->Close();
                 
                 // most likely this is an indication we have too many 
                 // open ports on the client side 
@@ -296,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/17 14:28:41  kuznets
+ * Close socket if connect return unknown error
+ *
  * Revision 1.11  2005/07/27 18:13:03  kuznets
  * Added PrintServerOut()
  *
