@@ -194,7 +194,6 @@ void TestNetscheduleLB(const string&  queue)
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
 
 
-
     NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
 }
 
@@ -204,8 +203,9 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     cl.SetProgramVersion("test 1.0.0");
     
     CNetScheduleClient::SJobBatch jobs;
+    const kJobCount = 500000;
 
-    for (int i = 0; i < 1000000; ++i) {
+    for (int i = 0; i < kJobCount; ++i) {
         jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
     }
     
@@ -228,6 +228,37 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
         _ASSERT(it->job_id);
     }
 
+    NcbiCout << "Get Jobs with permanent connection... " << NcbiEndl;
+
+    // Fetch it back
+
+    cl.SetConnMode(CNetScheduleClient::eKeepConnection);
+    cl.ActivateRequestRateControl(false);
+    cl.SetCommunicationTimeout().sec = 20;
+
+    {{
+    unsigned cnt = 0;
+    string job_key, input;
+    string out = "DONE";
+
+    CStopWatch sw(true);
+
+    for (;1;++cnt) {
+        bool job_exists = cl.GetJob(&job_key, &input);
+        if (!job_exists) {
+            break;
+        }
+        cl.PutResult(job_key, 0, out);
+    }
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    double elapsed = sw.Elapsed();
+    double rate = cnt / elapsed;
+
+    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+    NcbiCout << "Jobs processed: " << cnt     << NcbiEndl;
+    NcbiCout << "Elapsed: "        << elapsed << " sec."      << NcbiEndl;
+    NcbiCout << "Rate: "           << rate    << " jobs/sec." << NcbiEndl;
+    }}
 }
 
 
@@ -243,7 +274,6 @@ int CTestNetScheduleStress::Run(void)
 //    TestRunTimeout(host, port, queue_name);
 //    TestNetscheduleLB(queue_name);
 //    TestBatchSubmit(host, port, queue_name);
-
 
 
     unsigned jcount = 10000;
@@ -476,6 +506,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/08/17 15:04:14  kuznets
+ * Batch submit modified to do perm connection fetch
+ *
  * Revision 1.14  2005/08/15 13:30:57  kuznets
  * + test for batch submission
  *
