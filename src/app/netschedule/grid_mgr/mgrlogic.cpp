@@ -127,9 +127,9 @@ public:
     using CNetScheduleClient::ReloadServerConfig;
     using CNetScheduleClient::GetQueueList;
     // using CNetScheduleClient::CheckConnect;
-    virtual void CheckConnect(const string& key)
+    virtual bool CheckConnect(const string& key)
     {
-        CNetScheduleClient::CheckConnect(key);
+        return CNetScheduleClient::CheckConnect(key);
     }
 };
 
@@ -338,6 +338,9 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/17 14:44:24  kuznets
+ * Reflected change in CheckConnect proto
+ *
  * Revision 1.7  2005/07/07 19:06:44  didenko
  * Added errors handling
  *
