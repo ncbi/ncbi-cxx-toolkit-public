@@ -77,9 +77,23 @@ struct CNetSchedule_Key
 /// @sa CNetServiceException, CNetScheduleException
 ///
 
-class NCBI_XCONNECT_EXPORT CNetScheduleClient : protected CNetServiceClient
+class NCBI_XCONNECT_EXPORT CNetScheduleClient : public CNetServiceClient
 {
 public:
+    /// Connection management options
+    enum EConnectionMode {
+        /// Close connection after each call (default). 
+        /// This mode frees server side resources, but reconnection can be
+        /// costly because of the network overhead
+        eCloseConnection,  
+
+        /// Keep connection open.
+        /// This mode occupies server side resources(session thread), 
+        /// use this mode very carefully
+        eKeepConnection    
+    };
+
+
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
     /// job key 
@@ -127,6 +141,17 @@ public:
     /// Return TRUE if request rate control is ON
     bool RequestRateControl() const { return m_RequestRateControl; }
 
+    /// Returns current connection mode
+    /// @sa SetConnMode 
+    EConnectionMode GetConnMode() const { return m_ConnMode; }
+
+    /// Set connection mode
+    /// @sa GetConnMode
+    void SetConnMode(EConnectionMode conn_mode) { m_ConnMode = conn_mode; }
+
+    /// Close the connection (use with eKeepConnection mode)
+    /// @sa SetConnMode
+    void CloseConnection();
 
     /// Set program version (like: MyProgram v. 1.2.3)
     ///
@@ -496,13 +521,21 @@ protected:
     string GetQueueList();
 
 protected:
-    virtual 
-    void CheckConnect(const string& key);
+
+    /// @return TRUE if actually reconnected
+    virtual bool CheckConnect(const string& key);
+
     bool IsError(const char* str);
 
     /// Adds trailing: "client\r\n queue\r\n COMMAND"
-    void MakeCommandPacket(string* out_str, 
-                           const string& cmd_str);
+    ///
+    /// @param add_prefix 
+    ///    when true function adds full "client-queue" prefix 
+    ///    (new connection established). 
+    ///
+    void MakeCommandPacket(string*       out_str, 
+                           const string& cmd_str,
+                           bool          add_prefix);
 
     /// check string for "OK:" prefix, throws an exception if "ERR:"
     void TrimPrefix(string* str);
@@ -512,7 +545,8 @@ protected:
 
     void CommandInitiate(const string& command, 
                          const string& job_key,
-                         string*       answer);
+                         string*       answer,
+                         bool          add_prefix);
 
     void ParseGetJobResponse(string*        job_key, 
                              string*        input, 
@@ -531,6 +565,11 @@ protected:
                           unsigned   wait_time,
                           unsigned short udp_port);
 
+    /// Try to read ENDF from the socket to check if connection is still alive
+    ///
+    /// @return TRUE if disconnected 
+    bool CheckConnExpired();
+
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
@@ -540,6 +579,7 @@ protected:
     bool              m_RequestRateControl;
     CNetSchedule_Key  m_JobKey;
     string            m_ProgramVersion;
+    EConnectionMode   m_ConnMode;
 };
 
 
@@ -640,8 +680,7 @@ public:
 
 
 protected:
-    virtual 
-    void CheckConnect(const string& key);
+    virtual bool CheckConnect(const string& key);
 
     bool NeedRebalance(time_t curr) const;
 
@@ -796,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/08/17 14:26:14  kuznets
+ * Added permanent connection mode
+ *
  * Revision 1.39  2005/08/15 13:27:40  kuznets
  * Implemented batch job submission
  *

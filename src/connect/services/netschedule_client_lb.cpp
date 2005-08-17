@@ -99,14 +99,13 @@ bool CNetScheduleClient_LB::NeedRebalance(time_t curr) const
     return false;
 }
 
-void CNetScheduleClient_LB::CheckConnect(const string& key)
+bool CNetScheduleClient_LB::CheckConnect(const string& key)
 {
     if (m_StickToHost || !key.empty()) { // restore connection to the specified host
-        TParent::CheckConnect(key);
-        return;
+        return TParent::CheckConnect(key);
     }
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-        return; // we are connected, nothing to do
+        return true; // we are connected, nothing to do
     } 
 
     time_t curr = time(0);
@@ -128,7 +127,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
         } // ITERATE
 
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-            return; // we are connected
+            return false; // we are connected
         } 
 
         string warn = "Failed to discover the service ";
@@ -138,12 +137,13 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
 
         CreateSocket("netschedule", 9051);
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-            return; // we are connected
+            return true; // we are connected
         } 
 
         NCBI_THROW(CNetServiceException,
                    eCommunicationError,
                    "Cannot connect to netschedule service " + m_LB_ServiceName);
+        return false;
     }
 
 
@@ -161,7 +161,7 @@ void CNetScheduleClient_LB::CheckConnect(const string& key)
             EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
                 if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-                    return; // we are connected
+                    return true; // we are connected
                 } 
             }
         } else {
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/17 14:27:38  kuznets
+ * Added permanent connection mode
+ *
  * Revision 1.15  2005/08/15 13:28:33  kuznets
  * Implemented batch job submission
  *
