@@ -338,7 +338,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
-                    col2 = (long long)i;
+                    col2 = (Int8)i;
                     bi->AddRow();
                 }
                 bi->Complete();
@@ -2537,6 +2537,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2005/08/17 20:07:40  ucko
+ * Fix previous revision to use Int8 rather than hardcoding long long,
+ * which is not always equivalent (or even necessarily defined).
+ *
  * Revision 1.33  2005/08/17 18:05:47  ssikorsk
  * Added initial tests for BulkInsert with INT and BIGINT datatypes
  *
