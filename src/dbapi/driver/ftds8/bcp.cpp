@@ -99,15 +99,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
-                Int8 v8 = val.Value();
-                v->precision= 18;
-                v->scale= 0;
-                if (longlong_to_numeric(v8, 18, v->array) == 0)
-                    return false;
-                r = bcp_bind(m_Cmd, (BYTE*) v, 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBNUMERIC, i + 1);
-                pb = (void*) (v + 1);
+                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1);
             }
             break;
             case eDB_Char: {
@@ -245,17 +238,10 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                DBNUMERIC* v = (DBNUMERIC*) pb;
-                v->precision= 18;
-                v->scale= 0;
-                Int8 v8 = val.Value();
-                if (longlong_to_numeric(v8, 18, v->array) == 0)
-                    return false;
-                r = bcp_colptr(m_Cmd, (BYTE*) v, i + 1)
+                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
                     == SUCCEED &&
                     bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
-                pb = (void*) (v + 1);
             }
             break;
             case eDB_Char: {
@@ -492,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/17 18:01:03  ssikorsk
+ * Bind Int8 as SYBINT8 (was DBNUMERIC)
+ *
  * Revision 1.8  2005/08/12 15:44:56  ssikorsk
  * Fixed bind data types for variable-sized data types
  *
