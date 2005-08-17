@@ -128,13 +128,16 @@ protected:
     class CSockGuard
     {
     public:
-        CSockGuard(CSocket& sock) : m_Sock(sock) {}
-        ~CSockGuard() { m_Sock.Close(); }
+        CSockGuard(CSocket& sock) : m_Sock(&sock) {}
+        CSockGuard(CSocket* sock) : m_Sock(sock) {}
+        ~CSockGuard() { if (m_Sock) m_Sock->Close(); }
+        /// Dismiss the guard (no disconnect)
+        void Forget() { m_Sock = 0; }
     private:
         CSockGuard(const CSockGuard&);
         CSockGuard& operator=(const CSockGuard&);
     private:
-        CSocket&    m_Sock;
+        CSocket*    m_Sock;
     };
 
 
@@ -190,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/17 14:25:47  kuznets
+ * CSockGuard added Forget()
+ *
  * Revision 1.7  2005/08/15 13:28:05  kuznets
  * Added protocol error
  *
