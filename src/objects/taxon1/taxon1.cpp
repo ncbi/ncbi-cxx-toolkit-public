@@ -1240,8 +1240,7 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
         } catch( exception& e ) {
             SetLastError( e.what() );
             fail_flags = m_pOut->GetFailFlags();
-            bNeedReconnect = (fail_flags & ( CObjectOStream::eEOF
-                                             |CObjectOStream::eWriteError
+            bNeedReconnect = (fail_flags & ( CObjectOStream::eWriteError
                                              |CObjectOStream::eOverflow
                                              |CObjectOStream::eFail
                                              |CObjectOStream::eNotOpen )
@@ -1946,6 +1945,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.31  2005/08/17 19:35:37  ucko
+ * CObjectOStream::eEOF no longer exists, so don't use it.
+ *
  * Revision 6.30  2005/08/04 11:58:14  ivanov
  * Use 'flag' version of NStr::StringToInt()
  *
