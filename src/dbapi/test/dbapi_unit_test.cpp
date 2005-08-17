@@ -147,15 +147,27 @@ CDBAPIUnitTest::TestInit(void)
     auto_stmt->ExecuteUpdate( sql );
     
     // Table for bulk insert ...
-    if ( m_args.GetServerName() != "MOZART" ) {
+    if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
         sql  = " CREATE TABLE #bulk_insert_table( \n";
-        // sql += "    id NUMERIC(18, 0) IDENTITY PRIMARY KEY, \n";
         sql += "    id INT PRIMARY KEY, \n";
-        sql += "    vc8000_field VARCHAR(8000) NOT NULL \n";
+        sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+        sql += "    int_field INT NULL, \n";
+        sql += "    bigint_field BIGINT NULL \n";
         sql += " )";
 
         // Create the table
         auto_stmt->ExecuteUpdate(sql);
+    } else
+    {
+        if ( m_args.GetServerName() != "MOZART" ) {
+            sql  = " CREATE TABLE #bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+            sql += " )";
+
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+        }
     }
 }
 
@@ -241,22 +253,134 @@ BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
     bi->AddRow();
 }
 
+void
+CDBAPIUnitTest::DumpResults(const auto_ptr<IStatement>& auto_stmt)
+{
+    while ( auto_stmt->HasMoreResults() ) {
+        if ( auto_stmt->HasRows() ) {
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+        }
+    }
+}
 
 void
 CDBAPIUnitTest::Bulk_Writing(void)
 {
     string sql;
     
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // INT, BIGINT
+    {
+        
+        enum { num_of_tests = 3 };
+        
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+        
+        // INT collumn ...
+        {
+            // Insert data ...
+            {
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
+                
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_Int);
+
+                bi->Bind(1, &col1);
+                bi->Bind(3, &col2);
+
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    col1 = i;
+                    col2 = i;
+                    bi->AddRow();
+                }
+                bi->Complete();
+            }
+            
+            // Retrieve data ...
+            {
+                sql  = " SELECT int_field FROM #bulk_insert_table";
+                sql += " ORDER BY id";
+                
+                auto_stmt->Execute( sql );
+                
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+                BOOST_CHECK( rs.get() );
+                
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    BOOST_CHECK( rs->Next() );
+                    Int4 value = rs->GetVariant(1).GetInt4();
+                    BOOST_CHECK_EQUAL( i, value );
+                }
+                
+                // Dump results ...
+                DumpResults( auto_stmt );
+            }
+        }
+        
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+        
+        // BIGINT collumn ...
+        {
+            // Insert data ...
+            {
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
+                
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_BigInt);
+
+                bi->Bind(1, &col1);
+                bi->Bind(4, &col2);
+
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    col1 = i;
+                    col2 = (long long)i;
+                    bi->AddRow();
+                }
+                bi->Complete();
+            }
+            
+            // Retrieve data ...
+            {
+                sql  = " SELECT bigint_field FROM #bulk_insert_table";
+                sql += " ORDER BY id";
+                
+                auto_stmt->Execute( sql );
+                
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+                BOOST_CHECK( rs.get() );
+                
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    BOOST_CHECK( rs->Next() );
+                    Int8 value = rs->GetVariant(1).GetInt8();
+                    BOOST_CHECK_EQUAL( i, value );
+                }
+                
+                // Dump results ...
+                DumpResults( auto_stmt );
+            }
+        }
+    }
+
     // Very first test ...
+    // VARCHAR ...
     {
         enum { num_of_tests = 7 };
+        
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
         
         // Insert data ...
         {
             auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 2) );
-
-            CVariant col1 = CVariant(eDB_Int);
-            CVariant col2(eDB_Int);
+            
+            CVariant col1(eDB_Int);
 
             bi->Bind(1, &col1);
 
@@ -292,8 +416,6 @@ CDBAPIUnitTest::Bulk_Writing(void)
         
         // Retrieve data ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
             sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
             sql += " ORDER BY id";
 
@@ -2415,6 +2537,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2005/08/17 18:05:47  ssikorsk
+ * Added initial tests for BulkInsert with INT and BIGINT datatypes
+ *
  * Revision 1.32  2005/08/15 18:56:56  ssikorsk
  * Added Test_SelectStmtXML to the test-suite
  *

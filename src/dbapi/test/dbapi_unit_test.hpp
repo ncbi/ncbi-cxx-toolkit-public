@@ -189,6 +189,7 @@ protected:
     {
         return m_TableName;
     }
+    static void DumpResults(const auto_ptr<IStatement>& auto_stmt);
     
 private:
     const CTestArguments m_args;
@@ -213,6 +214,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/08/17 18:05:47  ssikorsk
+ * Added initial tests for BulkInsert with INT and BIGINT datatypes
+ *
  * Revision 1.21  2005/08/15 18:56:56  ssikorsk
  * Added Test_SelectStmtXML to the test-suite
  *
