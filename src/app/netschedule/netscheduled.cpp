@@ -455,7 +455,12 @@ CNetScheduleServer::~CNetScheduleServer()
         switch (x)  { \
         case eIO_Success: \
             break; \
+        case eIO_Timeout: \
+            NCBI_THROW(CNetServiceException, \
+                       eTimeout, "Communication timeout error"); \
         default: \
+            NCBI_THROW(CNetServiceException, \
+              eCommunicationError, "Communication error"); \
             return; \
         }; 
 
@@ -489,6 +494,9 @@ void CNetScheduleServer::Process(SOCK sock)
             io_st = socket.ReadLine(tdata->request,
                                     sizeof(tdata->request),
                                     &n_read);
+            if (io_st == eIO_Closed || io_st == eIO_Timeout) {
+                return;
+            }
             JS_CHECK_IO_STATUS(io_st)
 
 
@@ -2252,6 +2260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/08/17 14:24:37  kuznets
+ * Improved err checking
+ *
  * Revision 1.51  2005/08/16 13:45:26  kuznets
  * Added monitoring for batch submissions
  *
