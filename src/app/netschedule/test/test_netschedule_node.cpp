@@ -89,6 +89,9 @@ void CTestNetScheduleNode::Init(void)
                              "udp_port",
                              "Incoming UDP port",
                              CArgDescriptions::eInteger);
+
+    arg_desc->AddFlag("kc", 
+                      "Keep permanent connection");
     
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -108,8 +111,32 @@ int CTestNetScheduleNode::Run(void)
     }
     NcbiCout << "Incoming UDP port:" << udp_port << NcbiEndl;
 
+    bool keep_conn = args["kc"];
+
 
     CNetScheduleClient cl(host, port, "node_test", queue_name);
+
+
+    // Configure permanent connection mode
+    //
+    if (keep_conn) {
+        // Permanent connection is used when we want to avoid 
+        // network latency overhead.
+        // It make sense to use permanent connection when jobs
+        // can be executed fast and there are many of them.
+        // 
+        // Every permanent holds server resources (thread per connection), 
+        // so this mode should be used in special cases, together
+        // with the careful server configuration
+
+        cl.SetConnMode(CNetScheduleClient::eKeepConnection);
+
+        // don't need rate control for permanent connection
+        cl.ActivateRequestRateControl(false);
+
+        // client side inactivity timeout
+        cl.SetCommunicationTimeout().sec = 20;
+    }
 
     string    job_key;
     string    input;
@@ -141,7 +168,11 @@ int CTestNetScheduleNode::Run(void)
     // specified UDP port on the machine.
 
     while (1) {
-        job_exists = cl.WaitJob(&job_key, &input, 180, udp_port);
+        if (keep_conn) {
+            job_exists = cl.GetJob(&job_key, &input);
+        } else {
+            job_exists = cl.WaitJob(&job_key, &input, 180, udp_port);
+        }
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
@@ -165,7 +196,7 @@ int CTestNetScheduleNode::Run(void)
             }
 
             // do no job here, just delay for a little while
-            SleepMilliSec(50);
+            //SleepMilliSec(50);
             string out = "DONE " + queue_name;
             cl.PutResult(job_key, 0, out);
 
@@ -209,6 +240,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/17 14:29:25  kuznets
+ * +Option for permanent connection
+ *
  * Revision 1.8  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
