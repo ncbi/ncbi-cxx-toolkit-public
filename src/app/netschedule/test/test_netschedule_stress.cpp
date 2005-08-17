@@ -203,7 +203,7 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     cl.SetProgramVersion("test 1.0.0");
     
     CNetScheduleClient::SJobBatch jobs;
-    const kJobCount = 500000;
+    const int kJobCount = 500000;
 
     for (int i = 0; i < kJobCount; ++i) {
         jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
@@ -506,6 +506,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/17 15:58:19  ucko
+ * Give kJobCount an explicit type, as not all compilers will simply
+ * assume int.
+ *
  * Revision 1.15  2005/08/17 15:04:14  kuznets
  * Batch submit modified to do perm connection fetch
  *
