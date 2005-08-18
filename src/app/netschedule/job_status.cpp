@@ -302,6 +302,7 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
                                    CNetScheduleClient::eRunning,
                                    CNetScheduleClient::ePending);
             m_LastPending = job_id;
+            break;
         } else {
             Return2PendingNoLock();
         }
@@ -335,6 +336,7 @@ unsigned int CNetScheduler_JobStatusTracker::BorrowPendingJob()
             m_BorrowedIds.set(job_id, true);
             m_LastPending = job_id;
             bv.set(job_id, false);
+            break;
         } else {
             Return2PendingNoLock();
         }
@@ -491,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/18 16:40:01  kuznets
+ * Fixed bug in GetPendingJob()
+ *
  * Revision 1.16  2005/08/18 16:24:32  kuznets
  * Optimized job retrival out o the bit matrix
  *
