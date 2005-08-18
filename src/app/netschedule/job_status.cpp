@@ -257,6 +257,8 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
                                     CNetScheduleClient::ePending,
                                     CNetScheduleClient::eReturned);
         if (old_status != CNetScheduleClient::eJobNotFound) {
+            TBVector& bv = *m_StatusStor[(int)status];
+            bv.set_bit(job_id, true);
             break;
         }
         old_status = IsStatusNoLock(job_id, 
@@ -552,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/08/18 19:25:02  kuznets
+ * Bug fix
+ *
  * Revision 1.19  2005/08/18 19:16:31  kuznets
  * Performance optimization
  *
