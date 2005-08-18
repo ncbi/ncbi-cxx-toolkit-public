@@ -96,12 +96,17 @@ namespace std {
 
     class string {
     public:
-        // Used by some functions (not members of this class)
+        // Used by some functions
         // System-dependent, but hopefully long will suffice
         typedef long size_type;  
                     
         string(void);
         string(const string& rhs);
+        string(const string& rhs, size_type idx);
+        string(const string& rhs, size_type idx, size_type num);
+        string(size_type num, char ch);
+        string(const char* cstr);
+        string(const char* cstr, size_type len);
         ~string();
 
         unsigned int size(void) const;
@@ -181,6 +186,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/18 22:01:49  jcherry
+ * Wrap more std::string constructors
+ *
  * Revision 1.3  2005/05/16 15:23:10  jcherry
  * Make return type of operator+= non-const; this is correct, and necessary
  * for proper behavior of += in Python
