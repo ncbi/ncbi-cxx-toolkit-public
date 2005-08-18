@@ -251,6 +251,22 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
         break;
 
     case CNetScheduleClient::eDone:
+
+        old_status = ClearIfStatusNoLock(job_id,
+                                    CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::ePending,
+                                    CNetScheduleClient::eReturned);
+        if (old_status != CNetScheduleClient::eJobNotFound) {
+            break;
+        }
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eCanceled,
+                                    CNetScheduleClient::eFailed);
+        if (IsCancelCode(old_status)) {
+            break;
+        }
+
+/*
         old_status = IsStatusNoLock(job_id, 
                                     CNetScheduleClient::eCanceled,
                                     CNetScheduleClient::eFailed);
@@ -265,7 +281,7 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
-
+*/
         ReportInvalidStatus(job_id, status, old_status);
         break;    
         
@@ -459,6 +475,45 @@ CNetScheduler_JobStatusTracker::IsStatusNoLock(unsigned int job_id,
     return CNetScheduleClient::eJobNotFound;
 }
 
+CNetScheduleClient::EJobStatus 
+CNetScheduler_JobStatusTracker::ClearIfStatusNoLock(unsigned int job_id, 
+    CNetScheduleClient::EJobStatus st1,
+    CNetScheduleClient::EJobStatus st2,
+    CNetScheduleClient::EJobStatus st3
+    ) const
+{
+    if (st1 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;
+    } else {
+        TBVector& bv = *m_StatusStor[(int)st1];
+        if (bv.set_bit(job_id, false)) {
+            return st1;
+        }
+    }
+
+    if (st2 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;
+    } else {
+        TBVector& bv = *m_StatusStor[(int)st2];
+        if (bv.set_bit(job_id, false)) {
+            return st2;
+        }
+    }
+
+    if (st3 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;
+    } else {
+        TBVector& bv = *m_StatusStor[(int)st3];
+        if (bv.set_bit(job_id, false)) {
+            return st3;
+        }
+    }
+
+
+    return CNetScheduleClient::eJobNotFound;
+}
+
+
 void 
 CNetScheduler_JobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
 {
@@ -497,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/08/18 19:16:31  kuznets
+ * Performance optimization
+ *
  * Revision 1.18  2005/08/18 18:04:47  kuznets
  * GetPendingJob() performance optimization
  *

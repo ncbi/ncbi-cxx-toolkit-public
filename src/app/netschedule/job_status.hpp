@@ -154,7 +154,17 @@ protected:
         CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
         CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
         ) const;
-    
+
+    /// Check if job is in specified status and clear it
+    /// @return -1 if no, status value otherwise
+    CNetScheduleClient::EJobStatus 
+    ClearIfStatusNoLock(unsigned int job_id, 
+        CNetScheduleClient::EJobStatus st1,
+        CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
+        CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
+        ) const;
+
+
     void ReportInvalidStatus(unsigned int    job_id, 
              CNetScheduleClient::EJobStatus  status,
              CNetScheduleClient::EJobStatus  old_status);
@@ -265,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/18 19:16:31  kuznets
+ * Performance optimization
+ *
  * Revision 1.9  2005/08/18 16:24:32  kuznets
  * Optimized job retrival out o the bit matrix
  *

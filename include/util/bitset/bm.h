@@ -905,12 +905,12 @@ public:
 
 
     /*!
-        \brief Sets bit n if val is true, clears bit n if val is false
-        \param n - index of the bit to be set
-        \param val - new bit value
-        \return *this
+       \brief Sets bit n.
+       \param n - index of the bit to be set. 
+       \param val - new bit value
+       \return  TRUE if bit was changed
     */
-    bvector<Alloc, MS>& set(bm::id_t n, bool val = true)
+    bool set_bit(bm::id_t n, bool val = true)
     {
         // calculate logical block number
         unsigned nblock = unsigned(n >>  bm::set_block_shift); 
@@ -919,11 +919,11 @@ public:
 
         bm::word_t* blk = 
             blockman_.check_allocate_block(nblock, 
-                                           val, 
+                                           val,
                                            get_new_blocks_strat(), 
                                            &block_type);
 
-        if (!blk) return *this;
+        if (!blk) return false;
 
         // calculate word number in block and bit
         unsigned nbit   = unsigned(n & bm::set_block_mask); 
@@ -946,6 +946,7 @@ public:
                 {
                     extend_gap_block(nblock, BMGAP_PTR(blk));
                 }
+                return true;
             }
         }
         else  // bit block
@@ -962,6 +963,7 @@ public:
                 {
                     *word |= mask; // set bit
                     BMCOUNT_INC;
+                    return true;
                 }
             }
             else
@@ -970,10 +972,23 @@ public:
                 {
                     *word &= ~mask; // clear bit
                     BMCOUNT_DEC;
+                    return true;
                 }
             }
         }
-        
+        return false;
+    }
+
+
+    /*!
+        \brief Sets bit n if val is true, clears bit n if val is false
+        \param n - index of the bit to be set
+        \param val - new bit value
+        \return *this
+    */
+    bvector<Alloc, MS>& set(bm::id_t n, bool val = true)
+    {
+        set_bit(n, val);
         return *this;
     }
 
@@ -1116,14 +1131,6 @@ public:
     }
 
 
-    /*!
-       \brief Sets bit n.
-       \param n - index of the bit to be set. 
-    */
-    void set_bit(bm::id_t n)
-    {
-        set(n, true);
-    }
     
     /*! Function erturns insert iterator for this bitvector */
     insert_iterator inserter()
