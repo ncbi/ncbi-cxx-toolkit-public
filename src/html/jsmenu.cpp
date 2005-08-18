@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <html/jsmenu.hpp>
+#include <html/htmlhelper.hpp>
 #include <html/html_exception.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -381,11 +382,14 @@ string CHTMLPopupMenu::ShowMenu(void) const
         }
     case eKurdinConf:
         return "PopUpMenu2_Set(" + m_Name + ");";
-    case eKurdinSide:
-        return "<script language=\"JavaScript1.2\">\n<!--\n" \
+    case eKurdinSide: {
+        const string& nl = CHTMLHelper::GetNL();
+        return "<script language=\"JavaScript1.2\">" + nl + "<!--" + nl +
                "document.write(SideMenuType == \"static\" ? " \
-               "SideMenuStaticHtml : SideMenuDynamicHtml);" \
-               "\n//-->\n</script>\n";
+               "SideMenuStaticHtml : SideMenuDynamicHtml);" + nl +
+               "//-->" + nl + "</script>" + nl;
+
+        }
     }
     _TROUBLE;
     return kEmptyStr;
@@ -410,8 +414,10 @@ CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
     if ( mode == eHTML ) {
         string items = GetCodeItems();
         if ( !items.empty() ) {
-            out << "<script language=\"JavaScript1.2\">\n<!--\n" 
-                << items << "//-->\n</script>\n";
+            const string& nl = CHTMLHelper::GetNL();
+            out << "<script language=\"JavaScript1.2\">" << nl 
+                << "<!--" << nl << items << "//-->" << nl
+                << "</script>" << nl;
         }
     }
     return out;
@@ -421,6 +427,7 @@ CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
 string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
 {
     string url, code;
+    const string& nl = CHTMLHelper::GetNL();
 
     switch (type) {
 
@@ -434,17 +441,17 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
 
     case eKurdinConf:
         {
-        code = "<script language=\"JavaScript1.2\">\n<!--\n";
-        code += "var PopUpMenu2_GlobalConfig = [\n";
-        code += "  [\"UseThisGlobalConfig\",\"yes\"]";
+        code = "<script language=\"JavaScript1.2\">" + nl+ "<!--" + nl;
+        code.append("var PopUpMenu2_GlobalConfig = [" + nl +
+                    "  [\"UseThisGlobalConfig\",\"yes\"]");
         // Write properties
         CHTMLPopupMenu::TAttributes* attrs = GetGlobalAttributesPtr();
         ITERATE (TAttributes, i, *attrs) {
             string name  = GetAttributeName(i->first, eKurdinConf);
             string value = i->second;
-            code += ",\n  [\"" + name + "\",\"" + value + "\"]";
+            code.append("," + nl + "  [\"" + name + "\",\"" + value + "\"]");
         }
-        code += "\n]\n//-->\n</script>\n";
+        code.append(nl + "]" + nl + "//-->" + nl + "</script>" + nl);
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinConf :
                menu_lib_url;
         break;
@@ -454,12 +461,12 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide :
                menu_lib_url;
         code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
-               kJSMenuDefaultURL_KurdinSideCSS + "\">\n"; 
+               kJSMenuDefaultURL_KurdinSideCSS + "\">" + nl; 
         break;
     }
     if ( !url.empty() ) {
-        code += "<script language=\"JavaScript1.2\" src=\"" + url +
-            "\"></script>\n";
+        code.append("<script language=\"JavaScript1.2\" src=\"" + url +
+                    "\"></script>" + nl);
     }
     return code;
 }
@@ -471,102 +478,110 @@ string CHTMLPopupMenu::GetCodeBody(EType type, bool use_dyn_menu)
         return kEmptyStr;
     }
     string use_dm = use_dyn_menu ? "true" : "false";
-    return "<script language=\"JavaScript1.2\">\n"
-        "<!--\nfunction onLoad() {\n"
-        "window.useDynamicMenu = " + use_dm + ";\n"
-        "window.defaultjsmenu = new Menu();\n"
-        "defaultjsmenu.addMenuSeparator();\n"
-        "defaultjsmenu.writeMenus();\n"
-        "}\n"
-        "// For IE & NS6\nif (!document.layers) onLoad();\n//-->\n</script>\n";
+    const string& nl = CHTMLHelper::GetNL();
+    return "<script language=\"JavaScript1.2\">" + nl +
+           "<!--" + nl + "function onLoad() {" + nl +
+           "  window.useDynamicMenu = " + use_dm + ";" + nl + 
+           "  window.defaultjsmenu = new Menu();" + nl +
+           "  defaultjsmenu.addMenuSeparator();" + nl +
+           "  defaultjsmenu.writeMenus();" + nl +
+           "}" + nl +
+           "// For IE & NS6" + nl + 
+           "if (!document.layers) onLoad();"  + nl +
+           "//-->" + nl +
+           "</script>" + nl;
 }
 
 
 string CHTMLPopupMenu::GetCodeItems(void) const
 {
     string code;
+    const string& nl = CHTMLHelper::GetNL();
+
     switch (m_Type) {
     case eSmith: 
         {
-            code = "window." + m_Name + " = new Menu();\n";
+            code = "window." + m_Name + " = new Menu();" + nl;
             // Write menu items
             ITERATE (TItems, i, m_Items) {
                 if ( (i->title).empty() ) {
-                    code += m_Name + ".addMenuSeparator();\n";
+                    code.append(m_Name + ".addMenuSeparator();" + nl);
                 }
                 else {
-                    code += m_Name + ".addMenuItem(\"" +
-                        i->title     + "\",\""  +
-                        i->action    + "\",\""  +
-                        i->color     + "\",\""  +
-                        i->mouseover + "\",\""  +
-                        i->mouseout  + "\");\n";
+                    code.append(m_Name + ".addMenuItem(\"" +
+                                i->title     + "\",\""  +
+                                i->action    + "\",\""  +
+                                i->color     + "\",\""  +
+                                i->mouseover + "\",\""  +
+                                i->mouseout  + "\");" + nl);
                 }
             }
             // Write properties
             ITERATE (TAttributes, i, m_Attrs) {
                 string name  = GetAttributeName(i->first);
                 string value = i->second;
-                code += m_Name + "." + name + " = \"" + value + "\";\n";
+                code.append(m_Name + "." + name + " = \"" + value + "\";" + nl);
             }
         }
         break;
 
     case eKurdin: 
         {
-            code = "var " + m_Name + " = [\n";
+            code = "var " + m_Name + " = [" + nl;
             // Write menu items
             ITERATE (TItems, i, m_Items) {
                 if ( i != m_Items.begin()) {
-                    code += ",\n";
+                    code.append("," + nl);
                 }
-                code += "[\"" +
-                    i->title     + "\",\""  +
-                    i->action    + "\",\""  +
-                    i->mouseover + "\",\""  +
-                    i->mouseout  + "\"]";
+                code.append("  [\"" +
+                            i->title     + "\",\""  +
+                            i->action    + "\",\""  +
+                            i->mouseover + "\",\""  +
+                            i->mouseout  + "\"]");
             }
-            code += "\n]\n";
+            code.append(nl + "]" + nl);
         }
         break;
 
     case eKurdinConf:
         {
             if ( m_ConfigName == m_Name ) {
-                code += "var PopUpMenu2_LocalConfig_" + m_Name + " = [\n";
+                code.append("var PopUpMenu2_LocalConfig_" +
+                            m_Name + " = [" + nl);
                 // If local config is disabled
                 if ( m_DisableLocalConfig ) {
-                    code += "  [\"UseThisLocalConfig\",\"no\"]";
+                    code.append("  [\"UseThisLocalConfig\",\"no\"]");
                 }
                 // Write properties
                 ITERATE (TAttributes, i, m_Attrs) {
                     if ( m_DisableLocalConfig  ||  i != m_Attrs.begin() ) {
-                        code += ",\n";
+                        code.append("," + nl);
                     }
                     string name  = GetAttributeName(i->first);
                     string value = i->second;
-                    code += "  [\"" + name + "\",\"" + value + "\"]";
+                    code.append("  [\"" + name + "\",\"" + value + "\"]");
                 }
-                code += "\n]\n";
+                code.append(nl + "]" + nl);
             }
             // Write menu only if it have items
             if ( m_Items.size() ) {
-                code += "var " + m_Name + " = [\n";
+                code.append("var " + m_Name + " = [" + nl);
                 if ( !m_ConfigName.empty() ) {
-                    code += "  [\"UseLocalConfig\",\"" + m_ConfigName + "\",\"\",\"\"]";
+                    code.append("  [\"UseLocalConfig\",\"" + 
+                                m_ConfigName + "\",\"\",\"\"]");
                 }
                 // Write menu items
                 ITERATE (TItems, i, m_Items) {
                     if ( !m_ConfigName.empty()  ||  i != m_Items.begin()) {
-                        code += ",\n";
+                        code.append("," + nl);
                     }
-                    code += "  [\"" +
-                        i->title     + "\",\""  +
-                        i->action    + "\",\""  +
-                        i->mouseover + "\",\""  +
-                        i->mouseout  + "\"]";
+                    code.append("  [\"" +
+                                i->title     + "\",\""  +
+                                i->action    + "\",\""  +
+                                i->mouseover + "\",\""  +
+                                i->mouseout  + "\"]");
                 }
-                code += "\n]\n";
+                code.append(nl + "]" + nl);
             }
         }
         break;
@@ -574,7 +589,7 @@ string CHTMLPopupMenu::GetCodeItems(void) const
     case eKurdinSide:
         {
             // Menu name always is "SideMenuParams"
-            code = "var SideMenuParams = [\n";
+            code = "var SideMenuParams = [" + nl;
             // Menu configuration
             string disable_hide = GetAttributeValue(eHTML_PM_disableHide);
             string menu_type;
@@ -587,15 +602,16 @@ string CHTMLPopupMenu::GetCodeItems(void) const
             string width       = GetAttributeValue(eHTML_PM_menuWidth);
             string peep_offset = GetAttributeValue(eHTML_PM_peepOffset);
             string top_offset  = GetAttributeValue(eHTML_PM_topOffset);
-            code += "[\"\",\"" + menu_type + "\",\"\",\"" + width + "\",\"" +
-                peep_offset + "\",\"" + top_offset + "\",\"\",\"\"]";
+            code.append("[\"\",\"" + menu_type + "\",\"\",\"" + width +
+                        "\",\"" + peep_offset + "\",\"" + top_offset +
+                        "\",\"\",\"\"]");
             // Write menu items
             ITERATE (TItems, i, m_Items) {
-                code += ",\n[\"" +
-                    i->title     + "\",\""  +
-                    i->action    + "\",\"\",\"\"]";
+                code.append("," + nl + "[\"" +
+                            i->title + "\",\""  +
+                            i->action + "\",\"\",\"\"]");
             }
-            code += "\n]\n";
+            code.append(nl + "]" + nl);
         }
         break;
     }
@@ -610,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/08/18 14:16:47  ivanov
+ * Use CHTMLHelper::GetNL() for EOL instead of '\n'
+ *
  * Revision 1.33  2005/05/09 11:28:15  ivanov
  * HideMenu(): moved adding "return false;" to CHTMLNode::AttachPopupMenu()
  *
