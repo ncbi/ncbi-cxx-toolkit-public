@@ -182,6 +182,8 @@ CAlnMixMerger::x_Merge()
 
     first_refseq = true; // mark the first loop
 
+    x_SetTaskTotal(m_Matches.size());
+
     while (true) {
         // reached the end?
         if (first_refseq ?
@@ -271,7 +273,7 @@ CAlnMixMerger::x_Merge()
 
         // save the match info into the segments map
         if (seq1) {
-            m_MatchIdx++;
+            x_SetTaskCompleted(m_MatchIdx++);
 
             // order the match
             match->m_AlnSeq1 = seq1;
@@ -797,6 +799,8 @@ CAlnMixMerger::x_Merge()
             }
         }
     }
+    x_SetTaskCompleted(m_MatchIdx);
+    
     m_AlnMixSequences->BuildRows();
     m_AlnMixSegments->Build(m_MergeFlags & fGapJoin,
                             m_MergeFlags & fMinGap);
@@ -1143,6 +1147,9 @@ CAlnMixMerger::x_CreateDenseg()
     CDense_seg::TStrands& strands = m_DS->SetStrands();
     CDense_seg::TLens&    lens    = m_DS->SetLens();
 
+    x_SetTaskName("Building");
+    x_SetTaskTotal(numsegs);
+
     ids.resize(numrows);
     lens.resize(numsegs);
     starts.resize(num, -1);
@@ -1181,6 +1188,7 @@ CAlnMixMerger::x_CreateDenseg()
 
         // next segment
         numseg++; offset += numrows;
+        x_SetTaskCompleted(numseg);
     }
 
     // widths
@@ -1243,6 +1251,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/08/18 17:04:16  todorov
+* Added progress feedback.
+*
 * Revision 1.10  2005/08/10 19:47:16  todorov
 * Delegated truncation to CDiagRangeCollection.
 *
@@ -1274,7 +1285,7 @@ END_NCBI_SCOPE
 * Renamed iterators to improve readability.
 *
 * Revision 1.3  2005/06/23 18:00:50  todorov
-* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
+* Abstracted sequence fetcthing in CAlnMixSeq::GeSeqString
 *
 * Revision 1.2  2005/03/10 19:33:00  todorov
 * Moved a few routines out of the merger to their corresponding classes

@@ -251,6 +251,7 @@ CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
 void
 CAlnMix::Merge(TMergeFlags flags)
 {
+    x_SetTaskName("Sorting");
     if (flags & fSortSeqsByScore) {
         if (flags & fSortInputByScore) {
             m_AlnMixSequences->SortByChainScore();
@@ -263,6 +264,8 @@ CAlnMix::Merge(TMergeFlags flags)
     } else {
         m_AlnMixMatches->SortByScore();
     }
+    x_SetTaskName("Merging");
+    m_AlnMixMerger->SetTaskProgressCallback(x_GetTaskProgressCallback());
     m_AlnMixMerger->Merge(flags);
 }
 
@@ -288,6 +291,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.124  2005/08/18 17:04:39  todorov
+* Added progress feedback.
+*
 * Revision 1.123  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *
