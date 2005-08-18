@@ -1119,7 +1119,7 @@ CScope_Impl::x_FindBioseq_Info(const CSeq_id_Handle& id,
     if ( info ) {
         ret = x_InitBioseq_Info(*info, get_flag, match);
         if ( ret ) {
-            _ASSERT(&ret->x_GetScopeImpl() == this);
+            _ASSERT(!ret->HasBioseq() || &ret->x_GetScopeImpl() == this);
         }
     }
     return ret;
@@ -1867,19 +1867,23 @@ void CScope_Impl::x_PopulateBioseq_HandleSet(const CSeq_entry_Handle& seh,
 
 CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 {
+    TIds ret;
     TReadLockGuard rguard(m_ConfLock);
     SSeqMatch_Scope match;
     CRef<CBioseq_ScopeInfo> info =
         x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
-    if ( info  &&  info->HasBioseq() ) {
-        return info->GetIds();
+    if ( info ) {
+        if ( info->HasBioseq() ) {
+            ret = info->GetIds();
+        }
     }
-    // Unknown bioseq, try to find in data sources
-    TIds ret;
-    for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->GetDataSource().GetIds(idh, ret);
-        if ( !ret.empty() ) {
-            return ret;
+    else {
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            it->GetDataSource().GetIds(idh, ret);
+            if ( !ret.empty() ) {
+                break;
+            }
         }
     }
     return ret;
