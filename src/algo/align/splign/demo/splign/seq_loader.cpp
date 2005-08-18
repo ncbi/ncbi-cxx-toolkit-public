@@ -60,7 +60,7 @@ static const size_t g_sizeof_endl = strlen(Endl());
 
 
 #define THROW_FATAL(exception_class, err_code, message) \
-{ exception_class e NCBI_EXCEPTION(exception_class, err_code, message); \
+{ exception_class e = NCBI_EXCEPTION(exception_class, err_code, message); \
   e.SetSeverity(eDiag_Fatal); throw e; }
 
 
@@ -392,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/08/18 17:25:48  ucko
+ * Fix typo in THROW_FATAL.
+ *
  * Revision 1.21  2005/08/18 15:11:16  kapustin
  * Use fatal severety to report missing IDs
  *
