@@ -198,6 +198,12 @@ CAlnMixMerger::x_Merge()
             NON_CONST_ITERATE (TSeqs, it, m_Seqs){
                 if ( !((*it)->m_MatchList.empty())  &&
                      (*it)->m_RefBy == refseq) {
+                    if (refseq == *it) {
+                        NCBI_THROW(CAlnException, eMergeFailure,
+                                   "CAlnMixMerger::x_Merge(): "
+                                   "Infinitue loop detected "
+                                   "while searching for a connected candidate.");
+                    }
                     refseq = *it;
                     break;
                 }
@@ -207,6 +213,12 @@ CAlnMixMerger::x_Merge()
                 // continue with the highest scoring candidate
                 NON_CONST_ITERATE (TSeqs, it, m_Seqs){
                     if ( !((*it)->m_MatchList.empty()) ) {
+                        if (refseq == *it) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMixMerger::x_Merge(): "
+                                       "Infinitue loop detected "
+                                       "while searching for a new candidate.");
+                        }
                         refseq = *it;
                         break;
                     }
@@ -275,6 +287,13 @@ CAlnMixMerger::x_Merge()
         if (seq1) {
             x_SetTaskCompleted(m_MatchIdx++);
 
+            // this match is used, erase from seq1 list
+            if ( !first_refseq ) {
+                if ( !seq1->m_MatchList.empty() ) {
+                    seq1->m_MatchList.erase(match_list_iter1);
+                }
+            }
+
             // order the match
             match->m_AlnSeq1 = seq1;
             match->m_Start1 = start1;
@@ -332,13 +351,6 @@ CAlnMixMerger::x_Merge()
                     match_list_iter2 = match->m_MatchIter2;
                     curr_len = len = match->m_Len;
                 }}
-            }
-
-            // this match is used, erase from seq1 list
-            if ( !first_refseq ) {
-                if ( !seq1->m_MatchList.empty() ) {
-                    seq1->m_MatchList.erase(match_list_iter1);
-                }
             }
 
             // if a subject sequence place it in the proper row
@@ -1251,6 +1263,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/08/18 19:37:29  todorov
+* Fixed a matches iteration problem that was causing an infinite loop:
+* m_MatchList was not being properly shrinked due to sequence reference
+* moved to a child sequence because of mismatching frame.  Added two
+* checks for infinite loop on iterations.
+*
 * Revision 1.11  2005/08/18 17:04:16  todorov
 * Added progress feedback.
 *
