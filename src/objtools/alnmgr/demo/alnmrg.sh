@@ -97,6 +97,9 @@ test2 best_reciprocal_hits "-queryseqmergeonly t -truncateoverlaps t -noobjmgr t
 test1 slave_repeated_insert "-noobjmgr t" "slave repeated insert"
 
 
+test2 match_iter "-noobjmgr t" "proper match iteration"
+
+
 # clean
 rm $tmp_out
 
