@@ -1455,6 +1455,12 @@ public:
         return (++prev == bm::id_max) ? 0 : check_or_next(prev);
     }
 
+    bm::id_t extract_next(bm::id_t prev)
+    {
+        return (++prev == bm::id_max) ? 0 : check_or_next_extract(prev);
+    }
+
+
     /*!
        @brief Calculates bitvector statistics.
 
@@ -1824,14 +1830,16 @@ private:
                     if (IS_FULL_BLOCK(block)) return prev;
                     if (BM_IS_GAP(blockman_, block, nblock))
                     {
-                        if (gap_find_in_block(BMGAP_PTR(block), nbit, &prev))
+                        if (bm::gap_find_in_block(BMGAP_PTR(block),
+                                                  nbit,
+                                                  &prev))
                         {
                             return prev;
                         }
                     }
                     else
                     {
-                        if (bit_find_in_block(block, nbit, &prev)) 
+                        if (bm::bit_find_in_block(block, nbit, &prev)) 
                         {
                             return prev;
                         }
@@ -1850,6 +1858,81 @@ private:
         return 0;
     }
     
+    /// check if specified bit is 1, and set it to 0
+    /// if specified bit is 0, scan for the next 1 and returns it
+    /// if no 1 found returns 0
+    bm::id_t check_or_next_extract(bm::id_t prev)
+    {
+        for (;;)
+        {
+            unsigned nblock = unsigned(prev >> bm::set_block_shift); 
+            if (nblock >= bm::set_total_blocks) break;
+
+            if (blockman_.is_subblock_null(nblock >> bm::set_array_shift))
+            {
+                prev += (bm::set_blkblk_mask + 1) -
+                              (prev & bm::set_blkblk_mask);
+            }
+            else
+            {
+                unsigned nbit = unsigned(prev & bm::set_block_mask);
+
+                bm::word_t* blk = blockman_.get_block(nblock);
+    
+                if (blk)
+                {
+                    if (IS_FULL_BLOCK(blk))
+                    {
+                        set(prev, false);
+                        return prev;
+                    }
+                    if (BM_IS_GAP(blockman_, blk, nblock))
+                    {
+                        unsigned is_set;
+                        unsigned new_block_len = 
+                            gap_set_value(0, BMGAP_PTR(blk), nbit, &is_set);
+                        if (is_set) {
+                            BMCOUNT_DEC
+                            unsigned threshold = 
+                              bm::gap_limit(BMGAP_PTR(blk), blockman_.glen());
+                            if (new_block_len > threshold) 
+                            {
+                                extend_gap_block(nblock, BMGAP_PTR(blk));
+                            }
+                            return prev;
+                        }
+                    }
+                    else // bit block
+                    {
+                        if (bm::bit_find_in_block(blk, nbit, &prev)) 
+                        {
+                            BMCOUNT_DEC
+
+                            unsigned nbit = 
+                                unsigned(prev & bm::set_block_mask); 
+                            unsigned nword = 
+                                unsigned(nbit >> bm::set_word_shift);
+                            nbit &= bm::set_word_mask;
+                            bm::word_t* word = blk + nword;
+                            bm::word_t  mask = ((bm::word_t)1) << nbit;
+                            *word &= ~mask;
+
+                            return prev;
+                        }
+                    }
+                }
+                else
+                {
+                    prev += (bm::set_block_mask + 1) - 
+                                (prev & bm::set_block_mask);
+                }
+
+            }
+            if (!prev) break;
+        }
+
+        return 0;
+    }
 
     void combine_operation(const bm::bvector<Alloc, MS>& bvect, 
                            bm::operation                 opcode)
