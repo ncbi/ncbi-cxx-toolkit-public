@@ -155,12 +155,12 @@ protected:
         CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
         ) const;
     
-    void ReportInvalidStatus(unsigned int job_id, 
+    void ReportInvalidStatus(unsigned int    job_id, 
              CNetScheduleClient::EJobStatus  status,
              CNetScheduleClient::EJobStatus  old_status);
     void x_SetClearStatusNoLock(unsigned int job_id,
-             CNetScheduleClient::EJobStatus          status,
-             CNetScheduleClient::EJobStatus          old_status);
+             CNetScheduleClient::EJobStatus  status,
+             CNetScheduleClient::EJobStatus  old_status);
 
     void Return2PendingNoLock();
 
@@ -172,7 +172,10 @@ private:
 
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
-    TBVector                m_BorrowedIds; ///< Pending Ids extracted out
+    /// Pending Ids extracted out
+    TBVector                m_BorrowedIds; 
+    /// Last pending id
+    bm::id_t                m_LastPending;
 };
 
 
@@ -262,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/08/18 16:24:32  kuznets
+ * Optimized job retrival out o the bit matrix
+ *
  * Revision 1.8  2005/08/15 13:29:50  kuznets
  * Implemented batch job submission
  *

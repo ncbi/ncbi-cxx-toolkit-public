@@ -37,7 +37,8 @@
 BEGIN_NCBI_SCOPE
 
 CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
- : m_BorrowedIds(bm::BM_GAP)
+ : m_BorrowedIds(bm::BM_GAP),
+   m_LastPending(0)
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
         bm::bvector<>* bv = new bm::bvector<>();
@@ -109,6 +110,7 @@ void CNetScheduler_JobStatusTracker::Return2PendingNoLock()
     bv_pen |= bv_ret;
     bv_ret.clear();
     bv_pen.count();
+    m_LastPending = 0;
 }
 
 
@@ -154,6 +156,11 @@ CNetScheduler_JobStatusTracker::SetExactStatusNoLock(unsigned int job_id,
 {
     TBVector& bv = *m_StatusStor[(int)status];
     bv.set(job_id, set_clear);
+
+    if ((status == CNetScheduleClient::ePending) && 
+        (job_id < m_LastPending)) {
+        m_LastPending = job_id - 1;
+    }
 }
 
 
@@ -167,15 +174,15 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
 
     switch (status) {
 
-    case CNetScheduleClient::ePending:        
+    case CNetScheduleClient::ePending:
         old_status = GetStatusNoLock(job_id);
-        if ((old_status == CNetScheduleClient::eJobNotFound) // new job
-            ||
-            (old_status == CNetScheduleClient::eReturned)
-            ||
-            (old_status == CNetScheduleClient::eRunning)
-            ) {
+        if (old_status == CNetScheduleClient::eJobNotFound) { // new job
             SetExactStatusNoLock(job_id, status, true);
+            break;
+        }
+        if ((old_status == CNetScheduleClient::eReturned) ||
+            (old_status == CNetScheduleClient::eRunning)) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
         ReportInvalidStatus(job_id, status, old_status);
@@ -251,8 +258,8 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
             break;
         }
         old_status = IsStatusNoLock(job_id,
-                                    CNetScheduleClient::ePending,
                                     CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::ePending,
                                     CNetScheduleClient::eReturned);
         if ((int)old_status >= 0) {
             x_SetClearStatusNoLock(job_id, status, old_status);
@@ -285,10 +292,20 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
     const TBVector& bv = 
         *m_StatusStor[(int)CNetScheduleClient::ePending];
 
-    unsigned int job_id = 0;
+    bm::id_t job_id;
     CWriteLockGuard guard(m_Lock);
 
     for (int i = 0; i < 2; ++i) {
+        job_id = bv.get_next(m_LastPending);
+        if (job_id) {
+            x_SetClearStatusNoLock(job_id,
+                                   CNetScheduleClient::eRunning,
+                                   CNetScheduleClient::ePending);
+            m_LastPending = job_id;
+        } else {
+            Return2PendingNoLock();
+        }
+/*
         if (bv.any()) {
             job_id = bv.get_first();
             if (job_id) {
@@ -299,19 +316,29 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
             }
         }        
         Return2PendingNoLock();
+*/
     }
     return job_id;
 }
 
 unsigned int CNetScheduler_JobStatusTracker::BorrowPendingJob()
 {
-    const TBVector& bv = 
+    TBVector& bv = 
         *m_StatusStor[(int)CNetScheduleClient::ePending];
 
-    unsigned int job_id = 0;
+    bm::id_t job_id;
     CWriteLockGuard guard(m_Lock);
 
     for (int i = 0; i < 2; ++i) {
+        job_id = bv.get_next(m_LastPending);
+        if (job_id) {
+            m_BorrowedIds.set(job_id, true);
+            m_LastPending = job_id;
+            bv.set(job_id, false);
+        } else {
+            Return2PendingNoLock();
+        }
+/*
         if (bv.any()) {
             job_id = bv.get_first();
             if (job_id) {
@@ -320,6 +347,7 @@ unsigned int CNetScheduler_JobStatusTracker::BorrowPendingJob()
             }
         }        
         Return2PendingNoLock();
+*/
     }
     return job_id;
 }
@@ -463,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/18 16:24:32  kuznets
+ * Optimized job retrival out o the bit matrix
+ *
  * Revision 1.15  2005/08/15 13:29:46  kuznets
  * Implemented batch job submission
  *

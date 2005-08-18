@@ -270,7 +270,7 @@ struct SLockedQueue
     CFastMutex                   rec_dump_lock;
     bool                         rec_dump_flag;
 
-    mutable bool                 lb_flag;
+    mutable bool                 lb_flag;  ///< Load balancing flag
     CNSLB_Coordinator*           lb_coordinator;
 
     ENSLB_RunDelayType           lb_stall_delay_type;
@@ -438,9 +438,11 @@ public:
         void JobFailed(unsigned int  job_id,
                        const string& err_msg);
 
+        /// Get job with load balancing
         void GetJobLB(unsigned int   worker_node,
                       unsigned int*  job_id, 
                       char*          input);
+
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input);
@@ -645,6 +647,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/08/18 16:24:32  kuznets
+ * Optimized job retrival out o the bit matrix
+ *
  * Revision 1.31  2005/08/15 13:29:50  kuznets
  * Implemented batch job submission
  *
