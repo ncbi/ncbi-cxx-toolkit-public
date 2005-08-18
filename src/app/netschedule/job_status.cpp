@@ -289,18 +289,22 @@ CNetScheduler_JobStatusTracker::AddPendingBatch(
 
 unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
 {
-    const TBVector& bv = 
+    TBVector& bv = 
         *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bm::id_t job_id;
     CWriteLockGuard guard(m_Lock);
 
     for (int i = 0; i < 2; ++i) {
-        job_id = bv.get_next(m_LastPending);
+        job_id = bv.extract_next(m_LastPending);
         if (job_id) {
+            TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eRunning];
+            bv2.set(job_id, true);
+/*
             x_SetClearStatusNoLock(job_id,
                                    CNetScheduleClient::eRunning,
                                    CNetScheduleClient::ePending);
+*/
             m_LastPending = job_id;
             break;
         } else {
@@ -493,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/18 18:04:47  kuznets
+ * GetPendingJob() performance optimization
+ *
  * Revision 1.17  2005/08/18 16:40:01  kuznets
  * Fixed bug in GetPendingJob()
  *
