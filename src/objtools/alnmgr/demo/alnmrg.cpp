@@ -80,6 +80,33 @@ private:
     CRef<CAlnMix>                m_Mix; // must appear AFTER m_ObjMgr!
 };
 
+
+class CAlnMrgTaskProgressCallback :
+    public CObject,
+    public ITaskProgressCallback
+{
+public:
+    virtual void SetTaskName      (const string& name)
+    {
+        cerr << name << "..." << endl;
+    };
+    virtual void SetTaskCompleted (int completed)
+    {
+        cerr << completed << " out of " << m_Total << endl;
+    }
+    virtual void SetTaskTotal     (int total)
+    {
+        m_Total = total;
+    }
+    virtual bool InterruptTask    ()
+    {
+        return false;
+    }
+private:
+    int m_Total;
+};
+
+
 void CAlnMrgApp::Init(void)
 {
     // Create command-line argument descriptions class
@@ -222,6 +249,10 @@ void CAlnMrgApp::Init(void)
          "Flags for GetChunks (CAlnMap::TGetChunkFlags)",
          CArgDescriptions::eInteger, "0");
 
+    arg_desc->AddDefaultKey
+        ("progress", "bool",
+         "Show progress feedback on stderr",
+         CArgDescriptions::eBoolean, "f");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -457,13 +488,18 @@ void CAlnMrgApp::ViewMergedAlignment(void)
 
 int CAlnMrgApp::Run(void)
 {
+    const CArgs& args = GetArgs();
+
     SetOptions();
 
     m_Mix = m_Scope ? new CAlnMix(GetScope()) : new CAlnMix();
+    CRef<CAlnMrgTaskProgressCallback> progress_callback;
+    if (args["progress"]  &&  args["progress"].AsBoolean()) {
+        progress_callback.Reset(new CAlnMrgTaskProgressCallback);
+    }
+    m_Mix->SetTaskProgressCallback(progress_callback.GetPointerOrNull());
     LoadInputAlignments();
     m_Mix->Merge(m_MergeFlags);
-
-    const CArgs& args = GetArgs();
 
     PrintMergedAlignment();
     if ( args["v"] ) {
@@ -488,6 +524,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/08/18 19:38:59  todorov
+* Added optional progress feedback.
+*
 * Revision 1.33  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *
