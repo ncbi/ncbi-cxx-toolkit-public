@@ -623,9 +623,10 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
             CNCBINode* parent = previous->GetNode();
             if ( parent && parent->HaveChildren() &&
                  parent->Children().size() > 1 )
-                out << '\n'; // separate child nodes by newline
+                // separate child nodes by newline
+                out << CHTMLHelper::GetNL();
         } else {
-            out << '\n';
+            out << CHTMLHelper::GetNL();
         }
         CHECK_STREAM_WRITE(out);
     }
@@ -653,7 +654,7 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
             }
         }
         INIT_STREAM_WRITE;
-        out << '\n';
+        out << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
     }
     return out;
@@ -2353,7 +2354,9 @@ CHTML_script::~CHTML_script(void)
 
 CHTML_script* CHTML_script::AppendScript(const string& script)
 {
-    AppendChild(new CHTMLPlainText("\n<!--\n" + script + "-->\n", true));
+    const string& nl = CHTMLHelper::GetNL();
+    AppendChild(
+        new CHTMLPlainText(nl + "<!--" + nl + script + "-->" + nl, true));
     return this;
 }
 
@@ -2430,6 +2433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.121  2005/08/18 13:48:48  ivanov
+ * Use CHTMLHelper::GetNL() for EOL instead of '\n'
+ *
  * Revision 1.120  2005/08/04 11:14:05  ivanov
  * NStr::fSign -> NStr::fWithSign
  *
