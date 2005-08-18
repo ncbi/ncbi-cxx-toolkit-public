@@ -1371,7 +1371,8 @@ extern int/*bool*/ BASE64_Decode
         return 0/*false*/;
     }
     for (;;) {
-        unsigned char c = i < src_size ? src[i++] : '=';
+        int/*bool*/  ok = i < src_size ? 1/*true*/ : 0/*false*/;
+        unsigned char c = ok ? src[i++] : '=';
         if (c == '=') {
             c  = 64; /*end*/
         } else if (c >= 'A'  &&  c <= 'Z') {
@@ -1392,7 +1393,10 @@ extern int/*bool*/ BASE64_Decode
         if (!(++k & 3)  ||  c == 64) {
             if (c == 64) {
                 if (k < 2) {
-                    --i;
+                    if (ok) {
+                        /* pushback leading '=' */
+                        --i;
+                    }
                     break;
                 }
                 switch (k) {
@@ -1406,12 +1410,19 @@ extern int/*bool*/ BASE64_Decode
                     temp >>= 8;
                     break;
                 default:
+                    assert(0);
                     break;
                 }
-                for (l = k; l < 4; l++) {
-                    if (i < src_size  &&  src[i] == '=') {
-                        i++;
-                    }
+                l = 4 - k;
+                while (l > 0) {
+                    /* eat up '='-padding */
+                    if (i >= src_size)
+                        break;
+                    if (src[i] == '=')
+                        l--;
+                    else if (src[i] != '\r'  &&  src[i] != '\n')
+                        break;
+                    i++;
                 }
             } else {
                 k = 0;
@@ -1437,7 +1448,7 @@ extern int/*bool*/ BASE64_Decode
     }
     *src_read    = i;
     *dst_written = j;
-    return i ? 1/*true*/ : 0/*false*/;
+    return i  &&  j ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -1691,6 +1702,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.77  2005/08/18 19:00:13  lavr
+ * Fix finishing-up bug in BASE64_Decode()
+ *
  * Revision 6.76  2005/06/08 20:42:41  lavr
  * Buffer size better adjustment in ConnNetInfo_AdjustForProxy()
  *
