@@ -38,6 +38,7 @@
 #include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/alnmatch.hpp>
 #include <objtools/alnmgr/alndiag.hpp>
+#include <objtools/alnmgr/task_progress.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +53,9 @@ class CAlnMixSequences;
 class CAlnMixSeq;
 
 
-class NCBI_XALNMGR_EXPORT CAlnMixMerger : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMixMerger : 
+    public CObject, 
+    public CTaskProgressReporter
 {
 public:
     
@@ -64,7 +67,6 @@ public:
 
 
     void Reset();
-
 
     enum EMergeFlags {
         fGen2EST              = 0x0001, // otherwise Nucl2Nucl
@@ -192,6 +194,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/08/18 17:03:50  todorov
+* Derive from CTaskProgressReporter
+*
 * Revision 1.8  2005/08/10 19:49:46  todorov
 * Delegated truncation to CDiagRangeCollection.
 *

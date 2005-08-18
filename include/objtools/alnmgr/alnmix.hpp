@@ -35,6 +35,7 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objtools/alnmgr/alnmatch.hpp>
+#include <objtools/alnmgr/task_progress.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -47,8 +48,10 @@ class CAlnMixSeq;
 class CAlnMixMerger;
 
 
-class NCBI_XALNMGR_EXPORT CAlnMix : public CSeq_align::SSeqIdChooser
-// Note that SSeqIdChooser derives from CObject, so CAlnMix *is* also a CObject.
+class NCBI_XALNMGR_EXPORT CAlnMix : 
+    public CSeq_align::SSeqIdChooser, // Note that SSeqIdChooser derives from 
+                                      // CObject, so CAlnMix *is* also a CObject.
+    public CTaskProgressReporter
 {
 public:
 
@@ -194,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/08/18 17:03:31  todorov
+* Derive from CTaskProgressReporter
+*
 * Revision 1.52  2005/07/22 15:30:37  todorov
 * + fAllowTranslocation as a merge option
 *
