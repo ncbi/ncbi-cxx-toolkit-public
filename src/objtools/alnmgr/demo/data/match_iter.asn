@@ -1,0 +1,5276 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type
+        str "Hist Seqalign" ,
+      data {
+        {
+          label
+            str "Hist Seqalign" ,
+          data
+            bool TRUE } } } ,
+    user {
+      type
+        str "Blast Type" ,
+      data {
+        {
+          label
+            id 0 ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "BLAST database title" ,
+      data {
+        {
+          label
+            str "genome (all assemblies)" ,
+          data
+            bool TRUE } } } } ,
+  data
+    align {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 317 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 515615, 10, -33 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 126716, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 62 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9392914 ,
+                  to 9393081 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9393082 ,
+                  to 9393084 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9393085 ,
+                  to 9393318 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 304 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 165868, 10, -31 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 121709, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 60 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9181074 ,
+                  to 9181235 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9181236 ,
+                  to 9181238 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9181239 ,
+                  to 9181475 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 291 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 533578, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 116701, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 94 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9444938 ,
+                  to 9445117 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9445118 ,
+                  to 9445120 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9445121 ,
+                  to 9445354 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 290 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 696874, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 116316, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 192 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9113859 ,
+                  to 9114140 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 193 ,
+                  to 193 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 29823171 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 194 ,
+                  to 201 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9113835 ,
+                  to 9113858 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9113829 ,
+                  to 9113834 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 202 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9113739 ,
+                  to 9113828 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 289 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 910146, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115931, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9360977 ,
+                  to 9361144 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9361145 ,
+                  to 9361147 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9361148 ,
+                  to 9361381 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 288 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 118869, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115546, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 54 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 103 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9055050 ,
+                  to 9055199 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9055200 ,
+                  to 9055202 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9055203 ,
+                  to 9055439 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 283 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 451701, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 11362, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 53 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 200 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9095897 ,
+                  to 9096202 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9095894 ,
+                  to 9095896 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 201 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9095801 ,
+                  to 9095893 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 275 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 382388, 10, -28 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 110538, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 53 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 88 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9024652 ,
+                  to 9024849 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9024850 ,
+                  to 9024852 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9024853 ,
+                  to 9025086 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 265 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 552167, 10, -27 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 106686, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9262313 ,
+                  to 9262480 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 9262481 ,
+                  to 9262483 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 217 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9262484 ,
+                  to 9262675 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 218 ,
+                  to 219 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 29823171 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 220 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9262676 ,
+                  to 9262711 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 242 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 256491, 10, -24 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 978265, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 44 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 151 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 8961405 ,
+                  to 8961566 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 8961567 ,
+                  to 8961569 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 152 ,
+                  to 182 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 8961570 ,
+                  to 8961662 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 183 ,
+                  to 186 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 29823171 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 187 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 8961663 ,
+                  to 8961797 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 128 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 424745, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 539138, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 50 ,
+                  to 103 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9097249 ,
+                  to 9097410 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 125 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 946232, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 527582, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9115349 ,
+                  to 9115489 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 118 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 61333, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 500618, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 50 ,
+                  to 103 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9114895 ,
+                  to 9115056 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 118 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 61333, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 500618, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 37 ,
+                  to 95 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 8957168 ,
+                  to 8957344 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 8957345 ,
+                  to 8957356 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 96 ,
+                  to 101 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 8957357 ,
+                  to 8957374 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 117 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 801034, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 496766, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 24 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9097713 ,
+                  to 9097853 ,
+                  strand minus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 115 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 136636, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 489062, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 99 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9053096 ,
+                  to 9053266 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 114 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178452, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 48521, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 20 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9388126 ,
+                  to 9388266 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 113 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 233065, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 481358, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 51 ,
+                  to 79 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9360495 ,
+                  to 9360581 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 80 ,
+                  to 80 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 29823171 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 81 ,
+                  to 96 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9360582 ,
+                  to 9360629 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 110 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 519214999, 10, -12 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 469802, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9359821 ,
+                  to 9359955 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 109 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 678116, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 46595, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9052436 ,
+                  to 9052576 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 109 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 678116, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 46595, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 20 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9022058 ,
+                  to 9022186 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 104 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 257684, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 446689999, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 29823171 } ,
+              loc {
+                int {
+                  from 49 ,
+                  to 99 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 9391133 ,
+                  to 9391285 ,
+                  strand plus ,
+                  id
+                    gi 29823171 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 317 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 515615, 10, -33 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 126716, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 62 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16904401 ,
+                  to 16904568 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16904569 ,
+                  to 16904571 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16904572 ,
+                  to 16904805 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 300 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 482601, 10, -31 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 120168, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 60 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16693847 ,
+                  to 16694008 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16694009 ,
+                  to 16694011 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16694012 ,
+                  to 16694248 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 291 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 533578, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 116701, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 94 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16956518 ,
+                  to 16956697 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16956698 ,
+                  to 16956700 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16956701 ,
+                  to 16956934 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 290 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 696874, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 116316, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 54 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 103 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16563432 ,
+                  to 16563581 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16563582 ,
+                  to 16563584 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16563585 ,
+                  to 16563821 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 289 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 910146, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115931, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16873350 ,
+                  to 16873517 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16873518 ,
+                  to 16873520 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16873521 ,
+                  to 16873754 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 289 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 910146, 10, -30 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115931, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 192 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16622642 ,
+                  to 16622923 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 193 ,
+                  to 193 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51474642 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 194 ,
+                  to 201 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16622618 ,
+                  to 16622641 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16622612 ,
+                  to 16622617 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 202 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16622522 ,
+                  to 16622611 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 283 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 451701, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 11362, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 53 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 200 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16604579 ,
+                  to 16604884 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16604576 ,
+                  to 16604578 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 201 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16604483 ,
+                  to 16604575 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 275 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 382388, 10, -28 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 110538, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 53 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 88 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16533185 ,
+                  to 16533382 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16533383 ,
+                  to 16533385 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16533386 ,
+                  to 16533619 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 265 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 552167, 10, -27 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 106686, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 56 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16774939 ,
+                  to 16775106 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16775107 ,
+                  to 16775109 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 217 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16775110 ,
+                  to 16775301 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 218 ,
+                  to 219 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51474642 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 220 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16775302 ,
+                  to 16775337 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 242 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 256491, 10, -24 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 978265, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 44 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 151 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16470333 ,
+                  to 16470494 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16470495 ,
+                  to 16470497 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 152 ,
+                  to 182 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16470498 ,
+                  to 16470590 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 183 ,
+                  to 186 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51474642 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 187 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16470591 ,
+                  to 16470725 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 128 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 424745, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 539138, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 50 ,
+                  to 103 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16605931 ,
+                  to 16606092 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 125 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 946232, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 527582, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16624132 ,
+                  to 16624272 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 118 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 61333, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 500618, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 50 ,
+                  to 103 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16623678 ,
+                  to 16623839 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 118 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 61333, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 500618, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 37 ,
+                  to 95 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16466099 ,
+                  to 16466275 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 16466276 ,
+                  to 16466287 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 96 ,
+                  to 101 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16466288 ,
+                  to 16466305 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 117 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 801034, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 496766, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 24 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16606395 ,
+                  to 16606535 ,
+                  strand minus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 115 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 136636, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 489062, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 99 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16561480 ,
+                  to 16561650 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 114 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178452, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 48521, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 20 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16899549 ,
+                  to 16899689 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 113 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 233065, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 481358, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 51 ,
+                  to 79 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16872868 ,
+                  to 16872954 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 80 ,
+                  to 80 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51474642 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 81 ,
+                  to 96 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16872955 ,
+                  to 16873002 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 110 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 519214999, 10, -12 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 469802, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16872194 ,
+                  to 16872328 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 109 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 678116, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 46595, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16560820 ,
+                  to 16560960 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 109 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 678116, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 46595, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 20 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16530590 ,
+                  to 16530718 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 104 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 257684, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 446689999, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51474642 } ,
+              loc {
+                int {
+                  from 49 ,
+                  to 99 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 16902556 ,
+                  to 16902708 ,
+                  strand plus ,
+                  id
+                    gi 51474642 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 287 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 155247, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115161, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 60 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2774080 ,
+                  to 2774247 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2774077 ,
+                  to 2774079 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2773843 ,
+                  to 2774076 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 282 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 589939, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 113235, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 150 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2888776 ,
+                  to 2888931 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2888773 ,
+                  to 2888775 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 151 ,
+                  to 163 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2888734 ,
+                  to 2888772 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 164 ,
+                  to 164 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 37551285 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 165 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2888533 ,
+                  to 2888733 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 276 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 292783999, 10, -31 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 110923, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2830641 ,
+                  to 2830805 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2830638 ,
+                  to 2830640 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 201 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2830491 ,
+                  to 2830637 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2830488 ,
+                  to 2830490 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 202 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2830398 ,
+                  to 2830487 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 172 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 335766, 10, -16 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 708626, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 43 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2776340 ,
+                  to 2776480 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2776256 ,
+                  to 2776339 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 47 ,
+                  to 95 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2776109 ,
+                  to 2776255 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 132 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 145983, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 554546, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2833643 ,
+                  to 2833783 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 114 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178452, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 48521, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 46 ,
+                  to 106 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2832041 ,
+                  to 2832223 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 107 ,
+                  to 113 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 37551285 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 114 ,
+                  to 129 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2831993 ,
+                  to 2832040 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 113 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 233065, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 481358, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 30 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 51 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2893261 ,
+                  to 2893416 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2893255 ,
+                  to 2893260 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 52 ,
+                  to 63 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2893219 ,
+                  to 2893254 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2893216 ,
+                  to 2893218 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37551285 } ,
+              loc {
+                int {
+                  from 64 ,
+                  to 77 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2893174 ,
+                  to 2893215 ,
+                  strand minus ,
+                  id
+                    gi 37551285 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 287 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 155247, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 115161, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 60 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2451278 ,
+                  to 2451445 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2451275 ,
+                  to 2451277 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2451041 ,
+                  to 2451274 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 282 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 589939, 10, -29 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 113235, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 99 ,
+                  to 150 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2560291 ,
+                  to 2560446 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2560288 ,
+                  to 2560290 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 151 ,
+                  to 163 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2560249 ,
+                  to 2560287 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 164 ,
+                  to 164 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51465691 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 165 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2560048 ,
+                  to 2560248 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 276 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 292783999, 10, -31 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 110923, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 57 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 98 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2507374 ,
+                  to 2507538 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2507371 ,
+                  to 2507373 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 201 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2507224 ,
+                  to 2507370 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2507221 ,
+                  to 2507223 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 202 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2507131 ,
+                  to 2507220 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 172 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 335766, 10, -16 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 708626, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 43 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2453538 ,
+                  to 2453678 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 2453454 ,
+                  to 2453537 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 47 ,
+                  to 95 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2453307 ,
+                  to 2453453 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 132 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 145983, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 554546, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 46 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2510381 ,
+                  to 2510521 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 114 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178452, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 48521, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 46 ,
+                  to 106 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2508777 ,
+                  to 2508959 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 107 ,
+                  to 113 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51465691 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 114 ,
+                  to 129 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2508729 ,
+                  to 2508776 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 112 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 304393, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 477506, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51465691 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 53 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 2564769 ,
+                  to 2564930 ,
+                  strand minus ,
+                  id
+                    gi 51465691 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 219 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 119145, 10, -21 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 889669, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 49 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 22 ,
+                  to 66 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 12228307 ,
+                  to 12228441 ,
+                  strand minus ,
+                  id
+                    gi 51460387 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 67 ,
+                  to 67 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51460387 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 68 ,
+                  to 112 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 12228172 ,
+                  to 12228306 ,
+                  strand minus ,
+                  id
+                    gi 51460387 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 113 ,
+                  to 114 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51460387 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 115 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 12228058 ,
+                  to 12228171 ,
+                  strand minus ,
+                  id
+                    gi 51460387 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 12228055 ,
+                  to 12228057 ,
+                  strand minus ,
+                  id
+                    gi 51460387 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51460387 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 163 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 12228022 ,
+                  to 12228054 ,
+                  strand minus ,
+                  id
+                    gi 51460387 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 219 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 119145, 10, -21 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 889669, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 49 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 22 ,
+                  to 66 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 24287896 ,
+                  to 24288030 ,
+                  strand minus ,
+                  id
+                    gi 51458934 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 67 ,
+                  to 67 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51458934 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 68 ,
+                  to 112 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 24287761 ,
+                  to 24287895 ,
+                  strand minus ,
+                  id
+                    gi 51458934 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 113 ,
+                  to 114 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51458934 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 115 ,
+                  to 152 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 24287647 ,
+                  to 24287760 ,
+                  strand minus ,
+                  id
+                    gi 51458934 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 24287644 ,
+                  to 24287646 ,
+                  strand minus ,
+                  id
+                    gi 51458934 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51458934 } ,
+              loc {
+                int {
+                  from 153 ,
+                  to 163 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 24287611 ,
+                  to 24287643 ,
+                  strand minus ,
+                  id
+                    gi 51458934 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 111 } ,
+          {
+            id
+              str "sum_n" ,
+            value
+              int 2 } ,
+          {
+            id
+              str "sum_e" ,
+            value
+              real { 629835, 10, -15 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 473654, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } ,
+          {
+            id
+              str "small_gap" ,
+            value
+              int 1 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 17 ,
+                  to 100 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 956057 ,
+                  to 956308 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 89 } ,
+          {
+            id
+              str "sum_n" ,
+            value
+              int 2 } ,
+          {
+            id
+              str "sum_e" ,
+            value
+              real { 629835, 10, -15 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 38891, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 27 } ,
+          {
+            id
+              str "small_gap" ,
+            value
+              int 1 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 135 ,
+                  to 153 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 956400 ,
+                  to 956456 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 956457 ,
+                  to 956459 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 154 ,
+                  to 182 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 956460 ,
+                  to 956546 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 183 ,
+                  to 188 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51467687 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 189 ,
+                  to 203 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 956547 ,
+                  to 956591 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                empty
+                  gi 129295 ,
+                int {
+                  from 956592 ,
+                  to 956600 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51467687 } ,
+              loc {
+                int {
+                  from 204 ,
+                  to 231 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 956601 ,
+                  to 956684 ,
+                  strand plus ,
+                  id
+                    gi 51467687 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 124 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 123582, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 52373, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 27 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51466710 } ,
+              loc {
+                int {
+                  from 1 ,
+                  to 62 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 188405 ,
+                  to 188590 ,
+                  strand plus ,
+                  id
+                    gi 51466710 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 124 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 123582, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 52373, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 27 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37539429 } ,
+              loc {
+                int {
+                  from 1 ,
+                  to 62 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 169115 ,
+                  to 169300 ,
+                  strand plus ,
+                  id
+                    gi 37539429 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 124 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 123582, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 52373, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 27 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51493052 } ,
+              loc {
+                int {
+                  from 1 ,
+                  to 62 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 25958220 ,
+                  to 25958405 ,
+                  strand plus ,
+                  id
+                    gi 51493052 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 116 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 104618, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 492914, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 1 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5622815 ,
+                  to 5622940 ,
+                  strand plus ,
+                  id
+                    gi 51464126 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51464126 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 45 ,
+                  to 57 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5622941 ,
+                  to 5622979 ,
+                  strand plus ,
+                  id
+                    gi 51464126 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 104 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 257684, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 446689999, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5296834 ,
+                  to 5296962 ,
+                  strand minus ,
+                  id
+                    gi 51464126 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51464126 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51464126 } ,
+              loc {
+                int {
+                  from 45 ,
+                  to 57 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5296795 ,
+                  to 5296833 ,
+                  strand minus ,
+                  id
+                    gi 51464126 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 116 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 104618, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 492914, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 1 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 74005540 ,
+                  to 74005665 ,
+                  strand plus ,
+                  id
+                    gi 37550867 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 37550867 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 45 ,
+                  to 57 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 74005666 ,
+                  to 74005704 ,
+                  strand plus ,
+                  id
+                    gi 37550867 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 104 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 257684, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 446689999, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 0 ,
+                  to 42 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 73678488 ,
+                  to 73678616 ,
+                  strand minus ,
+                  id
+                    gi 37550867 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 43 ,
+                  to 44 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 37550867 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37550867 } ,
+              loc {
+                int {
+                  from 45 ,
+                  to 57 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 73678449 ,
+                  to 73678487 ,
+                  strand minus ,
+                  id
+                    gi 37550867 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 115 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 136636, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 489062, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51470726 } ,
+              loc {
+                int {
+                  from 69 ,
+                  to 112 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 20935074 ,
+                  to 20935205 ,
+                  strand plus ,
+                  id
+                    gi 51470726 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51470726 } ,
+              loc {
+                int {
+                  from 113 ,
+                  to 114 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51470726 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51470726 } ,
+              loc {
+                int {
+                  from 115 ,
+                  to 137 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 20935206 ,
+                  to 20935274 ,
+                  strand plus ,
+                  id
+                    gi 51470726 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 115 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 136636, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 489062, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51468880 } ,
+              loc {
+                int {
+                  from 69 ,
+                  to 112 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5502761 ,
+                  to 5502892 ,
+                  strand plus ,
+                  id
+                    gi 51468880 } } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51468880 } ,
+              loc {
+                int {
+                  from 113 ,
+                  to 114 ,
+                  id
+                    gi 129295 } ,
+                empty
+                  gi 51468880 } } ,
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51468880 } ,
+              loc {
+                int {
+                  from 115 ,
+                  to 137 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 5502893 ,
+                  to 5502961 ,
+                  strand plus ,
+                  id
+                    gi 51468880 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 111 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 397549, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 473654, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 25 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 37540361 } ,
+              loc {
+                int {
+                  from 17 ,
+                  to 100 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 34308995 ,
+                  to 34309246 ,
+                  strand plus ,
+                  id
+                    gi 37540361 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 110 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 519214999, 10, -12 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 469802, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 23 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51472322 } ,
+              loc {
+                int {
+                  from 120 ,
+                  to 182 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 23129740 ,
+                  to 23129928 ,
+                  strand plus ,
+                  id
+                    gi 51472322 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 105 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 197301, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 450542, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 19 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51472322 } ,
+              loc {
+                int {
+                  from 123 ,
+                  to 169 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 23161440 ,
+                  to 23161580 ,
+                  strand plus ,
+                  id
+                    gi 51472322 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 108 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 885647, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 462098, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51493278 } ,
+              loc {
+                int {
+                  from 120 ,
+                  to 178 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 76056836 ,
+                  to 76057012 ,
+                  strand plus ,
+                  id
+                    gi 51493278 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 105 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 197301, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 450542, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 19 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51493278 } ,
+              loc {
+                int {
+                  from 123 ,
+                  to 169 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 76088440 ,
+                  to 76088580 ,
+                  strand plus ,
+                  id
+                    gi 51493278 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 106 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 151068, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 454394, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51461028 } ,
+              loc {
+                int {
+                  from 14 ,
+                  to 61 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 75065941 ,
+                  to 75066084 ,
+                  strand minus ,
+                  id
+                    gi 51461028 } } } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 106 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 151068, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 454394, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          std {
+            {
+              dim 2 ,
+              ids {
+                gi 129295 ,
+                gi 51463854 } ,
+              loc {
+                int {
+                  from 14 ,
+                  to 61 ,
+                  id
+                    gi 129295 } ,
+                int {
+                  from 29494769 ,
+                  to 29494912 ,
+                  strand minus ,
+                  id
+                    gi 51463854 } } } } } } }
+
+
+
