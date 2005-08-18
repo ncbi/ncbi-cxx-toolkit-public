@@ -58,6 +58,12 @@ USING_SCOPE(objects);
 
 static const size_t g_sizeof_endl = strlen(Endl());
 
+
+#define THROW_FATAL(exception_class, err_code, message) \
+{ exception_class e NCBI_EXCEPTION(exception_class, err_code, message); \
+  e.SetSeverity(eDiag_Fatal); throw e; }
+
+
 void CSeqLoader::Open(const string& filename_index)
 {
     CNcbiIfstream idxstream (filename_index.c_str());
@@ -150,16 +156,16 @@ void CSeqLoader::Open(const string& filename_index)
     }
     else {      
         
-        NCBI_THROW( CSplignAppException,
-                    eCannotOpenFile,
-                    filename_index.c_str());
+        THROW_FATAL( CSplignAppException,
+                     eCannotOpenFile,
+                     filename_index);
     }
 
  throw_file_corrupt: {
         
-        NCBI_THROW( CSplignAppException,
-                    eErrorReadingIndexFile,
-                    "File is corrupt");
+        THROW_FATAL( CSplignAppException,
+                     eErrorReadingIndexFile,
+                     "File is corrupt");
     }
 }
 
@@ -168,9 +174,9 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 		      size_t from, size_t to)
 {
     if(seq == 0) {
-        NCBI_THROW( CSplignAppException,
-                    eInternal,
-                    "Null pointer passed to CSeqLoader::Load()");
+        THROW_FATAL( CSplignAppException,
+                     eInternal,
+                     "Null pointer passed to CSeqLoader::Load()");
         
     }
     
@@ -178,30 +184,34 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     
     map<string, SIdxTarget>::const_iterator im = m_idx.find(id);
     if(im == m_idx.end()) {
-        string msg ("Unable to locate ");
-        msg += id;
-        NCBI_THROW( CSplignAppException,
-                    eInternal,
-                    msg.c_str());
+
+        CNcbiOstrstream ostr;
+        ostr << "Unable to locate " << id
+             << ". Make sure that sequence identifiers in the hit file "
+             << "match those in the index file.";
+        const string msg = CNcbiOstrstreamToString(ostr);
+        THROW_FATAL(CSplignAppException, eBadData, msg);
     }
     else {
-        const string& filename = m_filenames[im->second.m_filename_idx-m_min_idx];
+
+        const string& filename = m_filenames[
+                       im->second.m_filename_idx - m_min_idx];
         CNcbiIstream* istr = new ifstream (filename.c_str());
+        input.reset(istr);
         if(!istr || !*istr) {
             NCBI_THROW( CSplignAppException,
                         eCannotOpenFile,
                         filename.c_str());
         }
-        input.reset(istr);
         input->seekg(im->second.m_offset);
     }
   
     char buf [1024];
     input->getline(buf, sizeof buf, '\n'); // info line
     if(input->fail()) {
-        NCBI_THROW( CSplignAppException,
-                    eCannotReadFile,
-                    "Unable to read sequence data");
+        THROW_FATAL( CSplignAppException,
+                     eCannotReadFile,
+                     "Unable to read sequence data");
     }
     
     seq->clear();
@@ -334,16 +344,16 @@ void CSeqLoaderPairwise::Load(const string& id, vector<char> *seq,
                               size_t start, size_t finish)
 {
     if(seq == 0) {
-        NCBI_THROW( CSplignAppException,
+        THROW_FATAL( CSplignAppException,
                     eInternal,
                     "Null pointer passed to CSeqLoader::Load()");
     }
 
     if(start > finish) {
-        NCBI_THROW( CSplignAppException,
-                    eBadParameter,
-                    "Inconsistent parameters passed to passed to "
-                    "CSeqLoaderPairwise::Load()");
+        THROW_FATAL( CSplignAppException,
+                     eBadParameter,
+                     "Inconsistent parameters passed to passed to "
+                     "CSeqLoaderPairwise::Load()");
     }
 
     seq->clear();
@@ -367,10 +377,10 @@ void CSeqLoaderPairwise::Load(const string& id, vector<char> *seq,
         i1 = m_Subj.begin() + (finish < dim? finish + 1: dim);
     }
     else {
-        NCBI_THROW( CSplignAppException,
-                    eGeneral,
-                    "Unknolwn sequence requested from "
-                    "CSeqLoaderPairwise::Load()");
+        THROW_FATAL( CSplignAppException,
+                     eGeneral,
+                     "Unknolwn sequence requested from "
+                     "CSeqLoaderPairwise::Load()");
     }
     seq->resize(i1 - i0);
     copy(i0, i1, seq->begin());
@@ -382,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/08/18 15:11:16  kapustin
+ * Use fatal severety to report missing IDs
+ *
  * Revision 1.20  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

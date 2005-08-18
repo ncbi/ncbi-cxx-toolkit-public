@@ -431,6 +431,10 @@ void CSplign::Run( THits* phits )
         }
 
         catch(CException& e) {
+            
+            if(e.GetSeverity() == eDiag_Fatal) {
+                throw;
+            }
 
             m_result.push_back(SAlignedCompartment(0,true,e.GetMsg().c_str()));
             ++m_model_id;
@@ -1578,6 +1582,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/08/18 15:11:15  kapustin
+ * Use fatal severety to report missing IDs
+ *
  * Revision 1.31  2005/08/02 15:55:36  kapustin
  * +x_GetGenomicExtent()
  *
