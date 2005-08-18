@@ -369,11 +369,16 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGeneral)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|EcoSeq|EcoAce")));
+    CHECK_NO_THROW
+        (id.Reset(new CSeq_id
+                  ("gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
+                   "|snpClass=1|alleles=?|mol=?|build=?")));
     CHECK(id->IsGeneral());
-    CHECK_EQUAL(id->GetGeneral().GetDb(), string("EcoSeq"));
+    CHECK_EQUAL(id->GetGeneral().GetDb(), string("dbSNP"));
     CHECK(id->GetGeneral().GetTag().IsStr());
-    CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(), string("EcoAce"));
+    CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(),
+                string("rs31251_allelePos=201totallen=401|taxid=9606"
+                       "|snpClass=1|alleles=?|mol=?|build=?"));
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|taxon|9606")));
     CHECK(id->IsGeneral());
@@ -576,7 +581,10 @@ static const char* kTestFastaStrings[] = {
     "tpg|BK003456|",
     "tpe|BN000123|",
     "tpd|FAA00017|",
-    "gpp|GP123456|"
+    "gpp|GP123456|",
+    /* Must be last due to special-cased greedy parsing */
+    "gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
+    "|snpClass=1|alleles=?|mol=?|build=?"
 };
 static const size_t kNumFastaStrings
 = sizeof(kTestFastaStrings)/sizeof(*kTestFastaStrings);
@@ -673,6 +681,9 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/08/18 14:42:36  ucko
+* Verify special-casing of dbSNP IDs.
+*
 * Revision 1.2  2005/06/29 21:37:41  ucko
 * Fix WorkShop build.  (It seems BOOST_PARAM_TEST_CASE can be made to
 * work with a little tweaking after all.)
