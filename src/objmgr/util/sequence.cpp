@@ -1470,221 +1470,35 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle)
 }
 
 
-// XXX - replace with SRelLoc?
-struct SGap {
-    SGap(TSeqPos start, TSeqPos length) : m_Start(start), m_Length(length) { }
-    TSeqPos GetEnd(void) const { return m_Start + m_Length - 1; }
-
-    TSeqPos m_Start, m_Length;
-};
-typedef list<SGap> TGaps;
-
-
-static bool s_IsGap(const CSeq_loc& loc, CScope& scope)
-{
-    if (loc.IsNull()) {
-        return true;
-    }
-
-    CTypeConstIterator<CSeq_id> id(loc);
-    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
-    if (handle  &&  handle.GetInst_Repr() == CSeq_inst::eRepr_virtual) {
-        return true;
-    }
-
-    return false; // default
-}
-
-
-static TGaps s_FindGaps(const CSeq_ext& ext, CScope& scope)
-{
-    TSeqPos pos = 0;
-    TGaps   gaps;
-
-    switch (ext.Which()) {
-    case CSeq_ext::e_Seg:
-        ITERATE (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
-            TSeqPos length = sequence::GetLength(**it, &scope);
-            if (s_IsGap(**it, scope)) {
-                gaps.push_back(SGap(pos, length));
-            }
-            pos += length;
-        }
-        break;
-
-    case CSeq_ext::e_Delta:
-        ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
-            switch ((*it)->Which()) {
-            case CDelta_seq::e_Loc:
-            {
-                const CSeq_loc& loc = (*it)->GetLoc();
-                TSeqPos length = sequence::GetLength(loc, &scope);
-                if (s_IsGap(loc, scope)) {
-                    gaps.push_back(SGap(pos, length));
-                }
-                pos += length;
-                break;
-            }
-
-            case CDelta_seq::e_Literal:
-            {
-                const CSeq_literal& lit    = (*it)->GetLiteral();
-                TSeqPos             length = lit.GetLength();
-                if ( !lit.IsSetSeq_data() ) {
-                    gaps.push_back(SGap(pos, length));
-                }
-                pos += length;
-                break;
-            }
-
-            default:
-                ERR_POST(Warning << "CFastaOstream::WriteSequence: "
-                         "unsupported Delta-seq selection "
-                         << CDelta_seq::SelectionName((*it)->Which()));
-                break;
-            }
-        }
-
-    default:
-        break;
-    }
-
-    return gaps;
-}
-
-
-static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
-{
-    // assume location matches handle
-    const TSeqPos         kMaxPos = numeric_limits<TSeqPos>::max();
-    TSeqPos               pos     = 0;
-    TGaps::const_iterator gap_it  = gaps.begin();
-    TGaps                 adjusted_gaps;
-    SGap                  new_gap(kMaxPos, 0);
-
-    for (CSeq_loc_CI loc_it(location);  loc_it  &&  gap_it != gaps.end();
-         pos += loc_it.GetRange().GetLength(), ++loc_it) {
-        CSeq_loc_CI::TRange range = loc_it.GetRange();
-
-        if (new_gap.m_Start != kMaxPos) {
-            // in progress
-            if (gap_it->GetEnd() < range.GetFrom()) {
-                adjusted_gaps.push_back(new_gap);
-                new_gap.m_Start = kMaxPos;
-                ++gap_it;
-            } else if (gap_it->GetEnd() <= range.GetTo()) {
-                new_gap.m_Length += gap_it->GetEnd() - range.GetFrom() + 1;
-                adjusted_gaps.push_back(new_gap);
-                new_gap.m_Start = kMaxPos;
-                ++gap_it;
-            } else {
-                new_gap.m_Length += range.GetLength();
-                continue;
-            }
-        }
-
-        while (gap_it != gaps.end()  &&  gap_it->GetEnd() < range.GetFrom()) {
-            ++gap_it; // skip
-        }
-        // we may be out of gaps now...
-        if (gap_it == gaps.end()) {
-            break;
-        }
-
-        if (gap_it->m_Start <= range.GetFrom()) {
-            if (gap_it->GetEnd() <= range.GetTo()) {
-                adjusted_gaps.push_back
-                    (SGap(pos, gap_it->GetEnd() - range.GetFrom() + 1));
-                ++gap_it;
-            } else {
-                new_gap.m_Start  = pos;
-                new_gap.m_Length = range.GetLength();
-                continue;
-            }
-        }
-
-        while (gap_it->m_Start <= range.GetTo()) {
-            TSeqPos pos2 = pos + gap_it->m_Start - range.GetFrom();
-            if (gap_it->GetEnd() <= range.GetTo()) {
-                adjusted_gaps.push_back(SGap(pos2, gap_it->m_Length));
-                ++gap_it;
-            } else {
-                new_gap.m_Start  = pos2;
-                new_gap.m_Length = range.GetTo() - gap_it->m_Start + 1;
-            }
-        }
-    }
-
-    if (new_gap.m_Start != kMaxPos) {
-        adjusted_gaps.push_back(new_gap);
-    }
-
-    return adjusted_gaps;
-}
-
-
 void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
-    CConstRef<CBioseq> seq  = handle.GetCompleteBioseq();
-    const CSeq_inst& inst = seq->GetInst();
-    if ( !(m_Flags & eAssembleParts)  &&  !inst.IsSetSeq_data() ) {
-        return;
+    if ( !(m_Flags & eAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
+        return; // XXX - too extreme?
     }
+
+    CScope& scope = handle.GetScope();
 
     CSeqVector v;
-    if ( location ) {
-        CRef<CSeq_loc> merged = sequence::Seq_loc_Merge(*location,
-                                                        CSeq_loc::fMerge_All,
-                                                        &handle.GetScope());
-        v = CSeqVector(*merged,
-                       handle.GetScope(),
-                       CBioseq_Handle::eCoding_Iupac);
-    }
-    else {
+    if (location) {
+        CRef<CSeq_loc> merged
+            = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
+        v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
+    } else {
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
-    bool is_na = inst.GetMol() != CSeq_inst::eMol_aa;
-    // autodetection is sometimes broken (!)
-    v.SetCoding(is_na ? CSeq_data::e_Iupacna : CSeq_data::e_Iupacaa);
 
-    TSeqPos              size = v.size();
-    TSeqPos              pos  = 0;
-    CSeqVector::TResidue gap  = v.GetGapChar();
-    string               buffer;
-    TGaps                gaps;
-    CScope&              scope   = handle.GetScope();
-    const TSeqPos        kMaxPos = numeric_limits<TSeqPos>::max();
-
-    if ( !inst.IsSetSeq_data()  &&  inst.IsSetExt() ) {
-        gaps = s_FindGaps(inst.GetExt(), scope);
-        if (location) {
-            gaps = s_AdjustGaps(gaps, *location);
-        }
-    }
-    gaps.push_back(SGap(kMaxPos, 0));
-
-    while (pos < size) {
-        unsigned int limit = min(m_Width,
-                                 min(size, gaps.front().m_Start) - pos);
-        v.GetSeqData(pos, pos + limit, buffer);
-        pos += limit;
-        if (limit > 0) {
-            m_Out << buffer << '\n';
-        }
-        if (pos == gaps.front().m_Start) {
-            if (m_Flags & eInstantiateGaps) {
-                TSeqPos l = gaps.front().m_Length;
-                while (l > m_Width) {
-                    m_Out << string(m_Width, gap) << '\n';
-                    l -= m_Width;
-                }
-                m_Out << string(l, gap) << '\n';
-            } else {
-                m_Out << "-\n";
+    unsigned int line_pos = 0;
+    ITERATE (CSeqVector, it, v) {
+        if ( !(m_Flags & eInstantiateGaps)  &&  it.SkipGap() ) {
+            m_Out << "-\n";
+            line_pos = 0;
+        } else {
+            m_Out << *it;
+            if (++line_pos >= m_Width) {
+                m_Out << '\n';
+                line_pos = 0;
             }
-            pos += gaps.front().m_Length;
-            gaps.pop_front();
         }
     }
     m_Out << NcbiFlush;
@@ -2697,6 +2511,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.131  2005/08/18 20:48:07  ucko
+* Rework CFastaOstream to use the object manager in a more modern fashion;
+* in particular, take advantage of CSeqVector's support for gap reporting.
+* Also, stop forcing linebreaks around instantiated gaps; their presence
+* turns out not to have been in keeping with the C Toolkit after all.
+*
 * Revision 1.130  2005/06/22 14:05:32  grichenk
 * Fixed error messages in x_GetId()
 *
