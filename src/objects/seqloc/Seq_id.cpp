@@ -1378,6 +1378,14 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
             fasta_pieces.pop_front();
         }
     }
+
+    // Special case -- dbSNP IDs have historically contained internal
+    // vertical bars, so we have to parse them greedily.
+    if (type == e_General  &&  NStr::EqualNocase(fields[0], "dbSNP")) {
+        fields[1] += '|';
+        fields[1] += NStr::Join(fasta_pieces, "|");
+        fasta_pieces.clear();
+    }
     
     int ver = 0;
     if (type == e_Patent) {
@@ -1595,6 +1603,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.112  2005/08/18 14:42:26  ucko
+ * By request, parse FASTA-style dbSNP IDs greedily, as they may contain
+ * extra vertical bars as part of the tag.
+ *
  * Revision 6.111  2005/07/28 18:28:51  ucko
  * CSeq_id::IdentifyAccession: DT -> gb_est, DU -> gb_gss.
  *
