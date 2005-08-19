@@ -1222,13 +1222,14 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
                         } else
                             return true;
                     }
-                } catch( exception& e ) {
+                } catch( CEofException& eoe ) {
+		    bNeedReconnect = true;
+		} catch( exception& e ) {
                     SetLastError( e.what() );
                 }
                 fail_flags = m_pIn->GetFailFlags();
-                bNeedReconnect = (fail_flags & ( CObjectIStream::eEOF
+                bNeedReconnect |= (fail_flags & ( CObjectIStream::eEOF
                                                  |CObjectIStream::eReadError
-                                                 |CObjectIStream::eOverflow
                                                  |CObjectIStream::eFail
                                                  |CObjectIStream::eNotOpen )
                                   ? true : false);
@@ -1241,7 +1242,6 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
             SetLastError( e.what() );
             fail_flags = m_pOut->GetFailFlags();
             bNeedReconnect = (fail_flags & ( CObjectOStream::eWriteError
-                                             |CObjectOStream::eOverflow
                                              |CObjectOStream::eFail
                                              |CObjectOStream::eNotOpen )
                               ? true : false);
@@ -1945,6 +1945,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.32  2005/08/19 20:38:54  domrach
+ * Eof exception while reading response is being caught now
+ *
  * Revision 6.31  2005/08/17 19:35:37  ucko
  * CObjectOStream::eEOF no longer exists, so don't use it.
  *
