@@ -151,18 +151,24 @@ check_add: check_add.needs-reqs
 
 
 all.real: configurables
+	@-rm -f .built .built_r
+	@-echo "`date`: starting to build in `pwd`" | tee .building
 	@$(USRP_BRA) all   $(USRP_KET)
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(LIBP_BRA) all   $(LIBP_KET)
 	@$(APPP_BRA) all   $(APPP_KET)
+	@-rm -f .building
+	@echo "`date`: local build succeeded in `pwd`" | tee .built
 clean.real:
+	@-rm -f .building .built .built_r
 	@$(USRP_BRA) clean $(USRP_KET)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
 #	@$(DTDP_BRA) clean_sources $(DTDP_KET)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
 purge.real:
+	@-rm -f .building .built .built_r
 	@$(USRP_BRA) purge $(USRP_KET)
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
 #	@$(DTDP_BRA) purge_sources $(DTDP_KET)
@@ -218,7 +224,11 @@ check_r:     check_r.needs-reqs
 check_add_r: check_add_r.needs-reqs
 
 all_r.real: all.real
+	@-rm -f .built_r
+	@-echo "`date`: building in subdirectories of `pwd`" | tee .building
 	@$(SUB_BRA) all_r   $(SUB_KET)
+	@-rm -f .building
+	@echo "`date`: recursive build succeeded in `pwd`" | tee .built_r
 clean_r.real: clean.real
 	@$(SUB_BRA) clean_r $(SUB_KET)
 purge_r.real: purge.real
@@ -290,8 +300,12 @@ check_p:     check_p.needs-reqs
 check_add_p: check_add_p.needs-reqs
 
 all_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+	@-rm -f .built_r
+	@-echo "`date`: starting to build in `pwd`" | tee .building
 	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
 	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
+	@-rm -f .building
+	@-echo "`date`: recursive build succeeded in `pwd`" | tee .built_r
 
 clean_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
