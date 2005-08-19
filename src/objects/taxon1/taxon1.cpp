@@ -1209,35 +1209,29 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
             *m_pOut << req;
             m_pOut->Flush();
 
-            if( m_pOut->InGoodState() ) {
-                try {
-                    *m_pIn >> resp;
+	    try {
+		*m_pIn >> resp;
 		
-                    if( m_pIn->InGoodState() ) {
-                        if( resp.IsError() ) { // Process error here
-                            string err;
-                            resp.GetError().GetErrorText( err );
-                            SetLastError( err.c_str() );
-                            return false;
-                        } else
-                            return true;
-                    }
-                } catch( CEofException& eoe ) {
-		    bNeedReconnect = true;
-		} catch( exception& e ) {
-                    SetLastError( e.what() );
-                }
-                fail_flags = m_pIn->GetFailFlags();
-                bNeedReconnect |= (fail_flags & ( CObjectIStream::eEOF
-                                                 |CObjectIStream::eReadError
-                                                 |CObjectIStream::eFail
-                                                 |CObjectIStream::eNotOpen )
-                                  ? true : false);
-            } else {
-                m_pOut->ThrowError((CObjectOStream::EFailFlags)
-                                   m_pOut->GetFailFlags(),
-                                   "Output stream is in bad state");
-            }
+		if( m_pIn->InGoodState() ) {
+		    if( resp.IsError() ) { // Process error here
+			string err;
+			resp.GetError().GetErrorText( err );
+			SetLastError( err.c_str() );
+			return false;
+		    } else
+			return true;
+		}
+	    } catch( CEofException& eoe ) {
+		bNeedReconnect = true;
+	    } catch( exception& e ) {
+		SetLastError( e.what() );
+	    }
+	    fail_flags = m_pIn->GetFailFlags();
+	    bNeedReconnect |= (fail_flags & ( CObjectIStream::eEOF
+					      |CObjectIStream::eReadError
+					      |CObjectIStream::eFail
+					      |CObjectIStream::eNotOpen )
+			       ? true : false);
         } catch( exception& e ) {
             SetLastError( e.what() );
             fail_flags = m_pOut->GetFailFlags();
@@ -1945,6 +1939,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.33  2005/08/19 20:50:54  domrach
+ * Unneeded check for output stream state removed
+ *
  * Revision 6.32  2005/08/19 20:38:54  domrach
  * Eof exception while reading response is being caught now
  *
