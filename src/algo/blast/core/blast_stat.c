@@ -59,14 +59,6 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_encoding.h>
 #include "blast_psi_priv.h"
 
-/* OSF1 apparently doesn't like this. */
-#if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1) 
-#define BLASTKAR_HUGE_VAL HUGE_VAL /**< Rename HUGE_VAL for OSF1. */
-#else
-#define BLASTKAR_HUGE_VAL 1.e30 /**< Redefine HUGE_VAL for OSF1. */
-#endif
-
-
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
 /****************************************************************************
@@ -2322,7 +2314,7 @@ Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
 
 ErrExit:
    kbp->Lambda = kbp->H = kbp->K = -1.;
-   kbp->logK = BLASTKAR_HUGE_VAL;
+   kbp->logK = HUGE_VAL;
    return 1;
 }
 
@@ -2981,7 +2973,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
                      Int4* gap_open_max, Int4* gap_extend_max,
                      Blast_Message** error_return)
 {
-    const array_of_8 * kValues;
+    const array_of_8 * kValues = NULL;
 
     if (reward == 1 && penalty == -4) {
         kValues = blastn_values_1_4;
@@ -3349,7 +3341,7 @@ s_OuterIntegralCback(double x, void* vp)
    SRombergCbackArgs* callback_args = (SRombergCbackArgs*) vp;
    double y = exp(x - callback_args->sdvir);
 
-   if (y == BLASTKAR_HUGE_VAL)
+   if (y == HUGE_VAL)
       return 0.;
 
    if (callback_args->num_hsps_minus_2 == 0)
@@ -3471,7 +3463,7 @@ s_BlastSumPCalc(int r, double s)
 
    do {
       d = BLAST_RombergIntegrate(s_InnerIntegralCback, &callback_args, s, t, callback_args.epsilon, 0, itmin);
-      if (d == BLASTKAR_HUGE_VAL)
+      if (d == HUGE_VAL)
          return d;
    } while (s < mean && d < 0.4 && itmin++ < 4);
 
@@ -4005,6 +3997,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.123  2005/08/19 17:56:18  dondosha
+ * Removed unnecessary redefinition of HUGE_VAL
+ *
  * Revision 1.122  2005/08/15 20:41:44  dondosha
  * New blastn statistics can be enabled with a -DNEW_BLASTN_STAT only with a compilation flag
  *
