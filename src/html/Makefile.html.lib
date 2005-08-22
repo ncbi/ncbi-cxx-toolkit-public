@@ -3,6 +3,6 @@
 # Build library "XHTML"
 #################################
 
-SRC = node html htmlhelper page nodemap pager selection components \
+SRC = node html htmlhelper page pager selection components \
       jsmenu commentdiag indentstream html_exception writer_htmlenc
 LIB = xhtml
