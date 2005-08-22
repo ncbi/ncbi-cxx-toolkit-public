@@ -190,7 +190,7 @@ void TestNetscheduleLB(const string&  queue)
         cl.SetRunTimeout(job_key, 5);
         NcbiCout << job_key << " ";
     }
-    NcbiCout << "Jobs count" << cnt << NcbiEndl;
+    NcbiCout << "Jobs count " << cnt << NcbiEndl;
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
 
 
@@ -203,7 +203,7 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     cl.SetProgramVersion("test 1.0.0");
     
     CNetScheduleClient::SJobBatch jobs;
-    const int kJobCount = 500000;
+    const int kJobCount = 40;
 
     for (int i = 0; i < kJobCount; ++i) {
         jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
@@ -244,20 +244,19 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     CStopWatch sw(true);
 
     for (;1;++cnt) {
-        bool job_exists = cl.GetJob(&job_key, &input);
+        bool job_exists = cl.PutResultGetJob(job_key, 0, out, &job_key, &input);
         if (!job_exists) {
             break;
         }
-        cl.PutResult(job_key, 0, out);
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
     double rate = cnt / elapsed;
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Jobs processed: " << cnt     << NcbiEndl;
-    NcbiCout << "Elapsed: "        << elapsed << " sec."      << NcbiEndl;
-    NcbiCout << "Rate: "           << rate    << " jobs/sec." << NcbiEndl;
+    NcbiCout << "Jobs processed: " << cnt         << NcbiEndl;
+    NcbiCout << "Elapsed: "        << elapsed     << " sec."      << NcbiEndl;
+    NcbiCout << "Rate: "           << rate        << " jobs/sec." << NcbiEndl;
     }}
 }
 
@@ -274,7 +273,7 @@ int CTestNetScheduleStress::Run(void)
 //    TestRunTimeout(host, port, queue_name);
 //    TestNetscheduleLB(queue_name);
 //    TestBatchSubmit(host, port, queue_name);
-
+//return 0;
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
@@ -506,6 +505,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/22 14:02:27  kuznets
+ * Batch test changed to use job exchange
+ *
  * Revision 1.16  2005/08/17 15:58:19  ucko
  * Give kJobCount an explicit type, as not all compilers will simply
  * assume int.
