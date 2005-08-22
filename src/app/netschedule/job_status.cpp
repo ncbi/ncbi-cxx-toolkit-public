@@ -307,41 +307,80 @@ CNetScheduler_JobStatusTracker::AddPendingBatch(
 
 unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
 {
-    TBVector& bv = 
-        *m_StatusStor[(int)CNetScheduleClient::ePending];
+    CWriteLockGuard guard(m_Lock);
+    return GetPendingJobNoLock();
+}
+
+unsigned int 
+CNetScheduler_JobStatusTracker::GetPendingJobNoLock()
+{
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bm::id_t job_id;
-    CWriteLockGuard guard(m_Lock);
-
-    for (int i = 0; i < 2; ++i) {
+    int i = 0;
+    do {
         job_id = bv.extract_next(m_LastPending);
         if (job_id) {
             TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eRunning];
-            bv2.set(job_id, true);
-/*
-            x_SetClearStatusNoLock(job_id,
-                                   CNetScheduleClient::eRunning,
-                                   CNetScheduleClient::ePending);
-*/
+            bv2.set_bit(job_id, true);
             m_LastPending = job_id;
             break;
         } else {
             Return2PendingNoLock();
         }
-/*
-        if (bv.any()) {
-            job_id = bv.get_first();
-            if (job_id) {
-                x_SetClearStatusNoLock(job_id, 
-                                    CNetScheduleClient::eRunning, 
-                                    CNetScheduleClient::ePending);
-                return job_id;
-            }
-        }        
-        Return2PendingNoLock();
-*/
-    }
+    } while (++i < 2);
     return job_id;
+}
+
+unsigned int 
+CNetScheduler_JobStatusTracker::PutDone_GetPending(
+                                            unsigned int done_job_id,
+                                            bool*        need_db_update)
+{
+    _ASSERT(need_db_update);
+
+    CNetScheduleClient::EJobStatus old_status;
+
+    CWriteLockGuard guard(m_Lock);
+
+    // Running -> Done
+
+    while (done_job_id != 0) {
+        *need_db_update = true;
+        TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::eRunning];
+        bool bit_changed = bv.set_bit(done_job_id, false);
+
+        if (bit_changed) {
+            TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eDone];
+            bv2.set_bit(done_job_id, true);
+        } else { // job canceled or returned or something else?
+            old_status = 
+                ClearIfStatusNoLock(done_job_id,
+                                    CNetScheduleClient::ePending,
+                                    CNetScheduleClient::eReturned);
+            if (old_status != CNetScheduleClient::eJobNotFound) {
+                TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eDone];
+                bv2.set_bit(done_job_id, true);
+                break;
+            }
+
+            // looks like it's been canceled
+            *need_db_update = false;
+            old_status = IsStatusNoLock(done_job_id, 
+                                        CNetScheduleClient::eCanceled,
+                                        CNetScheduleClient::eFailed);
+            if (!IsCancelCode(old_status)) {
+                // some kind of logic error
+                ReportInvalidStatus(done_job_id,
+                                    CNetScheduleClient::eDone,
+                                    old_status);
+                return 0;
+            }
+        } 
+        break;
+    } // while
+
+    return GetPendingJobNoLock();
 }
 
 unsigned int CNetScheduler_JobStatusTracker::BorrowPendingJob()
@@ -405,7 +444,7 @@ unsigned int CNetScheduler_JobStatusTracker::GetFirstDone() const
 
 unsigned int 
 CNetScheduler_JobStatusTracker::GetFirst(
-                        CNetScheduleClient::EJobStatus  status) const
+                        CNetScheduleClient::EJobStatus status) const
 {
     const TBVector& bv = *m_StatusStor[(int)status];
 
@@ -554,6 +593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/08/22 14:01:58  kuznets
+ * Added JobExchange command
+ *
  * Revision 1.20  2005/08/18 19:25:02  kuznets
  * Bug fix
  *

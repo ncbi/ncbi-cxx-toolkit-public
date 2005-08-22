@@ -70,13 +70,15 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.6.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.6.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
 
 /// JS request types
+///
 /// @internal
+///
 typedef enum {
     eSubmitJob,
     eSubmitBatch,
@@ -92,6 +94,7 @@ typedef enum {
     eDropJob,
     eGetProgressMsg,
     ePutProgressMsg,
+    eJobExchange,
 
     eShutdown,
     eVersion,
@@ -250,6 +253,10 @@ public:
     void ProcessPut(CSocket&                sock,
                     SThreadData&            tdata,
                     CQueueDataBase::CQueue& queue);
+
+    void ProcessJobExchange(CSocket&                sock,
+                            SThreadData&            tdata,
+                            CQueueDataBase::CQueue& queue);
 
     void ProcessMPut(CSocket&                sock,
                      SThreadData&            tdata,
@@ -616,6 +623,13 @@ end_version_control:
                     break;
                 }
                 ProcessGet(socket, *tdata, queue);
+                break;
+            case eJobExchange:
+                if (!queue.IsWorkerAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
+                ProcessJobExchange(socket, *tdata, queue);
                 break;
             case eWaitGetJob:
                 if (!queue.IsWorkerAllowed()) {
@@ -1162,7 +1176,6 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
         monitor->SendString(msg);
     }
 
-
     if (req.port) {  // unregister notification
         sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
         queue.RegisterNotificationListener(
@@ -1170,7 +1183,50 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
    }
 }
 
-void CNetScheduleServer::ProcessWaitGet(CSocket&                sock, 
+void 
+CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+    unsigned job_id;
+    unsigned client_address;
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+
+    char key_buf[1024];
+
+    unsigned done_job_id;
+    if (!req.job_key_str.empty()) {
+        done_job_id = CNetSchedule_GetJobId(req.job_key_str);
+    } else {
+        done_job_id = 0;
+    }
+    queue.PutResultGetJob(done_job_id, req.job_return_code, req.output,
+                          key_buf, client_address, &job_id,
+                          req.input, m_Host, GetPort());
+
+    if (job_id) {
+        x_MakeGetAnswer(key_buf, tdata);
+        WriteMsg(sock, "OK:", tdata.answer.c_str());
+    } else {
+        WriteMsg(sock, "OK:", "");
+    }
+
+    CNetScheduleMonitor* monitor = queue.GetMonitor();
+    if (monitor->IsMonitorActive() && job_id) {
+        string msg = "::ProcessJobExchange ";
+        msg += m_LocalTimer.GetLocalTime().AsString();
+        msg += tdata.answer;
+        msg += " ==> ";
+        msg += sock.GetPeerAddress();
+        msg += " ";
+        msg += tdata.auth;
+
+        monitor->SendString(msg);
+    }
+}
+
+void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
                                         SThreadData&            tdata,
                                         CQueueDataBase::CQueue& queue)
 {
@@ -1187,13 +1243,14 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
         WriteMsg(sock, "OK:", tdata.answer.c_str());
         return;
     }
-    
+
     // job not found, initiate waiting mode
 
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-    queue.RegisterNotificationListener(client_address, req.port, req.timeout, tdata.auth);
+    queue.RegisterNotificationListener(
+        client_address, req.port, req.timeout, tdata.auth);
 
 }
 
@@ -1535,6 +1592,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 21.RECO
     // 22.QLST
     // 23.BSUB
+    // 24.JXCG [JSID_01_1 EndStatus "NCID_01_2..."]
 
     const char* s = reqstr;
 
@@ -1663,11 +1721,23 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         return;
     }
 
+    if (strncmp(s, "JXCG", 4) == 0) {
+        req->req_type = eJobExchange;
+        s += 4;
+        NS_SKIPSPACE(s)
+        if (*s == 0) {
+            req->job_key_str.erase();
+            return;
+        }
+        goto parse_put_params;
+    }
+
 
     if (strncmp(s, "PUT", 3) == 0) {
         req->req_type = ePutJobResult;
         s += 3;
         NS_SKIPSPACE(s)
+parse_put_params:
         NS_GETSTRING(s, req->job_key_str)
 
         NS_SKIPSPACE(s)
@@ -2260,6 +2330,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/08/22 14:01:58  kuznets
+ * Added JobExchange command
+ *
  * Revision 1.52  2005/08/17 14:24:37  kuznets
  * Improved err checking
  *

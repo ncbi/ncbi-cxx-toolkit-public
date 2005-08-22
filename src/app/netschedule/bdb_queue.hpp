@@ -432,6 +432,17 @@ public:
                        int           ret_code,
                        const char*   output);
 
+        void PutResultGetJob(unsigned int   done_job_id,
+                             int            ret_code,
+                             const char*    output,
+                             char*          key_buf,
+                             unsigned int   worker_node,
+                             unsigned int*  job_id, 
+                             char*          input,
+                             const string&  host,
+                             unsigned       port);
+
+
         void PutProgressMessage(unsigned int  job_id,
                                 const char*   msg);
         
@@ -588,6 +599,43 @@ public:
                                unsigned      port,
                                unsigned      wait_timeout,
                                const char*   progress_msg);
+
+        /// Info on how to notify job submitter
+        struct SSubmitNotifInfo
+        {
+            unsigned subm_addr;
+            unsigned subm_port;
+            unsigned subm_timeout;
+            unsigned time_submit;
+            unsigned time_run;
+        };
+
+        /// @return TRUE if job record has been found and updated
+        bool x_UpdateDB_PutResultNoLock(SQueueDB&            db,
+                                        time_t               curr,
+                                        CBDB_FileCursor&     cur,
+                                        unsigned             job_id,
+                                        int                  ret_code,
+                                        const char*          output,
+                                        SSubmitNotifInfo*    subm_info);
+
+
+        enum EGetJobUpdateStatus
+        {
+            eGetJobUpdate_Ok,
+            eGetJobUpdate_NotFound,
+            eGetJobUpdate_JobStopped,  
+            eGetJobUpdate_JobFailed  
+        };
+        EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
+                                    SQueueDB&            db,
+                                    time_t               curr,
+                                    CBDB_FileCursor&     cur,
+                                    CBDB_Transaction&    trans,
+                                    unsigned int         worker_node,
+                                    unsigned             job_id,
+                                    char*                input);
+
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -647,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/08/22 14:01:58  kuznets
+ * Added JobExchange command
+ *
  * Revision 1.32  2005/08/18 16:24:32  kuznets
  * Optimized job retrival out o the bit matrix
  *

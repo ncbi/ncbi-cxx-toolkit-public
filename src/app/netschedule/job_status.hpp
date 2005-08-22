@@ -78,8 +78,18 @@ public:
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
     /// Return job id (job is moved from pending to running)
-    /// 0 - no pending jobs
+    /// @return job id, 0 - no pending jobs
     unsigned int GetPendingJob();
+
+    /// Set running job to done status, find and return pending job
+    /// @param done_job_id
+    ///     job id going from running to done status. Ignored if 0.
+    /// @param need_db_update
+    ///     (out) TRUE if database needs to be updated. 
+    ///     Update is not needed if database 
+    /// @return job_id, 0 - no pending jobs
+    unsigned int PutDone_GetPending(unsigned int done_job_id,
+                                    bool*        need_db_update);
 
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs
@@ -118,8 +128,7 @@ public:
                               bool           set_clear);
 
     /// Return number of jobs in specified status
-    unsigned CountStatus(
-        CNetScheduleClient::EJobStatus status) const;
+    unsigned CountStatus(CNetScheduleClient::EJobStatus status) const;
 
     static
     bool IsCancelCode(CNetScheduleClient::EJobStatus status)
@@ -173,6 +182,7 @@ protected:
              CNetScheduleClient::EJobStatus  old_status);
 
     void Return2PendingNoLock();
+    unsigned int GetPendingJobNoLock();
 
 private:
     CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
@@ -275,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/08/22 14:01:58  kuznets
+ * Added JobExchange command
+ *
  * Revision 1.10  2005/08/18 19:16:31  kuznets
  * Performance optimization
  *
