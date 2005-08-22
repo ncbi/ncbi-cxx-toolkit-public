@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.14 2005/08/15 15:24:42 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.15 2005/08/22 17:38:07 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -131,7 +131,9 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         taxonomy         INTEGER,                 -- Taxonomy ID for an Organism
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        aid              INTEGER                  -- PubChem BioAssay ID
+        aid              INTEGER,                 -- PubChem BioAssay ID
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        mim              INTEGER                  -- MIM, Mendelian Inheritance in Man, Number 
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
@@ -650,6 +652,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.15  2005/08/22 17:38:07  bolton
+-- Added MIM Number Xref in the PC-Xref object container.
+--
 -- Revision 1.14  2005/08/15 15:24:42  bolton
 -- Added AID Xref in the PC-Xref object container.
 --
@@ -736,5 +741,6 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
 
