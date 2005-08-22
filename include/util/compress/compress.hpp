@@ -154,7 +154,7 @@ public:
         void*       dst_buf, size_t  dst_size,
         /* out */            size_t* dst_len
     ) = 0;
-    
+
     // (De)compress file "src_file" and put result to file "dst_file".
     // Return TRUE on success, FALSE on error.
     virtual bool CompressFile(
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/08/22 14:25:48  ivanov
+ * Cosmetics
+ *
  * Revision 1.10  2005/04/25 19:01:44  ivanov
  * Changed parameters and buffer sizes from being 'int', 'unsigned int' or
  * 'unsigned long' to unified 'size_t'
