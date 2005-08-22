@@ -26,9 +26,157 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko
+ * Authors:  Lewis Geer, Eugene Vasilchenko, Vladimir Ivanov
  *
  */
+
+
+
+// CHTMLNode
+
+inline
+CHTMLNode* CHTMLNode::SetClass(const string& class_name)
+{
+    SetOptionalAttribute("class", class_name);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetId(const string& class_name)
+{
+    SetOptionalAttribute("id", class_name);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetWidth(int width)
+{
+    SetAttribute("width", width);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetHeight(int height)
+{
+    SetAttribute("height", height);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetWidth(const string& width)
+{
+    SetOptionalAttribute("width", width);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetHeight(const string& height)
+{
+    SetOptionalAttribute("height", height);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetSize(int size)
+{
+    SetAttribute("size", size);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetAlign(const string& align)
+{
+    SetOptionalAttribute("align", align);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetVAlign(const string& align)
+{
+    SetOptionalAttribute("valign", align);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetColor(const string& color)
+{
+    SetOptionalAttribute("color", color);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetBgColor(const string& color)
+{
+    SetOptionalAttribute("bgcolor", color);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
+{
+    SetAttribute("name", name);
+    return this;
+}
+
+inline
+const string& CHTMLNode::GetNameAttribute(void) const
+{
+    return GetAttribute("name");
+}
+
+inline
+CHTMLNode* CHTMLNode::SetAccessKey(char key)
+{
+    SetAttribute("accesskey", string(1, key));
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetTitle(const string& title)
+{
+    SetAttribute("title", title);
+    return this;
+}
+
+inline
+CHTMLNode* CHTMLNode::SetStyle(const string& style)
+{
+    SetAttribute("style", style);
+    return this;
+}
+
+inline
+void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
+{
+    if ( !appendstring.empty() ) {
+        AppendChild(new CHTMLPlainText(appendstring, noEncode));
+    }
+}
+
+inline
+void CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
+{
+    if ( appendstring && *appendstring ) {
+        AppendChild(new CHTMLPlainText(appendstring, noEncode));
+    }
+}
+
+inline
+void CHTMLNode::AppendHTMLText(const string& appendstring)
+{
+    if ( !appendstring.empty() ) {
+        AppendChild(new CHTMLText(appendstring));
+    }
+}
+
+inline
+void CHTMLNode::AppendHTMLText(const char* appendstring)
+{
+    if ( appendstring && *appendstring ) {
+        AppendChild(new CHTMLText(appendstring));
+    }
+}
+
 
 
 inline
@@ -752,6 +900,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/08/22 12:12:32  ivanov
+ * Move some code from html.cpp to html.inl
+ *
  * Revision 1.38  2004/12/27 14:27:32  ivanov
  * CHTML_map:: added AddArea() method
  *
