@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/08/22 14:40:06  gouriano
+* Recognize old-style BigInts in binary ASN
+*
 * Revision 1.77  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
@@ -831,7 +834,12 @@ Uint4 CObjectIStreamAsnBinary::ReadUint4(void)
 
 Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 {
-    ExpectSysTag(eInteger);
+    TByte next = PeekTagByte();
+    if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
+        ExpectSysTag(eInteger);
+    } else {
+        ExpectSysTag(eApplication, ePrimitive, eInteger);
+    }
     Uint8 data;
     ReadStdSigned(*this, data);
     return data;
@@ -839,7 +847,12 @@ Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 
 Uint8 CObjectIStreamAsnBinary::ReadUint8(void)
 {
-    ExpectSysTag(eInteger);
+    TByte next = PeekTagByte();
+    if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
+        ExpectSysTag(eInteger);
+    } else {
+        ExpectSysTag(eApplication, ePrimitive, eInteger);
+    }
     Uint8 data;
     ReadStdUnsigned(*this, data);
     return data;
