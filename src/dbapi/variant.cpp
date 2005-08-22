@@ -350,7 +350,7 @@ string CVariant::GetString(void) const
         case eDB_LongBinary:
             {
                 CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
-                s = string((char*)vb->Value(), vb->Size());
+                s = string((char*)vb->Value(), vb->DataSize());
                 break;
             }
     case eDB_VarBinary:
@@ -838,6 +838,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.40  2005/08/22 12:03:55  ssikorsk
+* Use actual data size instead of database column size with eDB_LongBinary
+*
 * Revision 1.39  2005/08/11 16:25:49  kholodov
 * Modified: illegal size argument in CVariant::ctor() throws an exception
 *
