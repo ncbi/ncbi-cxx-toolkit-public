@@ -35,73 +35,6 @@
 BEGIN_NCBI_SCOPE
 
 
-void CIDs::Decode(const string& str)
-{
-    if ( str.empty() ) {
-        return;
-    }
-    int id = 0;         // previous ID
-    SIZE_TYPE pos;      // current position
-    char cmd = str[0];  // command
-
-    // If string begins with digit
-    if ( cmd >= '0' && cmd <= '9' ) {
-        cmd = ',';      // default command: direct ID
-        pos = 0;        // start of number
-    }
-    else {
-        pos = 1;        // start of number
-    }
-
-    SIZE_TYPE end;      // end of number
-    while ( (end = str.find_first_of(" +_,", pos)) != NPOS ) {
-        id = AddID(cmd, id, GetNumber(str.substr(pos, end - pos)));
-        cmd = str[end];
-        pos = end + 1;
-    }
-    id = AddID(cmd, id, GetNumber(str.substr(pos)));
-}
-
-
-int CIDs::GetNumber(const string& str)
-{
-    return NStr::StringToInt(str);
-}
-
-
-int CIDs::AddID(char cmd, int id, int number)
-{
-    switch ( cmd ) {
-    case ' ':
-    case '+':
-    case '_':
-        // incremental ID
-        id += number;
-        break;
-    default:
-        id = number;
-        break;
-    }
-    AddID(id);
-    return id;
-}
-
-
-string CIDs::Encode(void) const
-{
-    string out;
-    int idPrev = 0;
-    for ( const_iterator i = begin(); i != end(); ++i ) {
-        int id = *i;
-        if ( !out.empty() )
-            out += ' ';
-        out += NStr::IntToString(id - idPrev);
-        idPrev = id;
-    }
-    return out;
-}
-
-
 // CHTMLHelper
 
 string CHTMLHelper::sm_newline( "\n" );
@@ -246,12 +179,79 @@ string CHTMLHelper::StripSpecialChars(const string& str)
 }
 
 
+
+// CIDs
+
+void CIDs::Decode(const string& str)
+{
+    if ( str.empty() ) {
+        return;
+    }
+    int id = 0;         // previous ID
+    SIZE_TYPE pos;      // current position
+    char cmd = str[0];  // command
+
+    // If string begins with digit
+    if ( cmd >= '0' && cmd <= '9' ) {
+        cmd = ',';      // default command: direct ID
+        pos = 0;        // start of number
+    }
+    else {
+        pos = 1;        // start of number
+    }
+
+    SIZE_TYPE end;      // end of number
+    while ( (end = str.find_first_of(" +_,", pos)) != NPOS ) {
+        id = AddID(cmd, id, GetNumber(str.substr(pos, end - pos)));
+        cmd = str[end];
+        pos = end + 1;
+    }
+    id = AddID(cmd, id, GetNumber(str.substr(pos)));
+}
+
+
+int CIDs::AddID(char cmd, int id, int number)
+{
+    switch ( cmd ) {
+    case ' ':
+    case '+':
+    case '_':
+        // incremental ID
+        id += number;
+        break;
+    default:
+        id = number;
+        break;
+    }
+    AddID(id);
+    return id;
+}
+
+
+string CIDs::Encode(void) const
+{
+    string out;
+    int idPrev = 0;
+    for ( const_iterator i = begin(); i != end(); ++i ) {
+        int id = *i;
+        if ( !out.empty() )
+            out += ' ';
+        out += NStr::IntToString(id - idPrev);
+        idPrev = id;
+    }
+    return out;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/22 12:13:43  ivanov
+ * Minor code rearrangement
+ *
  * Revision 1.22  2005/06/03 16:48:43  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
