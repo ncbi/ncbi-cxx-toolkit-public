@@ -259,9 +259,6 @@ protected:
 
     // Repeat tag flag (used only inside tag node mappers hooks). See RepeatTag().
     bool            m_RepeatTag; 
-                                      
-                                         
-                                            
 
     // Attributes, e.g. href="link.html"
     auto_ptr<TAttributes> m_Attributes;     
@@ -292,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/08/22 12:13:16  ivanov
+ * Removed extra empty lines
+ *
  * Revision 1.27  2005/06/10 13:47:57  ivanov
  * + CNCBINode::ReInitialize()
  *
