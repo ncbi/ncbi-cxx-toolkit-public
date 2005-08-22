@@ -131,40 +131,42 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
 
     // Finish
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
-        return;
-    }
-    CT_CHAR_TYPE* buf = 0;
-    size_t out_size = 0, out_avail = 0;
+    if ( sp->m_LastStatus != CP::eStatus_EndOfData ) {
 
-    do {
-        // Get pointer to the free space in the buffer
-        if ( dir == CCompressionStream::eRead ) {
-            buf = egptr();
-        } else {
-            buf = sp->m_End;
-        }
-        out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
+        // Here is some unprocessed data
+        CT_CHAR_TYPE* buf = 0;
+        size_t out_size = 0, out_avail = 0;
 
-        // Get remaining data
-        sp->m_LastStatus = sp->m_Processor->Finish(buf, out_size, &out_avail);
-        // Check on error
-        if ( sp->m_LastStatus == CP::eStatus_Error ) {
-           break;
-        }
-        if ( dir == CCompressionStream::eRead ) {
-            // Update the get's pointers
-            setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
-        } else {
-            // Update the output buffer pointer
-            sp->m_End += out_avail;
-            // Write data to the underlying stream only if the output buffer
-            // is full or an overflow/endofdata occurs.
-            if ( !WriteOutBufToStream() ) {
-                break;
+        do {
+            // Get pointer to the free space in the buffer
+            if ( dir == CCompressionStream::eRead ) {
+                buf = egptr();
+            } else {
+                buf = sp->m_End;
             }
-        }
-    } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
+            out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
+
+            // Get remaining data
+            sp->m_LastStatus = sp->m_Processor->Finish(buf,
+                                                       out_size, &out_avail);
+            // Check on error
+            if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            break;
+            }
+            if ( dir == CCompressionStream::eRead ) {
+                // Update the get's pointers
+                setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
+            } else {
+                // Update the output buffer pointer
+                sp->m_End += out_avail;
+                // Write data to the underlying stream only if the output
+                // buffer is full or an overflow/endofdata occurs.
+                if ( !WriteOutBufToStream() ) {
+                    break;
+                }
+            }
+        } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
+    }
 
     // Cleanup
     sp->m_Processor->End();
@@ -497,6 +499,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/08/22 14:35:13  ivanov
+ * CCompressionStreambuf::Finalize() -- Do not forget to clean up
+ * a [de]compression processor even if no more data to process.
+ *
  * Revision 1.19  2005/06/27 13:47:41  ivanov
  * Optimize process of writing data to the underlying stream.
  * Write only when the output buffer is full or an overflow occurs.
