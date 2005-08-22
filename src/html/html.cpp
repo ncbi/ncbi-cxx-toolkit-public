@@ -23,10 +23,9 @@
  *
  * ===========================================================================
  *
- * Author:  Lewis Geer
+ * Authors:  Lewis Geer, Eugene Vasilchenko, Vladimir Ivanov
  *
  */
-
 
 #include <ncbi_pch.hpp>
 #include <html/html.hpp>
@@ -41,10 +40,9 @@ BEGIN_NCBI_SCOPE
 
 
 /// Tag delimiters
-const char* kTagStart    = "<@";   ///< Tag start.
-const char* kTagEnd      = "@>";   ///< Tag end.
-const char* kTagStartEnd = "</@";  ///< Tag start in the end of
-                                   ///< block definition.
+const char* kTagStart = "<@";   ///< Tag start.
+const char* kTagEnd   = "@>";   ///< Tag end.
+
 
 #define INIT_STREAM_WRITE  \
     errno = 0
@@ -81,134 +79,26 @@ static string s_GenerateNodeInternalName(const string& basename,
 }
 
 
+static SIZE_TYPE s_Find(const string& s, const char* target,
+                        SIZE_TYPE start = 0)
+{
+    // Return s.find(target);
+    // Some implementations of string::find call memcmp at every
+    // possible position, which is way too slow.
+    if ( start >= s.size() ) {
+        return NPOS;
+    }
+    const char* cstr = s.c_str();
+    const char* p    = strstr(cstr + start, target);
+    return p ? p - cstr : NPOS;
+}
+
+
 // CHTMLNode
 
 CHTMLNode::~CHTMLNode(void)
 {
     return;
-}
-
-CHTMLNode* CHTMLNode::SetClass(const string& class_name)
-{
-    SetOptionalAttribute("class", class_name);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetId(const string& class_name)
-{
-    SetOptionalAttribute("id", class_name);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetWidth(int width)
-{
-    SetAttribute("width", width);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetHeight(int height)
-{
-    SetAttribute("height", height);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetWidth(const string& width)
-{
-    SetOptionalAttribute("width", width);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetHeight(const string& height)
-{
-    SetOptionalAttribute("height", height);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetSize(int size)
-{
-    SetAttribute("size", size);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetAlign(const string& align)
-{
-    SetOptionalAttribute("align", align);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetVAlign(const string& align)
-{
-    SetOptionalAttribute("valign", align);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetColor(const string& color)
-{
-    SetOptionalAttribute("color", color);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetBgColor(const string& color)
-{
-    SetOptionalAttribute("bgcolor", color);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
-{
-    SetAttribute("name", name);
-    return this;
-}
-
-const string& CHTMLNode::GetNameAttribute(void) const
-{
-    return GetAttribute("name");
-}
-
-CHTMLNode* CHTMLNode::SetAccessKey(char key)
-{
-    SetAttribute("accesskey", string(1, key));
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetTitle(const string& title)
-{
-    SetAttribute("title", title);
-    return this;
-}
-
-CHTMLNode* CHTMLNode::SetStyle(const string& style)
-{
-    SetAttribute("style", style);
-    return this;
-}
-
-void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
-{
-    if ( !appendstring.empty() ) {
-        AppendChild(new CHTMLPlainText(appendstring, noEncode));
-    }
-}
-
-void CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
-{
-    if ( appendstring && *appendstring ) {
-        AppendChild(new CHTMLPlainText(appendstring, noEncode));
-    }
-}
-
-void CHTMLNode::AppendHTMLText(const string& appendstring)
-{
-    if ( !appendstring.empty() ) {
-        AppendChild(new CHTMLText(appendstring));
-    }
-}
-
-void CHTMLNode::AppendHTMLText(const char* appendstring)
-{
-    if ( appendstring && *appendstring ) {
-        AppendChild(new CHTMLText(appendstring));
-    }
 }
 
 string CHTMLNode::GetEventHandlerName(const EHTML_EH_Attribute name) const
@@ -426,24 +316,8 @@ CHTMLText::~CHTMLText(void)
     return;
 }
 
-
-static SIZE_TYPE s_Find(const string& s, const char* target,
-                        SIZE_TYPE start = 0)
-{
-    // Return s.find(target);
-    // Some implementations of string::find call memcmp at every
-    // possible position, which is way too slow.
-    if ( start >= s.size() ) {
-        return NPOS;
-    }
-    const char* cstr = s.c_str();
-    const char* p    = strstr(cstr + start, target);
-    return p ? p - cstr : NPOS;
-}
-
-
-CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
-                                      const string& s) const
+CNcbiOstream& CHTMLText::PrintString(CNcbiOstream& out, TMode mode,
+                                     const string& s) const
 {
     TFlags flags = 0;
     if ( mode == ePlainText ) {
@@ -483,7 +357,7 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
     if ( enable_buffering ) { \
         pstr->write(tmp.data(), tmp.size()); \
     } else { \
-        x_PrintBegin(out, mode, tmp); \
+        PrintString(out, mode, tmp); \
     }
 
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
@@ -491,7 +365,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     const string& text = GetText();
     SIZE_TYPE tagStart = s_Find(text, kTagStart);
     if ( tagStart == NPOS ) {
-        return x_PrintBegin(out, mode, text);
+        return PrintString(out, mode, text);
     }
 
     SIZE_TYPE tag_start_size = strlen(kTagStart);
@@ -550,7 +424,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         PRINT_TMP_STR;
     }
     if ( enable_buffering ) {
-        x_PrintBegin(out, mode, CNcbiOstrstreamToString(*pstr));
+        PrintString(out, mode, CNcbiOstrstreamToString(*pstr));
         delete pstr;
     }
     return out;
@@ -575,7 +449,16 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                 CHECK_STREAM_WRITE(out);
                 if ( !i->second.IsOptional() ||
                      !i->second.GetValue().empty() ) {
-                    out << "=\"" << i->second.GetValue() << '"';
+                    string attr = i->second.GetValue();
+                    out << "=\"";
+                    // Check tags inside attribute value
+                    if ( s_Find(attr, kTagStart) == NPOS) {
+                        out << attr;
+                    } else {
+                        CHTMLText tmp(attr);
+                        tmp.Print(out, mode);
+                    }
+                    out << '"';
                 }
             }
         }
@@ -2433,6 +2316,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.122  2005/08/22 12:12:45  ivanov
+ * CHTMLOpenElement::PrintBegin() -- added parsing <@TAG@> for attributes.
+ * Renamed x_PrintBegin() -> PrintString()
+ * Move some code from html.cpp to html.inl
+ *
  * Revision 1.121  2005/08/18 13:48:48  ivanov
  * Use CHTMLHelper::GetNL() for EOL instead of '\n'
  *
