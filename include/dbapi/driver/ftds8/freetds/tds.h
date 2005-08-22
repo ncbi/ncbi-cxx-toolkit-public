@@ -437,6 +437,15 @@ sheesh! </rant>
 #define TDS_STR_APPENDMODE  "dump file append"
 #define TDS_STR_DATEFMT "date format"
 
+/* Transfered from FreeTDS v0.63 */
+typedef union
+{
+	void *p;
+	int i;
+} tds_align_struct;
+
+#define TDS_ALIGN_SIZE sizeof(tds_align_struct)
+
 #define TDS_MAX_LOGIN_STR_SZ 30
 #define TDS_MAX_LIBRARY_STR_SZ 11
 typedef struct tds_login {
