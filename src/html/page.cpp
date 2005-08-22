@@ -35,9 +35,7 @@
 
 #include <errno.h>
 
-
 BEGIN_NCBI_SCOPE
-
 
 
 // The buffer size for reading from stream.
@@ -45,7 +43,8 @@ const SIZE_TYPE kBufferSize = 4096;
 
 extern const char* kTagStart;
 extern const char* kTagEnd;
-extern const char* kTagStartEnd;
+// Tag start in the end of block definition (see page templates)
+const char* kTagStartEnd = "</@";  
  
 
 // CHTMLBasicPage
@@ -70,9 +69,6 @@ CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
 
 CHTMLBasicPage::~CHTMLBasicPage(void)
 {
-    // BW_02:  the following does not compile on MSVC++ 6.0 SP3:
-    // DeleteElements(m_TagMap);
-
     for (TTagMap::iterator i = m_TagMap.begin();  i != m_TagMap.end();  ++i) {
         delete i->second;
     }
@@ -614,6 +610,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/08/22 12:14:12  ivanov
+ * Move 'kTagStartEnd' definition from html.cpp to page.hpp.
+ * Remove obsolete comments.
+ *
  * Revision 1.45  2005/08/01 16:00:54  ivanov
  * Added support #include command for template libraries
  *
