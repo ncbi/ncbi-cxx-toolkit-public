@@ -177,6 +177,7 @@ TDSCOMPUTEINFO *tds_alloc_compute_results(int num_cols)
  */
 TDSCOMPUTEINFO *comp_info;
 int col;
+int null_sz;
 
 	comp_info = (TDSCOMPUTEINFO *) malloc(sizeof(TDSCOMPUTEINFO));
 	memset(comp_info,'\0',sizeof(TDSCOMPUTEINFO));
@@ -187,6 +188,12 @@ int col;
 		memset(comp_info->columns[col],'\0',sizeof(TDSCOLINFO));
 	}
 	comp_info->num_cols = num_cols;
+    
+	null_sz = (unsigned) (num_cols + (8 * TDS_ALIGN_SIZE - 1)) / 8u;
+	null_sz = null_sz - null_sz % TDS_ALIGN_SIZE;
+	/* set the initial row size to the size of the null info */
+	comp_info->row_size = comp_info->null_info_size = null_sz;
+    
 	return comp_info;
 }
 
@@ -207,13 +214,13 @@ int null_sz;
 		memset(res_info->columns[col],'\0',sizeof(TDSCOLINFO));
 	}
 	res_info->num_cols = num_cols;
-	null_sz = (num_cols/8) + 1;
-	/* 4 byte alignment fix -- should be ifdef'ed to only platforms that 
-	** need it */
-	if (null_sz % 4) null_sz = ((null_sz/4)+1)*4;
+    
+	null_sz = (unsigned) (num_cols + (8 * TDS_ALIGN_SIZE - 1)) / 8u;
+	null_sz = null_sz - null_sz % TDS_ALIGN_SIZE;
 	res_info->null_info_size = null_sz;
 	/* set the initial row size to the size of the null info */
 	res_info->row_size = res_info->null_info_size;
+    
 	return res_info;
 }
 

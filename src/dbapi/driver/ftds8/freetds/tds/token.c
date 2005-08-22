@@ -473,6 +473,32 @@ TDSRESULTINFO *info;
 	return TDS_SUCCEED;
 } 
 
+/**
+ * Add a column size to result info row size and calc offset into row
+ * @param info   result where to add column
+ * @param curcol column to add
+ */
+void
+tds_add_row_column_size_result(TDSRESULTINFO* info, TDSCOLINFO* curcol)
+{
+	/*
+	 * the column_offset is the offset into the row buffer
+	 * where this column begins, text types are no longer
+	 * stored in the row buffer because the max size can
+	 * be too large (2gig) to allocate 
+	 */
+	curcol->column_offset = info->row_size;
+	if (is_numeric_type(curcol->column_type)) {
+		info->row_size += sizeof(TDS_NUMERIC);
+	} else if (is_blob_type(curcol->column_type)) {
+		info->row_size += sizeof(TDSBLOBINFO);
+	} else {
+		info->row_size += curcol->column_size;
+	}
+	info->row_size += (TDS_ALIGN_SIZE - 1);
+	info->row_size -= info->row_size % TDS_ALIGN_SIZE;
+}
+
 /* 
 ** tds_process_col_info() is the other half of result set processing
 ** under TDS 4.2. It follows tds_process_col_name(). It contains all the 
@@ -536,17 +562,7 @@ char ci_flags[4];
 				break;
 		}
 
-		if (is_blob_type(curcol->column_type)) {
-			curcol->column_offset = info->row_size;
-		} else {
-			curcol->column_offset = info->row_size;
-			info->row_size += curcol->column_size + 1;
-		}
-		if (IS_TDS42(tds)) {
-			remainder = info->row_size % align; 
-			if (remainder)
-				info->row_size += (align - remainder);
-		}
+        tds_add_row_column_size_result(info, curcol);
 	}
 
 	/* get the rest of the bytes */
@@ -596,6 +612,33 @@ int marker;
 	tds_unget_byte(tds);
 	return TDS_SUCCEED;
 }
+
+/**
+ * Add a column size to result info row size and calc offset into row
+ * @param info   result where to add column
+ * @param curcol column to add
+ */
+void
+tds_add_row_column_size_compute(TDSCOMPUTEINFO * info, TDSCOLINFO * curcol)
+{
+	/*
+	 * the column_offset is the offset into the row buffer
+	 * where this column begins, text types are no longer
+	 * stored in the row buffer because the max size can
+	 * be too large (2gig) to allocate 
+	 */
+	curcol->column_offset = info->row_size;
+	if (is_numeric_type(curcol->column_type)) {
+		info->row_size += sizeof(TDS_NUMERIC);
+	} else if (is_blob_type(curcol->column_type)) {
+		info->row_size += sizeof(TDSBLOBINFO);
+	} else {
+		info->row_size += curcol->column_size;
+	}
+	info->row_size += (TDS_ALIGN_SIZE - 1);
+	info->row_size -= info->row_size % TDS_ALIGN_SIZE;
+}
+
 /*
 ** tds_process_compute_result() processes compute result sets.  These functions
 ** need work but since they get little use, nobody has complained!
@@ -634,11 +677,8 @@ int remainder;
 		} else { 
 			curcol->column_size = get_size_by_type(curcol->column_type);
 		}
-		curcol->column_offset = info->row_size;
-		info->row_size += curcol->column_size + 1;
-		/* actually this 4 should be a machine dependent #define */
-		remainder = info->row_size & 0x3; 
-		if (remainder) info->row_size += (4 - remainder);
+        
+        tds_add_row_column_size_compute(info, curcol);
 
 		tds_get_byte(tds);
 	}
@@ -741,33 +781,11 @@ int remainder;
 		colnamelen = tds_get_byte(tds);
 		tds_get_string(tds,curcol->column_name, colnamelen);
 
-		/* the column_offset is the offset into the row buffer
-		** where this column begins, text types are no longer
-		** stored in the row buffer because the max size can
-		** be too large (2gig) to allocate */
-		curcol->column_offset = info->row_size;
-		if (!is_blob_type(curcol->column_type)) {
-			info->row_size += curcol->column_size + 1;
-		}
-#ifdef NCBI_FTDS
-      else {
+        tds_add_row_column_size_result(info, curcol);
+		
+		if (is_blob_type(curcol->column_type)) {
           strcpy(curcol->full_column_name+tabnamelen+1,curcol->column_name);
       }
-#endif
-		if (is_numeric_type(curcol->column_type)) {
-                       info->row_size += sizeof(TDS_NUMERIC) + 1;
-		}
-#ifdef NCBI_FTDS
-		else if(curcol->column_type == SYBVARBINARY) {
-		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
-		}
-#endif
-		
-		/* actually this 4 should be a machine dependent #define */
-		if(remainder = info->row_size & 0x3) {
-          info->row_size += (4 - remainder);
-      }
-		
 	}
 
 	/* all done now allocate a row for tds_process_row to use */
@@ -845,23 +863,7 @@ int remainder;
 			curcol->column_scale = tds_get_byte(tds); /* scale */
 		}
 
-		curcol->column_offset = info->row_size;
-		if (is_numeric_type(curcol->column_type)) {
-			info->row_size += sizeof(TDS_NUMERIC) + 1;
-		} else if (!is_blob_type(curcol->column_type)) {
-			info->row_size += curcol->column_size + 1;
-		}
-#ifdef NCBI_FTDS
-		else if(curcol->column_type == SYBVARBINARY) {
-		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
-		}
-#endif
-
-
-
-		/* actually this 4 should be a machine dependent #define */
-		remainder = info->row_size & 0x3; 
-		if (remainder) info->row_size += (4 - remainder);
+        tds_add_row_column_size_result(info, curcol);
 
 		tds_get_byte(tds); /* ? */
 	}
