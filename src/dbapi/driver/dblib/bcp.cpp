@@ -105,6 +105,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
+#ifndef FTDS_IN_USE
                 DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
                 Int8 v8 = val.Value();
                 v->precision= 18;
@@ -114,6 +115,10 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 r = bcp_bind(m_Cmd, (BYTE*) v, 0,
                              val.IsNULL() ? 0 : -1, 0, 0, SYBNUMERIC, i + 1);
                 pb = (void*) (v + 1);
+#else                
+                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1);
+#endif
             }
             break;
             case eDB_Char: {
@@ -253,6 +258,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
+#ifndef FTDS_IN_USE
                 DBNUMERIC* v = (DBNUMERIC*) pb;
                 v->precision= 18;
                 v->scale= 0;
@@ -264,6 +270,12 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                     bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
                 pb = (void*) (v + 1);
+#else                
+                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+#endif                
             }
             break;
             case eDB_Char: {
@@ -509,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/08/22 15:16:48  ssikorsk
+ * Treat eDB_BigInt as SYBINT8 in case of FreeTDS and as SYBNUMERIC in case of Sybase dblib
+ *
  * Revision 1.13  2005/08/15 18:46:03  ssikorsk
  * Rebind variables after each call of Bind.
  *
