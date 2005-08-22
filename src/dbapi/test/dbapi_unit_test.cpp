@@ -2517,7 +2517,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if ( args.GetServerType() == CTestArguments::eMsSql ) {
+    if ( args.GetServerType() == CTestArguments::eMsSql && 
+         args.GetDriverName() != "msdblib") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -2642,6 +2643,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2005/08/22 17:01:30  ssikorsk
+ * Disabled Test_SelectStmtXML for the msdblib driver.
+ *
  * Revision 1.35  2005/08/22 12:09:17  ssikorsk
  * Added test for the SQLVARBINARY data type to the BulKWriting test.
  *
