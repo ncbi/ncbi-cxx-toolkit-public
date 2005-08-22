@@ -51,15 +51,18 @@ class CNCBINode;
 
 struct NCBI_XHTML_EXPORT BaseTagMapper
 {
-    virtual ~BaseTagMapper(void);
+    virtual ~BaseTagMapper(void) {};
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
 
 struct NCBI_XHTML_EXPORT StaticTagMapper : public BaseTagMapper
 {
-    StaticTagMapper(CNCBINode* (*function)(void));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    StaticTagMapper(CNCBINode* (*function)(void))
+        : m_Function(function)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (*m_Function)(); }
 private:
     CNCBINode* (*m_Function)(void);
 };
@@ -67,8 +70,11 @@ private:
 
 struct NCBI_XHTML_EXPORT StaticTagMapperByName : public BaseTagMapper
 {
-    StaticTagMapperByName(CNCBINode* (*function)(const string& name));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    StaticTagMapperByName(CNCBINode* (*function)(const string& name))
+        : m_Function(function)
+        { return; };
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (*m_Function)(name); }
 private:
     CNCBINode* (*m_Function)(const string& name);
 };
@@ -76,8 +82,11 @@ private:
 
 struct NCBI_XHTML_EXPORT StaticTagMapperByData : public BaseTagMapper
 {
-    StaticTagMapperByData(CNCBINode* (*function)(void* data), void* data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    StaticTagMapperByData(CNCBINode* (*function)(void* data), void* data)
+        : m_Function(function), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (*m_Function)(m_Data); }
 private:
     CNCBINode* (*m_Function)(void* data);
     void* m_Data;
@@ -87,8 +96,11 @@ private:
 struct NCBI_XHTML_EXPORT StaticTagMapperByDataAndName : public BaseTagMapper
 {
     StaticTagMapperByDataAndName(
-        CNCBINode* (*function)(void* data, const string& name), void* data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+        CNCBINode* (*function)(void* data, const string& name), void* data)
+        : m_Function(function), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (*m_Function)(m_Data, name); }
 private:
     CNCBINode* (*m_Function)(void* data, const string& name);
     void* m_Data;
@@ -98,8 +110,12 @@ private:
 template<class C>
 struct StaticTagMapperByNode : public BaseTagMapper
 {
-    StaticTagMapperByNode(CNCBINode* (*function)(C* node));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    StaticTagMapperByNode(CNCBINode* (*function)(C* node))
+        : m_Function(function)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return m_Function(dynamic_cast<C*>(_this)); }
+
 private:
     CNCBINode* (*m_Function)(C* node);
 };
@@ -109,8 +125,11 @@ template<class C>
 struct StaticTagMapperByNodeAndName : public BaseTagMapper
 {
     StaticTagMapperByNodeAndName(
-        CNCBINode* (*function)(C* node, const string& name));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+        CNCBINode* (*function)(C* node, const string& name))
+        : m_Function(function)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return m_Function(dynamic_cast<C*>(_this), name); }
 private:
     CNCBINode* (*m_Function)(C* node, const string& name);
 };
@@ -120,8 +139,11 @@ template<class C, typename T>
 struct StaticTagMapperByNodeAndData : public BaseTagMapper
 {
     StaticTagMapperByNodeAndData(
-        CNCBINode* (*function)(C* node, T data), T data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+        CNCBINode* (*function)(C* node, T data), T data)
+        : m_Function(function), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return m_Function(dynamic_cast<C*>(_this), m_Data); }
 private:
     CNCBINode* (*m_Function)(C* node, T data);
     T m_Data;
@@ -132,8 +154,11 @@ template<class C, typename T>
 struct StaticTagMapperByNodeAndDataAndName : public BaseTagMapper
 {
     StaticTagMapperByNodeAndDataAndName(
-        CNCBINode* (*function)(C* node, T data, const string& name), T data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+        CNCBINode* (*function)(C* node, T data, const string& name), T data)
+        : m_Function(function), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    { return m_Function(dynamic_cast<C*>(_this), m_Data, name); }
 private:
     CNCBINode* (*m_Function)(C* node, T data, const string& name);
     T m_Data;
@@ -142,8 +167,11 @@ private:
 
 struct NCBI_XHTML_EXPORT ReadyTagMapper : public BaseTagMapper
 {
-    ReadyTagMapper(CNCBINode* node);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    ReadyTagMapper(CNCBINode* node)
+        : m_Node(node)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return &*m_Node; }
 private:
     mutable CNodeRef m_Node;
 };
@@ -152,8 +180,11 @@ private:
 template<class C>
 struct TagMapper : public BaseTagMapper
 {
-    TagMapper(CNCBINode* (C::*method)(void));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    TagMapper(CNCBINode* (C::*method)(void))
+        : m_Method(method)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (dynamic_cast<C*>(_this)->*m_Method)(); }
 private:
     CNCBINode* (C::*m_Method)(void);
 };
@@ -162,8 +193,11 @@ private:
 template<class C>
 struct TagMapperByName : public BaseTagMapper
 {
-    TagMapperByName(CNCBINode* (C::*method)(const string& name));
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    TagMapperByName(CNCBINode* (C::*method)(const string& name))
+        : m_Method(method)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (dynamic_cast<C*>(_this)->*m_Method)(name) }
 private:
     CNCBINode* (C::*m_Method)(const string& name);
 };
@@ -172,8 +206,11 @@ private:
 template<class C, typename T>
 struct TagMapperByData : public BaseTagMapper
 {
-    TagMapperByData(CNCBINode* (C::*method)(T data), T data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+    TagMapperByData(CNCBINode* (C::*method)(T data), T data)
+        : m_Method(method), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (dynamic_cast<C*>(_this)->*m_Method)(m_Data); }
 private:
     CNCBINode* (C::*m_Method)(T data);
     T m_Data;
@@ -184,23 +221,26 @@ template<class C, typename T>
 struct TagMapperByDataAndName : public BaseTagMapper
 {
     TagMapperByDataAndName(
-        CNCBINode* (C::*method)(T data, const string& name), T data);
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+        CNCBINode* (C::*method)(T data, const string& name), T data)
+        : m_Method(method), m_Data(data)
+        { return; }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+        { return (dynamic_cast<C*>(_this)->*m_Method)(m_Data, name); }
 private:
     CNCBINode* (C::*m_Method)(T data, const string& name);
     T m_Data;
 };
 
 
-#include <html/nodemap.inl>
-
+//=============================================================================
+//  Inline methods
+//=============================================================================
 
 inline
 BaseTagMapper* CreateTagMapper(CNCBINode* node)
 {
     return new ReadyTagMapper(node);
 }
-
 
 inline
 BaseTagMapper* CreateTagMapper(
@@ -209,14 +249,12 @@ BaseTagMapper* CreateTagMapper(
     return new StaticTagMapper(function);
 }
 
-
 inline
 BaseTagMapper* CreateTagMapper(
     CNCBINode* (*function)(const string& name))
 {
     return new StaticTagMapperByName(function);
 }
-
 
 inline
 BaseTagMapper* CreateTagMapper(
@@ -225,7 +263,6 @@ BaseTagMapper* CreateTagMapper(
     return new StaticTagMapperByData(function, data);
 }
 
-
 inline
 BaseTagMapper* CreateTagMapper(
     CNCBINode* (*function)(void* data, const string& name), void* data)
@@ -233,13 +270,11 @@ BaseTagMapper* CreateTagMapper(
     return new StaticTagMapperByDataAndName(function, data);
 }
 
-
 template<class C>
 BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node))
 {
     return new StaticTagMapperByNode<C>(function);
 }
-
 
 template<class C>
 BaseTagMapper* CreateTagMapper(
@@ -248,14 +283,12 @@ BaseTagMapper* CreateTagMapper(
     return new StaticTagMapperByNodeAndName<C>(function);
 }
 
-
 template<class C, typename T>
 BaseTagMapper* CreateTagMapper(
     CNCBINode* (*function)(C* node, T data), T data)
 {
     return new StaticTagMapperByNodeAndData<C,T>(function, data);
 }
-
 
 template<class C, typename T>
 BaseTagMapper* CreateTagMapper(
@@ -264,13 +297,11 @@ BaseTagMapper* CreateTagMapper(
     return new StaticTagMapperByNodeAndDataAndName<C,T>(function, data);
 }
 
-
 template<class C>
 BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
 {
     return new TagMapper<C>(method);
 }
-
 
 template<class C>
 BaseTagMapper* CreateTagMapper(
@@ -279,13 +310,11 @@ BaseTagMapper* CreateTagMapper(
     return new TagMapperByName<C>(method);
 }
 
-
 template<class C, typename T>
 BaseTagMapper* CreateTagMapper(CNCBINode* (C::*method)(T data), T data)
 {
     return new TagMapperByData<C,T>(method, data);
 }
-
 
 template<class C, typename T>
 BaseTagMapper* CreateTagMapper(
@@ -304,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/22 12:13:27  ivanov
+ * Dropped nodemap.[cpp|inl]
+ *
  * Revision 1.15  2004/02/02 14:14:15  ivanov
  * Added TagMapper to functons and class methods which used a data parameter
  *
