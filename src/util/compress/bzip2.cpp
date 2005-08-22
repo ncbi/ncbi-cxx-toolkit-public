@@ -392,6 +392,10 @@ CBZip2Compressor::CBZip2Compressor(
 
 CBZip2Compressor::~CBZip2Compressor()
 {
+    if ( IsBusy() ) {
+        // Abnormal session termination
+        End();
+    }
 }
 
 
@@ -624,6 +628,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/22 14:29:42  ivanov
+ * Call End() in the CBZip2Compressor destrustor for terminated sessions
+ *
  * Revision 1.15  2005/07/14 17:52:05  ivanov
  * [De]compressFile() -- combine default CBZip2CompressionFile and
  * current CBZip2Compression flags.
