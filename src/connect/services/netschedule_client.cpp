@@ -962,6 +962,56 @@ void CNetScheduleClient::PutResult(const string& job_key,
     CheckOK(&m_Tmp);
 }
 
+
+bool CNetScheduleClient::PutResultGetJob(const string& done_job_key, 
+                                         int           done_ret_code, 
+                                         const string& done_output,
+                                         string*       new_job_key, 
+                                         string*       new_input)
+{
+    if (done_job_key.empty()) {
+        return GetJob(new_job_key, new_input);
+    }
+
+    _ASSERT(new_job_key);
+    _ASSERT(new_input);
+
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    bool connected = CheckConnect(done_job_key);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "JXCG ", connected);
+
+    m_Tmp.append(done_job_key);
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::IntToString(done_ret_code));
+    m_Tmp.append(" \"");
+    m_Tmp.append(done_output);
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    TrimPrefix(&m_Tmp);
+
+    if (m_Tmp.empty()) {
+        return false;
+    }
+
+    ParseGetJobResponse(new_job_key, new_input, m_Tmp);
+
+    _ASSERT(!new_job_key->empty());
+
+    return true;
+}
+
+
 void CNetScheduleClient::PutProgressMsg(const string& job_key, 
                                         const string& progress_msg)
 {
@@ -1433,6 +1483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/08/22 14:03:22  kuznets
+ * +PutREsultGetJob()
+ *
  * Revision 1.38  2005/08/17 14:27:31  kuznets
  * Added permanent connection mode
  *

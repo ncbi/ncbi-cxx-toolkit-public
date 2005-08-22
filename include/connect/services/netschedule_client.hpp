@@ -363,6 +363,19 @@ public:
                    int           ret_code, 
                    const string& output);
 
+
+    /// Put job result, get new job from the queue
+    /// If this is the first call and there is no previous job 
+    /// (done_job_key is empty) this is equivalent to GetJob
+    ///
+    /// @sa PutResult, GetJob
+    virtual
+    bool PutResultGetJob(const string& done_job_key, 
+                         int           done_ret_code, 
+                         const string& done_output,
+                         string*       new_job_key, 
+                         string*       new_input);
+
     /// Put job interim (progress) message
     /// 
     /// @param job_key
@@ -835,6 +848,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/08/22 14:03:10  kuznets
+ * +PutREsultGetJob()
+ *
  * Revision 1.40  2005/08/17 14:26:14  kuznets
  * Added permanent connection mode
  *
