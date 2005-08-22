@@ -151,6 +151,7 @@ CDBAPIUnitTest::TestInit(void)
         sql  = " CREATE TABLE #bulk_insert_table( \n";
         sql += "    id INT PRIMARY KEY, \n";
         sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+        sql += "    vb8000_field VARBINARY(8000) NULL, \n";
         sql += "    int_field INT NULL, \n";
         sql += "    bigint_field BIGINT NULL \n";
         sql += " )";
@@ -163,6 +164,7 @@ CDBAPIUnitTest::TestInit(void)
             sql  = " CREATE TABLE #bulk_insert_table( \n";
             sql += "    id INT PRIMARY KEY, \n";
             sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+            sql += "    vb8000_field VARBINARY(8000) NULL \n";
             sql += " )";
 
             // Create the table
@@ -270,29 +272,90 @@ CDBAPIUnitTest::Bulk_Writing(void)
     
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     
+    
+    // VARBINARY ...
+    {
+        enum { num_of_tests = 10 };
+        const char char_val('2');
+        
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+        
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
+            
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_LongBinary, 8000);
+
+            bi->Bind(1, &col1);
+            bi->Bind(3, &col2);
+            
+            for(int i = 0; i < num_of_tests; ++i ) {
+                int int_value = 8000 / num_of_tests * i;
+                string str_val(int_value , char_val);
+                
+                col1 = int_value;
+                col2 = CVariant::LongBinary(8000, str_val.c_str(), str_val.size());
+                bi->AddRow();
+            }
+            bi->Complete();
+        }
+        
+        // Retrieve data ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            sql  = " SELECT id, vb8000_field FROM #bulk_insert_table";
+            sql += " ORDER BY id";
+
+            auto_stmt->Execute( sql );
+            
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            BOOST_CHECK( rs.get() );
+
+            for(int i = 0; i < num_of_tests; ++i ) {
+                BOOST_CHECK( rs->Next() );
+                
+                int int_value = 8000 / num_of_tests * i;
+                Int4 id = rs->GetVariant(1).GetInt4();
+                string vb8000_value = rs->GetVariant(2).GetString(); 
+                
+                BOOST_CHECK_EQUAL( int_value, id );
+                BOOST_CHECK_EQUAL( string::size_type(int_value), vb8000_value.size() );
+            }
+
+            // Dump results ...
+            DumpResults( auto_stmt );
+        }
+    }
+    
     // INT, BIGINT
     {
-        
-        enum { num_of_tests = 3 };
         
         // Clean table ...
         auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
         
         // INT collumn ...
         {
+            enum { num_of_tests = 8 };
+
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
                 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
 
                 bi->Bind(1, &col1);
-                bi->Bind(3, &col2);
+                bi->Bind(4, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
-                    col2 = i;
+                    Int4 value = Int4( 1 ) << (i * 4);
+                    col2 = value;
                     bi->AddRow();
                 }
                 bi->Complete();
@@ -313,7 +376,8 @@ CDBAPIUnitTest::Bulk_Writing(void)
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
                     Int4 value = rs->GetVariant(1).GetInt4();
-                    BOOST_CHECK_EQUAL( i, value );
+                    Int4 expected_value = Int4( 1 ) << (i * 4);
+                    BOOST_CHECK_EQUAL( expected_value, value );
                 }
                 
                 // Dump results ...
@@ -326,19 +390,24 @@ CDBAPIUnitTest::Bulk_Writing(void)
         
         // BIGINT collumn ...
         {
+            // There is a problem at least with the ftds driver ...
+            // enum { num_of_tests = 16 }; 
+            enum { num_of_tests = 14 };
+
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 5) );
                 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_BigInt);
 
                 bi->Bind(1, &col1);
-                bi->Bind(4, &col2);
+                bi->Bind(5, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
-                    col2 = (Int8)i;
+                    Int8 value = Int8( 1 ) << (i * 4);
+                    col2 = value;
                     bi->AddRow();
                 }
                 bi->Complete();
@@ -359,7 +428,8 @@ CDBAPIUnitTest::Bulk_Writing(void)
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
                     Int8 value = rs->GetVariant(1).GetInt8();
-                    BOOST_CHECK_EQUAL( i, value );
+                    Int8 expected_value = Int8( 1 ) << (i * 4);
+                    BOOST_CHECK_EQUAL( expected_value, value );
                 }
                 
                 // Dump results ...
@@ -368,7 +438,42 @@ CDBAPIUnitTest::Bulk_Writing(void)
         }
     }
 
-    // Very first test ...
+    // Yet another BIGINT test ...
+    {
+        auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
+        
+        stmt->ExecuteUpdate(
+            "create table #__blki_test ( name char(32) not null, value bigint null )" );
+        stmt->Close();
+        
+        auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+        
+        CVariant col1(eDB_Char,32);
+        CVariant col2(eDB_BigInt);
+        
+        blki->Bind(1, &col1);
+        blki->Bind(2, &col2);
+        
+        col1 = "Hello-1";
+        col2 = Int8( 123 );
+        blki->AddRow();
+        
+        col1 = "Hello-2";
+        col2 = Int8( 1234 );
+        blki->AddRow();
+        
+        col1 = "Hello-3";
+        col2 = Int8( 12345 );
+        blki->AddRow();
+        
+        col1 = "Hello-4";
+        col2 = Int8( 123456 );
+        blki->AddRow();
+        
+        blki->Complete();
+        blki->Close();
+    }
+    
     // VARCHAR ...
     {
         enum { num_of_tests = 7 };
@@ -2537,6 +2642,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2005/08/22 12:09:17  ssikorsk
+ * Added test for the SQLVARBINARY data type to the BulKWriting test.
+ *
  * Revision 1.34  2005/08/17 20:07:40  ucko
  * Fix previous revision to use Int8 rather than hardcoding long long,
  * which is not always equivalent (or even necessarily defined).
