@@ -186,7 +186,6 @@ void CTestCompressor<TCompression, TCompressionFile,
             size_t nread = 0;
             do {
                 n = zf.Read(cmp_buf + nread, 100);
-                assert(n >= 0);
                 nread += n;
             } while ( n != 0 );
             assert(nread == (int)kDataLen);
@@ -564,6 +563,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/22 18:14:20  ivanov
+ * Removed redundant assert
+ *
  * Revision 1.11  2005/04/25 19:05:24  ivanov
  * Fixed compilation warnings on 64-bit Worshop compiler
  *
