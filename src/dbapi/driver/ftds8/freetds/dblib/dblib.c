@@ -1088,6 +1088,7 @@ DBNUMERIC   *num;
        switch (desttype) {
 
           case SYBBINARY:
+		  case SYBVARBINARY:
           case SYBIMAGE:
                if (srclen > destlen && destlen >= 0) {
                   ret = -1;
@@ -1163,6 +1164,9 @@ DBNUMERIC   *num;
                ret = sizeof(DBNUMERIC);
                break;
 
+		  default:
+			   ret = -1;
+		   	   break;
        }
        return ret;
     }          /* srctype == desttype */
@@ -1192,6 +1196,7 @@ DBNUMERIC   *num;
 
     switch (desttype) {
         case SYBBINARY:
+        case SYBVARBINARY:
         case SYBIMAGE:
 
              if (len > destlen && destlen >= 0) {
