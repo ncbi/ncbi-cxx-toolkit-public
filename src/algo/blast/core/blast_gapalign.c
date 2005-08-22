@@ -2341,6 +2341,10 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
             BlastIntervalTreeAddHSP(new_hsp, tree, query_info, 
                                     eQueryAndSubject);
          }
+         else
+         {
+            gap_align->edit_script = GapEditScriptDelete(gap_align->edit_script);
+         }
       }
    }
 
