@@ -901,6 +901,10 @@ CZipDecompressor::CZipDecompressor(int window_bits, TFlags flags)
 
 CZipDecompressor::~CZipDecompressor()
 {
+    if ( IsBusy() ) {
+        // Abnormal session termination
+        End();
+    }
 }
 
 
@@ -1073,6 +1077,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/08/22 14:30:49  ivanov
+ * Call End() in the CZipCompression destrustor for abnormal
+ * terminated sessions
+ *
  * Revision 1.24  2005/07/14 17:56:55  ivanov
  * CZipCompressionFile:: use gzip file format by default.
  * [De]compressFile() -- combine default CZipCompressionFile and
