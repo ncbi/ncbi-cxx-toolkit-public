@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Lewis Geer
+ * Authors:  Lewis Geer, Eugene Vasilchenko, Vladimir Ivanov
  *
  */
 
@@ -320,24 +320,24 @@ public:
     /// old code using CHTMLText class. In the future it will be disabled
     /// by default.
     enum EFlags {
-        fStripHtmlMode    = 1 << 1,   //< Strip text in html mode
-        fStripTextMode    = 1 << 2,   //< Strip text in plain text mode
+        fStripHtmlMode    = 1 << 1,   ///< Strip text in html mode
+        fStripTextMode    = 1 << 2,   ///< Strip text in plain text mode
         fStrip            = fStripHtmlMode  | fStripTextMode,
         fNoStrip          = 0,
-        fEncodeHtmlMode   = 1 << 3,   //< Encode text in html mode
-        fEncodeTextMode   = 1 << 4,   //< Encode text in plain text mode
+        fEncodeHtmlMode   = 1 << 3,   ///< Encode text in html mode
+        fEncodeTextMode   = 1 << 4,   ///< Encode text in plain text mode
         fEncode           = fEncodeHtmlMode | fEncodeTextMode,
         fNoEncode         = 0,
-        fEnableBuffering  = 0,        //< Enable printout buffering
-        fDisableBuffering = 1 << 5,   //< Disable printout buffering
+        fEnableBuffering  = 0,        ///< Enable printout buffering
+        fDisableBuffering = 1 << 5,   ///< Disable printout buffering
 
         // Presets
         fCode             = fStripTextMode  | fNoEncode,
         fCodeCompatible   = fStripTextMode  | fNoEncode  |  fDisableBuffering,
         fExample          = fNoStrip        | fEncodeHtmlMode,
-        fDefault          = fCodeCompatible  //< Default value
+        fDefault          = fCodeCompatible  ///< Default value
     };
-    typedef int TFlags;               //< Bitwise OR of "EFlags"
+    typedef int TFlags;               ///< Bitwise OR of "EFlags"
 
     CHTMLText(const char*   text, TFlags flags = fDefault);
     CHTMLText(const string& text, TFlags flags = fDefault);
@@ -348,9 +348,10 @@ public:
 
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
-private:
-    CNcbiOstream& x_PrintBegin(CNcbiOstream& out, TMode mode,
-                               const string& s) const;
+protected:
+    // Print HTML string (with encoding/stripping HTML entities)
+    CNcbiOstream& PrintString(CNcbiOstream& out, TMode mode, 
+                              const string& s) const;
 private:
     string  m_Text;
     TFlags  m_Flags;
@@ -397,8 +398,6 @@ public:
 
 protected:
     bool m_NoWrap;
-
-
 };
 
 
@@ -1618,6 +1617,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2005/08/22 12:12:19  ivanov
+ * Renamed x_PrintBegin() -> PrintString()
+ *
  * Revision 1.86  2005/05/09 18:58:01  ivanov
  * CHTMLNode::AttachPopupMenu() -- changed type of 3-rd parameter
  * from 'bool'to TPopupMenuFlags.
