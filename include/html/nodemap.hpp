@@ -197,7 +197,7 @@ struct TagMapperByName : public BaseTagMapper
         : m_Method(method)
         { return; }
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
-        { return (dynamic_cast<C*>(_this)->*m_Method)(name) }
+        { return (dynamic_cast<C*>(_this)->*m_Method)(name); }
 private:
     CNCBINode* (C::*m_Method)(const string& name);
 };
@@ -333,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/22 13:29:40  ivanov
+ * Added missed ';'
+ *
  * Revision 1.16  2005/08/22 12:13:27  ivanov
  * Dropped nodemap.[cpp|inl]
  *
