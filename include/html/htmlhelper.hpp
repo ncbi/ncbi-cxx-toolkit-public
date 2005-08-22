@@ -56,49 +56,19 @@ class CHTML_form;
 
 // Utility functions
 
-class NCBI_XHTML_EXPORT CIDs : public list<int>
-{
-public:
-    CIDs(void);
-    ~CIDs(void);
-
-    // If 'id' is not in list, return false.
-    // If 'id' in list - return true and remove 'id' from list.
-    bool ExtractID(int id);
-
-    // Add 'id' to list.
-    void AddID(int id);
-
-    // Return number of ids in list.
-    size_t CountIDs(void) const;
-
-    // Decode id list from text representation.
-    void Decode(const string& str);
-
-    // Encode id list to text representation.
-    string Encode(void) const;
-
-private:
-    // Decoder helpers.
-    int GetNumber(const string& str);
-    int AddID(char cmd, int id, int number);
-    
-};
-
-
 class NCBI_XHTML_EXPORT CHTMLHelper
 {
 public:
-    // HTML encodes a string. E.g. &lt;.
+    /// HTML encodes a string. E.g. &lt;.
     static string HTMLEncode(const string& str);
 
-    // Strip all HTML code from a string.
+    /// Strip all HTML code from a string.
     static string StripHTML(const string& str);
 
-    // Strip all HTML tags from a string.
+    /// Strip all HTML tags from a string.
     static string StripTags(const string& str);
 
-    // Strip all named and numeric character entities from a string.
+    /// Strip all named and numeric character entities from a string.
     static string StripSpecialChars(const string& str);
 
     typedef set<int> TIDList;
@@ -139,7 +109,59 @@ protected:
 };
 
 
-#include <html/htmlhelper.inl>
+/// CIDs class to hold sorted list of IDs.
+///
+/// It is here by historical reasons.
+/// We cannot find place for it in any other library now.
+
+class NCBI_XHTML_EXPORT CIDs : public list<int>
+{
+public:
+    CIDs(void)  {};
+    ~CIDs(void) {};
+
+    // If 'id' is not in list, return false.
+    // If 'id' in list - return true and remove 'id' from list.
+    bool ExtractID(int id);
+
+    // Add 'id' to list.
+    void AddID(int id) { push_back(id); }
+
+    // Return number of ids in list.
+    size_t CountIDs(void) const { return size(); }
+
+    // Decode id list from text representation.
+    void Decode(const string& str);
+
+    // Encode id list to text representation.
+    string Encode(void) const;
+
+private:
+    // Decoder helpers.
+    int GetNumber(const string& str);
+    int AddID(char cmd, int id, int number);
+};
+
+
+
+//=============================================================================
+//  Inline methods
+//=============================================================================
+
+inline bool CIDs::ExtractID(int id)
+{
+    iterator i = find(begin(), end(), id);
+    if ( i != end() ) {
+        erase(i);
+        return true;
+    }
+    return false;
+}
+
+inline int CIDs::GetNumber(const string& str)
+{
+    return NStr::StringToInt(str);
+}
 
 
 END_NCBI_SCOPE
@@ -151,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/08/22 12:13:02  ivanov
+ * Dropped htmlhelper.inl
+ *
  * Revision 1.13  2004/02/02 14:18:33  ivanov
  * Added CHTMLHelper::StripHTML(), StripSpecialChars()
  *
