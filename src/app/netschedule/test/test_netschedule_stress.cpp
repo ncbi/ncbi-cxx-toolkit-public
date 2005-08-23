@@ -197,13 +197,42 @@ void TestNetscheduleLB(const string&  queue)
     NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
 }
 
+
+void TestNetwork(const string host, unsigned port, const string& queue_name)
+{
+    CNetScheduleClient cl(host, port, "stress_test", queue_name);
+    cl.SetProgramVersion("test 1.0.0");
+    const int kIterCount = 400000;
+
+    cl.SetConnMode(CNetScheduleClient::eKeepConnection);
+    cl.ActivateRequestRateControl(false);
+    cl.SetCommunicationTimeout().sec = 20;
+
+    NcbiCout << "Testing network using ServerVersion command " <<  kIterCount<< " iterations..." << NcbiEndl;
+
+    CStopWatch sw(true);
+
+    for (unsigned i = 0; i < kIterCount; ++i) {
+        cl.ServerVersion();
+    }
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    double elapsed = sw.Elapsed();
+    double rate = kIterCount / elapsed;
+
+    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+    NcbiCout << "Commands processed: " << kIterCount         << NcbiEndl;
+    NcbiCout << "Elapsed: "        << elapsed     << " sec."      << NcbiEndl;
+    NcbiCout << "Rate: "           << rate        << " cmd/sec." << NcbiEndl;
+
+}
+
 void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
 {
     CNetScheduleClient cl(host, port, "stress_test", queue_name);
     cl.SetProgramVersion("test 1.0.0");
     
     CNetScheduleClient::SJobBatch jobs;
-    const int kJobCount = 40;
+    const int kJobCount = 400000;
 
     for (int i = 0; i < kJobCount; ++i) {
         jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
@@ -272,6 +301,8 @@ int CTestNetScheduleStress::Run(void)
 
 //    TestRunTimeout(host, port, queue_name);
 //    TestNetscheduleLB(queue_name);
+
+//    TestNetwork(host, port, queue_name);
 //    TestBatchSubmit(host, port, queue_name);
 //return 0;
 
@@ -505,6 +536,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/23 15:00:42  kuznets
+ * Added network test
+ *
  * Revision 1.17  2005/08/22 14:02:27  kuznets
  * Batch test changed to use job exchange
  *
