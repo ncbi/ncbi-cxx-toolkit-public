@@ -492,7 +492,9 @@ tds_add_row_column_size_result(TDSRESULTINFO* info, TDSCOLINFO* curcol)
 		info->row_size += sizeof(TDS_NUMERIC);
 	} else if (is_blob_type(curcol->column_type)) {
 		info->row_size += sizeof(TDSBLOBINFO);
-	} else {
+	// } else if(curcol->column_type == SYBVARBINARY) {
+    //     info->row_size += sizeof(TDS_INT); /* to prevent memory corruption */
+    } else {
 		info->row_size += curcol->column_size;
 	}
 	info->row_size += (TDS_ALIGN_SIZE - 1);
@@ -516,7 +518,6 @@ int rest;
 /* XXX do a best check for alignment than this */
 union { void *p; int i; } align_struct;
 const int align = sizeof(align_struct);
-int remainder;
 char ci_flags[4];
 
 	hdrsize = tds_get_smallint(tds);
@@ -632,7 +633,9 @@ tds_add_row_column_size_compute(TDSCOMPUTEINFO * info, TDSCOLINFO * curcol)
 		info->row_size += sizeof(TDS_NUMERIC);
 	} else if (is_blob_type(curcol->column_type)) {
 		info->row_size += sizeof(TDSBLOBINFO);
-	} else {
+	// } else if(curcol->column_type == SYBVARBINARY) {
+    //     info->row_size += sizeof(TDS_INT); /* to prevent memory corruption */
+    } else {
 		info->row_size += curcol->column_size;
 	}
 	info->row_size += (TDS_ALIGN_SIZE - 1);
@@ -650,7 +653,6 @@ int hdrsize;
 int col, num_cols;
 TDSCOLINFO *curcol;
 TDSCOMPUTEINFO *info;
-int remainder;
 
 	info = tds->comp_info;
 
@@ -781,11 +783,34 @@ int remainder;
 		colnamelen = tds_get_byte(tds);
 		tds_get_string(tds,curcol->column_name, colnamelen);
 
-        tds_add_row_column_size_result(info, curcol);
-		
-		if (is_blob_type(curcol->column_type)) {
+		/* the column_offset is the offset into the row buffer
+		** where this column begins, text types are no longer
+		** stored in the row buffer because the max size can
+		** be too large (2gig) to allocate */
+		curcol->column_offset = info->row_size;
+		if (!is_blob_type(curcol->column_type)) {
+			info->row_size += curcol->column_size + 1;
+		}
+#ifdef NCBI_FTDS
+      else {
           strcpy(curcol->full_column_name+tabnamelen+1,curcol->column_name);
       }
+#endif
+		if (is_numeric_type(curcol->column_type)) {
+                       info->row_size += sizeof(TDS_NUMERIC) + 1;
+		}
+#ifdef NCBI_FTDS
+		else if(curcol->column_type == SYBVARBINARY) {
+		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
+		}
+#endif
+		
+		/* actually this 4 should be a machine dependent #define */
+		if(remainder = info->row_size & 0x3) {
+          info->row_size += (4 - remainder);
+        }
+
+        // tds_add_row_column_size_result(info, curcol);
 	}
 
 	/* all done now allocate a row for tds_process_row to use */
@@ -807,7 +832,6 @@ int colnamelen;
 int col, num_cols;
 TDSCOLINFO *curcol;
 TDSRESULTINFO *info;
-int remainder;
 
 	tds_free_all_results(tds);
 
