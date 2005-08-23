@@ -34,7 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algorithm>
-#include <algo/structure/cd_utils/cuSequence.hpp>
+//#include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuTaxNRCriteria.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -164,11 +164,11 @@ void CTaxNRCriteria::InitializeCriteria() {
     m_name = "Taxonomic Non-redundification Criteria";
     m_shouldMatch = true;
 
+    //  Lazy-initialize tax server.
     if (!m_taxClient) {
         m_taxClient = new TaxClient();
-        if (m_taxClient) m_taxClient->ConnectToTaxServer();
     }
-    m_isTaxConnected = (m_taxClient) ? m_taxClient->IsAlive() : false;
+    m_isTaxConnected = ConnectToServer();
 
     m_id2Tax.clear();
 }
@@ -250,6 +250,13 @@ int CTaxNRCriteria::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) c
     return (lhsItem.taxId == rhsItem.taxId) ? 0 : (lhsItem.taxId < rhsItem.taxId) ? -1 : 1;
 }
 
+bool CTaxNRCriteria::ConnectToServer() {
+    if (m_taxClient && !m_taxClient->IsAlive()) {
+        m_taxClient->ConnectToTaxServer();
+    }
+    return (m_taxClient) ? m_taxClient->IsAlive() : false;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -257,6 +264,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/08/23 20:53:47  lanczyck
+* add a ConnectToServer method; accompanying changes when initializing m_taxClient
+*
 * Revision 1.4  2005/07/18 19:13:39  lanczyck
 * add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
 * add a pair of convenience methods to extract items & ids;
