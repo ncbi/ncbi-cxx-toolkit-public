@@ -44,6 +44,7 @@
 #include <util/rangemap.hpp>
 
 #include <vector>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -78,15 +79,32 @@ struct SAnnotObject_Index
     SAnnotObject_Index(void)
         : m_AnnotObject_Info(0),
           m_AnnotLocationIndex(0),
-          m_StrandIndex(0x3) // both strands are in this index
+          m_Flags(fStrand_both)
         {
+        }
+
+    enum EFlags {
+        fStrand_none        = 0,
+        fStrand_plus        = 1 << 0,
+        fStrand_minus       = 1 << 1,
+        fStrand_both        = fStrand_plus | fStrand_minus,
+        fMultiId            = 1 << 2
+    };
+    typedef Uint1 TFlags;
+    
+    bool GetMultiIdFlag(void) const
+        {
+            return (m_Flags & fMultiId) != 0;
+        }
+    void SetMultiIdFlag(void)
+        {
+            m_Flags |= fMultiId;
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
     CRef< CObjectFor<CHandleRange> >    m_HandleRange;
-    unsigned short                      m_AnnotLocationIndex;
-    // bit 0 = plus strand; bit 1 = minus strand
-    unsigned short                      m_StrandIndex;
+    Uint2                               m_AnnotLocationIndex;
+    Uint1                               m_Flags;
 };
 
 
@@ -97,7 +115,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
     SAnnotObjectsIndex(const SAnnotObjectsIndex&);
     ~SAnnotObjectsIndex(void);
 
-    typedef vector<CAnnotObject_Info>          TObjectInfos;
+    typedef deque<CAnnotObject_Info>           TObjectInfos;
     typedef vector<SAnnotObject_Key>           TObjectKeys;
     typedef vector<SAnnotObject_Index>         TObjectIndices;
 
@@ -114,10 +132,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
     void ReserveInfoSize(size_t size);
     void AddInfo(const CAnnotObject_Info& info);
 
+    TObjectInfos& GetInfos(void);
     const TObjectInfos& GetInfos(void) const;
-    const CAnnotObject_Info& GetInfo(size_t index) const;
-    CAnnotObject_Info& GetInfo(size_t index);
-    size_t GetIndex(const CAnnotObject_Info& info) const;
 
     void ReserveMapSize(size_t size);
     void AddMap(const SAnnotObject_Key& key, const SAnnotObject_Index& index);
@@ -161,6 +177,14 @@ SAnnotObjectsIndex::GetInfos(void) const
 
 
 inline
+SAnnotObjectsIndex::TObjectInfos&
+SAnnotObjectsIndex::GetInfos(void)
+{
+    return m_Infos;
+}
+
+
+inline
 const SAnnotObjectsIndex::TObjectKeys&
 SAnnotObjectsIndex::GetKeys(void) const
 {
@@ -176,37 +200,17 @@ SAnnotObjectsIndex::GetIndices(void) const
 }
 
 
-inline
-const CAnnotObject_Info& SAnnotObjectsIndex::GetInfo(size_t index) const
-{
-    _ASSERT(index < m_Infos.size());
-    return m_Infos[index];
-}
-
-
-inline
-CAnnotObject_Info& SAnnotObjectsIndex::GetInfo(size_t index)
-{
-    _ASSERT(index < m_Infos.size());
-    return m_Infos[index];
-}
-
-
-inline
-size_t SAnnotObjectsIndex::GetIndex(const CAnnotObject_Info& info) const
-{
-    _ASSERT(!m_Infos.empty());
-    _ASSERT(&info >= &m_Infos.front() && &info <= &m_Infos.back());
-    return &info - &m_Infos.front();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/08/23 17:02:55  vasilche
+* Used typedefs for integral members of SAnnotObject_Index.
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+* Used deque<> instead of vector<> for storing CAnnotObject_Info set.
+*
 * Revision 1.9  2004/12/22 15:56:20  vasilche
 * Renamed SAnnotObjects_Info -> SAnnotObjectsIndex.
 * Allow reuse of annotation indices for several TSEs.

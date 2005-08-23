@@ -74,13 +74,6 @@ void SAnnotObjectsIndex::Clear(void)
 }
 
 
-void SAnnotObjectsIndex::ReserveInfoSize(size_t size)
-{
-    _ASSERT(m_Indices.empty() && m_Keys.empty() && m_Infos.empty());
-    m_Infos.reserve(size);
-}
-
-
 void SAnnotObjectsIndex::ReserveMapSize(size_t size)
 {
     _ASSERT(m_Indices.empty() && m_Keys.empty());
@@ -129,6 +122,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/08/23 17:02:55  vasilche
+* Used typedefs for integral members of SAnnotObject_Index.
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+* Used deque<> instead of vector<> for storing CAnnotObject_Info set.
+*
 * Revision 1.4  2004/12/22 15:56:20  vasilche
 * Renamed SAnnotObjects_Info -> SAnnotObjectsIndex.
 * Allow reuse of annotation indices for several TSEs.
