@@ -160,6 +160,8 @@ public:
     bool GetItemForId(CBaseClusterer::TId itemId, CTaxNRItem& taxNRItem) const;
     int  GetTaxIdForId(const CBaseClusterer::TId& id) const;
 
+    bool ConnectToServer();
+
 //    static void SetPriorityTaxNodes(const CCdd_pref_nodes& prefNodes);
 //    static unsigned int AddPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, CPriorityTaxNodes::TaxNodeInputType nodeType = CPriorityTaxNodes::eCddPrefNodesAll);
 
@@ -193,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/08/23 20:53:08  lanczyck
+* add a ConnectToServer method
+*
 * Revision 1.3  2005/07/18 19:06:44  lanczyck
 * add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
 * add a pair of convenience methods to extract items & ids
