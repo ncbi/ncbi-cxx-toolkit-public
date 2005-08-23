@@ -871,7 +871,7 @@ void CFileCode::GetModuleNames( map<string,string>& names) const
 {
     CNcbiOstrstream ostr;
     WriteSourceFile(ostr);
-    ostr.put('\0');
+//    ostr.put('\0');
     string src_file = string(CNcbiOstrstreamToString(ostr));
     string module_name;
 
@@ -891,6 +891,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2005/08/23 18:58:20  gouriano
+* Fix GetModuleNames
+*
 * Revision 1.48  2005/03/01 19:11:01  gouriano
 * Fixed file references in DOXYGEN comments
 *
