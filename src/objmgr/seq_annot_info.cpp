@@ -176,14 +176,6 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
 }
 
 
-size_t
-CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
-{
-    _ASSERT(&info.GetSeq_annot_Info() == this);
-    return m_ObjectIndex.GetIndex(info);
-}
-
-
 const CAnnotName& CSeq_annot_Info::GetName(void) const
 {
     return m_Name.IsNamed()? m_Name: GetTSE_Info().GetName();
@@ -360,20 +352,20 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
 
     m_ObjectIndex.SetName(GetName());
 
-    size_t object_count = objs.size();
-    m_ObjectIndex.ReserveInfoSize(object_count);
     ITERATE ( CSeq_annot::C_Data::TFtable, oit, objs ) {
         m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
     }
 
+    size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(size_t(object_count*1.1));
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    for ( size_t i = 0; i < object_count; ++i ) {
-        CAnnotObject_Info& info = m_ObjectIndex.GetInfo(i);
+    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
+                        m_ObjectIndex.GetInfos() ) {
+        CAnnotObject_Info& info = *it;
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -381,10 +373,14 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
         index.m_AnnotLocationIndex = 0;
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+            bool multi_id = hrmit->GetMap().size() > 1;
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
-                index.m_StrandIndex = hr.GetStrandsFlag();
+                index.m_Flags = hr.GetStrandsFlag();
+                if ( multi_id ) {
+                    index.SetMultiIdFlag();
+                }
                 if ( hr.HasGaps() ) {
                     index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     index.m_HandleRange->GetData() = hr;
@@ -419,21 +415,19 @@ void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
     }
 
     m_ObjectIndex.SetName(GetName());
-
-    size_t object_count = objs.size();
-    m_ObjectIndex.ReserveInfoSize(object_count);
     ITERATE ( CSeq_annot::C_Data::TGraph, oit, objs ) {
         m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
     }
-
+    size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    for ( size_t i = 0; i < object_count; ++i ) {
-        CAnnotObject_Info& info = m_ObjectIndex.GetInfo(i);
+    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
+                        m_ObjectIndex.GetInfos() ) {
+        CAnnotObject_Info& info = *it;
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -469,20 +463,19 @@ void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
 
     m_ObjectIndex.SetName(GetName());
 
-    size_t object_count = objs.size();
-    m_ObjectIndex.ReserveInfoSize(object_count);
     ITERATE ( CSeq_annot::C_Data::TAlign, oit, objs ) {
         m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
     }
-
+    size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    for ( size_t i = 0; i < object_count; ++i ) {
-        CAnnotObject_Info& info = m_ObjectIndex.GetInfo(i);
+    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
+                        m_ObjectIndex.GetInfos() ) {
+        CAnnotObject_Info& info = *it;
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -529,7 +522,7 @@ void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    CAnnotObject_Info& info = m_ObjectIndex.GetInfo(0);
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos().front();
     key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
     info.GetMaps(hrmaps);
@@ -578,6 +571,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/08/23 17:02:57  vasilche
+ * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+ * Used deque<> instead of vector<> for storing CAnnotObject_Info set.
+ *
  * Revision 1.33  2005/08/05 15:41:30  vasilche
  * Copy Seq-annot object when detaching from data loader.
  *
