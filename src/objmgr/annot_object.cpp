@@ -36,6 +36,7 @@
 #include <objmgr/impl/bioseq_base_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -70,24 +71,17 @@ BEGIN_SCOPE(objects)
 
 
 CAnnotObject_Info::CAnnotObject_Info(void)
-    : m_Annot_Info(0),
-      m_Object(0),
-      m_FeatSubtype(CSeqFeatData::eSubtype_any),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_not_set),
-      m_MultiId(0)
+    : m_Seq_annot_Info(0),
+      m_Object()
 {
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
-    : m_Annot_Info(&annot),
+    : m_Seq_annot_Info(&annot),
       m_Object(&feat),
-      m_FeatSubtype(feat.GetData().GetSubtype()),
-      m_FeatType(feat.GetData().Which()),
-      m_AnnotType(CSeq_annot::C_Data::e_Ftable),
-      m_MultiId(0)
+      m_Annot_Type(feat.GetData().GetSubtype())
 {
     _ASSERT(!IsChunkStub());
 }
@@ -95,12 +89,9 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
                                      CSeq_annot_Info& annot)
-    : m_Annot_Info(&annot),
+    : m_Seq_annot_Info(&annot),
       m_Object(&align),
-      m_FeatSubtype(CSeqFeatData::eSubtype_any),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_Align),
-      m_MultiId(0)
+      m_Annot_Type(CSeq_annot::C_Data::e_Align)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -108,12 +99,9 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
-    : m_Annot_Info(&annot),
+    : m_Seq_annot_Info(&annot),
       m_Object(&graph),
-      m_FeatSubtype(CSeqFeatData::eSubtype_any),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_Graph),
-      m_MultiId(0)
+      m_Annot_Type(CSeq_annot::C_Data::e_Graph)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -121,12 +109,9 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_loc& loc,
                                      CSeq_annot_Info& annot)
-    : m_Annot_Info(&annot),
+    : m_Seq_annot_Info(&annot),
       m_Object(&loc),
-      m_FeatSubtype(CSeqFeatData::eSubtype_any),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_Locs),
-      m_MultiId(0)
+      m_Annot_Type(CSeq_annot::C_Data::e_Locs)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -134,12 +119,9 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_loc& loc,
 
 CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                                      const SAnnotTypeSelector& sel)
-    : m_Annot_Info(0),
+    : m_Seq_annot_Info(0),
       m_Object(&chunk_info),
-      m_FeatSubtype(sel.GetFeatSubtype()),
-      m_FeatType(sel.GetFeatType()),
-      m_AnnotType(sel.GetAnnotType()),
-      m_MultiId(0)
+      m_Annot_Type(sel)
 {
     _ASSERT(IsChunkStub());
 }
@@ -166,15 +148,9 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         hrmaps.resize(feat.IsSetProduct()? 2: 1);
         hrmaps[0].clear();
         hrmaps[0].AddLocation(feat.GetLocation());
-        if (hrmaps[0].GetMap().size() > 1) {
-            m_MultiId |= fMultiId_Location;
-        }
         if ( feat.IsSetProduct() ) {
             hrmaps[1].clear();
             hrmaps[1].AddLocation(feat.GetProduct());
-            if (hrmaps[1].GetMap().size() > 1) {
-                m_MultiId |= fMultiId_Product;
-            }
         }
         break;
     }
@@ -184,9 +160,6 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         hrmaps.resize(1);
         hrmaps[0].clear();
         hrmaps[0].AddLocation(graph.GetLoc());
-        if (hrmaps[0].GetMap().size() > 1) {
-            m_MultiId |= fMultiId_Location;
-        }
         break;
     }
     case CSeq_annot::C_Data::e_Align:
@@ -538,6 +511,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/08/23 17:02:38  vasilche
+* Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+*
 * Revision 1.42  2005/02/16 15:18:58  grichenk
 * Ignore e_Locs annotations with unknown format
 *

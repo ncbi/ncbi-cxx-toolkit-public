@@ -40,9 +40,9 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objmgr/impl/annot_type_index.hpp>
 
-#include <memory>
+#include <objmgr/annot_type_selector.hpp>
+
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -96,6 +96,7 @@ public:
     // Get CDataSource object
     CDataSource& GetDataSource(void) const;
 
+    const SAnnotTypeSelector& GetTypeSelector(void) const;
     TAnnotType Which(void) const;
     TAnnotType GetAnnotType(void) const;
     TFeatType GetFeatType(void) const;
@@ -116,7 +117,7 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_graph* GetGraphFast(void) const; // unchecked & unsafe
 
-    typedef CAnnotType_Index::TIndexRange TIndexRange;
+    typedef pair<size_t, size_t> TIndexRange;
     typedef vector<TIndexRange> TTypeIndexSet;
 
     bool IsLocs(void) const;
@@ -125,19 +126,11 @@ public:
 
     void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
+    bool IsRemoved(void) const;
+
     // split support
     bool IsChunkStub(void) const;
     const CTSE_Chunk_Info& GetChunk_Info(void) const;
-
-    enum EMultiIdFlags {
-        fMultiId_Location = 0x1,
-        fMultiId_Product  = 0x2
-    };
-    typedef Uint1 TMultiIdFlags;
-
-    TMultiIdFlags GetMultiIdFlags(void) const {
-        return m_MultiId;
-    }
 
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
@@ -151,12 +144,9 @@ private:
                                int subtype,
                                TTypeIndexSet& idx_set) const;
 
-    CSeq_annot_Info*             m_Annot_Info;
+    CSeq_annot_Info*             m_Seq_annot_Info; // owner Seq-annot
     CConstRef<CObject>           m_Object;         // annot object itself
-    Uint2                        m_FeatSubtype;    // feature subtype
-    Uint1                        m_FeatType;       // feature type or e_not_set
-    Uint1                        m_AnnotType;      // annot object type
-    mutable TMultiIdFlags        m_MultiId;
+    SAnnotTypeSelector           m_Annot_Type;     // annot type
 };
 
 
@@ -168,37 +158,51 @@ private:
 
 
 inline
+const SAnnotTypeSelector& CAnnotObject_Info::GetTypeSelector(void) const
+{
+    return m_Annot_Type;
+}
+
+
+inline
 CAnnotObject_Info::TAnnotType CAnnotObject_Info::Which(void) const
 {
-    return TAnnotType(m_AnnotType);
+    return GetTypeSelector().GetAnnotType();
 }
 
 
 inline
 CAnnotObject_Info::TAnnotType CAnnotObject_Info::GetAnnotType(void) const
 {
-    return TAnnotType(m_AnnotType);
+    return GetTypeSelector().GetAnnotType();
 }
 
 
 inline
 CAnnotObject_Info::TFeatType CAnnotObject_Info::GetFeatType(void) const
 {
-    return TFeatType(m_FeatType);
+    return GetTypeSelector().GetFeatType();
 }
 
 
 inline
 CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 {
-    return TFeatSubtype(m_FeatSubtype);
+    return GetTypeSelector().GetFeatSubtype();
+}
+
+
+inline
+bool CAnnotObject_Info::IsRemoved(void) const
+{
+    return !m_Object;
 }
 
 
 inline
 bool CAnnotObject_Info::IsChunkStub(void) const
 {
-    return !m_Annot_Info;
+    return !m_Seq_annot_Info;
 }
 
 
@@ -219,21 +223,21 @@ const CObject* CAnnotObject_Info::GetObjectPointer(void) const
 inline
 bool CAnnotObject_Info::IsFeat(void) const
 {
-    return m_AnnotType == CSeq_annot::C_Data::e_Ftable;
+    return Which() == CSeq_annot::C_Data::e_Ftable;
 }
 
 
 inline
 bool CAnnotObject_Info::IsAlign(void) const
 {
-    return m_AnnotType == CSeq_annot::C_Data::e_Align;
+    return Which() == CSeq_annot::C_Data::e_Align;
 }
 
 
 inline
 bool CAnnotObject_Info::IsGraph(void) const
 {
-    return m_AnnotType == CSeq_annot::C_Data::e_Graph;
+    return Which() == CSeq_annot::C_Data::e_Graph;
 }
 
 
@@ -264,7 +268,7 @@ const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
 inline
 bool CAnnotObject_Info::IsLocs(void) const
 {
-    return m_AnnotType == CSeq_annot::C_Data::e_Locs;
+    return Which() == CSeq_annot::C_Data::e_Locs;
 }
 
 
@@ -272,7 +276,7 @@ inline
 const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 {
     _ASSERT(!IsChunkStub());
-    return *m_Annot_Info;
+    return *m_Seq_annot_Info;
 }
 
 
@@ -280,7 +284,7 @@ inline
 CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void)
 {
     _ASSERT(!IsChunkStub());
-    return *m_Annot_Info;
+    return *m_Seq_annot_Info;
 }
 
 
@@ -290,6 +294,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/08/23 17:02:29  vasilche
+* Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+*
 * Revision 1.19  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *
