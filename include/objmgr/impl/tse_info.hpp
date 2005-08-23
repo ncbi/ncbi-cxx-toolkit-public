@@ -66,7 +66,6 @@ class CTSE_LoadLock;
 
 class CDataSource;
 class CHandleRange;
-class CAnnotObject_Info;
 class CAnnotTypes_CI;
 class CSeq_entry;
 
