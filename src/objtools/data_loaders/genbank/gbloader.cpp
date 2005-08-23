@@ -919,7 +919,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error", blobs->GetState());
+                    "blob state error for "+sih.AsString(), blobs->GetState());
     }
 
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
@@ -929,7 +929,8 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
             _ASSERT(blob.IsLoaded());
             if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error", blob.GetBlobState());
+                            "blob state error for "+it->first.ToString(),
+                            blob.GetBlobState());
             }
         }
     }
