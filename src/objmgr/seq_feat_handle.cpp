@@ -45,21 +45,34 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
-                                   EAnnotInfoType type,
-                                   size_t index,
+                                   const CAnnotObject_Info& feat_info,
                                    CCreatedFeat_Ref& created_ref)
     : m_Annot(annot),
-      m_AnnotInfoType(type),
-      m_Index(index),
+      m_AnnotInfoType(eType_Seq_annot_Info),
+      m_AnnotPtr(&feat_info),
       m_CreatedFeat(&created_ref)
 {
+    _ASSERT(feat_info.IsFeat());
+    _ASSERT(&feat_info.GetSeq_annot_Info() == &annot.x_GetInfo());
+}
+
+
+CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
+                                   const SSNP_Info& snp_info,
+                                   CCreatedFeat_Ref& created_ref)
+    : m_Annot(annot),
+      m_AnnotInfoType(eType_Seq_annot_SNP_Info),
+      m_AnnotPtr(&snp_info),
+      m_CreatedFeat(&created_ref)
+{
+    _ASSERT(annot.x_GetInfo().x_HasSNP_annot_Info());
 }
 
 
 void CSeq_feat_Handle::Reset(void)
 {
     m_CreatedFeat.Reset();
-    m_Index = 0;
+    m_AnnotPtr = 0;
     m_AnnotInfoType = eType_null;
     m_Annot.Reset();
 }
@@ -67,21 +80,44 @@ void CSeq_feat_Handle::Reset(void)
 
 const SSNP_Info& CSeq_feat_Handle::x_GetSNP_Info(void) const
 {
-    _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
-    return x_GetSNP_annot_Info().GetSNP_Info(m_Index);
+    if ( m_AnnotInfoType != eType_Seq_annot_SNP_Info ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSNP_Info: not SNP info");
+    }
+    const SSNP_Info* snp_info = static_cast<const SSNP_Info*>(m_AnnotPtr);
+    _ASSERT(snp_info);
+    if ( snp_info->IsRemoved() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSNP_Info: SNP was removed");
+    }
+    return *snp_info;
 }
 
 
 const CSeq_annot_SNP_Info& CSeq_feat_Handle::x_GetSNP_annot_Info(void) const
 {
-    return m_Annot.x_GetInfo().x_GetSNP_annot_Info();
+    if ( m_AnnotInfoType != eType_Seq_annot_SNP_Info ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSNP_annot_Info: not SNP info");
+    }
+    return GetAnnot().x_GetInfo().x_GetSNP_annot_Info();
 }
 
 
 const CSeq_feat& CSeq_feat_Handle::x_GetSeq_feat(void) const
 {
-    _ASSERT(m_AnnotInfoType == eType_Seq_annot_Info);
-    return m_Annot.x_GetInfo().GetAnnotObject_Info(m_Index).GetFeat();
+    if ( m_AnnotInfoType != eType_Seq_annot_Info ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSeq_feat: not Seq-feat info");
+    }
+    const CAnnotObject_Info* feat_info =
+        static_cast<const CAnnotObject_Info*>(m_AnnotPtr);
+    _ASSERT(feat_info);
+    if ( feat_info->IsRemoved() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSeq_feat: Seq-feat was removed");
+    }
+    return feat_info->GetFeat();
 }
 
 
@@ -94,7 +130,6 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
         }
     case eType_Seq_annot_SNP_Info:
         {
-            // return x_GetSNP_Info().CreateSeq_feat(x_GetSNP_annot_Info());
             return m_CreatedFeat->MakeOriginalFeature(*this);
         }
     default:
@@ -102,18 +137,6 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
             return CConstRef<CSeq_feat>(0);
         }
     }
-}
-
-
-CScope& CSeq_feat_Handle::GetScope(void) const
-{
-    return GetAnnot().GetScope();
-}
-
-
-const CSeq_annot_Handle& CSeq_feat_Handle::GetAnnot(void) const
-{
-    return m_Annot;
 }
 
 
@@ -139,7 +162,6 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 
 CSeq_id::TGi CSeq_feat_Handle::GetSNPGi(void) const
 {
-    _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
     return x_GetSNP_annot_Info().GetGi();
 }
 
@@ -172,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/08/23 17:03:01  vasilche
+ * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+ *
  * Revision 1.10  2005/04/07 16:30:42  vasilche
  * Inlined handles' constructors and destructors.
  * Optimized handles' assignment operators.

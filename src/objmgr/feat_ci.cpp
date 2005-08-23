@@ -257,11 +257,13 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
             &feat_ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
         m_OriginalFeat.m_AnnotInfoType =
             CSeq_feat_Handle::eType_Seq_annot_SNP_Info;
+        m_OriginalFeat.m_AnnotPtr = &feat_ref.GetSNP_Info();
     }
     else {
         annot_info = &feat_ref.GetSeq_annot_Info();
         m_OriginalFeat.m_AnnotInfoType =
             CSeq_feat_Handle::eType_Seq_annot_Info;
+        m_OriginalFeat.m_AnnotPtr = &feat_ref.GetAnnotObject_Info();
     }
     if ( !m_OriginalFeat.m_Annot ||
          &m_OriginalFeat.m_Annot.x_GetInfo() != annot_info ) {
@@ -269,16 +271,8 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
             collector.m_AnnotLockMap.find(annot_info);
         _ASSERT(annot_it != collector.m_AnnotLockMap.end());
         m_OriginalFeat.m_Annot = annot_it->second;
-        /*
-        CAnnot_Collector::TTSE_LockMap::const_iterator tse_it =
-            collector.m_TSE_LockMap.find(&annot_info->GetTSE_Info());
-        _ASSERT(tse_it != collector.m_TSE_LockMap.end());
-        m_OriginalFeat.m_Annot =
-            CSeq_annot_Handle(*annot_info, tse_it->second);
-        */
     }
 
-    m_OriginalFeat.m_Index = feat_ref.GetAnnotObjectIndex();
     m_OriginalFeat.m_CreatedFeat = collector.m_CreatedOriginal;
 
     m_MappingInfoPtr = &feat_ref.GetMappingInfo();
@@ -302,6 +296,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/08/23 17:03:01  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.44  2005/06/22 14:07:42  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.

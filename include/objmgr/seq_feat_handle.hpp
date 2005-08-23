@@ -156,21 +156,37 @@ private:
     };
 
     CSeq_feat_Handle(const CSeq_annot_Handle& annot,
-                     EAnnotInfoType type,
-                     size_t index,
+                     const CAnnotObject_Info& feat_info,
+                     CCreatedFeat_Ref& created_ref);
+    CSeq_feat_Handle(const CSeq_annot_Handle& annot,
+                     const SSNP_Info& snp_info,
                      CCreatedFeat_Ref& created_ref);
 
     CSeq_annot_Handle              m_Annot;
     EAnnotInfoType                 m_AnnotInfoType;
-    size_t                         m_Index;
+    const void*                    m_AnnotPtr;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
 
 
 inline
 CSeq_feat_Handle::CSeq_feat_Handle(void)
-    : m_AnnotInfoType(eType_null)
+    : m_AnnotInfoType(eType_null), m_AnnotPtr(0)
 {
+}
+
+
+inline
+const CSeq_annot_Handle& CSeq_feat_Handle::GetAnnot(void) const
+{
+    return m_Annot;
+}
+
+
+inline
+CScope& CSeq_feat_Handle::GetScope(void) const
+{
+    return GetAnnot().GetScope();
 }
 
 
@@ -179,7 +195,7 @@ bool CSeq_feat_Handle::operator ==(const CSeq_feat_Handle& feat) const
 {
     return m_Annot == feat.m_Annot
         && m_AnnotInfoType == feat.m_AnnotInfoType
-        && m_Index == feat.m_Index;
+        && m_AnnotPtr == feat.m_AnnotPtr;
 }
 
 
@@ -199,7 +215,7 @@ bool CSeq_feat_Handle::operator <(const CSeq_feat_Handle& feat) const
     if (m_AnnotInfoType != feat.m_AnnotInfoType) {
         return m_AnnotInfoType < feat.m_AnnotInfoType;
     }
-    return m_Index < feat.m_Index;
+    return m_AnnotPtr < feat.m_AnnotPtr;
 }
 
 
@@ -474,6 +490,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/08/23 17:03:01  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.15  2005/04/07 20:09:12  ucko
 * Include annot_collector.hpp so that CSeq_feat_Handle::m_CreatedFeat
 * has a fully known type for the sake of its inline constructor.

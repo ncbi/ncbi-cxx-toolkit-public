@@ -79,9 +79,6 @@ public:
 
     const CAnnotName& GetName(void) const;
 
-    const CAnnotObject_Info& GetAnnotObject_Info(size_t index) const;
-    size_t GetAnnotObjectIndex(const CAnnotObject_Info& info) const;
-
     // tree initialization
     virtual void x_DSAttachContents(CDataSource& ds);
     virtual void x_DSDetachContents(CDataSource& ds);
@@ -171,14 +168,6 @@ CSeq_annot_Info::GetAnnotObjectInfos(void) const
 
 
 inline
-const CAnnotObject_Info&
-CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
-{
-    return m_ObjectIndex.GetInfo(index);
-}
-
-
-inline
 bool CSeq_annot_Info::x_HasSNP_annot_Info(void) const
 {
     return m_SNP_Info.NotEmpty();
@@ -198,6 +187,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/08/23 17:04:20  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.25  2005/08/09 17:38:19  vasilche
 * Define constructors/destructors in *.cpp file to allow Windows DLL compilation.
 *

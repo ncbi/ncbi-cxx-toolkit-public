@@ -49,6 +49,7 @@ BEGIN_SCOPE(objects)
 
 class CSeq_annot_Handle;
 class CMappedGraph;
+class CAnnotObject_Info;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -61,7 +62,6 @@ class NCBI_XOBJMGR_EXPORT CSeq_graph_Handle
 {
 public:
     CSeq_graph_Handle(void);
-    ~CSeq_graph_Handle(void);
 
     void Reset(void);
 
@@ -101,11 +101,33 @@ private:
 
     const CSeq_graph& x_GetSeq_graph(void) const;
 
-    CSeq_graph_Handle(const CSeq_annot_Handle& annot, size_t index);
+    CSeq_graph_Handle(const CSeq_annot_Handle& annot,
+                      const CAnnotObject_Info& annot_object);
 
     CSeq_annot_Handle          m_Annot;
-    size_t                     m_Index;
+    const CAnnotObject_Info*   m_AnnotObjectPtr;
 };
+
+
+inline
+CSeq_graph_Handle::CSeq_graph_Handle(void)
+    : m_AnnotObjectPtr(0)
+{
+}
+
+
+inline
+const CSeq_annot_Handle& CSeq_graph_Handle::GetAnnot(void) const
+{
+    return m_Annot;
+}
+
+
+inline
+CScope& CSeq_graph_Handle::GetScope(void) const
+{
+    return GetAnnot().GetScope();
+}
 
 
 inline
@@ -243,6 +265,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/08/23 17:03:01  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.9  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.

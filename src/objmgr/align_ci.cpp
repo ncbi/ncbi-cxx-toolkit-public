@@ -206,8 +206,7 @@ const CSeq_align& CAlign_CI::GetOriginalSeq_align(void) const
 
 CSeq_align_Handle CAlign_CI::GetSeq_align_Handle(void) const
 {
-    return CSeq_align_Handle(GetAnnot(),
-                             GetIterator()->GetAnnotObjectIndex());
+    return CSeq_align_Handle(GetAnnot(), GetIterator()->GetAnnotObject_Info());
 }
 
 
@@ -217,6 +216,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/08/23 17:03:01  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.32  2005/06/22 14:07:42  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.

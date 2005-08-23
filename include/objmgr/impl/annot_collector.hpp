@@ -157,7 +157,8 @@ public:
 
     CAnnotObject_Ref(void);
     CAnnotObject_Ref(const CAnnotObject_Info& object);
-    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_info, TSeqPos index);
+    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                     const SSNP_Info& snp_info);
     ~CAnnotObject_Ref(void);
 
     enum EObjectType {
@@ -182,8 +183,6 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_align& GetAlign(void) const;
 
-    unsigned int GetAnnotObjectIndex(void) const;
-
     CAnnotMapping_Info& GetMappingInfo(void) const;
 
     void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
@@ -197,7 +196,7 @@ public:
 
 private:
     CConstRef<CObject>         m_Object;
-    unsigned int               m_AnnotObject_Index;
+    const void*                m_AnnotObjectPtr;
     Int1                       m_ObjectType; // EObjectType
     mutable CAnnotMapping_Info m_MappingInfo;
 };
@@ -631,7 +630,7 @@ void CAnnotMapping_Info::Swap(CAnnotMapping_Info& info)
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_AnnotObject_Index(0),
+    : m_AnnotObjectPtr(0),
       m_ObjectType(eType_null),
       m_MappingInfo(0, CSeq_loc::e_not_set, eNa_strand_unknown)
 {
@@ -648,13 +647,6 @@ inline
 CAnnotObject_Ref::EObjectType CAnnotObject_Ref::GetObjectType(void) const
 {
     return EObjectType(m_ObjectType);
-}
-
-
-inline
-unsigned int CAnnotObject_Ref::GetAnnotObjectIndex(void) const
-{
-    return m_AnnotObject_Index;
 }
 
 
@@ -687,7 +679,7 @@ bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
     if ( m_Object != ref.m_Object ) {
         return m_Object < ref.m_Object;
     }
-    return GetAnnotObjectIndex() < ref.GetAnnotObjectIndex();
+    return m_AnnotObjectPtr < ref.m_AnnotObjectPtr;
 }
 
 
@@ -695,7 +687,7 @@ inline
 bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
 {
     return ( m_Object == ref.m_Object  &&
-        GetAnnotObjectIndex() == ref.GetAnnotObjectIndex() );
+             m_AnnotObjectPtr == ref.m_AnnotObjectPtr );
 }
 
 
@@ -703,7 +695,7 @@ inline
 bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
 {
     return ( m_Object != ref.m_Object  ||
-        GetAnnotObjectIndex() != ref.GetAnnotObjectIndex() );
+             m_AnnotObjectPtr != ref.m_AnnotObjectPtr );
 }
 
 
@@ -758,7 +750,7 @@ inline
 void CAnnotObject_Ref::Swap(CAnnotObject_Ref& ref)
 {
     m_Object.Swap(ref.m_Object);
-    swap(m_AnnotObject_Index, ref.m_AnnotObject_Index);
+    swap(m_AnnotObjectPtr, ref.m_AnnotObjectPtr);
     swap(m_ObjectType, ref.m_ObjectType);
     m_MappingInfo.Swap(ref.m_MappingInfo);
 }
@@ -788,6 +780,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/08/23 17:04:02  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.31  2005/07/19 20:12:23  ucko
 * Predeclare CSeqMap_CI for the sake of G++ 4.
 *

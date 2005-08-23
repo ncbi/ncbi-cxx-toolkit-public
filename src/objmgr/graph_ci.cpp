@@ -70,7 +70,7 @@ void CMappedGraph::MakeMappedLoc(void) const
 
 CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
 {
-    return CSeq_graph_Handle(GetAnnot(), m_GraphRef->GetAnnotObjectIndex());
+    return CSeq_graph_Handle(GetAnnot(), m_GraphRef->GetAnnotObject_Info());
 }
 
 
@@ -234,6 +234,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/08/23 17:03:01  vasilche
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.33  2005/06/22 14:07:42  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.

@@ -41,27 +41,19 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_align_Handle::CSeq_align_Handle(void)
-{
-}
-
-
 CSeq_align_Handle::CSeq_align_Handle(const CSeq_annot_Handle& annot,
-                                     size_t index)
+                                     const CAnnotObject_Info& annot_object)
     : m_Annot(annot),
-      m_Index(index)
+      m_AnnotObjectPtr(&annot_object)
 {
-}
-
-
-CSeq_align_Handle::~CSeq_align_Handle(void)
-{
+    _ASSERT(annot_object.IsAlign());
+    _ASSERT(&annot_object.GetSeq_annot_Info() == &annot.x_GetInfo());
 }
 
 
 void CSeq_align_Handle::Reset(void)
 {
-    m_Index = 0;
+    m_AnnotObjectPtr = 0;
     m_Annot.Reset();
 }
 
@@ -69,7 +61,11 @@ void CSeq_align_Handle::Reset(void)
 const CSeq_align& CSeq_align_Handle::x_GetSeq_align(void) const
 {
     _ASSERT(m_Annot);
-    return m_Annot.x_GetInfo().GetAnnotObject_Info(m_Index).GetAlign();
+    if ( !m_AnnotObjectPtr ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_align_Handle: null handle");
+    }
+    return m_AnnotObjectPtr->GetAlign();
 }
 
 
@@ -79,24 +75,15 @@ CConstRef<CSeq_align> CSeq_align_Handle::GetSeq_align(void) const
 }
 
 
-CScope& CSeq_align_Handle::GetScope(void) const
-{
-    return GetAnnot().GetScope();
-}
-
-
-const CSeq_annot_Handle& CSeq_align_Handle::GetAnnot(void) const
-{
-    return m_Annot;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/23 17:03:01  vasilche
+ * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+ *
  * Revision 1.7  2005/04/07 16:30:42  vasilche
  * Inlined handles' constructors and destructors.
  * Optimized handles' assignment operators.
