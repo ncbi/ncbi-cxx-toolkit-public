@@ -41,6 +41,9 @@
 // blast::TSeqAlignVector
 VECTOR_CREF(vector_CRef_CSeq_align_set, ncbi::objects::CSeq_align_set);
 
+// Returned by CContigAssembly::Align
+VECTOR_CREF(vector_CRef_CSeq_align, ncbi::objects::CSeq_align);
+
 %template(vector_CNWAligner_ETranscriptSymbol)
     std::vector<ncbi::CNWAligner::ETranscriptSymbol>;
 
@@ -249,6 +252,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/23 13:06:59  jcherry
+ * Added vector<CRef<CSeq_align> >
+ *
  * Revision 1.6  2005/08/09 18:48:38  jcherry
  * Removed phy_tree_serial.hpp
  *
