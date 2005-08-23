@@ -112,18 +112,6 @@ void CAnnotMapping_Info::SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts)
 }
 
 
-const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
-{
-    return GetSeq_annot_Info().GetAnnotObject_Info(GetAnnotObjectIndex());
-}
-
-
-const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
-{
-    return GetSeq_annot_SNP_Info().GetSNP_Info(GetAnnotObjectIndex());
-}
-
-
 const CSeq_align&
 CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
 {
@@ -378,8 +366,7 @@ void CAnnotMapping_Info::InitializeMappedSeq_feat(const CSeq_feat& src,
 
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
-      m_AnnotObject_Index(object.GetSeq_annot_Info()
-                          .GetAnnotObjectIndex(object)),
+      m_AnnotObjectPtr(&object),
       m_ObjectType(eType_Seq_annot_Info)
 {
     if ( object.IsFeat() ) {
@@ -392,9 +379,9 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
 
 
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
-                                   TSeqPos index)
+                                   const SSNP_Info& snp_info)
     : m_Object(&snp_annot),
-      m_AnnotObject_Index(index),
+      m_AnnotObjectPtr(&snp_info),
       m_ObjectType(eType_Seq_annot_SNP_Info)
 {
 }
@@ -412,6 +399,20 @@ void CAnnotObject_Ref::ResetLocation(void)
             }
         }
     }
+}
+
+
+const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
+{
+    _ASSERT(!IsSNPFeat());
+    return *static_cast<const CAnnotObject_Info*>(m_AnnotObjectPtr);
+}
+
+
+const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
+{
+    _ASSERT(IsSNPFeat());
+    return *static_cast<const SSNP_Info*>(m_AnnotObjectPtr);
 }
 
 
@@ -521,8 +522,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     const CAnnotObject_Info* x_info;
     CSeq_annot::C_Data::E_Choice x_annot_type;
     if ( !x.IsSNPFeat() ) {
-        const CSeq_annot_Info& x_annot = x.GetSeq_annot_Info();
-        x_info = &x_annot.GetAnnotObject_Info(x.GetAnnotObjectIndex());
+        x_info = &x.GetAnnotObject_Info();
         x_annot_type = x_info->GetAnnotType();
     }
     else {
@@ -534,8 +534,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     const CAnnotObject_Info* y_info;
     CSeq_annot::C_Data::E_Choice y_annot_type;
     if ( !y.IsSNPFeat() ) {
-        const CSeq_annot_Info& y_annot = y.GetSeq_annot_Info();
-        y_info = &y_annot.GetAnnotObject_Info(y.GetAnnotObjectIndex());
+        y_info = &y.GetAnnotObject_Info();
         y_annot_type = y_info->GetAnnotType();
     }
     else {
@@ -551,20 +550,26 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     if ( x_annot_type == CSeq_annot::C_Data::e_Ftable ) {
         // compare features by type
         if ( !x_info != !y_info ) {
-            CSeqFeatData::E_Choice x_feat_type = CSeqFeatData::e_Imp;
-            CSeqFeatData::ESubtype x_feat_subtype =
-                CSeqFeatData::eSubtype_variation;
+            CSeqFeatData::E_Choice x_feat_type;
+            CSeqFeatData::ESubtype x_feat_subtype;
             if ( x_info ) {
                 x_feat_type = x_info->GetFeatType();
                 x_feat_subtype = x_info->GetFeatSubtype();
             }
+            else {
+                x_feat_type = CSeqFeatData::e_Imp;
+                x_feat_subtype = CSeqFeatData::eSubtype_variation;
+            }
 
-            CSeqFeatData::E_Choice y_feat_type = CSeqFeatData::e_Imp;
-            CSeqFeatData::ESubtype y_feat_subtype =
-                CSeqFeatData::eSubtype_variation;
+            CSeqFeatData::E_Choice y_feat_type;
+            CSeqFeatData::ESubtype y_feat_subtype;
             if ( y_info ) {
                 y_feat_type = y_info->GetFeatType();
                 y_feat_subtype = y_info->GetFeatSubtype();
+            }
+            else {
+                y_feat_type = CSeqFeatData::e_Imp;
+                y_feat_subtype = CSeqFeatData::eSubtype_variation;
             }
 
             // one is simple SNP feature, another is some complex feature
@@ -1355,7 +1360,7 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
         }
     }
     else {
-        if ( (hr.GetStrandsFlag() & index.m_StrandIndex) == 0 ) {
+        if ( (hr.GetStrandsFlag() & index.m_Flags) == 0 ) {
             return false; // different strands
         }
     }
@@ -1655,7 +1660,8 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                         continue;
                     }
 
-                    CAnnotObject_Ref annot_ref(snp_annot, index);
+                    CAnnotObject_Ref annot_ref(snp_annot, *snp_it);
+                    //CAnnotObject_Ref annot_ref(snp_annot, index);
                     annot_ref.SetSNP_Point(snp, cvt);
                     x_AddObject(annot_ref, cvt, 0);
                     if ( x_NoMoreObjects() ) {
@@ -1855,10 +1861,10 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                         aoit->second.m_HandleRange->GetData().IsCircular();
                     need_unique |= is_circular;
                     CAnnotObject_Ref annot_ref(annot_info);
-                    if (!cvt  &&  annot_info.GetMultiIdFlags()) {
+                    if ( !cvt  &&  aoit->second.GetMultiIdFlag() ) {
                         // Create self-conversion, add to conversion set
                         x_AddObjectMapping(annot_ref, 0,
-                                        aoit->second.m_AnnotLocationIndex);
+                                           aoit->second.m_AnnotLocationIndex);
                     }
                     else {
                         if (cvt  &&  !annot_ref.IsAlign() ) {
@@ -2137,7 +2143,8 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
         TSeqPos index = 0;
         ITERATE ( CSeq_annot_SNP_Info, snp_it, snp_annot ) {
             const SSNP_Info& snp = *snp_it;
-            CAnnotObject_Ref annot_ref(snp_annot, index);
+            CAnnotObject_Ref annot_ref(snp_annot, snp);
+            //CAnnotObject_Ref annot_ref(snp_annot, index);
             annot_ref.SetSNP_Point(snp, 0);
             x_AddObject(annot_ref);
             if ( x_NoMoreObjects() ) {
@@ -2212,6 +2219,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2005/08/23 17:02:56  vasilche
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+* Use CAnnotObject_Info pointer instead of annotation index in annot handles.
+*
 * Revision 1.63  2005/08/10 20:40:00  vasilche
 * BUGZID:147 Fixed by exiting from all collecting methods when done.
 *
