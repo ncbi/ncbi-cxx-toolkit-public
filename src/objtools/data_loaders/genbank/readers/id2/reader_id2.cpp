@@ -144,11 +144,14 @@ struct SId2LoadedSet
 
 
 namespace {
+    DEFINE_STATIC_FAST_MUTEX(sx_DebugPrinterMutex);
+    
     class CDebugPrinter : public CNcbiOstrstream
     {
     public:
         ~CDebugPrinter()
             {
+                CFastMutexGuard guard(sx_DebugPrinterMutex);
                 (NcbiCout << rdbuf()).flush();
             }
     };
