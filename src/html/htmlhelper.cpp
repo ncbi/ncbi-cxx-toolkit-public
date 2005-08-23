@@ -78,6 +78,9 @@ string CHTMLHelper::HTMLEncode(const string& input)
         case '>':
             output.append("&gt;");
             break;
+        case '\'':
+            output.append("&#39;");
+            break;
         }
 
         // Skip it
@@ -249,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/08/23 17:54:56  ivanov
+ * HTMLEncode() -- added symbol &#39;
+ *
  * Revision 1.23  2005/08/22 12:13:43  ivanov
  * Minor code rearrangement
  *
