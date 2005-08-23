@@ -58,6 +58,8 @@ public:
     TSeqPos GetTo(void) const;
     bool MinusStrand(void) const;
 
+    bool IsRemoved(void) const;
+
     bool operator<(const SSNP_Info& snp) const;
     bool operator<(TSeqPos end_position) const;
 
@@ -137,9 +139,10 @@ public:
     };
     typedef Uint1 TFlags;
     enum FFlags {
-        fMinusStrand = 1,
-        fQualReplace = 2,
-        fWeightQual  = 4
+        fMinusStrand = 1 << 0,
+        fQualReplace = 1 << 1,
+        fWeightQual  = 1 << 2,
+        fRemoved     = 1 << 3
     };
 
     TSeqPos         m_ToPosition;
@@ -174,6 +177,13 @@ inline
 bool SSNP_Info::MinusStrand(void) const
 {
     return (m_Flags & fMinusStrand) != 0;
+}
+
+
+inline
+bool SSNP_Info::IsRemoved(void) const
+{
+    return (m_Flags & fRemoved) != 0;
 }
 
 
