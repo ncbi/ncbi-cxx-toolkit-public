@@ -56,6 +56,9 @@
 #include <util/rwstream.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+#define DEFAULT_DB_SERVER   "PUBSEQ_OS"
+#define DEFAULT_DB_USER     "anyone"
+#define DEFAULT_DB_PASSWORD "allowed"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -92,6 +95,17 @@ CPubseqReader::CPubseqReader(int max_connections,
                              const string& pswd)
     : m_Server(server) , m_User(user), m_Password(pswd), m_Context(0)
 {
+    if ( m_Server.empty() ) {
+        m_Server = DEFAULT_DB_SERVER;
+    }
+    if ( m_User.empty() ) {
+        m_User = DEFAULT_DB_USER;
+    }
+    if ( m_Password.empty() ) {
+        m_Password = DEFAULT_DB_PASSWORD;
+    }
+    //m_Server = "IDDEV_OS_LX";
+
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
         s_pubseq_readers.Add(-1);
