@@ -383,33 +383,11 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
         m_ObjectIndexList.push_back(TObjectIndex(it->first));
         TObjectIndex& infos = m_ObjectIndexList.back();
         _ASSERT(infos.GetName() == it->first);
-        
-        // first count object infos to store
-        size_t count = 0;
-        ITERATE ( TAnnotTypes, tit, it->second ) {
-            count += tit->second.size();
-        }
-        infos.ReserveInfoSize(count);
-        
         ITERATE ( TAnnotTypes, tit, it->second ) {
             infos.AddInfo(CAnnotObject_Info(*this, tit->first));
-        }
-    }
-
-    // fill keys
-    TObjectIndexList::iterator list_iter = m_ObjectIndexList.begin();
-    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
-        _ASSERT(list_iter != m_ObjectIndexList.end());
-        TObjectIndex& infos = *list_iter++;
-        _ASSERT(infos.GetName() == it->first);
-        
-        size_t info_index = 0;
-        ITERATE ( TAnnotTypes, tit, it->second ) {
-            CAnnotObject_Info& info = infos.GetInfo(info_index++);
+            CAnnotObject_Info& info = infos.GetInfos().back();
             _ASSERT(info.IsChunkStub() && &info.GetChunk_Info() == this);
-            _ASSERT(info.GetAnnotType() == tit->first.GetAnnotType());
-            _ASSERT(info.GetFeatType() == tit->first.GetFeatType());
-            _ASSERT(info.GetFeatSubtype() == tit->first.GetFeatSubtype());
+            _ASSERT(info.GetTypeSelector() == tit->first);
             SAnnotObject_Key key;
             SAnnotObject_Index index;
             key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
@@ -422,6 +400,33 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
         infos.PackKeys();
         infos.PackIndices();
     }
+
+    /*
+    // fill keys
+    TObjectIndexList::iterator list_iter = m_ObjectIndexList.begin();
+    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        _ASSERT(list_iter != m_ObjectIndexList.end());
+        TObjectIndex& infos = *list_iter++;
+        _ASSERT(infos.GetName() == it->first);
+        
+        size_t info_index = 0;
+        ITERATE ( TAnnotTypes, tit, it->second ) {
+            CAnnotObject_Info& info = infos.GetInfo(info_index++);
+            _ASSERT(info.IsChunkStub() && &info.GetChunk_Info() == this);
+            _ASSERT(info.GetTypeSelector() == tit->first);
+            SAnnotObject_Key key;
+            SAnnotObject_Index index;
+            key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+            ITERATE ( TLocationSet, lit, tit->second ) {
+                key.m_Handle = lit->first;
+                key.m_Range = lit->second;
+                infos.AddMap(key, index);
+            }
+        }
+        infos.PackKeys();
+        infos.PackIndices();
+    }
+    */
 }
 
 
@@ -509,6 +514,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/08/23 17:02:58  vasilche
+* Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
+* Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
+* Used deque<> instead of vector<> for storing CAnnotObject_Info set.
+*
 * Revision 1.25  2005/08/15 15:45:37  grichenk
 * Removed split assembly from bioseq-set.
 *
