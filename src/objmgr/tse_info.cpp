@@ -890,34 +890,37 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
 
 void CTSE_Info::x_MapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
-    size_t count = infos.GetKeys().size();
-    if ( count == 0 ) {
+    const SAnnotObjectsIndex::TObjectKeys& keys = infos.GetKeys();
+    if ( keys.empty() ) {
         return;
     }
-    _ASSERT(infos.GetIndices().size() == count);
+    const SAnnotObjectsIndex::TObjectIndices& values = infos.GetIndices();
+    _ASSERT(values.size() == keys.size());
 
     const CAnnotName& name = infos.GetName();
     TAnnotObjs& index = x_SetAnnotObjs(name);
 
-    for ( size_t i = 0; i < count; ++i ) {
-        x_MapAnnotObject(index, name, infos.GetKeys()[i],
-                         infos.GetIndices()[i]);
+    SAnnotObjectsIndex::TObjectIndices::const_iterator value = values.begin();
+    ITERATE ( SAnnotObjectsIndex::TObjectKeys, key, keys ) {
+        _ASSERT(value != values.end());
+        x_MapAnnotObject(index, name, *key, *value);
+        ++value;
     }
 }
 
 
 void CTSE_Info::x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
-    size_t count = infos.GetKeys().size();
-    if ( count == 0 ) {
+    const SAnnotObjectsIndex::TObjectKeys& keys = infos.GetKeys();
+    if ( keys.empty() ) {
         return;
     }
 
     const CAnnotName& name = infos.GetName();
     TAnnotObjs& index = x_SetAnnotObjs(name);
 
-    for ( size_t i = 0; i < count; ++i ) {
-        x_UnmapAnnotObject(index, name, infos.GetKeys()[i]);
+    ITERATE ( SAnnotObjectsIndex::TObjectKeys, key, keys ) {
+        x_UnmapAnnotObject(index, name, *key);
     }
 
     if ( index.empty() ) {
