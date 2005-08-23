@@ -643,6 +643,10 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
 
 SPHIPatternSearchBlk* SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* lut)
 {
+    if ( !lut ) {
+        return NULL;
+    }
+
     if (lut->multi_word_items) {
         sfree(lut->multi_word_items->extra_long_items);
         sfree(lut->multi_word_items->dna_items);
