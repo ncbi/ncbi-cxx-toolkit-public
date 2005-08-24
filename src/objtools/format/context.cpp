@@ -126,7 +126,7 @@ const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
         return *m_PrimaryId;
     }
 
-    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandleFromTSE(id, m_Handle);
+    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandle(id);
     if ( h ) {
         if ( h == m_Handle ) {
             return *m_PrimaryId;
@@ -656,6 +656,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/08/24 13:36:35  dicuccio
+* Resolve bioseq-handle against full scope, not just TSE
+*
 * Revision 1.39  2005/04/27 17:10:37  shomrat
 * Modify config for RefSeq
 *
