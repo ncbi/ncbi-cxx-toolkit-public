@@ -398,8 +398,11 @@ class CNetCacheException : public CNetServiceException
 public:
     typedef CNetServiceException TParent;
     enum EErrCode {
+        ///< If client is not allowed to run this operation
         eAuthenticationError,
+        ///< BLOB key corruption or version mismatch
         eKeyFormatError,
+        ///< Server side error
         eServerError
     };
 
@@ -521,6 +524,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/08/24 15:57:12  kuznets
+ * Improved comments
+ *
  * Revision 1.38  2005/08/11 19:32:56  kuznets
  * Added communication error from IWriter
  *
