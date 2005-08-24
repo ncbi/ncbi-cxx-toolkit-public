@@ -225,6 +225,7 @@ void CQueueDataBase::Open(const string& path,
         m_Env->SetLogFileMax(200 * 1024 * 1024);
         m_Env->SetLogAutoRemove(true);
     }
+
     
 
     // Check if bdb env. files are in place and try to join
@@ -277,6 +278,8 @@ void CQueueDataBase::Open(const string& path,
     m_Env->SetDirectLog(true);
 
     m_Env->SetLockTimeout(10 * 1000000); // 10 sec
+
+    m_Env->SetTasSpins(5);
 
     if (m_Env->IsTransactional()) {
         m_Env->SetTransactionTimeout(10 * 1000000); // 10 sec
@@ -893,7 +896,7 @@ void CQueueDataBase::RunNotifThread()
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting client notification thread.");
        m_NotifThread.Reset(
-           new CJobNotificationThread(*this, 2, 2));
+           new CJobNotificationThread(*this, 5, 2));
        m_NotifThread->Run();
 # else
         LOG_POST(Warning << 
@@ -3003,6 +3006,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/08/24 18:17:26  kuznets
+ * Reduced priority of notifiction thread, increased Tas spins
+ *
  * Revision 1.46  2005/08/22 14:01:58  kuznets
  * Added JobExchange command
  *
