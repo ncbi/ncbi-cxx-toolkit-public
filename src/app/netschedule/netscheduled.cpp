@@ -1596,370 +1596,388 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
     const char* s = reqstr;
 
-    if (strncmp(s, "STATUS", 6) == 0) {
-        req->req_type = eStatusJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed STATUS request")
+    switch (*s) {
+
+    case 'S':
+        if (strncmp(s, "STATUS", 6) == 0) {
+            req->req_type = eStatusJob;
+            s += 6;
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed STATUS request")
+            }
+            return;
         }
-        return;
-    }
-
-    if (strncmp(s, "SUBMIT", 6) == 0) {
-        req->req_type = eSubmitJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-        if (*s !='"') {
-            NS_RETURN_ERROR("Misformed SUBMIT request")
-        }
-        char *ptr = req->input;
-        for (++s; *s != '"'; ++s) {
-            NS_CHECKEND(s, "Misformed SUBMIT request")
-            NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDataSize);
-            *ptr++ = *s;
-        }
-        ++s;
-        *ptr = 0;
-
-        NS_SKIPSPACE(s)
 
 
-        // optional progress message
-
-        if (*s == '"') {
-            ptr = req->progress_msg;
-
+        if (strncmp(s, "SUBMIT", 6) == 0) {
+            req->req_type = eSubmitJob;
+            s += 6;
+            NS_SKIPSPACE(s)
+            if (*s !='"') {
+                NS_RETURN_ERROR("Misformed SUBMIT request")
+            }
+            char *ptr = req->input;
             for (++s; *s != '"'; ++s) {
                 NS_CHECKEND(s, "Misformed SUBMIT request")
-                NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
+                NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDataSize);
                 *ptr++ = *s;
             }
             ++s;
             *ptr = 0;
 
             NS_SKIPSPACE(s)
-        }
 
-        // optional UDP notification parameters
+            // optional progress message
 
-        if (!*s) {
-            return;
-        }
+            if (*s == '"') {
+                ptr = req->progress_msg;
 
-        int port = atoi(s);
-        if (port > 0) {
-            req->port = (unsigned)port;
-        }
+                for (++s; *s != '"'; ++s) {
+                    NS_CHECKEND(s, "Misformed SUBMIT request")
+                    NS_CHECKSIZE(ptr-req->progress_msg, 
+                                 kNetScheduleMaxDataSize);
+                    *ptr++ = *s;
+                }
+                ++s;
+                *ptr = 0;
 
-        for (; *s && isdigit((unsigned char)(*s)); ++s) {}
+                NS_SKIPSPACE(s)
+            }
 
-        NS_SKIPSPACE(s)
+            // optional UDP notification parameters
 
-        if (!*s) {
-            return;
-        }
+            if (!*s) {
+                return;
+            }
 
-        int timeout = atoi(s);
-        if (timeout > 0) {
-            req->timeout = timeout;
-        }
-
-        return;
-    }
-
-    if (strncmp(s, "GET", 3) == 0) {
-        req->req_type = eGetJob;
-        
-        s += 3;
-        NS_SKIPSPACE(s)
-
-        if (*s) {
             int port = atoi(s);
             if (port > 0) {
                 req->port = (unsigned)port;
             }
-        }
-        
-        return;
-    }
 
-    if (strncmp(s, "MPUT", 4) == 0) {
-        req->req_type = ePutProgressMsg;
-        s += 4;
+            for (; *s && isdigit((unsigned char)(*s)); ++s) {}
 
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
+            NS_SKIPSPACE(s)
 
-        NS_SKIPSPACE(s)
+            if (!*s) {
+                return;
+            }
 
-        if (*s !='"') {
-            NS_RETURN_ERROR("Misformed MPUT request")
-        }
-        char *ptr = req->progress_msg;
-        for (++s; *s; ++s) {
-            if (*s == '"' && *(s-1) != '\\') break;
-            NS_CHECKEND(s, "Misformed MPUT request")
-            NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
-            *ptr++ = *s;            
-        }
-        *ptr = 0;
+            int timeout = atoi(s);
+            if (timeout > 0) {
+                req->timeout = timeout;
+            }
 
-        return;
-    }
-
-    if (strncmp(s, "MGET", 4) == 0) {
-        req->req_type = eGetProgressMsg;
-        s += 4;
-
-        NS_SKIPSPACE(s)
-        if (*s != 0) {
-            NS_GETSTRING(s, req->job_key_str)
-        }
-        return;
-    }
-
-    if (strncmp(s, "JXCG", 4) == 0) {
-        req->req_type = eJobExchange;
-        s += 4;
-        NS_SKIPSPACE(s)
-        if (*s == 0) {
-            req->job_key_str.erase();
             return;
         }
-        goto parse_put_params;
-    }
 
+        if (strncmp(s, "STAT", 4) == 0) {
+            req->req_type = eStatistics;
+            return;
+        }
 
-    if (strncmp(s, "PUT", 3) == 0) {
-        req->req_type = ePutJobResult;
-        s += 3;
-        NS_SKIPSPACE(s)
-parse_put_params:
-        NS_GETSTRING(s, req->job_key_str)
+        if (strncmp(s, "SHUTDOWN", 8) == 0) {
+            req->req_type = eShutdown;
+            return;
+        }
 
-        NS_SKIPSPACE(s)
+        break;
 
-        // return code
-        if (*s) {
-            req->job_return_code = atoi(s);
-            // skip digits
-            for (; isdigit((unsigned char)(*s)); ++s) {}
-            if (!isspace((unsigned char)(*s))) {
-                goto put_format_error;
+    case 'G':
+        if (strncmp(s, "GET", 3) == 0) {
+            req->req_type = eGetJob;
+            
+            s += 3;
+            NS_SKIPSPACE(s)
+
+            if (*s) {
+                int port = atoi(s);
+                if (port > 0) {
+                    req->port = (unsigned)port;
+                }
             }
-        } else {
-        put_format_error:
-            NS_RETURN_ERROR("Misformed PUT request. Missing job return code.")
+            return;
         }
 
-        // output information
-        NS_SKIPSPACE(s)
-        
-        if (*s !='"') {
-            NS_RETURN_ERROR("Misformed PUT request")
+        break;
+    case 'M':
+        if (strncmp(s, "MPUT", 4) == 0) {
+            req->req_type = ePutProgressMsg;
+            s += 4;
+
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            NS_SKIPSPACE(s)
+
+            if (*s !='"') {
+                NS_RETURN_ERROR("Misformed MPUT request")
+            }
+            char *ptr = req->progress_msg;
+            for (++s; *s; ++s) {
+                if (*s == '"' && *(s-1) != '\\') break;
+                NS_CHECKEND(s, "Misformed MPUT request")
+                NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
+                *ptr++ = *s;            
+            }
+            *ptr = 0;
+
+            return;
         }
-        char *ptr = req->output;
-        for (++s; *s; ++s) {
-            if (*s == '"' && *(s-1) != '\\') break;
-            NS_CHECKEND(s, "Misformed PUT request")
-            NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
-            *ptr++ = *s;            
+        if (strncmp(s, "MGET", 4) == 0) {
+            req->req_type = eGetProgressMsg;
+            s += 4;
+
+            NS_SKIPSPACE(s)
+            if (*s != 0) {
+                NS_GETSTRING(s, req->job_key_str)
+            }
+            return;
         }
-        *ptr = 0;
-
-        return;
-    }
-
-    if (strncmp(s, "WGET", 4) == 0) {
-        req->req_type = eWaitGetJob;
-        
-        s += 4;
-        NS_SKIPSPACE(s)
-
-        NS_CHECKEND(s, "Misformed WGET request")
-
-        int port = atoi(s);
-        if (port > 0) {
-            req->port = (unsigned)port;
-        }
-
-        for (; *s && isdigit((unsigned char)(*s)); ++s) {}
-
-        NS_CHECKEND(s, "Misformed WGET request")
-
-        NS_SKIPSPACE(s)
-        
-        NS_CHECKEND(s, "Misformed WGET request")
-
-        int timeout = atoi(s);
-        if (timeout <= 0) {
-            timeout = 60;
-        }
-        req->timeout = timeout;
-        
-        return;
-    }
-
-    if (strncmp(s, "CANCEL", 6) == 0) {
-        req->req_type = eCancelJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed CANCEL request")
-        }
-        return;
-    }
-
-    if (strncmp(s, "JRTO", 4) == 0) {
-        req->req_type = eJobRunTimeout;
-        
-        s += 4;
-        NS_SKIPSPACE(s)
-
-        NS_CHECKEND(s, "Misformed job run timeout request")
-
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed job run timeout request")
-        }
-        NS_SKIPSPACE(s)
-
-        NS_CHECKEND(s, "Misformed job run timeout request")
-
-        int timeout = atoi(s);
-        if (timeout < 0) {
-            NS_RETURN_ERROR(
-                "Invalid job run timeout request: incorrect timeout value")
-        }
-        req->timeout = timeout;
-
-        return;
-    }
-
-    if (strncmp(s, "DROJ", 4) == 0) {
-        req->req_type = eDropJob;
-        s += 4;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed drop job request")
-        }
-        return;
-    }
-
-    if (strncmp(s, "FPUT", 4) == 0) {
-        req->req_type = ePutJobFailure;
-        s += 4;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed put error request")
+        if (strncmp(s, "MONI", 4) == 0) {
+            req->req_type = eMonitor;
+            return;
         }
 
-        if (!*s) return;
-        NS_SKIPSPACE(s)
-        if (!*s) return;
+        break;
 
-        if (*s !='"') {
-            NS_RETURN_ERROR("Misformed PUT error request")
+    case 'J':
+        if (strncmp(s, "JXCG", 4) == 0) {
+            req->req_type = eJobExchange;
+            s += 4;
+            NS_SKIPSPACE(s)
+            if (*s == 0) {
+                req->job_key_str.erase();
+                return;
+            }
+            goto parse_put_params;
         }
-        for (++s; *s; ++s) {
-            if (*s == '"' && *(s-1) != '\\') break;
-            NS_CHECKEND(s, "Misformed PUT error request")
-            req->err_msg.push_back(*s);
+        if (strncmp(s, "JRTO", 4) == 0) {
+            req->req_type = eJobRunTimeout;
+            
+            s += 4;
+            NS_SKIPSPACE(s)
+
+            NS_CHECKEND(s, "Misformed job run timeout request")
+
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed job run timeout request")
+            }
+            NS_SKIPSPACE(s)
+
+            NS_CHECKEND(s, "Misformed job run timeout request")
+
+            int timeout = atoi(s);
+            if (timeout < 0) {
+                NS_RETURN_ERROR(
+                    "Invalid job run timeout request: incorrect timeout value")
+            }
+            req->timeout = timeout;
+
+            return;
         }
-        
+        break;
+
+    case 'P':
+        if (strncmp(s, "PUT", 3) == 0) {
+            req->req_type = ePutJobResult;
+            s += 3;
+            NS_SKIPSPACE(s)
+            parse_put_params:
+            NS_GETSTRING(s, req->job_key_str)
+
+            NS_SKIPSPACE(s)
+
+            // return code
+            if (*s) {
+                req->job_return_code = atoi(s);
+                // skip digits
+                for (; isdigit((unsigned char)(*s)); ++s) {}
+                if (!isspace((unsigned char)(*s))) {
+                    goto put_format_error;
+                }
+            } else {
+            put_format_error:
+                NS_RETURN_ERROR("Misformed PUT request. Missing job return code.")
+            }
+
+            // output information
+            NS_SKIPSPACE(s)
+            
+            if (*s !='"') {
+                NS_RETURN_ERROR("Misformed PUT request")
+            }
+            char *ptr = req->output;
+            for (++s; *s; ++s) {
+                if (*s == '"' && *(s-1) != '\\') break;
+                NS_CHECKEND(s, "Misformed PUT request")
+                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
+                *ptr++ = *s;            
+            }
+            *ptr = 0;
+
+            return;
+        }
+
+        break;
+    case 'W':
+        if (strncmp(s, "WGET", 4) == 0) {
+            req->req_type = eWaitGetJob;
+            
+            s += 4;
+            NS_SKIPSPACE(s)
+
+            NS_CHECKEND(s, "Misformed WGET request")
+
+            int port = atoi(s);
+            if (port > 0) {
+                req->port = (unsigned)port;
+            }
+
+            for (; *s && isdigit((unsigned char)(*s)); ++s) {}
+
+            NS_CHECKEND(s, "Misformed WGET request")
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed WGET request")
+
+            int timeout = atoi(s);
+            if (timeout <= 0) {
+                timeout = 60;
+            }
+            req->timeout = timeout;
+            
+            return;
+        }
+        break;
+    case 'C':
+        if (strncmp(s, "CANCEL", 6) == 0) {
+            req->req_type = eCancelJob;
+            s += 6;
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed CANCEL request")
+            }
+            return;
+        }
+
+        break;
+    case 'D':
+        if (strncmp(s, "DROJ", 4) == 0) {
+            req->req_type = eDropJob;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed drop job request")
+            }
+            return;
+        }
+
+        if (strncmp(s, "DROPQ", 4) == 0) {
+            req->req_type = eDropQueue;
+            return;
+        }
+
+        if (strncmp(s, "DUMP", 4) == 0) {
+            req->req_type = eDumpQueue;
+            s += 4;
+
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            return;
+        }
+
+        break;
+    case 'F':
+        if (strncmp(s, "FPUT", 4) == 0) {
+            req->req_type = ePutJobFailure;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed put error request")
+            }
+
+            if (!*s) return;
+            NS_SKIPSPACE(s)
+            if (!*s) return;
+
+            if (*s !='"') {
+                NS_RETURN_ERROR("Misformed PUT error request")
+            }
+            for (++s; *s; ++s) {
+                if (*s == '"' && *(s-1) != '\\') break;
+                NS_CHECKEND(s, "Misformed PUT error request")
+                req->err_msg.push_back(*s);
+            }
+            
+            return;
+        }
+        break;
+
+    case 'R':
+        if (strncmp(s, "RETURN", 6) == 0) {
+            req->req_type = eReturnJob;
+            s += 6;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed job return request")
+            NS_GETSTRING(s, req->job_key_str)
+
+            return;
+        }
+        if (strncmp(s, "RECO", 4) == 0) {
+            req->req_type = eReloadConfig;
+            return;
+        }
+
+        break;
+    case 'Q':
+        if (strncmp(s, "QUIT", 4) == 0) {
+            req->req_type = eQuitSession;
+            return;
+        }
+        if (strncmp(s, "QLST", 4) == 0) {
+            req->req_type = eQList;
+            return;
+        }
+
+        break;
+    case 'V':
+        if (strncmp(s, "VERSION", 7) == 0) {
+            req->req_type = eVersion;
+            return;
+        }
+        break;
+    case 'L':
+        if (strncmp(s, "LOG", 3) == 0) {
+            req->req_type = eLogging;
+            s += 3;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed LOG request")
+            NS_GETSTRING(s, req->job_key_str)
+            return;
+        } // LOG
+        break;
+    case 'B':
+        if (strncmp(s, "BSUB", 4) == 0) {
+            req->req_type = eSubmitBatch;
+            s += 4;
+            return;
+        }
+        break;
+    default:
+        req->req_type = eError;
+        req->err_msg = "Unknown request";
         return;
-    }
-
-
-    if (strncmp(s, "RETURN", 6) == 0) {
-        req->req_type = eReturnJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-
-        NS_CHECKEND(s, "Misformed job return request")
-
-        NS_GETSTRING(s, req->job_key_str)
-
-        return;
-    }
-
-    if (strncmp(s, "QUIT", 4) == 0) {
-        req->req_type = eQuitSession;
-        return;
-    }
-
-    if (strncmp(s, "STAT", 4) == 0) {
-        req->req_type = eStatistics;
-        return;
-    }
-
-    if (strncmp(s, "VERSION", 7) == 0) {
-        req->req_type = eVersion;
-        return;
-    }
-
-    if (strncmp(s, "DROPQ", 4) == 0) {
-        req->req_type = eDropQueue;
-        return;
-    }
-
-    if (strncmp(s, "LOG", 3) == 0) {
-        req->req_type = eLogging;
-        s += 3;
-        NS_SKIPSPACE(s)
-
-        NS_CHECKEND(s, "Misformed LOG request")
-
-        NS_GETSTRING(s, req->job_key_str)
-        return;
-    } // LOG
-
-    if (strncmp(s, "MONI", 4) == 0) {
-        req->req_type = eMonitor;
-        return;
-    }
-
-    if (strncmp(s, "RECO", 4) == 0) {
-        req->req_type = eReloadConfig;
-        return;
-    }
-
-    if (strncmp(s, "DUMP", 4) == 0) {
-        req->req_type = eDumpQueue;
-        s += 4;
-
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        return;
-    }
-
-    if (strncmp(s, "QLST", 4) == 0) {
-        req->req_type = eQList;
-        return;
-    }
-
-    if (strncmp(s, "BSUB", 4) == 0) {
-        req->req_type = eSubmitBatch;
-        s += 4;
-
-        return;
-    }
-
-
-    if (strncmp(s, "SHUTDOWN", 8) == 0) {
-        req->req_type = eShutdown;
-        return;
-    }
+    } // switch
 
     req->req_type = eError;
     req->err_msg = "Unknown request";
@@ -2330,6 +2348,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/08/24 16:57:56  kuznets
+ * Optimization of command parsing
+ *
  * Revision 1.53  2005/08/22 14:01:58  kuznets
  * Added JobExchange command
  *
