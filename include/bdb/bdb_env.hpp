@@ -175,6 +175,10 @@ public:
     /// Set timeout value for transactions in microseconds (1 000 000 in sec)
     void SetTransactionTimeout(unsigned timeout);
 
+    /// Specify that test-and-set mutexes should spin tas_spins times 
+    /// without blocking
+    void SetTasSpins(unsigned tas_spins);
+
     /// Non-force removal of BDB environment. (data files remains intact).
     /// @return
     ///   FALSE if environment is busy and cannot be deleted
@@ -214,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/24 18:14:27  kuznets
+ * +SetTasSpins()
+ *
  * Revision 1.22  2005/08/15 11:36:03  kuznets
  * + methods to set allowed locks and place trans.log in memory
  *

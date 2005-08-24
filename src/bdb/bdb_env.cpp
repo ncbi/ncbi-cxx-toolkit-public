@@ -363,6 +363,12 @@ void CBDB_Env::SetLogInMemory(bool on_off)
     BDB_CHECK(ret, "DB_ENV::set_flags");
 }
 
+void CBDB_Env::SetTasSpins(unsigned tas_spins)
+{
+    int ret = m_Env->set_tas_spins(m_Env, tas_spins);
+    BDB_CHECK(ret, "DB_ENV::set_tas_spins");
+}
+
 void CBDB_Env::OpenErrFile(const char* file_name)
 {
     if (m_ErrFile) {
@@ -453,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/08/24 18:15:23  kuznets
+ * +SetTasSpins()
+ *
  * Revision 1.31  2005/08/15 11:36:08  kuznets
  * + methods to set allowed locks and place trans.log in memory
  *
