@@ -70,7 +70,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.6.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.6.2  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2348,6 +2348,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/08/24 18:17:59  kuznets
+ * Incremented program version
+ *
  * Revision 1.54  2005/08/24 16:57:56  kuznets
  * Optimization of command parsing
  *
